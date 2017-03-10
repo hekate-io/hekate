@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright 2017 The Hekate Project
+
+  The Hekate Project licenses this file to you under the Apache License,
+  version 2.0 (the "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at:
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+  License for the specific language governing permissions and limitations
+  under the License.
+  -->
+
+<!--Start:example-->
+<s:beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:s="http://www.springframework.org/schema/beans"
+    xmlns="http://www.hekate.io/spring/hekate-core"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.hekate.io/spring/hekate-core
+        http://www.hekate.io/spring/hekate-core.xsd">
+    <node id="hekate" node-name="my-node" cluster-name="my-cluster">
+        <!-- Node roles. -->
+        <roles>
+            <role>role 1</role>
+            <role>role 2</role>
+        </roles>
+
+        <!-- Node properties. -->
+        <properties>
+            <prop name="prop 1">prop val 1</prop>
+            <prop name="prop 2">prop val 2</prop>
+        </properties>
+
+        <!-- Default data serialization options. -->
+        <default-codec>
+            <s:bean class="io.hekate.codec.JavaCodecFactory"/>
+        </default-codec>
+
+        <!-- Network service. -->
+        <network nio-threads="1"
+            connect-timeout-ms="3000"
+            accept-retry-interval-ms="1000"
+            heartbeat-interval-ms="1000"
+            heartbeat-loss-threshold="3"
+            tcp-no-delay="true">
+            <!-- Node address selection options. -->
+            <address port="10001" port-range="100">
+                <any-host ip-version="V4"/>
+            </address>
+        </network>
+
+        <!-- Cluster service. -->
+        <cluster gossip-interval-ms="1000" gossip-speedup-size="100">
+            <seed-node-provider>
+                <multicast group="224.1.2.12" port="45454" interval-ms="200" wait-time-ms="1000" ttl="3"/>
+            </seed-node-provider>
+            <failure-detection>
+                <heartbeat interval-ms="500" loss-threshold="6" quorum="2"/>
+            </failure-detection>
+        </cluster>
+
+        <!-- Messaging service. -->
+        <messaging>
+            <channel name="some.channel" sockets="1" nio-threads="1" log-category="foo.bar.Channel">
+                <receiver>
+                    <s:bean class="foo.bar.SomeMessageReceiver"/>
+                </receiver>
+            </channel>
+        </messaging>
+
+        <!-- Task service. -->
+        <tasks worker-threads="8"/>
+
+        <!-- Lock service. -->
+        <locks>
+            <region name="region1">
+                <lock name="someLock1"/>
+                <lock name="someLock2"/>
+            </region>
+        </locks>
+
+        <!-- Coordination service. -->
+        <coordination>
+            <process name="someProcess1">
+                <handler>
+                    <s:bean class="foo.bar.SomeCoordinationHandler"/>
+                </handler>
+            </process>
+        </coordination>
+
+        <!-- Leader election service. -->
+        <election>
+            <candidate group="someGroup1">
+                <s:bean class="foo.bar.SomeCandidate"/>
+            </candidate>
+        </election>
+
+        <!-- Local metrics service. -->
+        <metrics refresh-interval-ms="1000">
+            <counters>
+                <counter name="counter1"/>
+            </counters>
+            <probes>
+                <probe name="probe1" init-value="1">
+                    <s:bean class="foo.bar.SomeProbe"/>
+                </probe>
+            </probes>
+        </metrics>
+
+        <!-- Cluster metrics service. -->
+        <cluster-metrics replication-interval-ms="1000"/>
+    </node>
+</s:beans>
+    <!--End:example-->

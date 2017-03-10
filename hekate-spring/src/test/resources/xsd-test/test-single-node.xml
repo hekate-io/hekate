@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright 2017 The Hekate Project
+
+  The Hekate Project licenses this file to you under the Apache License,
+  version 2.0 (the "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at:
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+  License for the specific language governing permissions and limitations
+  under the License.
+  -->
+
+<s:beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:s="http://www.springframework.org/schema/beans"
+    xmlns="http://www.hekate.io/spring/hekate-core"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.hekate.io/spring/hekate-core
+        http://www.hekate.io/spring/hekate-core.xsd">
+    <node id="hekateBean" node-name="test-node" cluster-name="test-cluster">
+        <roles>
+            <role>role 1</role>
+            <role>role 2</role>
+            <role>role 3</role>
+        </roles>
+
+        <properties>
+            <prop name="prop 1">prop val 1</prop>
+            <prop name="prop 2">prop val 2</prop>
+            <prop name="prop 3">prop val 3</prop>
+        </properties>
+
+        <property-providers>
+            <provider>
+                <s:bean class="foo.bar.SomeNodePropertyProvider"/>
+            </provider>
+        </property-providers>
+
+        <default-codec>
+            <s:bean class="io.hekate.codec.JavaCodecFactory"/>
+        </default-codec>
+
+        <cluster id="cluster" gossip-interval-ms="1000" gossip-speedup-size="100">
+            <seed-node-provider>
+                <jdbc cleanup-interval-ms="60000"
+                    query-timeout-sec="5"
+                    table="cn"
+                    cluster-column="c"
+                    host-column="h"
+                    port-column="p">
+                    <datasource>
+                        <s:bean class="org.h2.jdbcx.JdbcDataSource">
+                            <s:property name="url" value="jdbc:h2:mem:test;INIT=CREATE TABLE cn (c VARCHAR, h VARCHAR, p NUMBER)"/>
+                        </s:bean>
+                    </datasource>
+                </jdbc>
+            </seed-node-provider>
+
+            <failure-detection>
+                <heartbeat interval-ms="500" loss-threshold="6" quorum="2"/>
+            </failure-detection>
+
+            <split-brain-detection action="TERMINATE">
+                <group require="ANY_VALID">
+                    <host-reachable host="127.0.0.1" timeout-ms="3000"/>
+                    <group require="ALL_VALID">
+                        <address-reachable address="127.0.0.1:10001" timeout-ms="3000"/>
+                        <host-reachable host="127.0.0.1" timeout-ms="3000"/>
+                    </group>
+                </group>
+            </split-brain-detection>
+
+            <join-validators>
+                <validator>
+                    <s:bean class="foo.bar.SomeClusterJoinValidator"/>
+                </validator>
+            </join-validators>
+
+            <listeners>
+                <listener>
+                    <s:bean class="foo.bar.SomeClusterEventListener"/>
+                </listener>
+            </listeners>
+        </cluster>
+
+        <network id="network"
+            connect-timeout-ms="3000"
+            accept-retry-interval-ms="1000"
+            heartbeat-interval-ms="1000"
+            heartbeat-loss-threshold="3"
+            nio-threads="1"
+            transport="AUTO"
+            tcp-no-delay="true"
+            tcp-receive-buffer-size=""
+            tcp-send-buffer-size=""
+            tcp-reuse-address=""
+            tcp-backlog="">
+            <address port="10001" port-range="100">
+                <any-host exclude-loopback="true" ip-version="V4">
+                    <interface-name match="" not-match=""/>
+                    <ip-address match="" not-match=""/>
+                </any-host>
+            </address>
+
+            <connectors>
+                <connector
+                    protocol="test.protocol.1"
+                    idle-timeout-ms="0"
+                    nio-threads="0"
+                    log-category="foo.bar.NetworkConnector">
+                    <message-codec>
+                        <s:bean class="io.hekate.codec.JavaCodecFactory"/>
+                    </message-codec>
+                    <server-handler>
+                        <s:bean class="foo.bar.SomeNetworkServerHandler"/>
+                    </server-handler>
+                </connector>
+
+                <connector protocol="test.protocol.2"/>
+            </connectors>
+        </network>
+
+        <messaging id="messaging">
+            <channel
+                name="some.channel"
+                sockets="1"
+                nio-threads="1"
+                worker-threads="0"
+                idle-timeout-ms="60000"
+                log-category="foo.bar.Channel">
+                <back-pressure>
+                    <outbound low-watermark="50" high-watermark="100" overflow="BLOCK"/>
+                    <inbound low-watermark="50" high-watermark="100"/>
+                </back-pressure>
+                <receiver>
+                    <s:bean class="foo.bar.SomeMessageReceiver"/>
+                </receiver>
+                <load-balancer>
+                    <s:bean class="foo.bar.SomeLoadBalancer"/>
+                </load-balancer>
+                <message-codec>
+                    <s:bean class="io.hekate.codec.JavaCodecFactory"/>
+                </message-codec>
+                <cluster-filter>
+                    <s:bean class="foo.bar.SomeClusterNodeFilter"/>
+                </cluster-filter>
+                <failover-policy>
+                    <s:bean class="foo.bar.SomeFailoverPolicy"/>
+                </failover-policy>
+            </channel>
+
+            <channel name="another.channel"/>
+        </messaging>
+
+        <tasks id="tasks" nio-threads="0" worker-threads="8" socket-pool-size="1" idle-socket-timeout-ms="0"/>
+
+        <locks id="locks" retry-interval-ms="100" nio-threads="0" worker-threads="1">
+            <region name="region1">
+                <lock name="someLock1"/>
+                <lock name="someLock2"/>
+            </region>
+
+            <region name="region2"/>
+        </locks>
+
+        <coordination id="coordination">
+            <process name="someProcess1">
+                <handler>
+                    <s:bean class="foo.bar.SomeCoordinationHandler"/>
+                </handler>
+            </process>
+
+            <process name="someProcess3">
+                <handler>
+                    <s:bean class="foo.bar.SomeCoordinationHandler"/>
+                </handler>
+                <message-codec>
+                    <s:bean class="io.hekate.codec.JavaCodecFactory"/>
+                </message-codec>
+            </process>
+        </coordination>
+
+        <election id="election">
+            <candidate group="someGroup1">
+                <s:bean class="foo.bar.SomeCandidate"/>
+            </candidate>
+
+            <candidate group="someGroup2">
+                <s:bean class="foo.bar.SomeCandidate"/>
+            </candidate>
+        </election>
+
+        <metrics id="metrics" refresh-interval-ms="1000">
+            <counters>
+                <counter name="counter1" auto-reset="true" total-name="c1.total"/>
+                <counter name="counter2" auto-reset="true" total-name="c2.total"/>
+            </counters>
+
+            <probes>
+                <probe name="probe1" init-value="1">
+                    <s:bean class="foo.bar.SomeProbe"/>
+                </probe>
+                <probe name="probe2" init-value="1">
+                    <s:bean class="foo.bar.SomeProbe"/>
+                </probe>
+            </probes>
+
+            <listeners>
+                <listener>
+                    <s:bean class="foo.bar.SomeMetricsListener"/>
+                </listener>
+                <listener>
+                    <s:bean class="foo.bar.SomeMetricsListener"/>
+                </listener>
+            </listeners>
+        </metrics>
+
+        <cluster-metrics id="clusterMetrics" replication-interval-ms="1000">
+            <filter>
+                <s:bean class="foo.bar.SomeMetricFilter"/>
+            </filter>
+        </cluster-metrics>
+
+        <custom-services>
+            <service>
+                <s:bean class="foo.bar.SomeServiceFactory"/>
+            </service>
+            <service>
+                <s:bean class="foo.bar.SomeServiceFactory"/>
+            </service>
+        </custom-services>
+
+        <plugins>
+            <plugin>
+                <s:bean class="foo.bar.SomePlugin"/>
+            </plugin>
+        </plugins>
+    </node>
+</s:beans>

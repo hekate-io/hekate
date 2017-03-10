@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright 2017 The Hekate Project
+  
+  The Hekate Project licenses this file to you under the Apache License,
+  version 2.0 (the "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at:
+  
+  http://www.apache.org/licenses/LICENSE-2.0
+  
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+  License for the specific language governing permissions and limitations
+  under the License.
+  -->
+
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:h="http://www.hekate.io/spring/hekate-core"
+    xmlns="http://www.springframework.org/schema/beans"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.hekate.io/spring/hekate-core
+        http://www.hekate.io/spring/hekate-core.xsd">
+
+    <bean id="testClusterName" class="java.lang.String">
+        <constructor-arg value="#{T(java.util.UUID).randomUUID().toString()}"/>
+    </bean>
+
+    <bean id="testIdentity" class="java.lang.String">
+        <constructor-arg value="#{T(io.hekate.HekateTestProps).get('AWS_TEST_ACCESS_KEY')}"/>
+    </bean>
+
+    <bean id="testCredential" class="java.lang.String">
+        <constructor-arg value="#{T(io.hekate.HekateTestProps).get('AWS_TEST_SECRET_KEY')}"/>
+    </bean>
+
+    <bean id="testRegion" class="java.lang.String">
+        <constructor-arg value="#{T(io.hekate.HekateTestProps).get('AWS_TEST_REGION')}"/>
+    </bean>
+
+    <bean id="testEndpoint" class="java.lang.String">
+        <constructor-arg value="https://ec2.#{testRegion}.amazonaws.com"/>
+    </bean>
+
+    <h:node id="node1" cluster-name="#{testClusterName}">
+        <h:cluster>
+            <h:seed-node-provider>
+                <h:cloud provider="aws-ec2" endpoint="#{testEndpoint}">
+                    <h:credentials>
+                        <h:basic identity="#{testIdentity}" credential="#{testCredential}"/>
+                    </h:credentials>
+                    <h:regions>
+                        <h:region>#{testRegion}</h:region>
+                    </h:regions>
+                    <h:zones>
+                        <h:zone>#{testRegion}a</h:zone>
+                        <h:zone>#{testRegion}b</h:zone>
+                    </h:zones>
+                    <h:tags>
+                        <h:tag name="HEKATE" value="1"/>
+                    </h:tags>
+                    <h:properties>
+                        <h:prop name="test.property">test.value</h:prop>
+                    </h:properties>
+                </h:cloud>
+            </h:seed-node-provider>
+        </h:cluster>
+    </h:node>
+</beans>

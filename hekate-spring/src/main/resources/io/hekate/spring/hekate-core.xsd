@@ -1,0 +1,1584 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  Copyright 2017 The Hekate Project
+
+  The Hekate Project licenses this file to you under the Apache License,
+  version 2.0 (the "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at:
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+  License for the specific language governing permissions and limitations
+  under the License.
+  -->
+
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:beans="http://www.springframework.org/schema/beans"
+    xmlns:tool="http://www.springframework.org/schema/tool"
+    xmlns="http://www.hekate.io/spring/hekate-core"
+    targetNamespace="http://www.hekate.io/spring/hekate-core"
+    elementFormDefault="qualified"
+    attributeFormDefault="unqualified">
+    <xsd:import namespace="http://www.springframework.org/schema/beans"/>
+    <xsd:import namespace="http://www.springframework.org/schema/tool"/>
+
+    <xsd:element name="node">
+        <xsd:annotation>
+            <xsd:documentation>
+                Registers a new instance of 'io.hekate.spring.bean.HekateSpringBootstrap' within a Spring context.
+            </xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="io.hekate.core.Hekate"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="abstractNodeType">
+                    <xsd:attribute name="id" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                The unique identifier for a bean.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="node-name" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.core.HekateBootstrap#setNodeName(String name)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="cluster-name" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.core.HekateBootstrap#setClusterName(String)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:complexType name="abstractNodeType" abstract="true">
+        <xsd:all minOccurs="0" maxOccurs="1">
+            <xsd:element name="roles" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.core.HekateBootstrap#setNodeRoles(java.util.Set)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="role" type="xsd:string" minOccurs="0" maxOccurs="unbounded"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="properties" type="propertiesType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.core.HekateBootstrap#setNodeProperties(java.util.Map)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="property-providers" type="nodePropertyProviders" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.core.HekateBootstrap#setNodePropertyProviders(java.util.List)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="default-codec" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.core.HekateBootstrap#setDefaultCodec(io.hekate.codec.CodecFactory)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="network" type="networkServiceType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.network.NetworkServiceFactory'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="cluster" type="clusterServiceType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.cluster.ClusterServiceFactory'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="messaging" type="messagingServiceType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.messaging.MessagingServiceFactory'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="tasks" type="taskServiceType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.task.TaskServiceFactory'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="locks" type="lockServiceType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.lock.LockServiceFactory'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="election" type="electionServiceType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.election.ElectionServiceFactory.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="coordination" type="coordinationServiceType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.coordinate.CoordinationServiceFactory'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="metrics" type="localMetricsServiceType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.metrics.MetricsServiceFactory'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="cluster-metrics" type="clusterMetricsServiceType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.metrics.cluster.ClusterMetricsServiceFactory'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-services" type="customServicesType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers custom implementations of 'io.hekate.core.service.Service' interface.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="plugins" type="pluginsType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers implementations 'io.hekate.core.plugin.Plugin' interface.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:all>
+    </xsd:complexType>
+
+    <xsd:complexType name="nodePropertyProviders">
+        <xsd:sequence>
+            <xsd:element name="provider" type="beanOrRefType" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="customServicesType">
+        <xsd:sequence>
+            <xsd:element name="service" type="beanOrRefType" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="pluginsType">
+        <xsd:sequence>
+            <xsd:element name="plugin" type="beanOrRefType" minOccurs="0" maxOccurs="unbounded">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.core.plugin.Plugin'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="abstractServiceType" abstract="true">
+        <xsd:attribute name="id" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation>
+                    The unique identifier for the service bean.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="networkServiceType">
+        <xsd:complexContent>
+            <xsd:extension base="abstractServiceType">
+                <xsd:all>
+                    <xsd:element name="address" type="networkAddressType" minOccurs="0" maxOccurs="1">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                Configures network address selection options.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="connectors" minOccurs="0" maxOccurs="1">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.network.NetworkServiceFactory#setConnectors(List)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                        <xsd:complexType>
+                            <xsd:sequence minOccurs="1" maxOccurs="unbounded">
+                                <xsd:choice>
+                                    <xsd:element name="connector" type="networkConnectorType" minOccurs="0">
+                                        <xsd:annotation>
+                                            <xsd:documentation>
+                                                Registers 'io.hekate.network.NetworkConnectorConfig'.
+                                            </xsd:documentation>
+                                        </xsd:annotation>
+                                    </xsd:element>
+                                </xsd:choice>
+                            </xsd:sequence>
+                        </xsd:complexType>
+                    </xsd:element>
+                </xsd:all>
+                <xsd:attribute name="connect-timeout-ms" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    See javadoc of 'io.hekate.network.NetworkServiceFactory#setConnectTimeout(int)'.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="accept-retry-interval-ms" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.network.NetworkServiceFactory#setAcceptRetryInterval(long)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="heartbeat-interval-ms" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.network.NetworkServiceFactory#setHeartbeatInterval(int)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="heartbeat-loss-threshold" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.network.NetworkServiceFactory#setHeartbeatLossThreshold(int)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="nio-threads" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.network.NetworkServiceFactory#setNioThreads(int)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="transport" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.network.NetworkServiceFactory#setTransport(io.hekate.network.NetworkTransportType)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="tcp-no-delay" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.network.NetworkServiceFactory#setTcpNoDelay(boolean)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="tcp-receive-buffer-size" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.network.NetworkServiceFactory#setTcpReceiveBufferSize(java.lang.Integer)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="tcp-send-buffer-size" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.network.NetworkServiceFactory#setTcpSendBufferSize(java.lang.Integer)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="tcp-reuse-address" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.network.NetworkServiceFactory#setTcpReuseAddress(java.lang.Boolean)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="tcp-backlog" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.network.NetworkServiceFactory#setTcpBacklog(java.lang.Boolean)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="networkAddressType">
+        <xsd:choice minOccurs="0" maxOccurs="1">
+            <xsd:element name="host" type="xsd:string">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.network.NetworkServiceFactory#setHost(java.lang.String)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="any-host" type="networkAddressAutoSelectType">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.network.address.DefaultAddressSelector'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="host-selector" type="beanOrRefType"/>
+        </xsd:choice>
+        <xsd:attribute name="port" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.network.NetworkServiceFactory#setPort(int)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="port-range" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.network.NetworkServiceFactory#setPortRange(int)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="networkAddressAutoSelectType">
+        <xsd:all minOccurs="0" maxOccurs="1">
+            <xsd:element name="interface-name" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Network interface name matching options.
+                    </xsd:documentation>
+                </xsd:annotation>
+                <xsd:complexType>
+                    <xsd:attribute name="match" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.network.address.DefaultAddressSelector#setInterfaceMatch(java.lang.String)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="not-match" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.network.address.DefaultAddressSelector#setInterfaceNotMatch(java.lang.String)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="ip-address" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        IP address matching options.
+                    </xsd:documentation>
+                </xsd:annotation>
+                <xsd:complexType>
+                    <xsd:attribute name="match" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.network.address.DefaultAddressSelector#setIpMatch(java.lang.String)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="not-match" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.network.address.DefaultAddressSelector#setIpNotMatch(java.lang.String)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:all>
+        <xsd:attribute name="exclude-loopback" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.network.address.DefaultAddressSelector#setExcludeLoopback(boolean)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="ip-version" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.network.address.DefaultAddressSelector#setIpVersion(io.hekate.network.address.IpVersion)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="networkConnectorType">
+        <xsd:all minOccurs="0">
+            <xsd:element name="server-handler" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.network.NetworkConnectorConfig#setServerHandler(io.hekate.network.NetworkServerHandler)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="message-codec" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.network.NetworkConnectorConfig#setMessageCodec(io.hekate.codec.CodecFactory)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:all>
+        <xsd:attribute name="protocol" type="xsd:string" use="required">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.network.NetworkConnectorConfig#setProtocol(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="idle-timeout-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.network.NetworkConnectorConfig#setIdleTimeout(long)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="nio-threads" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.network.NetworkConnectorConfig#setNioThreads(int)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="log-category" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.network.NetworkConnectorConfig#setLogCategory(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="clusterServiceType">
+        <xsd:complexContent>
+            <xsd:extension base="abstractServiceType">
+                <xsd:all minOccurs="1">
+                    <xsd:element name="seed-node-provider" type="clusterSeedNodeProviderType" minOccurs="0" maxOccurs="1">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                Registers 'io.hekate.cluster.seed.SeedNodeProvider'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="split-brain-detection" type="clusterSplitBrainDetectionType" minOccurs="0" maxOccurs="1">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                Registers 'io.hekate.cluster.split.SplitBrainDetector'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="failure-detection" type="clusterFailureDetectionType" minOccurs="0" maxOccurs="1">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                Registers 'io.hekate.cluster.health.FailureDetector'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="listeners" type="clusterListenersType" minOccurs="0" maxOccurs="1">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.cluster.ClusterServiceFactory#setClusterListeners(java.util.List)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="join-validators" type="clusterJoinValidatorsType" minOccurs="0" maxOccurs="1">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.cluster.ClusterServiceFactory#setJoinValidators(java.util.List)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                </xsd:all>
+                <xsd:attribute name="gossip-interval-ms" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.cluster.ClusterServiceFactory#setGossipInterval(long).
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="gossip-speedup-size" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.cluster.ClusterServiceFactory#setSpeedUpGossipSize(int).
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="clusterSeedNodeProviderType">
+        <xsd:choice maxOccurs="1" minOccurs="1">
+            <xsd:element name="multicast" type="clusterMulticastSeedNodeProviderType">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.cluster.seed.multicast.MulticastSeedNodeProvider'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="static" type="clusterStaticSeedNodeProviderType">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.cluster.seed.StaticSeedNodeProvider'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="jdbc" type="clusterJdbcSeedNodeProviderType">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.cluster.seed.jdbc.JdbcSeedNodeProvider'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="shared-folder" type="clusterSharedFolderSeedNodeProviderType">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.cluster.seed.fs.FsSeedNodeProvider'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="cloud-store" type="clusterCloudStoreSeedNodeProviderType">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.cluster.seed.jclouds.CloudStoreSeedNodeProvider'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="cloud" type="clusterCloudSeedNodeProviderType">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.cluster.seed.jclouds.CloudSeedNodeProvider'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="custom-provider" type="beanOrRefType">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.cluster.seed.SeedNodeProvider'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:choice>
+        <xsd:attribute name="ref" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    Reference to a bean of 'io.hekate.cluster.seed.SeedNodeProvider' type.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="clusterMulticastSeedNodeProviderType">
+        <xsd:attribute name="group" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.multicast.MulticastSeedNodeProviderConfig#setGroup(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="port" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.multicast.MulticastSeedNodeProviderConfig#setPort(int)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="ttl" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.multicast.MulticastSeedNodeProviderConfig#setTtl(int)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="interval-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.multicast.MulticastSeedNodeProviderConfig#setInterval(long)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="wait-time-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.multicast.MulticastSeedNodeProviderConfig#setWaitTime(long)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="loopback-disabled" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.multicast.MulticastSeedNodeProviderConfig#setLoopBackDisabled(boolean)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="clusterStaticSeedNodeProviderType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="address" type="xsd:string">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.cluster.seed.StaticSeedNodeProviderConfig#setAddresses(java.util.List)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="clusterJdbcSeedNodeProviderType">
+        <xsd:all minOccurs="1" maxOccurs="1">
+            <xsd:element name="datasource" type="beanOrRefType">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.cluster.seed.jdbc.JdbcSeedNodeProviderConfig#setDataSource(javax.sql.DataSource)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:all>
+        <xsd:attribute name="query-timeout-sec" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.jdbc.JdbcSeedNodeProviderConfig#setQueryTimeout(int)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="cleanup-interval-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.jdbc.JdbcSeedNodeProviderConfig#setCleanupInterval(long)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="table" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.jdbc.JdbcSeedNodeProviderConfig#setTable(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="host-column" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.jdbc.JdbcSeedNodeProviderConfig#setHostColumn(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="port-column" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.jdbc.JdbcSeedNodeProviderConfig#setPortColumn(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="cluster-column" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.jdbc.JdbcSeedNodeProviderConfig#setClusterColumn(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="clusterCloudSeedNodeProviderType">
+        <xsd:all minOccurs="0" maxOccurs="1">
+            <xsd:element name="credentials" type="cloudProviderCredentialsType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.cluster.seed.jclouds.CloudSeedNodeProviderConfig#setRegions(java.util.Set)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="regions" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.cluster.seed.jclouds.CloudSeedNodeProviderConfig#setNodeRoles(java.util.Set)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="region" type="xsd:string" minOccurs="0" maxOccurs="unbounded"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="zones" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.cluster.seed.jclouds.CloudSeedNodeProviderConfig#setZones(java.util.Set)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="zone" type="xsd:string" minOccurs="0" maxOccurs="unbounded"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="tags" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.cluster.seed.jclouds.CloudSeedNodeProviderConfig#setTags(java.util.Map)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="tag" minOccurs="0" maxOccurs="unbounded">
+                            <xsd:complexType>
+                                <xsd:attribute name="name" type="xsd:string" use="required">
+                                    <xsd:annotation>
+                                        <xsd:documentation>
+                                            Tag name.
+                                        </xsd:documentation>
+                                    </xsd:annotation>
+                                </xsd:attribute>
+                                <xsd:attribute name="value" type="xsd:string" use="required">
+                                    <xsd:annotation>
+                                        <xsd:documentation>
+                                            Tag value.
+                                        </xsd:documentation>
+                                    </xsd:annotation>
+                                </xsd:attribute>
+                            </xsd:complexType>
+                        </xsd:element>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="properties" type="propertiesType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.cluster.seed.jclouds.CloudSeedNodeProviderConfig#setProperties(java.util.Properties)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:all>
+        <xsd:attribute name="provider" type="xsd:string" use="required">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.jclouds.CloudSeedNodeProviderConfig#setProvider(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="endpoint" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.jclouds.CloudSeedNodeProviderConfig#setEndpoint(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="clusterCloudStoreSeedNodeProviderType">
+        <xsd:all minOccurs="0" maxOccurs="1">
+            <xsd:element name="credentials" type="cloudProviderCredentialsType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of
+                        'io.hekate.cluster.seed.jclouds.CloudStoreSeedNodeProviderConfig#setCredentials(
+                        io.hekate.cluster.seed.jclouds.CredentialsSupplier)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="properties" type="propertiesType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of
+                        'io.hekate.cluster.seed.jclouds.CloudStoreSeedNodeProviderConfig#setProperties(java.util.Properties)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:all>
+        <xsd:attribute name="provider" type="xsd:string" use="required">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.jclouds.CloudStoreSeedNodeProviderConfig#setProvider(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="container" type="xsd:string" use="required">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.jclouds.CloudStoreSeedNodeProviderConfig#setContainer(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="cleanup-interval-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.jclouds.CloudStoreSeedNodeProviderConfig#setCleanupInterval(long)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="cloudProviderCredentialsType">
+        <xsd:choice maxOccurs="1">
+            <xsd:element name="basic" minOccurs="0" maxOccurs="1">
+                <xsd:complexType>
+                    <xsd:attribute name="identity" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.cluster.seed.jclouds.BasicCredentialsSupplier#setIdentity(java.lang.String)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="credential" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.cluster.seed.jclouds.BasicCredentialsSupplier#setCredential(java.lang.String)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="custom-supplier" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers a custom implementation of 'io.hekate.cluster.seed.jclouds.CredentialsSupplier' interface.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="clusterSharedFolderSeedNodeProviderType">
+        <xsd:attribute name="work-dir" type="xsd:string" use="required">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.fs.FsSeedNodeProviderConfig#setWorkDir(java.io.File)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="cleanup-interval-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.fs.FsSeedNodeProviderConfig#setCleanupInterval(long)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="clusterSplitBrainDetectionType">
+        <xsd:sequence minOccurs="0" maxOccurs="1">
+            <xsd:element name="group" type="splitBrainDetectorsGroupType">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.cluster.split.SplitBrainDetectorGroup'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+        <xsd:attribute name="action">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of
+                    'io.hekate.cluster.ClusterServiceFactory#setSplitBrainAction(io.hekate.cluster.split.SplitBrainAction)'.
+                </xsd:documentation>
+            </xsd:annotation>
+            <xsd:simpleType>
+                <xsd:restriction base="xsd:string">
+                    <xsd:enumeration value="TERMINATE">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.cluster.split.SplitBrainAction#TERMINATE'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:enumeration>
+                    <xsd:enumeration value="REJOIN">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.cluster.split.SplitBrainAction#REJOIN'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:enumeration>
+                </xsd:restriction>
+            </xsd:simpleType>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="splitBrainDetectorsGroupType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:choice>
+                <xsd:element name="group" type="splitBrainDetectorsGroupType">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            Registers 'io.hekate.cluster.split.SplitBrainDetectorGroup'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:element>
+                <xsd:element name="address-reachable">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            Registers 'io.hekate.cluster.split.AddressReachabilityDetector'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                    <xsd:complexType>
+                        <xsd:attribute name="address" type="xsd:string">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    Address as 'host:port' (f.e. '192.168.39.41:10012').
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:attribute>
+                        <xsd:attribute name="timeout-ms" type="xsd:string">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    Connect timeout in milliseconds.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:attribute>
+                    </xsd:complexType>
+                </xsd:element>
+                <xsd:element name="host-reachable">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            Registers 'io.hekate.cluster.split.HostReachabilityDetector'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                    <xsd:complexType>
+                        <xsd:attribute name="host" type="xsd:string">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    Host to be checked for reachability (f.e. '192.168.39.41').
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:attribute>
+                        <xsd:attribute name="timeout-ms" type="xsd:string">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    Timeout in milliseconds for host reachability checking (see 'java.net.InetAddress#isReachable(int)')
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:attribute>
+                    </xsd:complexType>
+                </xsd:element>
+                <xsd:element name="custom-detector" type="beanOrRefType">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            Registers a custom implementation of 'io.hekate.cluster.split.SplitBrainDetector' interface.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:element>
+            </xsd:choice>
+        </xsd:sequence>
+        <xsd:attribute name="require">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.split.SplitBrainDetectorGroup#setGroupPolicy(GroupPolicy)'.
+                </xsd:documentation>
+            </xsd:annotation>
+            <xsd:simpleType>
+                <xsd:restriction base="xsd:string">
+                    <xsd:enumeration value="ANY_VALID">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.cluster.split.SplitBrainDetectorGroup.GroupPolicy#ANY_VALID'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:enumeration>
+                    <xsd:enumeration value="ALL_VALID">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.cluster.split.SplitBrainDetectorGroup.GroupPolicy#ALL_VALID'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:enumeration>
+                </xsd:restriction>
+            </xsd:simpleType>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="clusterFailureDetectionType">
+        <xsd:sequence>
+            <xsd:choice minOccurs="0" maxOccurs="1">
+                <xsd:element name="heartbeat">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            Registers 'io.hekate.cluster.health.DefaultFailureDetector'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                    <xsd:complexType>
+                        <xsd:attribute name="interval-ms" type="xsd:string">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    See javadoc of 'io.hekate.cluster.health.DefaultFailureDetectorConfig#setHeartbeatInterval(long)'.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:attribute>
+                        <xsd:attribute name="loss-threshold" type="xsd:string">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    See javadoc of 'io.hekate.cluster.health.DefaultFailureDetectorConfig#setHeartbeatLossThreshold(int)'.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:attribute>
+                        <xsd:attribute name="quorum" type="xsd:string">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    See javadoc of 'io.hekate.cluster.health.DefaultFailureDetectorConfig#setFailureDetectionQuorum(int)'.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:attribute>
+                    </xsd:complexType>
+                </xsd:element>
+                <xsd:element name="custom-detector" type="beanOrRefType">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            Registers a custom implementation of 'io.hekate.cluster.health.FailureDetector' interface.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:element>
+            </xsd:choice>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="clusterListenersType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="listener" type="beanOrRefType">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.cluster.event.ClusterEventListener'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="clusterJoinValidatorsType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="validator" type="beanOrRefType">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.cluster.ClusterJoinValidator'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="messagingServiceType">
+        <xsd:complexContent>
+            <xsd:extension base="abstractServiceType">
+                <xsd:sequence minOccurs="1" maxOccurs="unbounded">
+                    <xsd:choice>
+                        <xsd:element name="channel" type="messagingChannelType" minOccurs="0">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    Registers 'io.hekate.messaging.MessagingChannelConfig'.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                    </xsd:choice>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="messagingChannelType">
+        <xsd:all minOccurs="0">
+            <xsd:element name="receiver" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.messaging.MessagingChannelConfig#setReceiver(io.hekate.messaging.MessageReceiver)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="load-balancer" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of
+                        'io.hekate.messaging.MessagingChannelConfig#setLoadBalancer(io.hekate.messaging.unicast.LoadBalancer)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="message-codec" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.messaging.MessagingChannelConfig#setMessageCodec(io.hekate.codec.CodecFactory)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="cluster-filter" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.messaging.MessagingChannelConfig#setClusterFilter(io.hekate.cluster.ClusterNodeFilter)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="failover-policy" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of
+                        'io.hekate.messaging.MessagingChannelConfig#setFailoverPolicy(io.hekate.failover.FailoverPolicy)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="back-pressure" type="messagingChannelBackPressureType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of
+                        'io.hekate.messaging.MessagingChannelConfig#setBackPressure(io.hekate.messaging.MessagingBackPressureConfig)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:all>
+        <xsd:attribute name="name" type="xsd:string" use="required">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.messaging.MessagingChannelConfig#setName(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="sockets" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.messaging.MessagingChannelConfig#setSockets(int)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="nio-threads" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.messaging.MessagingChannelConfig#setNioThreads(int)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="worker-threads" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.messaging.MessagingChannelConfig#setWorkerThreads(int)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="idle-timeout-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.messaging.MessagingChannelConfig#setIdleTimeout(long)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="log-category" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.messaging.MessagingChannelConfig#setLogCategory(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="messagingChannelBackPressureType">
+        <xsd:all minOccurs="0">
+            <xsd:element name="outbound" minOccurs="0" maxOccurs="1">
+                <xsd:complexType>
+                    <xsd:attribute name="low-watermark" type="xsd:string" use="optional">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.messaging.MessagingBackPressureConfig#setInLowWatermark(int)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="high-watermark" type="xsd:string" use="optional">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.messaging.MessagingBackPressureConfig#setInHighWatermark(int)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="overflow" type="xsd:string" use="optional">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.messaging.MessagingBackPressureConfig#setOutOverflow(io.hekate.messaging
+                                .MessagingOverflowPolicy)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="inbound" minOccurs="0" maxOccurs="1">
+                <xsd:complexType>
+                    <xsd:attribute name="low-watermark" type="xsd:string" use="optional">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.messaging.MessagingBackPressureConfig#setOutLowWatermark(int)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="high-watermark" type="xsd:string" use="optional">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.messaging.MessagingBackPressureConfig#setOutHighWatermark(int)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:all>
+    </xsd:complexType>
+
+    <xsd:complexType name="taskServiceType">
+        <xsd:complexContent>
+            <xsd:extension base="abstractServiceType">
+                <xsd:attribute name="worker-threads" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.task.TaskServiceFactory#setWorkerThreads(int)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="nio-threads" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.task.TaskServiceFactory#setNioThreads(int)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="socket-pool-size" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.task.TaskServiceFactory#setSockets(int)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="idle-socket-timeout-ms" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.task.TaskServiceFactory#setIdleSocketTimeout(int)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="lockServiceType">
+        <xsd:complexContent>
+            <xsd:extension base="abstractServiceType">
+                <xsd:sequence minOccurs="1" maxOccurs="unbounded">
+                    <xsd:choice>
+                        <xsd:element name="region" type="lockRegionType" minOccurs="0">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    Registers 'io.hekate.lock.LockRegionConfig'.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                    </xsd:choice>
+                </xsd:sequence>
+                <xsd:attribute name="retry-interval-ms" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.lock.LockServiceFactory#setRetryInterval(long)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="nio-threads" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.lock.LockServiceFactory#setNioThreads(int)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="worker-threads" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.lock.LockServiceFactory#setWorkerThreads(int)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="lockRegionType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="lock">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers a bean of 'io.hekate.lock.DistributedLock' type within the Spring context.
+                    </xsd:documentation>
+                </xsd:annotation>
+                <xsd:complexType>
+                    <xsd:attribute name="name" type="xsd:string" use="required">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.lock.LockRegion#getLock(java.lang.String)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:sequence>
+        <xsd:attribute name="name" type="xsd:string" use="required">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.lock.LockRegionConfig#setName(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="electionServiceType">
+        <xsd:complexContent>
+            <xsd:extension base="abstractServiceType">
+                <xsd:sequence minOccurs="1" maxOccurs="unbounded">
+                    <xsd:choice>
+                        <xsd:element name="candidate" type="electionCandidateType" minOccurs="0">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    Registers 'io.hekate.election.CandidateConfig'.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                    </xsd:choice>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="electionCandidateType">
+        <xsd:complexContent>
+            <xsd:extension base="beanOrRefType">
+                <xsd:attribute name="group" type="xsd:string" use="required">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.election.CandidateConfig#setGroup(java.lang.String)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="coordinationServiceType">
+        <xsd:complexContent>
+            <xsd:extension base="abstractServiceType">
+                <xsd:sequence minOccurs="1" maxOccurs="unbounded">
+                    <xsd:choice>
+                        <xsd:element name="process" type="coordinationProcessType" minOccurs="0">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    Registers 'io.hekate.coordinate.CoordinationProcessConfig'.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                    </xsd:choice>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="coordinationProcessType">
+        <xsd:all maxOccurs="1">
+            <xsd:element name="handler" type="beanOrRefType">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of
+                        'io.hekate.coordinate.CoordinationProcessConfig#setHandler(io.hekate.coordinate.CoordinationHandler)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="message-codec" type="beanOrRefType" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.coordinate.CoordinationProcessConfig#setMessageCodec(io.hekate.codec.CodecFactory)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:all>
+        <xsd:attribute name="name" type="xsd:string" use="required">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.coordinate.CoordinationProcessConfig#setName(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="localMetricsServiceType">
+        <xsd:complexContent>
+            <xsd:extension base="abstractServiceType">
+                <xsd:all minOccurs="0" maxOccurs="1">
+                    <xsd:element name="counters" minOccurs="0" maxOccurs="1">
+                        <xsd:complexType>
+                            <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+                                <xsd:element name="counter" type="metricCounterType" minOccurs="0" maxOccurs="unbounded">
+                                    <xsd:annotation>
+                                        <xsd:documentation>
+                                            Registers 'io.hekate.metrics.CounterConfig'.
+                                        </xsd:documentation>
+                                    </xsd:annotation>
+                                </xsd:element>
+                            </xsd:sequence>
+                        </xsd:complexType>
+                    </xsd:element>
+                    <xsd:element name="probes" minOccurs="0" maxOccurs="1">
+                        <xsd:complexType>
+                            <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+                                <xsd:element name="probe" type="metricProbeType" minOccurs="0" maxOccurs="unbounded">
+                                    <xsd:annotation>
+                                        <xsd:documentation>
+                                            Registers 'io.hekate.metrics.ProbeConfig'.
+                                        </xsd:documentation>
+                                    </xsd:annotation>
+                                </xsd:element>
+                            </xsd:sequence>
+                        </xsd:complexType>
+                    </xsd:element>
+                    <xsd:element name="listeners" minOccurs="0" maxOccurs="1">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.metrics.MetricsServiceFactory#setListeners(java.util.List)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                        <xsd:complexType>
+                            <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+                                <xsd:element name="listener" type="beanOrRefType" minOccurs="0" maxOccurs="unbounded">
+                                    <xsd:annotation>
+                                        <xsd:documentation>
+                                            Registers 'io.hekate.metrics.MetricsListener'.
+                                        </xsd:documentation>
+                                    </xsd:annotation>
+                                </xsd:element>
+                            </xsd:sequence>
+                        </xsd:complexType>
+                    </xsd:element>
+                </xsd:all>
+                <xsd:attribute name="refresh-interval-ms" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.metrics.MetricsServiceFactory#setRefreshInterval(long)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="metricCounterType">
+        <xsd:attribute name="name" type="xsd:string" use="required">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.metrics.CounterConfig#setName(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="total-name" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.metrics.CounterConfig#setTotalName(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="auto-reset" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.metrics.CounterConfig#setAutoReset(boolean)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="metricProbeType">
+        <xsd:complexContent>
+            <xsd:extension base="beanOrRefType">
+                <xsd:attribute name="name" type="xsd:string" use="required">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.metrics.ProbeConfig#setName(java.lang.String)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="init-value" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.metrics.ProbeConfig#setInitValue(long)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="clusterMetricsServiceType">
+        <xsd:complexContent>
+            <xsd:extension base="abstractServiceType">
+                <xsd:sequence minOccurs="0" maxOccurs="1">
+                    <xsd:element name="filter" type="beanOrRefType">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of
+                                'io.hekate.metrics.cluster.ClusterMetricsServiceFactory
+                                #setReplicationFilter(io.hekate.metrics.MetricFilter)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                </xsd:sequence>
+                <xsd:attribute name="replication-interval-ms" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.metrics.cluster.ClusterMetricsServiceFactory#setReplicationInterval(long)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="propertiesType">
+        <xsd:sequence>
+            <xsd:element name="prop" type="propertyType" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="propertyType">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:string">
+                <xsd:attribute name="name" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            Property name.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="beanOrRefType">
+        <xsd:all minOccurs="0" maxOccurs="1">
+            <xsd:element ref="beans:bean"/>
+        </xsd:all>
+        <xsd:attribute name="ref" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    The name of the referenced bean.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+</xsd:schema>

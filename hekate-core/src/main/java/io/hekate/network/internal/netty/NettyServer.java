@@ -1,0 +1,782 @@
+/*
+ * Copyright 2017 The Hekate Project
+ *
+ * The Hekate Project licenses this file to you under the Apache License,
+ * version 2.0 (the "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+package io.hekate.network.internal.netty;
+
+import io.hekate.codec.CodecFactory;
+import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.core.internal.util.ConfigCheck;
+import io.hekate.network.NetworkEndpoint;
+import io.hekate.network.internal.NetworkServer;
+import io.hekate.network.internal.NetworkServerCallback;
+import io.hekate.network.internal.NetworkServerFailure;
+import io.hekate.network.internal.NetworkServerFailure.Resolution;
+import io.hekate.network.internal.NetworkServerFuture;
+import io.hekate.network.internal.NetworkServerHandlerConfig;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerAdapter;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollServerSocketChannel;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static io.hekate.network.internal.NetworkServer.State.STARTED;
+import static io.hekate.network.internal.NetworkServer.State.STARTING;
+import static io.hekate.network.internal.NetworkServer.State.STOPPED;
+import static io.hekate.network.internal.NetworkServer.State.STOPPING;
+
+class NettyServer implements NetworkServer {
+    static class HandlerRegistration {
+        private final NettyServerHandlerConfig<Object> config;
+
+        private final Map<NettyServerClient, Void> clients = new IdentityHashMap<>();
+
+        // Volatile since metrics can be enabled/disabled dynamically.
+        private volatile NettyMetricsCallback metrics;
+
+        public HandlerRegistration(NettyServerHandlerConfig<Object> config, NettyMetricsCallback metrics) {
+            this.config = config;
+            this.metrics = metrics;
+        }
+
+        public NettyServerHandlerConfig<Object> getConfig() {
+            return config;
+        }
+
+        public NettyMetricsCallback getMetrics() {
+            return metrics;
+        }
+
+        public void setMetrics(NettyMetricsCallback metrics) {
+            this.metrics = metrics;
+        }
+
+        public List<NetworkEndpoint<?>> getConnected() {
+            synchronized (clients) {
+                if (clients.isEmpty()) {
+                    return Collections.emptyList();
+                } else {
+                    return new ArrayList<>(clients.keySet());
+                }
+            }
+        }
+
+        public void add(NettyServerClient client) {
+            synchronized (clients) {
+                clients.put(client, null);
+            }
+        }
+
+        public void remove(NettyServerClient client) {
+            synchronized (clients) {
+                clients.remove(client, null);
+            }
+        }
+    }
+
+    private static final Logger log = LoggerFactory.getLogger(NettyServer.class);
+
+    private static final boolean DEBUG = log.isDebugEnabled();
+
+    private static final ConfigCheck CHECK = ConfigCheck.get(NettyServer.class);
+
+    private final ReentrantLock lock = new ReentrantLock();
+
+    private final boolean autoAccept;
+
+    private final int hbInterval;
+
+    private final int hbLossThreshold;
+
+    private final boolean hbDisabled;
+
+    private final boolean tcpNoDelay;
+
+    private final Integer soReceiveBufferSize;
+
+    private final Integer soSendBuffer;
+
+    private final Boolean soReuseAddress;
+
+    private final Integer soBacklog;
+
+    private final Map<String, CodecFactory<Object>> codecs = Collections.synchronizedMap(new HashMap<>());
+
+    private final Map<String, HandlerRegistration> handlers = new ConcurrentHashMap<>();
+
+    private final Map<SocketChannel, NettyServerClient> clients = new IdentityHashMap<>();
+
+    private final EventLoopGroup acceptors;
+
+    private final EventLoopGroup workers;
+
+    // Volatile since address is updated (to reflect a real port) after server is started and can be accessed in non-synchronized context.
+    private volatile InetSocketAddress address;
+
+    private NettyMetricsAdaptor metrics;
+
+    private Channel server;
+
+    private NetworkServerCallback callback;
+
+    private NetworkServerFuture startFuture;
+
+    private NetworkServerFuture stopFuture;
+
+    // Volatile since it can be accessed in non-synchronized context.
+    private volatile State state = STOPPED;
+
+    private boolean failoverInProgress;
+
+    public NettyServer(NettyServerFactory factory) {
+        ArgAssert.check(factory != null, "Factory must be not null.");
+
+        CHECK.that(factory.getAcceptorEventLoopGroup() != null, "acceptor event loops group must be not null.");
+        CHECK.that(factory.getWorkerEventLoopGroup() != null, "worker event loops group must be not null.");
+
+        autoAccept = factory.isAutoAccept();
+        hbInterval = factory.getHeartbeatInterval();
+        hbLossThreshold = factory.getHeartbeatLossThreshold();
+        hbDisabled = factory.isDisableHeartbeats();
+        tcpNoDelay = factory.isTcpNoDelay();
+        soReceiveBufferSize = factory.getSoReceiveBufferSize();
+        soSendBuffer = factory.getSoSendBufferSize();
+        soReuseAddress = factory.getSoReuseAddress();
+        soBacklog = factory.getSoBacklog();
+
+        acceptors = factory.getAcceptorEventLoopGroup();
+        workers = factory.getWorkerEventLoopGroup();
+
+        validateEventLoopType(workers);
+
+        if (factory.getHandlers() != null) {
+            factory.getHandlers().forEach(this::addHandler);
+        }
+    }
+
+    @Override
+    public InetSocketAddress getAddress() {
+        return address;
+    }
+
+    @Override
+    public State getState() {
+        return state;
+    }
+
+    @Override
+    public NetworkServerFuture start(InetSocketAddress bindAddress) {
+        return start(bindAddress, null);
+    }
+
+    @Override
+    public NetworkServerFuture start(InetSocketAddress address, NetworkServerCallback callback) {
+        ArgAssert.check(address != null, "address must be a non-null value.");
+
+        lock.lock();
+
+        try {
+            if (state != STOPPED) {
+                throw new IllegalStateException("Server is in " + state + " state [address=" + this.address + ']');
+            }
+
+            if (DEBUG) {
+                log.debug("Starting [address={}]", this.address);
+            }
+
+            this.state = STARTING;
+            this.address = address;
+            this.callback = callback;
+
+            startFuture = new NetworkServerFuture();
+
+            doStart(0);
+
+            return startFuture;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public void startAccepting() {
+        lock.lock();
+
+        try {
+            if (server != null && !server.config().isAutoRead()) {
+                if (DEBUG) {
+                    log.debug("Start accepting [address={}]", address);
+                }
+
+                server.config().setAutoRead(true);
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public NetworkServerFuture stop() {
+        return doStop(null);
+    }
+
+    @Override
+    public void addHandler(NetworkServerHandlerConfig<?> cfg) {
+        @SuppressWarnings("unchecked")
+        NetworkServerHandlerConfig<Object> objCfg = (NetworkServerHandlerConfig<Object>)cfg;
+
+        addHandler(copy(objCfg));
+    }
+
+    public void addHandler(NettyServerHandlerConfig<?> cfg) {
+        lock.lock();
+
+        try {
+            validate(cfg);
+
+            @SuppressWarnings("unchecked")
+            NettyServerHandlerConfig<Object> nettyCfg = (NettyServerHandlerConfig<Object>)cfg;
+
+            NettyServerHandlerConfig<Object> copy = copy(nettyCfg);
+
+            copy.setEventLoopGroup(cfg.getEventLoopGroup());
+
+            validateEventLoopType(copy.getEventLoopGroup());
+
+            if (DEBUG) {
+                log.debug("Adding handler [protocol={}]", copy);
+            }
+
+            NettyMetricsCallback metricsCallback = null;
+
+            if (metrics != null) {
+                metricsCallback = metrics.createCallback(true, copy.getProtocol());
+            }
+
+            HandlerRegistration registration = new HandlerRegistration(copy, metricsCallback);
+
+            handlers.put(copy.getProtocol(), registration);
+            codecs.put(copy.getProtocol(), copy.getCodecFactory());
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public List<NetworkEndpoint<?>> removeHandler(String protocol) {
+        ArgAssert.check(protocol != null, "Protocol must be not null.");
+
+        if (DEBUG) {
+            log.debug("Removing handler [protocol={}]", protocol);
+        }
+
+        lock.lock();
+
+        try {
+            handlers.remove(protocol);
+            codecs.remove(protocol);
+
+            List<NetworkEndpoint<?>> liveClients = new ArrayList<>();
+
+            for (NettyServerClient client : clients.values()) {
+                String clientProtocol = client.getProtocol();
+
+                if (clientProtocol != null && clientProtocol.equals(protocol)) {
+                    liveClients.add(client);
+                }
+            }
+
+            return liveClients;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public List<NetworkEndpoint<?>> getConnected(String protocol) {
+        HandlerRegistration handler = handlers.get(protocol);
+
+        if (handler != null) {
+            return handler.getConnected();
+        }
+
+        return Collections.emptyList();
+    }
+
+    public NettyMetricsAdaptor getMetrics() {
+        lock.lock();
+
+        try {
+            return metrics;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void setMetrics(NettyMetricsAdaptor metrics) {
+        lock.lock();
+
+        try {
+            this.metrics = metrics;
+
+            for (HandlerRegistration handler : handlers.values()) {
+                if (metrics == null) {
+                    handler.setMetrics(null);
+                } else {
+                    NetworkServerHandlerConfig<Object> handlerCfg = handler.getConfig();
+
+                    handler.setMetrics(metrics.createCallback(true, handlerCfg.getProtocol()));
+                }
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void doStart(int attempt) {
+        assert lock.isHeldByCurrentThread() : "Thread must hold lock.";
+
+        ServerBootstrap boot = new ServerBootstrap();
+
+        if (acceptors instanceof EpollEventLoopGroup) {
+            if (DEBUG) {
+                log.debug("Using EPOLL server socket channel.");
+            }
+
+            boot.channel(EpollServerSocketChannel.class);
+        } else {
+            if (DEBUG) {
+                log.debug("Using NIO server socket channel.");
+            }
+
+            boot.channel(NioServerSocketChannel.class);
+        }
+
+        boot.group(acceptors, workers);
+
+        setOpts(boot);
+        setChildOpts(boot);
+
+        boot.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+
+        boot.handler(new ChannelHandlerAdapter() {
+            @Override
+            public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+                tryFailover(ctx.channel(), attempt, cause);
+            }
+        });
+
+        boot.childHandler(new ChannelInitializer<SocketChannel>() {
+            @Override
+            protected void initChannel(SocketChannel channel) throws Exception {
+                InetSocketAddress remoteAddress = channel.remoteAddress();
+                InetSocketAddress localAddress = channel.localAddress();
+
+                lock.lock();
+
+                try {
+                    if (state == STOPPING || state == STOPPED) {
+                        if (DEBUG) {
+                            log.debug("Closing connection since server is in {} state [address={}].", state, remoteAddress);
+                        }
+
+                        channel.close();
+
+                        return;
+                    }
+
+                    ChannelPipeline pipeline = channel.pipeline();
+
+                    NetworkProtocolCodec codec = new NetworkProtocolCodec(codecs);
+
+                    pipeline.addLast(codec.getEncoder());
+                    pipeline.addLast(codec.getDecoder());
+
+                    NettyServerClient client = new NettyServerClient(remoteAddress, localAddress, hbInterval, hbLossThreshold,
+                        hbDisabled, handlers);
+
+                    pipeline.addLast(client);
+
+                    clients.put(channel, client);
+
+                    channel.closeFuture().addListener(close -> {
+                        if (DEBUG) {
+                            log.debug("Removing connection from server registry [address={}]", remoteAddress);
+                        }
+
+                        lock.lock();
+
+                        try {
+                            clients.remove(channel);
+                        } finally {
+                            lock.unlock();
+                        }
+                    });
+                } finally {
+                    lock.unlock();
+                }
+            }
+        });
+
+        ChannelFuture bindFuture = boot.bind(address);
+
+        server = bindFuture.channel();
+
+        bindFuture.addListener((ChannelFutureListener)bind -> {
+            if (bind.isSuccess()) {
+                lock.lock();
+
+                try {
+                    failoverInProgress = false;
+
+                    if (state == STARTING) {
+                        state = STARTED;
+
+                        // Updated since port can be automatically assigned by the underlying OS.
+                        address = (InetSocketAddress)bind.channel().localAddress();
+
+                        if (DEBUG) {
+                            log.debug("Started [address={}]", address);
+                        }
+
+                        if (!startFuture.isDone() && callback != null) {
+                            callback.onStart(NettyServer.this);
+                        }
+
+                        startFuture.complete(NettyServer.this);
+                    }
+                } finally {
+                    lock.unlock();
+                }
+            } else {
+                tryFailover(bind.channel(), attempt, bind.cause());
+            }
+        });
+    }
+
+    private void tryFailover(Channel channel, int attempt, Throwable cause) {
+        boolean stopWithError = true;
+
+        if (cause instanceof IOException) {
+            lock.lock();
+
+            try {
+                if (state == STARTED || state == STARTING) {
+                    InetSocketAddress newAddress = null;
+
+                    long delay = 0;
+
+                    if (callback != null) {
+                        NetworkServerFailure failure = new NettyServerFailure(cause, attempt, address);
+
+                        try {
+                            Resolution resolution = callback.onFailure(this, failure);
+
+                            if (resolution != null && !resolution.isFailure()) {
+                                newAddress = resolution.getRetryAddress();
+
+                                if (newAddress == null) {
+                                    // Reuse old address.
+                                    newAddress = address;
+                                }
+
+                                delay = resolution.getRetryDelay();
+                            }
+                        } catch (RuntimeException | Error e) {
+                            if (log.isErrorEnabled()) {
+                                log.error("Got an unexpected runtime error while notifying network server callback on failure.", e);
+                            }
+                        }
+                    }
+
+                    if (newAddress != null) {
+                        if (DEBUG) {
+                            log.debug("Network server encountered an I/O error ...will try to restart after {} ms "
+                                + "[old-address={}, new-address={}]", delay, address, newAddress, cause);
+                        }
+
+                        channel.close();
+
+                        stopWithError = false;
+
+                        failoverInProgress = true;
+
+                        address = newAddress;
+
+                        Runnable failoverTask = () -> {
+                            lock.lock();
+
+                            try {
+                                if (failoverInProgress) {
+                                    failoverInProgress = false;
+
+                                    doStart(attempt + 1);
+                                }
+                            } catch (RuntimeException | Error e) {
+                                if (log.isErrorEnabled()) {
+                                    log.error("Got an unexpected runtime error during network server failover.", e);
+                                }
+                            } finally {
+                                lock.unlock();
+                            }
+                        };
+
+                        if (delay > 0) {
+                            acceptors.schedule(failoverTask, delay, TimeUnit.MILLISECONDS);
+                        } else {
+                            acceptors.submit(failoverTask);
+                        }
+                    }
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        if (stopWithError) {
+            if (DEBUG) {
+                log.debug("Network server encountered an error and will be stopped [address={}]", address, cause);
+            }
+
+            doStop(cause);
+        }
+    }
+
+    // This method is for testing purposes only.
+    Channel getServerChannel() {
+        lock.lock();
+
+        try {
+            return server;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private NetworkServerFuture doStop(Throwable cause) {
+        lock.lock();
+
+        try {
+            if (state == STOPPING) {
+                return stopFuture;
+            } else if (state == STARTING || state == STARTED) {
+                State oldState = state;
+
+                state = STOPPING;
+
+                failoverInProgress = false;
+
+                if (DEBUG) {
+                    log.debug("Stopping [address={}]", address);
+                }
+
+                NetworkServerCallback localCallback = this.callback;
+                NetworkServerFuture localStartFuture = this.startFuture;
+                NetworkServerFuture localStopFuture = this.stopFuture = new NetworkServerFuture();
+
+                server.close().addListener(serverClose -> {
+                    CompletableFuture<Void> allClientsClosed = new CompletableFuture<>();
+
+                    lock.lock();
+
+                    try {
+                        // Close client connections.
+                        if (clients.isEmpty()) {
+                            allClientsClosed.complete(null);
+                        } else {
+                            List<SocketChannel> connectionsCopy = new ArrayList<>(clients.keySet());
+
+                            clients.clear();
+
+                            AtomicInteger remaining = new AtomicInteger(connectionsCopy.size());
+
+                            connectionsCopy.forEach(channel -> {
+                                if (DEBUG) {
+                                    log.debug("Closing connection due to server shutdown [address={}]", channel.remoteAddress());
+                                }
+
+                                channel.close().addListener(clientClose -> {
+                                    if (remaining.decrementAndGet() == 0) {
+                                        allClientsClosed.complete(null);
+                                    }
+                                });
+                            });
+                        }
+                    } finally {
+                        lock.unlock();
+                    }
+
+                    allClientsClosed.thenRun(() -> {
+                        lock.lock();
+
+                        try {
+                            state = STOPPED;
+
+                            server = null;
+
+                            if (oldState == STARTED && localCallback != null && !localStopFuture.isDone()) {
+                                localCallback.onStop(this);
+                            }
+
+                            if (oldState == STARTING && cause != null) {
+                                localStartFuture.completeExceptionally(cause);
+                            } else {
+                                localStartFuture.complete(this);
+                            }
+
+                            if (DEBUG) {
+                                log.debug("Stopped [address={}]", address);
+                            }
+
+                            localStopFuture.complete(this);
+
+                            // Cleanup fields only if they were not changed by a concurrent start.
+
+                            // JVM identity check to make sure that objects are exactly the same.
+                            if (startFuture == localStartFuture) {
+                                startFuture = null;
+                            }
+
+                            // JVM identity check to make sure that objects are exactly the same.
+                            if (stopFuture == localStopFuture) {
+                                stopFuture = null;
+                            }
+
+                            // JVM identity check to make sure that objects are exactly the same.
+                            if (callback == localCallback) {
+                                callback = null;
+                            }
+                        } finally {
+                            lock.unlock();
+                        }
+                    });
+                });
+
+                return localStopFuture;
+            } else {
+                if (DEBUG) {
+                    log.debug("Skipped stop request since server is in {} state [address={}]", state, address);
+                }
+            }
+        } finally {
+            lock.unlock();
+        }
+
+        NetworkServerFuture future = new NetworkServerFuture();
+
+        future.complete(this);
+
+        return future;
+    }
+
+    private NettyServerHandlerConfig<Object> copy(NetworkServerHandlerConfig<Object> source) {
+        NettyServerHandlerConfig<Object> copy = new NettyServerHandlerConfig<>();
+
+        copy.setProtocol(source.getProtocol());
+        copy.setHandler(source.getHandler());
+        copy.setCodecFactory(source.getCodecFactory());
+        copy.setLoggerCategory(source.getLoggerCategory());
+
+        return copy;
+    }
+
+    private void validate(NetworkServerHandlerConfig<?> handler) {
+        assert lock.isHeldByCurrentThread() : "Thread must hold lock.";
+
+        ConfigCheck check = ConfigCheck.get(NetworkServerHandlerConfig.class);
+
+        check.that(handler.getProtocol() != null, "Protocol must be not null.");
+        check.that(handler.getHandler() != null, "Listener must be not null.");
+        check.that(handler.getCodecFactory() != null, "Codec factory must be not null.");
+        check.that(!handlers.containsKey(handler.getProtocol()), "Duplicated protocol ID: " + handler.getProtocol());
+    }
+
+    private void setChildOpts(ServerBootstrap boot) {
+        setChildOpt(boot, ChannelOption.TCP_NODELAY, tcpNoDelay);
+        setChildOpt(boot, ChannelOption.SO_RCVBUF, soReceiveBufferSize);
+        setChildOpt(boot, ChannelOption.SO_SNDBUF, soSendBuffer);
+    }
+
+    private void setOpts(ServerBootstrap boot) {
+        setOpt(boot, ChannelOption.SO_BACKLOG, soBacklog);
+        setOpt(boot, ChannelOption.SO_RCVBUF, soReceiveBufferSize);
+        setOpt(boot, ChannelOption.SO_REUSEADDR, soReuseAddress);
+
+        if (!autoAccept) {
+            setOpt(boot, ChannelOption.AUTO_READ, false);
+        }
+    }
+
+    private <O> void setChildOpt(ServerBootstrap boot, ChannelOption<O> opt, O value) {
+        if (value != null) {
+            if (DEBUG) {
+                log.debug("Setting option {} = {} [address={}]", opt, value, address);
+            }
+
+            boot.childOption(opt, value);
+        }
+    }
+
+    private <O> void setOpt(ServerBootstrap boot, ChannelOption<O> opt, O value) {
+        if (value != null) {
+            if (DEBUG) {
+                log.debug("Setting option {} = {} [address={}]", opt, value, address);
+            }
+
+            boot.option(opt, value);
+        }
+    }
+
+    private void validateEventLoopType(EventLoopGroup group) {
+        if (group != null) {
+            CHECK.that(acceptors.getClass().isAssignableFrom(group.getClass()), "Can't mix different types of event loop groups "
+                + "[parent=" + acceptors.getClass().getName() + ", group=" + group.getClass().getName() + ']');
+        }
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName()
+            + "[address=" + address
+            + ", state=" + state
+            + ", handlers=" + handlers.keySet()
+            + ']';
+    }
+}

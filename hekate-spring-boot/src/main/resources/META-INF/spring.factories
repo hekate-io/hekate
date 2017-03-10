@@ -1,0 +1,19 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  io.hekate.spring.boot.network.HekateNetworkServiceConfigurer,\
+  io.hekate.spring.boot.cluster.HekateClusterServiceConfigurer,\
+  io.hekate.spring.boot.cluster.HekateMulticastSeedNodeProviderConfigurer,\
+  io.hekate.spring.boot.cluster.HekateFsSeedNodeProviderConfigurer,\
+  io.hekate.spring.boot.cluster.HekateJdbcSeedNodeProviderConfigurer,\
+  io.hekate.spring.boot.cluster.HekateCloudSeedNodeProviderConfigurer,\
+  io.hekate.spring.boot.cluster.HekateCloudStoreSeedNodeProviderConfigurer,\
+  io.hekate.spring.boot.cluster.HekateStaticSeedNodeProviderConfigurer,\
+  io.hekate.spring.boot.messaging.HekateMessagingServiceConfigurer,\
+  io.hekate.spring.boot.coordination.HekateCoordinationServiceConfigurer,\
+  io.hekate.spring.boot.election.HekateElectionServiceConfigurer,\
+  io.hekate.spring.boot.lock.HekateLockServiceConfigurer,\
+  io.hekate.spring.boot.task.HekateTaskServiceConfigurer,\
+  io.hekate.spring.boot.metrics.cluster.HekateClusterMetricsServiceConfigurer,\
+  io.hekate.spring.boot.metrics.HekateMetricsServiceConfigurer,\
+  io.hekate.spring.boot.metrics.HekateMetricsPublisherConfigurer,\
+  io.hekate.spring.boot.metrics.influxdb.InfluxDbMetricsPluginConfigurer,\
+  io.hekate.spring.boot.metrics.statsd.StatsdMetricsPluginConfigurer

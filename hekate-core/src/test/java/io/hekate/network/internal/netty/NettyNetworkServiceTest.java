@@ -1,0 +1,243 @@
+/*
+ * Copyright 2017 The Hekate Project
+ *
+ * The Hekate Project licenses this file to you under the Apache License,
+ * version 2.0 (the "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+package io.hekate.network.internal.netty;
+
+import io.hekate.HekateTestContext;
+import io.hekate.core.internal.util.Utils;
+import io.hekate.network.NetworkClient;
+import io.hekate.network.NetworkConnector;
+import io.hekate.network.NetworkConnectorConfig;
+import io.hekate.network.NetworkServiceFactory;
+import io.hekate.network.internal.NetworkBindCallback;
+import io.hekate.network.internal.NetworkClientCallbackMock;
+import io.hekate.network.internal.NetworkTestBase;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import org.junit.After;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+public class NettyNetworkServiceTest extends NetworkTestBase {
+    private interface Configurer {
+        void configure(NetworkServiceFactory cfg);
+    }
+
+    private final List<NettyNetworkService> services = new CopyOnWriteArrayList<>();
+
+    public NettyNetworkServiceTest(HekateTestContext textContext) {
+        super(textContext);
+    }
+
+    @After
+    @Override
+    public void tearDown() throws Exception {
+        services.forEach(NettyNetworkService::stop);
+
+        services.clear();
+
+        super.tearDown();
+    }
+
+    @Test
+    public void testStartBindStop() throws Exception {
+        NettyNetworkService net = createService();
+
+        repeat(5, i -> {
+            net.bind(new NetworkBindCallback() {
+                // No-op.
+            }).get();
+
+            net.start();
+
+            net.stop();
+        });
+    }
+
+    @Test
+    public void testStartStop() throws Exception {
+        NettyNetworkService net = createService();
+
+        repeat(5, i -> {
+            net.start();
+
+            net.stop();
+        });
+    }
+
+    @Test
+    public void testStopWithoutStart() throws Exception {
+        NettyNetworkService net = createService();
+
+        repeat(5, i -> {
+            net.start();
+
+            net.stop();
+        });
+    }
+
+    @Test
+    public void testClientAfterServiceStop() throws Exception {
+        NettyNetworkService serverService = createService(c ->
+            c.withConnector(new NetworkConnectorConfig<String>()
+                .withProtocol("test")
+                .withMessageCodec(createStringCodecFactory())
+                .withServerHandler((message, from) -> from.send(message + "-response"))
+            ));
+
+        NettyNetworkService clientService = createService(c ->
+            c.withConnector(new NetworkConnectorConfig<String>()
+                .withProtocol("test")
+                .withMessageCodec(createStringCodecFactory())
+            ));
+
+        InetSocketAddress addr = serverService.bind(new NetworkBindCallback() {
+            // No-op.
+        }).get().getAddress();
+
+        clientService.bind(new NetworkBindCallback() {
+            // No-op.
+        }).get();
+
+        serverService.start();
+        clientService.start();
+
+        NetworkClient<Object> client = clientService.get("test").newClient();
+
+        NetworkClientCallbackMock<Object> callback = new NetworkClientCallbackMock<>();
+
+        client.connect(addr, callback).get();
+
+        assertSame(NetworkClient.State.CONNECTED, client.getState());
+
+        clientService.stop();
+
+        assertSame(NetworkClient.State.DISCONNECTED, client.getState());
+
+        try {
+            client.connect(addr, callback).get(1, TimeUnit.SECONDS);
+
+            fail("Error was expected.");
+        } catch (IllegalStateException e) {
+            assertEquals("I/O thread pools terminated.", e.getMessage());
+        }
+
+        assertSame(NetworkClient.State.DISCONNECTED, client.getState());
+
+        callback.assertConnects(1);
+        callback.assertDisconnects(1);
+        callback.assertErrors(0);
+    }
+
+    @Test
+    public void testPreConfiguredConnectorAndServerHandler() throws Exception {
+        String protocol = "pre-configured";
+
+        NettyNetworkService service = createService(c ->
+            c.withConnector(new NetworkConnectorConfig<String>()
+                .withProtocol(protocol)
+                .withMessageCodec(createStringCodecFactory())
+                .withServerHandler((message, from) -> from.send(message.decode() + "-response"))
+            ));
+
+        InetSocketAddress addr = service.bind(new NetworkBindCallback() {
+            // No-op.
+        }).get().getAddress();
+
+        service.start();
+
+        NetworkConnector<String> connector = service.get(protocol);
+
+        NetworkClient<String> client = connector.newClient();
+
+        try {
+            NetworkClientCallbackMock<String> callback = new NetworkClientCallbackMock<>();
+
+            client.connect(addr, callback);
+
+            client.send("test");
+
+            callback.awaitForMessages("test-response");
+        } finally {
+            client.disconnect();
+        }
+    }
+
+    @Test
+    public void testPortAutoIncrement() throws Exception {
+        repeat(5, i -> {
+            NettyNetworkService service = createService(f -> {
+                f.setPort(20100);
+                f.setPortRange(10);
+            });
+
+            InetSocketAddress addr = service.bind(new NetworkBindCallback() {
+                // No-op.
+            }).get().getAddress();
+
+            assertEquals(20100 + i, addr.getPort());
+        });
+
+        say("Will fail.");
+
+        NettyNetworkService failingService = createService(f -> {
+            f.setPort(20100);
+            f.setPortRange(5);
+        });
+
+        try {
+            failingService.bind(new NetworkBindCallback() {
+                // No-op.
+            }).get();
+
+            fail("Error was expected.");
+        } catch (ExecutionException e) {
+            assertTrue(Utils.isCausedBy(e, IOException.class));
+        }
+    }
+
+    private NettyNetworkService createService() {
+        return createService(null);
+    }
+
+    private NettyNetworkService createService(Configurer configurer) {
+        NetworkServiceFactory cfg = new NetworkServiceFactory();
+
+        cfg.setTransport(getTestContext().getTransport());
+        cfg.setConnectTimeout(500);
+
+        if (configurer != null) {
+            configurer.configure(cfg);
+        }
+
+        // Important to set test-dependent options after applying the configurer.
+        cfg.setTransport(getTestContext().getTransport());
+
+        NettyNetworkService service = new NettyNetworkService(cfg);
+
+        services.add(service);
+
+        return service;
+    }
+}
