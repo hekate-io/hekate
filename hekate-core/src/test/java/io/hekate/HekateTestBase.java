@@ -226,10 +226,9 @@ public abstract class HekateTestBase {
 
             time.set(now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
 
-            System.out.println("#############################################################################################");
-            System.out.println(
-                "# Starting: " + description.getDisplayName() + " [start-time=" + TIMESTAMP_FORMAT.format(now) + ']');
-            System.out.println("#--------------------------------------------------------------------------------------------");
+            System.out.println("#######################################");
+            System.out.println("# Starting: " + description.getDisplayName() + " [start-time=" + TIMESTAMP_FORMAT.format(now) + ']');
+            System.out.println("#--------------------------------------");
         }
 
         @Override
@@ -246,9 +245,9 @@ public abstract class HekateTestBase {
                 time.remove();
             }
 
-            System.out.println("#--------------------------------------------------------------------------------------------");
+            System.out.println("#--------------------------------------");
             System.out.println("# Finished: " + description.getDisplayName() + durationInfo);
-            System.out.println("#############################################################################################");
+            System.out.println("#######################################");
             System.out.println();
             System.out.println();
         }
@@ -341,14 +340,14 @@ public abstract class HekateTestBase {
     }
 
     protected static void sleep(long time) {
-        if (time > 5) {
+        if (time > 20) {
             say("Will sleep for " + time + " ms...");
         }
 
         try {
             Thread.sleep(time);
 
-            if (time > 5) {
+            if (time > 20) {
                 say("Done sleeping.");
             }
         } catch (InterruptedException e) {
@@ -651,8 +650,6 @@ public abstract class HekateTestBase {
                 REPEAT_STATE.set(name);
 
                 if (parentName == null) {
-                    sayHeader("Iteration: " + name);
-                } else {
                     say("Iteration: " + name);
                 }
 

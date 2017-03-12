@@ -26,6 +26,7 @@ import io.hekate.network.internal.NetworkBindCallback;
 import io.hekate.network.internal.NetworkClientCallbackMock;
 import io.hekate.network.internal.NetworkTestBase;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -112,13 +113,15 @@ public class NettyNetworkServiceTest extends NetworkTestBase {
                 .withMessageCodec(createStringCodecFactory())
             ));
 
-        InetSocketAddress addr = serverService.bind(new NetworkBindCallback() {
+        InetSocketAddress bindAddr = serverService.bind(new NetworkBindCallback() {
             // No-op.
         }).get().getAddress();
 
         clientService.bind(new NetworkBindCallback() {
             // No-op.
         }).get();
+
+        InetSocketAddress connectAddr = new InetSocketAddress(InetAddress.getLocalHost(), bindAddr.getPort());
 
         serverService.start();
         clientService.start();
@@ -127,7 +130,7 @@ public class NettyNetworkServiceTest extends NetworkTestBase {
 
         NetworkClientCallbackMock<Object> callback = new NetworkClientCallbackMock<>();
 
-        client.connect(addr, callback).get();
+        client.connect(connectAddr, callback).get();
 
         assertSame(NetworkClient.State.CONNECTED, client.getState());
 
@@ -136,7 +139,7 @@ public class NettyNetworkServiceTest extends NetworkTestBase {
         assertSame(NetworkClient.State.DISCONNECTED, client.getState());
 
         try {
-            client.connect(addr, callback).get(1, TimeUnit.SECONDS);
+            client.connect(connectAddr, callback).get(1, TimeUnit.SECONDS);
 
             fail("Error was expected.");
         } catch (IllegalStateException e) {
@@ -161,11 +164,13 @@ public class NettyNetworkServiceTest extends NetworkTestBase {
                 .withServerHandler((message, from) -> from.send(message.decode() + "-response"))
             ));
 
-        InetSocketAddress addr = service.bind(new NetworkBindCallback() {
+        InetSocketAddress bindAddr = service.bind(new NetworkBindCallback() {
             // No-op.
         }).get().getAddress();
 
         service.start();
+
+        InetSocketAddress connectAddr = new InetSocketAddress(InetAddress.getLocalHost(), bindAddr.getPort());
 
         NetworkConnector<String> connector = service.get(protocol);
 
@@ -174,7 +179,7 @@ public class NettyNetworkServiceTest extends NetworkTestBase {
         try {
             NetworkClientCallbackMock<String> callback = new NetworkClientCallbackMock<>();
 
-            client.connect(addr, callback);
+            client.connect(connectAddr, callback);
 
             client.send("test");
 

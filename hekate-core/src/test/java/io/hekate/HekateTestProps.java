@@ -25,9 +25,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 public final class HekateTestProps {
-    private static final String DEFAULT_FILE_NAME = "default.test.properties";
+    private static final String DEFAULT_FILE_NAME = "test.properties";
 
-    private static final String USER_FILE_NAME = "test.properties";
+    private static final String USER_FILE_NAME = "my_test.properties";
 
     private static final Properties PROPERTIES;
 

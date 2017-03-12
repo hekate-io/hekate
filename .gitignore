@@ -3,4 +3,4 @@ target
 *.ipr
 *.iws
 .idea
-test.properties
+my_test.properties

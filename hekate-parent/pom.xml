@@ -710,7 +710,7 @@
                         </goals>
                         <configuration>
                             <target>
-                                <delete>
+                                <delete failonerror="false">
                                     <fileset dir="${project.build.directory}/site/apidocs" includes="**/dev/**.*"/>
                                 </delete>
 

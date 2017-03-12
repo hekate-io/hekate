@@ -17,12 +17,18 @@
 
 <configuration>
     <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <!-- INFO level in order prevent synchronization on stdout in tests (can potentially hide concurrency issues). -->
+            <level>INFO</level>
+        </filter>
         <encoder>
             <pattern>%-5level %d{yyyy-MM-dd HH:mm:ss.SSS} [%logger{0}] {%thread}: %msg%n</pattern>
         </encoder>
     </appender>
 
-    <root level="info">
+    <root level="warn">
         <appender-ref ref="stdout"/>
     </root>
+
+    <logger name="io.hekate.metrics.influxdb" level="trace"/>
 </configuration>

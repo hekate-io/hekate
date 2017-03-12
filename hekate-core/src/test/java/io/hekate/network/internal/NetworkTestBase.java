@@ -27,7 +27,9 @@ import io.hekate.network.internal.netty.NettyServerHandlerConfig;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -115,8 +117,8 @@ public abstract class NetworkTestBase extends HekateTestBase {
         }
     }
 
-    protected InetSocketAddress newServerAddress() {
-        return new InetSocketAddress(10001 + portsSeq.incrementAndGet());
+    protected InetSocketAddress newServerAddress() throws UnknownHostException {
+        return new InetSocketAddress(InetAddress.getLocalHost(), 10001 + portsSeq.incrementAndGet());
     }
 
     protected NetworkServer createAndConfigureServerHandler(HandlerConfigurer<String> configurer) {

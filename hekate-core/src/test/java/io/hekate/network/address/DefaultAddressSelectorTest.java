@@ -29,6 +29,7 @@ import java.util.List;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -65,6 +66,8 @@ public class DefaultAddressSelectorTest extends HekateTestBase {
 
     private static List<SupportedInterface> interfaces;
 
+    private static boolean ipV6Supported;
+
     private final InetAddress anyAddress = new InetSocketAddress(0).getAddress();
 
     private final DefaultAddressSelectorConfig selectorCfg = new DefaultAddressSelectorConfig();
@@ -74,6 +77,10 @@ public class DefaultAddressSelectorTest extends HekateTestBase {
         networkInterfaces = Collections.unmodifiableList(getNetworkInterfaces());
 
         interfaces = Collections.unmodifiableList(getInterfaces(networkInterfaces));
+
+        ipV6Supported = interfaces.stream()
+            .flatMap(i -> i.getAddresses().stream())
+            .anyMatch(a -> a instanceof Inet6Address);
     }
 
     @Test
@@ -172,6 +179,8 @@ public class DefaultAddressSelectorTest extends HekateTestBase {
             for (InetAddress address : si.getAddresses()) {
                 String excludes = getAllButOneAddressPattern(address, interfaces);
 
+                say(address.getHostAddress() + " ~ " + excludes);
+
                 selectorCfg.setIpNotMatch(excludes);
 
                 assertEquals(excludes, selectorCfg.getIpNotMatch());
@@ -230,11 +239,13 @@ public class DefaultAddressSelectorTest extends HekateTestBase {
 
         assertTrue(createSelector().select(anyAddress) instanceof Inet4Address);
 
-        selectorCfg.setIpVersion(IpVersion.V6);
+        if (ipV6Supported) {
+            selectorCfg.setIpVersion(IpVersion.V6);
 
-        assertSame(IpVersion.V6, selectorCfg.getIpVersion());
+            assertSame(IpVersion.V6, selectorCfg.getIpVersion());
 
-        assertTrue(createSelector().select(anyAddress) instanceof Inet6Address);
+            assertTrue(createSelector().select(anyAddress) instanceof Inet6Address);
+        }
     }
 
     private DefaultAddressSelector createSelector() {
@@ -249,23 +260,17 @@ public class DefaultAddressSelectorTest extends HekateTestBase {
 
     private String getAllButOneAddressPattern(InetAddress include, List<SupportedInterface> all) {
         return all.stream()
-            .map(SupportedInterface::getAddresses)
-            .reduce(new ArrayList<>(), (allAddresses, addresses) -> {
-                allAddresses.addAll(addresses);
-
-                return allAddresses;
-            })
-            .stream()
-            .filter(a -> !a.equals(include))
+            .flatMap(i -> i.getAddresses().stream())
+            .filter(a -> !a.getHostAddress().equals(include.getHostAddress()))
             .map(n -> n.getHostAddress().replaceAll("\\.", "\\\\."))
-            .reduce("", (n1, n2) -> n1.isEmpty() ? n2 : n1 + "|" + n2);
+            .collect(joining("|"));
     }
 
     private String getAllButOneInterfacePattern(SupportedInterface include, List<SupportedInterface> all) {
         return all.stream()
             .filter(n -> !n.getNetworkInterface().getName().equals(include.getNetworkInterface().getName()))
             .map(n -> n.getNetworkInterface().getName())
-            .reduce("", (n1, n2) -> n1.isEmpty() ? n2 : n1 + "|" + n2);
+            .collect(joining("|"));
     }
 
     private static List<SupportedInterface> getInterfaces(List<NetworkInterface> interfaces) throws SocketException {

@@ -20,14 +20,21 @@ import io.hekate.cluster.seed.PersistentSeedNodeProviderCommonTest;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.UUID;
-import org.junit.Ignore;
+import org.junit.Assume;
+import org.junit.BeforeClass;
 
-// TODO: Disabled test
-@Ignore("Temporary disabled due to a bug in JClouds 2.0.0 filesystem blog store on Windows (UserPrincipalNotFoundException)")
 public class CloudStoreSeedNodeProviderTest extends PersistentSeedNodeProviderCommonTest<CloudStoreSeedNodeProvider> {
     private final String container = "container-" + UUID.randomUUID().toString();
 
     private File tempDir;
+
+    @BeforeClass
+    public static void mayBeDisableTest() {
+        String osName = System.getProperty("os.name").toLowerCase();
+
+        // TODO: Temporary disabled due to a bug in the JClouds filesystem blog store on Windows (UserPrincipalNotFoundException)
+        Assume.assumeFalse(osName.contains("windows"));
+    }
 
     @Override
     public void setUp() throws Exception {

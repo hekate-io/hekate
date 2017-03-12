@@ -176,7 +176,7 @@ class NetClientPool<T> implements ClientPool<T> {
     }
 
     // Package level for testing purposes.
-    public List<NetSenderContext<T>> getClients() {
+    List<NetSenderContext<T>> getClients() {
         return Arrays.asList(clients);
     }
 

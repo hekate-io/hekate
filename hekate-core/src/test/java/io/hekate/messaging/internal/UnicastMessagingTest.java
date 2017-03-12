@@ -1112,6 +1112,14 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
             } catch (ClosedChannelException e) {
                 // No-op.
             }
+
+            if (sender.getImpl().getPool(receiver.getNodeId()) instanceof NetClientPool) {
+                NetClientPool<String> netPool = (NetClientPool<String>)sender.getImpl().getPool(receiver.getNodeId());
+
+                busyWait("reconnect", () ->
+                    netPool.getClients().stream().allMatch(c -> c.getNetState() == NetworkClient.State.CONNECTED)
+                );
+            }
         });
     }
 

@@ -1,0 +1,23 @@
+language: java
+jdk:
+  - oraclejdk8
+  - openjdk8
+
+sudo: required
+services:
+  - docker
+
+cache:
+  directories:
+    - $HOME/.m2
+
+before_install:
+  - 'docker-compose up -d'
+
+install: true
+
+script:
+  - mvn clean install
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)

@@ -165,11 +165,6 @@ public final class CodeSamplesProcessorMain {
                     buf.append("</div>").append(NL);
 
                     rewrite = true;
-
-                    say("Included sample code:");
-                    say("        from: " + code.getAbsolutePath());
-                    say("          to: " + javadocSource.getAbsolutePath());
-                    say("     section: " + (section == null ? "" : section));
                 } else {
                     buf.append(s).append(NL);
                 }

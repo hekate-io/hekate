@@ -221,11 +221,7 @@ public class ClusterServiceSingleNodeTest extends HekateInstanceContextTestBase 
 
                 while (!seedStopped.get()) {
                     // Immediately reject connection.
-                    Socket sock = server.accept();
-
-                    say("Rejecting seed node connection: " + sock.getRemoteSocketAddress());
-
-                    sock.close();
+                    server.accept().close();
                 }
             }
 

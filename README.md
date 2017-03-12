@@ -91,8 +91,8 @@ For now, the most detailed documentation is provided as part of javadocs. Comple
 ### Building project (with tests):
  
   - cd to the project's root folder
-  - make a copy of `default.test.properties` file with name `test.properties`
-  - edit `test.properties` according to your environment
+  - make a copy of `test.properties` file with name `my_test.properties`
+  - edit `my_test.properties` according to your environment
   - run `docker-compose up` to prepare Docker-based testing infrastructure
   - run `mvn clean package`
   - see `target/hekate-<version>.zip` for build results

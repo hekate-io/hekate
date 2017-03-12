@@ -112,4 +112,9 @@ class NetSenderContext<T> extends NetReceiverContextBase<T> {
             return super.disconnect();
         }
     }
+
+    // Package level for testing purposes.
+    NetworkClient.State getNetState() {
+        return net.getState();
+    }
 }

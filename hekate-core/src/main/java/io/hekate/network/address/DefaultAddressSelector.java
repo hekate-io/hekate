@@ -143,6 +143,10 @@ public class DefaultAddressSelector implements AddressSelector {
             List<NetworkInterface> nis = getNetworkInterfaces();
 
             for (NetworkInterface ni : nis) {
+                if (!ni.isUp()) {
+                    continue;
+                }
+
                 String niName = ni.getName();
 
                 if (matches(true, niName, niIncludes) && matches(false, niName, niExcludes)) {
@@ -150,6 +154,10 @@ public class DefaultAddressSelector implements AddressSelector {
 
                     while (addresses.hasMoreElements()) {
                         InetAddress address = addresses.nextElement();
+
+                        if (DEBUG) {
+                            log.debug("Trying address {}", address);
+                        }
 
                         if (checkAddress(addrIncludes, addrExcludes, niName, address)) {
                             if (DEBUG) {

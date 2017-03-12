@@ -593,7 +593,7 @@ public class NetworkServerTest extends NetworkTestBase {
         }
     }
 
-    private void startAndStop(List<NetworkServer> servers) throws InterruptedException, ExecutionException {
+    private void startAndStop(List<NetworkServer> servers) throws Exception {
         NetworkServerCallbackMock listener = new NetworkServerCallbackMock();
 
         for (NetworkServer server : servers) {
