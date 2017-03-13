@@ -190,16 +190,13 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
         ConfigCheck check = ConfigCheck.get(getClass());
 
         check.that(cfg != null, "configuration must be not null.");
-        check.that(cfg.getGroup() != null && !cfg.getGroup().trim().isEmpty(), "multicast group is not specified.");
         check.that(cfg.getPort() > 0, "port is not specified.");
         check.that(cfg.getTtl() >= 0, "TTL must be greater than or equals to zero [value=" + cfg.getTtl() + ']');
-        check.that(cfg.getInterval() > 0, "discovery interval must be greater than zero [value="
-            + cfg.getInterval() + ']');
-        check.that(cfg.getWaitTime() > 0, "discovery timeout must be greater than zero [value="
-            + cfg.getWaitTime() + ']');
+        check.that(cfg.getGroup() != null && !cfg.getGroup().trim().isEmpty(), "multicast group is not specified.");
+        check.that(cfg.getInterval() > 0, "discovery interval must be greater than zero [value=" + cfg.getInterval() + ']');
+        check.that(cfg.getWaitTime() > 0, "discovery timeout must be greater than zero [value=" + cfg.getWaitTime() + ']');
         check.that(cfg.getInterval() < cfg.getWaitTime(), "discovery interval must be greater than discovery timeout "
-            + "[discovery-interval=" + cfg.getInterval() + ", discovery-timeout=" + cfg.getWaitTime() + ']'
-        );
+            + "[discovery-interval=" + cfg.getInterval() + ", discovery-timeout=" + cfg.getWaitTime() + ']');
 
         InetAddress groupAddress = InetAddress.getByName(cfg.getGroup());
 

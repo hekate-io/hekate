@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
@@ -34,6 +35,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class MulticastSeedNodeProviderTest extends SeedNodeProviderCommonTest<MulticastSeedNodeProviderTest.TestProvider> {
     public static class TestProvider extends MulticastSeedNodeProvider {
@@ -128,12 +130,55 @@ public class MulticastSeedNodeProviderTest extends SeedNodeProviderCommonTest<Mu
         }
     }
 
+    @Test
+    public void testThreadInterruptionOnStart() throws Exception {
+        TestProvider provider = createProvider();
+
+        Thread.currentThread().interrupt();
+
+        try {
+            provider.startDiscovery(CLUSTER_1, newSocketAddress());
+
+            fail("Error was expected.");
+        } catch (HekateException e) {
+            assertTrue(getStacktrace(e), e.isCausedBy(InterruptedException.class));
+
+            assertTrue(Thread.currentThread().isInterrupted());
+        }
+    }
+
+    @Test
+    public void testConfig() throws Exception {
+        TestProvider provider = createProvider(c -> c
+            .withWaitTime(987)
+            .withGroup("224.1.2.14")
+            .withPort(MulticastSeedNodeProviderConfig.DEFAULT_PORT + 1)
+            .withTtl(789)
+            .withInterval(123)
+        );
+
+        assertEquals(987, provider.getWaitTime());
+        assertEquals("224.1.2.14", provider.getGroup().getAddress().getHostAddress());
+        assertEquals(MulticastSeedNodeProviderConfig.DEFAULT_PORT + 1, provider.getGroup().getPort());
+        assertEquals(789, provider.getTtl());
+        assertEquals(123, provider.getInterval());
+        assertEquals(0, provider.getCleanupInterval());
+    }
+
     @Override
     protected TestProvider createProvider() throws Exception {
+        return createProvider(null);
+    }
+
+    protected TestProvider createProvider(Consumer<MulticastSeedNodeProviderConfig> configurer) throws Exception {
         MulticastSeedNodeProviderConfig cfg = new MulticastSeedNodeProviderConfig();
 
         cfg.setInterval(DISCOVERY_INTERVAL);
         cfg.setWaitTime(RESPONSE_WAIT_TIME);
+
+        if (configurer != null) {
+            configurer.accept(cfg);
+        }
 
         return new TestProvider(cfg);
     }
