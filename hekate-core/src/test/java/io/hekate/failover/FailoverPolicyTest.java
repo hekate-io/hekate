@@ -16,19 +16,13 @@
 
 package io.hekate.failover;
 
-import io.hekate.HekateTestBase;
-import io.hekate.cluster.ClusterNode;
-import io.hekate.failover.internal.DefaultFailoverContext;
-import java.util.Optional;
 import org.junit.Test;
 
-import static io.hekate.failover.FailoverRoutingPolicy.RETRY_SAME_NODE;
-import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class FailoverPolicyTest extends HekateTestBase {
+public class FailoverPolicyTest extends FailoverPolicyTestBase {
     @Test
     public void testAlwaysFail() throws Exception {
         FailoverPolicy policy = FailoverPolicy.alwaysFail();
@@ -60,11 +54,5 @@ public class FailoverPolicyTest extends HekateTestBase {
         assertEquals(99, delay.getDelay(newContext(2)));
 
         assertTrue(delay.toString(), delay.toString().startsWith(ConstantFailoverDelay.class.getSimpleName()));
-    }
-
-    private DefaultFailoverContext newContext(int attempt) throws Exception {
-        ClusterNode failedNode = newNode();
-
-        return new DefaultFailoverContext(attempt, new Exception(), Optional.of(failedNode), singleton(failedNode), RETRY_SAME_NODE);
     }
 }
