@@ -471,5 +471,6 @@ public class GossipProtocolCodecTest extends HekateTestBase {
         assertEquals(s1.getJvmName(), s2.getJvmName());
         assertEquals(s1.getJvmVendor(), s2.getJvmVendor());
         assertEquals(s1.getPid(), s2.getPid());
+        assertEquals(s1.toString(), s2.toString());
     }
 }

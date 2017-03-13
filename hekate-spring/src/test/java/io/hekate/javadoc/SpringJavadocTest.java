@@ -17,6 +17,7 @@
 package io.hekate.javadoc;
 
 import io.hekate.HekateTestBase;
+import io.hekate.codec.CodecService;
 import io.hekate.coordinate.CoordinationService;
 import io.hekate.core.Hekate;
 import io.hekate.election.ElectionService;
@@ -44,7 +45,9 @@ public class SpringJavadocTest extends HekateTestBase {
 
     @Test
     public void testNodeSimpleXsd() {
-        doTest("javadoc/simple-xsd.xml");
+        doTest("javadoc/simple-xsd.xml", (hekate, ctx) ->
+            assertNotNull(ctx.getBean(CodecService.class))
+        );
     }
 
     @Test

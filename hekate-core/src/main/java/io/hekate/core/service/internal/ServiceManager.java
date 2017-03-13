@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.StampedLock;
 import org.slf4j.Logger;
@@ -266,31 +265,6 @@ public class ServiceManager {
         }
 
         return service != NULL_SERVICE ? type.cast(service) : null;
-    }
-
-    public <F extends ServiceFactory<?>> Optional<F> getServiceFactory(Class<F> factoryType) {
-        return factories.stream()
-            .filter(f -> factoryType.isAssignableFrom(f.getClass()))
-            .map(factoryType::cast)
-            .findFirst();
-    }
-
-    public <F extends ServiceFactory<?>> Optional<F> getOrRegisterServiceFactory(Class<F> factoryType) {
-        Optional<F> optFactory = getServiceFactory(factoryType);
-
-        if (optFactory.isPresent()) {
-            return optFactory;
-        } else {
-            try {
-                F factory = factoryType.newInstance();
-
-                factories.add(factory);
-
-                return Optional.of(factory);
-            } catch (InstantiationException | IllegalAccessException e) {
-                throw new HekateConfigurationException("Failed to instantiate service factory [class=" + factoryType.getName() + ']', e);
-            }
-        }
     }
 
     public Map<String, ClusterNodeService> getServicesInfo() {

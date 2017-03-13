@@ -291,6 +291,11 @@ public class InfluxDbMetricsPublisherTest extends InfluxDbMetricsTestBase {
         publisher.publish(single("test", 3)).get(3, TimeUnit.SECONDS);
     }
 
+    @Test
+    public void testToString() {
+        assertTrue(publisher.toString(), publisher.toString().startsWith("[url="));
+    }
+
     private void assertLatestValue(String metric, long expected) {
         long real = getLatestValue(metric);
 

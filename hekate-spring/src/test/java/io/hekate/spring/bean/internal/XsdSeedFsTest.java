@@ -14,21 +14,35 @@
  * under the License.
  */
 
-package io.hekate.spring.internal;
+package io.hekate.spring.bean.internal;
 
-import io.hekate.cluster.seed.jdbc.JdbcSeedNodeProvider;
+import io.hekate.cluster.seed.fs.FsSeedNodeProvider;
+import java.io.File;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.util.FileSystemUtils;
 
 import static org.junit.Assert.assertFalse;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration("classpath*:xsd-test/test-seed-jdbc.xml")
-public class XsdSeedJdbcTest extends XsdTestBase {
+@ContextConfiguration("classpath*:xsd-test/test-seed-fs.xml")
+public class XsdSeedFsTest extends XsdTestBase {
+    @Autowired
+    @Qualifier("seedNodeTempDir")
+    private String dirPath;
+
+    @After
+    public void tearDown() {
+        FileSystemUtils.deleteRecursively(new File(dirPath));
+    }
+
     @Test
     public void testExpectedProvider() {
-        assertFalse(spring.getBeansOfType(JdbcSeedNodeProvider.class).isEmpty());
+        assertFalse(spring.getBeansOfType(FsSeedNodeProvider.class).isEmpty());
     }
 }

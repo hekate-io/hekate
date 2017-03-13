@@ -16,18 +16,21 @@
 
 package io.hekate.core;
 
+import io.hekate.HekateTestBase;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
 
-public class HekateVersionTest {
+public class HekateVersionTest extends HekateTestBase {
     @Test
-    public void test() {
+    public void test() throws Exception {
         assertNotNull(HekateVersion.getProductName());
         assertNotNull(HekateVersion.getShortVersion());
         assertNotNull(HekateVersion.getFullVersion());
         assertNotNull(HekateVersion.getDate());
         assertNotNull(HekateVersion.getRevision());
         assertNotNull(HekateVersion.getInfo());
+
+        assertValidUtilityClass(HekateVersion.class);
     }
 }

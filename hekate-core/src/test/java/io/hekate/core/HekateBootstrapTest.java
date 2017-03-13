@@ -265,4 +265,9 @@ public class HekateBootstrapTest extends HekateTestBase {
             }
         }
     }
+
+    @Test
+    public void testToString() {
+        assertTrue(bootstrap.toString(), bootstrap.toString().startsWith(HekateBootstrap.class.getSimpleName()));
+    }
 }

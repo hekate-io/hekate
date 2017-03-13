@@ -25,10 +25,6 @@ public final class ConfigCheck {
         this.component = component;
     }
 
-    public static ConfigCheck get(String component) {
-        return new ConfigCheck(component);
-    }
-
     public static ConfigCheck get(Class<?> component) {
         return new ConfigCheck(component.getSimpleName());
     }

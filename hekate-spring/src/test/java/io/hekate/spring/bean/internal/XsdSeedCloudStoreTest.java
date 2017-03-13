@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package io.hekate.spring.internal;
+package io.hekate.spring.bean.internal;
 
 import io.hekate.HekateTestProps;
 import io.hekate.cluster.seed.jclouds.CloudStoreSeedNodeProvider;

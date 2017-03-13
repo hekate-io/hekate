@@ -14,20 +14,21 @@
  * under the License.
  */
 
-package io.hekate.spring.internal;
+package io.hekate.spring.bean.internal;
 
-import io.hekate.HekateTestProps;
-import org.junit.Assume;
-import org.junit.BeforeClass;
+import io.hekate.cluster.seed.jdbc.JdbcSeedNodeProvider;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import static org.junit.Assert.assertFalse;
+
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration("classpath*:xsd-test/test-defaults.xml")
-public class XsdDefaultsTest extends XsdTestBase {
-    @BeforeClass
-    public static void mayBeDisableTest() {
-        Assume.assumeTrue(Boolean.valueOf(HekateTestProps.get("MULTICAST_ENABLED")));
+@ContextConfiguration("classpath*:xsd-test/test-seed-jdbc.xml")
+public class XsdSeedJdbcTest extends XsdTestBase {
+    @Test
+    public void testExpectedProvider() {
+        assertFalse(spring.getBeansOfType(JdbcSeedNodeProvider.class).isEmpty());
     }
 }

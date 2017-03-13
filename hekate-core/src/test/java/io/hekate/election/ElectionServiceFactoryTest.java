@@ -81,6 +81,10 @@ public class ElectionServiceFactoryTest extends HekateTestBase {
 
         assertEquals(1, factory.getConfigProviders().size());
         assertTrue(factory.getConfigProviders().contains(p1));
+    }
 
+    @Test
+    public void testToString() {
+        assertTrue(factory.toString(), factory.toString().startsWith(ElectionServiceFactory.class.getSimpleName()));
     }
 }

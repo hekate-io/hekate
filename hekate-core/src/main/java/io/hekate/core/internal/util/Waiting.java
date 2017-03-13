@@ -25,22 +25,6 @@ public interface Waiting {
 
     void await() throws InterruptedException;
 
-    static Waiting awaitAll(Waiting... all) {
-        if (all == null || all.length == 0) {
-            return NO_WAIT;
-        }
-
-        return () -> {
-            for (int i = 0; i < all.length; i++) {
-                Waiting w = all[i];
-
-                if (w != null) {
-                    w.await();
-                }
-            }
-        };
-    }
-
     static Waiting awaitAll(Collection<Waiting> all) {
         if (all == null || all.isEmpty()) {
             return NO_WAIT;

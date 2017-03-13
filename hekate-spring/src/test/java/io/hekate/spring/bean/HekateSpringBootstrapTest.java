@@ -14,14 +14,16 @@
  * under the License.
  */
 
-package io.hekate.spring;
+package io.hekate.spring.bean;
 
 import io.hekate.HekateTestBase;
 import io.hekate.core.Hekate;
+import io.hekate.inject.InjectionService;
 import org.junit.Test;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 public class HekateSpringBootstrapTest extends HekateTestBase {
     @Test
@@ -34,6 +36,10 @@ public class HekateSpringBootstrapTest extends HekateTestBase {
             instance = ctx.getBean("hekate", Hekate.class);
 
             assertSame(Hekate.State.UP, instance.getState());
+
+            InjectionService injection = instance.get(InjectionService.class);
+
+            assertTrue(injection.toString(), injection.toString().startsWith(SpringInjectionService.class.getSimpleName()));
 
             ctx.refresh();
 

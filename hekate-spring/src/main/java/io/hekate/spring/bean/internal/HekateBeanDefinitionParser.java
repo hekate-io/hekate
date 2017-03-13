@@ -55,6 +55,7 @@ import io.hekate.network.address.DefaultAddressSelector;
 import io.hekate.network.address.DefaultAddressSelectorConfig;
 import io.hekate.spring.bean.HekateSpringBootstrap;
 import io.hekate.spring.bean.cluster.ClusterServiceBean;
+import io.hekate.spring.bean.codec.CodecServiceBean;
 import io.hekate.spring.bean.coordinate.CoordinationServiceBean;
 import io.hekate.spring.bean.election.ElectionServiceBean;
 import io.hekate.spring.bean.lock.LockBean;
@@ -117,10 +118,16 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
     protected String resolveId(Element el, AbstractBeanDefinition def, ParserContext ctx) {
         String id = super.resolveId(el, def, ctx);
 
-        deferredBaseBeans.forEach((baseDef, baseDefId) -> {
-            baseDef.addPropertyValue("source", new RuntimeBeanReference(id));
+        deferredBaseBeans.forEach((baseBeanBuilder, baseBeanName) -> {
+            baseBeanBuilder.addPropertyValue("source", new RuntimeBeanReference(id));
 
-            ctx.getRegistry().registerBeanDefinition(baseDefId, baseDef.getBeanDefinition());
+            AbstractBeanDefinition baseBean = baseBeanBuilder.getBeanDefinition();
+
+            if (baseBeanName == null) {
+                ctx.getRegistry().registerBeanDefinition(ctx.getReaderContext().generateBeanName(baseBean), baseBean);
+            } else {
+                ctx.getRegistry().registerBeanDefinition(baseBeanName, baseBean);
+            }
         });
 
         return id;
@@ -198,6 +205,10 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
 
     private void parseDefaultCodec(BeanDefinitionBuilder boot, Element rootEl, ParserContext ctx) {
         setBeanOrRef(boot, rootEl, "defaultCodec", "default-codec", ctx);
+
+        BeanDefinitionBuilder serviceDef = newBean(CodecServiceBean.class, rootEl);
+
+        deferredBaseBeans.put(serviceDef, null);
     }
 
     private Optional<RuntimeBeanReference> parseClusterService(Element rootEl, ParserContext ctx) {

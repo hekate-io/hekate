@@ -14,18 +14,19 @@
  * under the License.
  */
 
-package io.hekate.messaging.internal;
+package io.hekate.failover;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.failover.FailoverPolicy;
-import io.hekate.failover.FailureResolution;
+import io.hekate.failover.internal.DefaultFailoverContext;
 import java.util.Optional;
 import org.junit.Test;
 
 import static io.hekate.failover.FailoverRoutingPolicy.RETRY_SAME_NODE;
 import static java.util.Collections.singleton;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class FailoverPolicyTest extends HekateTestBase {
     @Test
@@ -35,6 +36,30 @@ public class FailoverPolicyTest extends HekateTestBase {
         FailureResolution resolution = policy.apply(newContext(0));
 
         assertFalse(resolution.isRetry());
+    }
+
+    @Test
+    public void testMaxFailoverAttempts() throws Exception {
+        MaxFailoverAttempts attempts = new MaxFailoverAttempts(2);
+
+        assertTrue(attempts.test(newContext(0)));
+        assertTrue(attempts.test(newContext(1)));
+
+        assertFalse(attempts.test(newContext(2)));
+        assertFalse(attempts.test(newContext(3)));
+
+        assertTrue(attempts.toString(), attempts.toString().startsWith(MaxFailoverAttempts.class.getSimpleName()));
+    }
+
+    @Test
+    public void testConstantFailoverDelay() throws Exception {
+        ConstantFailoverDelay delay = new ConstantFailoverDelay(99);
+
+        assertEquals(99, delay.getDelay(newContext(0)));
+        assertEquals(99, delay.getDelay(newContext(1)));
+        assertEquals(99, delay.getDelay(newContext(2)));
+
+        assertTrue(delay.toString(), delay.toString().startsWith(ConstantFailoverDelay.class.getSimpleName()));
     }
 
     private DefaultFailoverContext newContext(int attempt) throws Exception {

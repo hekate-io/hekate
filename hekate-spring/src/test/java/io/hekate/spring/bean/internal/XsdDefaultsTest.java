@@ -14,21 +14,20 @@
  * under the License.
  */
 
-package io.hekate.spring.internal;
+package io.hekate.spring.bean.internal;
 
-import io.hekate.cluster.seed.StaticSeedNodeProvider;
-import org.junit.Test;
+import io.hekate.HekateTestProps;
+import org.junit.Assume;
+import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.assertFalse;
-
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration("classpath*:xsd-test/test-seed-custom-bean.xml")
-public class XsdSeedCustomBeanTest extends XsdTestBase {
-    @Test
-    public void testExpectedProvider() {
-        assertFalse(spring.getBeansOfType(StaticSeedNodeProvider.class).isEmpty());
+@ContextConfiguration("classpath*:xsd-test/test-defaults.xml")
+public class XsdDefaultsTest extends XsdTestBase {
+    @BeforeClass
+    public static void mayBeDisableTest() {
+        Assume.assumeTrue(Boolean.valueOf(HekateTestProps.get("MULTICAST_ENABLED")));
     }
 }

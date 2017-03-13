@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package io.hekate.messaging.internal;
+package io.hekate.failover.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.internal.util.ArgAssert;
@@ -26,7 +26,7 @@ import io.hekate.util.format.ToString;
 import java.util.Optional;
 import java.util.Set;
 
-class DefaultFailoverContext implements FailoverContext {
+public class DefaultFailoverContext implements FailoverContext {
     static class Resolution implements FailureResolution {
         private final boolean retry;
 

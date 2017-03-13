@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package io.hekate.spring.internal;
+package io.hekate.spring.bean.internal;
 
 import io.hekate.cluster.seed.StaticSeedNodeProvider;
 import org.junit.Test;
@@ -25,8 +25,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import static org.junit.Assert.assertFalse;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration("classpath*:xsd-test/test-seed-custom-ref.xml")
-public class XsdSeedCustomRefTest extends XsdTestBase {
+@ContextConfiguration("classpath*:xsd-test/test-seed-static.xml")
+public class XsdSeedStaticTest extends XsdTestBase {
     @Test
     public void testExpectedProvider() {
         assertFalse(spring.getBeansOfType(StaticSeedNodeProvider.class).isEmpty());

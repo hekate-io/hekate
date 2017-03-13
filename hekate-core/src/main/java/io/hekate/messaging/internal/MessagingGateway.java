@@ -26,6 +26,7 @@ import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.failover.FailureInfo;
 import io.hekate.failover.FailureResolution;
+import io.hekate.failover.internal.DefaultFailoverContext;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelClosedException;
