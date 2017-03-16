@@ -149,8 +149,8 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
     public DefaultTaskService(TaskServiceFactory factory) {
         ConfigCheck check = ConfigCheck.get(TaskServiceFactory.class);
 
-        check.that(factory != null, "Factory is null.");
-        check.that(factory.getWorkerThreads() > 0, "worker thread pool size must be above zero.");
+        check.notNull(factory, "factory");
+        check.positive(factory.getWorkerThreads(), "worker thread pool size");
 
         workerThreadPoolSize = factory.getWorkerThreads();
         socketPoolSize = factory.getSockets();

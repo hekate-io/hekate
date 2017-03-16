@@ -159,10 +159,9 @@ public class HekateInstance implements Hekate, Serializable {
         // Check configuration.
         ConfigCheck check = ConfigCheck.get(HekateBootstrap.class);
 
-        check.that(cfg.getClusterName() != null, "cluster name must be not null.");
-        check.that(!cfg.getClusterName().trim().isEmpty(), "cluster name must be a non-empty string.");
-        check.that(cfg.getDefaultCodec() != null, "default codec must be not null.");
-        check.that(!cfg.getDefaultCodec().createCodec().isStateful(), "default codec must be not stateful.");
+        check.notEmpty(cfg.getClusterName(), "cluster name");
+        check.notNull(cfg.getDefaultCodec(), "default codec");
+        check.isFalse(cfg.getDefaultCodec().createCodec().isStateful(), "default codec can't be stateful.");
 
         // Basic properties.
         this.nodeName = cfg.getNodeName() != null ? cfg.getNodeName().trim() : "";
@@ -249,7 +248,7 @@ public class HekateInstance implements Hekate, Serializable {
         // Get internal service managers.
         net = services.findService(NetworkServiceManager.class);
 
-        check.that(net != null, NetworkServiceManager.class.getName() + " not found.");
+        check.notNull(net, NetworkServiceManager.class.getName(), "not found");
     }
 
     @Override

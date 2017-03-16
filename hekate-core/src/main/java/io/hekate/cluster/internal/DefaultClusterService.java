@@ -242,10 +242,10 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     public DefaultClusterService(ClusterServiceFactory factory, StateGuard guard, GossipListener gossipSpy) {
         ConfigCheck check = ConfigCheck.get(ClusterServiceFactory.class);
 
-        check.that(factory != null, "configuration must be not null.");
-        check.that(factory.getGossipInterval() > 0, "gossip interval must be above zero.");
-        check.that(factory.getFailureDetector() != null, "failure detector must be not null.");
-        check.that(factory.getSplitBrainAction() != null, "split-brain policy must be not null.");
+        check.notNull(factory, "configuration");
+        check.positive(factory.getGossipInterval(), "gossip interval");
+        check.notNull(factory.getFailureDetector(), "failure detector");
+        check.notNull(factory.getSplitBrainAction(), "split-brain action");
 
         // Basic properties.
         this.gossipInterval = factory.getGossipInterval();

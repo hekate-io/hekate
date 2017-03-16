@@ -189,18 +189,18 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
     public MulticastSeedNodeProvider(MulticastSeedNodeProviderConfig cfg) throws UnknownHostException {
         ConfigCheck check = ConfigCheck.get(getClass());
 
-        check.that(cfg != null, "configuration must be not null.");
-        check.that(cfg.getPort() > 0, "port is not specified.");
-        check.that(cfg.getTtl() >= 0, "TTL must be greater than or equals to zero [value=" + cfg.getTtl() + ']');
-        check.that(cfg.getGroup() != null && !cfg.getGroup().trim().isEmpty(), "multicast group is not specified.");
-        check.that(cfg.getInterval() > 0, "discovery interval must be greater than zero [value=" + cfg.getInterval() + ']');
-        check.that(cfg.getWaitTime() > 0, "discovery timeout must be greater than zero [value=" + cfg.getWaitTime() + ']');
-        check.that(cfg.getInterval() < cfg.getWaitTime(), "discovery interval must be greater than discovery timeout "
-            + "[discovery-interval=" + cfg.getInterval() + ", discovery-timeout=" + cfg.getWaitTime() + ']');
+        check.notNull(cfg, "configuration");
+        check.positive(cfg.getPort(), "port");
+        check.nonNegative(cfg.getTtl(), "TTL");
+        check.notEmpty(cfg.getGroup(), "multicast group");
+        check.positive(cfg.getInterval(), "discovery interval");
+        check.positive(cfg.getWaitTime(), "wait time");
+        check.that(cfg.getInterval() < cfg.getWaitTime(), "discovery interval must be greater than wait time "
+            + "[discovery-interval=" + cfg.getInterval() + ", wait-time=" + cfg.getWaitTime() + ']');
 
         InetAddress groupAddress = InetAddress.getByName(cfg.getGroup());
 
-        check.that(groupAddress.isMulticastAddress(), "address is not a multicast address [address=" + groupAddress + ']');
+        check.isTrue(groupAddress.isMulticastAddress(), "address is not a multicast address [address=" + groupAddress + ']');
 
         group = new InetSocketAddress(groupAddress, cfg.getPort());
         ttl = cfg.getTtl();

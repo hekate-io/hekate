@@ -81,14 +81,14 @@ public class FsSeedNodeProvider implements SeedNodeProvider {
 
         File dir = cfg.getWorkDir();
 
-        check.that(dir != null, "work directory must be not null.");
+        check.notNull(dir, "work directory");
 
         dir = dir.getCanonicalFile();
 
         if (dir.exists()) {
-            check.that(dir.isDirectory(), "work directory is not a directory [path=" + dir + ']');
-            check.that(dir.canRead(), "work directory is not readable [path=" + dir + ']');
-            check.that(dir.canWrite(), "work directory is not writable [path=" + dir + ']');
+            check.isTrue(dir.isDirectory(), "work directory is not a directory [path=" + dir + ']');
+            check.isTrue(dir.canRead(), "work directory is not readable [path=" + dir + ']');
+            check.isTrue(dir.canWrite(), "work directory is not writable [path=" + dir + ']');
         }
 
         this.cleanupInterval = cfg.getCleanupInterval();

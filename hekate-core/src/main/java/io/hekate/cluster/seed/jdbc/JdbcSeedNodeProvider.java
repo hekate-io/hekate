@@ -79,15 +79,11 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider {
 
         ConfigCheck check = ConfigCheck.get(JdbcSeedNodeProviderConfig.class);
 
-        check.that(cfg.getDataSource() != null, "datasource must be not null.");
-        check.that(cfg.getTable() != null, "table name must be not null.");
-        check.that(!cfg.getTable().trim().isEmpty(), "table name must be a non-empty string.");
-        check.that(cfg.getHostColumn() != null, "host column must be not null.");
-        check.that(!cfg.getHostColumn().trim().isEmpty(), "host column must be a non-empty string.");
-        check.that(cfg.getPortColumn() != null, "port column must be not null.");
-        check.that(!cfg.getPortColumn().trim().isEmpty(), "port column must be a non-empty string.");
-        check.that(cfg.getClusterColumn() != null, "cluster name column must be not null.");
-        check.that(!cfg.getClusterColumn().trim().isEmpty(), "cluster name column must be a non-empty string.");
+        check.notNull(cfg.getDataSource(), "datasource");
+        check.notEmpty(cfg.getTable(), "table");
+        check.notEmpty(cfg.getHostColumn(), "host column");
+        check.notEmpty(cfg.getPortColumn(), "port column");
+        check.notEmpty(cfg.getClusterColumn(), "cluster name column");
 
         ds = cfg.getDataSource();
         timeout = cfg.getQueryTimeout();

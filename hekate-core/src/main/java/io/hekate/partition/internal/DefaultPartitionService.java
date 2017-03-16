@@ -94,13 +94,12 @@ public class DefaultPartitionService implements PartitionService, DependentServi
         Set<String> uniqueNames = new HashSet<>();
 
         mappersConfig.forEach(cfg -> {
-            check.that(cfg.getName() != null, "mapper name must be not null.");
+            check.notEmpty(cfg.getName(), "name");
+            check.positive(cfg.getPartitions(), "partitions");
 
             String name = cfg.getName().trim();
 
-            check.that(!name.isEmpty(), "mapper name must be be a non empty string.");
-            check.that(!uniqueNames.contains(name), "duplicated mapper name [config=" + cfg + ']');
-            check.that(cfg.getPartitions() > 0, "partitions must be above zero.");
+            check.unique(name, uniqueNames, "name");
 
             uniqueNames.add(name);
         });

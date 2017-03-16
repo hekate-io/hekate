@@ -70,9 +70,8 @@ public class HostReachabilityDetector implements SplitBrainDetector {
     public HostReachabilityDetector(String host, int timeout) {
         ConfigCheck check = ConfigCheck.get(getClass());
 
-        check.that(host != null, "host can't be null.");
-        check.that(!host.trim().isEmpty(), "host can't be null.");
-        check.that(timeout > 0, "timeout must be above zero.");
+        check.notEmpty(host, "host");
+        check.positive(timeout, "timeout");
 
         this.host = host.trim();
         this.timeout = timeout;

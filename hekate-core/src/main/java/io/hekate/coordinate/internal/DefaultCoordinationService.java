@@ -109,7 +109,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
         ConfigCheck check = ConfigCheck.get(CoordinationServiceFactory.class);
 
-        check.that(factory.getRetryInterval() > 0, "failover interval must be greater than zero.");
+        check.positive(factory.getRetryInterval(), "retry interval");
 
         this.sockets = factory.getSockets();
         this.nioThreads = factory.getNioThreads();
@@ -142,16 +142,14 @@ public class DefaultCoordinationService implements CoordinationService, Configur
         Set<String> uniqueNames = new HashSet<>();
 
         processesConfig.forEach(cfg -> {
-            check.that(cfg.getName() != null, "name must be not null.");
-            check.that(cfg.getHandler() != null, "handler must be not null.");
+            check.notEmpty(cfg.getName(), "name");
+            check.notNull(cfg.getHandler(), "handler");
 
             String name = cfg.getName().trim();
 
-            check.that(!name.isEmpty(), "name must be a non-empty string.");
-            check.that(!uniqueNames.contains(name), "duplicated name [name=" + name + ']');
+            check.unique(name, uniqueNames, "name");
 
             uniqueNames.add(name);
-
         });
 
         // Register process names as service property.

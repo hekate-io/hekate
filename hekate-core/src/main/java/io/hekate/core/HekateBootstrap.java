@@ -232,7 +232,7 @@ public class HekateBootstrap {
      * @return This instance.
      */
     public HekateBootstrap withNodeRole(String role) {
-        ConfigCheck.get(getClass()).that(role != null, "role must be not null.");
+        ConfigCheck.get(getClass()).notNull(role, "role");
 
         if (nodeRoles == null) {
             nodeRoles = new HashSet<>();

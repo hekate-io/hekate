@@ -108,13 +108,12 @@ public class DefaultElectionService implements ElectionService, DependentService
         Set<String> uniqueGroups = new HashSet<>();
 
         candidatesConfig.forEach(cfg -> {
-            check.that(cfg.getGroup() != null, "group must be not null.");
-            check.that(cfg.getCandidate() != null, "candidate must be not null.");
+            check.notEmpty(cfg.getGroup(), "group");
+            check.notNull(cfg.getCandidate(), "candidate");
 
             String group = cfg.getGroup().trim();
 
-            check.that(!group.isEmpty(), "group must be a non empty string.");
-            check.that(!uniqueGroups.contains(group), "duplicated group name [group=" + group + ']');
+            check.unique(group, uniqueGroups, "group");
 
             uniqueGroups.add(group);
         });

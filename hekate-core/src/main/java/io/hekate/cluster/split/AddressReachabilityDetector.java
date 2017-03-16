@@ -85,8 +85,8 @@ public class AddressReachabilityDetector implements SplitBrainDetector {
     public AddressReachabilityDetector(InetSocketAddress address, int timeout) {
         ConfigCheck check = ConfigCheck.get(AddressReachabilityDetector.class);
 
-        check.that(address != null, "address must be not null.");
-        check.that(timeout > 0, "timeout must be above zero.");
+        check.notNull(address, "address");
+        check.positive(timeout, "timeout");
 
         this.address = address;
         this.timeout = timeout;

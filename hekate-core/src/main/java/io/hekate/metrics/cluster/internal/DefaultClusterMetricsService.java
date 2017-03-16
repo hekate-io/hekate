@@ -232,8 +232,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
         ConfigCheck check = ConfigCheck.get(ClusterMetricsServiceFactory.class);
 
-        check.that(factory.getReplicationInterval() > 0, "replicate interval must be above zero [interval="
-            + factory.getReplicationInterval() + ']');
+        check.positive(factory.getReplicationInterval(), "replication interval");
 
         replicationInterval = factory.getReplicationInterval();
         filter = factory.getReplicationFilter();

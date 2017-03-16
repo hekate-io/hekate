@@ -88,8 +88,7 @@ public class DefaultMetricsService implements MetricsService, InitializingServic
 
         ConfigCheck check = ConfigCheck.get(MetricsServiceFactory.class);
 
-        check.that(factory.getRefreshInterval() > 0, "refresh interval must be above zero [interval="
-            + factory.getRefreshInterval() + ']');
+        check.positive(factory.getRefreshInterval(), "refresh interval");
 
         refreshInterval = factory.getRefreshInterval();
 
@@ -181,9 +180,8 @@ public class DefaultMetricsService implements MetricsService, InitializingServic
     public CounterMetric register(CounterConfig config) {
         ConfigCheck check = ConfigCheck.get(CounterConfig.class);
 
-        check.that(config != null, "must be not null.");
-        check.that(config.getName() != null, "name must be not null.");
-        check.that(!config.getName().trim().isEmpty(), "name must be a not empty string.");
+        check.notNull(config, "configuration");
+        check.notEmpty(config.getName(), "name");
 
         guard.lockWrite();
 
@@ -197,7 +195,7 @@ public class DefaultMetricsService implements MetricsService, InitializingServic
             DefaultCounterMetric existing = counters.get(name);
 
             if (existing == null) {
-                check.that(!allMetrics.containsKey(name), "duplicated metric name [config=" + config + ']');
+                check.unique(name, allMetrics.keySet(), "metric name");
 
                 String totalName = config.getTotalName();
 
@@ -206,7 +204,7 @@ public class DefaultMetricsService implements MetricsService, InitializingServic
                 }
 
                 if (totalName != null) {
-                    check.that(!allMetrics.containsKey(totalName), "duplicated metric name [config=" + config + ']');
+                    check.unique(totalName, allMetrics.keySet(), "metric name");
                 }
 
                 DefaultCounterMetric counter = new DefaultCounterMetric(name, config.isAutoReset(), totalName);
@@ -232,10 +230,9 @@ public class DefaultMetricsService implements MetricsService, InitializingServic
     public Metric register(ProbeConfig config) {
         ConfigCheck check = ConfigCheck.get(CounterConfig.class);
 
-        check.that(config != null, "must be not null.");
-        check.that(config.getName() != null, "name must be not null.");
-        check.that(!config.getName().trim().isEmpty(), "name must be a not empty string.");
-        check.that(config.getProbe() != null, "probe must be not null.");
+        check.notNull(config, "configuration");
+        check.notEmpty(config.getName(), "name");
+        check.notNull(config.getProbe(), "probe");
 
         guard.lockWrite();
 
@@ -246,7 +243,7 @@ public class DefaultMetricsService implements MetricsService, InitializingServic
 
             String name = config.getName().trim();
 
-            check.that(!allMetrics.containsKey(name), "duplicated metric name [config=" + config + ']');
+            check.unique(name, allMetrics.keySet(), "name");
 
             DefaultProbeMetric metricProbe = new DefaultProbeMetric(name, config.getProbe(), config.getInitValue());
 

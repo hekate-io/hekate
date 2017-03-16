@@ -55,7 +55,8 @@ public class ClusterServiceFactoryTest extends HekateTestBase {
 
             fail("Error was expected.");
         } catch (HekateConfigurationException e) {
-            assertTrue(e.getMessage().contains("Split-brain policy must be not null."));
+            assertEquals(e.toString(), e.getMessage(), ClusterServiceFactory.class.getSimpleName()
+                + ": split-brain action must be not null.");
         }
 
         assertSame(SplitBrainAction.TERMINATE, factory.getSplitBrainAction());

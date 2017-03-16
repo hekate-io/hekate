@@ -96,11 +96,10 @@ class StatsdMetricsPublisher {
 
         ConfigCheck check = ConfigCheck.get(StatsdMetricsPublisher.class);
 
-        check.that(cfg.getHost() != null, "host must be not null.");
-        check.that(!cfg.getHost().trim().isEmpty(), "host must be a non empty string.");
-        check.that(cfg.getPort() > 0, "port must be above zero [value=" + cfg.getPort() + ']');
-        check.that(cfg.getMaxQueueSize() > 0, "queue size must be above zero [value=" + cfg.getMaxQueueSize() + ']');
-        check.that(cfg.getBatchSize() > 0, "batch size must be above zero [value=" + cfg.getBatchSize() + ']');
+        check.notEmpty(cfg.getHost(), "host");
+        check.positive(cfg.getPort(), "port");
+        check.positive(cfg.getMaxQueueSize(), "maximum queue size");
+        check.positive(cfg.getBatchSize(), "batch size");
 
         statsdHost = cfg.getHost();
         statsdPort = cfg.getPort();

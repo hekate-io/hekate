@@ -90,10 +90,9 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider {
 
         ConfigCheck check = ConfigCheck.get(CloudStoreSeedNodeProvider.class);
 
-        check.that(cfg.getProvider() != null, "provider must be not null.");
-        check.that(cfg.getCredentials() != null, "credentials must be not null.");
-        check.that(cfg.getContainer() != null, "container must be not null.");
-        check.that(!cfg.getContainer().trim().isEmpty(), "container must be a non-empty string.");
+        check.notNull(cfg.getProvider(), "provider");
+        check.notNull(cfg.getCredentials(), "credentials");
+        check.notEmpty(cfg.getContainer(), "container");
 
         this.provider = cfg.getProvider();
         this.container = cfg.getContainer().trim();

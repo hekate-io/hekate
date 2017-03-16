@@ -183,7 +183,7 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
      * @see #setSplitBrainDetector(SplitBrainDetector)
      */
     public void setSplitBrainAction(SplitBrainAction splitBrainAction) {
-        ConfigCheck.get(getClass()).that(splitBrainAction != null, "Split-brain policy must be not null.");
+        ConfigCheck.get(getClass()).notNull(splitBrainAction, "split-brain action");
 
         this.splitBrainAction = splitBrainAction;
     }

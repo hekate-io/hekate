@@ -129,8 +129,8 @@ public class CloudSeedNodeProvider implements SeedNodeProvider {
 
         ConfigCheck check = ConfigCheck.get(CloudSeedNodeProviderConfig.class);
 
-        check.that(cfg.getProvider() != null, "provider must be not null.");
-        check.that(cfg.getCredentials() != null, "credentials must be not null.");
+        check.notNull(cfg.getProvider(), "provider");
+        check.notNull(cfg.getCredentials(), "credentials");
 
         this.provider = cfg.getProvider();
         this.credentials = cfg.getCredentials();

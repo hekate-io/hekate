@@ -292,7 +292,7 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
 
             fail("Error was expected.");
         } catch (HekateConfigurationException e) {
-            assertTrue(e.getMessage().contains("duplicated metric name"));
+            assertEquals(e.toString(), e.getMessage(), CounterConfig.class.getSimpleName() + ": duplicated name [value=c]");
         }
 
         assertTrue(metrics.getAll().containsKey("c"));

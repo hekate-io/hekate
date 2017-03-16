@@ -143,10 +143,13 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         Set<String> uniqueNames = new HashSet<>();
 
         channelsConfig.forEach(cfg -> {
-            check.that(cfg.getName() != null, "channel name must be not null.");
+            check.notEmpty(cfg.getName(), "name");
+            check.positive(cfg.getSockets(), "socket pool size");
 
             String name = cfg.getName().trim();
-            int socketPoolSize = cfg.getSockets();
+
+            check.unique(name, uniqueNames, "name");
+
             MessagingBackPressureConfig pressureCfg = cfg.getBackPressure();
 
             if (pressureCfg != null) {
@@ -154,20 +157,19 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                 int outLo = pressureCfg.getOutLowWatermark();
                 int inHi = pressureCfg.getInHighWatermark();
                 int inLo = pressureCfg.getInLowWatermark();
+
                 MessagingOverflowPolicy outOverflow = pressureCfg.getOutOverflow();
 
-                check.that(!name.isEmpty(), "channel name must be not empty.");
-                check.that(!uniqueNames.contains(name), "duplicated channel name [name=" + name + ']');
-                check.that(socketPoolSize > 0, "socket pool size must be above zero [socket-pool-size=" + socketPoolSize + ']');
-                check.that(outOverflow != null, "Outbound queue overflow policy must be not null.");
+                check.notNull(outOverflow, "outbound queue overflow policy");
 
                 if (outOverflow != MessagingOverflowPolicy.IGNORE) {
-                    check.that(outHi > 0, "Outbound queue high watermark must be above zero.");
-                    check.that(outHi > outLo, "Outbound queue high watermark must be greater than low watermark.");
+                    check.positive(outHi, "outbound queue high watermark");
+
+                    check.that(outHi > outLo, "outbound queue high watermark must be greater than low watermark.");
                 }
 
                 if (inHi > 0) {
-                    check.that(inHi > inLo, "Inbound queue high watermark must be greater than low watermark.");
+                    check.that(inHi > inLo, "inbound queue high watermark must be greater than low watermark.");
                 }
             }
 

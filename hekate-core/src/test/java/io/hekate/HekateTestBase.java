@@ -621,6 +621,21 @@ public abstract class HekateTestBase {
         }
     }
 
+    protected void expectErrorMessage(Class<? extends Throwable> error, String message, TestTask task) {
+        try {
+            task.execute();
+
+            fail("Failure of type " + error.getName() + " was expected.");
+        } catch (AssertionError e) {
+            throw e;
+        } catch (Throwable t) {
+            assertSame(Utils.getStacktrace(t), error, t.getClass());
+
+            assertNotNull(t.toString(), t.getMessage());
+            assertEquals(message, t.getMessage());
+        }
+    }
+
     @SafeVarargs
     protected final <T> Set<T> toSet(T... nodes) {
         return new HashSet<>(Arrays.asList(nodes));

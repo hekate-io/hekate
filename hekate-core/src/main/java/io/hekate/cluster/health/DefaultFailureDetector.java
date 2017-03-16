@@ -152,15 +152,15 @@ public class DefaultFailureDetector implements FailureDetector {
     public DefaultFailureDetector(DefaultFailureDetectorConfig cfg) {
         ConfigCheck check = ConfigCheck.get(getClass());
 
-        check.that(cfg != null, "configuration must be not null.");
+        check.notNull(cfg, "configuration");
 
         hbLossThreshold = cfg.getHeartbeatLossThreshold();
         hbInterval = cfg.getHeartbeatInterval();
         failureQuorum = cfg.getFailureDetectionQuorum();
 
-        check.that(hbLossThreshold > 0, "heartbeat loss threshold must be a positive value [value=" + hbLossThreshold + ']');
-        check.that(hbInterval > 0, "heartbeat interval must be a positive value [value=" + hbInterval + ']');
-        check.that(failureQuorum >= 1, "failure detection quorum must be a positive value [value=" + failureQuorum + ']');
+        check.positive(hbLossThreshold, "heartbeat loss threshold");
+        check.positive(hbInterval, "heartbeat interval");
+        check.greater(failureQuorum, 1, "failure detection quorum");
 
         ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 

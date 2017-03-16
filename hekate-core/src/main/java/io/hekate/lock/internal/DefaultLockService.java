@@ -112,8 +112,8 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
         ConfigCheck check = ConfigCheck.get(LockServiceFactory.class);
 
-        check.that(factory.getRetryInterval() > 0, "failover interval must be above zero.");
-        check.that(factory.getWorkerThreads() > 0, "worker thread pool size must be above zero.");
+        check.positive(factory.getRetryInterval(), "retry interval");
+        check.positive(factory.getWorkerThreads(), "worker thread pool size");
 
         this.retryInterval = factory.getRetryInterval();
         this.workerThreads = factory.getWorkerThreads();
@@ -150,12 +150,11 @@ public class DefaultLockService implements LockService, InitializingService, Dep
         Set<String> uniqueNames = new HashSet<>();
 
         regionsConfig.forEach(cfg -> {
-            check.that(cfg.getName() != null, "lock region name must be not null.");
+            check.notEmpty(cfg.getName(), "name");
 
             String name = cfg.getName().trim();
 
-            check.that(!name.isEmpty(), "lock region name must be a non-empty string.");
-            check.that(!uniqueNames.contains(name), "duplicated lock region name [name=" + name + ']');
+            check.unique(name, uniqueNames, "name");
 
             uniqueNames.add(name);
         });

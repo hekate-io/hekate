@@ -115,8 +115,6 @@ class NettyServer implements NetworkServer {
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private static final ConfigCheck CHECK = ConfigCheck.get(NettyServer.class);
-
     private final ReentrantLock lock = new ReentrantLock();
 
     private final boolean autoAccept;
@@ -168,8 +166,10 @@ class NettyServer implements NetworkServer {
     public NettyServer(NettyServerFactory factory) {
         ArgAssert.check(factory != null, "Factory must be not null.");
 
-        CHECK.that(factory.getAcceptorEventLoopGroup() != null, "acceptor event loops group must be not null.");
-        CHECK.that(factory.getWorkerEventLoopGroup() != null, "worker event loops group must be not null.");
+        ConfigCheck check = ConfigCheck.get(NettyServerFactory.class);
+
+        check.notNull(factory.getAcceptorEventLoopGroup(), "acceptor event loop group");
+        check.notNull(factory.getWorkerEventLoopGroup(), "worker event loop group");
 
         autoAccept = factory.isAutoAccept();
         hbInterval = factory.getHeartbeatInterval();
@@ -184,7 +184,7 @@ class NettyServer implements NetworkServer {
         acceptors = factory.getAcceptorEventLoopGroup();
         workers = factory.getWorkerEventLoopGroup();
 
-        validateEventLoopType(workers);
+        checkWorkerEventLoopType(check, workers);
 
         if (factory.getHandlers() != null) {
             factory.getHandlers().forEach(this::addHandler);
@@ -269,7 +269,7 @@ class NettyServer implements NetworkServer {
         lock.lock();
 
         try {
-            validate(cfg);
+            ConfigCheck check = validate(cfg);
 
             @SuppressWarnings("unchecked")
             NettyServerHandlerConfig<Object> nettyCfg = (NettyServerHandlerConfig<Object>)cfg;
@@ -278,7 +278,7 @@ class NettyServer implements NetworkServer {
 
             copy.setEventLoopGroup(cfg.getEventLoopGroup());
 
-            validateEventLoopType(copy.getEventLoopGroup());
+            checkWorkerEventLoopType(check, copy.getEventLoopGroup());
 
             if (DEBUG) {
                 log.debug("Adding handler [protocol={}]", copy);
@@ -717,15 +717,17 @@ class NettyServer implements NetworkServer {
         return copy;
     }
 
-    private void validate(NetworkServerHandlerConfig<?> handler) {
+    private ConfigCheck validate(NetworkServerHandlerConfig<?> handler) {
         assert lock.isHeldByCurrentThread() : "Thread must hold lock.";
 
         ConfigCheck check = ConfigCheck.get(NetworkServerHandlerConfig.class);
 
-        check.that(handler.getProtocol() != null, "Protocol must be not null.");
-        check.that(handler.getHandler() != null, "Listener must be not null.");
-        check.that(handler.getCodecFactory() != null, "Codec factory must be not null.");
-        check.that(!handlers.containsKey(handler.getProtocol()), "Duplicated protocol ID: " + handler.getProtocol());
+        check.notEmpty(handler.getProtocol(), "protocol");
+        check.unique(handler.getProtocol(), handlers.keySet(), "protocol");
+        check.notNull(handler.getHandler(), "handler");
+        check.notNull(handler.getCodecFactory() != null, "codec factory");
+
+        return check;
     }
 
     private void setChildOpts(ServerBootstrap boot) {
@@ -764,10 +766,10 @@ class NettyServer implements NetworkServer {
         }
     }
 
-    private void validateEventLoopType(EventLoopGroup group) {
+    private void checkWorkerEventLoopType(ConfigCheck check, EventLoopGroup group) {
         if (group != null) {
-            CHECK.that(acceptors.getClass().isAssignableFrom(group.getClass()), "Can't mix different types of event loop groups "
-                + "[parent=" + acceptors.getClass().getName() + ", group=" + group.getClass().getName() + ']');
+            check.isTrue(acceptors.getClass().isAssignableFrom(group.getClass()), "Can't mix different types of event loop groups "
+                + "[acceptors=" + acceptors.getClass().getName() + ", workers=" + group.getClass().getName() + ']');
         }
     }
 

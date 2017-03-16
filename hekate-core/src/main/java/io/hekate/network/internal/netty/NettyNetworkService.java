@@ -191,13 +191,13 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
 
         ConfigCheck check = ConfigCheck.get(NetworkServiceFactory.class);
 
-        check.that(factory.getNioThreads() > 0, "NIO thread pool size value must be above zero.");
-        check.that(factory.getHeartbeatInterval() > 0, "heartbeat interval must be above zero.");
-        check.that(factory.getHeartbeatLossThreshold() > 0, "heartbeat loss threshold must be above zero.");
-        check.that(factory.getConnectTimeout() > 0, "connect timeout must be above zero.");
-        check.that(factory.getAddressSelector() != null, "cluster node address selector must be not null.");
-        check.that(factory.getPort() >= 0 && factory.getPort() <= 65535, "port must be within a 0..65535 range.");
-        check.that(factory.getTransport() != null, "transport must be not null.");
+        check.range(factory.getPort(), 0, 65535, "port");
+        check.notNull(factory.getTransport(), "transport");
+        check.notNull(factory.getAddressSelector(), "address selector");
+        check.positive(factory.getNioThreads(), "NIO thread pool size");
+        check.positive(factory.getHeartbeatInterval(), "heartbeat interval");
+        check.positive(factory.getHeartbeatLossThreshold(), "heartbeat loss threshold");
+        check.positive(factory.getConnectTimeout(), "connect timeout");
 
         initHost = factory.getHost();
         initPort = factory.getPort();
@@ -587,8 +587,8 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
 
         String protocol = cfg.getProtocol();
 
-        check.that(protocol != null, "protocol must be not null.");
-        check.that(!connectors.containsKey(protocol), "duplicated protocol identifier [protocol=" + protocol + ']');
+        check.notEmpty(protocol, "protocol");
+        check.unique(protocol, connectors.keySet(), "protocol");
 
         boolean useCoreGroup;
         EventLoopGroup eventLoopGroup;

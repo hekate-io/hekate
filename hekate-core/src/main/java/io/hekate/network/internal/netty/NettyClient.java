@@ -94,8 +94,6 @@ class NettyClient<T> implements NetworkClient<T> {
 
     private static final String DECODER_HANDLER_ID = "decoder";
 
-    private static final ConfigCheck CHECK = ConfigCheck.get(NettyClient.class);
-
     private final ReentrantLock lock = new ReentrantLock();
 
     private final CodecFactory<Object> codecFactory;
@@ -148,9 +146,11 @@ class NettyClient<T> implements NetworkClient<T> {
     public NettyClient(NettyClientFactory<T> factory) {
         assert factory != null : "Configuration is null.";
 
-        CHECK.that(factory.getProtocol() != null, "protocol must be not null.");
-        CHECK.that(factory.getCodecFactory() != null, "codec factory must be not null.");
-        CHECK.that(factory.getEventLoopGroup() != null, "event loops group must be not null.");
+        ConfigCheck check = ConfigCheck.get(NettyClientFactory.class);
+
+        check.notEmpty(factory.getProtocol(), "protocol");
+        check.notNull(factory.getCodecFactory(), "codec factory");
+        check.notNull(factory.getEventLoopGroup(), "event loops group");
 
         if (factory.getLoggerCategory() == null) {
             log = LoggerFactory.getLogger(NettyClient.class);

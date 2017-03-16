@@ -28,6 +28,7 @@ import io.hekate.network.internal.NetworkSendCallbackMock;
 import io.hekate.network.internal.NetworkServer;
 import io.hekate.network.internal.NetworkServerCallbackMock;
 import io.hekate.network.internal.NetworkServerFailure;
+import io.hekate.network.internal.NetworkServerHandlerConfig;
 import io.hekate.network.internal.NetworkTestBase;
 import java.io.IOException;
 import java.net.ConnectException;
@@ -350,7 +351,8 @@ public class NetworkServerTest extends NetworkTestBase {
 
             fail("Error was expected.");
         } catch (HekateConfigurationException e) {
-            assertTrue(e.getMessage().contains("Duplicated protocol"));
+            assertEquals(e.toString(), e.getMessage(), NetworkServerHandlerConfig.class.getSimpleName()
+                + ": duplicated protocol [value=test]");
         }
 
         NetworkServerCallbackMock listener = new NetworkServerCallbackMock();
@@ -364,7 +366,8 @@ public class NetworkServerTest extends NetworkTestBase {
 
             fail("Error was expected.");
         } catch (HekateConfigurationException e) {
-            assertTrue(e.getMessage().contains("Duplicated protocol"));
+            assertEquals(e.toString(), e.getMessage(), NetworkServerHandlerConfig.class.getSimpleName()
+                + ": duplicated protocol [value=test]");
         }
     }
 

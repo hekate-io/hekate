@@ -109,12 +109,10 @@ class InfluxDbMetricsPublisher {
 
         ConfigCheck check = ConfigCheck.get(InfluxDbMetricsConfig.class);
 
-        check.that(cfg.getUrl() != null, "URL must be not null.");
-        check.that(!cfg.getUrl().trim().isEmpty(), "URL must be a non empty string.");
-        check.that(cfg.getDatabase() != null, "database must be not null.");
-        check.that(!cfg.getDatabase().trim().isEmpty(), "database must be a non empty string.");
-        check.that(cfg.getMaxQueueSize() > 0, "queue size must be above zero [value=" + cfg.getMaxQueueSize() + ']');
-        check.that(cfg.getTimeout() > 0, "timeout must be above zero [value=" + cfg.getTimeout() + ']');
+        check.notEmpty(cfg.getUrl(), "URL");
+        check.notEmpty(cfg.getDatabase(), "database");
+        check.positive(cfg.getMaxQueueSize(), "maximum queue size");
+        check.positive(cfg.getTimeout(), "timeout");
 
         url = cfg.getUrl().trim();
         database = cfg.getDatabase().trim();

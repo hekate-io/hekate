@@ -57,7 +57,7 @@ public class StaticSeedNodeProvider implements SeedNodeProvider {
      * @throws UnknownHostException If one of the configured addresses couldn't be resolved.
      */
     public StaticSeedNodeProvider(StaticSeedNodeProviderConfig cfg) throws UnknownHostException {
-        ConfigCheck.get(StaticSeedNodeProvider.class).that(cfg != null, "configuration must be not null.");
+        ConfigCheck.get(StaticSeedNodeProvider.class).notNull(cfg, "configuration");
 
         this.addresses = parseAddresses(cfg.getAddresses());
     }

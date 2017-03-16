@@ -17,6 +17,7 @@
 package io.hekate.core.internal.util;
 
 import io.hekate.core.HekateConfigurationException;
+import java.util.Set;
 
 public final class ConfigCheck {
     private final String component;
@@ -33,5 +34,59 @@ public final class ConfigCheck {
         if (!check) {
             throw new HekateConfigurationException(component + ": " + msg);
         }
+    }
+
+    public void range(int value, int from, int to, String component) {
+        that(value >= from && value <= to, component + " must be within the " + from + ".." + to + " range.");
+    }
+
+    public void positive(int value, String component) {
+        greater(value, 0, component);
+    }
+
+    public void positive(long value, String component) {
+        greater(value, 0, component);
+    }
+
+    public void nonNegative(int value, String component) {
+        greaterOrEquals(value, 0, component);
+    }
+
+    public void greater(long value, long than, String component) {
+        that(value > than, component + " must be greater than " + than + " [value=" + value + ']');
+    }
+
+    public void greater(int value, int than, String component) {
+        that(value > than, component + " must be greater than " + than + " [value=" + value + ']');
+    }
+
+    public void greaterOrEquals(int value, int than, String component) {
+        that(value >= than, component + " must be greater than or equals to " + than + " [value=" + value + ']');
+    }
+
+    public void unique(Object what, Set<?> where, String component) {
+        that(!where.contains(what), "duplicated " + component + " [value=" + what + ']');
+    }
+
+    public void isFalse(boolean value, String msg) throws HekateConfigurationException {
+        that(!value, msg);
+    }
+
+    public void isTrue(boolean value, String msg) throws HekateConfigurationException {
+        that(value, msg);
+    }
+
+    public void notNull(Object value, String component) throws HekateConfigurationException {
+        notNull(value, component, "must be not null");
+    }
+
+    public void notNull(Object value, String component, String details) throws HekateConfigurationException {
+        that(value != null, component + ' ' + details + ".");
+    }
+
+    public void notEmpty(String value, String component) throws HekateConfigurationException {
+        notNull(value, component);
+
+        that(!value.trim().isEmpty(), component + " must be a non-empty string.");
     }
 }

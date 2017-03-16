@@ -148,7 +148,7 @@ public class SplitBrainDetectorGroup implements SplitBrainDetector {
      * @param groupPolicy Group policy.
      */
     public void setGroupPolicy(GroupPolicy groupPolicy) {
-        ConfigCheck.get(SplitBrainDetectorGroup.class).that(groupPolicy != null, "group policy must be not null.");
+        ConfigCheck.get(SplitBrainDetectorGroup.class).notNull(groupPolicy, "group policy");
 
         this.groupPolicy = groupPolicy;
     }
