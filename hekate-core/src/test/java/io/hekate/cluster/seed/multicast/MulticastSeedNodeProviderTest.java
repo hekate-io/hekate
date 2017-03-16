@@ -144,6 +144,8 @@ public class MulticastSeedNodeProviderTest extends SeedNodeProviderCommonTest<Mu
             assertTrue(getStacktrace(e), e.isCausedBy(InterruptedException.class));
 
             assertTrue(Thread.currentThread().isInterrupted());
+
+            Thread.interrupted();
         }
     }
 
