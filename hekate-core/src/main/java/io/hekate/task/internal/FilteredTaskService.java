@@ -216,7 +216,7 @@ class FilteredTaskService implements TaskService {
 
     @Override
     public TaskFuture<MultiNodeResult<Void>> broadcast(RunnableTask task) {
-        ArgAssert.check(task != null, "Task is null.");
+        ArgAssert.notNull(task, "Task");
 
         MultiNodeTaskFuture<Void> future = new MultiNodeTaskFuture<>(task);
 
@@ -227,8 +227,8 @@ class FilteredTaskService implements TaskService {
 
     @Override
     public TaskFuture<MultiNodeResult<Void>> broadcast(Object affinityKey, RunnableTask task) {
-        ArgAssert.check(affinityKey != null, "Affinity key is null.");
-        ArgAssert.check(task != null, "Task is null.");
+        ArgAssert.notNull(affinityKey, "Affinity key");
+        ArgAssert.notNull(task, "Task");
 
         MultiNodeTaskFuture<Void> future = new MultiNodeTaskFuture<>(task);
 
@@ -239,7 +239,7 @@ class FilteredTaskService implements TaskService {
 
     @Override
     public <T> TaskFuture<MultiNodeResult<T>> aggregate(CallableTask<T> task) {
-        ArgAssert.check(task != null, "Task is null.");
+        ArgAssert.notNull(task, "Task");
 
         MultiNodeTaskFuture<T> future = new MultiNodeTaskFuture<>(task);
 
@@ -250,8 +250,8 @@ class FilteredTaskService implements TaskService {
 
     @Override
     public <T> TaskFuture<MultiNodeResult<T>> aggregate(Object affinityKey, CallableTask<T> task) {
-        ArgAssert.check(affinityKey != null, "Affinity key is null.");
-        ArgAssert.check(task != null, "Task is null.");
+        ArgAssert.notNull(affinityKey, "Affinity key");
+        ArgAssert.notNull(task, "Task");
 
         MultiNodeTaskFuture<T> future = new MultiNodeTaskFuture<>(task);
 
@@ -262,7 +262,7 @@ class FilteredTaskService implements TaskService {
 
     @Override
     public TaskFuture<?> run(RunnableTask task) {
-        ArgAssert.check(task != null, "Task is null.");
+        ArgAssert.notNull(task, "Task");
 
         SingleTaskFuture<Object> future = new SingleTaskFuture<>(task);
 
@@ -273,8 +273,8 @@ class FilteredTaskService implements TaskService {
 
     @Override
     public TaskFuture<?> run(Object affinityKey, RunnableTask task) {
-        ArgAssert.check(affinityKey != null, "Affinity key is null.");
-        ArgAssert.check(task != null, "Task is null.");
+        ArgAssert.notNull(affinityKey, "Affinity key");
+        ArgAssert.notNull(task, "Task");
 
         SingleTaskFuture<Object> future = new SingleTaskFuture<>(task);
 
@@ -285,7 +285,7 @@ class FilteredTaskService implements TaskService {
 
     @Override
     public <T> TaskFuture<T> call(CallableTask<T> task) {
-        ArgAssert.check(task != null, "Task is null.");
+        ArgAssert.notNull(task, "Task");
 
         SingleTaskFuture<T> future = new SingleTaskFuture<>(task);
 
@@ -296,8 +296,8 @@ class FilteredTaskService implements TaskService {
 
     @Override
     public <T> TaskFuture<T> call(Object affinityKey, CallableTask<T> task) {
-        ArgAssert.check(affinityKey != null, "Affinity key is null.");
-        ArgAssert.check(task != null, "Task is null.");
+        ArgAssert.notNull(affinityKey, "Affinity key");
+        ArgAssert.notNull(task, "Task");
 
         SingleTaskFuture<T> future = new SingleTaskFuture<>(task);
 
@@ -308,33 +308,33 @@ class FilteredTaskService implements TaskService {
 
     @Override
     public <T, V> TaskFuture<V> apply(T arg, ApplicableTask<T, V> task) {
-        ArgAssert.check(arg != null, "Argument must be not null.");
-        ArgAssert.check(task != null, "Task must be not null.");
+        ArgAssert.notNull(arg, "Argument");
+        ArgAssert.notNull(task, "Task");
 
         return call(() -> task.apply(arg));
     }
 
     @Override
     public <T, V> TaskFuture<V> apply(Object affinityKey, T arg, ApplicableTask<T, V> task) {
-        ArgAssert.check(affinityKey != null, "Affinity key must be not null.");
-        ArgAssert.check(arg != null, "Argument must be not null.");
-        ArgAssert.check(task != null, "Task must be not null.");
+        ArgAssert.notNull(affinityKey, "Affinity key.");
+        ArgAssert.notNull(arg, "Argument");
+        ArgAssert.notNull(task, "Task");
 
         return call(affinityKey, () -> task.apply(arg));
     }
 
     @Override
     public <T, V> TaskFuture<Collection<V>> applyAll(T[] args, ApplicableTask<T, V> task) {
-        ArgAssert.check(args != null, "Task arguments list must be not null.");
+        ArgAssert.notNull(args, "Task arguments list");
 
         return applyAll(Arrays.asList(args), task);
     }
 
     @Override
     public <T, V> TaskFuture<Collection<V>> applyAll(Collection<T> args, ApplicableTask<T, V> task) {
-        ArgAssert.check(args != null, "Task arguments list must be not null.");
-        ArgAssert.check(!args.isEmpty(), "Task arguments list must be not empty.");
-        ArgAssert.check(task != null, "Task must be not null.");
+        ArgAssert.notNull(args, "Task arguments list");
+        ArgAssert.isFalse(args.isEmpty(), "Task arguments");
+        ArgAssert.notNull(task, "Task");
 
         ClusterTopology nodes = channel.getCluster().getTopology();
 

@@ -344,7 +344,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
     @Override
     public Optional<ClusterNodeMetrics> forNode(ClusterNodeId node) {
-        ArgAssert.check(node != null, "Node identifier is null.");
+        ArgAssert.notNull(node, "Node");
 
         guard.lockReadWithStateCheck();
 
@@ -365,7 +365,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
     @Override
     public Optional<ClusterNodeMetrics> forNode(ClusterNode node) {
-        ArgAssert.check(node != null, "Node is null.");
+        ArgAssert.notNull(node, "Node");
 
         return forNode(node.getId());
     }
@@ -395,7 +395,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
     @Override
     public List<ClusterNodeMetrics> getMetrics(MetricFilter filter) {
-        ArgAssert.check(filter != null, "Filter is null.");
+        ArgAssert.notNull(filter, "Filter");
 
         guard.lockReadWithStateCheck();
 

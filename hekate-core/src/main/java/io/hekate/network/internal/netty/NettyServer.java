@@ -164,7 +164,7 @@ class NettyServer implements NetworkServer {
     private boolean failoverInProgress;
 
     public NettyServer(NettyServerFactory factory) {
-        ArgAssert.check(factory != null, "Factory must be not null.");
+        ArgAssert.notNull(factory, "Factory");
 
         ConfigCheck check = ConfigCheck.get(NettyServerFactory.class);
 
@@ -208,7 +208,7 @@ class NettyServer implements NetworkServer {
 
     @Override
     public NetworkServerFuture start(InetSocketAddress address, NetworkServerCallback callback) {
-        ArgAssert.check(address != null, "address must be a non-null value.");
+        ArgAssert.notNull(address, "Address");
 
         lock.lock();
 
@@ -301,7 +301,7 @@ class NettyServer implements NetworkServer {
 
     @Override
     public List<NetworkEndpoint<?>> removeHandler(String protocol) {
-        ArgAssert.check(protocol != null, "Protocol must be not null.");
+        ArgAssert.notNull(protocol, "Protocol");
 
         if (DEBUG) {
             log.debug("Removing handler [protocol={}]", protocol);

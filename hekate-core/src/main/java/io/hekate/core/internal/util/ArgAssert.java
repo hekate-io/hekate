@@ -26,4 +26,16 @@ public final class ArgAssert {
             throw new IllegalArgumentException(msg);
         }
     }
+
+    public static void notNull(Object obj, String component) {
+        check(obj != null, component + " must be not null.");
+    }
+
+    public static void isFalse(boolean condition, String msg) {
+        isTrue(!condition, msg);
+    }
+
+    public static void isTrue(boolean condition, String msg) {
+        check(condition, msg);
+    }
 }

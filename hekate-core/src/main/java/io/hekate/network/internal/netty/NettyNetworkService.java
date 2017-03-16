@@ -277,7 +277,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
 
     @Override
     public NetworkServerFuture bind(NetworkBindCallback callback) throws HekateException {
-        ArgAssert.check(callback != null, "callback must be not null.");
+        ArgAssert.notNull(callback, "Callback");
 
         if (DEBUG) {
             log.debug("Obtaining preferred host address...");
@@ -486,7 +486,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
 
     @Override
     public <T> NetworkConnector<T> get(String protocol) throws IllegalArgumentException {
-        ArgAssert.check(protocol != null, "Protocol must be not null.");
+        ArgAssert.notNull(protocol, "Protocol");
 
         guard.tryLockReadWithStateCheck();
 

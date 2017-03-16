@@ -159,7 +159,7 @@ class DefaultCoordinationContext implements CoordinationContext {
 
     @Override
     public CoordinationMember getMember(ClusterNode node) {
-        ArgAssert.check(node != null, "Cluster node is null.");
+        ArgAssert.notNull(node, "Cluster node ");
 
         return getMember(node.getId());
     }

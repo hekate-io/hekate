@@ -151,13 +151,13 @@ class ClusterEventManager {
     }
 
     public void addListener(ClusterEventListener listener) {
-        ArgAssert.check(listener != null, "Listener is null.");
+        ArgAssert.notNull(listener, "Listener");
 
         doAddListener(new FilteredListener(listener));
     }
 
     public void addListener(ClusterEventListener listener, ClusterEventType... eventTypes) {
-        ArgAssert.check(listener != null, "Listener is null.");
+        ArgAssert.notNull(listener, "Listener");
 
         if (eventTypes == null || eventTypes.length == 0) {
             addListener(listener);
@@ -169,13 +169,13 @@ class ClusterEventManager {
     }
 
     public void addListenerAsync(ClusterEventListener listener) {
-        ArgAssert.check(listener != null, "Listener is null.");
+        ArgAssert.notNull(listener, "Listener");
 
         doAddListenerAsync(new FilteredListener(listener));
     }
 
     public void addListenerAsync(ClusterEventListener listener, ClusterEventType... eventTypes) {
-        ArgAssert.check(listener != null, "Listener is null.");
+        ArgAssert.notNull(listener, "Listener");
 
         if (eventTypes == null || eventTypes.length == 0) {
             addListenerAsync(listener);
@@ -187,7 +187,7 @@ class ClusterEventManager {
     }
 
     public void removeListener(ClusterEventListener listener) {
-        ArgAssert.check(listener != null, "Listener is null.");
+        ArgAssert.notNull(listener, "Listener");
 
         FilteredListener filteredListener = new FilteredListener(null, listener);
 

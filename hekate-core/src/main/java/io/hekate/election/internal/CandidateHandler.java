@@ -66,7 +66,7 @@ class CandidateHandler implements AsyncLockCallback {
 
         @Override
         public void addLeaderChangeListener(LeaderChangeListener listener) {
-            ArgAssert.check(listener != null, "Listener is null.");
+            ArgAssert.notNull(listener, "Listener");
 
             listeners.add(listener);
         }

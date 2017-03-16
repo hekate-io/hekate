@@ -346,7 +346,7 @@ public class HekateInstance implements Hekate, Serializable {
     @Override
     @SuppressWarnings("unchecked")
     public <A> A setAttribute(String name, Object value) {
-        ArgAssert.check(name != null, "Attribute name must be not null.");
+        ArgAssert.notNull(name, "Attribute name");
 
         if (value == null) {
             return (A)attributes.remove(name);
@@ -378,7 +378,7 @@ public class HekateInstance implements Hekate, Serializable {
 
     @Override
     public void addListener(LifecycleListener listener) {
-        ArgAssert.check(listener != null, "Listener is null.");
+        ArgAssert.notNull(listener, "Listener");
 
         if (DEBUG) {
             log.debug("Adding lifecycle listener [listener={}]", listener);

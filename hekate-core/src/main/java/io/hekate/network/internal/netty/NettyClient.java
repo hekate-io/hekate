@@ -346,8 +346,8 @@ class NettyClient<T> implements NetworkClient<T> {
     }
 
     private NetworkFuture<T> doConnect(boolean required, InetSocketAddress address, T login, NetworkClientCallback<T> callback) {
-        ArgAssert.check(address != null, "address must be not null.");
-        ArgAssert.check(callback != null, "callback must be not null.");
+        ArgAssert.notNull(address, "Address");
+        ArgAssert.notNull(callback, "Callback");
 
         ChannelFuture nettyChannelFuture;
         NetworkFuture<T> localConnectFuture;

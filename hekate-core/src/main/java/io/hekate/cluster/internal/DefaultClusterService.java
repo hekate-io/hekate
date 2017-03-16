@@ -496,7 +496,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
     @Override
     public ClusterView filterAll(ClusterFilter filter) {
-        ArgAssert.check(filter != null, "Filter is null.");
+        ArgAssert.notNull(filter, "Filter");
 
         return new FilteredClusterView(this, filter);
     }
@@ -508,7 +508,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
     @Override
     public void addListener(ClusterEventListener listener, ClusterEventType... eventTypes) {
-        ArgAssert.check(listener != null, "Listener must be not null.");
+        ArgAssert.notNull(listener, "Listener");
 
         guard.lockRead();
 
@@ -525,7 +525,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
     @Override
     public void removeListener(ClusterEventListener listener) {
-        ArgAssert.check(listener != null, "Listener must be not null.");
+        ArgAssert.notNull(listener, "Listener");
 
         guard.lockRead();
 
@@ -542,7 +542,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
     @Override
     public CompletableFuture<ClusterTopology> futureOf(Predicate<ClusterTopology> predicate) {
-        ArgAssert.check(predicate != null, "Predicate must be not null.");
+        ArgAssert.notNull(predicate, "Predicate");
 
         CompletableFuture<ClusterTopology> future = new CompletableFuture<>();
 

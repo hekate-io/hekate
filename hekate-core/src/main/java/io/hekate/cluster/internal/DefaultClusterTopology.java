@@ -424,7 +424,7 @@ public class DefaultClusterTopology implements ClusterTopology, Serializable {
 
     @Override
     public ClusterTopology filterAll(ClusterFilter filter) {
-        ArgAssert.check(filter != null, "Filter must be not null.");
+        ArgAssert.notNull(filter, "Filter");
 
         if (nodes.isEmpty()) {
             return this;
@@ -441,7 +441,7 @@ public class DefaultClusterTopology implements ClusterTopology, Serializable {
 
     @Override
     public ClusterTopology filter(ClusterNodeFilter filter) {
-        ArgAssert.check(filter != null, "Filter must be not null.");
+        ArgAssert.notNull(filter, "Filter");
 
         Set<ClusterNode> filtered = null;
 

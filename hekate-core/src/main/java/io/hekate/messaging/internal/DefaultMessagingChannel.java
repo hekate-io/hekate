@@ -62,127 +62,127 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
 
     @Override
     public SendFuture send(T message) {
-        ArgAssert.check(message != null, "Message must be not null.");
+        ArgAssert.notNull(message, "Message");
 
         return gateway.send(affinity, message, this);
     }
 
     @Override
     public void send(T message, SendCallback callback) {
-        ArgAssert.check(message != null, "Message must be not null.");
+        ArgAssert.notNull(message, "Message");
 
         gateway.send(affinity, message, this, callback);
     }
 
     @Override
     public SendFuture affinitySend(Object affinityKey, T message) {
-        ArgAssert.check(message != null, "Message must be not null.");
-        ArgAssert.check(affinityKey != null, "Affinity key must be not null.");
+        ArgAssert.notNull(message, "Message");
+        ArgAssert.notNull(affinityKey, "Affinity key");
 
         return gateway.send(affinityKey, message, this);
     }
 
     @Override
     public void affinitySend(Object affinityKey, T message, SendCallback callback) {
-        ArgAssert.check(message != null, "Message must be not null.");
-        ArgAssert.check(callback != null, "Callback must be not null.");
-        ArgAssert.check(affinityKey != null, "Affinity key must be not null.");
+        ArgAssert.notNull(message, "Message");
+        ArgAssert.notNull(callback, "Callback");
+        ArgAssert.notNull(affinityKey, "Affinity key");
 
         gateway.send(affinityKey, message, this, callback);
     }
 
     @Override
     public <R extends T> RequestFuture<R> request(T message) {
-        ArgAssert.check(message != null, "Message must be not null.");
+        ArgAssert.notNull(message, "Message");
 
         return gateway.request(affinity, message, this);
     }
 
     @Override
     public void request(T message, RequestCallback<T> callback) {
-        ArgAssert.check(message != null, "Message must be not null.");
-        ArgAssert.check(callback != null, "Callback must be not null.");
+        ArgAssert.notNull(message, "Message");
+        ArgAssert.notNull(callback, "Callback");
 
         gateway.request(affinity, message, this, callback);
     }
 
     @Override
     public <R extends T> RequestFuture<R> affinityRequest(Object affinityKey, T message) {
-        ArgAssert.check(message != null, "Message must be not null.");
-        ArgAssert.check(affinityKey != null, "Affinity key must be not null.");
+        ArgAssert.notNull(message, "Message");
+        ArgAssert.notNull(affinityKey, "Affinity key");
 
         return gateway.request(affinityKey, message, this);
     }
 
     @Override
     public void affinityRequest(Object affinityKey, T message, RequestCallback<T> callback) {
-        ArgAssert.check(message != null, "Message must be not null.");
-        ArgAssert.check(callback != null, "Callback must be not null.");
-        ArgAssert.check(affinityKey != null, "Affinity key must be not null.");
+        ArgAssert.notNull(message, "Message");
+        ArgAssert.notNull(callback, "Callback");
+        ArgAssert.notNull(affinityKey, "Affinity key");
 
         gateway.request(affinityKey, message, this, callback);
     }
 
     @Override
     public BroadcastFuture<T> broadcast(T message) {
-        ArgAssert.check(message != null, "Message must be not null.");
+        ArgAssert.notNull(message, "Message");
 
         return gateway.broadcast(affinity, message, cluster);
     }
 
     @Override
     public void broadcast(T message, BroadcastCallback<T> callback) {
-        ArgAssert.check(message != null, "Message must be not null.");
-        ArgAssert.check(callback != null, "Callback must be not null.");
+        ArgAssert.notNull(message, "Message");
+        ArgAssert.notNull(callback, "Callback");
 
         gateway.broadcast(affinity, message, cluster, callback);
     }
 
     @Override
     public BroadcastFuture<T> affinityBroadcast(Object affinityKey, T message) {
-        ArgAssert.check(message != null, "Message must be not null.");
-        ArgAssert.check(affinityKey != null, "Affinity key must be not null.");
+        ArgAssert.notNull(message, "Message");
+        ArgAssert.notNull(affinityKey, "Affinity key");
 
         return gateway.broadcast(affinityKey, message, cluster);
     }
 
     @Override
     public void affinityBroadcast(Object affinityKey, T message, BroadcastCallback<T> callback) {
-        ArgAssert.check(message != null, "Message must be not null.");
-        ArgAssert.check(callback != null, "Callback must be not null.");
-        ArgAssert.check(affinityKey != null, "Affinity key must be not null.");
+        ArgAssert.notNull(message, "Message");
+        ArgAssert.notNull(callback, "Callback");
+        ArgAssert.notNull(affinityKey, "Affinity key");
 
         gateway.broadcast(affinityKey, message, cluster, callback);
     }
 
     @Override
     public <R extends T> AggregateFuture<R> aggregate(T message) {
-        ArgAssert.check(message != null, "Message must be not null.");
+        ArgAssert.notNull(message, "Message");
 
         return gateway.aggregate(affinity, message, cluster);
     }
 
     @Override
     public void aggregate(T message, AggregateCallback<T> callback) {
-        ArgAssert.check(message != null, "Message must be not null.");
-        ArgAssert.check(callback != null, "Callback must be not null.");
+        ArgAssert.notNull(message, "Message");
+        ArgAssert.notNull(callback, "Callback");
 
         gateway.aggregate(affinity, message, cluster, callback);
     }
 
     @Override
     public <R extends T> AggregateFuture<R> affinityAggregate(Object affinityKey, T message) {
-        ArgAssert.check(message != null, "Message must be not null.");
-        ArgAssert.check(affinityKey != null, "Affinity key must be not null.");
+        ArgAssert.notNull(message, "Message");
+        ArgAssert.notNull(affinityKey, "Affinity key");
 
         return gateway.aggregate(affinityKey, message, cluster);
     }
 
     @Override
     public void affinityAggregate(Object affinityKey, T message, AggregateCallback<T> callback) {
-        ArgAssert.check(message != null, "Message must be not null.");
-        ArgAssert.check(callback != null, "Callback must be not null.");
-        ArgAssert.check(affinityKey != null, "Affinity key must be not null.");
+        ArgAssert.notNull(message, "Message");
+        ArgAssert.notNull(callback, "Callback");
+        ArgAssert.notNull(affinityKey, "Affinity key");
 
         gateway.aggregate(affinityKey, message, cluster, callback);
     }
@@ -232,7 +232,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
 
     @Override
     public DefaultMessagingChannel<T> filterAll(ClusterFilter filter) {
-        ArgAssert.check(filter != null, "Filter must be not null.");
+        ArgAssert.notNull(filter, "Filter");
 
         return new DefaultMessagingChannel<>(gateway, cluster.filterAll(filter), balancer, failover, affinity);
     }

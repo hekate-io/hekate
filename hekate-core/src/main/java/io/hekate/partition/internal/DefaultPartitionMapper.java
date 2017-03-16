@@ -67,7 +67,7 @@ class DefaultPartitionMapper implements PartitionMapper {
 
         @Override
         public Partition map(Object key) {
-            ArgAssert.check(key != null, "Must be not null.");
+            ArgAssert.notNull(key, "Key");
 
             int partitionIdx = Utils.mod(key.hashCode(), partitionsSize);
 

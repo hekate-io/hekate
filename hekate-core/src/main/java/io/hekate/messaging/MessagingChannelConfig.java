@@ -490,7 +490,7 @@ public class MessagingChannelConfig<T> {
      * @param backPressure Back pressure configuration.
      */
     public void setBackPressure(MessagingBackPressureConfig backPressure) {
-        ArgAssert.check(backPressure != null, "Back pressure configuration must be not null.");
+        ArgAssert.notNull(backPressure, "Back pressure configuration");
 
         this.backPressure = backPressure;
     }

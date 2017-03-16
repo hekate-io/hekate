@@ -60,7 +60,7 @@ class DefaultCoordinationRequest implements CoordinationRequest {
 
     @Override
     public void reply(Object response) {
-        ArgAssert.check(response != null, "Response is null.");
+        ArgAssert.notNull(response, "Response");
 
         msg.reply(new CoordinationProtocol.Response(process, response));
     }

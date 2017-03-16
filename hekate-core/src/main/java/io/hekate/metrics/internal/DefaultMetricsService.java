@@ -259,7 +259,7 @@ public class DefaultMetricsService implements MetricsService, InitializingServic
 
     @Override
     public void addListener(MetricsListener listener) {
-        ArgAssert.check(listener != null, "Listener is null.");
+        ArgAssert.notNull(listener, "Listener");
 
         guard.lockReadWithStateCheck();
 
@@ -272,7 +272,7 @@ public class DefaultMetricsService implements MetricsService, InitializingServic
 
     @Override
     public void removeListener(MetricsListener listener) {
-        ArgAssert.check(listener != null, "Listener is null.");
+        ArgAssert.notNull(listener, "Listener");
 
         listeners.remove(listener);
     }

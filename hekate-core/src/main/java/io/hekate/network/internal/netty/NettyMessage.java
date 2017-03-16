@@ -87,9 +87,9 @@ class NettyMessage extends InputStream implements DataReader, NetworkMessage<Obj
 
     @Override
     public void handleAsync(Executor worker, Consumer<Object> handler, Consumer<Throwable> onError) {
-        ArgAssert.check(worker != null, "Message handling executor is null.");
-        ArgAssert.check(handler != null, "Message handler is null.");
-        ArgAssert.check(onError != null, "Error handler is null.");
+        ArgAssert.notNull(worker, "Worker");
+        ArgAssert.notNull(handler, "Handler");
+        ArgAssert.notNull(onError, "Error consumer");
 
         buf.retain();
 

@@ -85,7 +85,7 @@ class ServiceConfigurationContext implements ConfigurationContext {
 
     @Override
     public void addNodeRole(String role) {
-        ArgAssert.check(role != null, "Role is null.");
+        ArgAssert.notNull(role, "Role");
 
         checkState();
 
@@ -116,7 +116,7 @@ class ServiceConfigurationContext implements ConfigurationContext {
 
     @Override
     public void addServiceProperty(String name, String value) {
-        ArgAssert.check(name != null, "Property name must be not null.");
+        ArgAssert.notNull(name, "Property name");
 
         if (value != null && !value.isEmpty()) {
             checkState();

@@ -146,7 +146,7 @@ class FilteredClusterView implements ClusterView {
 
     @Override
     public ClusterView filterAll(ClusterFilter newFilter) {
-        ArgAssert.check(newFilter != null, "Filter must be not null.");
+        ArgAssert.notNull(newFilter, "Filter");
 
         return new FilteredClusterView(root, ClusterFilter.and(filter, newFilter));
     }
@@ -175,14 +175,14 @@ class FilteredClusterView implements ClusterView {
 
     @Override
     public void addListener(ClusterEventListener listener) {
-        ArgAssert.check(listener != null, "Listener must be not null.");
+        ArgAssert.notNull(listener, "Listener");
 
         root.addListener(new FilteredListener(filter, listener, Collections.emptySet()));
     }
 
     @Override
     public void addListener(ClusterEventListener listener, ClusterEventType... eventTypes) {
-        ArgAssert.check(listener != null, "Listener must be not null.");
+        ArgAssert.notNull(listener, "Listener");
 
         Set<ClusterEventType> eventTypesSet;
 

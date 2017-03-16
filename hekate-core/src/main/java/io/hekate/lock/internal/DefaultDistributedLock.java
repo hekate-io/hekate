@@ -110,8 +110,8 @@ class DefaultDistributedLock implements DistributedLock {
 
     @Override
     public Future<?> lockAsync(Executor executor, AsyncLockCallback callback) {
-        ArgAssert.check(executor != null, "Executor must be not null.");
-        ArgAssert.check(callback != null, "Callback must be not null.");
+        ArgAssert.notNull(executor, "Executor");
+        ArgAssert.notNull(callback, "Callback");
 
         if (DEBUG) {
             log.debug("Locking asynchronously [lock={}]", this);

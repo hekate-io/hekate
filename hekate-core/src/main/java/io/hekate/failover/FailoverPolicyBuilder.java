@@ -92,7 +92,7 @@ public class FailoverPolicyBuilder {
      * @return This instance.
      */
     public FailoverPolicyBuilder withErrorTypes(Class<? extends Throwable> errorType) {
-        ArgAssert.check(errorType != null, "Error type is null.");
+        ArgAssert.notNull(errorType, "Error type");
 
         if (errorTypes == null) {
             errorTypes = new ArrayList<>();
@@ -112,7 +112,7 @@ public class FailoverPolicyBuilder {
      */
     @SafeVarargs
     public final FailoverPolicyBuilder withErrorTypes(Class<? extends Throwable>... errorTypes) {
-        ArgAssert.check(errorTypes != null, "Error types are null.");
+        ArgAssert.notNull(errorTypes, "Error types array");
 
         for (Class<? extends Throwable> errorType : errorTypes) {
             withErrorTypes(errorType);
@@ -199,7 +199,7 @@ public class FailoverPolicyBuilder {
      * @return This instance.
      */
     public FailoverPolicyBuilder withRetryUntil(FailoverCondition retryUntil) {
-        ArgAssert.check(retryUntil != null, "Failover condition is null.");
+        ArgAssert.notNull(retryUntil, "Failover condition");
 
         if (this.retryUntil == null) {
             this.retryUntil = new ArrayList<>();

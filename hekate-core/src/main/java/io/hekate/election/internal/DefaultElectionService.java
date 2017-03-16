@@ -79,7 +79,7 @@ public class DefaultElectionService implements ElectionService, DependentService
     private ClusterNode localNode;
 
     public DefaultElectionService(ElectionServiceFactory factory) {
-        ArgAssert.check(factory != null, "Factory is null.");
+        ArgAssert.notNull(factory, "Factory");
 
         Utils.nullSafe(factory.getCandidates()).forEach(candidatesConfig::add);
 
@@ -215,7 +215,7 @@ public class DefaultElectionService implements ElectionService, DependentService
     }
 
     private CandidateHandler getRequiredHandler(String group) {
-        ArgAssert.check(group != null, "Group name must be not null.");
+        ArgAssert.notNull(group, "Group name");
 
         CandidateHandler handler;
 

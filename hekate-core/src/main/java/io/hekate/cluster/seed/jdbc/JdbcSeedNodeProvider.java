@@ -75,7 +75,7 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider {
      * @param cfg Configuration.
      */
     public JdbcSeedNodeProvider(JdbcSeedNodeProviderConfig cfg) {
-        ArgAssert.check(cfg != null, "configuration must be not null.");
+        ArgAssert.notNull(cfg, "configuration");
 
         ConfigCheck check = ConfigCheck.get(JdbcSeedNodeProviderConfig.class);
 

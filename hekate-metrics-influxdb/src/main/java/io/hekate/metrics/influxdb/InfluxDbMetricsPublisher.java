@@ -105,7 +105,7 @@ class InfluxDbMetricsPublisher {
     private ExecutorService worker;
 
     public InfluxDbMetricsPublisher(InfluxDbMetricsConfig cfg) {
-        ArgAssert.check(cfg != null, "Configuration must be not null.");
+        ArgAssert.notNull(cfg, "Configuration");
 
         ConfigCheck check = ConfigCheck.get(InfluxDbMetricsConfig.class);
 

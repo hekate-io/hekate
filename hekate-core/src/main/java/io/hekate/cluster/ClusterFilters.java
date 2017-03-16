@@ -158,7 +158,7 @@ public final class ClusterFilters {
      * @return Filter.
      */
     public static ClusterFilter forNode(ClusterNodeId nodeId) {
-        ArgAssert.check(nodeId != null, "Node must be not null.");
+        ArgAssert.notNull(nodeId, "Node");
 
         return nodes -> {
             if (nodes.isEmpty()) {
@@ -183,7 +183,7 @@ public final class ClusterFilters {
      * @return Filter.
      */
     public static ClusterFilter forNode(ClusterNode node) {
-        ArgAssert.check(node != null, "Node must be not null.");
+        ArgAssert.notNull(node, "Node");
 
         Set<ClusterNode> single = Collections.singleton(node);
 
@@ -216,7 +216,7 @@ public final class ClusterFilters {
      * @return Group filter.
      */
     public static ClusterFilter forFilter(ClusterNodeFilter filter) {
-        ArgAssert.check(filter != null, "Filter must be not null.");
+        ArgAssert.notNull(filter, "Filter");
 
         return nodes -> {
             Set<ClusterNode> result = null;
@@ -249,7 +249,7 @@ public final class ClusterFilters {
      * @return Filter.
      */
     public static ClusterFilter forRole(String role) {
-        ArgAssert.check(role != null, "Role must be not null.");
+        ArgAssert.notNull(role, "Role");
 
         return forFilter(n -> n.hasRole(role));
     }
@@ -262,7 +262,7 @@ public final class ClusterFilters {
      * @return Filter.
      */
     public static ClusterFilter forProperty(String name) {
-        ArgAssert.check(name != null, "Property name is null.");
+        ArgAssert.notNull(name, "Property name");
 
         return forFilter(n -> n.hasProperty(name));
     }
@@ -276,8 +276,8 @@ public final class ClusterFilters {
      * @return Filter.
      */
     public static ClusterFilter forProperty(String name, String value) {
-        ArgAssert.check(name != null, "Property name is null.");
-        ArgAssert.check(value != null, "Property value is null.");
+        ArgAssert.notNull(name, "Property name");
+        ArgAssert.notNull(value, "Property value");
 
         return forFilter(n -> value.equals(n.getProperty(name)));
     }
@@ -290,7 +290,7 @@ public final class ClusterFilters {
      * @return Filter.
      */
     public static ClusterFilter forService(Class<? extends Service> type) {
-        ArgAssert.check(type != null, "Service type must be not null.");
+        ArgAssert.notNull(type, "Service type");
 
         return forFilter(n -> n.hasService(type));
     }

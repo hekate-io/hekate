@@ -86,7 +86,7 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider {
      * @param cfg Configuration.
      */
     public CloudStoreSeedNodeProvider(CloudStoreSeedNodeProviderConfig cfg) {
-        ArgAssert.check(cfg != null, "Configuration is null.");
+        ArgAssert.notNull(cfg, "Configuration");
 
         ConfigCheck check = ConfigCheck.get(CloudStoreSeedNodeProvider.class);
 

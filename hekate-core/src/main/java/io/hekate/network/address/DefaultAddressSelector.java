@@ -110,7 +110,7 @@ public class DefaultAddressSelector implements AddressSelector {
      * @param cfg Configuration.
      */
     public DefaultAddressSelector(DefaultAddressSelectorConfig cfg) {
-        ArgAssert.check(cfg != null, "Configuration is null.");
+        ArgAssert.notNull(cfg, "Configuration");
 
         ipVersion = cfg.getIpVersion();
         excludeLoopback = cfg.isExcludeLoopback();

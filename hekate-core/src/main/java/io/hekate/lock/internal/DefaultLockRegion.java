@@ -204,14 +204,14 @@ class DefaultLockRegion implements LockRegion {
 
     @Override
     public DistributedLock getLock(String name) {
-        ArgAssert.check(name != null, "Lock name must be not null.");
+        ArgAssert.notNull(name, "Lock name");
 
         return new DefaultDistributedLock(name, this);
     }
 
     @Override
     public Optional<LockOwnerInfo> getLockOwner(String lockName) throws InterruptedException {
-        ArgAssert.check(lockName != null, "Lock name must be not null.");
+        ArgAssert.notNull(lockName, "Lock name");
 
         if (!awaitForInitialMigration()) {
             return Optional.empty();

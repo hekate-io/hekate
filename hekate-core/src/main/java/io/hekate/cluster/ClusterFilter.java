@@ -47,8 +47,8 @@ public interface ClusterFilter {
      * @return New filter.
      */
     static ClusterFilter and(ClusterFilter f1, ClusterFilter f2) {
-        ArgAssert.check(f1 != null, "First filter must be not null.");
-        ArgAssert.check(f2 != null, "Second filter must be not null.");
+        ArgAssert.notNull(f1, "First filter");
+        ArgAssert.notNull(f2, "Second filter");
 
         return nodes -> {
             Set<ClusterNode> filtered = f1.apply(nodes);

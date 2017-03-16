@@ -73,7 +73,7 @@ public class DefaultFailoverContext implements FailoverContext {
 
         @Override
         public FailureResolution withRoutingPolicy(FailoverRoutingPolicy routingPolicy) {
-            ArgAssert.check(routingPolicy != null, "Routing policy is null.");
+            ArgAssert.notNull(routingPolicy, "Routing policy");
 
             this.routingPolicy = routingPolicy;
 

@@ -101,8 +101,8 @@ class DefaultCoordinationMember implements CoordinationMember {
 
     @Override
     public void request(Object request, CoordinationRequestCallback callback) {
-        ArgAssert.check(request != null, "request is null.");
-        ArgAssert.check(callback != null, "callback is null.");
+        ArgAssert.notNull(request, "Request");
+        ArgAssert.notNull(callback, "Callback");
 
         if (DEBUG) {
             log.debug("Sending coordination request [to={}, message={}]", node, request);

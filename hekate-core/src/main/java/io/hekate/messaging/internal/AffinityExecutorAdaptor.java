@@ -33,7 +33,7 @@ class AffinityExecutorAdaptor implements Executor {
     }
 
     public Executor getExecutor(Object affinityKey) {
-        ArgAssert.check(affinityKey != null, "Affinity key must be not null.");
+        ArgAssert.notNull(affinityKey, "Affinity key");
 
         return async.workerFor(affinityKey.hashCode());
     }

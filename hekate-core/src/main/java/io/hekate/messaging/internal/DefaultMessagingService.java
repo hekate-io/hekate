@@ -295,7 +295,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     @Override
     public <T> DefaultMessagingChannel<T> get(String channelName) {
-        ArgAssert.check(channelName != null, "Channel name must be not null.");
+        ArgAssert.notNull(channelName, "Channel name");
 
         guard.lockReadWithStateCheck();
 

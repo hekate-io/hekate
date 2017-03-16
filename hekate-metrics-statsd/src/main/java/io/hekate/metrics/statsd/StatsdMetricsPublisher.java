@@ -92,7 +92,7 @@ class StatsdMetricsPublisher {
     private ExecutorService worker;
 
     public StatsdMetricsPublisher(StatsdMetricsConfig cfg) {
-        ArgAssert.check(cfg != null, "Configuration must be not null.");
+        ArgAssert.notNull(cfg, "Configuration");
 
         ConfigCheck check = ConfigCheck.get(StatsdMetricsPublisher.class);
 

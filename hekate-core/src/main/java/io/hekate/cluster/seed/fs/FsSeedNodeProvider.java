@@ -75,7 +75,7 @@ public class FsSeedNodeProvider implements SeedNodeProvider {
      * {@link FsSeedNodeProviderConfig#getWorkDir()}.
      */
     public FsSeedNodeProvider(FsSeedNodeProviderConfig cfg) throws IOException {
-        ArgAssert.check(cfg != null, "configuration is null.");
+        ArgAssert.notNull(cfg, "configuration");
 
         ConfigCheck check = ConfigCheck.get(FsSeedNodeProviderConfig.class);
 
