@@ -43,9 +43,7 @@ import java.util.function.Predicate;
  *
  * <p>
  * Cluster views can be stacked. If you call {@link #filter(ClusterNodeFilter)} method on a view that is already filtered then the
- * resulting view will contain only those nodes that match both filters (i.e. existing filter of this view and the new filter). If stacking
- * is not needed then consider calling {@link #getUnfiltered()} method to get the root (unfiltered) view and using this view for
- * further filtering.
+ * resulting view will contain only those nodes that match both filters (i.e. existing filter of this view and the new filter).
  * </p>
  */
 public interface ClusterView extends ClusterFilterSupport<ClusterView> {
@@ -55,13 +53,6 @@ public interface ClusterView extends ClusterFilterSupport<ClusterView> {
      * @return Cluster topology.
      */
     ClusterTopology getTopology();
-
-    /**
-     * Returns the unfiltered (root) cluster view.
-     *
-     * @return Root cluster view without any filters being applied.
-     */
-    ClusterView getUnfiltered();
 
     /**
      * Registers the cluster event listener.

@@ -490,11 +490,6 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     }
 
     @Override
-    public ClusterView getUnfiltered() {
-        return this;
-    }
-
-    @Override
     public ClusterView filterAll(ClusterFilter filter) {
         ArgAssert.notNull(filter, "Filter");
 

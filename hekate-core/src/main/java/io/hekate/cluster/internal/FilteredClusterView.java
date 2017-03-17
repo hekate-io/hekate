@@ -169,11 +169,6 @@ class FilteredClusterView implements ClusterView {
     }
 
     @Override
-    public ClusterView getUnfiltered() {
-        return root;
-    }
-
-    @Override
     public void addListener(ClusterEventListener listener) {
         ArgAssert.notNull(listener, "Listener");
 
