@@ -200,11 +200,6 @@ class FilteredTaskService implements TaskService {
     }
 
     @Override
-    public TaskService getUnfiltered() {
-        return parent.getUnfiltered();
-    }
-
-    @Override
     public TaskService withFailover(FailoverPolicy policy) {
         return new FilteredTaskService(this, channel.withFailover(policy), filter);
     }
@@ -392,6 +387,6 @@ class FilteredTaskService implements TaskService {
 
     @Override
     public String toString() {
-        return getUnfiltered().toString();
+        return parent.toString();
     }
 }

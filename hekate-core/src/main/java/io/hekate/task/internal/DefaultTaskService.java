@@ -267,11 +267,6 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
     }
 
     @Override
-    public TaskService getUnfiltered() {
-        return this;
-    }
-
-    @Override
     public TaskService withFailover(FailoverPolicy policy) {
         return getRootExecutor().withFailover(policy);
     }

@@ -435,15 +435,6 @@ public interface TaskService extends Service, ClusterFilterSupport<TaskService> 
     boolean hasFilter();
 
     /**
-     * Returns a service instance that doesn't have any filters applied.
-     *
-     * @return Unfiltered service instance.
-     *
-     * @see #filter(ClusterNodeFilter)
-     */
-    TaskService getUnfiltered();
-
-    /**
      * Returns a new lightweight wrapper that will use the specified failover policy and will inherit all cluster filtering options from
      * this instance.
      *
