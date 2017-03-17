@@ -147,8 +147,8 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
             awaitForReplicatedMetric("c1_" + i, 0, inst1, Arrays.asList(inst1, inst2));
             awaitForReplicatedMetric("c2_" + i, 0, inst2, Arrays.asList(inst1, inst2));
 
-            assertNull(cs1.forNode(inst2.getNode()).get().getMetric("no_2" + i));
-            assertNull(cs2.forNode(inst1.getNode()).get().getMetric("no_1" + i));
+            assertNull(cs1.forNode(inst2.getNode()).get().metric("no_2" + i));
+            assertNull(cs2.forNode(inst1.getNode()).get().metric("no_1" + i));
 
             c1.add(100);
             c2.add(200);
@@ -159,8 +159,8 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
             awaitForReplicatedMetric("c1_" + i, 100, inst1, Arrays.asList(inst1, inst2));
             awaitForReplicatedMetric("c2_" + i, 200, inst2, Arrays.asList(inst1, inst2));
 
-            assertNull(cs1.forNode(inst2.getNode()).get().getMetric("no_2" + i));
-            assertNull(cs2.forNode(inst1.getNode()).get().getMetric("no_1" + i));
+            assertNull(cs1.forNode(inst2.getNode()).get().metric("no_2" + i));
+            assertNull(cs2.forNode(inst1.getNode()).get().metric("no_1" + i));
 
             c1.add(1000);
             c2.add(2000);
@@ -168,8 +168,8 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
             awaitForReplicatedMetric("c1_" + i, 1100, inst1, Arrays.asList(inst1, inst2));
             awaitForReplicatedMetric("c2_" + i, 2200, inst2, Arrays.asList(inst1, inst2));
 
-            assertNull(cs1.forNode(inst2.getNode()).get().getMetric("no_2" + i));
-            assertNull(cs2.forNode(inst1.getNode()).get().getMetric("no_1" + i));
+            assertNull(cs1.forNode(inst2.getNode()).get().metric("no_2" + i));
+            assertNull(cs2.forNode(inst1.getNode()).get().metric("no_1" + i));
         });
     }
 
@@ -196,14 +196,14 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
             awaitForReplicatedMetric("c1_" + i, 0, inst1, Arrays.asList(inst1, inst2));
             awaitForReplicatedMetric("c2_" + i, 0, inst2, Arrays.asList(inst1, inst2));
 
-            assertTrue(cs1.getMetrics(m -> m.getName().startsWith("c")).stream().anyMatch(n -> n.getNode().equals(inst1.getNode())));
-            assertTrue(cs2.getMetrics(m -> m.getName().startsWith("c")).stream().anyMatch(n -> n.getNode().equals(inst1.getNode())));
+            assertTrue(cs1.forAll(m -> m.getName().startsWith("c")).stream().anyMatch(n -> n.getNode().equals(inst1.getNode())));
+            assertTrue(cs2.forAll(m -> m.getName().startsWith("c")).stream().anyMatch(n -> n.getNode().equals(inst1.getNode())));
 
-            assertTrue(cs1.getMetrics(m -> m.getName().startsWith("no1")).stream().noneMatch(n -> n.getNode().equals(inst2.getNode())));
-            assertTrue(cs2.getMetrics(m -> m.getName().startsWith("no2")).stream().noneMatch(n -> n.getNode().equals(inst1.getNode())));
+            assertTrue(cs1.forAll(m -> m.getName().startsWith("no1")).stream().noneMatch(n -> n.getNode().equals(inst2.getNode())));
+            assertTrue(cs2.forAll(m -> m.getName().startsWith("no2")).stream().noneMatch(n -> n.getNode().equals(inst1.getNode())));
 
-            assertTrue(cs1.getMetrics(m -> false).isEmpty());
-            assertTrue(cs2.getMetrics(m -> false).isEmpty());
+            assertTrue(cs1.forAll(m -> false).isEmpty());
+            assertTrue(cs2.forAll(m -> false).isEmpty());
         });
     }
 
@@ -250,20 +250,20 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
             awaitForReplicatedMetric("p", i, instances);
 
             for (ClusterMetricsService service : clusterServices) {
-                assertEquals(instances.size(), service.getMetrics().size());
+                assertEquals(instances.size(), service.forAll().size());
 
                 for (HekateTestInstance inst : instances) {
                     ClusterNodeMetrics nodeMetrics = service.forNode(inst.getNode()).get();
 
-                    assertNotNull(nodeMetrics.getMetric("c"));
-                    assertTrue(nodeMetrics.getAll().containsKey("c"));
+                    assertNotNull(nodeMetrics.metric("c"));
+                    assertTrue(nodeMetrics.allMetrics().containsKey("c"));
                     assertEquals(inst.getNode(), nodeMetrics.getNode());
-                    assertEquals(i, nodeMetrics.getMetric("c").getValue());
+                    assertEquals(i, nodeMetrics.metric("c").getValue());
 
-                    assertNotNull(nodeMetrics.getMetric("p"));
-                    assertTrue(nodeMetrics.getAll().containsKey("p"));
+                    assertNotNull(nodeMetrics.metric("p"));
+                    assertTrue(nodeMetrics.allMetrics().containsKey("p"));
                     assertEquals(inst.getNode(), nodeMetrics.getNode());
-                    assertEquals(i, nodeMetrics.getMetric("p").getValue());
+                    assertEquals(i, nodeMetrics.metric("p").getValue());
                 }
             }
         });
@@ -319,20 +319,20 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
             awaitForReplicatedMetric("p", 1000 + i, instances);
 
             for (ClusterMetricsService service : clusterServices) {
-                assertEquals(instances.size(), service.getMetrics().size());
+                assertEquals(instances.size(), service.forAll().size());
 
                 for (HekateTestInstance inst : instances) {
                     ClusterNodeMetrics nodeMetrics = service.forNode(inst.getNode()).get();
 
-                    assertNotNull(nodeMetrics.getMetric("c"));
-                    assertTrue(nodeMetrics.getAll().containsKey("c"));
+                    assertNotNull(nodeMetrics.metric("c"));
+                    assertTrue(nodeMetrics.allMetrics().containsKey("c"));
                     assertEquals(inst.getNode(), nodeMetrics.getNode());
-                    assertEquals(1000 + oldVal, nodeMetrics.getMetric("c").getValue());
+                    assertEquals(1000 + oldVal, nodeMetrics.metric("c").getValue());
 
-                    assertNotNull(nodeMetrics.getMetric("p"));
-                    assertTrue(nodeMetrics.getAll().containsKey("p"));
+                    assertNotNull(nodeMetrics.metric("p"));
+                    assertTrue(nodeMetrics.allMetrics().containsKey("p"));
                     assertEquals(inst.getNode(), nodeMetrics.getNode());
-                    assertEquals(1000 + i, nodeMetrics.getMetric("p").getValue());
+                    assertEquals(1000 + i, nodeMetrics.metric("p").getValue());
                 }
             }
 
@@ -430,7 +430,7 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
                 for (HekateTestInstance checkNode : checkNodes) {
                     ClusterNodeMetrics metrics = service.forNode(checkNode.getNode()).orElse(null);
 
-                    if (metrics == null || metrics.getMetric(metric) == null || metrics.getMetric(metric).getValue() != value) {
+                    if (metrics == null || metrics.metric(metric) == null || metrics.metric(metric).getValue() != value) {
                         return false;
                     }
                 }

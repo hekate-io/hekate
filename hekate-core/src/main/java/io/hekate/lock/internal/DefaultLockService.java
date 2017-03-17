@@ -210,7 +210,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
             scheduler.setRemoveOnCancelPolicy(true);
 
-            MessagingChannel<LockProtocol> channel = messaging.get(LOCK_PREFIX);
+            MessagingChannel<LockProtocol> channel = messaging.channel(LOCK_PREFIX);
 
             regionsConfig.forEach(cfg -> {
                 if (DEBUG) {
@@ -219,7 +219,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
                 String name = cfg.getName().trim();
 
-                PartitionMapper mapper = partitions.get(LOCK_PREFIX + '.' + name);
+                PartitionMapper mapper = partitions.mapper(LOCK_PREFIX + '.' + name);
 
                 regions.put(name, new DefaultLockRegion(name, node.getId(), scheduler, mapper, channel, retryInterval));
             });
@@ -280,7 +280,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
     }
 
     @Override
-    public List<LockRegion> getRegions() {
+    public List<LockRegion> allRegions() {
         guard.lockReadWithStateCheck();
 
         try {
@@ -291,7 +291,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
     }
 
     @Override
-    public DefaultLockRegion get(String region) {
+    public DefaultLockRegion region(String region) {
         guard.lockReadWithStateCheck();
 
         try {
@@ -306,7 +306,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
     }
 
     @Override
-    public boolean has(String region) {
+    public boolean hasRegion(String region) {
         guard.lockReadWithStateCheck();
 
         try {

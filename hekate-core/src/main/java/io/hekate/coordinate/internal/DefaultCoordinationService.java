@@ -196,7 +196,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
             cluster.addListener(this::processTopologyChange, ClusterEventType.JOIN, ClusterEventType.CHANGE);
 
-            MessagingChannel<CoordinationProtocol> channel = messaging.get(MESSAGING_CHANNEL);
+            MessagingChannel<CoordinationProtocol> channel = messaging.channel(MESSAGING_CHANNEL);
 
             processesConfig.forEach(cfg ->
                 register(cfg, channel)
@@ -240,7 +240,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
     }
 
     @Override
-    public List<CoordinationProcess> getProcesses() {
+    public List<CoordinationProcess> allProcesses() {
         guard.lockReadWithStateCheck();
 
         try {
@@ -251,7 +251,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
     }
 
     @Override
-    public CoordinationProcess get(String name) {
+    public CoordinationProcess process(String name) {
         DefaultCoordinationProcess process;
 
         guard.lockReadWithStateCheck();
@@ -268,7 +268,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
     }
 
     @Override
-    public boolean has(String name) {
+    public boolean hasProcess(String name) {
         guard.lockReadWithStateCheck();
 
         try {
@@ -279,8 +279,8 @@ public class DefaultCoordinationService implements CoordinationService, Configur
     }
 
     @Override
-    public CoordinationFuture getFuture(String process) {
-        return get(process).getFuture();
+    public CoordinationFuture futureOf(String process) {
+        return process(process).getFuture();
     }
 
     private void register(CoordinationProcessConfig cfg, MessagingChannel<CoordinationProtocol> channel) {

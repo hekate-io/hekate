@@ -39,7 +39,7 @@ import java.util.concurrent.Executor;
  * </p>
  *
  * <p>
- * Instances of this interface can be obtained via {@link MessagingService#get(String)} method.
+ * Instances of this interface can be obtained via {@link MessagingService#channel(String)} method.
  * </p>
  *
  * <p>
@@ -48,7 +48,7 @@ import java.util.concurrent.Executor;
  *
  * @param <T> Base type fo messages that can be handled by channels.
  *
- * @see MessagingService#get(String)
+ * @see MessagingService#channel(String)
  */
 public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChannel<T>> {
     /**

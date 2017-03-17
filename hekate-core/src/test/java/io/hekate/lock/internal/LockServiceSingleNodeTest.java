@@ -33,11 +33,11 @@ public class LockServiceSingleNodeTest extends HekateInstanceTestBase {
     public void testEmptyRegions() throws Exception {
         LockService locks = createInstance(boot -> boot.withService(new LockServiceFactory())).join().get(LockService.class);
 
-        assertTrue(locks.getRegions().isEmpty());
+        assertTrue(locks.allRegions().isEmpty());
 
-        assertFalse(locks.has("no-such-region"));
+        assertFalse(locks.hasRegion("no-such-region"));
 
-        expect(IllegalArgumentException.class, () -> locks.get("no-such-region"));
+        expect(IllegalArgumentException.class, () -> locks.region("no-such-region"));
     }
 
     @Test
@@ -49,18 +49,18 @@ public class LockServiceSingleNodeTest extends HekateInstanceTestBase {
             )
         ).join().get(LockService.class);
 
-        assertTrue(locks.has("test1"));
-        assertTrue(locks.has("test2"));
+        assertTrue(locks.hasRegion("test1"));
+        assertTrue(locks.hasRegion("test2"));
 
-        LockRegion region1 = locks.get("test1");
-        LockRegion region2 = locks.get("test2");
+        LockRegion region1 = locks.region("test1");
+        LockRegion region2 = locks.region("test2");
 
         assertNotNull(region1);
         assertNotNull(region2);
 
-        assertEquals(2, locks.getRegions().size());
-        assertTrue(locks.getRegions().contains(locks.get("test1")));
-        assertTrue(locks.getRegions().contains(region2));
+        assertEquals(2, locks.allRegions().size());
+        assertTrue(locks.allRegions().contains(locks.region("test1")));
+        assertTrue(locks.allRegions().contains(region2));
 
         region1.getLock("lock").lock();
         region2.getLock("lock").lock();

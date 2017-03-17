@@ -279,7 +279,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
     }
 
     @Override
-    public List<MessagingChannel<?>> getChannels() {
+    public List<MessagingChannel<?>> allChannels() {
         guard.lockReadWithStateCheck();
 
         try {
@@ -294,7 +294,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
     }
 
     @Override
-    public <T> DefaultMessagingChannel<T> get(String channelName) {
+    public <T> DefaultMessagingChannel<T> channel(String channelName) {
         ArgAssert.notNull(channelName, "Channel name");
 
         guard.lockReadWithStateCheck();
@@ -312,7 +312,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
     }
 
     @Override
-    public boolean has(String channelName) {
+    public boolean hasChannel(String channelName) {
         guard.lockReadWithStateCheck();
 
         try {
@@ -344,7 +344,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         ClusterNode localNode = cluster.getNode();
         ClusterView clusterView = cluster.filter(new ChannelNodeFilter(name, filter));
 
-        NetworkConnector<MessagingProtocol> connector = net.get(name);
+        NetworkConnector<MessagingProtocol> connector = net.connector(name);
 
         // Check if channel has idle connections timeout.
         boolean checkIdle;

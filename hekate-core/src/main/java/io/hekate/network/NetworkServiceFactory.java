@@ -731,7 +731,7 @@ public class NetworkServiceFactory implements ServiceFactory<NetworkService> {
      *
      * @param connectors Connector configurations.
      *
-     * @see NetworkService#get(String)
+     * @see NetworkService#connector(String)
      */
     public void setConnectors(List<NetworkConnectorConfig<?>> connectors) {
         this.connectors = connectors;

@@ -94,7 +94,7 @@ public class LockMigrationTest extends LockServiceTestBase {
             for (int i = 0; i < 50; i++) {
                 String lockName = "'" + n.getNode().getJoinOrder() + "-" + i + '\'';
 
-                DistributedLock lockReg1 = n.get(LockService.class).get(REGION_1).getLock(lockName);
+                DistributedLock lockReg1 = n.get(LockService.class).region(REGION_1).getLock(lockName);
 
                 lockReg1.lock();
 
@@ -104,7 +104,7 @@ public class LockMigrationTest extends LockServiceTestBase {
             for (int i = 0; i < 25; i++) {
                 String lockName = "'" + n.getNode().getJoinOrder() + "-" + i + '\'';
 
-                DistributedLock lockReg2 = n.get(LockService.class).get(REGION_2).getLock(lockName);
+                DistributedLock lockReg2 = n.get(LockService.class).region(REGION_2).getLock(lockName);
 
                 lockReg2.lock();
 
@@ -323,7 +323,7 @@ public class LockMigrationTest extends LockServiceTestBase {
 
         assertFalse(migrated.get());
 
-        DistributedLock lock = newNode.get(LockService.class).get("otherRegion").getLock("otherLock");
+        DistributedLock lock = newNode.get(LockService.class).region("otherRegion").getLock("otherLock");
 
         assertTrue(lock.tryLock());
 
@@ -342,7 +342,7 @@ public class LockMigrationTest extends LockServiceTestBase {
         existingLock.unlock();
 
         // Prepare lock.
-        DistributedLock lock = nextAfterCoordinator.get(LockService.class).get(REGION_1).getLock(existingLock.getName());
+        DistributedLock lock = nextAfterCoordinator.get(LockService.class).region(REGION_1).getLock(existingLock.getName());
 
         AtomicBoolean queuedLocked = new AtomicBoolean();
         CountDownLatch lockLatch = new CountDownLatch(1);
@@ -453,7 +453,7 @@ public class LockMigrationTest extends LockServiceTestBase {
     }
 
     private void setCallback(HekateTestInstance node, LockMigrationCallback callback) {
-        node.get(DefaultLockService.class).get(REGION_1).setMigrationCallback(callback);
+        node.get(DefaultLockService.class).region(REGION_1).setMigrationCallback(callback);
     }
 
     private boolean checkBusy(DistributedLock lock) {

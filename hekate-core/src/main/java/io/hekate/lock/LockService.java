@@ -130,7 +130,7 @@ public interface LockService extends Service {
      *
      * @return Lock regions or an empty collection if there are no registered regions.
      */
-    List<LockRegion> getRegions();
+    List<LockRegion> allRegions();
 
     /**
      * Returns a lock region for the specified name.
@@ -145,7 +145,7 @@ public interface LockService extends Service {
      *
      * @see LockServiceFactory#withRegion(LockRegionConfig)
      */
-    LockRegion get(String region);
+    LockRegion region(String region);
 
     /**
      * Returns {@code true} if this service has a lock region with the specified name.
@@ -154,5 +154,5 @@ public interface LockService extends Service {
      *
      * @return {@code true} if region exists.
      */
-    boolean has(String region);
+    boolean hasRegion(String region);
 }

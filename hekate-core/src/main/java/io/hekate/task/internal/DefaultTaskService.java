@@ -227,7 +227,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
                 log.debug("Initializing...");
             }
 
-            MessagingChannel<TaskProtocol> channel = messaging.get(CHANNEL_NAME);
+            MessagingChannel<TaskProtocol> channel = messaging.channel(CHANNEL_NAME);
 
             rootExecutor = new FilteredTaskService(this, channel);
 

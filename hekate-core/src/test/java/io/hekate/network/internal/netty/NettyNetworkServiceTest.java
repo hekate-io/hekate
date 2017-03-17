@@ -126,7 +126,7 @@ public class NettyNetworkServiceTest extends NetworkTestBase {
         serverService.start();
         clientService.start();
 
-        NetworkClient<Object> client = clientService.get("test").newClient();
+        NetworkClient<Object> client = clientService.connector("test").newClient();
 
         NetworkClientCallbackMock<Object> callback = new NetworkClientCallbackMock<>();
 
@@ -172,7 +172,7 @@ public class NettyNetworkServiceTest extends NetworkTestBase {
 
         InetSocketAddress connectAddr = new InetSocketAddress(InetAddress.getLocalHost(), bindAddr.getPort());
 
-        NetworkConnector<String> connector = service.get(protocol);
+        NetworkConnector<String> connector = service.connector(protocol);
 
         NetworkClient<String> client = connector.newClient();
 

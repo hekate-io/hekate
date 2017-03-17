@@ -23,7 +23,7 @@ import io.hekate.cluster.ClusterTopology;
  *
  * <p>
  * This interface represents a data partition mapper within the {@link PartitionService} and is responsible for mapping user-provided data
- * keys to cluster partitions. Instances of this interface can be obtained via the {@link PartitionService#get(String)} method.
+ * keys to cluster partitions. Instances of this interface can be obtained via the {@link PartitionService#mapper(String)} method.
  * </p>
  *
  * <p>
@@ -31,7 +31,7 @@ import io.hekate.cluster.ClusterTopology;
  * interface.
  * </p>
  *
- * @see PartitionService#get(String)
+ * @see PartitionService#mapper(String)
  * @see PartitionServiceFactory#withMapper(PartitionMapperConfig)
  */
 public interface PartitionMapper {
@@ -57,7 +57,7 @@ public interface PartitionMapper {
      *
      * <p>
      * Mapper name can be configured via the {@link PartitionMapperConfig#setName(String)} method and can be used to obtain mappers via the
-     * {@link PartitionService#get(String)} method.
+     * {@link PartitionService#mapper(String)} method.
      * </p>
      *
      * @return Name of this mapper.

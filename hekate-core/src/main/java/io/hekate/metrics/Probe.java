@@ -28,7 +28,7 @@ package io.hekate.metrics;
  * <p>
  * Once probe is registered, the {@link MetricsService} will start polling it every {@link
  * MetricsServiceFactory#getRefreshInterval()} in order to get the latest probe value. Such value is cached within the service for the
- * duration of refresh interval and can be obtained via {@link MetricsService#getMetric(String)} method.
+ * duration of refresh interval and can be obtained via {@link MetricsService#metric(String)} method.
  * </p>
  *
  * <p>

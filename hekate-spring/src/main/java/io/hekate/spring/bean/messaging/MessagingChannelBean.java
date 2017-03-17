@@ -30,7 +30,7 @@ public class MessagingChannelBean extends HekateBaseBean<MessagingChannel<?>> {
 
     @Override
     public MessagingChannel<?> getObject() throws Exception {
-        return getSource().get(MessagingService.class).get(getChannel());
+        return getSource().get(MessagingService.class).channel(getChannel());
     }
 
     @Override

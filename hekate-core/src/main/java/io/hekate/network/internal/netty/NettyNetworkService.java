@@ -485,7 +485,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
     }
 
     @Override
-    public <T> NetworkConnector<T> get(String protocol) throws IllegalArgumentException {
+    public <T> NetworkConnector<T> connector(String protocol) throws IllegalArgumentException {
         ArgAssert.notNull(protocol, "Protocol");
 
         guard.tryLockReadWithStateCheck();
@@ -505,7 +505,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
     }
 
     @Override
-    public boolean has(String protocol) {
+    public boolean hasConnector(String protocol) {
         guard.tryLockReadWithStateCheck();
 
         try {
@@ -517,7 +517,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
 
     @Override
     public void ping(InetSocketAddress address, PingCallback callback) {
-        get(PING_PROTOCOL).newClient().connect(address, new NetworkClientCallback<Object>() {
+        connector(PING_PROTOCOL).newClient().connect(address, new NetworkClientCallback<Object>() {
             @Override
             public void onConnect(NetworkClient<Object> client) {
                 client.disconnect();

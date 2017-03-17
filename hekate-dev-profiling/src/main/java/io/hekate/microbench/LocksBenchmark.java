@@ -51,7 +51,7 @@ public class LocksBenchmark {
         @Override
         protected void initialize(List<Hekate> nodes) throws Exception {
             regions = nodes.stream()
-                .map(n -> n.get(LockService.class).get("test"))
+                .map(n -> n.get(LockService.class).region("test"))
                 .collect(toList());
         }
     }

@@ -71,7 +71,7 @@ public class CoordinationProcessConfig {
      *
      * @param name Process name.
      *
-     * @see CoordinationService#get(String)
+     * @see CoordinationService#process(String)
      */
     public void setName(String name) {
         this.name = name;

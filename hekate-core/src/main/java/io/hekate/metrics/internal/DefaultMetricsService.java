@@ -289,7 +289,7 @@ public class DefaultMetricsService implements MetricsService, InitializingServic
     }
 
     @Override
-    public Map<String, Metric> getAll() {
+    public Map<String, Metric> allMetrics() {
         guard.lockReadWithStateCheck();
 
         try {
@@ -300,7 +300,7 @@ public class DefaultMetricsService implements MetricsService, InitializingServic
     }
 
     @Override
-    public Metric getMetric(String name) {
+    public Metric metric(String name) {
         guard.lockReadWithStateCheck();
 
         try {

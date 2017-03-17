@@ -70,12 +70,12 @@ public class HekateMetricsServiceConfigurerTest extends HekateAutoConfigurerTest
 
         @Bean
         public Metric probe1(MetricsService metricsService) {
-            return metricsService.getMetric("test.probe1");
+            return metricsService.metric("test.probe1");
         }
 
         @Bean
         public Metric probe2(MetricsService metricsService) {
-            return metricsService.getMetric("test.probe2");
+            return metricsService.metric("test.probe2");
         }
 
         @Bean
@@ -125,14 +125,14 @@ public class HekateMetricsServiceConfigurerTest extends HekateAutoConfigurerTest
         assertNotNull(get(LocalMetricsTestConfig.InnerBean.class).innerCounter);
         assertNotNull(get(LocalMetricsTestConfig.InnerBean.class).innerMetric);
 
-        assertNotNull(getNode().get(MetricsService.class).getMetric("test.counter1"));
-        assertNotNull(getNode().get(MetricsService.class).getMetric("test.counter2"));
+        assertNotNull(getNode().get(MetricsService.class).metric("test.counter1"));
+        assertNotNull(getNode().get(MetricsService.class).metric("test.counter2"));
 
         assertNotNull(getNode().get(MetricsService.class).getCounter("test.counter1"));
         assertNotNull(getNode().get(MetricsService.class).getCounter("test.counter2"));
 
-        assertNotNull(getNode().get(MetricsService.class).getMetric("test.probe1"));
-        assertNotNull(getNode().get(MetricsService.class).getMetric("test.probe2"));
+        assertNotNull(getNode().get(MetricsService.class).metric("test.probe1"));
+        assertNotNull(getNode().get(MetricsService.class).metric("test.probe2"));
 
         class TestAutowire {
             @Autowired

@@ -280,7 +280,7 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
         // Create a fake TCP client via node's TCP service.
         NetworkService net = channel.getInstance().get(NetworkService.class);
 
-        NetworkConnector<MessagingProtocol> fakeConnector = net.get(TEST_CHANNEL_NAME);
+        NetworkConnector<MessagingProtocol> fakeConnector = net.connector(TEST_CHANNEL_NAME);
 
         repeat(5, i -> {
             NetworkClient<MessagingProtocol> fakeClient = fakeConnector.newClient();
@@ -1494,7 +1494,7 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
 
         channel.getInstance().get(ClusterService.class).addListener(event -> {
             try {
-                MessagingChannel<String> send = event.getHekate().get(MessagingService.class).get(TEST_CHANNEL_NAME);
+                MessagingChannel<String> send = event.getHekate().get(MessagingService.class).channel(TEST_CHANNEL_NAME);
 
                 if (event.getType() == ClusterEventType.JOIN) {
                     send.request("to-self").get(3, TimeUnit.SECONDS);

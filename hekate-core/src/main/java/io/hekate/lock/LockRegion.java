@@ -34,7 +34,7 @@ public interface LockRegion {
      *
      * @return Name of this region.
      *
-     * @see LockService#get(String)
+     * @see LockService#region(String)
      * @see LockRegionConfig#setName(String)
      */
     String getName();

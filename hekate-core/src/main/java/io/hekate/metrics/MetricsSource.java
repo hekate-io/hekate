@@ -27,7 +27,7 @@ public interface MetricsSource {
      *
      * @return Map of metrics or an empty map.
      */
-    Map<String, Metric> getAll();
+    Map<String, Metric> allMetrics();
 
     /**
      * Returns a metric for with the specified name or {@code null} if there is no such metric.
@@ -36,7 +36,7 @@ public interface MetricsSource {
      *
      * @return Metric or {@code null}.
      */
-    Metric getMetric(String name);
+    Metric metric(String name);
 
     /**
      * Returns the value of a metric or {@code defaultVal} if there is no such metric.
@@ -47,7 +47,7 @@ public interface MetricsSource {
      * @return Metric value or {@code defaultVal} if there is no such metric.
      */
     default long get(String name, long defaultVal) {
-        Metric metric = getMetric(name);
+        Metric metric = metric(name);
 
         return metric != null ? metric.getValue() : defaultVal;
     }
@@ -71,6 +71,6 @@ public interface MetricsSource {
      * @return {@code true} if metric exists.
      */
     default boolean has(String name) {
-        return getMetric(name) != null;
+        return metric(name) != null;
     }
 }

@@ -73,7 +73,7 @@ public interface PartitionService extends Service {
      *
      * @return Partition mappers or an empty list if none are registered.
      */
-    List<PartitionMapper> getMappers();
+    List<PartitionMapper> allMappers();
 
     /**
      * Returns a partition mapper for the specified {@link PartitionMapperConfig#setName(String) name}. If there is no such mapper then
@@ -89,7 +89,7 @@ public interface PartitionService extends Service {
      *
      * @see PartitionServiceFactory#withMapper(PartitionMapperConfig)
      */
-    PartitionMapper get(String name);
+    PartitionMapper mapper(String name);
 
     /**
      * Returns {@code true} if this service has a partition mapper with the specified name.
@@ -98,5 +98,5 @@ public interface PartitionService extends Service {
      *
      * @return {@code true} if mapper exists.
      */
-    boolean has(String name);
+    boolean hasMapper(String name);
 }

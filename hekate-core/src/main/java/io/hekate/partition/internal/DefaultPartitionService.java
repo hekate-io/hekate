@@ -150,7 +150,7 @@ public class DefaultPartitionService implements PartitionService, DependentServi
     }
 
     @Override
-    public List<PartitionMapper> getMappers() {
+    public List<PartitionMapper> allMappers() {
         long readLock = guard.lockReadWithStateCheck();
 
         try {
@@ -161,7 +161,7 @@ public class DefaultPartitionService implements PartitionService, DependentServi
     }
 
     @Override
-    public PartitionMapper get(String name) {
+    public PartitionMapper mapper(String name) {
         PartitionMapper mapper;
 
         long readLock = guard.lockReadWithStateCheck();
@@ -178,7 +178,7 @@ public class DefaultPartitionService implements PartitionService, DependentServi
     }
 
     @Override
-    public boolean has(String name) {
+    public boolean hasMapper(String name) {
         long readLock = guard.lockReadWithStateCheck();
 
         try {

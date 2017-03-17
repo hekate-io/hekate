@@ -218,7 +218,7 @@ public interface NetworkService extends Service {
      *
      * @throws IllegalArgumentException If there is no such connector with the specified protocol name.
      */
-    <T> NetworkConnector<T> get(String protocol) throws IllegalArgumentException;
+    <T> NetworkConnector<T> connector(String protocol) throws IllegalArgumentException;
 
     /**
      * Returns {@code true} if this service has a connector with the specified protocol name.
@@ -227,7 +227,7 @@ public interface NetworkService extends Service {
      *
      * @return {@code true} if connector exists.
      */
-    boolean has(String protocol);
+    boolean hasConnector(String protocol);
 
     /**
      * Asynchronously checks if connection can be established with a {@link NetworkService} at the specified address and notifies the

@@ -56,7 +56,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 public @interface NamedMessagingChannel {
     /**
      * Specifies the {@link MessagingChannelConfig#setName(String) name} of a {@link MessagingChannel} that should be injected (see {@link
-     * MessagingService#get(String)}).
+     * MessagingService#channel(String)}).
      *
      * @return Name of a {@link MessagingChannel}.
      */

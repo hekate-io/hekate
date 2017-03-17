@@ -19,7 +19,7 @@ package io.hekate.coordinate;
 /**
  * Provided information about the coordination process.
  *
- * @see CoordinationService#get(String)
+ * @see CoordinationService#process(String)
  */
 public interface CoordinationProcess {
     /**

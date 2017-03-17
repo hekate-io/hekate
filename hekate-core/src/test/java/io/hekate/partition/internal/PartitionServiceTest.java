@@ -45,11 +45,11 @@ public class PartitionServiceTest extends HekateInstanceTestBase {
         PartitionService partitions = createInstance(boot -> boot.withService(new PartitionServiceFactory())).join()
             .get(PartitionService.class);
 
-        assertTrue(partitions.getMappers().isEmpty());
+        assertTrue(partitions.allMappers().isEmpty());
 
-        assertFalse(partitions.has("no-such-mapper"));
+        assertFalse(partitions.hasMapper("no-such-mapper"));
 
-        expect(IllegalArgumentException.class, () -> partitions.get("no-such-mapper"));
+        expect(IllegalArgumentException.class, () -> partitions.mapper("no-such-mapper"));
     }
 
     @Test
@@ -61,18 +61,18 @@ public class PartitionServiceTest extends HekateInstanceTestBase {
             )
         ).join().get(PartitionService.class);
 
-        assertTrue(partitions.has("mapper1"));
-        assertTrue(partitions.has("mapper2"));
+        assertTrue(partitions.hasMapper("mapper1"));
+        assertTrue(partitions.hasMapper("mapper2"));
 
-        PartitionMapper mapper1 = partitions.get("mapper1");
-        PartitionMapper mapper2 = partitions.get("mapper2");
+        PartitionMapper mapper1 = partitions.mapper("mapper1");
+        PartitionMapper mapper2 = partitions.mapper("mapper2");
 
         assertNotNull(mapper1);
         assertNotNull(mapper2);
 
-        assertEquals(2, partitions.getMappers().size());
-        assertTrue(partitions.getMappers().contains(mapper1));
-        assertTrue(partitions.getMappers().contains(mapper2));
+        assertEquals(2, partitions.allMappers().size());
+        assertTrue(partitions.allMappers().contains(mapper1));
+        assertTrue(partitions.allMappers().contains(mapper2));
     }
 
     @Test
@@ -87,7 +87,7 @@ public class PartitionServiceTest extends HekateInstanceTestBase {
             c.withMapper(cfg);
         }).join();
 
-        PartitionMapper mapper = instance.get(PartitionService.class).get("test");
+        PartitionMapper mapper = instance.get(PartitionService.class).mapper("test");
 
         assertNotNull(mapper);
 
@@ -102,7 +102,7 @@ public class PartitionServiceTest extends HekateInstanceTestBase {
     @Test
     public void testUnknownMapper() throws Exception {
         try {
-            createPartitionInstance().join().get(PartitionService.class).get("unknown");
+            createPartitionInstance().join().get(PartitionService.class).mapper("unknown");
 
             fail("Error was expected.");
         } catch (IllegalArgumentException e) {
@@ -138,7 +138,7 @@ public class PartitionServiceTest extends HekateInstanceTestBase {
                 Partition first = null;
 
                 for (Hekate instance : instances) {
-                    PartitionMapper mapper = instance.get(PartitionService.class).get("test" + i);
+                    PartitionMapper mapper = instance.get(PartitionService.class).mapper("test" + i);
 
                     assertEquals("test" + i, mapper.getName());
                     assertEquals(partitions, mapper.getPartitions());

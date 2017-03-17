@@ -56,7 +56,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 public @interface NamedLockRegion {
     /**
      * Specifies the {@link LockRegionConfig#setName(String) name} of a {@link LockRegion} that should be injected (see {@link
-     * LockService#get(String)}).
+     * LockService#region(String)}).
      *
      * @return Name of a {@link LockRegion}.
      */

@@ -24,7 +24,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * Coordination future.
  *
- * @see CoordinationService#getFuture(String)
+ * @see CoordinationService#futureOf(String)
  */
 public class CoordinationFuture extends HekateFuture<CoordinationProcess, CoordinationFuture> {
     @Override

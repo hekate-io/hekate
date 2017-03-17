@@ -65,7 +65,7 @@ public class NetworkConnectorConfig<T> {
      *
      * <p>
      * This protocol identifier can be used to obtain references to {@link NetworkConnector} instances via {@link
-     * NetworkService#get(String)} method.
+     * NetworkService#connector(String)} method.
      * </p>
      *
      * <p>

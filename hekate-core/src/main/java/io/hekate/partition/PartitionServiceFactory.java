@@ -57,7 +57,7 @@ public class PartitionServiceFactory implements ServiceFactory<PartitionService>
      *
      * @param mappers Partition mappers configuration.
      *
-     * @see PartitionService#get(String)
+     * @see PartitionService#mapper(String)
      */
     public void setMappers(List<PartitionMapperConfig> mappers) {
         this.mappers = mappers;

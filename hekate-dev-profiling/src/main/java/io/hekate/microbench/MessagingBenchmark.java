@@ -94,7 +94,7 @@ public class MessagingBenchmark {
 
         @Override
         protected void initialize(List<Hekate> nodes) throws Exception {
-            channel = nodes.get(0).get(MessagingService.class).<byte[]>get("test_channel").forRemotes();
+            channel = nodes.get(0).get(MessagingService.class).<byte[]>channel("test_channel").forRemotes();
         }
     }
 

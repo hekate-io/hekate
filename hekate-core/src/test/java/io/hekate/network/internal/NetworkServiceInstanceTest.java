@@ -60,7 +60,7 @@ public class NetworkServiceInstanceTest extends HekateInstanceTestBase {
             CompletableFuture<String> response = new CompletableFuture<>();
             requestRef.set(new CompletableFuture<>());
 
-            NetworkClient<String> client = sender.get(NetworkService.class).<String>get("test").newClient();
+            NetworkClient<String> client = sender.get(NetworkService.class).<String>connector("test").newClient();
 
             client.connect(receiver.getSocketAddress(), (message, self) ->
                 response.complete(message.decode())

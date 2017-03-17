@@ -136,7 +136,7 @@ public interface ClusterMetricsService extends Service {
      *
      * @return List of all cluster node metrics or an empty lists.
      */
-    List<ClusterNodeMetrics> getMetrics();
+    List<ClusterNodeMetrics> forAll();
 
     /**
      * Returns metrics of those nodes that have metrics matching the specified filter. Returns an empty list if there are no such
@@ -146,5 +146,5 @@ public interface ClusterMetricsService extends Service {
      *
      * @return List of all cluster node metrics or an empty lists.
      */
-    List<ClusterNodeMetrics> getMetrics(MetricFilter filter);
+    List<ClusterNodeMetrics> forAll(MetricFilter filter);
 }

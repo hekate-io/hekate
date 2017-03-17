@@ -118,5 +118,5 @@ public interface ElectionService extends Service {
      *
      * @throws IllegalStateException If service is stopped.
      */
-    LeaderFuture getLeader(String group) throws IllegalStateException;
+    LeaderFuture leader(String group) throws IllegalStateException;
 }

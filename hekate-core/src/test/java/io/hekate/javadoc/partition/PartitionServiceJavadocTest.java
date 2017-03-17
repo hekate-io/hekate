@@ -60,7 +60,7 @@ public class PartitionServiceJavadocTest extends HekateInstanceTestBase {
 
         // Start:usage
         // Get mapper by its name.
-        PartitionMapper mapper = partitions.get("mapper1");
+        PartitionMapper mapper = partitions.mapper("mapper1");
 
         // Map some imaginary data key to a partition.
         Partition partition = mapper.map("someDataKey1");

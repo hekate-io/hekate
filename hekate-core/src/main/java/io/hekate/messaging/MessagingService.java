@@ -120,7 +120,7 @@ import java.util.List;
  *
  * <h2>Accessing channels</h2>
  * <p>
- * Once configured and registered, channels can be accessed via {@link MessagingService#get(String)} method with the {@link
+ * Once configured and registered, channels can be accessed via {@link MessagingService#channel(String)} method with the {@link
  * MessagingChannelConfig#setName(String) channel name} passed in as a parameter.
  * ${source: messaging/MessagingServiceJavadocTest.java#access_channel}
  * </p>
@@ -247,7 +247,7 @@ import java.util.List;
  * ClusterNodeFilter}. Filter can be configured statically within the {@link MessagingChannelConfig#setClusterFilter(ClusterNodeFilter)
  * channel configuration} or {@link MessagingChannel#filter(ClusterNodeFilter) dynamically} for each {@link MessagingChannel} instance.
  * Key difference between static and dynamic filter is that static filter is always gets applied to the cluster topology before any other
- * dynamic filter and is always automatically applied when channel is {@link MessagingService#get(String) obtained} from the {@link
+ * dynamic filter and is always automatically applied when channel is {@link MessagingService#channel(String) obtained} from the {@link
  * MessagingService}.
  * </p>
  *
@@ -344,7 +344,7 @@ public interface MessagingService extends Service {
      *
      * @return Channels or an empty list if there are no registered channels.
      */
-    List<MessagingChannel<?>> getChannels();
+    List<MessagingChannel<?>> allChannels();
 
     /**
      * Returns a messaging channel for the specified name.
@@ -357,7 +357,7 @@ public interface MessagingService extends Service {
      * @throws IllegalArgumentException if there is no such channel configuration with the specified name.
      * @see MessagingServiceFactory#setChannels(List)
      */
-    <T> MessagingChannel<T> get(String channelName) throws IllegalArgumentException;
+    <T> MessagingChannel<T> channel(String channelName) throws IllegalArgumentException;
 
     /**
      * Returns {@code true} if this service has a messaging channel with the specified name.
@@ -366,5 +366,5 @@ public interface MessagingService extends Service {
      *
      * @return {@code true} if messaging channel exists.
      */
-    boolean has(String channelName);
+    boolean hasChannel(String channelName);
 }

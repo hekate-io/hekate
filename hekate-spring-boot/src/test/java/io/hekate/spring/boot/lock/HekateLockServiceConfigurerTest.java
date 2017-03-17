@@ -55,12 +55,12 @@ public class HekateLockServiceConfigurerTest extends HekateAutoConfigurerTestBas
 
         @Bean
         public LockRegion region1(LockService lockService) {
-            return lockService.get("test1");
+            return lockService.region("test1");
         }
 
         @Bean
         public LockRegion region2(LockService lockService) {
-            return lockService.get("test2");
+            return lockService.region("test2");
         }
 
         @Bean
@@ -88,8 +88,8 @@ public class HekateLockServiceConfigurerTest extends HekateAutoConfigurerTestBas
         assertEquals("lock1", get(LockTestConfig.class).lock.getName());
         assertEquals("lock2", get(LockTestConfig.InnerBean.class).innerLock.getName());
 
-        assertNotNull(getNode().get(LockService.class).get("test1"));
-        assertNotNull(getNode().get(LockService.class).get("test2"));
+        assertNotNull(getNode().get(LockService.class).region("test1"));
+        assertNotNull(getNode().get(LockService.class).region("test2"));
 
         class TestAutowire {
             @Autowired

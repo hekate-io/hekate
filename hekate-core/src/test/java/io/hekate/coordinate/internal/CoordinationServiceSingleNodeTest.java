@@ -41,11 +41,11 @@ public class CoordinationServiceSingleNodeTest extends HekateInstanceTestBase {
             boot.withService(new CoordinationServiceFactory())
         ).join().get(CoordinationService.class);
 
-        assertTrue(coordination.getProcesses().isEmpty());
+        assertTrue(coordination.allProcesses().isEmpty());
 
-        assertFalse(coordination.has("no-such-process"));
+        assertFalse(coordination.hasProcess("no-such-process"));
 
-        expect(IllegalArgumentException.class, () -> coordination.get("no-such-process"));
+        expect(IllegalArgumentException.class, () -> coordination.process("no-such-process"));
     }
 
     @Test
@@ -65,18 +65,18 @@ public class CoordinationServiceSingleNodeTest extends HekateInstanceTestBase {
             )
         ).join().get(CoordinationService.class);
 
-        assertTrue(coordination.has("process1"));
-        assertTrue(coordination.has("process2"));
+        assertTrue(coordination.hasProcess("process1"));
+        assertTrue(coordination.hasProcess("process2"));
 
-        CoordinationProcess process1 = coordination.get("process1");
-        CoordinationProcess process2 = coordination.get("process1");
+        CoordinationProcess process1 = coordination.process("process1");
+        CoordinationProcess process2 = coordination.process("process1");
 
         assertNotNull(process1);
         assertNotNull(process2);
 
-        assertEquals(2, coordination.getProcesses().size());
-        assertTrue(coordination.getProcesses().contains(process1));
-        assertTrue(coordination.getProcesses().contains(process1));
+        assertEquals(2, coordination.allProcesses().size());
+        assertTrue(coordination.allProcesses().contains(process1));
+        assertTrue(coordination.allProcesses().contains(process1));
 
         process1.getFuture().get(3, TimeUnit.SECONDS);
         process2.getFuture().get(3, TimeUnit.SECONDS);

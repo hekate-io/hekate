@@ -73,7 +73,7 @@ public class SpringJavadocTest extends HekateTestBase {
     @Test
     public void testMessagingXsd() {
         doTest("javadoc/messaging/service-xsd.xml", (node, ctx) -> {
-            assertNotNull(node.get(MessagingService.class).get("example.channel"));
+            assertNotNull(node.get(MessagingService.class).channel("example.channel"));
 
             MessagingChannel<?> channel = ctx.getBean("example.channel", MessagingChannel.class);
 
@@ -84,14 +84,14 @@ public class SpringJavadocTest extends HekateTestBase {
     @Test
     public void testMessagingBean() {
         doTest("javadoc/messaging/service-bean.xml", (node, ctx) ->
-            assertNotNull(node.get(MessagingService.class).get("example.channel"))
+            assertNotNull(node.get(MessagingService.class).channel("example.channel"))
         );
     }
 
     @Test
     public void testMessagingChannelOptionsXsd() {
         doTest("javadoc/messaging/channel-opts-xsd.xml", (node, ctx) -> {
-            assertNotNull(node.get(MessagingService.class).get("example.channel"));
+            assertNotNull(node.get(MessagingService.class).channel("example.channel"));
 
             MessagingChannel<?> channel = ctx.getBean("example.channel", MessagingChannel.class);
 
@@ -102,7 +102,7 @@ public class SpringJavadocTest extends HekateTestBase {
     @Test
     public void testMessagingChannelOptionsBean() {
         doTest("javadoc/messaging/channel-opts-bean.xml", (node, ctx) ->
-            assertNotNull(node.get(MessagingService.class).get("example.channel"))
+            assertNotNull(node.get(MessagingService.class).channel("example.channel"))
         );
     }
 
@@ -119,8 +119,8 @@ public class SpringJavadocTest extends HekateTestBase {
     @Test
     public void testLockXsd() {
         doTest("javadoc/lock/service-xsd.xml", (node, ctx) -> {
-            assertNotNull(node.get(LockService.class).get("region1"));
-            assertNotNull(node.get(LockService.class).get("region2"));
+            assertNotNull(node.get(LockService.class).region("region1"));
+            assertNotNull(node.get(LockService.class).region("region2"));
 
             assertNotNull(ctx.getBean("region1", LockRegion.class));
             assertNotNull(ctx.getBean("region2", LockRegion.class));
@@ -130,36 +130,36 @@ public class SpringJavadocTest extends HekateTestBase {
     @Test
     public void testLockBean() {
         doTest("javadoc/lock/service-bean.xml", (node, ctx) -> {
-            assertNotNull(node.get(LockService.class).get("region1"));
-            assertNotNull(node.get(LockService.class).get("region2"));
+            assertNotNull(node.get(LockService.class).region("region1"));
+            assertNotNull(node.get(LockService.class).region("region2"));
         });
     }
 
     @Test
     public void testElectionXsd() {
         doTest("javadoc/election/service-xsd.xml", (node, ctx) ->
-            assertEquals(node.getNode(), node.get(ElectionService.class).getLeader("example.election.group").join())
+            assertEquals(node.getNode(), node.get(ElectionService.class).leader("example.election.group").join())
         );
     }
 
     @Test
     public void testElectionBean() {
         doTest("javadoc/election/service-bean.xml", (node, ctx) ->
-            assertEquals(node.getNode(), node.get(ElectionService.class).getLeader("example.election.group").join())
+            assertEquals(node.getNode(), node.get(ElectionService.class).leader("example.election.group").join())
         );
     }
 
     @Test
     public void testCoordinationXsd() {
         doTest("javadoc/coordinate/service-xsd.xml", (node, ctx) ->
-            assertNotNull(node.get(CoordinationService.class).get("example.process").getFuture().join())
+            assertNotNull(node.get(CoordinationService.class).process("example.process").getFuture().join())
         );
     }
 
     @Test
     public void testCoordinationBean() {
         doTest("javadoc/coordinate/service-bean.xml", (node, ctx) ->
-            assertNotNull(node.get(CoordinationService.class).get("example.process").getFuture().join())
+            assertNotNull(node.get(CoordinationService.class).process("example.process").getFuture().join())
         );
     }
 
@@ -167,7 +167,7 @@ public class SpringJavadocTest extends HekateTestBase {
     public void testLocalMetricsXsd() {
         doTest("javadoc/metrics/service-xsd.xml", (node, ctx) -> {
             assertNotNull(node.get(MetricsService.class).getCounter("example.counter"));
-            assertNotNull(node.get(MetricsService.class).getMetric("example.probe"));
+            assertNotNull(node.get(MetricsService.class).metric("example.probe"));
         });
     }
 
@@ -175,7 +175,7 @@ public class SpringJavadocTest extends HekateTestBase {
     public void testMetricsBean() {
         doTest("javadoc/metrics/service-bean.xml", (node, ctx) -> {
             assertNotNull(node.get(MetricsService.class).getCounter("example.counter"));
-            assertNotNull(node.get(MetricsService.class).getMetric("example.probe"));
+            assertNotNull(node.get(MetricsService.class).metric("example.probe"));
         });
     }
 

@@ -33,7 +33,7 @@ public class LockBean extends HekateBaseBean<DistributedLock> {
 
     @Override
     public DistributedLock getObject() throws Exception {
-        return getSource().get(LockService.class).get(getRegion()).getLock(getName());
+        return getSource().get(LockService.class).region(getRegion()).getLock(getName());
     }
 
     @Override

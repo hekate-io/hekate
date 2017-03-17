@@ -25,7 +25,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * Asynchronous result of leader election.
  *
- * @see ElectionService#getLeader(String)
+ * @see ElectionService#leader(String)
  */
 public class LeaderFuture extends HekateFuture<ClusterNode, LeaderFuture> {
     @Override

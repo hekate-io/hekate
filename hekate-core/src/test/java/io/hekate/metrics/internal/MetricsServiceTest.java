@@ -72,18 +72,18 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
     public void testProbeInitValue() throws Exception {
         metrics.register(new ProbeConfig("p").withInitValue(1000).withProbe(() -> 0));
 
-        assertTrue(metrics.getAll().containsKey("p"));
-        assertEquals("p", metrics.getMetric("p").getName());
-        assertEquals(1000, metrics.getMetric("p").getValue());
+        assertTrue(metrics.allMetrics().containsKey("p"));
+        assertEquals("p", metrics.metric("p").getName());
+        assertEquals(1000, metrics.metric("p").getValue());
         assertEquals(1000, metrics.get("p"));
         assertEquals(1000, metrics.get("p", 10));
     }
 
     @Test
     public void testUnknownMetric() throws Exception {
-        assertNull(metrics.getMetric("c"));
-        assertNotNull(metrics.getAll());
-        assertFalse(metrics.getAll().containsKey("c"));
+        assertNull(metrics.metric("c"));
+        assertNotNull(metrics.allMetrics());
+        assertFalse(metrics.allMetrics().containsKey("c"));
         assertEquals(0, metrics.get("c"));
         assertEquals(10, metrics.get("c", 10));
     }
@@ -92,9 +92,9 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
     public void testProbeDefaultValue() throws Exception {
         metrics.register(new ProbeConfig("p").withProbe(() -> 1000));
 
-        assertTrue(metrics.getAll().containsKey("p"));
-        assertEquals("p", metrics.getMetric("p").getName());
-        assertEquals(0, metrics.getMetric("p").getValue());
+        assertTrue(metrics.allMetrics().containsKey("p"));
+        assertEquals("p", metrics.metric("p").getName());
+        assertEquals(0, metrics.metric("p").getValue());
     }
 
     @Test
@@ -103,7 +103,7 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
 
         metrics.register(new ProbeConfig("p1").withProbe(val::get));
 
-        Metric metric = metrics.getMetric("p1");
+        Metric metric = metrics.metric("p1");
 
         for (int i = 1; i <= 5; i++) {
             awaitForMetric(val.get(), metric);
@@ -130,7 +130,7 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
             return v;
         }));
 
-        Metric metric = metrics.getMetric("p1");
+        Metric metric = metrics.metric("p1");
 
         await(errorLatch);
 
@@ -138,31 +138,31 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
 
         sleep(TEST_METRICS_REFRESH_INTERVAL * 3);
 
-        assertEquals(2, metrics.getMetric("p1").getValue());
+        assertEquals(2, metrics.metric("p1").getValue());
     }
 
     @Test
     public void testCounterInitValue() throws Exception {
         metrics.register(new CounterConfig("c"));
 
-        assertTrue(metrics.getAll().containsKey("c"));
-        assertEquals("c", metrics.getMetric("c").getName());
-        assertEquals(0, metrics.getMetric("c").getValue());
+        assertTrue(metrics.allMetrics().containsKey("c"));
+        assertEquals("c", metrics.metric("c").getName());
+        assertEquals(0, metrics.metric("c").getValue());
     }
 
     @Test
     public void testCounterDefaultValue() throws Exception {
         metrics.register(new CounterConfig("c"));
 
-        assertTrue(metrics.getAll().containsKey("c"));
-        assertEquals("c", metrics.getMetric("c").getName());
-        assertEquals(0, metrics.getMetric("c").getValue());
+        assertTrue(metrics.allMetrics().containsKey("c"));
+        assertEquals("c", metrics.metric("c").getName());
+        assertEquals(0, metrics.metric("c").getValue());
     }
 
     @Test
     public void testCounterTotal() throws Exception {
         CounterMetric counter = metrics.register(new CounterConfig("c").withTotalName("ct").withAutoReset(true));
-        Metric total = metrics.getMetric("ct");
+        Metric total = metrics.metric("ct");
 
         assertEquals("ct", total.getName());
         assertEquals(0, total.getValue());
@@ -183,7 +183,7 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
     public void testCounterIncrement() throws Exception {
         CounterMetric c = metrics.register(new CounterConfig("c"));
 
-        Metric metric = metrics.getMetric("c");
+        Metric metric = metrics.metric("c");
 
         for (int i = 0; i < 10; i++) {
             assertEquals(i, metric.getValue());
@@ -202,7 +202,7 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
 
         c.add(9);
 
-        Metric metric = metrics.getMetric("c");
+        Metric metric = metrics.metric("c");
 
         for (int i = 9; i >= 0; i--) {
             assertEquals(i, metric.getValue());
@@ -219,7 +219,7 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
     public void testCounterAdd() throws Exception {
         CounterMetric c = metrics.register(new CounterConfig("c"));
 
-        Metric metric = metrics.getMetric("c");
+        Metric metric = metrics.metric("c");
 
         c.add(1);
 
@@ -241,7 +241,7 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
     public void testCounterSubtract() throws Exception {
         CounterMetric c = metrics.register(new CounterConfig("c"));
 
-        Metric metric = metrics.getMetric("c");
+        Metric metric = metrics.metric("c");
 
         assertEquals(0, metric.getValue());
         assertEquals(0, c.getValue());
@@ -295,10 +295,10 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
             assertEquals(e.toString(), e.getMessage(), CounterConfig.class.getSimpleName() + ": duplicated name [value=c]");
         }
 
-        assertTrue(metrics.getAll().containsKey("c"));
-        assertTrue(metrics.getAll().containsKey("p"));
-        assertEquals(1000, metrics.getMetric("c").getValue());
-        assertEquals(4000, metrics.getMetric("p").getValue());
+        assertTrue(metrics.allMetrics().containsKey("c"));
+        assertTrue(metrics.allMetrics().containsKey("p"));
+        assertEquals(1000, metrics.metric("c").getValue());
+        assertEquals(4000, metrics.metric("p").getValue());
     }
 
     @Test
@@ -311,24 +311,24 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
             c.withConfigProvider(() -> Arrays.asList(new CounterConfig("c1"), new CounterConfig("c2")));
         });
 
-        assertTrue(metrics.getAll().containsKey("p"));
-        assertEquals("p", metrics.getMetric("p").getName());
-        assertEquals(1000, metrics.getMetric("p").getValue());
+        assertTrue(metrics.allMetrics().containsKey("p"));
+        assertEquals("p", metrics.metric("p").getName());
+        assertEquals(1000, metrics.metric("p").getValue());
 
         probe.set(2000);
 
         for (int j = 0; j < 3; j++) {
-            assertTrue(metrics.getAll().containsKey("c" + j));
-            assertEquals("c" + j, metrics.getMetric("c" + j).getName());
-            assertEquals(0, metrics.getMetric("c" + j).getValue());
+            assertTrue(metrics.allMetrics().containsKey("c" + j));
+            assertEquals("c" + j, metrics.metric("c" + j).getName());
+            assertEquals(0, metrics.metric("c" + j).getValue());
 
             metrics.getCounter("c" + j).add(1000);
         }
 
-        awaitForMetric(1000, metrics.getMetric("c0"));
-        awaitForMetric(1000, metrics.getMetric("c1"));
-        awaitForMetric(1000, metrics.getMetric("c2"));
-        awaitForMetric(2000, metrics.getMetric("p"));
+        awaitForMetric(1000, metrics.metric("c0"));
+        awaitForMetric(1000, metrics.metric("c1"));
+        awaitForMetric(1000, metrics.metric("c2"));
+        awaitForMetric(2000, metrics.metric("p"));
     }
 
     @Test
@@ -347,13 +347,13 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
 
         repeat(5, i -> {
             for (int j = 0; j < 3; j++) {
-                assertTrue(metrics.getAll().containsKey("c" + j));
-                assertEquals("c" + j, metrics.getMetric("c" + j).getName());
-                assertEquals(0, metrics.getMetric("c" + j).getValue());
+                assertTrue(metrics.allMetrics().containsKey("c" + j));
+                assertEquals("c" + j, metrics.metric("c" + j).getName());
+                assertEquals(0, metrics.metric("c" + j).getValue());
 
                 metrics.getCounter("c" + j).add(10);
 
-                assertEquals(10, metrics.getMetric("c" + j).getValue());
+                assertEquals(10, metrics.metric("c" + j).getValue());
             }
 
             instance.leave();
@@ -367,13 +367,13 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
     @Test
     public void testMetricsAfterRejoin() throws Exception {
         repeat(5, i -> {
-            assertNull(metrics.getMetric("c"));
+            assertNull(metrics.metric("c"));
 
             metrics.register(new CounterConfig("c"));
 
-            assertTrue(metrics.getAll().containsKey("c"));
-            assertEquals("c", metrics.getMetric("c").getName());
-            assertEquals(0, metrics.getMetric("c").getValue());
+            assertTrue(metrics.allMetrics().containsKey("c"));
+            assertEquals("c", metrics.metric("c").getName());
+            assertEquals(0, metrics.metric("c").getValue());
 
             instance.leave();
 
@@ -411,20 +411,20 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
 
         MetricsUpdateEvent event = asyncRef.get().exchange(null);
 
-        Map<String, Metric> snapshot = event.getAll();
+        Map<String, Metric> snapshot = event.allMetrics();
 
         assertNotNull(snapshot);
 
         assertEquals(1000, snapshot.get("c").getValue());
         assertEquals(100, snapshot.get("p").getValue());
 
-        assertSame(snapshot.get("c"), event.getMetric("c"));
-        assertSame(snapshot.get("p"), event.getMetric("p"));
+        assertSame(snapshot.get("c"), event.metric("c"));
+        assertSame(snapshot.get("p"), event.metric("p"));
 
         this.metrics.getCounter("c").add(1000);
         probe.set(200);
 
-        snapshot = asyncRef.get().exchange(null).getAll();
+        snapshot = asyncRef.get().exchange(null).allMetrics();
 
         assertEquals(2000, snapshot.get("c").getValue());
         assertEquals(200, snapshot.get("p").getValue());
@@ -440,7 +440,7 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
 
         instance.join();
 
-        snapshot = asyncRef.get().exchange(null).getAll();
+        snapshot = asyncRef.get().exchange(null).allMetrics();
 
         assertEquals(0, snapshot.get("c").getValue());
         assertEquals(100, snapshot.get("p").getValue());
@@ -475,7 +475,7 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
 
         MetricsUpdateEvent event1 = asyncRef.get().exchange(null);
 
-        Map<String, Metric> snapshot = event1.getAll();
+        Map<String, Metric> snapshot = event1.allMetrics();
 
         assertNotNull(snapshot);
 
@@ -489,7 +489,7 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
 
         assertTrue(event1.getTick() < event2.getTick());
 
-        snapshot = event2.getAll();
+        snapshot = event2.allMetrics();
 
         assertEquals(2000, snapshot.get("c").getValue());
         assertEquals(200, snapshot.get("p").getValue());

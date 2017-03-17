@@ -377,7 +377,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
             gossipMgr = new GossipManager(initCtx.getClusterName(), node, failureDetector, speedUpGossipSize, createGossipListener());
 
             // Prepare gossip communication manager.
-            NetworkConnector<GossipProtocol> connector = net.get(GossipProtocolCodec.PROTOCOL_ID);
+            NetworkConnector<GossipProtocol> connector = net.connector(GossipProtocolCodec.PROTOCOL_ID);
 
             commMgr = new GossipCommManager(connector, new GossipCommManager.Callback() {
                 @Override

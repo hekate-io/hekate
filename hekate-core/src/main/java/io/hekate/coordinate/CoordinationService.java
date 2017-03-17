@@ -157,7 +157,7 @@ import java.util.List;
  * </p>
  *
  * <p>
- * This can be done by obtaining a future object via {@link #getFuture(String)} method. This future object will be notified right after the
+ * This can be done by obtaining a future object via {@link #futureOf(String)} method. This future object will be notified right after the
  * coordination process gets executed for the first time and can be used to {@link CoordinationFuture#get()} await} for its completion as
  * in the example below:
  * ${source: coordinate/CoordinationServiceJavadocTest.java#future}
@@ -183,7 +183,7 @@ public interface CoordinationService extends Service {
      *
      * @return Processes or an empty list if there are no registered processes.
      */
-    List<CoordinationProcess> getProcesses();
+    List<CoordinationProcess> allProcesses();
 
     /**
      * Returns a coordination process for the specified name.
@@ -192,7 +192,7 @@ public interface CoordinationService extends Service {
      *
      * @return Coordination process.
      */
-    CoordinationProcess get(String name);
+    CoordinationProcess process(String name);
 
     /**
      * Returns {@code true} if this service has a coordination process with the specified name.
@@ -201,7 +201,7 @@ public interface CoordinationService extends Service {
      *
      * @return {@code true} if process exists.
      */
-    boolean has(String name);
+    boolean hasProcess(String name);
 
     /**
      * Returns an initial coordination future for the specified process name. The returned future object will be completed once the
@@ -211,5 +211,5 @@ public interface CoordinationService extends Service {
      *
      * @return Initial coordination future.
      */
-    CoordinationFuture getFuture(String process);
+    CoordinationFuture futureOf(String process);
 }

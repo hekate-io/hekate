@@ -30,7 +30,7 @@ public class NetworkConnectorBean extends HekateBaseBean<NetworkConnector<?>> {
 
     @Override
     public NetworkConnector<?> getObject() throws Exception {
-        return getSource().get(NetworkService.class).get(protocol);
+        return getSource().get(NetworkService.class).connector(protocol);
     }
 
     @Override

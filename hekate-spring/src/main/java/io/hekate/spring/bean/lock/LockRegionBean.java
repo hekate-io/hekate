@@ -30,7 +30,7 @@ public class LockRegionBean extends HekateBaseBean<LockRegion> {
 
     @Override
     public LockRegion getObject() throws Exception {
-        return getSource().get(LockService.class).get(getRegion());
+        return getSource().get(LockService.class).region(getRegion());
     }
 
     @Override

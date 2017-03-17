@@ -48,12 +48,12 @@ public class HekateNetworkServiceConfigurerTest extends HekateAutoConfigurerTest
 
         @Bean
         public NetworkConnector<Object> connector1(NetworkService networkService) {
-            return networkService.get("test1");
+            return networkService.connector("test1");
         }
 
         @Bean
         public NetworkConnector<Object> connector2(NetworkService networkService) {
-            return networkService.get("test2");
+            return networkService.connector("test2");
         }
 
         @Bean
@@ -79,8 +79,8 @@ public class HekateNetworkServiceConfigurerTest extends HekateAutoConfigurerTest
         assertEquals("test1", get(NetworkTestConfig.class).connector.getProtocol());
         assertEquals("test2", get(NetworkTestConfig.InnerBean.class).innerConnector.getProtocol());
 
-        assertNotNull(getNode().get(NetworkService.class).get("test1"));
-        assertNotNull(getNode().get(NetworkService.class).get("test2"));
+        assertNotNull(getNode().get(NetworkService.class).connector("test1"));
+        assertNotNull(getNode().get(NetworkService.class).connector("test2"));
 
         class TestAutowire {
             @Autowired

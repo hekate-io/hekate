@@ -88,7 +88,7 @@ public abstract class LockServiceTestBase extends HekateInstanceContextTestBase 
 
         busyWait("queued lock [lock=" + lock + ']', () -> {
             for (HekateTestInstance node : nodes) {
-                List<ClusterNodeId> locks = node.get(DefaultLockService.class).get(REGION_1).getQueuedLocks(lock);
+                List<ClusterNodeId> locks = node.get(DefaultLockService.class).region(REGION_1).getQueuedLocks(lock);
 
                 if (locks.contains(owner.getNode().getId())) {
                     result.set(node);
@@ -110,7 +110,7 @@ public abstract class LockServiceTestBase extends HekateInstanceContextTestBase 
     }
 
     protected String getRemotelyManagedLockName(String lockPrefix, HekateTestInstance node) throws Exception {
-        DefaultLockRegion region = node.get(DefaultLockService.class).get(REGION_1);
+        DefaultLockRegion region = node.get(DefaultLockService.class).region(REGION_1);
 
         for (int i = 0; i < BUSY_WAIT_LOOPS; i++) {
             String lockName = lockPrefix + i;
@@ -128,7 +128,7 @@ public abstract class LockServiceTestBase extends HekateInstanceContextTestBase 
     protected HekateTestInstance getLockManagerNode(String lock, List<HekateTestInstance> nodes) {
         assertTrue(nodes.size() > 1);
 
-        ClusterNodeId nodeId = nodes.get(0).get(DefaultLockService.class).get(REGION_1).getLockManagerNode(lock);
+        ClusterNodeId nodeId = nodes.get(0).get(DefaultLockService.class).region(REGION_1).getLockManagerNode(lock);
 
         return nodes.stream()
             .filter(n -> n.getNode().getId().equals(nodeId))
@@ -141,7 +141,7 @@ public abstract class LockServiceTestBase extends HekateInstanceContextTestBase 
             Set<ClusterTopologyHash> topologies = new HashSet<>();
 
             nodes.forEach(n -> {
-                ClusterTopologyHash topology = n.get(DefaultLockService.class).get(REGION_1).getEffectiveTopology();
+                ClusterTopologyHash topology = n.get(DefaultLockService.class).region(REGION_1).getEffectiveTopology();
 
                 topologies.add(topology);
             });

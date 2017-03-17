@@ -58,12 +58,12 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
 
         @Bean
         public MessagingChannel<Object> channel1(MessagingService messagingService) {
-            return messagingService.get("test1");
+            return messagingService.channel("test1");
         }
 
         @Bean
         public MessagingChannel<Object> channel2(MessagingService messagingService) {
-            return messagingService.get("test2");
+            return messagingService.channel("test2");
         }
 
         @Bean
@@ -97,8 +97,8 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
         assertEquals("test2", get(MessagingTestConfig.InnerBean.class).innerChannel.getName());
         assertEquals("test3", get(MessagingTestConfig.InnerComponent.class).channel.getName());
 
-        assertNotNull(getNode().get(MessagingService.class).get("test1"));
-        assertNotNull(getNode().get(MessagingService.class).get("test2"));
+        assertNotNull(getNode().get(MessagingService.class).channel("test1"));
+        assertNotNull(getNode().get(MessagingService.class).channel("test2"));
 
         class TestAutowire {
             @Autowired

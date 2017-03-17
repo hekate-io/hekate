@@ -56,7 +56,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 public @interface NamedNetworkConnector {
     /**
      * Specifies the {@link NetworkConnectorConfig#setProtocol(String) protocol name} of a {@link NetworkConnector} that should be injected
-     * (see {@link NetworkService#get(String)}).
+     * (see {@link NetworkService#connector(String)}).
      *
      * @return Protocol name of a {@link NetworkConnector}.
      */

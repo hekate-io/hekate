@@ -106,7 +106,7 @@ public class MessagingChannelConfig<T> {
      * </p>
      *
      * <p>
-     * This name can be used to obtain channel by its name via {@link MessagingService#get(String)}.
+     * This name can be used to obtain channel by its name via {@link MessagingService#channel(String)}.
      * </p>
      *
      * <p>

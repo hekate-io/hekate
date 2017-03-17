@@ -210,7 +210,7 @@ public class DefaultElectionService implements ElectionService, DependentService
     }
 
     @Override
-    public LeaderFuture getLeader(String group) {
+    public LeaderFuture leader(String group) {
         return getRequiredHandler(group).getLeaderFuture();
     }
 
@@ -244,7 +244,7 @@ public class DefaultElectionService implements ElectionService, DependentService
         String group = cfg.getGroup().trim();
         Candidate candidate = cfg.getCandidate();
 
-        DistributedLock lock = locks.get(ELECTION_LOCK_REGION).getLock(group);
+        DistributedLock lock = locks.region(ELECTION_LOCK_REGION).getLock(group);
 
         ExecutorService worker = Executors.newSingleThreadExecutor(new HekateThreadFactory(ELECTION_THREAD_PREFIX + '-' + group));
 

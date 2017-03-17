@@ -56,7 +56,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 public @interface NamedMetric {
     /**
      * Specifies the {@link MetricConfigBase#setName(String) name} of a {@link Metric} that should be injected (see {@link
-     * MetricsService#getMetric(String)}).
+     * MetricsService#metric(String)}).
      *
      * @return Name of a {@link Metric}.
      */

@@ -144,7 +144,7 @@ public class InfluxDbMetricsPlugin implements Plugin {
     public void install(HekateBootstrap boot) {
         boot.withService(MetricsServiceFactory.class, metrics ->
             metrics.withListener(event ->
-                publisher.publish(event.getAll().values())
+                publisher.publish(event.allMetrics().values())
             )
         );
     }

@@ -38,11 +38,11 @@ public class ElectionServiceJavadocTest extends HekateInstanceTestBase {
         class ExampleCandidate implements Candidate {
             @Override
             public void becomeLeader(LeaderContext ctx) {
-                System.out.println("I'm a election.");
+                System.out.println("I'm leader.");
 
                 // ...do some work as a election...
 
-                System.out.println("Done with the election task ...will yield leadership.");
+                System.out.println("Done with the leader task ...will yield leadership.");
 
                 // Let some other node to become a election.
                 ctx.yieldLeadership();
@@ -50,9 +50,9 @@ public class ElectionServiceJavadocTest extends HekateInstanceTestBase {
 
             @Override
             public void becomeFollower(FollowerContext ctx) {
-                System.out.println("Someone else became a election: " + ctx.getLeader());
+                System.out.println("Leader: " + ctx.getLeader());
 
-                // Listen for election change events while we are staying in the follower state.
+                // Listen for leader change events while we are staying in the follower state.
                 ctx.addLeaderChangeListener(changed ->
                     System.out.println("Leader changed: " + changed.getLeader())
                 );
@@ -68,7 +68,7 @@ public class ElectionServiceJavadocTest extends HekateInstanceTestBase {
         // Start:configure
         // Prepare service factory.
         ElectionServiceFactory factory = new ElectionServiceFactory()
-            // Register leader election candidate.
+            // Register candidate.
             .withCandidate(new CandidateConfig()
                 // Group name.
                 .withGroup("example.election.group")
@@ -86,8 +86,8 @@ public class ElectionServiceJavadocTest extends HekateInstanceTestBase {
         // Get service.
         ElectionService election = hekate.get(ElectionService.class);
 
-        // Get current election (or wait up to 3 seconds for leader to be elected).
-        ClusterNode leader = election.getLeader("example.election.group").get(3, TimeUnit.SECONDS);
+        // Get current leader (or wait up to 3 seconds for leader to be elected).
+        ClusterNode leader = election.leader("example.election.group").get(3, TimeUnit.SECONDS);
         // End:access
 
         assertNotNull(leader);

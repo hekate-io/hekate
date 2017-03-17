@@ -69,13 +69,13 @@ public class NetworkServiceManagerMock implements NetworkServiceManager, Depende
     }
 
     @Override
-    public <T> NetworkConnector<T> get(String protocol) throws IllegalArgumentException {
-        return delegate.get(protocol);
+    public <T> NetworkConnector<T> connector(String protocol) throws IllegalArgumentException {
+        return delegate.connector(protocol);
     }
 
     @Override
-    public boolean has(String protocol) {
-        return delegate.has(protocol);
+    public boolean hasConnector(String protocol) {
+        return delegate.hasConnector(protocol);
     }
 
     @Override

@@ -142,7 +142,7 @@ public class NetworkServiceJavadocTest extends HekateInstanceTestBase {
 
         // Start:client_connect_example
         // Get connector by its protocol identifier.
-        NetworkConnector<String> connector = hekate.get(NetworkService.class).get("example.protocol");
+        NetworkConnector<String> connector = hekate.get(NetworkService.class).connector("example.protocol");
 
         NetworkClient<String> client = connector.newClient();
 

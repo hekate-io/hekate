@@ -39,12 +39,12 @@ class DefaultMetricsUpdateEvent implements MetricsUpdateEvent {
     }
 
     @Override
-    public Metric getMetric(String metric) {
+    public Metric metric(String metric) {
         return metrics.get(metric);
     }
 
     @Override
-    public Map<String, Metric> getAll() {
+    public Map<String, Metric> allMetrics() {
         return metrics;
     }
 

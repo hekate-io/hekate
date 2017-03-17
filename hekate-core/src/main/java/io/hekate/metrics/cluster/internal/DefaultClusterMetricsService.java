@@ -272,7 +272,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
                 log.debug("Initializing...");
             }
 
-            channel = messaging.get(MetricsProtocolCodec.PROTOCOL_ID);
+            channel = messaging.channel(MetricsProtocolCodec.PROTOCOL_ID);
 
             localNode = ctx.getNode().getId();
 
@@ -280,7 +280,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
             localMetrics.addListener(event -> {
                 try {
-                    updateLocalMetrics(event.getAll());
+                    updateLocalMetrics(event.allMetrics());
                 } catch (RuntimeException | Error e) {
                     log.error("Got an unexpected runtime error while updating local metrics.", e);
                 }
@@ -371,7 +371,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     }
 
     @Override
-    public List<ClusterNodeMetrics> getMetrics() {
+    public List<ClusterNodeMetrics> forAll() {
         guard.lockReadWithStateCheck();
 
         try {
@@ -394,7 +394,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     }
 
     @Override
-    public List<ClusterNodeMetrics> getMetrics(MetricFilter filter) {
+    public List<ClusterNodeMetrics> forAll(MetricFilter filter) {
         ArgAssert.notNull(filter, "Filter");
 
         guard.lockReadWithStateCheck();
@@ -412,7 +412,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
                     if (metricsOpt.isPresent()) {
                         ClusterNodeMetrics nodeMetrics = metricsOpt.get();
 
-                        for (Metric metric : nodeMetrics.getAll().values()) {
+                        for (Metric metric : nodeMetrics.allMetrics().values()) {
                             if (filter.accept(metric)) {
                                 metrics.add(nodeMetrics);
 
@@ -496,7 +496,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
                     .forEach(node -> replicas.put(node.getId(), new Replica(node)));
 
                 if (initial) {
-                    doUpdateLocalMetrics(localMetrics.getAll());
+                    doUpdateLocalMetrics(localMetrics.allMetrics());
                 }
 
                 NavigableSet<ClusterNodeId> ring = new TreeSet<>(ids);

@@ -100,7 +100,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
 
             worker.execute(() -> {
                 try {
-                    DistributedLock lock = instance.get(LockService.class).get(lockRegion).getLock(lockName);
+                    DistributedLock lock = instance.get(LockService.class).region(lockRegion).getLock(lockName);
 
                     if (lock.isHeldByCurrentThread()) {
                         lock.unlock();
@@ -180,7 +180,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
     public void testLock() throws Throwable {
         HekateTestInstance node = createInstanceWithLockService().join();
 
-        DistributedLock lock = node.get(LockService.class).get(REGION_1).getLock("test");
+        DistributedLock lock = node.get(LockService.class).region(REGION_1).getLock("test");
 
         ExecutorService worker = Executors.newSingleThreadExecutor(new HekateThreadFactory("lock-test"));
 
@@ -233,7 +233,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
     public void testReleaseOnNodeTermination() throws Throwable {
         HekateTestInstance node = createInstanceWithLockService().join();
 
-        DistributedLock lock = node.get(LockService.class).get(REGION_1).getLock("test");
+        DistributedLock lock = node.get(LockService.class).region(REGION_1).getLock("test");
 
         ExecutorService worker = Executors.newSingleThreadExecutor(new HekateThreadFactory("lock-test"));
 
@@ -288,8 +288,8 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
         HekateTestInstance ownerNode = createInstanceWithLockService().join();
         HekateTestInstance waitingNode = createInstanceWithLockService().join();
 
-        DistributedLock ownerLock = ownerNode.get(LockService.class).get(REGION_1).getLock("test");
-        DistributedLock waitingLock = waitingNode.get(LockService.class).get(REGION_1).getLock("test");
+        DistributedLock ownerLock = ownerNode.get(LockService.class).region(REGION_1).getLock("test");
+        DistributedLock waitingLock = waitingNode.get(LockService.class).region(REGION_1).getLock("test");
 
         ownerLock.lock();
 
@@ -406,7 +406,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
 
                 HekateTestInstance node = callback.getInstance();
 
-                DistributedLock lock = node.get(LockService.class).get(REGION_1).getLock("test");
+                DistributedLock lock = node.get(LockService.class).region(REGION_1).getLock("test");
 
                 lock.lockAsync(callback.getWorker(), callback);
 
@@ -482,9 +482,9 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
 
         ExecutorService worker = Executors.newSingleThreadExecutor(new HekateThreadFactory("test-lock"));
 
-        DistributedLock lock1 = node1.get(LockService.class).get(REGION_1).getLock("test");
-        DistributedLock lock2 = node2.get(LockService.class).get(REGION_1).getLock("test");
-        DistributedLock lock3 = node3.get(LockService.class).get(REGION_1).getLock("test");
+        DistributedLock lock1 = node1.get(LockService.class).region(REGION_1).getLock("test");
+        DistributedLock lock2 = node2.get(LockService.class).region(REGION_1).getLock("test");
+        DistributedLock lock3 = node3.get(LockService.class).region(REGION_1).getLock("test");
 
         // Obtain initial lock.
         lock1.lock();

@@ -35,11 +35,11 @@ public class MessagingServiceSingleNodeTest extends HekateInstanceTestBase {
             boot.withService(new MessagingServiceFactory())
         ).join().get(MessagingService.class);
 
-        assertTrue(messaging.getChannels().isEmpty());
+        assertTrue(messaging.allChannels().isEmpty());
 
-        assertFalse(messaging.has("no-such-channel"));
+        assertFalse(messaging.hasChannel("no-such-channel"));
 
-        expect(IllegalArgumentException.class, () -> messaging.get("no-such-channel"));
+        expect(IllegalArgumentException.class, () -> messaging.channel("no-such-channel"));
 
         assertTrue(messaging.toString(), messaging.toString().startsWith(MessagingService.class.getSimpleName()));
     }
@@ -53,18 +53,18 @@ public class MessagingServiceSingleNodeTest extends HekateInstanceTestBase {
             )
         ).join().get(MessagingService.class);
 
-        assertTrue(messaging.has("channel1"));
-        assertTrue(messaging.has("channel2"));
+        assertTrue(messaging.hasChannel("channel1"));
+        assertTrue(messaging.hasChannel("channel2"));
 
-        MessagingChannel<Object> channel1 = messaging.get("channel1");
-        MessagingChannel<Object> channel2 = messaging.get("channel2");
+        MessagingChannel<Object> channel1 = messaging.channel("channel1");
+        MessagingChannel<Object> channel2 = messaging.channel("channel2");
 
         assertNotNull(channel1);
         assertNotNull(channel2);
 
-        assertEquals(2, messaging.getChannels().size());
-        assertTrue(messaging.getChannels().contains(channel1));
-        assertTrue(messaging.getChannels().contains(channel2));
+        assertEquals(2, messaging.allChannels().size());
+        assertTrue(messaging.allChannels().contains(channel1));
+        assertTrue(messaging.allChannels().contains(channel2));
 
         assertTrue(messaging.toString(), messaging.toString().startsWith(MessagingService.class.getSimpleName()));
         assertTrue(messaging.toString(), messaging.toString().contains("channel1"));

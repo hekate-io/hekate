@@ -55,7 +55,7 @@ public class LockServiceJavadocTest extends HekateInstanceTestBase {
 
         // Start:lock
         // Get lock instance with name 'exampleLock' from region 'region1'.
-        DistributedLock lock = locks.get("region1").getLock("exampleLock");
+        DistributedLock lock = locks.region("region1").getLock("exampleLock");
 
         // Obtain the lock.
         lock.lock();

@@ -64,7 +64,7 @@ public class LockRegionConfig {
      * Sets the lock region name.
      *
      * <p>
-     * This name can be used to obtain reference to {@link LockRegion} via {@link LockService#get(String)}.
+     * This name can be used to obtain reference to {@link LockRegion} via {@link LockService#region(String)}.
      * </p>
      *
      * <p>

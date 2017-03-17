@@ -60,7 +60,7 @@ public interface DistributedLock extends Lock {
      *
      * @return Name of the lock region.
      *
-     * @see LockService#get(String)
+     * @see LockService#region(String)
      */
     String getRegion();
 

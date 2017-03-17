@@ -79,7 +79,7 @@ public class PartitionMapperConfig {
      *
      * @param name Partition mapper name.
      *
-     * @see PartitionService#get(String)
+     * @see PartitionService#mapper(String)
      */
     public void setName(String name) {
         this.name = name;

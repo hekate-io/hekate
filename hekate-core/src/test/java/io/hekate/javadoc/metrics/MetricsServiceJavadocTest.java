@@ -98,9 +98,9 @@ public class MetricsServiceJavadocTest extends HekateInstanceTestBase {
         );
         // End:probe_example
 
-        Metric memoryFree = metrics.getMetric("memory.free");
-        Metric tasksActive = metrics.getMetric("tasks.active");
-        Metric tasksTotal = metrics.getMetric("tasks.total");
+        Metric memoryFree = metrics.metric("memory.free");
+        Metric tasksActive = metrics.metric("tasks.active");
+        Metric tasksTotal = metrics.metric("tasks.total");
 
         assertNotNull(memoryFree);
         assertNotNull(tasksActive);

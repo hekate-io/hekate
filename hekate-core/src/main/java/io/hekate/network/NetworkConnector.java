@@ -24,7 +24,7 @@ import java.util.Optional;
  * Network connector.
  *
  * <p>
- * Instances of this interface can be obtained via {@link NetworkService#get(String)} method.
+ * Instances of this interface can be obtained via {@link NetworkService#connector(String)} method.
  * </p>
  *
  * <p>

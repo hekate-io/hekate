@@ -66,7 +66,7 @@ public @interface NamedLock {
 
     /**
      * Specifies the {@link LockRegionConfig#setName(String) name} of a {@link LockRegion} that should be used to get the lock (see {@link
-     * LockService#get(String)}).
+     * LockService#region(String)}).
      *
      * @return Name of a {@link LockRegion}.
      */

@@ -108,8 +108,7 @@ public class CoordinationServiceJavadocTest extends HekateInstanceTestBase {
 
             @Override
             public void terminate() {
-                // Make sure that lock is released if local node is stopping
-                // in the middle of coordination progress.
+                // Make sure that lock is released if local node gets stopped
                 if (dataLock.isHeldByCurrentThread()) {
                     dataLock.unlock();
                 }
@@ -140,7 +139,7 @@ public class CoordinationServiceJavadocTest extends HekateInstanceTestBase {
 
         // Start:future
         // Get coordination process (or wait up to 3 seconds for initial coordination to be completed).
-        CoordinationProcess process = coordination.getFuture("example.process").get(3, TimeUnit.SECONDS);
+        CoordinationProcess process = coordination.futureOf("example.process").get(3, TimeUnit.SECONDS);
 
         System.out.println("Coordination completed for " + process.getName());
         // End:future
@@ -157,7 +156,7 @@ public class CoordinationServiceJavadocTest extends HekateInstanceTestBase {
                 )
             ).join();
 
-            node.get(CoordinationService.class).getFuture("test").get(3, TimeUnit.SECONDS);
+            node.get(CoordinationService.class).futureOf("test").get(3, TimeUnit.SECONDS);
         }
     }
 }
