@@ -888,11 +888,13 @@ public class DistributedLockTest extends LockServiceTestBase {
 
             otherLock.lock();
 
-            lockAsync.countDown();
+            try {
+                lockAsync.countDown();
 
-            await(unlockAsync);
-
-            otherLock.unlock();
+                await(unlockAsync);
+            } finally {
+                otherLock.unlock();
+            }
 
             return null;
         });
