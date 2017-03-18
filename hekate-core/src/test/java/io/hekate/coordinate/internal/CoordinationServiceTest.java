@@ -391,7 +391,9 @@ public class CoordinationServiceTest extends HekateInstanceContextTestBase {
         HekateTestInstance n2 = createInstanceWithCoordination(h2);
         HekateTestInstance n3 = createInstanceWithCoordination(h3);
 
-        n1.join();
+        // Join and await for initial coordination on the first node.
+        n1.join().get(CoordinationService.class).futureOf("test").get(3, TimeUnit.SECONDS);
+
         n2.join(); // <-- Coordination should block.
 
         await(blockLatch);
