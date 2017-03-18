@@ -125,10 +125,6 @@ class LockControllerClient {
         return name;
     }
 
-    public String getRegion() {
-        return region;
-    }
-
     public long getLockId() {
         return lockId;
     }
@@ -157,16 +153,6 @@ class LockControllerClient {
 
     public ClusterNodeId getNode() {
         return node;
-    }
-
-    public ClusterTopology getTopology() {
-        lock.lock();
-
-        try {
-            return topology;
-        } finally {
-            lock.unlock();
-        }
     }
 
     public void update(ClusterNodeId managedBy, ClusterTopology topology) {

@@ -25,10 +25,6 @@ interface LockIdentity {
 
     long getThreadId();
 
-    default boolean isSameLock(long lockId, ClusterNodeId node) {
-        return lockId == getLockId() && node.equals(getNode());
-    }
-
     default boolean isSameLock(LockIdentity other) {
         return other.getLockId() == getLockId() && other.getNode().equals(getNode());
     }
