@@ -88,7 +88,6 @@ import org.springframework.beans.factory.support.ManagedMap;
 import org.springframework.beans.factory.support.ManagedSet;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
-import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
 
 import static java.util.stream.Collectors.toSet;
@@ -630,7 +629,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             Element anyHostEl = getChildElementByTagName(addrEl, "any-host");
 
             if (hostEl != null) {
-                String val = DomUtils.getTextValue(hostEl).trim();
+                String val = getTextValue(hostEl).trim();
 
                 if (!val.isEmpty()) {
                     net.addPropertyValue("host", val);
@@ -731,13 +730,13 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
     }
 
     private Optional<RuntimeBeanReference> parseMessagingBackPressure(Element channelEl, ParserContext ctx) {
-        Element backPressureEl = DomUtils.getChildElementByTagName(channelEl, "back-pressure");
+        Element backPressureEl = getChildElementByTagName(channelEl, "back-pressure");
 
         if (backPressureEl != null) {
             BeanDefinitionBuilder backPressure = newBean(MessagingBackPressureConfig.class, backPressureEl);
 
-            Element outboundEl = DomUtils.getChildElementByTagName(backPressureEl, "outbound");
-            Element inboundEl = DomUtils.getChildElementByTagName(backPressureEl, "inbound");
+            Element outboundEl = getChildElementByTagName(backPressureEl, "outbound");
+            Element inboundEl = getChildElementByTagName(backPressureEl, "inbound");
 
             if (outboundEl != null) {
                 setProperty(backPressure, outboundEl, "outLowWatermark", "low-watermark");

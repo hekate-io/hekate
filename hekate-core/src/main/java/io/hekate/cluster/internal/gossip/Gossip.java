@@ -256,8 +256,8 @@ public class Gossip extends GossipBase {
 
         Set<ClusterNodeId> newRemoved = new HashSet<>(removed);
 
-        newRemoved = Collections.unmodifiableSet(newRemoved);
-        newMembers = Collections.unmodifiableMap(newMembers);
+        newRemoved = unmodifiableSet(newRemoved);
+        newMembers = unmodifiableMap(newMembers);
 
         return new Gossip(version + 1, newMembers, newRemoved, newSeen, maxJoinOrder);
     }

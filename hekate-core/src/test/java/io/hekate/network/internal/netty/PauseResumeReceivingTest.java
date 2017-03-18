@@ -240,8 +240,6 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
             // Await for server endpoint to be initialized.
             busyWait("server endpoint connect", () -> !server.getConnected(client.getProtocol()).isEmpty());
 
-            NetworkEndpoint<?> remote = server.getConnected(client.getProtocol()).get(0);
-
             pause(client);
 
             client.disconnect().get(3, TimeUnit.SECONDS);

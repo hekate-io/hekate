@@ -136,8 +136,8 @@ public class CloudSeedNodeProvider implements SeedNodeProvider {
         this.credentials = cfg.getCredentials();
         this.endpoint = cfg.getEndpoint();
 
-        this.regions = Utils.nullSafe(cfg.getRegions()).collect(Collectors.toSet());
-        this.zones = Utils.nullSafe(cfg.getZones()).collect(Collectors.toSet());
+        this.regions = Utils.nullSafe(cfg.getRegions()).collect(toSet());
+        this.zones = Utils.nullSafe(cfg.getZones()).collect(toSet());
 
         Properties properties = new Properties();
 

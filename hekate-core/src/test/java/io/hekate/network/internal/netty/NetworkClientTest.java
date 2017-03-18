@@ -44,7 +44,6 @@ import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -265,11 +264,11 @@ public class NetworkClientTest extends NetworkTestBase {
             callback.assertDisconnects(0);
             callback.assertNoErrors();
 
-            Assert.assertEquals((Integer)i, client.getContext());
+            assertEquals((Integer)i, client.getContext());
 
             client.disconnect().get();
 
-            Assert.assertEquals((Integer)i, client.getContext());
+            assertEquals((Integer)i, client.getContext());
 
             callback.assertConnects(1);
             callback.assertDisconnects(1);

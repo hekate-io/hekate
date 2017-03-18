@@ -44,7 +44,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -185,7 +184,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
             listener.getErrors().forEach(e -> {
                 assertTrue(e.toString(), e instanceof IOException);
-                Assert.assertEquals(TEST_ERROR_MESSAGE, e.getMessage());
+                assertEquals(TEST_ERROR_MESSAGE, e.getMessage());
             });
         });
     }
@@ -242,7 +241,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
             listener.getErrors().forEach(e -> {
                 assertTrue(e.toString(), e instanceof IOException);
-                Assert.assertEquals(TEST_ERROR_MESSAGE, e.getMessage());
+                assertEquals(TEST_ERROR_MESSAGE, e.getMessage());
             });
         });
     }

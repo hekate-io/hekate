@@ -20,7 +20,6 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterView;
-import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.codec.SingletonCodecFactory;
 import io.hekate.core.HekateException;
@@ -204,7 +203,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
             ClusterNode node = ctx.getNode();
 
-            cluster.addListener(this::processTopologyChange, ClusterEventType.JOIN, ClusterEventType.CHANGE);
+            cluster.addListener(evt -> processTopologyChange(), ClusterEventType.JOIN, ClusterEventType.CHANGE);
 
             scheduler = new ScheduledThreadPoolExecutor(1, new HekateThreadFactory("LockService"));
 
@@ -421,7 +420,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
         }
     }
 
-    private void processTopologyChange(ClusterEvent event) {
+    private void processTopologyChange() {
         guard.lockRead();
 
         try {

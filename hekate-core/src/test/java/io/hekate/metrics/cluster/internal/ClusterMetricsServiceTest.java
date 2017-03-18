@@ -422,8 +422,6 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
     private void awaitForReplicatedMetric(String metric, long value, List<HekateTestInstance> checkNodes, List<HekateTestInstance> nodes)
         throws Exception {
         busyWait("metric value [name=" + metric + ", value=" + value + ", nodes=" + nodes + ']', () -> {
-            boolean hasValue = true;
-
             for (HekateTestInstance node : nodes) {
                 ClusterMetricsService service = node.get(ClusterMetricsService.class);
 

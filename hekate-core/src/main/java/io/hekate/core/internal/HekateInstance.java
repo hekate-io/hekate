@@ -1070,7 +1070,7 @@ public class HekateInstance implements Hekate, Serializable {
             }
         }
 
-        return removed != null ? Collections.unmodifiableSet(removed) : emptySet();
+        return removed != null ? unmodifiableSet(removed) : emptySet();
     }
 
     private String toAddressesString(ClusterTopology topology) {
