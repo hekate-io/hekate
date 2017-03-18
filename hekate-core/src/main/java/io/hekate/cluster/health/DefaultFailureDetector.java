@@ -160,7 +160,7 @@ public class DefaultFailureDetector implements FailureDetector {
 
         check.positive(hbLossThreshold, "heartbeat loss threshold");
         check.positive(hbInterval, "heartbeat interval");
-        check.greater(failureQuorum, 1, "failure detection quorum");
+        check.positive(failureQuorum, "failure detection quorum");
 
         ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
