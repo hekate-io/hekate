@@ -616,7 +616,7 @@ public abstract class HekateTestBase {
 
             if (message != null) {
                 assertNotNull(t.toString(), t.getMessage());
-                assertTrue(message, t.getMessage().contains(message));
+                assertTrue(t.getMessage(), t.getMessage().contains(message));
             }
         }
     }

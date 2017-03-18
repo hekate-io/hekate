@@ -85,7 +85,7 @@ public class StateGuard {
         assert writeLock.isHeldByCurrentThread() : "Thread must hold write lock.";
 
         if (state == State.INITIALIZING || state == State.INITIALIZED) {
-            throw new IllegalStateException(type.getSimpleName() + " already in " + state + " state.");
+            throw new IllegalStateException(type.getSimpleName() + " is already in " + state + " state.");
         }
 
         state = State.INITIALIZING;
