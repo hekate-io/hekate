@@ -263,7 +263,7 @@
         <module name="ModifierOrder"/>
 
         <module name="RedundantModifier">
-            <property name="tokens" value="METHOD_DEF,VARIABLE_DEF,ANNOTATION_FIELD_DEF,INTERFACE_DEF,CLASS_DEF,ENUM_DEF,RESOURCE"/>
+            <property name="tokens" value="METHOD_DEF,VARIABLE_DEF,ANNOTATION_FIELD_DEF,INTERFACE_DEF,CLASS_DEF,ENUM_DEF"/>
         </module>
 
         <!--
@@ -391,7 +391,7 @@
         </module>
 
         <module name="WhitespaceAfter">
-            <property name="tokens" value="COMMA, SEMI, LITERAL_IF, LITERAL_ELSE, LITERAL_WHILE, LITERAL_DO, LITERAL_FOR, DO_WHILE"/>
+            <property name="tokens" value="COMMA,SEMI"/>
         </module>
 
         <module name="WhitespaceAround">
