@@ -17,6 +17,7 @@ class MessageContext<T> {
 
     private final AffinityWorker worker;
 
+    @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
     private volatile int completed;
 
     public MessageContext(T message, MessageContext<T> src) {

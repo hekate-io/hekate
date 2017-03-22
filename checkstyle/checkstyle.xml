@@ -62,7 +62,7 @@
         <module name="PackageAnnotation"/>
 
         <module name="SuppressWarnings">
-            <property name="format" value="^((?!((unchecked)|(UseOfSystemOutOrSystemErr))).)*$"/>
+            <property name="format" value="^((?!((unused)|(unchecked)|(UseOfSystemOutOrSystemErr))).)*$"/>
         </module>
 
         <!--
