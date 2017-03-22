@@ -479,12 +479,7 @@ class MessagingGateway<T> {
         try {
             pool = selectUnicastPool(ctx, opts, prevErr);
         } catch (HekateException | RuntimeException | Error e) {
-            applyFailover(ctx, e, Optional.empty(), opts, prevErr,
-                // On failover accepted.
-                (routingPolicy, failure) -> routeAndSend(ctx, opts, callback, failure),
-                // On failover rejected.
-                newCause -> notifyOnError(ctx, callback, newCause)
-            );
+            notifyOnErrorAsync(ctx, callback, e);
         }
 
         if (pool != null) {
@@ -533,7 +528,7 @@ class MessagingGateway<T> {
                 };
 
                 // Actions if operation can't be retried.
-                FailoverRejectCallback onFail = newCause -> notifyOnError(ctx, callback, newCause);
+                FailoverRejectCallback onFail = newCause -> notifyOnErrorAsync(ctx, callback, newCause);
 
                 // Apply failover actions.
                 applyFailoverAsync(ctx, err, pool.getNodeOpt(), opts, prevErr, onFailover, onFail);
@@ -550,12 +545,7 @@ class MessagingGateway<T> {
         try {
             pool = selectUnicastPool(ctx, opts, prevErr);
         } catch (HekateException | RuntimeException | Error e) {
-            applyFailover(ctx, e, Optional.empty(), opts, prevErr,
-                // On failover accepted.
-                (routingPolicy, failure) -> routeAndRequest(ctx, opts, callback, failure),
-                // On failover rejected.
-                newCause -> notifyOnError(ctx, callback, newCause)
-            );
+            notifyOnErrorAsync(ctx, callback, e);
         }
 
         if (pool != null) {
@@ -644,7 +634,7 @@ class MessagingGateway<T> {
                     };
 
                     // Actions if operation can't be retried.
-                    FailoverRejectCallback onFail = newCause -> notifyOnError(ctx, callback, newCause);
+                    FailoverRejectCallback onFail = newCause -> notifyOnErrorAsync(ctx, callback, newCause);
 
                     // Apply failover actions.
                     applyFailoverAsync(ctx, err, pool.getNodeOpt(), opts, prevErr, onFailover, onFail);
@@ -676,7 +666,7 @@ class MessagingGateway<T> {
         try {
             pools = selectBroadcastPools(cluster);
         } catch (HekateException | RuntimeException | Error e) {
-            notifyOnError(ctx, callback, e);
+            notifyOnErrorAsync(ctx, callback, e);
 
             return;
         }
@@ -733,7 +723,7 @@ class MessagingGateway<T> {
         try {
             pools = selectBroadcastPools(cluster);
         } catch (HekateException | RuntimeException | Error e) {
-            notifyOnError(ctx, callback, e);
+            notifyOnErrorAsync(ctx, callback, e);
 
             return;
         }
@@ -1174,7 +1164,7 @@ class MessagingGateway<T> {
 
             if (err != null) {
                 affinityRun(ctx.getAffinity(), () ->
-                    notifyOnError(ctx, callback, err)
+                    notifyOnErrorAsync(ctx, callback, err)
                 );
 
                 return false;
@@ -1209,15 +1199,35 @@ class MessagingGateway<T> {
     }
 
     private void notifyOnChannelClosedError(MessageContext<T> ctx, Object callback) {
-        ForkJoinPool.commonPool().execute(() -> {
-            MessagingException err = getChannelClosedError(null);
+        MessagingException err = getChannelClosedError(null);
 
-            notifyOnError(ctx, callback, err);
-        });
+        notifyOnErrorAsync(ctx, callback, err);
+    }
+
+    private void notifyOnErrorAsync(MessageContext<T> ctx, Object callback, Throwable err) {
+        boolean scheduled = false;
+
+        if (!ctx.getWorker().isShutdown()) {
+            try {
+                ctx.getWorker().execute(() ->
+                    doNotifyOnError(ctx, callback, err)
+                );
+
+                scheduled = true;
+            } catch (RejectedExecutionException e) {
+                // Ignore since operation will be re-scheduled on common pool.
+            }
+        }
+
+        if (!scheduled) {
+            ForkJoinPool.commonPool().submit(() ->
+                doNotifyOnError(ctx, callback, err)
+            );
+        }
     }
 
     @SuppressWarnings("unchecked")
-    private void notifyOnError(MessageContext<T> ctx, Object callback, Throwable err) {
+    private void doNotifyOnError(MessageContext<T> ctx, Object callback, Throwable err) {
         if (ctx.complete()) {
             backPressureRelease();
 

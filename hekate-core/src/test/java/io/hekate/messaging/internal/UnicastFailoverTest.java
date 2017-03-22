@@ -200,7 +200,7 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testRequestRoutingFailoverWithUnknownNodeFails() throws Exception {
+    public void testRequestNoRoutingFailover() throws Exception {
         AtomicInteger failoverCalls = new AtomicInteger();
 
         ClusterNodeId unknown = newNodeId();
@@ -210,7 +210,7 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
                 .withFailover(context -> {
                     failoverCalls.incrementAndGet();
 
-                    return context.retry().withSameNode();
+                    return context.retry().withReRoute();
                 })
                 .request("error").getReply(3, TimeUnit.SECONDS);
 
@@ -219,32 +219,11 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
             assertTrue(getStacktrace(e), e.isCausedBy(UnknownRouteException.class));
         }
 
-        assertEquals(1, failoverCalls.get());
+        assertEquals(0, failoverCalls.get());
     }
 
     @Test
-    public void testRequestRoutingFailoverWithUnknownNodeSuccess() throws Exception {
-        AtomicInteger failoverCalls = new AtomicInteger();
-
-        ClusterNodeId unknown = newNodeId();
-
-        sender.withLoadBalancer((message, ctx) -> {
-            if (ctx.getFailure().isPresent() && !ctx.getFailure().get().isFirstAttempt()) {
-                return receiver.getNodeId();
-            }
-
-            return unknown;
-        }).withFailover(context -> {
-            failoverCalls.incrementAndGet();
-
-            return context.retry().withReRoute();
-        }).request("error").getReply(3, TimeUnit.SECONDS);
-
-        assertEquals(2, failoverCalls.get());
-    }
-
-    @Test
-    public void testSendRoutingFailoverWithUnknownNodeFails() throws Exception {
+    public void testSendNoRoutingFailover() throws Exception {
         AtomicInteger failoverCalls = new AtomicInteger();
 
         ClusterNodeId unknown = newNodeId();
@@ -254,7 +233,7 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
                 .withFailover(context -> {
                     failoverCalls.incrementAndGet();
 
-                    return context.retry().withSameNode();
+                    return context.retry().withReRoute();
                 })
                 .send("error").get(3, TimeUnit.SECONDS);
 
@@ -263,28 +242,7 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
             assertTrue(getStacktrace(e), e.isCausedBy(UnknownRouteException.class));
         }
 
-        assertEquals(1, failoverCalls.get());
-    }
-
-    @Test
-    public void testSendRoutingFailoverWithUnknownNodeSuccess() throws Exception {
-        AtomicInteger failoverCalls = new AtomicInteger();
-
-        ClusterNodeId unknown = newNodeId();
-
-        sender.withLoadBalancer((message, ctx) -> {
-            if (ctx.getFailure().isPresent() && !ctx.getFailure().get().isFirstAttempt()) {
-                return receiver.getNodeId();
-            }
-
-            return unknown;
-        }).withFailover(context -> {
-            failoverCalls.incrementAndGet();
-
-            return context.retry().withReRoute();
-        }).send("error").get(3, TimeUnit.SECONDS);
-
-        assertEquals(2, failoverCalls.get());
+        assertEquals(0, failoverCalls.get());
     }
 
     private List<FailoverContext> testWithRoutingPolicy(FailoverRoutingPolicy policy, Consumer<FailureInfo> onFailover)
