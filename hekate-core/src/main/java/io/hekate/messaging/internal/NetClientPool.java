@@ -100,8 +100,8 @@ class NetClientPool<T> implements ClientPool<T> {
     }
 
     @Override
-    public void send(int affinity, AffinityWorker worker, T message, SendCallback callback) {
-        NetSenderContext<T> client = route(affinity);
+    public void send(MessageContext<T> ctx, SendCallback callback) {
+        NetSenderContext<T> client = route(ctx.getAffinity());
 
         // Touch in advance to make sure that pool will not be disconnected
         // by a concurrent thread that executes disconnectIfIdle() method.
@@ -109,12 +109,12 @@ class NetClientPool<T> implements ClientPool<T> {
 
         ensureConnected();
 
-        client.sendNotification(affinity, worker, message, callback);
+        client.sendNotification(ctx, callback);
     }
 
     @Override
-    public void request(int affinity, AffinityWorker worker, T message, RequestCallback<T> callback) {
-        NetSenderContext<T> client = route(affinity);
+    public void request(MessageContext<T> ctx, RequestCallback<T> callback) {
+        NetSenderContext<T> client = route(ctx.getAffinity());
 
         // Touch in advance to make sure that pool will not be disconnected
         // by a concurrent thread that executes disconnectIfIdle() method.
@@ -122,7 +122,7 @@ class NetClientPool<T> implements ClientPool<T> {
 
         ensureConnected();
 
-        client.sendRequest(affinity, worker, message, callback);
+        client.sendRequest(ctx, callback);
     }
 
     @Override

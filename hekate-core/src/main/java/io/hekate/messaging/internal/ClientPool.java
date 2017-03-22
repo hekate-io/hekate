@@ -30,9 +30,9 @@ interface ClientPool<T> {
 
     void disconnectIfIdle();
 
-    void send(int affinity, AffinityWorker worker, T message, SendCallback callback);
+    void send(MessageContext<T> ctx, SendCallback callback);
 
-    void request(int affinity, AffinityWorker worker, T message, RequestCallback<T> callback);
+    void request(MessageContext<T> ctx, RequestCallback<T> callback);
 
     List<NetworkFuture<MessagingProtocol>> close();
 

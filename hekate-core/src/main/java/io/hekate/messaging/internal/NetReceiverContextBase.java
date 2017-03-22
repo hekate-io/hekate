@@ -50,37 +50,37 @@ abstract class NetReceiverContextBase<T> extends ReceiverContext<T> {
     }
 
     @Override
-    public void sendRequest(int affinity, AffinityWorker worker, T request, RequestCallback<T> callback) {
+    public void sendRequest(MessageContext<T> ctx, RequestCallback<T> callback) {
         // No need to call touch() since it is done in NetClientPool.
 
-        RequestHolder<T> holder = registerRequest(worker, request, callback);
+        RequestHolder<T> holder = registerRequest(ctx.getWorker(), ctx.getMessage(), callback);
 
         Request<T> msg;
 
-        if (affinity >= 0) {
-            msg = new AffinityRequest<>(affinity, holder.getId(), request);
+        if (ctx.getAffinity() >= 0) {
+            msg = new AffinityRequest<>(ctx.getAffinity(), holder.getId(), ctx.getMessage());
         } else {
-            msg = new Request<>(holder.getId(), request);
+            msg = new Request<>(holder.getId(), ctx.getMessage());
         }
 
-        msg.prepareSend(worker, this, callback);
+        msg.prepareSend(ctx.getWorker(), this, callback);
 
         endpoint.send(msg, msg /* <-- Message itself is a callback.*/);
     }
 
     @Override
-    public void sendNotification(int affinity, AffinityWorker worker, T notification, SendCallback callback) {
+    public void sendNotification(MessageContext<T> ctx, SendCallback callback) {
         // No need to call touch() since it is done in NetClientPool.
 
         Notification<T> msg;
 
-        if (affinity >= 0) {
-            msg = new AffinityNotification<>(affinity, notification);
+        if (ctx.getAffinity() >= 0) {
+            msg = new AffinityNotification<>(ctx.getAffinity(), ctx.getMessage());
         } else {
-            msg = new Notification<>(notification);
+            msg = new Notification<>(ctx.getMessage());
         }
 
-        msg.prepareSend(worker, this, callback);
+        msg.prepareSend(ctx.getWorker(), this, callback);
 
         endpoint.send(msg, msg /* <-- Message itself is a callback.*/);
     }

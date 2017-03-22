@@ -30,7 +30,6 @@ import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkMessage;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -122,9 +121,9 @@ abstract class ReceiverContext<T> {
 
     public abstract NetworkFuture<MessagingProtocol> disconnect();
 
-    public abstract void sendNotification(int affinity, AffinityWorker worker, T notification, SendCallback callback);
+    public abstract void sendNotification(MessageContext<T> ctx, SendCallback callback);
 
-    public abstract void sendRequest(int affinity, AffinityWorker worker, T request, RequestCallback<T> callback);
+    public abstract void sendRequest(MessageContext<T> ctx, RequestCallback<T> callback);
 
     public abstract void replyConversation(AffinityWorker worker, int requestId, T conversation, RequestCallback<T> callback);
 
@@ -385,13 +384,11 @@ abstract class ReceiverContext<T> {
     public void discardRequests(int epoch, Throwable cause) {
         List<RequestHolder<T>> failed = new ArrayList<>(requests.size());
 
-        for (Iterator<RequestHolder<T>> it = requests.values().iterator(); it.hasNext(); ) {
-            RequestHolder<T> holder = it.next();
-
+        for (RequestHolder<T> holder : requests.values()) {
             if (holder.getEpoch() == epoch) {
-                failed.add(holder);
-
-                it.remove();
+                if (requests.remove(holder.getId()) != null) {
+                    failed.add(holder);
+                }
             }
         }
 

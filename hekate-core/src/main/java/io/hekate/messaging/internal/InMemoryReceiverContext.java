@@ -38,13 +38,13 @@ class InMemoryReceiverContext<T> extends ReceiverContext<T> {
     }
 
     @Override
-    public void sendNotification(int affinity, AffinityWorker worker, T notification, SendCallback callback) {
+    public void sendNotification(MessageContext<T> ctx, SendCallback callback) {
         Notification<T> msg;
 
-        if (affinity >= 0) {
-            msg = new AffinityNotification<>(affinity, notification);
+        if (ctx.getAffinity() >= 0) {
+            msg = new AffinityNotification<>(ctx.getAffinity(), ctx.getMessage());
         } else {
-            msg = new Notification<>(notification);
+            msg = new Notification<>(ctx.getMessage());
         }
 
         if (callback != null) {
@@ -53,7 +53,7 @@ class InMemoryReceiverContext<T> extends ReceiverContext<T> {
 
         onAsyncEnqueue();
 
-        worker.execute(() -> {
+        ctx.getWorker().execute(() -> {
             onAsyncDequeue();
 
             doReceiveNotification(msg);
@@ -61,23 +61,23 @@ class InMemoryReceiverContext<T> extends ReceiverContext<T> {
     }
 
     @Override
-    public void sendRequest(int affinity, AffinityWorker worker, T request, RequestCallback<T> callback) {
-        RequestHolder<T> holder = registerRequest(worker, request, callback);
+    public void sendRequest(MessageContext<T> ctx, RequestCallback<T> callback) {
+        RequestHolder<T> holder = registerRequest(ctx.getWorker(), ctx.getMessage(), callback);
 
         Request<T> msg;
 
-        if (affinity >= 0) {
-            msg = new AffinityRequest<>(affinity, holder.getId(), request);
+        if (ctx.getAffinity() >= 0) {
+            msg = new AffinityRequest<>(ctx.getAffinity(), holder.getId(), ctx.getMessage());
         } else {
-            msg = new Request<>(holder.getId(), request);
+            msg = new Request<>(holder.getId(), ctx.getMessage());
         }
 
         onAsyncEnqueue();
 
-        worker.execute(() -> {
+        ctx.getWorker().execute(() -> {
             onAsyncDequeue();
 
-            doReceiveRequest(msg, worker);
+            doReceiveRequest(msg, ctx.getWorker());
         });
     }
 

@@ -98,13 +98,13 @@ class InMemoryClientPool<T> implements ClientPool<T> {
     }
 
     @Override
-    public void send(int affinity, AffinityWorker worker, T message, SendCallback callback) {
-        client.sendNotification(affinity, worker, message, callback);
+    public void send(MessageContext<T> ctx, SendCallback callback) {
+        client.sendNotification(ctx, callback);
     }
 
     @Override
-    public void request(int affinity, AffinityWorker worker, T message, RequestCallback<T> callback) {
-        client.sendRequest(affinity, worker, message, callback);
+    public void request(MessageContext<T> ctx, RequestCallback<T> callback) {
+        client.sendRequest(ctx, callback);
     }
 
     @Override
