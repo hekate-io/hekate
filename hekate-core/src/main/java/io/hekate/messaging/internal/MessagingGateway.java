@@ -538,8 +538,7 @@ class MessagingGateway<T> {
         pool.send(ctx, decoratedCallback);
     }
 
-    private void routeAndRequest(MessageContext<T> ctx, MessagingOpts<T> opts, RequestCallback<T> callback,
-        FailureInfo prevErr) {
+    private void routeAndRequest(MessageContext<T> ctx, MessagingOpts<T> opts, RequestCallback<T> callback, FailureInfo prevErr) {
         ClientPool<T> pool = null;
 
         try {
@@ -899,8 +898,7 @@ class MessagingGateway<T> {
         }
     }
 
-    private ClientPool<T> selectUnicastPool(MessageContext<T> ctx, MessagingOpts<T> opts, FailureInfo prevErr)
-        throws HekateException {
+    private ClientPool<T> selectUnicastPool(MessageContext<T> ctx, MessagingOpts<T> opts, FailureInfo prevErr) throws HekateException {
         ClusterView cluster = opts.cluster();
         LoadBalancer<T> balancer = opts.balancer();
 
@@ -1029,8 +1027,8 @@ class MessagingGateway<T> {
         }
     }
 
-    private void applyFailoverAsync(MessageContext<T> ctx, Throwable cause, Optional<ClusterNode> failedNode,
-        MessagingOpts<T> opts, FailureInfo prevErr, FailoverAcceptCallback onAccept, FailoverRejectCallback onReject) {
+    private void applyFailoverAsync(MessageContext<T> ctx, Throwable cause, Optional<ClusterNode> failedNode, MessagingOpts<T> opts,
+        FailureInfo prevErr, FailoverAcceptCallback onAccept, FailoverRejectCallback onReject) {
         boolean applied = false;
 
         if (async.isAsync()) {
@@ -1248,13 +1246,13 @@ class MessagingGateway<T> {
                     try {
                         ((BroadcastCallback)callback).onComplete(err, null);
                     } catch (RuntimeException | Error e) {
-                        log.error("Got an unexpected runtime error while notifying send callback on another error [cause={}]", err, e);
+                        log.error("Got an unexpected runtime error while notifying broadcast callback on another error [cause={}]", err, e);
                     }
                 } else if (callback instanceof AggregateCallback) {
                     try {
                         ((AggregateCallback<Object>)callback).onComplete(err, null);
                     } catch (RuntimeException | Error e) {
-                        log.error("Got an unexpected runtime error while notifying send callback on another error [cause={}]", err, e);
+                        log.error("Got an unexpected runtime error while notifying aggregate callback on another error [cause={}]", err, e);
                     }
                 } else {
                     throw new IllegalArgumentException("Unexpected callback type: " + callback);
