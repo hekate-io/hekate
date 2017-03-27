@@ -121,16 +121,19 @@ class LockControllerServer {
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
+    @ToStringIgnore
     private final ReentrantLock sync = new ReentrantLock();
 
+    @ToStringIgnore
     private final ScheduledExecutorService scheduler;
-
-    private final LinkedList<LockQueueEntry> queue = new LinkedList<>();
 
     private final String name;
 
+    private final LinkedList<LockQueueEntry> queue = new LinkedList<>();
+
     private LockHolder lockedBy;
 
+    @ToStringIgnore
     private int busy;
 
     public LockControllerServer(String name, ScheduledExecutorService scheduler) {
@@ -454,7 +457,7 @@ class LockControllerServer {
             .filter(LockQueueEntry::isWithFeedback)
             .forEach(other -> {
                 if (DEBUG) {
-                    log.debug("Updating lock owner info [queue-entry={}]", other);
+                    log.debug("Notifying queue entry on lock owner change [queue-entry={}]", other);
                 }
 
                 replyPartial(other.getMessage(), newResponse(LockResponse.Status.LOCK_INFO));
@@ -505,5 +508,10 @@ class LockControllerServer {
         } else {
             return new LockResponse(status, lockedBy.getNode(), lockedBy.getThreadId());
         }
+    }
+
+    @Override
+    public String toString() {
+        return ToString.format(this);
     }
 }

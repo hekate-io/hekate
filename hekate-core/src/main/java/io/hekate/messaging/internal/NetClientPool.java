@@ -18,7 +18,6 @@ package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.internal.util.Utils;
-import io.hekate.messaging.unicast.RequestCallback;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkConnector;
@@ -100,7 +99,7 @@ class NetClientPool<T> implements ClientPool<T> {
     }
 
     @Override
-    public void send(MessageContext<T> ctx, SendCallback callback) {
+    public void send(AffinityContext<T> ctx, SendCallback callback) {
         NetSenderContext<T> client = route(ctx.getAffinity());
 
         // Touch in advance to make sure that pool will not be disconnected
@@ -113,7 +112,7 @@ class NetClientPool<T> implements ClientPool<T> {
     }
 
     @Override
-    public void request(MessageContext<T> ctx, RequestCallback<T> callback) {
+    public void request(AffinityContext<T> ctx, InternalRequestCallback<T> callback) {
         NetSenderContext<T> client = route(ctx.getAffinity());
 
         // Touch in advance to make sure that pool will not be disconnected

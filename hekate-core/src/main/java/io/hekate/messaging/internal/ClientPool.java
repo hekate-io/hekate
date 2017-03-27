@@ -17,7 +17,6 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.messaging.unicast.RequestCallback;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkFuture;
 import java.util.List;
@@ -30,9 +29,9 @@ interface ClientPool<T> {
 
     void disconnectIfIdle();
 
-    void send(MessageContext<T> ctx, SendCallback callback);
+    void send(AffinityContext<T> ctx, SendCallback callback);
 
-    void request(MessageContext<T> ctx, RequestCallback<T> callback);
+    void request(AffinityContext<T> ctx, InternalRequestCallback<T> callback);
 
     List<NetworkFuture<MessagingProtocol>> close();
 

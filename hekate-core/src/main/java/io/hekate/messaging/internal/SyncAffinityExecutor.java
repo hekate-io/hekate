@@ -16,18 +16,21 @@
 
 package io.hekate.messaging.internal;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 class SyncAffinityExecutor implements AffinityExecutor {
-    private final ScheduledExecutorService scheduler;
+    private final ExecutorService scheduler;
 
     private final AffinityWorker worker;
 
     public SyncAffinityExecutor(ThreadFactory threadFactory) {
-        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(threadFactory);
+        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, threadFactory);
+
+        executor.setRemoveOnCancelPolicy(true);
 
         worker = new AffinityWorker() {
             @Override
@@ -36,8 +39,8 @@ class SyncAffinityExecutor implements AffinityExecutor {
             }
 
             @Override
-            public void executeDeferred(long delay, Runnable task) {
-                executor.schedule(task, delay, TimeUnit.MILLISECONDS);
+            public Future<?> executeDeferred(long delay, Runnable task) {
+                return executor.schedule(task, delay, TimeUnit.MILLISECONDS);
             }
 
             @Override

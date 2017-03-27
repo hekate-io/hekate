@@ -30,6 +30,7 @@ import io.hekate.messaging.unicast.RequestFuture;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.messaging.unicast.SendFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Messaging channel.
@@ -352,6 +353,8 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @param <C> Channel type.
      *
      * @return Channel wrapper.
+     *
+     * @see MessagingChannelConfig#setFailoverPolicy(FailoverPolicy)
      */
     <C extends T> MessagingChannel<C> withFailover(FailoverPolicy policy);
 
@@ -363,8 +366,33 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @param <C> Channel type.
      *
      * @return Channel wrapper.
+     *
+     * @see MessagingChannelConfig#setFailoverPolicy(FailoverPolicy)
      */
     <C extends T> MessagingChannel<C> withFailover(FailoverPolicyBuilder policy);
+
+    /**
+     * Returns a new lightweight wrapper of this channel that will use the specified timeout value and will inherit all other options from
+     * this instance.
+     *
+     * <p>
+     * If particular messaging operation (f.e. {@link MessagingChannel#request(Object) request(...)}
+     * or {@link MessagingChannel#send(Object) send}) can't be completed within the specified timeout then such operation will fail with
+     * {@link MessagingTimeoutException}.
+     * </p>
+     *
+     * <p>
+     * Specifying a negative or a zero value will disable timeout checking.
+     * </p>
+     *
+     * @param timeout Timeout.
+     * @param unit Unit.
+     *
+     * @return Channel wrapper.
+     *
+     * @see MessagingChannelConfig#setMessagingTimeout(long)
+     */
+    MessagingChannel<T> withTimeout(long timeout, TimeUnit unit);
 
     /**
      * Returns a new lightweight wrapper of this channel that will use the specified load balancer and will inherit all other options from
@@ -374,6 +402,8 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @param <C> Channel type.
      *
      * @return Channel wrapper.
+     *
+     * @see MessagingChannelConfig#setLoadBalancer(LoadBalancer)
      */
     <C extends T> MessagingChannel<C> withLoadBalancer(LoadBalancer<C> balancer);
 

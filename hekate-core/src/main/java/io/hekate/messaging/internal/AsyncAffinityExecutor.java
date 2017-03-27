@@ -17,8 +17,9 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.core.internal.util.Utils;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
@@ -36,8 +37,8 @@ class AsyncAffinityExecutor implements AffinityExecutor {
         }
 
         @Override
-        public void executeDeferred(long delay, Runnable task) {
-            executor.schedule(task, delay, TimeUnit.MILLISECONDS);
+        public Future<?> executeDeferred(long delay, Runnable task) {
+            return executor.schedule(task, delay, TimeUnit.MILLISECONDS);
         }
 
         @Override
@@ -66,7 +67,9 @@ class AsyncAffinityExecutor implements AffinityExecutor {
         workers = new AffinityWorkerImpl[size];
 
         for (int i = 0; i < size; i++) {
-            ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(threadFactory);
+            ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, threadFactory);
+
+            executor.setRemoveOnCancelPolicy(true);
 
             workers[i] = new AffinityWorkerImpl(executor);
         }

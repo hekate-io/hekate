@@ -16,20 +16,8 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.cluster.ClusterView;
-import io.hekate.failover.FailoverPolicy;
-import io.hekate.messaging.unicast.LoadBalancer;
+import io.hekate.messaging.unicast.Reply;
 
-interface MessagingOpts<T> {
-    LoadBalancer<T> balancer();
-
-    ClusterView cluster();
-
-    FailoverPolicy failover();
-
-    long timeout();
-
-    default boolean hasTimeout() {
-        return timeout() > 0;
-    }
+interface InternalRequestCallback<T> {
+    void onComplete(RequestHandle<T> handle, Throwable err, Reply<T> reply);
 }

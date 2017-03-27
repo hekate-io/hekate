@@ -34,7 +34,6 @@ import io.hekate.messaging.internal.MessagingProtocol.Connect;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.unicast.LoadBalancingException;
 import io.hekate.messaging.unicast.Reply;
-import io.hekate.messaging.unicast.RequestCallback;
 import io.hekate.messaging.unicast.RequestFuture;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.messaging.unicast.SendFuture;
@@ -56,7 +55,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -459,59 +457,14 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
         repeat(5, i -> {
             replyCallbackRef.set(new SendCallbackMock());
 
-            Message<String> msg = sender.requestWithSyncCallback(receiver.getNodeId(), "request");
+            Reply<String> msg = sender.requestWithSyncCallback(receiver.getNodeId(), "request");
 
             replyCallbackRef.get().get();
 
             assertNotNull(msg);
-            assertFalse(msg.mustReply());
             assertEquals("response", msg.get());
 
-            assertResponseUnsupported(msg);
-
             receiver.checkReceiverError();
-        });
-    }
-
-    @Test
-    public void testMultiStepRequestWithPartialResponse() throws Throwable {
-        List<String> messages = Collections.synchronizedList(new ArrayList<>());
-
-        AtomicReference<CountDownLatch> done = new AtomicReference<>();
-
-        TestChannel sender = createChannel().join();
-
-        TestChannel receiver = createChannel(c -> c.setReceiver(msg -> {
-            assertEquals("init_request", msg.get());
-
-            msg.replyWithRequest("init_response", (err, reply) -> {
-                messages.add(reply.get());
-
-                if (reply.get().equals("done")) {
-                    done.get().countDown();
-                }
-            });
-        })).join();
-
-        awaitForChannelsTopology(sender, receiver);
-
-        repeat(5, i -> {
-            done.set(new CountDownLatch(1));
-
-            sender.request(receiver.getNodeId(), "init_request", (err, reply) -> {
-                assertEquals("init_response", reply.get());
-
-                reply.replyPartial("one");
-                reply.replyPartial("two");
-                reply.replyPartial("three");
-                reply.reply("done");
-            });
-
-            await(done.get());
-
-            assertEquals(Arrays.asList("one", "two", "three", "done"), messages);
-
-            messages.clear();
         });
     }
 
@@ -557,8 +510,6 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
             sender.request(receiver.getNodeId(), "request", (err, reply) -> {
                 if (err == null) {
                     try {
-                        assertResponseUnsupported(reply);
-
                         senderMessages.add(reply.get());
 
                         if (reply.get().equals("final")) {
@@ -617,8 +568,6 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
             sender.request(receiver.getNodeId(), "request", (err, reply) -> {
                 if (err == null) {
                     try {
-                        assertResponseUnsupported(reply);
-
                         senderMessages.add(reply.get());
 
                         if (reply.get().equals("final")) {
@@ -643,92 +592,6 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
             assertEquals(expectedMessages, senderMessages);
 
             receiver.checkReceiverError();
-        });
-    }
-
-    @Test
-    public void testMultipleRequestResponse() throws Throwable {
-        // Run with 1 and 2 nodes in order to test network and in-memory messaging.
-        repeat(2, j -> {
-            List<TestChannel> channels = createAndJoinChannels(j + 1, c ->
-                c.setReceiver(msg -> {
-                    assertTrue(msg.mustReply());
-
-                    int initVal = Integer.parseInt(msg.get());
-
-                    msg.replyWithRequest("response_" + initVal, new RequestCallback<String>() {
-                        @Override
-                        public void onComplete(Throwable err, Reply<String> reply) {
-                            if (err == null) {
-                                assertTrue(reply.mustReply());
-
-                                int val = Integer.parseInt(reply.get());
-
-                                if (val < 9) {
-                                    reply.replyWithRequest("response_" + val, this);
-                                } else {
-                                    reply.reply("last");
-                                }
-
-                                assertFalse(reply.mustReply());
-                            }
-                        }
-                    });
-
-                    assertFalse(msg.mustReply());
-
-                    try {
-                        msg.reply("invalid");
-
-                        fail("Failure was expected.");
-                    } catch (IllegalStateException e) {
-                        assertTrue(e.getMessage().startsWith("Message already responded"));
-                    }
-                })
-            );
-
-            awaitForChannelsTopology(channels);
-
-            TestChannel sender = channels.get(0);
-            TestChannel receiver = channels.size() == 1 ? sender : channels.get(1);
-
-            repeat(5, i -> {
-                CompletableFuture<Throwable> errFuture = new CompletableFuture<>();
-
-                AtomicInteger val = new AtomicInteger();
-
-                RequestCallback<String> testCallback = new RequestCallback<String>() {
-                    @Override
-                    public void onComplete(Throwable err, Reply<String> reply) {
-                        if (err == null) {
-                            if (reply.get().equals("last")) {
-                                errFuture.complete(null);
-                            } else {
-                                try {
-                                    assertTrue(reply.mustReply());
-
-                                    assertEquals("response_" + (val.get() - 1), reply.get());
-
-                                    reply.replyWithRequest(String.valueOf(val.getAndIncrement()), this);
-                                } catch (Throwable t) {
-                                    errFuture.complete(t);
-                                }
-                            }
-                        } else {
-                            errFuture.complete(err);
-                        }
-                    }
-                };
-
-                sender.request(receiver.getNodeId(), String.valueOf(val.getAndIncrement()), testCallback);
-
-                assertNull(errFuture.get(3, TimeUnit.SECONDS));
-                assertEquals(10, val.get());
-
-                receiver.checkReceiverError();
-            });
-
-            channels.forEach(c -> c.getInstance().leaveAsync().join());
         });
     }
 
@@ -886,111 +749,6 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testMultipleRequestResponseThreadAffinity() throws Throwable {
-        List<Thread> receiverThreads = new CopyOnWriteArrayList<>();
-
-        TestChannel sender = createChannel().join();
-
-        TestChannel receiver = createChannel(c -> c.setReceiver(msg -> {
-            int initVal = Integer.parseInt(msg.get());
-
-            receiverThreads.add(Thread.currentThread());
-
-            msg.replyWithRequest("response_" + initVal, new RequestCallback<String>() {
-                @Override
-                public void onComplete(Throwable err, Reply<String> reply) {
-                    if (err == null) {
-                        receiverThreads.add(Thread.currentThread());
-
-                        int val = Integer.parseInt(reply.get());
-
-                        if (val < 9) {
-                            reply.replyWithRequest("response_" + val, this);
-                        } else {
-                            reply.reply("last", err1 -> {
-                                if (err1 == null) {
-                                    receiverThreads.add(Thread.currentThread());
-                                }
-                            });
-                        }
-                    }
-                }
-            });
-        })).join();
-
-        awaitForChannelsTopology(sender, receiver);
-
-        repeat(5, i -> {
-            AtomicInteger val = new AtomicInteger();
-
-            CompletableFuture<Throwable> errFuture = new CompletableFuture<>();
-
-            List<Thread> senderThreads = Collections.synchronizedList(new ArrayList<>());
-
-            RequestCallback<String> testCallback = new RequestCallback<String>() {
-                @Override
-                public void onComplete(Throwable err, Reply<String> reply) {
-                    if (err == null) {
-                        senderThreads.add(Thread.currentThread());
-
-                        if (reply.get().equals("last")) {
-                            errFuture.complete(null);
-                        } else {
-                            try {
-                                assertEquals("response_" + (val.get() - 1), reply.get());
-
-                                reply.replyWithRequest(String.valueOf(val.getAndIncrement()), this);
-                            } catch (Throwable t) {
-                                errFuture.complete(t);
-                            }
-                        }
-                    } else {
-                        errFuture.complete(err);
-                    }
-                }
-            };
-
-            String msg = String.valueOf(val.getAndIncrement());
-
-            sender.get().forNode(receiver.getNodeId()).affinityRequest(msg.hashCode(), msg, testCallback);
-
-            assertNull(errFuture.get(3, TimeUnit.SECONDS));
-            assertEquals(10, val.get());
-
-            receiver.checkReceiverError();
-
-            // Check that receiver callback was always notified on the same thread.
-            assertTrue(receiverThreads.size() > 1);
-
-            Thread prev = null;
-
-            for (Thread t : receiverThreads) {
-                if (prev == null) {
-                    prev = t;
-                } else {
-                    assertSame(prev, t);
-                }
-            }
-
-            // Check that sender callback was always notified on the same thread.
-            assertTrue(senderThreads.size() > 1);
-
-            prev = null;
-
-            for (Thread t : senderThreads) {
-                if (prev == null) {
-                    prev = t;
-                } else {
-                    assertSame(prev, t);
-                }
-            }
-
-            receiverThreads.clear();
-            senderThreads.clear();
-        });
-    }
-
-    @Test
     public void testServerResponseFailureOnServer() throws Throwable {
         TestChannel sender = createChannel().join();
 
@@ -1063,62 +821,6 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
                 fail("Error was expected.");
             } catch (ClosedChannelException e) {
                 // No-op.
-            }
-        });
-    }
-
-    @Test
-    public void testClientResponseFailure() throws Throwable {
-        AtomicReference<RequestCallbackMock> callbackRef = new AtomicReference<>();
-
-        TestChannel sender = createChannel(c -> c.setFailoverPolicy(context -> {
-            // Retry one I/O error that could be caused by a runtime error that is emulated buy this test.
-            return context.isCausedBy(IOException.class) && context.getAttempt() == 0 ? context.retry() : context.fail();
-        })).join();
-
-        TestChannel receiver = createChannel(c -> c.setReceiver(msg -> {
-            assertTrue(msg.mustReply());
-
-            msg.replyWithRequest("response", callbackRef.get());
-        })).join();
-
-        awaitForChannelsTopology(sender, receiver);
-
-        repeat(5, i -> {
-            String msg = "request" + i;
-
-            callbackRef.set(new RequestCallbackMock("response"));
-
-            CompletableFuture<Throwable> errFuture = new CompletableFuture<>();
-
-            sender.request(receiver.getNodeId(), msg, (err, reply) -> {
-                errFuture.complete(err);
-
-                if (err == null) {
-                    assertTrue(reply.mustReply());
-
-                    throw TEST_ERROR;
-                }
-            });
-
-            assertNull(errFuture.get(3, TimeUnit.SECONDS));
-
-            receiver.awaitForMessage(msg);
-
-            try {
-                callbackRef.get().get();
-
-                fail("Error was expected.");
-            } catch (ClosedChannelException e) {
-                // No-op.
-            }
-
-            if (sender.getImpl().getPool(receiver.getNodeId()) instanceof NetClientPool) {
-                NetClientPool<String> netPool = (NetClientPool<String>)sender.getImpl().getPool(receiver.getNodeId());
-
-                busyWait("reconnect", () ->
-                    netPool.getClients().stream().allMatch(c -> c.getNetState() == NetworkClient.State.CONNECTED)
-                );
             }
         });
     }
@@ -1859,28 +1561,6 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
         assertTrue(err.toString(), err instanceof ClosedChannelException);
     }
 
-    @Test
-    public void testClientReplyAfterStop() throws Exception {
-        TestChannel sender = createChannel().join();
-
-        TestChannel receiver = createChannel(c -> c.setReceiver(msg -> {
-            msg.replyWithRequest("request", (err, reply) -> {
-                // No-op.
-            });
-        })).join();
-
-        awaitForChannelsTopology(sender, receiver);
-
-        Reply<String> reply = sender.request(receiver.getNodeId(), "test").get(3, TimeUnit.SECONDS);
-
-        sender.leave();
-
-        Throwable err = replyAndGetError(reply);
-
-        assertNotNull(err);
-        assertTrue(err.toString(), err instanceof ClosedChannelException);
-    }
-
     private Throwable replyAndGetError(Message<String> reply) throws Exception {
         CompletableFuture<Throwable> errFuture = new CompletableFuture<>();
 
@@ -1913,14 +1593,6 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
         }
 
         try {
-            msg.replyWithRequest("invalid", new RequestCallbackMock("invalid"));
-
-            fail("Failure was expected.");
-        } catch (IllegalStateException e) {
-            assertTrue(e.getMessage().startsWith("Message already responded"));
-        }
-
-        try {
             msg.replyPartial("invalid", new SendCallbackMock());
 
             fail("Failure was expected.");
@@ -1940,14 +1612,6 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
 
         try {
             msg.reply("invalid", new SendCallbackMock());
-
-            fail("Failure was expected.");
-        } catch (UnsupportedOperationException e) {
-            assertEquals("Responses is not expected.", e.getMessage());
-        }
-
-        try {
-            msg.replyWithRequest("invalid", new RequestCallbackMock("invalid"));
 
             fail("Failure was expected.");
         } catch (UnsupportedOperationException e) {

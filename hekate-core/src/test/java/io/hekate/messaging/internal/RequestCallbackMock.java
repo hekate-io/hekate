@@ -16,7 +16,6 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.messaging.Message;
 import io.hekate.messaging.unicast.Reply;
 import io.hekate.messaging.unicast.RequestCallback;
 import java.util.concurrent.CompletableFuture;
@@ -28,13 +27,13 @@ import static org.junit.Assert.assertEquals;
 public class RequestCallbackMock implements RequestCallback<String> {
     private final String expectedRequest;
 
-    private final CompletableFuture<Message<String>> latch = new CompletableFuture<>();
+    private final CompletableFuture<Reply<String>> latch = new CompletableFuture<>();
 
     public RequestCallbackMock(String expectedRequest) {
         this.expectedRequest = expectedRequest;
     }
 
-    public Message<String> get() throws Exception {
+    public Reply<String> get() throws Exception {
         try {
             return latch.get(3, TimeUnit.SECONDS);
         } catch (ExecutionException e) {

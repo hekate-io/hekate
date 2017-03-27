@@ -102,6 +102,19 @@ public class MessagingChannelConfigTest extends HekateTestBase {
     }
 
     @Test
+    public void testMessagingTimeout() {
+        assertEquals(0, cfg.getMessagingTimeout());
+
+        cfg.setMessagingTimeout(10001);
+
+        assertEquals(10001, cfg.getMessagingTimeout());
+
+        assertSame(cfg, cfg.withMessagingTimeout(10002));
+
+        assertEquals(10002, cfg.getMessagingTimeout());
+    }
+
+    @Test
     public void testMessageCodec() {
         @SuppressWarnings("unchecked")
         CodecFactory<Object> factory = mock(CodecFactory.class);

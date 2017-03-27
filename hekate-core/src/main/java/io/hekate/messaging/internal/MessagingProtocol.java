@@ -22,7 +22,6 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.unicast.Reply;
-import io.hekate.messaging.unicast.RequestCallback;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkSendCallback;
@@ -43,8 +42,6 @@ abstract class MessagingProtocol {
         REQUEST,
 
         AFFINITY_REQUEST,
-
-        CONVERSATION,
 
         RESPONSE_CHUNK,
 
@@ -94,7 +91,34 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class Notification<T> extends MessagingProtocol implements Message<T>, NetworkSendCallback<MessagingProtocol> {
+    abstract static class NoReplyMessage<T> extends MessagingProtocol implements Message<T> {
+        @Override
+        public final boolean mustReply() {
+            return false;
+        }
+
+        @Override
+        public final void reply(T response) {
+            throw new UnsupportedOperationException("Responses is not expected.");
+        }
+
+        @Override
+        public final void reply(T response, SendCallback callback) {
+            throw new UnsupportedOperationException("Responses is not expected.");
+        }
+
+        @Override
+        public final void replyPartial(T response) throws UnsupportedOperationException {
+            throw new UnsupportedOperationException("Responses is not expected.");
+        }
+
+        @Override
+        public final void replyPartial(T response, SendCallback callback) throws UnsupportedOperationException {
+            throw new UnsupportedOperationException("Responses is not expected.");
+        }
+    }
+
+    static class Notification<T> extends NoReplyMessage<T> implements NetworkSendCallback<MessagingProtocol> {
         private final T payload;
 
         private AffinityWorker worker;
@@ -130,36 +154,6 @@ abstract class MessagingProtocol {
         @Override
         public <P extends T> P get(Class<P> type) {
             return type.cast(payload);
-        }
-
-        @Override
-        public boolean mustReply() {
-            return false;
-        }
-
-        @Override
-        public void reply(T response) {
-            throw new UnsupportedOperationException("Responses is not expected.");
-        }
-
-        @Override
-        public void reply(T response, SendCallback callback) {
-            throw new UnsupportedOperationException("Responses is not expected.");
-        }
-
-        @Override
-        public void replyWithRequest(T request, RequestCallback<T> callback) {
-            throw new UnsupportedOperationException("Responses is not expected.");
-        }
-
-        @Override
-        public void replyPartial(T response) throws UnsupportedOperationException {
-            throw new UnsupportedOperationException("Responses is not expected.");
-        }
-
-        @Override
-        public void replyPartial(T response, SendCallback callback) throws UnsupportedOperationException {
-            throw new UnsupportedOperationException("Responses is not expected.");
         }
 
         @Override
@@ -222,8 +216,9 @@ abstract class MessagingProtocol {
 
         private ReceiverContext<T> context;
 
-        private RequestCallback<T> sendCallback;
+        private RequestHandle<T> handle;
 
+        @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
         private volatile int mustReply;
 
         public Request(int requestId, T payload) {
@@ -236,10 +231,10 @@ abstract class MessagingProtocol {
             this.context = processor;
         }
 
-        public void prepareSend(AffinityWorker worker, ReceiverContext<T> context, RequestCallback<T> sendCallback) {
-            this.worker = worker;
+        public void prepareSend(RequestHandle<T> handle, ReceiverContext<T> context) {
+            this.worker = handle.getWorker();
             this.context = context;
-            this.sendCallback = sendCallback;
+            this.handle = handle;
         }
 
         public int getRequestId() {
@@ -279,13 +274,6 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public void replyWithRequest(T request, RequestCallback<T> callback) {
-            responded();
-
-            context.replyConversation(worker, requestId, request, callback);
-        }
-
-        @Override
         public void replyPartial(T response) throws UnsupportedOperationException {
             replyPartial(response, null);
         }
@@ -310,7 +298,7 @@ abstract class MessagingProtocol {
         @Override
         public void onComplete(MessagingProtocol message, Optional<Throwable> error, NetworkEndpoint<MessagingProtocol> endpoint) {
             error.ifPresent(err ->
-                context.notifyOnReplyFailure(worker, requestId, payload, err, sendCallback)
+                context.notifyOnReplyFailure(handle, err)
             );
         }
 
@@ -356,168 +344,7 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class Conversation<T> extends MessagingProtocol implements Reply<T>, NetworkSendCallback<MessagingProtocol> {
-        private static final AtomicIntegerFieldUpdater<Conversation> MUST_REPLY = newUpdater(Conversation.class, "mustReply");
-
-        private final int requestId;
-
-        private final int responseId;
-
-        private final T payload;
-
-        private AffinityWorker worker;
-
-        private ReceiverContext<T> context;
-
-        private T request;
-
-        private RequestCallback<T> sendCallback;
-
-        private SendBackPressure backPressure;
-
-        private volatile int mustReply;
-
-        public Conversation(int requestId, int responseId, T payload) {
-            this.requestId = requestId;
-            this.responseId = responseId;
-            this.payload = payload;
-        }
-
-        public void prepareSend(AffinityWorker worker, ReceiverContext<T> context, SendBackPressure backPressure,
-            RequestCallback<T> sendCallback) {
-            this.worker = worker;
-            this.context = context;
-            this.backPressure = backPressure;
-            this.sendCallback = sendCallback;
-
-            // Apply back pressure when sending from server back to client.
-            if (backPressure != null) {
-                // Note we are using IGNORE policy for back pressure
-                // since we don't want this operation to fail/block but still want it to be counted by the back pressure guard.
-                backPressure.onEnqueueIgnorePolicy();
-            }
-        }
-
-        public void prepareReceive(AffinityWorker worker, ReceiverContext<T> context, T request) {
-            this.worker = worker;
-            this.context = context;
-            this.request = request;
-        }
-
-        public int getResponseId() {
-            return responseId;
-        }
-
-        public int getRequestId() {
-            return requestId;
-        }
-
-        @Override
-        public boolean is(Class<? extends T> type) {
-            return type.isInstance(payload);
-        }
-
-        @Override
-        public T get() {
-            return payload;
-        }
-
-        @Override
-        public <P extends T> P get(Class<P> type) {
-            return type.cast(payload);
-        }
-
-        @Override
-        public boolean mustReply() {
-            return mustReply == 0;
-        }
-
-        @Override
-        public boolean isPartial() {
-            return false;
-        }
-
-        @Override
-        public void reply(T response) {
-            reply(response, null);
-        }
-
-        @Override
-        public void reply(T response, SendCallback callback) {
-            responded();
-
-            context.reply(worker, responseId, response, callback);
-        }
-
-        @Override
-        public void replyWithRequest(T request, RequestCallback<T> callback) {
-            responded();
-
-            context.replyConversation(worker, responseId, request, callback);
-        }
-
-        @Override
-        public void replyPartial(T response) throws UnsupportedOperationException {
-            replyPartial(response, null);
-        }
-
-        @Override
-        public void replyPartial(T response, SendCallback callback) throws UnsupportedOperationException {
-            checkNotResponded();
-
-            context.replyChunk(worker, requestId, response, callback);
-        }
-
-        @Override
-        public MessagingEndpoint<T> getEndpoint() {
-            return context.getEndpoint();
-        }
-
-        @Override
-        public MessagingChannel<T> getChannel() {
-            return context.getEndpoint().getChannel();
-        }
-
-        @Override
-        public void onComplete(MessagingProtocol message, Optional<Throwable> error, NetworkEndpoint<MessagingProtocol> endpoint) {
-            if (backPressure != null) {
-                backPressure.onDequeue();
-            }
-
-            error.ifPresent(err ->
-                context.notifyOnReplyFailure(worker, responseId, payload, err, sendCallback)
-            );
-        }
-
-        @Override
-        public Type getType() {
-            return Type.CONVERSATION;
-        }
-
-        @Override
-        public T getRequest() {
-            return request;
-        }
-
-        private void responded() {
-            if (!MUST_REPLY.compareAndSet(this, 0, 1)) {
-                throw new IllegalStateException("Message already responded. [message=" + payload + ']');
-            }
-        }
-
-        private void checkNotResponded() {
-            if (!mustReply()) {
-                throw new IllegalStateException("Message already responded..");
-            }
-        }
-
-        @Override
-        public String toString() {
-            return getClass().getSimpleName() + "[payload=" + payload + ']';
-        }
-    }
-
-    static class ResponseChunk<T> extends MessagingProtocol implements Reply<T>, NetworkSendCallback<MessagingProtocol> {
+    static class ResponseChunk<T> extends NoReplyMessage<T> implements Reply<T>, NetworkSendCallback<MessagingProtocol> {
         private final int requestId;
 
         private final T payload;
@@ -585,38 +412,8 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public boolean mustReply() {
-            return false;
-        }
-
-        @Override
         public boolean isPartial() {
             return true;
-        }
-
-        @Override
-        public void reply(T response) {
-            throw new UnsupportedOperationException("Responses is not expected.");
-        }
-
-        @Override
-        public void reply(T response, SendCallback callback) {
-            throw new UnsupportedOperationException("Responses is not expected.");
-        }
-
-        @Override
-        public void replyWithRequest(T request, RequestCallback<T> callback) {
-            throw new UnsupportedOperationException("Responses is not expected.");
-        }
-
-        @Override
-        public void replyPartial(T response) throws UnsupportedOperationException {
-            throw new UnsupportedOperationException("Responses is not expected.");
-        }
-
-        @Override
-        public void replyPartial(T response, SendCallback callback) throws UnsupportedOperationException {
-            throw new UnsupportedOperationException("Responses is not expected.");
         }
 
         @Override
@@ -717,38 +514,8 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public boolean mustReply() {
-            return false;
-        }
-
-        @Override
         public boolean isPartial() {
             return false;
-        }
-
-        @Override
-        public void reply(T response) {
-            throw new UnsupportedOperationException("Responses is not expected.");
-        }
-
-        @Override
-        public void reply(T response, SendCallback callback) {
-            throw new UnsupportedOperationException("Responses is not expected.");
-        }
-
-        @Override
-        public void replyWithRequest(T request, RequestCallback<T> callback) {
-            throw new UnsupportedOperationException("Responses is not expected.");
-        }
-
-        @Override
-        public void replyPartial(T response) throws UnsupportedOperationException {
-            throw new UnsupportedOperationException("Responses is not expected.");
-        }
-
-        @Override
-        public void replyPartial(T response, SendCallback callback) throws UnsupportedOperationException {
-            throw new UnsupportedOperationException("Responses is not expected.");
         }
 
         @Override

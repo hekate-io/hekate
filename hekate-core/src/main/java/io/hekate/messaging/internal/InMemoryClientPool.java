@@ -98,12 +98,12 @@ class InMemoryClientPool<T> implements ClientPool<T> {
     }
 
     @Override
-    public void send(MessageContext<T> ctx, SendCallback callback) {
+    public void send(AffinityContext<T> ctx, SendCallback callback) {
         client.sendNotification(ctx, callback);
     }
 
     @Override
-    public void request(MessageContext<T> ctx, RequestCallback<T> callback) {
+    public void request(AffinityContext<T> ctx, InternalRequestCallback<T> callback) {
         client.sendRequest(ctx, callback);
     }
 

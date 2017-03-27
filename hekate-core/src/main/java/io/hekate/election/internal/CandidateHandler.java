@@ -201,7 +201,7 @@ class CandidateHandler implements AsyncLockCallback {
             updateLeaderFuture(newLeader);
 
             if (log.isInfoEnabled()) {
-                log.info("Leader changed [group={}, new={}, old={}, candidate={}]", group, oldLeader, newLeader, candidate);
+                log.info("Leader changed [group={}, new={}, old={}, candidate={}]", group, newLeader, oldLeader, candidate);
             }
 
             followerCtx.onLeaderChange(newLeader);

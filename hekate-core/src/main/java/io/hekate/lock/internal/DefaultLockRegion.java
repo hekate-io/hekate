@@ -1023,8 +1023,16 @@ class DefaultLockRegion implements LockRegion {
             ClusterNodeId coordinator = request.getKey().getNode();
 
             if (localMapper.getTopology().contains(coordinator)) {
+                if (DEBUG) {
+                    log.debug("Request is valid [request={}]", request);
+                }
+
                 return true;
             }
+        }
+
+        if (DEBUG) {
+            log.debug("Request is invalid [request={}]", request);
         }
 
         return false;

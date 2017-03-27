@@ -19,12 +19,10 @@ package io.hekate.messaging.internal;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
-import io.hekate.messaging.internal.MessagingProtocol.Conversation;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.internal.MessagingProtocol.Request;
 import io.hekate.messaging.internal.MessagingProtocol.Response;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
-import io.hekate.messaging.unicast.RequestCallback;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkFuture;
@@ -50,28 +48,24 @@ abstract class NetReceiverContextBase<T> extends ReceiverContext<T> {
     }
 
     @Override
-    public void sendRequest(MessageContext<T> ctx, RequestCallback<T> callback) {
-        // No need to call touch() since it is done in NetClientPool.
-
-        RequestHolder<T> holder = registerRequest(ctx.getWorker(), ctx.getMessage(), callback);
+    public void sendRequest(AffinityContext<T> ctx, InternalRequestCallback<T> callback) {
+        RequestHandle<T> handle = registerRequest(ctx, callback);
 
         Request<T> msg;
 
         if (ctx.getAffinity() >= 0) {
-            msg = new AffinityRequest<>(ctx.getAffinity(), holder.getId(), ctx.getMessage());
+            msg = new AffinityRequest<>(ctx.getAffinity(), handle.getId(), ctx.getMessage());
         } else {
-            msg = new Request<>(holder.getId(), ctx.getMessage());
+            msg = new Request<>(handle.getId(), ctx.getMessage());
         }
 
-        msg.prepareSend(ctx.getWorker(), this, callback);
+        msg.prepareSend(handle, this);
 
         endpoint.send(msg, msg /* <-- Message itself is a callback.*/);
     }
 
     @Override
-    public void sendNotification(MessageContext<T> ctx, SendCallback callback) {
-        // No need to call touch() since it is done in NetClientPool.
-
+    public void sendNotification(AffinityContext<T> ctx, SendCallback callback) {
         Notification<T> msg;
 
         if (ctx.getAffinity() >= 0) {
@@ -81,19 +75,6 @@ abstract class NetReceiverContextBase<T> extends ReceiverContext<T> {
         }
 
         msg.prepareSend(ctx.getWorker(), this, callback);
-
-        endpoint.send(msg, msg /* <-- Message itself is a callback.*/);
-    }
-
-    @Override
-    public void replyConversation(AffinityWorker worker, int requestId, T conversation, RequestCallback<T> callback) {
-        touch();
-
-        RequestHolder<T> holder = registerRequest(worker, conversation, callback);
-
-        Conversation<T> msg = new Conversation<>(requestId, holder.getId(), conversation);
-
-        msg.prepareSend(worker, this, backPressure, callback);
 
         endpoint.send(msg, msg /* <-- Message itself is a callback.*/);
     }

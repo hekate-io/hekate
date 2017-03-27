@@ -32,6 +32,7 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingException;
+import io.hekate.messaging.MessagingTimeoutException;
 import io.hekate.messaging.UnknownRouteException;
 import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.AggregateFuture;
@@ -68,6 +69,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.StampedLock;
@@ -205,7 +207,7 @@ class MessagingGateway<T> {
     public MessagingGateway(String name, NetworkConnector<MessagingProtocol> net, ClusterNode localNode, ClusterView cluster,
         MessageReceiver<T> receiver, int sockets, int nioThreads, AffinityExecutor async, MetricsCallback metrics,
         ReceiveBackPressure receiveBackPressure, SendBackPressure sendBackPressure, FailoverPolicy failoverPolicy,
-        LoadBalancer<T> loadBalancer, boolean checkIdle, CloseCallback onBeforeClose) {
+        long defaultTimeout, LoadBalancer<T> loadBalancer, boolean checkIdle, CloseCallback onBeforeClose) {
         assert name != null : "Name is null.";
         assert net != null : "Network connector is null.";
         assert localNode != null : "Local cluster node is null.";
@@ -230,7 +232,7 @@ class MessagingGateway<T> {
 
         this.asyncAdaptor = new AffinityExecutorAdaptor(async);
 
-        this.channel = new DefaultMessagingChannel<>(this, rootCluster, loadBalancer, failoverPolicy, null);
+        this.channel = new DefaultMessagingChannel<>(this, rootCluster, loadBalancer, failoverPolicy, null, defaultTimeout);
     }
 
     public MessagingChannelId getId() {
@@ -269,13 +271,17 @@ class MessagingGateway<T> {
         assert message != null : "Message must be not null.";
         assert opts != null : "Messaging options must be not null.";
 
-        MessageContext<T> ctx = newContext(affinityKey, message);
+        AffinityContext<T> ctx = newContext(affinityKey, message, opts.hasTimeout());
 
         if (backPressureAcquire(ctx, callback)) {
             try {
                 routeAndSend(ctx, opts, callback, null);
             } catch (RejectedExecutionException e) {
                 notifyOnChannelClosedError(ctx, callback);
+            }
+
+            if (opts.hasTimeout()) {
+                scheduleTimeout(ctx, opts.timeout(), callback);
             }
         }
     }
@@ -294,13 +300,17 @@ class MessagingGateway<T> {
         assert opts != null : "Messaging options must be not null.";
         assert callback != null : "Callback must be not null.";
 
-        MessageContext<T> ctx = newContext(affinityKey, message);
+        AffinityContext<T> ctx = newContext(affinityKey, message, opts.hasTimeout());
 
         if (backPressureAcquire(ctx, callback)) {
             try {
                 routeAndRequest(ctx, opts, callback, null);
             } catch (RejectedExecutionException e) {
                 notifyOnChannelClosedError(ctx, callback);
+            }
+
+            if (opts.hasTimeout()) {
+                scheduleTimeout(ctx, opts.timeout(), callback);
             }
         }
     }
@@ -318,7 +328,7 @@ class MessagingGateway<T> {
         assert cluster != null : "Cluster must be not null.";
         assert callback != null : "Callback must be not null.";
 
-        MessageContext<T> ctx = newContext(affinityKey, message);
+        AffinityContext<T> ctx = newContext(affinityKey, message, false);
 
         if (backPressureAcquire(ctx, callback)) {
             try {
@@ -343,7 +353,7 @@ class MessagingGateway<T> {
         assert cluster != null : "Cluster must be not null.";
         assert callback != null : "Callback must be not null.";
 
-        MessageContext<T> ctx = newContext(affinityKey, message);
+        AffinityContext<T> ctx = newContext(affinityKey, message, false);
 
         if (backPressureAcquire(ctx, callback)) {
             try {
@@ -473,7 +483,7 @@ class MessagingGateway<T> {
         return sendBackPressure;
     }
 
-    private void routeAndSend(MessageContext<T> ctx, MessagingOpts<T> opts, SendCallback callback, FailureInfo prevErr) {
+    private void routeAndSend(AffinityContext<T> ctx, MessagingOpts<T> opts, SendCallback callback, FailureInfo prevErr) {
         ClientPool<T> pool = null;
 
         try {
@@ -487,9 +497,9 @@ class MessagingGateway<T> {
         }
     }
 
-    private void doSend(MessageContext<T> ctx, ClientPool<T> pool, MessagingOpts<T> opts, SendCallback callback, FailureInfo prevErr) {
+    private void doSend(AffinityContext<T> ctx, ClientPool<T> pool, MessagingOpts<T> opts, SendCallback callback, FailureInfo prevErr) {
         // Decorate callback with failover, error handling logic, etc.
-        SendCallback decoratedCallback = err -> {
+        SendCallback retryCallback = err -> {
             if (err == null || opts.failover() == null) {
                 if (ctx.complete()) {
                     backPressureRelease();
@@ -535,10 +545,10 @@ class MessagingGateway<T> {
             }
         };
 
-        pool.send(ctx, decoratedCallback);
+        pool.send(ctx, retryCallback);
     }
 
-    private void routeAndRequest(MessageContext<T> ctx, MessagingOpts<T> opts, RequestCallback<T> callback, FailureInfo prevErr) {
+    private void routeAndRequest(AffinityContext<T> ctx, MessagingOpts<T> opts, RequestCallback<T> callback, FailureInfo prevErr) {
         ClientPool<T> pool = null;
 
         try {
@@ -552,114 +562,98 @@ class MessagingGateway<T> {
         }
     }
 
-    private void doRequest(MessageContext<T> ctx, ClientPool<T> pool, MessagingOpts<T> opts, RequestCallback<T> callback,
+    private void doRequest(AffinityContext<T> ctx, ClientPool<T> pool, MessagingOpts<T> opts, RequestCallback<T> callback,
         FailureInfo prevErr) {
         // Decorate callback with failover, error handling logic, etc.
-        RequestCallback<T> decoratedCallback = new RequestCallback<T>() {
-            @Override
-            public void onComplete(Throwable err, Reply<T> reply) {
-                T replyMsg = null;
+        InternalRequestCallback<T> internalCallback = (request, err, reply) -> {
+            T replyMsg = null;
 
-                // Check if reply is an application-level error message.
-                if (err == null) {
-                    replyMsg = reply.get();
+            // Check if reply is an application-level error message.
+            if (err == null) {
+                replyMsg = reply.get();
 
-                    err = tryConvertToError(replyMsg);
+                err = tryConvertToError(replyMsg);
 
-                    if (err != null) {
-                        replyMsg = null;
-                    }
-                }
-
-                ReplyDecision acceptance = ReplyDecision.DEFAULT;
-
-                // Check if request callback can accept operation result.
-                if (err != null || !reply.mustReply()) {
-                    acceptance = callback.accept(err, replyMsg);
-                }
-
-                if (acceptance == null) {
-                    acceptance = ReplyDecision.DEFAULT;
-                }
-
-                FailoverPolicy failover = opts.failover();
-
-                if (acceptance == ReplyDecision.COMPLETE || acceptance == ReplyDecision.DEFAULT && err == null || failover == null) {
-                    // Check if this is the final reply or an error (ignore chunks).
-                    if (err != null || !reply.isPartial()) {
-                        // Make sure that callback will be notified only once on final reply.
-                        if (ctx.complete()) {
-                            backPressureRelease();
-
-                            // Accept final reply.
-                            callback.onComplete(err, reply);
-                        }
-                    } else if (!ctx.isCompleted()) {
-                        // Accept chunk.
-                        callback.onComplete(null, reply);
-                    }
-                } else {
-                    // Apply failover.
-                    if (acceptance == ReplyDecision.REJECT) {
-                        err = new RejectedReplyException("Reply was rejected by a request callback", replyMsg, err);
-                    }
-
-                    // Actions if operation should be retried.
-                    FailoverAcceptCallback onFailover = (routingPolicy, failure) -> {
-                        switch (routingPolicy) {
-                            case RETRY_SAME_NODE: {
-                                doRequest(ctx, pool, opts, callback, failure);
-
-                                break;
-                            }
-                            case PREFER_SAME_NODE: {
-                                if (isKnownNode(pool.getNode())) {
-                                    doRequest(ctx, pool, opts, callback, failure);
-                                } else {
-                                    routeAndRequest(ctx, opts, callback, failure);
-                                }
-
-                                break;
-                            }
-                            case RE_ROUTE: {
-                                routeAndRequest(ctx, opts, callback, failure);
-
-                                break;
-                            }
-                            default: {
-                                throw new IllegalArgumentException("Unexpected routing policy: " + routingPolicy);
-                            }
-                        }
-                    };
-
-                    // Actions if operation can't be retried.
-                    FailoverRejectCallback onFail = newCause -> notifyOnErrorAsync(ctx, callback, newCause);
-
-                    // Apply failover actions.
-                    applyFailoverAsync(ctx, err, pool.getNodeOpt(), opts, prevErr, onFailover, onFail);
+                if (err != null) {
+                    replyMsg = null;
                 }
             }
 
-            @Override
-            public ReplyDecision accept(Throwable err, T reply) {
-                throw new AssertionError("Invalid API usage.");
+            // Check if request callback can accept operation result.
+            ReplyDecision acceptance = callback.accept(err, replyMsg);
+
+            if (acceptance == null) {
+                acceptance = ReplyDecision.DEFAULT;
+            }
+
+            FailoverPolicy failover = opts.failover();
+
+            if (acceptance == ReplyDecision.COMPLETE || acceptance == ReplyDecision.DEFAULT && err == null || failover == null) {
+                // Check if this is the final reply or an error (ignore chunks).
+                if (err != null || !reply.isPartial()) {
+                    // Make sure that callback will be notified only once.
+                    if (ctx.complete()) {
+                        request.unregister();
+
+                        backPressureRelease();
+
+                        // Accept final reply.
+                        callback.onComplete(err, reply);
+                    }
+                } else if (!ctx.isCompleted()) {
+                    // Accept chunk.
+                    callback.onComplete(null, reply);
+                }
+            } else {
+                // No more interactions with this request.
+                // If failover is successful then new request will be registered.
+                request.unregister();
+
+                // Apply failover.
+                if (acceptance == ReplyDecision.REJECT) {
+                    err = new RejectedReplyException("Reply was rejected by a request callback", replyMsg, err);
+                }
+
+                // Actions if operation should be retried.
+                FailoverAcceptCallback onFailover = (routingPolicy, failure) -> {
+                    switch (routingPolicy) {
+                        case RETRY_SAME_NODE: {
+                            doRequest(ctx, pool, opts, callback, failure);
+
+                            break;
+                        }
+                        case PREFER_SAME_NODE: {
+                            if (isKnownNode(pool.getNode())) {
+                                doRequest(ctx, pool, opts, callback, failure);
+                            } else {
+                                routeAndRequest(ctx, opts, callback, failure);
+                            }
+
+                            break;
+                        }
+                        case RE_ROUTE: {
+                            routeAndRequest(ctx, opts, callback, failure);
+
+                            break;
+                        }
+                        default: {
+                            throw new IllegalArgumentException("Unexpected routing policy: " + routingPolicy);
+                        }
+                    }
+                };
+
+                // Actions if operation can't be retried.
+                FailoverRejectCallback onFail = newCause -> notifyOnErrorAsync(ctx, callback, newCause);
+
+                // Apply failover actions.
+                applyFailoverAsync(ctx, err, pool.getNodeOpt(), opts, prevErr, onFailover, onFail);
             }
         };
 
-        pool.request(ctx, decoratedCallback);
+        pool.request(ctx, internalCallback);
     }
 
-    private boolean isKnownNode(ClusterNode node) {
-        long readLock = lock.readLock();
-
-        try {
-            return pools.containsKey(node.getId());
-        } finally {
-            lock.unlockRead(readLock);
-        }
-    }
-
-    private void doAggregate(MessageContext<T> ctx, ClusterView cluster, AggregateCallback<T> callback) {
+    private void doAggregate(AffinityContext<T> ctx, ClusterView cluster, AggregateCallback<T> callback) {
         Map<ClusterNode, ClientPool<T>> pools;
 
         try {
@@ -673,50 +667,49 @@ class MessagingGateway<T> {
         if (pools.isEmpty()) {
             callback.onComplete(null, new ImmediateAggregateResult<>(ctx.getMessage()));
         } else {
-            AggregateContext<T> aggregateCtx = new AggregateContext<>(ctx.getMessage(), pools.keySet(), callback);
+            AggregateContext<T> aggregate = new AggregateContext<>(ctx.getMessage(), pools.keySet(), callback);
 
             for (Map.Entry<ClusterNode, ClientPool<T>> e : pools.entrySet()) {
-                ClusterNode target = e.getKey();
+                ClusterNode node = e.getKey();
                 ClientPool<T> pool = e.getValue();
 
-                RequestCallback<T> requestCallback = (err, reply) -> {
+                InternalRequestCallback<T> nodeCallback = (request, err, reply) -> {
                     if (err == null) {
                         // Check if reply is an application-level error message.
                         err = tryConvertToError(reply.get());
                     }
 
+                    if (err != null || !reply.isPartial()) {
+                        request.unregister();
+                    }
+
                     boolean completed;
 
                     if (err == null) {
-                        completed = aggregateCtx.onReplySuccess(target, reply);
+                        completed = aggregate.onReplySuccess(node, reply);
                     } else {
-                        completed = aggregateCtx.onReplyFailure(target, err);
+                        completed = aggregate.onReplyFailure(node, err);
                     }
 
                     if (completed && ctx.complete()) {
                         backPressureRelease();
 
-                        aggregateCtx.complete();
+                        aggregate.complete();
                     }
                 };
 
                 if (pool != null) {
-                    pool.request(ctx, requestCallback);
+                    pool.request(ctx, nodeCallback);
                 } else {
-                    UnknownRouteException cause = new UnknownRouteException("Node is not within the channel topology "
-                        + "[node=" + target + ']');
+                    UnknownRouteException err = new UnknownRouteException("Node is not within the channel topology [node=" + node + ']');
 
-                    try {
-                        requestCallback.onComplete(cause, null);
-                    } catch (RuntimeException | Error err) {
-                        log.error("Got an unexpected runtime error while notifying on another error [cause={}]", cause, err);
-                    }
+                    aggregate.onReplyFailure(node, err);
                 }
             }
         }
     }
 
-    private void doBroadcast(MessageContext<T> ctx, ClusterView cluster, BroadcastCallback<T> callback) {
+    private void doBroadcast(AffinityContext<T> ctx, ClusterView cluster, BroadcastCallback<T> callback) {
         Map<ClusterNode, ClientPool<T>> pools;
 
         try {
@@ -730,38 +723,34 @@ class MessagingGateway<T> {
         if (pools.isEmpty()) {
             callback.onComplete(null, new ImmediateBroadcastResult<>(ctx.getMessage()));
         } else {
-            BroadcastContext<T> broadcastCtx = new BroadcastContext<>(ctx.getMessage(), pools.keySet(), callback);
+            BroadcastContext<T> broadcast = new BroadcastContext<>(ctx.getMessage(), pools.keySet(), callback);
 
             for (Map.Entry<ClusterNode, ClientPool<T>> e : pools.entrySet()) {
                 ClusterNode node = e.getKey();
                 ClientPool<T> pool = e.getValue();
 
-                SendCallback sendCallback = err -> {
+                SendCallback nodeCallback = err -> {
                     boolean completed;
 
                     if (err == null) {
-                        completed = broadcastCtx.onSendSuccess(node);
+                        completed = broadcast.onSendSuccess(node);
                     } else {
-                        completed = broadcastCtx.onSendFailure(node, err);
+                        completed = broadcast.onSendFailure(node, err);
                     }
 
                     if (completed && ctx.complete()) {
                         backPressureRelease();
 
-                        broadcastCtx.complete();
+                        broadcast.complete();
                     }
                 };
 
                 if (pool != null) {
-                    pool.send(ctx, sendCallback);
+                    pool.send(ctx, nodeCallback);
                 } else {
-                    UnknownRouteException cause = new UnknownRouteException("Node is not within the channel topology [node=" + node + ']');
+                    UnknownRouteException err = new UnknownRouteException("Node is not within the channel topology [node=" + node + ']');
 
-                    try {
-                        sendCallback.onComplete(cause);
-                    } catch (Throwable t) {
-                        log.error("Got an unexpected runtime error while notifying callback on another error [cause={}]", cause, t);
-                    }
+                    broadcast.onSendFailure(node, err);
                 }
             }
         }
@@ -898,7 +887,17 @@ class MessagingGateway<T> {
         }
     }
 
-    private ClientPool<T> selectUnicastPool(MessageContext<T> ctx, MessagingOpts<T> opts, FailureInfo prevErr) throws HekateException {
+    private boolean isKnownNode(ClusterNode node) {
+        long readLock = lock.readLock();
+
+        try {
+            return pools.containsKey(node.getId());
+        } finally {
+            lock.unlockRead(readLock);
+        }
+    }
+
+    private ClientPool<T> selectUnicastPool(AffinityContext<T> ctx, MessagingOpts<T> opts, FailureInfo prevErr) throws HekateException {
         ClusterView cluster = opts.cluster();
         LoadBalancer<T> balancer = opts.balancer();
 
@@ -919,12 +918,12 @@ class MessagingGateway<T> {
                     targetId = topology.getNodesList().get(0).getId();
                 }
             } else {
-                LoadBalancerContext loadBalance = loadBalancer(ctx, topology, prevErr);
+                LoadBalancerContext balancerCtx = new DefaultLoadBalancerContext(ctx, topology, Optional.ofNullable(prevErr));
 
-                if (loadBalance.isEmpty()) {
+                if (balancerCtx.isEmpty()) {
                     throw new UnknownRouteException("No suitable receivers in the cluster topology [channel=" + name + ']');
                 } else {
-                    targetId = balancer.route(ctx.getMessage(), loadBalance);
+                    targetId = balancer.route(ctx.getMessage(), balancerCtx);
 
                     if (targetId == null) {
                         throw new UnknownRouteException("Load balancer failed to select a target node.");
@@ -1058,13 +1057,18 @@ class MessagingGateway<T> {
 
     private void applyFailover(MessageContext<T> ctx, Throwable cause, Optional<ClusterNode> failedNode, MessagingOpts<T> opts,
         FailureInfo prevErr, FailoverAcceptCallback onAccept, FailoverRejectCallback onReject) {
-        FailoverPolicy policy = opts.failover();
+        // Do nothing if operation is already completed.
+        if (ctx.isCompleted()) {
+            return;
+        }
 
         onRetry();
 
         boolean applied = false;
 
         Throwable finalCause = cause;
+
+        FailoverPolicy policy = opts.failover();
 
         if (policy != null && !(cause instanceof MessagingChannelClosedException)) {
             int attempt;
@@ -1074,7 +1078,7 @@ class MessagingGateway<T> {
             if (prevErr == null) {
                 attempt = 0;
                 prevRouting = RETRY_SAME_NODE;
-                failedNodes = failedNode.isPresent() ? Collections.singleton(failedNode.get()) : Collections.emptySet();
+                failedNodes = failedNode.map(Collections::singleton).orElseGet(Collections::emptySet);
             } else {
                 attempt = prevErr.getAttempt() + 1;
                 prevRouting = prevErr.getRouting();
@@ -1103,25 +1107,20 @@ class MessagingGateway<T> {
                     } else if (resolution != null && resolution.isRetry()) {
                         long delay = resolution.getDelay();
 
-                        FailoverRoutingPolicy reRoutePolicy = resolution.getRoutingPolicy();
+                        FailoverRoutingPolicy route = resolution.getRoutingPolicy();
 
                         // Apply failover only if re-routing was request or if the target node is still within the channel's topology.
-                        if (reRoutePolicy != RETRY_SAME_NODE || failedNode.isPresent() && pools.containsKey(failedNode.get().getId())) {
-                            // Schedule failover task for asynchronous execution.
-                            onAsyncEnqueue();
-
+                        if (route != RETRY_SAME_NODE || failedNode.isPresent() && pools.containsKey(failedNode.get().getId())) {
                             AffinityWorker worker = ctx.getWorker();
+
+                            // Schedule timeout task to apply failover actions after the failover delay.
+                            onAsyncEnqueue();
 
                             worker.executeDeferred(delay, () -> {
                                 onAsyncDequeue();
 
                                 try {
-                                    if (worker.isShutdown()) {
-                                        // Channel was closed.
-                                        onReject.onReject(getChannelClosedError(cause));
-                                    } else {
-                                        onAccept.onAccept(reRoutePolicy, newCtx.withRouting(reRoutePolicy));
-                                    }
+                                    onAccept.onAccept(route, newCtx.withRouting(route));
                                 } catch (RuntimeException | Error e) {
                                     log.error("Got an unexpected error during failover task processing.", e);
                                 }
@@ -1143,11 +1142,6 @@ class MessagingGateway<T> {
         }
     }
 
-    private LoadBalancerContext loadBalancer(MessageContext<T> ctx, ClusterTopology topology, FailureInfo failure)
-        throws MessagingException {
-        return new DefaultLoadBalancerContext(ctx.getAffinity(), ctx.getAffinityKey(), topology, Optional.ofNullable(failure));
-    }
-
     private ClientPool<T> createClientPool(ClusterNode node) {
         if (node.equals(localNode)) {
             return new InMemoryClientPool<>(localNode, this);
@@ -1156,14 +1150,32 @@ class MessagingGateway<T> {
         }
     }
 
-    private boolean backPressureAcquire(MessageContext<T> ctx, Object callback) {
+    private void scheduleTimeout(MessageContext<T> ctx, long timeout, Object callback) {
+        if (!ctx.isCompleted()) {
+            try {
+                Future<?> future = ctx.getWorker().executeDeferred(timeout, () -> {
+                    if (ctx.completeOnTimeout()) {
+                        MessagingTimeoutException err = new MessagingTimeoutException("Messaging operation timed out "
+                            + "[message=" + ctx.getMessage() + ']');
+
+                        notifyOnTimeoutErrorAsync(ctx, callback, err);
+                    }
+                });
+
+                ctx.setTimeoutFuture(future);
+            } catch (IllegalStateException e) {
+                // Ignore since this error means that channel is closed.
+                // In such case we can ignore timeout notification because messaging context will be notified by another error.
+            }
+        }
+    }
+
+    private boolean backPressureAcquire(AffinityContext<T> ctx, Object callback) {
         if (sendBackPressure != null) {
             Exception err = sendBackPressure.onEnqueue();
 
             if (err != null) {
-                affinityRun(ctx.getAffinity(), () ->
-                    notifyOnErrorAsync(ctx, callback, err)
-                );
+                notifyOnErrorAsync(ctx, callback, err);
 
                 return false;
             }
@@ -1203,94 +1215,82 @@ class MessagingGateway<T> {
     }
 
     private void notifyOnErrorAsync(MessageContext<T> ctx, Object callback, Throwable err) {
-        boolean scheduled = false;
-
-        if (!ctx.getWorker().isShutdown()) {
-            try {
-                ctx.getWorker().execute(() ->
-                    doNotifyOnError(ctx, callback, err)
-                );
-
-                scheduled = true;
-            } catch (RejectedExecutionException e) {
-                // Ignore since operation will be re-scheduled on common pool.
+        runAsyncAtAnyCost(ctx, () -> {
+            if (ctx.complete()) {
+                doNotifyOnError(callback, err);
             }
-        }
+        });
+    }
 
-        if (!scheduled) {
-            ForkJoinPool.commonPool().submit(() ->
-                doNotifyOnError(ctx, callback, err)
-            );
+    private void notifyOnTimeoutErrorAsync(MessageContext<T> ctx, Object callback, MessagingTimeoutException err) {
+        runAsyncAtAnyCost(ctx, () -> {
+            if (ctx.completeOnTimeout()) {
+                doNotifyOnError(callback, err);
+            }
+        });
+    }
+
+    private void runAsyncAtAnyCost(MessageContext<T> ctx, Runnable task) {
+        if (!ctx.isCompleted()) {
+            boolean scheduled = false;
+
+            if (!ctx.getWorker().isShutdown()) {
+                try {
+                    ctx.getWorker().execute(task);
+
+                    scheduled = true;
+                } catch (RejectedExecutionException e) {
+                    // Ignore since operation will be re-scheduled on common pool.
+                }
+            }
+
+            if (!scheduled) {
+                ForkJoinPool.commonPool().submit(task);
+            }
         }
     }
 
     @SuppressWarnings("unchecked")
-    private void doNotifyOnError(MessageContext<T> ctx, Object callback, Throwable err) {
-        if (ctx.complete()) {
-            backPressureRelease();
+    private void doNotifyOnError(Object callback, Throwable err) {
+        backPressureRelease();
 
-            if (callback != null) {
-                if (callback instanceof SendCallback) {
-                    try {
-                        ((SendCallback)callback).onComplete(err);
-                    } catch (RuntimeException | Error e) {
-                        log.error("Got an unexpected runtime error while notifying send callback on another error [cause={}]", err, e);
-                    }
-                } else if (callback instanceof RequestCallback) {
-                    try {
-                        ((RequestCallback)callback).onComplete(err, null);
-                    } catch (RuntimeException | Error e) {
-                        log.error("Got an unexpected runtime error while notifying request callback on another error [cause={}]", err, e);
-                    }
-                } else if (callback instanceof BroadcastCallback) {
-                    try {
-                        ((BroadcastCallback)callback).onComplete(err, null);
-                    } catch (RuntimeException | Error e) {
-                        log.error("Got an unexpected runtime error while notifying broadcast callback on another error [cause={}]", err, e);
-                    }
-                } else if (callback instanceof AggregateCallback) {
-                    try {
-                        ((AggregateCallback<Object>)callback).onComplete(err, null);
-                    } catch (RuntimeException | Error e) {
-                        log.error("Got an unexpected runtime error while notifying aggregate callback on another error [cause={}]", err, e);
-                    }
-                } else {
-                    throw new IllegalArgumentException("Unexpected callback type: " + callback);
+        if (callback != null) {
+            if (callback instanceof SendCallback) {
+                try {
+                    ((SendCallback)callback).onComplete(err);
+                } catch (RuntimeException | Error e) {
+                    log.error("Got an unexpected runtime error while notifying send callback on another error [cause={}]", err, e);
                 }
+            } else if (callback instanceof RequestCallback) {
+                try {
+                    ((RequestCallback)callback).onComplete(err, null);
+                } catch (RuntimeException | Error e) {
+                    log.error("Got an unexpected runtime error while notifying request callback on another error [cause={}]", err, e);
+                }
+            } else if (callback instanceof BroadcastCallback) {
+                try {
+                    ((BroadcastCallback)callback).onComplete(err, null);
+                } catch (RuntimeException | Error e) {
+                    log.error("Got an unexpected runtime error while notifying broadcast callback on another error [cause={}]", err, e);
+                }
+            } else if (callback instanceof AggregateCallback) {
+                try {
+                    ((AggregateCallback<Object>)callback).onComplete(err, null);
+                } catch (RuntimeException | Error e) {
+                    log.error("Got an unexpected runtime error while notifying aggregate callback on another error [cause={}]", err, e);
+                }
+            } else {
+                throw new IllegalArgumentException("Unexpected callback type: " + callback);
             }
         }
     }
 
-    private MessageContext<T> newContext(Object affinityKey, T message) {
+    private AffinityContext<T> newContext(Object affinityKey, T message, boolean hasTimeout) {
         int affinity = affinity(affinityKey);
 
         AffinityWorker worker = async.workerFor(affinity);
 
-        return new MessageContext<>(message, affinity, affinityKey, worker);
-    }
-
-    private void affinityRun(int affinity, Runnable task) {
-        if (async.isAsync()) {
-            AffinityWorker worker = async.workerFor(affinity);
-
-            boolean applied = false;
-
-            if (!worker.isShutdown()) {
-                try {
-                    worker.execute(task);
-
-                    applied = true;
-                } catch (RejectedExecutionException e) {
-                    // No-op.
-                }
-            }
-
-            if (!applied) {
-                ForkJoinPool.commonPool().execute(task);
-            }
-        } else {
-            task.run();
-        }
+        return new AffinityContext<>(message, affinity, affinityKey, worker, hasTimeout);
     }
 
     private MessagingChannelClosedException getChannelClosedError(Throwable cause) {

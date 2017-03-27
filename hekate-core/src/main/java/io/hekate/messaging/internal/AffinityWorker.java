@@ -17,9 +17,10 @@
 package io.hekate.messaging.internal;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 
 interface AffinityWorker extends Executor {
-    void executeDeferred(long delay, Runnable task);
+    Future<?> executeDeferred(long delay, Runnable task);
 
     boolean isShutdown();
 }

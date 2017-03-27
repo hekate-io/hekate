@@ -516,47 +516,6 @@ public class MessagingBackPressureTest extends MessagingServiceTestBase {
         assertEquals("ok", request.get(3, TimeUnit.SECONDS).get());
     }
 
-    @Test
-    public void testConversationIsNotGuarded() throws Exception {
-        CompletableFuture<Throwable> conversationErrFuture = new CompletableFuture<>();
-
-        TestChannel first = createChannel(c -> useBackPressure(c)
-            .withReceiver(msg -> {
-                // This message should be received when this channel's back pressure is enabled.
-                if (msg.mustReply() && msg.get().equals("check")) {
-                    // Send back the conversation request.
-                    msg.replyWithRequest("reply-request", (err, reply) ->
-                        conversationErrFuture.complete(err)
-                    );
-                }
-            })
-        ).join();
-
-        TestChannel second = createChannel(c -> useBackPressure(c)
-            .withReceiver(msg -> {
-                // Ignore all messages since we need to reach the back pressure limits on the 'first' node by not sending responses.
-            })
-        ).join();
-
-        awaitForChannelsTopology(first, second);
-
-        // Enforce back pressure on 'first'.
-        requestUpToHighWatermark(first.get());
-
-        // 'first' must have back pressure being enabled.
-        assertBackPressureEnabled(first.get().forRemotes());
-
-        // Request 'second' -> 'first' in order to trigger conversation while back pressure is enabled.
-        second.get().forRemotes().request("check", (err, reply) -> {
-            if (reply != null) {
-                reply.reply("ignore");
-            }
-        });
-
-        // Make sure that there were no back pressure-related errors in conversation request.
-        assertNull(conversationErrFuture.get(3, TimeUnit.SECONDS));
-    }
-
     private MessagingChannelConfig<String> useBackPressure(MessagingChannelConfig<String> cfg) {
         return cfg.withBackPressure(bp -> {
             bp.setOutOverflow(MessagingOverflowPolicy.FAIL);

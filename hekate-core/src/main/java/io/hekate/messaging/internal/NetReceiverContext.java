@@ -26,14 +26,14 @@ class NetReceiverContext<T> extends NetReceiverContextBase<T> {
     }
 
     public void onConnect() {
-        getGateway().getReceiver().onConnect(getEndpoint());
+        gateway().getReceiver().onConnect(getEndpoint());
     }
 
     public void onDisconnect() {
-        getGateway().getReceiver().onDisconnect(getEndpoint());
+        gateway().getReceiver().onDisconnect(getEndpoint());
 
         discardRequests(new ClosedChannelException());
 
-        getGateway().unregisterServerReceiver(this);
+        gateway().unregisterServerReceiver(this);
     }
 }

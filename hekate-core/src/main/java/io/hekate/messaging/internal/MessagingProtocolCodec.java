@@ -25,7 +25,6 @@ import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
 import io.hekate.messaging.internal.MessagingProtocol.Connect;
-import io.hekate.messaging.internal.MessagingProtocol.Conversation;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.internal.MessagingProtocol.Request;
 import io.hekate.messaging.internal.MessagingProtocol.Response;
@@ -124,14 +123,6 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 return new Response<>(requestId, payload);
             }
-            case CONVERSATION: {
-                int requestId = in.readInt();
-                int responseId = in.readInt();
-
-                T payload = delegate.decode(in);
-
-                return new Conversation<>(requestId, responseId, payload);
-            }
             case RESPONSE_CHUNK: {
                 int requestId = in.readInt();
 
@@ -205,16 +196,6 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 out.writeInt(response.getRequestId());
 
                 delegate.encode(response.get(), out);
-
-                break;
-            }
-            case CONVERSATION: {
-                Conversation<T> conversation = message.cast();
-
-                out.writeInt(conversation.getRequestId());
-                out.writeInt(conversation.getResponseId());
-
-                delegate.encode(conversation.get(), out);
 
                 break;
             }

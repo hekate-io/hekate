@@ -18,78 +18,26 @@ package io.hekate.messaging.internal;
 
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingEndpoint;
-import io.hekate.messaging.internal.MessagingProtocol.Conversation;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.internal.MessagingProtocol.Request;
 import io.hekate.messaging.internal.MessagingProtocol.Response;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
-import io.hekate.messaging.unicast.RequestCallback;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkMessage;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 abstract class ReceiverContext<T> {
-    static class RequestHolder<T> {
-        private final int id;
-
-        private final AffinityWorker worker;
-
-        private final T message;
-
-        private final RequestCallback<T> callback;
-
-        private final int epoch;
-
-        public RequestHolder(int id, AffinityWorker worker, T message, int epoch, RequestCallback<T> callback) {
-            this.id = id;
-            this.worker = worker;
-            this.message = message;
-            this.epoch = epoch;
-            this.callback = callback;
-        }
-
-        public int getId() {
-            return id;
-        }
-
-        public AffinityWorker getWorker() {
-            return worker;
-        }
-
-        public T getMessage() {
-            return message;
-        }
-
-        public int getEpoch() {
-            return epoch;
-        }
-
-        public RequestCallback<T> getCallback() {
-            return callback;
-        }
-    }
-
-    private static final int REQUEST_MAP_INIT_CAPACITY = 128;
-
     private final Logger log = LoggerFactory.getLogger(getClass());
-
-    private final Map<Integer, RequestHolder<T>> requests = new ConcurrentHashMap<>(REQUEST_MAP_INIT_CAPACITY);
 
     private final MessagingGateway<T> gateway;
 
     private final MessageReceiver<T> receiver;
-
-    private final AtomicInteger idGen = new AtomicInteger();
 
     private final AffinityExecutor async;
 
@@ -100,6 +48,8 @@ abstract class ReceiverContext<T> {
     private final MessagingEndpoint<T> endpoint;
 
     private final boolean trackIdleState;
+
+    private final RequestRegistry<T> requests;
 
     private volatile boolean touched;
 
@@ -117,15 +67,15 @@ abstract class ReceiverContext<T> {
         this.metrics = gateway.getMetrics();
         this.backPressure = gateway.getReceiveBackPressure();
         this.trackIdleState = trackIdleState;
+
+        this.requests = new RequestRegistry<>(metrics);
     }
 
     public abstract NetworkFuture<MessagingProtocol> disconnect();
 
-    public abstract void sendNotification(MessageContext<T> ctx, SendCallback callback);
+    public abstract void sendNotification(AffinityContext<T> ctx, SendCallback callback);
 
-    public abstract void sendRequest(MessageContext<T> ctx, RequestCallback<T> callback);
-
-    public abstract void replyConversation(AffinityWorker worker, int requestId, T conversation, RequestCallback<T> callback);
+    public abstract void sendRequest(AffinityContext<T> ctx, InternalRequestCallback<T> callback);
 
     public abstract void replyChunk(AffinityWorker worker, int requestId, T chunk, SendCallback callback);
 
@@ -133,8 +83,12 @@ abstract class ReceiverContext<T> {
 
     protected abstract void disconnectOnError(Throwable t);
 
-    public MessagingGateway<T> getGateway() {
+    public MessagingGateway<T> gateway() {
         return gateway;
+    }
+
+    public RequestRegistry<T> requests() {
+        return requests;
     }
 
     public void receive(NetworkMessage<MessagingProtocol> netMsg, NetworkEndpoint<MessagingProtocol> from) {
@@ -247,44 +201,21 @@ abstract class ReceiverContext<T> {
                 case RESPONSE: {
                     int requestId = MessagingProtocolCodec.previewRequestId(netMsg);
 
-                    RequestHolder<T> holder = unregisterRequest(requestId);
+                    RequestHandle<T> handle = requests.peek(requestId);
 
-                    if (holder != null) {
+                    if (handle != null) {
                         if (async.isAsync()) {
-                            AffinityWorker worker = holder.getWorker();
+                            AffinityWorker worker = handle.getWorker();
 
                             onEnqueueReceiveAsync(from);
 
                             netMsg.handleAsync(worker, m -> {
                                 onDequeueReceiveAsync();
 
-                                doReceiveResponse(m.cast(), holder);
+                                doReceiveResponse(handle, m.cast());
                             }, this::handleAsyncMessageError);
                         } else {
-                            doReceiveResponse(netMsg.decode().cast(), holder);
-                        }
-                    }
-
-                    break;
-                }
-                case CONVERSATION: {
-                    int requestId = MessagingProtocolCodec.previewRequestId(netMsg);
-
-                    RequestHolder<T> holder = unregisterRequest(requestId);
-
-                    if (holder != null) {
-                        if (async.isAsync()) {
-                            AffinityWorker worker = holder.getWorker();
-
-                            onEnqueueReceiveAsync(from);
-
-                            netMsg.handleAsync(worker, m -> {
-                                onDequeueReceiveAsync();
-
-                                doReceiveConversation(m.cast(), holder);
-                            }, this::handleAsyncMessageError);
-                        } else {
-                            doReceiveConversation(netMsg.decode().cast(), holder);
+                            doReceiveResponse(handle, netMsg.decode().cast());
                         }
                     }
 
@@ -293,21 +224,21 @@ abstract class ReceiverContext<T> {
                 case RESPONSE_CHUNK: {
                     int requestId = MessagingProtocolCodec.previewRequestId(netMsg);
 
-                    RequestHolder<T> holder = peekRequest(requestId);
+                    RequestHandle<T> handle = requests.peek(requestId);
 
-                    if (holder != null) {
+                    if (handle != null) {
                         if (async.isAsync()) {
-                            AffinityWorker worker = holder.getWorker();
+                            AffinityWorker worker = handle.getWorker();
 
                             onEnqueueReceiveAsync(from);
 
                             netMsg.handleAsync(worker, m -> {
                                 onDequeueReceiveAsync();
 
-                                doReceiveResponseChunk(m.cast(), holder);
+                                doReceiveResponseChunk(handle, m.cast());
                             }, this::handleAsyncMessageError);
                         } else {
-                            doReceiveResponseChunk(netMsg.decode().cast(), holder);
+                            doReceiveResponseChunk(handle, netMsg.decode().cast());
                         }
                     }
 
@@ -341,22 +272,6 @@ abstract class ReceiverContext<T> {
         }
     }
 
-    public void notifyOnReplyFailure(AffinityWorker worker, int responseId, T payload, Throwable error, RequestCallback<T> callback) {
-        if (discardRequest(responseId)) {
-            if (async.isAsync() && !worker.isShutdown()) {
-                onAsyncEnqueue();
-
-                worker.execute(() -> {
-                    onAsyncDequeue();
-
-                    doNotifyOnReplyFailure(payload, error, callback);
-                });
-            } else {
-                doNotifyOnReplyFailure(payload, error, callback);
-            }
-        }
-    }
-
     public void notifyOnSendFailure(boolean disconnect, AffinityWorker worker, T payload, Throwable error, SendCallback callback) {
         if (callback != null) {
             if (async.isAsync() && !worker.isShutdown()) {
@@ -373,8 +288,20 @@ abstract class ReceiverContext<T> {
         }
     }
 
-    public boolean discardRequest(int id) {
-        return unregisterRequest(id) != null;
+    public void notifyOnReplyFailure(RequestHandle<T> handle, Throwable err) {
+        if (handle.unregister()) {
+            if (async.isAsync() && !handle.getWorker().isShutdown()) {
+                onAsyncEnqueue();
+
+                handle.getWorker().execute(() -> {
+                    onAsyncDequeue();
+
+                    doNotifyOnReplyFailure(handle, err);
+                });
+            } else {
+                doNotifyOnReplyFailure(handle, err);
+            }
+        }
     }
 
     public void discardRequests(Throwable cause) {
@@ -382,20 +309,10 @@ abstract class ReceiverContext<T> {
     }
 
     public void discardRequests(int epoch, Throwable cause) {
-        List<RequestHolder<T>> failed = new ArrayList<>(requests.size());
+        List<RequestHandle<T>> discarded = requests.unregisterEpoch(epoch);
 
-        for (RequestHolder<T> holder : requests.values()) {
-            if (holder.getEpoch() == epoch) {
-                if (requests.remove(holder.getId()) != null) {
-                    failed.add(holder);
-                }
-            }
-        }
-
-        onRequestUnregister(failed.size());
-
-        for (RequestHolder<T> holder : failed) {
-            AffinityWorker worker = holder.getWorker();
+        for (RequestHandle<T> handle : discarded) {
+            AffinityWorker worker = handle.getWorker();
 
             if (async.isAsync()) {
                 onAsyncEnqueue();
@@ -403,10 +320,10 @@ abstract class ReceiverContext<T> {
                 worker.execute(() -> {
                     onAsyncDequeue();
 
-                    doDiscardRequest(cause, holder);
+                    doDiscardRequest(cause, handle);
                 });
             } else {
-                doDiscardRequest(cause, holder);
+                doDiscardRequest(cause, handle);
             }
         }
     }
@@ -447,19 +364,8 @@ abstract class ReceiverContext<T> {
         }
     }
 
-    protected RequestHolder<T> registerRequest(AffinityWorker worker, T message, RequestCallback<T> callback) {
-        while (true) {
-            int id = idGen.incrementAndGet();
-
-            RequestHolder<T> holder = new RequestHolder<>(id, worker, message, epoch, callback);
-
-            // Do not overwrite very very very old requests.
-            if (requests.putIfAbsent(id, holder) == null) {
-                onRequestRegister();
-
-                return holder;
-            }
-        }
+    protected RequestHandle<T> registerRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
+        return requests.register(epoch, ctx, callback);
     }
 
     protected void doReceiveRequest(Request<T> msg, AffinityWorker worker) {
@@ -486,39 +392,31 @@ abstract class ReceiverContext<T> {
         }
     }
 
-    protected void doReceiveResponse(Response<T> msg, RequestHolder<T> holder) {
-        try {
-            msg.prepareReceive(this, holder.getMessage());
+    protected void doReceiveResponse(RequestHandle<T> request, Response<T> msg) {
+        if (request.isRegistered()) {
+            try {
+                msg.prepareReceive(this, request.getMessage());
 
-            holder.getCallback().onComplete(null, msg);
-        } catch (RuntimeException | Error e) {
-            log.error("Got an unexpected runtime error during message processing [message={}]", msg, e);
+                request.getCallback().onComplete(request, null, msg);
+            } catch (RuntimeException | Error e) {
+                log.error("Got an unexpected runtime error during message processing [message={}]", msg, e);
 
-            disconnectOnError(e);
+                disconnectOnError(e);
+            }
         }
     }
 
-    protected void doReceiveConversation(Conversation<T> msg, RequestHolder<T> holder) {
-        try {
-            msg.prepareReceive(holder.getWorker(), this, holder.getMessage());
+    protected void doReceiveResponseChunk(RequestHandle<T> request, ResponseChunk<T> msg) {
+        if (request.isRegistered()) {
+            try {
+                msg.prepareReceive(this, request.getMessage());
 
-            holder.getCallback().onComplete(null, msg);
-        } catch (RuntimeException | Error e) {
-            log.error("Got an unexpected runtime error during message processing [message={}]", msg, e);
+                request.getCallback().onComplete(request, null, msg);
+            } catch (RuntimeException | Error e) {
+                log.error("Got an unexpected runtime error during message processing [message={}]", msg, e);
 
-            disconnectOnError(e);
-        }
-    }
-
-    protected void doReceiveResponseChunk(ResponseChunk<T> msg, RequestHolder<T> holder) {
-        try {
-            msg.prepareReceive(this, holder.getMessage());
-
-            holder.getCallback().onComplete(null, msg);
-        } catch (RuntimeException | Error e) {
-            log.error("Got an unexpected runtime error during message processing [message={}]", msg, e);
-
-            disconnectOnError(e);
+                disconnectOnError(e);
+            }
         }
     }
 
@@ -532,22 +430,6 @@ abstract class ReceiverContext<T> {
         if (metrics != null) {
             metrics.onAsyncDequeue();
         }
-    }
-
-    protected RequestHolder<T> unregisterRequest(int id) {
-        RequestHolder<T> holder;
-
-        holder = requests.remove(id);
-
-        if (holder != null) {
-            onRequestUnregister(1);
-        }
-
-        return holder;
-    }
-
-    protected RequestHolder<T> peekRequest(int id) {
-        return requests.get(id);
     }
 
     private void onEnqueueReceiveAsync(NetworkEndpoint<MessagingProtocol> from) {
@@ -576,16 +458,6 @@ abstract class ReceiverContext<T> {
         }
     }
 
-    private void doNotifyOnReplyFailure(T payload, Throwable error, RequestCallback<T> callback) {
-        try {
-            callback.onComplete(error, null);
-        } catch (RuntimeException | Error e) {
-            log.error("Got an unexpected runtime error during message processing [message={}]", payload, e);
-        } finally {
-            disconnectOnError(error);
-        }
-    }
-
     private void doNotifyOnSendFailure(boolean disconnect, T payload, Throwable error, SendCallback callback) {
         try {
             callback.onComplete(error);
@@ -598,29 +470,27 @@ abstract class ReceiverContext<T> {
         }
     }
 
-    private void doDiscardRequest(Throwable cause, RequestHolder<T> holder) {
-        T message = holder.getMessage();
+    private void doNotifyOnReplyFailure(RequestHandle<T> handle, Throwable error) {
+        try {
+            handle.getCallback().onComplete(handle, error, null);
+        } catch (RuntimeException | Error e) {
+            log.error("Got an unexpected runtime error during message processing [message={}]", handle.getMessage(), e);
+        } finally {
+            disconnectOnError(error);
+        }
+    }
 
-        RequestCallback<T> callback = holder.getCallback();
+    private void doDiscardRequest(Throwable cause, RequestHandle<T> handle) {
+        T message = handle.getMessage();
+
+        InternalRequestCallback<T> callback = handle.getCallback();
 
         try {
-            callback.onComplete(cause, null);
+            callback.onComplete(handle, cause, null);
         } catch (RuntimeException | Error e) {
             if (log.isErrorEnabled()) {
                 log.error("Failed to notify callback on response failure [message={}]", message, e);
             }
-        }
-    }
-
-    private void onRequestRegister() {
-        if (metrics != null) {
-            metrics.onPendingRequestAdded();
-        }
-    }
-
-    private void onRequestUnregister(int amount) {
-        if (metrics != null) {
-            metrics.onPendingRequestsRemoved(amount);
         }
     }
 

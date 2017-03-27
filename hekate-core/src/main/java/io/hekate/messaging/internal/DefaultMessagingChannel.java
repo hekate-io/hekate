@@ -35,6 +35,7 @@ import io.hekate.messaging.unicast.SendFuture;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T> {
     private final MessagingGateway<T> gateway;
@@ -48,8 +49,10 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
 
     private final LoadBalancer<T> balancer;
 
+    private final long timeout;
+
     public DefaultMessagingChannel(MessagingGateway<T> gateway, ClusterView cluster, LoadBalancer<T> balancer, FailoverPolicy failover,
-        Object affinity) {
+        Object affinity, long timeout) {
         assert gateway != null : "Gateway is null.";
         assert cluster != null : "Cluster view is null.";
 
@@ -58,6 +61,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
         this.balancer = balancer;
         this.failover = failover;
         this.affinity = affinity;
+        this.timeout = timeout;
     }
 
     @Override
@@ -190,7 +194,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     @Override
     @SuppressWarnings("unchecked")
     public <C extends T> MessagingChannel<C> withAffinityKey(Object affinityKey) {
-        return new DefaultMessagingChannel(gateway, cluster, balancer, failover, affinityKey);
+        return new DefaultMessagingChannel(gateway, cluster, balancer, failover, affinityKey, timeout);
     }
 
     @Override
@@ -206,7 +210,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     @Override
     @SuppressWarnings("unchecked")
     public <C extends T> DefaultMessagingChannel<C> withLoadBalancer(LoadBalancer<C> balancer) {
-        return new DefaultMessagingChannel(gateway, cluster, balancer, failover, affinity);
+        return new DefaultMessagingChannel(gateway, cluster, balancer, failover, affinity, timeout);
     }
 
     @Override
@@ -222,7 +226,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     @Override
     @SuppressWarnings("unchecked")
     public <C extends T> DefaultMessagingChannel<C> withFailover(FailoverPolicy policy) {
-        return new DefaultMessagingChannel(gateway, cluster, balancer, policy, affinity);
+        return new DefaultMessagingChannel(gateway, cluster, balancer, policy, affinity, timeout);
     }
 
     @Override
@@ -231,10 +235,17 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
+    public DefaultMessagingChannel<T> withTimeout(long timeout, TimeUnit unit) {
+        ArgAssert.notNull(unit, "Time unit");
+
+        return new DefaultMessagingChannel<>(gateway, cluster, balancer, failover, affinity, unit.toMillis(timeout));
+    }
+
+    @Override
     public DefaultMessagingChannel<T> filterAll(ClusterFilter filter) {
         ArgAssert.notNull(filter, "Filter");
 
-        return new DefaultMessagingChannel<>(gateway, cluster.filterAll(filter), balancer, failover, affinity);
+        return new DefaultMessagingChannel<>(gateway, cluster.filterAll(filter), balancer, failover, affinity, timeout);
     }
 
     @Override
@@ -270,6 +281,11 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     @Override
     public FailoverPolicy failover() {
         return failover;
+    }
+
+    @Override
+    public long timeout() {
+        return timeout;
     }
 
     // Package level for testing purposes.

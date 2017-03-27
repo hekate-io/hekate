@@ -76,7 +76,6 @@ public interface Message<T> {
      * <ul>
      * <li>{@link #reply(Object)}</li>
      * <li>{@link #reply(Object, SendCallback)} </li>
-     * <li>{@link #replyWithRequest(Object, RequestCallback)}</li>
      * </ul>
      *
      * <p>
@@ -87,7 +86,6 @@ public interface Message<T> {
      * @return {@code true} if sending side expects a response message to be send back.
      *
      * @see #reply(Object, SendCallback)
-     * @see #replyWithRequest(Object, RequestCallback)
      */
     boolean mustReply();
 
@@ -133,39 +131,13 @@ public interface Message<T> {
     void reply(T response, SendCallback callback) throws UnsupportedOperationException;
 
     /**
-     * Asynchronously sends a request back to the sender of this message and notifies the provided callback on results.
-     *
-     * <p>
-     * This method provides support for implementing complex conversation patterns that go beyond the simple request-response approach
-     * and require multi-step messages exchange between the messaging peers.
-     * </p>
-     *
-     * <p>
-     * Calling this method will put the message into the 'replied' state and its {@link #mustReply()} method will start returning {@code
-     * false}.
-     * </p>
-     *
-     * <p>
-     * Calling this method on a message that doesn't support responses (i.e. {@link #mustReply()} returns {@code false}) will result in
-     * {@link UnsupportedOperationException}.
-     * </p>
-     *
-     * @param request Response.
-     * @param callback Callback for response listening.
-     *
-     * @throws UnsupportedOperationException If message doesn't support responses (see {@link #mustReply()}).
-     */
-    void replyWithRequest(T request, RequestCallback<T> callback) throws UnsupportedOperationException;
-
-    /**
      * Asynchronously sends back a partial reply.
      *
      * <p>
      * This method provides support for subscription-based messages streaming from receiver back to sender. For example, sender can
      * subscribes to some topic via {@link MessagingChannel#request(Object, RequestCallback)} method and receiver of such request starts
      * continuously pushing updates back the sender. Sender will receive those updates via {@link RequestCallback#onComplete(Throwable,
-     * Reply)}. Once messages streaming is finished then final response should be sent via {@link #reply(Object)} or
-     * {@link #replyWithRequest(Object, RequestCallback)} methods.
+     * Reply)}. Once messages streaming is finished then final response should be sent via {@link #reply(Object)} method.
      * </p>
      *
      * <p>
@@ -187,8 +159,7 @@ public interface Message<T> {
      * This method provides support for subscription-based messages streaming from receiver back to sender. For example, sender can
      * subscribes to some topic via {@link MessagingChannel#request(Object, RequestCallback)} method and receiver of such request starts
      * continuously pushing updates back the sender. Sender will receive those updates via {@link RequestCallback#onComplete(Throwable,
-     * Reply)}. Once messages streaming is finished then final response should be sent via {@link #reply(Object)} or
-     * {@link #replyWithRequest(Object, RequestCallback)} methods.
+     * Reply)}. Once messages streaming is finished then final response should be sent via {@link #reply(Object)} method.
      * </p>
      *
      * <p>

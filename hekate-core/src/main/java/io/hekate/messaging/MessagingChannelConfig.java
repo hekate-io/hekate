@@ -27,6 +27,7 @@ import io.hekate.network.NetworkService;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.util.format.ToString;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -67,6 +68,8 @@ public class MessagingChannelConfig<T> {
     private FailoverPolicy failoverPolicy;
 
     private LoadBalancer<T> loadBalancer;
+
+    private long messagingTimeout;
 
     private MessagingBackPressureConfig backPressure = new MessagingBackPressureConfig();
 
@@ -517,6 +520,53 @@ public class MessagingChannelConfig<T> {
      */
     public MessagingChannelConfig<T> withBackPressure(Consumer<MessagingBackPressureConfig> configurer) {
         configurer.accept(getBackPressure());
+
+        return this;
+    }
+
+    /**
+     * Returns the timeout in milliseconds that should be applied to all messaging operations within this channel (see {@link
+     * #setMessagingTimeout(long)}).
+     *
+     * @return Timeout in milliseconds.
+     */
+    public long getMessagingTimeout() {
+        return messagingTimeout;
+    }
+
+    /**
+     * Sets the timeout in milliseconds that should be applied to all messaging operations within this channel.
+     *
+     * <p>
+     * If particular messaging operation (f.e. {@link MessagingChannel#request(Object) request(...)}
+     * or {@link MessagingChannel#send(Object) send}) can't be completed within the specified timeout then such operation will fail with
+     * {@link MessagingTimeoutException}.
+     * </p>
+     *
+     * <p>
+     * If value of this parameter is less than or equals to zero then timeouts will not be applied to messaging operations. Default value
+     * of this parameter is 0.
+     * </p>
+     *
+     * <p>
+     * <b>Note:</b> it is possible to dynamically specify timeout via {@link MessagingChannel#withTimeout(long, TimeUnit)}.
+     * </p>
+     *
+     * @param messagingTimeout Timeout in milliseconds.
+     */
+    public void setMessagingTimeout(long messagingTimeout) {
+        this.messagingTimeout = messagingTimeout;
+    }
+
+    /**
+     * Fluent-style version of {@link #setMessagingTimeout(long)}.
+     *
+     * @param messagingTimeout Timeout in milliseconds.
+     *
+     * @return This instance.
+     */
+    public MessagingChannelConfig<T> withMessagingTimeout(long messagingTimeout) {
+        setMessagingTimeout(messagingTimeout);
 
         return this;
     }

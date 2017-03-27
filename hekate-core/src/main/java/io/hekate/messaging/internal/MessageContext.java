@@ -1,38 +1,58 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.util.format.ToString;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
 
 class MessageContext<T> {
+    interface TimeoutListener {
+        void onTimeout();
+    }
+
     @SuppressWarnings("unchecked")
     private static final AtomicIntegerFieldUpdater<MessageContext> COMPLETED = newUpdater(MessageContext.class, "completed");
 
     private final T message;
 
-    private final int affinity;
-
-    private final Object affinityKey;
-
     private final AffinityWorker worker;
+
+    private final boolean hasTimeout;
 
     @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
     private volatile int completed;
 
-    public MessageContext(T message, MessageContext<T> src) {
-        this(message, src.getAffinity(), src.getAffinityKey(), src.getWorker());
-    }
+    private TimeoutListener timeoutListener;
 
-    public MessageContext(T message, int affinity, Object affinityKey, AffinityWorker worker) {
+    private Future<?> timeoutFuture;
+
+    public MessageContext(T message, AffinityWorker worker, boolean hasTimeout) {
         this.message = message;
-        this.affinity = affinity;
-        this.affinityKey = affinityKey;
         this.worker = worker;
+        this.hasTimeout = hasTimeout;
     }
 
     public boolean complete() {
-        return COMPLETED.compareAndSet(this, 0, 1);
+        boolean completed = doComplete();
+
+        if (completed && timeoutFuture != null) {
+            timeoutFuture.cancel(false);
+        }
+
+        return completed;
+    }
+
+    public boolean completeOnTimeout() {
+        boolean completed = complete();
+
+        if (completed) {
+            if (timeoutListener != null) {
+                timeoutListener.onTimeout();
+            }
+        }
+
+        return completed;
     }
 
     public boolean isCompleted() {
@@ -43,16 +63,26 @@ class MessageContext<T> {
         return message;
     }
 
-    public int getAffinity() {
-        return affinity;
-    }
-
-    public Object getAffinityKey() {
-        return affinityKey;
-    }
-
     public AffinityWorker getWorker() {
         return worker;
+    }
+
+    public void setTimeoutListener(TimeoutListener timeoutListener) {
+        assert hasTimeout : "Timeout listener can be set only for time-limited contexts.";
+
+        this.timeoutListener = timeoutListener;
+    }
+
+    public void setTimeoutFuture(Future<?> timeoutFuture) {
+        this.timeoutFuture = timeoutFuture;
+    }
+
+    private boolean doComplete() {
+        return COMPLETED.compareAndSet(this, 0, 1);
+    }
+
+    boolean hasTimeout() {
+        return hasTimeout;
     }
 
     @Override

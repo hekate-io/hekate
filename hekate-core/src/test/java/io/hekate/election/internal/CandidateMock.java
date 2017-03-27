@@ -74,7 +74,7 @@ class CandidateMock implements Candidate {
     public void yieldLeadership() {
         LeaderContext localCtx = this.leaderContext;
 
-        assertNotNull("Not a election.", localCtx);
+        assertNotNull("Not a leader.", localCtx);
 
         this.leaderContext = null;
         this.followerContext = null;
@@ -83,11 +83,11 @@ class CandidateMock implements Candidate {
     }
 
     public void awaitForBecomeLeader() throws Exception {
-        HekateTestBase.busyWait("become election", () -> leaderContext != null);
+        HekateTestBase.busyWait("become leader", () -> leaderContext != null);
     }
 
     public void awaitForLeaderChange(ClusterNode oldLeader) throws Exception {
-        HekateTestBase.busyWait("election change", () -> {
+        HekateTestBase.busyWait("leader change", () -> {
             ClusterNode lastLeader = getLastLeader();
 
             return lastLeader != null && !lastLeader.equals(oldLeader);

@@ -335,6 +335,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         int nioThreads = cfg.getNioThreads();
         int workerThreads = cfg.getWorkerThreads();
         long idleTimeout = cfg.getIdleTimeout();
+        long messagingTimeout = cfg.getMessagingTimeout();
         MessageReceiver<T> receiver = cfg.getReceiver();
         ClusterNodeFilter filter = cfg.getClusterFilter();
         FailoverPolicy failover = cfg.getFailoverPolicy();
@@ -399,7 +400,8 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         MessageReceiver<T> guardedReceiver = applyGuard(receiver);
 
         MessagingGateway<T> gateway = new MessagingGateway<>(name, connector, localNode, clusterView, guardedReceiver,
-            sockets, nioThreads, async, channelMetrics, receiveBackPressure, sendBackPressure, failover, loadBalancer, checkIdle,
+            sockets, nioThreads, async, channelMetrics, receiveBackPressure, sendBackPressure, failover, messagingTimeout,
+            loadBalancer, checkIdle,
             // Before close callback.
             () -> {
                 if (DEBUG) {

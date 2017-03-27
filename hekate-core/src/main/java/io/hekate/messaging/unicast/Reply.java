@@ -18,6 +18,7 @@ package io.hekate.messaging.unicast;
 
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.messaging.MessagingEndpoint;
 
 /**
  * Reply for {@link MessagingChannel#request(Object, RequestCallback) request(...)} operation.
@@ -26,7 +27,7 @@ import io.hekate.messaging.MessagingChannel;
  *
  * @see RequestCallback#onComplete(Throwable, Reply)
  */
-public interface Reply<T> extends Message<T> {
+public interface Reply<T> {
     /**
      * Returns the request.
      *
@@ -35,10 +36,52 @@ public interface Reply<T> extends Message<T> {
     T getRequest();
 
     /**
-     * Returns {@code true} if this message is a partial response that was produced by the {@link #replyPartial(Object, SendCallback)}
-     * method. This flag can be used to check if there is more data on the messaging stream or if this is the final response.
+     * Returns {@code true} if this message is a partial response that was produced by the {@link Message#replyPartial(Object,
+     * SendCallback)} method. This flag can be used to check if there is more data on the messaging stream or if this is the final response.
      *
      * @return {@code true} if this message is a partial response.
      */
     boolean isPartial();
+
+    /**
+     * Returns the payload of this message.
+     *
+     * @return Payload.
+     */
+    T get();
+
+    /**
+     * Casts the payload of this message ot the specified type.
+     *
+     * @param type Payload type.
+     * @param <P> Payload type.
+     *
+     * @return Payload.
+     *
+     * @throws ClassCastException If payload can't be cast to the specified type.
+     */
+    <P extends T> P get(Class<P> type);
+
+    /**
+     * Returns {@code true} if this message has a {@link #get() payload} of the specified type.
+     *
+     * @param type Payload type.
+     *
+     * @return {@code true} if this message has a {@link #get() payload} of the specified type.
+     */
+    boolean is(Class<? extends T> type);
+
+    /**
+     * Returns the messaging endpoint of this message..
+     *
+     * @return Messaging endpoint.
+     */
+    MessagingEndpoint<T> getEndpoint();
+
+    /**
+     * Returns the messaging channel of this message.
+     *
+     * @return Messaging channel.
+     */
+    MessagingChannel<T> getChannel();
 }

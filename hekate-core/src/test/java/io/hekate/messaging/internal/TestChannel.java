@@ -22,11 +22,11 @@ import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.core.HekateFutureException;
 import io.hekate.core.HekateTestInstance;
-import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.unicast.LoadBalancer;
+import io.hekate.messaging.unicast.Reply;
 import io.hekate.messaging.unicast.RequestCallback;
 import io.hekate.messaging.unicast.RequestFuture;
 import io.hekate.messaging.unicast.SendCallback;
@@ -148,7 +148,7 @@ public class TestChannel {
         channel.forNode(nodeId).request(msg, callback);
     }
 
-    public Message<String> requestWithSyncCallback(ClusterNodeId nodeId, String msg) throws Exception {
+    public Reply<String> requestWithSyncCallback(ClusterNodeId nodeId, String msg) throws Exception {
         RequestCallbackMock callback = new RequestCallbackMock(msg);
 
         channel.forNode(nodeId).request(msg, callback);

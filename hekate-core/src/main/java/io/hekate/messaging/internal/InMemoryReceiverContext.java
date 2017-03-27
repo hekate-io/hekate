@@ -18,12 +18,10 @@ package io.hekate.messaging.internal;
 
 import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
-import io.hekate.messaging.internal.MessagingProtocol.Conversation;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.internal.MessagingProtocol.Request;
 import io.hekate.messaging.internal.MessagingProtocol.Response;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
-import io.hekate.messaging.unicast.RequestCallback;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkFuture;
 
@@ -38,10 +36,10 @@ class InMemoryReceiverContext<T> extends ReceiverContext<T> {
     }
 
     @Override
-    public void sendNotification(MessageContext<T> ctx, SendCallback callback) {
+    public void sendNotification(AffinityContext<T> ctx, SendCallback callback) {
         Notification<T> msg;
 
-        if (ctx.getAffinity() >= 0) {
+        if (ctx.isStrictAffinity()) {
             msg = new AffinityNotification<>(ctx.getAffinity(), ctx.getMessage());
         } else {
             msg = new Notification<>(ctx.getMessage());
@@ -61,15 +59,15 @@ class InMemoryReceiverContext<T> extends ReceiverContext<T> {
     }
 
     @Override
-    public void sendRequest(MessageContext<T> ctx, RequestCallback<T> callback) {
-        RequestHolder<T> holder = registerRequest(ctx.getWorker(), ctx.getMessage(), callback);
+    public void sendRequest(AffinityContext<T> ctx, InternalRequestCallback<T> callback) {
+        RequestHandle<T> handle = registerRequest(ctx, callback);
 
         Request<T> msg;
 
-        if (ctx.getAffinity() >= 0) {
-            msg = new AffinityRequest<>(ctx.getAffinity(), holder.getId(), ctx.getMessage());
+        if (ctx.isStrictAffinity()) {
+            msg = new AffinityRequest<>(ctx.getAffinity(), handle.getId(), ctx.getMessage());
         } else {
-            msg = new Request<>(holder.getId(), ctx.getMessage());
+            msg = new Request<>(handle.getId(), ctx.getMessage());
         }
 
         onAsyncEnqueue();
@@ -82,29 +80,10 @@ class InMemoryReceiverContext<T> extends ReceiverContext<T> {
     }
 
     @Override
-    public void replyConversation(AffinityWorker worker, int requestId, T conversation, RequestCallback<T> callback) {
-        RequestHolder<T> toHolder = unregisterRequest(requestId);
-
-        if (toHolder != null) {
-            RequestHolder<T> fromHolder = registerRequest(worker, conversation, callback);
-
-            Conversation<T> msg = new Conversation<>(requestId, fromHolder.getId(), conversation);
-
-            onAsyncEnqueue();
-
-            worker.execute(() -> {
-                onAsyncDequeue();
-
-                doReceiveConversation(msg, toHolder);
-            });
-        }
-    }
-
-    @Override
     public void replyChunk(AffinityWorker worker, int requestId, T chunk, SendCallback callback) {
-        RequestHolder<T> holder = peekRequest(requestId);
+        RequestHandle<T> handle = requests().peek(requestId);
 
-        if (holder != null) {
+        if (handle != null) {
             ResponseChunk<T> msg = new ResponseChunk<>(requestId, chunk);
 
             if (callback != null) {
@@ -116,16 +95,16 @@ class InMemoryReceiverContext<T> extends ReceiverContext<T> {
             worker.execute(() -> {
                 onAsyncDequeue();
 
-                doReceiveResponseChunk(msg, holder);
+                doReceiveResponseChunk(handle, msg);
             });
         }
     }
 
     @Override
     public void reply(AffinityWorker worker, int requestId, T response, SendCallback callback) {
-        RequestHolder<T> holder = unregisterRequest(requestId);
+        RequestHandle<T> handle = requests().peek(requestId);
 
-        if (holder != null) {
+        if (handle != null) {
             Response<T> msg = new Response<>(requestId, response);
 
             if (callback != null) {
@@ -137,7 +116,7 @@ class InMemoryReceiverContext<T> extends ReceiverContext<T> {
             worker.execute(() -> {
                 onAsyncDequeue();
 
-                doReceiveResponse(msg, holder);
+                doReceiveResponse(handle, msg);
             });
         }
     }
