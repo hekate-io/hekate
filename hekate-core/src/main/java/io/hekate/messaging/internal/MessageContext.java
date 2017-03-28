@@ -1,6 +1,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.util.format.ToString;
+import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
@@ -20,21 +21,29 @@ class MessageContext<T> {
 
     private final T message;
 
+    @ToStringIgnore
     private final AffinityWorker worker;
 
-    private final boolean hasTimeout;
+    @ToStringIgnore
+    private final MessagingOpts<T> opts;
 
+    @ToStringIgnore
     private TimeoutListener timeoutListener;
 
+    @ToStringIgnore
     private Future<?> timeoutFuture;
 
     @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
     private volatile int completed;
 
-    public MessageContext(T message, int affinity, Object affinityKey, AffinityWorker worker, boolean hasTimeout) {
+    public MessageContext(T message, int affinity, Object affinityKey, AffinityWorker worker, MessagingOpts<T> opts) {
+        assert message != null : "Message is null.";
+        assert worker != null : "Worker is null.";
+        assert opts != null : "Messaging options are null.";
+
         this.message = message;
         this.worker = worker;
-        this.hasTimeout = hasTimeout;
+        this.opts = opts;
         this.affinityKey = affinityKey;
         this.affinity = affinity;
     }
@@ -57,6 +66,10 @@ class MessageContext<T> {
 
     public AffinityWorker getWorker() {
         return worker;
+    }
+
+    public MessagingOpts<T> getOpts() {
+        return opts;
     }
 
     public boolean isCompleted() {
@@ -86,7 +99,7 @@ class MessageContext<T> {
     }
 
     public void setTimeoutListener(TimeoutListener timeoutListener) {
-        assert hasTimeout : "Timeout listener can be set only for time-limited contexts.";
+        assert opts.hasTimeout() : "Timeout listener can be set only for time-limited contexts.";
 
         this.timeoutListener = timeoutListener;
     }
@@ -97,10 +110,6 @@ class MessageContext<T> {
 
     private boolean doComplete() {
         return COMPLETED.compareAndSet(this, 0, 1);
-    }
-
-    boolean hasTimeout() {
-        return hasTimeout;
     }
 
     @Override

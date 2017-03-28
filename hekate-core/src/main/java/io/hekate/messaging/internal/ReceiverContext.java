@@ -201,7 +201,7 @@ abstract class ReceiverContext<T> {
                 case RESPONSE: {
                     int requestId = MessagingProtocolCodec.previewRequestId(netMsg);
 
-                    RequestHandle<T> handle = requests.peek(requestId);
+                    RequestHandle<T> handle = requests.get(requestId);
 
                     if (handle != null) {
                         if (async.isAsync()) {
@@ -224,7 +224,7 @@ abstract class ReceiverContext<T> {
                 case RESPONSE_CHUNK: {
                     int requestId = MessagingProtocolCodec.previewRequestId(netMsg);
 
-                    RequestHandle<T> handle = requests.peek(requestId);
+                    RequestHandle<T> handle = requests.get(requestId);
 
                     if (handle != null) {
                         if (async.isAsync()) {

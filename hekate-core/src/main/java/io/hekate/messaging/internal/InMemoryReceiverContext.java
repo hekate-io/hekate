@@ -81,7 +81,7 @@ class InMemoryReceiverContext<T> extends ReceiverContext<T> {
 
     @Override
     public void replyChunk(AffinityWorker worker, int requestId, T chunk, SendCallback callback) {
-        RequestHandle<T> handle = requests().peek(requestId);
+        RequestHandle<T> handle = requests().get(requestId);
 
         if (handle != null) {
             ResponseChunk<T> msg = new ResponseChunk<>(requestId, chunk);
@@ -102,7 +102,7 @@ class InMemoryReceiverContext<T> extends ReceiverContext<T> {
 
     @Override
     public void reply(AffinityWorker worker, int requestId, T response, SendCallback callback) {
-        RequestHandle<T> handle = requests().peek(requestId);
+        RequestHandle<T> handle = requests().get(requestId);
 
         if (handle != null) {
             Response<T> msg = new Response<>(requestId, response);

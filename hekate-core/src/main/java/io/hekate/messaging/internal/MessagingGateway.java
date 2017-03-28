@@ -86,7 +86,7 @@ class MessagingGateway<T> {
         void onBeforeClose();
     }
 
-    private interface FailoverAcceptCallback {
+    private interface FailoverCallback {
         void retry(FailoverRoutingPolicy routingPolicy, FailureInfo newFailure);
 
         void fail(Throwable cause);
@@ -271,11 +271,11 @@ class MessagingGateway<T> {
         assert message != null : "Message must be not null.";
         assert opts != null : "Messaging options must be not null.";
 
-        MessageContext<T> ctx = newContext(affinityKey, message, opts.hasTimeout());
+        MessageContext<T> ctx = newContext(affinityKey, message, opts);
 
         if (backPressureAcquire(ctx, callback)) {
             try {
-                routeAndSend(ctx, opts, callback, null);
+                routeAndSend(ctx, callback, null);
             } catch (RejectedExecutionException e) {
                 notifyOnChannelClosedError(ctx, callback);
             }
@@ -300,11 +300,11 @@ class MessagingGateway<T> {
         assert opts != null : "Messaging options must be not null.";
         assert callback != null : "Callback must be not null.";
 
-        MessageContext<T> ctx = newContext(affinityKey, message, opts.hasTimeout());
+        MessageContext<T> ctx = newContext(affinityKey, message, opts);
 
         if (backPressureAcquire(ctx, callback)) {
             try {
-                routeAndRequest(ctx, opts, callback, null);
+                routeAndRequest(ctx, callback, null);
             } catch (RejectedExecutionException e) {
                 notifyOnChannelClosedError(ctx, callback);
             }
@@ -467,24 +467,24 @@ class MessagingGateway<T> {
         return sendBackPressure;
     }
 
-    private void routeAndSend(MessageContext<T> ctx, MessagingOpts<T> opts, SendCallback callback, FailureInfo prevErr) {
+    private void routeAndSend(MessageContext<T> ctx, SendCallback callback, FailureInfo prevErr) {
         ClientPool<T> pool = null;
 
         try {
-            pool = selectUnicastPool(ctx, opts, prevErr);
+            pool = selectPool(ctx, prevErr);
         } catch (HekateException | RuntimeException | Error e) {
             notifyOnErrorAsync(ctx, callback, e);
         }
 
         if (pool != null) {
-            doSend(ctx, pool, opts, callback, prevErr);
+            doSend(ctx, pool, callback, prevErr);
         }
     }
 
-    private void doSend(MessageContext<T> ctx, ClientPool<T> pool, MessagingOpts<T> opts, SendCallback callback, FailureInfo prevErr) {
+    private void doSend(MessageContext<T> ctx, ClientPool<T> pool, SendCallback callback, FailureInfo prevErr) {
         // Decorate callback with failover, error handling logic, etc.
         SendCallback retryCallback = err -> {
-            if (err == null || opts.failover() == null) {
+            if (err == null || ctx.getOpts().failover() == null) {
                 // Complete operation.
                 if (ctx.complete()) {
                     backPressureRelease();
@@ -495,26 +495,26 @@ class MessagingGateway<T> {
                 }
             } else {
                 // Apply failover actions.
-                FailoverAcceptCallback onFailover = new FailoverAcceptCallback() {
+                FailoverCallback onFailover = new FailoverCallback() {
                     @Override
                     public void retry(FailoverRoutingPolicy routingPolicy, FailureInfo failure) {
                         switch (routingPolicy) {
                             case RETRY_SAME_NODE: {
-                                doSend(ctx, pool, opts, callback, failure);
+                                doSend(ctx, pool, callback, failure);
 
                                 break;
                             }
                             case PREFER_SAME_NODE: {
                                 if (isKnownNode(pool.getNode())) {
-                                    doSend(ctx, pool, opts, callback, failure);
+                                    doSend(ctx, pool, callback, failure);
                                 } else {
-                                    routeAndSend(ctx, opts, callback, failure);
+                                    routeAndSend(ctx, callback, failure);
                                 }
 
                                 break;
                             }
                             case RE_ROUTE: {
-                                routeAndSend(ctx, opts, callback, failure);
+                                routeAndSend(ctx, callback, failure);
 
                                 break;
                             }
@@ -530,29 +530,28 @@ class MessagingGateway<T> {
                     }
                 };
 
-                applyFailoverAsync(ctx, err, pool.getNodeOpt(), opts, prevErr, onFailover);
+                applyFailoverAsync(ctx, err, pool.getNodeOpt(), prevErr, onFailover);
             }
         };
 
         pool.send(ctx, retryCallback);
     }
 
-    private void routeAndRequest(MessageContext<T> ctx, MessagingOpts<T> opts, RequestCallback<T> callback, FailureInfo prevErr) {
+    private void routeAndRequest(MessageContext<T> ctx, RequestCallback<T> callback, FailureInfo prevErr) {
         ClientPool<T> pool = null;
 
         try {
-            pool = selectUnicastPool(ctx, opts, prevErr);
+            pool = selectPool(ctx, prevErr);
         } catch (HekateException | RuntimeException | Error e) {
             notifyOnErrorAsync(ctx, callback, e);
         }
 
         if (pool != null) {
-            doRequest(ctx, pool, opts, callback, prevErr);
+            doRequest(ctx, pool, callback, prevErr);
         }
     }
 
-    private void doRequest(MessageContext<T> ctx, ClientPool<T> pool, MessagingOpts<T> opts, RequestCallback<T> callback,
-        FailureInfo prevErr) {
+    private void doRequest(MessageContext<T> ctx, ClientPool<T> pool, RequestCallback<T> callback, FailureInfo prevErr) {
         // Decorate callback with failover, error handling logic, etc.
         InternalRequestCallback<T> internalCallback = (request, err, reply) -> {
             T replyMsg = null;
@@ -575,7 +574,7 @@ class MessagingGateway<T> {
                 acceptance = ReplyDecision.DEFAULT;
             }
 
-            FailoverPolicy failover = opts.failover();
+            FailoverPolicy failover = ctx.getOpts().failover();
 
             if (acceptance == ReplyDecision.COMPLETE || acceptance == ReplyDecision.DEFAULT && err == null || failover == null) {
                 // Check if this is the final reply or an error (ignore chunks).
@@ -603,26 +602,26 @@ class MessagingGateway<T> {
                     err = new RejectedReplyException("Reply was rejected by a request callback", replyMsg, err);
                 }
 
-                FailoverAcceptCallback onFailover = new FailoverAcceptCallback() {
+                FailoverCallback onFailover = new FailoverCallback() {
                     @Override
                     public void retry(FailoverRoutingPolicy routingPolicy, FailureInfo failure) {
                         switch (routingPolicy) {
                             case RETRY_SAME_NODE: {
-                                doRequest(ctx, pool, opts, callback, failure);
+                                doRequest(ctx, pool, callback, failure);
 
                                 break;
                             }
                             case PREFER_SAME_NODE: {
                                 if (isKnownNode(pool.getNode())) {
-                                    doRequest(ctx, pool, opts, callback, failure);
+                                    doRequest(ctx, pool, callback, failure);
                                 } else {
-                                    routeAndRequest(ctx, opts, callback, failure);
+                                    routeAndRequest(ctx, callback, failure);
                                 }
 
                                 break;
                             }
                             case RE_ROUTE: {
-                                routeAndRequest(ctx, opts, callback, failure);
+                                routeAndRequest(ctx, callback, failure);
 
                                 break;
                             }
@@ -638,7 +637,7 @@ class MessagingGateway<T> {
                     }
                 };
 
-                applyFailoverAsync(ctx, err, pool.getNodeOpt(), opts, prevErr, onFailover);
+                applyFailoverAsync(ctx, err, pool.getNodeOpt(), prevErr, onFailover);
             }
         };
 
@@ -850,47 +849,47 @@ class MessagingGateway<T> {
         }
     }
 
-    private ClientPool<T> selectUnicastPool(MessageContext<T> ctx, MessagingOpts<T> opts, FailureInfo prevErr) throws HekateException {
-        ClusterView cluster = opts.cluster();
-        LoadBalancer<T> balancer = opts.balancer();
+    private ClientPool<T> selectPool(MessageContext<T> ctx, FailureInfo prevErr) throws HekateException {
+        assert ctx != null : "Message context is null.";
+
+        ClusterTopology topology = ctx.getOpts().cluster().getTopology();
+
+        if (topology.isEmpty()) {
+            throw new UnknownRouteException("No suitable receivers in the cluster topology [channel=" + name + ']');
+        }
+
+        LoadBalancer<T> balancer = ctx.getOpts().balancer();
 
         while (true) {
             // Perform routing in unlocked context in order to prevent cluster events blocking.
             ClusterNodeId targetId;
 
-            ClusterTopology topology = cluster.getTopology();
-
             if (balancer == null) {
                 // If balancer not specified then try to use cluster topology directly (must contain only one node).
-                if (topology.isEmpty()) {
-                    throw new UnknownRouteException("No suitable receivers in the cluster topology [channel=" + name + ']');
-                } else if (topology.size() > 1) {
+                if (topology.size() > 1) {
                     throw new TooManyRoutesException("Too many receivers for unicast operation [channel=" + name
                         + ", topology=" + topology + ']');
-                } else {
-                    targetId = topology.getNodes().iterator().next().getId();
                 }
+
+                // Select the only one node from the cluster topology.
+                targetId = topology.getNodes().iterator().next().getId();
             } else {
                 LoadBalancerContext balancerCtx = new DefaultLoadBalancerContext(ctx, topology, Optional.ofNullable(prevErr));
 
-                if (balancerCtx.isEmpty()) {
-                    throw new UnknownRouteException("No suitable receivers in the cluster topology [channel=" + name + ']');
-                } else {
-                    targetId = balancer.route(ctx.getMessage(), balancerCtx);
+                targetId = balancer.route(ctx.getMessage(), balancerCtx);
 
-                    if (targetId == null) {
-                        throw new UnknownRouteException("Load balancer failed to select a target node.");
-                    }
+                if (targetId == null) {
+                    throw new UnknownRouteException("Load balancer failed to select a target node.");
                 }
             }
 
-            // Enter lock (to prevent concurrent topology changes).
+            // Enter lock (prevents channel state changes).
             long readLock = lock.readLock();
 
             try {
-                // Check that channel was not closed.
+                // Check that channel is not closed.
                 if (closed) {
-                    throw getChannelClosedError(null);
+                    throw channelClosedError(null);
                 }
 
                 ClientPool<T> pool = pools.get(targetId);
@@ -918,19 +917,19 @@ class MessagingGateway<T> {
         }
     }
 
-    private void applyFailoverAsync(MessageContext<T> ctx, Throwable cause, Optional<ClusterNode> failedNode, MessagingOpts<T> opts,
-        FailureInfo prevErr, FailoverAcceptCallback callback) {
+    private void applyFailoverAsync(MessageContext<T> ctx, Throwable cause, Optional<ClusterNode> failedNode, FailureInfo prevErr,
+        FailoverCallback callback) {
         onAsyncEnqueue();
 
-        runAsyncAtAnyCost(ctx, () -> {
+        runAsyncAtAllCost(ctx, () -> {
             onAsyncDequeue();
 
-            applyFailover(ctx, cause, failedNode, opts, prevErr, callback);
+            applyFailover(ctx, cause, failedNode, prevErr, callback);
         });
     }
 
-    private void applyFailover(MessageContext<T> ctx, Throwable cause, Optional<ClusterNode> failedNode, MessagingOpts<T> opts,
-        FailureInfo prevErr, FailoverAcceptCallback callback) {
+    private void applyFailover(MessageContext<T> ctx, Throwable cause, Optional<ClusterNode> failedNode, FailureInfo prevErr,
+        FailoverCallback callback) {
         // Do nothing if operation is already completed.
         if (ctx.isCompleted()) {
             return;
@@ -940,7 +939,7 @@ class MessagingGateway<T> {
 
         Throwable finalCause = cause;
 
-        FailoverPolicy policy = opts.failover();
+        FailoverPolicy policy = ctx.getOpts().failover();
 
         if (policy != null && !(cause instanceof MessagingChannelClosedException)) {
             int attempt;
@@ -970,12 +969,12 @@ class MessagingGateway<T> {
             try {
                 FailureResolution resolution = policy.apply(failoverCtx);
 
-                // Enter lock (prevents concurrent topology changes).
+                // Enter lock (prevents channel state changes).
                 long readLock = lock.readLock();
 
                 try {
                     if (closed) {
-                        finalCause = getChannelClosedError(cause);
+                        finalCause = channelClosedError(cause);
                     } else if (resolution != null && resolution.isRetry()) {
                         FailoverRoutingPolicy route = resolution.getRoutingPolicy();
 
@@ -1027,15 +1026,12 @@ class MessagingGateway<T> {
             try {
                 Future<?> future = ctx.getWorker().executeDeferred(timeout, () -> {
                     if (ctx.completeOnTimeout()) {
-                        MessagingTimeoutException err = new MessagingTimeoutException("Messaging operation timed out "
-                            + "[message=" + ctx.getMessage() + ']');
-
-                        notifyOnTimeoutErrorAsync(ctx, callback, err);
+                        notifyOnTimeoutErrorAsync(ctx, callback);
                     }
                 });
 
                 ctx.setTimeoutFuture(future);
-            } catch (IllegalStateException e) {
+            } catch (RejectedExecutionException e) {
                 // Ignore since this error means that channel is closed.
                 // In such case we can ignore timeout notification because messaging context will be notified by another error.
             }
@@ -1081,28 +1077,30 @@ class MessagingGateway<T> {
     }
 
     private void notifyOnChannelClosedError(MessageContext<T> ctx, Object callback) {
-        MessagingException err = getChannelClosedError(null);
+        MessagingException err = channelClosedError(null);
 
         notifyOnErrorAsync(ctx, callback, err);
     }
 
     private void notifyOnErrorAsync(MessageContext<T> ctx, Object callback, Throwable err) {
-        runAsyncAtAnyCost(ctx, () -> {
+        runAsyncAtAllCost(ctx, () -> {
             if (ctx.complete()) {
                 doNotifyOnError(callback, err);
             }
         });
     }
 
-    private void notifyOnTimeoutErrorAsync(MessageContext<T> ctx, Object callback, MessagingTimeoutException err) {
-        runAsyncAtAnyCost(ctx, () -> {
+    private void notifyOnTimeoutErrorAsync(MessageContext<T> ctx, Object callback) {
+        runAsyncAtAllCost(ctx, () -> {
             if (ctx.completeOnTimeout()) {
-                doNotifyOnError(callback, err);
+                T msg = ctx.getMessage();
+
+                doNotifyOnError(callback, new MessagingTimeoutException("Messaging operation timed out [message=" + msg + ']'));
             }
         });
     }
 
-    private void runAsyncAtAnyCost(MessageContext<T> ctx, Runnable task) {
+    private void runAsyncAtAllCost(MessageContext<T> ctx, Runnable task) {
         if (!ctx.isCompleted()) {
             boolean scheduled = false;
 
@@ -1157,15 +1155,15 @@ class MessagingGateway<T> {
         }
     }
 
-    private MessageContext<T> newContext(Object affinityKey, T message, boolean hasTimeout) {
+    private MessageContext<T> newContext(Object affinityKey, T message, MessagingOpts<T> opts) {
         int affinity = affinity(affinityKey);
 
         AffinityWorker worker = async.workerFor(affinity);
 
-        return new MessageContext<>(message, affinity, affinityKey, worker, hasTimeout);
+        return new MessageContext<>(message, affinity, affinityKey, worker, opts);
     }
 
-    private MessagingChannelClosedException getChannelClosedError(Throwable cause) {
+    private MessagingChannelClosedException channelClosedError(Throwable cause) {
         return new MessagingChannelClosedException("Channel closed [channel=" + name + ']', cause);
     }
 

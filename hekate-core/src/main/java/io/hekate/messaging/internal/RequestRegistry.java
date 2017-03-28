@@ -29,7 +29,7 @@ class RequestRegistry<T> {
             if (requests.putIfAbsent(id, handle) == null) {
                 onRequestRegister();
 
-                if (ctx.hasTimeout()) {
+                if (ctx.getOpts().hasTimeout()) {
                     // Unregister if messaging operation gets timed out.
                     ctx.setTimeoutListener(() ->
                         requests.remove(id)
@@ -41,7 +41,7 @@ class RequestRegistry<T> {
         }
     }
 
-    public RequestHandle<T> peek(Integer id) {
+    public RequestHandle<T> get(Integer id) {
         return requests.get(id);
     }
 
