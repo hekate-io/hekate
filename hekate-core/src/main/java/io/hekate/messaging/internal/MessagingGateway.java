@@ -218,6 +218,7 @@ class MessagingGateway<T> {
         this.name = name;
         this.net = net;
         this.localNode = localNode;
+        this.rootCluster = cluster;
         this.receiver = receiver;
         this.sockets = sockets;
         this.nioThreads = nioThreads;
@@ -227,8 +228,6 @@ class MessagingGateway<T> {
         this.sendBackPressure = sendBackPressure;
         this.checkIdle = checkIdle;
         this.onBeforeClose = onBeforeClose;
-
-        this.rootCluster = cluster;
 
         this.asyncAdaptor = new AffinityExecutorAdaptor(async);
 
@@ -241,10 +240,6 @@ class MessagingGateway<T> {
 
     public String getName() {
         return name;
-    }
-
-    public ClusterView getCluster() {
-        return rootCluster;
     }
 
     public int getSockets() {
@@ -328,7 +323,35 @@ class MessagingGateway<T> {
         assert opts != null : "Messaging options must be not null.";
         assert callback != null : "Callback must be not null.";
 
-        doBroadcast(affinityKey, message, opts, callback);
+        Set<ClusterNode> nodes = opts.cluster().getTopology().getNodes();
+
+        if (nodes.isEmpty()) {
+            callback.onComplete(null, new EmptyBroadcastResult<>(message));
+        } else {
+            BroadcastContext<T> broadcast = new BroadcastContext<>(message, nodes, callback);
+
+            for (ClusterNode node : nodes) {
+                send(affinityKey, message, opts.forSingleNode(node), err -> {
+                    boolean completed;
+
+                    if (err == null) {
+                        completed = broadcast.onSendSuccess(node);
+                    } else if (err instanceof UnknownRouteException) {
+                        // Special case for unknown routes.
+                        //-----------------------------------------------
+                        // Can happen in some rare cases if node leaves the cluster at the same time with this operation.
+                        // We exclude such nodes from the operation's results as if it had left the cluster right before we event tried.
+                        completed = broadcast.forgetNode(node);
+                    } else {
+                        completed = broadcast.onSendFailure(node, err);
+                    }
+
+                    if (completed) {
+                        broadcast.complete();
+                    }
+                });
+            }
+        }
     }
 
     @SuppressWarnings("unchecked") // <- need to cast to the response type.
@@ -345,7 +368,35 @@ class MessagingGateway<T> {
         assert opts != null : "Messaging options must be not null.";
         assert callback != null : "Callback must be not null.";
 
-        doAggregate(affinityKey, message, opts, callback);
+        Set<ClusterNode> nodes = opts.cluster().getTopology().getNodes();
+
+        if (nodes.isEmpty()) {
+            callback.onComplete(null, new EmptyAggregateResult<>(message));
+        } else {
+            AggregateContext<T> aggregate = new AggregateContext<>(message, nodes, callback);
+
+            for (ClusterNode node : nodes) {
+                request(affinityKey, message, opts.forSingleNode(node), (err, reply) -> {
+                    boolean completed;
+
+                    if (err == null) {
+                        completed = aggregate.onReplySuccess(node, reply);
+                    } else if (err instanceof UnknownRouteException) {
+                        // Special case for unknown routes.
+                        //-----------------------------------------------
+                        // Can happen in some rare cases if node leaves the cluster at the same time with this operation.
+                        // We exclude such nodes from the operation's results as if it had left the cluster right before we event tried.
+                        completed = aggregate.forgetNode(node);
+                    } else {
+                        completed = aggregate.onReplyFailure(node, err);
+                    }
+
+                    if (completed) {
+                        aggregate.complete();
+                    }
+                });
+            }
+        }
     }
 
     public Waiting close() {
@@ -644,70 +695,6 @@ class MessagingGateway<T> {
         pool.request(ctx, internalCallback);
     }
 
-    private void doAggregate(Object affinityKey, T message, MessagingOpts<T> opts, AggregateCallback<T> callback) {
-        Set<ClusterNode> nodes = opts.cluster().getTopology().getNodes();
-
-        if (nodes.isEmpty()) {
-            callback.onComplete(null, new EmptyAggregateResult<>(message));
-        } else {
-            AggregateContext<T> aggregate = new AggregateContext<>(message, nodes, callback);
-
-            for (ClusterNode node : nodes) {
-                request(affinityKey, message, opts.forSingleNode(node), (err, reply) -> {
-                    boolean completed;
-
-                    if (err == null) {
-                        completed = aggregate.onReplySuccess(node, reply);
-                    } else if (err instanceof UnknownRouteException) {
-                        // Special case for unknown routes.
-                        //-----------------------------------------------
-                        // Can happen in some rare cases if node leaves the cluster at the same time with this operation.
-                        // We exclude such nodes from the operation's results as if it had left the cluster right before we event tried.
-                        completed = aggregate.forgetNode(node);
-                    } else {
-                        completed = aggregate.onReplyFailure(node, err);
-                    }
-
-                    if (completed) {
-                        aggregate.complete();
-                    }
-                });
-            }
-        }
-    }
-
-    private void doBroadcast(Object affinityKey, T message, MessagingOpts<T> opts, BroadcastCallback<T> callback) {
-        Set<ClusterNode> nodes = opts.cluster().getTopology().getNodes();
-
-        if (nodes.isEmpty()) {
-            callback.onComplete(null, new EmptyBroadcastResult<>(message));
-        } else {
-            BroadcastContext<T> broadcast = new BroadcastContext<>(message, nodes, callback);
-
-            for (ClusterNode node : nodes) {
-                send(affinityKey, message, opts.forSingleNode(node), err -> {
-                    boolean completed;
-
-                    if (err == null) {
-                        completed = broadcast.onSendSuccess(node);
-                    } else if (err instanceof UnknownRouteException) {
-                        // Special case for unknown routes.
-                        //-----------------------------------------------
-                        // Can happen in some rare cases if node leaves the cluster at the same time with this operation.
-                        // We exclude such nodes from the operation's results as if it had left the cluster right before we event tried.
-                        completed = broadcast.forgetNode(node);
-                    } else {
-                        completed = broadcast.onSendFailure(node, err);
-                    }
-
-                    if (completed) {
-                        broadcast.complete();
-                    }
-                });
-            }
-        }
-    }
-
     boolean registerServerReceiver(NetReceiverContext<T> receiver) {
         long readLock = lock.readLock();
 
@@ -917,18 +904,18 @@ class MessagingGateway<T> {
         }
     }
 
-    private void applyFailoverAsync(MessageContext<T> ctx, Throwable cause, Optional<ClusterNode> failedNode, FailureInfo prevErr,
+    private void applyFailoverAsync(MessageContext<T> ctx, Throwable cause, Optional<ClusterNode> failed, FailureInfo prevErr,
         FailoverCallback callback) {
         onAsyncEnqueue();
 
         runAsyncAtAllCost(ctx, () -> {
             onAsyncDequeue();
 
-            applyFailover(ctx, cause, failedNode, prevErr, callback);
+            applyFailover(ctx, cause, failed, prevErr, callback);
         });
     }
 
-    private void applyFailover(MessageContext<T> ctx, Throwable cause, Optional<ClusterNode> failedNode, FailureInfo prevErr,
+    private void applyFailover(MessageContext<T> ctx, Throwable cause, Optional<ClusterNode> failed, FailureInfo prevErr,
         FailoverCallback callback) {
         // Do nothing if operation is already completed.
         if (ctx.isCompleted()) {
@@ -949,21 +936,21 @@ class MessagingGateway<T> {
             if (prevErr == null) {
                 attempt = 0;
                 prevRouting = RETRY_SAME_NODE;
-                failedNodes = failedNode.map(Collections::singleton).orElseGet(Collections::emptySet);
+                failedNodes = failed.map(Collections::singleton).orElseGet(Collections::emptySet);
             } else {
                 attempt = prevErr.getAttempt() + 1;
                 prevRouting = prevErr.getRouting();
 
                 failedNodes = new HashSet<>(prevErr.getFailedNodes());
 
-                if (failedNode.isPresent()) {
-                    failedNodes.add(failedNode.get());
+                if (failed.isPresent()) {
+                    failedNodes.add(failed.get());
                 }
 
                 failedNodes = unmodifiableSet(failedNodes);
             }
 
-            DefaultFailoverContext failoverCtx = new DefaultFailoverContext(attempt, cause, failedNode, failedNodes, prevRouting);
+            DefaultFailoverContext failoverCtx = new DefaultFailoverContext(attempt, cause, failed, failedNodes, prevRouting);
 
             // Apply failover policy.
             try {
@@ -979,7 +966,7 @@ class MessagingGateway<T> {
                         FailoverRoutingPolicy route = resolution.getRoutingPolicy();
 
                         // Apply failover only if re-routing was requested or if the target node is still within the channel's topology.
-                        if (route != RETRY_SAME_NODE || failedNode.isPresent() && pools.containsKey(failedNode.get().getId())) {
+                        if (route != RETRY_SAME_NODE || failed.isPresent() && pools.containsKey(failed.get().getId())) {
                             onRetry();
 
                             AffinityWorker worker = ctx.getWorker();
