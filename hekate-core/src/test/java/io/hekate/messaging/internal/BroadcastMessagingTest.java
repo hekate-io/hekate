@@ -21,12 +21,9 @@ import io.hekate.core.HekateTestInstance;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingEndpoint;
-import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.broadcast.AggregateCallback;
-import io.hekate.messaging.broadcast.AggregateFuture;
 import io.hekate.messaging.broadcast.AggregateResult;
 import io.hekate.messaging.broadcast.BroadcastCallback;
-import io.hekate.messaging.broadcast.BroadcastFuture;
 import io.hekate.messaging.broadcast.BroadcastResult;
 import io.hekate.messaging.unicast.Reply;
 import java.util.ArrayList;
@@ -39,10 +36,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.junit.Test;
@@ -53,7 +47,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class BroadcastMessagingTest extends MessagingServiceTestBase {
     private static class BroadcastTestCallback extends CompletableFuture<BroadcastResult<String>> implements BroadcastCallback<String> {
@@ -355,118 +348,6 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testBroadcastFilterFailureWithCallback() throws Exception {
-        TestChannel channel = createChannel().join();
-
-        AtomicReference<Throwable> routeFailureRef = new AtomicReference<>();
-
-        BroadcastTestCallback callback = new BroadcastTestCallback() {
-            @Override
-            public void onComplete(Throwable error, BroadcastResult<String> result) {
-                try {
-                    assertNotNull(error);
-
-                    assertTrue(routeFailureRef.compareAndSet(null, error));
-
-                    super.onComplete(error, result);
-                } catch (AssertionError e) {
-                    completeExceptionally(e);
-                }
-            }
-        };
-
-        channel.get().filter(n -> {
-            throw TEST_ERROR;
-        }).broadcast("test", callback);
-
-        expect(ExecutionException.class, () -> callback.get(3, TimeUnit.SECONDS));
-
-        assertNotNull(routeFailureRef.get());
-        assertSame(TEST_ERROR, routeFailureRef.get());
-    }
-
-    @Test
-    public void testBroadcastFilterFailureWithCallbackFailure() throws Exception {
-        TestChannel channel = createChannel().join();
-
-        AtomicBoolean errorThrown = new AtomicBoolean();
-
-        BroadcastTestCallback callback = new BroadcastTestCallback() {
-            @Override
-            public void onComplete(Throwable error, BroadcastResult<String> result) {
-                try {
-                    errorThrown.set(true);
-
-                    throw TEST_ERROR;
-                } finally {
-                    super.onComplete(error, result);
-                }
-            }
-        };
-
-        channel.get().filter(n -> {
-            throw new AssertionError("This error should never be thrown.");
-        }).broadcast("test", callback);
-
-        expect(ExecutionException.class, () -> callback.get(3, TimeUnit.SECONDS));
-
-        assertTrue(errorThrown.get());
-    }
-
-    @Test
-    public void testAggregateFilterFailureWithCallback() throws Exception {
-        TestChannel channel = createChannel().join();
-
-        AggregateTestCallback callback = new AggregateTestCallback();
-
-        channel.get().filter(n -> {
-            throw TEST_ERROR;
-        }).aggregate("test", callback);
-
-        try {
-            callback.get(3, TimeUnit.SECONDS);
-
-            fail("Failure was expected.");
-        } catch (ExecutionException e) {
-            assertSame(TEST_ERROR, e.getCause());
-        }
-    }
-
-    @Test
-    public void testBroadcastFilterFailureWithFuture() throws Exception {
-        TestChannel channel = createChannel().join();
-
-        BroadcastFuture<String> future = channel.get().filter(n -> {
-            throw TEST_ERROR;
-        }).broadcast("test");
-
-        try {
-            future.get(3, TimeUnit.SECONDS);
-
-            fail("Failure was expected.");
-        } catch (MessagingFutureException e) {
-            assertSame(TEST_ERROR, e.getCause());
-        }
-    }
-
-    @Test
-    public void testAggregateFilterFailureWithFuture() throws Exception {
-        TestChannel channel = createChannel().join();
-
-        AggregateFuture<String> future = channel.get().filter(n -> {
-            throw TEST_ERROR;
-        }).aggregate("test");
-
-        try {
-            future.get(3, TimeUnit.SECONDS);
-
-            fail("Failure was expected.");
-        } catch (MessagingFutureException e) {
-            assertSame(TEST_ERROR, e.getCause());
-        }
-    }
-
-    @Test
     public void testBroadcastPartialFailureWithCallback() throws Exception {
         List<TestChannel> channels = createAndJoinChannels(5);
 
@@ -614,17 +495,14 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
         repeat(3, i -> {
             say("Broadcast with on join topology change.");
 
-            CountDownLatch beforeJoinRouteLatch = new CountDownLatch(1);
-            AtomicInteger joinRouteCounter = new AtomicInteger();
+            CountDownLatch joinFilterCallLatch = new CountDownLatch(1);
             CountDownLatch joinLatch = new CountDownLatch(1);
 
             BroadcastTestCallback joinCallback = new BroadcastTestCallback();
 
             runAsync(() -> {
                 channel.get().filterAll(nodes -> {
-                    joinRouteCounter.incrementAndGet();
-
-                    beforeJoinRouteLatch.countDown();
+                    joinFilterCallLatch.countDown();
 
                     await(joinLatch);
 
@@ -634,7 +512,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
                 return null;
             });
 
-            await(beforeJoinRouteLatch);
+            await(joinFilterCallLatch);
 
             TestChannel joined = createChannel().join();
 
@@ -648,9 +526,6 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             assertTrue(joinResult.getErrors().toString(), joinResult.isSuccess());
 
-            // Check that there was no re-routing.
-            assertEquals(1, joinRouteCounter.get());
-
             for (TestChannel c : channels) {
                 if (c == joined) {
                     assertFalse(joinResult.getNodes().contains(joined.getInstance().getNode()));
@@ -663,17 +538,14 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             say("Broadcast with on leave topology change.");
 
-            CountDownLatch beforeLeaveRouteLatch = new CountDownLatch(1);
-            AtomicInteger leaveRouteCounter = new AtomicInteger();
+            CountDownLatch leaveFilterCallLatch = new CountDownLatch(1);
             CountDownLatch leaveLatch = new CountDownLatch(1);
 
             BroadcastTestCallback leaveCallback = new BroadcastTestCallback();
 
             runAsync(() -> {
                 channel.get().filterAll(nodes -> {
-                    leaveRouteCounter.incrementAndGet();
-
-                    beforeLeaveRouteLatch.countDown();
+                    leaveFilterCallLatch.countDown();
 
                     await(leaveLatch);
 
@@ -683,7 +555,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
                 return null;
             });
 
-            await(beforeLeaveRouteLatch);
+            await(leaveFilterCallLatch);
 
             TestChannel left = channels.remove(channels.size() - 1);
 
@@ -700,8 +572,6 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
             assertTrue(leaveResult.getErrors().toString(), leaveResult.isSuccess());
 
             assertFalse(leaveResult.getNodes().contains(leftNode));
-
-            assertEquals(2, leaveRouteCounter.get());
 
             for (TestChannel c : channels) {
                 c.awaitForMessage("test-join" + i);
@@ -720,17 +590,14 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
         repeat(3, i -> {
             say("Aggregate with on join topology change.");
 
-            CountDownLatch beforeJoinRouteLatch = new CountDownLatch(1);
-            AtomicInteger joinRouteCounter = new AtomicInteger();
+            CountDownLatch joinFilterCallLatch = new CountDownLatch(1);
             CountDownLatch joinLatch = new CountDownLatch(1);
 
             AggregateTestCallback joinCallback = new AggregateTestCallback();
 
             runAsync(() -> {
                 channel.get().filterAll(nodes -> {
-                    joinRouteCounter.incrementAndGet();
-
-                    beforeJoinRouteLatch.countDown();
+                    joinFilterCallLatch.countDown();
 
                     await(joinLatch);
 
@@ -740,7 +607,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
                 return null;
             });
 
-            await(beforeJoinRouteLatch);
+            await(joinFilterCallLatch);
 
             TestChannel joined = createChannel(c -> c.setReceiver(receiver));
 
@@ -754,9 +621,6 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             assertTrue(joinResult.isSuccess());
 
-            // Check that there was no re-routing.
-            assertEquals(1, joinRouteCounter.get());
-
             for (TestChannel c : channels) {
                 if (c == joined) {
                     assertFalse(joinResult.getNodes().contains(joined.getInstance().getNode()));
@@ -769,17 +633,14 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             say("Aggregate with on leave topology change.");
 
-            CountDownLatch beforeLeaveRouteLatch = new CountDownLatch(1);
-            AtomicInteger leaveRouteCounter = new AtomicInteger();
+            CountDownLatch leaveFilterCallLatch = new CountDownLatch(1);
             CountDownLatch leaveLatch = new CountDownLatch(1);
 
             AggregateTestCallback leaveCallback = new AggregateTestCallback();
 
             runAsync(() -> {
                 channel.get().filterAll(nodes -> {
-                    leaveRouteCounter.incrementAndGet();
-
-                    beforeLeaveRouteLatch.countDown();
+                    leaveFilterCallLatch.countDown();
 
                     await(leaveLatch);
 
@@ -789,7 +650,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
                 return null;
             });
 
-            await(beforeLeaveRouteLatch);
+            await(leaveFilterCallLatch);
 
             TestChannel left = channels.remove(channels.size() - 1);
 
@@ -803,11 +664,9 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             AggregateResult<String> leaveResult = leaveCallback.get(3, TimeUnit.SECONDS);
 
-            assertTrue(leaveResult.isSuccess());
+            assertTrue(leaveResult.getErrors().toString(), leaveResult.isSuccess());
 
             assertFalse(leaveResult.getNodes().contains(leftNode));
-
-            assertEquals(2, leaveRouteCounter.get());
         });
     }
 

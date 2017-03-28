@@ -74,8 +74,8 @@ public abstract class MessagingServiceTestBase extends HekateInstanceContextTest
             new MessagingTestContext(p, 1, 1, 1),
             new MessagingTestContext(p, 2, 2, 2),
             new MessagingTestContext(p, 3, 3, 3),
-            new MessagingTestContext(p, 5, 2, 0),
-            new MessagingTestContext(p, 2, 5, 0)
+            new MessagingTestContext(p, 5, 1, 0),
+            new MessagingTestContext(p, 5, 1, 1)
         ));
     }
 

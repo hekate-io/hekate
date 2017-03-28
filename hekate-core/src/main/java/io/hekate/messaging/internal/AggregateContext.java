@@ -29,17 +29,19 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.util.stream.Collectors.toSet;
+
 class AggregateContext<T> implements AggregateResult<T> {
     private static final Logger log = LoggerFactory.getLogger(AggregateContext.class);
 
     private final T request;
 
-    private final Set<ClusterNode> nodes;
-
     private final Map<ClusterNode, Reply<T>> responses;
 
     @ToStringIgnore
     private final AggregateCallback<T> callback;
+
+    private Set<ClusterNode> nodes;
 
     private Map<ClusterNode, Throwable> errors;
 
@@ -100,6 +102,14 @@ class AggregateContext<T> implements AggregateResult<T> {
     public Reply<T> getReply(ClusterNode node) {
         // Safe to access in non-synchronized context since this method can be called only after all responses were received.
         return responses.get(node);
+    }
+
+    public boolean forgetNode(ClusterNode node) {
+        synchronized (this) {
+            nodes = Collections.unmodifiableSet(nodes.stream().filter(n -> !n.equals(node)).collect(toSet()));
+
+            return isReady();
+        }
     }
 
     boolean onReplySuccess(ClusterNode node, Reply<T> reply) {

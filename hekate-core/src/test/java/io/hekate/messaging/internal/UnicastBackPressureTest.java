@@ -20,15 +20,11 @@ import io.hekate.core.internal.util.Utils;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelClosedException;
-import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingOverflowException;
 import io.hekate.messaging.MessagingOverflowPolicy;
-import io.hekate.messaging.broadcast.AggregateFuture;
-import io.hekate.messaging.broadcast.BroadcastFuture;
 import io.hekate.messaging.unicast.RequestFuture;
 import io.hekate.messaging.unicast.SendFuture;
-import io.hekate.util.format.ToString;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -51,35 +47,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class MessagingBackPressureTest extends MessagingServiceTestBase {
-    public static class BackPressureTestContext {
-        private final MessagingTestContext parent;
-
-        private final int lowWatermark;
-
-        private final int highWatermark;
-
-        public BackPressureTestContext(MessagingTestContext parent, int lowWatermark, int highWatermark) {
-            this.parent = parent;
-            this.lowWatermark = lowWatermark;
-            this.highWatermark = highWatermark;
-        }
-
-        @Override
-        public String toString() {
-            return ToString.format(this);
-        }
-    }
-
-    protected final int lowWatermark;
-
-    protected final int highWatermark;
-
-    public MessagingBackPressureTest(BackPressureTestContext ctx) {
-        super(ctx.parent);
-
-        lowWatermark = ctx.lowWatermark;
-        highWatermark = ctx.highWatermark;
+public class UnicastBackPressureTest extends BackPressureTestBase {
+    public UnicastBackPressureTest(BackPressureTestContext ctx) {
+        super(ctx);
     }
 
     @Parameters(name = "{index}: {0}")
@@ -255,185 +225,6 @@ public class MessagingBackPressureTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testBroadcast() throws Exception {
-        CountDownLatch resumeReceive = new CountDownLatch(1);
-
-        createChannel(c -> useBackPressure(c).withReceiver(msg -> {
-            if (!msg.get().equals("init")) {
-                await(resumeReceive);
-            }
-        })).join();
-
-        createChannel(c -> useBackPressure(c).withReceiver(msg -> {
-            if (!msg.get().equals("init")) {
-                await(resumeReceive);
-            }
-        })).join();
-
-        MessagingChannel<String> sender = createChannel(this::useBackPressure).join().get().forRemotes();
-
-        // Ensure that connection to each node is established.
-        sender.broadcast("init").get(3, TimeUnit.SECONDS);
-
-        BroadcastFuture<String> future = null;
-
-        try {
-            for (int step = 0; step < 200000; step++) {
-                future = sender.broadcast("message-" + step);
-
-                if (future.isCompletedExceptionally()) {
-                    say("Completed after " + step + " steps.");
-
-                    break;
-                }
-            }
-        } finally {
-            resumeReceive.countDown();
-        }
-
-        assertNotNull(future);
-        assertTrue(future.isCompletedExceptionally());
-
-        try {
-            future.get();
-
-            fail("Error was expected");
-        } catch (MessagingFutureException e) {
-            assertTrue(e.toString(), e.isCausedBy(MessagingOverflowException.class));
-        }
-    }
-
-    @Test
-    public void testAggregate() throws Exception {
-        List<Message<String>> requests1 = new CopyOnWriteArrayList<>();
-        List<Message<String>> requests2 = new CopyOnWriteArrayList<>();
-
-        createChannel(c -> useBackPressure(c)
-            .withReceiver(msg -> {
-                if (!"init".equals(msg.get())) {
-                    requests1.add(msg);
-                }
-            })
-        ).join();
-
-        createChannel(c -> useBackPressure(c)
-            .withReceiver(msg -> {
-                if (!"init".equals(msg.get())) {
-                    requests2.add(msg);
-                }
-            })
-        ).join();
-
-        MessagingChannel<String> sender = createChannel(this::useBackPressure).join().get().forRemotes();
-
-        // Ensure that connection to each node is established.
-        sender.broadcast("init").get(3, TimeUnit.SECONDS);
-
-        // Request (aggregate) up to high watermark in order to trigger back pressure.
-        List<AggregateFuture<?>> futureResponses = new ArrayList<>();
-
-        for (int i = 0; i < highWatermark; i++) {
-            futureResponses.add(sender.aggregate("request-" + i));
-        }
-
-        busyWait("requests received", () -> requests1.size() == futureResponses.size());
-        busyWait("requests received", () -> requests2.size() == futureResponses.size());
-
-        // Check that message can't be sent when high watermark reached.
-        assertBackPressureEnabled(sender);
-
-        // Go down to low watermark.
-        for (int i = 0; i < getLowWatermarkBounds(); i++) {
-            String request = "request-" + i;
-
-            requests1.stream().filter(r -> r.get().equals(request)).findFirst().ifPresent(r -> r.reply("ok"));
-        }
-
-        for (int i = 0; i < getLowWatermarkBounds(); i++) {
-            String request = "request-" + i;
-
-            requests2.stream().filter(r -> r.get().equals(request)).findFirst().ifPresent(r -> r.reply("ok"));
-        }
-
-        busyWait("responses received", () ->
-            futureResponses.stream().filter(CompletableFuture::isDone).count() == getLowWatermarkBounds()
-        );
-
-        // Check that new request can be processed.
-        sender.broadcast("last").get(3, TimeUnit.SECONDS);
-
-        requests1.stream().filter(Message::mustReply).forEach(r -> r.reply("ok"));
-        requests2.stream().filter(Message::mustReply).forEach(r -> r.reply("ok"));
-
-        for (Future<?> future : futureResponses) {
-            future.get(3, TimeUnit.SECONDS);
-        }
-    }
-
-    @Test
-    public void testAggregateFailure() throws Exception {
-        List<Message<String>> requests1 = new CopyOnWriteArrayList<>();
-        List<Message<String>> requests2 = new CopyOnWriteArrayList<>();
-
-        createChannel(c -> useBackPressure(c)
-            .withReceiver(msg -> {
-                if (!"init".equals(msg.get())) {
-                    requests1.add(msg);
-                }
-            })
-        ).join();
-
-        TestChannel receiver2 = createChannel(c -> useBackPressure(c)
-            .withReceiver(msg -> {
-                if (!"init".equals(msg.get())) {
-                    requests2.add(msg);
-                }
-            })
-        ).join();
-
-        MessagingChannel<String> sender = createChannel(this::useBackPressure).join().get().forRemotes();
-
-        // Ensure that connection to each node is established.
-        sender.broadcast("init").get(3, TimeUnit.SECONDS);
-
-        // Request (aggregate) up to high watermark in order to trigger back pressure.
-        List<AggregateFuture<?>> futureResponses = new ArrayList<>();
-
-        for (int i = 0; i < highWatermark; i++) {
-            futureResponses.add(sender.aggregate("request-" + i));
-        }
-
-        busyWait("requests received", () -> requests1.size() == futureResponses.size());
-        busyWait("requests received", () -> requests2.size() == futureResponses.size());
-
-        // Check that message can't be sent when high watermark reached.
-        assertBackPressureEnabled(sender);
-
-        // Go down to low watermark on first node.
-        for (int i = 0; i < getLowWatermarkBounds(); i++) {
-            String request = "request-" + i;
-
-            requests1.stream().filter(r -> r.get().equals(request)).findFirst().ifPresent(r -> r.reply("ok"));
-        }
-
-        // Stop second receiver so that all pending requests would partially fail.
-        receiver2.leave();
-
-        busyWait("responses received", () ->
-            futureResponses.stream().filter(CompletableFuture::isDone).count() == getLowWatermarkBounds()
-        );
-
-        // Check that new request can be processed.
-        sender.broadcast("last").get(3, TimeUnit.SECONDS);
-
-        requests1.stream().filter(Message::mustReply).forEach(r -> r.reply("ok"));
-
-        for (Future<?> future : futureResponses) {
-            future.get(3, TimeUnit.SECONDS);
-        }
-    }
-
-    @Test
     public void testPartialReplyIsGuarded() throws Exception {
         AtomicReference<Message<String>> receivedRef = new AtomicReference<>();
 
@@ -516,30 +307,7 @@ public class MessagingBackPressureTest extends MessagingServiceTestBase {
         assertEquals("ok", request.get(3, TimeUnit.SECONDS).get());
     }
 
-    private MessagingChannelConfig<String> useBackPressure(MessagingChannelConfig<String> cfg) {
-        return cfg.withBackPressure(bp -> {
-            bp.setOutOverflow(MessagingOverflowPolicy.FAIL);
-            bp.setOutLowWatermark(lowWatermark);
-            bp.setOutHighWatermark(highWatermark);
-            bp.setInLowWatermark(lowWatermark);
-            bp.setInHighWatermark(highWatermark);
-        });
-    }
-
-    private void assertBackPressureEnabled(MessagingChannel<String> channel) {
-        // Check that message can't be sent when high watermark reached.
-        try {
-            channel.request("fail-on-back-pressure").get(3, TimeUnit.SECONDS);
-
-            fail("Back pressure error was expected [channel=" + channel + ']');
-        } catch (TimeoutException | InterruptedException e) {
-            throw new AssertionError(e);
-        } catch (MessagingFutureException e) {
-            assertTrue(e.toString(), e.isCausedBy(MessagingOverflowException.class));
-        }
-    }
-
-    private void assertBackPressureOnPartialReply(Message<String> msg) throws Exception {
+    protected void assertBackPressureOnPartialReply(Message<String> msg) throws Exception {
         assertTrue(msg.mustReply());
 
         CompletableFuture<Throwable> errFuture = new CompletableFuture<>();
@@ -552,7 +320,7 @@ public class MessagingBackPressureTest extends MessagingServiceTestBase {
         assertTrue(err.toString(), Utils.isCausedBy(err, MessagingOverflowException.class));
     }
 
-    private List<RequestFuture<String>> requestUpToHighWatermark(MessagingChannel<String> channel) {
+    protected List<RequestFuture<String>> requestUpToHighWatermark(MessagingChannel<String> channel) {
         List<RequestFuture<String>> responses = new ArrayList<>();
 
         // Request up to high watermark in order to enable back pressure.
@@ -561,9 +329,5 @@ public class MessagingBackPressureTest extends MessagingServiceTestBase {
         }
 
         return responses;
-    }
-
-    private int getLowWatermarkBounds() {
-        return Math.max(1, lowWatermark);
     }
 }

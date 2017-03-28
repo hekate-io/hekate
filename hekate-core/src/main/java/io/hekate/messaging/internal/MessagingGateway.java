@@ -315,53 +315,37 @@ class MessagingGateway<T> {
         }
     }
 
-    public BroadcastFuture<T> broadcast(Object affinityKey, T message, ClusterView cluster) {
+    public BroadcastFuture<T> broadcast(Object affinityKey, T message, MessagingOpts<T> opts) {
         BroadcastCallbackFuture<T> future = new BroadcastCallbackFuture<>();
 
-        broadcast(affinityKey, message, cluster, future);
+        broadcast(affinityKey, message, opts, future);
 
         return future;
     }
 
-    public void broadcast(Object affinityKey, T message, ClusterView cluster, BroadcastCallback<T> callback) {
+    public void broadcast(Object affinityKey, T message, MessagingOpts<T> opts, BroadcastCallback<T> callback) {
         assert message != null : "Message must be not null.";
-        assert cluster != null : "Cluster must be not null.";
+        assert opts != null : "Messaging options must be not null.";
         assert callback != null : "Callback must be not null.";
 
-        AffinityContext<T> ctx = newContext(affinityKey, message, false);
-
-        if (backPressureAcquire(ctx, callback)) {
-            try {
-                doBroadcast(ctx, cluster, callback);
-            } catch (RejectedExecutionException e) {
-                notifyOnChannelClosedError(ctx, callback);
-            }
-        }
+        doBroadcast(affinityKey, message, opts, callback);
     }
 
     @SuppressWarnings("unchecked") // <- need to cast to the response type.
-    public <R extends T> AggregateFuture<R> aggregate(Object affinityKey, T message, ClusterView cluster) {
+    public <R extends T> AggregateFuture<R> aggregate(Object affinityKey, T message, MessagingOpts<T> opts) {
         AggregateCallbackFuture<T> future = new AggregateCallbackFuture<>();
 
-        aggregate(affinityKey, message, cluster, future);
+        aggregate(affinityKey, message, opts, future);
 
         return (AggregateFuture<R>)future;
     }
 
-    public void aggregate(Object affinityKey, T message, ClusterView cluster, AggregateCallback<T> callback) {
+    public void aggregate(Object affinityKey, T message, MessagingOpts<T> opts, AggregateCallback<T> callback) {
         assert message != null : "Message must be not null.";
-        assert cluster != null : "Cluster must be not null.";
+        assert opts != null : "Messaging options must be not null.";
         assert callback != null : "Callback must be not null.";
 
-        AffinityContext<T> ctx = newContext(affinityKey, message, false);
-
-        if (backPressureAcquire(ctx, callback)) {
-            try {
-                doAggregate(ctx, cluster, callback);
-            } catch (RejectedExecutionException e) {
-                notifyOnChannelClosedError(ctx, callback);
-            }
-        }
+        doAggregate(affinityKey, message, opts, callback);
     }
 
     public Waiting close() {
@@ -653,105 +637,66 @@ class MessagingGateway<T> {
         pool.request(ctx, internalCallback);
     }
 
-    private void doAggregate(AffinityContext<T> ctx, ClusterView cluster, AggregateCallback<T> callback) {
-        Map<ClusterNode, ClientPool<T>> pools;
+    private void doAggregate(Object affinityKey, T message, MessagingOpts<T> opts, AggregateCallback<T> callback) {
+        Set<ClusterNode> nodes = opts.cluster().getTopology().getNodes();
 
-        try {
-            pools = selectBroadcastPools(cluster);
-        } catch (HekateException | RuntimeException | Error e) {
-            notifyOnErrorAsync(ctx, callback, e);
-
-            return;
-        }
-
-        if (pools.isEmpty()) {
-            callback.onComplete(null, new ImmediateAggregateResult<>(ctx.getMessage()));
+        if (nodes.isEmpty()) {
+            callback.onComplete(null, new EmptyAggregateResult<>(message));
         } else {
-            AggregateContext<T> aggregate = new AggregateContext<>(ctx.getMessage(), pools.keySet(), callback);
+            AggregateContext<T> aggregate = new AggregateContext<>(message, nodes, callback);
 
-            for (Map.Entry<ClusterNode, ClientPool<T>> e : pools.entrySet()) {
-                ClusterNode node = e.getKey();
-                ClientPool<T> pool = e.getValue();
-
-                InternalRequestCallback<T> nodeCallback = (request, err, reply) -> {
-                    if (err == null) {
-                        // Check if reply is an application-level error message.
-                        err = tryConvertToError(reply.get());
-                    }
-
-                    if (err != null || !reply.isPartial()) {
-                        request.unregister();
-                    }
-
+            for (ClusterNode node : nodes) {
+                request(affinityKey, message, opts.forSingleNode(node), (err, reply) -> {
                     boolean completed;
 
                     if (err == null) {
                         completed = aggregate.onReplySuccess(node, reply);
+                    } else if (err instanceof UnknownRouteException) {
+                        // Special case for unknown routes.
+                        //-----------------------------------------------
+                        // Can happen in some rare cases if node leaves the cluster at the same time with this operation.
+                        // We exclude such nodes from the operation's results as if it had left the cluster right before we event tried.
+                        completed = aggregate.forgetNode(node);
                     } else {
                         completed = aggregate.onReplyFailure(node, err);
                     }
 
-                    if (completed && ctx.complete()) {
-                        backPressureRelease();
-
+                    if (completed) {
                         aggregate.complete();
                     }
-                };
-
-                if (pool != null) {
-                    pool.request(ctx, nodeCallback);
-                } else {
-                    UnknownRouteException err = new UnknownRouteException("Node is not within the channel topology [node=" + node + ']');
-
-                    aggregate.onReplyFailure(node, err);
-                }
+                });
             }
         }
     }
 
-    private void doBroadcast(AffinityContext<T> ctx, ClusterView cluster, BroadcastCallback<T> callback) {
-        Map<ClusterNode, ClientPool<T>> pools;
+    private void doBroadcast(Object affinityKey, T message, MessagingOpts<T> opts, BroadcastCallback<T> callback) {
+        Set<ClusterNode> nodes = opts.cluster().getTopology().getNodes();
 
-        try {
-            pools = selectBroadcastPools(cluster);
-        } catch (HekateException | RuntimeException | Error e) {
-            notifyOnErrorAsync(ctx, callback, e);
-
-            return;
-        }
-
-        if (pools.isEmpty()) {
-            callback.onComplete(null, new ImmediateBroadcastResult<>(ctx.getMessage()));
+        if (nodes.isEmpty()) {
+            callback.onComplete(null, new EmptyBroadcastResult<>(message));
         } else {
-            BroadcastContext<T> broadcast = new BroadcastContext<>(ctx.getMessage(), pools.keySet(), callback);
+            BroadcastContext<T> broadcast = new BroadcastContext<>(message, nodes, callback);
 
-            for (Map.Entry<ClusterNode, ClientPool<T>> e : pools.entrySet()) {
-                ClusterNode node = e.getKey();
-                ClientPool<T> pool = e.getValue();
-
-                SendCallback nodeCallback = err -> {
+            for (ClusterNode node : nodes) {
+                send(affinityKey, message, opts.forSingleNode(node), err -> {
                     boolean completed;
 
                     if (err == null) {
                         completed = broadcast.onSendSuccess(node);
+                    } else if (err instanceof UnknownRouteException) {
+                        // Special case for unknown routes.
+                        //-----------------------------------------------
+                        // Can happen in some rare cases if node leaves the cluster at the same time with this operation.
+                        // We exclude such nodes from the operation's results as if it had left the cluster right before we event tried.
+                        completed = broadcast.forgetNode(node);
                     } else {
                         completed = broadcast.onSendFailure(node, err);
                     }
 
-                    if (completed && ctx.complete()) {
-                        backPressureRelease();
-
+                    if (completed) {
                         broadcast.complete();
                     }
-                };
-
-                if (pool != null) {
-                    pool.send(ctx, nodeCallback);
-                } else {
-                    UnknownRouteException err = new UnknownRouteException("Node is not within the channel topology [node=" + node + ']');
-
-                    broadcast.onSendFailure(node, err);
-                }
+                });
             }
         }
     }
@@ -915,7 +860,7 @@ class MessagingGateway<T> {
                     throw new TooManyRoutesException("Too many receivers for unicast operation [channel=" + name
                         + ", topology=" + topology + ']');
                 } else {
-                    targetId = topology.getNodesList().get(0).getId();
+                    targetId = topology.getNodes().iterator().next().getId();
                 }
             } else {
                 LoadBalancerContext balancerCtx = new DefaultLoadBalancerContext(ctx, topology, Optional.ofNullable(prevErr));
@@ -965,71 +910,11 @@ class MessagingGateway<T> {
         }
     }
 
-    private Map<ClusterNode, ClientPool<T>> selectBroadcastPools(ClusterView cluster) throws HekateException {
-        while (true) {
-            ClusterTopology topology = cluster.getTopology();
-
-            if (topology.isEmpty()) {
-                return Collections.emptyMap();
-            }
-
-            // Enter lock (to prevent concurrent topology changes).
-            long readLock = lock.readLock();
-
-            try {
-                // Check that channel was not closed.
-                if (closed) {
-                    throw getChannelClosedError(null);
-                }
-
-                if (topology.isEmpty()) {
-                    return Collections.emptyMap();
-                } else {
-                    Map<ClusterNode, ClientPool<T>> targetPools = new HashMap<>(topology.size(), 1.0f);
-
-                    boolean verifyTopology = false;
-
-                    for (ClusterNode target : topology) {
-                        if (target != null) {
-                            ClientPool<T> pool = pools.get(target.getId());
-
-                            if (pool == null) {
-                                // Enable post-checking of topology changes.
-                                verifyTopology = true;
-                            }
-
-                            targetPools.put(target, pool);
-                        }
-                    }
-
-                    if (verifyTopology) {
-                        // Post-check that topology was not changed during routing.
-                        ClusterTopology currentTopology = rootCluster.getTopology();
-
-                        if (topology.getVersion() == currentTopology.getVersion()) {
-                            return targetPools;
-                        }
-                    } else {
-                        return targetPools;
-                    }
-                }
-            } finally {
-                lock.unlockRead(readLock);
-            }
-
-            // Since we are here it means that topology was changed during routing.
-            if (DEBUG) {
-                log.debug("Retrying broadcast routing since topology was changed.");
-            }
-
-            updateTopology();
-        }
-    }
-
     private void applyFailoverAsync(MessageContext<T> ctx, Throwable cause, Optional<ClusterNode> failedNode, MessagingOpts<T> opts,
         FailureInfo prevErr, FailoverAcceptCallback onAccept, FailoverRejectCallback onReject) {
         boolean applied = false;
 
+        // TODO: Review this logic. Looks like we should always apply failover asynchronously
         if (async.isAsync()) {
             long readLock = lock.readLock();
 
@@ -1109,7 +994,7 @@ class MessagingGateway<T> {
 
                         FailoverRoutingPolicy route = resolution.getRoutingPolicy();
 
-                        // Apply failover only if re-routing was request or if the target node is still within the channel's topology.
+                        // Apply failover only if re-routing was requested or if the target node is still within the channel's topology.
                         if (route != RETRY_SAME_NODE || failedNode.isPresent() && pools.containsKey(failedNode.get().getId())) {
                             AffinityWorker worker = ctx.getWorker();
 

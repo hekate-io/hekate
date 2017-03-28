@@ -23,10 +23,10 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-class ImmediateBroadcastResult<T> implements BroadcastResult<T> {
+class EmptyBroadcastResult<T> implements BroadcastResult<T> {
     private final T message;
 
-    public ImmediateBroadcastResult(T message) {
+    public EmptyBroadcastResult(T message) {
         assert message != null : "Message is null.";
 
         this.message = message;

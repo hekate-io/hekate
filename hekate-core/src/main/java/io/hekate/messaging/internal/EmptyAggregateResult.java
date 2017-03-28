@@ -24,10 +24,10 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-class ImmediateAggregateResult<T> implements AggregateResult<T> {
+class EmptyAggregateResult<T> implements AggregateResult<T> {
     private final T request;
 
-    public ImmediateAggregateResult(T request) {
+    public EmptyAggregateResult(T request) {
         assert request != null : "Request is null.";
 
         this.request = request;

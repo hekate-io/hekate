@@ -28,15 +28,17 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.util.stream.Collectors.toSet;
+
 class BroadcastContext<T> implements BroadcastResult<T> {
     private static final Logger log = LoggerFactory.getLogger(BroadcastContext.class);
 
     private final T message;
 
-    private final Set<ClusterNode> nodes;
-
     @ToStringIgnore
     private final BroadcastCallback<T> callback;
+
+    private Set<ClusterNode> nodes;
 
     private Map<ClusterNode, Throwable> errors;
 
@@ -87,6 +89,16 @@ class BroadcastContext<T> implements BroadcastResult<T> {
     @Override
     public boolean isSuccess(ClusterNode node) {
         return getError(node) == null;
+    }
+
+    public boolean forgetNode(ClusterNode node) {
+        synchronized (this) {
+            nodes = Collections.unmodifiableSet(nodes.stream().filter(n -> !n.equals(node)).collect(toSet()));
+
+            remaining--;
+
+            return remaining == 0;
+        }
     }
 
     boolean onSendSuccess(ClusterNode node) {

@@ -17,6 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterFilter;
+import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterView;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.failover.FailoverPolicy;
@@ -131,7 +132,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     public BroadcastFuture<T> broadcast(T message) {
         ArgAssert.notNull(message, "Message");
 
-        return gateway.broadcast(affinity, message, cluster);
+        return gateway.broadcast(affinity, message, this);
     }
 
     @Override
@@ -139,7 +140,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
         ArgAssert.notNull(message, "Message");
         ArgAssert.notNull(callback, "Callback");
 
-        gateway.broadcast(affinity, message, cluster, callback);
+        gateway.broadcast(affinity, message, this, callback);
     }
 
     @Override
@@ -147,7 +148,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
         ArgAssert.notNull(message, "Message");
         ArgAssert.notNull(affinityKey, "Affinity key");
 
-        return gateway.broadcast(affinityKey, message, cluster);
+        return gateway.broadcast(affinityKey, message, this);
     }
 
     @Override
@@ -156,14 +157,14 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
         ArgAssert.notNull(callback, "Callback");
         ArgAssert.notNull(affinityKey, "Affinity key");
 
-        gateway.broadcast(affinityKey, message, cluster, callback);
+        gateway.broadcast(affinityKey, message, this, callback);
     }
 
     @Override
     public <R extends T> AggregateFuture<R> aggregate(T message) {
         ArgAssert.notNull(message, "Message");
 
-        return gateway.aggregate(affinity, message, cluster);
+        return gateway.aggregate(affinity, message, this);
     }
 
     @Override
@@ -171,7 +172,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
         ArgAssert.notNull(message, "Message");
         ArgAssert.notNull(callback, "Callback");
 
-        gateway.aggregate(affinity, message, cluster, callback);
+        gateway.aggregate(affinity, message, this, callback);
     }
 
     @Override
@@ -179,7 +180,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
         ArgAssert.notNull(message, "Message");
         ArgAssert.notNull(affinityKey, "Affinity key");
 
-        return gateway.aggregate(affinityKey, message, cluster);
+        return gateway.aggregate(affinityKey, message, this);
     }
 
     @Override
@@ -188,7 +189,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
         ArgAssert.notNull(callback, "Callback");
         ArgAssert.notNull(affinityKey, "Affinity key");
 
-        gateway.aggregate(affinityKey, message, cluster, callback);
+        gateway.aggregate(affinityKey, message, this, callback);
     }
 
     @Override
@@ -286,6 +287,13 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     @Override
     public long timeout() {
         return timeout;
+    }
+
+    @Override
+    public MessagingOpts<T> forSingleNode(ClusterNode node) {
+        ArgAssert.notNull(node, "Node");
+
+        return new DefaultMessagingChannel<>(gateway, cluster.forNode(node), null, failover, affinity, timeout);
     }
 
     // Package level for testing purposes.
