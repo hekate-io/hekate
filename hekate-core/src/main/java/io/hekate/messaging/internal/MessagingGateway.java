@@ -77,6 +77,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.hekate.failover.FailoverRoutingPolicy.RETRY_SAME_NODE;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toList;
 
 class MessagingGateway<T> {
@@ -85,11 +87,9 @@ class MessagingGateway<T> {
     }
 
     private interface FailoverAcceptCallback {
-        void onAccept(FailoverRoutingPolicy routingPolicy, FailureInfo newFailure);
-    }
+        void retry(FailoverRoutingPolicy routingPolicy, FailureInfo newFailure);
 
-    private interface FailoverRejectCallback {
-        void onReject(Throwable cause);
+        void fail(Throwable cause);
     }
 
     private static class SendCallbackFuture extends SendFuture implements SendCallback {
@@ -485,6 +485,7 @@ class MessagingGateway<T> {
         // Decorate callback with failover, error handling logic, etc.
         SendCallback retryCallback = err -> {
             if (err == null || opts.failover() == null) {
+                // Complete operation.
                 if (ctx.complete()) {
                     backPressureRelease();
 
@@ -493,39 +494,43 @@ class MessagingGateway<T> {
                     }
                 }
             } else {
-                // Actions if operation should be retried.
-                FailoverAcceptCallback onFailover = (routingPolicy, failure) -> {
-                    switch (routingPolicy) {
-                        case RETRY_SAME_NODE: {
-                            doSend(ctx, pool, opts, callback, failure);
-
-                            break;
-                        }
-                        case PREFER_SAME_NODE: {
-                            if (isKnownNode(pool.getNode())) {
+                // Apply failover actions.
+                FailoverAcceptCallback onFailover = new FailoverAcceptCallback() {
+                    @Override
+                    public void retry(FailoverRoutingPolicy routingPolicy, FailureInfo failure) {
+                        switch (routingPolicy) {
+                            case RETRY_SAME_NODE: {
                                 doSend(ctx, pool, opts, callback, failure);
-                            } else {
-                                routeAndSend(ctx, opts, callback, failure);
+
+                                break;
                             }
+                            case PREFER_SAME_NODE: {
+                                if (isKnownNode(pool.getNode())) {
+                                    doSend(ctx, pool, opts, callback, failure);
+                                } else {
+                                    routeAndSend(ctx, opts, callback, failure);
+                                }
 
-                            break;
-                        }
-                        case RE_ROUTE: {
-                            routeAndSend(ctx, opts, callback, failure);
+                                break;
+                            }
+                            case RE_ROUTE: {
+                                routeAndSend(ctx, opts, callback, failure);
 
-                            break;
+                                break;
+                            }
+                            default: {
+                                throw new IllegalArgumentException("Unexpected routing policy: " + routingPolicy);
+                            }
                         }
-                        default: {
-                            throw new IllegalArgumentException("Unexpected routing policy: " + routingPolicy);
-                        }
+                    }
+
+                    @Override
+                    public void fail(Throwable cause) {
+                        notifyOnErrorAsync(ctx, callback, cause);
                     }
                 };
 
-                // Actions if operation can't be retried.
-                FailoverRejectCallback onFail = newCause -> notifyOnErrorAsync(ctx, callback, newCause);
-
-                // Apply failover actions.
-                applyFailoverAsync(ctx, err, pool.getNodeOpt(), opts, prevErr, onFailover, onFail);
+                applyFailoverAsync(ctx, err, pool.getNodeOpt(), opts, prevErr, onFailover);
             }
         };
 
@@ -593,44 +598,47 @@ class MessagingGateway<T> {
                 // If failover is successful then new request will be registered.
                 request.unregister();
 
-                // Apply failover.
+                // Apply failover actions.
                 if (acceptance == ReplyDecision.REJECT) {
                     err = new RejectedReplyException("Reply was rejected by a request callback", replyMsg, err);
                 }
 
-                // Actions if operation should be retried.
-                FailoverAcceptCallback onFailover = (routingPolicy, failure) -> {
-                    switch (routingPolicy) {
-                        case RETRY_SAME_NODE: {
-                            doRequest(ctx, pool, opts, callback, failure);
-
-                            break;
-                        }
-                        case PREFER_SAME_NODE: {
-                            if (isKnownNode(pool.getNode())) {
+                FailoverAcceptCallback onFailover = new FailoverAcceptCallback() {
+                    @Override
+                    public void retry(FailoverRoutingPolicy routingPolicy, FailureInfo failure) {
+                        switch (routingPolicy) {
+                            case RETRY_SAME_NODE: {
                                 doRequest(ctx, pool, opts, callback, failure);
-                            } else {
-                                routeAndRequest(ctx, opts, callback, failure);
+
+                                break;
                             }
+                            case PREFER_SAME_NODE: {
+                                if (isKnownNode(pool.getNode())) {
+                                    doRequest(ctx, pool, opts, callback, failure);
+                                } else {
+                                    routeAndRequest(ctx, opts, callback, failure);
+                                }
 
-                            break;
-                        }
-                        case RE_ROUTE: {
-                            routeAndRequest(ctx, opts, callback, failure);
+                                break;
+                            }
+                            case RE_ROUTE: {
+                                routeAndRequest(ctx, opts, callback, failure);
 
-                            break;
+                                break;
+                            }
+                            default: {
+                                throw new IllegalArgumentException("Unexpected routing policy: " + routingPolicy);
+                            }
                         }
-                        default: {
-                            throw new IllegalArgumentException("Unexpected routing policy: " + routingPolicy);
-                        }
+                    }
+
+                    @Override
+                    public void fail(Throwable cause) {
+                        notifyOnErrorAsync(ctx, callback, cause);
                     }
                 };
 
-                // Actions if operation can't be retried.
-                FailoverRejectCallback onFail = newCause -> notifyOnErrorAsync(ctx, callback, newCause);
-
-                // Apply failover actions.
-                applyFailoverAsync(ctx, err, pool.getNodeOpt(), opts, prevErr, onFailover, onFail);
+                applyFailoverAsync(ctx, err, pool.getNodeOpt(), opts, prevErr, onFailover);
             }
         };
 
@@ -787,11 +795,11 @@ class MessagingGateway<T> {
                     }
 
                     if (removed == null) {
-                        removed = Collections.emptySet();
+                        removed = emptySet();
                     }
 
                     if (added == null) {
-                        added = Collections.emptySet();
+                        added = emptySet();
                     }
 
                     if (!removed.isEmpty()) {
@@ -911,43 +919,22 @@ class MessagingGateway<T> {
     }
 
     private void applyFailoverAsync(MessageContext<T> ctx, Throwable cause, Optional<ClusterNode> failedNode, MessagingOpts<T> opts,
-        FailureInfo prevErr, FailoverAcceptCallback onAccept, FailoverRejectCallback onReject) {
-        boolean applied = false;
+        FailureInfo prevErr, FailoverAcceptCallback callback) {
+        onAsyncEnqueue();
 
-        // TODO: Review this logic. Looks like we should always apply failover asynchronously
-        if (async.isAsync()) {
-            long readLock = lock.readLock();
+        runAsyncAtAnyCost(ctx, () -> {
+            onAsyncDequeue();
 
-            try {
-                if (!closed) {
-                    applied = true;
-
-                    onAsyncEnqueue();
-
-                    ctx.getWorker().execute(() -> {
-                        onAsyncDequeue();
-
-                        applyFailover(ctx, cause, failedNode, opts, prevErr, onAccept, onReject);
-                    });
-                }
-            } finally {
-                lock.unlock(readLock);
-            }
-        }
-
-        if (!applied) {
-            applyFailover(ctx, cause, failedNode, opts, prevErr, onAccept, onReject);
-        }
+            applyFailover(ctx, cause, failedNode, opts, prevErr, callback);
+        });
     }
 
     private void applyFailover(MessageContext<T> ctx, Throwable cause, Optional<ClusterNode> failedNode, MessagingOpts<T> opts,
-        FailureInfo prevErr, FailoverAcceptCallback onAccept, FailoverRejectCallback onReject) {
+        FailureInfo prevErr, FailoverAcceptCallback callback) {
         // Do nothing if operation is already completed.
         if (ctx.isCompleted()) {
             return;
         }
-
-        onRetry();
 
         boolean applied = false;
 
@@ -974,14 +961,14 @@ class MessagingGateway<T> {
                     failedNodes.add(failedNode.get());
                 }
 
-                failedNodes = Collections.unmodifiableSet(failedNodes);
+                failedNodes = unmodifiableSet(failedNodes);
             }
 
-            DefaultFailoverContext newCtx = new DefaultFailoverContext(attempt, cause, failedNode, failedNodes, prevRouting);
+            DefaultFailoverContext failoverCtx = new DefaultFailoverContext(attempt, cause, failedNode, failedNodes, prevRouting);
 
             // Apply failover policy.
             try {
-                FailureResolution resolution = policy.apply(newCtx);
+                FailureResolution resolution = policy.apply(failoverCtx);
 
                 // Enter lock (prevents concurrent topology changes).
                 long readLock = lock.readLock();
@@ -990,22 +977,22 @@ class MessagingGateway<T> {
                     if (closed) {
                         finalCause = getChannelClosedError(cause);
                     } else if (resolution != null && resolution.isRetry()) {
-                        long delay = resolution.getDelay();
-
                         FailoverRoutingPolicy route = resolution.getRoutingPolicy();
 
                         // Apply failover only if re-routing was requested or if the target node is still within the channel's topology.
                         if (route != RETRY_SAME_NODE || failedNode.isPresent() && pools.containsKey(failedNode.get().getId())) {
+                            onRetry();
+
                             AffinityWorker worker = ctx.getWorker();
 
                             // Schedule timeout task to apply failover actions after the failover delay.
                             onAsyncEnqueue();
 
-                            worker.executeDeferred(delay, () -> {
+                            worker.executeDeferred(resolution.getDelay(), () -> {
                                 onAsyncDequeue();
 
                                 try {
-                                    onAccept.onAccept(route, newCtx.withRouting(route));
+                                    callback.retry(route, failoverCtx.withRouting(route));
                                 } catch (RuntimeException | Error e) {
                                     log.error("Got an unexpected error during failover task processing.", e);
                                 }
@@ -1023,7 +1010,7 @@ class MessagingGateway<T> {
         }
 
         if (!applied) {
-            onReject.onReject(finalCause);
+            callback.fail(finalCause);
         }
     }
 
