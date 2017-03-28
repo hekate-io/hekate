@@ -99,7 +99,7 @@ class NetClientPool<T> implements ClientPool<T> {
     }
 
     @Override
-    public void send(AffinityContext<T> ctx, SendCallback callback) {
+    public void send(MessageContext<T> ctx, SendCallback callback) {
         NetSenderContext<T> client = route(ctx.getAffinity());
 
         // Touch in advance to make sure that pool will not be disconnected
@@ -112,7 +112,7 @@ class NetClientPool<T> implements ClientPool<T> {
     }
 
     @Override
-    public void request(AffinityContext<T> ctx, InternalRequestCallback<T> callback) {
+    public void request(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
         NetSenderContext<T> client = route(ctx.getAffinity());
 
         // Touch in advance to make sure that pool will not be disconnected

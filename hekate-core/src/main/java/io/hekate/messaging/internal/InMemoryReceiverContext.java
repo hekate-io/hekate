@@ -36,7 +36,7 @@ class InMemoryReceiverContext<T> extends ReceiverContext<T> {
     }
 
     @Override
-    public void sendNotification(AffinityContext<T> ctx, SendCallback callback) {
+    public void sendNotification(MessageContext<T> ctx, SendCallback callback) {
         Notification<T> msg;
 
         if (ctx.isStrictAffinity()) {
@@ -59,7 +59,7 @@ class InMemoryReceiverContext<T> extends ReceiverContext<T> {
     }
 
     @Override
-    public void sendRequest(AffinityContext<T> ctx, InternalRequestCallback<T> callback) {
+    public void sendRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
         RequestHandle<T> handle = registerRequest(ctx, callback);
 
         Request<T> msg;

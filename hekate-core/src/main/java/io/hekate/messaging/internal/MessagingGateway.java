@@ -271,7 +271,7 @@ class MessagingGateway<T> {
         assert message != null : "Message must be not null.";
         assert opts != null : "Messaging options must be not null.";
 
-        AffinityContext<T> ctx = newContext(affinityKey, message, opts.hasTimeout());
+        MessageContext<T> ctx = newContext(affinityKey, message, opts.hasTimeout());
 
         if (backPressureAcquire(ctx, callback)) {
             try {
@@ -300,7 +300,7 @@ class MessagingGateway<T> {
         assert opts != null : "Messaging options must be not null.";
         assert callback != null : "Callback must be not null.";
 
-        AffinityContext<T> ctx = newContext(affinityKey, message, opts.hasTimeout());
+        MessageContext<T> ctx = newContext(affinityKey, message, opts.hasTimeout());
 
         if (backPressureAcquire(ctx, callback)) {
             try {
@@ -467,7 +467,7 @@ class MessagingGateway<T> {
         return sendBackPressure;
     }
 
-    private void routeAndSend(AffinityContext<T> ctx, MessagingOpts<T> opts, SendCallback callback, FailureInfo prevErr) {
+    private void routeAndSend(MessageContext<T> ctx, MessagingOpts<T> opts, SendCallback callback, FailureInfo prevErr) {
         ClientPool<T> pool = null;
 
         try {
@@ -481,7 +481,7 @@ class MessagingGateway<T> {
         }
     }
 
-    private void doSend(AffinityContext<T> ctx, ClientPool<T> pool, MessagingOpts<T> opts, SendCallback callback, FailureInfo prevErr) {
+    private void doSend(MessageContext<T> ctx, ClientPool<T> pool, MessagingOpts<T> opts, SendCallback callback, FailureInfo prevErr) {
         // Decorate callback with failover, error handling logic, etc.
         SendCallback retryCallback = err -> {
             if (err == null || opts.failover() == null) {
@@ -537,7 +537,7 @@ class MessagingGateway<T> {
         pool.send(ctx, retryCallback);
     }
 
-    private void routeAndRequest(AffinityContext<T> ctx, MessagingOpts<T> opts, RequestCallback<T> callback, FailureInfo prevErr) {
+    private void routeAndRequest(MessageContext<T> ctx, MessagingOpts<T> opts, RequestCallback<T> callback, FailureInfo prevErr) {
         ClientPool<T> pool = null;
 
         try {
@@ -551,7 +551,7 @@ class MessagingGateway<T> {
         }
     }
 
-    private void doRequest(AffinityContext<T> ctx, ClientPool<T> pool, MessagingOpts<T> opts, RequestCallback<T> callback,
+    private void doRequest(MessageContext<T> ctx, ClientPool<T> pool, MessagingOpts<T> opts, RequestCallback<T> callback,
         FailureInfo prevErr) {
         // Decorate callback with failover, error handling logic, etc.
         InternalRequestCallback<T> internalCallback = (request, err, reply) -> {
@@ -850,7 +850,7 @@ class MessagingGateway<T> {
         }
     }
 
-    private ClientPool<T> selectUnicastPool(AffinityContext<T> ctx, MessagingOpts<T> opts, FailureInfo prevErr) throws HekateException {
+    private ClientPool<T> selectUnicastPool(MessageContext<T> ctx, MessagingOpts<T> opts, FailureInfo prevErr) throws HekateException {
         ClusterView cluster = opts.cluster();
         LoadBalancer<T> balancer = opts.balancer();
 
@@ -1042,7 +1042,7 @@ class MessagingGateway<T> {
         }
     }
 
-    private boolean backPressureAcquire(AffinityContext<T> ctx, Object callback) {
+    private boolean backPressureAcquire(MessageContext<T> ctx, Object callback) {
         if (sendBackPressure != null) {
             Exception err = sendBackPressure.onEnqueue();
 
@@ -1157,12 +1157,12 @@ class MessagingGateway<T> {
         }
     }
 
-    private AffinityContext<T> newContext(Object affinityKey, T message, boolean hasTimeout) {
+    private MessageContext<T> newContext(Object affinityKey, T message, boolean hasTimeout) {
         int affinity = affinity(affinityKey);
 
         AffinityWorker worker = async.workerFor(affinity);
 
-        return new AffinityContext<>(message, affinity, affinityKey, worker, hasTimeout);
+        return new MessageContext<>(message, affinity, affinityKey, worker, hasTimeout);
     }
 
     private MessagingChannelClosedException getChannelClosedError(Throwable cause) {

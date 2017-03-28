@@ -73,9 +73,9 @@ abstract class ReceiverContext<T> {
 
     public abstract NetworkFuture<MessagingProtocol> disconnect();
 
-    public abstract void sendNotification(AffinityContext<T> ctx, SendCallback callback);
+    public abstract void sendNotification(MessageContext<T> ctx, SendCallback callback);
 
-    public abstract void sendRequest(AffinityContext<T> ctx, InternalRequestCallback<T> callback);
+    public abstract void sendRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback);
 
     public abstract void replyChunk(AffinityWorker worker, int requestId, T chunk, SendCallback callback);
 

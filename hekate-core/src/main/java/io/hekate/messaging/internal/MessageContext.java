@@ -14,23 +14,53 @@ class MessageContext<T> {
     @SuppressWarnings("unchecked")
     private static final AtomicIntegerFieldUpdater<MessageContext> COMPLETED = newUpdater(MessageContext.class, "completed");
 
+    protected final int affinity;
+
+    protected final Object affinityKey;
+
     private final T message;
 
     private final AffinityWorker worker;
 
     private final boolean hasTimeout;
 
-    @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
-    private volatile int completed;
-
     private TimeoutListener timeoutListener;
 
     private Future<?> timeoutFuture;
 
-    public MessageContext(T message, AffinityWorker worker, boolean hasTimeout) {
+    @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
+    private volatile int completed;
+
+    public MessageContext(T message, int affinity, Object affinityKey, AffinityWorker worker, boolean hasTimeout) {
         this.message = message;
         this.worker = worker;
         this.hasTimeout = hasTimeout;
+        this.affinityKey = affinityKey;
+        this.affinity = affinity;
+    }
+
+    public boolean isStrictAffinity() {
+        return affinity >= 0;
+    }
+
+    public int getAffinity() {
+        return affinity;
+    }
+
+    public Object getAffinityKey() {
+        return affinityKey;
+    }
+
+    public T getMessage() {
+        return message;
+    }
+
+    public AffinityWorker getWorker() {
+        return worker;
+    }
+
+    public boolean isCompleted() {
+        return completed == 1;
     }
 
     public boolean complete() {
@@ -53,18 +83,6 @@ class MessageContext<T> {
         }
 
         return completed;
-    }
-
-    public boolean isCompleted() {
-        return completed == 1;
-    }
-
-    public T getMessage() {
-        return message;
-    }
-
-    public AffinityWorker getWorker() {
-        return worker;
     }
 
     public void setTimeoutListener(TimeoutListener timeoutListener) {

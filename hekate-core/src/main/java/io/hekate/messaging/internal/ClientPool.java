@@ -29,9 +29,9 @@ interface ClientPool<T> {
 
     void disconnectIfIdle();
 
-    void send(AffinityContext<T> ctx, SendCallback callback);
+    void send(MessageContext<T> ctx, SendCallback callback);
 
-    void request(AffinityContext<T> ctx, InternalRequestCallback<T> callback);
+    void request(MessageContext<T> ctx, InternalRequestCallback<T> callback);
 
     List<NetworkFuture<MessagingProtocol>> close();
 

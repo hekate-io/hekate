@@ -17,7 +17,6 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.messaging.unicast.RequestCallback;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkFuture;
 import io.hekate.util.format.ToString;
@@ -98,12 +97,12 @@ class InMemoryClientPool<T> implements ClientPool<T> {
     }
 
     @Override
-    public void send(AffinityContext<T> ctx, SendCallback callback) {
+    public void send(MessageContext<T> ctx, SendCallback callback) {
         client.sendNotification(ctx, callback);
     }
 
     @Override
-    public void request(AffinityContext<T> ctx, InternalRequestCallback<T> callback) {
+    public void request(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
         client.sendRequest(ctx, callback);
     }
 
