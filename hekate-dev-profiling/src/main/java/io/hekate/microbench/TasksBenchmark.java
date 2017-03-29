@@ -21,12 +21,14 @@ import io.hekate.codec.fst.FstCodecFactory;
 import io.hekate.codec.kryo.KryoCodecFactory;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
+import io.hekate.task.TaskFutureException;
 import io.hekate.task.TaskService;
 import io.hekate.task.TaskServiceFactory;
 import java.util.List;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
@@ -38,12 +40,12 @@ public class TasksBenchmark {
     }
 
     public enum Mode {
-        NIO_2_WORKER_2_KRYO(2, 4, CodecType.KRYO),
-        NIO_2_WORKER_2_FST(2, 4, CodecType.FST),
-        NIO_2_WORKER_2_JDK(2, 4, CodecType.JDK),
-        NIO_4_WORKER_8_KRYO(4, 8, CodecType.KRYO),
-        NIO_4_WORKER_8_FST(4, 8, CodecType.FST),
-        NIO_4_WORKER_8_JDK(4, 8, CodecType.JDK);
+        WORKER_2_KRYO(1, 4, CodecType.KRYO),
+        WORKER_2_FST(1, 4, CodecType.FST),
+        WORKER_2_JDK(1, 4, CodecType.JDK),
+        WORKER_8_KRYO(1, 8, CodecType.KRYO),
+        WORKER_8_FST(1, 8, CodecType.FST),
+        WORKER_8_JDK(1, 8, CodecType.JDK);
 
         private final int nio;
 
@@ -60,12 +62,12 @@ public class TasksBenchmark {
 
     public static class BenchmarkContext extends MultiNodeBenchmarkContext {
         @Param({
-            "NIO_2_WORKER_2_KRYO",
-            "NIO_2_WORKER_2_FST",
-            "NIO_2_WORKER_2_JDK",
-            "NIO_4_WORKER_8_KRYO",
-            "NIO_4_WORKER_8_FST",
-            "NIO_4_WORKER_8_JDK"}
+            "WORKER_2_KRYO",
+            "WORKER_2_FST",
+            "WORKER_2_JDK",
+            "WORKER_8_KRYO",
+            "WORKER_8_FST",
+            "WORKER_8_JDK"}
         )
         private Mode mode;
 
@@ -109,12 +111,12 @@ public class TasksBenchmark {
         }
 
         @Override
-        protected void initialize(List<Hekate> nodes) throws Exception {
+        protected void initialize(List<Hekate> nodes) {
             tasks = nodes.get(0).get(TaskService.class).forRemotes();
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
             .include(Thread.currentThread().getStackTrace()[1].getClassName())
             .forks(1)
@@ -126,9 +128,9 @@ public class TasksBenchmark {
     }
 
     @Benchmark
-    public void measure(BenchmarkContext ctx) throws Exception {
+    public TestBean measure(BenchmarkContext ctx) throws TaskFutureException, InterruptedException {
         TestBean arg = TestBean.random();
 
-        ctx.tasks.call(() -> arg).get();
+        return ctx.tasks.call(() -> arg).get();
     }
 }
