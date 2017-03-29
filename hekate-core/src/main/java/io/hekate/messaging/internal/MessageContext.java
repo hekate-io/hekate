@@ -15,9 +15,9 @@ class MessageContext<T> {
     @SuppressWarnings("unchecked")
     private static final AtomicIntegerFieldUpdater<MessageContext> COMPLETED = newUpdater(MessageContext.class, "completed");
 
-    protected final int affinity;
+    private final int affinity;
 
-    protected final Object affinityKey;
+    private final Object affinityKey;
 
     private final T message;
 
