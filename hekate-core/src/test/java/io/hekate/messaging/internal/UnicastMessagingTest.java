@@ -1396,7 +1396,7 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
                 future.getReply();
             } catch (MessagingFutureException e) {
                 assertTrue(e.isCausedBy(TooManyRoutesException.class));
-                assertEquals("Too many receivers for unicast operation "
+                assertEquals("Too many receivers "
                         + "[channel=" + channel1.get().getName() + ", topology=" + channel1.get().getCluster().getTopology() + ']',
                     e.getCause().getMessage());
             }
@@ -1479,26 +1479,26 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
             channel.send(channel.getNodeId(), "test").get(3, TimeUnit.SECONDS);
         } catch (MessagingFutureException e) {
             assertTrue(e.getCause().toString(), e.getCause() instanceof LoadBalancingException);
-            assertEquals("No suitable receivers in the cluster topology [channel=test_channel]", e.getCause().getMessage());
+            assertEquals("No suitable receivers [channel=test_channel]", e.getCause().getMessage());
         }
 
         try {
             channel.request(channel.getNodeId(), "test").get(3, TimeUnit.SECONDS);
         } catch (MessagingFutureException e) {
             assertTrue(e.getCause().toString(), e.getCause() instanceof LoadBalancingException);
-            assertEquals("No suitable receivers in the cluster topology [channel=test_channel]", e.getCause().getMessage());
+            assertEquals("No suitable receivers [channel=test_channel]", e.getCause().getMessage());
         }
 
         try {
             channel.sendWithSyncCallback(channel.getNodeId(), "test");
         } catch (LoadBalancingException e) {
-            assertEquals("No suitable receivers in the cluster topology [channel=test_channel]", e.getMessage());
+            assertEquals("No suitable receivers [channel=test_channel]", e.getMessage());
         }
 
         try {
             channel.requestWithSyncCallback(channel.getNodeId(), "test");
         } catch (LoadBalancingException e) {
-            assertEquals("No suitable receivers in the cluster topology [channel=test_channel]", e.getMessage());
+            assertEquals("No suitable receivers [channel=test_channel]", e.getMessage());
         }
     }
 

@@ -92,6 +92,12 @@ class MessagingGateway<T> {
         void fail(Throwable cause);
     }
 
+    private static class PoolSelectionRejectedException extends Exception {
+        public PoolSelectionRejectedException(Throwable cause) {
+            super(null, cause, false, false);
+        }
+    }
+
     private static class SendCallbackFuture extends SendFuture implements SendCallback {
         @Override
         public void onComplete(Throwable err) {
@@ -525,6 +531,8 @@ class MessagingGateway<T> {
             pool = selectPool(ctx, prevErr);
         } catch (HekateException | RuntimeException | Error e) {
             notifyOnErrorAsync(ctx, callback, e);
+        } catch (PoolSelectionRejectedException e) {
+            notifyOnErrorAsync(ctx, callback, e.getCause());
         }
 
         if (pool != null) {
@@ -595,6 +603,8 @@ class MessagingGateway<T> {
             pool = selectPool(ctx, prevErr);
         } catch (HekateException | RuntimeException | Error e) {
             notifyOnErrorAsync(ctx, callback, e);
+        } catch (PoolSelectionRejectedException e) {
+            notifyOnErrorAsync(ctx, callback, e.getCause());
         }
 
         if (pool != null) {
@@ -836,13 +846,19 @@ class MessagingGateway<T> {
         }
     }
 
-    private ClientPool<T> selectPool(MessageContext<T> ctx, FailureInfo prevErr) throws HekateException {
+    private ClientPool<T> selectPool(MessageContext<T> ctx, FailureInfo prevErr) throws HekateException, PoolSelectionRejectedException {
         assert ctx != null : "Message context is null.";
 
         ClusterTopology topology = ctx.getOpts().cluster().getTopology();
 
         if (topology.isEmpty()) {
-            throw new UnknownRouteException("No suitable receivers in the cluster topology [channel=" + name + ']');
+            Throwable cause = prevErr != null ? prevErr.getError() : null;
+
+            if (cause == null) {
+                throw new UnknownRouteException("No suitable receivers [channel=" + name + ']');
+            } else {
+                throw new PoolSelectionRejectedException(cause);
+            }
         }
 
         LoadBalancer<T> balancer = ctx.getOpts().balancer();
@@ -854,8 +870,13 @@ class MessagingGateway<T> {
             if (balancer == null) {
                 // If balancer not specified then try to use cluster topology directly (must contain only one node).
                 if (topology.size() > 1) {
-                    throw new TooManyRoutesException("Too many receivers for unicast operation [channel=" + name
-                        + ", topology=" + topology + ']');
+                    Throwable cause = prevErr != null ? prevErr.getError() : null;
+
+                    if (cause == null) {
+                        throw new TooManyRoutesException("Too many receivers [channel=" + name + ", topology=" + topology + ']');
+                    } else {
+                        throw new PoolSelectionRejectedException(cause);
+                    }
                 }
 
                 // Select the only one node from the cluster topology.
@@ -866,7 +887,13 @@ class MessagingGateway<T> {
                 targetId = balancer.route(ctx.getMessage(), balancerCtx);
 
                 if (targetId == null) {
-                    throw new UnknownRouteException("Load balancer failed to select a target node.");
+                    Throwable cause = prevErr != null ? prevErr.getError() : null;
+
+                    if (cause == null) {
+                        throw new UnknownRouteException("Load balancer failed to select a target node.");
+                    } else {
+                        throw new PoolSelectionRejectedException(cause);
+                    }
                 }
             }
 
@@ -886,7 +913,13 @@ class MessagingGateway<T> {
                     ClusterTopology currentTopology = rootCluster.getTopology();
 
                     if (channelTopology != null && channelTopology.getVersion() == currentTopology.getVersion()) {
-                        throw new UnknownRouteException("Node is not within the channel topology [id=" + targetId + ']');
+                        Throwable cause = prevErr != null ? prevErr.getError() : null;
+
+                        if (cause == null) {
+                            throw new UnknownRouteException("Node is not within the channel topology [id=" + targetId + ']');
+                        } else {
+                            throw new PoolSelectionRejectedException(cause);
+                        }
                     }
                 } else {
                     return pool;
