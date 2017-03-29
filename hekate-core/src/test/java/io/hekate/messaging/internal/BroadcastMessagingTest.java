@@ -112,7 +112,9 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
             assertTrue(result.getErrors().toString(), result.isSuccess());
             assertEquals(channels.size(), result.getReplies().size());
 
-            Set<String> replies = result.getReplies().values().stream().map(reply -> reply.get(String.class)).collect(Collectors.toSet());
+            Set<String> replies = result.getReplies().values().stream()
+                .map(reply -> reply.get(String.class))
+                .collect(Collectors.toSet());
 
             assertEquals(channelIds, replies);
         }
@@ -194,8 +196,8 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             AggregateResult<String> result = callback.get();
 
-            assertTrue(result.getErrors().toString(), result.isSuccess());
-            assertTrue(result.getErrors().isEmpty());
+            assertTrue(result.toString(), result.isSuccess());
+            assertTrue(result.toString(), result.getErrors().isEmpty());
             assertEquals(channels.size(), result.getNodes().size());
             assertEquals(channels.size(), result.getReplies().size());
 
@@ -224,8 +226,8 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             BroadcastResult<String> result = channel.get().broadcast("test" + i).get(3, TimeUnit.SECONDS);
 
-            assertTrue(result.getErrors().toString(), result.isSuccess());
-            assertTrue(result.getErrors().isEmpty());
+            assertTrue(result.toString(), result.isSuccess());
+            assertTrue(result.toString(), result.getErrors().isEmpty());
             assertEquals(channels.size(), result.getNodes().size());
 
             for (TestChannel c : channels) {
@@ -247,8 +249,8 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             AggregateResult<String> result = channel.get().aggregate("test" + i).get(3, TimeUnit.SECONDS);
 
-            assertTrue(result.getErrors().toString(), result.isSuccess());
-            assertTrue(result.getErrors().isEmpty());
+            assertTrue(result.toString(), result.isSuccess());
+            assertTrue(result.toString(), result.getErrors().isEmpty());
             assertEquals(channels.size(), result.getNodes().size());
             assertEquals(channels.size(), result.getReplies().size());
 
@@ -271,9 +273,9 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
             BroadcastResult<String> result = channel.get().forRole("no-such-role")
                 .broadcast("test" + i).get(3, TimeUnit.SECONDS);
 
-            assertTrue(result.getErrors().toString(), result.isSuccess());
-            assertTrue(result.getErrors().isEmpty());
-            assertTrue(result.getNodes().isEmpty());
+            assertTrue(result.toString(), result.isSuccess());
+            assertTrue(result.toString(), result.getErrors().isEmpty());
+            assertTrue(result.toString(), result.getNodes().isEmpty());
         });
     }
 
