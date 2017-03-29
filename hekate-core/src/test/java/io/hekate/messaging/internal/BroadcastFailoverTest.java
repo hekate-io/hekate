@@ -1,6 +1,8 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNodeId;
+import io.hekate.core.HekateFutureException;
+import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.messaging.broadcast.AggregateResult;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,10 +11,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class BroadcastFailoverTest extends MessagingServiceTestBase {
@@ -74,7 +78,7 @@ public class BroadcastFailoverTest extends MessagingServiceTestBase {
         channels.forEach(c -> times.put(c.getNodeId(), Collections.synchronizedList(new ArrayList<>())));
 
         AggregateResult<String> result = sender.get().withFailover(ctx -> {
-            times.get(ctx.getLastNode().orElseThrow(AssertionError::new).getId()).add(System.currentTimeMillis());
+            times.get(ctx.getFailedNode().getId()).add(System.currentTimeMillis());
 
             return ctx.retry().withDelay(failoverDelay);
         }).aggregate("test").get(3, TimeUnit.SECONDS);
@@ -180,5 +184,52 @@ public class BroadcastFailoverTest extends MessagingServiceTestBase {
             assertTrue(result.getReplies().isEmpty());
             assertEquals(channels.size(), result.getErrors().size());
         });
+    }
+
+    @Test
+    public void testNodeLeaveDuringFailover() throws Exception {
+        for (FailoverRoutingPolicy policy : FailoverRoutingPolicy.values()) {
+            say("Using policy " + policy);
+
+            repeat(3, i -> {
+                failures.set(1);
+
+                AtomicReference<Exception> errRef = new AtomicReference<>();
+                AtomicReference<TestChannel> leaveRef = new AtomicReference<>();
+
+                AggregateResult<String> result = sender.get().forRemotes().withFailover(context -> {
+                    try {
+                        TestChannel leave = channels.stream()
+                            .filter(c -> c.getNodeId().equals(context.getFailedNode().getId()))
+                            .findFirst()
+                            .orElseThrow(AssertionError::new)
+                            .leave();
+
+                        leaveRef.set(leave);
+                    } catch (HekateFutureException | InterruptedException e) {
+                        errRef.compareAndSet(null, e);
+                    }
+
+                    return context.retry().withRoutingPolicy(policy);
+                }).aggregate("test").get(3, TimeUnit.SECONDS);
+
+                assertNotNull(leaveRef.get());
+                assertFalse(result.toString(), result.isSuccess());
+                assertEquals(result.toString(), 1, result.getErrors().size());
+                assertEquals(result.toString(), channels.size() - 2, result.getReplies().size());
+
+                Throwable expected = result.getErrors().get(leaveRef.get().getInstance().getNode());
+
+                assertNotNull(result.toString(), expected);
+
+                if (errRef.get() != null) {
+                    throw new AssertionError(errRef.get());
+                }
+
+                leaveRef.get().join();
+
+                awaitForChannelsTopology(channels);
+            });
+        }
     }
 }

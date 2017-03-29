@@ -23,7 +23,6 @@ import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 class InMemoryClientPool<T> implements ClientPool<T> {
     private static class AlwaysAsyncExecutor implements AffinityExecutor {
@@ -64,8 +63,6 @@ class InMemoryClientPool<T> implements ClientPool<T> {
 
     private final ClusterNode node;
 
-    private final Optional<ClusterNode> nodeOpt;
-
     @ToStringIgnore
     private final InMemoryReceiverContext<T> client;
 
@@ -74,7 +71,6 @@ class InMemoryClientPool<T> implements ClientPool<T> {
         assert gateway != null : "Gateway is null.";
 
         this.node = node;
-        this.nodeOpt = Optional.of(node);
 
         AlwaysAsyncExecutor wrapAsync = new AlwaysAsyncExecutor(gateway.getAsync());
 
@@ -84,11 +80,6 @@ class InMemoryClientPool<T> implements ClientPool<T> {
     @Override
     public ClusterNode getNode() {
         return node;
-    }
-
-    @Override
-    public Optional<ClusterNode> getNodeOpt() {
-        return nodeOpt;
     }
 
     @Override

@@ -27,7 +27,6 @@ import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,8 +38,6 @@ class NetClientPool<T> implements ClientPool<T> {
     private final String name;
 
     private final ClusterNode node;
-
-    private final Optional<ClusterNode> nodeOpt;
 
     private final NetSenderContext<T>[] clients;
 
@@ -68,7 +65,6 @@ class NetClientPool<T> implements ClientPool<T> {
 
         this.name = name;
         this.node = node;
-        this.nodeOpt = Optional.of(node);
 
         @SuppressWarnings("unchecked")
         NetSenderContext<T>[] clients = new NetSenderContext[poolSize];
@@ -91,11 +87,6 @@ class NetClientPool<T> implements ClientPool<T> {
     @Override
     public ClusterNode getNode() {
         return node;
-    }
-
-    @Override
-    public Optional<ClusterNode> getNodeOpt() {
-        return nodeOpt;
     }
 
     @Override

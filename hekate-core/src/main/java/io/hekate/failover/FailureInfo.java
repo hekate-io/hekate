@@ -17,7 +17,6 @@
 package io.hekate.failover;
 
 import io.hekate.cluster.ClusterNode;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -46,11 +45,11 @@ public interface FailureInfo {
     Throwable getError();
 
     /**
-     * Returns the last tried node of a failed operation (note that node can be absent due to routing failure).
+     * Returns the last tried node of a failed operation.
      *
      * @return Cluster node.
      */
-    Optional<ClusterNode> getLastNode();
+    ClusterNode getFailedNode();
 
     /**
      * Returns the immutable set of all failed nodes.

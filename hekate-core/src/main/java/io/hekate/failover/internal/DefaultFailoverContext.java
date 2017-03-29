@@ -23,7 +23,6 @@ import io.hekate.failover.FailoverContext;
 import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.failover.FailureResolution;
 import io.hekate.util.format.ToString;
-import java.util.Optional;
 import java.util.Set;
 
 public class DefaultFailoverContext implements FailoverContext {
@@ -100,29 +99,31 @@ public class DefaultFailoverContext implements FailoverContext {
 
     private final Throwable error;
 
-    private final Optional<ClusterNode> lastNode;
+    private final ClusterNode failedNode;
 
     private final Set<ClusterNode> failedNodes;
 
     private final FailoverRoutingPolicy routing;
 
-    public DefaultFailoverContext(int attempt, Throwable error, Optional<ClusterNode> lastNode, Set<ClusterNode> failedNodes,
+    public DefaultFailoverContext(int attempt, Throwable error, ClusterNode failedNode, Set<ClusterNode> failedNodes,
         FailoverRoutingPolicy routing) {
         assert attempt >= 0 : "Attempt must be >= 0";
         assert error != null : "Error is null.";
-        assert lastNode != null : "Last tried node is null.";
+        assert failedNode != null : "Failed node is null.";
         assert failedNodes != null : "Failed nodes set is null.";
+        assert !failedNodes.isEmpty() : "Failed nodes set is empty.";
+        assert failedNodes.contains(failedNode) : "Failed nodes set doesn't contain the last failed node.";
         assert routing != null : "Failover routing policy is null.";
 
         this.attempt = attempt;
         this.error = error;
-        this.lastNode = lastNode;
+        this.failedNode = failedNode;
         this.failedNodes = failedNodes;
         this.routing = routing;
     }
 
     public DefaultFailoverContext withRouting(FailoverRoutingPolicy policy) {
-        return new DefaultFailoverContext(attempt, error, lastNode, failedNodes, policy);
+        return new DefaultFailoverContext(attempt, error, failedNode, failedNodes, policy);
     }
 
     @Override
@@ -141,8 +142,8 @@ public class DefaultFailoverContext implements FailoverContext {
     }
 
     @Override
-    public Optional<ClusterNode> getLastNode() {
-        return lastNode;
+    public ClusterNode getFailedNode() {
+        return failedNode;
     }
 
     @Override

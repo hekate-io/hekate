@@ -98,7 +98,7 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
 
             assertEquals(i, ctx.getAttempt());
             assertSame(ClosedChannelException.class, ctx.getError().getClass());
-            assertEquals(receiver.getInstance().getNode(), ctx.getLastNode().get());
+            assertEquals(receiver.getInstance().getNode(), ctx.getFailedNode());
         }
     }
 
@@ -130,9 +130,9 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
             FailoverContext ctx = contexts.get(i);
 
             if (i % 2 == 0) {
-                assertEquals(receiver.getNodeId(), ctx.getLastNode().get().getId());
+                assertEquals(receiver.getNodeId(), ctx.getFailedNode().getId());
             } else {
-                assertEquals(sender.getNodeId(), ctx.getLastNode().get().getId());
+                assertEquals(sender.getNodeId(), ctx.getFailedNode().getId());
             }
         }
     }
@@ -153,9 +153,9 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
             FailoverContext ctx = contexts.get(i);
 
             if (i == 0) {
-                assertEquals(receiver.getNodeId(), ctx.getLastNode().get().getId());
+                assertEquals(receiver.getNodeId(), ctx.getFailedNode().getId());
             } else {
-                assertEquals(sender.getNodeId(), ctx.getLastNode().get().getId());
+                assertEquals(sender.getNodeId(), ctx.getFailedNode().getId());
             }
         }
     }
@@ -166,7 +166,7 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
 
         List<FailoverContext> contexts = testWithRoutingPolicy(policy, details -> { /* No-op.*/ });
 
-        contexts.forEach(ctx -> assertEquals(receiver.getNodeId(), ctx.getLastNode().get().getId()));
+        contexts.forEach(ctx -> assertEquals(receiver.getNodeId(), ctx.getFailedNode().getId()));
     }
 
     @Test

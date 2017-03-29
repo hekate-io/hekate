@@ -20,12 +20,9 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkFuture;
 import java.util.List;
-import java.util.Optional;
 
 interface ClientPool<T> {
     ClusterNode getNode();
-
-    Optional<ClusterNode> getNodeOpt();
 
     void disconnectIfIdle();
 
