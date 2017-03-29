@@ -33,6 +33,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.Parameterized.Parameters;
 
@@ -61,6 +62,8 @@ public class BroadcastBackPressureTest extends BackPressureTestBase {
     }
 
     @Test
+    // TODO: Disabled back-pressure test for broadcast operations.
+    @Ignore("Temporary disabled due to test instability. Need to refactor logic of this test.")
     public void testBroadcast() throws Exception {
         CountDownLatch resumeReceive = new CountDownLatch(1);
 
