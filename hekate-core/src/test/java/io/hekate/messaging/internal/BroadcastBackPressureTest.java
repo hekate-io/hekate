@@ -52,6 +52,8 @@ public class BroadcastBackPressureTest extends BackPressureTestBase {
     public static Collection<BackPressureTestContext> getBackPressureTestContexts() {
         return getMessagingServiceTestContexts().stream().flatMap(ctx ->
             Stream.of(
+                // Multiply lo/hi watermarks by the number of receivers, since each broadcast/aggregate operation takes
+                // a number of back pressure slots that is proportional to the number of receiving nodes.
                 new BackPressureTestContext(ctx, 0, RECEIVERS),
                 new BackPressureTestContext(ctx, 2 * RECEIVERS, 4 * RECEIVERS)
             ))
