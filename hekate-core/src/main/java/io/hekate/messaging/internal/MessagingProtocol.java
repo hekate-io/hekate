@@ -18,6 +18,7 @@ package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.messaging.Message;
+import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
@@ -373,12 +374,12 @@ abstract class MessagingProtocol {
 
             // Apply back pressure when sending from server back to client.
             if (backPressure != null) {
-                Exception err = backPressure.onEnqueue();
-
-                if (err != null) {
+                try {
+                    backPressure.onEnqueue();
+                } catch (InterruptedException | MessageQueueOverflowException e) {
                     backPressure.onDequeue();
 
-                    context.notifyOnSendFailure(false, worker, payload, err, sendCallback);
+                    context.notifyOnSendFailure(false, worker, payload, e, sendCallback);
 
                     return false;
                 }

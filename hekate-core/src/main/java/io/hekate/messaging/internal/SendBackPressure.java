@@ -52,18 +52,16 @@ class SendBackPressure {
         queueSize.incrementAndGet();
     }
 
-    public Exception onEnqueue() {
+    public void onEnqueue() throws InterruptedException, MessageQueueOverflowException {
         int size = queueSize.incrementAndGet();
 
         if (size > hiMark) {
-            Exception rejected = null;
-
             synchronized (mux) {
                 // Double check queue size before applying policy.
                 if (queueSize.get() > hiMark) {
                     switch (policy) {
                         case BLOCK: {
-                            rejected = block();
+                            block();
 
                             break;
                         }
@@ -73,10 +71,8 @@ class SendBackPressure {
                             break;
                         }
                         case FAIL: {
-                            rejected = new MessageQueueOverflowException("Send queue overflow "
+                            throw new MessageQueueOverflowException("Send queue overflow "
                                 + "[queue-size=" + queueSize + ", low-watermark=" + loMark + ", high-watermark=" + hiMark + ']');
-
-                            break;
                         }
                         case IGNORE:
                         default: {
@@ -85,11 +81,7 @@ class SendBackPressure {
                     }
                 }
             }
-
-            return rejected;
         }
-
-        return null;
     }
 
     public void onDequeue() {
@@ -114,18 +106,12 @@ class SendBackPressure {
         return queueSize.get();
     }
 
-    private Exception block() {
+    private void block() throws InterruptedException {
         assert Thread.holdsLock(mux) : "Thread must hold lock on mutex.";
 
         while (!stopped && queueSize.get() > loMark) {
-            try {
-                mux.wait();
-            } catch (InterruptedException err) {
-                return err;
-            }
+            mux.wait();
         }
-
-        return null;
     }
 
     private void blockUninterruptedly() {

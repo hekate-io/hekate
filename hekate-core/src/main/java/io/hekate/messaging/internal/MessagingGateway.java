@@ -27,6 +27,7 @@ import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.failover.FailureInfo;
 import io.hekate.failover.FailureResolution;
 import io.hekate.failover.internal.DefaultFailoverContext;
+import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelClosedException;
@@ -274,16 +275,18 @@ class MessagingGateway<T> {
 
         MessageContext<T> ctx = newContext(affinityKey, message, opts);
 
-        if (backPressureAcquire(ctx, callback)) {
-            try {
-                routeAndSend(ctx, callback, null);
-            } catch (RejectedExecutionException e) {
-                notifyOnChannelClosedError(ctx, callback);
-            }
+        try {
+            backPressureAcquire();
+
+            routeAndSend(ctx, callback, null);
 
             if (opts.hasTimeout()) {
                 scheduleTimeout(ctx, callback);
             }
+        } catch (InterruptedException | MessageQueueOverflowException e) {
+            notifyOnErrorAsync(ctx, callback, e);
+        } catch (RejectedExecutionException e) {
+            notifyOnChannelClosedError(ctx, callback);
         }
     }
 
@@ -303,16 +306,18 @@ class MessagingGateway<T> {
 
         MessageContext<T> ctx = newContext(affinityKey, message, opts);
 
-        if (backPressureAcquire(ctx, callback)) {
-            try {
-                routeAndRequest(ctx, callback, null);
-            } catch (RejectedExecutionException e) {
-                notifyOnChannelClosedError(ctx, callback);
-            }
+        try {
+            backPressureAcquire();
+
+            routeAndRequest(ctx, callback, null);
 
             if (opts.hasTimeout()) {
                 scheduleTimeout(ctx, callback);
             }
+        } catch (InterruptedException | MessageQueueOverflowException e) {
+            notifyOnErrorAsync(ctx, callback, e);
+        } catch (RejectedExecutionException e) {
+            notifyOnChannelClosedError(ctx, callback);
         }
     }
 
@@ -1062,18 +1067,10 @@ class MessagingGateway<T> {
         }
     }
 
-    private boolean backPressureAcquire(MessageContext<T> ctx, Object callback) {
+    private void backPressureAcquire() throws MessageQueueOverflowException, InterruptedException {
         if (sendBackPressure != null) {
-            Exception err = sendBackPressure.onEnqueue();
-
-            if (err != null) {
-                notifyOnErrorAsync(ctx, callback, err);
-
-                return false;
-            }
+            sendBackPressure.onEnqueue();
         }
-
-        return true;
     }
 
     private void backPressureRelease() {

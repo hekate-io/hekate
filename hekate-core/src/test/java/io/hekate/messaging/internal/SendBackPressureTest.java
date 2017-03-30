@@ -19,15 +19,16 @@ package io.hekate.messaging.internal;
 import io.hekate.HekateTestBase;
 import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingOverflowPolicy;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class SendBackPressureTest extends HekateTestBase {
     @Test
@@ -36,14 +37,18 @@ public class SendBackPressureTest extends HekateTestBase {
 
         repeat(3, i -> {
             for (int j = 0; j < 10; j++) {
-                assertNull(backPressure.onEnqueue());
+                backPressure.onEnqueue();
 
                 assertEquals(j + 1, backPressure.getQueueSize());
             }
 
             assertEquals(10, backPressure.getQueueSize());
 
-            Future<Exception> future = runAsync(backPressure::onEnqueue);
+            Future<?> future = runAsync(() -> {
+                backPressure.onEnqueue();
+
+                return null;
+            });
 
             expect(TimeoutException.class, () -> future.get(300, TimeUnit.MILLISECONDS));
 
@@ -79,7 +84,7 @@ public class SendBackPressureTest extends HekateTestBase {
 
         repeat(3, i -> {
             for (int j = 0; j < 10; j++) {
-                assertNull(backPressure.onEnqueue());
+                backPressure.onEnqueue();
 
                 assertEquals(j + 1, backPressure.getQueueSize());
             }
@@ -87,14 +92,19 @@ public class SendBackPressureTest extends HekateTestBase {
             assertEquals(10, backPressure.getQueueSize());
 
             for (int j = 0; j < 10; j++) {
-                Exception err = runAsync(() -> {
-                    Thread.currentThread().interrupt();
+                try {
+                    runAsync(() -> {
+                        Thread.currentThread().interrupt();
 
-                    return backPressure.onEnqueue();
-                }).get(3, TimeUnit.SECONDS);
+                        backPressure.onEnqueue();
 
-                assertNotNull(err);
-                assertTrue(err.toString(), err instanceof InterruptedException);
+                        return null;
+                    }).get(3, TimeUnit.SECONDS);
+
+                    fail("Error was expected.");
+                } catch (ExecutionException err) {
+                    assertTrue(err.toString(), err.getCause() instanceof InterruptedException);
+                }
 
                 backPressure.onDequeue();
 
@@ -113,17 +123,19 @@ public class SendBackPressureTest extends HekateTestBase {
 
         repeat(3, i -> {
             for (int j = 0; j < 10; j++) {
-                assertNull(backPressure.onEnqueue());
+                backPressure.onEnqueue();
 
                 assertEquals(j + 1, backPressure.getQueueSize());
             }
 
             assertEquals(10, backPressure.getQueueSize());
 
-            Future<Exception> future = runAsync(() -> {
+            Future<?> future = runAsync(() -> {
                 Thread.currentThread().interrupt();
 
-                return backPressure.onEnqueue();
+                backPressure.onEnqueue();
+
+                return null;
             });
 
             expect(TimeoutException.class, () -> future.get(300, TimeUnit.MILLISECONDS));
@@ -150,7 +162,7 @@ public class SendBackPressureTest extends HekateTestBase {
 
         repeat(3, i -> {
             for (int j = 0; j < 10; j++) {
-                assertNull(backPressure.onEnqueue());
+                backPressure.onEnqueue();
 
                 assertEquals(j + 1, backPressure.getQueueSize());
             }
@@ -158,11 +170,13 @@ public class SendBackPressureTest extends HekateTestBase {
             assertEquals(10, backPressure.getQueueSize());
 
             for (int j = 0; j < 6; j++) {
-                Exception err = backPressure.onEnqueue();
+                try {
+                    backPressure.onEnqueue();
 
-                assertNotNull(err);
-                assertTrue(err.toString(), err instanceof MessageQueueOverflowException);
-                assertEquals("Send queue overflow [queue-size=11, low-watermark=5, high-watermark=10]", err.getMessage());
+                    fail("Error was expected.");
+                } catch (MessageQueueOverflowException e) {
+                    assertEquals("Send queue overflow [queue-size=11, low-watermark=5, high-watermark=10]", e.getMessage());
+                }
 
                 backPressure.onDequeue();
 
@@ -185,9 +199,13 @@ public class SendBackPressureTest extends HekateTestBase {
     private void doTestTerminateWhileBlocked(MessagingOverflowPolicy policy) throws Exception {
         SendBackPressure backPressure = new SendBackPressure(0, 1, policy);
 
-        assertNull(backPressure.onEnqueue());
+        backPressure.onEnqueue();
 
-        Future<Exception> async = runAsync(backPressure::onEnqueue);
+        Future<?> async = runAsync(() -> {
+            backPressure.onEnqueue();
+
+            return null;
+        });
 
         busyWait("blocked", () -> backPressure.getQueueSize() == 2);
 
