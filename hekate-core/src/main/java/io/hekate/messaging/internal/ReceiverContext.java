@@ -409,6 +409,11 @@ abstract class ReceiverContext<T> {
     protected void doReceiveResponseChunk(RequestHandle<T> request, ResponseChunk<T> msg) {
         if (request.isRegistered()) {
             try {
+                if (request.getContext().getOpts().hasTimeout()) {
+                    // Reset timeout on every response chunk.
+                    gateway().scheduleTimeout(request.getContext(), request.getCallback());
+                }
+
                 msg.prepareReceive(this, request.getMessage());
 
                 request.getCallback().onComplete(request, null, msg);
@@ -483,10 +488,8 @@ abstract class ReceiverContext<T> {
     private void doDiscardRequest(Throwable cause, RequestHandle<T> handle) {
         T message = handle.getMessage();
 
-        InternalRequestCallback<T> callback = handle.getCallback();
-
         try {
-            callback.onComplete(handle, cause, null);
+            handle.getCallback().onComplete(handle, cause, null);
         } catch (RuntimeException | Error e) {
             if (log.isErrorEnabled()) {
                 log.error("Failed to notify callback on response failure [message={}]", message, e);

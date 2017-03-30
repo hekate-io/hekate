@@ -282,7 +282,7 @@ class MessagingGateway<T> {
             }
 
             if (opts.hasTimeout()) {
-                scheduleTimeout(ctx, opts.timeout(), callback);
+                scheduleTimeout(ctx, callback);
             }
         }
     }
@@ -311,7 +311,7 @@ class MessagingGateway<T> {
             }
 
             if (opts.hasTimeout()) {
-                scheduleTimeout(ctx, opts.timeout(), callback);
+                scheduleTimeout(ctx, callback);
             }
         }
     }
@@ -825,6 +825,25 @@ class MessagingGateway<T> {
         }
     }
 
+    void scheduleTimeout(MessageContext<T> ctx, Object callback) {
+        if (!ctx.isCompleted()) {
+            try {
+                Future<?> future = ctx.getWorker().executeDeferred(ctx.getOpts().timeout(), () -> {
+                    if (ctx.completeOnTimeout()) {
+                        T msg = ctx.getMessage();
+
+                        doNotifyOnError(callback, new MessagingTimeoutException("Messaging operation timed out [message=" + msg + ']'));
+                    }
+                });
+
+                ctx.setTimeoutFuture(future);
+            } catch (RejectedExecutionException e) {
+                // Ignore since this error means that channel is closed.
+                // In such case we can ignore timeout notification because messaging context will be notified by another error.
+            }
+        }
+    }
+
     // This method is for testing purposes only.
     ClientPool<T> getPool(ClusterNodeId nodeId) throws MessagingException {
         long readLock = lock.readLock();
@@ -1043,23 +1062,6 @@ class MessagingGateway<T> {
         }
     }
 
-    private void scheduleTimeout(MessageContext<T> ctx, long timeout, Object callback) {
-        if (!ctx.isCompleted()) {
-            try {
-                Future<?> future = ctx.getWorker().executeDeferred(timeout, () -> {
-                    if (ctx.completeOnTimeout()) {
-                        notifyOnTimeoutErrorAsync(ctx, callback);
-                    }
-                });
-
-                ctx.setTimeoutFuture(future);
-            } catch (RejectedExecutionException e) {
-                // Ignore since this error means that channel is closed.
-                // In such case we can ignore timeout notification because messaging context will be notified by another error.
-            }
-        }
-    }
-
     private boolean backPressureAcquire(MessageContext<T> ctx, Object callback) {
         if (sendBackPressure != null) {
             Exception err = sendBackPressure.onEnqueue();
@@ -1112,16 +1114,6 @@ class MessagingGateway<T> {
         });
     }
 
-    private void notifyOnTimeoutErrorAsync(MessageContext<T> ctx, Object callback) {
-        runAsyncAtAllCost(ctx, () -> {
-            if (ctx.completeOnTimeout()) {
-                T msg = ctx.getMessage();
-
-                doNotifyOnError(callback, new MessagingTimeoutException("Messaging operation timed out [message=" + msg + ']'));
-            }
-        });
-    }
-
     private void runAsyncAtAllCost(MessageContext<T> ctx, Runnable task) {
         if (!ctx.isCompleted()) {
             boolean scheduled = false;
@@ -1158,18 +1150,6 @@ class MessagingGateway<T> {
                     ((RequestCallback)callback).onComplete(err, null);
                 } catch (RuntimeException | Error e) {
                     log.error("Got an unexpected runtime error while notifying request callback on another error [cause={}]", err, e);
-                }
-            } else if (callback instanceof BroadcastCallback) {
-                try {
-                    ((BroadcastCallback)callback).onComplete(err, null);
-                } catch (RuntimeException | Error e) {
-                    log.error("Got an unexpected runtime error while notifying broadcast callback on another error [cause={}]", err, e);
-                }
-            } else if (callback instanceof AggregateCallback) {
-                try {
-                    ((AggregateCallback<Object>)callback).onComplete(err, null);
-                } catch (RuntimeException | Error e) {
-                    log.error("Got an unexpected runtime error while notifying aggregate callback on another error [cause={}]", err, e);
                 }
             } else {
                 throw new IllegalArgumentException("Unexpected callback type: " + callback);

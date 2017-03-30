@@ -14,13 +14,10 @@ class RequestHandle<T> {
 
     private final int epoch;
 
-    private final T message;
+    private final MessageContext<T> ctx;
 
     @ToStringIgnore
     private final InternalRequestCallback<T> callback;
-
-    @ToStringIgnore
-    private final AffinityWorker worker;
 
     @ToStringIgnore
     private final RequestRegistry<T> registry;
@@ -32,8 +29,7 @@ class RequestHandle<T> {
     public RequestHandle(Integer id, RequestRegistry<T> registry, MessageContext<T> ctx, int epoch, InternalRequestCallback<T> callback) {
         this.id = id;
         this.registry = registry;
-        this.worker = ctx.getWorker();
-        this.message = ctx.getMessage();
+        this.ctx = ctx;
         this.epoch = epoch;
         this.callback = callback;
     }
@@ -43,11 +39,11 @@ class RequestHandle<T> {
     }
 
     public AffinityWorker getWorker() {
-        return worker;
+        return ctx.getWorker();
     }
 
     public T getMessage() {
-        return message;
+        return ctx.getMessage();
     }
 
     public int getEpoch() {
@@ -56,6 +52,10 @@ class RequestHandle<T> {
 
     public InternalRequestCallback<T> getCallback() {
         return callback;
+    }
+
+    public MessageContext<T> getContext() {
+        return ctx;
     }
 
     public boolean isRegistered() {

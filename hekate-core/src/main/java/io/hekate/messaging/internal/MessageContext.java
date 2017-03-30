@@ -31,7 +31,7 @@ class MessageContext<T> {
     private TimeoutListener timeoutListener;
 
     @ToStringIgnore
-    private Future<?> timeoutFuture;
+    private volatile Future<?> timeoutFuture;
 
     @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
     private volatile int completed;
@@ -79,15 +79,19 @@ class MessageContext<T> {
     public boolean complete() {
         boolean completed = doComplete();
 
-        if (completed && timeoutFuture != null) {
-            timeoutFuture.cancel(false);
+        if (completed) {
+            Future<?> localFuture = this.timeoutFuture;
+
+            if (localFuture != null) {
+                localFuture.cancel(false);
+            }
         }
 
         return completed;
     }
 
     public boolean completeOnTimeout() {
-        boolean completed = complete();
+        boolean completed = doComplete();
 
         if (completed) {
             if (timeoutListener != null) {
@@ -105,6 +109,12 @@ class MessageContext<T> {
     }
 
     public void setTimeoutFuture(Future<?> timeoutFuture) {
+        Future<?> oldFuture = this.timeoutFuture;
+
+        if (oldFuture != null) {
+            oldFuture.cancel(false);
+        }
+
         this.timeoutFuture = timeoutFuture;
     }
 
