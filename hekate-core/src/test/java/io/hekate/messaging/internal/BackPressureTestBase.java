@@ -16,10 +16,10 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingFutureException;
-import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingOverflowPolicy;
 import io.hekate.util.format.ToString;
 import java.util.concurrent.TimeUnit;

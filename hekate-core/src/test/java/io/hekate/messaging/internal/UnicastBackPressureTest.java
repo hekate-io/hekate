@@ -18,10 +18,10 @@ package io.hekate.messaging.internal;
 
 import io.hekate.core.internal.util.Utils;
 import io.hekate.messaging.Message;
+import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.MessagingFutureException;
-import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingOverflowPolicy;
 import io.hekate.messaging.unicast.RequestFuture;
 import io.hekate.messaging.unicast.SendFuture;
