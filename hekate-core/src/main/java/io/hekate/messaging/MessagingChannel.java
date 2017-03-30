@@ -377,8 +377,8 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * <p>
      * If particular messaging operation (f.e. {@link MessagingChannel#request(Object) request(...)}
-     * or {@link MessagingChannel#send(Object) send}) can't be completed within the specified timeout then such operation will fail with
-     * {@link MessagingTimeoutException}.
+     * or {@link MessagingChannel#send(Object) send(...)}) can't be completed within the specified timeout then such operation will fail
+     * with {@link MessagingTimeoutException}.
      * </p>
      *
      * <p>

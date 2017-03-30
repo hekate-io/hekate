@@ -539,8 +539,8 @@ public class MessagingChannelConfig<T> {
      *
      * <p>
      * If particular messaging operation (f.e. {@link MessagingChannel#request(Object) request(...)}
-     * or {@link MessagingChannel#send(Object) send}) can't be completed within the specified timeout then such operation will fail with
-     * {@link MessagingTimeoutException}.
+     * or {@link MessagingChannel#send(Object) send(...)}) can't be completed within the specified timeout then such operation will fail
+     * with {@link MessagingTimeoutException}.
      * </p>
      *
      * <p>
@@ -553,6 +553,8 @@ public class MessagingChannelConfig<T> {
      * </p>
      *
      * @param messagingTimeout Timeout in milliseconds.
+     *
+     * @see MessagingChannel#withTimeout(long, TimeUnit)
      */
     public void setMessagingTimeout(long messagingTimeout) {
         this.messagingTimeout = messagingTimeout;
