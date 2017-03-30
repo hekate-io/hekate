@@ -32,7 +32,7 @@ class RequestRegistry<T> {
                 if (ctx.getOpts().hasTimeout()) {
                     // Unregister if messaging operation gets timed out.
                     ctx.setTimeoutListener(() ->
-                        requests.remove(id)
+                        unregister(id)
                     );
                 }
 
