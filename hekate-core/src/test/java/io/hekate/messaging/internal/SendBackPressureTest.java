@@ -17,7 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.HekateTestBase;
-import io.hekate.messaging.MessagingOverflowException;
+import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingOverflowPolicy;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -161,7 +161,7 @@ public class SendBackPressureTest extends HekateTestBase {
                 Exception err = backPressure.onEnqueue();
 
                 assertNotNull(err);
-                assertTrue(err.toString(), err instanceof MessagingOverflowException);
+                assertTrue(err.toString(), err instanceof MessageQueueOverflowException);
                 assertEquals("Send queue overflow [queue-size=11, low-watermark=5, high-watermark=10]", err.getMessage());
 
                 backPressure.onDequeue();

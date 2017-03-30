@@ -20,7 +20,7 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.MessagingOverflowException;
+import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.broadcast.AggregateFuture;
 import io.hekate.messaging.broadcast.BroadcastFuture;
 import java.util.ArrayList;
@@ -105,7 +105,7 @@ public class BroadcastBackPressureTest extends BackPressureTestBase {
         Map<ClusterNode, Throwable> errors = future.get().getErrors();
 
         assertFalse(errors.isEmpty());
-        assertTrue(errors.toString(), errors.values().stream().allMatch(e -> Utils.isCausedBy(e, MessagingOverflowException.class)));
+        assertTrue(errors.toString(), errors.values().stream().allMatch(e -> Utils.isCausedBy(e, MessageQueueOverflowException.class)));
     }
 
     @Test

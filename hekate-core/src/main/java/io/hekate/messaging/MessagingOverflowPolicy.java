@@ -40,7 +40,7 @@ public enum MessagingOverflowPolicy {
     BLOCK_UNINTERRUPTEDLY,
 
     /**
-     * Rejects operation with {@link MessagingOverflowException} error.
+     * Rejects operation with {@link MessageQueueOverflowException} error.
      */
     FAIL,
 

@@ -27,7 +27,7 @@ package io.hekate.messaging;
  *
  * @see MessagingOverflowPolicy#FAIL
  */
-public class MessagingOverflowException extends MessagingException {
+public class MessageQueueOverflowException extends MessagingException {
     private static final long serialVersionUID = 1;
 
     /**
@@ -35,7 +35,7 @@ public class MessagingOverflowException extends MessagingException {
      *
      * @param message The error message.
      */
-    public MessagingOverflowException(String message) {
+    public MessageQueueOverflowException(String message) {
         super(message);
     }
 }

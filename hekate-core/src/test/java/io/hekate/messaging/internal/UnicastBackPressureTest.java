@@ -21,7 +21,7 @@ import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.MessagingFutureException;
-import io.hekate.messaging.MessagingOverflowException;
+import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingOverflowPolicy;
 import io.hekate.messaging.unicast.RequestFuture;
 import io.hekate.messaging.unicast.SendFuture;
@@ -220,7 +220,7 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
 
             fail("Error was expected");
         } catch (MessagingFutureException e) {
-            assertTrue(e.toString(), e.isCausedBy(MessagingOverflowException.class));
+            assertTrue(e.toString(), e.isCausedBy(MessageQueueOverflowException.class));
         }
     }
 
@@ -317,7 +317,7 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
         Throwable err = errFuture.get(3, TimeUnit.SECONDS);
 
         assertNotNull(err);
-        assertTrue(err.toString(), Utils.isCausedBy(err, MessagingOverflowException.class));
+        assertTrue(err.toString(), Utils.isCausedBy(err, MessageQueueOverflowException.class));
     }
 
     protected List<RequestFuture<String>> requestUpToHighWatermark(MessagingChannel<String> channel) {

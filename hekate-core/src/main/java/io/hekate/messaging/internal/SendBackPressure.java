@@ -16,7 +16,7 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.messaging.MessagingOverflowException;
+import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingOverflowPolicy;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -73,7 +73,7 @@ class SendBackPressure {
                             break;
                         }
                         case FAIL: {
-                            rejected = new MessagingOverflowException("Send queue overflow "
+                            rejected = new MessageQueueOverflowException("Send queue overflow "
                                 + "[queue-size=" + queueSize + ", low-watermark=" + loMark + ", high-watermark=" + hiMark + ']');
 
                             break;
