@@ -94,6 +94,8 @@ class MessagingGateway<T> {
     }
 
     private static class PoolSelectionRejectedException extends Exception {
+        private static final long serialVersionUID = 1L;
+
         public PoolSelectionRejectedException(Throwable cause) {
             super(null, cause, false, false);
         }
