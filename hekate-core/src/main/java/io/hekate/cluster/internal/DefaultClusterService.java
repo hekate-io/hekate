@@ -147,9 +147,9 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     private static final boolean DEBUG = log.isDebugEnabled();
 
     private static final ClusterJoinValidator DEFAULT_JOIN_VALIDATOR = (newNode, local) -> {
-        boolean localLoopback = local.getNode().getNetAddress().getAddress().isLoopbackAddress();
+        boolean localLoopback = local.getNode().getSocket().getAddress().isLoopbackAddress();
 
-        boolean remoteLoopback = newNode.getNetAddress().getAddress().isLoopbackAddress();
+        boolean remoteLoopback = newNode.getSocket().getAddress().isLoopbackAddress();
 
         String rejectReason = null;
 
@@ -437,7 +437,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                     waiting.add(seedNodeMgr.stopCleaning());
 
                     if (node != null) {
-                        InetSocketAddress address = node.getNetAddress();
+                        InetSocketAddress address = node.getSocket();
 
                         SeedNodeManager localSeedNodeManager = this.seedNodeMgr;
 
@@ -658,7 +658,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
                     // Start seed nodes discovery.
                     try {
-                        localSeedNodeMgr.startDiscovery(address.getNetAddress());
+                        localSeedNodeMgr.startDiscovery(address.getSocket());
                     } catch (HekateException e) {
                         boolean initialized = false;
 
@@ -681,7 +681,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
                         if (!initialized) {
                             // Make sure that seed nodes discovery is stopped in case of concurrent service termination.
-                            localSeedNodeMgr.stopDiscovery(address.getNetAddress());
+                            localSeedNodeMgr.stopDiscovery(address.getSocket());
                         }
 
                         return;
@@ -760,7 +760,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                 }
 
                 // Make sure that seed nodes discovery is stopped.
-                localSeedNodeMgr.stopDiscovery(address.getNetAddress());
+                localSeedNodeMgr.stopDiscovery(address.getSocket());
 
                 // Make sure that failure detector is terminated.
                 try {
@@ -1207,7 +1207,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
             @Override
             public void onKnownAddressesChange(Set<ClusterAddress> oldAddresses, Set<ClusterAddress> newAddresses) {
-                Set<InetSocketAddress> addresses = newAddresses.stream().map(ClusterAddress::getNetAddress).collect(toSet());
+                Set<InetSocketAddress> addresses = newAddresses.stream().map(ClusterAddress::getSocket).collect(toSet());
 
                 knownAddresses = Collections.unmodifiableSet(addresses);
             }

@@ -56,7 +56,7 @@ public abstract class GossipProtocol {
 
         @Override
         public InetSocketAddress getToAddress() {
-            return to.getNetAddress();
+            return to.getSocket();
         }
     }
 

@@ -49,8 +49,8 @@ public class StatsdMetricsPluginTest extends StatsdMetricsTestBase {
 
         await(published);
 
-        String nodeHost = StatsdMetricsPublisher.toSafeHost(node.getNode().getNetAddress().getAddress().getHostAddress());
-        int nodePort = node.getNode().getNetAddress().getPort();
+        String nodeHost = StatsdMetricsPublisher.toSafeHost(node.getNode().getSocket().getAddress().getHostAddress());
+        int nodePort = node.getNode().getSocket().getPort();
 
         busyWait("metrics", () -> {
             String received = receiveNext();

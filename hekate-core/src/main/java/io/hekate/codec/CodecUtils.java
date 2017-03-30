@@ -61,7 +61,7 @@ public final class CodecUtils {
     public static void writeClusterAddress(ClusterAddress address, DataOutput out) throws IOException {
         writeNodeId(address.getId(), out);
 
-        writeAddress(address.getNetAddress(), out);
+        writeAddress(address.getSocket(), out);
     }
 
     /**

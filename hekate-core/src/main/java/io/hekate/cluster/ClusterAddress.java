@@ -29,7 +29,7 @@ import java.net.InetSocketAddress;
  *
  * <p>
  * <b>Note:</b> all {@link #equals(Object) equality} and {@link #compareTo(ClusterAddress) comparison} operations are based on {@link
- * ClusterNodeId} value. In order to check for network address equality please consider using {@link #isSameNetAddress(ClusterAddress)}
+ * ClusterNodeId} value. In order to check for network address equality please consider using {@link #isSameSocket(ClusterAddress)}
  * method.
  * </p>
  *
@@ -38,21 +38,21 @@ import java.net.InetSocketAddress;
 public class ClusterAddress implements Comparable<ClusterAddress>, Serializable {
     private static final long serialVersionUID = 1;
 
-    private final InetSocketAddress netAddress;
+    private final InetSocketAddress socket;
 
     private final ClusterNodeId id;
 
     /**
      * Constructs new instance with the specified network address and node identifier.
      *
-     * @param netAddress Network address of {@link ClusterNode}.
+     * @param socket Network address of {@link ClusterNode}.
      * @param id Unique identifier of {@link ClusterNode}.
      */
-    public ClusterAddress(InetSocketAddress netAddress, ClusterNodeId id) {
-        assert netAddress != null : "Address is null.";
+    public ClusterAddress(InetSocketAddress socket, ClusterNodeId id) {
+        assert socket != null : "Address is null.";
         assert id != null : "ID is null.";
 
-        this.netAddress = netAddress;
+        this.socket = socket;
         this.id = id;
     }
 
@@ -70,19 +70,19 @@ public class ClusterAddress implements Comparable<ClusterAddress>, Serializable 
      *
      * @return Network address of {@link ClusterNode}.
      */
-    public InetSocketAddress getNetAddress() {
-        return netAddress;
+    public InetSocketAddress getSocket() {
+        return socket;
     }
 
     /**
-     * Returns {@code true} if this instance has the same {@link #getNetAddress() network address} with the specified one.
+     * Returns {@code true} if this instance has the same {@link #getSocket() socket address} with the specified one.
      *
      * @param other Other address.
      *
-     * @return {@code true} if this instance has the same {@link #getNetAddress() network address} with the specified one.
+     * @return {@code true} if this instance has the same {@link #getSocket() socket address} with the specified one.
      */
-    public boolean isSameNetAddress(ClusterAddress other) {
-        return netAddress.equals(other.getNetAddress());
+    public boolean isSameSocket(ClusterAddress other) {
+        return socket.equals(other.getSocket());
     }
 
     /**
@@ -125,6 +125,6 @@ public class ClusterAddress implements Comparable<ClusterAddress>, Serializable 
 
     @Override
     public String toString() {
-        return netAddress + ":" + id;
+        return socket + ":" + id;
     }
 }

@@ -894,7 +894,7 @@ public class NetworkClientTest extends NetworkTestBase {
                 }
             });
 
-            InetSocketAddress addr = newNode().getNetAddress();
+            InetSocketAddress addr = newNode().getSocket();
 
             channel = bootstrap.bind(addr).sync().channel();
 

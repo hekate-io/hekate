@@ -188,8 +188,8 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     }
 
     @Override
-    public InetSocketAddress getNetAddress() {
-        return address.getNetAddress();
+    public InetSocketAddress getSocket() {
+        return address.getSocket();
     }
 
     @Override

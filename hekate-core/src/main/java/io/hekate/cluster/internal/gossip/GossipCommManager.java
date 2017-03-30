@@ -170,7 +170,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
                 Connect connectMsg = new Connect(msg.getFrom().getId());
 
-                client.connect(addr.getNetAddress(), connectMsg, netClientCallback);
+                client.connect(addr.getSocket(), connectMsg, netClientCallback);
             }
         }
 

@@ -506,7 +506,7 @@ public abstract class HekateTestBase {
             addr = new ClusterAddress(sockAddr, nodeId);
         }
 
-        String name = "node" + addr.getNetAddress().getPort();
+        String name = "node" + addr.getSocket().getPort();
 
         DefaultClusterNodeBuilder builder = new DefaultClusterNodeBuilder()
             .withAddress(addr)

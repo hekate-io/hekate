@@ -173,7 +173,7 @@ public class ClusterPerformanceTest extends HekateTestBase {
         seedNodes.setDelegate(new SeedNodeProviderAdaptor() {
             @Override
             public List<InetSocketAddress> getSeedNodes(String cluster) {
-                return Collections.singletonList(seed.getNode().getNetAddress());
+                return Collections.singletonList(seed.getNode().getSocket());
             }
         });
 

@@ -59,7 +59,7 @@ class NetSenderContext<T> extends NetReceiverContextBase<T> {
 
             setEpoch(localEpoch);
 
-            final InetSocketAddress netAddress = address.getNetAddress();
+            final InetSocketAddress netAddress = address.getSocket();
 
             int poolOrder = getEndpoint().getSocketOrder();
             int poolSize = getEndpoint().getSockets();

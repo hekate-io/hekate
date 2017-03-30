@@ -124,7 +124,7 @@ public class GossipManager {
         }
 
         if (seedNodesSate == null) {
-            seedNodesSate = new GossipSeedNodesSate(address.getNetAddress(), seedNodes);
+            seedNodesSate = new GossipSeedNodesSate(address.getSocket(), seedNodes);
         } else {
             seedNodesSate.update(seedNodes);
         }

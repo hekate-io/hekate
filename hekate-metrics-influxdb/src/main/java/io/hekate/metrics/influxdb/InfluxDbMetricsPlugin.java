@@ -153,7 +153,7 @@ public class InfluxDbMetricsPlugin implements Plugin {
     public void start(Hekate hekate) throws HekateException {
         ClusterNode node = hekate.getNode();
 
-        InetSocketAddress netAddress = node.getNetAddress();
+        InetSocketAddress netAddress = node.getSocket();
 
         publisher.start(node.getName(), netAddress.getAddress().getHostAddress(), netAddress.getPort());
     }

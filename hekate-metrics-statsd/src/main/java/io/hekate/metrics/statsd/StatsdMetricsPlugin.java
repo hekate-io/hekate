@@ -144,7 +144,7 @@ public class StatsdMetricsPlugin implements Plugin {
     public void start(Hekate hekate) throws HekateException {
         ClusterNode node = hekate.getNode();
 
-        InetSocketAddress netAddress = node.getNetAddress();
+        InetSocketAddress netAddress = node.getSocket();
 
         try {
             publisher.start(netAddress.getAddress().getHostAddress(), netAddress.getPort());

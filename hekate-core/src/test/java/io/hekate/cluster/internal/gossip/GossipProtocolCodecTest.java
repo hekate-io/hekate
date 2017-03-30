@@ -56,13 +56,13 @@ public class GossipProtocolCodecTest extends HekateTestBase {
             ClusterNode fromNode = newNode();
             ClusterAddress to = newNode().getAddress();
 
-            JoinRequest before = new JoinRequest(fromNode, "test", to.getNetAddress());
+            JoinRequest before = new JoinRequest(fromNode, "test", to.getSocket());
 
             JoinRequest after = encodeDecode(before);
 
             assertEquals(fromNode, after.getFromNode());
             assertEquals(fromNode.getAddress(), after.getFrom());
-            assertEquals(to.getNetAddress(), after.getToAddress());
+            assertEquals(to.getSocket(), after.getToAddress());
             assertEquals(before.getCluster(), after.getCluster());
         });
     }
@@ -73,7 +73,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
             ClusterAddress from = newNode().getAddress();
             ClusterAddress to = newNode().getAddress();
 
-            JoinReject before = JoinReject.retryLater(from, to, to.getNetAddress());
+            JoinReject before = JoinReject.retryLater(from, to, to.getSocket());
 
             assertSame(JoinReject.RejectType.TEMPORARY, before.getRejectType());
 
@@ -81,7 +81,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
             assertEquals(from, after.getFrom());
             assertEquals(to, after.getTo());
-            assertEquals(to.getNetAddress(), after.getRejectedAddress());
+            assertEquals(to.getSocket(), after.getRejectedAddress());
             assertSame(before.getRejectType(), after.getRejectType());
         });
     }
@@ -92,7 +92,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
             ClusterAddress from = newNode().getAddress();
             ClusterAddress to = newNode().getAddress();
 
-            JoinReject before = JoinReject.permanent(from, to, to.getNetAddress());
+            JoinReject before = JoinReject.permanent(from, to, to.getSocket());
 
             assertSame(JoinReject.RejectType.PERMANENT, before.getRejectType());
 
@@ -100,7 +100,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
             assertEquals(from, after.getFrom());
             assertEquals(to, after.getTo());
-            assertEquals(to.getNetAddress(), after.getRejectedAddress());
+            assertEquals(to.getSocket(), after.getRejectedAddress());
             assertSame(before.getRejectType(), after.getRejectType());
         });
     }
@@ -111,7 +111,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
             ClusterAddress from = newNode().getAddress();
             ClusterAddress to = newNode().getAddress();
 
-            JoinReject before = JoinReject.fatal(from, to, to.getNetAddress(), "test reason.");
+            JoinReject before = JoinReject.fatal(from, to, to.getSocket(), "test reason.");
 
             assertSame(JoinReject.RejectType.FATAL, before.getRejectType());
             assertNotNull(before.getReason());
@@ -120,7 +120,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
             assertEquals(from, after.getFrom());
             assertEquals(to, after.getTo());
-            assertEquals(to.getNetAddress(), after.getRejectedAddress());
+            assertEquals(to.getSocket(), after.getRejectedAddress());
             assertSame(before.getRejectType(), after.getRejectType());
             assertEquals(before.getReason(), after.getReason());
         });

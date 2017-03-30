@@ -33,8 +33,8 @@ import org.slf4j.LoggerFactory;
 
 class ClusterEventLogger implements ClusterEventListener {
     private static final Comparator<ClusterNode> NODES_BY_ADDRESS = (o1, o2) -> {
-        InetSocketAddress a1 = o1.getNetAddress();
-        InetSocketAddress a2 = o2.getNetAddress();
+        InetSocketAddress a1 = o1.getSocket();
+        InetSocketAddress a2 = o2.getSocket();
 
         int cmp = a1.getAddress().getHostAddress().compareTo(a2.getAddress().getHostAddress());
 

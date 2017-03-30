@@ -77,12 +77,12 @@ public interface ClusterNode extends Comparable<ClusterNode> {
      * Returns the network socket address of this node.
      *
      * <p>
-     * This is a shortcut for {@link #getAddress()}.{@link ClusterAddress#getNetAddress() getNetAddress()}
+     * This is a shortcut for {@link #getAddress()}.{@link ClusterAddress#getSocket() getSocket()}
      * </p>
      *
      * @return Network socket address of this node.
      */
-    InetSocketAddress getNetAddress();
+    InetSocketAddress getSocket();
 
     /**
      * Returns system information of this node.
