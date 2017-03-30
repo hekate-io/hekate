@@ -21,6 +21,8 @@ import io.hekate.messaging.MessagingOverflowPolicy;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 class SendBackPressure {
     private final int loMark;
@@ -32,7 +34,10 @@ class SendBackPressure {
     private final AtomicInteger queueSize = new AtomicInteger();
 
     @ToStringIgnore
-    private final Object mux = new Object();
+    private final ReentrantLock lock = new ReentrantLock();
+
+    @ToStringIgnore
+    private final Condition block = lock.newCondition();
 
     @ToStringIgnore
     private boolean stopped;
@@ -56,7 +61,9 @@ class SendBackPressure {
         int size = queueSize.incrementAndGet();
 
         if (size > hiMark) {
-            synchronized (mux) {
+            lock.lock();
+
+            try {
                 // Double check queue size before applying policy.
                 if (queueSize.get() > hiMark) {
                     switch (policy) {
@@ -80,6 +87,8 @@ class SendBackPressure {
                         }
                     }
                 }
+            } finally {
+                lock.unlock();
             }
         }
     }
@@ -88,17 +97,24 @@ class SendBackPressure {
         int size = queueSize.decrementAndGet();
 
         if (size == loMark) { // <-- Strict equality to make sure that only a single thread will notify others.
-            synchronized (mux) {
-                mux.notifyAll();
+            lock.lock();
+            try {
+                block.signalAll();
+            } finally {
+                lock.unlock();
             }
         }
     }
 
     public void terminate() {
-        synchronized (mux) {
+        lock.lock();
+
+        try {
             stopped = true;
 
-            mux.notifyAll();
+            block.signalAll();
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -107,21 +123,21 @@ class SendBackPressure {
     }
 
     private void block() throws InterruptedException {
-        assert Thread.holdsLock(mux) : "Thread must hold lock on mutex.";
+        assert lock.isHeldByCurrentThread() : "Thread must hold lock.";
 
         while (!stopped && queueSize.get() > loMark) {
-            mux.wait();
+            block.await();
         }
     }
 
     private void blockUninterruptedly() {
-        assert Thread.holdsLock(mux) : "Thread must hold lock on mutex.";
+        assert lock.isHeldByCurrentThread() : "Thread must hold lock.";
 
         boolean interrupted = false;
 
         while (!stopped && queueSize.get() > loMark) {
             try {
-                mux.wait();
+                block.await();
             } catch (InterruptedException err) {
                 interrupted = true;
             }
