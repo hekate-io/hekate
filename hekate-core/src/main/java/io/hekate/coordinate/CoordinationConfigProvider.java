@@ -39,5 +39,5 @@ public interface CoordinationConfigProvider {
      *
      * @return Coordination processes configuration.
      */
-    Collection<CoordinationProcessConfig> getCoordinationConfig();
+    Collection<CoordinationProcessConfig> configureCoordination();
 }

@@ -246,7 +246,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     }
 
     @Override
-    public Collection<MessagingChannelConfig<?>> getMessagingConfig() {
+    public Collection<MessagingChannelConfig<?>> configureMessaging() {
         MessagingChannelConfig<MetricsProtocol> channelCfg = new MessagingChannelConfig<>();
 
         channelCfg.setName(MetricsProtocolCodec.PROTOCOL_ID);

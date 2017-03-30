@@ -37,5 +37,5 @@ public interface MetricsConfigProvider {
      *
      * @return Metrics configuration.
      */
-    List<MetricConfigBase<?>> getMetricsConfig();
+    List<MetricConfigBase<?>> configureMetrics();
 }

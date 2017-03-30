@@ -38,5 +38,5 @@ public interface CandidateConfigProvider {
      *
      * @return Leader election configuration.
      */
-    Collection<CandidateConfig> getElectionConfig();
+    Collection<CandidateConfig> configureElection();
 }

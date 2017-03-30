@@ -121,7 +121,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
         Utils.nullSafe(factory.getRegions()).forEach(regionsConfig::add);
 
         Utils.nullSafe(factory.getConfigProviders()).forEach(provider ->
-            Utils.nullSafe(provider.getLockingConfig()).forEach(regionsConfig::add)
+            Utils.nullSafe(provider.configureLocking()).forEach(regionsConfig::add)
         );
     }
 
@@ -138,7 +138,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
         Collection<LockConfigProvider> providers = ctx.findComponents(LockConfigProvider.class);
 
         Utils.nullSafe(providers).forEach(provider -> {
-            Collection<LockRegionConfig> regions = provider.getLockingConfig();
+            Collection<LockRegionConfig> regions = provider.configureLocking();
 
             Utils.nullSafe(regions).forEach(regionsConfig::add);
         });
@@ -165,7 +165,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
     }
 
     @Override
-    public Collection<MessagingChannelConfig<?>> getMessagingConfig() {
+    public Collection<MessagingChannelConfig<?>> configureMessaging() {
         return Collections.singleton(
             new MessagingChannelConfig<LockProtocol>()
                 .withName(LOCK_PREFIX)
@@ -179,7 +179,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
     }
 
     @Override
-    public Collection<PartitionMapperConfig> getPartitioningConfig() {
+    public Collection<PartitionMapperConfig> configurePartitions() {
         return regionsConfig.stream().map(cfg -> {
             String name = cfg.getName().trim();
 

@@ -38,5 +38,5 @@ public interface PartitionConfigProvider {
      *
      * @return Partition mappers configuration.
      */
-    Collection<PartitionMapperConfig> getPartitioningConfig();
+    Collection<PartitionMapperConfig> configurePartitions();
 }

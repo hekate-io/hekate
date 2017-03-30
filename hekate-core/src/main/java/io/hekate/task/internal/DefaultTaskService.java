@@ -171,7 +171,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
     }
 
     @Override
-    public Collection<MessagingChannelConfig<?>> getMessagingConfig() {
+    public Collection<MessagingChannelConfig<?>> configureMessaging() {
         return Collections.singleton(new MessagingChannelConfig<TaskProtocol>()
             .withName(CHANNEL_NAME)
             .withLogCategory(getClass().getName())

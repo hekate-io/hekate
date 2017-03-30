@@ -113,7 +113,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         Utils.nullSafe(factory.getChannels()).forEach(channelsConfig::add);
 
         Utils.nullSafe(factory.getConfigProviders()).forEach(provider ->
-            Utils.nullSafe(provider.getMessagingConfig()).forEach(channelsConfig::add)
+            Utils.nullSafe(provider.configureMessaging()).forEach(channelsConfig::add)
         );
     }
 
@@ -132,7 +132,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         Collection<MessagingConfigProvider> providers = ctx.findComponents(MessagingConfigProvider.class);
 
         Utils.nullSafe(providers).forEach(provider -> {
-            Collection<MessagingChannelConfig<?>> regions = provider.getMessagingConfig();
+            Collection<MessagingChannelConfig<?>> regions = provider.configureMessaging();
 
             Utils.nullSafe(regions).forEach(channelsConfig::add);
         });
@@ -185,7 +185,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
     }
 
     @Override
-    public Collection<NetworkConnectorConfig<?>> getNetworkingConfig() {
+    public Collection<NetworkConnectorConfig<?>> configureNetwork() {
         List<NetworkConnectorConfig<?>> connectors = new ArrayList<>(channelsConfig.size());
 
         channelsConfig.forEach(channelCfg ->

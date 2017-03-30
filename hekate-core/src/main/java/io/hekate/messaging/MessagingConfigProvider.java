@@ -38,5 +38,5 @@ public interface MessagingConfigProvider {
      *
      * @return Channels configuration.
      */
-    Collection<MessagingChannelConfig<?>> getMessagingConfig();
+    Collection<MessagingChannelConfig<?>> configureMessaging();
 }

@@ -94,10 +94,10 @@ public class DefaultMetricsService implements MetricsService, InitializingServic
 
         Utils.nullSafe(factory.getMetrics()).forEach(metricsConfig::add);
 
-        Utils.nullSafe(new JvmMetricsProvider().getMetricsConfig()).forEach(metricsConfig::add);
+        Utils.nullSafe(new JvmMetricsProvider().configureMetrics()).forEach(metricsConfig::add);
 
         Utils.nullSafe(factory.getConfigProviders()).forEach(provider ->
-            Utils.nullSafe(provider.getMetricsConfig()).forEach(metricsConfig::add)
+            Utils.nullSafe(provider.configureMetrics()).forEach(metricsConfig::add)
         );
 
         Utils.nullSafe(factory.getListeners()).forEach(initListeners::add);

@@ -131,7 +131,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
         Collection<CoordinationConfigProvider> providers = ctx.findComponents(CoordinationConfigProvider.class);
 
         Utils.nullSafe(providers).forEach(provider -> {
-            Collection<CoordinationProcessConfig> processesCfg = provider.getCoordinationConfig();
+            Collection<CoordinationProcessConfig> processesCfg = provider.configureCoordination();
 
             Utils.nullSafe(processesCfg).forEach(processesConfig::add);
         });
@@ -159,7 +159,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
     }
 
     @Override
-    public Collection<MessagingChannelConfig<?>> getMessagingConfig() {
+    public Collection<MessagingChannelConfig<?>> configureMessaging() {
         Map<String, CodecFactory<Object>> processCodecs = new HashMap<>();
 
         processesConfig.forEach(cfg -> {

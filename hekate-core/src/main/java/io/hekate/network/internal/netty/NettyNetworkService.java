@@ -223,7 +223,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
         Utils.nullSafe(factory.getConnectors()).forEach(connectorConfigs::add);
 
         Utils.nullSafe(factory.getConfigProviders()).forEach(provider ->
-            Utils.nullSafe(provider.getNetworkingConfig()).forEach(connectorConfigs::add)
+            Utils.nullSafe(provider.configureNetwork()).forEach(connectorConfigs::add)
         );
 
         // Register ping protocol.
@@ -271,7 +271,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
         Collection<NetworkConfigProvider> providers = ctx.findComponents(NetworkConfigProvider.class);
 
         providers.forEach(provider ->
-            Utils.nullSafe(provider.getNetworkingConfig()).forEach(connectorConfigs::add)
+            Utils.nullSafe(provider.configureNetwork()).forEach(connectorConfigs::add)
         );
     }
 

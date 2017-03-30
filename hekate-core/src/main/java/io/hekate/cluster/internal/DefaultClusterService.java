@@ -306,7 +306,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     }
 
     @Override
-    public Collection<NetworkConnectorConfig<?>> getNetworkingConfig() {
+    public Collection<NetworkConnectorConfig<?>> configureNetwork() {
         NetworkConnectorConfig<GossipProtocol> netCfg = new NetworkConnectorConfig<>();
 
         netCfg.setProtocol(GossipProtocolCodec.PROTOCOL_ID);

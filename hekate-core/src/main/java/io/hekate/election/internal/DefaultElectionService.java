@@ -84,7 +84,7 @@ public class DefaultElectionService implements ElectionService, DependentService
         Utils.nullSafe(factory.getCandidates()).forEach(candidatesConfig::add);
 
         Utils.nullSafe(factory.getConfigProviders()).forEach(provider ->
-            Utils.nullSafe(provider.getElectionConfig()).forEach(candidatesConfig::add)
+            Utils.nullSafe(provider.configureElection()).forEach(candidatesConfig::add)
         );
     }
 
@@ -99,7 +99,7 @@ public class DefaultElectionService implements ElectionService, DependentService
         Collection<CandidateConfigProvider> providers = ctx.findComponents(CandidateConfigProvider.class);
 
         Utils.nullSafe(providers).forEach(provider ->
-            Utils.nullSafe(provider.getElectionConfig()).forEach(candidatesConfig::add)
+            Utils.nullSafe(provider.configureElection()).forEach(candidatesConfig::add)
         );
 
         // Validate configs.
@@ -125,7 +125,7 @@ public class DefaultElectionService implements ElectionService, DependentService
     }
 
     @Override
-    public Collection<LockRegionConfig> getLockingConfig() {
+    public Collection<LockRegionConfig> configureLocking() {
         return Collections.singletonList(new LockRegionConfig().withName(ELECTION_LOCK_REGION));
     }
 

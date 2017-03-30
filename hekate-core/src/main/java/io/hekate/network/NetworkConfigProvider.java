@@ -38,5 +38,5 @@ public interface NetworkConfigProvider {
      *
      * @return Channels configuration.
      */
-    Collection<NetworkConnectorConfig<?>> getNetworkingConfig();
+    Collection<NetworkConnectorConfig<?>> configureNetwork();
 }

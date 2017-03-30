@@ -33,7 +33,7 @@ class JvmMetricsProvider implements MetricsConfigProvider {
     private final MemoryMXBean mem = ManagementFactory.getMemoryMXBean();
 
     @Override
-    public List<MetricConfigBase<?>> getMetricsConfig() {
+    public List<MetricConfigBase<?>> configureMetrics() {
         OperatingSystemMXBean os = ManagementFactory.getOperatingSystemMXBean();
         ThreadMXBean threads = ManagementFactory.getThreadMXBean();
 

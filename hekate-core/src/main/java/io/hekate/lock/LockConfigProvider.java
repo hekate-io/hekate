@@ -38,5 +38,5 @@ public interface LockConfigProvider {
      *
      * @return Lock regions configuration.
      */
-    Collection<LockRegionConfig> getLockingConfig();
+    Collection<LockRegionConfig> configureLocking();
 }

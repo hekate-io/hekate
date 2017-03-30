@@ -68,7 +68,7 @@ public class DefaultPartitionService implements PartitionService, DependentServi
         Utils.nullSafe(factory.getMappers()).forEach(mappersConfig::add);
 
         Utils.nullSafe(factory.getConfigProviders()).forEach(provider ->
-            Utils.nullSafe(provider.getPartitioningConfig()).forEach(mappersConfig::add)
+            Utils.nullSafe(provider.configurePartitions()).forEach(mappersConfig::add)
         );
     }
 
@@ -83,7 +83,7 @@ public class DefaultPartitionService implements PartitionService, DependentServi
         Collection<PartitionConfigProvider> providers = ctx.findComponents(PartitionConfigProvider.class);
 
         Utils.nullSafe(providers).forEach(provider -> {
-            Collection<PartitionMapperConfig> regions = provider.getPartitioningConfig();
+            Collection<PartitionMapperConfig> regions = provider.configurePartitions();
 
             Utils.nullSafe(regions).forEach(mappersConfig::add);
         });
