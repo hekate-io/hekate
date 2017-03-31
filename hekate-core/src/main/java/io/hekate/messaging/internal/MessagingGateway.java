@@ -28,12 +28,13 @@ import io.hekate.failover.FailureInfo;
 import io.hekate.failover.FailureResolution;
 import io.hekate.failover.internal.DefaultFailoverContext;
 import io.hekate.messaging.MessageQueueOverflowException;
+import io.hekate.messaging.MessageQueueTimeoutException;
 import io.hekate.messaging.MessageReceiver;
+import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingException;
-import io.hekate.messaging.MessagingTimeoutException;
 import io.hekate.messaging.UnknownRouteException;
 import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.AggregateFuture;
@@ -278,14 +279,14 @@ class MessagingGateway<T> {
         MessageContext<T> ctx = newContext(affinityKey, message, opts);
 
         try {
-            backPressureAcquire();
+            long timeout = backPressureAcquire(opts.timeout(), message);
 
             routeAndSend(ctx, callback, null);
 
-            if (opts.hasTimeout()) {
-                scheduleTimeout(ctx, callback);
+            if (timeout > 0) {
+                doScheduleTimeout(timeout, ctx, callback);
             }
-        } catch (InterruptedException | MessageQueueOverflowException e) {
+        } catch (InterruptedException | MessageQueueOverflowException | MessageQueueTimeoutException e) {
             notifyOnErrorAsync(ctx, callback, e);
         } catch (RejectedExecutionException e) {
             notifyOnChannelClosedError(ctx, callback);
@@ -309,14 +310,14 @@ class MessagingGateway<T> {
         MessageContext<T> ctx = newContext(affinityKey, message, opts);
 
         try {
-            backPressureAcquire();
+            long timeout = backPressureAcquire(opts.timeout(), message);
 
             routeAndRequest(ctx, callback, null);
 
-            if (opts.hasTimeout()) {
-                scheduleTimeout(ctx, callback);
+            if (timeout > 0) {
+                doScheduleTimeout(timeout, ctx, callback);
             }
-        } catch (InterruptedException | MessageQueueOverflowException e) {
+        } catch (InterruptedException | MessageQueueOverflowException | MessageQueueTimeoutException e) {
             notifyOnErrorAsync(ctx, callback, e);
         } catch (RejectedExecutionException e) {
             notifyOnChannelClosedError(ctx, callback);
@@ -833,22 +834,7 @@ class MessagingGateway<T> {
     }
 
     void scheduleTimeout(MessageContext<T> ctx, Object callback) {
-        if (!ctx.isCompleted()) {
-            try {
-                Future<?> future = ctx.getWorker().executeDeferred(ctx.getOpts().timeout(), () -> {
-                    if (ctx.completeOnTimeout()) {
-                        T msg = ctx.getMessage();
-
-                        doNotifyOnError(callback, new MessagingTimeoutException("Messaging operation timed out [message=" + msg + ']'));
-                    }
-                });
-
-                ctx.setTimeoutFuture(future);
-            } catch (RejectedExecutionException e) {
-                // Ignore since this error means that channel is closed.
-                // In such case we can ignore timeout notification because messaging context will be notified by another error.
-            }
-        }
+        doScheduleTimeout(ctx.getOpts().timeout(), ctx, callback);
     }
 
     // This method is for testing purposes only.
@@ -859,6 +845,25 @@ class MessagingGateway<T> {
             return pools.get(nodeId);
         } finally {
             lock.unlockRead(readLock);
+        }
+    }
+
+    private void doScheduleTimeout(long timeout, MessageContext<T> ctx, Object callback) {
+        if (!ctx.isCompleted()) {
+            try {
+                Future<?> future = ctx.getWorker().executeDeferred(timeout, () -> {
+                    if (ctx.completeOnTimeout()) {
+                        T msg = ctx.getMessage();
+
+                        doNotifyOnError(callback, new MessageTimeoutException("Messaging operation timed out [message=" + msg + ']'));
+                    }
+                });
+
+                ctx.setTimeoutFuture(future);
+            } catch (RejectedExecutionException e) {
+                // Ignore since this error means that channel is closed.
+                // In such case we can ignore timeout notification because messaging context will be notified by another error.
+            }
         }
     }
 
@@ -1069,10 +1074,13 @@ class MessagingGateway<T> {
         }
     }
 
-    private void backPressureAcquire() throws MessageQueueOverflowException, InterruptedException {
+    private long backPressureAcquire(long timeout, T msg) throws MessageQueueOverflowException, InterruptedException,
+        MessageQueueTimeoutException {
         if (sendBackPressure != null) {
-            sendBackPressure.onEnqueue();
+            return sendBackPressure.onEnqueue(timeout, msg);
         }
+
+        return timeout;
     }
 
     private void backPressureRelease() {

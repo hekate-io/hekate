@@ -1,8 +1,8 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.Message;
+import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingFutureException;
-import io.hekate.messaging.MessagingTimeoutException;
 import io.hekate.messaging.unicast.RequestFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Exchanger;
@@ -37,9 +37,9 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
             try {
                 sender.get().forRemotes().request("must-fail-" + i).get(3, TimeUnit.SECONDS);
             } catch (MessagingFutureException e) {
-                assertTrue(getStacktrace(e), e.isCausedBy(MessagingTimeoutException.class));
+                assertTrue(getStacktrace(e), e.isCausedBy(MessageTimeoutException.class));
                 assertEquals("Messaging operation timed out [message=must-fail-" + i + ']',
-                    e.findCause(MessagingTimeoutException.class).getMessage());
+                    e.findCause(MessageTimeoutException.class).getMessage());
             } finally {
                 hangLatchRef.get().countDown();
             }
@@ -100,9 +100,9 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
             try {
                 sender.get().forRemotes().send("must-fail-" + i).get(3, TimeUnit.SECONDS);
             } catch (MessagingFutureException e) {
-                assertTrue(getStacktrace(e), e.isCausedBy(MessagingTimeoutException.class));
+                assertTrue(getStacktrace(e), e.isCausedBy(MessageTimeoutException.class));
                 assertEquals("Messaging operation timed out [message=must-fail-" + i + ']',
-                    e.findCause(MessagingTimeoutException.class).getMessage());
+                    e.findCause(MessageTimeoutException.class).getMessage());
             }
         });
     }

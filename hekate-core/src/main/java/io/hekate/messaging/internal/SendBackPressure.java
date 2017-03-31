@@ -17,9 +17,11 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.MessageQueueOverflowException;
+import io.hekate.messaging.MessageQueueTimeoutException;
 import io.hekate.messaging.MessagingOverflowPolicy;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -58,6 +60,15 @@ class SendBackPressure {
     }
 
     public void onEnqueue() throws InterruptedException, MessageQueueOverflowException {
+        try {
+            onEnqueue(0, null);
+        } catch (MessageQueueTimeoutException e) {
+            throw new AssertionError("Unexpected timeout error.", e);
+        }
+    }
+
+    public long onEnqueue(long timeout, Object msg) throws InterruptedException, MessageQueueOverflowException,
+        MessageQueueTimeoutException {
         int size = queueSize.incrementAndGet();
 
         if (size > hiMark) {
@@ -68,14 +79,10 @@ class SendBackPressure {
                 if (queueSize.get() > hiMark) {
                     switch (policy) {
                         case BLOCK: {
-                            block();
-
-                            break;
+                            return block(timeout, msg);
                         }
                         case BLOCK_UNINTERRUPTEDLY: {
-                            blockUninterruptedly();
-
-                            break;
+                            return blockUninterruptedly(timeout, msg);
                         }
                         case FAIL: {
                             throw new MessageQueueOverflowException("Send queue overflow "
@@ -91,6 +98,8 @@ class SendBackPressure {
                 lock.unlock();
             }
         }
+
+        return timeout;
     }
 
     public void onDequeue() {
@@ -122,22 +131,32 @@ class SendBackPressure {
         return queueSize.get();
     }
 
-    private void block() throws InterruptedException {
+    private long block(long timeout, Object msg) throws InterruptedException, MessageQueueTimeoutException {
         assert lock.isHeldByCurrentThread() : "Thread must hold lock.";
 
-        while (!stopped && queueSize.get() > loMark) {
-            block.await();
+        long deadline = timeout > 0 ? TimeUnit.MILLISECONDS.toNanos(timeout) : Long.MAX_VALUE;
+
+        while (deadline > 0 && !stopped && queueSize.get() > loMark) {
+            deadline = block.awaitNanos(deadline);
+        }
+
+        if (timeout > 0) {
+            return checkDeadline(TimeUnit.NANOSECONDS.toMillis(deadline), msg);
+        } else {
+            return timeout;
         }
     }
 
-    private void blockUninterruptedly() {
+    private long blockUninterruptedly(long timeout, Object msg) throws MessageQueueTimeoutException {
         assert lock.isHeldByCurrentThread() : "Thread must hold lock.";
 
         boolean interrupted = false;
 
-        while (!stopped && queueSize.get() > loMark) {
+        long deadline = timeout > 0 ? TimeUnit.MILLISECONDS.toNanos(timeout) : Long.MAX_VALUE;
+
+        while (deadline > 0 && !stopped && queueSize.get() > loMark) {
             try {
-                block.await();
+                deadline = block.awaitNanos(deadline);
             } catch (InterruptedException err) {
                 interrupted = true;
             }
@@ -145,6 +164,21 @@ class SendBackPressure {
 
         if (interrupted) {
             Thread.currentThread().interrupt();
+        }
+
+        if (timeout > 0) {
+            return checkDeadline(TimeUnit.NANOSECONDS.toMillis(deadline), msg);
+        } else {
+            return timeout;
+        }
+    }
+
+    private long checkDeadline(long deadline, Object msg) throws MessageQueueTimeoutException {
+        if (deadline > 0) {
+            return deadline;
+        } else {
+            throw new MessageQueueTimeoutException("Messaging operation timed out while awaiting on back pressure control queue "
+                + "[message=" + msg + ']');
         }
     }
 

@@ -19,6 +19,7 @@ package io.hekate.messaging.internal;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageQueueOverflowException;
+import io.hekate.messaging.MessageQueueTimeoutException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.MessagingFutureException;
@@ -78,6 +79,50 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
         busyWait("requests received", () -> requests.size() == futureResponses.size());
 
         assertBackPressureEnabled(sender);
+
+        // Go down to low watermark.
+        requests.stream().limit(getLowWatermarkBounds()).forEach(r -> r.reply("ok"));
+
+        busyWait("responses received", () ->
+            futureResponses.stream().filter(CompletableFuture::isDone).count() == getLowWatermarkBounds()
+        );
+
+        // Check that new request can be processed.
+        sender.send("last").get(3, TimeUnit.SECONDS);
+
+        requests.stream().filter(Message::mustReply).forEach(r -> r.reply("ok"));
+
+        for (Future<?> future : futureResponses) {
+            future.get(3, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
+    public void testRequestWithTimeout() throws Exception {
+        List<Message<String>> requests = new CopyOnWriteArrayList<>();
+
+        createChannel(c -> useBackPressure(c)
+            .withReceiver(requests::add)
+        ).join();
+
+        MessagingChannel<String> sender = createChannel(c -> {
+            useBackPressure(c);
+            c.getBackPressure().setOutOverflow(MessagingOverflowPolicy.BLOCK);
+        }).join().get().forRemotes();
+
+        // Enforce back pressure on sender.
+        List<RequestFuture<String>> futureResponses = requestUpToHighWatermark(sender);
+
+        busyWait("requests received", () -> requests.size() == futureResponses.size());
+
+        // Check timeout.
+        try {
+            sender.withTimeout(10, TimeUnit.MILLISECONDS).request("timeout").get(3, TimeUnit.SECONDS);
+
+            fail("Error was expected.");
+        } catch (MessagingFutureException e) {
+            assertTrue(getStacktrace(e), e.isCausedBy(MessageQueueTimeoutException.class));
+        }
 
         // Go down to low watermark.
         requests.stream().limit(getLowWatermarkBounds()).forEach(r -> r.reply("ok"));

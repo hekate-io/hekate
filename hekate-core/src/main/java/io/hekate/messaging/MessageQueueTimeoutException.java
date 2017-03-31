@@ -16,19 +16,21 @@
 
 package io.hekate.messaging;
 
+import java.util.concurrent.TimeUnit;
+
 /**
- * Signals {@link MessagingChannel}'s send queue overflow.
+ * Signals {@link MessagingChannel}'s send queue timeout.
  *
  * <p>
- * This error is thrown by a {@link MessagingChannel} when its send queue size goes above the
- * {@link MessagingBackPressureConfig#setOutHighWatermark(int) high watermark} and {@link MessagingOverflowPolicy#FAIL} is
- * {@link MessagingBackPressureConfig#setOutOverflow(MessagingOverflowPolicy) being used}.
+ * This error is thrown by a {@link MessagingChannel} when its send queue is full (above {@link
+ * MessagingBackPressureConfig#setOutHighWatermark(int) high watermark}) and messaging operation
+ * {@link MessagingChannel#withTimeout(long, TimeUnit) timed out}.
  * </p>
  *
  * @see MessagingBackPressureConfig
- * @see MessagingOverflowPolicy#FAIL
+ * @see MessagingOverflowPolicy#BLOCK
  */
-public class MessageQueueOverflowException extends MessagingException {
+public class MessageQueueTimeoutException extends MessageTimeoutException {
     private static final long serialVersionUID = 1;
 
     /**
@@ -36,7 +38,7 @@ public class MessageQueueOverflowException extends MessagingException {
      *
      * @param message The error message.
      */
-    public MessageQueueOverflowException(String message) {
+    public MessageQueueTimeoutException(String message) {
         super(message);
     }
 }

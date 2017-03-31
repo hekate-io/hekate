@@ -17,8 +17,11 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.HekateTestBase;
+import io.hekate.core.internal.util.Utils;
 import io.hekate.messaging.MessageQueueOverflowException;
+import io.hekate.messaging.MessageQueueTimeoutException;
 import io.hekate.messaging.MessagingOverflowPolicy;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -66,6 +69,11 @@ public class SendBackPressureTest extends HekateTestBase {
                 backPressure.onDequeue();
             }
         });
+    }
+
+    @Test
+    public void testBlockWithTimeout() throws Exception {
+        doTestBlockWithTimeout(MessagingOverflowPolicy.BLOCK);
     }
 
     @Test
@@ -157,6 +165,11 @@ public class SendBackPressureTest extends HekateTestBase {
     }
 
     @Test
+    public void testBlockUninterruptedlyWithTimeout() throws Exception {
+        doTestBlockWithTimeout(MessagingOverflowPolicy.BLOCK_UNINTERRUPTEDLY);
+    }
+
+    @Test
     public void testFail() throws Exception {
         SendBackPressure backPressure = new SendBackPressure(5, 10, MessagingOverflowPolicy.FAIL);
 
@@ -194,6 +207,58 @@ public class SendBackPressureTest extends HekateTestBase {
         SendBackPressure backPressure = new SendBackPressure(0, 1, MessagingOverflowPolicy.FAIL);
 
         assertTrue(backPressure.toString(), backPressure.toString().startsWith(SendBackPressure.class.getSimpleName()));
+    }
+
+    private void doTestBlockWithTimeout(MessagingOverflowPolicy policy) throws Exception {
+        SendBackPressure backPressure = new SendBackPressure(5, 10, policy);
+
+        repeat(3, i -> {
+            for (int j = 0; j < 10; j++) {
+                backPressure.onEnqueue();
+
+                assertEquals(j + 1, backPressure.getQueueSize());
+            }
+
+            assertEquals(10, backPressure.getQueueSize());
+
+            try {
+                runAsync(() ->
+                    backPressure.onEnqueue(10, "test")
+                ).get(3, TimeUnit.SECONDS);
+
+                fail("Error was expected");
+            } catch (ExecutionException e) {
+                assertTrue(getStacktrace(e), Utils.isCausedBy(e, MessageQueueTimeoutException.class));
+            }
+
+            assertEquals(11, backPressure.getQueueSize());
+
+            backPressure.onDequeue();
+
+            CountDownLatch enqueueLatch = new CountDownLatch(1);
+
+            Future<Long> future = runAsync(() -> {
+                enqueueLatch.countDown();
+
+                return backPressure.onEnqueue(300, "test");
+            });
+
+            await(enqueueLatch);
+
+            sleep(50);
+
+            while (backPressure.getQueueSize() > 1) {
+                backPressure.onDequeue();
+            }
+
+            long remaining = future.get(3, TimeUnit.SECONDS);
+
+            assertTrue("remaining:" + remaining, remaining > 0);
+            assertTrue("remaining:" + remaining, remaining <= 250);
+            assertEquals(1, backPressure.getQueueSize());
+
+            backPressure.onDequeue();
+        });
     }
 
     private void doTestTerminateWhileBlocked(MessagingOverflowPolicy policy) throws Exception {

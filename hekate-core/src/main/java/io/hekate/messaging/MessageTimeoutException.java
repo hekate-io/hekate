@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
  * @see MessagingChannelConfig#setMessagingTimeout(long)
  * @see MessagingChannel#withTimeout(long, TimeUnit)
  */
-public class MessagingTimeoutException extends MessagingException {
+public class MessageTimeoutException extends MessagingException {
     private static final long serialVersionUID = 1599179762571202891L;
 
     /**
@@ -16,7 +16,7 @@ public class MessagingTimeoutException extends MessagingException {
      *
      * @param message Error message.
      */
-    public MessagingTimeoutException(String message) {
+    public MessageTimeoutException(String message) {
         super(message);
     }
 }
