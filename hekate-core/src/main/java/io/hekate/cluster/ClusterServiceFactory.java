@@ -49,7 +49,7 @@ import java.util.List;
  * </p>
  */
 public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
-    /** Default value (={@value}) for {@link #setGossipInterval(long)}. */
+    /** Default value (={@value}) in milliseconds for {@link #setGossipInterval(long)}. */
     public static final long DEFAULT_GOSSIP_INTERVAL = 1000;
 
     /** Default value (={@value}) for {@link #setSpeedUpGossipSize(int)}. */
@@ -265,7 +265,7 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
     }
 
     /**
-     * Adds the specified listener to a {@link #setClusterListeners(List) cluster event listeners list}.
+     * Fluent-style version of {@link #setClusterListeners(List)}.
      *
      * @param listener Cluster event listener.
      *
@@ -294,9 +294,9 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
      * Sets the list of cluster join validators.
      *
      * <p>
-     * Cluster join validators are intended for implementing a custom logic of accepting/rejecting new cluster
-     * nodes based on some application-specific criteria (f.e. configuration compatibility, authorization, etc).
-     * For more info please see description of the {@link ClusterJoinValidator} interface.
+     * Cluster join validators are intended for implementing a custom logic of accepting/rejecting new  nodes based on some
+     * application-specific criteria (f.e. configuration compatibility, authorization, etc).
+     * For more details please see documentation of the {@link ClusterJoinValidator} interface.
      * </p>
      *
      * @param joinValidators List of cluster join validators.

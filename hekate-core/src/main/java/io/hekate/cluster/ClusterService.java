@@ -107,7 +107,7 @@ import java.util.function.Predicate;
  * </p>
  *
  * <p>
- * Each node in the cluster topology is represented by a {@link ClusterNode} interface. This interface provides information about the
+ * Each node in the cluster topology is represented by the {@link ClusterNode} interface. This interface provides information about the
  * node's {@link ClusterNode#getAddress() network address}, {@link ClusterNode#getServices() provided services}, {@link
  * ClusterNode#getRoles() roles} and {@link ClusterNode#getProperties() user-defined properties}.
  * </p>

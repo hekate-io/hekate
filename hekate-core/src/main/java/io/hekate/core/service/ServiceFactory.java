@@ -38,7 +38,7 @@ import java.util.List;
  */
 public interface ServiceFactory<T extends Service> {
     /**
-     * Constructs a new service instances with the factory configuration options.
+     * Constructs a new service instance based on the configuration options of this factory.
      *
      * @return New service instance.
      */
