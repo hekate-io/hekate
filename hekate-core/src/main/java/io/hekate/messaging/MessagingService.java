@@ -328,12 +328,6 @@ import java.util.List;
  * </p>
  *
  * <p>
- * <b>Important:</b> Failover is supported only for unicast operations (like {@link MessagingChannel#send(Object) send(...)} and {@link
- * MessagingChannel#request(Object) request(...)}). It is up to the application developers to implement failover logic for broadcast
- * operations ({@link MessagingChannel#broadcast(Object) broadcast(...)} and {@link MessagingChannel#aggregate(Object) aggregate(...)}).
- * </p>
- *
- * <p>
  * For more details and usage examples please see the documentation of {@link FailoverPolicy} interface.
  * </p>
  */

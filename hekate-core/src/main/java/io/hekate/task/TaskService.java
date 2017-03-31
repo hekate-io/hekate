@@ -215,12 +215,6 @@ import java.util.concurrent.Callable;
  * </p>
  *
  * <p>
- * <b>Important:</b> Failover is supported only for single node tasks (like {@link #run(RunnableTask) run(...)} and {@link
- * #call(CallableTask) call(...)}). It is up to the application developers to implement failover logic for broadcast
- * operations ({@link #broadcast(RunnableTask) broadcast(...)} and {@link #aggregate(CallableTask) aggregate(...)}).
- * </p>
- *
- * <p>
  * For more details and usage examples please see the documentation of {@link FailoverPolicy} interface.
  * </p>
  *
