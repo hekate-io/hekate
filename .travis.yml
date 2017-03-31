@@ -25,3 +25,6 @@ after_success:
 branches:
   except:
   - /experimental-.*/
+
+notifications:
+  slack: hekate-io:tSiGS0Suj7vrmJN0tlTXw9xn
