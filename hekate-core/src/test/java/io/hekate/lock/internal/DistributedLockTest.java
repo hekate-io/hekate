@@ -262,7 +262,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                     asyncUnlock.countDown();
 
                     // Await for unlock.
-                    async.get(3, TimeUnit.SECONDS);
+                    get(async);
 
                     assertFalse(Thread.currentThread().isInterrupted());
 
@@ -318,7 +318,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                     asyncUnlock.countDown();
 
                     // Await for unlock.
-                    async.get(3, TimeUnit.SECONDS);
+                    get(async);
 
                     assertFalse(Thread.currentThread().isInterrupted());
 
@@ -441,7 +441,7 @@ public class DistributedLockTest extends LockServiceTestBase {
 
             lockUnlock(lock);
 
-            async.get(3, TimeUnit.SECONDS);
+            get(async);
         }));
     }
 
@@ -465,7 +465,7 @@ public class DistributedLockTest extends LockServiceTestBase {
 
             lock.unlock();
 
-            async.get(3, TimeUnit.SECONDS);
+            get(async);
         }));
     }
 
@@ -490,7 +490,7 @@ public class DistributedLockTest extends LockServiceTestBase {
 
                 lockUnlock(lock);
 
-                async.get(3, TimeUnit.SECONDS);
+                get(async);
 
                 asyncUnlock.countDown();
             });
@@ -520,7 +520,7 @@ public class DistributedLockTest extends LockServiceTestBase {
 
                 lockUnlock(lock);
 
-                async.get(3, TimeUnit.SECONDS);
+                get(async);
 
                 asyncUnlock.countDown();
             });
@@ -550,7 +550,7 @@ public class DistributedLockTest extends LockServiceTestBase {
 
                 lock.unlock();
 
-                async.get(3, TimeUnit.SECONDS);
+                get(async);
 
                 asyncUnlock.countDown();
             });
@@ -592,7 +592,7 @@ public class DistributedLockTest extends LockServiceTestBase {
 
                 say("Unlocked.");
 
-                async.get(3, TimeUnit.SECONDS);
+                get(async);
 
                 asyncUnlock.countDown();
             });
@@ -626,7 +626,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                     assertEquals("Lock service is not initialized.", e.getMessage());
                 }
 
-                async.get(3, TimeUnit.SECONDS);
+                get(async);
 
                 asyncUnlock.countDown();
             });
@@ -666,7 +666,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                     assertEquals("Lock service is not initialized.", e.getMessage());
                 }
 
-                async.get(3, TimeUnit.SECONDS);
+                get(async);
 
                 asyncUnlock.countDown();
             });
@@ -905,7 +905,7 @@ public class DistributedLockTest extends LockServiceTestBase {
 
         unlockAsync.countDown();
 
-        async.get(3, TimeUnit.SECONDS);
+        get(async);
 
         if (node.getState() == Hekate.State.UP) {
             // Double check that lock can be still be acquired after task is finished.
@@ -916,7 +916,7 @@ public class DistributedLockTest extends LockServiceTestBase {
     }
 
     private void checkCanLockAsync(DistributedLock lock) throws InterruptedException, ExecutionException, TimeoutException {
-        assertTrue(runAsync(() -> {
+        assertTrue(get(runAsync(() -> {
             if (lock.tryLock()) {
                 lock.unlock();
 
@@ -924,7 +924,7 @@ public class DistributedLockTest extends LockServiceTestBase {
             }
 
             return false;
-        }).get(3, TimeUnit.SECONDS));
+        })));
     }
 
     private Future<Object> asyncStagedLock(DistributedLock lock, CountDownLatch asyncLock, CountDownLatch asyncUnlock) {

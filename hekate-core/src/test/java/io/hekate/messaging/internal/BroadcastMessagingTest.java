@@ -36,7 +36,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.junit.Test;
@@ -224,7 +223,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             awaitForChannelsTopology(channels);
 
-            BroadcastResult<String> result = channel.get().broadcast("test" + i).get(3, TimeUnit.SECONDS);
+            BroadcastResult<String> result = get(channel.get().broadcast("test" + i));
 
             assertTrue(result.toString(), result.isSuccess());
             assertTrue(result.toString(), result.getErrors().isEmpty());
@@ -247,7 +246,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             awaitForChannelsTopology(channels);
 
-            AggregateResult<String> result = channel.get().aggregate("test" + i).get(3, TimeUnit.SECONDS);
+            AggregateResult<String> result = get(channel.get().aggregate("test" + i));
 
             assertTrue(result.toString(), result.isSuccess());
             assertTrue(result.toString(), result.getErrors().isEmpty());
@@ -270,8 +269,8 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
             awaitForChannelsTopology(channels);
 
             // Empty targets.
-            BroadcastResult<String> result = channel.get().forRole("no-such-role")
-                .broadcast("test" + i).get(3, TimeUnit.SECONDS);
+            BroadcastResult<String> result = get(channel.get().forRole("no-such-role")
+                .broadcast("test" + i));
 
             assertTrue(result.toString(), result.isSuccess());
             assertTrue(result.toString(), result.getErrors().isEmpty());
@@ -295,7 +294,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             channel.get().forRole("no-such-role").broadcast("test" + i, callback);
 
-            BroadcastResult<String> result = callback.get(3, TimeUnit.SECONDS);
+            BroadcastResult<String> result = get(callback);
 
             assertTrue(result.getErrors().toString(), result.isSuccess());
             assertTrue(result.getErrors().isEmpty());
@@ -315,7 +314,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
             awaitForChannelsTopology(channels);
 
             // Empty targets.
-            AggregateResult<String> result = channel.get().forRole("no-such-role").aggregate("test" + i).get(3, TimeUnit.SECONDS);
+            AggregateResult<String> result = get(channel.get().forRole("no-such-role").aggregate("test" + i));
 
             assertTrue(result.getErrors().toString(), result.isSuccess());
             assertTrue(result.getErrors().isEmpty());
@@ -340,7 +339,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             channel.get().forRole("no-such-role").aggregate("test" + i, callback);
 
-            AggregateResult<String> result = callback.get(3, TimeUnit.SECONDS);
+            AggregateResult<String> result = get(callback);
 
             assertTrue(result.getErrors().toString(), result.isSuccess());
             assertTrue(result.getErrors().isEmpty());
@@ -356,7 +355,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
         TestChannel source = channels.get(channels.size() - 1);
 
         // Initialize connection to all nodes.
-        source.get().broadcast("test").get(3, TimeUnit.SECONDS);
+        get(source.get().broadcast("test"));
 
         repeat(channels.size() - 1, i -> {
             TestChannel target = channels.get(i);
@@ -370,7 +369,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             source.get().broadcast("test" + i, callback);
 
-            BroadcastResult<String> result = callback.get(3, TimeUnit.SECONDS);
+            BroadcastResult<String> result = get(callback);
 
             assertEquals("test" + i, result.getMessage());
             assertFalse(result.getErrors().toString(), result.isSuccess());
@@ -399,7 +398,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             channel.get().aggregate("test" + i, callback);
 
-            AggregateResult<String> result = callback.get(3, TimeUnit.SECONDS);
+            AggregateResult<String> result = get(callback);
 
             assertEquals("test" + i, result.getRequest());
             assertFalse(result.isSuccess());
@@ -430,7 +429,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
         TestChannel source = channels.get(channels.size() - 1);
 
         // Initialize connection to all nodes.
-        source.get().broadcast("test").get(3, TimeUnit.SECONDS);
+        get(source.get().broadcast("test"));
 
         repeat(channels.size() - 1, i -> {
             TestChannel target = channels.get(i);
@@ -440,7 +439,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
             // Induce failure by closing existing network connections.
             pool.getClients().forEach(c -> c.disconnect().join());
 
-            BroadcastResult<String> result = source.get().broadcast("test" + i).get(3, TimeUnit.SECONDS);
+            BroadcastResult<String> result = get(source.get().broadcast("test" + i));
 
             assertEquals("test" + i, result.getMessage());
             assertFalse(result.getErrors().toString(), result.isSuccess());
@@ -467,7 +466,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             TestChannel channel = channels.get(channels.size() - 1);
 
-            AggregateResult<String> result = channel.get().aggregate("test" + i).get(3, TimeUnit.SECONDS);
+            AggregateResult<String> result = get(channel.get().aggregate("test" + i));
 
             assertEquals("test" + i, result.getRequest());
             assertFalse(result.isSuccess());
@@ -524,7 +523,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             joinLatch.countDown();
 
-            BroadcastResult<String> joinResult = joinCallback.get(3, TimeUnit.SECONDS);
+            BroadcastResult<String> joinResult = get(joinCallback);
 
             assertTrue(joinResult.getErrors().toString(), joinResult.isSuccess());
 
@@ -569,7 +568,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             leaveLatch.countDown();
 
-            BroadcastResult<String> leaveResult = leaveCallback.get(3, TimeUnit.SECONDS);
+            BroadcastResult<String> leaveResult = get(leaveCallback);
 
             assertTrue(leaveResult.getErrors().toString(), leaveResult.isSuccess());
 
@@ -619,7 +618,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             joinLatch.countDown();
 
-            AggregateResult<String> joinResult = joinCallback.get(3, TimeUnit.SECONDS);
+            AggregateResult<String> joinResult = get(joinCallback);
 
             assertTrue(joinResult.isSuccess());
 
@@ -664,7 +663,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             leaveLatch.countDown();
 
-            AggregateResult<String> leaveResult = leaveCallback.get(3, TimeUnit.SECONDS);
+            AggregateResult<String> leaveResult = get(leaveCallback);
 
             assertTrue(leaveResult.getErrors().toString(), leaveResult.isSuccess());
 
@@ -693,7 +692,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
             channel.get().aggregate("test", callback);
 
-            AggregateResult<String> result = callback.get(3, TimeUnit.SECONDS);
+            AggregateResult<String> result = get(callback);
 
             assertEquals("test", result.getRequest());
             assertTrue(result.isSuccess());

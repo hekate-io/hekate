@@ -25,7 +25,6 @@ import io.hekate.task.MultiNodeResult;
 import io.hekate.task.TaskService;
 import java.nio.channels.ClosedChannelException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import static java.util.stream.Collectors.toList;
@@ -48,11 +47,11 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
             for (HekateTestInstance node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                MultiNodeResult<Void> result = tasks.broadcast(() -> {
+                MultiNodeResult<Void> result = get(tasks.broadcast(() -> {
                     COUNTER.incrementAndGet();
 
                     NODES.add(node.getNode());
-                }).get(3, TimeUnit.SECONDS);
+                }));
 
                 assertEquals(nodes.size(), COUNTER.get());
                 assertTrue(NODES.toString(), NODES.containsAll(nodes.stream().map(HekateInstance::getNode).collect(toList())));
@@ -78,11 +77,11 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
             for (HekateTestInstance node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                MultiNodeResult<Void> affResult = tasks.broadcast(100500, () -> {
+                MultiNodeResult<Void> affResult = get(tasks.broadcast(100500, () -> {
                     COUNTER.incrementAndGet();
 
                     NODES.add(node.getNode());
-                }).get(3, TimeUnit.SECONDS);
+                }));
 
                 assertEquals(nodes.size(), COUNTER.get());
                 assertTrue(NODES.toString(), NODES.containsAll(nodes.stream().map(HekateInstance::getNode).collect(toList())));
@@ -106,9 +105,9 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
             for (HekateTestInstance node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                MultiNodeResult<Void> errResult = tasks.broadcast(() -> {
+                MultiNodeResult<Void> errResult = get(tasks.broadcast(() -> {
                     throw TEST_ERROR;
-                }).get(3, TimeUnit.SECONDS);
+                }));
 
                 assertFalse(errResult.isSuccess());
                 assertTrue(errResult.getResults().isEmpty());
@@ -136,11 +135,11 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
             for (HekateTestInstance node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                MultiNodeResult<Void> partErrResult = tasks.broadcast(() -> {
+                MultiNodeResult<Void> partErrResult = get(tasks.broadcast(() -> {
                     if (node.get(ClusterService.class).getTopology().getYoungest().equals(node.getNode())) {
                         throw TEST_ERROR;
                     }
-                }).get(3, TimeUnit.SECONDS);
+                }));
 
                 assertFalse(partErrResult.isSuccess());
 
@@ -174,20 +173,20 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
 
         REF.set(source);
 
-        MultiNodeResult<Void> result = source.get(TaskService.class).forRemotes().broadcast(() -> {
+        MultiNodeResult<Void> result = get(source.get(TaskService.class).forRemotes().broadcast(() -> {
             try {
                 REF.get().leave();
             } catch (Exception e) {
                 throw new AssertionError(e);
             }
-        }).get(3, TimeUnit.SECONDS);
+        }));
 
         assertFalse(result.isSuccess());
         assertEquals(ClosedChannelException.class, result.getError(target.getNode()).getClass());
 
         source.awaitForStatus(Hekate.State.DOWN);
 
-        target.get(TaskService.class).forNode(target.getNode()).broadcast(() -> REF.set(target)).get(3, TimeUnit.SECONDS);
+        get(target.get(TaskService.class).forNode(target.getNode()).broadcast(() -> REF.set(target)));
 
         assertSame(target, REF.get());
     }

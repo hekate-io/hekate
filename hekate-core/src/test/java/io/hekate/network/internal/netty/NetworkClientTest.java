@@ -95,7 +95,7 @@ public class NetworkClientTest extends NetworkTestBase {
             assertSame(NetworkClient.State.DISCONNECTED, client.getState());
 
             try {
-                client.connect(new InetSocketAddress("hekate.io", 81), callback).get(3, TimeUnit.SECONDS);
+                get(client.connect(new InetSocketAddress("hekate.io", 81), callback));
 
                 fail("Error was expected");
             } catch (ExecutionException e) {
@@ -767,7 +767,7 @@ public class NetworkClientTest extends NetworkTestBase {
         NetworkClientCallbackMock<String> callback = new NetworkClientCallbackMock<>();
 
         try {
-            client.connect(server.getAddress(), callback).get(3, TimeUnit.SECONDS);
+            get(client.connect(server.getAddress(), callback));
 
             fail("Error was expected");
         } catch (ExecutionException e) {
@@ -912,7 +912,7 @@ public class NetworkClientTest extends NetworkTestBase {
                     client.send("two", messageCallback);
                     client.send("three", messageCallback);
 
-                    future.get(3, TimeUnit.SECONDS);
+                    get(future);
 
                     fail("Error was expected");
                 } catch (ExecutionException e) {

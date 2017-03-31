@@ -25,7 +25,6 @@ import io.hekate.task.TaskFutureException;
 import io.hekate.task.TaskService;
 import java.nio.channels.ClosedChannelException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
@@ -48,11 +47,11 @@ public class TaskCallTest extends TaskServiceTestBase {
             for (HekateTestInstance node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                int got = tasks.call(() -> {
+                int got = get(tasks.call(() -> {
                     NODES.add(node.getNode());
 
                     return COUNTER.incrementAndGet();
-                }).get(3, TimeUnit.SECONDS);
+                }));
 
                 assertEquals(1, got);
                 assertEquals(1, NODES.size());
@@ -73,11 +72,11 @@ public class TaskCallTest extends TaskServiceTestBase {
             for (HekateTestInstance node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                int got = tasks.call(100500, () -> {
+                int got = get(tasks.call(100500, () -> {
                     NODES.add(node.getNode());
 
                     return COUNTER.incrementAndGet();
-                }).get(3, TimeUnit.SECONDS);
+                }));
 
                 assertEquals(1, got);
                 assertEquals(1, NODES.size());
@@ -98,11 +97,11 @@ public class TaskCallTest extends TaskServiceTestBase {
             for (HekateTestInstance node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                Object mustBeNull = tasks.call(() -> {
+                Object mustBeNull = get(tasks.call(() -> {
                     COUNTER.incrementAndGet();
 
                     return null;
-                }).get(3, TimeUnit.SECONDS);
+                }));
 
                 assertNull(mustBeNull);
                 assertEquals(1, COUNTER.get());
@@ -203,11 +202,11 @@ public class TaskCallTest extends TaskServiceTestBase {
 
         source.awaitForStatus(Hekate.State.DOWN);
 
-        target.get(TaskService.class).forNode(target.getNode()).call(() -> {
+        get(target.get(TaskService.class).forNode(target.getNode()).call(() -> {
             REF.set(target);
 
             return null;
-        }).get(3, TimeUnit.SECONDS);
+        }));
 
         assertSame(target, REF.get());
     }
@@ -229,13 +228,13 @@ public class TaskCallTest extends TaskServiceTestBase {
         // Successful retry.
         assertEquals(
             "ok",
-            tasks.call(() -> {
+            get(tasks.call(() -> {
                 if (attempts.get() < 3) {
                     throw TEST_ERROR;
                 }
 
                 return "ok";
-            }).get(3, TimeUnit.SECONDS)
+            }))
         );
 
         assertEquals(3, attempts.get());
@@ -244,9 +243,9 @@ public class TaskCallTest extends TaskServiceTestBase {
 
         // Failed retry.
         try {
-            tasks.call(() -> {
+            get(tasks.call(() -> {
                 throw TEST_ERROR;
-            }).get(3, TimeUnit.SECONDS);
+            }));
 
             fail("Error was expected.");
         } catch (TaskFutureException e) {
@@ -274,13 +273,13 @@ public class TaskCallTest extends TaskServiceTestBase {
         // Successful retry.
         assertEquals(
             "ok",
-            tasks.call("some-affinity", () -> {
+            get(tasks.call("some-affinity", () -> {
                 if (attempts.get() < 3) {
                     throw TEST_ERROR;
                 }
 
                 return "ok";
-            }).get(3, TimeUnit.SECONDS)
+            }))
         );
 
         assertEquals(3, attempts.get());
@@ -289,9 +288,9 @@ public class TaskCallTest extends TaskServiceTestBase {
 
         // Failed retry.
         try {
-            tasks.call("some-affinity", () -> {
+            get(tasks.call("some-affinity", () -> {
                 throw TEST_ERROR;
-            }).get(3, TimeUnit.SECONDS);
+            }));
 
             fail("Error was expected.");
         } catch (TaskFutureException e) {
@@ -314,7 +313,7 @@ public class TaskCallTest extends TaskServiceTestBase {
 
         assertEquals(
             "ok",
-            tasks.call(() -> {
+            get(tasks.call(() -> {
                 COUNTER.incrementAndGet();
 
                 NODES.add(node.getNode());
@@ -324,7 +323,7 @@ public class TaskCallTest extends TaskServiceTestBase {
                 }
 
                 return "ok";
-            }).get(3, TimeUnit.SECONDS)
+            }))
         );
 
         assertTrue(NODES.contains(nodes.get(1).getNode()));

@@ -31,7 +31,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.junit.Assume;
 import org.junit.BeforeClass;
@@ -97,13 +96,13 @@ public class PluginJavadocTest extends HekateTestBase {
 
         Hekate n2 = new HekateBootstrap().join();
 
-        node.get(ClusterService.class).futureOf(topology -> topology.size() == 2).get(3, TimeUnit.SECONDS);
+        get(node.get(ClusterService.class).futureOf(topology -> topology.size() == 2));
 
         verifyFileContents(node);
 
         n2.leave();
 
-        node.get(ClusterService.class).futureOf(topology -> topology.size() == 1).get(3, TimeUnit.SECONDS);
+        get(node.get(ClusterService.class).futureOf(topology -> topology.size() == 1));
 
         verifyFileContents(node);
 

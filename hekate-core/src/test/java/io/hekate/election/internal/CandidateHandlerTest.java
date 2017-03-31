@@ -28,7 +28,6 @@ import io.hekate.lock.LockOwnerInfo;
 import io.hekate.lock.internal.DefaultLockOwnerInfo;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -211,7 +210,7 @@ public class CandidateHandlerTest extends HekateTestBase {
         assertTrue(future.isDone());
         assertEquals(localNode, future.get());
         assertEquals(localNode, future.getUninterruptedly());
-        assertEquals(localNode, future.get(3, TimeUnit.SECONDS));
+        assertEquals(localNode, get(future));
     }
 
     @Test
@@ -256,10 +255,10 @@ public class CandidateHandlerTest extends HekateTestBase {
 
         expect(CancellationException.class, before::get);
         expect(CancellationException.class, before::getUninterruptedly);
-        expect(CancellationException.class, () -> before.get(3, TimeUnit.SECONDS));
+        expect(CancellationException.class, () -> get(before));
         expect(CancellationException.class, after::get);
         expect(CancellationException.class, after::getUninterruptedly);
-        expect(CancellationException.class, () -> after.get(3, TimeUnit.SECONDS));
+        expect(CancellationException.class, () -> get(after));
     }
 
     @Test

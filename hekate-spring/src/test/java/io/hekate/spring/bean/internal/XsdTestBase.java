@@ -49,8 +49,8 @@ public abstract class XsdTestBase extends HekateTestBase {
         assertNotNull(node1);
         assertNotNull(node2);
 
-        node1.get(ClusterService.class).futureOf(top -> top.size() == 2).get(3, TimeUnit.SECONDS);
-        node2.get(ClusterService.class).futureOf(top -> top.size() == 2).get(3, TimeUnit.SECONDS);
+        get(node1.get(ClusterService.class).futureOf(top -> top.size() == 2));
+        get(node2.get(ClusterService.class).futureOf(top -> top.size() == 2));
 
         ClusterTopology top1 = node1.get(ClusterService.class).getTopology();
         ClusterTopology top2 = node2.get(ClusterService.class).getTopology();

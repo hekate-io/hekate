@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -237,7 +236,7 @@ public class ClusterServiceSingleNodeTest extends HekateInstanceContextTestBase 
             );
 
             // Try join.
-            assertSame(State.UP, instance.joinAsync().get(3, TimeUnit.SECONDS).getState());
+            assertSame(State.UP, get(instance.joinAsync()).getState());
         } finally {
             seedStopped.set(true);
 
@@ -248,7 +247,7 @@ public class ClusterServiceSingleNodeTest extends HekateInstanceContextTestBase 
                 // Ignore.
             }
 
-            seedFuture.get(3, TimeUnit.SECONDS);
+            get(seedFuture);
         }
     }
 
@@ -293,9 +292,9 @@ public class ClusterServiceSingleNodeTest extends HekateInstanceContextTestBase 
 
             await(hangLatch);
 
-            assertNotNull(instance.leaveAsync().get(3, TimeUnit.SECONDS));
+            assertNotNull(get(instance.leaveAsync()));
 
-            assertNotNull(joinFuture.get().get(3, TimeUnit.SECONDS));
+            assertNotNull(get(joinFuture.get()));
 
             assertNull(error.get());
             assertNotNull(registered.get());
@@ -345,9 +344,9 @@ public class ClusterServiceSingleNodeTest extends HekateInstanceContextTestBase 
 
             await(hangLatch);
 
-            assertNotNull(instance.terminateAsync().get(3, TimeUnit.SECONDS));
+            assertNotNull(get(instance.terminateAsync()));
 
-            assertNotNull(joinFuture.get().get(3, TimeUnit.SECONDS));
+            assertNotNull(get(joinFuture.get()));
 
             assertNull(error.get());
             assertNotNull(registered.get());

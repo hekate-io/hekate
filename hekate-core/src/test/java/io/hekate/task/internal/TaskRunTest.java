@@ -25,7 +25,6 @@ import io.hekate.task.TaskFutureException;
 import io.hekate.task.TaskService;
 import java.nio.channels.ClosedChannelException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
@@ -53,7 +52,7 @@ public class TaskRunTest extends TaskServiceTestBase {
                     COUNTER.incrementAndGet();
                 });
 
-                future.get(3, TimeUnit.SECONDS);
+                get(future);
                 future.get();
                 future.getUninterruptedly();
 
@@ -76,11 +75,11 @@ public class TaskRunTest extends TaskServiceTestBase {
             for (HekateTestInstance node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                tasks.run(100500, () -> {
+                get(tasks.run(100500, () -> {
                     NODES.add(node.getNode());
 
                     COUNTER.incrementAndGet();
-                }).get(3, TimeUnit.SECONDS);
+                }));
 
                 assertEquals(1, COUNTER.get());
                 assertEquals(1, NODES.size());
@@ -158,7 +157,7 @@ public class TaskRunTest extends TaskServiceTestBase {
 
         source.awaitForStatus(Hekate.State.DOWN);
 
-        target.get(TaskService.class).forNode(target.getNode()).run(() -> REF.set(target)).get(3, TimeUnit.SECONDS);
+        get(target.get(TaskService.class).forNode(target.getNode()).run(() -> REF.set(target)));
 
         assertSame(target, REF.get());
     }
@@ -178,11 +177,11 @@ public class TaskRunTest extends TaskServiceTestBase {
         });
 
         // Successful retry.
-        tasks.run(() -> {
+        get(tasks.run(() -> {
             if (attempts.get() < 3) {
                 throw TEST_ERROR;
             }
-        }).get(3, TimeUnit.SECONDS);
+        }));
 
         assertEquals(3, attempts.get());
 
@@ -190,9 +189,9 @@ public class TaskRunTest extends TaskServiceTestBase {
 
         // Failed retry.
         try {
-            tasks.run(() -> {
+            get(tasks.run(() -> {
                 throw TEST_ERROR;
-            }).get(3, TimeUnit.SECONDS);
+            }));
 
             fail("Error was expected.");
         } catch (TaskFutureException e) {
@@ -218,11 +217,11 @@ public class TaskRunTest extends TaskServiceTestBase {
         });
 
         // Successful retry.
-        tasks.run("some-affinity", () -> {
+        get(tasks.run("some-affinity", () -> {
             if (attempts.get() < 3) {
                 throw TEST_ERROR;
             }
-        }).get(3, TimeUnit.SECONDS);
+        }));
 
         assertEquals(3, attempts.get());
 
@@ -230,9 +229,9 @@ public class TaskRunTest extends TaskServiceTestBase {
 
         // Failed retry.
         try {
-            tasks.run("some-affinity", () -> {
+            get(tasks.run("some-affinity", () -> {
                 throw TEST_ERROR;
-            }).get(3, TimeUnit.SECONDS);
+            }));
 
             fail("Error was expected.");
         } catch (TaskFutureException e) {
@@ -253,7 +252,7 @@ public class TaskRunTest extends TaskServiceTestBase {
             ctx.retry().withReRoute()
         );
 
-        tasks.run(() -> {
+        get(tasks.run(() -> {
             COUNTER.incrementAndGet();
 
             NODES.add(node.getNode());
@@ -261,7 +260,7 @@ public class TaskRunTest extends TaskServiceTestBase {
             if (NODES.size() < 2) {
                 throw TEST_ERROR;
             }
-        }).get(3, TimeUnit.SECONDS);
+        }));
 
         assertTrue(NODES.contains(nodes.get(1).getNode()));
         assertTrue(NODES.contains(nodes.get(2).getNode()));

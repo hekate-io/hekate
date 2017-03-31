@@ -28,7 +28,6 @@ import io.hekate.network.internal.NetworkServerHandlerMock;
 import io.hekate.network.internal.NetworkTestBase;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -54,7 +53,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
         NetworkClient<String> client = createClient();
 
         repeat(3, i -> {
-            client.connect(server.getAddress(), new NetworkClientCallbackMock<>()).get(3, TimeUnit.SECONDS);
+            get(client.connect(server.getAddress(), new NetworkClientCallbackMock<>()));
 
             // Await for server endpoint to be initialized.
             busyWait("server endpoint", () -> !server.getConnected(client.getProtocol()).isEmpty());
@@ -90,8 +89,8 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
                 receiver.reset();
             });
 
-            client.disconnect().get(3, TimeUnit.SECONDS);
-            remote.disconnect().get(3, TimeUnit.SECONDS);
+            get(client.disconnect());
+            get(remote.disconnect());
 
             // Check that pause/resume after disconnect doesn't cause errors.
             doPause(remote);
@@ -108,7 +107,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
         NetworkClient<String> client = createClient();
 
         repeat(3, i -> {
-            client.connect(server.getAddress(), new NetworkClientCallbackMock<>()).get(3, TimeUnit.SECONDS);
+            get(client.connect(server.getAddress(), new NetworkClientCallbackMock<>()));
 
             // Await for server endpoint to be initialized.
             busyWait("server endpoint connect", () -> !server.getConnected(client.getProtocol()).isEmpty());
@@ -117,7 +116,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
 
             pause(remote);
 
-            client.disconnect().get(3, TimeUnit.SECONDS);
+            get(client.disconnect());
 
             // Await for server endpoint to be disconnected.
             busyWait("server endpoint disconnect", () -> server.getConnected(client.getProtocol()).isEmpty());
@@ -133,7 +132,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
         NetworkClient<String> client = createClient();
 
         repeat(3, i -> {
-            client.connect(server.getAddress(), new NetworkClientCallbackMock<>()).get(3, TimeUnit.SECONDS);
+            get(client.connect(server.getAddress(), new NetworkClientCallbackMock<>()));
 
             // Await for server endpoint to be initialized.
             busyWait("server endpoint connect", () -> !server.getConnected(client.getProtocol()).isEmpty());
@@ -143,7 +142,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
             pause(client);
             pause(remote);
 
-            client.disconnect().get(3, TimeUnit.SECONDS);
+            get(client.disconnect());
 
             // Await for server endpoint to be disconnected.
             busyWait("server endpoint disconnect", () -> server.getConnected(client.getProtocol()).isEmpty());
@@ -159,7 +158,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
         NetworkClient<String> client = createClient();
 
         repeat(3, i -> {
-            client.connect(server.getAddress(), new NetworkClientCallbackMock<>()).get(3, TimeUnit.SECONDS);
+            get(client.connect(server.getAddress(), new NetworkClientCallbackMock<>()));
 
             // Await for server endpoint to be initialized.
             busyWait("server endpoint connect", () -> !server.getConnected(client.getProtocol()).isEmpty());
@@ -168,7 +167,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
 
             pause(remote);
 
-            remote.disconnect().get(3, TimeUnit.SECONDS);
+            get(remote.disconnect());
 
             // Await for client to be disconnected.
             busyWait("client disconnect", () -> client.getState() == NetworkClient.State.DISCONNECTED);
@@ -184,7 +183,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
         NetworkClient<String> client = createClient();
 
         repeat(3, i -> {
-            client.connect(server.getAddress(), new NetworkClientCallbackMock<>()).get(3, TimeUnit.SECONDS);
+            get(client.connect(server.getAddress(), new NetworkClientCallbackMock<>()));
 
             // Await for server endpoint to be initialized.
             busyWait("server endpoint connect", () -> !server.getConnected(client.getProtocol()).isEmpty());
@@ -193,7 +192,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
 
             pause(client);
 
-            remote.disconnect().get(3, TimeUnit.SECONDS);
+            get(remote.disconnect());
 
             // Await for client to be disconnected.
             busyWait("client disconnect", () -> client.getState() == NetworkClient.State.DISCONNECTED);
@@ -209,7 +208,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
         NetworkClient<String> client = createClient();
 
         repeat(3, i -> {
-            client.connect(server.getAddress(), new NetworkClientCallbackMock<>()).get(3, TimeUnit.SECONDS);
+            get(client.connect(server.getAddress(), new NetworkClientCallbackMock<>()));
 
             // Await for server endpoint to be initialized.
             busyWait("server endpoint connect", () -> !server.getConnected(client.getProtocol()).isEmpty());
@@ -219,7 +218,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
             pause(remote);
             pause(client);
 
-            remote.disconnect().get(3, TimeUnit.SECONDS);
+            get(remote.disconnect());
 
             // Await for client to be disconnected.
             busyWait("client disconnect", () -> client.getState() == NetworkClient.State.DISCONNECTED);
@@ -235,14 +234,14 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
         NetworkClient<String> client = createClient();
 
         repeat(3, i -> {
-            client.connect(server.getAddress(), new NetworkClientCallbackMock<>()).get(3, TimeUnit.SECONDS);
+            get(client.connect(server.getAddress(), new NetworkClientCallbackMock<>()));
 
             // Await for server endpoint to be initialized.
             busyWait("server endpoint connect", () -> !server.getConnected(client.getProtocol()).isEmpty());
 
             pause(client);
 
-            client.disconnect().get(3, TimeUnit.SECONDS);
+            get(client.disconnect());
 
             // Await for server endpoint to be disconnected.
             busyWait("server endpoint disconnect", () -> server.getConnected(client.getProtocol()).isEmpty());
@@ -262,7 +261,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
         repeat(3, i -> {
             NetworkClientCallbackMock<String> clientCallback = new NetworkClientCallbackMock<>();
 
-            client.connect(server.getAddress(), clientCallback).get(3, TimeUnit.SECONDS);
+            get(client.connect(server.getAddress(), clientCallback));
 
             // Await for server endpoint to be initialized.
             busyWait("server endpoint", () -> !server.getConnected(client.getProtocol()).isEmpty());
@@ -299,7 +298,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
                 clientCallback.reset();
             });
 
-            client.disconnect().get(3, TimeUnit.SECONDS);
+            get(client.disconnect());
 
             // Check that pause/resume after disconnect doesn't cause errors.
             doPause(client);

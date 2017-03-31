@@ -21,7 +21,6 @@ import io.hekate.core.HekateTestInstance;
 import io.hekate.failover.FailoverContext;
 import io.hekate.task.TaskService;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -43,35 +42,35 @@ public class TaskServiceTest extends TaskServiceTestBase {
 
         assertTrue(tasks.toString(), tasks.toString().startsWith(TaskService.class.getSimpleName()));
 
-        assertEquals(second.getNode(), tasks.forRemotes().call(() -> {
+        assertEquals(second.getNode(), get(tasks.forRemotes().call(() -> {
             say(first.getNode());
 
             return first.getNode();
-        }).get(3, TimeUnit.SECONDS));
+        })));
 
-        assertEquals(second.getNode(), tasks.forRemotes().withFailover(FailoverContext::fail).call(() -> {
+        assertEquals(second.getNode(), get(tasks.forRemotes().withFailover(FailoverContext::fail).call(() -> {
             say(first.getNode());
 
             return first.getNode();
-        }).get(3, TimeUnit.SECONDS));
+        })));
 
-        assertEquals(second.getNode(), tasks.forNode(second.getNode()).call(() -> {
+        assertEquals(second.getNode(), get(tasks.forNode(second.getNode()).call(() -> {
             say(second.getNode());
 
             return second.getNode();
-        }).get(3, TimeUnit.SECONDS));
+        })));
 
-        assertEquals(second.getNode(), tasks.forNode(second.getNode().getId()).call(() -> {
+        assertEquals(second.getNode(), get(tasks.forNode(second.getNode().getId()).call(() -> {
             say(second.getNode());
 
             return second.getNode();
-        }).get(3, TimeUnit.SECONDS));
+        })));
 
-        assertEquals(second.getNode(), tasks.filter(n -> n.equals(second.getNode())).call(() -> {
+        assertEquals(second.getNode(), get(tasks.filter(n -> n.equals(second.getNode())).call(() -> {
             say(second.getNode());
 
             return second.getNode();
-        }).get(3, TimeUnit.SECONDS));
+        })));
 
         TaskService filtered = tasks.forRemotes();
 

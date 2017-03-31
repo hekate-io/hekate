@@ -34,6 +34,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -113,7 +114,7 @@ public class InfluxDbMetricsPublisherTest extends InfluxDbMetricsTestBase {
 
             publisher.start("test" + i, "test-host" + i, 10002);
 
-            publisher.publish(single("test", i)).get(3, TimeUnit.SECONDS);
+            get(publisher.publish(single("test", i)));
 
             publisher.stop();
 
@@ -126,15 +127,15 @@ public class InfluxDbMetricsPublisherTest extends InfluxDbMetricsTestBase {
         publisher.start("test", "test-host", 10002);
 
         repeat(3, i -> {
-            publisher.publish(single("test.metric", 100 + i)).get(3, TimeUnit.SECONDS);
+            get(publisher.publish(single("test.metric", 100 + i)));
 
             assertLatestValue("test.metric", 100 + i);
 
-            publisher.publish(single("test.metric with   spaces", 100 + i)).get(3, TimeUnit.SECONDS);
+            get(publisher.publish(single("test.metric with   spaces", 100 + i)));
 
             assertLatestValue("test.metric_with___spaces", 100 + i);
 
-            publisher.publish(single(" test ^ &&$metric with  _,@@signs ", 100 + i)).get(3, TimeUnit.SECONDS);
+            get(publisher.publish(single(" test ^ &&$metric with  _,@@signs ", 100 + i)));
 
             assertLatestValue("test______metric_with______signs", 100 + i);
         });
@@ -147,12 +148,12 @@ public class InfluxDbMetricsPublisherTest extends InfluxDbMetricsTestBase {
         publisher.start("test", "test-host", 10002);
 
         repeat(3, i -> {
-            publisher.publish(Arrays.asList(
+            get(publisher.publish(asList(
                 metric("test.metric1", 100 + i),
                 metric("test.metric2", 1000 + i),
                 metric("test.metric3", 10000 + i),
                 metric("test.metric4", 100000 + i)
-            )).get(3, TimeUnit.SECONDS);
+            )));
 
             assertLatestValue("test.metric1", 100 + i);
             assertLatestValue("test.metric2", 1000 + i);
@@ -264,7 +265,7 @@ public class InfluxDbMetricsPublisherTest extends InfluxDbMetricsTestBase {
         publisher.start("test", "test-host", 10002);
 
         try {
-            publisher.publish(single("test.metric", 10)).get(3, TimeUnit.SECONDS);
+            get(publisher.publish(single("test.metric", 10)));
         } catch (ExecutionException e) {
             assertSame(TEST_ERROR, e.getCause());
         }
@@ -276,19 +277,19 @@ public class InfluxDbMetricsPublisherTest extends InfluxDbMetricsTestBase {
     public void testErrorRecover() throws Exception {
         publisher.start("test", "test-host", 10002);
 
-        publisher.publish(single("test", 1)).get(3, TimeUnit.SECONDS);
+        get(publisher.publish(single("test", 1)));
 
         assertLatestValue("test", 1);
 
         influxDb.deleteDatabase(database);
 
         expect(ExecutionException.class, "database not found: \\\"" + database + "\\\"", () ->
-            publisher.publish(single("test", 2)).get(3, TimeUnit.SECONDS)
+            get(publisher.publish(single("test", 2)))
         );
 
         influxDb.createDatabase(database);
 
-        publisher.publish(single("test", 3)).get(3, TimeUnit.SECONDS);
+        get(publisher.publish(single("test", 3)));
     }
 
     @Test

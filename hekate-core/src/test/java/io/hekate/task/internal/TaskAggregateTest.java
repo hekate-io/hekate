@@ -25,7 +25,6 @@ import io.hekate.task.MultiNodeResult;
 import io.hekate.task.TaskService;
 import java.nio.channels.ClosedChannelException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import static java.util.stream.Collectors.toList;
@@ -48,13 +47,13 @@ public class TaskAggregateTest extends TaskServiceTestBase {
             for (HekateTestInstance node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                MultiNodeResult<Integer> result = tasks.aggregate(() -> {
+                MultiNodeResult<Integer> result = get(tasks.aggregate(() -> {
                     int intResult = COUNTER.incrementAndGet();
 
                     NODES.add(node.getNode());
 
                     return intResult;
-                }).get(3, TimeUnit.SECONDS);
+                }));
 
                 List<Integer> sorted = result.getResults().values().stream().sorted().collect(toList());
 
@@ -86,13 +85,13 @@ public class TaskAggregateTest extends TaskServiceTestBase {
             for (HekateTestInstance node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                MultiNodeResult<Integer> affResult = tasks.aggregate(100500, () -> {
+                MultiNodeResult<Integer> affResult = get(tasks.aggregate(100500, () -> {
                     int intResult = COUNTER.incrementAndGet();
 
                     NODES.add(node.getNode());
 
                     return intResult;
-                }).get(3, TimeUnit.SECONDS);
+                }));
 
                 List<Integer> affSorted = affResult.getResults().values().stream().sorted().collect(toList());
 
@@ -124,9 +123,9 @@ public class TaskAggregateTest extends TaskServiceTestBase {
             for (HekateTestInstance node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                MultiNodeResult<?> errResult = tasks.aggregate(() -> {
+                MultiNodeResult<?> errResult = get(tasks.aggregate(() -> {
                     throw TEST_ERROR;
-                }).get(3, TimeUnit.SECONDS);
+                }));
 
                 assertFalse(errResult.isSuccess());
                 assertTrue(errResult.getResults().isEmpty());
@@ -154,13 +153,13 @@ public class TaskAggregateTest extends TaskServiceTestBase {
             for (HekateTestInstance node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                MultiNodeResult<Integer> partErrResult = tasks.aggregate(() -> {
+                MultiNodeResult<Integer> partErrResult = get(tasks.aggregate(() -> {
                     if (node.get(ClusterService.class).getTopology().getYoungest().equals(node.getNode())) {
                         throw TEST_ERROR;
                     }
 
                     return COUNTER.incrementAndGet();
-                }).get(3, TimeUnit.SECONDS);
+                }));
 
                 assertFalse(partErrResult.isSuccess());
 
@@ -195,7 +194,7 @@ public class TaskAggregateTest extends TaskServiceTestBase {
 
         REF.set(source);
 
-        MultiNodeResult<Object> result = source.get(TaskService.class).forRemotes().aggregate(() -> {
+        MultiNodeResult<Object> result = get(source.get(TaskService.class).forRemotes().aggregate(() -> {
             try {
                 REF.get().leave();
             } catch (InterruptedException e) {
@@ -203,18 +202,18 @@ public class TaskAggregateTest extends TaskServiceTestBase {
             }
 
             return null;
-        }).get(3, TimeUnit.SECONDS);
+        }));
 
         assertFalse(result.isSuccess());
         assertEquals(ClosedChannelException.class, result.getError(target.getNode()).getClass());
 
         source.awaitForStatus(Hekate.State.DOWN);
 
-        target.get(TaskService.class).forNode(target.getNode()).aggregate(() -> {
+        get(target.get(TaskService.class).forNode(target.getNode()).aggregate(() -> {
             REF.set(target);
 
             return null;
-        }).get(3, TimeUnit.SECONDS);
+        }));
 
         assertSame(target, REF.get());
     }

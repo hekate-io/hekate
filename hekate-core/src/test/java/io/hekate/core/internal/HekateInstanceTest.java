@@ -37,9 +37,10 @@ import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
+import static io.hekate.core.Hekate.State.DOWN;
+import static io.hekate.core.Hekate.State.UP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -164,7 +165,7 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
                 instance.getClusterGuard().unlockWrite();
             }
 
-            assertNotNull(leave.get(3, TimeUnit.SECONDS));
+            assertNotNull(get(leave));
         });
     }
 
@@ -307,27 +308,27 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
         repeat(5, i -> {
             JoinFuture joinFuture = instance.joinAsync();
 
-            joinFuture.thenAccept(joined -> {
+            get(joinFuture.thenAccept(joined -> {
                 assertNotNull(joined);
 
                 assertTrue(joinFuture.isSuccess());
                 assertTrue(joinFuture.isDone());
 
                 assertNotNull(joined.getNode());
-                assertSame(Hekate.State.UP, joined.getState());
+                assertSame(UP, joined.getState());
 
                 ClusterTopology topology = joined.get(ClusterService.class).getTopology();
 
                 assertNotNull(topology);
                 assertEquals(1, topology.getNodes().size());
                 assertTrue(topology.contains(joined.getNode()));
-            }).get(3, TimeUnit.SECONDS);
+            }));
 
             LeaveFuture leaveFuture = instance.leaveAsync();
 
-            leaveFuture.thenAccept(left ->
-                assertSame(Hekate.State.DOWN, left.getState())
-            ).get(3, TimeUnit.SECONDS);
+            get(leaveFuture.thenAccept(left ->
+                assertSame(DOWN, left.getState())
+            ));
         });
     }
 
@@ -336,27 +337,27 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
         repeat(5, i -> {
             JoinFuture joinFuture = instance.joinAsync();
 
-            joinFuture.thenAccept(joined -> {
+            get(joinFuture.thenAccept(joined -> {
                 assertNotNull(joined);
 
                 assertTrue(joinFuture.isSuccess());
                 assertTrue(joinFuture.isDone());
 
                 assertNotNull(joined.getNode());
-                assertSame(Hekate.State.UP, joined.getState());
+                assertSame(UP, joined.getState());
 
                 ClusterTopology topology = joined.get(ClusterService.class).getTopology();
 
                 assertNotNull(topology);
                 assertEquals(1, topology.getNodes().size());
                 assertTrue(topology.contains(joined.getNode()));
-            }).get(3, TimeUnit.SECONDS);
+            }));
 
             TerminateFuture terminateFuture = instance.terminateAsync();
 
-            terminateFuture.thenAccept(left ->
-                assertSame(Hekate.State.DOWN, left.getState())
-            ).get(3, TimeUnit.SECONDS);
+            get(terminateFuture.thenAccept(left ->
+                assertSame(DOWN, left.getState())
+            ));
         });
     }
 
@@ -365,13 +366,13 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
         repeat(5, i -> {
             JoinFuture joinFuture = instance.joinAsync();
 
-            joinFuture.thenApply(joined -> {
+            get(get(joinFuture.thenApply(joined -> {
                 try {
                     return joined.leaveAsync();
                 } catch (Exception e) {
                     throw new AssertionError(e);
                 }
-            }).get(3, TimeUnit.SECONDS).get(3, TimeUnit.SECONDS);
+            })));
 
             assertSame(Hekate.State.DOWN, joinFuture.get().getState());
         });
@@ -384,7 +385,7 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
 
             LeaveFuture leaveFuture = instance.leaveAsync();
 
-            leaveFuture.thenApply(Hekate::joinAsync).get(3, TimeUnit.SECONDS).get(3, TimeUnit.SECONDS);
+            get(get(leaveFuture.thenApply(Hekate::joinAsync)));
 
             assertSame(Hekate.State.UP, leaveFuture.get().getState());
 
@@ -399,7 +400,7 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
 
             TerminateFuture terminateFuture = instance.terminateAsync();
 
-            terminateFuture.thenApply(Hekate::joinAsync).get(3, TimeUnit.SECONDS).get(3, TimeUnit.SECONDS);
+            get(get(terminateFuture.thenApply(Hekate::joinAsync)));
 
             assertSame(Hekate.State.UP, terminateFuture.get().getState());
 

@@ -98,7 +98,7 @@ public class StatsdMetricsTestBase extends HekateInstanceTestBase {
     public void tearDown() throws Exception {
         udp.close();
 
-        udpFuture.get(3, TimeUnit.SECONDS);
+        get(udpFuture);
 
         super.tearDown();
     }

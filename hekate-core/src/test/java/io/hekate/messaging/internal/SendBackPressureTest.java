@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.junit.Test;
 
+import static java.lang.Thread.currentThread;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -61,7 +62,7 @@ public class SendBackPressureTest extends HekateTestBase {
                 backPressure.onDequeue();
             }
 
-            assertNull(future.get(3, TimeUnit.SECONDS));
+            assertNull(get(future));
 
             assertEquals(5, backPressure.getQueueSize());
 
@@ -101,13 +102,13 @@ public class SendBackPressureTest extends HekateTestBase {
 
             for (int j = 0; j < 10; j++) {
                 try {
-                    runAsync(() -> {
-                        Thread.currentThread().interrupt();
+                    get(runAsync(() -> {
+                        currentThread().interrupt();
 
                         backPressure.onEnqueue();
 
                         return null;
-                    }).get(3, TimeUnit.SECONDS);
+                    }));
 
                     fail("Error was expected.");
                 } catch (ExecutionException err) {
@@ -154,7 +155,7 @@ public class SendBackPressureTest extends HekateTestBase {
                 backPressure.onDequeue();
             }
 
-            assertNull(future.get(3, TimeUnit.SECONDS));
+            assertNull(get(future));
 
             assertEquals(5, backPressure.getQueueSize());
 
@@ -222,9 +223,9 @@ public class SendBackPressureTest extends HekateTestBase {
             assertEquals(10, backPressure.getQueueSize());
 
             try {
-                runAsync(() ->
+                get(runAsync(() ->
                     backPressure.onEnqueue(10, "test")
-                ).get(3, TimeUnit.SECONDS);
+                ));
 
                 fail("Error was expected");
             } catch (ExecutionException e) {
@@ -251,7 +252,7 @@ public class SendBackPressureTest extends HekateTestBase {
                 backPressure.onDequeue();
             }
 
-            long remaining = future.get(3, TimeUnit.SECONDS);
+            long remaining = get(future);
 
             assertTrue("remaining:" + remaining, remaining > 0);
             assertTrue("remaining:" + remaining, remaining <= 250);
@@ -278,6 +279,6 @@ public class SendBackPressureTest extends HekateTestBase {
 
         backPressure.terminate();
 
-        assertNull(async.get(3, TimeUnit.SECONDS));
+        assertNull(get(async));
     }
 }

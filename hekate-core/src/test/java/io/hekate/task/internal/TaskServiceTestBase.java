@@ -28,7 +28,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -79,7 +78,7 @@ public abstract class TaskServiceTestBase extends HekateInstanceContextTestBase 
 
     protected void assertErrorCausedBy(HekateFuture future, Class<? extends Throwable> type, Consumer<Throwable> check)
         throws Exception {
-        doAssertErrorCausedBy(type, check, () -> future.get(3, TimeUnit.SECONDS));
+        doAssertErrorCausedBy(type, check, () -> get(future));
         doAssertErrorCausedBy(type, check, future::get);
         doAssertErrorCausedBy(type, check, future::getUninterruptedly);
     }

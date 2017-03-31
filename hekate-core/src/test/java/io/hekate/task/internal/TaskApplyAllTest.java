@@ -33,10 +33,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -69,9 +69,9 @@ public class TaskApplyAllTest extends TaskServiceTestBase {
                     }
 
                     // Apply.
-                    Collection<String> results = tasks.applyAll(args, arg ->
+                    Collection<String> results = get(tasks.applyAll(args, arg ->
                         node.getNode().getName() + '=' + arg
-                    ).get(3, TimeUnit.SECONDS);
+                    ));
 
                     say("Results: " + results);
 
@@ -111,7 +111,7 @@ public class TaskApplyAllTest extends TaskServiceTestBase {
             for (HekateTestInstance node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                Collection<Object> allNulls = tasks.applyAll(Arrays.asList(1, 2, 3), arg -> null).get(3, TimeUnit.SECONDS);
+                Collection<Object> allNulls = get(tasks.applyAll(asList(1, 2, 3), arg -> null));
 
                 assertNotNull(allNulls);
                 assertEquals(3, allNulls.size());
@@ -273,11 +273,11 @@ public class TaskApplyAllTest extends TaskServiceTestBase {
 
         source.awaitForStatus(Hekate.State.DOWN);
 
-        target.get(TaskService.class).forNode(target.getNode()).applyAll(Arrays.asList(1, 2, 3), arg -> {
+        get(target.get(TaskService.class).forNode(target.getNode()).applyAll(asList(1, 2, 3), arg -> {
             REF.set(target);
 
             return null;
-        }).get(3, TimeUnit.SECONDS);
+        }));
 
         assertSame(target, REF.get());
     }
@@ -304,7 +304,7 @@ public class TaskApplyAllTest extends TaskServiceTestBase {
                     }
                 });
 
-                future.get(3, TimeUnit.SECONDS).containsAll(Arrays.asList(1, 2, 3));
+                get(future).containsAll(Arrays.asList(1, 2, 3));
 
                 assertTrue(attempts.get() > 0);
             }

@@ -16,11 +16,11 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.HekateTestBase;
 import io.hekate.messaging.unicast.Reply;
 import io.hekate.messaging.unicast.RequestCallback;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 
@@ -35,7 +35,7 @@ public class RequestCallbackMock implements RequestCallback<String> {
 
     public Reply<String> get() throws Exception {
         try {
-            return latch.get(3, TimeUnit.SECONDS);
+            return HekateTestBase.get(latch);
         } catch (ExecutionException e) {
             Throwable error = e.getCause();
 

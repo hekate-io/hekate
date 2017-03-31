@@ -23,7 +23,6 @@ import io.hekate.network.NetworkConnectorConfig;
 import io.hekate.network.NetworkService;
 import io.hekate.network.NetworkServiceFactory;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
@@ -62,14 +61,14 @@ public class NetworkServiceInstanceTest extends HekateInstanceTestBase {
 
             NetworkClient<String> client = sender.get(NetworkService.class).<String>connector("test").newClient();
 
-            client.connect(receiver.getSocketAddress(), (message, self) ->
+            get(client.connect(receiver.getSocketAddress(), (message, self) ->
                 response.complete(message.decode())
-            ).get(3, TimeUnit.SECONDS);
+            ));
 
             client.send("request" + i);
 
-            assertEquals("request" + i, requestRef.get().get(3, TimeUnit.SECONDS));
-            assertEquals("request" + i + "-response", response.get(3, TimeUnit.SECONDS));
+            assertEquals("request" + i, get(requestRef.get()));
+            assertEquals("request" + i + "-response", get(response));
 
             sender.leave();
             receiver.leave();

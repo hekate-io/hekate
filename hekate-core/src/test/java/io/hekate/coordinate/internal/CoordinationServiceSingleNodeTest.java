@@ -23,7 +23,6 @@ import io.hekate.coordinate.CoordinationProcess;
 import io.hekate.coordinate.CoordinationProcessConfig;
 import io.hekate.coordinate.CoordinationService;
 import io.hekate.coordinate.CoordinationServiceFactory;
-import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -78,7 +77,7 @@ public class CoordinationServiceSingleNodeTest extends HekateInstanceTestBase {
         assertTrue(coordination.allProcesses().contains(process1));
         assertTrue(coordination.allProcesses().contains(process1));
 
-        process1.getFuture().get(3, TimeUnit.SECONDS);
-        process2.getFuture().get(3, TimeUnit.SECONDS);
+        get(process1.getFuture());
+        get(process2.getFuture());
     }
 }

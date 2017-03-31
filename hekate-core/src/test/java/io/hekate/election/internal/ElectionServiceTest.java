@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -73,13 +72,13 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
         CandidateMock candidate = getCandidate(node);
 
         for (int i = 0; i < 3; i++) {
-            assertEquals(node.getNode(), node.get(ElectionService.class).leader(GROUP).get(3, TimeUnit.SECONDS));
+            assertEquals(node.getNode(), get(node.get(ElectionService.class).leader(GROUP)));
 
             candidate.yieldLeadership();
 
             candidate.awaitForBecomeLeader();
 
-            assertEquals(node.getNode(), node.get(ElectionService.class).leader(GROUP).get(3, TimeUnit.SECONDS));
+            assertEquals(node.getNode(), get(node.get(ElectionService.class).leader(GROUP)));
         }
     }
 
@@ -88,7 +87,7 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
         // Start leader.
         HekateTestInstance node1 = createInstanceWithElection().join();
 
-        node1.get(ElectionService.class).leader(GROUP).get(3, TimeUnit.SECONDS);
+        get(node1.get(ElectionService.class).leader(GROUP));
 
         // Start follower.
         HekateTestInstance node2 = createInstanceWithElection().join();
@@ -97,8 +96,8 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
             say("Iteration: " + i);
 
             // Make sure that node1 is the leader.
-            assertEquals(node1.getNode(), node1.get(ElectionService.class).leader(GROUP).get(3, TimeUnit.SECONDS));
-            assertEquals(node1.getNode(), node2.get(ElectionService.class).leader(GROUP).get(3, TimeUnit.SECONDS));
+            assertEquals(node1.getNode(), get(node1.get(ElectionService.class).leader(GROUP)));
+            assertEquals(node1.getNode(), get(node2.get(ElectionService.class).leader(GROUP)));
 
             CandidateMock candidate1 = getCandidate(node1);
             CandidateMock candidate2 = getCandidate(node2);
@@ -131,14 +130,14 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
             // Start leader.
             HekateTestInstance node1 = createInstanceWithElection().join();
 
-            node1.get(ElectionService.class).leader(GROUP).get(3, TimeUnit.SECONDS);
+            get(node1.get(ElectionService.class).leader(GROUP));
 
             // Start follower.
             HekateTestInstance node2 = createInstanceWithElection().join();
 
             // Make sure that node1 is the leader.
-            assertEquals(node1.getNode(), node1.get(ElectionService.class).leader(GROUP).get(3, TimeUnit.SECONDS));
-            assertEquals(node1.getNode(), node2.get(ElectionService.class).leader(GROUP).get(3, TimeUnit.SECONDS));
+            assertEquals(node1.getNode(), get(node1.get(ElectionService.class).leader(GROUP)));
+            assertEquals(node1.getNode(), get(node2.get(ElectionService.class).leader(GROUP)));
 
             CandidateMock candidate1 = getCandidate(node1);
             CandidateMock candidate2 = getCandidate(node2);
@@ -167,7 +166,7 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
         // Start leader.
         HekateTestInstance leader = createInstanceWithElection().join();
 
-        leader.get(ElectionService.class).leader(GROUP).get(3, TimeUnit.SECONDS);
+        get(leader.get(ElectionService.class).leader(GROUP));
 
         for (int i = 0; i < 5; i++) {
             say("Iteration: " + i);
@@ -176,7 +175,7 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
             HekateTestInstance follower = createInstanceWithElection().join();
 
             // Verify leader.
-            assertEquals(leader.getNode(), follower.get(ElectionService.class).leader(GROUP).get(3, TimeUnit.SECONDS));
+            assertEquals(leader.getNode(), get(follower.get(ElectionService.class).leader(GROUP)));
 
             CandidateMock followerCandidate = getCandidate(follower);
 
@@ -211,7 +210,7 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
             Set<ClusterNode> leaders = new HashSet<>();
 
             for (HekateTestInstance node : nodes) {
-                ClusterNode leader = node.get(ElectionService.class).leader(GROUP).get(3, TimeUnit.SECONDS);
+                ClusterNode leader = get(node.get(ElectionService.class).leader(GROUP));
 
                 assertTrue(nodes.stream().anyMatch(n -> n.getNode().equals(leader)));
 
@@ -301,7 +300,7 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
 
     private void awaitForLeaderFuture(ClusterNode expectedLeader, HekateTestInstance node) throws Exception {
         busyWait("leader " + expectedLeader, () -> {
-            ClusterNode currentLeader = node.get(ElectionService.class).leader(GROUP).get(3, TimeUnit.SECONDS);
+            ClusterNode currentLeader = get(node.get(ElectionService.class).leader(GROUP));
 
             return currentLeader.equals(expectedLeader);
         });

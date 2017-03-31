@@ -42,7 +42,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
@@ -486,7 +485,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
         client.connect(server.getAddress(), clientCallback);
 
-        NetworkEndpoint<String> serverClient = latch.get(3, TimeUnit.SECONDS);
+        NetworkEndpoint<String> serverClient = get(latch);
 
         repeat(5, i -> {
             serverClient.send("test" + i);
@@ -530,10 +529,10 @@ public class NetworkServerTest extends NetworkTestBase {
             NetworkClient<String> p2c1 = createClient(c -> c.setProtocol("protocol_2"));
             NetworkClient<String> p2c2 = createClient(c -> c.setProtocol("protocol_2"));
 
-            p1c1.connect(server.getAddress(), new NetworkClientCallbackMock<>()).get(3, TimeUnit.SECONDS);
-            p1c2.connect(server.getAddress(), new NetworkClientCallbackMock<>()).get(3, TimeUnit.SECONDS);
-            p2c1.connect(server.getAddress(), new NetworkClientCallbackMock<>()).get(3, TimeUnit.SECONDS);
-            p2c2.connect(server.getAddress(), new NetworkClientCallbackMock<>()).get(3, TimeUnit.SECONDS);
+            get(p1c1.connect(server.getAddress(), new NetworkClientCallbackMock<>()));
+            get(p1c2.connect(server.getAddress(), new NetworkClientCallbackMock<>()));
+            get(p2c1.connect(server.getAddress(), new NetworkClientCallbackMock<>()));
+            get(p2c2.connect(server.getAddress(), new NetworkClientCallbackMock<>()));
 
             // Verify that for each client there is a server endpoint.
             List<NetworkEndpoint<?>> connectedP1 = server.getConnected("protocol_1");
@@ -548,8 +547,8 @@ public class NetworkServerTest extends NetworkTestBase {
             assertTrue(connectedP2.stream().anyMatch(e -> e.getRemoteAddress().equals(p2c2.getLocalAddress())));
 
             // Disconnect 1 client from each protocol.
-            p1c1.disconnect().get(3, TimeUnit.SECONDS);
-            p2c1.disconnect().get(3, TimeUnit.SECONDS);
+            get(p1c1.disconnect());
+            get(p2c1.disconnect());
 
             busyWait("'protocol_1' server disconnect", () -> server.getConnected("protocol_1").size() == 1);
             busyWait("'protocol_1' server disconnect", () -> server.getConnected("protocol_2").size() == 1);
@@ -565,8 +564,8 @@ public class NetworkServerTest extends NetworkTestBase {
             assertTrue(connectedP2.stream().anyMatch(e -> e.getRemoteAddress().equals(p2c2.getLocalAddress())));
 
             // Disconnect server endpoints.
-            connectedP1.get(0).disconnect().get(3, TimeUnit.SECONDS);
-            connectedP2.get(0).disconnect().get(3, TimeUnit.SECONDS);
+            get(connectedP1.get(0).disconnect());
+            get(connectedP2.get(0).disconnect());
 
             busyWait("'protocol_1' client disconnect", () -> p1c2.getState() == NetworkClient.State.DISCONNECTED);
             busyWait("'protocol_2' client disconnect", () -> p2c2.getState() == NetworkClient.State.DISCONNECTED);
@@ -587,7 +586,7 @@ public class NetworkServerTest extends NetworkTestBase {
         try {
             InetSocketAddress address = new InetSocketAddress("254.254.254.254", 0);
 
-            server.start(address).get(3, TimeUnit.SECONDS);
+            get(server.start(address));
 
             fail("Error was expected.");
         } catch (ExecutionException e) {

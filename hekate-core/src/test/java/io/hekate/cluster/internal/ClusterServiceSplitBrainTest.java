@@ -27,7 +27,6 @@ import io.hekate.core.HekateFutureException;
 import io.hekate.core.HekateTestInstance;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -58,7 +57,7 @@ public class ClusterServiceSplitBrainTest extends HekateInstanceContextTestBase 
 
         detector.setValid(true);
 
-        future.get(3, TimeUnit.SECONDS);
+        get(future);
 
         assertEquals(1, detector.getChecks());
     }

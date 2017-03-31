@@ -51,7 +51,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -149,7 +148,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
                 List<LeaveFuture> leaves = nodes.stream().map(HekateTestInstance::leaveAsync).collect(toList());
 
                 for (LeaveFuture future : leaves) {
-                    future.get(3, TimeUnit.SECONDS);
+                    get(future);
                 }
             });
 
@@ -281,11 +280,11 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
         node.join();
 
-        beforeJoin.get(3, TimeUnit.SECONDS);
+        get(beforeJoin);
 
         CompletableFuture<ClusterTopology> afterJoin = cluster.futureOf(topology -> topology.size() == 1);
 
-        afterJoin.get(3, TimeUnit.SECONDS);
+        get(afterJoin);
 
         CompletableFuture<ClusterTopology> afterJoinOther = cluster.futureOf(topology -> topology.size() == 2);
 
@@ -293,7 +292,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
         createInstance().join().leave();
 
-        afterJoinOther.get(3, TimeUnit.SECONDS);
+        get(afterJoinOther);
 
         CompletableFuture<ClusterTopology> afterLeave = cluster.futureOf(topology -> false);
 
@@ -307,7 +306,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
         node.join();
 
-        afterRejoin.get(3, TimeUnit.SECONDS);
+        get(afterRejoin);
 
         assertTrue(afterRejoin.isDone());
         assertFalse(afterRejoin.isCancelled());
@@ -912,7 +911,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             }
         });
 
-        joining.joinAsync().get(3, TimeUnit.SECONDS);
+        get(joining.joinAsync());
 
         assertSame(Hekate.State.DOWN, coordinator.getState());
 

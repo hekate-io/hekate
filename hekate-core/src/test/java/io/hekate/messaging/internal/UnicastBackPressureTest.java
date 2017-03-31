@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runners.Parameterized.Parameters;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -88,12 +89,12 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
         );
 
         // Check that new request can be processed.
-        sender.send("last").get(3, TimeUnit.SECONDS);
+        get(sender.send("last"));
 
         requests.stream().filter(Message::mustReply).forEach(r -> r.reply("ok"));
 
         for (Future<?> future : futureResponses) {
-            future.get(3, TimeUnit.SECONDS);
+            get(future);
         }
     }
 
@@ -117,7 +118,7 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
 
         // Check timeout.
         try {
-            sender.withTimeout(10, TimeUnit.MILLISECONDS).request("timeout").get(3, TimeUnit.SECONDS);
+            get(sender.withTimeout(10, MILLISECONDS).request("timeout"));
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
@@ -132,12 +133,12 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
         );
 
         // Check that new request can be processed.
-        sender.send("last").get(3, TimeUnit.SECONDS);
+        get(sender.send("last"));
 
         requests.stream().filter(Message::mustReply).forEach(r -> r.reply("ok"));
 
         for (Future<?> future : futureResponses) {
-            future.get(3, TimeUnit.SECONDS);
+            get(future);
         }
     }
 
@@ -175,7 +176,7 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
         busyWait("all responses failed", () -> futureResponses.stream().allMatch(CompletableFuture::isDone));
 
         // Check that new request can be processed.
-        senderChannel.send("last").get(3, TimeUnit.SECONDS);
+        get(senderChannel.send("last"));
     }
 
     @Test
@@ -216,11 +217,11 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
         say("Stopped");
 
         // Await for last send operation to be unblocked.
-        RequestFuture<String> request = async.get(3, TimeUnit.SECONDS);
+        RequestFuture<String> request = get(async);
 
         // Check that last send operation failed.
         try {
-            request.get(3, TimeUnit.SECONDS);
+            get(request);
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
@@ -239,7 +240,7 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
         MessagingChannel<String> sender = createChannel(this::useBackPressure).join().get().forRemotes();
 
         // Ensure that sender -> receiver connection is established.
-        sender.send("init").get(3, TimeUnit.SECONDS);
+        get(sender.send("init"));
 
         SendFuture future = null;
 
@@ -313,7 +314,7 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
 
         received.replyPartial("last", errFuture::complete);
 
-        assertNull(errFuture.get(3, TimeUnit.SECONDS));
+        assertNull(get(errFuture));
     }
 
     @Test
@@ -347,9 +348,9 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
         RequestFuture<String> request = second.get().forRemotes().request("check");
 
         // Make sure that there were no back pressure-related errors.
-        assertNull(errFuture.get(3, TimeUnit.SECONDS));
+        assertNull(get(errFuture));
 
-        assertEquals("ok", request.get(3, TimeUnit.SECONDS).get());
+        assertEquals("ok", get(request).get());
     }
 
     protected void assertBackPressureOnPartialReply(Message<String> msg) throws Exception {
@@ -359,7 +360,7 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
 
         msg.replyPartial("fail-on-back-pressure", errFuture::complete);
 
-        Throwable err = errFuture.get(3, TimeUnit.SECONDS);
+        Throwable err = get(errFuture);
 
         assertNotNull(err);
         assertTrue(err.toString(), Utils.isCausedBy(err, MessageQueueOverflowException.class));

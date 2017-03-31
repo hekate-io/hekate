@@ -529,8 +529,8 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
                 }
             });
 
-            assertNull(receiveErrFuture.get(3, TimeUnit.SECONDS));
-            assertNull(sendErrFuture.get(3, TimeUnit.SECONDS));
+            assertNull(get(receiveErrFuture));
+            assertNull(get(sendErrFuture));
 
             List<String> expectedMessages = Arrays.asList("response0", "response1", "response2", "final");
 
@@ -585,7 +585,7 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
                 }
             });
 
-            assertNull(errFuture.get(3, TimeUnit.SECONDS));
+            assertNull(get(errFuture));
 
             List<String> expectedMessages = Arrays.asList("response0", "response1", "response2", "final");
 
@@ -863,7 +863,7 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
             stopped.set(true);
 
             try {
-                future.get(3, TimeUnit.SECONDS);
+                get(future);
 
                 fail("Error was expected.");
             } catch (ExecutionException e) {
@@ -961,7 +961,7 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
             close.await();
 
             try {
-                future.get(3, TimeUnit.SECONDS).get(3, TimeUnit.SECONDS);
+                get(get(future));
 
                 fail("Error was expected.");
             } catch (MessagingFutureException e) {
@@ -1003,7 +1003,7 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
             close.await();
 
             try {
-                future.get(3, TimeUnit.SECONDS).get(3, TimeUnit.SECONDS);
+                get(get(future));
 
                 fail("Error was expected.");
             } catch (MessagingFutureException e) {
@@ -1199,10 +1199,10 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
                 MessagingChannel<String> send = event.getHekate().get(MessagingService.class).channel(TEST_CHANNEL_NAME);
 
                 if (event.getType() == ClusterEventType.JOIN) {
-                    send.request("to-self").get(3, TimeUnit.SECONDS);
+                    get(send.request("to-self"));
                     send.request("to-self", toSelf);
                 } else if (event.getType() == ClusterEventType.CHANGE) {
-                    send.forRemotes().request("to-remote").get(3, TimeUnit.SECONDS);
+                    get(send.forRemotes().request("to-remote"));
                     send.forRemotes().request("to-remote", toRemote);
                 }
             } catch (Throwable err) {
@@ -1476,14 +1476,14 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
         ).join();
 
         try {
-            channel.send(channel.getNodeId(), "test").get(3, TimeUnit.SECONDS);
+            get(channel.send(channel.getNodeId(), "test"));
         } catch (MessagingFutureException e) {
             assertTrue(e.getCause().toString(), e.getCause() instanceof LoadBalancingException);
             assertEquals("No suitable receivers [channel=test_channel]", e.getCause().getMessage());
         }
 
         try {
-            channel.request(channel.getNodeId(), "test").get(3, TimeUnit.SECONDS);
+            get(channel.request(channel.getNodeId(), "test"));
         } catch (MessagingFutureException e) {
             assertTrue(e.getCause().toString(), e.getCause() instanceof LoadBalancingException);
             assertEquals("No suitable receivers [channel=test_channel]", e.getCause().getMessage());
@@ -1508,19 +1508,19 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
 
         channel.join();
 
-        channel.send(channel.getNodeId(), "test").get(3, TimeUnit.SECONDS);
+        get(channel.send(channel.getNodeId(), "test"));
 
         channel.leave();
 
         try {
-            channel.send(channel.getNodeId(), "test").get(3, TimeUnit.SECONDS);
+            get(channel.send(channel.getNodeId(), "test"));
         } catch (MessagingFutureException e) {
             assertTrue(e.getCause().toString(), e.getCause() instanceof MessagingChannelClosedException);
             assertEquals("Channel closed [channel=test_channel]", e.getCause().getMessage());
         }
 
         try {
-            channel.request(channel.getNodeId(), "test").get(3, TimeUnit.SECONDS);
+            get(channel.request(channel.getNodeId(), "test"));
         } catch (MessagingFutureException e) {
             assertTrue(e.getCause().toString(), e.getCause() instanceof MessagingChannelClosedException);
             assertEquals("Channel closed [channel=test_channel]", e.getCause().getMessage());
@@ -1551,7 +1551,7 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
 
         sender.request(receiver.getNodeId(), "test");
 
-        Message<String> request = requestFuture.get(3, TimeUnit.SECONDS);
+        Message<String> request = get(requestFuture);
 
         receiver.leave();
 
@@ -1570,7 +1570,7 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
             return null;
         });
 
-        return errFuture.get(3, TimeUnit.SECONDS);
+        return get(errFuture);
     }
 
     private void assertResponded(Message<String> msg) {

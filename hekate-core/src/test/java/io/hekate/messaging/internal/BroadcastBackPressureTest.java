@@ -31,7 +31,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -82,7 +81,7 @@ public class BroadcastBackPressureTest extends BackPressureTestBase {
         MessagingChannel<String> sender = createChannel(this::useBackPressure).join().get().forRemotes();
 
         // Ensure that connection to each node is established.
-        sender.broadcast("init").get(3, TimeUnit.SECONDS);
+        get(sender.broadcast("init"));
 
         BroadcastFuture<String> future = null;
 
@@ -132,7 +131,7 @@ public class BroadcastBackPressureTest extends BackPressureTestBase {
         MessagingChannel<String> sender = createChannel(this::useBackPressure).join().get().forRemotes();
 
         // Ensure that connection to each node is established.
-        sender.broadcast("init").get(3, TimeUnit.SECONDS);
+        get(sender.broadcast("init"));
 
         // Request (aggregate) up to high watermark in order to trigger back pressure.
         List<AggregateFuture<?>> futureResponses = new ArrayList<>();
@@ -165,13 +164,13 @@ public class BroadcastBackPressureTest extends BackPressureTestBase {
         );
 
         // Check that new request can be processed.
-        sender.broadcast("last").get(3, TimeUnit.SECONDS);
+        get(sender.broadcast("last"));
 
         requests1.stream().filter(Message::mustReply).forEach(r -> r.reply("ok"));
         requests2.stream().filter(Message::mustReply).forEach(r -> r.reply("ok"));
 
         for (Future<?> future : futureResponses) {
-            future.get(3, TimeUnit.SECONDS);
+            get(future);
         }
     }
 
@@ -199,7 +198,7 @@ public class BroadcastBackPressureTest extends BackPressureTestBase {
         MessagingChannel<String> sender = createChannel(this::useBackPressure).join().get().forRemotes();
 
         // Ensure that connection to each node is established.
-        sender.broadcast("init").get(3, TimeUnit.SECONDS);
+        get(sender.broadcast("init"));
 
         // Request (aggregate) up to high watermark in order to trigger back pressure.
         List<AggregateFuture<?>> futureResponses = new ArrayList<>();
@@ -229,12 +228,12 @@ public class BroadcastBackPressureTest extends BackPressureTestBase {
         );
 
         // Check that new request can be processed.
-        sender.broadcast("last").get(3, TimeUnit.SECONDS);
+        get(sender.broadcast("last"));
 
         requests1.stream().filter(Message::mustReply).forEach(r -> r.reply("ok"));
 
         for (Future<?> future : futureResponses) {
-            future.get(3, TimeUnit.SECONDS);
+            get(future);
         }
     }
 }

@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import org.junit.Test;
@@ -388,7 +387,7 @@ public class LockMigrationTest extends LockServiceTestBase {
             return null;
         });
 
-        async.get(3, TimeUnit.SECONDS);
+        get(async);
 
         await(leaveLatch);
 

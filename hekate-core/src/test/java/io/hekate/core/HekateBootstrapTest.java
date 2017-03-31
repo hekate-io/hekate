@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.Test;
@@ -258,7 +257,7 @@ public class HekateBootstrapTest extends HekateTestBase {
         } finally {
             for (LeaveFuture future : leave) {
                 try {
-                    future.get(3, TimeUnit.SECONDS);
+                    get(future);
                 } catch (InterruptedException e) {
                     // Ignore.
                 }

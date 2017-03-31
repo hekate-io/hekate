@@ -16,13 +16,13 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.core.internal.util.Utils;
 import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
-import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingOverflowPolicy;
 import io.hekate.util.format.ToString;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertTrue;
@@ -71,13 +71,13 @@ public abstract class BackPressureTestBase extends MessagingServiceTestBase {
     protected boolean isBackPressureEnabled(MessagingChannel<String> channel) {
         // Check that message can't be sent when high watermark reached.
         try {
-            channel.request("fail-on-back-pressure").get(3, TimeUnit.SECONDS);
+            get(channel.request("fail-on-back-pressure"));
 
             return false;
         } catch (TimeoutException | InterruptedException e) {
             throw new AssertionError(e);
-        } catch (MessagingFutureException e) {
-            return e.isCausedBy(MessageQueueOverflowException.class);
+        } catch (ExecutionException e) {
+            return Utils.isCausedBy(e, MessageQueueOverflowException.class);
         }
     }
 

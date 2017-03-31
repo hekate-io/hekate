@@ -6,7 +6,6 @@ import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.unicast.RequestFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Exchanger;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
@@ -35,7 +34,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
             hangLatchRef.set(new CountDownLatch(1));
 
             try {
-                sender.get().forRemotes().request("must-fail-" + i).get(3, TimeUnit.SECONDS);
+                get(sender.get().forRemotes().request("must-fail-" + i));
             } catch (MessagingFutureException e) {
                 assertTrue(getStacktrace(e), e.isCausedBy(MessageTimeoutException.class));
                 assertEquals("Messaging operation timed out [message=must-fail-" + i + ']',
@@ -73,7 +72,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
             request.reply("final");
 
-            future.get(3, TimeUnit.SECONDS);
+            get(future);
         });
     }
 
@@ -86,7 +85,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
         TestChannel sender = createChannel(c -> c.withMessagingTimeout(1000)).join();
 
         repeat(5, i ->
-            sender.get().forRemotes().request("request-" + i).get(3, TimeUnit.SECONDS)
+            get(sender.get().forRemotes().request("request-" + i))
         );
     }
 
@@ -98,7 +97,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
         repeat(5, i -> {
             try {
-                sender.get().forRemotes().send("must-fail-" + i).get(3, TimeUnit.SECONDS);
+                get(sender.get().forRemotes().send("must-fail-" + i));
             } catch (MessagingFutureException e) {
                 assertTrue(getStacktrace(e), e.isCausedBy(MessageTimeoutException.class));
                 assertEquals("Messaging operation timed out [message=must-fail-" + i + ']',
@@ -116,7 +115,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
         TestChannel sender = createChannel(c -> c.withMessagingTimeout(1000)).join();
 
         repeat(5, i ->
-            sender.get().forRemotes().request("request-" + i).get(3, TimeUnit.SECONDS)
+            get(sender.get().forRemotes().request("request-" + i))
         );
     }
 }

@@ -306,6 +306,16 @@ public abstract class HekateTestBase {
         return latch;
     }
 
+    public static <T> T get(Future<T> future) throws ExecutionException, InterruptedException, TimeoutException {
+        try {
+            return future.get(3, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            System.out.println(threadDump());
+
+            throw e;
+        }
+    }
+
     @After
     public void cleanup() throws Exception {
         if (async != null) {
@@ -688,7 +698,7 @@ public abstract class HekateTestBase {
     }
 
     protected <V> V runAsyncAndGet(Callable<V> task) throws InterruptedException, ExecutionException, TimeoutException {
-        return runAsync(task).get(3, TimeUnit.SECONDS);
+        return get(runAsync(task));
     }
 
     protected void deleteDirectory(File dir) {

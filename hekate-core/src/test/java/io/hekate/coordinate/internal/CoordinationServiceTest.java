@@ -133,7 +133,7 @@ public class CoordinationServiceTest extends HekateInstanceContextTestBase {
 
             node.join();
 
-            node.get(CoordinationService.class).futureOf("test").get(3, TimeUnit.SECONDS);
+            get(node.get(CoordinationService.class).futureOf("test"));
 
             InOrder order = inOrder(handler);
 
@@ -220,7 +220,7 @@ public class CoordinationServiceTest extends HekateInstanceContextTestBase {
 
         endLatch.countDown();
 
-        future.get(3, TimeUnit.SECONDS);
+        get(future);
 
         assertTrue(future.isDone());
         assertNotNull(future.getNow(null));
@@ -251,7 +251,7 @@ public class CoordinationServiceTest extends HekateInstanceContextTestBase {
 
         node.leave();
 
-        expect(CancellationException.class, () -> future.get(3, TimeUnit.SECONDS));
+        expect(CancellationException.class, () -> get(future));
 
         assertTrue(future.isDone());
         assertTrue(future.isCancelled());
@@ -271,7 +271,7 @@ public class CoordinationServiceTest extends HekateInstanceContextTestBase {
 
                 nodes.add(node);
 
-                node.get(CoordinationService.class).futureOf("test").get(3, TimeUnit.SECONDS);
+                get(node.get(CoordinationService.class).futureOf("test"));
 
                 String expected = String.valueOf(++val);
 
@@ -347,7 +347,7 @@ public class CoordinationServiceTest extends HekateInstanceContextTestBase {
 
         proceedLatch.countDown();
 
-        leaveFuture.get(3, TimeUnit.SECONDS);
+        get(leaveFuture);
 
         List<HekateTestInstance> remaining = Stream.of(n1, n2, n3).filter(n -> !n.equals(coordinator)).collect(toList());
 
@@ -392,7 +392,7 @@ public class CoordinationServiceTest extends HekateInstanceContextTestBase {
         HekateTestInstance n3 = createInstanceWithCoordination(h3);
 
         // Join and await for initial coordination on the first node.
-        n1.join().get(CoordinationService.class).futureOf("test").get(3, TimeUnit.SECONDS);
+        get(n1.join().get(CoordinationService.class).futureOf("test"));
 
         n2.join(); // <-- Coordination should block.
 

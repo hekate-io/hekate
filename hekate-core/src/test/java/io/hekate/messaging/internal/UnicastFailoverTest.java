@@ -229,13 +229,13 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
         ClusterNodeId unknown = newNodeId();
 
         try {
-            sender.get().forNode(unknown)
+            get(sender.get().forNode(unknown)
                 .withFailover(context -> {
                     failoverCalls.incrementAndGet();
 
                     return context.retry().withReRoute();
                 })
-                .send("error").get(3, TimeUnit.SECONDS);
+                .send("error"));
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {

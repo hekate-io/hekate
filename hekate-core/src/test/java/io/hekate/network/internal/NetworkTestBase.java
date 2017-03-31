@@ -33,13 +33,15 @@ import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+
+import static java.lang.Long.MAX_VALUE;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 @RunWith(Parameterized.class)
 public abstract class NetworkTestBase extends HekateTestBase {
@@ -100,8 +102,8 @@ public abstract class NetworkTestBase extends HekateTestBase {
 
         servers.clear();
 
-        acceptorEventLoopGroup.shutdownGracefully(0, Long.MAX_VALUE, TimeUnit.MILLISECONDS).get(3, TimeUnit.SECONDS);
-        workerEventLoopGroup.shutdownGracefully(0, Long.MAX_VALUE, TimeUnit.MILLISECONDS).get(3, TimeUnit.SECONDS);
+        get(acceptorEventLoopGroup.shutdownGracefully(0, MAX_VALUE, MILLISECONDS));
+        get(workerEventLoopGroup.shutdownGracefully(0, MAX_VALUE, MILLISECONDS));
     }
 
     @SuppressWarnings("unchecked")

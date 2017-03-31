@@ -26,7 +26,6 @@ import io.hekate.election.ElectionService;
 import io.hekate.election.ElectionServiceFactory;
 import io.hekate.election.FollowerContext;
 import io.hekate.election.LeaderContext;
-import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
@@ -87,7 +86,7 @@ public class ElectionServiceJavadocTest extends HekateInstanceTestBase {
         ElectionService election = hekate.get(ElectionService.class);
 
         // Get current leader (or wait up to 3 seconds for leader to be elected).
-        ClusterNode leader = election.leader("example.election.group").get(3, TimeUnit.SECONDS);
+        ClusterNode leader = get(election.leader("example.election.group"));
         // End:access
 
         assertNotNull(leader);

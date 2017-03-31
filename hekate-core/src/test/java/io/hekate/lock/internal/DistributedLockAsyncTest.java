@@ -515,7 +515,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
             lock1.unlock();
 
             // Make sure that second pending lock was obtained (since first lock was cancelled).
-            future3.get(3, TimeUnit.SECONDS);
+            get(future3);
 
             callback3.awaitAcquire();
 

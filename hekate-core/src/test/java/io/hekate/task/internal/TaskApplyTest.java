@@ -25,7 +25,6 @@ import io.hekate.task.TaskFutureException;
 import io.hekate.task.TaskService;
 import java.nio.channels.ClosedChannelException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
@@ -48,11 +47,11 @@ public class TaskApplyTest extends TaskServiceTestBase {
             for (HekateTestInstance node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                int got = tasks.apply("test", arg -> {
+                int got = get(tasks.apply("test", arg -> {
                     NODES.add(node.getNode());
 
                     return COUNTER.incrementAndGet();
-                }).get(3, TimeUnit.SECONDS);
+                }));
 
                 assertEquals(1, got);
                 assertEquals(1, NODES.size());
@@ -73,11 +72,11 @@ public class TaskApplyTest extends TaskServiceTestBase {
             for (HekateTestInstance node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                int got = tasks.apply(100500, "test", arg -> {
+                int got = get(tasks.apply(100500, "test", arg -> {
                     NODES.add(node.getNode());
 
                     return COUNTER.incrementAndGet();
-                }).get(3, TimeUnit.SECONDS);
+                }));
 
                 assertEquals(1, got);
                 assertEquals(1, NODES.size());
@@ -98,11 +97,11 @@ public class TaskApplyTest extends TaskServiceTestBase {
             for (HekateTestInstance node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                Object mustBeNull = tasks.apply("test", arg -> {
+                Object mustBeNull = get(tasks.apply("test", arg -> {
                     COUNTER.incrementAndGet();
 
                     return null;
-                }).get(3, TimeUnit.SECONDS);
+                }));
 
                 assertNull(mustBeNull);
                 assertEquals(1, COUNTER.get());
@@ -177,11 +176,11 @@ public class TaskApplyTest extends TaskServiceTestBase {
 
         source.awaitForStatus(Hekate.State.DOWN);
 
-        target.get(TaskService.class).forNode(target.getNode()).apply("test", arg -> {
+        get(target.get(TaskService.class).forNode(target.getNode()).apply("test", arg -> {
             REF.set(target);
 
             return null;
-        }).get(3, TimeUnit.SECONDS);
+        }));
 
         assertSame(target, REF.get());
     }
@@ -203,13 +202,13 @@ public class TaskApplyTest extends TaskServiceTestBase {
         // Successful retry.
         assertEquals(
             "test-ok",
-            tasks.apply("test", arg -> {
+            get(tasks.apply("test", arg -> {
                 if (attempts.get() < 3) {
                     throw TEST_ERROR;
                 }
 
                 return arg + "-ok";
-            }).get(3, TimeUnit.SECONDS)
+            }))
         );
 
         assertEquals(3, attempts.get());
@@ -218,9 +217,9 @@ public class TaskApplyTest extends TaskServiceTestBase {
 
         // Failed retry.
         try {
-            tasks.apply("test", arg -> {
+            get(tasks.apply("test", arg -> {
                 throw TEST_ERROR;
-            }).get(3, TimeUnit.SECONDS);
+            }));
 
             fail("Error was expected.");
         } catch (TaskFutureException e) {
@@ -248,13 +247,13 @@ public class TaskApplyTest extends TaskServiceTestBase {
         // Successful retry.
         assertEquals(
             "test-ok",
-            tasks.apply("some-affinity", "test", arg -> {
+            get(tasks.apply("some-affinity", "test", arg -> {
                 if (attempts.get() < 3) {
                     throw TEST_ERROR;
                 }
 
                 return arg + "-ok";
-            }).get(3, TimeUnit.SECONDS)
+            }))
         );
 
         assertEquals(3, attempts.get());
@@ -263,9 +262,9 @@ public class TaskApplyTest extends TaskServiceTestBase {
 
         // Failed retry.
         try {
-            tasks.apply("some-affinity", "test", arg -> {
+            get(tasks.apply("some-affinity", "test", arg -> {
                 throw TEST_ERROR;
-            }).get(3, TimeUnit.SECONDS);
+            }));
 
             fail("Error was expected.");
         } catch (TaskFutureException e) {
@@ -288,7 +287,7 @@ public class TaskApplyTest extends TaskServiceTestBase {
 
         assertEquals(
             "test-ok",
-            tasks.apply("test", arg -> {
+            get(tasks.apply("test", arg -> {
                 COUNTER.incrementAndGet();
 
                 NODES.add(node.getNode());
@@ -298,7 +297,7 @@ public class TaskApplyTest extends TaskServiceTestBase {
                 }
 
                 return arg + "-ok";
-            }).get(3, TimeUnit.SECONDS)
+            }))
         );
 
         assertTrue(NODES.contains(nodes.get(1).getNode()));

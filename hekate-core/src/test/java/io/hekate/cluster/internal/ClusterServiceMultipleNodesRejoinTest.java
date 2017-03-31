@@ -283,7 +283,7 @@ public class ClusterServiceMultipleNodesRejoinTest extends ClusterServiceMultipl
 
                 rejoinContinueLatch.countDown();
 
-                assertNotNull(terminateFuture.get(3, TimeUnit.SECONDS));
+                assertNotNull(get(terminateFuture));
 
                 assertSame(DOWN, hanged.getState());
                 assertNull(asyncError.get());
@@ -362,7 +362,7 @@ public class ClusterServiceMultipleNodesRejoinTest extends ClusterServiceMultipl
 
                 rejoinContinueLatch.countDown();
 
-                assertNotNull(leaveFuture.get(3, TimeUnit.SECONDS));
+                assertNotNull(get(leaveFuture));
 
                 assertSame(DOWN, hanged.getState());
                 assertNull(asyncError.get());
@@ -423,7 +423,7 @@ public class ClusterServiceMultipleNodesRejoinTest extends ClusterServiceMultipl
 
                 say("Unlocked: " + hanged);
 
-                assertNotNull(leave.get(3, TimeUnit.SECONDS));
+                assertNotNull(get(leave));
 
                 assertSame(DOWN, hanged.getState());
 
