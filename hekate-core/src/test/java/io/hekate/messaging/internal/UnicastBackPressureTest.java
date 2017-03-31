@@ -233,7 +233,7 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
         CountDownLatch resumeReceive = new CountDownLatch(1);
 
         createChannel(c -> useBackPressure(c).withReceiver(msg ->
-            await(resumeReceive)
+            await(resumeReceive, 10)
         )).join();
 
         MessagingChannel<String> sender = createChannel(this::useBackPressure).join().get().forRemotes();

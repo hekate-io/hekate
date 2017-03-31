@@ -287,8 +287,12 @@ public abstract class HekateTestBase {
     }
 
     public static CountDownLatch await(CountDownLatch latch) {
+        return await(latch, 3);
+    }
+
+    public static CountDownLatch await(CountDownLatch latch, int seconds) {
         try {
-            boolean success = latch.await(3, TimeUnit.SECONDS);
+            boolean success = latch.await(seconds, TimeUnit.SECONDS);
 
             if (!success) {
                 System.out.println(threadDump());
