@@ -535,6 +535,19 @@ public class MessagingChannelConfig<T> {
     }
 
     /**
+     * Fluent-style version of {@link #setMessagingTimeout(long)}.
+     *
+     * @param messagingTimeout Timeout in milliseconds.
+     *
+     * @return This instance.
+     */
+    public MessagingChannelConfig<T> withMessagingTimeout(long messagingTimeout) {
+        setMessagingTimeout(messagingTimeout);
+
+        return this;
+    }
+
+    /**
      * Sets the timeout in milliseconds that should be applied to all messaging operations within this channel.
      *
      * <p>
@@ -558,19 +571,6 @@ public class MessagingChannelConfig<T> {
      */
     public void setMessagingTimeout(long messagingTimeout) {
         this.messagingTimeout = messagingTimeout;
-    }
-
-    /**
-     * Fluent-style version of {@link #setMessagingTimeout(long)}.
-     *
-     * @param messagingTimeout Timeout in milliseconds.
-     *
-     * @return This instance.
-     */
-    public MessagingChannelConfig<T> withMessagingTimeout(long messagingTimeout) {
-        setMessagingTimeout(messagingTimeout);
-
-        return this;
     }
 
     /**

@@ -686,6 +686,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 setProperty(channel, channelEl, "workerThreads", "worker-threads");
                 setProperty(channel, channelEl, "idleTimeout", "idle-timeout-ms");
                 setProperty(channel, channelEl, "logCategory", "log-category");
+                setProperty(channel, channelEl, "messagingTimeout", "messaging-timeout-ms");
 
                 // Nested elements.
                 setBeanOrRef(channel, channelEl, "receiver", "receiver", ctx);

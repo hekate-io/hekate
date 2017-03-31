@@ -1182,6 +1182,13 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
+        <xsd:attribute name="messaging-timeout-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.messaging.MessagingChannelConfig#setMessagingTimeout(long)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
         <xsd:attribute name="log-category" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
