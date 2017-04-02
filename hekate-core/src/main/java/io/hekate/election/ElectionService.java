@@ -28,15 +28,16 @@ import java.util.List;
  *
  * <h2>Overview</h2>
  * <p>
- * This service provides support for electing a leader among cluster nodes that belong to the same election group. This service
- * guarantees that only one node within the group will be elected as a leader and all other nodes will become followers. If leader node
- * goes down or decides to yield its leadership then some other node within its group will be elected as a new leader.
+ * This service provides support for electing a leader among a set of cluster nodes that belong to the same election group. This service
+ * guarantees that only one node within each group will be elected as a leader and all other nodes will become followers. If leader node
+ * goes down or decides to yield its leadership then some other node will be elected as a new leader.
  * </p>
  *
  * <p>
  * In order to participate in leader election process, each node must {@link ElectionServiceFactory#setCandidates(List) register} an
- * implementation of {@link Candidate} interface and specify its {@link CandidateConfig#setGroup(String) group name}. Each node can register
- * candidates to multiple groups and {@link ElectionService} will make sure that only one node within each group will become a leader.
+ * implementation of the {@link Candidate} interface and specify its {@link CandidateConfig#setGroup(String) group name}. Each node can
+ * register candidates to multiple groups and {@link ElectionService} will make sure that only one node within each group will become a
+ * leader.
  * </p>
  *
  * <h2>Leader election</h2>

@@ -29,14 +29,14 @@ package io.hekate.messaging;
  */
 public interface MessagingEndpoint<T> {
     /**
-     * Returns a universally unique identifier of a remote channel (see {@link MessagingChannel#getId()}).
+     * Returns the universally unique identifier of a remote channel (see {@link MessagingChannel#getId()}).
      *
      * @return Universally unique identifier of a remote channel.
      */
     MessagingChannelId getRemoteId();
 
     /**
-     * Returns an order index of a socket connection within the remote connections pool (see {@link #getSockets()}).
+     * Returns the order index of this endpoint within the remote connections pool (see {@link #getSockets()}).
      *
      * @return Order index of a socket connection within the remote connections pool.
      */
@@ -52,7 +52,7 @@ public interface MessagingEndpoint<T> {
     int getSockets();
 
     /**
-     * Returns the custom user context object that was set via {@link #setContext(Object)}.
+     * Returns the custom context object that was set via {@link #setContext(Object)}.
      *
      * @param <C> Type of context object.
      *
@@ -61,7 +61,7 @@ public interface MessagingEndpoint<T> {
     <C> C getContext();
 
     /**
-     * Sets the custom user context object that should be associated with this endpoint.
+     * Sets the custom context object that should be associated with this endpoint.
      *
      * @param ctx Context object.
      */

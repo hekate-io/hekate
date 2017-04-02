@@ -103,9 +103,9 @@ import java.util.Optional;
  * </p>
  *
  * <p>
- * Note that due to the periodic nature of metrics replication algorithm it is possible that that some nodes will lag and will see older
- * metrics data than other nodes. How large this lag is depends on the cluster size and the {@link
- * ClusterMetricsServiceFactory#setReplicationInterval(long) replication interval} configuration option.
+ * Note that due to the periodic nature of metrics replication algorithm it is possible that some nodes will lag and will see older metrics
+ * data than other nodes. How large this lag is depends on the cluster size and the
+ * {@link ClusterMetricsServiceFactory#setReplicationInterval(long) replication interval} configuration option.
  * </p>
  *
  * @see ClusterMetricsServiceFactory
