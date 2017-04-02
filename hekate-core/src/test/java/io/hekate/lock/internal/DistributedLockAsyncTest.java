@@ -525,6 +525,10 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
                 lock1.unlock();
             }
 
+            node1.leave();
+            node2.leave();
+            node3.leave();
+
             worker.shutdown();
 
             assertTrue(worker.awaitTermination(3, TimeUnit.SECONDS));
