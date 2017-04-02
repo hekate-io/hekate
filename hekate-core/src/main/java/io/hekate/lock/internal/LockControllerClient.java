@@ -58,6 +58,8 @@ class LockControllerClient {
 
     private static final Logger log = LoggerFactory.getLogger(LockControllerClient.class);
 
+    private static final boolean DEBUG = log.isDebugEnabled();
+
     private final String region;
 
     private final String name;
@@ -485,8 +487,8 @@ class LockControllerClient {
                         }
                     }
                 } else {
-                    if (log.isWarnEnabled()) {
-                        log.warn("Failed to send lock message [error={}, message={}]", err.toString(), lockReq);
+                    if (DEBUG) {
+                        log.debug("Failed to send lock message [error={}, message={}]", err.toString(), lockReq);
                     }
 
                     // Retry if still LOCKING.
@@ -529,8 +531,8 @@ class LockControllerClient {
                         }
                     }
                 } else {
-                    if (log.isWarnEnabled()) {
-                        log.warn("Failed to send lock message [error={}, message={}]", err.toString(), unlockReq);
+                    if (DEBUG) {
+                        log.debug("Failed to send lock message [error={}, message={}]", err.toString(), unlockReq);
                     }
 
                     // Retry if not TERMINATED.

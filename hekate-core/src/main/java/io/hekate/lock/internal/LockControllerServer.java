@@ -479,8 +479,8 @@ class LockControllerServer {
                     log.debug("Successfully sent lock response [response={}, request={}]", reply, msg.get());
                 }
             } else {
-                if (log.isWarnEnabled()) {
-                    log.warn("Failed to send lock response [cause={}, response={}, request={}]", err.toString(), reply, msg.get());
+                if (DEBUG) {
+                    log.debug("Failed to send lock response [cause={}, response={}, request={}]", err.toString(), reply, msg.get());
                 }
             }
         });
@@ -493,8 +493,8 @@ class LockControllerServer {
                     log.debug("Successfully sent partial lock response [response={}, request={}]", reply, msg.get());
                 }
             } else {
-                if (log.isWarnEnabled()) {
-                    log.warn("Failed to send partial lock response [cause={}, response={}, request={}]", err.toString(), reply, msg.get());
+                if (DEBUG) {
+                    log.debug("Failed to send partial lock response [cause={}, response={}, request={}]", err.toString(), reply, msg.get());
                 }
             }
         });
