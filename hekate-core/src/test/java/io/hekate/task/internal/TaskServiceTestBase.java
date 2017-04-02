@@ -76,7 +76,7 @@ public abstract class TaskServiceTestBase extends HekateInstanceContextTestBase 
         assertErrorCausedBy(future, type, null);
     }
 
-    protected void assertErrorCausedBy(HekateFuture future, Class<? extends Throwable> type, Consumer<Throwable> check)
+    protected void assertErrorCausedBy(HekateFuture<?, ?> future, Class<? extends Throwable> type, Consumer<Throwable> check)
         throws Exception {
         doAssertErrorCausedBy(type, check, () -> get(future));
         doAssertErrorCausedBy(type, check, future::get);
