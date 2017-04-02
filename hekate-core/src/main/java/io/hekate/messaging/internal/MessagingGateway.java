@@ -70,7 +70,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
@@ -972,7 +971,7 @@ class MessagingGateway<T> {
         FailureInfo prevErr) {
         onAsyncEnqueue();
 
-        runAsyncAtAllCost(ctx, () -> {
+        ctx.getWorker().execute(() -> {
             onAsyncDequeue();
 
             applyFailover(ctx, cause, failed, callback, prevErr);
@@ -1114,31 +1113,15 @@ class MessagingGateway<T> {
     }
 
     private void notifyOnErrorAsync(MessageContext<T> ctx, Object callback, Throwable err) {
-        runAsyncAtAllCost(ctx, () -> {
+        onAsyncEnqueue();
+
+        ctx.getWorker().execute(() -> {
+            onAsyncDequeue();
+
             if (ctx.complete()) {
                 doNotifyOnError(callback, err);
             }
         });
-    }
-
-    private void runAsyncAtAllCost(MessageContext<T> ctx, Runnable task) {
-        if (!ctx.isCompleted()) {
-            boolean scheduled = false;
-
-            if (!ctx.getWorker().isShutdown()) {
-                try {
-                    ctx.getWorker().execute(task);
-
-                    scheduled = true;
-                } catch (RejectedExecutionException e) {
-                    // Ignore since operation will be re-scheduled on common pool.
-                }
-            }
-
-            if (!scheduled) {
-                ForkJoinPool.commonPool().submit(task);
-            }
-        }
     }
 
     @SuppressWarnings("unchecked")

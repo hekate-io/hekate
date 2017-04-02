@@ -17,45 +17,12 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.core.internal.util.Utils;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 class AsyncAffinityExecutor implements AffinityExecutor {
-    private static class AffinityWorkerImpl implements AffinityWorker {
-        private final ScheduledExecutorService executor;
 
-        public AffinityWorkerImpl(ScheduledExecutorService executor) {
-            this.executor = executor;
-        }
-
-        @Override
-        public void execute(Runnable task) {
-            executor.execute(task);
-        }
-
-        @Override
-        public Future<?> executeDeferred(long delay, Runnable task) {
-            return executor.schedule(task, delay, TimeUnit.MILLISECONDS);
-        }
-
-        @Override
-        public boolean isShutdown() {
-            return executor.isShutdown();
-        }
-
-        public void shutdown() {
-            executor.shutdown();
-        }
-
-        public void awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-            executor.awaitTermination(timeout, unit);
-        }
-    }
-
-    private final AffinityWorkerImpl[] workers;
+    private final DefaultAffinityWorker[] workers;
 
     private final int size;
 
@@ -64,14 +31,10 @@ class AsyncAffinityExecutor implements AffinityExecutor {
 
         this.size = size;
 
-        workers = new AffinityWorkerImpl[size];
+        workers = new DefaultAffinityWorker[size];
 
         for (int i = 0; i < size; i++) {
-            ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, threadFactory);
-
-            executor.setRemoveOnCancelPolicy(true);
-
-            workers[i] = new AffinityWorkerImpl(executor);
+            workers[i] = new DefaultAffinityWorker(threadFactory);
         }
     }
 
@@ -87,14 +50,14 @@ class AsyncAffinityExecutor implements AffinityExecutor {
 
     @Override
     public void terminate() {
-        for (AffinityWorkerImpl worker : workers) {
+        for (DefaultAffinityWorker worker : workers) {
             worker.execute(worker::shutdown);
         }
     }
 
     @Override
     public void awaitTermination() throws InterruptedException {
-        for (AffinityWorkerImpl worker : workers) {
+        for (DefaultAffinityWorker worker : workers) {
             worker.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         }
     }

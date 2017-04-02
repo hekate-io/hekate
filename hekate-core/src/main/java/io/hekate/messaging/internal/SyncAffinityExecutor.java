@@ -16,40 +16,19 @@
 
 package io.hekate.messaging.internal;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 class SyncAffinityExecutor implements AffinityExecutor {
-    private final ExecutorService scheduler;
-
-    private final AffinityWorker worker;
+    private final DefaultAffinityWorker worker;
 
     public SyncAffinityExecutor(ThreadFactory threadFactory) {
         ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, threadFactory);
 
         executor.setRemoveOnCancelPolicy(true);
 
-        worker = new AffinityWorker() {
-            @Override
-            public void execute(Runnable task) {
-                executor.execute(task);
-            }
-
-            @Override
-            public Future<?> executeDeferred(long delay, Runnable task) {
-                return executor.schedule(task, delay, TimeUnit.MILLISECONDS);
-            }
-
-            @Override
-            public boolean isShutdown() {
-                return executor.isShutdown();
-            }
-        };
-
-        scheduler = executor;
+        worker = new DefaultAffinityWorker(threadFactory);
     }
 
     @Override
@@ -64,12 +43,12 @@ class SyncAffinityExecutor implements AffinityExecutor {
 
     @Override
     public void terminate() {
-        scheduler.execute(scheduler::shutdown);
+        worker.execute(worker::shutdown);
     }
 
     @Override
     public void awaitTermination() throws InterruptedException {
-        scheduler.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        worker.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
     }
 
     @Override

@@ -274,7 +274,7 @@ abstract class ReceiverContext<T> {
 
     public void notifyOnSendFailure(boolean disconnect, AffinityWorker worker, T payload, Throwable error, SendCallback callback) {
         if (callback != null) {
-            if (async.isAsync() && !worker.isShutdown()) {
+            if (async.isAsync()) {
                 onAsyncEnqueue();
 
                 worker.execute(() -> {
@@ -290,7 +290,7 @@ abstract class ReceiverContext<T> {
 
     public void notifyOnReplyFailure(RequestHandle<T> handle, Throwable err) {
         if (handle.unregister()) {
-            if (async.isAsync() && !handle.getWorker().isShutdown()) {
+            if (async.isAsync()) {
                 onAsyncEnqueue();
 
                 handle.getWorker().execute(() -> {
