@@ -225,7 +225,7 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
-            assertTrue(Utils.getStacktrace(e), e.isCausedBy(MessagingChannelClosedException.class));
+            assertTrue(Utils.getStackTrace(e), e.isCausedBy(MessagingChannelClosedException.class));
         }
     }
 

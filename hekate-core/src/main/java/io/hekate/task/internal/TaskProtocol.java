@@ -150,7 +150,7 @@ abstract class TaskProtocol {
         private final String errorStackTrace;
 
         public ErrorResult(Throwable cause) {
-            errorStackTrace = Utils.getStacktrace(cause);
+            errorStackTrace = Utils.getStackTrace(cause);
         }
 
         public ErrorResult(String errorStackTrace) {

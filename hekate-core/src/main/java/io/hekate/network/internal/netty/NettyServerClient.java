@@ -17,6 +17,7 @@
 package io.hekate.network.internal.netty;
 
 import io.hekate.codec.Codec;
+import io.hekate.core.internal.util.Utils;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkSendCallback;
@@ -50,7 +51,6 @@ import java.net.SocketTimeoutException;
 import java.nio.channels.ClosedChannelException;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -537,14 +537,14 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                         notified = true;
                     } catch (RejectedExecutionException e) {
                         if (debug) {
-                            log.debug("Failed to notify send callback on channel close error. Will retry via common fork/join pool.");
+                            log.debug("Failed to notify send callback on channel close error. Will retry via fallback pool.");
                         }
                     }
                 }
 
                 // If couldn't notify via channel's event loop then use common fork-join pool.
                 if (!notified) {
-                    ForkJoinPool.commonPool().execute(() ->
+                    Utils.fallbackExecutor().execute(() ->
                         notifyOnChannelClose(msg, onSend)
                     );
                 }

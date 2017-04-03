@@ -286,7 +286,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
                 }
             });
 
-            worker = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("ClusterMetrics"));
+            worker = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("MetricsCluster"));
 
             worker.scheduleAtFixedRate(() -> {
                 try {

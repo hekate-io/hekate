@@ -28,10 +28,13 @@ import java.text.DecimalFormatSymbols;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -52,12 +55,35 @@ public final class Utils {
 
     private static final DecimalFormatSymbols NUMBER_FORMAT_SYMBOLS;
 
+    private static final ThreadPoolExecutor FALLBACK_EXECUTOR;
+
     private static String pid;
 
     static {
+        // Formatting options.
         NUMBER_FORMAT_SYMBOLS = new DecimalFormatSymbols(Locale.getDefault());
 
         NUMBER_FORMAT_SYMBOLS.setDecimalSeparator('.');
+
+        // Global fallback executor.
+        HekateThreadFactory factory = new HekateThreadFactory("AsyncFallback") {
+            @Override
+            protected String resolveNodeName(String nodeName) {
+                return null;
+            }
+        };
+
+        BlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
+
+        FALLBACK_EXECUTOR = new ThreadPoolExecutor(0, 1, 1, TimeUnit.SECONDS, queue, r -> {
+            Thread t = factory.newThread(r);
+
+            t.setDaemon(true);
+
+            return t;
+        });
+
+        FALLBACK_EXECUTOR.allowCoreThreadTimeOut(true);
     }
 
     private Utils() {
@@ -115,7 +141,7 @@ public final class Utils {
         return collection.stream().filter(Objects::nonNull);
     }
 
-    public static String getStacktrace(Throwable error) {
+    public static String getStackTrace(Throwable error) {
         StringWriter out = new StringWriter();
 
         error.printStackTrace(new PrintWriter(out));
@@ -123,34 +149,14 @@ public final class Utils {
         return out.toString();
     }
 
+    public static Executor fallbackExecutor() {
+        return FALLBACK_EXECUTOR;
+    }
+
     public static Waiting shutdown(ExecutorService executor) {
         executor.shutdown();
 
         return () -> executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-    }
-
-    public static Waiting shutdownNow(ExecutorService executor) {
-        executor.shutdownNow();
-
-        return () -> executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-    }
-
-    public static boolean isCausedBy(Throwable error, Class<? extends Throwable> causeType) {
-        return findCause(error, causeType) != null;
-    }
-
-    public static <T extends Throwable> T findCause(Throwable error, Class<T> causeType) {
-        Throwable cause = error;
-
-        while (cause != null) {
-            if (causeType.isAssignableFrom(cause.getClass())) {
-                return causeType.cast(cause);
-            }
-
-            cause = cause.getCause();
-        }
-
-        return null;
     }
 
     public static <T> T getUninterruptedly(Future<T> future) throws ExecutionException {
@@ -171,18 +177,22 @@ public final class Utils {
         }
     }
 
-    /**
-     * Collection-based version of {@link CompletableFuture#allOf(CompletableFuture[])}.
-     *
-     * @param futures Collection of future objects to be converted to an array and used as a parameter of {@link
-     * CompletableFuture#allOf(CompletableFuture[])} method.
-     *
-     * @return Future.
-     */
-    public static CompletableFuture<Void> allOf(Collection<CompletableFuture<?>> futures) {
-        CompletableFuture<?>[] futuresArr = futures.toArray(new CompletableFuture<?>[futures.size()]);
+    public static boolean isCausedBy(Throwable error, Class<? extends Throwable> causeType) {
+        return findCause(error, causeType) != null;
+    }
 
-        return CompletableFuture.allOf(futuresArr);
+    public static <T extends Throwable> T findCause(Throwable error, Class<T> causeType) {
+        Throwable cause = error;
+
+        while (cause != null) {
+            if (causeType.isAssignableFrom(cause.getClass())) {
+                return causeType.cast(cause);
+            }
+
+            cause = cause.getCause();
+        }
+
+        return null;
     }
 
     /**

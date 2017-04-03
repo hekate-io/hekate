@@ -64,7 +64,7 @@ public class DefaultElectionService implements ElectionService, DependentService
 
     private static final String GROUPS_PROPERTY = "groups";
 
-    private static final String ELECTION_THREAD_PREFIX = "ElectionWorker";
+    private static final String ELECTION_THREAD_PREFIX = "Election";
 
     private static final String ELECTION_LOCK_REGION = "election.service";
 

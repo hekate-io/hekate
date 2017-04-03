@@ -364,8 +364,8 @@ public class DefaultClusterService implements ClusterService, DependentService, 
             localNodeIdRef.set(node.getId());
 
             // Prepare workers.
-            gossipThread = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("GossipWorker"));
-            serviceThread = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("ClusterServiceWorker"));
+            gossipThread = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("ClusterGossip"));
+            serviceThread = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("Cluster"));
 
             // Register listeners from service configuration.
             initListeners.forEach(listener -> ctx.getCluster().addListener(listener));

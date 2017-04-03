@@ -187,7 +187,10 @@ public abstract class HekateTestBase {
     private static final List<String> KNOWN_THREAD_PREFIXES = new ArrayList<>();
 
     static {
-        // JVM threads.
+        // Fallback thread.
+        KNOWN_THREAD_PREFIXES.add("HekateAsyncFallback".toLowerCase());
+
+        // Core threads.
         KNOWN_THREAD_PREFIXES.add("threadDeathWatcher".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("globalEventExecutor".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("Time-limited test".toLowerCase());
@@ -197,6 +200,8 @@ public abstract class HekateTestBase {
         KNOWN_THREAD_PREFIXES.add("Finalizer".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("Attach Listener".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("ForkJoinPool.".toLowerCase());
+        KNOWN_THREAD_PREFIXES.add("RMI ".toLowerCase());
+        KNOWN_THREAD_PREFIXES.add("JMX ".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("main".toLowerCase());
 
         // Maven surefire plugin threads.
@@ -370,7 +375,7 @@ public abstract class HekateTestBase {
     }
 
     protected static String getStacktrace(Throwable error) {
-        return Utils.getStacktrace(error);
+        return Utils.getStackTrace(error);
     }
 
     protected static List<NetworkInterface> getNetworkInterfaces() throws SocketException {
@@ -626,7 +631,7 @@ public abstract class HekateTestBase {
         } catch (AssertionError e) {
             throw e;
         } catch (Throwable t) {
-            assertSame(Utils.getStacktrace(t), error, t.getClass());
+            assertSame(Utils.getStackTrace(t), error, t.getClass());
 
             if (message != null) {
                 assertNotNull(t.toString(), t.getMessage());
@@ -643,7 +648,7 @@ public abstract class HekateTestBase {
         } catch (AssertionError e) {
             throw e;
         } catch (Throwable t) {
-            assertSame(Utils.getStacktrace(t), error, t.getClass());
+            assertSame(Utils.getStackTrace(t), error, t.getClass());
 
             assertNotNull(t.toString(), t.getMessage());
             assertEquals(message, t.getMessage());

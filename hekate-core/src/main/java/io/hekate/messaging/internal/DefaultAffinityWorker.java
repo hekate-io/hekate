@@ -1,6 +1,6 @@
 package io.hekate.messaging.internal;
 
-import java.util.concurrent.ForkJoinPool;
+import io.hekate.core.internal.util.Utils;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -10,8 +10,8 @@ import java.util.concurrent.TimeUnit;
 class DefaultAffinityWorker implements AffinityWorker {
     private final ScheduledThreadPoolExecutor executor;
 
-    public DefaultAffinityWorker(ThreadFactory threadFactory) {
-        executor = new ScheduledThreadPoolExecutor(1, threadFactory);
+    public DefaultAffinityWorker(ThreadFactory factory) {
+        executor = new ScheduledThreadPoolExecutor(1, factory);
 
         executor.setRemoveOnCancelPolicy(true);
     }
@@ -27,7 +27,7 @@ class DefaultAffinityWorker implements AffinityWorker {
         }
 
         if (fallback) {
-            ForkJoinPool.commonPool().execute(task);
+            Utils.fallbackExecutor().execute(task);
         }
     }
 

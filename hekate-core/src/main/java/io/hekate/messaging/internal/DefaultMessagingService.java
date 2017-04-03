@@ -431,7 +431,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         if (checkIdle) {
             // Lazy initialize scheduler.
             if (scheduler == null) {
-                HekateThreadFactory threadFactory = new HekateThreadFactory(MessagingService.class.getSimpleName());
+                HekateThreadFactory threadFactory = new HekateThreadFactory(MESSAGING_THREAD_PREFIX);
 
                 scheduler = Executors.newSingleThreadScheduledExecutor(threadFactory);
             }

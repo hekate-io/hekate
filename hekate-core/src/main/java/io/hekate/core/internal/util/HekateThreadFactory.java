@@ -37,13 +37,7 @@ public class HekateThreadFactory implements ThreadFactory {
     }
 
     public HekateThreadFactory(String nodeName, String threadName) {
-        if ((nodeName == null || nodeName.isEmpty()) && Thread.currentThread() instanceof HekateThread) {
-            HekateThread parent = (HekateThread)Thread.currentThread();
-
-            nodeName = parent.getNodeName();
-        }
-
-        this.nodeName = nodeName == null ? "" : nodeName;
+        this.nodeName = resolveNodeName(nodeName);
         this.threadName = threadName;
     }
 
@@ -52,5 +46,15 @@ public class HekateThreadFactory implements ThreadFactory {
         String name = THREAD_COMMON_PREFIX + threadName + '-' + factoryId + '-' + threadCounter.getAndIncrement();
 
         return new HekateThread(nodeName, name, r);
+    }
+
+    protected String resolveNodeName(String nodeName) {
+        if ((nodeName == null || nodeName.isEmpty()) && Thread.currentThread() instanceof HekateThread) {
+            HekateThread parent = (HekateThread)Thread.currentThread();
+
+            nodeName = parent.getNodeName();
+        }
+
+        return nodeName == null ? "" : nodeName;
     }
 }

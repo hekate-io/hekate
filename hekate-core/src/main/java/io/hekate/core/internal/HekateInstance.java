@@ -463,10 +463,10 @@ public class HekateInstance implements Hekate, Serializable {
             nodeId = localNodeId;
 
             // Initialize asynchronous task executor.
-            sysWorker = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory(nodeName, "SysWorker"));
+            sysWorker = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory(nodeName, "Sys"));
 
             // Initialize cluster event manager.
-            clusterEvents.start(new HekateThreadFactory(nodeName, "ClusterEventWorker"));
+            clusterEvents.start(new HekateThreadFactory(nodeName, "ClusterEvent"));
 
             notifyOnLifecycleChange();
 
