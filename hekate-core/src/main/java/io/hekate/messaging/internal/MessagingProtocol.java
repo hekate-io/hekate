@@ -170,7 +170,7 @@ abstract class MessagingProtocol {
         @Override
         public void onComplete(MessagingProtocol message, Optional<Throwable> error, NetworkEndpoint<MessagingProtocol> endpoint) {
             if (error.isPresent()) {
-                context.notifyOnSendFailure(true, worker, payload, error.get(), sendCallback);
+                context.notifyOnSendFailure(worker, payload, error.get(), sendCallback);
             } else {
                 context.notifyOnSendSuccess(worker, payload, sendCallback);
             }
@@ -379,7 +379,7 @@ abstract class MessagingProtocol {
                 } catch (InterruptedException | MessageQueueOverflowException e) {
                     backPressure.onDequeue();
 
-                    context.notifyOnSendFailure(false, worker, payload, e, sendCallback);
+                    context.notifyOnSendFailure(worker, payload, e, sendCallback);
 
                     return false;
                 }
@@ -434,7 +434,7 @@ abstract class MessagingProtocol {
             }
 
             if (error.isPresent()) {
-                context.notifyOnSendFailure(true, worker, payload, error.get(), sendCallback);
+                context.notifyOnSendFailure(worker, payload, error.get(), sendCallback);
             } else {
                 context.notifyOnSendSuccess(worker, payload, sendCallback);
             }
@@ -536,7 +536,7 @@ abstract class MessagingProtocol {
             }
 
             if (error.isPresent()) {
-                context.notifyOnSendFailure(true, worker, payload, error.get(), sendCallback);
+                context.notifyOnSendFailure(worker, payload, error.get(), sendCallback);
             } else {
                 context.notifyOnSendSuccess(worker, payload, sendCallback);
             }

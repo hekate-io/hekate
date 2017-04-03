@@ -17,6 +17,7 @@
 package io.hekate.network.internal.netty;
 
 import io.hekate.codec.Codec;
+import io.hekate.codec.CodecException;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkFuture;
@@ -302,7 +303,11 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable error) throws Exception {
-        if (error instanceof IOException) {
+        boolean disconnect = true;
+
+        if (error instanceof CodecException) {
+            disconnect = false;
+        } else if (error instanceof IOException) {
             if (debug) {
                 log.debug("Closing inbound network connection due to I/O error "
                     + "[protocol={}, address={}, reason={}]", protocol, address(), error.toString());
@@ -311,11 +316,13 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             log.error("Inbound network connection failure [protocol={}, address={}]", protocol, address(), error);
         }
 
-        if (serverHandler != null) {
-            serverHandler.onFailure(this, error);
-        }
+        if (disconnect) {
+            if (serverHandler != null) {
+                serverHandler.onFailure(this, error);
+            }
 
-        ctx.close();
+            ctx.close();
+        }
     }
 
     @Override
@@ -583,7 +590,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                 ByteBuf buf = NetworkProtocolCodec.preEncode(msg, codec, localCtx.alloc());
 
                 promise = new WritePromise(buf, channel);
-            } catch (Throwable e) {
+            } catch (CodecException e) {
                 promise = fail(msg, channel, e);
 
                 failed = true;

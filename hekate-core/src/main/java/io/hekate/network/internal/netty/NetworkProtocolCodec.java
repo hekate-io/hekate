@@ -17,6 +17,7 @@
 package io.hekate.network.internal.netty;
 
 import io.hekate.codec.Codec;
+import io.hekate.codec.CodecException;
 import io.hekate.codec.CodecFactory;
 import io.hekate.network.internal.netty.NetworkProtocol.HandshakeAccept;
 import io.hekate.network.internal.netty.NetworkProtocol.HandshakeReject;
@@ -222,17 +223,21 @@ class NetworkProtocolCodec {
         return encoder;
     }
 
-    static ByteBuf preEncode(Object msg, Codec<Object> codec, ByteBufAllocator allocator) throws IOException {
-        ByteBuf buf = allocator.buffer();
+    static ByteBuf preEncode(Object msg, Codec<Object> codec, ByteBufAllocator allocator) throws CodecException {
+        ByteBuf buf = null;
 
         try {
+            buf = allocator.buffer();
+
             ByteBufDataWriter writer = new ByteBufDataWriter(buf);
 
             doEncode(msg, writer, codec);
 
             return buf;
-        } catch (RuntimeException | Error | IOException e) {
-            buf.release();
+        } catch (CodecException e) {
+            if (buf != null) {
+                buf.release();
+            }
 
             throw e;
         }
@@ -242,80 +247,86 @@ class NetworkProtocolCodec {
         this.codec = codec;
     }
 
-    private static void doEncode(Object msg, ByteBufDataWriter writer, Codec<Object> codec) throws IOException {
-        int startIdx = writer.buffer().writerIndex();
+    private static void doEncode(Object msg, ByteBufDataWriter writer, Codec<Object> codec) throws CodecException {
+        try {
+            int startIdx = writer.buffer().writerIndex();
 
-        // Placeholder for message length header.
-        writer.buffer().writeBytes(LENGTH_PLACEHOLDER);
+            // Placeholder for message length header.
+            writer.buffer().writeBytes(LENGTH_PLACEHOLDER);
 
-        boolean protocolMsg = false;
+            boolean protocolMsg = false;
 
-        if (msg instanceof NetworkProtocol) {
-            protocolMsg = true;
+            if (msg instanceof NetworkProtocol) {
+                protocolMsg = true;
 
-            NetworkProtocol netMsg = (NetworkProtocol)msg;
+                NetworkProtocol netMsg = (NetworkProtocol)msg;
 
-            NetworkProtocol.Type type = netMsg.getType();
+                NetworkProtocol.Type type = netMsg.getType();
 
-            writer.writeByte(type.ordinal());
+                writer.writeByte(type.ordinal());
 
-            switch (type) {
-                case HANDSHAKE_REQUEST: {
-                    HandshakeRequest request = (HandshakeRequest)netMsg;
+                switch (type) {
+                    case HANDSHAKE_REQUEST: {
+                        HandshakeRequest request = (HandshakeRequest)netMsg;
 
-                    writer.writeUTF(request.getProtocol());
+                        writer.writeUTF(request.getProtocol());
 
-                    Object payload = request.getPayload();
+                        Object payload = request.getPayload();
 
-                    if (payload == null) {
-                        writer.writeBoolean(false);
-                    } else {
-                        writer.writeBoolean(true);
+                        if (payload == null) {
+                            writer.writeBoolean(false);
+                        } else {
+                            writer.writeBoolean(true);
 
-                        codec.encode(payload, writer);
+                            codec.encode(payload, writer);
+                        }
+
+                        break;
                     }
+                    case HANDSHAKE_ACCEPT: {
+                        HandshakeAccept accept = (HandshakeAccept)netMsg;
 
-                    break;
-                }
-                case HANDSHAKE_ACCEPT: {
-                    HandshakeAccept accept = (HandshakeAccept)netMsg;
+                        writer.writeInt(accept.getHbInterval());
+                        writer.writeInt(accept.getHbLossThreshold());
+                        writer.writeBoolean(accept.isHbDisabled());
 
-                    writer.writeInt(accept.getHbInterval());
-                    writer.writeInt(accept.getHbLossThreshold());
-                    writer.writeBoolean(accept.isHbDisabled());
+                        break;
+                    }
+                    case HANDSHAKE_REJECT: {
+                        HandshakeReject reject = (HandshakeReject)netMsg;
 
-                    break;
-                }
-                case HANDSHAKE_REJECT: {
-                    HandshakeReject reject = (HandshakeReject)netMsg;
+                        writer.writeUTF(reject.getReason());
 
-                    writer.writeUTF(reject.getReason());
-
-                    break;
+                        break;
+                    }
+                    case HEARTBEAT: {
+                        // No-op.
+                        break;
+                    }
+                    default: {
+                        throw new IllegalStateException("Unexpected message type: " + msg);
+                    }
                 }
-                case HEARTBEAT: {
-                    // No-op.
-                    break;
-                }
-                default: {
-                    throw new IllegalStateException("Unexpected message type: " + msg);
-                }
+            } else {
+                codec.encode(msg, writer);
             }
-        } else {
-            codec.encode(msg, writer);
+
+            // Calculate real message length.
+            int len = writer.buffer().writerIndex() - startIdx;
+
+            // Magic length value:
+            //   negative - for protocol messages
+            //   positive - for user messages
+            if (protocolMsg) {
+                len = -len;
+            }
+
+            // Update length header.
+            writer.buffer().setInt(startIdx, len);
+        } catch (CodecException e) {
+            throw e;
+        } catch (Throwable t) {
+            throw new CodecException("Failed to encode message [message=" + msg + ", codec=" + codec + ']', t);
         }
-
-        // Calculate real message length.
-        int len = writer.buffer().writerIndex() - startIdx;
-
-        // Magic length value:
-        //   negative - for protocol messages
-        //   positive - for user messages
-        if (protocolMsg) {
-            len = -len;
-        }
-
-        // Update length header.
-        writer.buffer().setInt(startIdx, len);
     }
 }

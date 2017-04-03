@@ -272,7 +272,7 @@ abstract class ReceiverContext<T> {
         }
     }
 
-    public void notifyOnSendFailure(boolean disconnect, AffinityWorker worker, T payload, Throwable error, SendCallback callback) {
+    public void notifyOnSendFailure(AffinityWorker worker, T payload, Throwable error, SendCallback callback) {
         if (callback != null) {
             if (async.isAsync()) {
                 onAsyncEnqueue();
@@ -280,10 +280,10 @@ abstract class ReceiverContext<T> {
                 worker.execute(() -> {
                     onAsyncDequeue();
 
-                    doNotifyOnSendFailure(disconnect, payload, error, callback);
+                    doNotifyOnSendFailure(payload, error, callback);
                 });
             } else {
-                doNotifyOnSendFailure(disconnect, payload, error, callback);
+                doNotifyOnSendFailure(payload, error, callback);
             }
         }
     }
@@ -463,15 +463,11 @@ abstract class ReceiverContext<T> {
         }
     }
 
-    private void doNotifyOnSendFailure(boolean disconnect, T payload, Throwable error, SendCallback callback) {
+    private void doNotifyOnSendFailure(T payload, Throwable error, SendCallback callback) {
         try {
             callback.onComplete(error);
         } catch (RuntimeException | Error e) {
             log.error("Got an unexpected runtime error during message processing [message={}]", payload, e);
-        } finally {
-            if (disconnect) {
-                disconnectOnError(error);
-            }
         }
     }
 
@@ -480,8 +476,6 @@ abstract class ReceiverContext<T> {
             handle.getCallback().onComplete(handle, error, null);
         } catch (RuntimeException | Error e) {
             log.error("Got an unexpected runtime error during message processing [message={}]", handle.getMessage(), e);
-        } finally {
-            disconnectOnError(error);
         }
     }
 

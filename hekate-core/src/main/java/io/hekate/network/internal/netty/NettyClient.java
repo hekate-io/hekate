@@ -17,6 +17,7 @@
 package io.hekate.network.internal.netty;
 
 import io.hekate.codec.Codec;
+import io.hekate.codec.CodecException;
 import io.hekate.codec.CodecFactory;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
@@ -525,27 +526,30 @@ class NettyClient<T> implements NetworkClient<T> {
                         @Override
                         public void exceptionCaught(ChannelHandlerContext ctx, Throwable error) throws Exception {
                             if (firstError == null) {
-                                // Check if we are connected or connecting.
-                                boolean connected = withLock(() ->
-                                    state == CONNECTING || state == CONNECTED
-                                );
+                                if (!(error instanceof CodecException)) {
+                                    // Check if we are connected or connecting.
+                                    boolean connected = withLock(() ->
+                                        state == CONNECTING || state == CONNECTED
+                                    );
 
-                                if (connected) {
-                                    // Store the first error for user callback notification.
-                                    firstError = error;
-                                }
-
-                                if (error instanceof IOException) {
-                                    if (connected && debug) {
-                                        log.debug("Closing outbound network connection due to I/O error "
-                                            + "[protocol={}, address={}, state={}, cause={}]", protocol, address, state, error.toString());
+                                    if (connected) {
+                                        // Store the first error for user callback notification.
+                                        firstError = error;
                                     }
-                                } else {
-                                    log.error("Outbound network connection failure "
-                                        + "[protocol={}, address={}, state={}]", protocol, address, state, error);
-                                }
 
-                                ctx.close();
+                                    if (error instanceof IOException) {
+                                        if (connected && debug) {
+                                            log.debug("Closing outbound network connection due to I/O error "
+                                                    + "[protocol={}, address={}, state={}, cause={}]", protocol, address, state,
+                                                error.toString());
+                                        }
+                                    } else {
+                                        log.error("Outbound network connection failure "
+                                            + "[protocol={}, address={}, state={}]", protocol, address, state, error);
+                                    }
+
+                                    ctx.close();
+                                }
                             }
                         }
 
@@ -724,7 +728,7 @@ class NettyClient<T> implements NetworkClient<T> {
                 ByteBuf buf = NetworkProtocolCodec.preEncode(msg, codec, channel.alloc());
 
                 promise = new WritePromise(buf, channel);
-            } catch (Throwable e) {
+            } catch (CodecException e) {
                 promise = fail(msg, channel, e);
 
                 failed = true;

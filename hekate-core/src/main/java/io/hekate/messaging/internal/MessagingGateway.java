@@ -20,6 +20,7 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
+import io.hekate.codec.CodecException;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.failover.FailoverPolicy;
@@ -995,7 +996,7 @@ class MessagingGateway<T> {
 
         FailoverPolicy policy = ctx.getOpts().failover();
 
-        if (policy != null && !(cause instanceof MessagingChannelClosedException)) {
+        if (policy != null && isRecoverable(cause)) {
             int attempt;
             FailoverRoutingPolicy prevRouting;
             Set<ClusterNode> failedNodes;
@@ -1063,6 +1064,11 @@ class MessagingGateway<T> {
         if (!applied) {
             callback.fail(finalCause);
         }
+    }
+
+    private boolean isRecoverable(Throwable cause) {
+        return !(cause instanceof MessagingChannelClosedException)
+            && !(cause instanceof CodecException);
     }
 
     private ClientPool<T> createClientPool(ClusterNode node) {
