@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutionException;
@@ -79,7 +80,7 @@ public class NetworkClientTest extends NetworkTestBase {
             assertNull(client.getRemoteAddress());
             assertNull(client.getLocalAddress());
             callback.assertConnects(0);
-            callback.assertDisconnects(0);
+            callback.assertDisconnects(1);
             callback.assertErrors(1);
             callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof ConnectException));
         });
@@ -106,7 +107,7 @@ public class NetworkClientTest extends NetworkTestBase {
             assertNull(client.getRemoteAddress());
             assertNull(client.getLocalAddress());
             callback.assertConnects(0);
-            callback.assertDisconnects(0);
+            callback.assertDisconnects(1);
             callback.assertErrors(1);
             callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof ConnectTimeoutException));
         });
@@ -444,8 +445,8 @@ public class NetworkClientTest extends NetworkTestBase {
             }
 
             @Override
-            public void onDisconnect(NetworkClient<String> from) {
-                super.onDisconnect(client);
+            public void onDisconnect(NetworkClient<String> from, Optional<Throwable> cause) {
+                super.onDisconnect(client, cause);
 
                 disconnect.countDown();
             }
@@ -777,7 +778,7 @@ public class NetworkClientTest extends NetworkTestBase {
         assertSame(NetworkClient.State.DISCONNECTED, client.getState());
 
         callback.assertConnects(0);
-        callback.assertDisconnects(0);
+        callback.assertDisconnects(1);
         callback.assertErrors(1);
         callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof ConnectException));
     }
@@ -819,7 +820,7 @@ public class NetworkClientTest extends NetworkTestBase {
             assertSame(NetworkClient.State.DISCONNECTED, client.getState());
 
             callback.assertConnects(0);
-            callback.assertDisconnects(0);
+            callback.assertDisconnects(1);
             callback.assertErrors(1);
             callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof ConnectException));
         });
@@ -862,7 +863,7 @@ public class NetworkClientTest extends NetworkTestBase {
         assertSame(NetworkClient.State.DISCONNECTED, client.getState());
 
         callback.assertConnects(1);
-        callback.assertDisconnects(1);
+        callback.assertDisconnects(2);
         callback.assertErrors(1);
         callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof ConnectException));
     }
@@ -978,7 +979,7 @@ public class NetworkClientTest extends NetworkTestBase {
             assertSame(NetworkClient.State.DISCONNECTED, badClient.getState());
 
             badCallback.assertConnects(0);
-            badCallback.assertDisconnects(0);
+            badCallback.assertDisconnects(1);
             badCallback.assertErrors(1);
 
             goodClient.disconnect().get();

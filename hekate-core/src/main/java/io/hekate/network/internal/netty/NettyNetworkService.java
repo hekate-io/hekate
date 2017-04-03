@@ -526,11 +526,15 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
             }
 
             @Override
-            public void onFailure(NetworkClient<Object> client, Throwable error) {
-                if (error instanceof ConnectTimeoutException || error instanceof SocketTimeoutException) {
-                    callback.onResult(address, PingResult.TIMEOUT);
-                } else {
-                    callback.onResult(address, PingResult.FAILURE);
+            public void onDisconnect(NetworkClient<Object> client, Optional<Throwable> cause) {
+                if (cause.isPresent()) {
+                    Throwable error = cause.get();
+
+                    if (error instanceof ConnectTimeoutException || error instanceof SocketTimeoutException) {
+                        callback.onResult(address, PingResult.TIMEOUT);
+                    } else {
+                        callback.onResult(address, PingResult.FAILURE);
+                    }
                 }
             }
 

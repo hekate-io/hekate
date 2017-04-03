@@ -478,8 +478,6 @@ class NettyClient<T> implements NetworkClient<T> {
                     }
 
                     pipeline.addLast(new ChannelInboundHandlerAdapter() {
-                        private boolean notifiedOnConnect;
-
                         private Throwable firstError;
 
                         @Override
@@ -511,8 +509,6 @@ class NettyClient<T> implements NetworkClient<T> {
 
                                 // Notify callback.
                                 if (notify) {
-                                    notifiedOnConnect = true;
-
                                     callback.onConnect(client);
                                 }
 
@@ -525,32 +521,32 @@ class NettyClient<T> implements NetworkClient<T> {
 
                         @Override
                         public void exceptionCaught(ChannelHandlerContext ctx, Throwable error) throws Exception {
-                            if (firstError == null) {
-                                if (!(error instanceof CodecException)) {
-                                    // Check if we are connected or connecting.
-                                    boolean connected = withLock(() ->
-                                        state == CONNECTING || state == CONNECTED
-                                    );
-
-                                    if (connected) {
-                                        // Store the first error for user callback notification.
-                                        firstError = error;
-                                    }
-
-                                    if (error instanceof IOException) {
-                                        if (connected && debug) {
-                                            log.debug("Closing outbound network connection due to I/O error "
-                                                    + "[protocol={}, address={}, state={}, cause={}]", protocol, address, state,
-                                                error.toString());
-                                        }
-                                    } else {
-                                        log.error("Outbound network connection failure "
-                                            + "[protocol={}, address={}, state={}]", protocol, address, state, error);
-                                    }
-
-                                    ctx.close();
-                                }
+                            if (firstError != null || error instanceof CodecException) {
+                                // Ignore since this is an application-level error.
+                                return;
                             }
+
+                            // Check if we are connected or connecting.
+                            boolean connected = withLock(() ->
+                                state == CONNECTING || state == CONNECTED
+                            );
+
+                            if (connected) {
+                                // Store the first error for user callback notification.
+                                firstError = error;
+                            }
+
+                            if (error instanceof IOException) {
+                                if (connected && debug) {
+                                    log.debug("Closing outbound network connection due to I/O error "
+                                        + "[protocol={}, address={}, state={}, cause={}]", protocol, address, state, error.toString());
+                                }
+                            } else {
+                                log.error("Outbound network connection failure "
+                                    + "[protocol={}, address={}, state={}]", protocol, address, state, error);
+                            }
+
+                            ctx.close();
                         }
 
                         @Override
@@ -577,13 +573,7 @@ class NettyClient<T> implements NetworkClient<T> {
                                 return false;
                             });
 
-                            if (firstError != null) {
-                                callback.onFailure(client, firstError);
-                            }
-
-                            if (notifiedOnConnect) {
-                                callback.onDisconnect(client);
-                            }
+                            callback.onDisconnect(client, Optional.ofNullable(firstError));
 
                             // Notify futures only if we were NOT in CONNECTING state or if we are aware of an error,
                             // otherwise we can mis an error and notify future on false success.
@@ -626,7 +616,7 @@ class NettyClient<T> implements NetworkClient<T> {
                 if (future.channel().pipeline().last() == null) {
                     // Pipeline not initialized yet -> dispose connection in place.
                     try {
-                        callback.onFailure(this, cause);
+                        callback.onDisconnect(this, Optional.of(cause));
                     } finally {
                         // Notify futures at all cost.
                         try {

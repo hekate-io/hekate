@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,16 +108,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
             }
 
             @Override
-            public void onFailure(NetworkClient<GossipProtocol> client, Throwable error) {
-                cleanup(client);
-            }
-
-            @Override
-            public void onDisconnect(NetworkClient<GossipProtocol> client) {
-                cleanup(client);
-            }
-
-            private void cleanup(NetworkClient<GossipProtocol> client) {
+            public void onDisconnect(NetworkClient<GossipProtocol> client, Optional<Throwable> cause) {
                 ClusterNodeId id = client.getContext();
 
                 if (id != null) {
@@ -224,11 +216,13 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
             }
 
             @Override
-            public void onFailure(NetworkClient<GossipProtocol> client, Throwable error) {
-                callback.onSendFailure(msg, error);
+            public void onDisconnect(NetworkClient<GossipProtocol> client, Optional<Throwable> cause) {
+                if (cause.isPresent()) {
+                    callback.onSendFailure(msg, cause.get());
 
-                if (onComplete != null) {
-                    onComplete.run();
+                    if (onComplete != null) {
+                        onComplete.run();
+                    }
                 }
             }
         });

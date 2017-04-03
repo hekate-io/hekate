@@ -27,6 +27,7 @@ import io.hekate.network.NetworkMessage;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
+import java.util.Optional;
 
 class NetSenderContext<T> extends NetReceiverContextBase<T> {
     private final ClusterAddress address;
@@ -73,21 +74,7 @@ class NetSenderContext<T> extends NetReceiverContextBase<T> {
                 }
 
                 @Override
-                public void onFailure(NetworkClient<MessagingProtocol> client, Throwable error) {
-                    synchronized (mux) {
-                        // Check if there were no disconnects for this epoch.
-                        if (localEpoch == epoch) {
-                            Connect msg = new Connect(address.getId(), channelId, poolOrder, poolSize);
-
-                            client.ensureConnected(netAddress, msg, this);
-                        }
-                    }
-
-                    discardRequests(localEpoch, error);
-                }
-
-                @Override
-                public void onDisconnect(NetworkClient<MessagingProtocol> client) {
+                public void onDisconnect(NetworkClient<MessagingProtocol> client, Optional<Throwable> cause) {
                     synchronized (mux) {
                         // Check if there were no disconnects for this epoch.
                         if (localEpoch == epoch) {
@@ -111,10 +98,5 @@ class NetSenderContext<T> extends NetReceiverContextBase<T> {
 
             return super.disconnect();
         }
-    }
-
-    // Package level for testing purposes.
-    NetworkClient.State getNetState() {
-        return net.getState();
     }
 }

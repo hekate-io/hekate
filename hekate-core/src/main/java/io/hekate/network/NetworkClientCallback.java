@@ -18,6 +18,7 @@ package io.hekate.network;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Optional;
 
 /**
  * Callback for receiving messages and tracking state changes in {@link NetworkClient}.
@@ -48,7 +49,7 @@ public interface NetworkClientCallback<T> {
      *
      * <p>
      * Note that this method will not be called in case of {@link NetworkClient#connect(InetSocketAddress, NetworkClientCallback) connect}
-     * operation failure, {@link #onFailure(NetworkClient, Throwable)} method will be called instead.
+     * operation failure, {@link #onDisconnect(NetworkClient, Optional)} method will be called instead with a non-empty {@code cause}.
      * </p>
      *
      * @param client Client that was connected.
@@ -58,33 +59,13 @@ public interface NetworkClientCallback<T> {
     }
 
     /**
-     * Called in case of an error in {@link NetworkClient}.
-     *
-     * <p>
-     * If client was in {@link NetworkClient.State#CONNECTED CONNECTED} state at the time of this error then {@link
-     * #onDisconnect(NetworkClient)} method will be called after this method.
-     * </p>
-     *
-     * @param client Failed client.
-     * @param error Error.
-     */
-    default void onFailure(NetworkClient<T> client, Throwable error) {
-        // No-op.
-    }
-
-    /**
      * Called right after {@link NetworkClient} gets disconnected and switched to the {@link NetworkClient.State#DISCONNECTED DISCONNECTED}
      * state either by explicit call of {@link NetworkClient#disconnect()} method or if connection was closed due to an error.
      *
-     * <p>
-     * This method will not be called if {@link NetworkClient#connect(InetSocketAddress, NetworkClientCallback) connect} operation failed
-     * (i.e. this method gets called only if preceding {@link #onConnect(NetworkClient)} method was called). In such case only {@link
-     * #onFailure(NetworkClient, Throwable)} method will be called.
-     * </p>
-     *
      * @param client Client that was disconnected.
+     * @param cause Error that caused this disconnect.
      */
-    default void onDisconnect(NetworkClient<T> client) {
+    default void onDisconnect(NetworkClient<T> client, Optional<Throwable> cause) {
         // No-op.
     }
 }

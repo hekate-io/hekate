@@ -420,7 +420,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     Executor getExecutor();
 
     /**
-     * Returned the asynchronous single-threaded task executor for the specified affinity key.
+     * Returned an asynchronous single-threaded task executor for the specified affinity key.
      *
      * @param affinityKey Affinity key.
      *

@@ -25,6 +25,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -55,12 +56,9 @@ public class NetworkClientCallbackMock<T> implements NetworkClientCallback<T> {
     }
 
     @Override
-    public void onFailure(NetworkClient<T> client, Throwable error) {
-        errors.add(error);
-    }
+    public void onDisconnect(NetworkClient<T> client, Optional<Throwable> cause) {
+        cause.ifPresent(errors::add);
 
-    @Override
-    public void onDisconnect(NetworkClient<T> client) {
         disconnects.incrementAndGet();
     }
 

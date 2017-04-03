@@ -20,6 +20,7 @@ import io.hekate.codec.Codec;
 import io.hekate.codec.CodecFactory;
 import java.io.Closeable;
 import java.net.InetSocketAddress;
+import java.util.Optional;
 
 /**
  * Asynchronous network client connection.
@@ -128,7 +129,7 @@ public interface NetworkClient<T> extends NetworkEndpoint<T>, Closeable {
      *
      * <p>
      * If operation completes successfully then {@link NetworkClientCallback#onConnect(NetworkClient)} will be notified. If operation
-     * completes  with an error then {@link NetworkClientCallback#onFailure(NetworkClient, Throwable)} will be notified.
+     * completes with an error then {@link NetworkClientCallback#onDisconnect(NetworkClient, Optional)} will be notified.
      * </p>
      *
      * <p>
@@ -153,7 +154,7 @@ public interface NetworkClient<T> extends NetworkEndpoint<T>, Closeable {
      *
      * <p>
      * If operation completes successfully then {@link NetworkClientCallback#onConnect(NetworkClient)} will be notified. If operation
-     * completes with an error then {@link NetworkClientCallback#onFailure(NetworkClient, Throwable)} will be notified.
+     * completes with an error then {@link NetworkClientCallback#onConnect(NetworkClient)} will be notified.
      * </p>
      *
      * @param address Socket address where {@link NetworkService} is running.
