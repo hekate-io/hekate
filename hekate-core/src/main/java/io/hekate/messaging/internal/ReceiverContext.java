@@ -100,9 +100,7 @@ abstract class ReceiverContext<T> {
             switch (msgType) {
                 case NOTIFICATION: {
                     if (receiver == null) {
-                        if (log.isErrorEnabled()) {
-                            log.error("Received an unexpected message [channel={}, message={}]", gateway.getName(), netMsg);
-                        }
+                        log.error("Received an unexpected message [message={}]", netMsg);
                     } else {
                         if (async.isAsync()) {
                             int affinity = randomAffinity();
@@ -125,9 +123,7 @@ abstract class ReceiverContext<T> {
                 }
                 case AFFINITY_NOTIFICATION: {
                     if (receiver == null) {
-                        if (log.isErrorEnabled()) {
-                            log.error("Received an unexpected message [channel={}, message={}]", gateway.getName(), netMsg);
-                        }
+                        log.error("Received an unexpected message [message={}, from={}]", netMsg, from);
                     } else {
                         if (async.isAsync()) {
                             int affinity = MessagingProtocolCodec.previewAffinity(netMsg);
@@ -150,9 +146,7 @@ abstract class ReceiverContext<T> {
                 }
                 case REQUEST: {
                     if (receiver == null) {
-                        if (log.isErrorEnabled()) {
-                            log.error("Received an unexpected message [channel={}, message={}]", gateway.getName(), netMsg);
-                        }
+                        log.error("Received an unexpected message [message={}, from={}]", netMsg, from);
                     } else {
                         int affinity = randomAffinity();
 
@@ -175,9 +169,7 @@ abstract class ReceiverContext<T> {
                 }
                 case AFFINITY_REQUEST: {
                     if (receiver == null) {
-                        if (log.isErrorEnabled()) {
-                            log.error("Received an unexpected message [channel={}, message={}]", gateway.getName(), netMsg);
-                        }
+                        log.error("Received an unexpected message [message={}, from={}]", netMsg, from);
                     } else {
                         int affinity = MessagingProtocolCodec.previewAffinity(netMsg);
 
@@ -213,7 +205,7 @@ abstract class ReceiverContext<T> {
                                 onDequeueReceiveAsync();
 
                                 doReceiveResponse(handle, m.cast());
-                            }, this::handleAsyncMessageError);
+                            }, error -> notifyOnReplyFailure(handle, error));
                         } else {
                             doReceiveResponse(handle, netMsg.decode().cast());
                         }
@@ -236,7 +228,7 @@ abstract class ReceiverContext<T> {
                                 onDequeueReceiveAsync();
 
                                 doReceiveResponseChunk(handle, m.cast());
-                            }, this::handleAsyncMessageError);
+                            }, error -> notifyOnReplyFailure(handle, error));
                         } else {
                             doReceiveResponseChunk(handle, netMsg.decode().cast());
                         }
@@ -250,7 +242,7 @@ abstract class ReceiverContext<T> {
                 }
             }
         } catch (IOException e) {
-            log.error("Failed to decode network message [message={}]", netMsg, e);
+            log.error("Failed to decode network message [message={}], from={}]", netMsg, from, e);
 
             disconnectOnError(e);
         }
@@ -374,8 +366,9 @@ abstract class ReceiverContext<T> {
 
             receiver.receive(msg);
         } catch (RuntimeException | Error e) {
-            log.error("Got an unexpected runtime error during message processing [message={}]", msg, e);
+            log.error("Got an unexpected runtime error during request processing [message={}]", msg, e);
 
+            // TODO: Send back an error response instead of closing the connection?
             disconnectOnError(e);
         }
     }
@@ -386,9 +379,7 @@ abstract class ReceiverContext<T> {
 
             receiver.receive(msg);
         } catch (RuntimeException | Error e) {
-            log.error("Got an unexpected runtime error during message processing [message={}]", msg, e);
-
-            disconnectOnError(e);
+            log.error("Got an unexpected runtime error during notification processing [message={}]", msg, e);
         }
     }
 
@@ -399,28 +390,28 @@ abstract class ReceiverContext<T> {
 
                 request.getCallback().onComplete(request, null, msg);
             } catch (RuntimeException | Error e) {
-                log.error("Got an unexpected runtime error during message processing [message={}]", msg, e);
-
-                disconnectOnError(e);
+                log.error("Got an unexpected runtime error during response processing [message={}]", msg, e);
             }
         }
     }
 
     protected void doReceiveResponseChunk(RequestHandle<T> request, ResponseChunk<T> msg) {
         if (request.isRegistered()) {
-            try {
-                if (request.getContext().getOpts().hasTimeout()) {
-                    // Reset timeout on every response chunk.
-                    gateway().scheduleTimeout(request.getContext(), request.getCallback());
-                }
+            if (request.getContext().getOpts().hasTimeout()) {
+                // Reset timeout on every response chunk.
+                gateway().scheduleTimeout(request.getContext(), request.getCallback());
+            }
 
+            try {
                 msg.prepareReceive(this, request.getMessage());
 
                 request.getCallback().onComplete(request, null, msg);
             } catch (RuntimeException | Error e) {
-                log.error("Got an unexpected runtime error during message processing [message={}]", msg, e);
+                log.error("Got an unexpected runtime error during response chunk processing [message={}]", msg, e);
 
-                disconnectOnError(e);
+                if (request.unregister()) {
+                    doNotifyOnReplyFailure(request, e);
+                }
             }
         }
     }
@@ -458,8 +449,6 @@ abstract class ReceiverContext<T> {
             callback.onComplete(null);
         } catch (RuntimeException | Error e) {
             log.error("Got an unexpected runtime error during message processing [message={}]", payload, e);
-
-            disconnectOnError(e);
         }
     }
 
@@ -485,18 +474,12 @@ abstract class ReceiverContext<T> {
         try {
             handle.getCallback().onComplete(handle, cause, null);
         } catch (RuntimeException | Error e) {
-            if (log.isErrorEnabled()) {
-                log.error("Failed to notify callback on response failure [message={}]", message, e);
-            }
+            log.error("Failed to notify callback on response failure [message={}]", message, e);
         }
     }
 
     private void handleAsyncMessageError(Throwable error) {
-        if (log.isErrorEnabled()) {
-            log.error("Got error during message processing.", error);
-        }
-
-        disconnectOnError(error);
+        log.error("Got error during message processing.", error);
     }
 
     private int randomAffinity() {

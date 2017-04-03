@@ -84,7 +84,7 @@ class NetSenderContext<T> extends NetReceiverContextBase<T> {
                         }
                     }
 
-                    discardRequests(localEpoch, new ClosedChannelException());
+                    discardRequests(localEpoch, cause.orElseGet(ClosedChannelException::new));
                 }
             });
         }
