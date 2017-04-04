@@ -43,6 +43,8 @@ import io.hekate.metrics.MetricsService;
 import io.hekate.metrics.cluster.ClusterMetricsService;
 import io.hekate.metrics.cluster.ClusterMetricsServiceFactory;
 import io.hekate.metrics.cluster.ClusterNodeMetrics;
+import io.hekate.metrics.cluster.internal.MetricsProtocol.UpdateRequest;
+import io.hekate.metrics.cluster.internal.MetricsProtocol.UpdateResponse;
 import io.hekate.metrics.internal.StaticMetric;
 import io.hekate.util.StateGuard;
 import io.hekate.util.format.ToString;
@@ -164,7 +166,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
                     log.debug("Sending metrics update [to={}, updates={}]", to, updates);
                 }
 
-                MetricsProtocol.UpdateRequest update = new MetricsProtocol.UpdateRequest(localNode, targetVer, updates);
+                UpdateRequest update = new UpdateRequest(localNode, targetVer, updates);
 
                 channel.send(update);
             }
@@ -532,12 +534,12 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
         guard.lockRead();
 
         try {
-            if (guard.isInitialized()) {
+            if (guard.isInitialized() && !replicas.isEmpty()) {
                 MetricsProtocol in = msg.get();
 
                 switch (in.getType()) {
                     case UPDATE_REQUEST: {
-                        MetricsProtocol.UpdateRequest request = (MetricsProtocol.UpdateRequest)in;
+                        UpdateRequest request = (UpdateRequest)in;
 
                         List<MetricsUpdate> updates = request.getUpdates();
 
@@ -548,7 +550,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
                                 log.debug("Sending push back updates [from={}, metrics={}]", in.getFrom(), pushBack);
                             }
 
-                            MetricsProtocol.UpdateResponse response = new MetricsProtocol.UpdateResponse(localNode, pushBack);
+                            UpdateResponse response = new UpdateResponse(localNode, pushBack);
 
                             msg.getEndpoint().getChannel().forNode(in.getFrom()).send(response);
                         }
@@ -556,7 +558,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
                         break;
                     }
                     case UPDATE_RESPONSE: {
-                        MetricsProtocol.UpdateResponse response = (MetricsProtocol.UpdateResponse)in;
+                        UpdateResponse response = (UpdateResponse)in;
 
                         processUpdates(in.getFrom(), response.getMetrics(), false, -1);
 
