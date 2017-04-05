@@ -32,7 +32,6 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import java.net.ConnectException;
-import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
@@ -50,6 +49,8 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
 
     private final boolean trace;
 
+    private final String id;
+
     private final int epoch;
 
     private final String protocol;
@@ -59,8 +60,6 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
     private final long idleTimeout;
 
     private final Integer connectTimeout;
-
-    private final InetSocketAddress address;
 
     private final NettyMetricsCallback metrics;
 
@@ -78,16 +77,15 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
 
     private State state = CONNECTING;
 
-    public NettyClientHandler(int epoch, String protocol, T login, Integer connectTimeout, long idleTimeout, InetSocketAddress address,
-        Logger log, NettyMetricsCallback metrics, NettyClient<T> client,
-        NetworkClientCallback<T> callback) {
+    public NettyClientHandler(String id, int epoch, String protocol, T login, Integer connectTimeout, long idleTimeout, Logger log,
+        NettyMetricsCallback metrics, NettyClient<T> client, NetworkClientCallback<T> callback) {
         this.log = log;
+        this.id = id;
         this.epoch = epoch;
         this.protocol = protocol;
         this.login = login;
         this.idleTimeout = idleTimeout;
         this.connectTimeout = connectTimeout;
-        this.address = address;
         this.metrics = metrics;
         this.client = client;
         this.callback = callback;
@@ -104,7 +102,7 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
 
         if (connectTimeout != null && connectTimeout > 0) {
             if (debug) {
-                log.debug("Registering connect timeout handler [protocol={}, address={}, timeout={}]", protocol, address, connectTimeout);
+                log.debug("Registering connect timeout handler [channel={}, timeout={}]", id, connectTimeout);
             }
 
             IdleStateHandler idleStateHandler = new IdleStateHandler(connectTimeout, 0, 0, TimeUnit.MILLISECONDS);
@@ -120,7 +118,7 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
         HandshakeRequest request = new HandshakeRequest(protocol, login);
 
         if (debug) {
-            log.debug("Connected ...sending handshake request [address={}, request={}]", address, request);
+            log.debug("Connected ...sending handshake request [channel={}, request={}]", id, request);
         }
 
         if (metrics != null) {
@@ -163,9 +161,9 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
                             ignoreReadTimeouts--;
                         } else {
                             if (state == CONNECTING) {
-                                throw new ConnectTimeoutException("Timeout while connecting to " + address);
+                                throw new ConnectTimeoutException("Timeout while connecting to " + id);
                             } else if (state == CONNECTED) {
-                                throw new SocketTimeoutException("Timeout while reading data from " + address);
+                                throw new SocketTimeoutException("Timeout while reading data from " + id);
                             }
                         }
                     }
@@ -185,7 +183,7 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
         if (state == CONNECTING) {
             state = DISCONNECTED;
 
-            ctx.fireExceptionCaught(new ConnectException("Got disconnected on handshake [address=" + address + ']'));
+            ctx.fireExceptionCaught(new ConnectException("Got disconnected on handshake [channel=" + id + ']'));
         } else {
             state = DISCONNECTED;
 
@@ -198,7 +196,7 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
         // Ignore heartbeats.
         if (msg instanceof Heartbeat) {
             if (trace) {
-                log.trace("Received heartbeat from server [from={}, message={}]", address, msg);
+                log.trace("Received heartbeat from server [from={}, message={}]", id, msg);
             }
 
             return;
@@ -211,7 +209,7 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
                 netMsg.prepare(log);
 
                 if (trace) {
-                    log.trace("Message buffer prepared [from={}, buffer={}]", address, netMsg);
+                    log.trace("Message buffer prepared [from={}, buffer={}]", id, netMsg);
                 }
 
                 if (metrics != null) {
@@ -224,7 +222,7 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
             }
         } else {
             if (debug) {
-                log.debug("Received handshake response [from={}, message={}]", address, msg);
+                log.debug("Received handshake response [from={}, message={}]", id, msg);
             }
 
             NetworkProtocol handshakeMsg = (NetworkProtocol)msg;
@@ -237,10 +235,10 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
                 String reason = reject.getReason();
 
                 if (debug) {
-                    log.debug("Server rejected connection [address={}, protocol={}, reason={}]", address, protocol, reason);
+                    log.debug("Server rejected connection [channel={}, reason={}]", id, reason);
                 }
 
-                throw new ConnectException(reason + " [protocol=" + protocol + ']');
+                throw new ConnectException(reason + " [channel=" + id + ']');
             } else {
                 HandshakeAccept accept = (HandshakeAccept)handshakeMsg;
 
@@ -263,12 +261,12 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
                         interval = 0;
 
                         if (debug) {
-                            log.debug("Registering heartbeatless timeout handler [read-timeout={}]", readTimeout);
+                            log.debug("Registering heartbeatless timeout handler [channel={}, read-timeout={}]", id, readTimeout);
                         }
                     } else {
                         if (debug) {
-                            log.debug("Registering heartbeats handler [interval={}, loss-threshold={}, read-timeout={}]", interval,
-                                threshold, readTimeout);
+                            log.debug("Registering heartbeats handler [channel={}, interval={}, loss-threshold={}, read-timeout={}]",
+                                id, interval, threshold, readTimeout);
                         }
                     }
 
@@ -278,7 +276,7 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
                 // Register idle connection handler.
                 if (idleTimeout > 0) {
                     if (debug) {
-                        log.debug("Registering idle connection handler [idle-timeout={}]", idleTimeout);
+                        log.debug("Registering idle connection handler [channel={}, idle-timeout={}]", id, idleTimeout);
                     }
 
                     NettyClientIdleStateHandler idleStateHandler = new NettyClientIdleStateHandler(idleTimeout);
