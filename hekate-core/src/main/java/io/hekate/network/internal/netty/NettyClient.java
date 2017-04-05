@@ -33,7 +33,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
@@ -45,6 +44,7 @@ import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.traffic.ChannelTrafficShapingHandler;
 import io.netty.handler.traffic.TrafficCounter;
+import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -86,6 +86,148 @@ class NettyClient<T> implements NetworkClient<T> {
 
         public GenericFutureListener<ChannelFuture> getWriteListener() {
             return writeListener;
+        }
+    }
+
+    private class NettyClientStateHandler<V> extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>> {
+        private final NettyClient<V> client;
+
+        private final int localEpoch;
+
+        private final NetworkClientCallback<V> callback;
+
+        private final NetworkFuture<V> localConnectFuture;
+
+        private final NetworkFuture<V> localDisconnectFuture;
+
+        private Throwable firstError;
+
+        private boolean disconnected;
+
+        public NettyClientStateHandler(NettyClient<V> client, NetworkClientCallback<V> callback) {
+            this.client = client;
+            this.localEpoch = client.epoch;
+            this.callback = callback;
+            this.localConnectFuture = client.connectFuture;
+            this.localDisconnectFuture = client.disconnectFuture;
+        }
+
+        @Override
+        public void operationComplete(Future<? super Void> future) throws Exception {
+            if (!future.isSuccess()) {
+                firstError = future.cause();
+            }
+        }
+
+        @Override
+        public void channelActive(ChannelHandlerContext ctx) throws Exception {
+            localAddress = (InetSocketAddress)ctx.channel().localAddress();
+
+            super.channelActive(ctx);
+        }
+
+        @Override
+        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+            if (evt instanceof HandshakeDoneEvent) {
+                HandshakeDoneEvent handshake = (HandshakeDoneEvent)evt;
+
+                // Try to update state and decide on whether the user callback should be notified.
+                boolean notify = withLock(() -> {
+                    if (handshake.getEpoch() == client.epoch && state == CONNECTING) {
+                        if (debug) {
+                            log.debug("Updated connection state [from={}, to={}, address={}]", state, CONNECTED, address);
+                        }
+
+                        state = CONNECTED;
+
+                        return true;
+                    } else {
+                        return false;
+                    }
+                });
+
+                // Notify callback and future.
+                if (notify) {
+                    callback.onConnect(client);
+
+                    localConnectFuture.complete(client);
+                }
+            }
+
+            super.userEventTriggered(ctx, evt);
+        }
+
+        @Override
+        public void exceptionCaught(ChannelHandlerContext ctx, Throwable error) throws Exception {
+            if (firstError != null) {
+                // Handle only the very first error.
+                return;
+            }
+
+            if (error instanceof CodecException) {
+                // Ignore since this is an application-level error.
+                return;
+            }
+
+            firstError = error;
+
+            ctx.close();
+        }
+
+        @Override
+        public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+            super.channelUnregistered(ctx);
+
+            becomeDisconnected();
+        }
+
+        private void becomeDisconnected() {
+            if (!disconnected) {
+                disconnected = true;
+
+                if (firstError != null) {
+                    if (firstError instanceof IOException) {
+                        if (debug) {
+                            log.debug("Closing outbound network connection due to I/O error [protocol={}, address={}, "
+                                + "state={}, cause={}]", protocol, address, state, firstError.toString());
+                        }
+                    } else {
+                        log.error("Outbound network connection failure [protocol={}, address={}, state={}]", protocol,
+                            address, state, firstError);
+                    }
+                }
+
+                boolean ignoreError = withLock(() -> {
+                    if (localEpoch == client.epoch && state != DISCONNECTED) {
+                        if (debug) {
+                            log.debug("Updated connection state [from={}, to={}, address={}]", state, DISCONNECTED, address);
+                        }
+
+                        try {
+                            return state == DISCONNECTING;
+                        } finally {
+                            // Make sure that state is updated and cleanup actions are performed.
+                            state = DISCONNECTED;
+
+                            cleanup();
+                        }
+                    }
+
+                    return true;
+                });
+
+                Optional<Throwable> finalError = ignoreError ? Optional.empty() : Optional.ofNullable(firstError);
+
+                callback.onDisconnect(client, finalError);
+
+                if (finalError.isPresent()) {
+                    localConnectFuture.completeExceptionally(finalError.get());
+                } else {
+                    localConnectFuture.complete(client);
+                }
+
+                localDisconnectFuture.complete(client);
+            }
         }
     }
 
@@ -350,9 +492,8 @@ class NettyClient<T> implements NetworkClient<T> {
         ArgAssert.notNull(address, "Address");
         ArgAssert.notNull(callback, "Callback");
 
-        ChannelFuture nettyChannelFuture;
         NetworkFuture<T> localConnectFuture;
-        NetworkFuture<T> localDisconnectFuture;
+        Runnable afterLock;
 
         lock.lock();
 
@@ -366,11 +507,7 @@ class NettyClient<T> implements NetworkClient<T> {
             }
 
             if (eventLoop.isTerminated()) {
-                throw new IllegalStateException("I/O thread pools terminated.");
-            }
-
-            if (debug) {
-                log.debug("Connecting [address={}, protocol={}]", address, protocol);
+                throw new IllegalStateException("I/O thread pool terminated.");
             }
 
             this.address = address;
@@ -380,13 +517,13 @@ class NettyClient<T> implements NetworkClient<T> {
 
             if (useEpoll) {
                 if (debug) {
-                    log.debug("Using EPOLL socket channel [address={}, protocol={}]", address, protocol);
+                    log.debug("Connecting [address={}, protocol={}, transport=EPOLL]", address, protocol);
                 }
 
                 bootstrap.channel(EpollSocketChannel.class);
             } else {
                 if (debug) {
-                    log.debug("Using NIO socket channel [address={}, protocol={}]", address, protocol);
+                    log.debug("Connecting [address={}, protocol={}, transport=NIO]", address, protocol);
                 }
 
                 bootstrap.channel(NioSocketChannel.class);
@@ -404,7 +541,7 @@ class NettyClient<T> implements NetworkClient<T> {
 
             // Prepare connect/disconnect future.
             connectFuture = localConnectFuture = new NetworkFuture<>();
-            disconnectFuture = localDisconnectFuture = new NetworkFuture<>();
+            disconnectFuture = new NetworkFuture<>();
 
             // Update state.
             state = CONNECTING;
@@ -426,11 +563,11 @@ class NettyClient<T> implements NetworkClient<T> {
                         metrics.onMessageSendError();
                     }
 
-                    ChannelPipeline pipeline = future.channel().pipeline();
+                    Channel channel = future.channel();
 
-                    // Notify on error (only if pipeline is not empty).
-                    if (pipeline.last() != null) {
-                        future.channel().pipeline().fireExceptionCaught(future.cause());
+                    // Notify channel pipeline on error (ignore if channel is already closed).
+                    if (channel.isOpen()) {
+                        channel.pipeline().fireExceptionCaught(future.cause());
                     }
                 }
             };
@@ -438,15 +575,13 @@ class NettyClient<T> implements NetworkClient<T> {
             // Prepare codec.
             Codec<Object> codec = codecFactory.createCodec();
 
+            NettyClientStateHandler<T> stateHandler = new NettyClientStateHandler<>(this, callback);
+
             // Prepare channel handlers.
             bootstrap.handler(new ChannelInitializer() {
                 @Override
                 protected void initChannel(Channel ch) throws Exception {
                     ChannelPipeline pipeline = ch.pipeline();
-
-                    if (debug) {
-                        log.debug("Initializing channel pipeline...");
-                    }
 
                     NettyClient<T> client = NettyClient.this;
 
@@ -455,20 +590,10 @@ class NettyClient<T> implements NetworkClient<T> {
 
                     NettyClientDeferHandler<T> deferHandler = new NettyClientDeferHandler<>(log);
 
-                    pipeline.addFirst(deferHandler);
-                    pipeline.addFirst(msgHandler);
-
                     NetworkProtocolCodec netCodec = new NetworkProtocolCodec(codec);
 
-                    pipeline.addFirst(ENCODER_HANDLER_ID, netCodec.getEncoder());
-                    pipeline.addFirst(DECODER_HANDLER_ID, netCodec.getDecoder());
-
                     if (metrics != null) {
-                        if (debug) {
-                            log.debug("Registering metrics handler.");
-                        }
-
-                        pipeline.addFirst(new ChannelTrafficShapingHandler(0, 0, TRAFFIC_SHAPING_INTERVAL) {
+                        pipeline.addLast(new ChannelTrafficShapingHandler(0, 0, TRAFFIC_SHAPING_INTERVAL) {
                             @Override
                             protected void doAccounting(TrafficCounter counter) {
                                 metrics.onBytesReceived(counter.lastReadBytes());
@@ -477,164 +602,29 @@ class NettyClient<T> implements NetworkClient<T> {
                         });
                     }
 
-                    pipeline.addLast(new ChannelInboundHandlerAdapter() {
-                        private Throwable firstError;
+                    pipeline.addLast(DECODER_HANDLER_ID, netCodec.getDecoder());
+                    pipeline.addLast(ENCODER_HANDLER_ID, netCodec.getEncoder());
 
-                        @Override
-                        public void channelActive(ChannelHandlerContext ctx) throws Exception {
-                            localAddress = (InetSocketAddress)ctx.channel().localAddress();
-
-                            super.channelActive(ctx);
-                        }
-
-                        @Override
-                        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-                            if (evt instanceof HandshakeDoneEvent) {
-                                HandshakeDoneEvent handshake = (HandshakeDoneEvent)evt;
-
-                                // Try to update state and decide on whether the user callback should be notified.
-                                boolean notify = withLock(() -> {
-                                    if (handshake.getEpoch() == client.epoch && state == CONNECTING) {
-                                        if (debug) {
-                                            log.debug("Updated connection state [from={}, to={}, address={}]", state, CONNECTED, address);
-                                        }
-
-                                        state = CONNECTED;
-
-                                        return true;
-                                    } else {
-                                        return false;
-                                    }
-                                });
-
-                                // Notify callback.
-                                if (notify) {
-                                    callback.onConnect(client);
-                                }
-
-                                // Notify connect future.
-                                localConnectFuture.complete(client);
-                            }
-
-                            super.userEventTriggered(ctx, evt);
-                        }
-
-                        @Override
-                        public void exceptionCaught(ChannelHandlerContext ctx, Throwable error) throws Exception {
-                            if (firstError != null || error instanceof CodecException) {
-                                // Ignore since this is an application-level error.
-                                return;
-                            }
-
-                            // Check if we are connected or connecting.
-                            boolean connected = withLock(() ->
-                                state == CONNECTING || state == CONNECTED
-                            );
-
-                            if (connected) {
-                                // Store the first error for user callback notification.
-                                firstError = error;
-                            }
-
-                            if (error instanceof IOException) {
-                                if (connected && debug) {
-                                    log.debug("Closing outbound network connection due to I/O error "
-                                        + "[protocol={}, address={}, state={}, cause={}]", protocol, address, state, error.toString());
-                                }
-                            } else {
-                                log.error("Outbound network connection failure "
-                                    + "[protocol={}, address={}, state={}]", protocol, address, state, error);
-                            }
-
-                            ctx.close();
-                        }
-
-                        @Override
-                        public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-                            super.channelUnregistered(ctx);
-
-                            boolean wasConnecting = withLock(() -> {
-                                if (localEpoch == client.epoch) {
-                                    if (debug) {
-                                        log.debug("Updated connection state [from={}, to={}, address={}]", state, DISCONNECTED, address);
-                                    }
-
-                                    try {
-                                        return state == CONNECTING;
-                                    } finally {
-                                        // Make sure that state is updated and cleanup actions are performed.
-                                        state = DISCONNECTED;
-
-                                        cleanup();
-                                    }
-
-                                }
-
-                                return false;
-                            });
-
-                            callback.onDisconnect(client, Optional.ofNullable(firstError));
-
-                            // Notify futures only if we were NOT in CONNECTING state or if we are aware of an error,
-                            // otherwise we can mis an error and notify future on false success.
-                            // If not notified here then notification will be performed by netty channel future listener.
-                            if (firstError != null || !wasConnecting) {
-                                if (!localConnectFuture.isDone()) {
-                                    if (firstError == null) {
-                                        localConnectFuture.complete(client);
-                                    } else {
-                                        localConnectFuture.completeExceptionally(firstError);
-                                    }
-                                }
-
-                                localDisconnectFuture.complete(client);
-                            }
-                        }
-                    });
-
-                    if (debug) {
-                        log.debug("Done initializing channel pipeline.");
-                    }
+                    pipeline.addLast(msgHandler);
+                    pipeline.addLast(deferHandler);
+                    pipeline.addLast(stateHandler);
                 }
             });
 
             // Connect channel.
-            nettyChannelFuture = bootstrap.connect();
+            ChannelFuture future = bootstrap.connect();
 
-            Channel channel = nettyChannelFuture.channel();
+            // Register state handler as a listener after lock is released.
+            afterLock = () -> future.addListener(stateHandler);
+
+            Channel channel = future.channel();
 
             channelCtx = new ChannelContext(channel, allWritesListener, codec);
         } finally {
             lock.unlock();
         }
 
-        // Add listener that will perform cleanup in case of connect failure.
-        nettyChannelFuture.addListener((ChannelFutureListener)future -> {
-            Throwable cause = future.cause();
-
-            if (cause != null) {
-                if (future.channel().pipeline().last() == null) {
-                    // Pipeline not initialized yet -> dispose connection in place.
-                    try {
-                        callback.onDisconnect(this, Optional.of(cause));
-                    } finally {
-                        // Notify futures at all cost.
-                        try {
-                            localConnectFuture.completeExceptionally(cause);
-                        } finally {
-                            try {
-                                localDisconnectFuture.complete(NettyClient.this);
-                            } finally {
-                                disconnect();
-                            }
-                        }
-                    }
-                } else {
-                    // Pipeline already initialized -> fire error to the pipeline.
-                    future.channel().pipeline().fireExceptionCaught(cause);
-                }
-            }
-        });
+        afterLock.run();
 
         return localConnectFuture;
     }
@@ -731,7 +721,7 @@ class NettyClient<T> implements NetworkClient<T> {
                 if (result.isSuccess()) {
                     log.debug("Done sending [address={}, message={}]", address, msg);
                 } else {
-                    log.debug("Failed to send a message [address={}, message={}]", address, msg, result.cause());
+                    log.debug("Failed to send message [address={}, message={}]", address, msg, result.cause());
                 }
             }
 

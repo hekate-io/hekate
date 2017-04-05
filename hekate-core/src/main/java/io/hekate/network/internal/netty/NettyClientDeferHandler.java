@@ -97,16 +97,16 @@ class NettyClientDeferHandler<T> extends ChannelDuplexHandler {
 
     @Override
     public void close(ChannelHandlerContext ctx, ChannelPromise future) throws Exception {
-        discardDeferred(ctx);
-
         super.close(ctx, future);
+
+        discardDeferred(ctx);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        discardDeferred(ctx);
-
         super.channelInactive(ctx);
+
+        discardDeferred(ctx);
     }
 
     @Override

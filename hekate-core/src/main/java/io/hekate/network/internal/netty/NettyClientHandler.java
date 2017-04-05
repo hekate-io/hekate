@@ -104,7 +104,7 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
 
         if (connectTimeout != null && connectTimeout > 0) {
             if (debug) {
-                log.debug("Registering connect timeout handler [connect-timeout={}]", connectTimeout);
+                log.debug("Registering connect timeout handler [protocol={}, address={}, timeout={}]", protocol, address, connectTimeout);
             }
 
             IdleStateHandler idleStateHandler = new IdleStateHandler(connectTimeout, 0, 0, TimeUnit.MILLISECONDS);

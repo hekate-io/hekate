@@ -143,7 +143,7 @@ public class NettyNetworkServiceTest extends NetworkTestBase {
 
             fail("Error was expected.");
         } catch (IllegalStateException e) {
-            assertEquals("I/O thread pools terminated.", e.getMessage());
+            assertEquals("I/O thread pool terminated.", e.getMessage());
         }
 
         assertSame(NetworkClient.State.DISCONNECTED, client.getState());
