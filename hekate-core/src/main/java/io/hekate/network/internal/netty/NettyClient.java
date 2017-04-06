@@ -125,7 +125,7 @@ class NettyClient<T> implements NetworkClient<T> {
                 if (trace) {
                     log.trace("Channel connect future completed successfully [channel={}]", id);
                 }
-            } else if (firstError != null) {
+            } else if (firstError == null) {
                 if (trace) {
                     log.trace("Notifying on connect future failure [channel={}]", id, future.cause());
                 }
