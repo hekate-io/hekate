@@ -322,9 +322,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
                 connFuture.get();
                 discFuture.get();
 
-                callback.assertFailed("one");
-                callback.assertFailed("two");
-                callback.assertFailed("three");
+                callback.awaitForErrors("one", "two", "three");
 
                 clientCallback.reset();
             });
