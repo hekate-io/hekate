@@ -33,6 +33,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
@@ -44,7 +45,6 @@ import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.traffic.ChannelTrafficShapingHandler;
 import io.netty.handler.traffic.TrafficCounter;
-import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -89,7 +89,7 @@ class NettyClient<T> implements NetworkClient<T> {
         }
     }
 
-    private class NettyClientStateHandler<V> extends ChannelInboundHandlerAdapter implements GenericFutureListener<Future<? super Void>> {
+    private class NettyClientStateHandler<V> extends ChannelInboundHandlerAdapter implements ChannelFutureListener {
         private final String id;
 
         private final NettyClient<V> client;
@@ -106,6 +106,8 @@ class NettyClient<T> implements NetworkClient<T> {
 
         private boolean disconnected;
 
+        private boolean connectComplete;
+
         public NettyClientStateHandler(NettyClient<V> client, NetworkClientCallback<V> callback) {
             this.client = client;
             this.id = client.id();
@@ -116,7 +118,9 @@ class NettyClient<T> implements NetworkClient<T> {
         }
 
         @Override
-        public void operationComplete(Future<? super Void> future) throws Exception {
+        public void operationComplete(ChannelFuture future) throws Exception {
+            connectComplete = true;
+
             if (future.isSuccess()) {
                 if (trace) {
                     log.trace("Channel connect future completed successfully [channel={}]", id);
@@ -127,6 +131,12 @@ class NettyClient<T> implements NetworkClient<T> {
                 }
 
                 firstError = future.cause();
+
+                if (future.channel().pipeline().get(NettyClientDeferHandler.class.getName()) != null) {
+                    future.channel().pipeline().fireExceptionCaught(future.cause());
+                }
+
+                becomeDisconnected();
             }
         }
 
@@ -193,7 +203,7 @@ class NettyClient<T> implements NetworkClient<T> {
             }
 
             if (trace) {
-                log.trace("Exception caught [channel={}]", id, error);
+                log.trace("Exception caught in state handler [channel={}]", id, error);
             }
 
             firstError = error;
@@ -213,9 +223,13 @@ class NettyClient<T> implements NetworkClient<T> {
         }
 
         private void becomeDisconnected() {
-            if (disconnected) {
+            if (!connectComplete) {
                 if (trace) {
-                    log.trace("Skipped on-disconnect notification [channel={}, state={}]", id, state);
+                    log.trace("Skipped on-disconnect notification since connect is not complete yet [channel={}, state={}]", id, state);
+                }
+            } else if (disconnected) {
+                if (trace) {
+                    log.trace("Skipped on-disconnect notification since already disconnected [channel={}, state={}]", id, state);
                 }
             } else {
                 disconnected = true;
@@ -459,6 +473,10 @@ class NettyClient<T> implements NetworkClient<T> {
 
                 state = DISCONNECTING;
 
+                if (trace) {
+                    log.trace("Invoking close [channel={}", id());
+                }
+
                 channelCtx.getChannel().close();
 
                 channelCtx = null;
@@ -644,7 +662,7 @@ class NettyClient<T> implements NetworkClient<T> {
                     pipeline.addLast(ENCODER_HANDLER_ID, netCodec.getEncoder());
 
                     pipeline.addLast(msgHandler);
-                    pipeline.addLast(deferHandler);
+                    pipeline.addLast(NettyClientDeferHandler.class.getName(), deferHandler);
                     pipeline.addLast(stateHandler);
                 }
             });
