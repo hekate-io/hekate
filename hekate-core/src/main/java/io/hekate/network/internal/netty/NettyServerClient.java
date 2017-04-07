@@ -59,25 +59,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkEndpoint<Object> {
-    private final int hbInterval;
-
-    private final int hbLossThreshold;
-
-    private final boolean hbDisabled;
-
     private final Map<String, HandlerRegistration> handlers;
 
     private final InetSocketAddress remoteAddress;
 
     private final InetSocketAddress localAddress;
 
-    private final ChannelFutureListener allWritesListener;
+    private final ChannelFutureListener writeListener;
 
     private final NettyWriteQueue writeQueue = new NettyWriteQueue();
 
-    private final GenericFutureListener<Future<? super Void>> heartbeatFlushListener;
+    private final int hbInterval;
 
-    private boolean heartbeatFlushed = true;
+    private final int hbLossThreshold;
+
+    private final boolean hbDisabled;
+
+    private final GenericFutureListener<Future<? super Void>> hbFlushListener;
+
+    private boolean hbFlushed = true;
 
     private Logger log = LoggerFactory.getLogger(NettyServerClient.class);
 
@@ -112,7 +112,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         this.hbDisabled = hbDisabled;
         this.handlers = handlers;
 
-        allWritesListener = future -> {
+        writeListener = future -> {
             if (future.isSuccess()) {
                 // Notify metrics on successful operation.
                 if (metrics != null) {
@@ -137,7 +137,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             }
         };
 
-        heartbeatFlushListener = future -> heartbeatFlushed = true;
+        hbFlushListener = future -> hbFlushed = true;
     }
 
     @Override
@@ -339,13 +339,13 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             IdleStateEvent idle = (IdleStateEvent)evt;
 
             if (idle.state() == IdleState.WRITER_IDLE) {
-                if (heartbeatFlushed) {
+                if (hbFlushed) {
                     // Make sure that we don't push multiple heartbeats to the network buffer simultaneously.
                     // Need to perform this check since remote peer can hang and stop reading
                     // while this channel will still be trying to put more and more heartbeats on its send buffer.
-                    heartbeatFlushed = false;
+                    hbFlushed = false;
 
-                    ctx.writeAndFlush(Heartbeat.INSTANCE).addListener(heartbeatFlushListener);
+                    ctx.writeAndFlush(Heartbeat.INSTANCE).addListener(hbFlushListener);
                 }
             } else {
                 // Reader idle.
@@ -607,7 +607,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                 }
             }
 
-            allWritesListener.operationComplete(result);
+            writeListener.operationComplete(result);
 
             if (onSend != null) {
                 try {
