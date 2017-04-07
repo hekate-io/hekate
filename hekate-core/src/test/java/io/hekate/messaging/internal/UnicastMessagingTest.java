@@ -678,7 +678,7 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
                 List<Integer> partition = affinityBuf.get(key);
 
                 if (partition == null) {
-                    partition = Collections.synchronizedList(new ArrayList<>());
+                    partition = Collections.synchronizedList(new ArrayList<>(1000));
 
                     List<Integer> existing = affinityBuf.putIfAbsent(key, partition);
 
@@ -701,11 +701,17 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
 
         int partitionSize = 50;
 
-        for (int i = 0; i < partitionSize; i++) {
-            for (int j = 0; j < partitionSize; j++) {
-                sender.get().forNode(receiver.getNodeId()).withAffinityKey(j).request(j + ":" + i).get();
+        sayTime("Request-response", () -> {
+            for (int i = 0; i < partitionSize; i++) {
+                List<CompletableFuture<?>> futures = new ArrayList<>(partitionSize * partitionSize);
+
+                for (int j = 0; j < partitionSize; j++) {
+                    futures.add(sender.get().forNode(receiver.getNodeId()).withAffinityKey(j).request(j + ":" + i));
+                }
+
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get();
             }
-        }
+        });
 
         for (List<Integer> partition : affinityBuf.values()) {
             for (int i = 0; i < partitionSize; i++) {
