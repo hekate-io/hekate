@@ -30,19 +30,6 @@ public class TaskServiceFactoryTest extends HekateTestBase {
     private final TaskServiceFactory factory = new TaskServiceFactory();
 
     @Test
-    public void testSockets() {
-        assertEquals(TaskServiceFactory.DEFAULT_SOCKETS, factory.getSockets());
-
-        factory.setSockets(10000);
-
-        assertEquals(10000, factory.getSockets());
-
-        assertSame(factory, factory.withSockets(20000));
-
-        assertEquals(20000, factory.getSockets());
-    }
-
-    @Test
     public void testIdleSocketTimeout() {
         assertEquals(0, factory.getIdleSocketTimeout());
 

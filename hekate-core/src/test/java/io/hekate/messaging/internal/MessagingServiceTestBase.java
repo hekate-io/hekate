@@ -36,15 +36,12 @@ public abstract class MessagingServiceTestBase extends HekateInstanceContextTest
     public static class MessagingTestContext extends HekateTestContext {
         private final int workerThreads;
 
-        private final int sockets;
-
         private final int nioThreads;
 
-        public MessagingTestContext(HekateTestContext parent, int workerThreads, int sockets, int nioThreads) {
+        public MessagingTestContext(HekateTestContext parent, int workerThreads, int nioThreads) {
             super(parent);
 
             this.workerThreads = workerThreads;
-            this.sockets = sockets;
             this.nioThreads = nioThreads;
         }
     }
@@ -55,36 +52,27 @@ public abstract class MessagingServiceTestBase extends HekateInstanceContextTest
 
     private final int workerThreads;
 
-    private final int sockets;
-
     private final int nioThreads;
 
     public MessagingServiceTestBase(MessagingTestContext ctx) {
         super(ctx);
 
         this.workerThreads = ctx.workerThreads;
-        this.sockets = ctx.sockets;
         this.nioThreads = ctx.nioThreads;
     }
 
     @Parameters(name = "{index}: {0}")
     public static Collection<MessagingTestContext> getMessagingServiceTestContexts() {
         return mapTestContext(p -> Stream.of(
-            new MessagingTestContext(p, 0, 1, 2),
-            new MessagingTestContext(p, 1, 1, 1),
-            new MessagingTestContext(p, 2, 2, 2),
-            new MessagingTestContext(p, 3, 3, 3),
-            new MessagingTestContext(p, 5, 1, 0),
-            new MessagingTestContext(p, 5, 1, 1)
+            new MessagingTestContext(p, 0, 1),
+            new MessagingTestContext(p, 1, 1),
+            new MessagingTestContext(p, 4, 1),
+            new MessagingTestContext(p, 5, 0)
         ));
     }
 
     public int getWorkerThreads() {
         return workerThreads;
-    }
-
-    public int getSockets() {
-        return sockets;
     }
 
     public int getNioThreads() {
@@ -156,7 +144,6 @@ public abstract class MessagingServiceTestBase extends HekateInstanceContextTest
 
         cfg.setName(TEST_CHANNEL_NAME);
         cfg.setWorkerThreads(workerThreads);
-        cfg.setSockets(sockets);
         cfg.setNioThreads(nioThreads);
         cfg.setClusterFilter(node -> node.hasRole(TEST_NODE_ROLE));
         cfg.setLogCategory(getClass().getName());

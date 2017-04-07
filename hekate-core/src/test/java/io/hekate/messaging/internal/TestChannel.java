@@ -120,11 +120,7 @@ public class TestChannel {
         return channel.getId();
     }
 
-    public int getSocketPoolSize() {
-        return channel.getSockets();
-    }
-
-    public int getSocketThreadPoolSize() {
+    public int getNioThreadPoolSize() {
         return channel.getNioThreads();
     }
 

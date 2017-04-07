@@ -84,8 +84,8 @@ import java.util.List;
  * If not specified then the {@link HekateBootstrap#setDefaultCodec(CodecFactory) default codec} will be used.
  * </li>
  * <li>
- * {@link MessagingChannelConfig#setNioThreads(int) Thread} and {@link MessagingChannelConfig#setSockets(int) Socket}
- * pooling options
+ * {@link MessagingChannelConfig#setNioThreads(int) NIO} and {@link MessagingChannelConfig#setWorkerThreads(int) worker} thread pool
+ * options
  * </li>
  * </ul>
  *
@@ -274,24 +274,20 @@ import java.util.List;
  * additional rules on which node should be used as a destination for each particular messaging operation.
  * </p>
  *
- * <h2>Resources pooling</h2>
+ * <h2>Thread pooling</h2>
  * <p>
- * Messaging service manages a pool of resources for each of the registered channels. Pooled resources are:
+ * Messaging service manages a pool of threads for each of its registered channels. The following  threads pools are managed:
  * </p>
  *
  * <ul>
  * <li>
- * <b>NIO threads</b> - thread pool for managing NIO socket channels. The size of this thread pool is controlled by the {@link
+ * <b>NIO thread pool</b> - thread pool for managing NIO socket channels. The size of this thread pool is controlled by the {@link
  * MessagingChannelConfig#setNioThreads(int)} configuration option.
  * </li>
  * <li>
- * <b>TCP connections (NIO channels)</b> - channel can manage multiple socket connections per each remote node that it communicates with.
- * The size of this pool is controlled by the {@link MessagingChannelConfig#setSockets(int)} configuration option.
- * </li>
- * <li>
- * <b>Worker threads</b> - Optional thread pool to offload message processing work from NIO threads. The size of this pool is controlled by
- * the {@link MessagingChannelConfig#setWorkerThreads(int)} configuration option. It is recommended to set this parameter in those
- * cases where message processing is a heavy operation that can block NIO thread for a long time.
+ * <b>Worker thread pool</b> - Optional thread pool to offload messages processing work from NIO threads. The size of this pool is
+ * controlled by the {@link MessagingChannelConfig#setWorkerThreads(int)} configuration option. It is recommended to set this parameter in
+ * those cases where message processing is a heavy operation that can block NIO thread for a long time.
  * </li>
  * </ul>
  *

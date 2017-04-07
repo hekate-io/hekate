@@ -681,7 +681,6 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
 
                 // Attributes.
                 setProperty(channel, channelEl, "name", "name");
-                setProperty(channel, channelEl, "sockets", "sockets");
                 setProperty(channel, channelEl, "nioThreads", "nio-threads");
                 setProperty(channel, channelEl, "workerThreads", "worker-threads");
                 setProperty(channel, channelEl, "idleTimeout", "idle-timeout-ms");
@@ -764,7 +763,6 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
 
             setProperty(tasks, tasksEl, "workerThreads", "worker-threads");
             setProperty(tasks, tasksEl, "nioThreads", "nio-threads");
-            setProperty(tasks, tasksEl, "sockets", "socket-pool-size");
             setProperty(tasks, tasksEl, "idleSocketTimeout", "idle-socket-timeout-ms");
 
             String id = tasksEl.getAttribute("id");

@@ -42,13 +42,8 @@ import java.util.List;
  * @see CoordinationService
  */
 public class CoordinationServiceFactory implements ServiceFactory<CoordinationService> {
-    /** Default value (={@value}) for {@link #setSockets(int)}. */
-    public static final int DEFAULT_SOCKETS = 1;
-
     /** Default value in milliseconds (={@value}) for {@link #setRetryInterval(long)}. */
     public static final int DEFAULT_RETRY_INTERVAL = 50;
-
-    private int sockets = DEFAULT_SOCKETS;
 
     private int nioThreads;
 
@@ -57,41 +52,6 @@ public class CoordinationServiceFactory implements ServiceFactory<CoordinationSe
     private List<CoordinationProcessConfig> processes;
 
     private List<CoordinationConfigProvider> configProviders;
-
-    /**
-     * Returns the socket pool size for network communications between the cluster nodes (see {@link #setSockets(int)}).
-     *
-     * @return Socket pool size for network communications between the cluster nodes.
-     */
-    public int getSockets() {
-        return sockets;
-    }
-
-    /**
-     * Sets the socket pool size for network communications between the cluster nodes.
-     *
-     * <p>
-     * Value of this parameter must be above zero. Default value is {@value #DEFAULT_SOCKETS}.
-     * </p>
-     *
-     * @param sockets Socket pool size for network communications between the cluster nodes.
-     */
-    public void setSockets(int sockets) {
-        this.sockets = sockets;
-    }
-
-    /**
-     * Fluent-style version of {@link #setSockets(int)}.
-     *
-     * @param sockets Socket pool size for network communications between the cluster nodes.
-     *
-     * @return This instance.
-     */
-    public CoordinationServiceFactory withSockets(int sockets) {
-        setSockets(sockets);
-
-        return this;
-    }
 
     /**
      * Returns the size of a thread pool for handling NIO-based socket connections.

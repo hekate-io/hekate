@@ -63,19 +63,6 @@ public class MessagingChannelConfigTest extends HekateTestBase {
     }
 
     @Test
-    public void testSockets() {
-        assertEquals(MessagingChannelConfig.DEFAULT_SOCKETS, cfg.getSockets());
-
-        cfg.setSockets(10001);
-
-        assertEquals(10001, cfg.getSockets());
-
-        assertSame(cfg, cfg.withSockets(10002));
-
-        assertEquals(10002, cfg.getSockets());
-    }
-
-    @Test
     public void testNioThreads() {
         assertEquals(0, cfg.getNioThreads());
 

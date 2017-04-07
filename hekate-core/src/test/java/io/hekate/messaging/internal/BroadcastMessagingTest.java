@@ -18,7 +18,6 @@ package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.HekateTestInstance;
-import io.hekate.core.internal.util.Utils;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.broadcast.AggregateCallback;
@@ -716,11 +715,6 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
                 MessagingEndpoint<String> endpoint = msg.getEndpoint();
 
                 assertEquals(sender.getId(), endpoint.getRemoteId());
-                assertEquals(getSockets(), endpoint.getSockets());
-
-                int expectedPoolOrder = Utils.mod(extractAffinityKey(msg.get()), getSockets());
-
-                assertEquals(expectedPoolOrder, endpoint.getSocketOrder());
 
                 endpoint.setContext("test");
 
@@ -742,68 +736,13 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        // Broadcast with static affinity.
-        for (int j = 0; j < getSockets(); j++) {
-            BroadcastResult<String> result = sender.get().forRemotes().withAffinityKey(j).broadcast(j + ":send").get();
-
-            assertTrue(result.getErrors().toString(), result.isSuccess());
-            assertFalse(result.getNodes().isEmpty());
-
-            BroadcastTestCallback callback = new BroadcastTestCallback();
-
-            sender.get().forRemotes().withAffinityKey(j).broadcast(j + ":send", callback);
-
-            assertTrue(callback.get().getErrors().toString(), result.isSuccess());
-            assertFalse(callback.get().getNodes().isEmpty());
-        }
-
-        // Broadcast with dynamic affinity.
-        for (int j = 0; j < getSockets(); j++) {
-            BroadcastResult<String> result = sender.get().forRemotes().affinityBroadcast(j, j + ":send").get();
-
-            assertTrue(result.getErrors().toString(), result.isSuccess());
-            assertFalse(result.getNodes().isEmpty());
-
-            BroadcastTestCallback callback = new BroadcastTestCallback();
-
-            sender.get().forRemotes().affinityBroadcast(j, j + ":send", callback);
-
-            assertTrue(callback.get().getErrors().toString(), result.isSuccess());
-            assertFalse(callback.get().getNodes().isEmpty());
-        }
-
-        // Aggregate with static affinity.
-        for (int j = 0; j < getSockets(); j++) {
-            AggregateResult<String> result = sender.get().forRemotes().withAffinityKey(j).aggregate(j + ":request").get();
-
-            assertTrue(result.isSuccess());
-            assertFalse(result.getReplies().isEmpty());
-
-            AggregateTestCallback callback = new AggregateTestCallback();
-
-            sender.get().forRemotes().withAffinityKey(j).aggregate(j + ":request", callback);
-
-            assertTrue(callback.get().isSuccess());
-            assertFalse(callback.get().getReplies().isEmpty());
-        }
-
-        // Aggregate with dynamic affinity.
-        for (int j = 0; j < getSockets(); j++) {
-            AggregateResult<String> result = sender.get().forRemotes().affinityAggregate(j, j + ":request").get();
-
-            assertTrue(result.isSuccess());
-            assertFalse(result.getReplies().isEmpty());
-
-            AggregateTestCallback callback = new AggregateTestCallback();
-
-            sender.get().forRemotes().affinityAggregate(j, j + ":request", callback);
-
-            assertTrue(callback.get().isSuccess());
-            assertFalse(callback.get().getReplies().isEmpty());
-        }
+        AggregateResult<String> result = get(sender.get().forRemotes().aggregate("request"));
 
         if (errorRef.get() != null) {
             throw errorRef.get();
         }
+
+        assertTrue(result.toString(), result.isSuccess());
+        assertFalse(result.toString(), result.getReplies().isEmpty());
     }
 }

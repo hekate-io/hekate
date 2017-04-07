@@ -54,15 +54,9 @@ abstract class MessagingProtocol {
 
         private final MessagingChannelId channelId;
 
-        private final int poolOrder;
-
-        private final int poolSize;
-
-        public Connect(ClusterNodeId to, MessagingChannelId channelId, int poolOrder, int poolSize) {
+        public Connect(ClusterNodeId to, MessagingChannelId channelId) {
             this.to = to;
             this.channelId = channelId;
-            this.poolOrder = poolOrder;
-            this.poolSize = poolSize;
         }
 
         public ClusterNodeId getTo() {
@@ -71,14 +65,6 @@ abstract class MessagingProtocol {
 
         public MessagingChannelId getChannelId() {
             return channelId;
-        }
-
-        public int getPoolOrder() {
-            return poolOrder;
-        }
-
-        public int getPoolSize() {
-            return poolSize;
         }
 
         @Override

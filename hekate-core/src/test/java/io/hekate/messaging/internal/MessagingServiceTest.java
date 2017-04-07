@@ -73,8 +73,7 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
         TestChannel channel = createChannel().join();
 
         assertEquals(getWorkerThreads(), channel.getWorkerThreads());
-        assertEquals(getSockets(), channel.getSocketPoolSize());
-        assertEquals(getNioThreads(), channel.getSocketThreadPoolSize());
+        assertEquals(getNioThreads(), channel.getNioThreadPoolSize());
     }
 
     @Test

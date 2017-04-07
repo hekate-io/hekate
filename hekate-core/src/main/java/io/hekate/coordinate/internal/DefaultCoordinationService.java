@@ -82,8 +82,6 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
     private final long failoverDelay;
 
-    private final int sockets;
-
     private final int nioThreads;
 
     @ToStringIgnore
@@ -111,7 +109,6 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
         check.positive(factory.getRetryInterval(), "retry interval");
 
-        this.sockets = factory.getSockets();
         this.nioThreads = factory.getNioThreads();
         this.failoverDelay = factory.getRetryInterval();
 
@@ -175,7 +172,6 @@ public class DefaultCoordinationService implements CoordinationService, Configur
         return Collections.singleton(new MessagingChannelConfig<CoordinationProtocol>()
             .withName(MESSAGING_CHANNEL)
             .withLogCategory(DefaultCoordinationService.class.getName())
-            .withSockets(sockets)
             .withNioThreads(nioThreads)
             .withMessageCodec(() -> new CoordinationProtocolCodec(processCodecs))
             .withClusterFilter(NODE_FILTER)

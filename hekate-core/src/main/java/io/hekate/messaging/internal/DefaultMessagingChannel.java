@@ -62,7 +62,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
         this.balancer = balancer;
         this.failover = failover;
         this.affinity = affinity;
-        this.timeout = timeout;
+        this.timeout = timeout;  
     }
 
     @Override
@@ -252,11 +252,6 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     @Override
     public ClusterView getCluster() {
         return cluster;
-    }
-
-    @Override
-    public int getSockets() {
-        return gateway.getSockets();
     }
 
     @Override

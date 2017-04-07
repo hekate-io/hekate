@@ -19,7 +19,6 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.event.ClusterEventType;
-import io.hekate.core.internal.util.Utils;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageReceiver;
@@ -292,7 +291,7 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
 
             MessagingChannelId sourceId = new MessagingChannelId();
 
-            fakeClient.connect(socketAddress, new Connect(invalidNodeId, sourceId, 0, 1), callback);
+            fakeClient.connect(socketAddress, new Connect(invalidNodeId, sourceId), callback);
 
             fakeClient.send(new Notification<>("fail1"));
             fakeClient.send(new Notification<>("fail2"));
@@ -319,18 +318,18 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
 
             ClientPool<String> pool = sender.getImpl().getPool(receiver.getNodeId());
 
-            repeat(5, i -> {
+            repeat(3, i -> {
                 assertFalse(pool.isConnected());
 
-                sender.send(receiver.getNodeId(), "test" + i).get();
+                sender.send(receiver.getNodeId(), "test-" + i).get();
 
                 busyWait("idle pool disconnect", () -> !pool.isConnected());
 
                 assertFalse(pool.isConnected());
             });
 
-            receiver.awaitForMessage("test4");
-            assertEquals(5, receiver.getReceived().size());
+            receiver.awaitForMessage("test-2");
+            assertEquals(3, receiver.getReceived().size());
 
             sender.leave();
             receiver.leave();
@@ -1422,11 +1421,6 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
                 MessagingEndpoint<String> endpoint = msg.getEndpoint();
 
                 assertEquals(sender.getId(), endpoint.getRemoteId());
-                assertEquals(getSockets(), endpoint.getSockets());
-
-                int expectedPoolOrder = Utils.mod(extractAffinityKey(msg.get()), getSockets());
-
-                assertEquals(expectedPoolOrder, endpoint.getSocketOrder());
 
                 assertTrue(endpoint.toString(), endpoint.toString().startsWith(MessagingEndpoint.class.getSimpleName()));
             } catch (AssertionError e) {
@@ -1442,33 +1436,7 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        // Send.
-        for (int j = 0; j < getSockets(); j++) {
-            String message = j + ":send";
-
-            sender.get().forNode(receiver.getNodeId()).withAffinityKey(j).send(message).get();
-            sender.get().forNode(receiver.getNodeId()).affinitySend(j, message).get();
-
-            SendCallbackMock callback = new SendCallbackMock();
-
-            sender.get().forNode(receiver.getNodeId()).affinitySend(j, message, callback);
-
-            callback.get();
-        }
-
-        // Request.
-        for (int j = 0; j < getSockets(); j++) {
-            String request = j + ":request";
-
-            sender.get().forNode(receiver.getNodeId()).withAffinityKey(j).request(request).get();
-            sender.get().forNode(receiver.getNodeId()).affinityRequest(j, request).get();
-
-            RequestCallbackMock callback = new RequestCallbackMock(request);
-
-            sender.get().forNode(receiver.getNodeId()).affinityRequest(j, request, callback);
-
-            callback.get();
-        }
+        sender.get().forNode(receiver.getNodeId()).request("request").get();
 
         if (errorRef.get() != null) {
             throw errorRef.get();

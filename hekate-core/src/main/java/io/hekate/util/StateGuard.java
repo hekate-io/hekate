@@ -20,6 +20,8 @@ import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 /**
  * Helper class that provides support for components lifecycle management and locking.
@@ -51,10 +53,10 @@ public class StateGuard {
     private final Class<?> type;
 
     @ToStringIgnore
-    private final ReentrantReadWriteLock.ReadLock readLock;
+    private final ReadLock readLock;
 
     @ToStringIgnore
-    private final ReentrantReadWriteLock.WriteLock writeLock;
+    private final WriteLock writeLock;
 
     private State state = State.TERMINATED;
 
@@ -250,7 +252,7 @@ public class StateGuard {
     /**
      * Acquires the read lock.
      *
-     * @see ReentrantReadWriteLock.ReadLock#lock()
+     * @see ReadLock#lock()
      */
     public void lockRead() {
         readLock.lock();
@@ -265,7 +267,7 @@ public class StateGuard {
      * @return {@code true} if lock was successfully acquired.
      *
      * @throws InterruptedException If thread was interrupted while awaiting for lock acquisition.
-     * @see ReentrantReadWriteLock.ReadLock#tryLock(long, TimeUnit)
+     * @see ReadLock#tryLock(long, TimeUnit)
      */
     public boolean tryLockRead(long timeout, TimeUnit unit) throws InterruptedException {
         return readLock.tryLock(timeout, unit);
@@ -274,7 +276,7 @@ public class StateGuard {
     /**
      * Releases the read lock.
      *
-     * @see ReentrantReadWriteLock.ReadLock#unlock()
+     * @see ReadLock#unlock()
      */
     public void unlockRead() {
         readLock.unlock();
@@ -299,7 +301,7 @@ public class StateGuard {
     /**
      * Acquires the write lock.
      *
-     * @see ReentrantReadWriteLock.WriteLock#lock()
+     * @see WriteLock#lock()
      */
     public void lockWrite() {
         writeLock.lock();
@@ -314,7 +316,7 @@ public class StateGuard {
      * @return {@code true} if lock was successfully acquired.
      *
      * @throws InterruptedException If thread was interrupted while awaiting for lock acquisition.
-     * @see ReentrantReadWriteLock.WriteLock#tryLock(long, TimeUnit)
+     * @see WriteLock#tryLock(long, TimeUnit)
      */
     public boolean tryLockWrite(long timeout, TimeUnit unit) throws InterruptedException {
         return writeLock.tryLock(timeout, unit);
@@ -323,7 +325,7 @@ public class StateGuard {
     /**
      * Releases the write lock.
      *
-     * @see ReentrantReadWriteLock.WriteLock#unlock()
+     * @see WriteLock#unlock()
      */
     public void unlockWrite() {
         writeLock.unlock();
@@ -334,7 +336,7 @@ public class StateGuard {
      *
      * @return {@code true} if current thread hold the write lock.
      *
-     * @see ReentrantReadWriteLock.WriteLock#isHeldByCurrentThread()
+     * @see WriteLock#isHeldByCurrentThread()
      */
     public boolean isWriteLocked() {
         return writeLock.isHeldByCurrentThread();

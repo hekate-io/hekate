@@ -74,7 +74,7 @@ class InMemoryClientPool<T> implements ClientPool<T> {
 
         AlwaysAsyncExecutor wrapAsync = new AlwaysAsyncExecutor(gateway.getAsync());
 
-        client = new InMemoryReceiverContext<>(gateway, 0, 1, wrapAsync);
+        client = new InMemoryReceiverContext<>(gateway, wrapAsync);
     }
 
     @Override

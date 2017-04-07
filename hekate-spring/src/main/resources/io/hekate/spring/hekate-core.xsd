@@ -1154,13 +1154,6 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
-        <xsd:attribute name="sockets" type="xsd:string">
-            <xsd:annotation>
-                <xsd:documentation>
-                    See javadoc of 'io.hekate.messaging.MessagingChannelConfig#setSockets(int)'.
-                </xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
         <xsd:attribute name="nio-threads" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
@@ -1261,13 +1254,6 @@
                     <xsd:annotation>
                         <xsd:documentation>
                             See javadoc of 'io.hekate.task.TaskServiceFactory#setNioThreads(int)'.
-                        </xsd:documentation>
-                    </xsd:annotation>
-                </xsd:attribute>
-                <xsd:attribute name="socket-pool-size" type="xsd:string">
-                    <xsd:annotation>
-                        <xsd:documentation>
-                            See javadoc of 'io.hekate.task.TaskServiceFactory#setSockets(int)'.
                         </xsd:documentation>
                     </xsd:annotation>
                 </xsd:attribute>

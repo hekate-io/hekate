@@ -35,18 +35,15 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 public class MessagingBenchmark {
     public enum Mode {
-        SOCKET_1_NIO_2_WORKER_2(1, 2, 4),
-        SOCKET_1_NIO_4_WORKER_8(1, 4, 8),
-        SOCKET_1_NIO_4_WORKER_0(1, 4, 0);
-
-        private final int socket;
+        NIO_2_WORKER_2(2, 4),
+        NIO_4_WORKER_8(4, 8),
+        NIO_4_WORKER_0(4, 0);
 
         private final int nio;
 
         private final int workers;
 
-        Mode(int socket, int nio, int workers) {
-            this.socket = socket;
+        Mode(int nio, int workers) {
             this.nio = nio;
             this.workers = workers;
         }
@@ -54,9 +51,9 @@ public class MessagingBenchmark {
 
     public static class BenchmarkContext extends MultiNodeBenchmarkContext {
         @Param({
-            "SOCKET_1_NIO_2_WORKER_2",
-            "SOCKET_1_NIO_4_WORKER_8",
-            "SOCKET_1_NIO_4_WORKER_0"}
+            "NIO_2_WORKER_2",
+            "NIO_4_WORKER_8",
+            "NIO_4_WORKER_0"}
         )
         private Mode mode;
 
@@ -68,13 +65,11 @@ public class MessagingBenchmark {
 
         @Override
         protected void configure(int index, HekateBootstrap boot) {
-            int sockets = mode.socket;
             int nioThreadPoolSize = mode.nio;
             int workerThreadPoolSize = mode.workers;
 
             MessagingChannelConfig<byte[]> channel = new MessagingChannelConfig<byte[]>()
                 .withName("test_channel")
-                .withSockets(sockets)
                 .withNioThreads(nioThreadPoolSize)
                 .withWorkerThreads(workerThreadPoolSize)
                 .withLoadBalancer(LoadBalancers.toRandom());

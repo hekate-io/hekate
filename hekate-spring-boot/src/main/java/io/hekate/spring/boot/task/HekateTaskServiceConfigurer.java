@@ -45,7 +45,6 @@ import org.springframework.context.annotation.Configuration;
  * </p>
  * <ul>
  * <li>{@link TaskServiceFactory#setWorkerThreads(int) 'hekate.task.worker-thread-pool-size'}</li>
- * <li>{@link TaskServiceFactory#setSockets(int) 'hekate.task.socket-pool-size'}</li>
  * <li>{@link TaskServiceFactory#setNioThreads(int) 'hekate.task.nio-thread-pool-size'}</li>
  * <li>{@link TaskServiceFactory#setIdleSocketTimeout(int) 'hekate.task.idle-socket-pool-timeout'}</li>
  * </ul>

@@ -36,22 +36,6 @@ public interface MessagingEndpoint<T> {
     MessagingChannelId getRemoteId();
 
     /**
-     * Returns the order index of this endpoint within the remote connections pool (see {@link #getSockets()}).
-     *
-     * @return Order index of a socket connection within the remote connections pool.
-     */
-    int getSocketOrder();
-
-    /**
-     * Returns the size of a remote connection pool that this endpoint belongs to.
-     *
-     * @return Size of a remote connection pool that this endpoint belongs to.
-     *
-     * @see MessagingChannelConfig#setSockets(int)
-     */
-    int getSockets();
-
-    /**
      * Returns the custom context object that was set via {@link #setContext(Object)}.
      *
      * @param <C> Type of context object.

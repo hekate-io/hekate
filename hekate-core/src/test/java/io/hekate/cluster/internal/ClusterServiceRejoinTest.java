@@ -49,8 +49,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-public class ClusterServiceMultipleNodesRejoinTest extends ClusterServiceMultipleNodesTestBase {
-    public ClusterServiceMultipleNodesRejoinTest(HekateTestContext params) {
+public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBase {
+    public ClusterServiceRejoinTest(HekateTestContext params) {
         super(params);
     }
 

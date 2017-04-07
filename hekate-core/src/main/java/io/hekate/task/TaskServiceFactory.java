@@ -30,12 +30,7 @@ import io.hekate.util.format.ToString;
  * @see TaskService
  */
 public class TaskServiceFactory implements ServiceFactory<TaskService> {
-    /** Default value (={@value}) for {@link #setSockets(int)}. */
-    public static final int DEFAULT_SOCKETS = 1;
-
     private int workerThreads = Runtime.getRuntime().availableProcessors();
-
-    private int sockets = DEFAULT_SOCKETS;
 
     private int nioThreads;
 
@@ -80,41 +75,6 @@ public class TaskServiceFactory implements ServiceFactory<TaskService> {
      */
     public TaskServiceFactory withWorkerThreads(int workerThreads) {
         setWorkerThreads(workerThreads);
-
-        return this;
-    }
-
-    /**
-     * Returns the socket pool size (see {@link #setSockets(int)}).
-     *
-     * @return Socket pool size.
-     */
-    public int getSockets() {
-        return sockets;
-    }
-
-    /**
-     * Sets the socket pool size for task submission to remote nodes.
-     *
-     * <p>
-     * Value of this parameter must be above zero. Default value is {@value #DEFAULT_SOCKETS}.
-     * </p>
-     *
-     * @param sockets Socket pool size.
-     */
-    public void setSockets(int sockets) {
-        this.sockets = sockets;
-    }
-
-    /**
-     * Fluent-style version of {@link #setSockets(int)}.
-     *
-     * @param sockets Socket pool size.
-     *
-     * @return This instance.
-     */
-    public TaskServiceFactory withSockets(int sockets) {
-        setSockets(sockets);
 
         return this;
     }

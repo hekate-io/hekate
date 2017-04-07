@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
+// TODO: Urgent!!! Unit test for FilteredClusterView.
 class FilteredClusterView implements ClusterView {
     private static class FilteredListener implements ClusterEventListener {
         private final ClusterFilter filter;
@@ -60,7 +61,7 @@ class FilteredClusterView implements ClusterView {
             boolean notify = eventTypes.isEmpty() || eventTypes.contains(event.getType());
 
             if (notify) {
-                ClusterTopology topology = event.getTopology().filterAll(this.filter);
+                ClusterTopology topology = event.getTopology().filterAll(filter);
 
                 switch (event.getType()) {
                     case JOIN: {
@@ -101,6 +102,16 @@ class FilteredClusterView implements ClusterView {
             return filtered.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(nodes);
         }
 
+        private ClusterEventListener unwrap() {
+            ClusterEventListener unwrapped = delegate;
+
+            while (unwrapped instanceof FilteredListener) {
+                unwrapped = ((FilteredListener)unwrapped).delegate;
+            }
+
+            return unwrapped;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -111,54 +122,53 @@ class FilteredClusterView implements ClusterView {
                 return false;
             }
 
-            FilteredListener that = (FilteredListener)o;
+            FilteredListener other = (FilteredListener)o;
 
-            return delegate.equals(that.delegate);
+            return unwrap().equals(other.unwrap());
         }
 
         @Override
         public int hashCode() {
-            return delegate.hashCode();
+            return unwrap().hashCode();
         }
 
         @Override
         public String toString() {
-            return delegate.toString();
+            return unwrap().toString();
         }
     }
 
     @ToStringIgnore
-    private final ClusterView root;
+    private final ClusterView parent;
 
     @ToStringIgnore
     private final ClusterFilter filter;
 
     private ClusterTopology topologyCache;
 
-    public FilteredClusterView(ClusterView root, ClusterFilter filter) {
-        assert root != null : "Root view is null.";
+    public FilteredClusterView(ClusterView parent, ClusterFilter filter) {
+        assert parent != null : "Parent view is null.";
         assert filter != null : "Filter is null.";
 
         this.filter = filter;
-
-        this.root = root;
+        this.parent = parent;
     }
 
     @Override
     public ClusterView filterAll(ClusterFilter newFilter) {
         ArgAssert.notNull(newFilter, "Filter");
 
-        return new FilteredClusterView(root, ClusterFilter.and(filter, newFilter));
+        return new FilteredClusterView(this, newFilter);
     }
 
     @Override
     public ClusterTopology getTopology() {
-        long realVer = root.getTopology().getVersion();
+        long realVer = parent.getTopology().getVersion();
 
         ClusterTopology cached = this.topologyCache;
 
         if (cached == null || cached.getVersion() < realVer) {
-            ClusterTopology newFiltered = root.getTopology().filterAll(filter);
+            ClusterTopology newFiltered = parent.getTopology().filterAll(filter);
 
             this.topologyCache = newFiltered;
 
@@ -172,7 +182,7 @@ class FilteredClusterView implements ClusterView {
     public void addListener(ClusterEventListener listener) {
         ArgAssert.notNull(listener, "Listener");
 
-        root.addListener(new FilteredListener(filter, listener, Collections.emptySet()));
+        parent.addListener(new FilteredListener(filter, listener, Collections.emptySet()));
     }
 
     @Override
@@ -187,17 +197,17 @@ class FilteredClusterView implements ClusterView {
             eventTypesSet = Collections.emptySet();
         }
 
-        root.addListener(new FilteredListener(filter, listener, eventTypesSet));
+        parent.addListener(new FilteredListener(filter, listener, eventTypesSet));
     }
 
     @Override
     public void removeListener(ClusterEventListener listener) {
-        root.removeListener(new FilteredListener(filter, listener, Collections.emptySet()));
+        parent.removeListener(new FilteredListener(filter, listener, Collections.emptySet()));
     }
 
     @Override
     public CompletableFuture<ClusterTopology> futureOf(Predicate<ClusterTopology> predicate) {
-        return root.futureOf(topology -> predicate.test(topology.filterAll(filter)));
+        return parent.futureOf(topology -> predicate.test(topology.filterAll(filter)));
     }
 
     @Override

@@ -46,14 +46,9 @@ import java.util.function.Consumer;
  * @see MessagingServiceFactory#setChannels(List)
  */
 public class MessagingChannelConfig<T> {
-    /** Default value (={@value}) for {@link #setSockets(int)}. */
-    public static final int DEFAULT_SOCKETS = 1;
-
     private String name;
 
     private int workerThreads;
-
-    private int sockets = DEFAULT_SOCKETS;
 
     private int nioThreads;
 
@@ -247,41 +242,6 @@ public class MessagingChannelConfig<T> {
      */
     public MessagingChannelConfig<T> withWorkerThreads(int workerThreads) {
         setWorkerThreads(workerThreads);
-
-        return this;
-    }
-
-    /**
-     * Returns the socket pool size (see {@link #setSockets(int)}).
-     *
-     * @return Socket pool size.
-     */
-    public int getSockets() {
-        return sockets;
-    }
-
-    /**
-     * Sets the size of a socket pool that should be created by this channel per each remote node that this channel will communicate with.
-     *
-     * <p>
-     * Value of this parameter must be greater than zero. Default value is {@value #DEFAULT_SOCKETS}.
-     * </p>
-     *
-     * @param sockets Socket pool size.
-     */
-    public void setSockets(int sockets) {
-        this.sockets = sockets;
-    }
-
-    /**
-     * Fluent-style version of {@link #setSockets(int)}.
-     *
-     * @param sockets Socket pool size.
-     *
-     * @return This instance.
-     */
-    public MessagingChannelConfig<T> withSockets(int sockets) {
-        setSockets(sockets);
 
         return this;
     }
@@ -535,19 +495,6 @@ public class MessagingChannelConfig<T> {
     }
 
     /**
-     * Fluent-style version of {@link #setMessagingTimeout(long)}.
-     *
-     * @param messagingTimeout Timeout in milliseconds.
-     *
-     * @return This instance.
-     */
-    public MessagingChannelConfig<T> withMessagingTimeout(long messagingTimeout) {
-        setMessagingTimeout(messagingTimeout);
-
-        return this;
-    }
-
-    /**
      * Sets the timeout in milliseconds that should be applied to all messaging operations within this channel.
      *
      * <p>
@@ -571,6 +518,19 @@ public class MessagingChannelConfig<T> {
      */
     public void setMessagingTimeout(long messagingTimeout) {
         this.messagingTimeout = messagingTimeout;
+    }
+
+    /**
+     * Fluent-style version of {@link #setMessagingTimeout(long)}.
+     *
+     * @param messagingTimeout Timeout in milliseconds.
+     *
+     * @return This instance.
+     */
+    public MessagingChannelConfig<T> withMessagingTimeout(long messagingTimeout) {
+        setMessagingTimeout(messagingTimeout);
+
+        return this;
     }
 
     /**

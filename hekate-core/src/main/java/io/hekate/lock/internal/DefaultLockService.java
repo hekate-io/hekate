@@ -170,7 +170,6 @@ public class DefaultLockService implements LockService, InitializingService, Dep
             new MessagingChannelConfig<LockProtocol>()
                 .withName(LOCK_PREFIX)
                 .withLogCategory(getClass().getName())
-                .withSockets(1)
                 .withNioThreads(nioThreads)
                 .withWorkerThreads(workerThreads)
                 .withMessageCodec(new SingletonCodecFactory<>(new LockProtocolCodec()))

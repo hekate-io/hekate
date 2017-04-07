@@ -17,15 +17,13 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.core.internal.util.Utils;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkFuture;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,10 +37,7 @@ class NetClientPool<T> implements ClientPool<T> {
 
     private final ClusterNode node;
 
-    private final NetSenderContext<T>[] clients;
-
-    @ToStringIgnore
-    private final NetSenderContext<T> single;
+    private final NetSenderContext<T> client;
 
     @ToStringIgnore
     private final Object mux = new Object();
@@ -51,37 +46,25 @@ class NetClientPool<T> implements ClientPool<T> {
 
     private volatile boolean closed;
 
-    public NetClientPool(String name, ClusterNode node, NetworkConnector<MessagingProtocol> net, int poolSize, MessagingGateway<T> gateway,
+    public NetClientPool(String name, ClusterNode node, NetworkConnector<MessagingProtocol> net, MessagingGateway<T> gateway,
         boolean trackIdle) {
         assert name != null : "Name is null.";
         assert node != null : "Cluster node is null.";
         assert net != null : "Network connector is null.";
         assert gateway != null : "Gateway is null.";
-        assert poolSize > 0 : "Size must be above zero.";
 
         if (DEBUG) {
-            log.debug("Creating new connection pool [channel={}, node={}, size={}]", name, node, poolSize);
+            log.debug("Creating new connection pool [channel={}, node={}]", name, node);
         }
 
         this.name = name;
         this.node = node;
 
-        @SuppressWarnings("unchecked")
-        NetSenderContext<T>[] clients = new NetSenderContext[poolSize];
+        NetworkClient<MessagingProtocol> netClient = net.newClient();
 
-        for (int i = 0; i < clients.length; i++) {
-            NetworkClient<MessagingProtocol> client = net.newClient();
+        DefaultMessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(gateway.getId(), gateway.getChannel());
 
-            DefaultMessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(gateway.getId(), i, poolSize, gateway.getChannel());
-
-            NetSenderContext<T> commClient = new NetSenderContext<>(node.getAddress(), client, gateway, endpoint, trackIdle);
-
-            clients[i] = commClient;
-        }
-
-        this.clients = clients;
-
-        single = poolSize == 1 ? clients[0] : null;
+        this.client = new NetSenderContext<>(node.getAddress(), netClient, gateway, endpoint, trackIdle);
     }
 
     @Override
@@ -91,8 +74,6 @@ class NetClientPool<T> implements ClientPool<T> {
 
     @Override
     public void send(MessageContext<T> ctx, SendCallback callback) {
-        NetSenderContext<T> client = route(ctx.getAffinity());
-
         // Touch in advance to make sure that pool will not be disconnected
         // by a concurrent thread that executes disconnectIfIdle() method.
         client.touch();
@@ -104,8 +85,6 @@ class NetClientPool<T> implements ClientPool<T> {
 
     @Override
     public void request(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
-        NetSenderContext<T> client = route(ctx.getAffinity());
-
         // Touch in advance to make sure that pool will not be disconnected
         // by a concurrent thread that executes disconnectIfIdle() method.
         client.touch();
@@ -125,16 +104,7 @@ class NetClientPool<T> implements ClientPool<T> {
             // Mark as closed.
             closed = true;
 
-            // Disconnect clients and collect their disconnects future.
-            List<NetworkFuture<MessagingProtocol>> clientsFuture = new ArrayList<>(clients.length);
-
-            for (NetSenderContext<T> client : clients) {
-                NetworkFuture<MessagingProtocol> netFuture = client.disconnect();
-
-                clientsFuture.add(netFuture);
-            }
-
-            return clientsFuture;
+            return Collections.singletonList(client.disconnect());
         }
     }
 
@@ -157,9 +127,7 @@ class NetClientPool<T> implements ClientPool<T> {
 
                     connected = false;
 
-                    for (NetSenderContext<T> client : clients) {
-                        client.disconnect();
-                    }
+                    client.disconnect();
                 }
             }
         }
@@ -167,7 +135,7 @@ class NetClientPool<T> implements ClientPool<T> {
 
     // Package level for testing purposes.
     List<NetSenderContext<T>> getClients() {
-        return Arrays.asList(clients);
+        return Collections.singletonList(client);
     }
 
     private void ensureConnected() {
@@ -180,13 +148,9 @@ class NetClientPool<T> implements ClientPool<T> {
                             log.debug("Initializing connections pool [chanel={}, node={}]", name, node);
                         }
 
-                        for (NetSenderContext<T> client : clients) {
-                            client.connect();
-                        }
+                        client.connect();
 
-                        for (NetSenderContext<T> client : clients) {
-                            client.touch();
-                        }
+                        client.touch();
 
                         connected = true;
                     }
@@ -196,21 +160,7 @@ class NetClientPool<T> implements ClientPool<T> {
     }
 
     private boolean isIdle() {
-        for (NetSenderContext<T> client : clients) {
-            if (!client.isIdle()) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private NetSenderContext<T> route(int affinity) {
-        if (single == null) {
-            return clients[Utils.mod(affinity, clients.length)];
-        } else {
-            return single;
-        }
+        return client.isIdle();
     }
 
     @Override

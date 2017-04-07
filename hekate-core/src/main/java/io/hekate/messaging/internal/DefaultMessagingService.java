@@ -144,7 +144,6 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
         channelsConfig.forEach(cfg -> {
             check.notEmpty(cfg.getName(), "name");
-            check.positive(cfg.getSockets(), "socket pool size");
 
             String name = cfg.getName().trim();
 
@@ -331,7 +330,6 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         }
 
         String name = cfg.getName().trim();
-        int sockets = cfg.getSockets();
         int nioThreads = cfg.getNioThreads();
         int workerThreads = cfg.getWorkerThreads();
         long idleTimeout = cfg.getIdleTimeout();
@@ -399,9 +397,8 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         // Create gateway.
         MessageReceiver<T> guardedReceiver = applyGuard(receiver);
 
-        MessagingGateway<T> gateway = new MessagingGateway<>(name, connector, localNode, clusterView, guardedReceiver,
-            sockets, nioThreads, async, channelMetrics, receiveBackPressure, sendBackPressure, failover, messagingTimeout,
-            loadBalancer, checkIdle,
+        MessagingGateway<T> gateway = new MessagingGateway<>(name, connector, localNode, clusterView, guardedReceiver, nioThreads, async,
+            channelMetrics, receiveBackPressure, sendBackPressure, failover, messagingTimeout, loadBalancer, checkIdle,
             // Before close callback.
             () -> {
                 if (DEBUG) {
@@ -512,10 +509,8 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                     }
 
                     MessagingChannelId channelId = connect.getChannelId();
-                    int poolOrder = connect.getPoolOrder();
-                    int poolSize = connect.getPoolSize();
 
-                    MessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(channelId, poolOrder, poolSize, gateway.getChannel());
+                    MessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(channelId, gateway.getChannel());
 
                     NetReceiverContext<T> ctx = new NetReceiverContext<>(client, endpoint, gateway);
 

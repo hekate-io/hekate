@@ -121,9 +121,8 @@ public class MessagingServiceJavadocTest extends HekateInstanceTestBase {
         MessagingChannelConfig<String> channelCfg = new MessagingChannelConfig<String>()
             // Channel name.
             .withName("example.channel")
-            // Resources pooling options.
+            // Thread pooling options.
             .withNioThreads(2)
-            .withSockets(1)
             .withWorkerThreads(6);
 
         // Prepare messaging service factory and register channel configuration.

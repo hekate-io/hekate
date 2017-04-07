@@ -23,10 +23,6 @@ import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 
 class DefaultMessagingEndpoint<T> implements MessagingEndpoint<T> {
-    private final int poolOrder;
-
-    private final int poolSize;
-
     @ToStringIgnore
     private final MessagingChannelId channelId;
 
@@ -34,29 +30,17 @@ class DefaultMessagingEndpoint<T> implements MessagingEndpoint<T> {
 
     private volatile Object userContext;
 
-    public DefaultMessagingEndpoint(MessagingChannelId channelId, int poolOrder, int poolSize, MessagingChannel<T> channel) {
+    public DefaultMessagingEndpoint(MessagingChannelId channelId, MessagingChannel<T> channel) {
         assert channelId != null : "Channel ID is null.";
         assert channel != null : "Channel is null.";
 
         this.channelId = channelId;
-        this.poolOrder = poolOrder;
-        this.poolSize = poolSize;
         this.channel = channel;
     }
 
     @Override
     public MessagingChannelId getRemoteId() {
         return channelId;
-    }
-
-    @Override
-    public int getSocketOrder() {
-        return poolOrder;
-    }
-
-    @Override
-    public int getSockets() {
-        return poolSize;
     }
 
     @Override

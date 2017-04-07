@@ -83,7 +83,6 @@ public class TasksBenchmark {
             int workerThreadPoolSize = mode.workers;
 
             boot.withService(new TaskServiceFactory()
-                .withSockets(1)
                 .withNioThreads(nioThreadPoolSize)
                 .withWorkerThreads(workerThreadPoolSize)
             );

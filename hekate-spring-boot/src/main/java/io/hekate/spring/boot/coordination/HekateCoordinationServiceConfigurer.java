@@ -53,7 +53,6 @@ import org.springframework.context.annotation.Configuration;
  * For example:
  * </p>
  * <ul>
- * <li>{@link CoordinationServiceFactory#setSockets(int) 'hekate.coordination.socket-pool-size'}</li>
  * <li>{@link CoordinationServiceFactory#setNioThreads(int) 'hekate.coordination.socket-thread-pool-size'}</li>
  * <li>{@link CoordinationServiceFactory#setRetryInterval(long) 'hekate.coordination.failover-interval'}</li>
  * </ul>

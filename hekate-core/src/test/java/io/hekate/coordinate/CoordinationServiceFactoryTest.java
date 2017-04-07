@@ -84,18 +84,6 @@ public class CoordinationServiceFactoryTest extends HekateTestBase {
     }
 
     @Test
-    public void testSockets() throws Exception {
-        assertEquals(CoordinationServiceFactory.DEFAULT_SOCKETS, factory.getSockets());
-
-        factory.setSockets(10000);
-
-        assertEquals(10000, factory.getSockets());
-
-        assertSame(factory, factory.withSockets(1000));
-        assertEquals(1000, factory.getSockets());
-    }
-
-    @Test
     public void testNioThreads() throws Exception {
         assertEquals(0, factory.getNioThreads());
 

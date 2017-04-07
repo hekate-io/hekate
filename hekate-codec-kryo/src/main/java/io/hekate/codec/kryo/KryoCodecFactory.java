@@ -18,6 +18,7 @@ package io.hekate.codec.kryo;
 
 import com.esotericsoftware.kryo.ClassResolver;
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Kryo.DefaultInstantiatorStrategy;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.UnsafeInput;
 import com.esotericsoftware.kryo.io.UnsafeOutput;
@@ -92,7 +93,7 @@ public class KryoCodecFactory<T> implements CodecFactory<T> {
     private boolean cacheUnknownTypes;
 
     @ToStringIgnore
-    private InstantiatorStrategy instantiatorStrategy = new Kryo.DefaultInstantiatorStrategy(new StdInstantiatorStrategy());
+    private InstantiatorStrategy instantiatorStrategy = new DefaultInstantiatorStrategy(new StdInstantiatorStrategy());
 
     @Override
     public Codec<T> createCodec() {
@@ -201,7 +202,7 @@ public class KryoCodecFactory<T> implements CodecFactory<T> {
      * Sets instantiator strategy. Such strategy will be registered via {@link Kryo#setInstantiatorStrategy(InstantiatorStrategy)}.
      *
      * <p>
-     * By default this parameter is set to {@link Kryo.DefaultInstantiatorStrategy} with a fallback to {@link StdInstantiatorStrategy}.
+     * By default this parameter is set to {@link DefaultInstantiatorStrategy} with a fallback to {@link StdInstantiatorStrategy}.
      * </p>
      *
      * @param instantiatorStrategy Instantiator strategy.

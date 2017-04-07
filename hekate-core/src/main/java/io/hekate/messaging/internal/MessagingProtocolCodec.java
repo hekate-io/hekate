@@ -84,10 +84,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 MessagingChannelId sourceId = decodeSourceId(in);
 
-                int poolOrder = in.readInt();
-                int poolSize = in.readInt();
-
-                return new Connect(to, sourceId, poolOrder, poolSize);
+                return new Connect(to, sourceId);
             }
             case AFFINITY_NOTIFICATION: {
                 int affinity = in.readInt();
@@ -149,9 +146,6 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 CodecUtils.writeNodeId(connect.getTo(), out);
 
                 encodeSourceId(connect.getChannelId(), out);
-
-                out.writeInt(connect.getPoolOrder());
-                out.writeInt(connect.getPoolSize());
 
                 break;
             }

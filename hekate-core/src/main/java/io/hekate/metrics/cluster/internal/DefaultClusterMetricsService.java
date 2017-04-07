@@ -258,7 +258,6 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
         channelCfg.setReceiver(this::handleMessage);
         channelCfg.setClusterFilter(METRICS_SUPPORT_FILTER);
         channelCfg.setWorkerThreads(1);
-        channelCfg.setSockets(1);
 
         return Collections.singleton(channelCfg);
     }

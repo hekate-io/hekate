@@ -62,10 +62,7 @@ class NetSenderContext<T> extends NetReceiverContextBase<T> {
 
             final InetSocketAddress netAddress = address.getSocket();
 
-            int poolOrder = getEndpoint().getSocketOrder();
-            int poolSize = getEndpoint().getSockets();
-
-            Connect connectMsg = new Connect(address.getId(), channelId, poolOrder, poolSize);
+            Connect connectMsg = new Connect(address.getId(), channelId);
 
             return net.connect(netAddress, connectMsg, new NetworkClientCallback<MessagingProtocol>() {
                 @Override
@@ -78,7 +75,7 @@ class NetSenderContext<T> extends NetReceiverContextBase<T> {
                     synchronized (mux) {
                         // Check if there were no disconnects for this epoch.
                         if (localEpoch == epoch) {
-                            Connect msg = new Connect(address.getId(), channelId, poolOrder, poolSize);
+                            Connect msg = new Connect(address.getId(), channelId);
 
                             client.ensureConnected(netAddress, msg, this);
                         }

@@ -197,9 +197,6 @@ class MessagingGateway<T> {
     private final SendBackPressure sendBackPressure;
 
     @ToStringIgnore
-    private final int sockets;
-
-    @ToStringIgnore
     private final int nioThreads;
 
     @ToStringIgnore
@@ -215,9 +212,9 @@ class MessagingGateway<T> {
     private boolean closed;
 
     public MessagingGateway(String name, NetworkConnector<MessagingProtocol> net, ClusterNode localNode, ClusterView cluster,
-        MessageReceiver<T> receiver, int sockets, int nioThreads, AffinityExecutor async, MetricsCallback metrics,
-        ReceiveBackPressure receiveBackPressure, SendBackPressure sendBackPressure, FailoverPolicy failoverPolicy,
-        long defaultTimeout, LoadBalancer<T> loadBalancer, boolean checkIdle, CloseCallback onBeforeClose) {
+        MessageReceiver<T> receiver, int nioThreads, AffinityExecutor async, MetricsCallback metrics,
+        ReceiveBackPressure receiveBackPressure, SendBackPressure sendBackPressure, FailoverPolicy failoverPolicy, long defaultTimeout,
+        LoadBalancer<T> loadBalancer, boolean checkIdle, CloseCallback onBeforeClose) {
         assert name != null : "Name is null.";
         assert net != null : "Network connector is null.";
         assert localNode != null : "Local cluster node is null.";
@@ -230,7 +227,6 @@ class MessagingGateway<T> {
         this.localNode = localNode;
         this.rootCluster = cluster;
         this.receiver = receiver;
-        this.sockets = sockets;
         this.nioThreads = nioThreads;
         this.async = async;
         this.metrics = metrics;
@@ -250,10 +246,6 @@ class MessagingGateway<T> {
 
     public String getName() {
         return name;
-    }
-
-    public int getSockets() {
-        return sockets;
     }
 
     public int getNioThreads() {
@@ -1075,7 +1067,7 @@ class MessagingGateway<T> {
         if (node.equals(localNode)) {
             return new InMemoryClientPool<>(localNode, this);
         } else {
-            return new NetClientPool<>(name, node, net, sockets, this, checkIdle);
+            return new NetClientPool<>(name, node, net, this, checkIdle);
         }
     }
 
