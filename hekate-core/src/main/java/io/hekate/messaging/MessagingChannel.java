@@ -156,7 +156,6 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @param message Message to be sent.
      * @param callback Callback to be notified upon the operation completion.
      */
-    // TODO: URGENT!!! Not covered by tests.
     void affinitySend(Object affinityKey, T message, SendCallback callback);
 
     /**

@@ -45,6 +45,7 @@ import io.hekate.network.internal.NetworkClientCallbackMock;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -614,28 +615,38 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testSendAffinity() throws Exception {
-        Map<Integer, List<Integer>> affinityBuf = new ConcurrentHashMap<>();
+    public void testAffinitySend() throws Exception {
+        Map<Integer, List<Map.Entry<Integer, Thread>>> callbackBuf = new ConcurrentHashMap<>();
+        Map<Integer, List<Map.Entry<Integer, Thread>>> futureBuf = new ConcurrentHashMap<>();
 
         MessageReceiver<String> affinityReceiver = msg -> {
             if (msg.get().contains(":")) {
                 String[] tokens = msg.get().split(":");
                 Integer key = Integer.parseInt(tokens[0]);
                 Integer value = Integer.parseInt(tokens[1]);
+                String type = tokens[2];
 
-                List<Integer> partition = affinityBuf.get(key);
+                Map<Integer, List<Map.Entry<Integer, Thread>>> buf;
+
+                if (type.equals("future")) {
+                    buf = futureBuf;
+                } else {
+                    buf = callbackBuf;
+                }
+
+                List<Map.Entry<Integer, Thread>> partition = buf.get(key);
 
                 if (partition == null) {
-                    partition = Collections.synchronizedList(new ArrayList<>(1000));
+                    partition = Collections.synchronizedList(new ArrayList<>());
 
-                    List<Integer> existing = affinityBuf.putIfAbsent(key, partition);
+                    List<Map.Entry<Integer, Thread>> existing = buf.putIfAbsent(key, partition);
 
                     if (existing != null) {
                         partition = existing;
                     }
                 }
 
-                partition.add(value);
+                partition.add(new SimpleEntry<>(value, Thread.currentThread()));
             }
         };
 
@@ -645,48 +656,59 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
 
         sender.awaitForTopology(Arrays.asList(sender, receiver));
 
-        int partitionSize = 50;
+        int partitionSize = 10;
 
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
-                sender.get().forNode(receiver.getNodeId()).affinitySend(j, j + ":" + i);
+                String msg = j + ":" + i;
+
+                sender.get().forNode(receiver.getNodeId()).affinitySend(j, msg + ":callback", new SendCallbackMock());
+                sender.get().forNode(receiver.getNodeId()).affinitySend(j, msg + ":future");
             }
         }
 
         for (int i = 0; i < partitionSize; i++) {
-            receiver.awaitForMessage(i + ":" + (partitionSize - 1));
+            receiver.awaitForMessage(i + ":" + (partitionSize - 1) + ":callback");
+            receiver.awaitForMessage(i + ":" + (partitionSize - 1) + ":future");
         }
 
-        for (List<Integer> partition : affinityBuf.values()) {
-            for (int i = 0; i < partitionSize; i++) {
-                assertEquals(i, partition.get(i).intValue());
-            }
-        }
+        verifyAffinity(callbackBuf, partitionSize);
+        verifyAffinity(futureBuf, partitionSize);
     }
 
     @Test
-    public void testRequestAffinity() throws Exception {
-        Map<Integer, List<Integer>> affinityBuf = new ConcurrentHashMap<>();
+    public void testAffinityRequest() throws Exception {
+        Map<Integer, List<Map.Entry<Integer, Thread>>> futureBuf = new ConcurrentHashMap<>();
+        Map<Integer, List<Map.Entry<Integer, Thread>>> callbackBuf = new ConcurrentHashMap<>();
 
         MessageReceiver<String> affinityReceiver = msg -> {
             if (msg.get().contains(":")) {
                 String[] tokens = msg.get().split(":");
                 Integer key = Integer.parseInt(tokens[0]);
                 Integer value = Integer.parseInt(tokens[1]);
+                String type = tokens[2];
 
-                List<Integer> partition = affinityBuf.get(key);
+                Map<Integer, List<Map.Entry<Integer, Thread>>> buf;
+
+                if (type.equals("future")) {
+                    buf = futureBuf;
+                } else {
+                    buf = callbackBuf;
+                }
+
+                List<Map.Entry<Integer, Thread>> partition = buf.get(key);
 
                 if (partition == null) {
-                    partition = Collections.synchronizedList(new ArrayList<>(1000));
+                    partition = Collections.synchronizedList(new ArrayList<>());
 
-                    List<Integer> existing = affinityBuf.putIfAbsent(key, partition);
+                    List<Map.Entry<Integer, Thread>> existing = buf.putIfAbsent(key, partition);
 
                     if (existing != null) {
                         partition = existing;
                     }
                 }
 
-                partition.add(value);
+                partition.add(new SimpleEntry<>(value, Thread.currentThread()));
             }
 
             msg.reply("ok");
@@ -698,29 +720,39 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
 
         sender.awaitForTopology(Arrays.asList(sender, receiver));
 
-        int partitionSize = 50;
+        int partitionSize = 10;
 
         sayTime("Request-response", () -> {
             for (int i = 0; i < partitionSize; i++) {
                 List<CompletableFuture<?>> futures = new ArrayList<>(partitionSize * partitionSize);
+                List<RequestCallbackMock> callbacks = new ArrayList<>(partitionSize * partitionSize);
 
                 for (int j = 0; j < partitionSize; j++) {
-                    futures.add(sender.get().forNode(receiver.getNodeId()).affinityRequest(j, j + ":" + i));
+                    String msg = j + ":" + i;
+
+                    RequestCallbackMock callback = new RequestCallbackMock(msg + ":callback");
+
+                    sender.get().forNode(receiver.getNodeId()).affinityRequest(j, msg + ":callback", callback);
+                    RequestFuture<String> future = sender.get().forNode(receiver.getNodeId()).affinityRequest(j, msg + ":future");
+
+                    callbacks.add(callback);
+                    futures.add(future);
                 }
 
                 CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get();
+
+                for (RequestCallbackMock callback : callbacks) {
+                    callback.get();
+                }
             }
         });
 
-        for (List<Integer> partition : affinityBuf.values()) {
-            for (int i = 0; i < partitionSize; i++) {
-                assertEquals(i, partition.get(i).intValue());
-            }
-        }
+        verifyAffinity(futureBuf, partitionSize);
+        verifyAffinity(callbackBuf, partitionSize);
     }
 
     @Test
-    public void testSingleRequestThreadAffinity() throws Exception {
+    public void testResponseThreadAffinity() throws Exception {
         TestChannel sender = createChannel().join();
 
         AtomicReference<SendCallbackMock> callbackRef = new AtomicReference<>();
@@ -1533,6 +1565,24 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
 
         assertNotNull(err);
         assertTrue(err.toString(), err instanceof ClosedChannelException);
+    }
+
+    private void verifyAffinity(Map<Integer, List<Map.Entry<Integer, Thread>>> partitions, int partitionSize) {
+        assertFalse(partitions.isEmpty());
+
+        for (List<Map.Entry<Integer, Thread>> partition : partitions.values()) {
+            Thread thread = null;
+
+            for (int i = 0; i < partitionSize; i++) {
+                assertEquals(i, partition.get(i).getKey().intValue());
+
+                if (thread == null) {
+                    thread = partition.get(i).getValue();
+                } else {
+                    assertSame(thread, partition.get(i).getValue());
+                }
+            }
+        }
     }
 
     private Throwable replyAndGetError(Message<String> reply) throws Exception {
