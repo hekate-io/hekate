@@ -37,7 +37,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
-// TODO: Urgent!!! Unit test for FilteredClusterView.
 class FilteredClusterView implements ClusterView {
     private static class FilteredListener implements ClusterEventListener {
         private final ClusterFilter filter;
@@ -212,6 +211,9 @@ class FilteredClusterView implements ClusterView {
 
     @Override
     public String toString() {
+        // Update cache.
+        getTopology();
+
         return ToString.format(this);
     }
 }
