@@ -236,7 +236,6 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return Future object that can be used to inspect the broadcast operation result.
      */
-    // TODO: URGENT!!! Not covered by tests.
     BroadcastFuture<T> affinityBroadcast(Object affinityKey, T message);
 
     /**
@@ -247,7 +246,6 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @param message Message to broadcast.
      * @param callback Callback that should be notified upon the broadcast operation completion.
      */
-    // TODO: URGENT!!! Not covered by tests.
     void affinityBroadcast(Object affinityKey, T message, BroadcastCallback<T> callback);
 
     /**
@@ -287,7 +285,6 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @see #aggregate(Object, AggregateCallback)
      */
-    // TODO: URGENT!!! Not covered by tests.
     <R extends T> AggregateFuture<R> affinityAggregate(Object affinityKey, T message);
 
     /**
