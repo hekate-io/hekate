@@ -273,13 +273,13 @@ class InfluxDbMetricsPublisher {
                 if (worker != null) {
                     log.info("Stopping InfluxDB metrics publisher...");
 
-                    while (!queue.offer(STOP_ENTRY)) {
+                    do {
                         if (staleEntries == null) {
                             staleEntries = new ArrayList<>(queue.size());
                         }
 
                         queue.drainTo(staleEntries);
-                    }
+                    } while (!queue.offer(STOP_ENTRY));
 
                     termination = Utils.shutdown(worker);
 
