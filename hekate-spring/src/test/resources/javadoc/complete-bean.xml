@@ -100,7 +100,6 @@
                     <property name="channels">
                         <bean class="io.hekate.messaging.MessagingChannelConfig">
                             <property name="name" value="some.channel"/>
-                            <property name="sockets" value="1"/>
                             <property name="nioThreads" value="1"/>
                             <property name="logCategory" value="foo.bar.Channel"/>
                             <property name="receiver">

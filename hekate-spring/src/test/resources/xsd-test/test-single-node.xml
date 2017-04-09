@@ -128,7 +128,6 @@
         <messaging id="messaging">
             <channel
                 name="some.channel"
-                sockets="1"
                 nio-threads="1"
                 worker-threads="0"
                 idle-timeout-ms="60000"
@@ -158,7 +157,7 @@
             <channel name="another.channel"/>
         </messaging>
 
-        <tasks id="tasks" nio-threads="0" worker-threads="8" socket-pool-size="1" idle-socket-timeout-ms="0"/>
+        <tasks id="tasks" nio-threads="0" worker-threads="8" idle-socket-timeout-ms="0"/>
 
         <locks id="locks" retry-interval-ms="100" nio-threads="0" worker-threads="1">
             <region name="region1">

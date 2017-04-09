@@ -31,9 +31,8 @@
                             <bean id="example.channel" class="io.hekate.messaging.MessagingChannelConfig">
                                 <!-- Channel name. -->
                                 <property name="name" value="example.channel"/>
-                                <!-- Resources pooling options. -->
+                                <!-- Thread pooling options. -->
                                 <property name="nioThreads" value="2"/>
-                                <property name="sockets" value="1"/>
                                 <property name="workerThreads" value="6"/>
 
                                 <!-- ...other options... -->

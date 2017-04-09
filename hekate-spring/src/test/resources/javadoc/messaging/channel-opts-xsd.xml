@@ -27,7 +27,7 @@
     <h:node id="hekate">
         <!-- Messaging service. -->
         <h:messaging>
-            <h:channel name="example.channel" sockets="1" nio-threads="2" worker-threads="6">
+            <h:channel name="example.channel" nio-threads="2" worker-threads="6">
                 <!-- ...other options... -->
             </h:channel>
         </h:messaging>
