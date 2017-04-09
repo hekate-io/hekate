@@ -268,12 +268,15 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
             awaitForChannelsTopology(channels);
 
             // Empty targets.
-            BroadcastResult<String> result = get(channel.get().forRole("no-such-role")
-                .broadcast("test" + i));
+            BroadcastResult<String> result = get(channel.get().forRole("no-such-role").broadcast("test" + i));
 
             assertTrue(result.toString(), result.isSuccess());
             assertTrue(result.toString(), result.getErrors().isEmpty());
             assertTrue(result.toString(), result.getNodes().isEmpty());
+            assertEquals("test" + i, result.getMessage());
+            assertNull(result.getError(channel.getInstance().getNode()));
+            assertFalse(result.isSuccess(channel.getInstance().getNode()));
+            assertTrue(result.toString().startsWith(BroadcastResult.class.getSimpleName()));
         });
     }
 
@@ -319,6 +322,11 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
             assertTrue(result.getErrors().isEmpty());
             assertTrue(result.getNodes().isEmpty());
             assertTrue(result.getReplies().isEmpty());
+            assertEquals("test" + i, result.getRequest());
+            assertNull(result.getError(channel.getInstance().getNode()));
+            assertNull(result.getReply(channel.getInstance().getNode()));
+            assertFalse(result.isSuccess(channel.getInstance().getNode()));
+            assertTrue(result.toString().startsWith(AggregateResult.class.getSimpleName()));
         });
     }
 

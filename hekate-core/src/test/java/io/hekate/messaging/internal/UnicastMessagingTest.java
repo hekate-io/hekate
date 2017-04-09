@@ -626,7 +626,7 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
                 List<Integer> partition = affinityBuf.get(key);
 
                 if (partition == null) {
-                    partition = Collections.synchronizedList(new ArrayList<>());
+                    partition = Collections.synchronizedList(new ArrayList<>(1000));
 
                     List<Integer> existing = affinityBuf.putIfAbsent(key, partition);
 

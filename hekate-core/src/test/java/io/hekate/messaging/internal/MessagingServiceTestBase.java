@@ -21,6 +21,7 @@ import io.hekate.HekateTestContext;
 import io.hekate.core.HekateTestInstance;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingServiceFactory;
+import io.hekate.metrics.MetricsServiceFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -126,6 +127,7 @@ public abstract class MessagingServiceTestBase extends HekateInstanceContextTest
 
         HekateTestInstance instance = createInstance(c -> {
             c.withNodeRole(TEST_NODE_ROLE);
+            c.withService(new MetricsServiceFactory());
 
             c.findOrRegister(MessagingServiceFactory.class).withChannel(cfg);
 
