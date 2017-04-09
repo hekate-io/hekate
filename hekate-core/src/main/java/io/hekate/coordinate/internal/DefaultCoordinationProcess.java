@@ -60,7 +60,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
         this.name = name;
         this.handler = handler;
         this.async = async;
-        this.channel = channel.withAffinityKey(name);
+        this.channel = channel;
         this.failoverDelay = failoverDelay;
     }
 

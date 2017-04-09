@@ -127,7 +127,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
 
     private final int nioThreadPoolSize;
 
-    private final long idleSocketPoolTimeout;
+    private final long idleSocketTimeout;
 
     @ToStringIgnore
     private final StateGuard guard = new StateGuard(TaskService.class);
@@ -152,7 +152,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
 
         workerThreadPoolSize = factory.getWorkerThreads();
         nioThreadPoolSize = factory.getNioThreads();
-        idleSocketPoolTimeout = factory.getIdleSocketTimeout();
+        idleSocketTimeout = factory.getIdleSocketTimeout();
         codec = factory.getTaskCodec();
     }
 
@@ -173,7 +173,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
             .withName(CHANNEL_NAME)
             .withLogCategory(getClass().getName())
             .withClusterFilter(n -> n.hasService(TaskService.class))
-            .withIdleTimeout(idleSocketPoolTimeout)
+            .withIdleTimeout(idleSocketTimeout)
             .withNioThreads(nioThreadPoolSize)
             .withWorkerThreads(workerThreadPoolSize)
             .withMessageCodec(() -> new TaskProtocolCodec(codec.createCodec()))

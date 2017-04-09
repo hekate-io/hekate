@@ -306,7 +306,7 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testIdleSocketPoolTimeoutWithSend() throws Exception {
+    public void testIdleSocketTimeoutWithSend() throws Exception {
         repeat(3, j -> {
             int idlePoolTimeout = 20 * (j + 1);
 
@@ -337,7 +337,7 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testIdleSocketPoolTimeoutWithRequest() throws Exception {
+    public void testIdleSocketTimeoutWithRequest() throws Exception {
         repeat(3, j -> {
             int idlePoolTimeout = 20 * (j + 1);
 
@@ -649,7 +649,7 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
 
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
-                sender.get().forNode(receiver.getNodeId()).withAffinityKey(j).send(j + ":" + i);
+                sender.get().forNode(receiver.getNodeId()).affinitySend(j, j + ":" + i);
             }
         }
 
@@ -705,7 +705,7 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
                 List<CompletableFuture<?>> futures = new ArrayList<>(partitionSize * partitionSize);
 
                 for (int j = 0; j < partitionSize; j++) {
-                    futures.add(sender.get().forNode(receiver.getNodeId()).withAffinityKey(j).request(j + ":" + i));
+                    futures.add(sender.get().forNode(receiver.getNodeId()).affinityRequest(j, j + ":" + i));
                 }
 
                 CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get();

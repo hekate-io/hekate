@@ -131,9 +131,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * required then consider using the {@link #request(Object)} method.
      * </p>
      *
-     * @param affinityKey Message affinity key. Note that if affinity key is defined at the channel level
-     * (see {@link #withAffinityKey(Object)}) then such key will be completely ignored and only the key that is provided as parameter of
-     * this method will be used for this operation.
+     * @param affinityKey Message affinity key.
      * @param message Message to be sent.
      *
      * @return Future object that can be used to inspect the operation result.
@@ -154,9 +152,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * required then consider using the {@link #request(Object, RequestCallback)} method.
      * </p>
      *
-     * @param affinityKey Message affinity key. Note that if affinity key is defined at the channel level
-     * (see {@link #withAffinityKey(Object)}) then such key will be completely ignored and only the key that is provided as parameter of
-     * this method will be used for this operation.
+     * @param affinityKey Message affinity key.
      * @param message Message to be sent.
      * @param callback Callback to be notified upon the operation completion.
      */
@@ -192,9 +188,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * node will always use the same thread to process such requests.
      * </p>
      *
-     * @param affinityKey Message affinity key. Note that if affinity key is defined at the channel level
-     * (see {@link #withAffinityKey(Object)}) then such key will be completely ignored and only the key that is provided as parameter of
-     * this method will be used for this operation.
+     * @param affinityKey Message affinity key.
      * @param message Request message.
      * @param <R> Expected response type.
      *
@@ -211,9 +205,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * node will always use the same thread to process such requests.
      * </p>
      *
-     * @param affinityKey Message affinity key. Note that if affinity key is defined at the channel level
-     * (see {@link #withAffinityKey(Object)}) then such key will be completely ignored and only the key that is provided as parameter of
-     * this method will be used for this operation.
+     * @param affinityKey Message affinity key.
      * @param message Request message.
      * @param callback Callback to be notified upon the operation completion.
      */
@@ -239,10 +231,8 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     /**
      * Asynchronously broadcasts the specified message and returns a future object that can be used to inspect the operation result.
      *
-     * @param affinityKey Message affinity key to make sure that messages with the same key will always go through the same network
-     * connection and will be processed by the same thread. Note that if affinity key is defined at the channel level
-     * (see {@link #withAffinityKey(Object)}) then such key will be completely ignored and only the key that is provided as parameter of
-     * this method will be used for this operation.
+     * @param affinityKey Message affinity key to make sure that all messages with the same key will always go through the same network
+     * connection and will be processed by the same thread.
      * @param message Message to broadcast.
      *
      * @return Future object that can be used to inspect the broadcast operation result.
@@ -254,9 +244,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * Asynchronously broadcasts the specified message and notifies the specified callback upon the operation completion.
      *
      * @param affinityKey Message affinity key to make sure that messages with the same key will always go through the same network
-     * connection and will be processed by the same thread. Note that if affinity key is defined at the channel level
-     * (see {@link #withAffinityKey(Object)}) then such key will be completely ignored and only the key that is provided as parameter of
-     * this method will be used for this operation.
+     * connection and will be processed by the same thread.
      * @param message Message to broadcast.
      * @param callback Callback that should be notified upon the broadcast operation completion.
      */
@@ -292,9 +280,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * future object that can be used to inspect the aggregation results.
      *
      * @param affinityKey Message affinity key to make sure that messages with the same key will always go through the same network
-     * connection and will be processed by the same thread. Note that if affinity key is defined at the channel level
-     * (see {@link #withAffinityKey(Object)}) then such key will be completely ignored and only the key that is provided as parameter of
-     * this method will be used for this operation.
+     * connection and will be processed by the same thread.
      * @param message Query message that should be sent.
      * @param <R> Response type (each remote node should return a response of this type).
      *
@@ -310,37 +296,13 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * specified callback on operation progress and aggregation results.
      *
      * @param affinityKey Message affinity key to make sure that messages with the same key will always go through the same network
-     * connection and will be processed by the same thread. Note that if affinity key is defined at the channel level
-     * (see {@link #withAffinityKey(Object)}) then such key will be completely ignored and only the key that is provided as parameter of
-     * this method will be used for this operation.
+     * connection and will be processed by the same thread.
      * @param message Query message that should be sent.
      * @param callback Callback that should be notified on operation progress and aggregation results.
      *
      * @see #aggregate(Object)
      */
     void affinityAggregate(Object affinityKey, T message, AggregateCallback<T> callback);
-
-    /**
-     * Returns a new lightweight wrapper of this channel that will use the specified affinity key and will inherit all other options from
-     * this instance.
-     *
-     * <p>
-     * The specified affinity key will be used by default for methods that do not provide their own affinity keys
-     * (f.e. {@link #send(Object)}, {@link #request(Object)}, etc).
-     * </p>
-     *
-     * <p>
-     * It is possible to provide an affinity key for each operation individually by using a method that directly accept affinity key as
-     * parameter (f.e. {@link #affinitySend(Object, Object)}, {@link #affinityRequest(Object, Object)}, etc). Affinity keys of such methods
-     * have higher precedence over the affinity key of this method.
-     * </p>
-     *
-     * @param affinityKey Affinity key.
-     * @param <C> Channel type.
-     *
-     * @return Channel wrapper.
-     */
-    <C extends T> MessagingChannel<C> withAffinityKey(Object affinityKey);
 
     /**
      * Returns a new lightweight wrapper of this channel that will use the specified failover policy and will inherit all other options from

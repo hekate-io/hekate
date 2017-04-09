@@ -90,6 +90,9 @@ class LockControllerClient {
     private final AsyncLockCallbackAdaptor callback;
 
     @ToStringIgnore
+    private final LockAffinityKey lockKey;
+
+    @ToStringIgnore
     private ClusterTopology topology;
 
     @ToStringIgnore
@@ -113,11 +116,12 @@ class LockControllerClient {
         this.node = node;
         this.threadId = threadId;
         this.unlockCallback = unlockCallback;
+        this.channel = channel;
         this.lockTimeout = lockTimeout;
         this.callback = callback;
 
         // Make sure that all messages will be routed with the affinity key of this lock.
-        this.channel = channel.withAffinityKey(new LockAffinityKey(lock.getRegion(), lock.getName()));
+        lockKey = new LockAffinityKey(lock.getRegion(), lock.getName());
 
         lockFuture = new LockFuture(this);
         unlockFuture = new LockFuture(this);
@@ -442,7 +446,7 @@ class LockControllerClient {
 
         LockRequest lockReq = new LockRequest(lockId, region, name, node, lockTimeout, withFeedback, threadId);
 
-        channel.request(lockReq, new RequestCallback<LockProtocol>() {
+        channel.affinityRequest(lockKey, lockReq, new RequestCallback<LockProtocol>() {
             @Override
             public ReplyDecision accept(Throwable err, LockProtocol reply) {
                 if (err == null) {
@@ -508,7 +512,7 @@ class LockControllerClient {
     private void remoteUnlock() {
         UnlockRequest unlockReq = new UnlockRequest(lockId, region, name, node);
 
-        channel.request(unlockReq, new RequestCallback<LockProtocol>() {
+        channel.affinityRequest(lockKey, unlockReq, new RequestCallback<LockProtocol>() {
             @Override
             public ReplyDecision accept(Throwable err, LockProtocol reply) {
                 if (err == null) {

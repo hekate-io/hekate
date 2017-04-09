@@ -237,7 +237,7 @@ class MessagingGateway<T> {
 
         this.asyncAdaptor = new AffinityExecutorAdaptor(async);
 
-        this.channel = new DefaultMessagingChannel<>(this, rootCluster, loadBalancer, failoverPolicy, null, defaultTimeout);
+        this.channel = new DefaultMessagingChannel<>(this, rootCluster, loadBalancer, failoverPolicy, defaultTimeout);
     }
 
     public MessagingChannelId getId() {

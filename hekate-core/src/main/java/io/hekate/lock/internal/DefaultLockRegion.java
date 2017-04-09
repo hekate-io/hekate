@@ -188,7 +188,6 @@ class DefaultLockRegion implements LockRegion {
 
         // Configure messaging channel for locks migration.
         migrationChannel = channel.filter(regionFilter)
-            .withAffinityKey(regionName)
             .forNextInJoinOrder() // Use ring-based communications.
             .withFailover(new FailoverPolicyBuilder()
                 .withAlwaysReRoute()
@@ -976,7 +975,7 @@ class DefaultLockRegion implements LockRegion {
     }
 
     private void sendToNextNode(MigrationRequest request) {
-        migrationChannel.request(request, new RequestCallback<LockProtocol>() {
+        migrationChannel.affinityRequest(regionName, request, new RequestCallback<LockProtocol>() {
             @Override
             public ReplyDecision accept(Throwable err, LockProtocol reply) {
                 if (err == null) {

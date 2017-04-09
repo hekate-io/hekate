@@ -130,7 +130,7 @@ class DefaultCoordinationMember implements CoordinationMember {
 
             CoordinationProtocol.Request req = new CoordinationProtocol.Request(processName, from, topologyHash, request);
 
-            channel.request(req, new RequestCallback<CoordinationProtocol>() {
+            channel.affinityRequest(processName, req, new RequestCallback<CoordinationProtocol>() {
                 @Override
                 public ReplyDecision accept(Throwable err, CoordinationProtocol reply) {
                     if (err != null || reply instanceof CoordinationProtocol.Reject) {
