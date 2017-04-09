@@ -81,8 +81,6 @@ abstract class NetReceiverContextBase<T> extends ReceiverContext<T> {
 
     @Override
     public void replyChunk(AffinityWorker worker, int requestId, T chunk, SendCallback callback) {
-        touch();
-
         ResponseChunk<T> msg = new ResponseChunk<>(requestId, chunk);
 
         if (msg.prepareSend(worker, this, backPressure, callback)) {
@@ -92,8 +90,6 @@ abstract class NetReceiverContextBase<T> extends ReceiverContext<T> {
 
     @Override
     public void reply(AffinityWorker worker, int requestId, T response, SendCallback callback) {
-        touch();
-
         Response<T> msg = new Response<>(requestId, response);
 
         msg.prepareSend(worker, this, backPressure, callback);

@@ -74,10 +74,6 @@ class NetClientPool<T> implements ClientPool<T> {
 
     @Override
     public void send(MessageContext<T> ctx, SendCallback callback) {
-        // Touch in advance to make sure that pool will not be disconnected
-        // by a concurrent thread that executes disconnectIfIdle() method.
-        client.touch();
-
         ensureConnected();
 
         client.sendNotification(ctx, callback);
@@ -85,10 +81,6 @@ class NetClientPool<T> implements ClientPool<T> {
 
     @Override
     public void request(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
-        // Touch in advance to make sure that pool will not be disconnected
-        // by a concurrent thread that executes disconnectIfIdle() method.
-        client.touch();
-
         ensureConnected();
 
         client.sendRequest(ctx, callback);
@@ -117,10 +109,10 @@ class NetClientPool<T> implements ClientPool<T> {
 
     @Override
     public void disconnectIfIdle() {
-        if (connected && isIdle()) {
+        if (connected && client.isIdle()) {
             synchronized (mux) {
                 // Double check with lock.
-                if (connected && isIdle()) {
+                if (connected && client.isIdle()) {
                     if (DEBUG) {
                         log.debug("Disconnecting idle connections pool [chanel={}, node={}]", name, node);
                     }
@@ -139,6 +131,8 @@ class NetClientPool<T> implements ClientPool<T> {
     }
 
     private void ensureConnected() {
+        client.touch();
+
         if (!connected) {
             if (!closed) {
                 synchronized (mux) {
@@ -157,10 +151,6 @@ class NetClientPool<T> implements ClientPool<T> {
                 }
             }
         }
-    }
-
-    private boolean isIdle() {
-        return client.isIdle();
     }
 
     @Override

@@ -92,8 +92,6 @@ abstract class ReceiverContext<T> {
     }
 
     public void receive(NetworkMessage<MessagingProtocol> netMsg, NetworkEndpoint<MessagingProtocol> from) {
-        touch();
-
         try {
             MessagingProtocol.Type msgType = MessagingProtocolCodec.previewType(netMsg);
 

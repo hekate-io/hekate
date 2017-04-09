@@ -53,8 +53,6 @@ class NetSenderContext<T> extends NetReceiverContextBase<T> {
 
     public NetworkFuture<MessagingProtocol> connect() {
         synchronized (mux) {
-            touch();
-
             // Update connection epoch.
             int localEpoch = ++epoch;
 
