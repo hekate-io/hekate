@@ -19,12 +19,14 @@ package io.hekate.cluster;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.service.Service;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TreeSet;
+
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
 
 /**
  * Predefined cluster filters.
@@ -42,11 +44,11 @@ public final class ClusterFilters {
             int size = nodes.size();
 
             if (size == 0) {
-                return Collections.emptySet();
+                return emptySet();
             } else if (size == 1) {
                 ClusterNode node = nodes.iterator().next();
 
-                return node.isLocal() ? Collections.singleton(node) : Collections.emptySet();
+                return node.isLocal() ? singleton(node) : emptySet();
             } else {
                 ClusterNode local = null;
 
@@ -61,7 +63,7 @@ public final class ClusterFilters {
                 }
 
                 if (local == null) {
-                    return Collections.emptySet();
+                    return emptySet();
                 } else {
                     ClusterNode next = sortedNodes.higher(local);
 
@@ -69,7 +71,7 @@ public final class ClusterFilters {
                         next = sortedNodes.first();
                     }
 
-                    return Collections.singleton(next);
+                    return singleton(next);
                 }
             }
         }
@@ -87,7 +89,7 @@ public final class ClusterFilters {
 
     private static final ClusterFilter OLDEST = nodes -> {
         if (nodes.isEmpty()) {
-            return Collections.emptySet();
+            return emptySet();
         }
 
         ClusterNode oldest = null;
@@ -98,12 +100,12 @@ public final class ClusterFilters {
             }
         }
 
-        return Collections.singleton(oldest);
+        return singleton(oldest);
     };
 
     private static final ClusterFilter YOUNGEST = nodes -> {
         if (nodes.isEmpty()) {
-            return Collections.emptySet();
+            return emptySet();
         }
 
         ClusterNode youngest = null;
@@ -114,7 +116,7 @@ public final class ClusterFilters {
             }
         }
 
-        return Collections.singleton(youngest);
+        return singleton(youngest);
     };
 
     private ClusterFilters() {
@@ -162,15 +164,15 @@ public final class ClusterFilters {
 
         return nodes -> {
             if (nodes.isEmpty()) {
-                return Collections.emptySet();
+                return emptySet();
             } else {
                 for (ClusterNode node : nodes) {
                     if (node.getId().equals(nodeId)) {
-                        return Collections.singleton(node);
+                        return singleton(node);
                     }
                 }
 
-                return Collections.emptySet();
+                return emptySet();
             }
         };
     }
@@ -185,9 +187,13 @@ public final class ClusterFilters {
     public static ClusterFilter forNode(ClusterNode node) {
         ArgAssert.notNull(node, "Node");
 
-        Set<ClusterNode> single = Collections.singleton(node);
-
-        return nodes -> single;
+        return nodes -> {
+            if (nodes.isEmpty() || !nodes.contains(node)) {
+                return emptySet();
+            } else {
+                return singleton(node);
+            }
+        };
     }
 
     /**
@@ -227,7 +233,7 @@ public final class ClusterFilters {
                         int size = nodes.size();
 
                         if (size == 1) {
-                            return Collections.singleton(node);
+                            return singleton(node);
                         }
 
                         result = new HashSet<>(size, 1.0f);
@@ -237,7 +243,7 @@ public final class ClusterFilters {
                 }
             }
 
-            return result != null ? result : Collections.emptySet();
+            return result != null ? result : emptySet();
         };
     }
 

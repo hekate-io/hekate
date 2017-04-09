@@ -56,7 +56,7 @@ public class ClusterFiltersTest extends HekateTestBase {
 
         ClusterNode nonExisting = newNode();
 
-        assertEquals(singleton(nonExisting), ClusterFilters.forNode(nonExisting).apply(nodesSet));
+        assertEquals(emptySet(), ClusterFilters.forNode(nonExisting).apply(nodesSet));
     }
 
     @Test

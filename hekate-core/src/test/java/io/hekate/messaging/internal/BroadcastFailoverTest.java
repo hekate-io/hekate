@@ -213,6 +213,10 @@ public class BroadcastFailoverTest extends MessagingServiceTestBase {
                     return context.retry().withRoutingPolicy(policy);
                 }).aggregate("test"));
 
+                if (errRef.get() != null) {
+                    throw new AssertionError(errRef.get());
+                }
+
                 assertNotNull(leaveRef.get());
                 assertFalse(result.toString(), result.isSuccess());
                 assertEquals(result.toString(), 1, result.getErrors().size());
@@ -221,10 +225,6 @@ public class BroadcastFailoverTest extends MessagingServiceTestBase {
                 Throwable expected = result.getErrors().get(leaveRef.get().getInstance().getNode());
 
                 assertNotNull(result.toString(), expected);
-
-                if (errRef.get() != null) {
-                    throw new AssertionError(errRef.get());
-                }
 
                 leaveRef.get().join();
 

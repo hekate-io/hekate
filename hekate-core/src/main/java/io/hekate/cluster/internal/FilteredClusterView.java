@@ -163,12 +163,12 @@ class FilteredClusterView implements ClusterView {
 
     @Override
     public ClusterTopology getTopology() {
-        long realVer = parent.getTopology().getVersion();
+        ClusterTopology parentTopology = parent.getTopology();
 
         ClusterTopology cached = this.topologyCache;
 
-        if (cached == null || cached.getVersion() < realVer) {
-            ClusterTopology newFiltered = parent.getTopology().filterAll(filter);
+        if (cached == null || cached.getVersion() < parentTopology.getVersion()) {
+            ClusterTopology newFiltered = parentTopology.filterAll(filter);
 
             this.topologyCache = newFiltered;
 
