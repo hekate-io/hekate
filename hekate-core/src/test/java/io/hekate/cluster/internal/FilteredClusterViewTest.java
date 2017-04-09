@@ -37,6 +37,8 @@ public class FilteredClusterViewTest extends HekateInstanceTestBase {
 
         ClusterView allRemote = cluster.forRemotes().forRole("all");
 
+        allRemote.futureOf(topology -> topology.size() == 3);
+
         assertTrue(allRemote.toString().startsWith(FilteredClusterView.class.getSimpleName()));
         assertTrue(allRemote.toString().contains(node2.getNode().toString()));
         assertTrue(allRemote.toString().contains(node3.getNode().toString()));
@@ -73,7 +75,7 @@ public class FilteredClusterViewTest extends HekateInstanceTestBase {
 
         HekateTestInstance node4 = createInstance(c -> c.withNodeRole("role4").withNodeRole("all")).join();
 
-        get(cluster.forRemotes().forRole("role4").futureOf(top -> !top.isEmpty()));
+        get(cluster.forRemotes().forRole("role4").futureOf(topology -> !topology.isEmpty()));
 
         ArgumentCaptor<ClusterChangeEvent> evt1 = ArgumentCaptor.forClass(ClusterChangeEvent.class);
         ArgumentCaptor<ClusterChangeEvent> evt2 = ArgumentCaptor.forClass(ClusterChangeEvent.class);
