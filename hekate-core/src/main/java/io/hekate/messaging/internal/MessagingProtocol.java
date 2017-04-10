@@ -110,7 +110,7 @@ abstract class MessagingProtocol {
 
         private AffinityWorker worker;
 
-        private ReceiverContext<T> context;
+        private MessagingConnectionBase<T> conn;
 
         private SendCallback sendCallback;
 
@@ -118,14 +118,14 @@ abstract class MessagingProtocol {
             this.payload = payload;
         }
 
-        public void prepareSend(AffinityWorker worker, ReceiverContext<T> context, SendCallback sendCallback) {
+        public void prepareSend(AffinityWorker worker, MessagingConnectionBase<T> conn, SendCallback sendCallback) {
             this.worker = worker;
-            this.context = context;
+            this.conn = conn;
             this.sendCallback = sendCallback;
         }
 
-        public void prepareReceive(ReceiverContext<T> context) {
-            this.context = context;
+        public void prepareReceive(MessagingConnectionBase<T> conn) {
+            this.conn = conn;
         }
 
         @Override
@@ -145,20 +145,20 @@ abstract class MessagingProtocol {
 
         @Override
         public MessagingEndpoint<T> getEndpoint() {
-            return context.getEndpoint();
+            return conn.getEndpoint();
         }
 
         @Override
         public MessagingChannel<T> getChannel() {
-            return context.getEndpoint().getChannel();
+            return conn.getEndpoint().getChannel();
         }
 
         @Override
         public void onComplete(MessagingProtocol message, Optional<Throwable> error, NetworkEndpoint<MessagingProtocol> endpoint) {
             if (error.isPresent()) {
-                context.notifyOnSendFailure(worker, payload, error.get(), sendCallback);
+                conn.notifyOnSendFailure(worker, payload, error.get(), sendCallback);
             } else {
-                context.notifyOnSendSuccess(worker, payload, sendCallback);
+                conn.notifyOnSendSuccess(worker, payload, sendCallback);
             }
         }
 
@@ -201,7 +201,7 @@ abstract class MessagingProtocol {
 
         private AffinityWorker worker;
 
-        private ReceiverContext<T> context;
+        private MessagingConnectionBase<T> conn;
 
         private RequestHandle<T> handle;
 
@@ -213,14 +213,14 @@ abstract class MessagingProtocol {
             this.payload = payload;
         }
 
-        public void prepareReceive(AffinityWorker worker, ReceiverContext<T> processor) {
+        public void prepareReceive(AffinityWorker worker, MessagingConnectionBase<T> processor) {
             this.worker = worker;
-            this.context = processor;
+            this.conn = processor;
         }
 
-        public void prepareSend(RequestHandle<T> handle, ReceiverContext<T> context) {
+        public void prepareSend(RequestHandle<T> handle, MessagingConnectionBase<T> conn) {
             this.worker = handle.getWorker();
-            this.context = context;
+            this.conn = conn;
             this.handle = handle;
         }
 
@@ -257,7 +257,7 @@ abstract class MessagingProtocol {
         public void reply(T response, SendCallback callback) {
             responded();
 
-            context.reply(worker, requestId, response, callback);
+            conn.reply(worker, requestId, response, callback);
         }
 
         @Override
@@ -269,23 +269,23 @@ abstract class MessagingProtocol {
         public void replyPartial(T response, SendCallback callback) throws UnsupportedOperationException {
             checkNotResponded();
 
-            context.replyChunk(worker, requestId, response, callback);
+            conn.replyChunk(worker, requestId, response, callback);
         }
 
         @Override
         public MessagingEndpoint<T> getEndpoint() {
-            return context.getEndpoint();
+            return conn.getEndpoint();
         }
 
         @Override
         public MessagingChannel<T> getChannel() {
-            return context.getEndpoint().getChannel();
+            return conn.getEndpoint().getChannel();
         }
 
         @Override
         public void onComplete(MessagingProtocol message, Optional<Throwable> error, NetworkEndpoint<MessagingProtocol> endpoint) {
             error.ifPresent(err ->
-                context.notifyOnReplyFailure(handle, err)
+                conn.notifyOnReplyFailure(handle, err)
             );
         }
 
@@ -338,7 +338,7 @@ abstract class MessagingProtocol {
 
         private AffinityWorker worker;
 
-        private ReceiverContext<T> context;
+        private MessagingConnectionBase<T> conn;
 
         private T request;
 
@@ -351,10 +351,10 @@ abstract class MessagingProtocol {
             this.payload = payload;
         }
 
-        public boolean prepareSend(AffinityWorker worker, ReceiverContext<T> context, SendBackPressure backPressure,
+        public boolean prepareSend(AffinityWorker worker, MessagingConnectionBase<T> conn, SendBackPressure backPressure,
             SendCallback sendCallback) {
             this.worker = worker;
-            this.context = context;
+            this.conn = conn;
             this.backPressure = backPressure;
             this.sendCallback = sendCallback;
 
@@ -365,7 +365,7 @@ abstract class MessagingProtocol {
                 } catch (InterruptedException | MessageQueueOverflowException e) {
                     backPressure.onDequeue();
 
-                    context.notifyOnSendFailure(worker, payload, e, sendCallback);
+                    conn.notifyOnSendFailure(worker, payload, e, sendCallback);
 
                     return false;
                 }
@@ -374,8 +374,8 @@ abstract class MessagingProtocol {
             return true;
         }
 
-        public void prepareReceive(ReceiverContext<T> context, T request) {
-            this.context = context;
+        public void prepareReceive(MessagingConnectionBase<T> conn, T request) {
+            this.conn = conn;
             this.request = request;
         }
 
@@ -405,12 +405,12 @@ abstract class MessagingProtocol {
 
         @Override
         public MessagingEndpoint<T> getEndpoint() {
-            return context.getEndpoint();
+            return conn.getEndpoint();
         }
 
         @Override
         public MessagingChannel<T> getChannel() {
-            return context.getEndpoint().getChannel();
+            return conn.getEndpoint().getChannel();
         }
 
         @Override
@@ -420,9 +420,9 @@ abstract class MessagingProtocol {
             }
 
             if (error.isPresent()) {
-                context.notifyOnSendFailure(worker, payload, error.get(), sendCallback);
+                conn.notifyOnSendFailure(worker, payload, error.get(), sendCallback);
             } else {
-                context.notifyOnSendSuccess(worker, payload, sendCallback);
+                conn.notifyOnSendSuccess(worker, payload, sendCallback);
             }
         }
 
@@ -449,7 +449,7 @@ abstract class MessagingProtocol {
 
         private AffinityWorker worker;
 
-        private ReceiverContext<T> context;
+        private MessagingConnectionBase<T> conn;
 
         private T request;
 
@@ -462,9 +462,10 @@ abstract class MessagingProtocol {
             this.payload = payload;
         }
 
-        public void prepareSend(AffinityWorker worker, ReceiverContext<T> context, SendBackPressure backPressure, SendCallback onSend) {
+        public void prepareSend(AffinityWorker worker, MessagingConnectionBase<T> conn, SendBackPressure backPressure,
+            SendCallback onSend) {
             this.worker = worker;
-            this.context = context;
+            this.conn = conn;
             this.backPressure = backPressure;
             this.sendCallback = onSend;
 
@@ -476,8 +477,8 @@ abstract class MessagingProtocol {
             }
         }
 
-        public void prepareReceive(ReceiverContext<T> context, T request) {
-            this.context = context;
+        public void prepareReceive(MessagingConnectionBase<T> conn, T request) {
+            this.conn = conn;
             this.request = request;
         }
 
@@ -507,12 +508,12 @@ abstract class MessagingProtocol {
 
         @Override
         public MessagingEndpoint<T> getEndpoint() {
-            return context.getEndpoint();
+            return conn.getEndpoint();
         }
 
         @Override
         public MessagingChannel<T> getChannel() {
-            return context.getEndpoint().getChannel();
+            return conn.getEndpoint().getChannel();
         }
 
         @Override
@@ -522,9 +523,9 @@ abstract class MessagingProtocol {
             }
 
             if (error.isPresent()) {
-                context.notifyOnSendFailure(worker, payload, error.get(), sendCallback);
+                conn.notifyOnSendFailure(worker, payload, error.get(), sendCallback);
             } else {
-                context.notifyOnSendSuccess(worker, payload, sendCallback);
+                conn.notifyOnSendSuccess(worker, payload, sendCallback);
             }
         }
 

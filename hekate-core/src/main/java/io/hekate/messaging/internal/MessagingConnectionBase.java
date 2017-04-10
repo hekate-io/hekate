@@ -32,7 +32,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-abstract class ReceiverContext<T> {
+abstract class MessagingConnectionBase<T> {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     private final MessagingGateway<T> gateway;
@@ -47,15 +47,11 @@ abstract class ReceiverContext<T> {
 
     private final MessagingEndpoint<T> endpoint;
 
-    private final boolean trackIdleState;
-
     private final RequestRegistry<T> requests;
-
-    private volatile boolean touched;
 
     private volatile int epoch;
 
-    public ReceiverContext(MessagingGateway<T> gateway, AffinityExecutor async, MessagingEndpoint<T> endpoint, boolean trackIdleState) {
+    public MessagingConnectionBase(MessagingGateway<T> gateway, AffinityExecutor async, MessagingEndpoint<T> endpoint) {
         assert gateway != null : "Gateway is null.";
         assert async != null : "Executor is null.";
         assert endpoint != null : "Messaging endpoint is null.";
@@ -66,7 +62,6 @@ abstract class ReceiverContext<T> {
         this.endpoint = endpoint;
         this.metrics = gateway.getMetrics();
         this.backPressure = gateway.getReceiveBackPressure();
-        this.trackIdleState = trackIdleState;
 
         this.requests = new RequestRegistry<>(metrics);
     }
@@ -294,6 +289,14 @@ abstract class ReceiverContext<T> {
         }
     }
 
+    public boolean hasPendingRequests() {
+        return !requests.isEmpty();
+    }
+
+    public MessagingEndpoint<T> getEndpoint() {
+        return endpoint;
+    }
+
     public void discardRequests(Throwable cause) {
         discardRequests(epoch, cause);
     }
@@ -318,44 +321,12 @@ abstract class ReceiverContext<T> {
         }
     }
 
-    public boolean isIdle() {
-        // Check if was touched since the previous check (volatile read).
-        boolean idle = !touched;
-
-        if (idle) {
-            // Do not mark as idle if there are requests awaiting for responses.
-            if (!requests.isEmpty()) {
-                idle = false;
-            }
-        } else {
-            // Reset touched flag (volatile write).
-            // Note we are not updating this flag if there are requests awaiting for responses
-            // since their responses will reset this flag anyway.
-            touched = false;
-        }
-
-        return idle;
-    }
-
-    public MessagingEndpoint<T> getEndpoint() {
-        return endpoint;
+    protected RequestHandle<T> registerRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
+        return requests.register(epoch, ctx, callback);
     }
 
     protected void setEpoch(int epoch) {
         this.epoch = epoch;
-    }
-
-    protected void touch() {
-        // 1. Check if idling is enabled.
-        // 2. Check if not touched yet (volatile read).
-        if (trackIdleState && !touched) {
-            // Update touched flag (it is ok if multiple threads would do it in parallel).
-            touched = true;
-        }
-    }
-
-    protected RequestHandle<T> registerRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
-        return requests.register(epoch, ctx, callback);
     }
 
     protected void doReceiveRequest(Request<T> msg, AffinityWorker worker) {

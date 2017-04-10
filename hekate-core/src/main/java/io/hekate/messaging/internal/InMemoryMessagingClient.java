@@ -24,11 +24,11 @@ import io.hekate.util.format.ToStringIgnore;
 import java.util.Collections;
 import java.util.List;
 
-class InMemoryClientPool<T> implements ClientPool<T> {
-    private static class AlwaysAsyncExecutor implements AffinityExecutor {
+class InMemoryMessagingClient<T> implements MessagingClient<T> {
+    private static class AsyncEnforcedExecutor implements AffinityExecutor {
         private final AffinityExecutor delegate;
 
-        public AlwaysAsyncExecutor(AffinityExecutor delegate) {
+        public AsyncEnforcedExecutor(AffinityExecutor delegate) {
             assert delegate != null : "Delegate is null.";
 
             this.delegate = delegate;
@@ -64,17 +64,17 @@ class InMemoryClientPool<T> implements ClientPool<T> {
     private final ClusterNode node;
 
     @ToStringIgnore
-    private final InMemoryReceiverContext<T> client;
+    private final InMemoryConnection<T> conn;
 
-    public InMemoryClientPool(ClusterNode node, MessagingGateway<T> gateway) {
+    public InMemoryMessagingClient(ClusterNode node, MessagingGateway<T> gateway) {
         assert node != null : "Cluster node is null.";
         assert gateway != null : "Gateway is null.";
 
         this.node = node;
 
-        AlwaysAsyncExecutor wrapAsync = new AlwaysAsyncExecutor(gateway.getAsync());
+        AsyncEnforcedExecutor asyncEnforced = new AsyncEnforcedExecutor(gateway.getAsync());
 
-        client = new InMemoryReceiverContext<>(gateway, wrapAsync);
+        conn = new InMemoryConnection<>(gateway, asyncEnforced);
     }
 
     @Override
@@ -83,18 +83,23 @@ class InMemoryClientPool<T> implements ClientPool<T> {
     }
 
     @Override
+    public void send(MessageContext<T> ctx, SendCallback callback) {
+        conn.sendNotification(ctx, callback);
+    }
+
+    @Override
+    public void request(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
+        conn.sendRequest(ctx, callback);
+    }
+
+    @Override
     public void disconnectIfIdle() {
         // No-op.
     }
 
     @Override
-    public void send(MessageContext<T> ctx, SendCallback callback) {
-        client.sendNotification(ctx, callback);
-    }
-
-    @Override
-    public void request(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
-        client.sendRequest(ctx, callback);
+    public void touch() {
+        // No-op.
     }
 
     @Override

@@ -20,9 +20,9 @@ import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.network.NetworkEndpoint;
 import java.nio.channels.ClosedChannelException;
 
-class NetReceiverContext<T> extends NetReceiverContextBase<T> {
-    public NetReceiverContext(NetworkEndpoint<MessagingProtocol> net, MessagingEndpoint<T> endpoint, MessagingGateway<T> gateway) {
-        super(net, gateway, endpoint, false);
+class NetworkInboundConnection<T> extends NetworkConnectionBase<T> {
+    public NetworkInboundConnection(NetworkEndpoint<MessagingProtocol> net, MessagingEndpoint<T> endpoint, MessagingGateway<T> gateway) {
+        super(net, gateway, endpoint);
     }
 
     public void onConnect() {
@@ -34,6 +34,6 @@ class NetReceiverContext<T> extends NetReceiverContextBase<T> {
 
         discardRequests(new ClosedChannelException());
 
-        gateway().unregisterServerReceiver(this);
+        gateway().unregister(this);
     }
 }

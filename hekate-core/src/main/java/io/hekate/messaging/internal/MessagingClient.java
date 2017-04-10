@@ -21,14 +21,16 @@ import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkFuture;
 import java.util.List;
 
-interface ClientPool<T> {
+interface MessagingClient<T> {
     ClusterNode getNode();
-
-    void disconnectIfIdle();
 
     void send(MessageContext<T> ctx, SendCallback callback);
 
     void request(MessageContext<T> ctx, InternalRequestCallback<T> callback);
+
+    void disconnectIfIdle();
+
+    void touch();
 
     List<NetworkFuture<MessagingProtocol>> close();
 

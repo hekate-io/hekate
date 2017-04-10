@@ -37,7 +37,7 @@ public class FilteredClusterViewTest extends HekateInstanceTestBase {
 
         ClusterView allRemote = cluster.forRemotes().forRole("all");
 
-        allRemote.futureOf(topology -> topology.size() == 3);
+        get(allRemote.futureOf(topology -> topology.size() == 2));
 
         assertTrue(allRemote.toString().startsWith(FilteredClusterView.class.getSimpleName()));
         assertTrue(allRemote.toString().contains(node2.getNode().toString()));

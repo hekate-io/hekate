@@ -29,7 +29,7 @@ import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
 
-class NetSenderContext<T> extends NetReceiverContextBase<T> {
+class NetworkOutboundConnection<T> extends NetworkConnectionBase<T> {
     private final ClusterAddress address;
 
     private final NetworkClient<MessagingProtocol> net;
@@ -40,9 +40,9 @@ class NetSenderContext<T> extends NetReceiverContextBase<T> {
 
     private int epoch;
 
-    public NetSenderContext(ClusterAddress address, NetworkClient<MessagingProtocol> net, MessagingGateway<T> gateway,
-        MessagingEndpoint<T> endpoint, boolean trackIdleState) {
-        super(net, gateway, endpoint, trackIdleState);
+    public NetworkOutboundConnection(ClusterAddress address, NetworkClient<MessagingProtocol> net, MessagingGateway<T> gateway,
+        MessagingEndpoint<T> endpoint) {
+        super(net, gateway, endpoint);
 
         assert address != null : "Address is null.";
 

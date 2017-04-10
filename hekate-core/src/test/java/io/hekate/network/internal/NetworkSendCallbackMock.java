@@ -19,7 +19,9 @@ package io.hekate.network.internal;
 import io.hekate.HekateTestBase;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkSendCallback;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -61,9 +63,25 @@ public class NetworkSendCallbackMock<T> implements NetworkSendCallback<T> {
 
     @SafeVarargs
     public final void awaitForSent(T... messages) throws Exception {
-        List<T> expected = Arrays.asList(messages);
+        List<T> expected = new ArrayList<>(Arrays.asList(messages));
 
-        HekateTestBase.busyWait("messages sending [expected=" + expected + ']', () -> sentMessages.containsAll(expected));
+        HekateTestBase.busyWait("messages sending [expected=" + expected + ']', () -> {
+            for (Iterator<T> it = expected.iterator(); it.hasNext(); ) {
+                T msg = it.next();
+
+                if (sentMessages.contains(msg)) {
+                    it.remove();
+                } else {
+                    Throwable err = getFailure(msg);
+
+                    if (err != null) {
+                        throw new AssertionError("Failed to await for message sending due to an error [message=" + msg + ']', err);
+                    }
+                }
+            }
+
+            return expected.isEmpty();
+        });
     }
 
     @SafeVarargs
@@ -83,24 +101,12 @@ public class NetworkSendCallbackMock<T> implements NetworkSendCallback<T> {
         assertEquals(n, sentMessages.size());
     }
 
-    public void assertSent(T message) {
-        assertTrue(message.toString(), sentMessages.contains(message));
-    }
-
     public void assertFailed(int n) {
         assertEquals(n, failedMessages.size());
     }
 
     public void assertFailed(T message) {
         assertTrue(message.toString(), failedMessages.stream().anyMatch(f -> f.message.equals(message)));
-    }
-
-    public int getSentCount() {
-        return sentMessages.size();
-    }
-
-    public int getFailedCount() {
-        return failedMessages.size();
     }
 
     public List<T> getFailed() {

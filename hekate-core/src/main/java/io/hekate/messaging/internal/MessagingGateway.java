@@ -94,10 +94,10 @@ class MessagingGateway<T> {
         void fail(Throwable cause);
     }
 
-    private static class PoolSelectionRejectedException extends Exception {
+    private static class ClientSelectionRejectedException extends Exception {
         private static final long serialVersionUID = 1L;
 
-        public PoolSelectionRejectedException(Throwable cause) {
+        public ClientSelectionRejectedException(Throwable cause) {
             super(null, cause, false, false);
         }
     }
@@ -173,13 +173,13 @@ class MessagingGateway<T> {
     private final CloseCallback onBeforeClose;
 
     @ToStringIgnore
-    private final Map<ClusterNodeId, ClientPool<T>> pools = new HashMap<>();
+    private final Map<ClusterNodeId, MessagingClient<T>> clients = new HashMap<>();
 
     @ToStringIgnore
     private final boolean checkIdle;
 
     @ToStringIgnore
-    private final Set<NetReceiverContext<T>> serverReceivers = new HashSet<>();
+    private final Set<NetworkInboundConnection<T>> inbound = new HashSet<>();
 
     @ToStringIgnore
     private final StampedLock lock = new StampedLock();
@@ -432,28 +432,28 @@ class MessagingGateway<T> {
                     sendBackPressure.terminate();
                 }
 
-                // Close all client pools.
+                // Close all clients.
                 List<NetworkFuture<MessagingProtocol>> disconnects = new LinkedList<>();
 
-                for (ClientPool<T> pool : pools.values()) {
-                    disconnects.addAll(pool.close());
+                for (MessagingClient<T> client : clients.values()) {
+                    disconnects.addAll(client.close());
                 }
 
-                // Clear client pools.
-                pools.clear();
+                // Clear clients.
+                clients.clear();
 
-                // Close all server connections.
-                List<NetReceiverContext<T>> receivers;
+                // Close all inbound connections.
+                List<NetworkInboundConnection<T>> localInbound;
 
-                synchronized (serverReceivers) {
-                    // Create a local copy of receivers list since they are removing themselves from this list during disconnect.
-                    receivers = new ArrayList<>(serverReceivers);
+                synchronized (inbound) {
+                    // Create a local copy of inbound connections since they are removing themselves from the list during disconnect.
+                    localInbound = new ArrayList<>(inbound);
 
-                    serverReceivers.clear();
+                    inbound.clear();
                 }
 
-                disconnects.addAll(receivers.stream()
-                    .map(NetReceiverContext::disconnect)
+                disconnects.addAll(localInbound.stream()
+                    .map(NetworkInboundConnection::disconnect)
                     .filter(Objects::nonNull)
                     .collect(toList()));
 
@@ -525,24 +525,26 @@ class MessagingGateway<T> {
     }
 
     private void routeAndSend(MessageContext<T> ctx, SendCallback callback, FailureInfo prevErr) {
-        ClientPool<T> pool = null;
+        MessagingClient<T> client = null;
 
         try {
-            pool = selectPool(ctx, prevErr);
+            client = selectClient(ctx, prevErr);
         } catch (HekateException | RuntimeException | Error e) {
             notifyOnErrorAsync(ctx, callback, e);
-        } catch (PoolSelectionRejectedException e) {
+        } catch (ClientSelectionRejectedException e) {
             notifyOnErrorAsync(ctx, callback, e.getCause());
         }
 
-        if (pool != null) {
-            doSend(ctx, pool, callback, prevErr);
+        if (client != null) {
+            doSend(ctx, client, callback, prevErr);
         }
     }
 
-    private void doSend(MessageContext<T> ctx, ClientPool<T> pool, SendCallback callback, FailureInfo prevErr) {
+    private void doSend(MessageContext<T> ctx, MessagingClient<T> client, SendCallback callback, FailureInfo prevErr) {
         // Decorate callback with failover, error handling logic, etc.
         SendCallback retryCallback = err -> {
+            client.touch();
+
             if (err == null || ctx.getOpts().failover() == null) {
                 // Complete operation.
                 if (ctx.complete()) {
@@ -559,13 +561,13 @@ class MessagingGateway<T> {
                     public void retry(FailoverRoutingPolicy routing, FailureInfo failure) {
                         switch (routing) {
                             case RETRY_SAME_NODE: {
-                                doSend(ctx, pool, callback, failure);
+                                doSend(ctx, client, callback, failure);
 
                                 break;
                             }
                             case PREFER_SAME_NODE: {
-                                if (isKnownNode(pool.getNode())) {
-                                    doSend(ctx, pool, callback, failure);
+                                if (isKnownNode(client.getNode())) {
+                                    doSend(ctx, client, callback, failure);
                                 } else {
                                     routeAndSend(ctx, callback, failure);
                                 }
@@ -589,32 +591,34 @@ class MessagingGateway<T> {
                     }
                 };
 
-                applyFailoverAsync(ctx, err, pool.getNode(), onFailover, prevErr);
+                applyFailoverAsync(ctx, err, client.getNode(), onFailover, prevErr);
             }
         };
 
-        pool.send(ctx, retryCallback);
+        client.send(ctx, retryCallback);
     }
 
     private void routeAndRequest(MessageContext<T> ctx, RequestCallback<T> callback, FailureInfo prevErr) {
-        ClientPool<T> pool = null;
+        MessagingClient<T> client = null;
 
         try {
-            pool = selectPool(ctx, prevErr);
+            client = selectClient(ctx, prevErr);
         } catch (HekateException | RuntimeException | Error e) {
             notifyOnErrorAsync(ctx, callback, e);
-        } catch (PoolSelectionRejectedException e) {
+        } catch (ClientSelectionRejectedException e) {
             notifyOnErrorAsync(ctx, callback, e.getCause());
         }
 
-        if (pool != null) {
-            doRequest(ctx, pool, callback, prevErr);
+        if (client != null) {
+            doRequest(ctx, client, callback, prevErr);
         }
     }
 
-    private void doRequest(MessageContext<T> ctx, ClientPool<T> pool, RequestCallback<T> callback, FailureInfo prevErr) {
+    private void doRequest(MessageContext<T> ctx, MessagingClient<T> client, RequestCallback<T> callback, FailureInfo prevErr) {
         // Decorate callback with failover, error handling logic, etc.
         InternalRequestCallback<T> internalCallback = (request, err, reply) -> {
+            client.touch();
+
             T replyMsg = null;
 
             // Check if reply is an application-level error message.
@@ -668,13 +672,13 @@ class MessagingGateway<T> {
                     public void retry(FailoverRoutingPolicy routing, FailureInfo failure) {
                         switch (routing) {
                             case RETRY_SAME_NODE: {
-                                doRequest(ctx, pool, callback, failure);
+                                doRequest(ctx, client, callback, failure);
 
                                 break;
                             }
                             case PREFER_SAME_NODE: {
-                                if (isKnownNode(pool.getNode())) {
-                                    doRequest(ctx, pool, callback, failure);
+                                if (isKnownNode(client.getNode())) {
+                                    doRequest(ctx, client, callback, failure);
                                 } else {
                                     routeAndRequest(ctx, callback, failure);
                                 }
@@ -698,14 +702,14 @@ class MessagingGateway<T> {
                     }
                 };
 
-                applyFailoverAsync(ctx, err, pool.getNode(), onFailover, prevErr);
+                applyFailoverAsync(ctx, err, client.getNode(), onFailover, prevErr);
             }
         };
 
-        pool.request(ctx, internalCallback);
+        client.request(ctx, internalCallback);
     }
 
-    boolean registerServerReceiver(NetReceiverContext<T> receiver) {
+    boolean register(NetworkInboundConnection<T> conn) {
         long readLock = lock.readLock();
 
         try {
@@ -713,8 +717,8 @@ class MessagingGateway<T> {
                 return false;
             }
 
-            synchronized (serverReceivers) {
-                serverReceivers.add(receiver);
+            synchronized (inbound) {
+                inbound.add(conn);
             }
 
             return true;
@@ -723,12 +727,12 @@ class MessagingGateway<T> {
         }
     }
 
-    void unregisterServerReceiver(NetReceiverContext<T> receiver) {
+    void unregister(NetworkInboundConnection<T> conn) {
         long readLock = lock.readLock();
 
         try {
-            synchronized (serverReceivers) {
-                serverReceivers.remove(receiver);
+            synchronized (inbound) {
+                inbound.remove(conn);
             }
         } finally {
             lock.unlockRead(readLock);
@@ -740,7 +744,7 @@ class MessagingGateway<T> {
 
         try {
             if (!closed) {
-                pools.values().forEach(ClientPool::disconnectIfIdle);
+                clients.values().forEach(MessagingClient::disconnectIfIdle);
             }
         } finally {
             lock.unlockRead(readLock);
@@ -748,7 +752,7 @@ class MessagingGateway<T> {
     }
 
     void updateTopology() {
-        List<ClientPool<T>> poolsToClose = null;
+        List<MessagingClient<T>> clientsToClose = null;
 
         long writeLock = lock.writeLock();
 
@@ -799,17 +803,17 @@ class MessagingGateway<T> {
                     }
 
                     if (!removed.isEmpty()) {
-                        poolsToClose = removed.stream()
-                            .map(node -> pools.remove(node.getId()))
+                        clientsToClose = removed.stream()
+                            .map(node -> clients.remove(node.getId()))
                             .filter(Objects::nonNull)
                             .collect(toList());
                     }
 
                     if (!added.isEmpty()) {
                         added.forEach(node -> {
-                            ClientPool<T> pool = createClientPool(node);
+                            MessagingClient<T> client = createClient(node);
 
-                            pools.put(node.getId(), pool);
+                            clients.put(node.getId(), client);
                         });
                     }
 
@@ -820,8 +824,8 @@ class MessagingGateway<T> {
             lock.unlockWrite(writeLock);
         }
 
-        if (poolsToClose != null) {
-            poolsToClose.forEach(ClientPool::close);
+        if (clientsToClose != null) {
+            clientsToClose.forEach(MessagingClient::close);
         }
     }
 
@@ -830,11 +834,11 @@ class MessagingGateway<T> {
     }
 
     // This method is for testing purposes only.
-    ClientPool<T> getPool(ClusterNodeId nodeId) throws MessagingException {
+    MessagingClient<T> getClient(ClusterNodeId nodeId) throws MessagingException {
         long readLock = lock.readLock();
 
         try {
-            return pools.get(nodeId);
+            return clients.get(nodeId);
         } finally {
             lock.unlockRead(readLock);
         }
@@ -863,13 +867,14 @@ class MessagingGateway<T> {
         long readLock = lock.readLock();
 
         try {
-            return pools.containsKey(node.getId());
+            return clients.containsKey(node.getId());
         } finally {
             lock.unlockRead(readLock);
         }
     }
 
-    private ClientPool<T> selectPool(MessageContext<T> ctx, FailureInfo prevErr) throws HekateException, PoolSelectionRejectedException {
+    private MessagingClient<T> selectClient(MessageContext<T> ctx, FailureInfo prevErr) throws HekateException,
+        ClientSelectionRejectedException {
         assert ctx != null : "Message context is null.";
 
         ClusterTopology topology = ctx.getOpts().cluster().getTopology();
@@ -880,7 +885,7 @@ class MessagingGateway<T> {
             if (cause == null) {
                 throw new UnknownRouteException("No suitable receivers [channel=" + name + ']');
             } else {
-                throw new PoolSelectionRejectedException(cause);
+                throw new ClientSelectionRejectedException(cause);
             }
         }
 
@@ -898,7 +903,7 @@ class MessagingGateway<T> {
                     if (cause == null) {
                         throw new TooManyRoutesException("Too many receivers [channel=" + name + ", topology=" + topology + ']');
                     } else {
-                        throw new PoolSelectionRejectedException(cause);
+                        throw new ClientSelectionRejectedException(cause);
                     }
                 }
 
@@ -915,7 +920,7 @@ class MessagingGateway<T> {
                     if (cause == null) {
                         throw new UnknownRouteException("Load balancer failed to select a target node.");
                     } else {
-                        throw new PoolSelectionRejectedException(cause);
+                        throw new ClientSelectionRejectedException(cause);
                     }
                 }
             }
@@ -929,9 +934,9 @@ class MessagingGateway<T> {
                     throw channelClosedError(null);
                 }
 
-                ClientPool<T> pool = pools.get(targetId);
+                MessagingClient<T> client = clients.get(targetId);
 
-                if (pool == null) {
+                if (client == null) {
                     // Post-check that topology was not changed during routing.
                     ClusterTopology currentTopology = rootCluster.getTopology();
 
@@ -941,11 +946,11 @@ class MessagingGateway<T> {
                         if (cause == null) {
                             throw new UnknownRouteException("Node is not within the channel topology [id=" + targetId + ']');
                         } else {
-                            throw new PoolSelectionRejectedException(cause);
+                            throw new ClientSelectionRejectedException(cause);
                         }
                     }
                 } else {
-                    return pool;
+                    return client;
                 }
             } finally {
                 lock.unlockRead(readLock);
@@ -1024,7 +1029,7 @@ class MessagingGateway<T> {
                         FailoverRoutingPolicy route = resolution.getRoutingPolicy();
 
                         // Apply failover only if re-routing was requested or if the target node is still within the channel's topology.
-                        if (route != RETRY_SAME_NODE || pools.containsKey(failed.getId())) {
+                        if (route != RETRY_SAME_NODE || clients.containsKey(failed.getId())) {
                             onRetry();
 
                             AffinityWorker worker = ctx.getWorker();
@@ -1063,11 +1068,11 @@ class MessagingGateway<T> {
             && !(cause instanceof CodecException);
     }
 
-    private ClientPool<T> createClientPool(ClusterNode node) {
+    private MessagingClient<T> createClient(ClusterNode node) {
         if (node.equals(localNode)) {
-            return new InMemoryClientPool<>(localNode, this);
+            return new InMemoryMessagingClient<>(localNode, this);
         } else {
-            return new NetClientPool<>(name, node, net, this, checkIdle);
+            return new NetworkMessagingClient<>(name, node, net, this, checkIdle);
         }
     }
 

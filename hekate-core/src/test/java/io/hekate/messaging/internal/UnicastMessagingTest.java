@@ -313,16 +313,16 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
 
             awaitForChannelsTopology(sender, receiver);
 
-            ClientPool<String> pool = sender.getImpl().getPool(receiver.getNodeId());
+            MessagingClient<String> client = sender.getImpl().getClient(receiver.getNodeId());
 
             repeat(3, i -> {
-                assertFalse(pool.isConnected());
+                assertFalse(client.isConnected());
 
                 sender.send(receiver.getNodeId(), "test-" + i).get();
 
-                busyWait("idle pool disconnect", () -> !pool.isConnected());
+                busyWait("disconnect idle", () -> !client.isConnected());
 
-                assertFalse(pool.isConnected());
+                assertFalse(client.isConnected());
             });
 
             receiver.awaitForMessage("test-2");
@@ -334,29 +334,29 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testIdleSocketTimeoutWithRequest() throws Exception {
+    public void testIdleTimeoutWithRequest() throws Exception {
         repeat(3, j -> {
-            int idlePoolTimeout = 20 * (j + 1);
+            int idleTimeout = 20 * (j + 1);
 
-            TestChannel sender = createChannel(c -> c.setIdleTimeout(idlePoolTimeout)).join();
+            TestChannel sender = createChannel(c -> c.setIdleTimeout(idleTimeout)).join();
 
             TestChannel receiver = createChannel(c -> {
-                c.setIdleTimeout(idlePoolTimeout);
+                c.setIdleTimeout(idleTimeout);
                 c.setReceiver(msg -> msg.reply("ok"));
             }).join();
 
             awaitForChannelsTopology(sender, receiver);
 
-            ClientPool<String> pool = sender.getImpl().getPool(receiver.getNodeId());
+            MessagingClient<String> client = sender.getImpl().getClient(receiver.getNodeId());
 
             repeat(5, i -> {
-                assertFalse(pool.isConnected());
+                assertFalse(client.isConnected());
 
                 sender.request(receiver.getNodeId(), "test" + i).get();
 
-                busyWait("idle pool disconnect", () -> !pool.isConnected());
+                busyWait("disconnect idle", () -> !client.isConnected());
 
-                assertFalse(pool.isConnected());
+                assertFalse(client.isConnected());
             });
 
             receiver.awaitForMessage("test4");
@@ -368,16 +368,39 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
     }
 
     @Test
+    public void testNoFailuresOnRequestWithSmallIdleTimeout() throws Exception {
+        repeat(3, j -> {
+            int idleTimeout = 1 + j;
+
+            TestChannel sender = createChannel(c -> c.setIdleTimeout(idleTimeout)).join();
+
+            TestChannel receiver = createChannel(c -> {
+                c.setIdleTimeout(idleTimeout);
+                c.setReceiver(msg -> msg.reply("ok"));
+            }).join();
+
+            awaitForChannelsTopology(sender, receiver);
+
+            runParallel(4, 2500, s ->
+                sender.request(receiver.getNodeId(), "test").get()
+            );
+
+            sender.leave();
+            receiver.leave();
+        });
+    }
+
+    @Test
     public void testIdleTimeoutWithPendingResponse() throws Exception {
         repeat(3, j -> {
-            int idlePoolTimeout = 20 * (j + 1);
+            int idleTimeout = 20 * (j + 1);
 
-            TestChannel sender = createChannel(c -> c.setIdleTimeout(idlePoolTimeout)).join();
+            TestChannel sender = createChannel(c -> c.setIdleTimeout(idleTimeout)).join();
 
             AtomicReference<CountDownLatch> latchRef = new AtomicReference<>();
 
             TestChannel receiver = createChannel(c -> {
-                c.setIdleTimeout(idlePoolTimeout);
+                c.setIdleTimeout(idleTimeout);
                 c.setReceiver(msg -> {
                     assertTrue(msg.mustReply());
 
@@ -393,10 +416,10 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
 
             awaitForChannelsTopology(receiver, sender);
 
-            ClientPool<String> pool = sender.getImpl().getPool(receiver.getNodeId());
+            MessagingClient<String> client = sender.getImpl().getClient(receiver.getNodeId());
 
             repeat(5, i -> {
-                assertFalse(pool.isConnected());
+                assertFalse(client.isConnected());
 
                 String request = "test" + i;
 
@@ -409,10 +432,10 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
                     sender.request(receiver.getNodeId(), request, callback);
 
                     // Await for timeout.
-                    sleep((long)(idlePoolTimeout * 3));
+                    sleep((long)(idleTimeout * 3));
 
-                    // Pool must be still connected since there is a non-replied message.
-                    assertTrue(pool.isConnected());
+                    // Client must be still connected since there is a non-replied message.
+                    assertTrue(client.isConnected());
                 } finally {
                     // Trigger reply.
                     latchRef.get().countDown();
@@ -421,7 +444,7 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
                 callback.get();
 
                 // Pool must be disconnected since there are no non-replied messages.
-                busyWait("pool disconnect", () -> !pool.isConnected());
+                busyWait("pool disconnect", () -> !client.isConnected());
             });
 
             receiver.awaitForMessage("test4");
@@ -642,9 +665,9 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        ClientPool<String> pool = sender.getImpl().getPool(receiver.getNodeId());
+        MessagingClient<String> client = sender.getImpl().getClient(receiver.getNodeId());
 
-        List<NetworkFuture<MessagingProtocol>> closeFuture = pool.close();
+        List<NetworkFuture<MessagingProtocol>> closeFuture = client.close();
 
         for (NetworkFuture<MessagingProtocol> future : closeFuture) {
             future.get();
@@ -668,9 +691,9 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        ClientPool<String> pool = sender.getImpl().getPool(receiver.getNodeId());
+        MessagingClient<String> client = sender.getImpl().getClient(receiver.getNodeId());
 
-        List<NetworkFuture<MessagingProtocol>> closeFuture = pool.close();
+        List<NetworkFuture<MessagingProtocol>> closeFuture = client.close();
 
         for (NetworkFuture<MessagingProtocol> future : closeFuture) {
             future.get();
@@ -823,7 +846,9 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
             close.await();
 
             try {
-                get(get(future));
+                SendFuture sendFuture = get(future);
+
+                get(sendFuture);
 
                 fail("Error was expected.");
             } catch (MessagingFutureException e) {
@@ -865,7 +890,9 @@ public class UnicastMessagingTest extends MessagingServiceTestBase {
             close.await();
 
             try {
-                get(get(future));
+                RequestFuture<String> request = get(future);
+
+                get(request);
 
                 fail("Error was expected.");
             } catch (MessagingFutureException e) {

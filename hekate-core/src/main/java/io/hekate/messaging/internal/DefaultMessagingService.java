@@ -512,13 +512,13 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
                     MessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(channelId, gateway.getChannel());
 
-                    NetReceiverContext<T> ctx = new NetReceiverContext<>(client, endpoint, gateway);
+                    NetworkInboundConnection<T> conn = new NetworkInboundConnection<>(client, endpoint, gateway);
 
                     // Try to register connection within the gateway.
-                    if (gateway.registerServerReceiver(ctx)) {
-                        client.setContext(ctx);
+                    if (gateway.register(conn)) {
+                        client.setContext(conn);
 
-                        ctx.onConnect();
+                        conn.onConnect();
                     } else {
                         // Gateway rejected connection.
                         client.disconnect();
@@ -527,16 +527,16 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
                 @Override
                 public void onMessage(NetworkMessage<MessagingProtocol> msg, NetworkEndpoint<MessagingProtocol> from) throws IOException {
-                    NetReceiverContext<T> ctx = from.getContext();
+                    NetworkInboundConnection<T> conn = from.getContext();
 
-                    if (ctx != null) {
-                        ctx.receive(msg, from);
+                    if (conn != null) {
+                        conn.receive(msg, from);
                     }
                 }
 
                 @Override
                 public void onDisconnect(NetworkEndpoint<MessagingProtocol> client) {
-                    NetReceiverContext<T> ctx = client.getContext();
+                    NetworkInboundConnection<T> ctx = client.getContext();
 
                     if (ctx != null) {
                         ctx.onDisconnect();

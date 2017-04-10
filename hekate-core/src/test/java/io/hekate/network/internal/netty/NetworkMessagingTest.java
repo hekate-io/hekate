@@ -400,12 +400,10 @@ public class NetworkMessagingTest extends NetworkTestBase {
 
             serverHandler.awaitForMessages(client, "one", "two", "three");
 
-            clientCallback.awaitForMessages("serverOne", "serverTwo", "serverThree");
-
-            serverCallback.assertSent("serverOne");
-            serverCallback.assertSent("serverTwo");
-            serverCallback.assertSent("serverThree");
+            serverCallback.awaitForSent("serverOne", "serverTwo", "serverThree");
             serverCallback.assertFailed(0);
+
+            clientCallback.awaitForMessages("serverOne", "serverTwo", "serverThree");
 
             serverHandler.assertConnects(client, 1);
 

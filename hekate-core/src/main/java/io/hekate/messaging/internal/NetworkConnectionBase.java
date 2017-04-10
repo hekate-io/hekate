@@ -27,24 +27,23 @@ import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkFuture;
 
-abstract class NetReceiverContextBase<T> extends ReceiverContext<T> {
-    private final NetworkEndpoint<MessagingProtocol> endpoint;
+abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
+    private final NetworkEndpoint<MessagingProtocol> net;
 
     private final SendBackPressure backPressure;
 
-    public NetReceiverContextBase(NetworkEndpoint<MessagingProtocol> endpoint, MessagingGateway<T> gateway,
-        MessagingEndpoint<T> messagingEndpoint, boolean trackIdleState) {
-        super(gateway, gateway.getAsync(), messagingEndpoint, trackIdleState);
+    public NetworkConnectionBase(NetworkEndpoint<MessagingProtocol> net, MessagingGateway<T> gateway, MessagingEndpoint<T> messaging) {
+        super(gateway, gateway.getAsync(), messaging);
 
-        assert endpoint != null : "Endpoint is null.";
+        assert net != null : "Endpoint is null.";
 
-        this.endpoint = endpoint;
+        this.net = net;
         this.backPressure = gateway.getSendBackPressure();
     }
 
     @Override
     public NetworkFuture<MessagingProtocol> disconnect() {
-        return endpoint.disconnect();
+        return net.disconnect();
     }
 
     @Override
@@ -61,7 +60,7 @@ abstract class NetReceiverContextBase<T> extends ReceiverContext<T> {
 
         msg.prepareSend(handle, this);
 
-        endpoint.send(msg, msg /* <-- Message itself is a callback.*/);
+        net.send(msg, msg /* <-- Message itself is a callback.*/);
     }
 
     @Override
@@ -76,7 +75,7 @@ abstract class NetReceiverContextBase<T> extends ReceiverContext<T> {
 
         msg.prepareSend(ctx.getWorker(), this, callback);
 
-        endpoint.send(msg, msg /* <-- Message itself is a callback.*/);
+        net.send(msg, msg /* <-- Message itself is a callback.*/);
     }
 
     @Override
@@ -84,7 +83,7 @@ abstract class NetReceiverContextBase<T> extends ReceiverContext<T> {
         ResponseChunk<T> msg = new ResponseChunk<>(requestId, chunk);
 
         if (msg.prepareSend(worker, this, backPressure, callback)) {
-            endpoint.send(msg, msg /* <-- Message itself is a callback.*/);
+            net.send(msg, msg /* <-- Message itself is a callback.*/);
         }
     }
 
@@ -94,11 +93,11 @@ abstract class NetReceiverContextBase<T> extends ReceiverContext<T> {
 
         msg.prepareSend(worker, this, backPressure, callback);
 
-        endpoint.send(msg, msg /* <-- Message itself is a callback.*/);
+        net.send(msg, msg /* <-- Message itself is a callback.*/);
     }
 
     @Override
     protected void disconnectOnError(Throwable t) {
-        endpoint.disconnect();
+        net.disconnect();
     }
 }

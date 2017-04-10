@@ -50,7 +50,11 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
         doTestConcurrentElection(node -> {
             say("Leave " + node.getNode());
 
-            node.leaveAsync().join();
+            try {
+                get(node.leaveAsync());
+            } catch (Exception e) {
+                throw new AssertionError(e);
+            }
         });
     }
 
@@ -61,7 +65,11 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
         doTestConcurrentElection(node -> {
             say("Terminate " + node.getNode());
 
-            node.terminateAsync().join();
+            try {
+                get(node.terminateAsync());
+            } catch (Exception e) {
+                throw new AssertionError(e);
+            }
         });
     }
 

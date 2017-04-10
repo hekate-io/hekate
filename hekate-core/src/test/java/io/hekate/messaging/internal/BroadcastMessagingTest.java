@@ -367,10 +367,10 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
         repeat(channels.size() - 1, i -> {
             TestChannel target = channels.get(i);
 
-            NetClientPool<String> pool = (NetClientPool<String>)source.getImpl().getPool(target.getNodeId());
+            NetworkMessagingClient<String> client = (NetworkMessagingClient<String>)source.getImpl().getClient(target.getNodeId());
 
             // Induce failure by closing existing network connections.
-            pool.getClients().forEach(c -> c.disconnect().join());
+            get(client.getConnection().disconnect());
 
             BroadcastTestCallback callback = new BroadcastTestCallback();
 
@@ -441,10 +441,10 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
         repeat(channels.size() - 1, i -> {
             TestChannel target = channels.get(i);
 
-            NetClientPool<String> pool = (NetClientPool<String>)source.getImpl().getPool(target.getNodeId());
+            NetworkMessagingClient<String> client = (NetworkMessagingClient<String>)source.getImpl().getClient(target.getNodeId());
 
             // Induce failure by closing existing network connections.
-            pool.getClients().forEach(c -> c.disconnect().join());
+            get(client.getConnection().disconnect());
 
             BroadcastResult<String> result = get(source.get().broadcast("test" + i));
 

@@ -25,9 +25,9 @@ import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkFuture;
 
-class InMemoryReceiverContext<T> extends ReceiverContext<T> {
-    public InMemoryReceiverContext(MessagingGateway<T> gateway, AffinityExecutor async) {
-        super(gateway, async, new DefaultMessagingEndpoint<>(gateway.getId(), gateway.getChannel()), false);
+class InMemoryConnection<T> extends MessagingConnectionBase<T> {
+    public InMemoryConnection(MessagingGateway<T> gateway, AffinityExecutor async) {
+        super(gateway, async, new DefaultMessagingEndpoint<>(gateway.getId(), gateway.getChannel()));
     }
 
     @Override

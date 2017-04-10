@@ -28,7 +28,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class NetClientPool<T> implements ClientPool<T> {
+class NetworkMessagingClient<T> implements MessagingClient<T> {
     private static final Logger log = LoggerFactory.getLogger(MessagingGateway.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -37,16 +37,21 @@ class NetClientPool<T> implements ClientPool<T> {
 
     private final ClusterNode node;
 
-    private final NetSenderContext<T> client;
+    private final NetworkOutboundConnection<T> conn;
+
+    private final boolean trackIdle;
 
     @ToStringIgnore
     private final Object mux = new Object();
+
+    @ToStringIgnore
+    private volatile boolean idle;
 
     private volatile boolean connected;
 
     private volatile boolean closed;
 
-    public NetClientPool(String name, ClusterNode node, NetworkConnector<MessagingProtocol> net, MessagingGateway<T> gateway,
+    public NetworkMessagingClient(String name, ClusterNode node, NetworkConnector<MessagingProtocol> net, MessagingGateway<T> gateway,
         boolean trackIdle) {
         assert name != null : "Name is null.";
         assert node != null : "Cluster node is null.";
@@ -59,12 +64,13 @@ class NetClientPool<T> implements ClientPool<T> {
 
         this.name = name;
         this.node = node;
+        this.trackIdle = trackIdle;
 
         NetworkClient<MessagingProtocol> netClient = net.newClient();
 
         DefaultMessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(gateway.getId(), gateway.getChannel());
 
-        this.client = new NetSenderContext<>(node.getAddress(), netClient, gateway, endpoint, trackIdle);
+        this.conn = new NetworkOutboundConnection<>(node.getAddress(), netClient, gateway, endpoint);
     }
 
     @Override
@@ -74,29 +80,33 @@ class NetClientPool<T> implements ClientPool<T> {
 
     @Override
     public void send(MessageContext<T> ctx, SendCallback callback) {
+        touch();
+
         ensureConnected();
 
-        client.sendNotification(ctx, callback);
+        conn.sendNotification(ctx, callback);
     }
 
     @Override
     public void request(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
+        touch();
+
         ensureConnected();
 
-        client.sendRequest(ctx, callback);
+        conn.sendRequest(ctx, callback);
     }
 
     @Override
     public List<NetworkFuture<MessagingProtocol>> close() {
         if (DEBUG) {
-            log.debug("Closing connection pool [channel={}, node={}]", name, node);
+            log.debug("Closing connection [channel={}, node={}]", name, node);
         }
 
         synchronized (mux) {
             // Mark as closed.
             closed = true;
 
-            return Collections.singletonList(client.disconnect());
+            return Collections.singletonList(conn.disconnect());
         }
     }
 
@@ -109,30 +119,47 @@ class NetClientPool<T> implements ClientPool<T> {
 
     @Override
     public void disconnectIfIdle() {
-        if (connected && client.isIdle()) {
-            synchronized (mux) {
-                // Double check with lock.
-                if (connected && client.isIdle()) {
-                    if (DEBUG) {
-                        log.debug("Disconnecting idle connections pool [chanel={}, node={}]", name, node);
+        if (trackIdle) {
+            if (connected) {
+                if (idle && !conn.hasPendingRequests()) {
+                    synchronized (mux) {
+                        // Double check with lock.
+                        if (connected && idle && !conn.hasPendingRequests()) {
+                            if (DEBUG) {
+                                log.debug("Disconnecting idle connection [chanel={}, node={}]", name, node);
+                            }
+
+                            connected = false;
+
+                            conn.disconnect();
+                        }
                     }
+                }
 
-                    connected = false;
+                idle = true;
+            }
+        }
+    }
 
-                    client.disconnect();
+    @Override
+    public void touch() {
+        if (trackIdle) {
+            if (idle) {
+                synchronized (mux) {
+                    if (!closed && connected) {
+                        idle = false;
+                    }
                 }
             }
         }
     }
 
     // Package level for testing purposes.
-    List<NetSenderContext<T>> getClients() {
-        return Collections.singletonList(client);
+    NetworkOutboundConnection<T> getConnection() {
+        return conn;
     }
 
     private void ensureConnected() {
-        client.touch();
-
         if (!connected) {
             if (!closed) {
                 synchronized (mux) {
@@ -142,11 +169,10 @@ class NetClientPool<T> implements ClientPool<T> {
                             log.debug("Initializing connections pool [chanel={}, node={}]", name, node);
                         }
 
-                        client.connect();
-
-                        client.touch();
+                        conn.connect();
 
                         connected = true;
+                        idle = false;
                     }
                 }
             }
