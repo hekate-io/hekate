@@ -373,13 +373,4 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @return Asynchronous task executor of this channel.
      */
     Executor getExecutor();
-
-    /**
-     * Returned an asynchronous single-threaded task executor for the specified affinity key.
-     *
-     * @param affinityKey Affinity key.
-     *
-     * @return Asynchronous single-threaded task executor for the specified affinity key.
-     */
-    Executor getExecutor(Object affinityKey);
 }

@@ -38,6 +38,11 @@ class MessagingExecutorSync implements MessagingExecutor {
     }
 
     @Override
+    public MessagingWorker executor() {
+        return worker;
+    }
+
+    @Override
     public boolean isAsync() {
         return false;
     }

@@ -16,10 +16,13 @@
 
 package io.hekate.core.internal.util;
 
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinPool.ForkJoinWorkerThreadFactory;
+import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class HekateThreadFactory implements ThreadFactory {
+public class HekateThreadFactory implements ThreadFactory, ForkJoinWorkerThreadFactory {
     public static final String THREAD_COMMON_PREFIX = "Hekate";
 
     private static final AtomicInteger FACTORY_COUNTER = new AtomicInteger();
@@ -48,9 +51,16 @@ public class HekateThreadFactory implements ThreadFactory {
         return new HekateThread(nodeName, name, r);
     }
 
+    @Override
+    public ForkJoinWorkerThread newThread(ForkJoinPool pool) {
+        String name = THREAD_COMMON_PREFIX + threadName + '-' + factoryId + '-' + threadCounter.getAndIncrement();
+
+        return new HekateForkJoinThread(nodeName, name, pool);
+    }
+
     protected String resolveNodeName(String nodeName) {
-        if ((nodeName == null || nodeName.isEmpty()) && Thread.currentThread() instanceof HekateThread) {
-            HekateThread parent = (HekateThread)Thread.currentThread();
+        if ((nodeName == null || nodeName.isEmpty()) && Thread.currentThread() instanceof HekateNodeNameAwareThread) {
+            HekateNodeNameAwareThread parent = (HekateNodeNameAwareThread)Thread.currentThread();
 
             nodeName = parent.getNodeName();
         }

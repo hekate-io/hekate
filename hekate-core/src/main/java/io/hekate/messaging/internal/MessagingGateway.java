@@ -203,9 +203,6 @@ class MessagingGateway<T> {
     private final DefaultMessagingChannel<T> channel;
 
     @ToStringIgnore
-    private final MessagingExecutorAdaptor asyncAdaptor;
-
-    @ToStringIgnore
     private ClusterTopology channelTopology;
 
     @ToStringIgnore
@@ -234,8 +231,6 @@ class MessagingGateway<T> {
         this.sendBackPressure = sendBackPressure;
         this.checkIdle = checkIdle;
         this.onBeforeClose = onBeforeClose;
-
-        this.asyncAdaptor = new MessagingExecutorAdaptor(async);
 
         this.channel = new DefaultMessagingChannel<>(this, rootCluster, loadBalancer, failoverPolicy, defaultTimeout);
     }
@@ -497,11 +492,7 @@ class MessagingGateway<T> {
     }
 
     public Executor getExecutor() {
-        return asyncAdaptor;
-    }
-
-    public Executor getExecutor(Object affinityKey) {
-        return asyncAdaptor.getExecutor(affinityKey);
+        return async.executor();
     }
 
     DefaultMessagingChannel<T> getChannel() {

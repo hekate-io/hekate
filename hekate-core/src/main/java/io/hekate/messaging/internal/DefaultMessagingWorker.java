@@ -44,11 +44,6 @@ class DefaultMessagingWorker implements MessagingWorker {
         return timer.schedule(() -> execute(task), delay, TimeUnit.MILLISECONDS);
     }
 
-    @Override
-    public boolean isShutdown() {
-        return executor.isShutdown();
-    }
-
     public void shutdown() {
         executor.shutdown();
     }

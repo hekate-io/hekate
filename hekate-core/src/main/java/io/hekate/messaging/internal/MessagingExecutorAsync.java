@@ -16,32 +16,42 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Utils;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 class MessagingExecutorAsync implements MessagingExecutor {
-    private final DefaultMessagingWorker[] workers;
+    private final DefaultMessagingWorker[] affinityWorkers;
+
+    private final ForkJoinMessagingWorker nonAffinityWorker;
 
     private final int size;
 
-    public MessagingExecutorAsync(ThreadFactory factory, int size, ScheduledExecutorService timer) {
+    public MessagingExecutorAsync(HekateThreadFactory factory, int size, ScheduledExecutorService timer) {
         assert size > 0 : "Thread pool size must be above zero [size=" + size + ']';
         assert timer != null : "Timer is null.";
 
         this.size = size;
 
-        workers = new DefaultMessagingWorker[size];
+        affinityWorkers = new DefaultMessagingWorker[size];
 
         for (int i = 0; i < size; i++) {
-            workers[i] = new DefaultMessagingWorker(factory, timer);
+            affinityWorkers[i] = new DefaultMessagingWorker(factory, timer);
         }
+
+        nonAffinityWorker = new ForkJoinMessagingWorker(size, factory);
     }
 
     @Override
     public MessagingWorker workerFor(int affinity) {
-        return workers[Utils.mod(affinity, size)];
+        return affinityWorkers[Utils.mod(affinity, size)];
+    }
+
+    @Override
+    public Executor executor() {
+        return nonAffinityWorker;
     }
 
     @Override
@@ -51,16 +61,20 @@ class MessagingExecutorAsync implements MessagingExecutor {
 
     @Override
     public void terminate() {
-        for (DefaultMessagingWorker worker : workers) {
+        for (DefaultMessagingWorker worker : affinityWorkers) {
             worker.execute(worker::shutdown);
         }
+
+        nonAffinityWorker.shutdown();
     }
 
     @Override
     public void awaitTermination() throws InterruptedException {
-        for (DefaultMessagingWorker worker : workers) {
+        for (DefaultMessagingWorker worker : affinityWorkers) {
             worker.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         }
+
+        nonAffinityWorker.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
     }
 
     @Override

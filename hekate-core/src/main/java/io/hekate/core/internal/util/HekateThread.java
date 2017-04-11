@@ -16,22 +16,21 @@
 
 package io.hekate.core.internal.util;
 
-public class HekateThread extends Thread {
-    private static final ThreadGroup THREAD_GROUP = new ThreadGroup("Hekate");
-
+class HekateThread extends Thread implements HekateNodeNameAwareThread {
     private final String nodeName;
 
     public HekateThread(String nodeName, String threadName, Runnable runnable) {
-        super(THREAD_GROUP, runnable, makeName(nodeName, threadName));
+        super(runnable, makeName(nodeName, threadName));
 
         this.nodeName = nodeName;
     }
 
+    @Override
     public String getNodeName() {
         return nodeName;
     }
 
-    private static String makeName(String nodeName, String threadName) {
+    static String makeName(String nodeName, String threadName) {
         if (nodeName == null || nodeName.isEmpty()) {
             return threadName;
         } else {

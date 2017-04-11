@@ -58,7 +58,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ThreadLocalRandom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -410,11 +409,8 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
 
                         inject(task);
 
-                        // Use random seed for better distribution of tasks among threads.
-                        int affinity = ThreadLocalRandom.current().nextInt();
-
                         for (Object arg : args) {
-                            channel.getExecutor(affinity).execute(() -> {
+                            channel.getExecutor().execute(() -> {
                                 try {
                                     if (!callback.isCompleted()) {
                                         Object result = task.apply(arg);
@@ -425,8 +421,6 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
                                     callback.onError(t);
                                 }
                             });
-
-                            affinity++;
                         }
                     } catch (Throwable t) {
                         callback.onError(t);

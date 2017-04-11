@@ -211,11 +211,6 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
-    public Executor getExecutor(Object affinityKey) {
-        return gateway.getExecutor(affinityKey);
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
     public <C extends T> DefaultMessagingChannel<C> withFailover(FailoverPolicy policy) {
         return new DefaultMessagingChannel(gateway, cluster, balancer, policy, timeout);
