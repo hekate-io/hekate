@@ -16,6 +16,7 @@
 
 package io.hekate.messaging.internal;
 
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -23,12 +24,12 @@ import java.util.concurrent.TimeUnit;
 class SyncAffinityExecutor implements AffinityExecutor {
     private final DefaultAffinityWorker worker;
 
-    public SyncAffinityExecutor(ThreadFactory threadFactory) {
+    public SyncAffinityExecutor(ThreadFactory threadFactory, ScheduledExecutorService timer) {
         ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, threadFactory);
 
         executor.setRemoveOnCancelPolicy(true);
 
-        worker = new DefaultAffinityWorker(threadFactory);
+        worker = new DefaultAffinityWorker(threadFactory, timer);
     }
 
     @Override

@@ -17,6 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.core.internal.util.Utils;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
@@ -26,15 +27,16 @@ class AsyncAffinityExecutor implements AffinityExecutor {
 
     private final int size;
 
-    public AsyncAffinityExecutor(ThreadFactory threadFactory, int size) {
+    public AsyncAffinityExecutor(ThreadFactory factory, int size, ScheduledExecutorService timer) {
         assert size > 0 : "Thread pool size must be above zero [size=" + size + ']';
+        assert timer != null : "Timer is null.";
 
         this.size = size;
 
         workers = new DefaultAffinityWorker[size];
 
         for (int i = 0; i < size; i++) {
-            workers[i] = new DefaultAffinityWorker(threadFactory);
+            workers[i] = new DefaultAffinityWorker(factory, timer);
         }
     }
 

@@ -68,10 +68,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -95,7 +94,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     private final List<MessagingChannelConfig<?>> channelsConfig = new LinkedList<>();
 
-    private ScheduledExecutorService scheduler;
+    private ScheduledThreadPoolExecutor timer;
 
     private ClusterNodeId nodeId;
 
@@ -207,6 +206,12 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
             nodeId = ctx.getNode().getId();
 
+            HekateThreadFactory timerFactory = new HekateThreadFactory(MESSAGING_THREAD_PREFIX + "Timer");
+
+            timer = new ScheduledThreadPoolExecutor(1, timerFactory);
+
+            timer.setRemoveOnCancelPolicy(true);
+
             channelsConfig.forEach(this::registerChannel);
 
             cluster.addListener(this::updateTopology, ClusterEventType.JOIN, ClusterEventType.CHANGE);
@@ -256,10 +261,10 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                 gateways.clear();
 
                 // Shutdown scheduler.
-                if (scheduler != null) {
-                    waiting.add(Utils.shutdown(scheduler));
+                if (timer != null) {
+                    waiting.add(Utils.shutdown(timer));
 
-                    scheduler = null;
+                    timer = null;
                 }
 
                 nodeId = null;
@@ -361,14 +366,14 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         }
 
         // Prepare thread pool for asynchronous messages processing.
-        HekateThreadFactory asyncThreadFactory = new HekateThreadFactory(MESSAGING_THREAD_PREFIX + '-' + name);
+        HekateThreadFactory asyncFactory = new HekateThreadFactory(MESSAGING_THREAD_PREFIX + '-' + name);
 
         AffinityExecutor async;
 
         if (workerThreads > 0) {
-            async = new AsyncAffinityExecutor(asyncThreadFactory, workerThreads);
+            async = new AsyncAffinityExecutor(asyncFactory, workerThreads, timer);
         } else {
-            async = new SyncAffinityExecutor(asyncThreadFactory);
+            async = new SyncAffinityExecutor(asyncFactory, timer);
         }
 
         // Prepare metrics.
@@ -426,13 +431,6 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
         // Schedule idle connections checking (if required).
         if (checkIdle) {
-            // Lazy initialize scheduler.
-            if (scheduler == null) {
-                HekateThreadFactory threadFactory = new HekateThreadFactory(MESSAGING_THREAD_PREFIX);
-
-                scheduler = Executors.newSingleThreadScheduledExecutor(threadFactory);
-            }
-
             if (DEBUG) {
                 log.debug("Scheduling new task for idle channel handling [check-interval={}]", idleTimeout);
             }
@@ -445,7 +443,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                 }
             };
 
-            ScheduledFuture<?> future = scheduler.scheduleWithFixedDelay(idleCheckTask, idleTimeout, idleTimeout, TimeUnit.MILLISECONDS);
+            ScheduledFuture<?> future = timer.scheduleWithFixedDelay(idleCheckTask, idleTimeout, idleTimeout, TimeUnit.MILLISECONDS);
 
             idleCheckTaskRef.set(future);
         }
