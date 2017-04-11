@@ -23,6 +23,7 @@ import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingService;
 import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.unicast.LoadBalancers;
+import io.hekate.metrics.MetricsServiceFactory;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -35,9 +36,10 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 public class MessagingBenchmark {
     public enum Mode {
-        NIO_2_WORKER_2(2, 4),
-        NIO_4_WORKER_8(4, 8),
-        NIO_4_WORKER_0(4, 0);
+        NIO_2_WORKER_0(2, 0),
+        NIO_1_WORKER_4(1, 4),
+        NIO_2_WORKER_4(2, 4),
+        NIO_1_WORKER_0(1, 0);
 
         private final int nio;
 
@@ -51,9 +53,10 @@ public class MessagingBenchmark {
 
     public static class BenchmarkContext extends MultiNodeBenchmarkContext {
         @Param({
-            "NIO_2_WORKER_2",
-            "NIO_4_WORKER_8",
-            "NIO_4_WORKER_0"}
+            "NIO_2_WORKER_0",
+            "NIO_1_WORKER_4",
+            "NIO_2_WORKER_4",
+            "NIO_1_WORKER_0"}
         )
         private Mode mode;
 
@@ -85,6 +88,7 @@ public class MessagingBenchmark {
             boot.withService(new MessagingServiceFactory()
                 .withChannel(channel)
             );
+            boot.withService(new MetricsServiceFactory());
         }
 
         @Override
@@ -106,7 +110,7 @@ public class MessagingBenchmark {
 
     @Benchmark
     public void measure(BenchmarkContext ctx) throws Exception {
-        ctx.channel.send(randomBytes()).get();
+        ctx.channel.request(randomBytes()).get();
     }
 
     private static byte[] randomBytes() {

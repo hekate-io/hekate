@@ -16,14 +16,14 @@
 
 package io.hekate.messaging.internal;
 
-interface AffinityExecutor {
-    boolean isAsync();
+import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 
-    AffinityWorker workerFor(int affinity);
+interface MessagingWorker extends Executor {
+    @Override
+    void execute(Runnable command);
 
-    void terminate();
+    Future<?> executeDeferred(long delay, Runnable task);
 
-    void awaitTermination() throws InterruptedException;
-
-    int getThreadPoolSize();
+    boolean isShutdown();
 }

@@ -21,19 +21,19 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-class SyncAffinityExecutor implements AffinityExecutor {
-    private final DefaultAffinityWorker worker;
+class MessagingExecutorSync implements MessagingExecutor {
+    private final DefaultMessagingWorker worker;
 
-    public SyncAffinityExecutor(ThreadFactory threadFactory, ScheduledExecutorService timer) {
+    public MessagingExecutorSync(ThreadFactory threadFactory, ScheduledExecutorService timer) {
         ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, threadFactory);
 
         executor.setRemoveOnCancelPolicy(true);
 
-        worker = new DefaultAffinityWorker(threadFactory, timer);
+        worker = new DefaultMessagingWorker(threadFactory, timer);
     }
 
     @Override
-    public AffinityWorker workerFor(int affinity) {
+    public MessagingWorker workerFor(int affinity) {
         return worker;
     }
 

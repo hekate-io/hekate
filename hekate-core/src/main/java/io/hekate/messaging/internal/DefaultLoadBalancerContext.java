@@ -58,6 +58,11 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
     }
 
     @Override
+    public boolean hasAffinity() {
+        return affinityKey != null;
+    }
+
+    @Override
     public int getAffinity() {
         return affinity;
     }

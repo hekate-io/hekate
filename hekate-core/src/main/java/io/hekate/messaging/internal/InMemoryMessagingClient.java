@@ -25,10 +25,10 @@ import java.util.Collections;
 import java.util.List;
 
 class InMemoryMessagingClient<T> implements MessagingClient<T> {
-    private static class AsyncEnforcedExecutor implements AffinityExecutor {
-        private final AffinityExecutor delegate;
+    private static class AsyncEnforcedExecutor implements MessagingExecutor {
+        private final MessagingExecutor delegate;
 
-        public AsyncEnforcedExecutor(AffinityExecutor delegate) {
+        public AsyncEnforcedExecutor(MessagingExecutor delegate) {
             assert delegate != null : "Delegate is null.";
 
             this.delegate = delegate;
@@ -41,7 +41,7 @@ class InMemoryMessagingClient<T> implements MessagingClient<T> {
         }
 
         @Override
-        public AffinityWorker workerFor(int affinity) {
+        public MessagingWorker workerFor(int affinity) {
             return delegate.workerFor(affinity);
         }
 

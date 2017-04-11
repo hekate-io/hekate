@@ -185,7 +185,7 @@ class MessagingGateway<T> {
     private final StampedLock lock = new StampedLock();
 
     @ToStringIgnore
-    private final AffinityExecutor async;
+    private final MessagingExecutor async;
 
     @ToStringIgnore
     private final MetricsCallback metrics;
@@ -203,7 +203,7 @@ class MessagingGateway<T> {
     private final DefaultMessagingChannel<T> channel;
 
     @ToStringIgnore
-    private final AffinityExecutorAdaptor asyncAdaptor;
+    private final MessagingExecutorAdaptor asyncAdaptor;
 
     @ToStringIgnore
     private ClusterTopology channelTopology;
@@ -212,7 +212,7 @@ class MessagingGateway<T> {
     private boolean closed;
 
     public MessagingGateway(String name, NetworkConnector<MessagingProtocol> net, ClusterNode localNode, ClusterView cluster,
-        MessageReceiver<T> receiver, int nioThreads, AffinityExecutor async, MetricsCallback metrics,
+        MessageReceiver<T> receiver, int nioThreads, MessagingExecutor async, MetricsCallback metrics,
         ReceiveBackPressure receiveBackPressure, SendBackPressure sendBackPressure, FailoverPolicy failoverPolicy, long defaultTimeout,
         LoadBalancer<T> loadBalancer, boolean checkIdle, CloseCallback onBeforeClose) {
         assert name != null : "Name is null.";
@@ -235,7 +235,7 @@ class MessagingGateway<T> {
         this.checkIdle = checkIdle;
         this.onBeforeClose = onBeforeClose;
 
-        this.asyncAdaptor = new AffinityExecutorAdaptor(async);
+        this.asyncAdaptor = new MessagingExecutorAdaptor(async);
 
         this.channel = new DefaultMessagingChannel<>(this, rootCluster, loadBalancer, failoverPolicy, defaultTimeout);
     }
@@ -508,7 +508,7 @@ class MessagingGateway<T> {
         return channel;
     }
 
-    AffinityExecutor getAsync() {
+    MessagingExecutor getAsync() {
         return async;
     }
 
@@ -1032,7 +1032,7 @@ class MessagingGateway<T> {
                         if (route != RETRY_SAME_NODE || clients.containsKey(failed.getId())) {
                             onRetry();
 
-                            AffinityWorker worker = ctx.getWorker();
+                            MessagingWorker worker = ctx.getWorker();
 
                             // Schedule timeout task to apply failover actions after the failover delay.
                             onAsyncEnqueue();
@@ -1153,7 +1153,7 @@ class MessagingGateway<T> {
     private MessageContext<T> newContext(Object affinityKey, T message, MessagingOpts<T> opts) {
         int affinity = affinity(affinityKey);
 
-        AffinityWorker worker = async.workerFor(affinity);
+        MessagingWorker worker = async.workerFor(affinity);
 
         return new MessageContext<>(message, affinity, affinityKey, worker, opts);
     }

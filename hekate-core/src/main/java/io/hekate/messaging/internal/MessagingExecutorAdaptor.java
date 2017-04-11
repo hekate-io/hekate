@@ -16,11 +16,25 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.core.internal.util.ArgAssert;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
+import java.util.concurrent.ThreadLocalRandom;
 
-interface AffinityWorker extends Executor {
-    Future<?> executeDeferred(long delay, Runnable task);
+class MessagingExecutorAdaptor implements Executor {
+    private final MessagingExecutor async;
 
-    boolean isShutdown();
+    public MessagingExecutorAdaptor(MessagingExecutor async) {
+        this.async = async;
+    }
+
+    @Override
+    public void execute(Runnable command) {
+        async.workerFor(ThreadLocalRandom.current().nextInt()).execute(command);
+    }
+
+    public Executor getExecutor(Object affinityKey) {
+        ArgAssert.notNull(affinityKey, "Affinity key");
+
+        return async.workerFor(affinityKey.hashCode());
+    }
 }

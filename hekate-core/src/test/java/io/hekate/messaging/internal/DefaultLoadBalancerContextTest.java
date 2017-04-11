@@ -28,6 +28,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 public class DefaultLoadBalancerContextTest extends ClusterTopologyTestBase {
@@ -42,6 +43,7 @@ public class DefaultLoadBalancerContextTest extends ClusterTopologyTestBase {
         assertNotNull(ctx.getFailure());
         assertEquals(100, ctx.getAffinity());
         assertEquals("test", ctx.getAffinityKey());
+        assertTrue(ctx.hasAffinity());
         assertSame(details, ctx.getFailure().get());
         assertSame(details, ctx.filter(n -> false).getFailure().get());
         assertSame(details, ctx.filter(n -> n.equals(n1)).getFailure().get());

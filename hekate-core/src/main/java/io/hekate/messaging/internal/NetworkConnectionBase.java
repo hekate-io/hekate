@@ -79,7 +79,7 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void replyChunk(AffinityWorker worker, int requestId, T chunk, SendCallback callback) {
+    public void replyChunk(MessagingWorker worker, int requestId, T chunk, SendCallback callback) {
         ResponseChunk<T> msg = new ResponseChunk<>(requestId, chunk);
 
         if (msg.prepareSend(worker, this, backPressure, callback)) {
@@ -88,7 +88,7 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void reply(AffinityWorker worker, int requestId, T response, SendCallback callback) {
+    public void reply(MessagingWorker worker, int requestId, T response, SendCallback callback) {
         Response<T> msg = new Response<>(requestId, response);
 
         msg.prepareSend(worker, this, backPressure, callback);

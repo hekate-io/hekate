@@ -22,7 +22,7 @@ class MessageContext<T> {
     private final T message;
 
     @ToStringIgnore
-    private final AffinityWorker worker;
+    private final MessagingWorker worker;
 
     @ToStringIgnore
     private final MessagingOpts<T> opts;
@@ -36,7 +36,7 @@ class MessageContext<T> {
     @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
     private volatile int completed;
 
-    public MessageContext(T message, int affinity, Object affinityKey, AffinityWorker worker, MessagingOpts<T> opts) {
+    public MessageContext(T message, int affinity, Object affinityKey, MessagingWorker worker, MessagingOpts<T> opts) {
         assert message != null : "Message is null.";
         assert worker != null : "Worker is null.";
         assert opts != null : "Messaging options are null.";
@@ -48,7 +48,7 @@ class MessageContext<T> {
         this.affinity = affinity;
     }
 
-    public boolean isStrictAffinity() {
+    public boolean hasAffinity() {
         return affinity >= 0;
     }
 
@@ -64,7 +64,7 @@ class MessageContext<T> {
         return message;
     }
 
-    public AffinityWorker getWorker() {
+    public MessagingWorker getWorker() {
         return worker;
     }
 

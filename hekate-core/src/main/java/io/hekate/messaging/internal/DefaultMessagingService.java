@@ -368,12 +368,12 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         // Prepare thread pool for asynchronous messages processing.
         HekateThreadFactory asyncFactory = new HekateThreadFactory(MESSAGING_THREAD_PREFIX + '-' + name);
 
-        AffinityExecutor async;
+        MessagingExecutor async;
 
         if (workerThreads > 0) {
-            async = new AsyncAffinityExecutor(asyncFactory, workerThreads, timer);
+            async = new MessagingExecutorAsync(asyncFactory, workerThreads, timer);
         } else {
-            async = new SyncAffinityExecutor(asyncFactory, timer);
+            async = new MessagingExecutorSync(asyncFactory, timer);
         }
 
         // Prepare metrics.

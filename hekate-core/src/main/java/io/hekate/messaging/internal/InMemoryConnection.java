@@ -26,7 +26,7 @@ import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkFuture;
 
 class InMemoryConnection<T> extends MessagingConnectionBase<T> {
-    public InMemoryConnection(MessagingGateway<T> gateway, AffinityExecutor async) {
+    public InMemoryConnection(MessagingGateway<T> gateway, MessagingExecutor async) {
         super(gateway, async, new DefaultMessagingEndpoint<>(gateway.getId(), gateway.getChannel()));
     }
 
@@ -39,7 +39,7 @@ class InMemoryConnection<T> extends MessagingConnectionBase<T> {
     public void sendNotification(MessageContext<T> ctx, SendCallback callback) {
         Notification<T> msg;
 
-        if (ctx.isStrictAffinity()) {
+        if (ctx.hasAffinity()) {
             msg = new AffinityNotification<>(ctx.getAffinity(), ctx.getMessage());
         } else {
             msg = new Notification<>(ctx.getMessage());
@@ -64,7 +64,7 @@ class InMemoryConnection<T> extends MessagingConnectionBase<T> {
 
         Request<T> msg;
 
-        if (ctx.isStrictAffinity()) {
+        if (ctx.hasAffinity()) {
             msg = new AffinityRequest<>(ctx.getAffinity(), handle.getId(), ctx.getMessage());
         } else {
             msg = new Request<>(handle.getId(), ctx.getMessage());
@@ -80,7 +80,7 @@ class InMemoryConnection<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void replyChunk(AffinityWorker worker, int requestId, T chunk, SendCallback callback) {
+    public void replyChunk(MessagingWorker worker, int requestId, T chunk, SendCallback callback) {
         RequestHandle<T> handle = requests().get(requestId);
 
         if (handle != null) {
@@ -101,7 +101,7 @@ class InMemoryConnection<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void reply(AffinityWorker worker, int requestId, T response, SendCallback callback) {
+    public void reply(MessagingWorker worker, int requestId, T response, SendCallback callback) {
         RequestHandle<T> handle = requests().get(requestId);
 
         if (handle != null) {

@@ -38,7 +38,7 @@ class RequestHandle<T> {
         return id;
     }
 
-    public AffinityWorker getWorker() {
+    public MessagingWorker getWorker() {
         return ctx.getWorker();
     }
 

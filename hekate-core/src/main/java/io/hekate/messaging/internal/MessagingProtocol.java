@@ -108,20 +108,20 @@ abstract class MessagingProtocol {
     static class Notification<T> extends NoReplyMessage<T> implements NetworkSendCallback<MessagingProtocol> {
         private final T payload;
 
-        private AffinityWorker worker;
+        private MessagingWorker worker;
 
         private MessagingConnectionBase<T> conn;
 
-        private SendCallback sendCallback;
+        private SendCallback callback;
 
         public Notification(T payload) {
             this.payload = payload;
         }
 
-        public void prepareSend(AffinityWorker worker, MessagingConnectionBase<T> conn, SendCallback sendCallback) {
+        public void prepareSend(MessagingWorker worker, MessagingConnectionBase<T> conn, SendCallback callback) {
             this.worker = worker;
             this.conn = conn;
-            this.sendCallback = sendCallback;
+            this.callback = callback;
         }
 
         public void prepareReceive(MessagingConnectionBase<T> conn) {
@@ -156,9 +156,9 @@ abstract class MessagingProtocol {
         @Override
         public void onComplete(MessagingProtocol message, Optional<Throwable> error, NetworkEndpoint<MessagingProtocol> endpoint) {
             if (error.isPresent()) {
-                conn.notifyOnSendFailure(worker, payload, error.get(), sendCallback);
+                conn.notifyOnSendFailure(worker, payload, error.get(), callback);
             } else {
-                conn.notifyOnSendSuccess(worker, payload, sendCallback);
+                conn.notifyOnSendSuccess(worker, payload, callback);
             }
         }
 
@@ -199,7 +199,7 @@ abstract class MessagingProtocol {
 
         private final T payload;
 
-        private AffinityWorker worker;
+        private MessagingWorker worker;
 
         private MessagingConnectionBase<T> conn;
 
@@ -213,7 +213,7 @@ abstract class MessagingProtocol {
             this.payload = payload;
         }
 
-        public void prepareReceive(AffinityWorker worker, MessagingConnectionBase<T> processor) {
+        public void prepareReceive(MessagingWorker worker, MessagingConnectionBase<T> processor) {
             this.worker = worker;
             this.conn = processor;
         }
@@ -336,7 +336,7 @@ abstract class MessagingProtocol {
 
         private final T payload;
 
-        private AffinityWorker worker;
+        private MessagingWorker worker;
 
         private MessagingConnectionBase<T> conn;
 
@@ -344,19 +344,19 @@ abstract class MessagingProtocol {
 
         private SendBackPressure backPressure;
 
-        private SendCallback sendCallback;
+        private SendCallback callback;
 
         public ResponseChunk(int requestId, T payload) {
             this.requestId = requestId;
             this.payload = payload;
         }
 
-        public boolean prepareSend(AffinityWorker worker, MessagingConnectionBase<T> conn, SendBackPressure backPressure,
-            SendCallback sendCallback) {
+        public boolean prepareSend(MessagingWorker worker, MessagingConnectionBase<T> conn, SendBackPressure backPressure,
+            SendCallback callback) {
             this.worker = worker;
             this.conn = conn;
             this.backPressure = backPressure;
-            this.sendCallback = sendCallback;
+            this.callback = callback;
 
             // Apply back pressure when sending from server back to client.
             if (backPressure != null) {
@@ -365,7 +365,7 @@ abstract class MessagingProtocol {
                 } catch (InterruptedException | MessageQueueOverflowException e) {
                     backPressure.onDequeue();
 
-                    conn.notifyOnSendFailure(worker, payload, e, sendCallback);
+                    conn.notifyOnSendFailure(worker, payload, e, callback);
 
                     return false;
                 }
@@ -420,9 +420,9 @@ abstract class MessagingProtocol {
             }
 
             if (error.isPresent()) {
-                conn.notifyOnSendFailure(worker, payload, error.get(), sendCallback);
+                conn.notifyOnSendFailure(worker, payload, error.get(), callback);
             } else {
-                conn.notifyOnSendSuccess(worker, payload, sendCallback);
+                conn.notifyOnSendSuccess(worker, payload, callback);
             }
         }
 
@@ -447,7 +447,7 @@ abstract class MessagingProtocol {
 
         private final T payload;
 
-        private AffinityWorker worker;
+        private MessagingWorker worker;
 
         private MessagingConnectionBase<T> conn;
 
@@ -455,19 +455,19 @@ abstract class MessagingProtocol {
 
         private SendBackPressure backPressure;
 
-        private SendCallback sendCallback;
+        private SendCallback callback;
 
         public Response(int requestId, T payload) {
             this.requestId = requestId;
             this.payload = payload;
         }
 
-        public void prepareSend(AffinityWorker worker, MessagingConnectionBase<T> conn, SendBackPressure backPressure,
-            SendCallback onSend) {
+        public void prepareSend(MessagingWorker worker, MessagingConnectionBase<T> conn, SendBackPressure backPressure,
+            SendCallback callback) {
             this.worker = worker;
             this.conn = conn;
             this.backPressure = backPressure;
-            this.sendCallback = onSend;
+            this.callback = callback;
 
             // Apply back pressure when sending from server back to client.
             if (backPressure != null) {
@@ -523,9 +523,9 @@ abstract class MessagingProtocol {
             }
 
             if (error.isPresent()) {
-                conn.notifyOnSendFailure(worker, payload, error.get(), sendCallback);
+                conn.notifyOnSendFailure(worker, payload, error.get(), callback);
             } else {
-                conn.notifyOnSendSuccess(worker, payload, sendCallback);
+                conn.notifyOnSendSuccess(worker, payload, callback);
             }
         }
 

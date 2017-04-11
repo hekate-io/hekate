@@ -21,27 +21,26 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-class AsyncAffinityExecutor implements AffinityExecutor {
-
-    private final DefaultAffinityWorker[] workers;
+class MessagingExecutorAsync implements MessagingExecutor {
+    private final DefaultMessagingWorker[] workers;
 
     private final int size;
 
-    public AsyncAffinityExecutor(ThreadFactory factory, int size, ScheduledExecutorService timer) {
+    public MessagingExecutorAsync(ThreadFactory factory, int size, ScheduledExecutorService timer) {
         assert size > 0 : "Thread pool size must be above zero [size=" + size + ']';
         assert timer != null : "Timer is null.";
 
         this.size = size;
 
-        workers = new DefaultAffinityWorker[size];
+        workers = new DefaultMessagingWorker[size];
 
         for (int i = 0; i < size; i++) {
-            workers[i] = new DefaultAffinityWorker(factory, timer);
+            workers[i] = new DefaultMessagingWorker(factory, timer);
         }
     }
 
     @Override
-    public AffinityWorker workerFor(int affinity) {
+    public MessagingWorker workerFor(int affinity) {
         return workers[Utils.mod(affinity, size)];
     }
 
@@ -52,14 +51,14 @@ class AsyncAffinityExecutor implements AffinityExecutor {
 
     @Override
     public void terminate() {
-        for (DefaultAffinityWorker worker : workers) {
+        for (DefaultMessagingWorker worker : workers) {
             worker.execute(worker::shutdown);
         }
     }
 
     @Override
     public void awaitTermination() throws InterruptedException {
-        for (DefaultAffinityWorker worker : workers) {
+        for (DefaultMessagingWorker worker : workers) {
             worker.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         }
     }

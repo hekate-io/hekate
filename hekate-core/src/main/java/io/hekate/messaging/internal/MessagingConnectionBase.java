@@ -39,7 +39,7 @@ abstract class MessagingConnectionBase<T> {
 
     private final MessageReceiver<T> receiver;
 
-    private final AffinityExecutor async;
+    private final MessagingExecutor async;
 
     private final MetricsCallback metrics;
 
@@ -51,7 +51,7 @@ abstract class MessagingConnectionBase<T> {
 
     private volatile int epoch;
 
-    public MessagingConnectionBase(MessagingGateway<T> gateway, AffinityExecutor async, MessagingEndpoint<T> endpoint) {
+    public MessagingConnectionBase(MessagingGateway<T> gateway, MessagingExecutor async, MessagingEndpoint<T> endpoint) {
         assert gateway != null : "Gateway is null.";
         assert async != null : "Executor is null.";
         assert endpoint != null : "Messaging endpoint is null.";
@@ -72,9 +72,9 @@ abstract class MessagingConnectionBase<T> {
 
     public abstract void sendRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback);
 
-    public abstract void replyChunk(AffinityWorker worker, int requestId, T chunk, SendCallback callback);
+    public abstract void replyChunk(MessagingWorker worker, int requestId, T chunk, SendCallback callback);
 
-    public abstract void reply(AffinityWorker worker, int requestId, T response, SendCallback callback);
+    public abstract void reply(MessagingWorker worker, int requestId, T response, SendCallback callback);
 
     protected abstract void disconnectOnError(Throwable t);
 
@@ -98,7 +98,7 @@ abstract class MessagingConnectionBase<T> {
                         if (async.isAsync()) {
                             int affinity = randomAffinity();
 
-                            AffinityWorker worker = async.workerFor(affinity);
+                            MessagingWorker worker = async.workerFor(affinity);
 
                             onEnqueueReceiveAsync(from);
 
@@ -121,7 +121,7 @@ abstract class MessagingConnectionBase<T> {
                         if (async.isAsync()) {
                             int affinity = MessagingProtocolCodec.previewAffinity(netMsg);
 
-                            AffinityWorker worker = async.workerFor(affinity);
+                            MessagingWorker worker = async.workerFor(affinity);
 
                             onEnqueueReceiveAsync(from);
 
@@ -143,7 +143,7 @@ abstract class MessagingConnectionBase<T> {
                     } else {
                         int affinity = randomAffinity();
 
-                        AffinityWorker worker = async.workerFor(affinity);
+                        MessagingWorker worker = async.workerFor(affinity);
 
                         if (async.isAsync()) {
                             onEnqueueReceiveAsync(from);
@@ -166,7 +166,7 @@ abstract class MessagingConnectionBase<T> {
                     } else {
                         int affinity = MessagingProtocolCodec.previewAffinity(netMsg);
 
-                        AffinityWorker worker = async.workerFor(affinity);
+                        MessagingWorker worker = async.workerFor(affinity);
 
                         if (async.isAsync()) {
                             onEnqueueReceiveAsync(from);
@@ -190,7 +190,7 @@ abstract class MessagingConnectionBase<T> {
 
                     if (handle != null) {
                         if (async.isAsync()) {
-                            AffinityWorker worker = handle.getWorker();
+                            MessagingWorker worker = handle.getWorker();
 
                             onEnqueueReceiveAsync(from);
 
@@ -213,7 +213,7 @@ abstract class MessagingConnectionBase<T> {
 
                     if (handle != null) {
                         if (async.isAsync()) {
-                            AffinityWorker worker = handle.getWorker();
+                            MessagingWorker worker = handle.getWorker();
 
                             onEnqueueReceiveAsync(from);
 
@@ -241,7 +241,7 @@ abstract class MessagingConnectionBase<T> {
         }
     }
 
-    public void notifyOnSendSuccess(AffinityWorker worker, T payload, SendCallback callback) {
+    public void notifyOnSendSuccess(MessagingWorker worker, T payload, SendCallback callback) {
         if (callback != null) {
             if (async.isAsync()) {
                 onAsyncEnqueue();
@@ -257,7 +257,7 @@ abstract class MessagingConnectionBase<T> {
         }
     }
 
-    public void notifyOnSendFailure(AffinityWorker worker, T payload, Throwable error, SendCallback callback) {
+    public void notifyOnSendFailure(MessagingWorker worker, T payload, Throwable error, SendCallback callback) {
         if (callback != null) {
             if (async.isAsync()) {
                 onAsyncEnqueue();
@@ -305,7 +305,7 @@ abstract class MessagingConnectionBase<T> {
         List<RequestHandle<T>> discarded = requests.unregisterEpoch(epoch);
 
         for (RequestHandle<T> handle : discarded) {
-            AffinityWorker worker = handle.getWorker();
+            MessagingWorker worker = handle.getWorker();
 
             if (async.isAsync()) {
                 onAsyncEnqueue();
@@ -329,7 +329,7 @@ abstract class MessagingConnectionBase<T> {
         this.epoch = epoch;
     }
 
-    protected void doReceiveRequest(Request<T> msg, AffinityWorker worker) {
+    protected void doReceiveRequest(Request<T> msg, MessagingWorker worker) {
         try {
             msg.prepareReceive(worker, this);
 

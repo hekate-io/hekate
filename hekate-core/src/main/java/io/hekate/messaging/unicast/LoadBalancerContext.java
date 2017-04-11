@@ -38,6 +38,13 @@ public interface LoadBalancerContext extends ClusterTopology {
     ClusterTopology getTopology();
 
     /**
+     * Returns <tt>true</tt> if the messaging operation has an affinity key (see {@link #getAffinityKey()}).
+     *
+     * @return <tt>true</tt> if the messaging operation has an affinity key.
+     */
+    boolean hasAffinity();
+
+    /**
      * Returns the hash code of affinity key or a synthetically generated value if affinity key was not specified for the messaging
      * operation.
      *
