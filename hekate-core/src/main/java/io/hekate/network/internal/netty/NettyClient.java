@@ -122,8 +122,13 @@ class NettyClient<T> implements NetworkClient<T> {
             connectComplete = true;
 
             if (future.isSuccess()) {
-                if (trace) {
-                    log.trace("Channel connect future completed successfully [channel={}]", id);
+                if (future.channel().isOpen()) {
+                    if (trace) {
+                        log.trace("Channel connect future completed successfully [channel={}]", id);
+                    }
+                } else {
+                    // Channel was disconnect()'ed while we were connecting.
+                    becomeDisconnected();
                 }
             } else if (firstError == null) {
                 if (trace) {
