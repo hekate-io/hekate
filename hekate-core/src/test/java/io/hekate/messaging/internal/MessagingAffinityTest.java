@@ -16,7 +16,6 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
 
@@ -169,9 +168,7 @@ public class MessagingAffinityTest extends MessagingServiceTestBase {
         awaitForChannelsTopology(sender, receiver);
 
         repeat(5, i -> {
-            sender.requestWithSyncCallback(receiver.getNodeId(), "request");
-
-            assertNotNull(callbackRef.get());
+            get(sender.get().forNode(receiver.getNodeId()).affinityRequest(i, "request"));
 
             callbackRef.get().get();
 
