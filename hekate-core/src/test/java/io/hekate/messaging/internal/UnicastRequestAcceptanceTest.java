@@ -63,7 +63,7 @@ public class UnicastRequestAcceptanceTest extends MessagingServiceTestBase {
     public void testCompleteNoPolicy() throws Exception {
         AtomicInteger accepts = new AtomicInteger();
 
-        RequestCallbackMock callback = new RequestCallbackMock("test") {
+        ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
             public ReplyDecision accept(Throwable err, String reply) {
                 if (err != null) {
@@ -86,7 +86,7 @@ public class UnicastRequestAcceptanceTest extends MessagingServiceTestBase {
     public void testCompleteWithPolicy() throws Exception {
         AtomicInteger accepts = new AtomicInteger();
 
-        RequestCallbackMock callback = new RequestCallbackMock("test") {
+        ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
             public ReplyDecision accept(Throwable err, String reply) {
                 accepts.incrementAndGet();
@@ -108,7 +108,7 @@ public class UnicastRequestAcceptanceTest extends MessagingServiceTestBase {
     public void testRetryNoPolicy() throws Exception {
         AtomicInteger accepts = new AtomicInteger();
 
-        RequestCallbackMock callback = new RequestCallbackMock("test") {
+        ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
             public ReplyDecision accept(Throwable err, String reply) {
                 if (err != null) {
@@ -132,7 +132,7 @@ public class UnicastRequestAcceptanceTest extends MessagingServiceTestBase {
     public void testRetryWithPolicyRetry() throws Exception {
         AtomicInteger accepts = new AtomicInteger();
 
-        RequestCallbackMock callback = new RequestCallbackMock("test") {
+        ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
             public ReplyDecision accept(Throwable err, String reply) {
                 if (err != null) {
@@ -159,7 +159,7 @@ public class UnicastRequestAcceptanceTest extends MessagingServiceTestBase {
     public void testRetryWithPolicyFail() throws Exception {
         AtomicInteger accepts = new AtomicInteger();
 
-        RequestCallbackMock callback = new RequestCallbackMock("test") {
+        ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
             public ReplyDecision accept(Throwable err, String reply) {
                 if (err != null) {
@@ -196,7 +196,7 @@ public class UnicastRequestAcceptanceTest extends MessagingServiceTestBase {
 
         AtomicInteger accepts = new AtomicInteger();
 
-        RequestCallbackMock callback = new RequestCallbackMock("test") {
+        ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
             public ReplyDecision accept(Throwable err, String reply) {
                 accepts.incrementAndGet();
@@ -222,7 +222,7 @@ public class UnicastRequestAcceptanceTest extends MessagingServiceTestBase {
 
         AtomicInteger accepts = new AtomicInteger();
 
-        RequestCallbackMock callback = new RequestCallbackMock("test") {
+        ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
             public ReplyDecision accept(Throwable err, String reply) {
                 accepts.incrementAndGet();
@@ -246,7 +246,7 @@ public class UnicastRequestAcceptanceTest extends MessagingServiceTestBase {
     public void testCompleteAfterReject() throws Exception {
         AtomicInteger accepts = new AtomicInteger();
 
-        RequestCallbackMock callback = new RequestCallbackMock("test") {
+        ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
             public ReplyDecision accept(Throwable err, String reply) {
                 if (err != null) {

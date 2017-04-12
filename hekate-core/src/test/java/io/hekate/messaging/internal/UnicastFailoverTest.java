@@ -89,7 +89,7 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
             contexts.add(ctx);
 
             return ctx.retry();
-        }).request("test--1").getReply(3, TimeUnit.SECONDS);
+        }).request("test--1").getResponse(3, TimeUnit.SECONDS);
 
         assertEquals(3, contexts.size());
 
@@ -111,7 +111,7 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
                 sender.getInstance().leaveAsync();
 
                 return ctx.retry().withDelay(50);
-            }).request("test--1").getReply(3, TimeUnit.SECONDS);
+            }).request("test--1").getResponse(3, TimeUnit.SECONDS);
 
             fail("Error eas expected.");
         } catch (MessagingFutureException e) {
@@ -212,7 +212,7 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
 
                     return context.retry().withReRoute();
                 })
-                .request("error").getReply(3, TimeUnit.SECONDS);
+                .request("error").getResponse(3, TimeUnit.SECONDS);
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
@@ -267,7 +267,7 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
             onFailover.accept(ctx);
 
             return ctx.retry().withRoutingPolicy(policy);
-        }).request("test").getReply(3, TimeUnit.SECONDS);
+        }).request("test").getResponse(3, TimeUnit.SECONDS);
 
         assertEquals(5, contexts.size());
 
@@ -286,7 +286,7 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
                 failoverCalls.incrementAndGet();
 
                 return context.retry();
-            }).request("test").getReply(3, TimeUnit.SECONDS);
+            }).request("test").getResponse(3, TimeUnit.SECONDS);
 
             assertNotNull(reply);
 
@@ -307,7 +307,7 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
             times.add(time);
 
             return context.retry().withDelay(failoverDelay);
-        }).request("test").getReply(3, TimeUnit.SECONDS);
+        }).request("test").getResponse(3, TimeUnit.SECONDS);
 
         assertNotNull(reply);
 
@@ -339,7 +339,7 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
                     failoverCalls.incrementAndGet();
 
                     return context.getAttempt() < attempts ? context.retry() : context.fail();
-                }).request("test").getReply(3, TimeUnit.SECONDS);
+                }).request("test").getResponse(3, TimeUnit.SECONDS);
 
                 fail("Error was expected.");
             } catch (MessagingFutureException e) {

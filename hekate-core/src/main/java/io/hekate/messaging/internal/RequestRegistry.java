@@ -29,7 +29,7 @@ class RequestRegistry<T> {
             if (requests.putIfAbsent(id, handle) == null) {
                 onRequestRegister();
 
-                if (ctx.getOpts().hasTimeout()) {
+                if (ctx.opts().hasTimeout()) {
                     // Unregister if messaging operation gets timed out.
                     ctx.setTimeoutListener(() ->
                         unregister(id)

@@ -88,12 +88,21 @@ class NetworkMessagingClient<T> implements MessagingClient<T> {
     }
 
     @Override
-    public void request(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
+    public void streamRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
         touch();
 
         ensureConnected();
 
-        conn.sendRequest(ctx, callback);
+        conn.sendStreamRequest(ctx, callback);
+    }
+
+    @Override
+    public void singleRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
+        touch();
+
+        ensureConnected();
+
+        conn.sendSingleRequest(ctx, callback);
     }
 
     @Override

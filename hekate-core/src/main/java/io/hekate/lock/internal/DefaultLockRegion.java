@@ -37,9 +37,9 @@ import io.hekate.lock.internal.LockProtocol.UnlockRequest;
 import io.hekate.lock.internal.LockProtocol.UnlockResponse;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.unicast.Reply;
 import io.hekate.messaging.unicast.ReplyDecision;
-import io.hekate.messaging.unicast.RequestCallback;
+import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.partition.Partition;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.util.format.ToString;
@@ -220,7 +220,7 @@ class DefaultLockRegion implements LockRegion {
 
         LockOwnerRequest request = new LockOwnerRequest(regionName, lockName);
 
-        lockChannel.affinityRequest(new LockAffinityKey(regionName, lockName), request, new RequestCallback<LockProtocol>() {
+        lockChannel.affinityRequest(new LockAffinityKey(regionName, lockName), request, new ResponseCallback<LockProtocol>() {
             @Override
             public ReplyDecision accept(Throwable err, LockProtocol reply) {
                 LockOwnerResponse lockReply = (LockOwnerResponse)reply;
@@ -249,7 +249,7 @@ class DefaultLockRegion implements LockRegion {
             }
 
             @Override
-            public void onComplete(Throwable err, Reply<LockProtocol> reply) {
+            public void onComplete(Throwable err, Response<LockProtocol> rsp) {
                 // All attempts failed which means that manager is terminated.
                 if (err != null) {
                     future.complete(Optional.empty());
@@ -975,7 +975,7 @@ class DefaultLockRegion implements LockRegion {
     }
 
     private void sendToNextNode(MigrationRequest request) {
-        migrationChannel.affinityRequest(regionName, request, new RequestCallback<LockProtocol>() {
+        migrationChannel.affinityRequest(regionName, request, new ResponseCallback<LockProtocol>() {
             @Override
             public ReplyDecision accept(Throwable err, LockProtocol reply) {
                 if (err == null) {
@@ -1006,7 +1006,7 @@ class DefaultLockRegion implements LockRegion {
             }
 
             @Override
-            public void onComplete(Throwable err, Reply<LockProtocol> reply) {
+            public void onComplete(Throwable err, Response<LockProtocol> rsp) {
                 if (err != null && isValid(request)) {
                     log.error("Failed to submit migration request [request={}]", request, err);
                 }

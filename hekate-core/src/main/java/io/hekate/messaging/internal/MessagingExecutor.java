@@ -16,14 +16,12 @@
 
 package io.hekate.messaging.internal;
 
-import java.util.concurrent.Executor;
-
 interface MessagingExecutor {
     boolean isAsync();
 
     MessagingWorker workerFor(int affinity);
 
-    Executor executor();
+    MessagingWorker pooledWorker();
 
     void terminate();
 

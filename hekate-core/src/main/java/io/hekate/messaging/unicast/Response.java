@@ -21,13 +21,13 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingEndpoint;
 
 /**
- * Reply for {@link MessagingChannel#request(Object, RequestCallback) request(...)} operation.
+ * Response of {@link MessagingChannel#request(Object, ResponseCallback) request(...)} operation.
  *
  * @param <T> Payload type.
  *
- * @see RequestCallback#onComplete(Throwable, Reply)
+ * @see ResponseCallback#onComplete(Throwable, Response)
  */
-public interface Reply<T> {
+public interface Response<T> {
     /**
      * Returns the request.
      *
@@ -36,7 +36,7 @@ public interface Reply<T> {
     T getRequest();
 
     /**
-     * Returns {@code true} if this message is a partial response that was produced by the {@link Message#replyPartial(Object,
+     * Returns {@code true} if this message is a partial response that was produced by the {@link Message#partialReply(Object,
      * SendCallback)} method. This flag can be used to check if there is more data on the messaging stream or if this is the final response.
      *
      * @return {@code true} if this message is a partial response.

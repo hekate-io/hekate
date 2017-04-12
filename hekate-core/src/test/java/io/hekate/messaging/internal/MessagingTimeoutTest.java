@@ -3,7 +3,7 @@ package io.hekate.messaging.internal;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingFutureException;
-import io.hekate.messaging.unicast.RequestFuture;
+import io.hekate.messaging.unicast.StreamFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -46,7 +46,20 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testPartialReply() throws Exception {
+    public void testRequestNoTimeout() throws Exception {
+        createChannel(c -> c.withReceiver(msg -> {
+            msg.reply("done");
+        })).join();
+
+        TestChannel sender = createChannel(c -> c.withMessagingTimeout(1000)).join();
+
+        repeat(5, i ->
+            get(sender.get().forRemotes().request("request-" + i))
+        );
+    }
+
+    @Test
+    public void testStream() throws Exception {
         Exchanger<Message<String>> msgRef = new Exchanger<>();
 
         createChannel(c -> c.withReceiver(msg -> {
@@ -60,12 +73,12 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
         TestChannel sender = createChannel(c -> c.withMessagingTimeout(150)).join();
 
         repeat(3, i -> {
-            RequestFuture<String> future = sender.get().forRemotes().request("must-fail-" + i);
+            StreamFuture<String> future = sender.get().forRemotes().streamRequest("must-fail-" + i);
 
             Message<String> request = msgRef.exchange(null);
 
             repeat(5, j -> {
-                request.replyPartial("part");
+                request.partialReply("part");
 
                 sleep(50);
             });
@@ -74,19 +87,6 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
             get(future);
         });
-    }
-
-    @Test
-    public void testRequestNoTimeout() throws Exception {
-        createChannel(c -> c.withReceiver(msg -> {
-            msg.reply("done");
-        })).join();
-
-        TestChannel sender = createChannel(c -> c.withMessagingTimeout(1000)).join();
-
-        repeat(5, i ->
-            get(sender.get().forRemotes().request("request-" + i))
-        );
     }
 
     @Test

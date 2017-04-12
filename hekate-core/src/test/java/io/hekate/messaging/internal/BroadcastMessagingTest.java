@@ -24,9 +24,8 @@ import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.AggregateResult;
 import io.hekate.messaging.broadcast.BroadcastCallback;
 import io.hekate.messaging.broadcast.BroadcastResult;
-import io.hekate.messaging.unicast.Reply;
+import io.hekate.messaging.unicast.Response;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -62,7 +61,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
         private final ConcurrentMap<ClusterNode, List<String>> replies = new ConcurrentHashMap<>();
 
         @Override
-        public void onReplySuccess(Reply<String> reply, ClusterNode node) {
+        public void onReplySuccess(Response<String> rsp, ClusterNode node) {
             List<String> nodeReplies = replies.get(node);
 
             if (nodeReplies == null) {
@@ -75,7 +74,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
                 }
             }
 
-            nodeReplies.add(reply.get());
+            nodeReplies.add(rsp.get());
         }
 
         @Override
@@ -85,10 +84,6 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
             } else {
                 completeExceptionally(err);
             }
-        }
-
-        public ConcurrentMap<ClusterNode, List<String>> getReplies() {
-            return replies;
         }
     }
 
@@ -172,14 +167,13 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testAggregatePartial() throws Exception {
+    public void testAggregateDoesNotSupportStreaming() throws Exception {
         List<TestChannel> channels = new ArrayList<>();
 
         repeat(5, i -> {
             TestChannel channel = createChannel(c -> c.setReceiver(msg -> {
-                for (int j = 0; j < 3; j++) {
-                    msg.replyPartial("reply" + j);
-                }
+                assertTrue(msg.mustReply());
+                assertFalse(msg.isStreamRequest());
 
                 msg.reply(msg.get() + "-reply");
             })).join();
@@ -195,19 +189,7 @@ public class BroadcastMessagingTest extends MessagingServiceTestBase {
             AggregateResult<String> result = callback.get();
 
             assertTrue(result.toString(), result.isSuccess());
-            assertTrue(result.toString(), result.getErrors().isEmpty());
             assertEquals(channels.size(), result.getNodes().size());
-            assertEquals(channels.size(), result.getReplies().size());
-
-            result.getReplies().values().forEach(r -> assertEquals("test" + i + "-reply", r.get()));
-
-            List<String> expected = Arrays.asList("reply0", "reply1", "reply2", "test" + i + "-reply");
-
-            assertEquals(callback.getReplies().toString(), channels.size(), callback.getReplies().size());
-
-            callback.getReplies().forEach((node, replies) ->
-                assertEquals(expected, replies)
-            );
         });
     }
 

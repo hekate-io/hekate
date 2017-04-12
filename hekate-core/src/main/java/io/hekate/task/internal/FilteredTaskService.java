@@ -27,8 +27,8 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.UnknownRouteException;
 import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.AggregateResult;
-import io.hekate.messaging.unicast.Reply;
-import io.hekate.messaging.unicast.RequestCallback;
+import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.task.ApplicableTask;
 import io.hekate.task.CallableTask;
 import io.hekate.task.MultiNodeResult;
@@ -48,7 +48,7 @@ import java.util.List;
 import java.util.Map;
 
 class FilteredTaskService implements TaskService {
-    private static class SingleTaskFuture<T> extends TaskFuture<T> implements RequestCallback<TaskProtocol> {
+    private static class SingleTaskFuture<T> extends TaskFuture<T> implements ResponseCallback<TaskProtocol> {
         private final Object task;
 
         public SingleTaskFuture(Object task) {
@@ -56,9 +56,9 @@ class FilteredTaskService implements TaskService {
         }
 
         @Override
-        public void onComplete(Throwable err, Reply<TaskProtocol> reply) {
+        public void onComplete(Throwable err, Response<TaskProtocol> rsp) {
             if (err == null) {
-                TaskProtocol taskReply = reply.get();
+                TaskProtocol taskReply = rsp.get();
 
                 TaskProtocol.Type type = taskReply.getType();
 
@@ -88,7 +88,7 @@ class FilteredTaskService implements TaskService {
         @Override
         public void onComplete(Throwable err, AggregateResult<TaskProtocol> result) {
             if (err == null) {
-                Map<ClusterNode, Reply<TaskProtocol>> responses = result.getReplies();
+                Map<ClusterNode, Response<TaskProtocol>> responses = result.getReplies();
 
                 Map<ClusterNode, Throwable> errors = new HashMap<>(result.getErrors());
                 Map<ClusterNode, T> values = new HashMap<>(responses.size(), 1.0f);
@@ -117,7 +117,7 @@ class FilteredTaskService implements TaskService {
         }
     }
 
-    private static class ApplyTaskFuture<V> extends TaskFuture<Collection<V>> implements RequestCallback<TaskProtocol> {
+    private static class ApplyTaskFuture<V> extends TaskFuture<Collection<V>> implements ResponseCallback<TaskProtocol> {
         private final Object task;
 
         private final List<V> result;
@@ -133,11 +133,11 @@ class FilteredTaskService implements TaskService {
         }
 
         @Override
-        public void onComplete(Throwable err, Reply<TaskProtocol> reply) {
+        public void onComplete(Throwable err, Response<TaskProtocol> rsp) {
             if (err == null) {
                 if (!isDone()) {
                     @SuppressWarnings("unchecked")
-                    Collection<V> part = (Collection<V>)reply.get(ObjectResult.class).getResult();
+                    Collection<V> part = (Collection<V>)rsp.get(ObjectResult.class).getResult();
 
                     boolean allReceived;
 

@@ -18,9 +18,9 @@ package io.hekate.messaging.internal;
 
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingEndpoint;
+import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
-import io.hekate.messaging.internal.MessagingProtocol.Request;
-import io.hekate.messaging.internal.MessagingProtocol.Response;
+import io.hekate.messaging.internal.MessagingProtocol.RequestBase;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkEndpoint;
@@ -70,7 +70,9 @@ abstract class MessagingConnectionBase<T> {
 
     public abstract void sendNotification(MessageContext<T> ctx, SendCallback callback);
 
-    public abstract void sendRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback);
+    public abstract void sendSingleRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback);
+
+    public abstract void sendStreamRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback);
 
     public abstract void replyChunk(MessagingWorker worker, int requestId, T chunk, SendCallback callback);
 
@@ -141,9 +143,7 @@ abstract class MessagingConnectionBase<T> {
                     if (receiver == null) {
                         log.error("Received an unexpected message [message={}, from={}]", netMsg, from);
                     } else {
-                        int affinity = randomAffinity();
-
-                        MessagingWorker worker = async.workerFor(affinity);
+                        MessagingWorker worker = async.pooledWorker();
 
                         if (async.isAsync()) {
                             onEnqueueReceiveAsync(from);
@@ -183,7 +183,54 @@ abstract class MessagingConnectionBase<T> {
 
                     break;
                 }
-                case RESPONSE: {
+                case STREAM_REQUEST: {
+                    if (receiver == null) {
+                        log.error("Received an unexpected message [message={}, from={}]", netMsg, from);
+                    } else {
+                        // Use artificial affinity since all of the stream's operations must be handled by the same stream.
+                        int affinity = randomAffinity();
+
+                        MessagingWorker worker = async.workerFor(affinity);
+
+                        if (async.isAsync()) {
+                            onEnqueueReceiveAsync(from);
+
+                            netMsg.handleAsync(worker, m -> {
+                                onDequeueReceiveAsync();
+
+                                doReceiveRequest(m.cast(), worker);
+                            }, this::handleAsyncMessageError);
+                        } else {
+                            doReceiveRequest(netMsg.decode().cast(), worker);
+                        }
+                    }
+
+                    break;
+                }
+                case AFFINITY_STREAM_REQUEST: {
+                    if (receiver == null) {
+                        log.error("Received an unexpected message [message={}, from={}]", netMsg, from);
+                    } else {
+                        int affinity = MessagingProtocolCodec.previewAffinity(netMsg);
+
+                        MessagingWorker worker = async.workerFor(affinity);
+
+                        if (async.isAsync()) {
+                            onEnqueueReceiveAsync(from);
+
+                            netMsg.handleAsync(worker, m -> {
+                                onDequeueReceiveAsync();
+
+                                doReceiveRequest(m.cast(), worker);
+                            }, this::handleAsyncMessageError);
+                        } else {
+                            doReceiveRequest(netMsg.decode().cast(), worker);
+                        }
+                    }
+
+                    break;
+                }
+                case FINAL_RESPONSE: {
                     int requestId = MessagingProtocolCodec.previewRequestId(netMsg);
 
                     RequestHandle<T> handle = requests.get(requestId);
@@ -329,7 +376,7 @@ abstract class MessagingConnectionBase<T> {
         this.epoch = epoch;
     }
 
-    protected void doReceiveRequest(Request<T> msg, MessagingWorker worker) {
+    protected void doReceiveRequest(RequestBase<T> msg, MessagingWorker worker) {
         try {
             msg.prepareReceive(worker, this);
 
@@ -352,7 +399,7 @@ abstract class MessagingConnectionBase<T> {
         }
     }
 
-    protected void doReceiveResponse(RequestHandle<T> request, Response<T> msg) {
+    protected void doReceiveResponse(RequestHandle<T> request, FinalResponse<T> msg) {
         if (request.isRegistered()) {
             try {
                 msg.prepareReceive(this, request.getMessage());
@@ -366,7 +413,7 @@ abstract class MessagingConnectionBase<T> {
 
     protected void doReceiveResponseChunk(RequestHandle<T> request, ResponseChunk<T> msg) {
         if (request.isRegistered()) {
-            if (request.getContext().getOpts().hasTimeout()) {
+            if (request.getContext().opts().hasTimeout()) {
                 // Reset timeout on every response chunk.
                 gateway().scheduleTimeout(request.getContext(), request.getCallback());
             }

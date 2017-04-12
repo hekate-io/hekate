@@ -16,23 +16,22 @@
 
 package io.hekate.messaging;
 
-import io.hekate.messaging.unicast.Reply;
-import io.hekate.messaging.unicast.RequestCallback;
+import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.messaging.unicast.SendCallback;
 
 /**
- * Message with arbitrary payload.
+ * Message with an arbitrary payload.
  *
  * <p>
- * This interface represents a message that was received from a {@link MessagingChannel} and provides methods for sending responses in
- * order to support request-response (or even more complex) communication pattern.
+ * This interface represents a message that was received by a {@link MessagingChannel} and provides methods for sending responses.
  * </p>
  *
  * <p>
- * Please see the documentation of {@link MessagingService} for more information about messaging and supported communication patterns.
+ * For more information about messaging please see the {@link MessagingService} documentation.
  * </p>
  *
- * @param <T> Base type of message's payload.
+ * @param <T> Base type of the message payload.
  *
  * @see MessageReceiver
  */
@@ -45,7 +44,7 @@ public interface Message<T> {
     T get();
 
     /**
-     * Casts the payload of this message ot the specified type.
+     * Casts the payload of this message to the specified type.
      *
      * @param type Payload type.
      * @param <P> Payload type.
@@ -66,12 +65,10 @@ public interface Message<T> {
     boolean is(Class<? extends T> type);
 
     /**
-     * Returns {@code true} if the sending side expects a response message to be send back.
+     * Returns {@code true} if the sender is waiting for a response message.
      *
      * <p>
-     * Responses are required if the sending side used {@link MessagingChannel#request(Object) request(...)} or {@link
-     * MessagingChannel#aggregate(Object) aggregate(...)} methods for the message submission. Responses can be sent back via the following
-     * methods:
+     * Responses can be sent back via the following methods:
      * </p>
      * <ul>
      * <li>{@link #reply(Object)}</li>
@@ -79,11 +76,11 @@ public interface Message<T> {
      * </ul>
      *
      * <p>
-     * <b>Note:</b> Not sending a response when this method returns {@code true} can lead to resource leaks since the sending side
-     * keeps track of messages in its in-memory queues and releases resources only when responses are received.
+     * <b>Note:</b> Not responding on messages that have this flag set to {@code true} can result in resource leaks, since the sending side
+     * keeps track of all outstanding requests in its memory queue and releases resources only when a response is received.
      * </p>
      *
-     * @return {@code true} if sending side expects a response message to be send back.
+     * @return {@code true} if the sender is waiting for a response message.
      *
      * @see #reply(Object, SendCallback)
      */
@@ -92,98 +89,129 @@ public interface Message<T> {
     /**
      * Asynchronously send back a reply and ignores the operation result.
      *
+     * <p>
+     * Calling this method will put the message into the 'replied' state and its {@link #mustReply()} method will start returning {@code
+     * false}. Note that each message can be responded only once and all subsequent attempts to call this method will result in {@link
+     * IllegalStateException}.
+     * </p>
+     *
+     * <p>
+     * Any attempt to call this method on a message that doesn't support responses (i.e. message not a {@link #isRequest() request}) will
+     * result in {@link IllegalStateException}.
+     * </p>
+     *
+     * @param response Response.
+     *
+     * @throws UnsupportedOperationException If message doesn't support responses.
+     * @throws IllegalStateException If message had already been responded (see {@link #mustReply()}).
+     */
+    void reply(T response) throws UnsupportedOperationException, IllegalStateException;
+
+    /**
+     * Asynchronously sends a response and uses the specified callback for notification of the operation result.
      *
      * <p>
      * Calling this method will put the message into the 'replied' state and its {@link #mustReply()} method will start returning {@code
-     * false}.
+     * false}. Note that each message can be responded only once and all subsequent attempts to call this method will result in {@link
+     * IllegalStateException}.
      * </p>
      *
      * <p>
-     * Calling this method on a message that doesn't support responses (i.e. {@link #mustReply()} returns {@code false}) will result in an
-     * {@link UnsupportedOperationException}.
+     * Any attempt to call this method on a message that doesn't support responses (i.e. message not a {@link #isRequest() request}) will
+     * result in {@link IllegalStateException}.
+     * </p>
+     *
+     * @param response Response.
+     * @param callback Callback for tracking completion of an operation.
+     *
+     * @throws UnsupportedOperationException If message doesn't support responses.
+     * @throws IllegalStateException If message had already been responded (see {@link #mustReply()}).
+     */
+    void reply(T response, SendCallback callback) throws UnsupportedOperationException, IllegalStateException;
+
+    /**
+     * Asynchronously sends a partial reply in response to a {@link MessagingChannel#streamRequest(Object, ResponseCallback) stream
+     * request}.
+     *
+     * <p>
+     * This method provides support for streaming messages based on a subscription from the recipient to the sender.
+     * For example, the sender can subscribe to a topic using the {@link MessagingChannel#streamRequest(Object, ResponseCallback)} method,
+     * and the recipient of such a request can start to continuously send updates back to the sender. The sender will receive these updates
+     * via the {@link ResponseCallback#onComplete(Throwable, Response)} method. After the streaming is complete, the final response must be
+     * sent using the {@link #reply(Object)} method.
+     * </p>
+     *
+     * <p>
+     * <b>Note:</b> This method can only be called for messages that were sent using the {@link MessagingChannel#streamRequest(Object,
+     * ResponseCallback)} method (or its overloaded versions). If the message was sent by some other method, then all attempts to call this
+     * method will throw {@link UnsupportedOperationException}.
+     * </p>
+     *
+     * <p>
+     * The verification of whether a particular message supports partial replies can be performed using the {@link #isStreamRequest()}
+     * method.
      * </p>
      *
      * @param response Response.
      *
-     * @throws UnsupportedOperationException If message doesn't support responses (see {@link #mustReply()}).
-     * @see #reply(Object, SendCallback)
+     * @throws UnsupportedOperationException If message doesn't support partial responses (see {@link #isStreamRequest()}).
      */
-    void reply(T response) throws UnsupportedOperationException;
+    void partialReply(T response) throws UnsupportedOperationException;
 
     /**
-     * Asynchronously send back a reply and uses the specified callback to notify on operation result.
+     * Asynchronously sends a partial reply in response to a {@link MessagingChannel#streamRequest(Object, ResponseCallback) stream
+     * request}.
      *
      * <p>
-     * Calling this method will put the message into the 'replied' state and its {@link #mustReply()} method will start returning {@code
-     * false}.
+     * This method provides support for messages streaming based on a subscription from the recipient to the sender.
+     * For example, the sender can subscribe to a topic using the {@link MessagingChannel#streamRequest(Object, ResponseCallback)} method,
+     * and the recipient of such a request can start to continuously send updates back to the sender. The sender will receive these updates
+     * via the {@link ResponseCallback#onComplete(Throwable, Response)} method. After the streaming is complete, the final response must be
+     * sent using the {@link #reply(Object)} method.
      * </p>
      *
      * <p>
-     * Calling this method on a message that doesn't support responses (i.e. {@link #mustReply()} returns {@code false}) will result in
-     * {@link UnsupportedOperationException}.
+     * <b>Note:</b> This method can only be called for messages that were sent using the {@link MessagingChannel#streamRequest(Object,
+     * ResponseCallback)} method (or its overloaded versions). If the message was sent by some other method, then all attempts to call this
+     * method will throw {@link UnsupportedOperationException}.
+     * </p>
+     *
+     * <p>
+     * The verification of whether a particular message supports partial replies can be performed using the {@link #isStreamRequest()}
+     * method.
      * </p>
      *
      * @param response Response.
-     * @param callback Callback for tracking the operation completion results.
+     * @param callback Callback for tracking completion of an operation.
      *
-     * @throws UnsupportedOperationException If message doesn't support responses (see {@link #mustReply()}).
+     * @throws UnsupportedOperationException If message doesn't support partial responses (see {@link #isStreamRequest()}).
      */
-    void reply(T response, SendCallback callback) throws UnsupportedOperationException;
+    void partialReply(T response, SendCallback callback) throws UnsupportedOperationException;
 
     /**
-     * Asynchronously sends back a partial reply.
+     * Returns {@code true} if this message represents a {@link MessagingChannel#streamRequest(Object, ResponseCallback) stream request} and
+     * supports {@link #partialReply(Object, SendCallback) partial responses}.
      *
-     * <p>
-     * This method provides support for subscription-based messages streaming from receiver back to sender. For example, sender can
-     * subscribes to some topic via {@link MessagingChannel#request(Object, RequestCallback)} method and receiver of such request starts
-     * continuously pushing updates back the sender. Sender will receive those updates via {@link RequestCallback#onComplete(Throwable,
-     * Reply)}. Once messages streaming is finished then final response should be sent via {@link #reply(Object)} method.
-     * </p>
-     *
-     * <p>
-     * Calling this method on a message that doesn't support responses (i.e. {@link #mustReply()} returns {@code false}) will result in
-     * {@link UnsupportedOperationException}.
-     * </p>
-     *
-     * @param response Response.
-     *
-     * @throws UnsupportedOperationException If message doesn't support responses (see {@link #mustReply()}).
-     * @see Reply#isPartial()
+     * @return {@code true} if this message represents a {@link MessagingChannel#streamRequest(Object, ResponseCallback) stream request}.
      */
-    void replyPartial(T response) throws UnsupportedOperationException;
+    boolean isStreamRequest();
 
     /**
-     * Asynchronously sends back the partial reply.
+     * Returns {@code true} if this message represents a request and can be {@link #reply(Object) replied}.
      *
-     * <p>
-     * This method provides support for subscription-based messages streaming from receiver back to sender. For example, sender can
-     * subscribes to some topic via {@link MessagingChannel#request(Object, RequestCallback)} method and receiver of such request starts
-     * continuously pushing updates back the sender. Sender will receive those updates via {@link RequestCallback#onComplete(Throwable,
-     * Reply)}. Once messages streaming is finished then final response should be sent via {@link #reply(Object)} method.
-     * </p>
-     *
-     * <p>
-     * Calling this method on a message that doesn't support responses (i.e. {@link #mustReply()} returns {@code false}) will result in
-     * {@link UnsupportedOperationException}.
-     * </p>
-     *
-     * @param response Response.
-     * @param callback Callback for tracking the operation completion results.
-     *
-     * @throws UnsupportedOperationException If message doesn't support responses (see {@link #mustReply()}).
-     * @see Reply#isPartial()
+     * @return {@code true} if this message represents a request and can be {@link #reply(Object) replied}.
      */
-    void replyPartial(T response, SendCallback callback) throws UnsupportedOperationException;
+    boolean isRequest();
 
     /**
-     * Returns the messaging endpoint of this message..
+     * Returns the messaging endpoint.
      *
      * @return Messaging endpoint.
      */
     MessagingEndpoint<T> getEndpoint();
 
     /**
-     * Returns the messaging channel of this message.
+     * Returns the messaging channel.
      *
      * @return Messaging channel.
      */

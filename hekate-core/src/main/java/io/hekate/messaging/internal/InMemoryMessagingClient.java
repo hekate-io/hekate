@@ -23,7 +23,6 @@ import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Executor;
 
 class InMemoryMessagingClient<T> implements MessagingClient<T> {
     private static class AsyncEnforcedExecutor implements MessagingExecutor {
@@ -47,8 +46,8 @@ class InMemoryMessagingClient<T> implements MessagingClient<T> {
         }
 
         @Override
-        public Executor executor() {
-            return delegate.executor();
+        public MessagingWorker pooledWorker() {
+            return delegate.pooledWorker();
         }
 
         @Override
@@ -94,8 +93,13 @@ class InMemoryMessagingClient<T> implements MessagingClient<T> {
     }
 
     @Override
-    public void request(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
-        conn.sendRequest(ctx, callback);
+    public void streamRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
+        conn.sendStreamRequest(ctx, callback);
+    }
+
+    @Override
+    public void singleRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
+        conn.sendSingleRequest(ctx, callback);
     }
 
     @Override

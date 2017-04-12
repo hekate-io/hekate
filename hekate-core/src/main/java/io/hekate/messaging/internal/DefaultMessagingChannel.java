@@ -29,10 +29,11 @@ import io.hekate.messaging.broadcast.AggregateFuture;
 import io.hekate.messaging.broadcast.BroadcastCallback;
 import io.hekate.messaging.broadcast.BroadcastFuture;
 import io.hekate.messaging.unicast.LoadBalancer;
-import io.hekate.messaging.unicast.RequestCallback;
-import io.hekate.messaging.unicast.RequestFuture;
+import io.hekate.messaging.unicast.ResponseCallback;
+import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.messaging.unicast.SendFuture;
+import io.hekate.messaging.unicast.StreamFuture;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.Executor;
@@ -94,35 +95,55 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
-    public <R extends T> RequestFuture<R> request(T message) {
-        ArgAssert.notNull(message, "Message");
+    public <R extends T> ResponseFuture<R> request(T request) {
+        ArgAssert.notNull(request, "Message");
 
-        return gateway.request(null, message, this);
+        return gateway.request(null, request, this);
     }
 
     @Override
-    public void request(T message, RequestCallback<T> callback) {
-        ArgAssert.notNull(message, "Message");
+    public void request(T request, ResponseCallback<T> callback) {
+        ArgAssert.notNull(request, "Message");
         ArgAssert.notNull(callback, "Callback");
 
-        gateway.request(null, message, this, callback);
+        gateway.request(null, request, this, callback);
     }
 
     @Override
-    public <R extends T> RequestFuture<R> affinityRequest(Object affinityKey, T message) {
-        ArgAssert.notNull(message, "Message");
+    public <R extends T> ResponseFuture<R> affinityRequest(Object affinityKey, T request) {
+        ArgAssert.notNull(request, "Message");
         ArgAssert.notNull(affinityKey, "Affinity key");
 
-        return gateway.request(affinityKey, message, this);
+        return gateway.request(affinityKey, request, this);
     }
 
     @Override
-    public void affinityRequest(Object affinityKey, T message, RequestCallback<T> callback) {
-        ArgAssert.notNull(message, "Message");
+    public void affinityRequest(Object affinityKey, T request, ResponseCallback<T> callback) {
+        ArgAssert.notNull(request, "Message");
         ArgAssert.notNull(callback, "Callback");
         ArgAssert.notNull(affinityKey, "Affinity key");
 
-        gateway.request(affinityKey, message, this, callback);
+        gateway.request(affinityKey, request, this, callback);
+    }
+
+    @Override
+    public void streamRequest(T request, ResponseCallback<T> callback) {
+        gateway.streamRequest(null, request, this, callback);
+    }
+
+    @Override
+    public StreamFuture<T> streamRequest(T request) {
+        return gateway.streamRequest(null, request, this);
+    }
+
+    @Override
+    public void affinityStreamRequest(Object affinityKey, T request, ResponseCallback<T> callback) {
+        gateway.streamRequest(affinityKey, request, this, callback);
+    }
+
+    @Override
+    public StreamFuture<T> affinityStreamRequest(Object affinityKey, T request) {
+        return gateway.streamRequest(affinityKey, request, this);
     }
 
     @Override

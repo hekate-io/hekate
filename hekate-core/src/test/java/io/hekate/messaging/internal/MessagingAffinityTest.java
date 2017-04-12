@@ -3,7 +3,7 @@ package io.hekate.messaging.internal;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.BroadcastCallback;
-import io.hekate.messaging.unicast.RequestCallback;
+import io.hekate.messaging.unicast.ResponseCallback;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -129,7 +129,7 @@ public class MessagingAffinityTest extends MessagingServiceTestBase {
                 MessagingChannel<String> channel = sender.get().forNode(receiver.getNodeId());
 
                 @SuppressWarnings("unchecked")
-                RequestCallback<String> callback = mock(RequestCallback.class);
+                ResponseCallback<String> callback = mock(ResponseCallback.class);
 
                 channel.affinityRequest(j, AffinityCollector.messageForCallback(j, i), callback);
                 channel.affinityRequest(j, AffinityCollector.messageForFuture(j, i));

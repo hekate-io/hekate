@@ -42,7 +42,7 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
     private final Optional<FailureInfo> failure;
 
     public DefaultLoadBalancerContext(MessageContext<?> ctx, ClusterTopology topology, Optional<FailureInfo> failure) {
-        this(ctx.getAffinity(), ctx.getAffinityKey(), topology, failure);
+        this(ctx.affinity(), ctx.affinityKey(), topology, failure);
     }
 
     public DefaultLoadBalancerContext(int affinity, Object affinityKey, ClusterTopology topology, Optional<FailureInfo> failure) {

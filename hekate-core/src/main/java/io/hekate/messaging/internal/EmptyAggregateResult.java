@@ -18,7 +18,7 @@ package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.messaging.broadcast.AggregateResult;
-import io.hekate.messaging.unicast.Reply;
+import io.hekate.messaging.unicast.Response;
 import io.hekate.util.format.ToString;
 import java.util.Collections;
 import java.util.Map;
@@ -64,12 +64,12 @@ class EmptyAggregateResult<T> implements AggregateResult<T> {
     }
 
     @Override
-    public Map<ClusterNode, Reply<T>> getReplies() {
+    public Map<ClusterNode, Response<T>> getReplies() {
         return Collections.emptyMap();
     }
 
     @Override
-    public Reply<T> getReply(ClusterNode node) {
+    public Response<T> getReply(ClusterNode node) {
         return null;
     }
 

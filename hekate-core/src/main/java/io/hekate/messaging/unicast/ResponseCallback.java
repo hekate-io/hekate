@@ -19,14 +19,14 @@ package io.hekate.messaging.unicast;
 import io.hekate.messaging.MessagingChannel;
 
 /**
- * Callback for {@link MessagingChannel#request(Object, RequestCallback) request(...)} operation.
+ * Callback for {@link MessagingChannel#request(Object, ResponseCallback) request(...)} operation.
  *
  * @param <T> Base type of request message.
  *
- * @see MessagingChannel#request(Object, RequestCallback)
+ * @see MessagingChannel#request(Object, ResponseCallback)
  */
 @FunctionalInterface
-public interface RequestCallback<T> {
+public interface ResponseCallback<T> {
     /**
      * Called when a request operation gets completed either successfully or with an error.
      *
@@ -37,9 +37,9 @@ public interface RequestCallback<T> {
      * </p>
      *
      * @param err Error ({@code null} if operation was successful).
-     * @param reply Reply ({@code null} if operation failed).
+     * @param rsp Response ({@code null} if operation failed).
      */
-    void onComplete(Throwable err, Reply<T> reply);
+    void onComplete(Throwable err, Response<T> rsp);
 
     /**
      * Called upon a request operation completion (either successfully or with an error) in order decide on whether the operation outcome
@@ -54,7 +54,7 @@ public interface RequestCallback<T> {
      * </p>
      *
      * @param err Error ({@code null} if operation was successful).
-     * @param reply Reply ({@code null} if operation failed).
+     * @param reply Response ({@code null} if operation failed).
      *
      * @return Decision.
      */

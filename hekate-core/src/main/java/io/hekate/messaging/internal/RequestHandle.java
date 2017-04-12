@@ -39,11 +39,11 @@ class RequestHandle<T> {
     }
 
     public MessagingWorker getWorker() {
-        return ctx.getWorker();
+        return ctx.worker();
     }
 
     public T getMessage() {
-        return ctx.getMessage();
+        return ctx.message();
     }
 
     public int getEpoch() {

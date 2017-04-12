@@ -18,7 +18,7 @@ package io.hekate.messaging.internal;
 
 import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.unicast.RequestFuture;
+import io.hekate.messaging.unicast.ResponseFuture;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -68,7 +68,7 @@ public class UnicastOrderTest extends MessagingServiceTestBase {
             .withMaxAttempts(10)
         );
 
-        List<RequestFuture<String>> tasks = new ArrayList<>();
+        List<ResponseFuture<String>> tasks = new ArrayList<>();
 
         for (int i = 0; i < 100; i++) {
             tasks.add(out.affinityRequest(1, String.valueOf(i)));

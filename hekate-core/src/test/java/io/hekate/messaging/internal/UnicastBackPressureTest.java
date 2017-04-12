@@ -24,7 +24,7 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingOverflowPolicy;
-import io.hekate.messaging.unicast.RequestFuture;
+import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.messaging.unicast.SendFuture;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -75,7 +75,7 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
         MessagingChannel<String> sender = createChannel(this::useBackPressure).join().get().forRemotes();
 
         // Enforce back pressure on sender.
-        List<RequestFuture<String>> futureResponses = requestUpToHighWatermark(sender);
+        List<ResponseFuture<String>> futureResponses = requestUpToHighWatermark(sender);
 
         busyWait("requests received", () -> requests.size() == futureResponses.size());
 
@@ -112,7 +112,7 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
         }).join().get().forRemotes();
 
         // Enforce back pressure on sender.
-        List<RequestFuture<String>> futureResponses = requestUpToHighWatermark(sender);
+        List<ResponseFuture<String>> futureResponses = requestUpToHighWatermark(sender);
 
         busyWait("requests received", () -> requests.size() == futureResponses.size());
 
@@ -155,7 +155,7 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
         MessagingChannel<String> senderChannel = sender.get().forRemotes();
 
         // Enforce back pressure on sender.
-        List<RequestFuture<String>> futureResponses = requestUpToHighWatermark(senderChannel);
+        List<ResponseFuture<String>> futureResponses = requestUpToHighWatermark(senderChannel);
 
         busyWait("requests received", () -> requests1.size() == highWatermark);
 
@@ -202,7 +202,7 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
         busyWait("requests received", () -> requests.get() == 1);
 
         // Asynchronously try to send a new message (should block).
-        Future<RequestFuture<String>> async = runAsync(() ->
+        Future<ResponseFuture<String>> async = runAsync(() ->
             sender.get().forRemotes().request("must-block")
         );
 
@@ -217,7 +217,7 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
         say("Stopped");
 
         // Await for last send operation to be unblocked.
-        RequestFuture<String> request = get(async);
+        ResponseFuture<String> request = get(async);
 
         // Check that last send operation failed.
         try {
@@ -287,12 +287,12 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
         awaitForChannelsTopology(sender, receiver);
 
         // Enforce back pressure on receiver in order to block sending of partial responses.
-        List<RequestFuture<String>> futureResponses = requestUpToHighWatermark(receiver.get());
+        List<ResponseFuture<String>> futureResponses = requestUpToHighWatermark(receiver.get());
 
         busyWait("requests received", () -> requests.size() == futureResponses.size());
 
         // Send trigger message sender -> receiver.
-        sender.get().forRemotes().request("init");
+        sender.get().forRemotes().streamRequest("init");
 
         // Await for trigger message to be received.
         busyWait("trigger received", () -> receivedRef.get() != null);
@@ -312,7 +312,7 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
         // Check that partial replies can be send.
         CompletableFuture<Throwable> errFuture = new CompletableFuture<>();
 
-        received.replyPartial("last", errFuture::complete);
+        received.partialReply("last", errFuture::complete);
 
         assertNull(get(errFuture));
     }
@@ -345,7 +345,7 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
         assertBackPressureEnabled(first.get());
 
         // Request 'second' -> 'first' in order to trigger response while back pressure is enabled.
-        RequestFuture<String> request = second.get().forRemotes().request("check");
+        ResponseFuture<String> request = second.get().forRemotes().request("check");
 
         // Make sure that there were no back pressure-related errors.
         assertNull(get(errFuture));
@@ -358,7 +358,7 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
 
         CompletableFuture<Throwable> errFuture = new CompletableFuture<>();
 
-        msg.replyPartial("fail-on-back-pressure", errFuture::complete);
+        msg.partialReply("fail-on-back-pressure", errFuture::complete);
 
         Throwable err = get(errFuture);
 
@@ -366,8 +366,8 @@ public class UnicastBackPressureTest extends BackPressureTestBase {
         assertTrue(err.toString(), Utils.isCausedBy(err, MessageQueueOverflowException.class));
     }
 
-    protected List<RequestFuture<String>> requestUpToHighWatermark(MessagingChannel<String> channel) {
-        List<RequestFuture<String>> responses = new ArrayList<>();
+    protected List<ResponseFuture<String>> requestUpToHighWatermark(MessagingChannel<String> channel) {
+        List<ResponseFuture<String>> responses = new ArrayList<>();
 
         // Request up to high watermark in order to enable back pressure.
         for (int i = 0; i < highWatermark; i++) {

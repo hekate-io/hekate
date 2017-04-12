@@ -17,23 +17,23 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.HekateTestBase;
-import io.hekate.messaging.unicast.Reply;
-import io.hekate.messaging.unicast.RequestCallback;
+import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.ResponseCallback;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 
-public class RequestCallbackMock implements RequestCallback<String> {
+public class ResponseCallbackMock implements ResponseCallback<String> {
     private final String expectedRequest;
 
-    private final CompletableFuture<Reply<String>> latch = new CompletableFuture<>();
+    private final CompletableFuture<Response<String>> latch = new CompletableFuture<>();
 
-    public RequestCallbackMock(String expectedRequest) {
+    public ResponseCallbackMock(String expectedRequest) {
         this.expectedRequest = expectedRequest;
     }
 
-    public Reply<String> get() throws Exception {
+    public Response<String> get() throws Exception {
         try {
             return HekateTestBase.get(latch);
         } catch (ExecutionException e) {
@@ -50,12 +50,12 @@ public class RequestCallbackMock implements RequestCallback<String> {
     }
 
     @Override
-    public void onComplete(Throwable err, Reply<String> reply) {
+    public void onComplete(Throwable err, Response<String> rsp) {
         if (err == null) {
             try {
-                assertEquals(expectedRequest, reply.getRequest());
+                assertEquals(expectedRequest, rsp.getRequest());
 
-                latch.complete(reply);
+                latch.complete(rsp);
             } catch (AssertionError e) {
                 latch.completeExceptionally(e);
             }

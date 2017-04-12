@@ -23,15 +23,15 @@ import io.hekate.messaging.MessagingChannel;
  * Marker interface for application-specific error replies.
  *
  * <p>
- * Messages can implement this interface in order to indicated that particular {@link Reply} represents an application-specific error that
- * should be treated as a messaging failure. If {@link MessagingChannel} receives a reply of this type then it will call the {@link
- * #asError()} method and will fail the messaging operation (or will apply a {@link FailoverPolicy} if it was {@link
+ * Messages can implement this interface in order to indicated that particular {@link Response} represents an application-specific error
+ * that should be treated as a messaging failure. If {@link MessagingChannel} receives a reply of this type then it will call the
+ * {@link #asError()} method and will fail the messaging operation (or will apply a {@link FailoverPolicy} if it was {@link
  * MessagingChannel#withFailover(FailoverPolicy) specified}) using the resulting error.
  * </p>
  */
 public interface ReplyFailure {
     /**
-     * Converts this reply to a throwable error.
+     * Converts this reply to an error.
      *
      * @return Error.
      */

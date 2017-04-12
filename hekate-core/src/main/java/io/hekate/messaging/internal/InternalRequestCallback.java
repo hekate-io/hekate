@@ -16,8 +16,8 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.messaging.unicast.Reply;
+import io.hekate.messaging.unicast.Response;
 
 interface InternalRequestCallback<T> {
-    void onComplete(RequestHandle<T> handle, Throwable err, Reply<T> reply);
+    void onComplete(RequestHandle<T> handle, Throwable err, Response<T> rsp);
 }

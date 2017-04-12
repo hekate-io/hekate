@@ -24,11 +24,13 @@ import io.hekate.codec.DataWriter;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
+import io.hekate.messaging.internal.MessagingProtocol.AffinityStreamRequest;
 import io.hekate.messaging.internal.MessagingProtocol.Connect;
+import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.internal.MessagingProtocol.Request;
-import io.hekate.messaging.internal.MessagingProtocol.Response;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
+import io.hekate.messaging.internal.MessagingProtocol.StreamRequest;
 import io.hekate.network.NetworkMessage;
 import java.io.IOException;
 
@@ -113,12 +115,20 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 return new Request<>(requestId, payload);
             }
-            case RESPONSE: {
+            case AFFINITY_STREAM_REQUEST: {
+                int affinity = in.readInt();
                 int requestId = in.readInt();
 
                 T payload = delegate.decode(in);
 
-                return new Response<>(requestId, payload);
+                return new AffinityStreamRequest<>(affinity, requestId, payload);
+            }
+            case STREAM_REQUEST: {
+                int requestId = in.readInt();
+
+                T payload = delegate.decode(in);
+
+                return new StreamRequest<>(requestId, payload);
             }
             case RESPONSE_CHUNK: {
                 int requestId = in.readInt();
@@ -126,6 +136,13 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 T payload = delegate.decode(in);
 
                 return new ResponseChunk<>(requestId, payload);
+            }
+            case FINAL_RESPONSE: {
+                int requestId = in.readInt();
+
+                T payload = delegate.decode(in);
+
+                return new FinalResponse<>(requestId, payload);
             }
             default: {
                 throw new IllegalArgumentException("Unexpected message type: " + msgType);
@@ -184,8 +201,27 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 break;
             }
-            case RESPONSE: {
-                Response<T> response = message.cast();
+            case AFFINITY_STREAM_REQUEST: {
+                AffinityStreamRequest<T> request = message.cast();
+
+                out.writeInt(request.getAffinity());
+                out.writeInt(request.getRequestId());
+
+                delegate.encode(request.get(), out);
+
+                break;
+            }
+            case STREAM_REQUEST: {
+                StreamRequest<T> request = message.cast();
+
+                out.writeInt(request.getRequestId());
+
+                delegate.encode(request.get(), out);
+
+                break;
+            }
+            case RESPONSE_CHUNK: {
+                ResponseChunk<T> response = message.cast();
 
                 out.writeInt(response.getRequestId());
 
@@ -193,8 +229,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 break;
             }
-            case RESPONSE_CHUNK: {
-                ResponseChunk<T> response = message.cast();
+            case FINAL_RESPONSE: {
+                FinalResponse<T> response = message.cast();
 
                 out.writeInt(response.getRequestId());
 

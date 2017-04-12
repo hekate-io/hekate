@@ -46,19 +46,19 @@ import io.hekate.messaging.broadcast.BroadcastResult;
 import io.hekate.messaging.unicast.LoadBalancer;
 import io.hekate.messaging.unicast.LoadBalancerContext;
 import io.hekate.messaging.unicast.RejectedReplyException;
-import io.hekate.messaging.unicast.Reply;
 import io.hekate.messaging.unicast.ReplyDecision;
 import io.hekate.messaging.unicast.ReplyFailure;
-import io.hekate.messaging.unicast.RequestCallback;
-import io.hekate.messaging.unicast.RequestFuture;
+import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.ResponseCallback;
+import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.messaging.unicast.SendFuture;
+import io.hekate.messaging.unicast.StreamFuture;
 import io.hekate.messaging.unicast.TooManyRoutesException;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkFuture;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -69,7 +69,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -113,12 +112,34 @@ class MessagingGateway<T> {
         }
     }
 
-    private static class RequestCallbackFuture<T> extends RequestFuture<T> implements RequestCallback<T> {
+    private static class ResponseCallbackFuture<T> extends ResponseFuture<T> implements ResponseCallback<T> {
         @Override
-        public void onComplete(Throwable err, Reply<T> reply) {
+        public void onComplete(Throwable err, Response<T> rsp) {
             if (err == null) {
-                if (!reply.isPartial()) {
-                    complete(reply);
+                if (!rsp.isPartial()) {
+                    complete(rsp);
+                }
+            } else {
+                completeExceptionally(err);
+            }
+        }
+    }
+
+    private static class StreamCallbackFuture<T> extends StreamFuture<T> implements ResponseCallback<T> {
+        private List<Response<T>> result;
+
+        @Override
+        public void onComplete(Throwable err, Response<T> rsp) {
+            if (err == null) {
+                // No need to synchronize since streams are always processed by the same thread.
+                if (result == null) {
+                    result = new ArrayList<>();
+                }
+
+                result.add(rsp);
+
+                if (!rsp.isPartial()) {
+                    complete(result);
                 }
             } else {
                 completeExceptionally(err);
@@ -266,7 +287,7 @@ class MessagingGateway<T> {
         MessageContext<T> ctx = newContext(affinityKey, message, opts);
 
         try {
-            long timeout = backPressureAcquire(opts.timeout(), message);
+            long timeout = backPressureAcquire(ctx.opts().timeout(), message);
 
             routeAndSend(ctx, callback, null);
 
@@ -275,40 +296,45 @@ class MessagingGateway<T> {
             }
         } catch (InterruptedException | MessageQueueOverflowException | MessageQueueTimeoutException e) {
             notifyOnErrorAsync(ctx, callback, e);
-        } catch (RejectedExecutionException e) {
-            notifyOnChannelClosedError(ctx, callback);
         }
     }
 
     @SuppressWarnings("unchecked") // <- need to cast to the response type.
-    public <R extends T> RequestFuture<R> request(Object affinityKey, T message, MessagingOpts<T> opts) {
-        RequestCallbackFuture<T> future = new RequestCallbackFuture<>();
+    public <R extends T> ResponseFuture<R> request(Object affinityKey, T message, MessagingOpts<T> opts) {
+        ResponseCallbackFuture<T> future = new ResponseCallbackFuture<>();
 
         request(affinityKey, message, opts, future);
 
-        return (RequestFuture<R>)future;
+        return (ResponseFuture<R>)future;
     }
 
-    public void request(Object affinityKey, T message, MessagingOpts<T> opts, RequestCallback<T> callback) {
-        assert message != null : "Message must be not null.";
+    public void request(Object affinityKey, T request, MessagingOpts<T> opts, ResponseCallback<T> callback) {
+        assert request != null : "Request message must be not null.";
         assert opts != null : "Messaging options must be not null.";
         assert callback != null : "Callback must be not null.";
 
-        MessageContext<T> ctx = newContext(affinityKey, message, opts);
+        MessageContext<T> ctx = newContext(affinityKey, request, opts);
 
-        try {
-            long timeout = backPressureAcquire(opts.timeout(), message);
+        requestAsync(request, ctx, callback);
+    }
 
-            routeAndRequest(ctx, callback, null);
+    @SuppressWarnings("unchecked") // <- need to cast to the stream type.
+    public <R extends T> StreamFuture<R> streamRequest(Object affinityKey, T request, MessagingOpts<T> opts) {
+        StreamCallbackFuture<T> future = new StreamCallbackFuture<>();
 
-            if (timeout > 0) {
-                doScheduleTimeout(timeout, ctx, callback);
-            }
-        } catch (InterruptedException | MessageQueueOverflowException | MessageQueueTimeoutException e) {
-            notifyOnErrorAsync(ctx, callback, e);
-        } catch (RejectedExecutionException e) {
-            notifyOnChannelClosedError(ctx, callback);
-        }
+        streamRequest(affinityKey, request, opts, future);
+
+        return (StreamFuture<R>)future;
+    }
+
+    public void streamRequest(Object affinityKey, T request, MessagingOpts<T> opts, ResponseCallback<T> callback) {
+        assert request != null : "Request message must be not null.";
+        assert opts != null : "Messaging options must be not null.";
+        assert callback != null : "Callback must be not null.";
+
+        MessageContext<T> ctx = newContext(affinityKey, request, opts, true);
+
+        requestAsync(request, ctx, callback);
     }
 
     public BroadcastFuture<T> broadcast(Object affinityKey, T message, MessagingOpts<T> opts) {
@@ -456,22 +482,7 @@ class MessagingGateway<T> {
 
                 // Collect disconnect futures to waiting list.
                 disconnects.stream()
-                    .map(future -> (Waiting)() -> {
-                        try {
-                            future.get();
-                        } catch (ExecutionException e) {
-                            Throwable cause = e.getCause();
-
-                            if (cause instanceof IOException) {
-                                if (DEBUG) {
-                                    log.debug("Failed to close network connection due to an I/O error "
-                                        + "[channel={}, cause={}]", name, cause.toString());
-                                }
-                            } else {
-                                log.warn("Failed to close network connection [channel={}]", name, cause);
-                            }
-                        }
-                    })
+                    .map(future -> (Waiting)future::join)
                     .forEach(waiting::add);
 
                 // Terminate async thread pool.
@@ -492,7 +503,7 @@ class MessagingGateway<T> {
     }
 
     public Executor getExecutor() {
-        return async.executor();
+        return async.pooledWorker();
     }
 
     DefaultMessagingChannel<T> getChannel() {
@@ -536,7 +547,7 @@ class MessagingGateway<T> {
         SendCallback retryCallback = err -> {
             client.touch();
 
-            if (err == null || ctx.getOpts().failover() == null) {
+            if (err == null || ctx.opts().failover() == null) {
                 // Complete operation.
                 if (ctx.complete()) {
                     backPressureRelease();
@@ -546,6 +557,7 @@ class MessagingGateway<T> {
                     }
                 }
             } else {
+                // TODO: Urgent!!! Failover in MessagingGateway#send(...) is not covered by unit tests.
                 // Apply failover actions.
                 FailoverCallback onFailover = new FailoverCallback() {
                     @Override
@@ -582,14 +594,28 @@ class MessagingGateway<T> {
                     }
                 };
 
-                applyFailoverAsync(ctx, err, client.getNode(), onFailover, prevErr);
+                failoverAsync(ctx, err, client.getNode(), onFailover, prevErr);
             }
         };
 
         client.send(ctx, retryCallback);
     }
 
-    private void routeAndRequest(MessageContext<T> ctx, RequestCallback<T> callback, FailureInfo prevErr) {
+    private void requestAsync(T request, MessageContext<T> ctx, ResponseCallback<T> callback) {
+        try {
+            long timeout = backPressureAcquire(ctx.opts().timeout(), request);
+
+            routeAndRequest(ctx, callback, null);
+
+            if (timeout > 0) {
+                doScheduleTimeout(timeout, ctx, callback);
+            }
+        } catch (InterruptedException | MessageQueueOverflowException | MessageQueueTimeoutException e) {
+            notifyOnErrorAsync(ctx, callback, e);
+        }
+    }
+
+    private void routeAndRequest(MessageContext<T> ctx, ResponseCallback<T> callback, FailureInfo prevErr) {
         MessagingClient<T> client = null;
 
         try {
@@ -605,7 +631,7 @@ class MessagingGateway<T> {
         }
     }
 
-    private void doRequest(MessageContext<T> ctx, MessagingClient<T> client, RequestCallback<T> callback, FailureInfo prevErr) {
+    private void doRequest(MessageContext<T> ctx, MessagingClient<T> client, ResponseCallback<T> callback, FailureInfo prevErr) {
         // Decorate callback with failover, error handling logic, etc.
         InternalRequestCallback<T> internalCallback = (request, err, reply) -> {
             client.touch();
@@ -630,7 +656,7 @@ class MessagingGateway<T> {
                 acceptance = ReplyDecision.DEFAULT;
             }
 
-            FailoverPolicy failover = ctx.getOpts().failover();
+            FailoverPolicy failover = ctx.opts().failover();
 
             if (acceptance == ReplyDecision.COMPLETE || acceptance == ReplyDecision.DEFAULT && err == null || failover == null) {
                 // Check if this is the final reply or an error (ignore chunks).
@@ -655,7 +681,7 @@ class MessagingGateway<T> {
 
                 // Apply failover actions.
                 if (acceptance == ReplyDecision.REJECT) {
-                    err = new RejectedReplyException("Reply was rejected by a request callback", replyMsg, err);
+                    err = new RejectedReplyException("Response was rejected by a request callback", replyMsg, err);
                 }
 
                 FailoverCallback onFailover = new FailoverCallback() {
@@ -693,11 +719,15 @@ class MessagingGateway<T> {
                     }
                 };
 
-                applyFailoverAsync(ctx, err, client.getNode(), onFailover, prevErr);
+                failoverAsync(ctx, err, client.getNode(), onFailover, prevErr);
             }
         };
 
-        client.request(ctx, internalCallback);
+        if (ctx.isStream()) {
+            client.streamRequest(ctx, internalCallback);
+        } else {
+            client.singleRequest(ctx, internalCallback);
+        }
     }
 
     boolean register(NetworkInboundConnection<T> conn) {
@@ -821,7 +851,7 @@ class MessagingGateway<T> {
     }
 
     void scheduleTimeout(MessageContext<T> ctx, Object callback) {
-        doScheduleTimeout(ctx.getOpts().timeout(), ctx, callback);
+        doScheduleTimeout(ctx.opts().timeout(), ctx, callback);
     }
 
     // This method is for testing purposes only.
@@ -838,9 +868,9 @@ class MessagingGateway<T> {
     private void doScheduleTimeout(long timeout, MessageContext<T> ctx, Object callback) {
         if (!ctx.isCompleted()) {
             try {
-                Future<?> future = ctx.getWorker().executeDeferred(timeout, () -> {
+                Future<?> future = ctx.worker().executeDeferred(timeout, () -> {
                     if (ctx.completeOnTimeout()) {
-                        T msg = ctx.getMessage();
+                        T msg = ctx.message();
 
                         doNotifyOnError(callback, new MessageTimeoutException("Messaging operation timed out [message=" + msg + ']'));
                     }
@@ -868,7 +898,7 @@ class MessagingGateway<T> {
         ClientSelectionRejectedException {
         assert ctx != null : "Message context is null.";
 
-        ClusterTopology topology = ctx.getOpts().cluster().getTopology();
+        ClusterTopology topology = ctx.opts().cluster().getTopology();
 
         if (topology.isEmpty()) {
             Throwable cause = prevErr != null ? prevErr.getError() : null;
@@ -880,7 +910,7 @@ class MessagingGateway<T> {
             }
         }
 
-        LoadBalancer<T> balancer = ctx.getOpts().balancer();
+        LoadBalancer<T> balancer = ctx.opts().balancer();
 
         while (true) {
             // Perform routing in unlocked context in order to prevent cluster events blocking.
@@ -903,7 +933,7 @@ class MessagingGateway<T> {
             } else {
                 LoadBalancerContext balancerCtx = new DefaultLoadBalancerContext(ctx, topology, Optional.ofNullable(prevErr));
 
-                targetId = balancer.route(ctx.getMessage(), balancerCtx);
+                targetId = balancer.route(ctx.message(), balancerCtx);
 
                 if (targetId == null) {
                     Throwable cause = prevErr != null ? prevErr.getError() : null;
@@ -956,18 +986,17 @@ class MessagingGateway<T> {
         }
     }
 
-    private void applyFailoverAsync(MessageContext<T> ctx, Throwable cause, ClusterNode failed, FailoverCallback callback,
-        FailureInfo prevErr) {
+    private void failoverAsync(MessageContext<T> ctx, Throwable cause, ClusterNode failed, FailoverCallback callback, FailureInfo prevErr) {
         onAsyncEnqueue();
 
-        ctx.getWorker().execute(() -> {
+        ctx.worker().execute(() -> {
             onAsyncDequeue();
 
-            applyFailover(ctx, cause, failed, callback, prevErr);
+            failover(ctx, cause, failed, callback, prevErr);
         });
     }
 
-    private void applyFailover(MessageContext<T> ctx, Throwable cause, ClusterNode failed, FailoverCallback callback, FailureInfo prevErr) {
+    private void failover(MessageContext<T> ctx, Throwable cause, ClusterNode failed, FailoverCallback callback, FailureInfo prevErr) {
         assert ctx != null : "Message context is null.";
         assert cause != null : "Cause is null.";
         assert failed != null : "Failed node is null.";
@@ -982,7 +1011,7 @@ class MessagingGateway<T> {
 
         Throwable finalCause = cause;
 
-        FailoverPolicy policy = ctx.getOpts().failover();
+        FailoverPolicy policy = ctx.opts().failover();
 
         if (policy != null && isRecoverable(cause)) {
             int attempt;
@@ -1023,7 +1052,7 @@ class MessagingGateway<T> {
                         if (route != RETRY_SAME_NODE || clients.containsKey(failed.getId())) {
                             onRetry();
 
-                            MessagingWorker worker = ctx.getWorker();
+                            MessagingWorker worker = ctx.worker();
 
                             // Schedule timeout task to apply failover actions after the failover delay.
                             onAsyncEnqueue();
@@ -1100,16 +1129,10 @@ class MessagingGateway<T> {
         }
     }
 
-    private void notifyOnChannelClosedError(MessageContext<T> ctx, Object callback) {
-        MessagingException err = channelClosedError(null);
-
-        notifyOnErrorAsync(ctx, callback, err);
-    }
-
     private void notifyOnErrorAsync(MessageContext<T> ctx, Object callback, Throwable err) {
         onAsyncEnqueue();
 
-        ctx.getWorker().execute(() -> {
+        ctx.worker().execute(() -> {
             onAsyncDequeue();
 
             if (ctx.complete()) {
@@ -1129,9 +1152,9 @@ class MessagingGateway<T> {
                 } catch (RuntimeException | Error e) {
                     log.error("Got an unexpected runtime error while notifying send callback on another error [cause={}]", err, e);
                 }
-            } else if (callback instanceof RequestCallback) {
+            } else if (callback instanceof ResponseCallback) {
                 try {
-                    ((RequestCallback)callback).onComplete(err, null);
+                    ((ResponseCallback)callback).onComplete(err, null);
                 } catch (RuntimeException | Error e) {
                     log.error("Got an unexpected runtime error while notifying request callback on another error [cause={}]", err, e);
                 }
@@ -1142,11 +1165,21 @@ class MessagingGateway<T> {
     }
 
     private MessageContext<T> newContext(Object affinityKey, T message, MessagingOpts<T> opts) {
+        return newContext(affinityKey, message, opts, false);
+    }
+
+    private MessageContext<T> newContext(Object affinityKey, T message, MessagingOpts<T> opts, boolean stream) {
         int affinity = affinity(affinityKey);
 
-        MessagingWorker worker = async.workerFor(affinity);
+        MessagingWorker worker;
 
-        return new MessageContext<>(message, affinity, affinityKey, worker, opts);
+        if (affinityKey != null || stream /* <- Stream operations should always be processed by the same thread. */) {
+            worker = async.workerFor(affinity);
+        } else {
+            worker = async.pooledWorker();
+        }
+
+        return new MessageContext<>(message, affinity, affinityKey, worker, opts, stream);
     }
 
     private MessagingChannelClosedException channelClosedError(Throwable cause) {

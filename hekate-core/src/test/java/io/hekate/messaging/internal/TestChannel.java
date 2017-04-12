@@ -26,9 +26,9 @@ import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.unicast.LoadBalancer;
-import io.hekate.messaging.unicast.Reply;
-import io.hekate.messaging.unicast.RequestCallback;
-import io.hekate.messaging.unicast.RequestFuture;
+import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.ResponseCallback;
+import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.messaging.unicast.SendFuture;
 import java.util.ArrayList;
@@ -136,16 +136,16 @@ public class TestChannel {
         channel.forNode(nodeId).send(msg, callback);
     }
 
-    public RequestFuture<String> request(ClusterNodeId nodeId, String msg) {
+    public ResponseFuture<String> request(ClusterNodeId nodeId, String msg) {
         return channel.forNode(nodeId).request(msg);
     }
 
-    public void request(ClusterNodeId nodeId, String msg, RequestCallback<String> callback) {
+    public void request(ClusterNodeId nodeId, String msg, ResponseCallback<String> callback) {
         channel.forNode(nodeId).request(msg, callback);
     }
 
-    public Reply<String> requestWithSyncCallback(ClusterNodeId nodeId, String msg) throws Exception {
-        RequestCallbackMock callback = new RequestCallbackMock(msg);
+    public Response<String> requestWithSyncCallback(ClusterNodeId nodeId, String msg) throws Exception {
+        ResponseCallbackMock callback = new ResponseCallbackMock(msg);
 
         channel.forNode(nodeId).request(msg, callback);
 

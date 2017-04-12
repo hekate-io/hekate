@@ -30,7 +30,7 @@ import io.hekate.messaging.MessagingChannel;
  * </p>
  *
  * @see MessagingChannel#send(Object, SendCallback)
- * @see MessagingChannel#request(Object, RequestCallback)
+ * @see MessagingChannel#request(Object, ResponseCallback)
  */
 public class TooManyRoutesException extends LoadBalancingException {
     private static final long serialVersionUID = 1;

@@ -22,7 +22,7 @@ import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
-import io.hekate.messaging.unicast.Reply;
+import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkSendCallback;
@@ -44,9 +44,170 @@ abstract class MessagingProtocol {
 
         AFFINITY_REQUEST,
 
+        STREAM_REQUEST,
+
+        AFFINITY_STREAM_REQUEST,
+
         RESPONSE_CHUNK,
 
-        RESPONSE
+        FINAL_RESPONSE
+    }
+
+    abstract static class NoReplyMessage<T> extends MessagingProtocol implements Message<T> {
+        @Override
+        public final boolean mustReply() {
+            return false;
+        }
+
+        @Override
+        public boolean isStreamRequest() {
+            return false;
+        }
+
+        @Override
+        public boolean isRequest() {
+            return false;
+        }
+
+        @Override
+        public final void reply(T response) {
+            throw new UnsupportedOperationException("Reply is not supported by this message.");
+        }
+
+        @Override
+        public final void reply(T response, SendCallback callback) {
+            throw new UnsupportedOperationException("Reply is not supported by this message.");
+        }
+
+        @Override
+        public final void partialReply(T response) throws UnsupportedOperationException {
+            throw new UnsupportedOperationException("Reply is not supported by this message.");
+        }
+
+        @Override
+        public final void partialReply(T response, SendCallback callback) throws UnsupportedOperationException {
+            throw new UnsupportedOperationException("Reply is not supported by this message.");
+        }
+    }
+
+    abstract static class RequestBase<T> extends MessagingProtocol implements Message<T>, NetworkSendCallback<MessagingProtocol> {
+        private static final AtomicIntegerFieldUpdater<RequestBase> MUST_REPLY = newUpdater(RequestBase.class, "mustReply");
+
+        private final int requestId;
+
+        private final T payload;
+
+        private MessagingWorker worker;
+
+        private MessagingConnectionBase<T> conn;
+
+        private RequestHandle<T> handle;
+
+        @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
+        private volatile int mustReply;
+
+        public RequestBase(int requestId, T payload) {
+            this.requestId = requestId;
+            this.payload = payload;
+        }
+
+        public void prepareReceive(MessagingWorker worker, MessagingConnectionBase<T> processor) {
+            this.worker = worker;
+            this.conn = processor;
+        }
+
+        public void prepareSend(RequestHandle<T> handle, MessagingConnectionBase<T> conn) {
+            this.worker = handle.getWorker();
+            this.conn = conn;
+            this.handle = handle;
+        }
+
+        public int getRequestId() {
+            return requestId;
+        }
+
+        @Override
+        public boolean isRequest() {
+            return true;
+        }
+
+        @Override
+        public boolean is(Class<? extends T> type) {
+            return type.isInstance(payload);
+        }
+
+        @Override
+        public T get() {
+            return payload;
+        }
+
+        @Override
+        public <P extends T> P get(Class<P> type) {
+            return type.cast(payload);
+        }
+
+        @Override
+        public boolean mustReply() {
+            return mustReply == 0;
+        }
+
+        @Override
+        public void reply(T response) {
+            reply(response, null);
+        }
+
+        @Override
+        public void reply(T response, SendCallback callback) {
+            responded();
+
+            conn.reply(worker, requestId, response, callback);
+        }
+
+        @Override
+        public void partialReply(T response) throws UnsupportedOperationException {
+            partialReply(response, null);
+        }
+
+        @Override
+        public void partialReply(T response, SendCallback callback) throws UnsupportedOperationException {
+            checkNotResponded();
+
+            conn.replyChunk(worker, requestId, response, callback);
+        }
+
+        @Override
+        public MessagingEndpoint<T> getEndpoint() {
+            return conn.getEndpoint();
+        }
+
+        @Override
+        public MessagingChannel<T> getChannel() {
+            return conn.getEndpoint().getChannel();
+        }
+
+        @Override
+        public void onComplete(MessagingProtocol message, Optional<Throwable> error, NetworkEndpoint<MessagingProtocol> endpoint) {
+            error.ifPresent(err ->
+                conn.notifyOnReplyFailure(handle, err)
+            );
+        }
+
+        protected void checkNotResponded() {
+            if (!mustReply()) {
+                throw new IllegalStateException("Message already responded.");
+            }
+        }
+
+        private void responded() {
+            if (!MUST_REPLY.compareAndSet(this, 0, 1)) {
+                throw new IllegalStateException("Message already responded [message=" + payload + ']');
+            }
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "[payload=" + payload + ']';
+        }
     }
 
     static class Connect extends MessagingProtocol {
@@ -75,33 +236,6 @@ abstract class MessagingProtocol {
         @Override
         public String toString() {
             return ToString.format(this);
-        }
-    }
-
-    abstract static class NoReplyMessage<T> extends MessagingProtocol implements Message<T> {
-        @Override
-        public final boolean mustReply() {
-            return false;
-        }
-
-        @Override
-        public final void reply(T response) {
-            throw new UnsupportedOperationException("Responses is not expected.");
-        }
-
-        @Override
-        public final void reply(T response, SendCallback callback) {
-            throw new UnsupportedOperationException("Responses is not expected.");
-        }
-
-        @Override
-        public final void replyPartial(T response) throws UnsupportedOperationException {
-            throw new UnsupportedOperationException("Responses is not expected.");
-        }
-
-        @Override
-        public final void replyPartial(T response, SendCallback callback) throws UnsupportedOperationException {
-            throw new UnsupportedOperationException("Responses is not expected.");
         }
     }
 
@@ -192,123 +326,24 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class Request<T> extends MessagingProtocol implements Message<T>, NetworkSendCallback<MessagingProtocol> {
-        private static final AtomicIntegerFieldUpdater<Request> MUST_REPLY = newUpdater(Request.class, "mustReply");
-
-        private final int requestId;
-
-        private final T payload;
-
-        private MessagingWorker worker;
-
-        private MessagingConnectionBase<T> conn;
-
-        private RequestHandle<T> handle;
-
-        @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
-        private volatile int mustReply;
-
+    static class Request<T> extends RequestBase<T> {
         public Request(int requestId, T payload) {
-            this.requestId = requestId;
-            this.payload = payload;
-        }
-
-        public void prepareReceive(MessagingWorker worker, MessagingConnectionBase<T> processor) {
-            this.worker = worker;
-            this.conn = processor;
-        }
-
-        public void prepareSend(RequestHandle<T> handle, MessagingConnectionBase<T> conn) {
-            this.worker = handle.getWorker();
-            this.conn = conn;
-            this.handle = handle;
-        }
-
-        public int getRequestId() {
-            return requestId;
+            super(requestId, payload);
         }
 
         @Override
-        public boolean is(Class<? extends T> type) {
-            return type.isInstance(payload);
+        public void partialReply(T response, SendCallback callback) throws UnsupportedOperationException {
+            throw new UnsupportedOperationException("Partial replies are not supported by this message.");
         }
 
         @Override
-        public T get() {
-            return payload;
-        }
-
-        @Override
-        public <P extends T> P get(Class<P> type) {
-            return type.cast(payload);
-        }
-
-        @Override
-        public boolean mustReply() {
-            return mustReply == 0;
-        }
-
-        @Override
-        public void reply(T response) {
-            reply(response, null);
-        }
-
-        @Override
-        public void reply(T response, SendCallback callback) {
-            responded();
-
-            conn.reply(worker, requestId, response, callback);
-        }
-
-        @Override
-        public void replyPartial(T response) throws UnsupportedOperationException {
-            replyPartial(response, null);
-        }
-
-        @Override
-        public void replyPartial(T response, SendCallback callback) throws UnsupportedOperationException {
-            checkNotResponded();
-
-            conn.replyChunk(worker, requestId, response, callback);
-        }
-
-        @Override
-        public MessagingEndpoint<T> getEndpoint() {
-            return conn.getEndpoint();
-        }
-
-        @Override
-        public MessagingChannel<T> getChannel() {
-            return conn.getEndpoint().getChannel();
-        }
-
-        @Override
-        public void onComplete(MessagingProtocol message, Optional<Throwable> error, NetworkEndpoint<MessagingProtocol> endpoint) {
-            error.ifPresent(err ->
-                conn.notifyOnReplyFailure(handle, err)
-            );
+        public boolean isStreamRequest() {
+            return false;
         }
 
         @Override
         public Type getType() {
             return Type.REQUEST;
-        }
-
-        private void responded() {
-            if (!MUST_REPLY.compareAndSet(this, 0, 1)) {
-                throw new IllegalStateException("Message already responded [message=" + payload + ']');
-            }
-        }
-
-        private void checkNotResponded() {
-            if (!mustReply()) {
-                throw new IllegalStateException("Message already responded.");
-            }
-        }
-
-        @Override
-        public String toString() {
-            return getClass().getSimpleName() + "[payload=" + payload + ']';
         }
     }
 
@@ -331,7 +366,43 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class ResponseChunk<T> extends NoReplyMessage<T> implements Reply<T>, NetworkSendCallback<MessagingProtocol> {
+    static class StreamRequest<T> extends RequestBase<T> {
+        public StreamRequest(int requestId, T payload) {
+            super(requestId, payload);
+        }
+
+        @Override
+        public boolean isStreamRequest() {
+            return true;
+        }
+
+        @Override
+        public Type getType() {
+            return Type.STREAM_REQUEST;
+        }
+    }
+
+    static class AffinityStreamRequest<T> extends StreamRequest<T> {
+        private final int affinity;
+
+        public AffinityStreamRequest(int affinity, int requestId, T payload) {
+            super(requestId, payload);
+
+            this.affinity = affinity;
+        }
+
+        public int getAffinity() {
+            return affinity;
+        }
+
+        @Override
+        public Type getType() {
+            return Type.AFFINITY_STREAM_REQUEST;
+        }
+    }
+
+    static class ResponseChunk<T> extends NoReplyMessage<T>
+        implements Response<T>, NetworkSendCallback<MessagingProtocol> {
         private final int requestId;
 
         private final T payload;
@@ -442,7 +513,7 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class Response<T> extends MessagingProtocol implements Reply<T>, NetworkSendCallback<MessagingProtocol> {
+    static class FinalResponse<T> extends MessagingProtocol implements Response<T>, NetworkSendCallback<MessagingProtocol> {
         private final int requestId;
 
         private final T payload;
@@ -457,7 +528,7 @@ abstract class MessagingProtocol {
 
         private SendCallback callback;
 
-        public Response(int requestId, T payload) {
+        public FinalResponse(int requestId, T payload) {
             this.requestId = requestId;
             this.payload = payload;
         }
@@ -531,7 +602,7 @@ abstract class MessagingProtocol {
 
         @Override
         public Type getType() {
-            return Type.RESPONSE;
+            return Type.FINAL_RESPONSE;
         }
 
         @Override

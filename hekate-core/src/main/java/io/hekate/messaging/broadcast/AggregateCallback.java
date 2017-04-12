@@ -18,7 +18,7 @@ package io.hekate.messaging.broadcast;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.unicast.Reply;
+import io.hekate.messaging.unicast.Response;
 
 /**
  * Callback for {@link MessagingChannel#aggregate(Object, AggregateCallback) aggregate(...)} operation.
@@ -30,7 +30,7 @@ import io.hekate.messaging.unicast.Reply;
  * <ul>
  * <li>channel submits request to each of the target nodes in parallel</li>
  * <li>for each failed submission the {@link #onReplyFailure(Object, ClusterNode, Throwable)} method gets notified</li>
- * <li>for each successfully received response the {@link #onReplySuccess(Reply, ClusterNode)} method gets notified</li>
+ * <li>for each successfully received response the {@link #onReplySuccess(Response, ClusterNode)} method gets notified</li>
  * <li>for each response receiving failure the {@link #onReplyFailure(Object, ClusterNode, Throwable)} method gets notified</li>
  * <li>when all results are collected (either successful or failed) the {@link #onComplete(Throwable, AggregateResult)} method gets
  * called with an error parameter being {@code null} and an {@link AggregateResult} object containing all successful and partially failed
@@ -71,10 +71,10 @@ public interface AggregateCallback<T> {
      * sequence of callback methods notification.
      * </p>
      *
-     * @param reply Reply from the cluster node.
+     * @param rsp Response from the cluster node.
      * @param node Cluster node that sent the reply.
      */
-    default void onReplySuccess(Reply<T> reply, ClusterNode node) {
+    default void onReplySuccess(Response<T> rsp, ClusterNode node) {
         // No-op.
     }
 

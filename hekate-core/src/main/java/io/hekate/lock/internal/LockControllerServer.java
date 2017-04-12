@@ -487,7 +487,7 @@ class LockControllerServer {
     }
 
     private void replyPartial(Message<LockProtocol> msg, LockProtocol reply) {
-        msg.replyPartial(reply, err -> {
+        msg.partialReply(reply, err -> {
             if (err == null) {
                 if (DEBUG) {
                     log.debug("Successfully sent partial lock response [response={}, request={}]", reply, msg.get());

@@ -9,12 +9,12 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-class DefaultMessagingWorker implements MessagingWorker {
+class MessagingAffinityWorker implements MessagingWorker {
     private final ThreadPoolExecutor executor;
 
     private final ScheduledExecutorService timer;
 
-    public DefaultMessagingWorker(ThreadFactory factory, ScheduledExecutorService timer) {
+    public MessagingAffinityWorker(ThreadFactory factory, ScheduledExecutorService timer) {
         assert timer != null : "Timer is null.";
 
         this.timer = timer;

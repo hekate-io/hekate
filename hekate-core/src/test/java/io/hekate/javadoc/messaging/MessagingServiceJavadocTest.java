@@ -194,7 +194,7 @@ public class MessagingServiceJavadocTest extends HekateInstanceTestBase {
         throws MessagingFutureException, InterruptedException {
         // Start:unicast_request_sync
         // Execute request to the oldest node in the cluster and synchronously await for reply.
-        String reply = channel.forOldest().request("example request").getReply();
+        String reply = channel.forOldest().request("example request").getResponse();
         // End:unicast_request_sync
 
         assertNotNull(reply);

@@ -18,14 +18,13 @@ package io.hekate.messaging.internal;
 
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Utils;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 class MessagingExecutorAsync implements MessagingExecutor {
-    private final DefaultMessagingWorker[] affinityWorkers;
+    private final MessagingAffinityWorker[] affinityWorkers;
 
-    private final ForkJoinMessagingWorker nonAffinityWorker;
+    private final MessagingForkJoinWorker forkJoinWorker;
 
     private final int size;
 
@@ -35,13 +34,13 @@ class MessagingExecutorAsync implements MessagingExecutor {
 
         this.size = size;
 
-        affinityWorkers = new DefaultMessagingWorker[size];
+        affinityWorkers = new MessagingAffinityWorker[size];
 
         for (int i = 0; i < size; i++) {
-            affinityWorkers[i] = new DefaultMessagingWorker(factory, timer);
+            affinityWorkers[i] = new MessagingAffinityWorker(factory, timer);
         }
 
-        nonAffinityWorker = new ForkJoinMessagingWorker(size, factory);
+        forkJoinWorker = new MessagingForkJoinWorker(size, factory, timer);
     }
 
     @Override
@@ -50,8 +49,8 @@ class MessagingExecutorAsync implements MessagingExecutor {
     }
 
     @Override
-    public Executor executor() {
-        return nonAffinityWorker;
+    public MessagingWorker pooledWorker() {
+        return forkJoinWorker;
     }
 
     @Override
@@ -61,20 +60,20 @@ class MessagingExecutorAsync implements MessagingExecutor {
 
     @Override
     public void terminate() {
-        for (DefaultMessagingWorker worker : affinityWorkers) {
+        for (MessagingAffinityWorker worker : affinityWorkers) {
             worker.execute(worker::shutdown);
         }
 
-        nonAffinityWorker.shutdown();
+        forkJoinWorker.shutdown();
     }
 
     @Override
     public void awaitTermination() throws InterruptedException {
-        for (DefaultMessagingWorker worker : affinityWorkers) {
+        for (MessagingAffinityWorker worker : affinityWorkers) {
             worker.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         }
 
-        nonAffinityWorker.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        forkJoinWorker.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
     }
 
     @Override

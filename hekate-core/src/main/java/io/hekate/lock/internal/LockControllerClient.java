@@ -27,9 +27,9 @@ import io.hekate.lock.internal.LockProtocol.LockResponse;
 import io.hekate.lock.internal.LockProtocol.UnlockRequest;
 import io.hekate.lock.internal.LockProtocol.UnlockResponse;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.unicast.Reply;
 import io.hekate.messaging.unicast.ReplyDecision;
-import io.hekate.messaging.unicast.RequestCallback;
+import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.locks.ReentrantLock;
@@ -446,7 +446,7 @@ class LockControllerClient {
 
         LockRequest lockReq = new LockRequest(lockId, region, name, node, lockTimeout, withFeedback, threadId);
 
-        channel.affinityRequest(lockKey, lockReq, new RequestCallback<LockProtocol>() {
+        channel.affinityStreamRequest(lockKey, lockReq, new ResponseCallback<LockProtocol>() {
             @Override
             public ReplyDecision accept(Throwable err, LockProtocol reply) {
                 if (err == null) {
@@ -501,7 +501,7 @@ class LockControllerClient {
             }
 
             @Override
-            public void onComplete(Throwable err, Reply<LockProtocol> reply) {
+            public void onComplete(Throwable err, Response<LockProtocol> rsp) {
                 if (err != null && is(Status.LOCKING)) {
                     log.error("Failed to submit lock request [request={}]", lockReq, err);
                 }
@@ -512,7 +512,7 @@ class LockControllerClient {
     private void remoteUnlock() {
         UnlockRequest unlockReq = new UnlockRequest(lockId, region, name, node);
 
-        channel.affinityRequest(lockKey, unlockReq, new RequestCallback<LockProtocol>() {
+        channel.affinityStreamRequest(lockKey, unlockReq, new ResponseCallback<LockProtocol>() {
             @Override
             public ReplyDecision accept(Throwable err, LockProtocol reply) {
                 if (err == null) {
@@ -545,7 +545,7 @@ class LockControllerClient {
             }
 
             @Override
-            public void onComplete(Throwable err, Reply<LockProtocol> reply) {
+            public void onComplete(Throwable err, Response<LockProtocol> rsp) {
                 if (err != null && !is(Status.TERMINATED)) {
                     log.error("Failed to submit unlock request [request={}]", unlockReq, err);
                 }

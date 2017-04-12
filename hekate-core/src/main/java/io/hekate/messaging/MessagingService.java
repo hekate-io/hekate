@@ -30,7 +30,7 @@ import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.AggregateResult;
 import io.hekate.messaging.broadcast.BroadcastCallback;
 import io.hekate.messaging.unicast.LoadBalancer;
-import io.hekate.messaging.unicast.RequestCallback;
+import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.messaging.unicast.TooManyRoutesException;
 import java.util.List;
@@ -153,7 +153,7 @@ import java.util.List;
  * </p>
  *
  * <p>
- * ... or using a completely asynchronous callback-based approach (see {@link MessagingChannel#request(Object, RequestCallback)}):
+ * ... or using a completely asynchronous callback-based approach (see {@link MessagingChannel#request(Object, ResponseCallback)}):
  * ${source: messaging/MessagingServiceJavadocTest.java#unicast_request_async}
  * </p>
  *
@@ -267,7 +267,7 @@ import java.util.List;
  *
  * <p>
  * <b>NOTICE:</b> For {@link MessagingChannel#send(Object, SendCallback) send(...)} and {@link MessagingChannel#request(Object,
- * RequestCallback) request(...)} (unicast operations) it is important to make sure that there is no uncertainty in which node should
+ * ResponseCallback) request(...)} (unicast operations) it is important to make sure that there is no uncertainty in which node should
  * receive a message. If there are multiple receivers visible to a {@link MessagingChannel} instance then unicast operation will fail with
  * {@link TooManyRoutesException}. Besides channel topology filtering it is possible to
  * {@link MessagingChannel#withLoadBalancer(LoadBalancer) specify} an instance of {@link LoadBalancer} interface that can apply

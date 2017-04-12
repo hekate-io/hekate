@@ -19,7 +19,7 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.AggregateResult;
-import io.hekate.messaging.unicast.Reply;
+import io.hekate.messaging.unicast.Response;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.Collections;
@@ -36,7 +36,7 @@ class AggregateContext<T> implements AggregateResult<T> {
 
     private final T request;
 
-    private final Map<ClusterNode, Reply<T>> responses;
+    private final Map<ClusterNode, Response<T>> responses;
 
     @ToStringIgnore
     private final AggregateCallback<T> callback;
@@ -93,13 +93,13 @@ class AggregateContext<T> implements AggregateResult<T> {
     }
 
     @Override
-    public Map<ClusterNode, Reply<T>> getReplies() {
+    public Map<ClusterNode, Response<T>> getReplies() {
         // Safe to access in non-synchronized context since this method can be called only after all responses were received.
         return responses;
     }
 
     @Override
-    public Reply<T> getReply(ClusterNode node) {
+    public Response<T> getReply(ClusterNode node) {
         // Safe to access in non-synchronized context since this method can be called only after all responses were received.
         return responses.get(node);
     }
@@ -112,13 +112,13 @@ class AggregateContext<T> implements AggregateResult<T> {
         }
     }
 
-    boolean onReplySuccess(ClusterNode node, Reply<T> reply) {
+    boolean onReplySuccess(ClusterNode node, Response<T> rsp) {
         boolean ready = false;
 
         // Do not count partial replies.
-        if (!reply.isPartial()) {
+        if (!rsp.isPartial()) {
             synchronized (this) {
-                responses.put(node, reply);
+                responses.put(node, rsp);
 
                 if (isReady()) {
                     ready = true;
@@ -127,7 +127,7 @@ class AggregateContext<T> implements AggregateResult<T> {
         }
 
         try {
-            callback.onReplySuccess(reply, node);
+            callback.onReplySuccess(rsp, node);
         } catch (RuntimeException | Error e) {
             log.error("Got an unexpected runtime error while notifying aggregation callback.", e);
         }

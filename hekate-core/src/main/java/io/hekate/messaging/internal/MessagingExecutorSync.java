@@ -22,14 +22,14 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 class MessagingExecutorSync implements MessagingExecutor {
-    private final DefaultMessagingWorker worker;
+    private final MessagingAffinityWorker worker;
 
     public MessagingExecutorSync(ThreadFactory threadFactory, ScheduledExecutorService timer) {
         ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, threadFactory);
 
         executor.setRemoveOnCancelPolicy(true);
 
-        worker = new DefaultMessagingWorker(threadFactory, timer);
+        worker = new MessagingAffinityWorker(threadFactory, timer);
     }
 
     @Override
@@ -38,7 +38,7 @@ class MessagingExecutorSync implements MessagingExecutor {
     }
 
     @Override
-    public MessagingWorker executor() {
+    public MessagingWorker pooledWorker() {
         return worker;
     }
 

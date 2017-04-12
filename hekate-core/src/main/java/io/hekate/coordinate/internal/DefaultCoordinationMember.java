@@ -25,9 +25,9 @@ import io.hekate.coordinate.CoordinationRequestCallback;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.unicast.Reply;
 import io.hekate.messaging.unicast.ReplyDecision;
-import io.hekate.messaging.unicast.RequestCallback;
+import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.ResponseCallback;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -130,7 +130,7 @@ class DefaultCoordinationMember implements CoordinationMember {
 
             CoordinationProtocol.Request req = new CoordinationProtocol.Request(processName, from, topologyHash, request);
 
-            channel.affinityRequest(processName, req, new RequestCallback<CoordinationProtocol>() {
+            channel.affinityRequest(processName, req, new ResponseCallback<CoordinationProtocol>() {
                 @Override
                 public ReplyDecision accept(Throwable err, CoordinationProtocol reply) {
                     if (err != null || reply instanceof CoordinationProtocol.Reject) {
@@ -145,7 +145,7 @@ class DefaultCoordinationMember implements CoordinationMember {
                 }
 
                 @Override
-                public void onComplete(Throwable err, Reply<CoordinationProtocol> reply) {
+                public void onComplete(Throwable err, Response<CoordinationProtocol> rsp) {
                     unregister(future);
 
                     if (DEBUG) {

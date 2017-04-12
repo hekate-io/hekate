@@ -18,10 +18,12 @@ package io.hekate.messaging.internal;
 
 import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
+import io.hekate.messaging.internal.MessagingProtocol.AffinityStreamRequest;
+import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.internal.MessagingProtocol.Request;
-import io.hekate.messaging.internal.MessagingProtocol.Response;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
+import io.hekate.messaging.internal.MessagingProtocol.StreamRequest;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkFuture;
 
@@ -40,9 +42,9 @@ class InMemoryConnection<T> extends MessagingConnectionBase<T> {
         Notification<T> msg;
 
         if (ctx.hasAffinity()) {
-            msg = new AffinityNotification<>(ctx.getAffinity(), ctx.getMessage());
+            msg = new AffinityNotification<>(ctx.affinity(), ctx.message());
         } else {
-            msg = new Notification<>(ctx.getMessage());
+            msg = new Notification<>(ctx.message());
         }
 
         if (callback != null) {
@@ -51,7 +53,7 @@ class InMemoryConnection<T> extends MessagingConnectionBase<T> {
 
         onAsyncEnqueue();
 
-        ctx.getWorker().execute(() -> {
+        ctx.worker().execute(() -> {
             onAsyncDequeue();
 
             doReceiveNotification(msg);
@@ -59,23 +61,44 @@ class InMemoryConnection<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void sendRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
+    public void sendSingleRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
         RequestHandle<T> handle = registerRequest(ctx, callback);
 
         Request<T> msg;
 
         if (ctx.hasAffinity()) {
-            msg = new AffinityRequest<>(ctx.getAffinity(), handle.getId(), ctx.getMessage());
+            msg = new AffinityRequest<>(ctx.affinity(), handle.getId(), ctx.message());
         } else {
-            msg = new Request<>(handle.getId(), ctx.getMessage());
+            msg = new Request<>(handle.getId(), ctx.message());
         }
 
         onAsyncEnqueue();
 
-        ctx.getWorker().execute(() -> {
+        ctx.worker().execute(() -> {
             onAsyncDequeue();
 
-            doReceiveRequest(msg, ctx.getWorker());
+            doReceiveRequest(msg, ctx.worker());
+        });
+    }
+
+    @Override
+    public void sendStreamRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
+        RequestHandle<T> handle = registerRequest(ctx, callback);
+
+        StreamRequest<T> msg;
+
+        if (ctx.hasAffinity()) {
+            msg = new AffinityStreamRequest<>(ctx.affinity(), handle.getId(), ctx.message());
+        } else {
+            msg = new StreamRequest<>(handle.getId(), ctx.message());
+        }
+
+        onAsyncEnqueue();
+
+        ctx.worker().execute(() -> {
+            onAsyncDequeue();
+
+            doReceiveRequest(msg, ctx.worker());
         });
     }
 
@@ -105,7 +128,7 @@ class InMemoryConnection<T> extends MessagingConnectionBase<T> {
         RequestHandle<T> handle = requests().get(requestId);
 
         if (handle != null) {
-            Response<T> msg = new Response<>(requestId, response);
+            FinalResponse<T> msg = new MessagingProtocol.FinalResponse<>(requestId, response);
 
             if (callback != null) {
                 callback.onComplete(null);

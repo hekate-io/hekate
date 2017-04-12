@@ -2,18 +2,24 @@ package io.hekate.messaging.internal;
 
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Utils;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-class ForkJoinMessagingWorker implements Executor {
+class MessagingForkJoinWorker implements MessagingWorker {
     private final ExecutorService executor;
 
-    public ForkJoinMessagingWorker(int parallelism, HekateThreadFactory factory) {
+    private final ScheduledExecutorService timer;
+
+    public MessagingForkJoinWorker(int parallelism, HekateThreadFactory factory, ScheduledExecutorService timer) {
         assert parallelism > 0 : "Parallelism must be above zero [parallelism=" + parallelism + ']';
         assert factory != null : "Thread Factory is null.";
+        assert timer != null : "Timer is null.";
+
+        this.timer = timer;
 
         executor = new ForkJoinPool(parallelism, factory, null, true);
     }
@@ -31,6 +37,11 @@ class ForkJoinMessagingWorker implements Executor {
         if (fallback) {
             Utils.fallbackExecutor().execute(task);
         }
+    }
+
+    @Override
+    public Future<?> executeDeferred(long delay, Runnable task) {
+        return timer.schedule(() -> execute(task), delay, TimeUnit.MILLISECONDS);
     }
 
     public void shutdown() {

@@ -29,49 +29,49 @@ import java.util.concurrent.TimeoutException;
  *
  * @see MessagingChannel#request(Object)
  */
-public class RequestFuture<T> extends MessagingFuture<Reply<T>> {
+public class ResponseFuture<T> extends MessagingFuture<Response<T>> {
     /**
-     * Awaits for the asynchronous operation to complete within the timeout and returns the {@link Reply#get() payload} of reply. Throws
+     * Awaits for the asynchronous operation to complete within the timeout and returns the {@link Response#get() payload} of reply. Throws
      * {@link TimeoutException} if timeout happens before operation results are ready.
      *
      * @param timeout Time to wait for operation result.
      * @param unit Time unit of the timeout argument
      *
-     * @return Reply.
+     * @return Response.
      *
      * @throws MessagingFutureException Signals that request operation failed.
      * @throws TimeoutException Signals that timeout happened.
      * @throws InterruptedException Signals that thread was interrupted while awaiting for operation completion.
      */
-    public T getReply(long timeout, TimeUnit unit) throws MessagingFutureException, InterruptedException, TimeoutException {
+    public T getResponse(long timeout, TimeUnit unit) throws MessagingFutureException, InterruptedException, TimeoutException {
         return get(timeout, unit).get();
     }
 
     /**
-     * Awaits for the asynchronous operation to complete and returns the {@link Reply#get() payload} of reply.
+     * Awaits for the asynchronous operation to complete and returns the {@link Response#get() payload} of reply.
      *
-     * @return Reply.
+     * @return Response.
      *
      * @throws MessagingFutureException Signals that request operation failed.
      * @throws InterruptedException Signals that thread was interrupted while awaiting for operation completion.
      */
-    public T getReply() throws MessagingFutureException, InterruptedException {
+    public T getResponse() throws MessagingFutureException, InterruptedException {
         return get().get();
     }
 
     /**
-     * Uninterruptedly awaits for the asynchronous operation to complete and returns the {@link Reply#get() payload} of reply.
+     * Uninterruptedly awaits for the asynchronous operation to complete and returns the {@link Response#get() payload} of reply.
      *
      * <p>
      * <b>Note:</b> if thread gets interrupted while awaiting for operation to complete then such interruption will be ignored and thread's
      * {@link Thread#isInterrupted() interrupted} flag will be set to {@code true} after operation completion.
      * </p>
      *
-     * @return Reply.
+     * @return Response.
      *
      * @throws MessagingFutureException Signals that request operation failed.
      */
-    public T getReplyUninterruptedly() throws MessagingFutureException {
+    public T getResponseUninterruptedly() throws MessagingFutureException {
         return getUninterruptedly().get();
     }
 }

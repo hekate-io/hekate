@@ -18,7 +18,7 @@ package io.hekate.messaging.broadcast;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.unicast.Reply;
+import io.hekate.messaging.unicast.Response;
 import java.util.Map;
 import java.util.Set;
 
@@ -93,16 +93,16 @@ public interface AggregateResult<T> {
      *
      * @see #getReply(ClusterNode)
      */
-    Map<ClusterNode, Reply<T>> getReplies();
+    Map<ClusterNode, Response<T>> getReplies();
 
     /**
      * Returns a reply for the specified cluster node or {@code null} if there was no successful reply from that node.
      *
      * @param node Cluster node (must be one of {@link #getNodes()}, otherwise results will be unpredictable).
      *
-     * @return Reply.
+     * @return Response.
      *
      * @see #getReplies()
      */
-    Reply<T> getReply(ClusterNode node);
+    Response<T> getReply(ClusterNode node);
 }
