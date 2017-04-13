@@ -214,17 +214,24 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
             nodes.add(createInstanceWithElection().join());
             nodes.add(createInstanceWithElection().join());
 
-            // Check that only single leader exists.
+            busyWait("Same leader", () -> {
+                Set<ClusterNode> leaders = new HashSet<>();
+
+                for (HekateTestInstance node : nodes) {
+                    leaders.add(get(node.get(ElectionService.class).leader(GROUP)));
+                }
+
+                return leaders.size() == 1;
+            });
+
             Set<ClusterNode> leaders = new HashSet<>();
 
             for (HekateTestInstance node : nodes) {
                 ClusterNode leader = get(node.get(ElectionService.class).leader(GROUP));
 
-                assertTrue(nodes.stream().anyMatch(n -> n.getNode().equals(leader)));
-
                 leaders.add(leader);
 
-                assertEquals(leaders.toString(), 1, leaders.size());
+                assertTrue(nodes.stream().anyMatch(n -> n.getNode().equals(leader)));
 
                 CandidateMock candidate = getCandidate(node);
 
