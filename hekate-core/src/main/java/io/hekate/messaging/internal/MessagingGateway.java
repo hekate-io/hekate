@@ -185,7 +185,7 @@ class MessagingGateway<T> {
     private final NetworkConnector<MessagingProtocol> net;
 
     @ToStringIgnore
-    private final ClusterView rootCluster;
+    private final ClusterView cluster;
 
     @ToStringIgnore
     private final MessageReceiver<T> receiver;
@@ -243,7 +243,7 @@ class MessagingGateway<T> {
         this.name = name;
         this.net = net;
         this.localNode = localNode;
-        this.rootCluster = cluster;
+        this.cluster = cluster;
         this.receiver = receiver;
         this.nioThreads = nioThreads;
         this.async = async;
@@ -253,7 +253,7 @@ class MessagingGateway<T> {
         this.checkIdle = checkIdle;
         this.onBeforeClose = onBeforeClose;
 
-        this.channel = new DefaultMessagingChannel<>(this, rootCluster, loadBalancer, failoverPolicy, defaultTimeout);
+        this.channel = new DefaultMessagingChannel<>(this, this.cluster, loadBalancer, failoverPolicy, defaultTimeout);
     }
 
     public MessagingChannelId getId() {
@@ -411,8 +411,8 @@ class MessagingGateway<T> {
                     } else if (err instanceof UnknownRouteException) {
                         // Special case for unknown routes.
                         //-----------------------------------------------
-                        // Can happen in some rare cases if node leaves the cluster at the same time with this operation.
-                        // We exclude such nodes from the operation's results as if it had left the cluster right before we event tried.
+                        // It may happen that in some rare cases the node leaves the cluster at the same time with this operation.
+                        // We exclude such a node from the results of the operation, as if there was no such node at all.
                         completed = aggregate.forgetNode(node);
                     } else {
                         completed = aggregate.onReplyFailure(node, err);
@@ -779,7 +779,7 @@ class MessagingGateway<T> {
 
         try {
             if (!closed) {
-                ClusterTopology newTopology = rootCluster.getTopology();
+                ClusterTopology newTopology = cluster.getTopology();
 
                 if (channelTopology == null || channelTopology.getVersion() < newTopology.getVersion()) {
                     if (DEBUG) {
@@ -959,7 +959,7 @@ class MessagingGateway<T> {
 
                 if (client == null) {
                     // Post-check that topology was not changed during routing.
-                    ClusterTopology currentTopology = rootCluster.getTopology();
+                    ClusterTopology currentTopology = cluster.getTopology();
 
                     if (channelTopology != null && channelTopology.getVersion() == currentTopology.getVersion()) {
                         Throwable cause = prevErr != null ? prevErr.getError() : null;
@@ -1014,26 +1014,7 @@ class MessagingGateway<T> {
         FailoverPolicy policy = ctx.opts().failover();
 
         if (policy != null && isRecoverable(cause)) {
-            int attempt;
-            FailoverRoutingPolicy prevRouting;
-            Set<ClusterNode> failedNodes;
-
-            if (prevErr == null) {
-                attempt = 0;
-                prevRouting = RETRY_SAME_NODE;
-                failedNodes = Collections.singleton(failed);
-            } else {
-                attempt = prevErr.getAttempt() + 1;
-                prevRouting = prevErr.getRouting();
-
-                failedNodes = new HashSet<>(prevErr.getFailedNodes());
-
-                failedNodes.add(failed);
-
-                failedNodes = unmodifiableSet(failedNodes);
-            }
-
-            DefaultFailoverContext failoverCtx = new DefaultFailoverContext(attempt, cause, failed, failedNodes, prevRouting);
+            DefaultFailoverContext failoverCtx = newFailoverContext(cause, failed, prevErr);
 
             // Apply failover policy.
             try {
@@ -1083,13 +1064,36 @@ class MessagingGateway<T> {
         }
     }
 
+    private DefaultFailoverContext newFailoverContext(Throwable cause, ClusterNode failed, FailureInfo prevErr) {
+        int attempt;
+        FailoverRoutingPolicy prevRouting;
+        Set<ClusterNode> failedNodes;
+
+        if (prevErr == null) {
+            attempt = 0;
+            prevRouting = RETRY_SAME_NODE;
+            failedNodes = Collections.singleton(failed);
+        } else {
+            attempt = prevErr.getAttempt() + 1;
+            prevRouting = prevErr.getRouting();
+
+            failedNodes = new HashSet<>(prevErr.getFailedNodes());
+
+            failedNodes.add(failed);
+
+            failedNodes = unmodifiableSet(failedNodes);
+        }
+
+        return new DefaultFailoverContext(attempt, cause, failed, failedNodes, prevRouting);
+    }
+
     private boolean isRecoverable(Throwable cause) {
         return !(cause instanceof MessagingChannelClosedException)
             && !(cause instanceof CodecException);
     }
 
     private MessagingClient<T> createClient(ClusterNode node) {
-        if (node.equals(localNode)) {
+        if (localNode.equals(node)) {
             return new InMemoryMessagingClient<>(localNode, this);
         } else {
             return new NetworkMessagingClient<>(name, node, net, this, checkIdle);
