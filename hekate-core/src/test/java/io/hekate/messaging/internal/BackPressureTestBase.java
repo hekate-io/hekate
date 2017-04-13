@@ -17,14 +17,20 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.core.internal.util.Utils;
+import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingOverflowPolicy;
+import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.util.format.ToString;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public abstract class BackPressureTestBase extends MessagingServiceTestBase {
@@ -87,5 +93,29 @@ public abstract class BackPressureTestBase extends MessagingServiceTestBase {
 
     protected int getLowWatermarkBounds() {
         return Math.max(1, lowWatermark);
+    }
+
+    protected void assertBackPressureOnPartialReply(Message<String> msg) throws Exception {
+        assertTrue(msg.mustReply());
+
+        CompletableFuture<Throwable> errFuture = new CompletableFuture<>();
+
+        msg.partialReply("fail-on-back-pressure", errFuture::complete);
+
+        Throwable err = get(errFuture);
+
+        assertNotNull(err);
+        assertTrue(err.toString(), Utils.isCausedBy(err, MessageQueueOverflowException.class));
+    }
+
+    protected List<ResponseFuture<String>> requestUpToHighWatermark(MessagingChannel<String> channel) {
+        List<ResponseFuture<String>> responses = new ArrayList<>();
+
+        // Request up to high watermark in order to enable back pressure.
+        for (int i = 0; i < highWatermark; i++) {
+            responses.add(channel.forRemotes().request("request-" + i));
+        }
+
+        return responses;
     }
 }

@@ -16,35 +16,25 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.cluster.ClusterNode;
-import io.hekate.core.internal.util.Utils;
 import io.hekate.messaging.Message;
-import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.broadcast.AggregateFuture;
-import io.hekate.messaging.broadcast.BroadcastFuture;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.stream.Stream;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.Parameterized.Parameters;
 
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
-public class BroadcastBackPressureTest extends BackPressureTestBase {
+public class BackPressureAggregateTest extends BackPressureTestBase {
     public static final int RECEIVERS = 2;
 
-    public BroadcastBackPressureTest(BackPressureTestContext ctx) {
+    public BackPressureAggregateTest(BackPressureTestContext ctx) {
         super(ctx);
     }
 
@@ -61,54 +51,7 @@ public class BroadcastBackPressureTest extends BackPressureTestBase {
     }
 
     @Test
-    // TODO: Disabled back-pressure test for broadcast operations.
-    @Ignore("Temporary disabled due to test instability. Need to refactor logic of this test.")
-    public void testBroadcast() throws Exception {
-        CountDownLatch resumeReceive = new CountDownLatch(1);
-
-        createChannel(c -> useBackPressure(c).withReceiver(msg -> {
-            if (!msg.get().equals("init")) {
-                await(resumeReceive);
-            }
-        })).join();
-
-        createChannel(c -> useBackPressure(c).withReceiver(msg -> {
-            if (!msg.get().equals("init")) {
-                await(resumeReceive);
-            }
-        })).join();
-
-        MessagingChannel<String> sender = createChannel(this::useBackPressure).join().get().forRemotes();
-
-        // Ensure that connection to each node is established.
-        get(sender.broadcast("init"));
-
-        BroadcastFuture<String> future = null;
-
-        try {
-            for (int step = 0; step < 2000000; step++) {
-                future = sender.broadcast("message-" + step);
-
-                if (future.isDone() && !future.get().isSuccess()) {
-                    say("Completed after " + step + " steps.");
-
-                    break;
-                }
-            }
-        } finally {
-            resumeReceive.countDown();
-        }
-
-        assertNotNull(future);
-
-        Map<ClusterNode, Throwable> errors = future.get().getErrors();
-
-        assertFalse(errors.isEmpty());
-        assertTrue(errors.toString(), errors.values().stream().allMatch(e -> Utils.isCausedBy(e, MessageQueueOverflowException.class)));
-    }
-
-    @Test
-    public void testAggregate() throws Exception {
+    public void test() throws Exception {
         List<Message<String>> requests1 = new CopyOnWriteArrayList<>();
         List<Message<String>> requests2 = new CopyOnWriteArrayList<>();
 
@@ -175,7 +118,7 @@ public class BroadcastBackPressureTest extends BackPressureTestBase {
     }
 
     @Test
-    public void testAggregateFailure() throws Exception {
+    public void testFailure() throws Exception {
         List<Message<String>> requests1 = new CopyOnWriteArrayList<>();
         List<Message<String>> requests2 = new CopyOnWriteArrayList<>();
 

@@ -19,14 +19,14 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class BroadcastFailoverTest extends MessagingServiceTestBase {
+public class FailoverAggregateTest extends MessagingServiceTestBase {
     private AtomicInteger failures = new AtomicInteger();
 
     private List<TestChannel> channels;
 
     private TestChannel sender;
 
-    public BroadcastFailoverTest(MessagingTestContext ctx) {
+    public FailoverAggregateTest(MessagingTestContext ctx) {
         super(ctx);
     }
 
@@ -46,7 +46,7 @@ public class BroadcastFailoverTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testFailoverSuccess() throws Exception {
+    public void testSuccess() throws Exception {
         repeat(3, i -> {
             int attempts = i + 1;
 
@@ -68,7 +68,7 @@ public class BroadcastFailoverTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testFailoverDelay() throws Exception {
+    public void testDelay() throws Exception {
         int failoverDelay = 200;
 
         failures.set(channels.size() * 3);
@@ -104,7 +104,7 @@ public class BroadcastFailoverTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testPartialFailoverSuccess() throws Exception {
+    public void testPartialSuccess() throws Exception {
         repeat(2, i -> {
             int attempts = i + 1;
 
@@ -126,7 +126,7 @@ public class BroadcastFailoverTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testFailoverFailure() throws Exception {
+    public void testFailure() throws Exception {
         repeat(3, i -> {
             int attempts = i + 1;
 
@@ -149,7 +149,7 @@ public class BroadcastFailoverTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testPartialFailoverFailure() throws Exception {
+    public void testPartialFailure() throws Exception {
         repeat(3, i -> {
             int attempts = i + 1;
 

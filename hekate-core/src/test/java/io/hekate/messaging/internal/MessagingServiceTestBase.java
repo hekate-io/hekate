@@ -19,6 +19,7 @@ package io.hekate.messaging.internal;
 import io.hekate.HekateInstanceContextTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.core.HekateTestInstance;
+import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.metrics.MetricsServiceFactory;
@@ -28,6 +29,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.runners.Parameterized.Parameters;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public abstract class MessagingServiceTestBase extends HekateInstanceContextTestBase {
     public interface ChannelConfigurer {
@@ -51,9 +57,9 @@ public abstract class MessagingServiceTestBase extends HekateInstanceContextTest
 
     public static final String TEST_NODE_ROLE = "test_comm";
 
-    private final int workerThreads;
+    protected final int workerThreads;
 
-    private final int nioThreads;
+    protected final int nioThreads;
 
     public MessagingServiceTestBase(MessagingTestContext ctx) {
         super(ctx);
@@ -153,7 +159,59 @@ public abstract class MessagingServiceTestBase extends HekateInstanceContextTest
         return cfg;
     }
 
-    protected int extractAffinityKey(String message) {
-        return Integer.parseInt(message.substring(0, message.indexOf(':')));
+    protected void assertResponded(Message<String> msg) {
+        assertFalse(msg.mustReply());
+
+        try {
+            msg.reply("invalid");
+
+            fail("Failure was expected.");
+        } catch (IllegalStateException e) {
+            assertTrue(e.getMessage().startsWith("Message already responded"));
+        }
+
+        try {
+            msg.reply("invalid", new SendCallbackMock());
+
+            fail("Failure was expected.");
+        } catch (IllegalStateException e) {
+            assertTrue(e.getMessage().startsWith("Message already responded"));
+        }
+
+        if (msg.isStreamRequest()) {
+            try {
+                msg.partialReply("invalid", new SendCallbackMock());
+
+                fail("Failure was expected.");
+            } catch (IllegalStateException e) {
+                assertTrue(e.getMessage().startsWith("Message already responded"));
+            }
+        }
+    }
+
+    protected void assertResponseUnsupported(Message<String> msg) {
+        try {
+            msg.reply("invalid");
+
+            fail("Failure was expected.");
+        } catch (UnsupportedOperationException e) {
+            assertEquals("Reply is not supported by this message.", e.getMessage());
+        }
+
+        try {
+            msg.reply("invalid", new SendCallbackMock());
+
+            fail("Failure was expected.");
+        } catch (UnsupportedOperationException e) {
+            assertEquals("Reply is not supported by this message.", e.getMessage());
+        }
+
+        try {
+            msg.partialReply("invalid", new SendCallbackMock());
+
+            fail("Failure was expected.");
+        } catch (UnsupportedOperationException e) {
+            assertEquals("Reply is not supported by this message.", e.getMessage());
+        }
     }
 }

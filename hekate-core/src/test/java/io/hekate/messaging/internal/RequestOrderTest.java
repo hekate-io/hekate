@@ -32,8 +32,8 @@ import static org.junit.Assert.assertEquals;
 
 // TODO: Implement strict ordering of messages.
 @Ignore("Disabled unless strict ordering of messaging is supported.")
-public class UnicastOrderTest extends MessagingServiceTestBase {
-    public UnicastOrderTest(MessagingTestContext ctx) {
+public class RequestOrderTest extends MessagingServiceTestBase {
+    public RequestOrderTest(MessagingTestContext ctx) {
         super(ctx);
     }
 

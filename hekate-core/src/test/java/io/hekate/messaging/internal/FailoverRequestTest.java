@@ -1,19 +1,3 @@
-/*
- * Copyright 2017 The Hekate Project
- *
- * The Hekate Project licenses this file to you under the Apache License,
- * version 2.0 (the "License"); you may not use this file except in compliance
- * with the License. You may obtain a copy of the License at:
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
- */
-
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNodeId;
@@ -36,70 +20,12 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class UnicastFailoverTest extends MessagingServiceTestBase {
-    private final AtomicInteger failures = new AtomicInteger();
-
-    private TestChannel sender;
-
-    private TestChannel receiver;
-
-    private MessagingChannel<String> toSelf;
-
-    private MessagingChannel<String> toRemote;
-
-    public UnicastFailoverTest(MessagingTestContext ctx) {
+public class FailoverRequestTest extends FailoverTestBase {
+    public FailoverRequestTest(MessagingTestContext ctx) {
         super(ctx);
-    }
-
-    @Override
-    public void setUp() throws Exception {
-        super.setUp();
-
-        List<TestChannel> channels = createAndJoinChannels(2, c -> c.withReceiver(msg -> {
-            if (failures.getAndDecrement() > 0) {
-                throw TEST_ERROR;
-            }
-
-            if (msg.mustReply()) {
-                msg.reply(msg.get() + "reply");
-            }
-        }));
-
-        awaitForChannelsTopology(channels);
-
-        sender = channels.get(0);
-
-        receiver = channels.get(1);
-
-        toSelf = sender.get().forNode(sender.getNodeId());
-        toRemote = sender.get().forNode(receiver.getNodeId());
-    }
-
-    @Test
-    public void testContext() throws Exception {
-        List<FailoverContext> contexts = Collections.synchronizedList(new ArrayList<>());
-
-        failures.set(3);
-
-        toRemote.withFailover(ctx -> {
-            contexts.add(ctx);
-
-            return ctx.retry();
-        }).request("test--1").getResponse(3, TimeUnit.SECONDS);
-
-        assertEquals(3, contexts.size());
-
-        for (int i = 0; i < contexts.size(); i++) {
-            FailoverContext ctx = contexts.get(i);
-
-            assertEquals(i, ctx.getAttempt());
-            assertSame(ClosedChannelException.class, ctx.getError().getClass());
-            assertEquals(receiver.getInstance().getNode(), ctx.getFailedNode());
-        }
     }
 
     @Test
@@ -170,37 +96,37 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testRequestToRemoteFailoverSuccess() throws Exception {
-        doTestRequestFailoverSuccess(toRemote);
+    public void testRemoteFailoverSuccess() throws Exception {
+        doFailoverSuccess(toRemote);
     }
 
     @Test
-    public void testRequestToSelfFailoverSuccess() throws Exception {
-        doTestRequestFailoverSuccess(toSelf);
+    public void testSelfFailoverSuccess() throws Exception {
+        doFailoverSuccess(toSelf);
     }
 
     @Test
-    public void testRequestToRemoteFailoverDelay() throws Exception {
-        doTestRequestFailoverDelay(toRemote);
+    public void testRemoteFailoverDelay() throws Exception {
+        doFailoverDelay(toRemote);
     }
 
     @Test
-    public void testRequestToSelfFailoverDelay() throws Exception {
-        doTestRequestFailoverDelay(toSelf);
+    public void testSelfFailoverDelay() throws Exception {
+        doFailoverDelay(toSelf);
     }
 
     @Test
-    public void testRequestToRemoteFailoverFailure() throws Exception {
-        doTestRequestFailoverFailure(toRemote, ClosedChannelException.class);
+    public void testRemoteFailoverFailure() throws Exception {
+        doFailoverFailure(toRemote, ClosedChannelException.class);
     }
 
     @Test
-    public void testRequestToSelfFailoverFailure() throws Exception {
-        doTestRequestFailoverFailure(toSelf, AssertionError.class);
+    public void testSelfFailoverFailure() throws Exception {
+        doFailoverFailure(toSelf, AssertionError.class);
     }
 
     @Test
-    public void testRequestNoRoutingFailover() throws Exception {
+    public void testNoFailoverOfRoutingErrors() throws Exception {
         AtomicInteger failoverCalls = new AtomicInteger();
 
         ClusterNodeId unknown = newNodeId();
@@ -213,29 +139,6 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
                     return context.retry().withReRoute();
                 })
                 .request("error").getResponse(3, TimeUnit.SECONDS);
-
-            fail("Error was expected.");
-        } catch (MessagingFutureException e) {
-            assertTrue(getStacktrace(e), e.isCausedBy(UnknownRouteException.class));
-        }
-
-        assertEquals(0, failoverCalls.get());
-    }
-
-    @Test
-    public void testSendNoRoutingFailover() throws Exception {
-        AtomicInteger failoverCalls = new AtomicInteger();
-
-        ClusterNodeId unknown = newNodeId();
-
-        try {
-            get(sender.get().forNode(unknown)
-                .withFailover(context -> {
-                    failoverCalls.incrementAndGet();
-
-                    return context.retry().withReRoute();
-                })
-                .send("error"));
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
@@ -274,7 +177,7 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
         return contexts;
     }
 
-    private void doTestRequestFailoverSuccess(MessagingChannel<String> channel) throws Exception {
+    private void doFailoverSuccess(MessagingChannel<String> channel) throws Exception {
         repeat(3, i -> {
             int attempts = i + 1;
 
@@ -294,7 +197,7 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
         });
     }
 
-    private void doTestRequestFailoverDelay(MessagingChannel<String> channel) throws Exception {
+    private void doFailoverDelay(MessagingChannel<String> channel) throws Exception {
         int failoverDelay = 200;
 
         failures.set(3);
@@ -326,7 +229,7 @@ public class UnicastFailoverTest extends MessagingServiceTestBase {
         }
     }
 
-    private void doTestRequestFailoverFailure(MessagingChannel<String> channel, Class<? extends Throwable> errorType) throws Exception {
+    private void doFailoverFailure(MessagingChannel<String> channel, Class<? extends Throwable> errorType) throws Exception {
         repeat(3, i -> {
             int attempts = i + 1;
 

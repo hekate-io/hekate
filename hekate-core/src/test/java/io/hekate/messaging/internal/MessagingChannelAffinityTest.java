@@ -19,7 +19,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
 
-public class MessagingAffinityTest extends MessagingServiceTestBase {
+public class MessagingChannelAffinityTest extends MessagingServiceTestBase {
     private static class AffinityCollector {
         private final Map<Integer, List<Map.Entry<Integer, Thread>>> callbackBuf = new ConcurrentHashMap<>();
 
@@ -71,7 +71,7 @@ public class MessagingAffinityTest extends MessagingServiceTestBase {
         }
     }
 
-    public MessagingAffinityTest(MessagingTestContext ctx) {
+    public MessagingChannelAffinityTest(MessagingTestContext ctx) {
         super(ctx);
     }
 

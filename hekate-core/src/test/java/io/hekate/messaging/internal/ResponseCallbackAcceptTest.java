@@ -27,14 +27,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class UnicastRequestAcceptanceTest extends MessagingServiceTestBase {
+public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
     private final AtomicInteger failures = new AtomicInteger();
 
     private TestChannel sender;
 
     private TestChannel receiver;
 
-    public UnicastRequestAcceptanceTest(MessagingTestContext ctx) {
+    public ResponseCallbackAcceptTest(MessagingTestContext ctx) {
         super(ctx);
     }
 
