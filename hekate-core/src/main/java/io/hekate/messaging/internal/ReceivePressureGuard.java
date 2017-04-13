@@ -22,7 +22,7 @@ import io.hekate.util.format.ToStringIgnore;
 import java.util.IdentityHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-class ReceiveBackPressure {
+class ReceivePressureGuard {
     private final int loMark;
 
     private final int hiMark;
@@ -35,7 +35,7 @@ class ReceiveBackPressure {
     @ToStringIgnore
     private final Object mux = new Object();
 
-    public ReceiveBackPressure(int loMark, int hiMark) {
+    public ReceivePressureGuard(int loMark, int hiMark) {
         assert hiMark > 0 : "High watermark must be above zero.";
         assert loMark < hiMark : "Low watermark must less than high watermark [low=" + loMark + ", high=" + hiMark + ']';
 

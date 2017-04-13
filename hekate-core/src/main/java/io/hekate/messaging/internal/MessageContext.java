@@ -52,7 +52,7 @@ class MessageContext<T> {
     }
 
     public boolean hasAffinity() {
-        return affinity >= 0;
+        return affinityKey != null;
     }
 
     public int affinity() {

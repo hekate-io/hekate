@@ -380,8 +380,8 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         MetricsCallback channelMetrics = metrics != null ? new MetricsCallback(name, metrics) : null;
 
         // Prepare back pressure guards.
-        SendBackPressure sendBackPressure = null;
-        ReceiveBackPressure receiveBackPressure = null;
+        SendPressureGuard sendPressureGuard = null;
+        ReceivePressureGuard receivePressureGuard = null;
 
         if (pressureCfg != null) {
             int inHiWatermark = pressureCfg.getInHighWatermark();
@@ -391,11 +391,11 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             MessagingOverflowPolicy outOverflow = pressureCfg.getOutOverflow();
 
             if (outOverflow != MessagingOverflowPolicy.IGNORE) {
-                sendBackPressure = new SendBackPressure(outLoWatermark, outHiWatermark, outOverflow);
+                sendPressureGuard = new SendPressureGuard(outLoWatermark, outHiWatermark, outOverflow);
             }
 
             if (inHiWatermark > 0) {
-                receiveBackPressure = new ReceiveBackPressure(inLoWatermark, inHiWatermark);
+                receivePressureGuard = new ReceivePressureGuard(inLoWatermark, inHiWatermark);
             }
         }
 
@@ -403,7 +403,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         MessageReceiver<T> guardedReceiver = applyGuard(receiver);
 
         MessagingGateway<T> gateway = new MessagingGateway<>(name, connector, localNode, clusterView, guardedReceiver, nioThreads, async,
-            channelMetrics, receiveBackPressure, sendBackPressure, failover, messagingTimeout, loadBalancer, checkIdle,
+            channelMetrics, receivePressureGuard, sendPressureGuard, failover, messagingTimeout, loadBalancer, checkIdle,
             // Before close callback.
             () -> {
                 if (DEBUG) {

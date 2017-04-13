@@ -26,10 +26,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-public class ReceiveBackPressureTest extends HekateTestBase {
+public class ReceivePressureGuardTest extends HekateTestBase {
     @Test
     public void testHiLo() throws Exception {
-        ReceiveBackPressure backPressure = new ReceiveBackPressure(5, 10);
+        ReceivePressureGuard backPressure = new ReceivePressureGuard(5, 10);
 
         repeat(5, (int i) -> {
             NetworkEndpoint<?> endpoint1 = mock(NetworkEndpoint.class);
@@ -95,7 +95,7 @@ public class ReceiveBackPressureTest extends HekateTestBase {
         repeat(5, i -> {
             NetworkEndpoint<?> endpoint = mock(NetworkEndpoint.class);
 
-            ReceiveBackPressure backPressure = new ReceiveBackPressure(0, 1);
+            ReceivePressureGuard backPressure = new ReceivePressureGuard(0, 1);
 
             backPressure.onEnqueue(endpoint);
 
@@ -113,8 +113,8 @@ public class ReceiveBackPressureTest extends HekateTestBase {
 
     @Test
     public void testToString() {
-        ReceiveBackPressure backPressure = new ReceiveBackPressure(0, 1);
+        ReceivePressureGuard backPressure = new ReceivePressureGuard(0, 1);
 
-        assertTrue(backPressure.toString(), backPressure.toString().startsWith(ReceiveBackPressure.class.getSimpleName()));
+        assertTrue(backPressure.toString(), backPressure.toString().startsWith(ReceivePressureGuard.class.getSimpleName()));
     }
 }

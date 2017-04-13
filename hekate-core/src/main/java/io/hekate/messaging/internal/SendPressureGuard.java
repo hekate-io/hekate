@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-class SendBackPressure {
+class SendPressureGuard {
     private final int loMark;
 
     private final int hiMark;
@@ -44,7 +44,7 @@ class SendBackPressure {
     @ToStringIgnore
     private boolean stopped;
 
-    public SendBackPressure(int loMark, int hiMark, MessagingOverflowPolicy policy) {
+    public SendPressureGuard(int loMark, int hiMark, MessagingOverflowPolicy policy) {
         assert hiMark > 0 : "High watermark must be above zero.";
         assert loMark < hiMark : "Low watermark must less than high watermark [low=" + loMark + ", high=" + hiMark + ']';
         assert policy != null : "Policy must be not null.";

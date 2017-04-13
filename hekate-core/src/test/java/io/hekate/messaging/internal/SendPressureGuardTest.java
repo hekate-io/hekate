@@ -34,10 +34,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class SendBackPressureTest extends HekateTestBase {
+public class SendPressureGuardTest extends HekateTestBase {
     @Test
     public void testBlock() throws Exception {
-        SendBackPressure backPressure = new SendBackPressure(5, 10, MessagingOverflowPolicy.BLOCK);
+        SendPressureGuard backPressure = new SendPressureGuard(5, 10, MessagingOverflowPolicy.BLOCK);
 
         repeat(3, i -> {
             for (int j = 0; j < 10; j++) {
@@ -89,7 +89,7 @@ public class SendBackPressureTest extends HekateTestBase {
 
     @Test
     public void testBlockInterrupted() throws Exception {
-        SendBackPressure backPressure = new SendBackPressure(5, 10, MessagingOverflowPolicy.BLOCK);
+        SendPressureGuard backPressure = new SendPressureGuard(5, 10, MessagingOverflowPolicy.BLOCK);
 
         repeat(3, i -> {
             for (int j = 0; j < 10; j++) {
@@ -128,7 +128,7 @@ public class SendBackPressureTest extends HekateTestBase {
 
     @Test
     public void testBlockUninterruptedly() throws Exception {
-        SendBackPressure backPressure = new SendBackPressure(5, 10, MessagingOverflowPolicy.BLOCK_UNINTERRUPTEDLY);
+        SendPressureGuard backPressure = new SendPressureGuard(5, 10, MessagingOverflowPolicy.BLOCK_UNINTERRUPTEDLY);
 
         repeat(3, i -> {
             for (int j = 0; j < 10; j++) {
@@ -172,7 +172,7 @@ public class SendBackPressureTest extends HekateTestBase {
 
     @Test
     public void testFail() throws Exception {
-        SendBackPressure backPressure = new SendBackPressure(5, 10, MessagingOverflowPolicy.FAIL);
+        SendPressureGuard backPressure = new SendPressureGuard(5, 10, MessagingOverflowPolicy.FAIL);
 
         repeat(3, i -> {
             for (int j = 0; j < 10; j++) {
@@ -205,13 +205,13 @@ public class SendBackPressureTest extends HekateTestBase {
 
     @Test
     public void testToString() {
-        SendBackPressure backPressure = new SendBackPressure(0, 1, MessagingOverflowPolicy.FAIL);
+        SendPressureGuard backPressure = new SendPressureGuard(0, 1, MessagingOverflowPolicy.FAIL);
 
-        assertTrue(backPressure.toString(), backPressure.toString().startsWith(SendBackPressure.class.getSimpleName()));
+        assertTrue(backPressure.toString(), backPressure.toString().startsWith(SendPressureGuard.class.getSimpleName()));
     }
 
     private void doTestBlockWithTimeout(MessagingOverflowPolicy policy) throws Exception {
-        SendBackPressure backPressure = new SendBackPressure(5, 10, policy);
+        SendPressureGuard backPressure = new SendPressureGuard(5, 10, policy);
 
         repeat(3, i -> {
             for (int j = 0; j < 10; j++) {
@@ -263,7 +263,7 @@ public class SendBackPressureTest extends HekateTestBase {
     }
 
     private void doTestTerminateWhileBlocked(MessagingOverflowPolicy policy) throws Exception {
-        SendBackPressure backPressure = new SendBackPressure(0, 1, policy);
+        SendPressureGuard backPressure = new SendPressureGuard(0, 1, policy);
 
         backPressure.onEnqueue();
 

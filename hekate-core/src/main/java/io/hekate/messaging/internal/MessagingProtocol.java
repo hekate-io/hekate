@@ -413,7 +413,7 @@ abstract class MessagingProtocol {
 
         private T request;
 
-        private SendBackPressure backPressure;
+        private SendPressureGuard backPressure;
 
         private SendCallback callback;
 
@@ -422,12 +422,11 @@ abstract class MessagingProtocol {
             this.payload = payload;
         }
 
-        public boolean prepareSend(MessagingWorker worker, MessagingConnectionBase<T> conn, SendBackPressure backPressure,
-            SendCallback callback) {
+        public boolean prepareSend(MessagingWorker worker, NetworkConnectionBase<T> conn, SendCallback callback) {
             this.worker = worker;
             this.conn = conn;
-            this.backPressure = backPressure;
             this.callback = callback;
+            this.backPressure = conn.getPressureGuard();
 
             // Apply back pressure when sending from server back to client.
             if (backPressure != null) {
@@ -524,7 +523,7 @@ abstract class MessagingProtocol {
 
         private T request;
 
-        private SendBackPressure backPressure;
+        private SendPressureGuard backPressure;
 
         private SendCallback callback;
 
@@ -533,12 +532,11 @@ abstract class MessagingProtocol {
             this.payload = payload;
         }
 
-        public void prepareSend(MessagingWorker worker, MessagingConnectionBase<T> conn, SendBackPressure backPressure,
-            SendCallback callback) {
+        public void prepareSend(MessagingWorker worker, NetworkConnectionBase<T> conn, SendCallback callback) {
             this.worker = worker;
             this.conn = conn;
-            this.backPressure = backPressure;
             this.callback = callback;
+            this.backPressure = conn.getPressureGuard();
 
             // Apply back pressure when sending from server back to client.
             if (backPressure != null) {

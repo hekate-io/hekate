@@ -212,10 +212,10 @@ class MessagingGateway<T> {
     private final MetricsCallback metrics;
 
     @ToStringIgnore
-    private final ReceiveBackPressure receiveBackPressure;
+    private final ReceivePressureGuard receivePressure;
 
     @ToStringIgnore
-    private final SendBackPressure sendBackPressure;
+    private final SendPressureGuard sendPressure;
 
     @ToStringIgnore
     private final int nioThreads;
@@ -231,7 +231,7 @@ class MessagingGateway<T> {
 
     public MessagingGateway(String name, NetworkConnector<MessagingProtocol> net, ClusterNode localNode, ClusterView cluster,
         MessageReceiver<T> receiver, int nioThreads, MessagingExecutor async, MetricsCallback metrics,
-        ReceiveBackPressure receiveBackPressure, SendBackPressure sendBackPressure, FailoverPolicy failoverPolicy, long defaultTimeout,
+        ReceivePressureGuard receivePressure, SendPressureGuard sendPressure, FailoverPolicy failoverPolicy, long defaultTimeout,
         LoadBalancer<T> loadBalancer, boolean checkIdle, CloseCallback onBeforeClose) {
         assert name != null : "Name is null.";
         assert net != null : "Network connector is null.";
@@ -248,8 +248,8 @@ class MessagingGateway<T> {
         this.nioThreads = nioThreads;
         this.async = async;
         this.metrics = metrics;
-        this.receiveBackPressure = receiveBackPressure;
-        this.sendBackPressure = sendBackPressure;
+        this.receivePressure = receivePressure;
+        this.sendPressure = sendPressure;
         this.checkIdle = checkIdle;
         this.onBeforeClose = onBeforeClose;
 
@@ -449,8 +449,8 @@ class MessagingGateway<T> {
                 channelTopology = null;
 
                 // Terminate back pressure guard.
-                if (sendBackPressure != null) {
-                    sendBackPressure.terminate();
+                if (sendPressure != null) {
+                    sendPressure.terminate();
                 }
 
                 // Close all clients.
@@ -518,12 +518,12 @@ class MessagingGateway<T> {
         return metrics;
     }
 
-    ReceiveBackPressure getReceiveBackPressure() {
-        return receiveBackPressure;
+    ReceivePressureGuard getReceivePressureGuard() {
+        return receivePressure;
     }
 
-    SendBackPressure getSendBackPressure() {
-        return sendBackPressure;
+    SendPressureGuard getSendPressureGuard() {
+        return sendPressure;
     }
 
     private void routeAndSend(MessageContext<T> ctx, SendCallback callback, FailureInfo prevErr) {
@@ -1098,16 +1098,16 @@ class MessagingGateway<T> {
 
     private long backPressureAcquire(long timeout, T msg) throws MessageQueueOverflowException, InterruptedException,
         MessageQueueTimeoutException {
-        if (sendBackPressure != null) {
-            return sendBackPressure.onEnqueue(timeout, msg);
+        if (sendPressure != null) {
+            return sendPressure.onEnqueue(timeout, msg);
         }
 
         return timeout;
     }
 
     private void backPressureRelease() {
-        if (sendBackPressure != null) {
-            sendBackPressure.onDequeue();
+        if (sendPressure != null) {
+            sendPressure.onDequeue();
         }
     }
 

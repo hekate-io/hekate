@@ -43,7 +43,7 @@ abstract class MessagingConnectionBase<T> {
 
     private final MetricsCallback metrics;
 
-    private final ReceiveBackPressure backPressure;
+    private final ReceivePressureGuard pressureGuard;
 
     private final MessagingEndpoint<T> endpoint;
 
@@ -61,7 +61,7 @@ abstract class MessagingConnectionBase<T> {
         this.receiver = gateway.getReceiver();
         this.endpoint = endpoint;
         this.metrics = gateway.getMetrics();
-        this.backPressure = gateway.getReceiveBackPressure();
+        this.pressureGuard = gateway.getReceivePressureGuard();
 
         this.requests = new RequestRegistry<>(metrics);
     }
@@ -102,10 +102,10 @@ abstract class MessagingConnectionBase<T> {
 
                             MessagingWorker worker = async.workerFor(affinity);
 
-                            onEnqueueReceiveAsync(from);
+                            onReceiveAsyncEnqueue(from);
 
                             netMsg.handleAsync(worker, m -> {
-                                onDequeueReceiveAsync();
+                                onReceiveAsyncDequeue();
 
                                 doReceiveNotification(m.cast());
                             }, this::handleAsyncMessageError);
@@ -125,10 +125,10 @@ abstract class MessagingConnectionBase<T> {
 
                             MessagingWorker worker = async.workerFor(affinity);
 
-                            onEnqueueReceiveAsync(from);
+                            onReceiveAsyncEnqueue(from);
 
                             netMsg.handleAsync(worker, m -> {
-                                onDequeueReceiveAsync();
+                                onReceiveAsyncDequeue();
 
                                 doReceiveNotification(m.cast());
                             }, this::handleAsyncMessageError);
@@ -146,10 +146,10 @@ abstract class MessagingConnectionBase<T> {
                         MessagingWorker worker = async.pooledWorker();
 
                         if (async.isAsync()) {
-                            onEnqueueReceiveAsync(from);
+                            onReceiveAsyncEnqueue(from);
 
                             netMsg.handleAsync(worker, m -> {
-                                onDequeueReceiveAsync();
+                                onReceiveAsyncDequeue();
 
                                 doReceiveRequest(m.cast(), worker);
                             }, this::handleAsyncMessageError);
@@ -169,10 +169,10 @@ abstract class MessagingConnectionBase<T> {
                         MessagingWorker worker = async.workerFor(affinity);
 
                         if (async.isAsync()) {
-                            onEnqueueReceiveAsync(from);
+                            onReceiveAsyncEnqueue(from);
 
                             netMsg.handleAsync(worker, m -> {
-                                onDequeueReceiveAsync();
+                                onReceiveAsyncDequeue();
 
                                 doReceiveRequest(m.cast(), worker);
                             }, this::handleAsyncMessageError);
@@ -193,10 +193,10 @@ abstract class MessagingConnectionBase<T> {
                         MessagingWorker worker = async.workerFor(affinity);
 
                         if (async.isAsync()) {
-                            onEnqueueReceiveAsync(from);
+                            onReceiveAsyncEnqueue(from);
 
                             netMsg.handleAsync(worker, m -> {
-                                onDequeueReceiveAsync();
+                                onReceiveAsyncDequeue();
 
                                 doReceiveRequest(m.cast(), worker);
                             }, this::handleAsyncMessageError);
@@ -216,10 +216,10 @@ abstract class MessagingConnectionBase<T> {
                         MessagingWorker worker = async.workerFor(affinity);
 
                         if (async.isAsync()) {
-                            onEnqueueReceiveAsync(from);
+                            onReceiveAsyncEnqueue(from);
 
                             netMsg.handleAsync(worker, m -> {
-                                onDequeueReceiveAsync();
+                                onReceiveAsyncDequeue();
 
                                 doReceiveRequest(m.cast(), worker);
                             }, this::handleAsyncMessageError);
@@ -239,10 +239,10 @@ abstract class MessagingConnectionBase<T> {
                         if (async.isAsync()) {
                             MessagingWorker worker = handle.getWorker();
 
-                            onEnqueueReceiveAsync(from);
+                            onReceiveAsyncEnqueue(from);
 
                             netMsg.handleAsync(worker, m -> {
-                                onDequeueReceiveAsync();
+                                onReceiveAsyncDequeue();
 
                                 doReceiveResponse(handle, m.cast());
                             }, error -> notifyOnReplyFailure(handle, error));
@@ -262,10 +262,10 @@ abstract class MessagingConnectionBase<T> {
                         if (async.isAsync()) {
                             MessagingWorker worker = handle.getWorker();
 
-                            onEnqueueReceiveAsync(from);
+                            onReceiveAsyncEnqueue(from);
 
                             netMsg.handleAsync(worker, m -> {
-                                onDequeueReceiveAsync();
+                                onReceiveAsyncDequeue();
 
                                 doReceiveResponseChunk(handle, m.cast());
                             }, error -> notifyOnReplyFailure(handle, error));
@@ -444,17 +444,17 @@ abstract class MessagingConnectionBase<T> {
         }
     }
 
-    private void onEnqueueReceiveAsync(NetworkEndpoint<MessagingProtocol> from) {
+    private void onReceiveAsyncEnqueue(NetworkEndpoint<MessagingProtocol> from) {
         onAsyncEnqueue();
 
-        if (backPressure != null) {
-            backPressure.onEnqueue(from);
+        if (pressureGuard != null) {
+            pressureGuard.onEnqueue(from);
         }
     }
 
-    private void onDequeueReceiveAsync() {
-        if (backPressure != null) {
-            backPressure.onDequeue();
+    private void onReceiveAsyncDequeue() {
+        if (pressureGuard != null) {
+            pressureGuard.onDequeue();
         }
 
         onAsyncDequeue();

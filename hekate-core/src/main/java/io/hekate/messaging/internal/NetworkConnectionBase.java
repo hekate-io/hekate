@@ -32,7 +32,7 @@ import io.hekate.network.NetworkFuture;
 abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
     private final NetworkEndpoint<MessagingProtocol> net;
 
-    private final SendBackPressure backPressure;
+    private final SendPressureGuard pressureGuard;
 
     public NetworkConnectionBase(NetworkEndpoint<MessagingProtocol> net, MessagingGateway<T> gateway, MessagingEndpoint<T> messaging) {
         super(gateway, gateway.getAsync(), messaging);
@@ -40,7 +40,7 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
         assert net != null : "Endpoint is null.";
 
         this.net = net;
-        this.backPressure = gateway.getSendBackPressure();
+        this.pressureGuard = gateway.getSendPressureGuard();
     }
 
     @Override
@@ -54,7 +54,7 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
 
         Request<T> msg;
 
-        if (ctx.affinity() >= 0) {
+        if (ctx.hasAffinity()) {
             msg = new AffinityRequest<>(ctx.affinity(), handle.getId(), ctx.message());
         } else {
             msg = new Request<>(handle.getId(), ctx.message());
@@ -71,7 +71,7 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
 
         StreamRequest<T> msg;
 
-        if (ctx.affinity() >= 0) {
+        if (ctx.hasAffinity()) {
             msg = new AffinityStreamRequest<>(ctx.affinity(), handle.getId(), ctx.message());
         } else {
             msg = new StreamRequest<>(handle.getId(), ctx.message());
@@ -86,7 +86,7 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
     public void sendNotification(MessageContext<T> ctx, SendCallback callback) {
         Notification<T> msg;
 
-        if (ctx.affinity() >= 0) {
+        if (ctx.hasAffinity()) {
             msg = new AffinityNotification<>(ctx.affinity(), ctx.message());
         } else {
             msg = new Notification<>(ctx.message());
@@ -101,7 +101,7 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
     public void replyChunk(MessagingWorker worker, int requestId, T chunk, SendCallback callback) {
         ResponseChunk<T> msg = new ResponseChunk<>(requestId, chunk);
 
-        if (msg.prepareSend(worker, this, backPressure, callback)) {
+        if (msg.prepareSend(worker, this, callback)) {
             net.send(msg, msg /* <-- Message itself is a callback.*/);
         }
     }
@@ -110,9 +110,13 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
     public void reply(MessagingWorker worker, int requestId, T response, SendCallback callback) {
         MessagingProtocol.FinalResponse<T> msg = new FinalResponse<>(requestId, response);
 
-        msg.prepareSend(worker, this, backPressure, callback);
+        msg.prepareSend(worker, this, callback);
 
         net.send(msg, msg /* <-- Message itself is a callback.*/);
+    }
+
+    public SendPressureGuard getPressureGuard() {
+        return pressureGuard;
     }
 
     @Override
