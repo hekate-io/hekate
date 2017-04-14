@@ -26,15 +26,6 @@ public class MessagingChannelClosedException extends MessagingException {
      * Constructs new instance.
      *
      * @param message Error message.
-     */
-    public MessagingChannelClosedException(String message) {
-        super(message);
-    }
-
-    /**
-     * Constructs new instance.
-     *
-     * @param message Error message.
      * @param cause Error cause.
      */
     public MessagingChannelClosedException(String message, Throwable cause) {
