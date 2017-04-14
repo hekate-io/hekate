@@ -61,7 +61,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
             }).aggregate("test"));
 
             assertTrue(result.isSuccess());
-            assertEquals(channels.size(), result.getReplies().size());
+            assertEquals(channels.size(), result.getResults().size());
 
             assertEquals(channels.size() * attempts, failoverCalls.get());
         });
@@ -100,7 +100,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
         });
 
         assertTrue(result.isSuccess());
-        assertEquals(channels.size(), result.getReplies().size());
+        assertEquals(channels.size(), result.getResults().size());
     }
 
     @Test
@@ -119,7 +119,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
             }).aggregate("test"));
 
             assertTrue(result.isSuccess());
-            assertEquals(channels.size(), result.getReplies().size());
+            assertEquals(channels.size(), result.getResults().size());
 
             assertEquals(attempts, failoverCalls.get());
         });
@@ -141,7 +141,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
             }).aggregate("test"));
 
             assertFalse(result.isSuccess());
-            assertTrue(result.getReplies().isEmpty());
+            assertTrue(result.getResults().isEmpty());
             assertEquals(channels.size(), result.getErrors().size());
 
             assertEquals(channels.size() * attempts + channels.size() /* <- we count last failed attempts too. */, failoverCalls.get());
@@ -164,7 +164,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
             }).aggregate("test"));
 
             assertFalse(result.isSuccess());
-            assertEquals(channels.size() - attempts, result.getReplies().size());
+            assertEquals(channels.size() - attempts, result.getResults().size());
             assertEquals(attempts, result.getErrors().size());
 
             assertEquals(attempts, failoverCalls.get());
@@ -181,7 +181,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
             }).aggregate("test"));
 
             assertFalse(result.isSuccess());
-            assertTrue(result.getReplies().isEmpty());
+            assertTrue(result.getResults().isEmpty());
             assertEquals(channels.size(), result.getErrors().size());
         });
     }
@@ -220,7 +220,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
                 assertNotNull(leaveRef.get());
                 assertFalse(result.toString(), result.isSuccess());
                 assertEquals(result.toString(), 1, result.getErrors().size());
-                assertEquals(result.toString(), channels.size() - 2, result.getReplies().size());
+                assertEquals(result.toString(), channels.size() - 2, result.getResults().size());
 
                 Throwable expected = result.getErrors().get(leaveRef.get().getInstance().getNode());
 

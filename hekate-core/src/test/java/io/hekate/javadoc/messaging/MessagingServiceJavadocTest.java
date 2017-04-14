@@ -213,7 +213,7 @@ public class MessagingServiceJavadocTest extends HekateInstanceTestBase {
             // Iterate over aggregation participants and check their responses.
             result.getNodes().forEach(node -> {
                 if (result.isSuccess(node)) {
-                    System.out.println("Got response from " + node + ": " + result.getReply(node));
+                    System.out.println("Got response from " + node + ": " + result.getResult(node));
                 } else {
                     System.out.println("Partial failure on node  " + node + ": " + result.getError(node));
                 }
@@ -230,7 +230,7 @@ public class MessagingServiceJavadocTest extends HekateInstanceTestBase {
                 // Iterate over aggregation participants and check their responses.
                 result.getNodes().forEach(node -> {
                     if (result.isSuccess(node)) {
-                        System.out.println("Got response from " + node + ": " + result.getReply(node));
+                        System.out.println("Got response from " + node + ": " + result.getResult(node));
                     } else {
                         System.out.println("Partial failure on node  " + node + ": " + result.getError(node));
                     }

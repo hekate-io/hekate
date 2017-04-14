@@ -18,7 +18,6 @@ package io.hekate.messaging.broadcast;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.unicast.Response;
 import java.util.Map;
 import java.util.Set;
 
@@ -86,23 +85,23 @@ public interface AggregateResult<T> {
     boolean isSuccess(ClusterNode node);
 
     /**
-     * Returns the map of cluster nodes and replies that were successfully received from those nodes. Returns an empty map if there were
-     * no successful replies.
+     * Returns a map of cluster nodes and replies that were successfully received from these nodes. Returns an empty map if there were no
+     * successful replies.
      *
-     * @return Map of cluster nodes with their replies or an empty map.
+     * @return Map of results.
      *
-     * @see #getReply(ClusterNode)
+     * @see #getResult(ClusterNode)
      */
-    Map<ClusterNode, Response<T>> getReplies();
+    Map<ClusterNode, T> getResults();
 
     /**
-     * Returns a reply for the specified cluster node or {@code null} if there was no successful reply from that node.
+     * Returns the result for the specified cluster node or {@code null} if there was no result from this node.
      *
-     * @param node Cluster node (must be one of {@link #getNodes()}, otherwise results will be unpredictable).
+     * @param node Cluster node (must be one of the {@link #getNodes()}, otherwise results will be unpredictable).
      *
-     * @return Response.
+     * @return Result.
      *
-     * @see #getReplies()
+     * @see #getResults()
      */
-    Response<T> getReply(ClusterNode node);
+    T getResult(ClusterNode node);
 }

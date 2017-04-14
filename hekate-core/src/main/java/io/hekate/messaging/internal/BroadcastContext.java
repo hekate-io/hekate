@@ -65,25 +65,30 @@ class BroadcastContext<T> implements BroadcastResult<T> {
 
     @Override
     public Set<ClusterNode> getNodes() {
-        return nodes;
+        synchronized (this) {
+            return nodes;
+        }
     }
 
     @Override
     public Map<ClusterNode, Throwable> getErrors() {
-        // Safe to access in non-synchronized context since this method can be called only after all errors were gathered.
-        return errors == null ? Collections.emptyMap() : errors;
+        synchronized (this) {
+            return errors == null ? Collections.emptyMap() : errors;
+        }
     }
 
     @Override
     public Throwable getError(ClusterNode node) {
-        // Safe to access in non-synchronized context since this method can be called only after all errors were gathered.
-        return errors != null ? errors.get(node) : null;
+        synchronized (this) {
+            return errors != null ? errors.get(node) : null;
+        }
     }
 
     @Override
     public boolean isSuccess() {
-        // Safe to access in non-synchronized context since this method can be called only after all errors were gathered.
-        return errors == null;
+        synchronized (this) {
+            return errors == null;
+        }
     }
 
     @Override

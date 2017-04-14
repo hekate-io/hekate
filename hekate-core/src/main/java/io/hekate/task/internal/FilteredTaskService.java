@@ -86,22 +86,19 @@ class FilteredTaskService implements TaskService {
         }
 
         @Override
-        public void onComplete(Throwable err, AggregateResult<TaskProtocol> result) {
+        public void onComplete(Throwable err, AggregateResult<TaskProtocol> aggregate) {
             if (err == null) {
-                Map<ClusterNode, Response<TaskProtocol>> responses = result.getReplies();
+                Map<ClusterNode, TaskProtocol> results = aggregate.getResults();
 
-                Map<ClusterNode, Throwable> errors = new HashMap<>(result.getErrors());
-                Map<ClusterNode, T> values = new HashMap<>(responses.size(), 1.0f);
+                Map<ClusterNode, T> values = new HashMap<>(results.size(), 1.0f);
 
-                responses.forEach((node, msg) -> {
-                    TaskProtocol taskReply = msg.get();
-
-                    TaskProtocol.Type type = taskReply.getType();
+                results.forEach((node, result) -> {
+                    TaskProtocol.Type type = result.getType();
 
                     if (type == TaskProtocol.Type.NULL_RESULT) {
                         values.put(node, null);
                     } else {
-                        ObjectResult resultMsg = (ObjectResult)taskReply;
+                        ObjectResult resultMsg = (ObjectResult)result;
 
                         @SuppressWarnings("unchecked")
                         T value = (T)resultMsg.getResult();
@@ -110,7 +107,7 @@ class FilteredTaskService implements TaskService {
                     }
                 });
 
-                complete(new DefaultMultiNodeResult<>(result.getNodes(), errors, values));
+                complete(new DefaultMultiNodeResult<>(aggregate.getNodes(), aggregate.getErrors(), values));
             } else {
                 completeExceptionally(new TaskException("Task execution failed [task=" + task + ']', err));
             }

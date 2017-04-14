@@ -36,7 +36,7 @@ class AggregateContext<T> implements AggregateResult<T> {
 
     private final T request;
 
-    private final Map<ClusterNode, Response<T>> responses;
+    private final Map<ClusterNode, T> responses;
 
     @ToStringIgnore
     private final AggregateCallback<T> callback;
@@ -64,7 +64,9 @@ class AggregateContext<T> implements AggregateResult<T> {
 
     @Override
     public Set<ClusterNode> getNodes() {
-        return nodes;
+        synchronized (this) {
+            return nodes;
+        }
     }
 
     @Override
@@ -83,8 +85,9 @@ class AggregateContext<T> implements AggregateResult<T> {
 
     @Override
     public boolean isSuccess() {
-        // Safe to access in non-synchronized context since this method can be called only after all errors were gathered.
-        return errors == null;
+        synchronized (this) {
+            return errors == null;
+        }
     }
 
     @Override
@@ -93,15 +96,17 @@ class AggregateContext<T> implements AggregateResult<T> {
     }
 
     @Override
-    public Map<ClusterNode, Response<T>> getReplies() {
-        // Safe to access in non-synchronized context since this method can be called only after all responses were received.
-        return responses;
+    public Map<ClusterNode, T> getResults() {
+        synchronized (this) {
+            return responses;
+        }
     }
 
     @Override
-    public Response<T> getReply(ClusterNode node) {
-        // Safe to access in non-synchronized context since this method can be called only after all responses were received.
-        return responses.get(node);
+    public T getResult(ClusterNode node) {
+        synchronized (this) {
+            return responses.get(node);
+        }
     }
 
     public boolean forgetNode(ClusterNode node) {
@@ -115,14 +120,11 @@ class AggregateContext<T> implements AggregateResult<T> {
     boolean onReplySuccess(ClusterNode node, Response<T> rsp) {
         boolean ready = false;
 
-        // Do not count partial replies.
-        if (!rsp.isPartial()) {
-            synchronized (this) {
-                responses.put(node, rsp);
+        synchronized (this) {
+            responses.put(node, rsp.get());
 
-                if (isReady()) {
-                    ready = true;
-                }
+            if (isReady()) {
+                ready = true;
             }
         }
 
