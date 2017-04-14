@@ -29,7 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class NetworkMessagingClient<T> implements MessagingClient<T> {
-    private static final Logger log = LoggerFactory.getLogger(MessagingGateway.class);
+    private static final Logger log = LoggerFactory.getLogger(NetworkMessagingClient.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
