@@ -1,27 +1,27 @@
 package io.hekate.messaging.internal;
 
-import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Utils;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-class MessagingForkJoinWorker implements MessagingWorker {
-    private final ExecutorService executor;
+class MessagingSingleThreadWorker implements MessagingWorker {
+    private final ThreadPoolExecutor executor;
 
     private final ScheduledExecutorService timer;
 
-    public MessagingForkJoinWorker(int parallelism, HekateThreadFactory factory, ScheduledExecutorService timer) {
-        assert parallelism > 0 : "Parallelism must be above zero [parallelism=" + parallelism + ']';
-        assert factory != null : "Thread Factory is null.";
+    public MessagingSingleThreadWorker(ThreadFactory factory, ScheduledExecutorService timer) {
         assert timer != null : "Timer is null.";
 
         this.timer = timer;
 
-        executor = new ForkJoinPool(parallelism, factory, null, true);
+        LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
+
+        executor = new ThreadPoolExecutor(0, 1, Long.MAX_VALUE, TimeUnit.MILLISECONDS, queue, factory);
     }
 
     @Override

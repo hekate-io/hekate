@@ -22,9 +22,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 class MessagingExecutorAsync implements MessagingExecutor {
-    private final MessagingAffinityWorker[] affinityWorkers;
+    private final MessagingSingleThreadWorker[] affinityWorkers;
 
-    private final MessagingForkJoinWorker forkJoinWorker;
+    private final MessagingThreadPoolWorker pooledWorker;
 
     private final int size;
 
@@ -34,13 +34,13 @@ class MessagingExecutorAsync implements MessagingExecutor {
 
         this.size = size;
 
-        affinityWorkers = new MessagingAffinityWorker[size];
+        affinityWorkers = new MessagingSingleThreadWorker[size];
 
         for (int i = 0; i < size; i++) {
-            affinityWorkers[i] = new MessagingAffinityWorker(factory, timer);
+            affinityWorkers[i] = new MessagingSingleThreadWorker(factory, timer);
         }
 
-        forkJoinWorker = new MessagingForkJoinWorker(size, factory, timer);
+        pooledWorker = new MessagingThreadPoolWorker(size, factory, timer);
     }
 
     @Override
@@ -50,7 +50,7 @@ class MessagingExecutorAsync implements MessagingExecutor {
 
     @Override
     public MessagingWorker pooledWorker() {
-        return forkJoinWorker;
+        return pooledWorker;
     }
 
     @Override
@@ -60,20 +60,20 @@ class MessagingExecutorAsync implements MessagingExecutor {
 
     @Override
     public void terminate() {
-        for (MessagingAffinityWorker worker : affinityWorkers) {
+        for (MessagingSingleThreadWorker worker : affinityWorkers) {
             worker.execute(worker::shutdown);
         }
 
-        forkJoinWorker.shutdown();
+        pooledWorker.shutdown();
     }
 
     @Override
     public void awaitTermination() throws InterruptedException {
-        for (MessagingAffinityWorker worker : affinityWorkers) {
+        for (MessagingSingleThreadWorker worker : affinityWorkers) {
             worker.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         }
 
-        forkJoinWorker.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        pooledWorker.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
     }
 
     @Override
