@@ -53,7 +53,7 @@ import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.messaging.unicast.SendFuture;
-import io.hekate.messaging.unicast.StreamFuture;
+import io.hekate.messaging.unicast.SubscribeFuture;
 import io.hekate.messaging.unicast.TooManyRoutesException;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkFuture;
@@ -125,7 +125,7 @@ class MessagingGateway<T> {
         }
     }
 
-    private static class StreamCallbackFuture<T> extends StreamFuture<T> implements ResponseCallback<T> {
+    private static class SubscribeCallbackFuture<T> extends SubscribeFuture<T> implements ResponseCallback<T> {
         private List<Response<T>> result;
 
         @Override
@@ -319,12 +319,12 @@ class MessagingGateway<T> {
     }
 
     @SuppressWarnings("unchecked") // <- need to cast to the response type.
-    public <R extends T> StreamFuture<R> subscribe(Object affinityKey, T request, MessagingOpts<T> opts) {
-        StreamCallbackFuture<T> future = new StreamCallbackFuture<>();
+    public <R extends T> SubscribeFuture<R> subscribe(Object affinityKey, T request, MessagingOpts<T> opts) {
+        SubscribeCallbackFuture<T> future = new SubscribeCallbackFuture<>();
 
         subscribe(affinityKey, request, opts, future);
 
-        return (StreamFuture<R>)future;
+        return (SubscribeFuture<R>)future;
     }
 
     public void subscribe(Object affinityKey, T request, MessagingOpts<T> opts, ResponseCallback<T> callback) {
@@ -723,10 +723,10 @@ class MessagingGateway<T> {
             }
         };
 
-        if (ctx.isStream()) {
-            client.streamRequest(ctx, internalCallback);
+        if (ctx.isSubscribe()) {
+            client.subscribe(ctx, internalCallback);
         } else {
-            client.singleRequest(ctx, internalCallback);
+            client.request(ctx, internalCallback);
         }
     }
 

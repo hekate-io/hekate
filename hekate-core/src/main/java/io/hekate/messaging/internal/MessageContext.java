@@ -19,7 +19,7 @@ class MessageContext<T> {
 
     private final Object affinityKey;
 
-    private final boolean stream;
+    private final boolean subscribe;
 
     private final T message;
 
@@ -38,7 +38,7 @@ class MessageContext<T> {
     @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
     private volatile int completed;
 
-    public MessageContext(T message, int affinity, Object affinityKey, MessagingWorker worker, MessagingOpts<T> opts, boolean stream) {
+    public MessageContext(T message, int affinity, Object affinityKey, MessagingWorker worker, MessagingOpts<T> opts, boolean subscribe) {
         assert message != null : "Message is null.";
         assert worker != null : "Worker is null.";
         assert opts != null : "Messaging options are null.";
@@ -48,7 +48,7 @@ class MessageContext<T> {
         this.opts = opts;
         this.affinityKey = affinityKey;
         this.affinity = affinity;
-        this.stream = stream;
+        this.subscribe = subscribe;
     }
 
     public boolean hasAffinity() {
@@ -63,8 +63,8 @@ class MessageContext<T> {
         return affinityKey;
     }
 
-    public boolean isStream() {
-        return stream;
+    public boolean isSubscribe() {
+        return subscribe;
     }
 
     public T message() {

@@ -32,7 +32,7 @@ import static java.util.stream.Collectors.toList;
  *
  * @see MessagingChannel#request(Object)
  */
-public class StreamFuture<T> extends MessagingFuture<List<Response<T>>> {
+public class SubscribeFuture<T> extends MessagingFuture<List<Response<T>>> {
     /**
      * Awaits for the asynchronous operation to complete within the timeout and returns the {@link Response#get() payload} of reply. Throws
      * {@link TimeoutException} if timeout happens before operation results are ready.

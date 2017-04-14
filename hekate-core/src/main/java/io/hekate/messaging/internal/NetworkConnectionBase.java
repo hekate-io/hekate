@@ -49,7 +49,7 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void sendSingleRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
+    public void request(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
         RequestHandle<T> handle = registerRequest(ctx, callback);
 
         Request<T> msg;
@@ -66,7 +66,7 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void sendStreamRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
+    public void subscribe(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
         RequestHandle<T> handle = registerRequest(ctx, callback);
 
         Subscribe<T> msg;

@@ -26,9 +26,9 @@ interface MessagingClient<T> {
 
     void send(MessageContext<T> ctx, SendCallback callback);
 
-    void streamRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback);
+    void subscribe(MessageContext<T> ctx, InternalRequestCallback<T> callback);
 
-    void singleRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback);
+    void request(MessageContext<T> ctx, InternalRequestCallback<T> callback);
 
     void disconnectIfIdle();
 

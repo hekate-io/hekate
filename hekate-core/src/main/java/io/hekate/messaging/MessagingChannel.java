@@ -30,7 +30,7 @@ import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.messaging.unicast.SendFuture;
-import io.hekate.messaging.unicast.StreamFuture;
+import io.hekate.messaging.unicast.SubscribeFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
@@ -154,7 +154,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return Future object that can be used to obtain all of the received responses.
      */
-    StreamFuture<T> subscribe(T request);
+    SubscribeFuture<T> subscribe(T request);
 
     /**
      * Opens a stream for receiving continuous responses.

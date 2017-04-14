@@ -3,7 +3,7 @@ package io.hekate.messaging.internal;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingFutureException;
-import io.hekate.messaging.unicast.StreamFuture;
+import io.hekate.messaging.unicast.SubscribeFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -73,7 +73,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
         TestChannel sender = createChannel(c -> c.withMessagingTimeout(150)).join();
 
         repeat(3, i -> {
-            StreamFuture<String> future = sender.get().forRemotes().subscribe("must-fail-" + i);
+            SubscribeFuture<String> future = sender.get().forRemotes().subscribe("must-fail-" + i);
 
             Message<String> request = msgRef.exchange(null);
 

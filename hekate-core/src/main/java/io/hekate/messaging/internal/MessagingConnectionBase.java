@@ -70,9 +70,9 @@ abstract class MessagingConnectionBase<T> {
 
     public abstract void sendNotification(MessageContext<T> ctx, SendCallback callback);
 
-    public abstract void sendSingleRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback);
+    public abstract void request(MessageContext<T> ctx, InternalRequestCallback<T> callback);
 
-    public abstract void sendStreamRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback);
+    public abstract void subscribe(MessageContext<T> ctx, InternalRequestCallback<T> callback);
 
     public abstract void replyChunk(MessagingWorker worker, int requestId, T chunk, SendCallback callback);
 
