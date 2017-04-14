@@ -31,7 +31,7 @@ import java.util.Set;
  */
 public interface AggregateResult<T> {
     /**
-     * Returns the original request object that was submitted to cluster nodes.
+     * Returns the original request object that was submitted to the cluster.
      *
      * @return Original request.
      */
@@ -47,18 +47,18 @@ public interface AggregateResult<T> {
 
     /**
      * Returns the map of cluster nodes and errors that happened while trying to communicate with those nodes. Returns an empty map if
-     * there were no communication failures.
+     * there were no failures.
      *
-     * @return Map of nodes and their corresponding failures. Returns an empty map if there were no communication failures.
+     * @return Map of nodes and their corresponding failures. Returns an empty map if there were no failures.
      *
      * @see #getError(ClusterNode)
      */
     Map<ClusterNode, Throwable> getErrors();
 
     /**
-     * Returns a communication error for the specified node or {@code null} if there was no communication failure with that node.
+     * Returns an error for the specified node or {@code null} if there was no failure on that node.
      *
-     * @param node Cluster node (must be one of {@link #getNodes()}, otherwise results will be unpredictable).
+     * @param node Cluster node (must be one of the {@link #getNodes()}).
      *
      * @return Error in case of a communication error with the specified node or {@code null}.
      *
@@ -76,17 +76,17 @@ public interface AggregateResult<T> {
     boolean isSuccess();
 
     /**
-     * Returns {@code true} if there was no communication failure with the specified cluster node.
+     * Returns {@code true} if there was no failure during the aggregation request processing on the specified cluster node.
      *
-     * @param node Cluster node (must be one of {@link #getNodes()}, otherwise results will be unpredictable).
+     * @param node Cluster node (must be one of the {@link #getNodes()}).
      *
      * @return {@code true} if there was no communication failure with the specified cluster node.
      */
     boolean isSuccess(ClusterNode node);
 
     /**
-     * Returns a map of cluster nodes and replies that were successfully received from these nodes. Returns an empty map if there were no
-     * successful replies.
+     * Returns a map of cluster nodes and results that were successfully received from these nodes. Returns an empty map if there were no
+     * successful results.
      *
      * @return Map of results.
      *
@@ -97,7 +97,7 @@ public interface AggregateResult<T> {
     /**
      * Returns the result for the specified cluster node or {@code null} if there was no result from this node.
      *
-     * @param node Cluster node (must be one of the {@link #getNodes()}, otherwise results will be unpredictable).
+     * @param node Cluster node (must be one of the {@link #getNodes()}).
      *
      * @return Result.
      *

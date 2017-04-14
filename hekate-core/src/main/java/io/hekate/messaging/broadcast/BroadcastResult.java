@@ -31,7 +31,7 @@ import java.util.Set;
  */
 public interface BroadcastResult<T> {
     /**
-     * Returns the original message object that was submitted to the cluster nodes.
+     * Returns the original message object that was submitted to the cluster.
      *
      * @return Original message.
      */
@@ -47,7 +47,7 @@ public interface BroadcastResult<T> {
     Set<ClusterNode> getNodes();
 
     /**
-     * Returns the map of cluster nodes and errors that happened while trying to communicate with those nodes. Returns an empty map if
+     * Returns the map of cluster nodes and errors that happened while trying to communicate with these nodes. Returns an empty map if
      * there were no communication failures.
      *
      * @return Map of nodes and their corresponding failures. Returns an empty map if there were no communication failures.
