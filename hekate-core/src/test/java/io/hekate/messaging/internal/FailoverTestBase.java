@@ -16,18 +16,9 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.failover.FailoverContext;
 import io.hekate.messaging.MessagingChannel;
-import java.nio.channels.ClosedChannelException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 
 public abstract class FailoverTestBase extends MessagingServiceTestBase {
     protected final AtomicInteger failures = new AtomicInteger();

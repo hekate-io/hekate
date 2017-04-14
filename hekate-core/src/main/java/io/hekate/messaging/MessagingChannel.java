@@ -154,7 +154,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return Future object that can be used to obtain all of the received responses.
      */
-    StreamFuture<T> streamRequest(T request);
+    StreamFuture<T> subscribe(T request);
 
     /**
      * Opens a stream for receiving continuous responses.
@@ -162,13 +162,13 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * <p>
      * This method asynchronously sends a request message and opens a stream for receiving {@link Message#partialReply(Object) partial
      * replies}. For each such reply the {@link ResponseCallback#onComplete(Throwable, Response)} method will be called until the last
-     * (non-{@link Response#isPartial() partial} response is received.
+     * (non-{@link Response#isPartial() partial}) response is received.
      * </p>
      *
      * @param request Request.
      * @param callback Callback.
      */
-    void streamRequest(T request, ResponseCallback<T> callback);
+    void subscribe(T request, ResponseCallback<T> callback);
 
     /**
      * Asynchronously broadcasts the specified message and returns a future object that can be used to inspect the operation result.

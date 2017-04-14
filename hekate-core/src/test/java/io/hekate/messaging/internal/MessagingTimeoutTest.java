@@ -59,7 +59,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testStream() throws Exception {
+    public void testSubscribe() throws Exception {
         Exchanger<Message<String>> msgRef = new Exchanger<>();
 
         createChannel(c -> c.withReceiver(msg -> {
@@ -73,7 +73,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
         TestChannel sender = createChannel(c -> c.withMessagingTimeout(150)).join();
 
         repeat(3, i -> {
-            StreamFuture<String> future = sender.get().forRemotes().streamRequest("must-fail-" + i);
+            StreamFuture<String> future = sender.get().forRemotes().subscribe("must-fail-" + i);
 
             Message<String> request = msgRef.exchange(null);
 

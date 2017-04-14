@@ -178,7 +178,7 @@ public abstract class MessagingServiceTestBase extends HekateInstanceContextTest
             assertTrue(e.getMessage().startsWith("Message already responded"));
         }
 
-        if (msg.isStreamRequest()) {
+        if (msg.isSubscribe()) {
             try {
                 msg.partialReply("invalid", new SendCallbackMock());
 

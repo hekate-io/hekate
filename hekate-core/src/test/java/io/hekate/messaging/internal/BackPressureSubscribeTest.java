@@ -26,8 +26,8 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertNull;
 
-public class BackPressureStreamRequestTest extends BackPressureParametrizedTestBase {
-    public BackPressureStreamRequestTest(BackPressureTestContext ctx) {
+public class BackPressureSubscribeTest extends BackPressureParametrizedTestBase {
+    public BackPressureSubscribeTest(BackPressureTestContext ctx) {
         super(ctx);
     }
 
@@ -47,13 +47,13 @@ public class BackPressureStreamRequestTest extends BackPressureParametrizedTestB
 
         awaitForChannelsTopology(sender, receiver);
 
-        // Enforce back pressure on receiver in order to block sending of partial responses.
+        // Enforce back pressure on the receiver in order to block sending of partial responses.
         List<ResponseFuture<String>> futureResponses = requestUpToHighWatermark(receiver.get());
 
         busyWait("requests received", () -> requests.size() == futureResponses.size());
 
-        // Send trigger message sender -> receiver.
-        sender.get().forRemotes().streamRequest("init");
+        // Send trigger message.
+        sender.get().forRemotes().subscribe("init");
 
         // Await for trigger message to be received.
         busyWait("trigger received", () -> receivedRef.get() != null);

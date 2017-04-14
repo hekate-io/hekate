@@ -318,16 +318,16 @@ class MessagingGateway<T> {
         requestAsync(request, ctx, callback);
     }
 
-    @SuppressWarnings("unchecked") // <- need to cast to the stream type.
-    public <R extends T> StreamFuture<R> streamRequest(Object affinityKey, T request, MessagingOpts<T> opts) {
+    @SuppressWarnings("unchecked") // <- need to cast to the response type.
+    public <R extends T> StreamFuture<R> subscribe(Object affinityKey, T request, MessagingOpts<T> opts) {
         StreamCallbackFuture<T> future = new StreamCallbackFuture<>();
 
-        streamRequest(affinityKey, request, opts, future);
+        subscribe(affinityKey, request, opts, future);
 
         return (StreamFuture<R>)future;
     }
 
-    public void streamRequest(Object affinityKey, T request, MessagingOpts<T> opts, ResponseCallback<T> callback) {
+    public void subscribe(Object affinityKey, T request, MessagingOpts<T> opts, ResponseCallback<T> callback) {
         assert request != null : "Request message must be not null.";
         assert opts != null : "Messaging options must be not null.";
         assert callback != null : "Callback must be not null.";

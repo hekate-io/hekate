@@ -24,13 +24,13 @@ import io.hekate.codec.DataWriter;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
-import io.hekate.messaging.internal.MessagingProtocol.AffinityStreamRequest;
+import io.hekate.messaging.internal.MessagingProtocol.AffinitySubscribe;
 import io.hekate.messaging.internal.MessagingProtocol.Connect;
 import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.internal.MessagingProtocol.Request;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
-import io.hekate.messaging.internal.MessagingProtocol.StreamRequest;
+import io.hekate.messaging.internal.MessagingProtocol.Subscribe;
 import io.hekate.network.NetworkMessage;
 import java.io.IOException;
 
@@ -115,20 +115,20 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 return new Request<>(requestId, payload);
             }
-            case AFFINITY_STREAM_REQUEST: {
+            case AFFINITY_SUBSCRIBE: {
                 int affinity = in.readInt();
                 int requestId = in.readInt();
 
                 T payload = delegate.decode(in);
 
-                return new AffinityStreamRequest<>(affinity, requestId, payload);
+                return new AffinitySubscribe<>(affinity, requestId, payload);
             }
-            case STREAM_REQUEST: {
+            case SUBSCRIBE: {
                 int requestId = in.readInt();
 
                 T payload = delegate.decode(in);
 
-                return new StreamRequest<>(requestId, payload);
+                return new Subscribe<>(requestId, payload);
             }
             case RESPONSE_CHUNK: {
                 int requestId = in.readInt();
@@ -201,8 +201,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 break;
             }
-            case AFFINITY_STREAM_REQUEST: {
-                AffinityStreamRequest<T> request = message.cast();
+            case AFFINITY_SUBSCRIBE: {
+                AffinitySubscribe<T> request = message.cast();
 
                 out.writeInt(request.getAffinity());
                 out.writeInt(request.getRequestId());
@@ -211,8 +211,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 break;
             }
-            case STREAM_REQUEST: {
-                StreamRequest<T> request = message.cast();
+            case SUBSCRIBE: {
+                Subscribe<T> request = message.cast();
 
                 out.writeInt(request.getRequestId());
 

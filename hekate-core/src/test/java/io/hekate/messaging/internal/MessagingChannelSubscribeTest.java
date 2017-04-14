@@ -15,8 +15,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-public class MessagingChannelStreamRequestTest extends MessagingServiceTestBase {
-    public MessagingChannelStreamRequestTest(MessagingTestContext ctx) {
+public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
+    public MessagingChannelSubscribeTest(MessagingTestContext ctx) {
         super(ctx);
     }
 
@@ -45,7 +45,7 @@ public class MessagingChannelStreamRequestTest extends MessagingServiceTestBase 
 
             List<String> senderMessages = Collections.synchronizedList(new ArrayList<>());
 
-            sender.get().forNode(receiver.getNodeId()).streamRequest("request", (err, reply) -> {
+            sender.get().forNode(receiver.getNodeId()).subscribe("request", (err, reply) -> {
                 if (err == null) {
                     try {
                         senderMessages.add(reply.get());
@@ -84,7 +84,7 @@ public class MessagingChannelStreamRequestTest extends MessagingServiceTestBase 
 
         TestChannel receiver = createChannel(c -> c.setReceiver(msg -> {
             assertTrue(msg.mustReply());
-            assertTrue(msg.isStreamRequest());
+            assertTrue(msg.isSubscribe());
 
             assertNotNull(replyCallbackRef.get());
 
@@ -92,7 +92,7 @@ public class MessagingChannelStreamRequestTest extends MessagingServiceTestBase 
                 msg.partialReply("response" + i, replyCallbackRef.get());
 
                 assertTrue(msg.mustReply());
-                assertTrue(msg.isStreamRequest());
+                assertTrue(msg.isSubscribe());
             }
 
             msg.reply("final", lastReplyCallbackRef.get());
@@ -116,7 +116,7 @@ public class MessagingChannelStreamRequestTest extends MessagingServiceTestBase 
 
             List<String> senderMessages = Collections.synchronizedList(new ArrayList<>());
 
-            sender.get().forNode(receiver.getNodeId()).streamRequest("request", (err, reply) -> {
+            sender.get().forNode(receiver.getNodeId()).subscribe("request", (err, reply) -> {
                 if (err == null) {
                     try {
                         senderMessages.add(reply.get());

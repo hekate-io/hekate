@@ -36,10 +36,12 @@ public interface Response<T> {
     T getRequest();
 
     /**
-     * Returns {@code true} if this message is a partial response that was produced by the {@link Message#partialReply(Object,
+     * Returns {@code true} if this message represents a partial response that was produced by the {@link Message#partialReply(Object,
      * SendCallback)} method. This flag can be used to check if there is more data on the messaging stream or if this is the final response.
      *
      * @return {@code true} if this message is a partial response.
+     *
+     * @see MessagingChannel#subscribe(Object, ResponseCallback)
      */
     boolean isPartial();
 

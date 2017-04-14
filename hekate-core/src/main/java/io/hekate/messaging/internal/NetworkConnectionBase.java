@@ -19,12 +19,12 @@ package io.hekate.messaging.internal;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
-import io.hekate.messaging.internal.MessagingProtocol.AffinityStreamRequest;
+import io.hekate.messaging.internal.MessagingProtocol.AffinitySubscribe;
 import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.internal.MessagingProtocol.Request;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
-import io.hekate.messaging.internal.MessagingProtocol.StreamRequest;
+import io.hekate.messaging.internal.MessagingProtocol.Subscribe;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkFuture;
@@ -69,12 +69,12 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
     public void sendStreamRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
         RequestHandle<T> handle = registerRequest(ctx, callback);
 
-        StreamRequest<T> msg;
+        Subscribe<T> msg;
 
         if (ctx.hasAffinity()) {
-            msg = new AffinityStreamRequest<>(ctx.affinity(), handle.getId(), ctx.message());
+            msg = new AffinitySubscribe<>(ctx.affinity(), handle.getId(), ctx.message());
         } else {
-            msg = new StreamRequest<>(handle.getId(), ctx.message());
+            msg = new Subscribe<>(handle.getId(), ctx.message());
         }
 
         msg.prepareSend(handle, this);

@@ -183,7 +183,7 @@ abstract class MessagingConnectionBase<T> {
 
                     break;
                 }
-                case STREAM_REQUEST: {
+                case SUBSCRIBE: {
                     if (receiver == null) {
                         log.error("Received an unexpected message [message={}, from={}]", netMsg, from);
                     } else {
@@ -207,7 +207,7 @@ abstract class MessagingConnectionBase<T> {
 
                     break;
                 }
-                case AFFINITY_STREAM_REQUEST: {
+                case AFFINITY_SUBSCRIBE: {
                     if (receiver == null) {
                         log.error("Received an unexpected message [message={}, from={}]", netMsg, from);
                     } else {
