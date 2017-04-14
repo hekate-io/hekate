@@ -160,53 +160,37 @@ class FilteredTaskService implements TaskService {
     }
 
     @ToStringIgnore
-    private final ClusterFilter filter;
-
-    @ToStringIgnore
     private final TaskService parent;
 
     @ToStringIgnore
     private final MessagingChannel<TaskProtocol> channel;
 
     public FilteredTaskService(TaskService parent, MessagingChannel<TaskProtocol> channel) {
-        this(parent, channel, null);
-    }
-
-    private FilteredTaskService(TaskService parent, MessagingChannel<TaskProtocol> channel, ClusterFilter filter) {
         assert parent != null : "Parent is null.";
         assert channel != null : "Channel is null.";
 
         this.parent = parent;
-        this.filter = filter;
         this.channel = channel;
     }
 
     @Override
     public TaskService filterAll(ClusterFilter newFilter) {
-        ClusterFilter childFilter;
-
-        if (filter == null) {
-            childFilter = newFilter;
-        } else {
-            childFilter = ClusterFilter.and(filter, newFilter);
-        }
-
-        return new FilteredTaskService(this, channel.filterAll(childFilter), childFilter);
+        return new FilteredTaskService(this, channel.filterAll(newFilter));
     }
 
     @Override
-    public boolean hasFilter() {
-        return filter != null;
+    public TaskService withAffinity(Object affinityKey) {
+        return new FilteredTaskService(this, channel.withAffinity(affinityKey));
     }
 
     @Override
     public TaskService withFailover(FailoverPolicy policy) {
-        return new FilteredTaskService(this, channel.withFailover(policy), filter);
+        return new FilteredTaskService(this, channel.withFailover(policy));
     }
 
     @Override
     public TaskService withFailover(FailoverPolicyBuilder builder) {
-        return new FilteredTaskService(this, channel.withFailover(builder), filter);
+        return new FilteredTaskService(this, channel.withFailover(builder));
     }
 
     @Override
@@ -216,18 +200,6 @@ class FilteredTaskService implements TaskService {
         MultiNodeTaskFuture<Void> future = new MultiNodeTaskFuture<>(task);
 
         channel.aggregate(new TaskProtocol.RunTask(task), future);
-
-        return future;
-    }
-
-    @Override
-    public TaskFuture<MultiNodeResult<Void>> broadcast(Object affinityKey, RunnableTask task) {
-        ArgAssert.notNull(affinityKey, "Affinity key");
-        ArgAssert.notNull(task, "Task");
-
-        MultiNodeTaskFuture<Void> future = new MultiNodeTaskFuture<>(task);
-
-        channel.affinityAggregate(affinityKey, new TaskProtocol.RunTask(task), future);
 
         return future;
     }
@@ -244,36 +216,12 @@ class FilteredTaskService implements TaskService {
     }
 
     @Override
-    public <T> TaskFuture<MultiNodeResult<T>> aggregate(Object affinityKey, CallableTask<T> task) {
-        ArgAssert.notNull(affinityKey, "Affinity key");
-        ArgAssert.notNull(task, "Task");
-
-        MultiNodeTaskFuture<T> future = new MultiNodeTaskFuture<>(task);
-
-        channel.affinityAggregate(affinityKey, new TaskProtocol.CallTask(task), future);
-
-        return future;
-    }
-
-    @Override
     public TaskFuture<?> run(RunnableTask task) {
         ArgAssert.notNull(task, "Task");
 
         SingleTaskFuture<Object> future = new SingleTaskFuture<>(task);
 
         channel.request(new TaskProtocol.RunTask(task), future);
-
-        return future;
-    }
-
-    @Override
-    public TaskFuture<?> run(Object affinityKey, RunnableTask task) {
-        ArgAssert.notNull(affinityKey, "Affinity key");
-        ArgAssert.notNull(task, "Task");
-
-        SingleTaskFuture<Object> future = new SingleTaskFuture<>(task);
-
-        channel.affinityRequest(affinityKey, new TaskProtocol.RunTask(task), future);
 
         return future;
     }
@@ -290,32 +238,11 @@ class FilteredTaskService implements TaskService {
     }
 
     @Override
-    public <T> TaskFuture<T> call(Object affinityKey, CallableTask<T> task) {
-        ArgAssert.notNull(affinityKey, "Affinity key");
-        ArgAssert.notNull(task, "Task");
-
-        SingleTaskFuture<T> future = new SingleTaskFuture<>(task);
-
-        channel.affinityRequest(affinityKey, new TaskProtocol.CallTask(task), future);
-
-        return future;
-    }
-
-    @Override
     public <T, V> TaskFuture<V> apply(T arg, ApplicableTask<T, V> task) {
         ArgAssert.notNull(arg, "Argument");
         ArgAssert.notNull(task, "Task");
 
         return call(() -> task.apply(arg));
-    }
-
-    @Override
-    public <T, V> TaskFuture<V> apply(Object affinityKey, T arg, ApplicableTask<T, V> task) {
-        ArgAssert.notNull(affinityKey, "Affinity key.");
-        ArgAssert.notNull(arg, "Argument");
-        ArgAssert.notNull(task, "Task");
-
-        return call(affinityKey, () -> task.apply(arg));
     }
 
     @Override
@@ -377,7 +304,7 @@ class FilteredTaskService implements TaskService {
         int affinity = 0;
 
         for (ApplyTask msg : msgByNode.values()) {
-            channel.affinityRequest(affinity, msg, future);
+            channel.withAffinity(affinity).request(msg, future);
 
             affinity++;
         }

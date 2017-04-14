@@ -85,7 +85,7 @@ public class TaskAggregateTest extends TaskServiceTestBase {
             for (HekateTestInstance node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                MultiNodeResult<Integer> affResult = get(tasks.aggregate(100500, () -> {
+                MultiNodeResult<Integer> affResult = get(tasks.withAffinity(100500).aggregate(() -> {
                     int intResult = COUNTER.incrementAndGet();
 
                     NODES.add(node.getNode());

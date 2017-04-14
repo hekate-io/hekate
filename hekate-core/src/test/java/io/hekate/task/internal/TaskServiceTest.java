@@ -18,63 +18,170 @@ package io.hekate.task.internal;
 
 import io.hekate.HekateTestContext;
 import io.hekate.core.HekateTestInstance;
-import io.hekate.failover.FailoverContext;
+import io.hekate.lock.LockService;
+import io.hekate.lock.LockServiceFactory;
 import io.hekate.task.TaskService;
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import org.junit.Test;
 
+import static java.util.Collections.singleton;
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class TaskServiceTest extends TaskServiceTestBase {
+    private HekateTestInstance local;
+
+    private HekateTestInstance first;
+
+    private HekateTestInstance second;
+
+    private TaskService tasks;
+
     public TaskServiceTest(HekateTestContext params) {
         super(params);
     }
 
-    @Test
-    public void testFiltering() throws Exception {
-        List<HekateTestInstance> nodes = createAndJoin(2);
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
 
-        HekateTestInstance first = nodes.get(0);
-        HekateTestInstance second = nodes.get(1);
+        local = createTaskInstance(c -> c.withNodeRole("all"));
 
-        TaskService tasks = first.get(TaskService.class);
+        first = createTaskInstance(c -> c.withNodeRole("all").withNodeRole("role1")
+            .withNodeProperty("prop", "val1")
+            .withNodeProperty("unique-prop", "val")
+            .withService(new LockServiceFactory())
+        );
 
+        second = createTaskInstance(c -> c.withNodeRole("all").withNodeRole("role2")
+            .withNodeProperty("prop", "val2")
+        );
+
+        get(CompletableFuture.allOf(local.joinAsync(), first.joinAsync(), second.joinAsync()));
+
+        awaitForTopology(local, first, second);
+
+        tasks = local.get(TaskService.class);
+    }
+
+    public void testToString() throws Exception {
         assertTrue(tasks.toString(), tasks.toString().startsWith(TaskService.class.getSimpleName()));
-
-        assertEquals(second.getNode(), get(tasks.forRemotes().call(() -> {
-            say(first.getNode());
-
-            return first.getNode();
-        })));
-
-        assertEquals(second.getNode(), get(tasks.forRemotes().withFailover(FailoverContext::fail).call(() -> {
-            say(first.getNode());
-
-            return first.getNode();
-        })));
-
-        assertEquals(second.getNode(), get(tasks.forNode(second.getNode()).call(() -> {
-            say(second.getNode());
-
-            return second.getNode();
-        })));
-
-        assertEquals(second.getNode(), get(tasks.forNode(second.getNode().getId()).call(() -> {
-            say(second.getNode());
-
-            return second.getNode();
-        })));
-
-        assertEquals(second.getNode(), get(tasks.filter(n -> n.equals(second.getNode())).call(() -> {
-            say(second.getNode());
-
-            return second.getNode();
-        })));
 
         TaskService filtered = tasks.forRemotes();
 
         assertTrue(filtered.toString(), filtered.toString().startsWith(TaskService.class.getSimpleName()));
-        assertTrue(filtered.hasFilter());
+    }
+
+    @Test
+    public void testFilter() throws Exception {
+        assertEquals(first.getNode(), get(tasks.filter(n -> n.equals(first.getNode())).call(local::getNode)));
+        assertEquals(second.getNode(), get(tasks.filter(n -> n.equals(second.getNode())).call(local::getNode)));
+    }
+
+    @Test
+    public void testFilterAll() throws Exception {
+        assertEquals(first.getNode(), get(tasks.filterAll(n -> singleton(first.getNode())).call(local::getNode)));
+        assertEquals(second.getNode(), get(tasks.filterAll(n -> singleton(second.getNode())).call(local::getNode)));
+    }
+
+    @Test
+    public void testForNode() throws Exception {
+        assertEquals(first.getNode(), get(tasks.forNode(first.getNode()).call(local::getNode)));
+        assertEquals(second.getNode(), get(tasks.forNode(second.getNode()).call(local::getNode)));
+    }
+
+    @Test
+    public void testForNodeId() throws Exception {
+        assertEquals(first.getNode(), get(tasks.forNode(first.getNode().getId()).call(local::getNode)));
+        assertEquals(second.getNode(), get(tasks.forNode(second.getNode().getId()).call(local::getNode)));
+    }
+
+    @Test
+    public void testForProperty() throws Exception {
+        assertThat(get(tasks.forProperty("unique-prop").aggregate(local::getNode)).getResults().values(),
+            allOf(
+                hasItems(first.getNode()),
+                not(hasItems(local.getNode(), second.getNode()))
+            )
+        );
+
+        assertThat(get(tasks.forProperty("prop").aggregate(local::getNode)).getResults().values(),
+            allOf(
+                hasItems(first.getNode(), second.getNode()),
+                not(hasItems(local.getNode()))
+            )
+        );
+    }
+
+    @Test
+    public void testForPropertyValue() throws Exception {
+        assertThat(get(tasks.forProperty("prop", "val1").aggregate(local::getNode)).getResults().values(),
+            allOf(
+                hasItems(first.getNode()),
+                not(hasItems(local.getNode(), second.getNode()))
+            )
+        );
+
+        assertThat(get(tasks.forProperty("prop", "val2").aggregate(local::getNode)).getResults().values(),
+            allOf(
+                hasItems(second.getNode()),
+                not(hasItems(local.getNode(), first.getNode()))
+            )
+        );
+    }
+
+    @Test
+    public void testForService() throws Exception {
+        assertThat(get(tasks.forRemotes().forService(TaskService.class).aggregate(local::getNode)).getResults().values(),
+            allOf(
+                hasItems(first.getNode(), second.getNode()),
+                not(hasItems(local.getNode()))
+            )
+        );
+
+        assertThat(get(tasks.forService(LockService.class).aggregate(local::getNode)).getResults().values(),
+            allOf(
+                hasItems(first.getNode()),
+                not(hasItems(local.getNode(), second.getNode()))
+            )
+        );
+    }
+
+    @Test
+    public void testForRemotes() throws Exception {
+        assertThat(get(tasks.forRemotes().aggregate(local::getNode)).getResults().values(),
+            allOf(
+                hasItems(first.getNode(), second.getNode()),
+                not(hasItems(local.getNode()))
+            )
+        );
+    }
+
+    @Test
+    public void testCombo() throws Exception {
+        assertThat(get(tasks.forRemotes().forProperty("prop").aggregate(local::getNode)).getResults().values(),
+            allOf(
+                hasItems(first.getNode(), second.getNode()),
+                not(hasItems(local.getNode()))
+            )
+        );
+
+        assertThat(get(tasks.forRole("all").forProperty("prop").aggregate(local::getNode)).getResults().values(),
+            allOf(
+                hasItems(first.getNode(), second.getNode()),
+                not(hasItems(local.getNode()))
+            )
+        );
+
+        assertThat(get(tasks.forRemotes().forRole("all").aggregate(local::getNode)).getResults().values(),
+            allOf(
+                hasItems(first.getNode(), second.getNode()),
+                not(hasItems(local.getNode()))
+            )
+        );
     }
 }

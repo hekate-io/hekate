@@ -257,11 +257,6 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
     }
 
     @Override
-    public boolean hasFilter() {
-        return false;
-    }
-
-    @Override
     public TaskService withFailover(FailoverPolicy policy) {
         return getRootExecutor().withFailover(policy);
     }
@@ -277,18 +272,13 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
     }
 
     @Override
-    public TaskFuture<MultiNodeResult<Void>> broadcast(Object affinityKey, RunnableTask task) {
-        return getRootExecutor().broadcast(affinityKey, task);
-    }
-
-    @Override
     public <T> TaskFuture<MultiNodeResult<T>> aggregate(CallableTask<T> task) {
         return getRootExecutor().aggregate(task);
     }
 
     @Override
-    public <T> TaskFuture<MultiNodeResult<T>> aggregate(Object affinityKey, CallableTask<T> task) {
-        return getRootExecutor().aggregate(affinityKey, task);
+    public TaskService withAffinity(Object affinityKey) {
+        return getRootExecutor().withAffinity(affinityKey);
     }
 
     @Override
@@ -297,28 +287,13 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
     }
 
     @Override
-    public TaskFuture<?> run(Object affinityKey, RunnableTask task) {
-        return getRootExecutor().run(affinityKey, task);
-    }
-
-    @Override
     public <T> TaskFuture<T> call(CallableTask<T> task) {
         return getRootExecutor().call(task);
     }
 
     @Override
-    public <T> TaskFuture<T> call(Object affinityKey, CallableTask<T> task) {
-        return getRootExecutor().call(affinityKey, task);
-    }
-
-    @Override
     public <T, V> TaskFuture<V> apply(T arg, ApplicableTask<T, V> task) {
         return getRootExecutor().apply(arg, task);
-    }
-
-    @Override
-    public <T, V> TaskFuture<V> apply(Object affinityKey, T arg, ApplicableTask<T, V> task) {
-        return getRootExecutor().apply(affinityKey, arg, task);
     }
 
     @Override

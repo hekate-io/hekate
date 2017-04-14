@@ -253,7 +253,7 @@ class MessagingGateway<T> {
         this.checkIdle = checkIdle;
         this.onBeforeClose = onBeforeClose;
 
-        this.channel = new DefaultMessagingChannel<>(this, this.cluster, loadBalancer, failoverPolicy, defaultTimeout);
+        this.channel = new DefaultMessagingChannel<>(this, this.cluster, loadBalancer, failoverPolicy, defaultTimeout, null);
     }
 
     public MessagingChannelId getId() {

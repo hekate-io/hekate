@@ -77,7 +77,7 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
             for (HekateTestInstance node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                MultiNodeResult<Void> affResult = get(tasks.broadcast(100500, () -> {
+                MultiNodeResult<Void> affResult = get(tasks.withAffinity(100500).broadcast(() -> {
                     COUNTER.incrementAndGet();
 
                     NODES.add(node.getNode());

@@ -91,10 +91,12 @@ public class MessagingChannelAffinityTest extends MessagingServiceTestBase {
 
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
-                MessagingChannel<String> channel = sender.get().forNode(receiver.getNodeId());
+                MessagingChannel<String> channel = sender.get()
+                    .forNode(receiver.getNodeId())
+                    .withAffinity(j);
 
-                channel.affinitySend(j, AffinityCollector.messageForCallback(j, i), new SendCallbackMock());
-                channel.affinitySend(j, AffinityCollector.messageForFuture(j, i));
+                channel.send(AffinityCollector.messageForCallback(j, i), new SendCallbackMock());
+                channel.send(AffinityCollector.messageForFuture(j, i));
             }
         }
 
@@ -125,13 +127,15 @@ public class MessagingChannelAffinityTest extends MessagingServiceTestBase {
 
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
-                MessagingChannel<String> channel = sender.get().forNode(receiver.getNodeId());
+                MessagingChannel<String> channel = sender.get()
+                    .forNode(receiver.getNodeId())
+                    .withAffinity(j);
 
                 @SuppressWarnings("unchecked")
                 ResponseCallback<String> callback = mock(ResponseCallback.class);
 
-                channel.affinityRequest(j, AffinityCollector.messageForCallback(j, i), callback);
-                channel.affinityRequest(j, AffinityCollector.messageForFuture(j, i));
+                channel.request(AffinityCollector.messageForCallback(j, i), callback);
+                channel.request(AffinityCollector.messageForFuture(j, i));
             }
         }
 
@@ -168,7 +172,7 @@ public class MessagingChannelAffinityTest extends MessagingServiceTestBase {
         awaitForChannelsTopology(sender, receiver);
 
         repeat(5, i -> {
-            get(sender.get().forNode(receiver.getNodeId()).affinityRequest(i, "request"));
+            get(sender.get().forNode(receiver.getNodeId()).withAffinity(i).request("request"));
 
             callbackRef.get().get();
 
@@ -197,13 +201,15 @@ public class MessagingChannelAffinityTest extends MessagingServiceTestBase {
 
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
-                MessagingChannel<String> channel = sender.get().forRemotes();
+                MessagingChannel<String> channel = sender.get()
+                    .forRemotes()
+                    .withAffinity(j);
 
                 @SuppressWarnings("unchecked")
                 BroadcastCallback<String> callback = mock(BroadcastCallback.class);
 
-                channel.affinityBroadcast(j, AffinityCollector.messageForCallback(j, i), callback);
-                channel.affinityBroadcast(j, AffinityCollector.messageForFuture(j, i));
+                channel.broadcast(AffinityCollector.messageForCallback(j, i), callback);
+                channel.broadcast(AffinityCollector.messageForFuture(j, i));
             }
         }
 
@@ -244,13 +250,15 @@ public class MessagingChannelAffinityTest extends MessagingServiceTestBase {
 
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
-                MessagingChannel<String> channel = sender.get().forRemotes();
+                MessagingChannel<String> channel = sender.get()
+                    .forRemotes()
+                    .withAffinity(j);
 
                 @SuppressWarnings("unchecked")
                 AggregateCallback<String> callback = mock(AggregateCallback.class);
 
-                channel.affinityAggregate(j, AffinityCollector.messageForCallback(j, i), callback);
-                channel.affinityAggregate(j, AffinityCollector.messageForFuture(j, i));
+                channel.aggregate(AffinityCollector.messageForCallback(j, i), callback);
+                channel.aggregate(AffinityCollector.messageForFuture(j, i));
             }
         }
 

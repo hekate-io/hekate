@@ -120,47 +120,6 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     void send(T message, SendCallback callback);
 
     /**
-     * Asynchronously sends a one way message and returns a future object that can be used to inspect the operation result.
-     *
-     * <p>
-     * This method guarantees that all messages sent with the same affinity key will always be processed by the same node (selected
-     * from the channel's {@link #getCluster()} cluster topology)) until topology doesn't change. Moreover it guarantees that the target
-     * node will always use the same thread to process such messages.
-     * </p>
-     *
-     * <p>
-     * This method doesn't assume any response to be received from the destination node. If request-response type of communication is
-     * required then consider using the {@link #request(Object)} method.
-     * </p>
-     *
-     * @param affinityKey Affinity key.
-     * @param message Message to be sent.
-     *
-     * @return Future object that can be used to inspect the operation result.
-     */
-    SendFuture affinitySend(Object affinityKey, T message);
-
-    /**
-     * Asynchronously sends a one-way message and notifies the specified callback when the operation gets completed.
-     *
-     * <p>
-     * This method guarantees that all messages sent with the same affinity key will always be processed by the same node (selected
-     * from the channel's {@link #getCluster()} cluster topology)) until topology doesn't change. Moreover it guarantees that the target
-     * node will always use the same thread to process such messages.
-     * </p>
-     *
-     * <p>
-     * This method doesn't assume any response to be received from the destination node. If request-response type of communication is
-     * required then consider using the {@link #request(Object, ResponseCallback)} method.
-     * </p>
-     *
-     * @param affinityKey Affinity key.
-     * @param message Message to be sent.
-     * @param callback Callback.
-     */
-    void affinitySend(Object affinityKey, T message, SendCallback callback);
-
-    /**
      * Asynchronously sends a request message and returns a future object that will be completed after receiving the response.
      *
      * @param request Request message.
@@ -177,38 +136,6 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @param callback Callback.
      */
     void request(T request, ResponseCallback<T> callback);
-
-    /**
-     * Asynchronously sends a request message and returns a future object that will be completed after receiving the response.
-     *
-     * <p>
-     * This method guarantees that all messages sent with the same affinity key will always be processed by the same node (selected
-     * from the channel's {@link #getCluster()} cluster topology)) until topology doesn't change. Moreover it guarantees that the target
-     * node will always use the same thread to process such messages.
-     * </p>
-     *
-     * @param affinityKey Affinity key.
-     * @param request Request message.
-     * @param <R> Response type.
-     *
-     * @return Future object that can be used to obtain the response.
-     */
-    <R extends T> ResponseFuture<R> affinityRequest(Object affinityKey, T request);
-
-    /**
-     * Asynchronously sends a request message and notifies the specified callback after receiving the response..
-     *
-     * <p>
-     * This method guarantees that all requests submitted with the same affinity key will always be processed by the same node (selected
-     * from the channel's {@link #getCluster()} cluster topology)) unless topology doesn't change. Moreover it guarantees that the target
-     * node will always use the same thread to process such requests.
-     * </p>
-     *
-     * @param affinityKey Affinity key.
-     * @param request Request message.
-     * @param callback Callback.
-     */
-    void affinityRequest(Object affinityKey, T request, ResponseCallback<T> callback);
 
     /**
      * Opens a stream for receiving continuous responses.
@@ -244,53 +171,6 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     void streamRequest(T request, ResponseCallback<T> callback);
 
     /**
-     * Opens a stream for receiving continuous responses.
-     *
-     * <p>
-     * This method asynchronously sends a request message and opens a stream for receiving {@link Message#partialReply(Object) partial
-     * replies}. For each such reply the {@link ResponseCallback#onComplete(Throwable, Response)} method will be called until the last
-     * (non-{@link Response#isPartial() partial} response is received.
-     * </p>
-     *
-     * <p>
-     * This method guarantees that all messages sent with the same affinity key will always be processed by the same node (selected
-     * from the channel's {@link #getCluster()} cluster topology)) until topology doesn't change. Moreover it guarantees that the target
-     * node will always use the same thread to process such messages.
-     * </p>
-     *
-     * @param affinityKey Affinity key.
-     * @param request Request.
-     * @param callback Callback.
-     */
-    void affinityStreamRequest(Object affinityKey, T request, ResponseCallback<T> callback);
-
-    /**
-     * Opens a stream for receiving continuous responses.
-     *
-     * <p>
-     * This method asynchronously sends a request message, opens a stream for receiving {@link Message#partialReply(Object) partial replies}
-     * and returns a future object that will be completed after receiving <b>all</b> responses.
-     * </p>
-     *
-     * <p>
-     * This method guarantees that all messages sent with the same affinity key will always be processed by the same node (selected
-     * from the channel's {@link #getCluster()} cluster topology)) until topology doesn't change. Moreover it guarantees that the target
-     * node will always use the same thread to process such messages.
-     * </p>
-     *
-     * <p>
-     * <b>Notice:</b> this method performs in-memory buffering of all received messages until the last
-     * (non-{@link Response#isPartial() partial} response is received.
-     * </p>
-     *
-     * @param affinityKey Affinity key.
-     * @param request Request.
-     *
-     * @return Future object that can be used to obtain all of the received responses.
-     */
-    StreamFuture<T> affinityStreamRequest(Object affinityKey, T request);
-
-    /**
      * Asynchronously broadcasts the specified message and returns a future object that can be used to inspect the operation result.
      *
      * @param message Message to broadcast.
@@ -306,27 +186,6 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @param callback Callback that should be notified upon the broadcast operation completion.
      */
     void broadcast(T message, BroadcastCallback<T> callback);
-
-    /**
-     * Asynchronously broadcasts the specified message and returns a future object that can be used to inspect the operation result.
-     *
-     * @param affinityKey Message affinity key to make sure that all messages with the same key will always go through the same network
-     * connection and will be processed by the same thread.
-     * @param message Message to broadcast.
-     *
-     * @return Future object that can be used to inspect the broadcast operation result.
-     */
-    BroadcastFuture<T> affinityBroadcast(Object affinityKey, T message);
-
-    /**
-     * Asynchronously broadcasts the specified message and notifies the specified callback upon the operation completion.
-     *
-     * @param affinityKey Message affinity key to make sure that messages with the same key will always go through the same network
-     * connection and will be processed by the same thread.
-     * @param message Message to broadcast.
-     * @param callback Callback that should be notified upon the broadcast operation completion.
-     */
-    void affinityBroadcast(Object affinityKey, T message, BroadcastCallback<T> callback);
 
     /**
      * Asynchronously sends the query message and aggregates responses from all the nodes that received this message. This method returns a
@@ -353,32 +212,20 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     void aggregate(T message, AggregateCallback<T> callback);
 
     /**
-     * Asynchronously sends the query message and aggregates responses from all the nodes that received this message. This method returns a
-     * future object that can be used to inspect the aggregation results.
+     * Returns a new lightweight wrapper of this channel that will apply the specified affinity key to all messaging operations.
      *
-     * @param affinityKey Message affinity key to make sure that messages with the same key will always go through the same network
-     * connection and will be processed by the same thread.
-     * @param message Query message that should be sent.
-     * @param <R> Response type (each remote node should return a response of this type).
+     * <p>
+     * Specifying an affinity key ensures that all messages sent with the same key will always be processed by the same node (selected from
+     * the channel cluster topology) until the topology changes. Moreover it guarantees that the target node will always use the same thread
+     * to process such messages.
+     * </p>
      *
-     * @return Future object that can be used to inspect the aggregation results.
+     * @param affinityKey Affinity key (if {@code null} then affinity key will be cleared).
+     * @param <C> Channel type.
      *
-     * @see #aggregate(Object, AggregateCallback)
+     * @return Channel wrapper.
      */
-    <R extends T> AggregateFuture<R> affinityAggregate(Object affinityKey, T message);
-
-    /**
-     * Asynchronously sends the query message, aggregates responses from all nodes that received this message and notifies the
-     * specified callback on operation progress and aggregation results.
-     *
-     * @param affinityKey Message affinity key to make sure that messages with the same key will always go through the same network
-     * connection and will be processed by the same thread.
-     * @param message Query message that should be sent.
-     * @param callback Callback that should be notified on operation progress and aggregation results.
-     *
-     * @see #aggregate(Object)
-     */
-    void affinityAggregate(Object affinityKey, T message, AggregateCallback<T> callback);
+    <C extends T> MessagingChannel<C> withAffinity(Object affinityKey);
 
     /**
      * Returns a new lightweight wrapper of this channel that will use the specified failover policy and will inherit all other options from

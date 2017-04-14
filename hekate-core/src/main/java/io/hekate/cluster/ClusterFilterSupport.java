@@ -137,22 +137,4 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
     default T forYoungest() {
         return filterAll(ClusterFilters.forYoungest());
     }
-
-    /**
-     * Applies {@link ClusterFilters#forNext()} to this instance.
-     *
-     * @return Filtered instance.
-     */
-    default T forNext() {
-        return filterAll(ClusterFilters.forNext());
-    }
-
-    /**
-     * Applies {@link ClusterFilters#forNextInJoinOrder()} to this instance.
-     *
-     * @return Filtered instance.
-     */
-    default T forNextInJoinOrder() {
-        return filterAll(ClusterFilters.forNextInJoinOrder());
-    }
 }

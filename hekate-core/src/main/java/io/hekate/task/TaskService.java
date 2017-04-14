@@ -163,31 +163,11 @@ import java.util.concurrent.Callable;
  *
  * <h2>Task affinity</h2>
  * <p>
- * By default, all tasks that are submitted to the cluster are executed on randomly selected nodes and on randomly selected threads of
- * those nodes. If it is required to process tasks sequentially based on come criteria then task affinity key should be specified for each
- * such task. For example, if tasks are modifying some user account data then such tasks can use account ID or username as affinity key in
- * order to make sure that all tasks for particular user will always be executed on the same node and on the same thread of that node.
+ * By default, all tasks that are sent to the cluster are executed on randomly selected nodes and randomly selected threads of these nodes.
+ * If you want to consistently process tasks based on certain criteria, then the affinity key should be specified via {@link
+ * #withAffinity(Object)}. For example, if tasks change some user account data, then such tasks can use an account identifier or user name
+ * as an affinity key to make sure that all tasks for a particular user are always performed on the same node and on the same thread.
  * </p>
- *
- * <p>
- * The following methods can be used to execute tasks with affinity keys:
- * </p>
- * <ul>
- * <li>{@link #run(Object, RunnableTask)} - runs all tasks with same affinity key on the same node and on the same thread of that
- * node</li>
- * <li>{@link #call(Object, CallableTask)} - calls all tasks with the same affinity key on the same node and on the same thread of that
- * node</li>
- * <li>{@link #broadcast(Object, RunnableTask)} - runs tasks to all nodes and makes sure that all tasks with same affinity key are
- * always executed on the same thread of each node</li>
- * <li>{@link #aggregate(Object, CallableTask)} - calls tasks on all nodes and makes sure that all tasks with same affinity key are
- * always executed on the same thread of each node</li>
- * </ul>
- *
- * <p>
- * The first parameter of those methods is the task affinity key. {@link TaskService} uses the {@link Object#hashCode() hash code} of
- * that key to perform consistent assignment of nodes and threads for task execution.
- * </p>
- *
  *
  * <h2>Notes on tasks serialization</h2>
  * <p>
@@ -246,22 +226,6 @@ public interface TaskService extends Service, ClusterFilterSupport<TaskService> 
     TaskFuture<?> run(RunnableTask task);
 
     /**
-     * Asynchronously executes the specified runnable task on a node that is mapped to the specified affinity key.
-     *
-     * <p>
-     * This method guarantees that all tasks with the same affinity key will always be executed on the same node (selected from
-     * the {@link #filter(ClusterNodeFilter) filtered } cluster topology) unless topology doesn't change. Moreover it guarantees that
-     * the target node will always use the same thread to execute such tasks.
-     * </p>
-     *
-     * @param affinityKey Task affinity key.
-     * @param task Task to be executed.
-     *
-     * @return Future object that can be used to obtain result of this operation.
-     */
-    TaskFuture<?> run(Object affinityKey, RunnableTask task);
-
-    /**
      * Asynchronously executes the specified callable task on a randomly selected node from the underlying cluster topology.
      *
      * @param task Task to be executed.
@@ -270,23 +234,6 @@ public interface TaskService extends Service, ClusterFilterSupport<TaskService> 
      * @return Future object that can be used to obtain result of this operation.
      */
     <T> TaskFuture<T> call(CallableTask<T> task);
-
-    /**
-     * Asynchronously executes the specified runnable task on a node that is mapped to the specified affinity key.
-     *
-     * <p>
-     * This method guarantees that all tasks with the same affinity key will always be executed on the same node (selected from
-     * the {@link #filter(ClusterNodeFilter) filtered } cluster topology) unless topology doesn't change. Moreover it guarantees that
-     * the target node will always use the same thread to execute such tasks.
-     * </p>
-     *
-     * @param affinityKey Task affinity key.
-     * @param task Task to be executed.
-     * @param <T> Result type.
-     *
-     * @return Future object that can be used to obtain result of this operation.
-     */
-    <T> TaskFuture<T> call(Object affinityKey, CallableTask<T> task);
 
     /**
      * Asynchronously applies the specified task to the single argument on a randomly selected node of the underlying cluster topology.
@@ -301,27 +248,6 @@ public interface TaskService extends Service, ClusterFilterSupport<TaskService> 
      * @see #applyAll(Collection, ApplicableTask)
      */
     <T, V> TaskFuture<V> apply(T arg, ApplicableTask<T, V> task);
-
-    /**
-     * Asynchronously applies the specified task to the single argument on a node that is mapped to the specified affinity key.
-     *
-     * <p>
-     * This method guarantees that all tasks with the same affinity key will always be executed on the same node (selected from
-     * the {@link #filter(ClusterNodeFilter) filtered } cluster topology) unless topology doesn't change. Moreover it guarantees that
-     * the target node will always use the same thread to execute such tasks.
-     * </p>
-     *
-     * @param affinityKey Task affinity key.
-     * @param arg Single argument.
-     * @param task Task.
-     * @param <T> Argument type.
-     * @param <V> Result type.
-     *
-     * @return Future object that can be used to obtain result of this operation.
-     *
-     * @see #applyAll(Collection, ApplicableTask)
-     */
-    <T, V> TaskFuture<V> apply(Object affinityKey, T arg, ApplicableTask<T, V> task);
 
     /**
      * Asynchronously applies the specified task to each of the specified arguments by distributing the workload among the cluster nodes.
@@ -366,26 +292,6 @@ public interface TaskService extends Service, ClusterFilterSupport<TaskService> 
     TaskFuture<MultiNodeResult<Void>> broadcast(RunnableTask task);
 
     /**
-     * Asynchronously executes the specified runnable task on all nodes from the underlying cluster topology.
-     *
-     * <p>
-     * This method guarantees that every node will always use the same thread to process tasks that were submitted with the same affinity
-     * key.
-     * </p>
-     *
-     * <p>
-     * <b>Notice:</b> this method doesn't throw an error in case of partial task failure (i.e. when task execution failed on some nodes).
-     * Consider using the {@link MultiNodeResult} object to {@link MultiNodeResult#getErrors() inspect failures}.
-     * </p>
-     *
-     * @param affinityKey Task affinity key.
-     * @param task Task to be executed.
-     *
-     * @return Future object that can be used to obtain result of this operation.
-     */
-    TaskFuture<MultiNodeResult<Void>> broadcast(Object affinityKey, RunnableTask task);
-
-    /**
      * Asynchronously executes the specified callable task on all nodes from the underlying cluster topology.
      *
      * <p>
@@ -401,32 +307,19 @@ public interface TaskService extends Service, ClusterFilterSupport<TaskService> 
     <T> TaskFuture<MultiNodeResult<T>> aggregate(CallableTask<T> task);
 
     /**
-     * Asynchronously executes the specified callable task on all nodes from the underlying cluster topology.
+     * Returns a new lightweight wrapper of this service that will apply the specified affinity key to all tasks.
      *
      * <p>
-     * This method guarantees that every node will always use the same thread to process tasks that were submitted with the same affinity
-     * key.
+     * Specifying an affinity key ensures that all tasks submitted with the same key will always be processed by the same node (selected
+     * from the channel cluster topology) until the topology changes. Moreover it guarantees that the target node will always use the same
+     * thread to execute such tasks.
      * </p>
      *
-     * <p>
-     * <b>Notice:</b> this method doesn't throw an error in case of partial task failure (i.e. when task execution failed on some nodes).
-     * Consider using the {@link MultiNodeResult} object to {@link MultiNodeResult#getErrors() inspect failures}.
-     * </p>
+     * @param affinityKey Affinity key (if {@code null} then affinity key will be cleared).
      *
-     * @param affinityKey Task affinity key.
-     * @param task Task to be executed.
-     * @param <T> Result type.
-     *
-     * @return Future object that can be used to obtain result of this operation.
+     * @return Wrapper that will use the specified affinity key.
      */
-    <T> TaskFuture<MultiNodeResult<T>> aggregate(Object affinityKey, CallableTask<T> task);
-
-    /**
-     * Returns {@code true} if this service instance has a {@link #filter(ClusterNodeFilter) filter}.
-     *
-     * @return {@code true} if this service instance has a {@link #filter(ClusterNodeFilter) filter}.
-     */
-    boolean hasFilter();
+    TaskService withAffinity(Object affinityKey);
 
     /**
      * Returns a new lightweight wrapper that will use the specified failover policy and will inherit all cluster filtering options from

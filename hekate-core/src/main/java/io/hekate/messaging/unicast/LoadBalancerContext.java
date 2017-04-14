@@ -53,12 +53,11 @@ public interface LoadBalancerContext extends ClusterTopology {
     int getAffinity();
 
     /**
-     * Returns affinity key of the messaging operation or {@code null} if affinity key wasn't specified.
+     * Returns the affinity key of the messaging operation or {@code null} if the affinity key wasn't specified.
      *
      * @return Affinity key or {@code null}.
      *
-     * @see MessagingChannel#affinitySend(Object, Object)
-     * @see MessagingChannel#affinityRequest(Object, Object)
+     * @see MessagingChannel#withAffinity(Object)
      */
     Object getAffinityKey();
 

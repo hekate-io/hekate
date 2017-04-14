@@ -245,6 +245,7 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
 
         when(mock.forNode(Mockito.<ClusterNode>any())).thenReturn(mock);
         when(mock.withFailover(any(FailoverPolicy.class))).thenReturn(mock);
+        when(mock.withAffinity(any())).thenReturn(mock);
 
         return mock;
     }

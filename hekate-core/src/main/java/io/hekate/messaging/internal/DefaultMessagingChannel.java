@@ -49,10 +49,12 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
 
     private final LoadBalancer<T> balancer;
 
+    private final Object affinityKey;
+
     private final long timeout;
 
     public DefaultMessagingChannel(MessagingGateway<T> gateway, ClusterView cluster, LoadBalancer<T> balancer, FailoverPolicy failover,
-        long timeout) {
+        long timeout, Object affinityKey) {
         assert gateway != null : "Gateway is null.";
         assert cluster != null : "Cluster view is null.";
 
@@ -61,35 +63,19 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
         this.balancer = balancer;
         this.failover = failover;
         this.timeout = timeout;
+        this.affinityKey = affinityKey;
     }
 
     @Override
     public SendFuture send(T message) {
         ArgAssert.notNull(message, "Message");
 
-        return gateway.send(null, message, this);
+        return gateway.send(affinityKey, message, this);
     }
 
     @Override
     public void send(T message, SendCallback callback) {
         ArgAssert.notNull(message, "Message");
-
-        gateway.send(null, message, this, callback);
-    }
-
-    @Override
-    public SendFuture affinitySend(Object affinityKey, T message) {
-        ArgAssert.notNull(message, "Message");
-        ArgAssert.notNull(affinityKey, "Affinity key");
-
-        return gateway.send(affinityKey, message, this);
-    }
-
-    @Override
-    public void affinitySend(Object affinityKey, T message, SendCallback callback) {
-        ArgAssert.notNull(message, "Message");
-        ArgAssert.notNull(callback, "Callback");
-        ArgAssert.notNull(affinityKey, "Affinity key");
 
         gateway.send(affinityKey, message, this, callback);
     }
@@ -98,7 +84,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     public <R extends T> ResponseFuture<R> request(T request) {
         ArgAssert.notNull(request, "Message");
 
-        return gateway.request(null, request, this);
+        return gateway.request(affinityKey, request, this);
     }
 
     @Override
@@ -106,43 +92,16 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
         ArgAssert.notNull(request, "Message");
         ArgAssert.notNull(callback, "Callback");
 
-        gateway.request(null, request, this, callback);
-    }
-
-    @Override
-    public <R extends T> ResponseFuture<R> affinityRequest(Object affinityKey, T request) {
-        ArgAssert.notNull(request, "Message");
-        ArgAssert.notNull(affinityKey, "Affinity key");
-
-        return gateway.request(affinityKey, request, this);
-    }
-
-    @Override
-    public void affinityRequest(Object affinityKey, T request, ResponseCallback<T> callback) {
-        ArgAssert.notNull(request, "Message");
-        ArgAssert.notNull(callback, "Callback");
-        ArgAssert.notNull(affinityKey, "Affinity key");
-
         gateway.request(affinityKey, request, this, callback);
     }
 
     @Override
     public void streamRequest(T request, ResponseCallback<T> callback) {
-        gateway.streamRequest(null, request, this, callback);
-    }
-
-    @Override
-    public StreamFuture<T> streamRequest(T request) {
-        return gateway.streamRequest(null, request, this);
-    }
-
-    @Override
-    public void affinityStreamRequest(Object affinityKey, T request, ResponseCallback<T> callback) {
         gateway.streamRequest(affinityKey, request, this, callback);
     }
 
     @Override
-    public StreamFuture<T> affinityStreamRequest(Object affinityKey, T request) {
+    public StreamFuture<T> streamRequest(T request) {
         return gateway.streamRequest(affinityKey, request, this);
     }
 
@@ -150,30 +109,13 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     public BroadcastFuture<T> broadcast(T message) {
         ArgAssert.notNull(message, "Message");
 
-        return gateway.broadcast(null, message, this);
+        return gateway.broadcast(affinityKey, message, this);
     }
 
     @Override
     public void broadcast(T message, BroadcastCallback<T> callback) {
         ArgAssert.notNull(message, "Message");
         ArgAssert.notNull(callback, "Callback");
-
-        gateway.broadcast(null, message, this, callback);
-    }
-
-    @Override
-    public BroadcastFuture<T> affinityBroadcast(Object affinityKey, T message) {
-        ArgAssert.notNull(message, "Message");
-        ArgAssert.notNull(affinityKey, "Affinity key");
-
-        return gateway.broadcast(affinityKey, message, this);
-    }
-
-    @Override
-    public void affinityBroadcast(Object affinityKey, T message, BroadcastCallback<T> callback) {
-        ArgAssert.notNull(message, "Message");
-        ArgAssert.notNull(callback, "Callback");
-        ArgAssert.notNull(affinityKey, "Affinity key");
 
         gateway.broadcast(affinityKey, message, this, callback);
     }
@@ -182,30 +124,13 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     public <R extends T> AggregateFuture<R> aggregate(T message) {
         ArgAssert.notNull(message, "Message");
 
-        return gateway.aggregate(null, message, this);
+        return gateway.aggregate(affinityKey, message, this);
     }
 
     @Override
     public void aggregate(T message, AggregateCallback<T> callback) {
         ArgAssert.notNull(message, "Message");
         ArgAssert.notNull(callback, "Callback");
-
-        gateway.aggregate(null, message, this, callback);
-    }
-
-    @Override
-    public <R extends T> AggregateFuture<R> affinityAggregate(Object affinityKey, T message) {
-        ArgAssert.notNull(message, "Message");
-        ArgAssert.notNull(affinityKey, "Affinity key");
-
-        return gateway.aggregate(affinityKey, message, this);
-    }
-
-    @Override
-    public void affinityAggregate(Object affinityKey, T message, AggregateCallback<T> callback) {
-        ArgAssert.notNull(message, "Message");
-        ArgAssert.notNull(callback, "Callback");
-        ArgAssert.notNull(affinityKey, "Affinity key");
 
         gateway.aggregate(affinityKey, message, this, callback);
     }
@@ -222,8 +147,14 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
 
     @Override
     @SuppressWarnings("unchecked")
+    public <C extends T> MessagingChannel<C> withAffinity(Object affinityKey) {
+        return new DefaultMessagingChannel(gateway, cluster, balancer, failover, timeout, affinityKey);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
     public <C extends T> DefaultMessagingChannel<C> withLoadBalancer(LoadBalancer<C> balancer) {
-        return new DefaultMessagingChannel(gateway, cluster, balancer, failover, timeout);
+        return new DefaultMessagingChannel(gateway, cluster, balancer, failover, timeout, affinityKey);
     }
 
     @Override
@@ -234,7 +165,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     @Override
     @SuppressWarnings("unchecked")
     public <C extends T> DefaultMessagingChannel<C> withFailover(FailoverPolicy policy) {
-        return new DefaultMessagingChannel(gateway, cluster, balancer, policy, timeout);
+        return new DefaultMessagingChannel(gateway, cluster, balancer, policy, timeout, affinityKey);
     }
 
     @Override
@@ -246,14 +177,14 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     public DefaultMessagingChannel<T> withTimeout(long timeout, TimeUnit unit) {
         ArgAssert.notNull(unit, "Time unit");
 
-        return new DefaultMessagingChannel<>(gateway, cluster, balancer, failover, unit.toMillis(timeout));
+        return new DefaultMessagingChannel<>(gateway, cluster, balancer, failover, unit.toMillis(timeout), affinityKey);
     }
 
     @Override
     public DefaultMessagingChannel<T> filterAll(ClusterFilter filter) {
         ArgAssert.notNull(filter, "Filter");
 
-        return new DefaultMessagingChannel<>(gateway, cluster.filterAll(filter), balancer, failover, timeout);
+        return new DefaultMessagingChannel<>(gateway, cluster.filterAll(filter), balancer, failover, timeout, affinityKey);
     }
 
     @Override
@@ -295,7 +226,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     public MessagingOpts<T> forSingleNode(ClusterNode node) {
         ArgAssert.notNull(node, "Node");
 
-        return new DefaultMessagingChannel<>(gateway, cluster.forNode(node), null, failover, timeout);
+        return new DefaultMessagingChannel<>(gateway, cluster.forNode(node), null, failover, timeout, affinityKey);
     }
 
     // Package level for testing purposes.

@@ -75,7 +75,7 @@ public class TaskRunTest extends TaskServiceTestBase {
             for (HekateTestInstance node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                get(tasks.run(100500, () -> {
+                get(tasks.withAffinity(100500).run(() -> {
                     NODES.add(node.getNode());
 
                     COUNTER.incrementAndGet();
@@ -217,7 +217,7 @@ public class TaskRunTest extends TaskServiceTestBase {
         });
 
         // Successful retry.
-        get(tasks.run("some-affinity", () -> {
+        get(tasks.withAffinity("some-affinity").run(() -> {
             if (attempts.get() < 3) {
                 throw TEST_ERROR;
             }
@@ -229,7 +229,7 @@ public class TaskRunTest extends TaskServiceTestBase {
 
         // Failed retry.
         try {
-            get(tasks.run("some-affinity", () -> {
+            get(tasks.withAffinity("some-affinity").run(() -> {
                 throw TEST_ERROR;
             }));
 

@@ -81,6 +81,7 @@ class DefaultCoordinationMember implements CoordinationMember {
         this.async = async;
 
         this.channel = channel.forNode(node)
+            .withAffinity(processName)
             .withFailover(new FailoverPolicyBuilder()
                 // Retry to death.
                 .withRetryUntil(ctx -> !cancelled)
@@ -130,7 +131,7 @@ class DefaultCoordinationMember implements CoordinationMember {
 
             CoordinationProtocol.Request req = new CoordinationProtocol.Request(processName, from, topologyHash, request);
 
-            channel.affinityRequest(processName, req, new ResponseCallback<CoordinationProtocol>() {
+            channel.request(req, new ResponseCallback<CoordinationProtocol>() {
                 @Override
                 public ReplyDecision accept(Throwable err, CoordinationProtocol reply) {
                     if (err != null || reply instanceof CoordinationProtocol.Reject) {

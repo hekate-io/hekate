@@ -16,6 +16,7 @@
 
 package io.hekate.lock.internal;
 
+import io.hekate.cluster.ClusterFilters;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
@@ -188,7 +189,8 @@ class DefaultLockRegion implements LockRegion {
 
         // Configure messaging channel for locks migration.
         migrationChannel = channel.filter(regionFilter)
-            .forNextInJoinOrder() // Use ring-based communications.
+            .withAffinity(regionName)
+            .filterAll(ClusterFilters.forNextInJoinOrder()) // <-- use ring-based communications.
             .withFailover(new FailoverPolicyBuilder()
                 .withAlwaysReRoute()
                 .withConstantRetryDelay(retryInterval)
@@ -220,7 +222,7 @@ class DefaultLockRegion implements LockRegion {
 
         LockOwnerRequest request = new LockOwnerRequest(regionName, lockName);
 
-        lockChannel.affinityRequest(new LockAffinityKey(regionName, lockName), request, new ResponseCallback<LockProtocol>() {
+        lockChannel.withAffinity(new LockAffinityKey(regionName, lockName)).request(request, new ResponseCallback<LockProtocol>() {
             @Override
             public ReplyDecision accept(Throwable err, LockProtocol reply) {
                 LockOwnerResponse lockReply = (LockOwnerResponse)reply;
@@ -975,7 +977,7 @@ class DefaultLockRegion implements LockRegion {
     }
 
     private void sendToNextNode(MigrationRequest request) {
-        migrationChannel.affinityRequest(regionName, request, new ResponseCallback<LockProtocol>() {
+        migrationChannel.request(request, new ResponseCallback<LockProtocol>() {
             @Override
             public ReplyDecision accept(Throwable err, LockProtocol reply) {
                 if (err == null) {
