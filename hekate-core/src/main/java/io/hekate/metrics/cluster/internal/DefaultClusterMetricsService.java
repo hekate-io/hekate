@@ -410,17 +410,15 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
                         metricsOpt = replica.getPublicMetrics();
                     }
 
-                    if (metricsOpt.isPresent()) {
-                        ClusterNodeMetrics nodeMetrics = metricsOpt.get();
+                metricsOpt.ifPresent(nodeMetrics -> {
+                    for (Metric metric : nodeMetrics.allMetrics().values()) {
+                        if (filter.accept(metric)) {
+                            metrics.add(nodeMetrics);
 
-                        for (Metric metric : nodeMetrics.allMetrics().values()) {
-                            if (filter.accept(metric)) {
-                                metrics.add(nodeMetrics);
-
-                                break;
-                            }
+                            break;
                         }
                     }
+                });
                 }
             );
 

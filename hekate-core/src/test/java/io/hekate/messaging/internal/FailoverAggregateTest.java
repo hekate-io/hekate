@@ -20,7 +20,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class FailoverAggregateTest extends MessagingServiceTestBase {
-    private AtomicInteger failures = new AtomicInteger();
+    private final AtomicInteger failures = new AtomicInteger();
 
     private List<TestChannel> channels;
 

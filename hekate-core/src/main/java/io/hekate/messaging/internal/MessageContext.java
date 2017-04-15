@@ -12,7 +12,6 @@ class MessageContext<T> {
         void onTimeout();
     }
 
-    @SuppressWarnings("unchecked")
     private static final AtomicIntegerFieldUpdater<MessageContext> COMPLETED = newUpdater(MessageContext.class, "completed");
 
     private final int affinity;

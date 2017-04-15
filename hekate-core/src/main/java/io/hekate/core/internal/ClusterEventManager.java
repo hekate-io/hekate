@@ -264,15 +264,15 @@ class ClusterEventManager {
     private void doAddListener(FilteredListener listener) {
         Optional<Future<?>> future = doAddListenerAsync(listener);
 
-        if (future.isPresent()) {
+        future.ifPresent(it -> {
             try {
-                Utils.getUninterruptedly(future.get());
+                Utils.getUninterruptedly(it);
             } catch (ExecutionException e) {
                 if (log.isErrorEnabled()) {
                     log.error("Failed to register cluster event listener [listener={}]", listener, e.getCause());
                 }
             }
-        }
+        });
     }
 
     private Optional<Future<?>> doAddListenerAsync(FilteredListener listener) {

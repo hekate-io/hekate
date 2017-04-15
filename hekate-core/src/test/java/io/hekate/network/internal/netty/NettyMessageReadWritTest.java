@@ -176,13 +176,13 @@ public class NettyMessageReadWritTest extends HekateTestBase {
         String str = "abc";
 
         check(input(str), (v, out) -> out.writeBytes(v), in -> {
-            String s = "";
+            StringBuilder s = new StringBuilder();
 
             for (int i = 0; i < str.length(); i++) {
-                s += (char)in.asStream().read();
+                s.append((char)in.asStream().read());
             }
 
-            return s;
+            return s.toString();
         });
     }
 
@@ -191,13 +191,13 @@ public class NettyMessageReadWritTest extends HekateTestBase {
         String str = "abc";
 
         check(input(str), (v, out) -> out.writeChars(v), in -> {
-            String s = "";
+            StringBuilder s = new StringBuilder();
 
             for (int i = 0; i < str.length(); i++) {
-                s += in.readChar();
+                s.append(in.readChar());
             }
 
-            return s;
+            return s.toString();
         });
     }
 

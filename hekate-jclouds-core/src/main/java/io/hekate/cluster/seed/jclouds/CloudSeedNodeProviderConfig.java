@@ -93,7 +93,7 @@ public class CloudSeedNodeProviderConfig {
      * Sets the {@link ComputeService} endpoint (f.e {@code "https://ec2.us-east-1.amazonaws.com"}).
      *
      * <p>
-     * If not specified then the {@link #setProvider(String) provider}'s default endpint will be used.
+     * If not specified then the {@link #setProvider(String) provider}'s default endpoint will be used.
      * </p>
      *
      * @param endpoint Endpoint.

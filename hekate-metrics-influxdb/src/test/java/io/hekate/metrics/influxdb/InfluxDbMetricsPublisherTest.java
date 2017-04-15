@@ -19,7 +19,6 @@ package io.hekate.metrics.influxdb;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.metrics.Metric;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;

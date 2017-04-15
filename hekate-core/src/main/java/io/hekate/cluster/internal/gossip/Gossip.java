@@ -125,21 +125,17 @@ public class Gossip extends GossipBase {
 
         Map<ClusterNodeId, GossipNodeState> newMembers = new HashMap<>();
 
-        thisMembers.entrySet().forEach(e -> {
-                ClusterNodeId id = e.getKey();
-                GossipNodeState member = e.getValue();
+        thisMembers.forEach((id, member) -> {
+            GossipNodeState otherMember = otherMembers.get(id);
 
-                GossipNodeState otherMember = otherMembers.get(id);
-
-                if (otherMember == null) {
-                    if (!removed.contains(id)) {
-                        newMembers.put(id, member);
-                    }
-                } else {
-                    newMembers.put(id, member.merge(otherMember));
+            if (otherMember == null) {
+                if (!removed.contains(id)) {
+                    newMembers.put(id, member);
                 }
+            } else {
+                newMembers.put(id, member.merge(otherMember));
             }
-        );
+        });
 
         otherMembers.entrySet().stream()
             .filter(e -> !newMembers.containsKey(e.getKey()))

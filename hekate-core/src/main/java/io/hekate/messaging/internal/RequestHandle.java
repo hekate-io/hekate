@@ -7,7 +7,6 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
 
 class RequestHandle<T> {
-    @SuppressWarnings("unchecked")
     private static final AtomicIntegerFieldUpdater<RequestHandle> UNREGISTERED = newUpdater(RequestHandle.class, "unregistered");
 
     private final Integer id;
