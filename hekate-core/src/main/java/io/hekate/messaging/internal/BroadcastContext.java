@@ -59,26 +59,26 @@ class BroadcastContext<T> implements BroadcastResult<T> {
     }
 
     @Override
-    public T getMessage() {
+    public T message() {
         return message;
     }
 
     @Override
-    public Set<ClusterNode> getNodes() {
+    public Set<ClusterNode> nodes() {
         synchronized (this) {
             return nodes;
         }
     }
 
     @Override
-    public Map<ClusterNode, Throwable> getErrors() {
+    public Map<ClusterNode, Throwable> errors() {
         synchronized (this) {
             return errors == null ? Collections.emptyMap() : errors;
         }
     }
 
     @Override
-    public Throwable getError(ClusterNode node) {
+    public Throwable errorOf(ClusterNode node) {
         synchronized (this) {
             return errors != null ? errors.get(node) : null;
         }
@@ -93,7 +93,7 @@ class BroadcastContext<T> implements BroadcastResult<T> {
 
     @Override
     public boolean isSuccess(ClusterNode node) {
-        return getError(node) == null;
+        return errorOf(node) == null;
     }
 
     public boolean forgetNode(ClusterNode node) {

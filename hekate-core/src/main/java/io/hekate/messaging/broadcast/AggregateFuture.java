@@ -18,6 +18,10 @@ package io.hekate.messaging.broadcast;
 
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFuture;
+import io.hekate.messaging.MessagingFutureException;
+import java.util.Collection;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Asynchronous result of {@link MessagingChannel#aggregate(Object) aggregate(...)} operation.
@@ -28,5 +32,42 @@ import io.hekate.messaging.MessagingFuture;
  * @see AggregateResult
  */
 public class AggregateFuture<T> extends MessagingFuture<AggregateResult<T>> {
-    // No-op.
+    /**
+     * Awaits for the asynchronous aggregation to complete and returns the {@link AggregateResult#results()} result}.
+     *
+     * @return Aggregation result.
+     *
+     * @throws MessagingFutureException Signals that aggregation failed.
+     * @throws InterruptedException Signals that the thread was interrupted while waiting for aggregation to complete.
+     */
+    public Collection<T> results() throws InterruptedException, MessagingFutureException {
+        return get().results();
+    }
+
+    /**
+     * Awaits for the asynchronous aggregation to complete within the timeout and returns the {@link AggregateResult#results()} result}.
+     *
+     * @param timeout Time to wait for operation result.
+     * @param unit Time unit of the timeout argument
+     *
+     * @return Aggregation result.
+     *
+     * @throws MessagingFutureException Signals that aggregation failed.
+     * @throws InterruptedException Signals that the thread was interrupted while waiting for aggregation to complete.
+     * @throws TimeoutException Signals that timeout happened.
+     */
+    public Collection<T> results(long timeout, TimeUnit unit) throws InterruptedException, MessagingFutureException, TimeoutException {
+        return get(timeout, unit).results();
+    }
+
+    /**
+     * Uninterruptedly awaits for the asynchronous aggregation to complete and returns the {@link AggregateResult#results()} result}.
+     *
+     * @return Aggregation result.
+     *
+     * @throws MessagingFutureException Signals that aggregation failed.
+     */
+    public Collection<T> resultsUninterruptedly() throws MessagingFutureException {
+        return getUninterruptedly().results();
+    }
 }

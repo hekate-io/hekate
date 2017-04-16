@@ -55,12 +55,12 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
             for (TestChannel channel : channels) {
                 try {
-                    channel.get().request("" + i).getResponse(3, TimeUnit.SECONDS);
+                    channel.get().request("" + i).response(3, TimeUnit.SECONDS);
                 } catch (MessagingFutureException e) {
                     assertTrue(getStacktrace(e), e.getCause() instanceof TooManyRoutesException);
                 }
 
-                responses.add(channel.get().forOldest().request("" + i).getResponse(3, TimeUnit.SECONDS));
+                responses.add(channel.get().forOldest().request("" + i).response(3, TimeUnit.SECONDS));
 
                 assertEquals(1, responses.size());
             }
@@ -99,8 +99,8 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
                 String msg1 = "test1-" + from.getNodeId();
                 String msg2 = "test2-" + from.getNodeId();
 
-                assertEquals(msg1 + "-reply", from.get().forNode(to.getNodeId()).request(msg1).getResponse());
-                assertEquals(msg2 + "-reply", from.get().forNode(to.getNodeId()).request(msg2).getResponseUninterruptedly());
+                assertEquals(msg1 + "-reply", from.get().forNode(to.getNodeId()).request(msg1).response());
+                assertEquals(msg2 + "-reply", from.get().forNode(to.getNodeId()).request(msg2).responseUninterruptedly());
 
                 to.assertReceived(msg1);
                 to.assertReceived(msg2);
@@ -155,7 +155,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
                     Thread.currentThread().interrupt();
 
-                    String response = from.get().forNode(to.getNodeId()).request(msg).getResponseUninterruptedly();
+                    String response = from.get().forNode(to.getNodeId()).request(msg).responseUninterruptedly();
 
                     assertTrue(Thread.currentThread().isInterrupted());
                     assertEquals(msg + "-reply", response);
@@ -692,14 +692,14 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             }).request("failed" + i);
 
             try {
-                future.getResponse();
+                future.response();
             } catch (MessagingFutureException e) {
                 assertTrue(e.isCausedBy(TestHekateException.class));
                 assertEquals(TEST_ERROR_MESSAGE, e.getCause().getMessage());
             }
         });
 
-        assertEquals("success-reply", sender.request(receiver.getNodeId(), "success").getResponse());
+        assertEquals("success-reply", sender.request(receiver.getNodeId(), "success").response());
     }
 
     @Test
@@ -718,14 +718,14 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             ResponseFuture<String> future = sender.withLoadBalancer((msg, topology) -> null).request("failed" + i);
 
             try {
-                future.getResponse();
+                future.response();
             } catch (MessagingFutureException e) {
                 assertTrue(e.isCausedBy(LoadBalancingException.class));
                 assertEquals("Load balancer failed to select a target node.", e.getCause().getMessage());
             }
         });
 
-        assertEquals("success-reply", sender.request(receiver.getNodeId(), "success").getResponse());
+        assertEquals("success-reply", sender.request(receiver.getNodeId(), "success").response());
     }
 
     @Test
@@ -746,14 +746,14 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             ResponseFuture<String> future = sender.withLoadBalancer((msg, topology) -> invalidNodeId).request("failed" + i);
 
             try {
-                future.getResponse();
+                future.response();
             } catch (MessagingFutureException e) {
                 assertTrue(e.isCausedBy(UnknownRouteException.class));
                 assertEquals("Node is not within the channel topology [id=" + invalidNodeId + ']', e.getCause().getMessage());
             }
         });
 
-        assertEquals("success-reply", sender.request(receiver.getNodeId(), "success").getResponse());
+        assertEquals("success-reply", sender.request(receiver.getNodeId(), "success").response());
     }
 
     @Test
@@ -773,7 +773,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             ResponseFuture<String> future = channel1.get().request("failed" + i);
 
             try {
-                future.getResponse();
+                future.response();
             } catch (MessagingFutureException e) {
                 assertTrue(e.isCausedBy(TooManyRoutesException.class));
                 assertEquals("Too many receivers "
@@ -782,7 +782,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             }
         });
 
-        assertEquals("success-reply", channel1.request(channel2.getNodeId(), "success").getResponse());
+        assertEquals("success-reply", channel1.request(channel2.getNodeId(), "success").response());
     }
 
     @Test

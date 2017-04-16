@@ -43,7 +43,7 @@ public class ResponseFuture<T> extends MessagingFuture<Response<T>> {
      * @throws TimeoutException Signals that timeout happened.
      * @throws InterruptedException Signals that thread was interrupted while awaiting for operation completion.
      */
-    public T getResponse(long timeout, TimeUnit unit) throws MessagingFutureException, InterruptedException, TimeoutException {
+    public T response(long timeout, TimeUnit unit) throws MessagingFutureException, InterruptedException, TimeoutException {
         return get(timeout, unit).get();
     }
 
@@ -55,7 +55,7 @@ public class ResponseFuture<T> extends MessagingFuture<Response<T>> {
      * @throws MessagingFutureException Signals that request operation failed.
      * @throws InterruptedException Signals that thread was interrupted while awaiting for operation completion.
      */
-    public T getResponse() throws MessagingFutureException, InterruptedException {
+    public T response() throws MessagingFutureException, InterruptedException {
         return get().get();
     }
 
@@ -71,7 +71,7 @@ public class ResponseFuture<T> extends MessagingFuture<Response<T>> {
      *
      * @throws MessagingFutureException Signals that request operation failed.
      */
-    public T getResponseUninterruptedly() throws MessagingFutureException {
+    public T responseUninterruptedly() throws MessagingFutureException {
         return getUninterruptedly().get();
     }
 }

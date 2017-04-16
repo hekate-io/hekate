@@ -19,9 +19,11 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.messaging.broadcast.AggregateResult;
 import io.hekate.util.format.ToString;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 class EmptyAggregateResult<T> implements AggregateResult<T> {
     private final T request;
@@ -33,22 +35,22 @@ class EmptyAggregateResult<T> implements AggregateResult<T> {
     }
 
     @Override
-    public T getRequest() {
+    public T request() {
         return request;
     }
 
     @Override
-    public Set<ClusterNode> getNodes() {
+    public Set<ClusterNode> nodes() {
         return Collections.emptySet();
     }
 
     @Override
-    public Map<ClusterNode, Throwable> getErrors() {
+    public Map<ClusterNode, Throwable> errors() {
         return Collections.emptyMap();
     }
 
     @Override
-    public Throwable getError(ClusterNode node) {
+    public Throwable errorOf(ClusterNode node) {
         return null;
     }
 
@@ -63,12 +65,22 @@ class EmptyAggregateResult<T> implements AggregateResult<T> {
     }
 
     @Override
-    public Map<ClusterNode, T> getResults() {
+    public Collection<T> results() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public Stream<T> stream() {
+        return Stream.empty();
+    }
+
+    @Override
+    public Map<ClusterNode, T> resultsByNode() {
         return Collections.emptyMap();
     }
 
     @Override
-    public T getResult(ClusterNode node) {
+    public T resultOf(ClusterNode node) {
         return null;
     }
 

@@ -19,8 +19,10 @@ package io.hekate.task.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.task.MultiNodeResult;
 import io.hekate.util.format.ToString;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 class DefaultMultiNodeResult<T> implements MultiNodeResult<T> {
     private final Set<ClusterNode> nodes;
@@ -30,13 +32,17 @@ class DefaultMultiNodeResult<T> implements MultiNodeResult<T> {
     private final Map<ClusterNode, Throwable> errors;
 
     public DefaultMultiNodeResult(Set<ClusterNode> nodes, Map<ClusterNode, Throwable> errors, Map<ClusterNode, T> results) {
+        assert nodes != null : "Nodes set is null.";
+        assert errors != null : "Errors map is null.";
+        assert results != null : "Result map is null.";
+
         this.nodes = nodes;
         this.errors = errors;
         this.results = results;
     }
 
     @Override
-    public Set<ClusterNode> getNodes() {
+    public Set<ClusterNode> nodes() {
         return nodes;
     }
 
@@ -51,22 +57,32 @@ class DefaultMultiNodeResult<T> implements MultiNodeResult<T> {
     }
 
     @Override
-    public T getResult(ClusterNode node) {
+    public T resultOf(ClusterNode node) {
         return results.get(node);
     }
 
     @Override
-    public Throwable getError(ClusterNode node) {
+    public Throwable errorOf(ClusterNode node) {
         return errors.get(node);
     }
 
     @Override
-    public Map<ClusterNode, T> getResults() {
+    public Collection<T> results() {
+        return resultsByNode().values();
+    }
+
+    @Override
+    public Stream<T> stream() {
+        return results().stream();
+    }
+
+    @Override
+    public Map<ClusterNode, T> resultsByNode() {
         return results;
     }
 
     @Override
-    public Map<ClusterNode, Throwable> getErrors() {
+    public Map<ClusterNode, Throwable> errors() {
         return errors;
     }
 

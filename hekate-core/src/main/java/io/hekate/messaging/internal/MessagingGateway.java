@@ -126,7 +126,7 @@ class MessagingGateway<T> {
     }
 
     private static class SubscribeCallbackFuture<T> extends SubscribeFuture<T> implements ResponseCallback<T> {
-        private List<Response<T>> result;
+        private List<T> result;
 
         @Override
         public void onComplete(Throwable err, Response<T> rsp) {
@@ -136,7 +136,7 @@ class MessagingGateway<T> {
                     result = new ArrayList<>();
                 }
 
-                result.add(rsp);
+                result.add(rsp.get());
 
                 if (!rsp.isPartial()) {
                     complete(result);

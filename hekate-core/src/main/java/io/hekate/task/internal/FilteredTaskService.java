@@ -88,7 +88,7 @@ class FilteredTaskService implements TaskService {
         @Override
         public void onComplete(Throwable err, AggregateResult<TaskProtocol> aggregate) {
             if (err == null) {
-                Map<ClusterNode, TaskProtocol> results = aggregate.getResults();
+                Map<ClusterNode, TaskProtocol> results = aggregate.resultsByNode();
 
                 Map<ClusterNode, T> values = new HashMap<>(results.size(), 1.0f);
 
@@ -107,7 +107,7 @@ class FilteredTaskService implements TaskService {
                     }
                 });
 
-                complete(new DefaultMultiNodeResult<>(aggregate.getNodes(), aggregate.getErrors(), values));
+                complete(new DefaultMultiNodeResult<>(aggregate.nodes(), aggregate.errors(), values));
             } else {
                 completeExceptionally(new TaskException("Task execution failed [task=" + task + ']', err));
             }

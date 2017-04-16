@@ -55,13 +55,13 @@ public class TaskAggregateTest extends TaskServiceTestBase {
                     return intResult;
                 }));
 
-                List<Integer> sorted = result.getResults().values().stream().sorted().collect(toList());
+                List<Integer> sorted = result.stream().sorted().collect(toList());
 
                 assertEquals(nodes.size(), COUNTER.get());
                 assertTrue(NODES.toString(), NODES.containsAll(nodes.stream().map(HekateInstance::getNode).collect(toList())));
                 assertTrue(result.isSuccess());
                 nodes.forEach(n -> assertTrue(result.isSuccess(n.getNode())));
-                assertTrue(result.getNodes().containsAll(nodes.stream().map(HekateInstance::getNode).collect(toList())));
+                assertTrue(result.nodes().containsAll(nodes.stream().map(HekateInstance::getNode).collect(toList())));
 
                 assertEquals(sorted.size(), nodes.size());
 
@@ -93,13 +93,13 @@ public class TaskAggregateTest extends TaskServiceTestBase {
                     return intResult;
                 }));
 
-                List<Integer> affSorted = affResult.getResults().values().stream().sorted().collect(toList());
+                List<Integer> affSorted = affResult.stream().sorted().collect(toList());
 
                 assertEquals(nodes.size(), COUNTER.get());
                 assertTrue(NODES.toString(), NODES.containsAll(nodes.stream().map(HekateInstance::getNode).collect(toList())));
                 assertTrue(affResult.isSuccess());
                 nodes.forEach(n -> assertTrue(affResult.isSuccess(n.getNode())));
-                assertTrue(affResult.getNodes().containsAll(nodes.stream().map(HekateInstance::getNode).collect(toList())));
+                assertTrue(affResult.nodes().containsAll(nodes.stream().map(HekateInstance::getNode).collect(toList())));
 
                 assertEquals(affSorted.size(), nodes.size());
 
@@ -128,13 +128,13 @@ public class TaskAggregateTest extends TaskServiceTestBase {
                 }));
 
                 assertFalse(errResult.isSuccess());
-                assertTrue(errResult.getResults().isEmpty());
+                assertTrue(errResult.results().isEmpty());
                 nodes.forEach(n -> {
                     assertFalse(errResult.isSuccess(n.getNode()));
-                    assertNotNull(errResult.getError(n.getNode()));
+                    assertNotNull(errResult.errorOf(n.getNode()));
 
-                    assertTrue(errResult.getError(n.getNode()).getMessage().contains(TestAssertionError.class.getName()));
-                    assertTrue(errResult.getError(n.getNode()).getMessage().contains(TEST_ERROR_MESSAGE));
+                    assertTrue(errResult.errorOf(n.getNode()).getMessage().contains(TestAssertionError.class.getName()));
+                    assertTrue(errResult.errorOf(n.getNode()).getMessage().contains(TEST_ERROR_MESSAGE));
                 });
 
                 NODES.clear();
@@ -166,14 +166,14 @@ public class TaskAggregateTest extends TaskServiceTestBase {
                 nodes.forEach(n -> {
                     if (n.get(ClusterService.class).getTopology().getYoungest().equals(n.getNode())) {
                         assertFalse(partErrResult.isSuccess(n.getNode()));
-                        assertNotNull(partErrResult.getError(n.getNode()));
-                        assertNotNull(partErrResult.getErrors().get(n.getNode()));
+                        assertNotNull(partErrResult.errorOf(n.getNode()));
+                        assertNotNull(partErrResult.errors().get(n.getNode()));
 
-                        assertTrue(partErrResult.getError(n.getNode()).getMessage().contains(TestAssertionError.class.getName()));
-                        assertTrue(partErrResult.getError(n.getNode()).getMessage().contains(TEST_ERROR_MESSAGE));
+                        assertTrue(partErrResult.errorOf(n.getNode()).getMessage().contains(TestAssertionError.class.getName()));
+                        assertTrue(partErrResult.errorOf(n.getNode()).getMessage().contains(TEST_ERROR_MESSAGE));
                     } else {
                         assertTrue(partErrResult.isSuccess(n.getNode()));
-                        assertNotNull(partErrResult.getResult(n.getNode()));
+                        assertNotNull(partErrResult.resultOf(n.getNode()));
                     }
                 });
 
@@ -205,7 +205,7 @@ public class TaskAggregateTest extends TaskServiceTestBase {
         }));
 
         assertFalse(result.isSuccess());
-        assertEquals(ClosedChannelException.class, result.getError(target.getNode()).getClass());
+        assertEquals(ClosedChannelException.class, result.errorOf(target.getNode()).getClass());
 
         source.awaitForStatus(Hekate.State.DOWN);
 

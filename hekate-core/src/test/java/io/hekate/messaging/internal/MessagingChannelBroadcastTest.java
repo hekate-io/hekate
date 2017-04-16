@@ -50,9 +50,9 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
             BroadcastResult<String> result = callback.get();
 
-            assertTrue(result.getErrors().toString(), result.isSuccess());
-            assertTrue(result.getErrors().isEmpty());
-            assertEquals(channels.size(), result.getNodes().size());
+            assertTrue(result.errors().toString(), result.isSuccess());
+            assertTrue(result.errors().isEmpty());
+            assertEquals(channels.size(), result.nodes().size());
 
             for (TestChannel c : channels) {
                 c.awaitForMessage("test" + i);
@@ -74,8 +74,8 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             BroadcastResult<String> result = get(channel.get().broadcast("test" + i));
 
             assertTrue(result.toString(), result.isSuccess());
-            assertTrue(result.toString(), result.getErrors().isEmpty());
-            assertEquals(channels.size(), result.getNodes().size());
+            assertTrue(result.toString(), result.errors().isEmpty());
+            assertEquals(channels.size(), result.nodes().size());
 
             for (TestChannel c : channels) {
                 c.awaitForMessage("test" + i);
@@ -98,10 +98,10 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             BroadcastResult<String> result = get(channel.get().forRole("no-such-role").broadcast("test" + i));
 
             assertTrue(result.toString(), result.isSuccess());
-            assertTrue(result.toString(), result.getErrors().isEmpty());
-            assertTrue(result.toString(), result.getNodes().isEmpty());
-            assertEquals("test" + i, result.getMessage());
-            assertNull(result.getError(channel.getInstance().getNode()));
+            assertTrue(result.toString(), result.errors().isEmpty());
+            assertTrue(result.toString(), result.nodes().isEmpty());
+            assertEquals("test" + i, result.message());
+            assertNull(result.errorOf(channel.getInstance().getNode()));
             assertFalse(result.isSuccess(channel.getInstance().getNode()));
             assertTrue(result.toString().startsWith(BroadcastResult.class.getSimpleName()));
         });
@@ -125,9 +125,9 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
             BroadcastResult<String> result = get(callback);
 
-            assertTrue(result.getErrors().toString(), result.isSuccess());
-            assertTrue(result.getErrors().isEmpty());
-            assertTrue(result.getNodes().isEmpty());
+            assertTrue(result.errors().toString(), result.isSuccess());
+            assertTrue(result.errors().isEmpty());
+            assertTrue(result.nodes().isEmpty());
         });
     }
 
@@ -154,14 +154,14 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
             BroadcastResult<String> result = get(callback);
 
-            assertEquals("test" + i, result.getMessage());
-            assertFalse(result.getErrors().toString(), result.isSuccess());
-            assertEquals(i + 1, result.getErrors().size());
+            assertEquals("test" + i, result.message());
+            assertFalse(result.errors().toString(), result.isSuccess());
+            assertEquals(i + 1, result.errors().size());
 
             for (int j = 0; j <= i; j++) {
                 ClusterNode node = channels.get(j).getInstance().getNode();
 
-                assertNotNull(result.getErrors().get(node));
+                assertNotNull(result.errors().get(node));
             }
         });
     }
@@ -185,15 +185,15 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
             BroadcastResult<String> result = get(source.get().broadcast("test" + i));
 
-            assertEquals("test" + i, result.getMessage());
-            assertFalse(result.getErrors().toString(), result.isSuccess());
-            assertEquals(i + 1, result.getErrors().size());
+            assertEquals("test" + i, result.message());
+            assertFalse(result.errors().toString(), result.isSuccess());
+            assertEquals(i + 1, result.errors().size());
 
             for (int j = 0; j <= i; j++) {
                 ClusterNode node = channels.get(j).getInstance().getNode();
 
-                assertNotNull(result.getErrors().get(node));
-                assertSame(result.getErrors().get(node), result.getError(node));
+                assertNotNull(result.errors().get(node));
+                assertSame(result.errors().get(node), result.errorOf(node));
                 assertFalse(result.isSuccess(node));
             }
         });
@@ -237,13 +237,13 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
             BroadcastResult<String> joinResult = get(joinCallback);
 
-            assertTrue(joinResult.getErrors().toString(), joinResult.isSuccess());
+            assertTrue(joinResult.errors().toString(), joinResult.isSuccess());
 
             for (TestChannel c : channels) {
                 if (c == joined) {
-                    assertFalse(joinResult.getNodes().contains(joined.getInstance().getNode()));
+                    assertFalse(joinResult.nodes().contains(joined.getInstance().getNode()));
                 } else {
-                    assertTrue(joinResult.getNodes().contains(c.getInstance().getNode()));
+                    assertTrue(joinResult.nodes().contains(c.getInstance().getNode()));
 
                     c.awaitForMessage("test-join" + i);
                 }
@@ -282,9 +282,9 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
             BroadcastResult<String> leaveResult = get(leaveCallback);
 
-            assertTrue(leaveResult.getErrors().toString(), leaveResult.isSuccess());
+            assertTrue(leaveResult.errors().toString(), leaveResult.isSuccess());
 
-            assertFalse(leaveResult.getNodes().contains(leftNode));
+            assertFalse(leaveResult.nodes().contains(leftNode));
 
             for (TestChannel c : channels) {
                 c.awaitForMessage("test-join" + i);

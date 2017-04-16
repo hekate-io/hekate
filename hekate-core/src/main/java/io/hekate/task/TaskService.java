@@ -97,7 +97,7 @@ import java.util.concurrent.Callable;
  * <p>
  * <b>Notice:</b> In case of partial task failure (i.e. when task execution failed on some or all nodes) the {@link
  * #broadcast(RunnableTask)} method doesn't throw an error. Consider using the {@link MultiNodeResult} object in order to {@link
- * MultiNodeResult#getErrors() inspect failures}.
+ * MultiNodeResult#errors() inspect failures}.
  * </p>
  *
  * <h2>Callable tasks</h2>
@@ -121,7 +121,7 @@ import java.util.concurrent.Callable;
  * <p>
  * <b>Notice:</b> In case of partial task failure (i.e. when task execution failed on some or all nodes) the {@link
  * #aggregate(CallableTask)} method doesn't throw an error. Consider using the {@link MultiNodeResult} object in order to {@link
- * MultiNodeResult#getErrors() inspect failures}.
+ * MultiNodeResult#errors() inspect failures}.
  * </p>
  *
  * <h2>Applicable tasks</h2>
@@ -282,7 +282,7 @@ public interface TaskService extends Service, ClusterFilterSupport<TaskService> 
      *
      * <p>
      * <b>Notice:</b> this method doesn't throw an error in case of partial task failure (i.e. when task execution failed on some nodes).
-     * Consider using the {@link MultiNodeResult} object to {@link MultiNodeResult#getErrors() inspect failures}.
+     * Consider using the {@link MultiNodeResult} object to {@link MultiNodeResult#errors() inspect failures}.
      * </p>
      *
      * @param task Task to be executed.
@@ -296,7 +296,7 @@ public interface TaskService extends Service, ClusterFilterSupport<TaskService> 
      *
      * <p>
      * <b>Notice:</b> this method doesn't throw an error in case of partial task failure (i.e. when task execution failed on some nodes).
-     * Consider using the {@link MultiNodeResult} object to {@link MultiNodeResult#getErrors() inspect failures}.
+     * Consider using the {@link MultiNodeResult} object to {@link MultiNodeResult#errors() inspect failures}.
      * </p>
      *
      * @param task Task to be executed.

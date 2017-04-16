@@ -37,7 +37,7 @@ public class FailoverRequestTest extends FailoverTestBase {
                 sender.getInstance().leaveAsync();
 
                 return ctx.retry().withDelay(50);
-            }).request("test--1").getResponse(3, TimeUnit.SECONDS);
+            }).request("test--1").response(3, TimeUnit.SECONDS);
 
             fail("Error eas expected.");
         } catch (MessagingFutureException e) {
@@ -138,7 +138,7 @@ public class FailoverRequestTest extends FailoverTestBase {
 
                     return context.retry().withReRoute();
                 })
-                .request("error").getResponse(3, TimeUnit.SECONDS);
+                .request("error").response(3, TimeUnit.SECONDS);
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
@@ -170,7 +170,7 @@ public class FailoverRequestTest extends FailoverTestBase {
             onFailover.accept(ctx);
 
             return ctx.retry().withRoutingPolicy(policy);
-        }).request("test").getResponse(3, TimeUnit.SECONDS);
+        }).request("test").response(3, TimeUnit.SECONDS);
 
         assertEquals(5, contexts.size());
 
@@ -189,7 +189,7 @@ public class FailoverRequestTest extends FailoverTestBase {
                 failoverCalls.incrementAndGet();
 
                 return context.retry();
-            }).request("test").getResponse(3, TimeUnit.SECONDS);
+            }).request("test").response(3, TimeUnit.SECONDS);
 
             assertNotNull(reply);
 
@@ -210,7 +210,7 @@ public class FailoverRequestTest extends FailoverTestBase {
             times.add(time);
 
             return context.retry().withDelay(failoverDelay);
-        }).request("test").getResponse(3, TimeUnit.SECONDS);
+        }).request("test").response(3, TimeUnit.SECONDS);
 
         assertNotNull(reply);
 
@@ -242,7 +242,7 @@ public class FailoverRequestTest extends FailoverTestBase {
                     failoverCalls.incrementAndGet();
 
                     return context.getAttempt() < attempts ? context.retry() : context.fail();
-                }).request("test").getResponse(3, TimeUnit.SECONDS);
+                }).request("test").response(3, TimeUnit.SECONDS);
 
                 fail("Error was expected.");
             } catch (MessagingFutureException e) {

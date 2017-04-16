@@ -1,6 +1,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.unicast.SendCallback;
+import io.hekate.messaging.unicast.SubscribeFuture;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -21,7 +22,38 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testPartialReply() throws Throwable {
+    public void testFuture() throws Throwable {
+        TestChannel sender = createChannel().join();
+
+        TestChannel receiver = createChannel(c -> c.setReceiver(msg -> {
+            assertTrue(msg.mustReply());
+
+            for (int i = 0; i < 3; i++) {
+                msg.partialReply("response" + i);
+
+                assertTrue(msg.mustReply());
+            }
+
+            msg.reply("final");
+
+            assertResponded(msg);
+        })).join();
+
+        awaitForChannelsTopology(sender, receiver);
+
+        repeat(5, i -> {
+            SubscribeFuture<String> future = sender.get().forNode(receiver.getNodeId()).subscribe("request");
+
+            List<String> expected = Arrays.asList("response0", "response1", "response2", "final");
+
+            assertEquals(expected, get(future));
+
+            receiver.checkReceiverError();
+        });
+    }
+
+    @Test
+    public void testCallback() throws Throwable {
         TestChannel sender = createChannel().join();
 
         TestChannel receiver = createChannel(c -> c.setReceiver(msg -> {

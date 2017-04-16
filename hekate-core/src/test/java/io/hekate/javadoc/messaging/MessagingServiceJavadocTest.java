@@ -194,7 +194,7 @@ public class MessagingServiceJavadocTest extends HekateInstanceTestBase {
         throws MessagingFutureException, InterruptedException {
         // Start:unicast_request_sync
         // Execute request to the oldest node in the cluster and synchronously await for reply.
-        String reply = channel.forOldest().request("example request").getResponse();
+        String reply = channel.forOldest().request("example request").response();
         // End:unicast_request_sync
 
         assertNotNull(reply);
@@ -211,11 +211,11 @@ public class MessagingServiceJavadocTest extends HekateInstanceTestBase {
             AggregateResult<String> result = channel.forRemotes().aggregate("example message").get();
 
             // Iterate over aggregation participants and check their responses.
-            result.getNodes().forEach(node -> {
+            result.nodes().forEach(node -> {
                 if (result.isSuccess(node)) {
-                    System.out.println("Got response from " + node + ": " + result.getResult(node));
+                    System.out.println("Got response from " + node + ": " + result.resultOf(node));
                 } else {
-                    System.out.println("Partial failure on node  " + node + ": " + result.getError(node));
+                    System.out.println("Partial failure on node  " + node + ": " + result.errorOf(node));
                 }
             });
         } catch (MessagingFutureException e) {
@@ -228,11 +228,11 @@ public class MessagingServiceJavadocTest extends HekateInstanceTestBase {
         channel.forRemotes().aggregate("example message", (err, result) -> {
             if (err == null) {
                 // Iterate over aggregation participants and check their responses.
-                result.getNodes().forEach(node -> {
+                result.nodes().forEach(node -> {
                     if (result.isSuccess(node)) {
-                        System.out.println("Got response from " + node + ": " + result.getResult(node));
+                        System.out.println("Got response from " + node + ": " + result.resultOf(node));
                     } else {
-                        System.out.println("Partial failure on node  " + node + ": " + result.getError(node));
+                        System.out.println("Partial failure on node  " + node + ": " + result.errorOf(node));
                     }
                 });
             } else {
@@ -247,11 +247,11 @@ public class MessagingServiceJavadocTest extends HekateInstanceTestBase {
             BroadcastResult<String> result = channel.forRemotes().broadcast("example message").get();
 
             // Iterate over participants and check operation results.
-            result.getNodes().forEach(node -> {
+            result.nodes().forEach(node -> {
                 if (result.isSuccess(node)) {
                     System.out.println("Successfully sent to " + node);
                 } else {
-                    System.out.println("Partial failure on node " + node + ": " + result.getError(node));
+                    System.out.println("Partial failure on node " + node + ": " + result.errorOf(node));
                 }
             });
         } catch (MessagingFutureException e) {
@@ -264,11 +264,11 @@ public class MessagingServiceJavadocTest extends HekateInstanceTestBase {
         channel.forRemotes().broadcast("example message", (err, result) -> {
             if (err == null) {
                 // Iterate over participants and check operation results.
-                result.getNodes().forEach(node -> {
+                result.nodes().forEach(node -> {
                     if (result.isSuccess(node)) {
                         System.out.println("Successfully sent to " + node);
                     } else {
-                        System.out.println("Partial failure on node " + node + ": " + result.getError(node));
+                        System.out.println("Partial failure on node " + node + ": " + result.errorOf(node));
                     }
                 });
             } else {

@@ -18,8 +18,10 @@ package io.hekate.messaging.broadcast;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.messaging.MessagingChannel;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Result of {@link MessagingChannel#aggregate(Object) aggregate(...)} operation.
@@ -35,7 +37,7 @@ public interface AggregateResult<T> {
      *
      * @return Original request.
      */
-    T getRequest();
+    T request();
 
     /**
      * Returns the aggregation participants. Returns an empty set if there were no suitable nodes in the cluster to perform the operation.
@@ -43,7 +45,7 @@ public interface AggregateResult<T> {
      * @return Cluster nodes that participated in the aggregation or an empty set if there were no suitable nodes in the cluster to perform
      * the operation.
      */
-    Set<ClusterNode> getNodes();
+    Set<ClusterNode> nodes();
 
     /**
      * Returns the map of cluster nodes and errors that happened while trying to communicate with those nodes. Returns an empty map if
@@ -51,38 +53,52 @@ public interface AggregateResult<T> {
      *
      * @return Map of nodes and their corresponding failures. Returns an empty map if there were no failures.
      *
-     * @see #getError(ClusterNode)
+     * @see #errorOf(ClusterNode)
      */
-    Map<ClusterNode, Throwable> getErrors();
+    Map<ClusterNode, Throwable> errors();
 
     /**
      * Returns an error for the specified node or {@code null} if there was no failure on that node.
      *
-     * @param node Cluster node (must be one of the {@link #getNodes()}).
+     * @param node Cluster node (must be one of the {@link #nodes()}).
      *
      * @return Error in case of a communication error with the specified node or {@code null}.
      *
-     * @see #getErrors()
+     * @see #errors()
      */
-    Throwable getError(ClusterNode node);
+    Throwable errorOf(ClusterNode node);
 
     /**
-     * Returns {@code true} if aggregation completed successfully without any {@link #getErrors() errors}.
+     * Returns {@code true} if aggregation completed successfully without any {@link #errors() errors}.
      *
      * @return {@code true} if aggregation completed successfully without any errors.
      *
-     * @see #getErrors()
+     * @see #errors()
      */
     boolean isSuccess();
 
     /**
      * Returns {@code true} if there was no failure during the aggregation request processing on the specified cluster node.
      *
-     * @param node Cluster node (must be one of the {@link #getNodes()}).
+     * @param node Cluster node (must be one of the {@link #nodes()}).
      *
      * @return {@code true} if there was no communication failure with the specified cluster node.
      */
     boolean isSuccess(ClusterNode node);
+
+    /**
+     * Returns the aggregation results.
+     *
+     * @return Aggregation results.
+     */
+    Collection<T> results();
+
+    /**
+     * Returns the aggregation results as {@link Stream}.
+     *
+     * @return Stream of aggregation results.
+     */
+    Stream<T> stream();
 
     /**
      * Returns a map of cluster nodes and results that were successfully received from these nodes. Returns an empty map if there were no
@@ -90,18 +106,18 @@ public interface AggregateResult<T> {
      *
      * @return Map of results.
      *
-     * @see #getResult(ClusterNode)
+     * @see #resultOf(ClusterNode)
      */
-    Map<ClusterNode, T> getResults();
+    Map<ClusterNode, T> resultsByNode();
 
     /**
      * Returns the result for the specified cluster node or {@code null} if there was no result from this node.
      *
-     * @param node Cluster node (must be one of the {@link #getNodes()}).
+     * @param node Cluster node (must be one of the {@link #nodes()}).
      *
      * @return Result.
      *
-     * @see #getResults()
+     * @see #results()
      */
-    T getResult(ClusterNode node);
+    T resultOf(ClusterNode node);
 }

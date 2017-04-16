@@ -22,10 +22,12 @@ import io.hekate.messaging.broadcast.AggregateResult;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +38,7 @@ class AggregateContext<T> implements AggregateResult<T> {
 
     private final T request;
 
-    private final Map<ClusterNode, T> responses;
+    private final Map<ClusterNode, T> results;
 
     @ToStringIgnore
     private final AggregateCallback<T> callback;
@@ -54,30 +56,30 @@ class AggregateContext<T> implements AggregateResult<T> {
         this.request = request;
         this.nodes = nodes;
         this.callback = callback;
-        this.responses = new HashMap<>(nodes.size(), 1.0f);
+        this.results = new HashMap<>(nodes.size(), 1.0f);
     }
 
     @Override
-    public T getRequest() {
+    public T request() {
         return request;
     }
 
     @Override
-    public Set<ClusterNode> getNodes() {
+    public Set<ClusterNode> nodes() {
         synchronized (this) {
             return nodes;
         }
     }
 
     @Override
-    public Map<ClusterNode, Throwable> getErrors() {
+    public Map<ClusterNode, Throwable> errors() {
         synchronized (this) {
             return errors == null ? Collections.emptyMap() : errors;
         }
     }
 
     @Override
-    public Throwable getError(ClusterNode node) {
+    public Throwable errorOf(ClusterNode node) {
         synchronized (this) {
             return errors != null ? errors.get(node) : null;
         }
@@ -92,20 +94,30 @@ class AggregateContext<T> implements AggregateResult<T> {
 
     @Override
     public boolean isSuccess(ClusterNode node) {
-        return getError(node) == null;
+        return errorOf(node) == null;
     }
 
     @Override
-    public Map<ClusterNode, T> getResults() {
+    public Collection<T> results() {
+        return resultsByNode().values();
+    }
+
+    @Override
+    public Stream<T> stream() {
+        return results().stream();
+    }
+
+    @Override
+    public Map<ClusterNode, T> resultsByNode() {
         synchronized (this) {
-            return responses;
+            return results;
         }
     }
 
     @Override
-    public T getResult(ClusterNode node) {
+    public T resultOf(ClusterNode node) {
         synchronized (this) {
-            return responses.get(node);
+            return results.get(node);
         }
     }
 
@@ -121,7 +133,7 @@ class AggregateContext<T> implements AggregateResult<T> {
         boolean ready = false;
 
         synchronized (this) {
-            responses.put(node, rsp.get());
+            results.put(node, rsp.get());
 
             if (isReady()) {
                 ready = true;
@@ -172,7 +184,7 @@ class AggregateContext<T> implements AggregateResult<T> {
     private boolean isReady() {
         assert Thread.holdsLock(this) : "Thread must hold lock on mutex.";
 
-        return nodes.size() == responses.size() + (errors == null ? 0 : errors.size());
+        return nodes.size() == results.size() + (errors == null ? 0 : errors.size());
     }
 
     @Override

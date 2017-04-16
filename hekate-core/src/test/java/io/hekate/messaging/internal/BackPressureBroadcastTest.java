@@ -94,7 +94,7 @@ public class BackPressureBroadcastTest extends BackPressureTestBase {
 
         assertNotNull(future);
 
-        Map<ClusterNode, Throwable> errors = future.get().getErrors();
+        Map<ClusterNode, Throwable> errors = future.get().errors();
 
         assertFalse(errors.isEmpty());
         assertTrue(errors.toString(), errors.values().stream().allMatch(e -> Utils.isCausedBy(e, MessageQueueOverflowException.class)));

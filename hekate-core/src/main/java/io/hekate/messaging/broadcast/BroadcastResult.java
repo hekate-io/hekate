@@ -35,7 +35,7 @@ public interface BroadcastResult<T> {
      *
      * @return Original message.
      */
-    T getMessage();
+    T message();
 
     /**
      * Returns the broadcast operation participants. Returns an empty set if there were no suitable nodes in the cluster to perform the
@@ -44,7 +44,7 @@ public interface BroadcastResult<T> {
      * @return Cluster nodes that participated in the broadcast operation or an empty set if there were no suitable nodes in the cluster to
      * perform the operation.
      */
-    Set<ClusterNode> getNodes();
+    Set<ClusterNode> nodes();
 
     /**
      * Returns the map of cluster nodes and errors that happened while trying to communicate with these nodes. Returns an empty map if
@@ -52,34 +52,34 @@ public interface BroadcastResult<T> {
      *
      * @return Map of nodes and their corresponding failures. Returns an empty map if there were no communication failures.
      *
-     * @see #getError(ClusterNode)
+     * @see #errorOf(ClusterNode)
      */
-    Map<ClusterNode, Throwable> getErrors();
+    Map<ClusterNode, Throwable> errors();
 
     /**
      * Returns a communication error for the specified node or {@code null} if there was no communication failure with that node.
      *
-     * @param node Cluster node (must be one of {@link #getNodes()}, otherwise results will be unpredictable).
+     * @param node Cluster node (must be one of {@link #nodes()}, otherwise results will be unpredictable).
      *
      * @return Error in case of a communication error with the specified node or {@code null}.
      *
-     * @see #getErrors()
+     * @see #errors()
      */
-    Throwable getError(ClusterNode node);
+    Throwable errorOf(ClusterNode node);
 
     /**
-     * Returns {@code true} if broadcast completed successfully without any {@link #getErrors() errors}.
+     * Returns {@code true} if broadcast completed successfully without any {@link #errors() errors}.
      *
      * @return {@code true} if broadcast completed successfully without any errors.
      *
-     * @see #getErrors()
+     * @see #errors()
      */
     boolean isSuccess();
 
     /**
      * Returns {@code true} if there was no communication failure with the specified cluster node..
      *
-     * @param node Cluster node (must be one of {@link #getNodes()}, otherwise results will be unpredictable).
+     * @param node Cluster node (must be one of {@link #nodes()}, otherwise results will be unpredictable).
      *
      * @return {@code true} if there was no communication failure with the specified cluster node.
      */

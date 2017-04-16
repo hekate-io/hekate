@@ -117,7 +117,7 @@ public class TaskServiceJavadocTest extends HekateInstanceTestBase {
         );
 
         // Await for task completion on all nodes.
-        System.out.println("Aggregated on nodes: " + broadcast.get().getResults());
+        System.out.println("Aggregated on nodes: " + broadcast.get().results());
         // End:aggregate_task
     }
 

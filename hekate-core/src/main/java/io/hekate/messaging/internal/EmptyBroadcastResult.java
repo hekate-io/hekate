@@ -33,22 +33,22 @@ class EmptyBroadcastResult<T> implements BroadcastResult<T> {
     }
 
     @Override
-    public T getMessage() {
+    public T message() {
         return message;
     }
 
     @Override
-    public Set<ClusterNode> getNodes() {
+    public Set<ClusterNode> nodes() {
         return Collections.emptySet();
     }
 
     @Override
-    public Map<ClusterNode, Throwable> getErrors() {
+    public Map<ClusterNode, Throwable> errors() {
         return Collections.emptyMap();
     }
 
     @Override
-    public Throwable getError(ClusterNode node) {
+    public Throwable errorOf(ClusterNode node) {
         return null;
     }
 
