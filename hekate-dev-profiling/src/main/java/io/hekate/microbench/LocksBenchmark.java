@@ -28,6 +28,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
@@ -49,14 +50,14 @@ public class LocksBenchmark {
         }
 
         @Override
-        protected void initialize(List<Hekate> nodes) throws Exception {
+        protected void initialize(List<Hekate> nodes) {
             regions = nodes.stream()
                 .map(n -> n.get(LockService.class).region("test"))
                 .collect(toList());
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
             .include(Thread.currentThread().getStackTrace()[1].getClassName())
             .forks(1)
@@ -69,7 +70,7 @@ public class LocksBenchmark {
     }
 
     @Benchmark
-    public void measure(BenchmarkContext ctx) throws Exception {
+    public void measure(BenchmarkContext ctx) {
         int regionIdx = ThreadLocalRandom.current().nextInt(ctx.regions.size());
 
         DistributedLock lock = ctx.regions.get(regionIdx).getLock(UUID.randomUUID().toString());

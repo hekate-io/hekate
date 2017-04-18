@@ -20,6 +20,7 @@ import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
+import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingService;
 import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.unicast.LoadBalancers;
@@ -94,7 +95,7 @@ public class MessagingBenchmark {
         }
 
         @Override
-        protected void initialize(List<Hekate> nodes) throws Exception {
+        protected void initialize(List<Hekate> nodes) {
             channel = nodes.get(0).get(MessagingService.class).<byte[]>channel("test_channel").forRemotes();
         }
     }
@@ -111,7 +112,7 @@ public class MessagingBenchmark {
     }
 
     @Benchmark
-    public void measure(BenchmarkContext ctx) throws Exception {
+    public void measure(BenchmarkContext ctx) throws MessagingFutureException, InterruptedException {
         ctx.channel.request(randomBytes()).get();
     }
 

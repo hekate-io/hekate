@@ -19,6 +19,7 @@ package io.hekate.microbench;
 import io.hekate.codec.kryo.KryoCodecFactory;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
+import io.hekate.core.HekateFutureException;
 import io.hekate.metrics.MetricsServiceFactory;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,12 +38,12 @@ public abstract class MultiNodeBenchmarkContext {
         this.nodesCount = nodesCount;
     }
 
-    protected abstract void configure(int index, HekateBootstrap boot) throws Exception;
+    protected abstract void configure(int index, HekateBootstrap boot);
 
-    protected abstract void initialize(List<Hekate> nodes) throws Exception;
+    protected abstract void initialize(List<Hekate> nodes);
 
     @Setup
-    public void setUp() throws Exception {
+    public void setUp() throws HekateFutureException, InterruptedException {
         nodes = new ArrayList<>(nodesCount);
 
         for (int i = 0; i < nodesCount; i++) {
