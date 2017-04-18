@@ -88,7 +88,7 @@ For now, the most detailed documentation is provided as part of javadocs. Comple
 ### Building project (no tests):
 
  - cd to the project's root folder
- - run `mvn clean package -DskipTests=true`
+ - run `mvnw clean package -DskipTests=true`
  - see `target/hekate-<version>.zip` for build results
  
 ### Building project (with tests):
@@ -97,7 +97,7 @@ For now, the most detailed documentation is provided as part of javadocs. Comple
   - make a copy of `test.properties` file with name `my_test.properties`
   - edit `my_test.properties` according to your environment
   - run `docker-compose up` to prepare Docker-based testing infrastructure
-  - run `mvn clean package`
+  - run `mvnw clean package`
   - see `target/hekate-<version>.zip` for build results
 
 ## Source code structure

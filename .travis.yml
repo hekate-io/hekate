@@ -12,12 +12,13 @@ cache:
     - $HOME/.m2
 
 before_install:
+  - 'chmod +x mvnw'
   - 'docker-compose up -d'
 
 install: true
 
 script:
-  - mvn clean install
+  - ./mvnw clean install
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
