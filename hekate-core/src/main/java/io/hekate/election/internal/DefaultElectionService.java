@@ -126,6 +126,10 @@ public class DefaultElectionService implements ElectionService, DependentService
 
     @Override
     public Collection<LockRegionConfig> configureLocking() {
+        if (candidatesConfig.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         return Collections.singletonList(new LockRegionConfig().withName(ELECTION_LOCK_REGION));
     }
 
@@ -140,9 +144,11 @@ public class DefaultElectionService implements ElectionService, DependentService
         try {
             guard.becomeInitialized();
 
-            localNode = ctx.getNode();
+            if (!candidatesConfig.isEmpty()) {
+                localNode = ctx.getNode();
 
-            candidatesConfig.forEach(this::doRegister);
+                candidatesConfig.forEach(this::doRegister);
+            }
         } finally {
             guard.unlockWrite();
         }

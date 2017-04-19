@@ -116,9 +116,11 @@ public class DefaultPartitionService implements PartitionService, DependentServi
         try {
             guard.becomeInitialized();
 
-            mappersConfig.forEach(this::doRegisterMapper);
+            if (!mappersConfig.isEmpty()) {
+                mappersConfig.forEach(this::doRegisterMapper);
 
-            cluster.addListener(this::updateTopology);
+                cluster.addListener(this::updateTopology);
+            }
         } finally {
             guard.unlockWrite(writeLock);
         }

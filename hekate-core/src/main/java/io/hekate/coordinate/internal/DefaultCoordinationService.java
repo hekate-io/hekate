@@ -157,6 +157,10 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
     @Override
     public Collection<MessagingChannelConfig<?>> configureMessaging() {
+        if (processesConfig.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         Map<String, CodecFactory<Object>> processCodecs = new HashMap<>();
 
         processesConfig.forEach(cfg -> {
@@ -190,13 +194,15 @@ public class DefaultCoordinationService implements CoordinationService, Configur
                 log.debug("Initializing...");
             }
 
-            cluster.addListener(this::processTopologyChange, ClusterEventType.JOIN, ClusterEventType.CHANGE);
+            if (!processesConfig.isEmpty()) {
+                cluster.addListener(this::processTopologyChange, ClusterEventType.JOIN, ClusterEventType.CHANGE);
 
-            MessagingChannel<CoordinationProtocol> channel = messaging.channel(MESSAGING_CHANNEL);
+                MessagingChannel<CoordinationProtocol> channel = messaging.channel(MESSAGING_CHANNEL);
 
-            processesConfig.forEach(cfg ->
-                register(cfg, channel)
-            );
+                processesConfig.forEach(cfg ->
+                    register(cfg, channel)
+                );
+            }
 
             if (DEBUG) {
                 log.debug("Initialized.");

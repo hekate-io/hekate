@@ -62,6 +62,7 @@ import io.hekate.util.StateGuard;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -184,6 +185,10 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     @Override
     public Collection<NetworkConnectorConfig<?>> configureNetwork() {
+        if (channelsConfig.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         List<NetworkConnectorConfig<?>> connectors = new ArrayList<>(channelsConfig.size());
 
         channelsConfig.forEach(channelCfg ->
@@ -204,17 +209,19 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                 log.debug("Initializing...");
             }
 
-            nodeId = ctx.getNode().getId();
+            if (!channelsConfig.isEmpty()) {
+                nodeId = ctx.getNode().getId();
 
-            HekateThreadFactory timerFactory = new HekateThreadFactory(MESSAGING_THREAD_PREFIX + "Timer");
+                HekateThreadFactory timerFactory = new HekateThreadFactory(MESSAGING_THREAD_PREFIX + "Timer");
 
-            timer = new ScheduledThreadPoolExecutor(1, timerFactory);
+                timer = new ScheduledThreadPoolExecutor(1, timerFactory);
 
-            timer.setRemoveOnCancelPolicy(true);
+                timer.setRemoveOnCancelPolicy(true);
 
-            channelsConfig.forEach(this::registerChannel);
+                channelsConfig.forEach(this::registerChannel);
 
-            cluster.addListener(this::updateTopology, ClusterEventType.JOIN, ClusterEventType.CHANGE);
+                cluster.addListener(this::updateTopology, ClusterEventType.JOIN, ClusterEventType.CHANGE);
+            }
 
             if (DEBUG) {
                 log.debug("Initialized.");

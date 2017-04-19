@@ -166,6 +166,10 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
     @Override
     public Collection<MessagingChannelConfig<?>> configureMessaging() {
+        if (regionsConfig.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         return Collections.singleton(
             new MessagingChannelConfig<LockProtocol>()
                 .withName(LOCK_PREFIX)
@@ -179,6 +183,10 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
     @Override
     public Collection<PartitionMapperConfig> configurePartitions() {
+        if (regionsConfig.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         return regionsConfig.stream().map(cfg -> {
             String name = cfg.getName().trim();
 
@@ -200,27 +208,29 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                 log.debug("Initializing...");
             }
 
-            ClusterNode node = ctx.getNode();
+            if (!regionsConfig.isEmpty()) {
+                ClusterNode node = ctx.getNode();
 
-            cluster.addListener(evt -> processTopologyChange(), ClusterEventType.JOIN, ClusterEventType.CHANGE);
+                cluster.addListener(evt -> processTopologyChange(), ClusterEventType.JOIN, ClusterEventType.CHANGE);
 
-            scheduler = new ScheduledThreadPoolExecutor(1, new HekateThreadFactory("LockService"));
+                scheduler = new ScheduledThreadPoolExecutor(1, new HekateThreadFactory("LockService"));
 
-            scheduler.setRemoveOnCancelPolicy(true);
+                scheduler.setRemoveOnCancelPolicy(true);
 
-            MessagingChannel<LockProtocol> channel = messaging.channel(LOCK_PREFIX);
+                MessagingChannel<LockProtocol> channel = messaging.channel(LOCK_PREFIX);
 
-            regionsConfig.forEach(cfg -> {
-                if (DEBUG) {
-                    log.debug("Registering new lock region [config={}]", cfg);
-                }
+                regionsConfig.forEach(cfg -> {
+                    if (DEBUG) {
+                        log.debug("Registering new lock region [config={}]", cfg);
+                    }
 
-                String name = cfg.getName().trim();
+                    String name = cfg.getName().trim();
 
-                PartitionMapper mapper = partitions.mapper(LOCK_PREFIX + '.' + name);
+                    PartitionMapper mapper = partitions.mapper(LOCK_PREFIX + '.' + name);
 
-                regions.put(name, new DefaultLockRegion(name, node.getId(), scheduler, mapper, channel, retryInterval));
-            });
+                    regions.put(name, new DefaultLockRegion(name, node.getId(), scheduler, mapper, channel, retryInterval));
+                });
+            }
 
             if (DEBUG) {
                 log.debug("Initialized.");
