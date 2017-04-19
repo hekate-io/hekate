@@ -18,7 +18,7 @@ package io.hekate.lock.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.HekateFutureException;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockRegionConfig;
 import io.hekate.lock.LockService;
@@ -42,17 +42,17 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class LockMigrationTest extends LockServiceTestBase {
-    private final List<HekateTestInstance> nodes = Collections.synchronizedList(new ArrayList<>());
+    private final List<HekateTestNode> nodes = Collections.synchronizedList(new ArrayList<>());
 
     private final Map<ClusterNode, List<DistributedLock>> liveLocks = Collections.synchronizedMap(new HashMap<>());
 
-    private HekateTestInstance coordinator;
+    private HekateTestNode coordinator;
 
-    private HekateTestInstance nextAfterCoordinator;
+    private HekateTestNode nextAfterCoordinator;
 
-    private HekateTestInstance nextAfterNext;
+    private HekateTestNode nextAfterNext;
 
-    private HekateTestInstance lastNode;
+    private HekateTestNode lastNode;
 
     public LockMigrationTest(LockTestContext ctx) {
         super(ctx);
@@ -73,7 +73,7 @@ public class LockMigrationTest extends LockServiceTestBase {
         super.setUp();
 
         for (int i = 0; i < 5; i++) {
-            nodes.add(createInstanceWithLockService().join());
+            nodes.add(createLockNode().join());
         }
 
         nodes.sort(Comparator.comparingInt(o -> o.getNode().getJoinOrder()));
@@ -291,7 +291,7 @@ public class LockMigrationTest extends LockServiceTestBase {
             }
         });
 
-        HekateTestInstance newNode = createInstance().join();
+        HekateTestNode newNode = createNode().join();
 
         awaitForTopology(nodes, newNode);
 
@@ -311,7 +311,7 @@ public class LockMigrationTest extends LockServiceTestBase {
             }
         });
 
-        HekateTestInstance newNode = createInstanceWithLockService(c -> {
+        HekateTestNode newNode = createLockNode(c -> {
             c.getRegions().clear();
             c.withRegion(new LockRegionConfig().withName("otherRegion"));
         }).join();
@@ -415,21 +415,21 @@ public class LockMigrationTest extends LockServiceTestBase {
         checkLiveLocksAreBusy();
     }
 
-    private void leave(HekateTestInstance node) throws InterruptedException, HekateFutureException {
+    private void leave(HekateTestNode node) throws InterruptedException, HekateFutureException {
         nodes.remove(node);
 
         node.leave();
     }
 
-    private void leaveAsync(HekateTestInstance node, CountDownLatch leaveLatch) {
+    private void leaveAsync(HekateTestNode node, CountDownLatch leaveLatch) {
         nodes.remove(node);
 
         node.leaveAsync().thenRun(leaveLatch::countDown);
     }
 
-    private HekateTestInstance joinAsync(CountDownLatch leaveLatch) {
+    private HekateTestNode joinAsync(CountDownLatch leaveLatch) {
         try {
-            HekateTestInstance node = createInstanceWithLockService();
+            HekateTestNode node = createLockNode();
 
             nodes.add(node);
 
@@ -451,7 +451,7 @@ public class LockMigrationTest extends LockServiceTestBase {
         assertTrue(busy);
     }
 
-    private void setCallback(HekateTestInstance node, LockMigrationCallback callback) {
+    private void setCallback(HekateTestNode node, LockMigrationCallback callback) {
         node.get(DefaultLockService.class).region(REGION_1).setMigrationCallback(callback);
     }
 

@@ -16,7 +16,7 @@
 
 package io.hekate.javadoc.metrics;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.metrics.CounterConfig;
@@ -29,7 +29,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
 
-public class MetricsServiceJavadocTest extends HekateInstanceTestBase {
+public class MetricsServiceJavadocTest extends HekateNodeTestBase {
     // Start:counter_example
     public static class ExampleService {
         private final CounterMetric activeTasks;

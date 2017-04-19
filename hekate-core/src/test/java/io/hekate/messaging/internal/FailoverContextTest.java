@@ -35,7 +35,7 @@ public class FailoverContextTest extends FailoverTestBase {
 
             assertEquals(i, ctx.getAttempt());
             assertSame(ClosedChannelException.class, ctx.getError().getClass());
-            assertEquals(receiver.getInstance().getNode(), ctx.getFailedNode());
+            assertEquals(receiver.getNode().getNode(), ctx.getFailedNode());
         }
     }
 }

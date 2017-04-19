@@ -162,7 +162,7 @@ public class ClusterServiceFactoryTest extends HekateTestBase {
     public void testJoinValidators() {
         assertNull(factory.getJoinValidators());
 
-        ClusterJoinValidator validator = (newNode, instance) -> null;
+        ClusterJoinValidator validator = (newNode, node) -> null;
 
         factory.setJoinValidators(Collections.singletonList(validator));
 

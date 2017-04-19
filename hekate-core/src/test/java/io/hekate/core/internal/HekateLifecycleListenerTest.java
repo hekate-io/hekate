@@ -16,9 +16,8 @@
 
 package io.hekate.core.internal;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
-import io.hekate.core.HekateTestInstance;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,14 +30,14 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-public class HekateLifecycleListenerTest extends HekateInstanceTestBase {
-    private HekateTestInstance node;
+public class HekateLifecycleListenerTest extends HekateNodeTestBase {
+    private HekateTestNode node;
 
     @Override
     public void setUp() throws Exception {
         super.setUp();
 
-        node = createInstance();
+        node = createNode();
     }
 
     @Test

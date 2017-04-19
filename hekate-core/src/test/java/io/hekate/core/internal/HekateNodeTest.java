@@ -16,7 +16,7 @@
 
 package io.hekate.core.internal;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.event.ClusterEvent;
@@ -25,7 +25,6 @@ import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
 import io.hekate.core.HekateFutureException;
-import io.hekate.core.HekateTestInstance;
 import io.hekate.core.JoinFuture;
 import io.hekate.core.LeaveFuture;
 import io.hekate.core.TerminateFuture;
@@ -48,67 +47,67 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class HekateInstanceTest extends HekateInstanceTestBase {
-    private HekateTestInstance instance;
+public class HekateNodeTest extends HekateNodeTestBase {
+    private HekateTestNode node;
 
     @Override
     public void setUp() throws Exception {
         super.setUp();
 
-        instance = createInstance();
+        node = createNode();
     }
 
     @Test
     public void testAttributes() throws Exception {
-        assertNull(instance.getAttribute("test"));
+        assertNull(node.getAttribute("test"));
 
-        instance.setAttribute("test", "A");
+        node.setAttribute("test", "A");
 
-        assertEquals("A", instance.getAttribute("test"));
+        assertEquals("A", node.getAttribute("test"));
 
-        instance.join();
+        node.join();
 
-        assertEquals("A", instance.getAttribute("test"));
+        assertEquals("A", node.getAttribute("test"));
 
-        instance.setAttribute("test", "B");
+        node.setAttribute("test", "B");
 
-        assertEquals("B", instance.getAttribute("test"));
-        assertEquals("B", instance.setAttribute("test", "C"));
-        assertEquals("C", instance.getAttribute("test"));
+        assertEquals("B", node.getAttribute("test"));
+        assertEquals("B", node.setAttribute("test", "C"));
+        assertEquals("C", node.getAttribute("test"));
 
-        instance.setAttribute("test", null);
+        node.setAttribute("test", null);
 
-        assertNull(instance.getAttribute("test"));
+        assertNull(node.getAttribute("test"));
 
-        instance.setAttribute("test", "A");
+        node.setAttribute("test", "A");
 
-        instance.leave();
+        node.leave();
 
-        assertEquals("A", instance.getAttribute("test"));
+        assertEquals("A", node.getAttribute("test"));
     }
 
     @Test
     public void testJoinLeave() throws Exception {
         repeat(50, i -> {
             if (i == 0) {
-                expect(IllegalStateException.class, instance::getNode);
-                expect(IllegalStateException.class, instance::getTopology);
+                expect(IllegalStateException.class, node::getNode);
+                expect(IllegalStateException.class, node::getTopology);
             } else {
-                assertNotNull(instance.getNode());
-                assertNotNull(instance.getTopology());
+                assertNotNull(node.getNode());
+                assertNotNull(node.getTopology());
             }
 
-            assertSame(Hekate.State.DOWN, instance.getState());
+            assertSame(Hekate.State.DOWN, node.getState());
 
-            instance.join();
+            node.join();
 
-            assertNotNull(instance.getNode());
-            assertSame(Hekate.State.UP, instance.getState());
-            assertNotNull(instance.getTopology());
-            assertEquals(1, instance.getTopology().getNodes().size());
-            assertTrue(instance.getTopology().contains(instance.getNode()));
+            assertNotNull(node.getNode());
+            assertSame(Hekate.State.UP, node.getState());
+            assertNotNull(node.getTopology());
+            assertEquals(1, node.getTopology().getNodes().size());
+            assertTrue(node.getTopology().contains(node.getNode()));
 
-            instance.leave();
+            node.leave();
         });
     }
 
@@ -116,25 +115,25 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
     public void testJoinTerminate() throws Exception {
         repeat(50, i -> {
             if (i == 0) {
-                expect(IllegalStateException.class, instance::getNode);
-                expect(IllegalStateException.class, instance::getTopology);
+                expect(IllegalStateException.class, node::getNode);
+                expect(IllegalStateException.class, node::getTopology);
             } else {
-                assertNotNull(instance.getNode());
-                assertNotNull(instance.getTopology());
+                assertNotNull(node.getNode());
+                assertNotNull(node.getTopology());
             }
 
-            assertSame(Hekate.State.DOWN, instance.getState());
+            assertSame(Hekate.State.DOWN, node.getState());
 
-            instance.join();
+            node.join();
 
-            assertNotNull(instance.getNode());
-            assertEquals(1, instance.getNode().getJoinOrder());
-            assertSame(Hekate.State.UP, instance.getState());
-            assertNotNull(instance.getTopology());
-            assertEquals(1, instance.getTopology().getNodes().size());
-            assertTrue(instance.getTopology().contains(instance.getNode()));
+            assertNotNull(node.getNode());
+            assertEquals(1, node.getNode().getJoinOrder());
+            assertSame(Hekate.State.UP, node.getState());
+            assertNotNull(node.getTopology());
+            assertEquals(1, node.getTopology().getNodes().size());
+            assertTrue(node.getTopology().contains(node.getNode()));
 
-            instance.terminate();
+            node.terminate();
         });
     }
 
@@ -142,27 +141,27 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
     public void testJoinFailureWhileLeaving() throws Exception {
         repeat(50, i -> {
             if (i == 0) {
-                expect(IllegalStateException.class, instance::getNode);
-                expect(IllegalStateException.class, instance::getTopology);
+                expect(IllegalStateException.class, node::getNode);
+                expect(IllegalStateException.class, node::getTopology);
             } else {
-                assertNotNull(instance.getNode());
-                assertNotNull(instance.getTopology());
+                assertNotNull(node.getNode());
+                assertNotNull(node.getTopology());
             }
 
-            assertSame(Hekate.State.DOWN, instance.getState());
+            assertSame(Hekate.State.DOWN, node.getState());
 
-            instance.join();
+            node.join();
 
             LeaveFuture leave;
 
-            instance.getClusterGuard().lockWrite();
+            node.getClusterGuard().lockWrite();
 
             try {
-                leave = instance.leaveAsync();
+                leave = node.leaveAsync();
 
-                expect(IllegalStateException.class, instance::joinAsync);
+                expect(IllegalStateException.class, node::joinAsync);
             } finally {
-                instance.getClusterGuard().unlockWrite();
+                node.getClusterGuard().unlockWrite();
             }
 
             assertNotNull(get(leave));
@@ -174,16 +173,16 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
         for (int i = 0; i < 50; i++) {
             say("Join " + i);
 
-            JoinFuture join = instance.joinAsync();
+            JoinFuture join = node.joinAsync();
 
             say("Leave " + i);
 
-            LeaveFuture leave = instance.leaveAsync();
+            LeaveFuture leave = node.leaveAsync();
 
             join.get();
             leave.get();
 
-            assertSame(Hekate.State.DOWN, instance.getState());
+            assertSame(Hekate.State.DOWN, node.getState());
         }
     }
 
@@ -192,16 +191,16 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
         for (int i = 0; i < 50; i++) {
             say("Join " + i);
 
-            JoinFuture join = instance.joinAsync();
+            JoinFuture join = node.joinAsync();
 
             say("Terminate " + i);
 
-            TerminateFuture terminate = instance.terminateAsync();
+            TerminateFuture terminate = node.terminateAsync();
 
             join.get();
             terminate.get();
 
-            assertSame(Hekate.State.DOWN, instance.getState());
+            assertSame(Hekate.State.DOWN, node.getState());
         }
     }
 
@@ -213,19 +212,19 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
 
         ClusterEventListener listener = events::add;
 
-        instance.get(ClusterService.class).addListener(listener);
+        node.get(ClusterService.class).addListener(listener);
 
         for (int i = 0; i < 50; i++) {
-            futures.add(instance.joinAsync());
+            futures.add(node.joinAsync());
         }
 
         for (JoinFuture future : futures) {
             future.get();
         }
 
-        instance.get(ClusterService.class).removeListener(listener);
+        node.get(ClusterService.class).removeListener(listener);
 
-        instance.leave();
+        node.leave();
 
         assertEquals(1, events.size());
         assertSame(ClusterEventType.JOIN, events.get(0).getType());
@@ -234,16 +233,16 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
 
     @Test
     public void testMultipleLeaveCalls() throws Exception {
-        instance.join();
+        node.join();
 
         List<ClusterEvent> events = new CopyOnWriteArrayList<>();
 
-        instance.get(ClusterService.class).addListener(events::add);
+        node.get(ClusterService.class).addListener(events::add);
 
         List<LeaveFuture> futures = new ArrayList<>();
 
         for (int i = 0; i < 50; i++) {
-            futures.add(instance.leaveAsync());
+            futures.add(node.leaveAsync());
         }
 
         for (LeaveFuture future : futures) {
@@ -257,14 +256,14 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
 
     @Test
     public void testNetworkServiceStartupFailure() throws Exception {
-        instance = createInstance(c -> c.findOrRegister(NetworkServiceFactory.class).setPortRange(0));
+        node = createNode(c -> c.findOrRegister(NetworkServiceFactory.class).setPortRange(0));
 
         try (ServerSocket sock = new ServerSocket()) {
-            sock.bind(instance.getSocketAddress());
+            sock.bind(node.getSocketAddress());
 
             repeat(10, i -> {
                 try {
-                    instance.join();
+                    node.join();
 
                     fail();
                 } catch (HekateFutureException e) {
@@ -282,7 +281,7 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
 
     @Test
     public void testNetworkServiceFailure() throws Exception {
-        instance = createInstance(c -> {
+        node = createNode(c -> {
             NetworkServiceFactory net = c.find(NetworkServiceFactory.class).get();
 
             c.getServices().remove(net);
@@ -291,22 +290,22 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
         });
 
         repeat(10, i -> {
-            instance.join();
+            node.join();
 
-            assertSame(Hekate.State.UP, instance.getState());
+            assertSame(Hekate.State.UP, node.getState());
 
-            NetworkServiceManagerMock netMock = instance.get(NetworkServiceManagerMock.class);
+            NetworkServiceManagerMock netMock = node.get(NetworkServiceManagerMock.class);
 
             netMock.fireServerFailure(new IOException(TEST_ERROR_MESSAGE));
 
-            instance.awaitForStatus(Hekate.State.DOWN);
+            node.awaitForStatus(Hekate.State.DOWN);
         });
     }
 
     @Test
     public void testJoinLeaveFuture() throws Exception {
         repeat(5, i -> {
-            JoinFuture joinFuture = instance.joinAsync();
+            JoinFuture joinFuture = node.joinAsync();
 
             get(joinFuture.thenAccept(joined -> {
                 assertNotNull(joined);
@@ -324,7 +323,7 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
                 assertTrue(topology.contains(joined.getNode()));
             }));
 
-            LeaveFuture leaveFuture = instance.leaveAsync();
+            LeaveFuture leaveFuture = node.leaveAsync();
 
             get(leaveFuture.thenAccept(left ->
                 assertSame(DOWN, left.getState())
@@ -335,7 +334,7 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
     @Test
     public void testJoinTerminateFuture() throws Exception {
         repeat(5, i -> {
-            JoinFuture joinFuture = instance.joinAsync();
+            JoinFuture joinFuture = node.joinAsync();
 
             get(joinFuture.thenAccept(joined -> {
                 assertNotNull(joined);
@@ -353,7 +352,7 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
                 assertTrue(topology.contains(joined.getNode()));
             }));
 
-            TerminateFuture terminateFuture = instance.terminateAsync();
+            TerminateFuture terminateFuture = node.terminateAsync();
 
             get(terminateFuture.thenAccept(left ->
                 assertSame(DOWN, left.getState())
@@ -364,7 +363,7 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
     @Test
     public void testLeaveAsyncFromJoinFuture() throws Exception {
         repeat(5, i -> {
-            JoinFuture joinFuture = instance.joinAsync();
+            JoinFuture joinFuture = node.joinAsync();
 
             get(get(joinFuture.thenApply(joined -> {
                 try {
@@ -381,30 +380,30 @@ public class HekateInstanceTest extends HekateInstanceTestBase {
     @Test
     public void testJoinAsyncFromLeaveFuture() throws Exception {
         repeat(5, i -> {
-            instance.join();
+            node.join();
 
-            LeaveFuture leaveFuture = instance.leaveAsync();
+            LeaveFuture leaveFuture = node.leaveAsync();
 
             get(get(leaveFuture.thenApply(Hekate::joinAsync)));
 
             assertSame(Hekate.State.UP, leaveFuture.get().getState());
 
-            instance.leave();
+            node.leave();
         });
     }
 
     @Test
     public void testJoinAsyncFromTerminateFuture() throws Exception {
         repeat(5, i -> {
-            instance.join();
+            node.join();
 
-            TerminateFuture terminateFuture = instance.terminateAsync();
+            TerminateFuture terminateFuture = node.terminateAsync();
 
             get(get(terminateFuture.thenApply(Hekate::joinAsync)));
 
             assertSame(Hekate.State.UP, terminateFuture.get().getState());
 
-            instance.leave();
+            node.leave();
         });
     }
 }

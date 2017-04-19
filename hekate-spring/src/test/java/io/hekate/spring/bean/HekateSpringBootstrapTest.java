@@ -30,24 +30,24 @@ public class HekateSpringBootstrapTest extends HekateTestBase {
     public void test() throws Exception {
         ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("hekate.xml");
 
-        Hekate instance = null;
+        Hekate hekate = null;
 
         for (int i = 0; i < 1; i++) {
-            instance = ctx.getBean("hekate", Hekate.class);
+            hekate = ctx.getBean("hekate", Hekate.class);
 
-            assertSame(Hekate.State.UP, instance.getState());
+            assertSame(Hekate.State.UP, hekate.getState());
 
-            InjectionService injection = instance.get(InjectionService.class);
+            InjectionService injection = hekate.get(InjectionService.class);
 
             assertTrue(injection.toString(), injection.toString().startsWith(SpringInjectionService.class.getSimpleName()));
 
             ctx.refresh();
 
-            assertSame(Hekate.State.DOWN, instance.getState());
+            assertSame(Hekate.State.DOWN, hekate.getState());
         }
 
         ctx.close();
 
-        assertSame(Hekate.State.DOWN, instance.getState());
+        assertSame(Hekate.State.DOWN, hekate.getState());
     }
 }

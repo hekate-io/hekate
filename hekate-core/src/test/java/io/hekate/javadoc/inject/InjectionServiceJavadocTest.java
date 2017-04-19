@@ -16,17 +16,17 @@
 
 package io.hekate.javadoc.inject;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
 import io.hekate.inject.InjectionService;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
 
-public class InjectionServiceJavadocTest extends HekateInstanceTestBase {
+public class InjectionServiceJavadocTest extends HekateNodeTestBase {
     @Test
     public void exampleService() throws Exception {
-        Hekate hekate = createInstance().join();
+        Hekate hekate = createNode().join();
 
         try {
             // Start:access

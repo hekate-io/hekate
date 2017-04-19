@@ -34,7 +34,7 @@ public class FailoverRequestTest extends FailoverTestBase {
 
         try {
             toRemote.withFailover(ctx -> {
-                sender.getInstance().leaveAsync();
+                sender.getNode().leaveAsync();
 
                 return ctx.retry().withDelay(50);
             }).request("test--1").response(3, TimeUnit.SECONDS);
@@ -69,7 +69,7 @@ public class FailoverRequestTest extends FailoverTestBase {
 
         List<FailoverContext> contexts = testWithRoutingPolicy(policy, details -> {
             if (details.isFirstAttempt()) {
-                receiver.getInstance().leaveAsync().join();
+                receiver.getNode().leaveAsync().join();
 
                 sender.awaitForTopology(Collections.singletonList(sender));
             }

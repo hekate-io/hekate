@@ -16,12 +16,12 @@
 
 package io.hekate.core.service;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeService;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -36,7 +36,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class ServiceLifecycleTest extends HekateInstanceTestBase {
+public class ServiceLifecycleTest extends HekateNodeTestBase {
     private interface ServiceBase extends Service {
         int getConfigured();
 
@@ -126,13 +126,13 @@ public class ServiceLifecycleTest extends HekateInstanceTestBase {
 
     @Test
     public void testLifecycle() throws Exception {
-        Hekate instance = createInstance(c -> {
+        Hekate node = createNode(c -> {
             c.withService(() -> new DefaultServiceA(null, null, null));
             c.withService(() -> new DefaultServiceB(null, null, null));
         }).join();
 
-        ServiceA serviceA = instance.get(ServiceA.class);
-        ServiceB serviceB = instance.get(ServiceB.class);
+        ServiceA serviceA = node.get(ServiceA.class);
+        ServiceB serviceB = node.get(ServiceB.class);
 
         repeat(5, i -> {
 
@@ -144,32 +144,32 @@ public class ServiceLifecycleTest extends HekateInstanceTestBase {
             assertEquals(i + 1, serviceB.getInitialized());
             assertEquals(i, serviceB.getTerminated());
 
-            instance.leave();
+            node.leave();
 
-            instance.join();
+            node.join();
         });
     }
 
     @Test
     public void testConfiguring() throws Exception {
-        List<HekateTestInstance> instances = new ArrayList<>();
+        List<HekateTestNode> nodes = new ArrayList<>();
 
         repeat(5, i -> {
-            HekateTestInstance instance = createInstance(c -> {
+            HekateTestNode node = createNode(c -> {
                 String strIdx = String.valueOf(i + 1);
 
                 c.withService(() -> new DefaultServiceA(toSet("a", "A"), singletonMap("a", "A"), singletonMap("_A", asList("a", strIdx))));
                 c.withService(() -> new DefaultServiceB(toSet("b", "B"), singletonMap("b", "B"), singletonMap("_B", asList("b", strIdx))));
             });
 
-            instances.add(instance);
+            nodes.add(node);
 
-            instance.join();
+            node.join();
 
-            awaitForTopology(instances);
+            awaitForTopology(nodes);
         });
 
-        instances.stream()
+        nodes.stream()
             .map(Hekate::getNode)
             .sorted(Comparator.comparingInt(ClusterNode::getJoinOrder))
             .forEach(node -> {

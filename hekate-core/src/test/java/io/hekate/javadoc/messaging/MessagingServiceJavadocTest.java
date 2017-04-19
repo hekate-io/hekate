@@ -16,7 +16,7 @@
 
 package io.hekate.javadoc.messaging;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.messaging.Message;
@@ -32,7 +32,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
 
-public class MessagingServiceJavadocTest extends HekateInstanceTestBase {
+public class MessagingServiceJavadocTest extends HekateNodeTestBase {
     // Start:message_receiver
     public static class ExampleReceiver implements MessageReceiver<String> {
         @Override

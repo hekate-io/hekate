@@ -641,7 +641,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         ResponseCallbackMock toSelf = new ResponseCallbackMock("to-self");
         ResponseCallbackMock toRemote = new ResponseCallbackMock("to-remote");
 
-        channel.getInstance().get(ClusterService.class).addListener(event -> {
+        channel.getNode().get(ClusterService.class).addListener(event -> {
             try {
                 MessagingChannel<String> send = event.getHekate().get(MessagingService.class).channel(TEST_CHANNEL_NAME);
 

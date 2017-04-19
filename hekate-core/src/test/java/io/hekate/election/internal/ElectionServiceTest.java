@@ -16,10 +16,10 @@
 
 package io.hekate.election.internal;
 
-import io.hekate.HekateInstanceContextTestBase;
+import io.hekate.HekateNodeContextTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.election.Candidate;
 import io.hekate.election.CandidateConfig;
 import io.hekate.election.ElectionService;
@@ -38,7 +38,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class ElectionServiceTest extends HekateInstanceContextTestBase {
+public class ElectionServiceTest extends HekateNodeContextTestBase {
     private static final String GROUP = "GROUP";
 
     public ElectionServiceTest(HekateTestContext params) {
@@ -75,7 +75,7 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
 
     @Test
     public void testYieldLeadershipSingleNode() throws Exception {
-        HekateTestInstance node = createInstanceWithElection().join();
+        HekateTestNode node = createElectionNode().join();
 
         CandidateMock candidate = getCandidate(node);
 
@@ -93,12 +93,12 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
     @Test
     public void testYieldLeadershipSameNodes() throws Exception {
         // Start leader.
-        HekateTestInstance node1 = createInstanceWithElection().join();
+        HekateTestNode node1 = createElectionNode().join();
 
         get(node1.get(ElectionService.class).leader(GROUP));
 
         // Start follower.
-        HekateTestInstance node2 = createInstanceWithElection().join();
+        HekateTestNode node2 = createElectionNode().join();
 
         for (int i = 0; i < 5; i++) {
             say("Iteration: " + i);
@@ -125,7 +125,7 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
             awaitForLeaderFuture(node2.getNode(), node2);
 
             // Invert nodes for the next iteration.
-            HekateTestInstance temp = node1;
+            HekateTestNode temp = node1;
 
             node1 = node2;
             node2 = temp;
@@ -136,12 +136,12 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
     public void testYieldLeadershipNewNodes() throws Exception {
         repeat(5, i -> {
             // Start leader.
-            HekateTestInstance node1 = createInstanceWithElection().join();
+            HekateTestNode node1 = createElectionNode().join();
 
             get(node1.get(ElectionService.class).leader(GROUP));
 
             // Start follower.
-            HekateTestInstance node2 = createInstanceWithElection().join();
+            HekateTestNode node2 = createElectionNode().join();
 
             // Make sure that node1 is the leader.
             assertEquals(node1.getNode(), get(node1.get(ElectionService.class).leader(GROUP)));
@@ -172,7 +172,7 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
     @Test
     public void testLeaderLeave() throws Exception {
         // Start leader.
-        HekateTestInstance leader = createInstanceWithElection().join();
+        HekateTestNode leader = createElectionNode().join();
 
         get(leader.get(ElectionService.class).leader(GROUP));
 
@@ -180,7 +180,7 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
             say("Iteration: " + i);
 
             // Start follower.
-            HekateTestInstance follower = createInstanceWithElection().join();
+            HekateTestNode follower = createElectionNode().join();
 
             // Verify leader.
             assertEquals(leader.getNode(), get(follower.get(ElectionService.class).leader(GROUP)));
@@ -207,17 +207,17 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
 
     @Test
     public void testClusterChange() throws Exception {
-        List<HekateTestInstance> nodes = new ArrayList<>();
+        List<HekateTestNode> nodes = new ArrayList<>();
 
         repeat(5, i -> {
             // Start few more nodes.
-            nodes.add(createInstanceWithElection().join());
-            nodes.add(createInstanceWithElection().join());
+            nodes.add(createElectionNode().join());
+            nodes.add(createElectionNode().join());
 
             busyWait("Same leader", () -> {
                 Set<ClusterNode> leaders = new HashSet<>();
 
-                for (HekateTestInstance node : nodes) {
+                for (HekateTestNode node : nodes) {
                     leaders.add(get(node.get(ElectionService.class).leader(GROUP)));
                 }
 
@@ -226,7 +226,7 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
 
             Set<ClusterNode> leaders = new HashSet<>();
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 ClusterNode leader = get(node.get(ElectionService.class).leader(GROUP));
 
                 leaders.add(leader);
@@ -244,7 +244,7 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
             }
 
             // Stop leader.
-            HekateTestInstance oldLeader = nodes.stream().filter(n -> leaders.contains(n.getNode())).findFirst().orElse(null);
+            HekateTestNode oldLeader = nodes.stream().filter(n -> leaders.contains(n.getNode())).findFirst().orElse(null);
 
             ClusterNode oldLeaderNode = oldLeader.getNode();
 
@@ -258,7 +258,7 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
 
             oldLeaderCandidate.awaitTermination();
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 say("Checking " + node.getNode());
 
                 getCandidate(node).awaitForLeaderChange(oldLeaderNode);
@@ -266,17 +266,17 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
         });
     }
 
-    private void doTestConcurrentElection(Consumer<HekateTestInstance> nodeStopAction) throws Exception {
+    private void doTestConcurrentElection(Consumer<HekateTestNode> nodeStopAction) throws Exception {
         repeat(5, i -> {
             AtomicInteger leaderIdx = new AtomicInteger();
             AtomicReference<AssertionError> err = new AtomicReference<>();
 
-            List<HekateTestInstance> nodes = new ArrayList<>();
+            List<HekateTestNode> nodes = new ArrayList<>();
 
             for (int j = 0; j < 2; j++) {
                 int idx = j + 1;
 
-                nodes.add(createInstanceWithElection(new Candidate() {
+                nodes.add(createElectionNode(new Candidate() {
                     @Override
                     public void becomeLeader(LeaderContext ctx) {
                         say("Leader " + idx);
@@ -313,7 +313,7 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
         });
     }
 
-    private void awaitForLeaderFuture(ClusterNode expectedLeader, HekateTestInstance node) throws Exception {
+    private void awaitForLeaderFuture(ClusterNode expectedLeader, HekateTestNode node) throws Exception {
         busyWait("leader " + expectedLeader, () -> {
             ClusterNode currentLeader = get(node.get(ElectionService.class).leader(GROUP));
 
@@ -321,16 +321,16 @@ public class ElectionServiceTest extends HekateInstanceContextTestBase {
         });
     }
 
-    private CandidateMock getCandidate(HekateTestInstance node) {
+    private CandidateMock getCandidate(HekateTestNode node) {
         return node.getAttribute(CandidateMock.class.getName());
     }
 
-    private HekateTestInstance createInstanceWithElection() throws Exception {
-        return createInstanceWithElection(new CandidateMock());
+    private HekateTestNode createElectionNode() throws Exception {
+        return createElectionNode(new CandidateMock());
     }
 
-    private HekateTestInstance createInstanceWithElection(Candidate candidate) throws Exception {
-        HekateTestInstance node = createInstance(c ->
+    private HekateTestNode createElectionNode(Candidate candidate) throws Exception {
+        HekateTestNode node = createNode(c ->
             c.withService(new ElectionServiceFactory()
                 .withCandidate(new CandidateConfig()
                     .withGroup(GROUP)

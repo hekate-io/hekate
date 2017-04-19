@@ -16,7 +16,7 @@
 
 package io.hekate.javadoc.coordinate;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.coordinate.CoordinationContext;
 import io.hekate.coordinate.CoordinationHandler;
 import io.hekate.coordinate.CoordinationProcess;
@@ -26,11 +26,11 @@ import io.hekate.coordinate.CoordinationService;
 import io.hekate.coordinate.CoordinationServiceFactory;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import java.util.concurrent.locks.ReentrantLock;
 import org.junit.Test;
 
-public class CoordinationServiceJavadocTest extends HekateInstanceTestBase {
+public class CoordinationServiceJavadocTest extends HekateNodeTestBase {
     @Test
     public void exampleCoordinationService() throws Exception {
         // Start:handler
@@ -146,7 +146,7 @@ public class CoordinationServiceJavadocTest extends HekateInstanceTestBase {
         hekate.leave();
 
         for (int i = 0; i < 3; i++) {
-            HekateTestInstance node = createInstance(c ->
+            HekateTestNode node = createNode(c ->
                 c.withService(new CoordinationServiceFactory()
                     .withProcess(new CoordinationProcessConfig()
                         .withName("test")

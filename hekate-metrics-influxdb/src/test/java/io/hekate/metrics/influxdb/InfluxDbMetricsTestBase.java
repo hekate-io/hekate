@@ -16,7 +16,7 @@
 
 package io.hekate.metrics.influxdb;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.HekateTestProps;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -36,7 +36,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-public class InfluxDbMetricsTestBase extends HekateInstanceTestBase {
+public class InfluxDbMetricsTestBase extends HekateNodeTestBase {
     protected static String url;
 
     protected static String database;

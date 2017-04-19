@@ -18,7 +18,7 @@ package io.hekate.task.internal;
 
 import io.hekate.HekateTestContext;
 import io.hekate.core.Hekate;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.task.RemoteTaskException;
 import io.hekate.task.TaskFuture;
 import io.hekate.task.TaskFutureException;
@@ -42,9 +42,9 @@ public class TaskApplyTest extends TaskServiceTestBase {
     @Test
     public void test() throws Exception {
         repeat(3, i -> {
-            List<HekateTestInstance> nodes = createAndJoin(i + 1);
+            List<HekateTestNode> nodes = createAndJoin(i + 1);
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
                 int got = get(tasks.apply("test", arg -> {
@@ -67,9 +67,9 @@ public class TaskApplyTest extends TaskServiceTestBase {
     @Test
     public void testAffinity() throws Exception {
         repeat(3, i -> {
-            List<HekateTestInstance> nodes = createAndJoin(i + 1);
+            List<HekateTestNode> nodes = createAndJoin(i + 1);
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
                 int got = get(tasks.withAffinity(100500).apply("test", arg -> {
@@ -92,9 +92,9 @@ public class TaskApplyTest extends TaskServiceTestBase {
     @Test
     public void testNullResult() throws Exception {
         repeat(3, i -> {
-            List<HekateTestInstance> nodes = createAndJoin(i + 1);
+            List<HekateTestNode> nodes = createAndJoin(i + 1);
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
                 Object mustBeNull = get(tasks.apply("test", arg -> {
@@ -117,9 +117,9 @@ public class TaskApplyTest extends TaskServiceTestBase {
     @Test
     public void testRuntimeException() throws Exception {
         repeat(3, i -> {
-            List<HekateTestInstance> nodes = createAndJoin(i + 1);
+            List<HekateTestNode> nodes = createAndJoin(i + 1);
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
                 TaskFuture<Object> future = tasks.apply("test", arg -> {
@@ -139,9 +139,9 @@ public class TaskApplyTest extends TaskServiceTestBase {
     @Test
     public void testNonSerializable() throws Exception {
         repeat(3, i -> {
-            List<HekateTestInstance> nodes = createAndJoin(i + 2);
+            List<HekateTestNode> nodes = createAndJoin(i + 2);
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
                 TaskFuture<Object> future = tasks.forRemotes().apply("test", arg -> {
@@ -159,10 +159,10 @@ public class TaskApplyTest extends TaskServiceTestBase {
 
     @Test
     public void testSourceLeave() throws Exception {
-        List<HekateTestInstance> nodes = createAndJoin(2);
+        List<HekateTestNode> nodes = createAndJoin(2);
 
-        HekateTestInstance source = nodes.get(0);
-        HekateTestInstance target = nodes.get(1);
+        HekateTestNode source = nodes.get(0);
+        HekateTestNode target = nodes.get(1);
 
         REF.set(source);
 
@@ -187,9 +187,9 @@ public class TaskApplyTest extends TaskServiceTestBase {
 
     @Test
     public void testFailover() throws Exception {
-        List<HekateTestInstance> nodes = createAndJoin(2);
+        List<HekateTestNode> nodes = createAndJoin(2);
 
-        HekateTestInstance source = nodes.get(0);
+        HekateTestNode source = nodes.get(0);
 
         AtomicInteger attempts = new AtomicInteger();
 
@@ -232,9 +232,9 @@ public class TaskApplyTest extends TaskServiceTestBase {
 
     @Test
     public void testAffinityFailover() throws Exception {
-        List<HekateTestInstance> nodes = createAndJoin(2);
+        List<HekateTestNode> nodes = createAndJoin(2);
 
-        HekateTestInstance source = nodes.get(0);
+        HekateTestNode source = nodes.get(0);
 
         AtomicInteger attempts = new AtomicInteger();
 
@@ -277,9 +277,9 @@ public class TaskApplyTest extends TaskServiceTestBase {
 
     @Test
     public void testFailoverReRoute() throws Exception {
-        List<HekateTestInstance> nodes = createAndJoin(3);
+        List<HekateTestNode> nodes = createAndJoin(3);
 
-        HekateTestInstance node = nodes.get(0);
+        HekateTestNode node = nodes.get(0);
 
         TaskService tasks = node.get(TaskService.class).forRemotes().withFailover(ctx ->
             ctx.retry().withReRoute()

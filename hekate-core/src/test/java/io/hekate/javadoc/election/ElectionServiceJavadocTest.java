@@ -16,7 +16,7 @@
 
 package io.hekate.javadoc.election;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
@@ -30,7 +30,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
 
-public class ElectionServiceJavadocTest extends HekateInstanceTestBase {
+public class ElectionServiceJavadocTest extends HekateNodeTestBase {
     @Test
     public void exampleBootstrap() throws Exception {
         // Start:candidate

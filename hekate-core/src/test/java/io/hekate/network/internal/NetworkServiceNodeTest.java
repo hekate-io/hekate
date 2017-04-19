@@ -16,8 +16,8 @@
 
 package io.hekate.network.internal;
 
-import io.hekate.HekateInstanceTestBase;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.HekateNodeTestBase;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkConnectorConfig;
 import io.hekate.network.NetworkService;
@@ -28,12 +28,12 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class NetworkServiceInstanceTest extends HekateInstanceTestBase {
+public class NetworkServiceNodeTest extends HekateNodeTestBase {
     @Test
     public void testDefaultCodec() throws Exception {
         AtomicReference<CompletableFuture<String>> requestRef = new AtomicReference<>();
 
-        HekateTestInstance receiver = createInstance(c ->
+        HekateTestNode receiver = createNode(c ->
             c.findOrRegister(NetworkServiceFactory.class)
                 .withConnector(new NetworkConnectorConfig<String>()
                     .withProtocol("test")
@@ -45,7 +45,7 @@ public class NetworkServiceInstanceTest extends HekateInstanceTestBase {
                 )
         );
 
-        HekateTestInstance sender = createInstance(c ->
+        HekateTestNode sender = createNode(c ->
             c.findOrRegister(NetworkServiceFactory.class)
                 .withConnector(new NetworkConnectorConfig<String>()
                     .withProtocol("test")

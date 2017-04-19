@@ -19,7 +19,7 @@ package io.hekate.task.internal;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterService;
 import io.hekate.core.Hekate;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.UnknownRouteException;
 import io.hekate.task.RemoteTaskException;
 import io.hekate.task.TaskException;
@@ -53,9 +53,9 @@ public class TaskApplyAllTest extends TaskServiceTestBase {
     @Test
     public void test() throws Exception {
         repeat(5, i -> {
-            List<HekateTestInstance> nodes = createAndJoin(i + 1);
+            List<HekateTestNode> nodes = createAndJoin(i + 1);
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
                 sayHeader("Applying on " + node.getNode().getName() + " [topology=" + node.get(ClusterService.class).getTopology());
@@ -106,9 +106,9 @@ public class TaskApplyAllTest extends TaskServiceTestBase {
     @Test
     public void testNullResult() throws Exception {
         repeat(3, i -> {
-            List<HekateTestInstance> nodes = createAndJoin(i + 1);
+            List<HekateTestNode> nodes = createAndJoin(i + 1);
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
                 Collection<Object> allNulls = get(tasks.applyAll(asList(1, 2, 3), arg -> null));
@@ -125,9 +125,9 @@ public class TaskApplyAllTest extends TaskServiceTestBase {
     @Test
     public void testCheckedException() throws Exception {
         repeat(3, i -> {
-            List<HekateTestInstance> nodes = createAndJoin(i + 1);
+            List<HekateTestNode> nodes = createAndJoin(i + 1);
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
                 TaskFuture<Collection<Object>> future = tasks.applyAll(Arrays.asList(1, 2, 3), arg -> {
@@ -147,9 +147,9 @@ public class TaskApplyAllTest extends TaskServiceTestBase {
     @Test
     public void testPartialCheckedException() throws Exception {
         repeat(3, i -> {
-            List<HekateTestInstance> nodes = createAndJoin(i + 1);
+            List<HekateTestNode> nodes = createAndJoin(i + 1);
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
                 TaskFuture<Collection<Object>> future = tasks.applyAll(Arrays.asList(1, 2, 3), arg -> {
@@ -173,9 +173,9 @@ public class TaskApplyAllTest extends TaskServiceTestBase {
     @Test
     public void testRuntimeException() throws Exception {
         repeat(3, i -> {
-            List<HekateTestInstance> nodes = createAndJoin(i + 1);
+            List<HekateTestNode> nodes = createAndJoin(i + 1);
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
                 TaskFuture<Collection<Object>> future = tasks.applyAll(Arrays.asList(1, 2, 3), arg -> {
@@ -195,9 +195,9 @@ public class TaskApplyAllTest extends TaskServiceTestBase {
     @Test
     public void testPartialRuntimeException() throws Exception {
         repeat(3, i -> {
-            List<HekateTestInstance> nodes = createAndJoin(i + 1);
+            List<HekateTestNode> nodes = createAndJoin(i + 1);
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
                 TaskFuture<Collection<Object>> future = tasks.applyAll(Arrays.asList(1, 2, 3), arg -> {
@@ -236,9 +236,9 @@ public class TaskApplyAllTest extends TaskServiceTestBase {
     @Test
     public void testNonSerializableException() throws Exception {
         repeat(3, i -> {
-            List<HekateTestInstance> nodes = createAndJoin(i + 1);
+            List<HekateTestNode> nodes = createAndJoin(i + 1);
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
                 TaskFuture<Collection<Object>> future = tasks.applyAll(Arrays.asList(1, 2, 3), arg -> {
@@ -256,10 +256,10 @@ public class TaskApplyAllTest extends TaskServiceTestBase {
 
     @Test
     public void testSourceLeave() throws Exception {
-        List<HekateTestInstance> nodes = createAndJoin(2);
+        List<HekateTestNode> nodes = createAndJoin(2);
 
-        HekateTestInstance source = nodes.get(0);
-        HekateTestInstance target = nodes.get(1);
+        HekateTestNode source = nodes.get(0);
+        HekateTestNode target = nodes.get(1);
 
         REF.set(source);
 
@@ -285,9 +285,9 @@ public class TaskApplyAllTest extends TaskServiceTestBase {
     @Test
     public void testFailover() throws Exception {
         repeat(3, i -> {
-            List<HekateTestInstance> nodes = createAndJoin(i + 1);
+            List<HekateTestNode> nodes = createAndJoin(i + 1);
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 AtomicInteger attempts = new AtomicInteger();
 
                 TaskService tasks = node.get(TaskService.class).withFailover(ctx -> {

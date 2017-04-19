@@ -16,7 +16,7 @@
 
 package io.hekate.javadoc.metrics.cluster;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.cluster.ClusterService;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
@@ -24,7 +24,7 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
 import io.hekate.metrics.cluster.ClusterMetricsServiceFactory;
 import org.junit.Test;
 
-public class ClusterMetricsServiceJavadocTest extends HekateInstanceTestBase {
+public class ClusterMetricsServiceJavadocTest extends HekateNodeTestBase {
     @Test
     public void exampleBootstrap() throws Exception {
         // Start:configure

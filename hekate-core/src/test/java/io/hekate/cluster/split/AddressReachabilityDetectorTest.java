@@ -16,17 +16,17 @@
 
 package io.hekate.cluster.split;
 
-import io.hekate.HekateInstanceTestBase;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.HekateNodeTestBase;
+import io.hekate.core.internal.HekateTestNode;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class AddressReachabilityDetectorTest extends HekateInstanceTestBase {
+public class AddressReachabilityDetectorTest extends HekateNodeTestBase {
     @Test
     public void testValid() throws Exception {
-        HekateTestInstance node = createInstance().join();
+        HekateTestNode node = createNode().join();
 
         AddressReachabilityDetector detector = new AddressReachabilityDetector(node.getSocketAddress(), 2000);
 

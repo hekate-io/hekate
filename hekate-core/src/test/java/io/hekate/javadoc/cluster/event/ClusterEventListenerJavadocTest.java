@@ -16,22 +16,19 @@
 
 package io.hekate.javadoc.cluster.event;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
+import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.event.ClusterChangeEvent;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterJoinEvent;
 import io.hekate.cluster.event.ClusterLeaveEvent;
-import io.hekate.core.internal.HekateInstance;
+import io.hekate.core.Hekate;
 import org.junit.Test;
 
-public class ClusterEventListenerJavadocTest extends HekateInstanceTestBase {
+public class ClusterEventListenerJavadocTest extends HekateNodeTestBase {
     @Test
     public void exampleListener() throws Exception {
-        HekateInstance instance = createInstance();
-
-        instance.join();
-
         // Start:cluster_event_listener
         class ExampleListener implements ClusterEventListener {
             @Override
@@ -67,5 +64,11 @@ public class ClusterEventListenerJavadocTest extends HekateInstanceTestBase {
             }
         }
         // End:cluster_event_listener
+
+        Hekate node = createNode();
+
+        node.get(ClusterService.class).addListener(new ExampleListener());
+
+        node.join();
     }
 }

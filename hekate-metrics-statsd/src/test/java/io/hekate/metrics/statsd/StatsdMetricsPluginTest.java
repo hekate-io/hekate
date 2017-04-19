@@ -16,7 +16,7 @@
 
 package io.hekate.metrics.statsd;
 
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.metrics.MetricsServiceFactory;
 import io.hekate.metrics.ProbeConfig;
 import java.net.InetAddress;
@@ -32,7 +32,7 @@ public class StatsdMetricsPluginTest extends StatsdMetricsTestBase {
 
         String localhost = InetAddress.getLocalHost().getHostAddress();
 
-        HekateTestInstance node = createInstance(boot -> {
+        HekateTestNode node = createNode(boot -> {
             boot.withPlugin(new StatsdMetricsPlugin(new StatsdMetricsConfig()
                 .withHost(localhost)
                 .withPort(testPort)

@@ -16,9 +16,9 @@
 
 package io.hekate.metrics.cluster.internal;
 
-import io.hekate.HekateInstanceContextTestBase;
+import io.hekate.HekateNodeContextTestBase;
 import io.hekate.HekateTestContext;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.metrics.CounterConfig;
 import io.hekate.metrics.CounterMetric;
 import io.hekate.metrics.MetricsService;
@@ -39,7 +39,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
+public class ClusterMetricsServiceTest extends HekateNodeContextTestBase {
     public interface ClusterMetricsConfigurer {
         void configure(ClusterMetricsServiceFactory factory);
     }
@@ -52,9 +52,9 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
 
     @Test
     public void testAddMetrics() throws Exception {
-        HekateTestInstance inst1 = createMetricsInstance();
-        HekateTestInstance inst2 = createMetricsInstance();
-        HekateTestInstance inst3 = createMetricsInstance();
+        HekateTestNode inst1 = createNodeWithMetrics();
+        HekateTestNode inst2 = createNodeWithMetrics();
+        HekateTestNode inst3 = createNodeWithMetrics();
 
         MetricsService s1 = inst1.join().get(MetricsService.class);
         MetricsService s2 = inst2.join().get(MetricsService.class);
@@ -91,10 +91,10 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
 
     @Test
     public void testMetricsWithNoMetricsNode() throws Exception {
-        HekateTestInstance inst1 = createMetricsInstance();
-        HekateTestInstance inst2 = createMetricsInstance();
+        HekateTestNode inst1 = createNodeWithMetrics();
+        HekateTestNode inst2 = createNodeWithMetrics();
 
-        HekateTestInstance noMetricsNode = createInstance();
+        HekateTestNode noMetricsNode = createNode();
 
         MetricsService s1 = inst1.join().get(MetricsService.class);
         MetricsService s2 = inst2.join().get(MetricsService.class);
@@ -126,8 +126,8 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
 
     @Test
     public void testMetricsFilter() throws Exception {
-        HekateTestInstance inst1 = createMetricsInstance(f -> f.setReplicationFilter(m -> m.getName().startsWith("c")));
-        HekateTestInstance inst2 = createMetricsInstance(f -> f.setReplicationFilter(m -> m.getName().startsWith("c")));
+        HekateTestNode inst1 = createNodeWithMetrics(f -> f.setReplicationFilter(m -> m.getName().startsWith("c")));
+        HekateTestNode inst2 = createNodeWithMetrics(f -> f.setReplicationFilter(m -> m.getName().startsWith("c")));
 
         MetricsService s1 = inst1.join().get(MetricsService.class);
         MetricsService s2 = inst2.join().get(MetricsService.class);
@@ -175,8 +175,8 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
 
     @Test
     public void testGetMetricsWithFilter() throws Exception {
-        HekateTestInstance inst1 = createMetricsInstance();
-        HekateTestInstance inst2 = createMetricsInstance();
+        HekateTestNode inst1 = createNodeWithMetrics();
+        HekateTestNode inst2 = createNodeWithMetrics();
 
         MetricsService s1 = inst1.join().get(MetricsService.class);
         MetricsService s2 = inst2.join().get(MetricsService.class);
@@ -209,12 +209,12 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
 
     @Test
     public void testAddRemoveNodes() throws Exception {
-        List<HekateTestInstance> instances = new LinkedList<>();
+        List<HekateTestNode> nodes = new LinkedList<>();
         List<MetricsService> services = new LinkedList<>();
         List<ClusterMetricsService> clusterServices = new LinkedList<>();
         List<AtomicInteger> probes = new LinkedList<>();
 
-        sayHeader("Start instances.");
+        sayHeader("Start nodes.");
 
         repeat(5, i -> {
             for (MetricsService metrics : services) {
@@ -225,14 +225,14 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
                 probe.set(i);
             }
 
-            HekateTestInstance instance = createMetricsInstance();
+            HekateTestNode node = createNodeWithMetrics();
 
-            instances.add(instance);
+            nodes.add(node);
 
-            instance.join();
+            node.join();
 
-            MetricsService metrics = instance.get(MetricsService.class);
-            ClusterMetricsService clusterMetrics = instance.get(ClusterMetricsService.class);
+            MetricsService metrics = node.get(MetricsService.class);
+            ClusterMetricsService clusterMetrics = node.get(ClusterMetricsService.class);
 
             services.add(metrics);
             clusterServices.add(clusterMetrics);
@@ -246,23 +246,23 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
 
             metrics.getCounter("c").add(i);
 
-            awaitForReplicatedMetric("c", i, instances);
-            awaitForReplicatedMetric("p", i, instances);
+            awaitForReplicatedMetric("c", i, nodes);
+            awaitForReplicatedMetric("p", i, nodes);
 
             for (ClusterMetricsService service : clusterServices) {
-                assertEquals(instances.size(), service.forAll().size());
+                assertEquals(nodes.size(), service.forAll().size());
 
-                for (HekateTestInstance inst : instances) {
-                    ClusterNodeMetrics nodeMetrics = service.forNode(inst.getNode()).get();
+                for (HekateTestNode n : nodes) {
+                    ClusterNodeMetrics nodeMetrics = service.forNode(n.getNode()).get();
 
                     assertNotNull(nodeMetrics.metric("c"));
                     assertTrue(nodeMetrics.allMetrics().containsKey("c"));
-                    assertEquals(inst.getNode(), nodeMetrics.getNode());
+                    assertEquals(n.getNode(), nodeMetrics.getNode());
                     assertEquals(i, nodeMetrics.metric("c").getValue());
 
                     assertNotNull(nodeMetrics.metric("p"));
                     assertTrue(nodeMetrics.allMetrics().containsKey("p"));
-                    assertEquals(inst.getNode(), nodeMetrics.getNode());
+                    assertEquals(n.getNode(), nodeMetrics.getNode());
                     assertEquals(i, nodeMetrics.metric("p").getValue());
                 }
             }
@@ -281,8 +281,8 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
                 probe.set(100000 + i);
             }
 
-            awaitForReplicatedMetric("c", 100000 + oldVal, instances);
-            awaitForReplicatedMetric("p", 100000 + i, instances);
+            awaitForReplicatedMetric("c", 100000 + oldVal, nodes);
+            awaitForReplicatedMetric("p", 100000 + i, nodes);
 
             for (MetricsService metrics : services) {
                 metrics.getCounter("c").subtract(100000);
@@ -292,18 +292,18 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
                 probe.set(i);
             }
 
-            awaitForReplicatedMetric("c", oldVal, instances);
-            awaitForReplicatedMetric("p", i, instances);
+            awaitForReplicatedMetric("c", oldVal, nodes);
+            awaitForReplicatedMetric("p", i, nodes);
         });
 
-        sayHeader("Stop instances.");
+        sayHeader("Stop nodes.");
 
         repeat(5, i -> {
-            instances.remove(0).leave();
+            nodes.remove(0).leave();
             services.remove(0);
             clusterServices.remove(0);
 
-            awaitForTopology(instances);
+            awaitForTopology(nodes);
 
             long oldVal = 4;
 
@@ -315,23 +315,23 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
                 probe.set(1000 + i);
             }
 
-            awaitForReplicatedMetric("c", 1000 + oldVal, instances);
-            awaitForReplicatedMetric("p", 1000 + i, instances);
+            awaitForReplicatedMetric("c", 1000 + oldVal, nodes);
+            awaitForReplicatedMetric("p", 1000 + i, nodes);
 
             for (ClusterMetricsService service : clusterServices) {
-                assertEquals(instances.size(), service.forAll().size());
+                assertEquals(nodes.size(), service.forAll().size());
 
-                for (HekateTestInstance inst : instances) {
-                    ClusterNodeMetrics nodeMetrics = service.forNode(inst.getNode()).get();
+                for (HekateTestNode node : nodes) {
+                    ClusterNodeMetrics nodeMetrics = service.forNode(node.getNode()).get();
 
                     assertNotNull(nodeMetrics.metric("c"));
                     assertTrue(nodeMetrics.allMetrics().containsKey("c"));
-                    assertEquals(inst.getNode(), nodeMetrics.getNode());
+                    assertEquals(node.getNode(), nodeMetrics.getNode());
                     assertEquals(1000 + oldVal, nodeMetrics.metric("c").getValue());
 
                     assertNotNull(nodeMetrics.metric("p"));
                     assertTrue(nodeMetrics.allMetrics().containsKey("p"));
-                    assertEquals(inst.getNode(), nodeMetrics.getNode());
+                    assertEquals(node.getNode(), nodeMetrics.getNode());
                     assertEquals(1000 + i, nodeMetrics.metric("p").getValue());
                 }
             }
@@ -344,8 +344,8 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
                 probe.set(i);
             }
 
-            awaitForReplicatedMetric("c", oldVal, instances);
-            awaitForReplicatedMetric("p", i, instances);
+            awaitForReplicatedMetric("c", oldVal, nodes);
+            awaitForReplicatedMetric("p", i, nodes);
         });
     }
 
@@ -353,9 +353,9 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
     public void testTerminateNode() throws Exception {
         disableNodeFailurePostCheck();
 
-        HekateTestInstance inst1 = createMetricsInstance();
-        HekateTestInstance inst2 = createMetricsInstance();
-        HekateTestInstance inst3 = createMetricsInstance();
+        HekateTestNode inst1 = createNodeWithMetrics();
+        HekateTestNode inst2 = createNodeWithMetrics();
+        HekateTestNode inst3 = createNodeWithMetrics();
 
         MetricsService s1 = inst1.join().get(MetricsService.class);
         MetricsService s2 = inst2.join().get(MetricsService.class);
@@ -373,7 +373,7 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
         awaitForReplicatedMetric("c1", 1, inst1, Arrays.asList(inst1, inst2, inst3));
         awaitForReplicatedMetric("c2", 2, inst2, Arrays.asList(inst1, inst2, inst3));
 
-        say("Terminating instance...");
+        say("Terminating node...");
 
         inst3.terminate();
 
@@ -386,12 +386,12 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
         awaitForReplicatedMetric("c2", 202, inst2, Arrays.asList(inst1, inst2));
     }
 
-    protected HekateTestInstance createMetricsInstance() throws Exception {
-        return createMetricsInstance(null);
+    protected HekateTestNode createNodeWithMetrics() throws Exception {
+        return createNodeWithMetrics(null);
     }
 
-    protected HekateTestInstance createMetricsInstance(ClusterMetricsConfigurer configurer) throws Exception {
-        return createInstance(c -> {
+    protected HekateTestNode createNodeWithMetrics(ClusterMetricsConfigurer configurer) throws Exception {
+        return createNode(c -> {
             MetricsServiceFactory metrics = new MetricsServiceFactory();
 
             metrics.setRefreshInterval(TEST_METRICS_REFRESH_INTERVAL);
@@ -410,22 +410,22 @@ public class ClusterMetricsServiceTest extends HekateInstanceContextTestBase {
         });
     }
 
-    private void awaitForReplicatedMetric(String metric, long value, HekateTestInstance fromNode, List<HekateTestInstance> nodes)
+    private void awaitForReplicatedMetric(String metric, long value, HekateTestNode fromNode, List<HekateTestNode> nodes)
         throws Exception {
         awaitForReplicatedMetric(metric, value, Collections.singletonList(fromNode), nodes);
     }
 
-    private void awaitForReplicatedMetric(String metric, long value, List<HekateTestInstance> nodes) throws Exception {
+    private void awaitForReplicatedMetric(String metric, long value, List<HekateTestNode> nodes) throws Exception {
         awaitForReplicatedMetric(metric, value, nodes, nodes);
     }
 
-    private void awaitForReplicatedMetric(String metric, long value, List<HekateTestInstance> checkNodes, List<HekateTestInstance> nodes)
+    private void awaitForReplicatedMetric(String metric, long value, List<HekateTestNode> checkNodes, List<HekateTestNode> nodes)
         throws Exception {
         busyWait("metric value [name=" + metric + ", value=" + value + ", nodes=" + nodes + ']', () -> {
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 ClusterMetricsService service = node.get(ClusterMetricsService.class);
 
-                for (HekateTestInstance checkNode : checkNodes) {
+                for (HekateTestNode checkNode : checkNodes) {
                     ClusterNodeMetrics metrics = service.forNode(checkNode.getNode()).orElse(null);
 
                     if (metrics == null || metrics.metric(metric) == null || metrics.metric(metric).getValue() != value) {

@@ -17,7 +17,7 @@
 package io.hekate.cluster.seed;
 
 import io.hekate.cluster.ClusterServiceFactory;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.network.NetworkServiceFactory;
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -173,13 +173,13 @@ public abstract class PersistentSeedNodeProviderCommonTest<T extends SeedNodePro
     }
 
     @Test
-    public void testCleanupWithInstances() throws Exception {
+    public void testCleanupWithNodes() throws Exception {
         SeedNodeProvider controlProvider = createProvider();
 
         repeat(3, i -> {
             SeedNodeProvider provider = createProvider();
 
-            HekateTestInstance node = createInstance(b -> {
+            HekateTestNode node = createNode(b -> {
                 b.setClusterName(CLUSTER_1);
 
                 b.withService(ClusterServiceFactory.class, cluster ->

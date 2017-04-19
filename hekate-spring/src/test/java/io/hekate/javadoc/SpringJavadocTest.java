@@ -210,16 +210,16 @@ public class SpringJavadocTest extends HekateTestBase {
     private void doTest(String resource, BiConsumer<Hekate, ApplicationContext> task) {
         ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext(resource);
 
-        Hekate instance = ctx.getBean("hekate", Hekate.class);
+        Hekate hekate = ctx.getBean("hekate", Hekate.class);
 
-        assertSame(Hekate.State.UP, instance.getState());
+        assertSame(Hekate.State.UP, hekate.getState());
 
         if (task != null) {
-            task.accept(instance, ctx);
+            task.accept(hekate, ctx);
         }
 
         ctx.close();
 
-        assertSame(Hekate.State.DOWN, instance.getState());
+        assertSame(Hekate.State.DOWN, hekate.getState());
     }
 }

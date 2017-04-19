@@ -16,7 +16,7 @@
 
 package io.hekate.metrics.influxdb;
 
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.metrics.MetricsServiceFactory;
 import io.hekate.metrics.ProbeConfig;
 import java.util.concurrent.CountDownLatch;
@@ -28,7 +28,7 @@ public class InfluxDbMetricsPluginTest extends InfluxDbMetricsTestBase {
     public void test() throws Exception {
         CountDownLatch published = new CountDownLatch(1);
 
-        HekateTestInstance node = createInstance(boot -> {
+        HekateTestNode node = createNode(boot -> {
             boot.withPlugin(new InfluxDbMetricsPlugin(new InfluxDbMetricsConfig()
                 .withUrl(url)
                 .withDatabase(database)

@@ -23,7 +23,7 @@ import io.hekate.cluster.ClusterView;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.codec.JavaCodecFactory;
-import io.hekate.core.internal.HekateInstance;
+import io.hekate.core.internal.HekateNodeFactory;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.core.plugin.Plugin;
@@ -99,7 +99,7 @@ public class HekateBootstrap {
      * @throws HekateConfigurationException If configuration is invalid.
      */
     public JoinFuture joinAsync() throws HekateConfigurationException {
-        return createInstance().joinAsync();
+        return create().joinAsync();
     }
 
     /**
@@ -112,7 +112,7 @@ public class HekateBootstrap {
      * @throws InterruptedException If the current thread was interrupted while awaiting for completion of this operation.
      */
     public Hekate join() throws HekateConfigurationException, InterruptedException, HekateFutureException {
-        return createInstance().join();
+        return create().join();
     }
 
     /**
@@ -547,9 +547,13 @@ public class HekateBootstrap {
         return this;
     }
 
-    // Package level for testing purposes.
-    HekateInstance createInstance() {
-        return new HekateInstance(this);
+    /**
+     * Creates a new {@link Hekate} instance.
+     *
+     * @return New {@link Hekate} instance.
+     */
+    protected Hekate create() {
+        return HekateNodeFactory.create(this);
     }
 
     @Override

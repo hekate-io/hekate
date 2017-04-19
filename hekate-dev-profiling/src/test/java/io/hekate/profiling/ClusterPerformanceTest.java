@@ -27,10 +27,9 @@ import io.hekate.cluster.health.DefaultFailureDetectorConfig;
 import io.hekate.cluster.seed.SeedNodeProviderAdaptor;
 import io.hekate.cluster.seed.SeedNodeProviderMock;
 import io.hekate.core.Hekate;
-import io.hekate.core.HekateTestInstance;
 import io.hekate.core.JoinFuture;
 import io.hekate.core.LeaveFuture;
-import io.hekate.core.internal.HekateInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.network.NetworkServiceFactory;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -73,21 +72,21 @@ public class ClusterPerformanceTest extends HekateTestBase {
 
     @Test
     public void testSequential() throws Exception {
-        List<HekateTestInstance> instances = new ArrayList<>();
+        List<HekateTestNode> nodes = new ArrayList<>();
 
         sayHeader("Starting");
 
         repeat(100, i -> sayTime("Start " + i, () -> {
             InetSocketAddress addr = new InetSocketAddress(InetAddress.getLocalHost(), 20000 + i);
 
-            HekateTestInstance inst = createInstance(addr);
+            HekateTestNode node = createNode(addr);
 
-            inst.join();
+            node.join();
 
-            instances.add(inst);
+            nodes.add(node);
 
-            for (HekateTestInstance other : instances) {
-                other.awaitForTopology(instances);
+            for (HekateTestNode other : nodes) {
+                other.awaitForTopology(nodes);
             }
         }));
 
@@ -95,16 +94,16 @@ public class ClusterPerformanceTest extends HekateTestBase {
 
         int idx = 0;
 
-        for (Iterator<HekateTestInstance> it = instances.iterator(); it.hasNext(); ) {
-            HekateTestInstance inst = it.next();
+        for (Iterator<HekateTestNode> it = nodes.iterator(); it.hasNext(); ) {
+            HekateTestNode node = it.next();
 
             it.remove();
 
-            sayTime("Leave " + idx++ + " ~ " + inst.getNode().getId(), () -> {
-                inst.leave();
+            sayTime("Leave " + idx++ + " ~ " + node.getNode().getId(), () -> {
+                node.leave();
 
-                for (HekateTestInstance clusterService : instances) {
-                    clusterService.awaitForTopology(instances);
+                for (HekateTestNode clusterService : nodes) {
+                    clusterService.awaitForTopology(nodes);
                 }
             });
         }
@@ -112,7 +111,7 @@ public class ClusterPerformanceTest extends HekateTestBase {
 
     @Test
     public void testSequentialBatch() throws Exception {
-        List<HekateTestInstance> instances = new ArrayList<>();
+        List<HekateTestNode> nodes = new ArrayList<>();
 
         sayHeader("Starting");
 
@@ -127,19 +126,19 @@ public class ClusterPerformanceTest extends HekateTestBase {
             repeat(nodesPerBatch, j -> {
                 InetSocketAddress addr = new InetSocketAddress(InetAddress.getLocalHost(), port.incrementAndGet());
 
-                HekateTestInstance inst = createInstance(addr);
+                HekateTestNode node = createNode(addr);
 
-                instances.add(inst);
+                nodes.add(node);
 
-                joinFutures.add(inst.joinAsync());
+                joinFutures.add(node.joinAsync());
             });
 
             for (JoinFuture future : joinFutures) {
                 future.get();
             }
 
-            for (HekateTestInstance clusterService : instances) {
-                clusterService.awaitForTopology(instances);
+            for (HekateTestNode clusterService : nodes) {
+                clusterService.awaitForTopology(nodes);
             }
         }));
 
@@ -149,13 +148,13 @@ public class ClusterPerformanceTest extends HekateTestBase {
 
         repeat(batches, i -> sayTime("Batch " + i, () -> {
             repeat(nodesPerBatch, j -> {
-                HekateTestInstance inst = instances.remove(instances.size() - 1);
+                HekateTestNode node = nodes.remove(nodes.size() - 1);
 
-                allLeaves.add(inst.leaveAsync());
+                allLeaves.add(node.leaveAsync());
             });
 
-            for (HekateTestInstance clusterService : instances) {
-                clusterService.awaitForTopology(instances);
+            for (HekateTestNode clusterService : nodes) {
+                clusterService.awaitForTopology(nodes);
             }
         }));
 
@@ -166,7 +165,7 @@ public class ClusterPerformanceTest extends HekateTestBase {
 
     @Test
     public void testRandom() throws Throwable {
-        HekateTestInstance seed = createInstance(new InetSocketAddress(InetAddress.getLocalHost(), 12001));
+        HekateTestNode seed = createNode(new InetSocketAddress(InetAddress.getLocalHost(), 12001));
 
         seed.join();
 
@@ -177,26 +176,26 @@ public class ClusterPerformanceTest extends HekateTestBase {
             }
         });
 
-        int nodes = 100;
+        int maxNodes = 100;
 
         AtomicBoolean stopped = new AtomicBoolean();
         CountDownLatch errorLatch = new CountDownLatch(1);
         AtomicReference<Throwable> error = new AtomicReference<>();
 
-        ExecutorService pool = Executors.newFixedThreadPool(nodes);
+        ExecutorService pool = Executors.newFixedThreadPool(maxNodes);
 
-        List<HekateTestInstance> instances = new ArrayList<>();
+        List<HekateTestNode> nodes = new ArrayList<>();
 
         List<Future<?>> tasks = new ArrayList<>();
 
         ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-        for (int i = 0; i < nodes; i++) {
+        for (int i = 0; i < maxNodes; i++) {
             int port = 11000 + i;
 
-            HekateTestInstance inst = createInstance(new InetSocketAddress(InetAddress.getLocalHost(), port));
+            HekateTestNode node = createNode(new InetSocketAddress(InetAddress.getLocalHost(), port));
 
-            instances.add(inst);
+            nodes.add(node);
 
             Future<Void> task = pool.submit(() -> {
                 try {
@@ -207,20 +206,20 @@ public class ClusterPerformanceTest extends HekateTestBase {
 
                         try {
                             sayTime("Started: " + port, () -> {
-                                Hekate started = inst.joinAsync().get(30, TimeUnit.SECONDS);
+                                Hekate started = node.joinAsync().get(30, TimeUnit.SECONDS);
 
                                 if (started == null) {
-                                    ClusterNodeId node = null;
+                                    ClusterNodeId nodeId = null;
 
                                     try {
-                                        node = inst.getNode().getId();
+                                        nodeId = node.getNode().getId();
                                     } catch (IllegalStateException e) {
                                         // No-op.
                                     }
 
-                                    inst.terminate();
+                                    node.terminate();
 
-                                    throw new IllegalStateException("Failed to await for node join: " + port + " (" + node + ')');
+                                    throw new IllegalStateException("Failed to await for node join: " + port + " (" + nodeId + ')');
                                 }
                             });
                         } finally {
@@ -234,23 +233,23 @@ public class ClusterPerformanceTest extends HekateTestBase {
                         lock.readLock().lock();
 
                         try {
-                            ClusterNodeId node = null;
+                            ClusterNodeId nodeId = null;
 
                             try {
-                                node = inst.getNode().getId();
+                                nodeId = node.getNode().getId();
                             } catch (IllegalStateException e) {
                                 // No-op.
                             }
 
-                            final ClusterNodeId finalNode = node;
+                            final ClusterNodeId finalNodeId = nodeId;
 
                             sayTime("Stopped: " + port, () -> {
-                                Hekate stopped1 = inst.leaveAsync().get(30, TimeUnit.SECONDS);
+                                Hekate stopped1 = node.leaveAsync().get(30, TimeUnit.SECONDS);
 
                                 if (stopped1 == null) {
-                                    inst.terminate();
+                                    node.terminate();
 
-                                    throw new IllegalStateException("Failed to await for node leave: " + port + " (" + finalNode + ')');
+                                    throw new IllegalStateException("Failed to await for node leave: " + port + " (" + finalNodeId + ')');
                                 }
                             });
                         } finally {
@@ -277,16 +276,16 @@ public class ClusterPerformanceTest extends HekateTestBase {
             lock.writeLock().lock();
 
             try {
-                List<HekateTestInstance> nonDown = instances.stream()
-                    .filter(inst -> inst.getState() != Hekate.State.DOWN)
+                List<HekateTestNode> nonDown = nodes.stream()
+                    .filter(node -> node.getState() != Hekate.State.DOWN)
                     .collect(toList());
 
                 nonDown.add(seed);
 
-                sayTime("Consistent topology of " + nonDown.size() + " nodes", () -> nonDown.forEach(inst -> {
-                    assertSame(Hekate.State.UP, inst.getState());
+                sayTime("Consistent topology of " + nonDown.size() + " nodes", () -> nonDown.forEach(node -> {
+                    assertSame(Hekate.State.UP, node.getState());
 
-                    inst.awaitForTopology(nonDown);
+                    node.awaitForTopology(nonDown);
                 }));
             } finally {
                 lock.writeLock().unlock();
@@ -299,8 +298,8 @@ public class ClusterPerformanceTest extends HekateTestBase {
             task.get();
         }
 
-        for (HekateInstance instance : instances) {
-            instance.leave();
+        for (Hekate node : nodes) {
+            node.leave();
         }
 
         seed.leave();
@@ -316,21 +315,21 @@ public class ClusterPerformanceTest extends HekateTestBase {
 
     @Test
     public void testSequentialWithTerminate() throws Exception {
-        List<HekateTestInstance> instances = new ArrayList<>();
+        List<HekateTestNode> nodes = new ArrayList<>();
 
         sayHeader("Starting");
 
         repeat(100, i -> sayTime("Start " + i, () -> {
             InetSocketAddress addr = new InetSocketAddress(InetAddress.getLocalHost(), 20000 + i);
 
-            HekateTestInstance inst = createInstance(addr);
+            HekateTestNode node = createNode(addr);
 
-            inst.join();
+            node.join();
 
-            instances.add(inst);
+            nodes.add(node);
 
-            for (HekateTestInstance clusterService : instances) {
-                clusterService.awaitForTopology(instances);
+            for (HekateTestNode clusterService : nodes) {
+                clusterService.awaitForTopology(nodes);
             }
         }));
 
@@ -338,16 +337,16 @@ public class ClusterPerformanceTest extends HekateTestBase {
 
         int idx = 0;
 
-        for (Iterator<HekateTestInstance> it = instances.iterator(); it.hasNext(); ) {
-            HekateTestInstance inst = it.next();
+        for (Iterator<HekateTestNode> it = nodes.iterator(); it.hasNext(); ) {
+            HekateTestNode node = it.next();
 
             it.remove();
 
             sayTime("Terminate " + idx++, () -> {
-                inst.terminate();
+                node.terminate();
 
-                for (HekateTestInstance clusterService : instances) {
-                    clusterService.awaitForTopology(instances);
+                for (HekateTestNode clusterService : nodes) {
+                    clusterService.awaitForTopology(nodes);
                 }
             });
         }
@@ -355,7 +354,7 @@ public class ClusterPerformanceTest extends HekateTestBase {
 
     @Test
     public void testJoinLeaveTime() throws Exception {
-        List<HekateTestInstance> clusters = new ArrayList<>();
+        List<HekateTestNode> clusters = new ArrayList<>();
         List<JoinFuture> joins = new ArrayList<>();
 
         // Non-existing seed nodes.
@@ -394,13 +393,13 @@ public class ClusterPerformanceTest extends HekateTestBase {
         for (int i = 1; i <= 100; i++) {
             InetSocketAddress addr = new InetSocketAddress(InetAddress.getLocalHost(), 20000 + i);
 
-            HekateTestInstance h = createInstance(addr);
+            HekateTestNode node = createNode(addr);
 
-            h.get(ClusterService.class).addListener(listener);
+            node.get(ClusterService.class).addListener(listener);
 
-            joins.add(h.joinAsync());
+            joins.add(node.joinAsync());
 
-            clusters.add(h);
+            clusters.add(node);
         }
 
         for (JoinFuture wait : joins) {
@@ -408,7 +407,7 @@ public class ClusterPerformanceTest extends HekateTestBase {
         }
 
         sayTime("Awaiting consistent topology", () -> {
-            for (HekateTestInstance clusterService : clusters) {
+            for (HekateTestNode clusterService : clusters) {
                 clusterService.awaitForTopology(clusters);
             }
         });
@@ -417,17 +416,17 @@ public class ClusterPerformanceTest extends HekateTestBase {
 
         InetSocketAddress addr = new InetSocketAddress(InetAddress.getLocalHost(), 10000);
 
-        Hekate h = createInstance(addr);
+        Hekate node = createNode(addr);
 
-        h.get(ClusterService.class).addListener(listener);
+        node.get(ClusterService.class).addListener(listener);
 
-        h.join();
+        node.join();
 
         say("LEAVE");
 
         long t3 = System.currentTimeMillis();
 
-        h.leave();
+        node.leave();
 
         long t4 = System.currentTimeMillis();
 
@@ -447,8 +446,8 @@ public class ClusterPerformanceTest extends HekateTestBase {
         say("Leave time: " + (t5 - t4));
     }
 
-    private HekateTestInstance createInstance(InetSocketAddress addr) {
-        HekateTestInstance.Bootstrap bootstrap = new HekateTestInstance.Bootstrap(addr);
+    private HekateTestNode createNode(InetSocketAddress addr) {
+        HekateTestNode.Bootstrap bootstrap = new HekateTestNode.Bootstrap(addr);
 
         bootstrap.setClusterName("test");
         bootstrap.setNodeName("node" + addr.getPort());
@@ -487,6 +486,6 @@ public class ClusterPerformanceTest extends HekateTestBase {
 
         cluster.setFailureDetector(new DefaultFailureDetector(fdCfg));
 
-        return bootstrap.createInstance();
+        return bootstrap.create();
     }
 }

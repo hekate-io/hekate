@@ -21,7 +21,7 @@ import io.hekate.cluster.health.DefaultFailureDetector;
 import io.hekate.cluster.health.DefaultFailureDetectorConfig;
 import io.hekate.cluster.seed.SeedNodeProviderMock;
 import io.hekate.cluster.split.SplitBrainAction;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.network.NetworkServiceFactory;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -33,14 +33,14 @@ import java.util.concurrent.TimeoutException;
 import org.junit.After;
 import org.junit.Before;
 
-public class HekateInstanceTestBase extends HekateTestBase {
-    public interface InstanceConfigurer {
-        void configure(HekateTestInstance.Bootstrap b);
+public class HekateNodeTestBase extends HekateTestBase {
+    public interface NodeConfigurer {
+        void configure(HekateTestNode.Bootstrap b);
     }
 
     protected SeedNodeProviderMock seedNodes;
 
-    private List<HekateTestInstance> instances;
+    private List<HekateTestNode> allNodes;
 
     private boolean ignoreNodeFailures;
 
@@ -48,20 +48,20 @@ public class HekateInstanceTestBase extends HekateTestBase {
     public void setUp() throws Exception {
         seedNodes = new SeedNodeProviderMock();
 
-        instances = new CopyOnWriteArrayList<>();
+        allNodes = new CopyOnWriteArrayList<>();
     }
 
     @After
     public void tearDown() throws Exception {
         try {
             if (!ignoreNodeFailures) {
-                instances.forEach(HekateTestInstance::assertNoNodeFailures);
+                allNodes.forEach(HekateTestNode::assertNoNodeFailures);
             }
         } finally {
             try {
-                for (HekateTestInstance instance : instances) {
+                for (HekateTestNode node : allNodes) {
                     try {
-                        instance.leaveAsync().get(5, TimeUnit.SECONDS);
+                        node.leaveAsync().get(5, TimeUnit.SECONDS);
                     } catch (TimeoutException e) {
                         say("Failed to await for node termination: " + e);
 
@@ -69,7 +69,7 @@ public class HekateInstanceTestBase extends HekateTestBase {
                     }
                 }
             } finally {
-                instances.clear();
+                allNodes.clear();
             }
         }
     }
@@ -78,33 +78,33 @@ public class HekateInstanceTestBase extends HekateTestBase {
         ignoreNodeFailures = true;
     }
 
-    protected void awaitForTopology(HekateTestInstance... nodes) {
+    protected void awaitForTopology(HekateTestNode... nodes) {
         awaitForTopology(Arrays.asList(nodes));
     }
 
-    protected void awaitForTopology(List<HekateTestInstance> nodes) {
+    protected void awaitForTopology(List<HekateTestNode> nodes) {
         nodes.forEach(n -> n.awaitForTopology(nodes));
     }
 
-    protected void awaitForTopology(List<HekateTestInstance> nodes, HekateTestInstance oneMore) {
-        List<HekateTestInstance> allNodes = new ArrayList<>(nodes);
+    protected void awaitForTopology(List<HekateTestNode> nodes, HekateTestNode oneMore) {
+        List<HekateTestNode> allNodes = new ArrayList<>(nodes);
 
         allNodes.add(oneMore);
 
         allNodes.forEach(n -> n.awaitForTopology(allNodes));
     }
 
-    protected HekateTestInstance createInstance() throws Exception {
-        return createInstance(null);
+    protected HekateTestNode createNode() throws Exception {
+        return createNode(null);
     }
 
-    protected HekateTestInstance createInstance(InstanceConfigurer configurer) throws Exception {
+    protected HekateTestNode createNode(NodeConfigurer configurer) throws Exception {
         InetSocketAddress address = newSocketAddress();
 
-        HekateTestInstance.Bootstrap bootstrap = new HekateTestInstance.Bootstrap(address);
+        HekateTestNode.Bootstrap bootstrap = new HekateTestNode.Bootstrap(address);
 
         bootstrap.setClusterName("test");
-        bootstrap.setNodeName("node-" + address.getPort() + '-' + instances.size());
+        bootstrap.setNodeName("node-" + address.getPort() + '-' + allNodes.size());
 
         DefaultFailureDetectorConfig fdCfg = new DefaultFailureDetectorConfig();
 
@@ -134,10 +134,10 @@ public class HekateInstanceTestBase extends HekateTestBase {
             configurer.configure(bootstrap);
         }
 
-        HekateTestInstance instance = bootstrap.createInstance();
+        HekateTestNode node = bootstrap.create();
 
-        instances.add(instance);
+        allNodes.add(node);
 
-        return instance;
+        return node;
     }
 }

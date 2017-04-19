@@ -16,7 +16,7 @@
 
 package io.hekate.javadoc.network;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.codec.JavaCodecFactory;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
@@ -35,7 +35,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
 
-public class NetworkServiceJavadocTest extends HekateInstanceTestBase {
+public class NetworkServiceJavadocTest extends HekateNodeTestBase {
     @Test
     public void exampleTcpService() throws Exception {
         // Start:config

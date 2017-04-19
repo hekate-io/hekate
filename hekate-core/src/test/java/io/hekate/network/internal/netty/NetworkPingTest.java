@@ -16,9 +16,9 @@
 
 package io.hekate.network.internal.netty;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.network.NetworkService;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.network.PingCallback;
@@ -33,7 +33,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-public class NetworkPingTest extends HekateInstanceTestBase {
+public class NetworkPingTest extends HekateNodeTestBase {
     private static class TestPingCallback implements PingCallback {
         private final CountDownLatch latch = new CountDownLatch(1);
 
@@ -66,10 +66,10 @@ public class NetworkPingTest extends HekateInstanceTestBase {
 
     @Test
     public void testSuccess() throws Exception {
-        List<HekateTestInstance> nodes = new ArrayList<>();
+        List<HekateTestNode> nodes = new ArrayList<>();
 
         for (int i = 0; i < 3; i++) {
-            HekateTestInstance node = createInstance();
+            HekateTestNode node = createNode();
 
             nodes.add(node);
 
@@ -78,12 +78,12 @@ public class NetworkPingTest extends HekateInstanceTestBase {
 
         awaitForTopology(nodes);
 
-        for (HekateTestInstance source : nodes) {
+        for (HekateTestNode source : nodes) {
             List<TestPingCallback> callbacks = new ArrayList<>();
 
             NetworkService netService = source.get(NetworkService.class);
 
-            for (HekateTestInstance target : nodes) {
+            for (HekateTestNode target : nodes) {
                 TestPingCallback callback = new TestPingCallback();
 
                 callbacks.add(callback);
@@ -99,7 +99,7 @@ public class NetworkPingTest extends HekateInstanceTestBase {
 
     @Test
     public void testConnectFailure() throws Exception {
-        Hekate hekate = createInstance(boot ->
+        Hekate hekate = createNode(boot ->
             boot.withService(NetworkServiceFactory.class, net ->
                 net.setConnectTimeout(3000)
             )
@@ -114,7 +114,7 @@ public class NetworkPingTest extends HekateInstanceTestBase {
 
     @Test
     public void testUnresolvedHostFailure() throws Exception {
-        Hekate hekate = createInstance().join();
+        Hekate hekate = createNode().join();
 
         TestPingCallback callback = new TestPingCallback();
 
@@ -125,7 +125,7 @@ public class NetworkPingTest extends HekateInstanceTestBase {
 
     @Test
     public void testTimeout() throws Exception {
-        Hekate hekate = createInstance(c -> c.find(NetworkServiceFactory.class).get().setConnectTimeout(1)).join();
+        Hekate hekate = createNode(c -> c.find(NetworkServiceFactory.class).get().setConnectTimeout(1)).join();
 
         TestPingCallback callback = new TestPingCallback();
 

@@ -16,18 +16,17 @@
 
 package io.hekate.core.internal;
 
-import io.hekate.HekateInstanceTestBase;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.HekateNodeTestBase;
 import java.util.Collections;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class HekateInstancePropertiesTest extends HekateInstanceTestBase {
+public class HekateNodePropertiesTest extends HekateNodeTestBase {
     @Test
     public void testRolesAndProperties() throws Exception {
-        HekateTestInstance node = createInstance(boot -> boot
+        HekateTestNode node = createNode(boot -> boot
             .withNodeRole("role1")
             .withNodeRole("role2")
             .withNodeProperty("prop1", "val1")

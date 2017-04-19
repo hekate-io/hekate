@@ -16,7 +16,7 @@
 
 package io.hekate.javadoc.partition;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.partition.Partition;
@@ -28,7 +28,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
 
-public class PartitionServiceJavadocTest extends HekateInstanceTestBase {
+public class PartitionServiceJavadocTest extends HekateNodeTestBase {
     @Test
     public void exampleAccessService() throws Exception {
         // Start:configure

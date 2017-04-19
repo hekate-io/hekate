@@ -17,7 +17,7 @@
 package io.hekate.task.internal;
 
 import io.hekate.HekateTestContext;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.lock.LockService;
 import io.hekate.lock.LockServiceFactory;
 import io.hekate.task.TaskService;
@@ -33,11 +33,11 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class TaskServiceTest extends TaskServiceTestBase {
-    private HekateTestInstance local;
+    private HekateTestNode local;
 
-    private HekateTestInstance first;
+    private HekateTestNode first;
 
-    private HekateTestInstance second;
+    private HekateTestNode second;
 
     private TaskService tasks;
 
@@ -49,15 +49,15 @@ public class TaskServiceTest extends TaskServiceTestBase {
     public void setUp() throws Exception {
         super.setUp();
 
-        local = createTaskInstance(c -> c.withNodeRole("all"));
+        local = createTaskNode(c -> c.withNodeRole("all"));
 
-        first = createTaskInstance(c -> c.withNodeRole("all").withNodeRole("role1")
+        first = createTaskNode(c -> c.withNodeRole("all").withNodeRole("role1")
             .withNodeProperty("prop", "val1")
             .withNodeProperty("unique-prop", "val")
             .withService(new LockServiceFactory())
         );
 
-        second = createTaskInstance(c -> c.withNodeRole("all").withNodeRole("role2")
+        second = createTaskNode(c -> c.withNodeRole("all").withNodeRole("role2")
             .withNodeProperty("prop", "val2")
         );
 

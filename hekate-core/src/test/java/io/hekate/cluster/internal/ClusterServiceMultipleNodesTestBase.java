@@ -16,39 +16,39 @@
 
 package io.hekate.cluster.internal;
 
-import io.hekate.HekateInstanceContextTestBase;
+import io.hekate.HekateNodeContextTestBase;
 import io.hekate.HekateTestContext;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class ClusterServiceMultipleNodesTestBase extends HekateInstanceContextTestBase {
+public abstract class ClusterServiceMultipleNodesTestBase extends HekateNodeContextTestBase {
     public ClusterServiceMultipleNodesTestBase(HekateTestContext params) {
         super(params);
     }
 
-    protected List<HekateTestInstance> createNodes(int count) throws Exception {
+    protected List<HekateTestNode> createNodes(int count) throws Exception {
         return createNodes(count, null);
     }
 
-    protected List<HekateTestInstance> createNodes(int count, InstanceConfigurer configurer) throws Exception {
-        List<HekateTestInstance> nodes = new ArrayList<>(count);
+    protected List<HekateTestNode> createNodes(int count, NodeConfigurer configurer) throws Exception {
+        List<HekateTestNode> nodes = new ArrayList<>(count);
 
         for (int i = 0; i < count; i++) {
-            nodes.add(createInstance(configurer));
+            nodes.add(createNode(configurer));
         }
 
         return nodes;
     }
 
-    protected List<HekateTestInstance> createAndJoinNodes(int count) throws Exception {
+    protected List<HekateTestNode> createAndJoinNodes(int count) throws Exception {
         return createAndJoinNodes(count, null);
     }
 
-    protected List<HekateTestInstance> createAndJoinNodes(int count, InstanceConfigurer configurer) throws Exception {
-        List<HekateTestInstance> nodes = createNodes(count, configurer);
+    protected List<HekateTestNode> createAndJoinNodes(int count, NodeConfigurer configurer) throws Exception {
+        List<HekateTestNode> nodes = createNodes(count, configurer);
 
-        for (HekateTestInstance node : nodes) {
+        for (HekateTestNode node : nodes) {
             node.join();
         }
 

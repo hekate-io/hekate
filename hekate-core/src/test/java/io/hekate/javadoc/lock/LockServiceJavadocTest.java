@@ -16,7 +16,7 @@
 
 package io.hekate.javadoc.lock;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.lock.DistributedLock;
@@ -27,7 +27,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
 
-public class LockServiceJavadocTest extends HekateInstanceTestBase {
+public class LockServiceJavadocTest extends HekateNodeTestBase {
     @Test
     public void exampleAccessService() throws Exception {
         // Start:configure

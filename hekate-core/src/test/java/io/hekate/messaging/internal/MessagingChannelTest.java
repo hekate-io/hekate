@@ -55,7 +55,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         assertNotNull(channel.getId());
         assertEquals(TEST_CHANNEL_NAME, channel.getName());
         assertNotNull(channel.getCluster());
-        assertThat(channel.getCluster().getTopology().getNodes(), hasItem(testChannel.getInstance().getNode()));
+        assertThat(channel.getCluster().getTopology().getNodes(), hasItem(testChannel.getNode().getNode()));
         assertEquals(nioThreads, channel.getNioThreads());
         assertEquals(workerThreads, channel.getWorkerThreads());
         assertNotNull(channel.getExecutor());
@@ -66,7 +66,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         TestChannel channel = createChannel().join();
 
         // Create a fake TCP client via node's TCP service.
-        NetworkService net = channel.getInstance().get(NetworkService.class);
+        NetworkService net = channel.getNode().get(NetworkService.class);
 
         NetworkConnector<MessagingProtocol> fakeConnector = net.connector(TEST_CHANNEL_NAME);
 
@@ -76,7 +76,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
             // Try connect to a node by using an invalid node ID.
             ClusterNodeId invalidNodeId = newNodeId();
 
-            InetSocketAddress socketAddress = channel.getInstance().getSocketAddress();
+            InetSocketAddress socketAddress = channel.getNode().getSocketAddress();
 
             NetworkClientCallbackMock<MessagingProtocol> callback = new NetworkClientCallbackMock<>();
 

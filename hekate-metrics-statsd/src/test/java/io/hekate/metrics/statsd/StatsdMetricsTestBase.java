@@ -16,7 +16,7 @@
 
 package io.hekate.metrics.statsd;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.metrics.Metric;
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -31,7 +31,7 @@ import org.junit.Before;
 
 import static org.junit.Assert.assertNotNull;
 
-public class StatsdMetricsTestBase extends HekateInstanceTestBase {
+public class StatsdMetricsTestBase extends HekateNodeTestBase {
     interface IoTask {
         void run() throws IOException;
     }

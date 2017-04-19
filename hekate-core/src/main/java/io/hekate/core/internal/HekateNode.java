@@ -87,7 +87,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toSet;
 
-public class HekateInstance implements Hekate, Serializable {
+class HekateNode implements Hekate, Serializable {
     private static class SerializationHandle implements Serializable {
         private static final SerializationHandle INSTANCE = new SerializationHandle();
 
@@ -98,7 +98,7 @@ public class HekateInstance implements Hekate, Serializable {
         }
     }
 
-    private static final Logger log = LoggerFactory.getLogger(HekateInstance.class);
+    private static final Logger log = LoggerFactory.getLogger(HekateNode.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
@@ -148,7 +148,7 @@ public class HekateInstance implements Hekate, Serializable {
 
     private volatile DefaultClusterNode node;
 
-    public HekateInstance(HekateBootstrap cfg) {
+    public HekateNode(HekateBootstrap cfg) {
         assert cfg != null : "Bootstrap is null.";
 
         // Install plugins.
@@ -668,11 +668,11 @@ public class HekateInstance implements Hekate, Serializable {
 
                             joinEventFired = true;
 
-                            ClusterJoinEvent join = new ClusterJoinEvent(HekateInstance.this, newTopology);
+                            ClusterJoinEvent join = new ClusterJoinEvent(HekateNode.this, newTopology);
 
                             clusterEvents.fireAsync(join, () -> {
                                     // Notify join future only after the initial join event has been processed by all listeners.
-                                    runOnSysThread(() -> localJoinFuture.complete(HekateInstance.this));
+                                    runOnSysThread(() -> localJoinFuture.complete(HekateNode.this));
                                 }
                             );
 
@@ -727,7 +727,7 @@ public class HekateInstance implements Hekate, Serializable {
                                         size, added, removed, version, addresses);
                                 }
 
-                                ClusterChangeEvent event = new ClusterChangeEvent(HekateInstance.this, newTopology, added, removed);
+                                ClusterChangeEvent event = new ClusterChangeEvent(HekateNode.this, newTopology, added, removed);
 
                                 clusterEvents.fireAsync(event);
 
@@ -811,7 +811,7 @@ public class HekateInstance implements Hekate, Serializable {
 
             @Override
             public Hekate getHekate() {
-                return HekateInstance.this;
+                return HekateNode.this;
             }
 
             @Override
@@ -904,7 +904,7 @@ public class HekateInstance implements Hekate, Serializable {
         if (joinEventFired) {
             joinEventFired = false;
 
-            ClusterLeaveEvent event = new ClusterLeaveEvent(HekateInstance.this, topology, emptySet(), emptySet());
+            ClusterLeaveEvent event = new ClusterLeaveEvent(HekateNode.this, topology, emptySet(), emptySet());
 
             clusterEvents.fireAsync(event, doAfterFired);
         } else {

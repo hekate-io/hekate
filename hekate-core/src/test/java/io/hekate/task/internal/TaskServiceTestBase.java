@@ -16,10 +16,10 @@
 
 package io.hekate.task.internal;
 
-import io.hekate.HekateInstanceContextTestBase;
+import io.hekate.HekateNodeContextTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.task.TaskServiceFactory;
 import io.hekate.util.HekateFuture;
@@ -36,7 +36,7 @@ import org.junit.Before;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public abstract class TaskServiceTestBase extends HekateInstanceContextTestBase {
+public abstract class TaskServiceTestBase extends HekateNodeContextTestBase {
     protected static class NonSerializable {
         // No-op.
     }
@@ -56,7 +56,7 @@ public abstract class TaskServiceTestBase extends HekateInstanceContextTestBase 
 
     protected static final List<ClusterNode> NODES = Collections.synchronizedList(new ArrayList<>());
 
-    protected static final AtomicReference<HekateTestInstance> REF = new AtomicReference<>();
+    protected static final AtomicReference<HekateTestNode> REF = new AtomicReference<>();
 
     public TaskServiceTestBase(HekateTestContext params) {
         super(params);
@@ -83,11 +83,11 @@ public abstract class TaskServiceTestBase extends HekateInstanceContextTestBase 
         doAssertErrorCausedBy(type, check, future::getUninterruptedly);
     }
 
-    protected List<HekateTestInstance> createAndJoin(int size) throws Exception {
-        List<HekateTestInstance> nodes = new ArrayList<>(size);
+    protected List<HekateTestNode> createAndJoin(int size) throws Exception {
+        List<HekateTestNode> nodes = new ArrayList<>(size);
 
         for (int i = 0; i < size; i++) {
-            nodes.add(createTaskInstance().join());
+            nodes.add(createTaskNode().join());
         }
 
         awaitForTopology(nodes);
@@ -95,12 +95,12 @@ public abstract class TaskServiceTestBase extends HekateInstanceContextTestBase 
         return nodes;
     }
 
-    protected HekateTestInstance createTaskInstance() throws Exception {
-        return createTaskInstance(null);
+    protected HekateTestNode createTaskNode() throws Exception {
+        return createTaskNode(null);
     }
 
-    protected HekateTestInstance createTaskInstance(InstanceConfigurer configurer) throws Exception {
-        return createInstance(c -> {
+    protected HekateTestNode createTaskNode(NodeConfigurer configurer) throws Exception {
+        return createNode(c -> {
             c.withService(new TaskServiceFactory());
 
             if (configurer != null) {

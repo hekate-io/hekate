@@ -16,7 +16,7 @@
 
 package io.hekate.javadoc.cluster;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.ClusterTopology;
@@ -33,7 +33,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
 
-public class ClusterServiceJavadocTest extends HekateInstanceTestBase {
+public class ClusterServiceJavadocTest extends HekateNodeTestBase {
     @Test
     public void exampleClusterService() throws Exception {
         // Start:configure

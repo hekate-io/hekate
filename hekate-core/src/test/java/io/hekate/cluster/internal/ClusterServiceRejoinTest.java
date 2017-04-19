@@ -26,9 +26,9 @@ import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.internal.gossip.GossipNodeStatus;
 import io.hekate.cluster.internal.gossip.GossipSpyAdaptor;
 import io.hekate.cluster.split.SplitBrainAction;
-import io.hekate.core.HekateTestInstance;
 import io.hekate.core.LeaveFuture;
 import io.hekate.core.TerminateFuture;
+import io.hekate.core.internal.HekateTestNode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -58,16 +58,16 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
     public void testRejoinAfterHanged() throws Exception {
         disableNodeFailurePostCheck();
 
-        List<HekateTestInstance> nodes = createNodes(3);
+        List<HekateTestNode> nodes = createNodes(3);
 
         repeat(3, i -> {
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 node.join();
             }
 
             awaitForTopology(nodes);
 
-            for (HekateTestInstance hanged : nodes) {
+            for (HekateTestNode hanged : nodes) {
                 ClusterNode hangedNode = hanged.getNode();
 
                 AtomicInteger suspectCount = new AtomicInteger();
@@ -132,7 +132,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                 hanged.clearEvents();
             }
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 node.leave();
             }
         });
@@ -140,16 +140,16 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
 
     @Test
     public void testNoRejoinAfterSuspectRecovery() throws Exception {
-        List<HekateTestInstance> nodes = createNodes(3);
+        List<HekateTestNode> nodes = createNodes(3);
 
         repeat(3, i -> {
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 node.join();
             }
 
             awaitForTopology(nodes);
 
-            for (HekateTestInstance hanged : nodes) {
+            for (HekateTestNode hanged : nodes) {
                 AtomicBoolean onlyOneShouldBlock = new AtomicBoolean();
                 CountDownLatch bothSuspected = new CountDownLatch(2);
                 CountDownLatch firstUnsuspected = new CountDownLatch(1);
@@ -215,7 +215,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                 hanged.clearEvents();
             }
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 node.leave();
             }
         });
@@ -225,24 +225,24 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
     public void testTerminateDuringRejoin() throws Exception {
         disableNodeFailurePostCheck();
 
-        HekateTestInstance alwaysAlive = createInstance();
+        HekateTestNode alwaysAlive = createNode();
 
         alwaysAlive.join();
 
-        List<HekateTestInstance> nodes = createNodes(3);
+        List<HekateTestNode> nodes = createNodes(3);
 
         repeat(3, i -> {
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 node.join();
             }
 
-            List<HekateTestInstance> alive = new ArrayList<>(nodes);
+            List<HekateTestNode> alive = new ArrayList<>(nodes);
 
             alive.add(alwaysAlive);
 
             alive.forEach(n -> n.awaitForTopology(alive));
 
-            for (HekateTestInstance hanged : nodes) {
+            for (HekateTestNode hanged : nodes) {
                 alive.remove(hanged);
 
                 hanged.startRecording();
@@ -304,24 +304,24 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
     public void testLeaveDuringRejoin() throws Exception {
         disableNodeFailurePostCheck();
 
-        HekateTestInstance alwaysAlive = createInstance();
+        HekateTestNode alwaysAlive = createNode();
 
         alwaysAlive.join();
 
-        List<HekateTestInstance> nodes = createNodes(3);
+        List<HekateTestNode> nodes = createNodes(3);
 
         repeat(3, i -> {
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 node.join();
             }
 
-            List<HekateTestInstance> alive = new ArrayList<>(nodes);
+            List<HekateTestNode> alive = new ArrayList<>(nodes);
 
             alive.add(alwaysAlive);
 
             alive.forEach(n -> n.awaitForTopology(alive));
 
-            for (HekateTestInstance hanged : nodes) {
+            for (HekateTestNode hanged : nodes) {
                 alive.remove(hanged);
 
                 hanged.startRecording();
@@ -383,24 +383,24 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
     public void testNoRejoinOnLeave() throws Exception {
         disableNodeFailurePostCheck();
 
-        HekateTestInstance alwaysAlive = createInstance();
+        HekateTestNode alwaysAlive = createNode();
 
         alwaysAlive.join();
 
-        List<HekateTestInstance> nodes = createNodes(3);
+        List<HekateTestNode> nodes = createNodes(3);
 
         repeat(3, i -> {
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 node.join();
             }
 
-            List<HekateTestInstance> alive = new ArrayList<>(nodes);
+            List<HekateTestNode> alive = new ArrayList<>(nodes);
 
             alive.add(alwaysAlive);
 
             alive.forEach(n -> n.awaitForTopology(alive));
 
-            for (HekateTestInstance hanged : nodes) {
+            for (HekateTestNode hanged : nodes) {
                 alive.remove(hanged);
 
                 LeaveFuture leave;
@@ -443,23 +443,23 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
     public void testTerminateAfterFalseFailure() throws Exception {
         disableNodeFailurePostCheck();
 
-        List<HekateTestInstance> nodes = createNodes(3, c ->
+        List<HekateTestNode> nodes = createNodes(3, c ->
             c.find(ClusterServiceFactory.class).get().setSplitBrainAction(SplitBrainAction.TERMINATE)
         );
 
         repeat(3, i -> {
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 node.join();
             }
 
             awaitForTopology(nodes);
 
-            HekateTestInstance hanged = nodes.get(i);
+            HekateTestNode hanged = nodes.get(i);
             CountDownLatch failureDetected = new CountDownLatch(1);
 
             ClusterNode hangedNode = hanged.getNode();
 
-            List<HekateTestInstance> nodesWithoutHanged = nodes.stream().filter(n -> !n.equals(hanged)).collect(toList());
+            List<HekateTestNode> nodesWithoutHanged = nodes.stream().filter(n -> !n.equals(hanged)).collect(toList());
 
             nodes.forEach(n -> n.setGossipSpy(new GossipSpyAdaptor() {
                 @Override
@@ -508,13 +508,13 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
             hanged.stopRecording();
             hanged.clearEvents();
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 node.leave();
             }
         });
     }
 
-    private void awaitForNodeChange(ClusterNodeId id, HekateTestInstance node) throws Exception {
+    private void awaitForNodeChange(ClusterNodeId id, HekateTestNode node) throws Exception {
         busyWait("node change from " + id, () -> {
             assertTrue(node.getClusterGuard().tryLockRead(3, TimeUnit.SECONDS));
 

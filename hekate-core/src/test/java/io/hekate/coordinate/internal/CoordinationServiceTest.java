@@ -16,7 +16,7 @@
 
 package io.hekate.coordinate.internal;
 
-import io.hekate.HekateInstanceContextTestBase;
+import io.hekate.HekateNodeContextTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.coordinate.CoordinationContext;
@@ -26,8 +26,8 @@ import io.hekate.coordinate.CoordinationProcessConfig;
 import io.hekate.coordinate.CoordinationRequest;
 import io.hekate.coordinate.CoordinationService;
 import io.hekate.coordinate.CoordinationServiceFactory;
-import io.hekate.core.HekateTestInstance;
 import io.hekate.core.LeaveFuture;
+import io.hekate.core.internal.HekateTestNode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -55,7 +55,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-public class CoordinationServiceTest extends HekateInstanceContextTestBase {
+public class CoordinationServiceTest extends HekateNodeContextTestBase {
     private static class CoordinatedValueHandler implements CoordinationHandler {
         private volatile String lastValue;
 
@@ -122,7 +122,7 @@ public class CoordinationServiceTest extends HekateInstanceContextTestBase {
     public void testHandlerLifecycleWithCompletedProcess() throws Exception {
         CoordinationHandler handler = mock(CoordinationHandler.class);
 
-        HekateTestInstance node = createInstanceWithCoordination(handler);
+        HekateTestNode node = createCoordinationNode(handler);
 
         repeat(3, i -> {
             doAnswer(invocation -> {
@@ -157,7 +157,7 @@ public class CoordinationServiceTest extends HekateInstanceContextTestBase {
     public void testHandlerLifecycleWithNonCompletedProcess() throws Exception {
         CoordinationHandler handler = mock(CoordinationHandler.class);
 
-        HekateTestInstance node = createInstanceWithCoordination(handler);
+        HekateTestNode node = createCoordinationNode(handler);
 
         repeat(3, i -> {
             CountDownLatch coordinateLatch = new CountDownLatch(1);
@@ -208,7 +208,7 @@ public class CoordinationServiceTest extends HekateInstanceContextTestBase {
             return null;
         }).when(handler).coordinate(any());
 
-        HekateTestInstance node = createInstanceWithCoordination(handler);
+        HekateTestNode node = createCoordinationNode(handler);
 
         node.join();
 
@@ -239,7 +239,7 @@ public class CoordinationServiceTest extends HekateInstanceContextTestBase {
             return null;
         }).when(handler).coordinate(any());
 
-        HekateTestInstance node = createInstanceWithCoordination(handler);
+        HekateTestNode node = createCoordinationNode(handler);
 
         node.join();
 
@@ -262,12 +262,12 @@ public class CoordinationServiceTest extends HekateInstanceContextTestBase {
         repeat(5, i -> {
             int nodesCount = i + 1;
 
-            List<HekateTestInstance> nodes = new ArrayList<>(nodesCount);
+            List<HekateTestNode> nodes = new ArrayList<>(nodesCount);
 
             int val = 0;
 
             for (int j = 0; j < nodesCount; j++) {
-                HekateTestInstance node = createInstanceWithCoordination(new CoordinatedValueHandler()).join();
+                HekateTestNode node = createCoordinationNode(new CoordinatedValueHandler()).join();
 
                 nodes.add(node);
 
@@ -278,8 +278,8 @@ public class CoordinationServiceTest extends HekateInstanceContextTestBase {
                 awaitForCoordinatedValue(expected, nodes);
             }
 
-            for (Iterator<HekateTestInstance> it = nodes.iterator(); it.hasNext(); ) {
-                HekateTestInstance node = it.next();
+            for (Iterator<HekateTestNode> it = nodes.iterator(); it.hasNext(); ) {
+                HekateTestNode node = it.next();
 
                 it.remove();
 
@@ -328,9 +328,9 @@ public class CoordinationServiceTest extends HekateInstanceContextTestBase {
         BlockingHandler h2 = new BlockingHandler();
         BlockingHandler h3 = new BlockingHandler();
 
-        HekateTestInstance n1 = createInstanceWithCoordination(h1);
-        HekateTestInstance n2 = createInstanceWithCoordination(h2);
-        HekateTestInstance n3 = createInstanceWithCoordination(h3);
+        HekateTestNode n1 = createCoordinationNode(h1);
+        HekateTestNode n2 = createCoordinationNode(h2);
+        HekateTestNode n3 = createCoordinationNode(h3);
 
         assertEquals("1", n1.join().get(CoordinationService.class).futureOf("test").get().<BlockingHandler>getHandler().getLastValue());
         assertEquals("2", n2.join().get(CoordinationService.class).futureOf("test").get().<BlockingHandler>getHandler().getLastValue());
@@ -339,7 +339,7 @@ public class CoordinationServiceTest extends HekateInstanceContextTestBase {
 
         await(blockLatch);
 
-        HekateTestInstance coordinator = Stream.of(n1, n2, n3)
+        HekateTestNode coordinator = Stream.of(n1, n2, n3)
             .filter(n -> n.getNode().equals(coordinatorRef.get()))
             .findFirst().orElseThrow(AssertionError::new);
 
@@ -349,7 +349,7 @@ public class CoordinationServiceTest extends HekateInstanceContextTestBase {
 
         get(leaveFuture);
 
-        List<HekateTestInstance> remaining = Stream.of(n1, n2, n3).filter(n -> !n.equals(coordinator)).collect(toList());
+        List<HekateTestNode> remaining = Stream.of(n1, n2, n3).filter(n -> !n.equals(coordinator)).collect(toList());
 
         awaitForCoordinatedValue("3", remaining);
 
@@ -387,9 +387,9 @@ public class CoordinationServiceTest extends HekateInstanceContextTestBase {
         BlockingHandler h2 = new BlockingHandler();
         BlockingHandler h3 = new BlockingHandler();
 
-        HekateTestInstance n1 = createInstanceWithCoordination(h1);
-        HekateTestInstance n2 = createInstanceWithCoordination(h2);
-        HekateTestInstance n3 = createInstanceWithCoordination(h3);
+        HekateTestNode n1 = createCoordinationNode(h1);
+        HekateTestNode n2 = createCoordinationNode(h2);
+        HekateTestNode n3 = createCoordinationNode(h3);
 
         // Join and await for initial coordination on the first node.
         get(n1.join().get(CoordinationService.class).futureOf("test"));
@@ -410,7 +410,7 @@ public class CoordinationServiceTest extends HekateInstanceContextTestBase {
         assertEquals(2, aborts.get());
     }
 
-    private void awaitForCoordinatedValue(String expected, List<HekateTestInstance> nodes) throws Exception {
+    private void awaitForCoordinatedValue(String expected, List<HekateTestNode> nodes) throws Exception {
         busyWait("value coordination", () ->
             nodes.stream().allMatch(n -> {
                 CoordinatedValueHandler handler = n.get(CoordinationService.class).process("test").getHandler();
@@ -420,8 +420,8 @@ public class CoordinationServiceTest extends HekateInstanceContextTestBase {
         );
     }
 
-    private HekateTestInstance createInstanceWithCoordination(CoordinationHandler handler) throws Exception {
-        return createInstance(c ->
+    private HekateTestNode createCoordinationNode(CoordinationHandler handler) throws Exception {
+        return createNode(c ->
             c.withService(new CoordinationServiceFactory()
                 .withProcess(new CoordinationProcessConfig()
                     .withName("test")

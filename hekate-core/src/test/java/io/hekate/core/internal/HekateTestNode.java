@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package io.hekate.core;
+package io.hekate.core.internal;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
@@ -26,7 +26,9 @@ import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.internal.gossip.GossipListener;
-import io.hekate.core.internal.HekateInstance;
+import io.hekate.core.Hekate;
+import io.hekate.core.HekateBootstrap;
+import io.hekate.core.HekateFutureException;
 import io.hekate.util.StateGuard;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -42,7 +44,7 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
-public class HekateTestInstance extends HekateInstance {
+public class HekateTestNode extends HekateNode {
     public static class Bootstrap extends HekateBootstrap {
         private final InetSocketAddress address;
 
@@ -53,10 +55,10 @@ public class HekateTestInstance extends HekateInstance {
         }
 
         @Override
-        public HekateTestInstance createInstance() {
+        public HekateTestNode create() {
             ClusterServiceFactoryMock cluster = find(ClusterServiceFactoryMock.class).get();
 
-            return new HekateTestInstance(address, this, cluster);
+            return new HekateTestNode(address, this, cluster);
         }
     }
 
@@ -70,7 +72,7 @@ public class HekateTestInstance extends HekateInstance {
 
     private ClusterEventListener listener;
 
-    public HekateTestInstance(InetSocketAddress socketAddress, HekateBootstrap cfg, ClusterServiceFactoryMock cluster) {
+    public HekateTestNode(InetSocketAddress socketAddress, HekateBootstrap cfg, ClusterServiceFactoryMock cluster) {
         super(cfg);
 
         this.socketAddress = socketAddress;
@@ -165,7 +167,7 @@ public class HekateTestInstance extends HekateInstance {
     }
 
     @Override
-    public HekateTestInstance join() throws HekateFutureException, InterruptedException {
+    public HekateTestNode join() throws HekateFutureException, InterruptedException {
         super.join();
 
         return this;

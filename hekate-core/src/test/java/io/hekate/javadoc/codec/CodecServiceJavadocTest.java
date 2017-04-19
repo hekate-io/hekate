@@ -16,17 +16,17 @@
 
 package io.hekate.javadoc.codec;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.codec.CodecService;
 import io.hekate.core.Hekate;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
 
-public class CodecServiceJavadocTest extends HekateInstanceTestBase {
+public class CodecServiceJavadocTest extends HekateNodeTestBase {
     @Test
     public void exampleService() throws Exception {
-        Hekate hekate = createInstance().join();
+        Hekate hekate = createNode().join();
 
         // Start:access
         CodecService codecService = hekate.get(CodecService.class);

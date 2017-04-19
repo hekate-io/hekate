@@ -19,8 +19,7 @@ package io.hekate.task.internal;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterService;
 import io.hekate.core.Hekate;
-import io.hekate.core.HekateTestInstance;
-import io.hekate.core.internal.HekateInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.task.MultiNodeResult;
 import io.hekate.task.TaskService;
 import java.nio.channels.ClosedChannelException;
@@ -42,9 +41,9 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
     @Test
     public void test() throws Exception {
         repeat(3, i -> {
-            List<HekateTestInstance> nodes = createAndJoin(i + 1);
+            List<HekateTestNode> nodes = createAndJoin(i + 1);
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
                 MultiNodeResult<Void> result = get(tasks.broadcast(() -> {
@@ -54,10 +53,10 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
                 }));
 
                 assertEquals(nodes.size(), COUNTER.get());
-                assertTrue(NODES.toString(), NODES.containsAll(nodes.stream().map(HekateInstance::getNode).collect(toList())));
+                assertTrue(NODES.toString(), NODES.containsAll(nodes.stream().map(Hekate::getNode).collect(toList())));
                 assertTrue(result.isSuccess());
                 nodes.forEach(n -> assertTrue(result.isSuccess(n.getNode())));
-                assertTrue(result.nodes().containsAll(nodes.stream().map(HekateInstance::getNode).collect(toList())));
+                assertTrue(result.nodes().containsAll(nodes.stream().map(Hekate::getNode).collect(toList())));
 
                 NODES.forEach(n -> assertTrue(result.toString().contains(n.toString())));
 
@@ -72,9 +71,9 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
     @Test
     public void testAffinity() throws Exception {
         repeat(3, i -> {
-            List<HekateTestInstance> nodes = createAndJoin(i + 1);
+            List<HekateTestNode> nodes = createAndJoin(i + 1);
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
                 MultiNodeResult<Void> affResult = get(tasks.withAffinity(100500).broadcast(() -> {
@@ -84,10 +83,10 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
                 }));
 
                 assertEquals(nodes.size(), COUNTER.get());
-                assertTrue(NODES.toString(), NODES.containsAll(nodes.stream().map(HekateInstance::getNode).collect(toList())));
+                assertTrue(NODES.toString(), NODES.containsAll(nodes.stream().map(Hekate::getNode).collect(toList())));
                 assertTrue(affResult.isSuccess());
                 nodes.forEach(n -> assertTrue(affResult.isSuccess(n.getNode())));
-                assertTrue(affResult.nodes().containsAll(nodes.stream().map(HekateInstance::getNode).collect(toList())));
+                assertTrue(affResult.nodes().containsAll(nodes.stream().map(Hekate::getNode).collect(toList())));
 
                 NODES.clear();
                 COUNTER.set(0);
@@ -100,9 +99,9 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
     @Test
     public void testError() throws Exception {
         repeat(3, i -> {
-            List<HekateTestInstance> nodes = createAndJoin(i + 1);
+            List<HekateTestNode> nodes = createAndJoin(i + 1);
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
                 MultiNodeResult<Void> errResult = get(tasks.broadcast(() -> {
@@ -130,9 +129,9 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
     @Test
     public void testPartialError() throws Exception {
         repeat(3, i -> {
-            List<HekateTestInstance> nodes = createAndJoin(i + 1);
+            List<HekateTestNode> nodes = createAndJoin(i + 1);
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
                 MultiNodeResult<Void> partErrResult = get(tasks.broadcast(() -> {
@@ -166,10 +165,10 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
 
     @Test
     public void testBroadcastWithSourceLeave() throws Exception {
-        List<HekateTestInstance> nodes = createAndJoin(2);
+        List<HekateTestNode> nodes = createAndJoin(2);
 
-        HekateTestInstance source = nodes.get(0);
-        HekateTestInstance target = nodes.get(1);
+        HekateTestNode source = nodes.get(0);
+        HekateTestNode target = nodes.get(1);
 
         REF.set(source);
 

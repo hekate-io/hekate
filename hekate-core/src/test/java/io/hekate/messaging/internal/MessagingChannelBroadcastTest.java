@@ -101,8 +101,8 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             assertTrue(result.toString(), result.errors().isEmpty());
             assertTrue(result.toString(), result.nodes().isEmpty());
             assertEquals("test" + i, result.message());
-            assertNull(result.errorOf(channel.getInstance().getNode()));
-            assertFalse(result.isSuccess(channel.getInstance().getNode()));
+            assertNull(result.errorOf(channel.getNode().getNode()));
+            assertFalse(result.isSuccess(channel.getNode().getNode()));
             assertTrue(result.toString().startsWith(BroadcastResult.class.getSimpleName()));
         });
     }
@@ -159,7 +159,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             assertEquals(i + 1, result.errors().size());
 
             for (int j = 0; j <= i; j++) {
-                ClusterNode node = channels.get(j).getInstance().getNode();
+                ClusterNode node = channels.get(j).getNode().getNode();
 
                 assertNotNull(result.errors().get(node));
             }
@@ -190,7 +190,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             assertEquals(i + 1, result.errors().size());
 
             for (int j = 0; j <= i; j++) {
-                ClusterNode node = channels.get(j).getInstance().getNode();
+                ClusterNode node = channels.get(j).getNode().getNode();
 
                 assertNotNull(result.errors().get(node));
                 assertSame(result.errors().get(node), result.errorOf(node));
@@ -241,9 +241,9 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
             for (TestChannel c : channels) {
                 if (c == joined) {
-                    assertFalse(joinResult.nodes().contains(joined.getInstance().getNode()));
+                    assertFalse(joinResult.nodes().contains(joined.getNode().getNode()));
                 } else {
-                    assertTrue(joinResult.nodes().contains(c.getInstance().getNode()));
+                    assertTrue(joinResult.nodes().contains(c.getNode().getNode()));
 
                     c.awaitForMessage("test-join" + i);
                 }
@@ -272,7 +272,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
             TestChannel left = channels.remove(channels.size() - 1);
 
-            ClusterNode leftNode = left.getInstance().getNode();
+            ClusterNode leftNode = left.getNode().getNode();
 
             left.leave();
 

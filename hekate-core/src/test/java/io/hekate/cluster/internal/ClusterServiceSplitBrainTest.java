@@ -16,7 +16,7 @@
 
 package io.hekate.cluster.internal;
 
-import io.hekate.HekateInstanceContextTestBase;
+import io.hekate.HekateNodeContextTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterServiceFactory;
@@ -24,7 +24,7 @@ import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.cluster.split.SplitBrainDetectorMock;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateFutureException;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import org.junit.Test;
@@ -33,7 +33,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 
-public class ClusterServiceSplitBrainTest extends HekateInstanceContextTestBase {
+public class ClusterServiceSplitBrainTest extends HekateNodeContextTestBase {
     public ClusterServiceSplitBrainTest(HekateTestContext params) {
         super(params);
     }
@@ -42,14 +42,14 @@ public class ClusterServiceSplitBrainTest extends HekateInstanceContextTestBase 
     public void testRejoinOnJoin() throws Exception {
         SplitBrainDetectorMock detector = new SplitBrainDetectorMock(false);
 
-        HekateTestInstance node = createInstance(c -> {
+        HekateTestNode node = createNode(c -> {
             ClusterServiceFactory cluster = c.find(ClusterServiceFactory.class).get();
 
             cluster.setSplitBrainAction(SplitBrainAction.REJOIN);
             cluster.setSplitBrainDetector(detector);
         });
 
-        Future<HekateTestInstance> future = runAsync(node::join);
+        Future<HekateTestNode> future = runAsync(node::join);
 
         detector.awaitForChecks(5);
 
@@ -66,14 +66,14 @@ public class ClusterServiceSplitBrainTest extends HekateInstanceContextTestBase 
     public void testRejoinWhenOtherNodeLeaves() throws Exception {
         SplitBrainDetectorMock detector = new SplitBrainDetectorMock(true);
 
-        HekateTestInstance node = createInstance(c -> {
+        HekateTestNode node = createNode(c -> {
             ClusterServiceFactory cluster = c.find(ClusterServiceFactory.class).get();
 
             cluster.setSplitBrainAction(SplitBrainAction.REJOIN);
             cluster.setSplitBrainDetector(detector);
         }).join();
 
-        HekateTestInstance leaving = createInstance().join();
+        HekateTestNode leaving = createNode().join();
 
         awaitForTopology(leaving, node);
 
@@ -94,14 +94,14 @@ public class ClusterServiceSplitBrainTest extends HekateInstanceContextTestBase 
     public void testTerminateWhenOtherNodeLeaves() throws Exception {
         SplitBrainDetectorMock detector = new SplitBrainDetectorMock(true);
 
-        HekateTestInstance node = createInstance(c -> {
+        HekateTestNode node = createNode(c -> {
             ClusterServiceFactory cluster = c.find(ClusterServiceFactory.class).get();
 
             cluster.setSplitBrainAction(SplitBrainAction.TERMINATE);
             cluster.setSplitBrainDetector(detector);
         }).join();
 
-        HekateTestInstance leaving = createInstance().join();
+        HekateTestNode leaving = createNode().join();
 
         awaitForTopology(leaving, node);
 
@@ -116,7 +116,7 @@ public class ClusterServiceSplitBrainTest extends HekateInstanceContextTestBase 
 
     @Test
     public void testTerminateOnDetectorError() throws Exception {
-        HekateTestInstance node = createInstance(c -> {
+        HekateTestNode node = createNode(c -> {
             ClusterServiceFactory cluster = c.find(ClusterServiceFactory.class).get();
 
             cluster.setSplitBrainAction(SplitBrainAction.REJOIN);
@@ -151,14 +151,14 @@ public class ClusterServiceSplitBrainTest extends HekateInstanceContextTestBase 
             }
         };
 
-        HekateTestInstance node = createInstance(c -> {
+        HekateTestNode node = createNode(c -> {
             ClusterServiceFactory cluster = c.find(ClusterServiceFactory.class).get();
 
             cluster.setSplitBrainAction(SplitBrainAction.REJOIN);
             cluster.setSplitBrainDetector(detector);
         }).join();
 
-        HekateTestInstance leaving = createInstance().join();
+        HekateTestNode leaving = createNode().join();
 
         awaitForTopology(leaving, node);
 

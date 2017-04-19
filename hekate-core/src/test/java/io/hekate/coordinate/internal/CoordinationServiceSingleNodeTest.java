@@ -16,7 +16,7 @@
 
 package io.hekate.coordinate.internal;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.coordinate.CoordinationContext;
 import io.hekate.coordinate.CoordinationHandler;
 import io.hekate.coordinate.CoordinationProcess;
@@ -33,10 +33,10 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
-public class CoordinationServiceSingleNodeTest extends HekateInstanceTestBase {
+public class CoordinationServiceSingleNodeTest extends HekateNodeTestBase {
     @Test
     public void testEmptyProcesses() throws Exception {
-        CoordinationService coordination = createInstance(boot ->
+        CoordinationService coordination = createNode(boot ->
             boot.withService(new CoordinationServiceFactory())
         ).join().get(CoordinationService.class);
 
@@ -57,7 +57,7 @@ public class CoordinationServiceSingleNodeTest extends HekateInstanceTestBase {
             return null;
         }).when(handler).coordinate(any());
 
-        CoordinationService coordination = createInstance(boot ->
+        CoordinationService coordination = createNode(boot ->
             boot.withService(new CoordinationServiceFactory()
                 .withProcess(new CoordinationProcessConfig("process1").withHandler(handler))
                 .withProcess(new CoordinationProcessConfig("process2").withHandler(handler))

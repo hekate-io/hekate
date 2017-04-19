@@ -16,13 +16,13 @@
 
 package io.hekate.core.plugin;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateConfigurationException;
 import io.hekate.core.HekateException;
 import io.hekate.core.HekateFutureException;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.metrics.MetricsServiceFactory;
@@ -40,7 +40,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class PluginTest extends HekateInstanceTestBase {
+public class PluginTest extends HekateNodeTestBase {
     public static class NonInstantiableServiceFactory implements ServiceFactory<Service> {
         public NonInstantiableServiceFactory(String ignore) {
             assert ignore != null : "Ignore.";
@@ -94,9 +94,9 @@ public class PluginTest extends HekateInstanceTestBase {
         TestPlugin act1 = new TestPlugin();
         TestPlugin act2 = new TestPlugin();
 
-        HekateTestInstance instance = createInstanceWithPlugin(act1, act2);
+        HekateTestNode node = createNodeWithPlugin(act1, act2);
 
-        instance.join();
+        node.join();
 
         assertEquals(1, act1.getInstalled());
         assertEquals(1, act1.getStarted());
@@ -104,7 +104,7 @@ public class PluginTest extends HekateInstanceTestBase {
         assertEquals(1, act2.getInstalled());
         assertEquals(1, act2.getStarted());
 
-        instance.leave();
+        node.leave();
 
         assertEquals(1, act1.getInstalled());
         assertEquals(1, act1.getStarted());
@@ -129,7 +129,7 @@ public class PluginTest extends HekateInstanceTestBase {
         TestPlugin act3 = new TestPlugin();
 
         try {
-            createInstanceWithPlugin(act1, act2, act3);
+            createNodeWithPlugin(act1, act2, act3);
 
             fail("Error was expected.");
         } catch (HekateConfigurationException e) {
@@ -163,18 +163,18 @@ public class PluginTest extends HekateInstanceTestBase {
         };
         TestPlugin act3 = new TestPlugin();
 
-        HekateTestInstance instance = createInstanceWithPlugin(act1, act2, act3);
+        HekateTestNode node = createNodeWithPlugin(act1, act2, act3);
 
         repeat(3, i -> {
             try {
-                instance.join();
+                node.join();
 
                 fail("Error was expected.");
             } catch (HekateFutureException e) {
                 assertEquals(TEST_ERROR_MESSAGE, e.getCause().getMessage());
             }
 
-            assertSame(Hekate.State.DOWN, instance.getState());
+            assertSame(Hekate.State.DOWN, node.getState());
 
             assertEquals(1, act1.getInstalled());
             assertEquals(i + 1, act1.getStarted());
@@ -203,13 +203,13 @@ public class PluginTest extends HekateInstanceTestBase {
         };
         TestPlugin act3 = new TestPlugin();
 
-        HekateTestInstance instance = createInstanceWithPlugin(act1, act2, act3);
+        HekateTestNode node = createNodeWithPlugin(act1, act2, act3);
 
         repeat(3, i -> {
-            instance.join();
-            instance.leave();
+            node.join();
+            node.leave();
 
-            assertSame(Hekate.State.DOWN, instance.getState());
+            assertSame(Hekate.State.DOWN, node.getState());
 
             assertEquals(1, act1.getInstalled());
             assertEquals(i + 1, act1.getStarted());
@@ -231,7 +231,7 @@ public class PluginTest extends HekateInstanceTestBase {
         String propKey = UUID.randomUUID().toString();
         String propVal = UUID.randomUUID().toString();
 
-        Hekate instance = createInstanceWithPlugin(new TestPlugin() {
+        Hekate node = createNodeWithPlugin(new TestPlugin() {
             @Override
             public void install(HekateBootstrap boot) {
                 boot.withNodeRole(role);
@@ -239,13 +239,13 @@ public class PluginTest extends HekateInstanceTestBase {
             }
         }).join();
 
-        assertTrue(instance.getNode().hasRole(role));
-        assertEquals(propVal, instance.getNode().getProperty(propKey));
+        assertTrue(node.getNode().hasRole(role));
+        assertEquals(propVal, node.getNode().getProperty(propKey));
     }
 
     @Test
     public void testConfigureServiceFactory() throws Exception {
-        HekateTestInstance instance = createInstanceWithPlugin(new TestPlugin() {
+        HekateTestNode node = createNodeWithPlugin(new TestPlugin() {
             @Override
             public void install(HekateBootstrap boot) {
                 // Check that service factory is not registered yet.
@@ -264,14 +264,14 @@ public class PluginTest extends HekateInstanceTestBase {
             }
         });
 
-        instance.join();
+        node.join();
     }
 
     @Test
     public void testAccessService() throws Exception {
         AtomicBoolean success = new AtomicBoolean();
 
-        HekateTestInstance instance = createInstanceWithPlugin(new TestPlugin() {
+        HekateTestNode node = createNodeWithPlugin(new TestPlugin() {
             @Override
             public void start(Hekate hekate) throws HekateException {
                 assertNotNull(hekate.get(NetworkService.class));
@@ -280,7 +280,7 @@ public class PluginTest extends HekateInstanceTestBase {
             }
         });
 
-        instance.join();
+        node.join();
 
         assertTrue(success.get());
     }
@@ -289,7 +289,7 @@ public class PluginTest extends HekateInstanceTestBase {
     public void testAccessNode() throws Exception {
         AtomicBoolean success = new AtomicBoolean();
 
-        HekateTestInstance instance = createInstanceWithPlugin(new TestPlugin() {
+        HekateTestNode node = createNodeWithPlugin(new TestPlugin() {
             @Override
             public void start(Hekate hekate) throws HekateException {
                 assertNotNull(hekate);
@@ -298,7 +298,7 @@ public class PluginTest extends HekateInstanceTestBase {
             }
         });
 
-        instance.join();
+        node.join();
 
         assertTrue(success.get());
     }
@@ -307,7 +307,7 @@ public class PluginTest extends HekateInstanceTestBase {
     public void testLeaveFromPlugin() throws Exception {
         AtomicBoolean success = new AtomicBoolean();
 
-        HekateTestInstance instance = createInstanceWithPlugin(new TestPlugin() {
+        HekateTestNode node = createNodeWithPlugin(new TestPlugin() {
             @Override
             public void start(Hekate hekate) throws HekateException {
                 hekate.leaveAsync();
@@ -316,18 +316,18 @@ public class PluginTest extends HekateInstanceTestBase {
             }
         });
 
-        instance.join();
+        node.join();
 
         assertTrue(success.get());
 
-        assertSame(Hekate.State.DOWN, instance.getState());
+        assertSame(Hekate.State.DOWN, node.getState());
     }
 
     @Test
     public void testTerminateFromPlugin() throws Exception {
         AtomicBoolean success = new AtomicBoolean();
 
-        HekateTestInstance instance = createInstanceWithPlugin(new TestPlugin() {
+        HekateTestNode node = createNodeWithPlugin(new TestPlugin() {
             @Override
             public void start(Hekate hekate) throws HekateException {
                 hekate.terminateAsync();
@@ -336,15 +336,15 @@ public class PluginTest extends HekateInstanceTestBase {
             }
         });
 
-        instance.join();
+        node.join();
 
         assertTrue(success.get());
 
-        assertSame(Hekate.State.DOWN, instance.getState());
+        assertSame(Hekate.State.DOWN, node.getState());
     }
 
-    private HekateTestInstance createInstanceWithPlugin(TestPlugin... plugin) throws Exception {
-        return createInstance(c -> {
+    private HekateTestNode createNodeWithPlugin(TestPlugin... plugin) throws Exception {
+        return createNode(c -> {
             for (TestPlugin act : plugin) {
                 c.withPlugin(act);
             }

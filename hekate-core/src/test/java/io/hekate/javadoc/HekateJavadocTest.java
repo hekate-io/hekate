@@ -34,7 +34,7 @@ public class HekateJavadocTest extends HekateTestBase {
     @Test
     public void exampleBootstrap() throws Exception {
         // Start:bootstrap
-        // Start new instance with all configuration parameters set to their default values.
+        // Start new node with all configuration parameters set to their default values.
         Hekate hekate = new HekateBootstrap()
             .withNodeName("my-node")
             .withClusterName("my-cluster")

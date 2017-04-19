@@ -16,7 +16,7 @@
 
 package io.hekate.lock.internal;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.lock.LockRegion;
 import io.hekate.lock.LockRegionConfig;
 import io.hekate.lock.LockService;
@@ -28,10 +28,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class LockServiceSingleNodeTest extends HekateInstanceTestBase {
+public class LockServiceSingleNodeTest extends HekateNodeTestBase {
     @Test
     public void testEmptyRegions() throws Exception {
-        LockService locks = createInstance(boot -> boot.withService(new LockServiceFactory())).join().get(LockService.class);
+        LockService locks = createNode(boot -> boot.withService(new LockServiceFactory())).join().get(LockService.class);
 
         assertTrue(locks.allRegions().isEmpty());
 
@@ -42,7 +42,7 @@ public class LockServiceSingleNodeTest extends HekateInstanceTestBase {
 
     @Test
     public void testMultipleRegions() throws Exception {
-        LockService locks = createInstance(boot ->
+        LockService locks = createNode(boot ->
             boot.withService(new LockServiceFactory()
                 .withRegion(new LockRegionConfig("test1"))
                 .withRegion(new LockRegionConfig("test2"))

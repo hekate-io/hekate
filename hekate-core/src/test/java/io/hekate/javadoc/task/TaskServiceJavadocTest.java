@@ -16,7 +16,7 @@
 
 package io.hekate.javadoc.task;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
@@ -29,7 +29,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
 
-public class TaskServiceJavadocTest extends HekateInstanceTestBase {
+public class TaskServiceJavadocTest extends HekateNodeTestBase {
     @Test
     public void exampleAccessService() throws Exception {
         // Start:configure

@@ -16,10 +16,10 @@
 
 package io.hekate.metrics.internal;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateConfigurationException;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.metrics.CounterConfig;
 import io.hekate.metrics.CounterMetric;
 import io.hekate.metrics.Metric;
@@ -48,7 +48,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
-public class MetricsServiceTest extends HekateInstanceTestBase {
+public class MetricsServiceTest extends HekateNodeTestBase {
     public interface MetricsConfigurer {
         void configure(MetricsServiceFactory factory);
     }
@@ -57,15 +57,15 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
 
     private MetricsService metrics;
 
-    private Hekate instance;
+    private Hekate node;
 
     @Override
     public void setUp() throws Exception {
         super.setUp();
 
-        instance = createMetricsInstance().join();
+        node = createMetricsNode().join();
 
-        metrics = instance.get(MetricsService.class);
+        metrics = node.get(MetricsService.class);
     }
 
     @Test
@@ -333,17 +333,17 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
 
     @Test
     public void testPreConfiguredMetricsAfterRejoin() throws Exception {
-        instance.leave();
+        node.leave();
 
         AtomicInteger probe = new AtomicInteger(1000);
 
-        instance = createMetricsInstance(c -> {
+        node = createMetricsNode(c -> {
             c.withMetric(new ProbeConfig("p").withInitValue(1000).withProbe(probe::get));
             c.withMetric(new CounterConfig("c0"));
             c.withConfigProvider(() -> Arrays.asList(new CounterConfig("c1"), new CounterConfig("c2")));
         }).join();
 
-        metrics = instance.get(MetricsService.class);
+        metrics = node.get(MetricsService.class);
 
         repeat(5, i -> {
             for (int j = 0; j < 3; j++) {
@@ -356,11 +356,11 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
                 assertEquals(10, metrics.metric("c" + j).getValue());
             }
 
-            instance.leave();
+            node.leave();
 
-            instance.join();
+            node.join();
 
-            metrics = instance.get(MetricsService.class);
+            metrics = node.get(MetricsService.class);
         });
     }
 
@@ -375,11 +375,11 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
             assertEquals("c", metrics.metric("c").getName());
             assertEquals(0, metrics.metric("c").getValue());
 
-            instance.leave();
+            node.leave();
 
-            instance.join();
+            node.join();
 
-            metrics = instance.get(MetricsService.class);
+            metrics = node.get(MetricsService.class);
         });
     }
 
@@ -432,13 +432,13 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
         // Unblock listener (exchange with a non-null object).
         asyncRef.get().exchange(mock(MetricsUpdateEvent.class));
 
-        instance.leave();
+        node.leave();
 
         probe.set(100);
 
         asyncRef.set(new Exchanger<>());
 
-        instance.join();
+        node.join();
 
         snapshot = asyncRef.get().exchange(null).allMetrics();
 
@@ -518,19 +518,19 @@ public class MetricsServiceTest extends HekateInstanceTestBase {
     }
 
     private void restart(MetricsConfigurer configurer) throws Exception {
-        instance.leave();
+        node.leave();
 
-        instance = createMetricsInstance(configurer).join();
+        node = createMetricsNode(configurer).join();
 
-        metrics = instance.get(MetricsService.class);
+        metrics = node.get(MetricsService.class);
     }
 
-    private HekateTestInstance createMetricsInstance() throws Exception {
-        return createMetricsInstance(null);
+    private HekateTestNode createMetricsNode() throws Exception {
+        return createMetricsNode(null);
     }
 
-    private HekateTestInstance createMetricsInstance(MetricsConfigurer configurer) throws Exception {
-        return createInstance(c -> {
+    private HekateTestNode createMetricsNode(MetricsConfigurer configurer) throws Exception {
+        return createNode(c -> {
             MetricsServiceFactory metrics = new MetricsServiceFactory();
 
             metrics.setRefreshInterval(TEST_METRICS_REFRESH_INTERVAL);

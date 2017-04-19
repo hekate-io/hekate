@@ -16,9 +16,9 @@
 
 package io.hekate.partition.internal;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.partition.Partition;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.partition.PartitionMapperConfig;
@@ -35,14 +35,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class PartitionServiceTest extends HekateInstanceTestBase {
+public class PartitionServiceTest extends HekateNodeTestBase {
     private interface PartitionConfigurer {
         void configure(PartitionServiceFactory factory);
     }
 
     @Test
     public void testEmptyPartitions() throws Exception {
-        PartitionService partitions = createInstance(boot -> boot.withService(new PartitionServiceFactory())).join()
+        PartitionService partitions = createNode(boot -> boot.withService(new PartitionServiceFactory())).join()
             .get(PartitionService.class);
 
         assertTrue(partitions.allMappers().isEmpty());
@@ -54,7 +54,7 @@ public class PartitionServiceTest extends HekateInstanceTestBase {
 
     @Test
     public void testMultiplePartitions() throws Exception {
-        PartitionService partitions = createInstance(boot ->
+        PartitionService partitions = createNode(boot ->
             boot.withService(new PartitionServiceFactory()
                 .withMapper(new PartitionMapperConfig("mapper1"))
                 .withMapper(new PartitionMapperConfig("mapper2"))
@@ -77,7 +77,7 @@ public class PartitionServiceTest extends HekateInstanceTestBase {
 
     @Test
     public void testPreConfiguredMapper() throws Exception {
-        HekateTestInstance instance = createPartitionInstance(c -> {
+        HekateTestNode node = createPartitionNode(c -> {
             PartitionMapperConfig cfg = new PartitionMapperConfig();
 
             cfg.setName("test");
@@ -87,22 +87,22 @@ public class PartitionServiceTest extends HekateInstanceTestBase {
             c.withMapper(cfg);
         }).join();
 
-        PartitionMapper mapper = instance.get(PartitionService.class).mapper("test");
+        PartitionMapper mapper = node.get(PartitionService.class).mapper("test");
 
         assertNotNull(mapper);
 
         Partition partition = mapper.map(1);
 
         assertNotNull(partition);
-        assertEquals(instance.getNode(), partition.getPrimaryNode());
+        assertEquals(node.getNode(), partition.getPrimaryNode());
         assertTrue(partition.getBackupNodes().isEmpty());
-        assertEquals(Collections.singletonList(instance.getNode()), partition.getNodes());
+        assertEquals(Collections.singletonList(node.getNode()), partition.getNodes());
     }
 
     @Test
     public void testUnknownMapper() throws Exception {
         try {
-            createPartitionInstance().join().get(PartitionService.class).mapper("unknown");
+            createPartitionNode().join().get(PartitionService.class).mapper("unknown");
 
             fail("Error was expected.");
         } catch (IllegalArgumentException e) {
@@ -116,10 +116,10 @@ public class PartitionServiceTest extends HekateInstanceTestBase {
             int partitions = 10;
             int values = 1000;
 
-            List<HekateTestInstance> instances = new ArrayList<>();
+            List<HekateTestNode> nodes = new ArrayList<>();
 
             for (int j = 0; j < 5; j++) {
-                instances.add(createPartitionInstance(c -> {
+                nodes.add(createPartitionNode(c -> {
                     PartitionMapperConfig cfg = new PartitionMapperConfig();
 
                     cfg.setName("test" + i);
@@ -130,15 +130,15 @@ public class PartitionServiceTest extends HekateInstanceTestBase {
                 }).join());
             }
 
-            awaitForTopology(instances);
+            awaitForTopology(nodes);
 
             int[] distributions = new int[partitions];
 
             for (int j = 0; j < values; j++) {
                 Partition first = null;
 
-                for (Hekate instance : instances) {
-                    PartitionMapper mapper = instance.get(PartitionService.class).mapper("test" + i);
+                for (Hekate node : nodes) {
+                    PartitionMapper mapper = node.get(PartitionService.class).mapper("test" + i);
 
                     assertEquals("test" + i, mapper.getName());
                     assertEquals(partitions, mapper.getPartitions());
@@ -174,18 +174,18 @@ public class PartitionServiceTest extends HekateInstanceTestBase {
                 );
             }
 
-            for (HekateTestInstance instance : instances) {
-                instance.leave();
+            for (HekateTestNode node : nodes) {
+                node.leave();
             }
         });
     }
 
-    private HekateTestInstance createPartitionInstance() throws Exception {
-        return createPartitionInstance(null);
+    private HekateTestNode createPartitionNode() throws Exception {
+        return createPartitionNode(null);
     }
 
-    private HekateTestInstance createPartitionInstance(PartitionConfigurer configurer) throws Exception {
-        return createInstance(c -> {
+    private HekateTestNode createPartitionNode(PartitionConfigurer configurer) throws Exception {
+        return createNode(c -> {
             PartitionServiceFactory factory = new PartitionServiceFactory();
 
             if (configurer != null) {

@@ -223,14 +223,14 @@ public class HekateBootstrapTest extends HekateTestBase {
 
     @Test
     public void testJoinWithDefaults() throws Exception {
-        List<Hekate> instances = new LinkedList<>();
+        List<Hekate> nodes = new LinkedList<>();
 
         try {
-            repeat(3, i -> instances.add(new HekateBootstrap().join()));
+            repeat(3, i -> nodes.add(new HekateBootstrap().join()));
         } finally {
-            for (Hekate instance : instances) {
+            for (Hekate node : nodes) {
                 try {
-                    instance.leave();
+                    node.leave();
                 } catch (InterruptedException e) {
                     // Ignore.
                 }
@@ -251,8 +251,8 @@ public class HekateBootstrapTest extends HekateTestBase {
                 joins.add(boot.joinAsync());
             });
 
-            for (JoinFuture instance : joins) {
-                leave.add(instance.get().leaveAsync());
+            for (JoinFuture future : joins) {
+                leave.add(future.get().leaveAsync());
             }
         } finally {
             for (LeaveFuture future : leave) {

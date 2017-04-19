@@ -16,7 +16,7 @@
 
 package io.hekate.cluster.internal;
 
-import io.hekate.HekateInstanceContextTestBase;
+import io.hekate.HekateNodeContextTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterService;
@@ -31,8 +31,8 @@ import io.hekate.cluster.seed.StaticSeedNodeProviderConfig;
 import io.hekate.core.Hekate.State;
 import io.hekate.core.HekateException;
 import io.hekate.core.HekateFutureException;
-import io.hekate.core.HekateTestInstance;
 import io.hekate.core.JoinFuture;
+import io.hekate.core.internal.HekateTestNode;
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -57,8 +57,8 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class ClusterServiceSingleNodeTest extends HekateInstanceContextTestBase {
-    private HekateTestInstance instance;
+public class ClusterServiceSingleNodeTest extends HekateNodeContextTestBase {
+    private HekateTestNode node;
 
     public ClusterServiceSingleNodeTest(HekateTestContext params) {
         super(params);
@@ -68,25 +68,25 @@ public class ClusterServiceSingleNodeTest extends HekateInstanceContextTestBase 
     public void setUp() throws Exception {
         super.setUp();
 
-        instance = createInstance();
+        node = createNode();
     }
 
     @Test
     public void testJoinLeaveEventsAfterJoin() throws Exception {
         repeat(50, i -> {
-            instance.join();
+            node.join();
 
-            ClusterNode node = instance.getNode();
+            ClusterNode node = this.node.getNode();
 
             List<ClusterEvent> events = new CopyOnWriteArrayList<>();
 
             ClusterEventListener listener = events::add;
 
-            instance.get(ClusterService.class).addListener(listener);
+            this.node.get(ClusterService.class).addListener(listener);
 
-            instance.leave();
+            this.node.leave();
 
-            instance.get(ClusterService.class).removeListener(listener);
+            this.node.get(ClusterService.class).removeListener(listener);
 
             assertEquals(2, events.size());
             assertSame(ClusterEventType.JOIN, events.get(0).getType());
@@ -110,19 +110,19 @@ public class ClusterServiceSingleNodeTest extends HekateInstanceContextTestBase 
     @Test
     public void testJoinLeaveEventsWithTerminate() throws Exception {
         repeat(50, i -> {
-            instance.join();
+            node.join();
 
-            ClusterNode node = instance.getNode();
+            ClusterNode node = this.node.getNode();
 
             List<ClusterEvent> events = new CopyOnWriteArrayList<>();
 
             ClusterEventListener listener = events::add;
 
-            instance.get(ClusterService.class).addListener(listener);
+            this.node.get(ClusterService.class).addListener(listener);
 
-            instance.terminate();
+            this.node.terminate();
 
-            instance.get(ClusterService.class).removeListener(listener);
+            this.node.get(ClusterService.class).removeListener(listener);
 
             assertEquals(2, events.size());
             assertSame(ClusterEventType.JOIN, events.get(0).getType());
@@ -150,15 +150,15 @@ public class ClusterServiceSingleNodeTest extends HekateInstanceContextTestBase 
 
             ClusterEventListener listener = events::add;
 
-            instance.get(ClusterService.class).addListener(listener);
+            node.get(ClusterService.class).addListener(listener);
 
-            instance.join();
+            node.join();
 
-            ClusterNode node = instance.getNode();
+            ClusterNode node = this.node.getNode();
 
-            instance.leave();
+            this.node.leave();
 
-            instance.get(ClusterService.class).removeListener(listener);
+            this.node.get(ClusterService.class).removeListener(listener);
 
             assertEquals(2, events.size());
             assertSame(ClusterEventType.JOIN, events.get(0).getType());
@@ -186,15 +186,15 @@ public class ClusterServiceSingleNodeTest extends HekateInstanceContextTestBase 
         repeat(50, i -> {
             List<State> statuses = new CopyOnWriteArrayList<>();
 
-            ClusterEventListener listener = event -> statuses.add(instance.getState());
+            ClusterEventListener listener = event -> statuses.add(node.getState());
 
-            instance.get(ClusterService.class).addListener(listener);
+            node.get(ClusterService.class).addListener(listener);
 
-            instance.join();
+            node.join();
 
-            instance.leave();
+            node.leave();
 
-            instance.get(ClusterService.class).removeListener(listener);
+            node.get(ClusterService.class).removeListener(listener);
 
             assertEquals(2, statuses.size());
             assertSame(State.UP, statuses.get(0));
@@ -236,7 +236,7 @@ public class ClusterServiceSingleNodeTest extends HekateInstanceContextTestBase 
             );
 
             // Try join.
-            assertSame(State.UP, get(instance.joinAsync()).getState());
+            assertSame(State.UP, get(node.joinAsync()).getState());
         } finally {
             seedStopped.set(true);
 
@@ -288,11 +288,11 @@ public class ClusterServiceSingleNodeTest extends HekateInstanceContextTestBase 
                 }
             });
 
-            Future<JoinFuture> joinFuture = runAsync(instance::joinAsync);
+            Future<JoinFuture> joinFuture = runAsync(node::joinAsync);
 
             await(hangLatch);
 
-            assertNotNull(get(instance.leaveAsync()));
+            assertNotNull(get(node.leaveAsync()));
 
             assertNotNull(get(joinFuture.get()));
 
@@ -340,11 +340,11 @@ public class ClusterServiceSingleNodeTest extends HekateInstanceContextTestBase 
                 }
             });
 
-            Future<JoinFuture> joinFuture = runAsync(instance::joinAsync);
+            Future<JoinFuture> joinFuture = runAsync(node::joinAsync);
 
             await(hangLatch);
 
-            assertNotNull(get(instance.terminateAsync()));
+            assertNotNull(get(node.terminateAsync()));
 
             assertNotNull(get(joinFuture.get()));
 
@@ -383,7 +383,7 @@ public class ClusterServiceSingleNodeTest extends HekateInstanceContextTestBase 
             });
 
             try {
-                instance.joinAsync().get();
+                node.joinAsync().get();
 
                 fail();
             } catch (HekateFutureException e) {
@@ -415,11 +415,11 @@ public class ClusterServiceSingleNodeTest extends HekateInstanceContextTestBase 
                 }
             });
 
-            instance.join();
+            node.join();
 
             assertEquals(0, errorsCounter.get());
 
-            instance.leave();
+            node.leave();
         });
     }
 
@@ -438,11 +438,11 @@ public class ClusterServiceSingleNodeTest extends HekateInstanceContextTestBase 
                 }
             });
 
-            instance.join();
+            node.join();
 
             assertEquals(0, errorsCounter.get());
 
-            instance.leave();
+            node.leave();
         });
     }
 }

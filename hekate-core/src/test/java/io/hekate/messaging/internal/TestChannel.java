@@ -21,7 +21,7 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.core.HekateFutureException;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelId;
@@ -44,7 +44,7 @@ public class TestChannel {
 
     private final List<String> received = Collections.synchronizedList(new ArrayList<>());
 
-    private HekateTestInstance instance;
+    private HekateTestNode node;
 
     private volatile DefaultMessagingChannel<String> channel;
 
@@ -68,14 +68,14 @@ public class TestChannel {
         };
     }
 
-    public void initialize(HekateTestInstance instance) {
-        this.instance = instance;
+    public void initialize(HekateTestNode node) {
+        this.node = node;
 
-        instance.get(ClusterService.class).addListener(event -> {
+        node.get(ClusterService.class).addListener(event -> {
             if (event.getType() == ClusterEventType.JOIN) {
-                nodeId = instance.getNode().getId();
+                nodeId = node.getNode().getId();
 
-                channel = instance.get(DefaultMessagingService.class).channel(MessagingServiceTestBase.TEST_CHANNEL_NAME);
+                channel = node.get(DefaultMessagingService.class).channel(MessagingServiceTestBase.TEST_CHANNEL_NAME);
             }
         });
     }
@@ -96,8 +96,8 @@ public class TestChannel {
         return receiver;
     }
 
-    public HekateTestInstance getInstance() {
-        return instance;
+    public HekateTestNode getNode() {
+        return node;
     }
 
     public MessagingGateway<String> getImpl() {
@@ -105,13 +105,13 @@ public class TestChannel {
     }
 
     public TestChannel join() throws HekateFutureException, InterruptedException {
-        instance.join();
+        node.join();
 
         return this;
     }
 
     public TestChannel leave() throws InterruptedException, HekateFutureException {
-        instance.leave();
+        node.leave();
 
         return this;
     }
@@ -195,7 +195,7 @@ public class TestChannel {
     }
 
     public void awaitForTopology(List<TestChannel> channels) {
-        instance.awaitForTopology(channel.getCluster(), channels.stream().map(c -> c.getInstance().getNode()).collect(toList()));
+        node.awaitForTopology(channel.getCluster(), channels.stream().map(c -> c.getNode().getNode()).collect(toList()));
     }
 
     public void checkReceiverError() {

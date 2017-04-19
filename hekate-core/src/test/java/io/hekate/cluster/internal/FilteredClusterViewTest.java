@@ -1,6 +1,6 @@
 package io.hekate.cluster.internal;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
@@ -8,7 +8,7 @@ import io.hekate.cluster.event.ClusterChangeEvent;
 import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.event.ClusterJoinEvent;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -26,12 +26,12 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-public class FilteredClusterViewTest extends HekateInstanceTestBase {
+public class FilteredClusterViewTest extends HekateNodeTestBase {
     @Test
     public void test() throws Exception {
-        HekateTestInstance node1 = createInstance(c -> c.withNodeRole("role1").withNodeRole("all")).join();
-        HekateTestInstance node2 = createInstance(c -> c.withNodeRole("role2").withNodeRole("all")).join();
-        HekateTestInstance node3 = createInstance(c -> c.withNodeRole("role3").withNodeRole("all")).join();
+        HekateTestNode node1 = createNode(c -> c.withNodeRole("role1").withNodeRole("all")).join();
+        HekateTestNode node2 = createNode(c -> c.withNodeRole("role2").withNodeRole("all")).join();
+        HekateTestNode node3 = createNode(c -> c.withNodeRole("role3").withNodeRole("all")).join();
 
         ClusterService cluster = node1.get(ClusterService.class);
 
@@ -73,7 +73,7 @@ public class FilteredClusterViewTest extends HekateInstanceTestBase {
         reset(l3);
         reset(l4);
 
-        HekateTestInstance node4 = createInstance(c -> c.withNodeRole("role4").withNodeRole("all")).join();
+        HekateTestNode node4 = createNode(c -> c.withNodeRole("role4").withNodeRole("all")).join();
 
         get(cluster.forRemotes().forRole("role4").futureOf(topology -> !topology.isEmpty()));
 

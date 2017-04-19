@@ -16,7 +16,7 @@
 
 package io.hekate;
 
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.network.NetworkServiceFactory;
 import java.util.Collection;
 import java.util.List;
@@ -27,15 +27,15 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(Parameterized.class)
-public abstract class HekateInstanceContextTestBase extends HekateInstanceTestBase {
+public abstract class HekateNodeContextTestBase extends HekateNodeTestBase {
     private final HekateTestContext ctx;
 
-    public HekateInstanceContextTestBase(HekateTestContext ctx) {
+    public HekateNodeContextTestBase(HekateTestContext ctx) {
         this.ctx = ctx;
     }
 
     @Parameters(name = "{index}: {0}")
-    public static Collection<HekateTestContext> getInstanceTestContexts() {
+    public static Collection<HekateTestContext> getNodeTestContexts() {
         return HekateTestContext.get();
     }
 
@@ -43,13 +43,9 @@ public abstract class HekateInstanceContextTestBase extends HekateInstanceTestBa
         return HekateTestContext.map(mapper);
     }
 
-    public HekateTestContext getTestContext() {
-        return ctx;
-    }
-
     @Override
-    protected HekateTestInstance createInstance(InstanceConfigurer configurer) throws Exception {
-        return super.createInstance(boot -> {
+    protected HekateTestNode createNode(NodeConfigurer configurer) throws Exception {
+        return super.createNode(boot -> {
             if (configurer != null) {
                 configurer.configure(boot);
             }

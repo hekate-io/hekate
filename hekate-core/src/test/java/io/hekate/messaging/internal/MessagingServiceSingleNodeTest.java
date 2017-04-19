@@ -16,7 +16,7 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.HekateInstanceTestBase;
+import io.hekate.HekateNodeTestBase;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingService;
@@ -28,10 +28,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class MessagingServiceSingleNodeTest extends HekateInstanceTestBase {
+public class MessagingServiceSingleNodeTest extends HekateNodeTestBase {
     @Test
     public void testEmptyChannels() throws Exception {
-        MessagingService messaging = createInstance(boot ->
+        MessagingService messaging = createNode(boot ->
             boot.withService(new MessagingServiceFactory())
         ).join().get(MessagingService.class);
 
@@ -46,7 +46,7 @@ public class MessagingServiceSingleNodeTest extends HekateInstanceTestBase {
 
     @Test
     public void testMultipleChannels() throws Exception {
-        MessagingService messaging = createInstance(boot ->
+        MessagingService messaging = createNode(boot ->
             boot.withService(new MessagingServiceFactory()
                 .withChannel(new MessagingChannelConfig<>("channel1"))
                 .withChannel(new MessagingChannelConfig<>("channel2"))

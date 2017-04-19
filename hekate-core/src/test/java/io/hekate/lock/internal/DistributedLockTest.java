@@ -18,7 +18,7 @@ package io.hekate.lock.internal;
 
 import io.hekate.HekateTestContext;
 import io.hekate.core.Hekate;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockOwnerInfo;
 import io.hekate.lock.LockRegion;
@@ -62,9 +62,9 @@ public class DistributedLockTest extends LockServiceTestBase {
 
     private LockRegion region;
 
-    private List<HekateTestInstance> nodes;
+    private List<HekateTestNode> nodes;
 
-    private HekateTestInstance lockNode;
+    private HekateTestNode lockNode;
 
     public DistributedLockTest(DistributedLockTestContext ctx) {
         super(ctx);
@@ -93,9 +93,9 @@ public class DistributedLockTest extends LockServiceTestBase {
         nodes = new ArrayList<>();
 
         for (int i = 0; i < nodeCount; i++) {
-            HekateTestInstance instance = createInstanceWithLockService().join();
+            HekateTestNode node = createLockNode().join();
 
-            nodes.add(instance);
+            nodes.add(node);
         }
 
         awaitForTopology(nodes);
@@ -474,7 +474,7 @@ public class DistributedLockTest extends LockServiceTestBase {
         if (nodes.size() > 1) { // <-- skip test if running only with a single node.
             String lockName = getRemotelyManagedLockName();
 
-            HekateTestInstance managerNode = getLockManagerNode(lockName);
+            HekateTestNode managerNode = getLockManagerNode(lockName);
 
             runWithBusyLock(lockName, managerNode, asyncUnlock -> {
                 DistributedLock lock = region.getLock(lockName);
@@ -504,7 +504,7 @@ public class DistributedLockTest extends LockServiceTestBase {
 
             String lockName = getRemotelyManagedLockName();
 
-            HekateTestInstance managerNode = getLockManagerNode(lockName);
+            HekateTestNode managerNode = getLockManagerNode(lockName);
 
             // Asynchronously await for lock to be placed on the queue and terminate node.
             runWithBusyLock(lockName, managerNode, asyncUnlock -> {
@@ -532,7 +532,7 @@ public class DistributedLockTest extends LockServiceTestBase {
         if (nodes.size() > 1) { // <-- skip test if running only with a single node.
             String lockName = getRemotelyManagedLockName();
 
-            HekateTestInstance managerNode = getLockManagerNode(lockName);
+            HekateTestNode managerNode = getLockManagerNode(lockName);
 
             runWithBusyLock(lockName, managerNode, asyncUnlock -> {
                 DistributedLock lock = region.getLock(lockName);
@@ -564,7 +564,7 @@ public class DistributedLockTest extends LockServiceTestBase {
 
             String lockName = getRemotelyManagedLockName();
 
-            HekateTestInstance managerNode = getLockManagerNode(lockName);
+            HekateTestNode managerNode = getLockManagerNode(lockName);
 
             runWithBusyLock(lockName, managerNode, asyncUnlock -> {
                 DistributedLock lock = region.getLock(lockName);
@@ -604,7 +604,7 @@ public class DistributedLockTest extends LockServiceTestBase {
         if (nodes.size() > 1) { // <-- skip test if running only with a single node.
             String lockName = getRemotelyManagedLockName();
 
-            HekateTestInstance managerNode = getLockManagerNode(lockName);
+            HekateTestNode managerNode = getLockManagerNode(lockName);
 
             runWithBusyLock(lockName, managerNode, asyncUnlock -> {
                 DistributedLock lock = region.getLock(lockName);
@@ -644,7 +644,7 @@ public class DistributedLockTest extends LockServiceTestBase {
 
             String lockName = getRemotelyManagedLockName();
 
-            HekateTestInstance managerNode = getLockManagerNode(lockName);
+            HekateTestNode managerNode = getLockManagerNode(lockName);
 
             runWithBusyLock(lockName, managerNode, asyncUnlock -> {
                 DistributedLock lock = region.getLock(lockName);
@@ -685,9 +685,9 @@ public class DistributedLockTest extends LockServiceTestBase {
             }
 
             try {
-                List<HekateTestInstance> nodesCopy = new ArrayList<>(nodes);
+                List<HekateTestNode> nodesCopy = new ArrayList<>(nodes);
 
-                for (HekateTestInstance node : nodes) {
+                for (HekateTestNode node : nodes) {
                     if (node.getNode().equals(lockNode.getNode())) {
                         // Skip lock owner.
                         continue;
@@ -859,7 +859,7 @@ public class DistributedLockTest extends LockServiceTestBase {
         lock.unlock();
     }
 
-    private HekateTestInstance awaitForQueuedLock(String lock) throws Exception {
+    private HekateTestNode awaitForQueuedLock(String lock) throws Exception {
         return awaitForQueuedLock(lock, lockNode, nodes);
     }
 
@@ -869,17 +869,17 @@ public class DistributedLockTest extends LockServiceTestBase {
         return getRemotelyManagedLockName(lockNode);
     }
 
-    private HekateTestInstance getLockManagerNode(String lock) {
+    private HekateTestNode getLockManagerNode(String lock) {
         return getLockManagerNode(lock, nodes);
     }
 
     private void runWithBusyLock(String lockName, AsyncLockTask task) throws Exception {
-        for (HekateTestInstance node : nodes) {
+        for (HekateTestNode node : nodes) {
             runWithBusyLock(lockName, node, task);
         }
     }
 
-    private void runWithBusyLock(String lockName, HekateTestInstance node, AsyncLockTask task) throws Exception {
+    private void runWithBusyLock(String lockName, HekateTestNode node, AsyncLockTask task) throws Exception {
         CountDownLatch lockAsync = new CountDownLatch(1);
         CountDownLatch unlockAsync = new CountDownLatch(1);
 

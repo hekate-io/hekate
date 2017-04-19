@@ -33,10 +33,10 @@ import io.hekate.cluster.internal.gossip.GossipNodeStatus;
 import io.hekate.cluster.internal.gossip.GossipSpyAdaptor;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateFutureException;
-import io.hekate.core.HekateTestInstance;
 import io.hekate.core.JoinFuture;
 import io.hekate.core.LeaveFuture;
 import io.hekate.core.TerminateFuture;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.service.Service;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.network.address.DefaultAddressSelector;
@@ -76,12 +76,12 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     @Test
     public void testJoinLeave() throws Exception {
         repeat(10, i -> {
-            List<HekateTestInstance> nodes = new ArrayList<>();
+            List<HekateTestNode> nodes = new ArrayList<>();
 
             AtomicInteger failuresCount = new AtomicInteger();
 
             for (int j = 0; j < i + 1; j++) {
-                HekateTestInstance node = createInstance();
+                HekateTestNode node = createNode();
 
                 node.setGossipSpy(new GossipSpyAdaptor() {
                     @Override
@@ -103,7 +103,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
             int j = 0;
 
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 sayTime("Node " + j++ + " leave", node::leave);
             }
 
@@ -114,14 +114,14 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     @Test
     public void testJoinLeaveNoWait() throws Exception {
         repeat(10, i -> {
-            List<HekateTestInstance> nodes = new ArrayList<>();
+            List<HekateTestNode> nodes = new ArrayList<>();
             List<JoinFuture> joins = new ArrayList<>();
 
             AtomicInteger failuresCount = new AtomicInteger();
 
             sayTime("Join", () -> {
                 for (int j = 0; j < i + 1; j++) {
-                    HekateTestInstance node = createInstance();
+                    HekateTestNode node = createNode();
 
                     node.setGossipSpy(new GossipSpyAdaptor() {
                         @Override
@@ -145,7 +145,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             verifyJoinOrder(nodes);
 
             sayTime("Leave", () -> {
-                List<LeaveFuture> leaves = nodes.stream().map(HekateTestInstance::leaveAsync).collect(toList());
+                List<LeaveFuture> leaves = nodes.stream().map(HekateTestNode::leaveAsync).collect(toList());
 
                 for (LeaveFuture future : leaves) {
                     get(future);
@@ -160,18 +160,18 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     public void testTopologyEventsWithTerminate() throws Exception {
         disableNodeFailurePostCheck();
 
-        List<HekateTestInstance> nodes = createAndJoinNodes(3);
+        List<HekateTestNode> nodes = createAndJoinNodes(3);
 
         repeat(3, i -> {
-            nodes.forEach(HekateTestInstance::startRecording);
+            nodes.forEach(HekateTestNode::startRecording);
 
-            HekateTestInstance terminated = createInstance();
+            HekateTestNode terminated = createNode();
 
             terminated.join();
 
             ClusterNode terminatedNode = terminated.getNode();
 
-            List<HekateTestInstance> nodesWithTerminated = new ArrayList<>(nodes);
+            List<HekateTestNode> nodesWithTerminated = new ArrayList<>(nodes);
 
             nodesWithTerminated.add(terminated);
 
@@ -202,17 +202,17 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
                 assertFalse(e3.getTopology().contains(terminatedNode));
             });
 
-            nodes.forEach(HekateTestInstance::clearEvents);
-            nodes.forEach(HekateTestInstance::stopRecording);
+            nodes.forEach(HekateTestNode::clearEvents);
+            nodes.forEach(HekateTestNode::stopRecording);
         });
     }
 
     @Test
     public void testTopologyEvents() throws Exception {
-        List<HekateTestInstance> nodes = new ArrayList<>();
+        List<HekateTestNode> nodes = new ArrayList<>();
 
         for (int i = 0; i < 10; i++) {
-            HekateTestInstance node = createInstance();
+            HekateTestNode node = createNode();
 
             node.startRecording();
 
@@ -222,7 +222,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
             nodes.forEach(n -> n.awaitForTopology(nodes));
 
-            for (HekateTestInstance oldNode : nodes) {
+            for (HekateTestNode oldNode : nodes) {
                 int ver = 0;
 
                 for (ClusterEvent event : oldNode.getEvents()) {
@@ -235,10 +235,10 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             }
         }
 
-        List<HekateTestInstance> stopped = new ArrayList<>(nodes);
+        List<HekateTestNode> stopped = new ArrayList<>(nodes);
 
-        for (Iterator<HekateTestInstance> it = nodes.iterator(); it.hasNext(); ) {
-            HekateTestInstance node = it.next();
+        for (Iterator<HekateTestNode> it = nodes.iterator(); it.hasNext(); ) {
+            HekateTestNode node = it.next();
 
             it.remove();
 
@@ -246,7 +246,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
             nodes.forEach(n -> n.awaitForTopology(nodes));
 
-            for (HekateTestInstance oldNode : nodes) {
+            for (HekateTestNode oldNode : nodes) {
                 int ver = 0;
 
                 for (ClusterEvent event : oldNode.getEvents()) {
@@ -259,7 +259,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             }
         }
 
-        for (HekateTestInstance node : stopped) {
+        for (HekateTestNode node : stopped) {
             assertSame(ClusterEventType.JOIN, node.getEvents().get(0).getType());
             assertSame(ClusterEventType.LEAVE, node.getLastEvent().getType());
 
@@ -270,7 +270,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
     @Test
     public void testTopologyFuture() throws Exception {
-        HekateTestInstance node = createInstance();
+        HekateTestNode node = createNode();
 
         ClusterService cluster = node.get(ClusterService.class);
 
@@ -290,7 +290,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
         assertFalse(afterJoinOther.isDone());
 
-        createInstance().join().leave();
+        createNode().join().leave();
 
         get(afterJoinOther);
 
@@ -314,10 +314,10 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
     @Test
     public void testTopologyChangeEvents() throws Exception {
-        List<HekateTestInstance> nodes = new ArrayList<>();
+        List<HekateTestNode> nodes = new ArrayList<>();
 
         for (int i = 0; i < 10; i++) {
-            HekateTestInstance added = createInstance();
+            HekateTestNode added = createNode();
 
             added.startRecording();
 
@@ -343,8 +343,8 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             });
         }
 
-        for (Iterator<HekateTestInstance> it = nodes.iterator(); it.hasNext(); ) {
-            HekateTestInstance removed = it.next();
+        for (Iterator<HekateTestNode> it = nodes.iterator(); it.hasNext(); ) {
+            HekateTestNode removed = it.next();
 
             ClusterNode removedNode = removed.getNode();
 
@@ -380,14 +380,14 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     @Test
     public void testJoinLeaveWithPermanentNodes() throws Exception {
         repeat(5, i -> {
-            List<HekateTestInstance> permanentNodes = createAndJoinNodes(i + 1);
+            List<HekateTestNode> permanentNodes = createAndJoinNodes(i + 1);
 
-            List<HekateTestInstance> allNodes = new ArrayList<>();
+            List<HekateTestNode> allNodes = new ArrayList<>();
 
             allNodes.addAll(permanentNodes);
 
             repeat(3, j -> {
-                HekateTestInstance node = createInstance();
+                HekateTestNode node = createNode();
 
                 allNodes.add(node);
 
@@ -402,7 +402,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
                 allNodes.forEach(n -> n.awaitForTopology(allNodes));
             });
 
-            for (HekateTestInstance node : permanentNodes) {
+            for (HekateTestNode node : permanentNodes) {
                 node.leave();
             }
         });
@@ -411,20 +411,20 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     @Test
     public void testJoinLeaveSameTimeWithPermanentNodes() throws Exception {
         repeat(5, i -> {
-            List<HekateTestInstance> permanentNodes = createAndJoinNodes(i + 1);
+            List<HekateTestNode> permanentNodes = createAndJoinNodes(i + 1);
 
-            List<HekateTestInstance> allNodes = new ArrayList<>();
+            List<HekateTestNode> allNodes = new ArrayList<>();
 
             allNodes.addAll(permanentNodes);
 
-            AtomicReference<HekateTestInstance> toLeave = new AtomicReference<>(createInstance());
+            AtomicReference<HekateTestNode> toLeave = new AtomicReference<>(createNode());
 
             toLeave.get().join();
 
             allNodes.add(toLeave.get());
 
             repeat(3, j -> {
-                HekateTestInstance newNode = createInstance();
+                HekateTestNode newNode = createNode();
 
                 JoinFuture join = newNode.joinAsync();
                 LeaveFuture leave = toLeave.get().leaveAsync();
@@ -440,7 +440,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
                 allNodes.forEach(n -> n.awaitForTopology(allNodes));
             });
 
-            for (HekateTestInstance node : allNodes) {
+            for (HekateTestNode node : allNodes) {
                 node.leave();
             }
         });
@@ -449,10 +449,10 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     @Test
     public void testJoinLeaveNoWaitWithPermanentNodes() throws Exception {
         repeat(5, i -> {
-            List<HekateTestInstance> permanentNodes = createAndJoinNodes(i + 1);
+            List<HekateTestNode> permanentNodes = createAndJoinNodes(i + 1);
 
             repeat(3, j -> {
-                HekateTestInstance newNode = createInstance();
+                HekateTestNode newNode = createNode();
 
                 JoinFuture join = newNode.joinAsync();
                 LeaveFuture leave = newNode.leaveAsync();
@@ -461,7 +461,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
                 leave.get();
             });
 
-            for (HekateTestInstance node : permanentNodes) {
+            for (HekateTestNode node : permanentNodes) {
                 node.leave();
             }
         });
@@ -470,10 +470,10 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     @Test
     public void testJoinTerminateNoWaitWithPermanentNodes() throws Exception {
         repeat(5, i -> {
-            List<HekateTestInstance> permanentNodes = createAndJoinNodes(i + 1);
+            List<HekateTestNode> permanentNodes = createAndJoinNodes(i + 1);
 
             repeat(3, j -> {
-                HekateTestInstance newNode = createInstance();
+                HekateTestNode newNode = createNode();
 
                 JoinFuture join = newNode.joinAsync();
                 TerminateFuture terminate = newNode.terminateAsync();
@@ -482,7 +482,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
                 terminate.get();
             });
 
-            for (HekateTestInstance node : permanentNodes) {
+            for (HekateTestNode node : permanentNodes) {
                 node.leave();
             }
         });
@@ -491,20 +491,20 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     @Test
     public void testLeaveJoinSameTimeWithPermanentNodes() throws Exception {
         repeat(5, i -> {
-            List<HekateTestInstance> permanentNodes = createAndJoinNodes(i + 1);
+            List<HekateTestNode> permanentNodes = createAndJoinNodes(i + 1);
 
-            List<HekateTestInstance> allNodes = new ArrayList<>();
+            List<HekateTestNode> allNodes = new ArrayList<>();
 
             allNodes.addAll(permanentNodes);
 
-            AtomicReference<HekateTestInstance> toLeave = new AtomicReference<>(createInstance());
+            AtomicReference<HekateTestNode> toLeave = new AtomicReference<>(createNode());
 
             toLeave.get().join();
 
             allNodes.add(toLeave.get());
 
             repeat(3, j -> {
-                HekateTestInstance newNode = createInstance();
+                HekateTestNode newNode = createNode();
 
                 LeaveFuture leave = toLeave.get().leaveAsync();
                 JoinFuture join = newNode.joinAsync();
@@ -520,7 +520,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
                 allNodes.forEach(n -> n.awaitForTopology(allNodes));
             });
 
-            for (HekateTestInstance node : allNodes) {
+            for (HekateTestNode node : allNodes) {
                 node.leave();
             }
         });
@@ -531,20 +531,20 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         disableNodeFailurePostCheck();
 
         repeat(3, i -> {
-            List<HekateTestInstance> permanentNodes = createAndJoinNodes(i + 1);
+            List<HekateTestNode> permanentNodes = createAndJoinNodes(i + 1);
 
-            List<HekateTestInstance> allNodes = new ArrayList<>();
+            List<HekateTestNode> allNodes = new ArrayList<>();
 
             allNodes.addAll(permanentNodes);
 
-            AtomicReference<HekateTestInstance> toTerminate = new AtomicReference<>(createInstance());
+            AtomicReference<HekateTestNode> toTerminate = new AtomicReference<>(createNode());
 
             toTerminate.get().join();
 
             allNodes.add(toTerminate.get());
 
             repeat(3, j -> {
-                HekateTestInstance newNode = createInstance();
+                HekateTestNode newNode = createNode();
 
                 JoinFuture join = newNode.joinAsync();
                 toTerminate.get().terminate();
@@ -559,7 +559,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
                 allNodes.forEach(n -> n.awaitForTopology(allNodes));
             });
 
-            for (HekateTestInstance node : allNodes) {
+            for (HekateTestNode node : allNodes) {
                 node.leave();
             }
         });
@@ -570,20 +570,20 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         disableNodeFailurePostCheck();
 
         repeat(3, i -> {
-            List<HekateTestInstance> permanentNodes = createAndJoinNodes(i + 1);
+            List<HekateTestNode> permanentNodes = createAndJoinNodes(i + 1);
 
-            List<HekateTestInstance> allNodes = new ArrayList<>();
+            List<HekateTestNode> allNodes = new ArrayList<>();
 
             allNodes.addAll(permanentNodes);
 
-            AtomicReference<HekateTestInstance> toTerminate = new AtomicReference<>(createInstance());
+            AtomicReference<HekateTestNode> toTerminate = new AtomicReference<>(createNode());
 
             toTerminate.get().join();
 
             allNodes.add(toTerminate.get());
 
             repeat(3, j -> {
-                HekateTestInstance newNode = createInstance();
+                HekateTestNode newNode = createNode();
 
                 toTerminate.get().terminate();
                 JoinFuture join = newNode.joinAsync();
@@ -598,7 +598,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
                 allNodes.forEach(n -> n.awaitForTopology(allNodes));
             });
 
-            for (HekateTestInstance node : allNodes) {
+            for (HekateTestNode node : allNodes) {
                 node.leave();
             }
         });
@@ -606,12 +606,12 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
     @Test
     public void testClusterView() throws Exception {
-        HekateTestInstance inst1 = createInstance(c -> c.withNodeRole("VIEW_1"));
-        HekateTestInstance inst2 = createInstance(c -> {
+        HekateTestNode inst1 = createNode(c -> c.withNodeRole("VIEW_1"));
+        HekateTestNode inst2 = createNode(c -> {
             c.withNodeRole("VIEW_1");
             c.withNodeRole("VIEW_2");
         });
-        HekateTestInstance inst3 = createInstance(c -> c.withNodeRole("VIEW_1"));
+        HekateTestNode inst3 = createNode(c -> c.withNodeRole("VIEW_1"));
 
         inst1.join();
         inst2.join();
@@ -678,7 +678,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
     @Test
     public void testJoinOrderRemoveOldest() throws Exception {
-        LinkedList<HekateTestInstance> nodes = new LinkedList<>();
+        LinkedList<HekateTestNode> nodes = new LinkedList<>();
 
         AtomicInteger expectedOrder = new AtomicInteger();
 
@@ -686,7 +686,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             repeat(5, j -> {
                 expectedOrder.incrementAndGet();
 
-                HekateTestInstance node = createInstance();
+                HekateTestNode node = createNode();
 
                 node.join();
 
@@ -709,7 +709,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
     @Test
     public void testJoinOrderRemoveYoungest() throws Exception {
-        LinkedList<HekateTestInstance> nodes = new LinkedList<>();
+        LinkedList<HekateTestNode> nodes = new LinkedList<>();
 
         AtomicInteger expectedOrder = new AtomicInteger();
 
@@ -717,7 +717,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             repeat(3, j -> {
                 expectedOrder.incrementAndGet();
 
-                HekateTestInstance node = createInstance();
+                HekateTestNode node = createNode();
 
                 node.join();
 
@@ -739,10 +739,10 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
     @Test
     public void testHasService() throws Exception {
-        List<HekateTestInstance> nodes = new ArrayList<>();
+        List<HekateTestNode> nodes = new ArrayList<>();
 
         for (int j = 0; j < 3; j++) {
-            HekateTestInstance node = createInstance(b -> b.withService(() -> new DummyService() {
+            HekateTestNode node = createNode(b -> b.withService(() -> new DummyService() {
                 // No-op.
             }));
 
@@ -753,14 +753,14 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
         nodes.forEach(n -> n.awaitForTopology(nodes));
 
-        for (HekateTestInstance instance : nodes) {
-            assertTrue(instance.has(DummyService.class));
-            assertNotNull(instance.get(DummyService.class));
+        for (HekateTestNode node : nodes) {
+            assertTrue(node.has(DummyService.class));
+            assertNotNull(node.get(DummyService.class));
 
-            assertTrue(instance.getNode().hasService(DummyService.class));
+            assertTrue(node.getNode().hasService(DummyService.class));
 
-            for (ClusterNode node : instance.getTopology().getRemoteNodes()) {
-                assertTrue(node.hasService(DummyService.class));
+            for (ClusterNode clusterNode : node.getTopology().getRemoteNodes()) {
+                assertTrue(clusterNode.hasService(DummyService.class));
             }
         }
     }
@@ -769,13 +769,13 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     public void testJoinRejectCustom() throws Exception {
         String rejectReason = HekateTestBase.TEST_ERROR_PREFIX + " This is a test reject.";
 
-        HekateTestInstance existing = createInstance(c ->
-            c.find(ClusterServiceFactory.class).get().withJoinValidator((newNode, instance) -> rejectReason)
+        HekateTestNode existing = createNode(c ->
+            c.find(ClusterServiceFactory.class).get().withJoinValidator((newNode, node) -> rejectReason)
         );
 
         existing.join();
 
-        HekateTestInstance joining = createInstance();
+        HekateTestNode joining = createNode();
 
         try {
             joining.join();
@@ -793,7 +793,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
     @Test
     public void testJoinRejectLoopback() throws Exception {
-        HekateTestInstance existing = createInstance(c -> {
+        HekateTestNode existing = createNode(c -> {
             DefaultAddressSelectorConfig cfg = new DefaultAddressSelectorConfig();
 
             cfg.setExcludeLoopback(false);
@@ -808,7 +808,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
         existing.join();
 
-        HekateTestInstance joining = createInstance(c -> {
+        HekateTestNode joining = createNode(c -> {
             DefaultAddressSelectorConfig cfg = new DefaultAddressSelectorConfig();
 
             cfg.setExcludeLoopback(false);
@@ -839,7 +839,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
     @Test
     public void testJoinRejectNonLoopback() throws Exception {
-        HekateTestInstance existing = createInstance(c -> {
+        HekateTestNode existing = createNode(c -> {
             DefaultAddressSelectorConfig cfg = new DefaultAddressSelectorConfig();
 
             cfg.setExcludeLoopback(false);
@@ -854,7 +854,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
         existing.join();
 
-        HekateTestInstance joining = createInstance(c -> {
+        HekateTestNode joining = createNode(c -> {
             DefaultAddressSelectorConfig cfg = new DefaultAddressSelectorConfig();
 
             cfg.setExcludeLoopback(false);
@@ -887,9 +887,9 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     public void testCoordinatorFailureWhileJoining() throws Exception {
         disableNodeFailurePostCheck();
 
-        HekateTestInstance coordinator = createInstance().join();
+        HekateTestNode coordinator = createNode().join();
 
-        HekateTestInstance joining = createInstance();
+        HekateTestNode joining = createNode();
 
         joining.setGossipSpy(new GossipSpyAdaptor() {
             @Override
@@ -920,8 +920,8 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         awaitForTopology(joining);
     }
 
-    private void verifyJoinOrder(List<HekateTestInstance> nodes) {
-        List<HekateTestInstance> sorted = new ArrayList<>(nodes);
+    private void verifyJoinOrder(List<HekateTestNode> nodes) {
+        List<HekateTestNode> sorted = new ArrayList<>(nodes);
 
         sorted.sort(Comparator.comparingInt(o -> o.getNode().getJoinOrder()));
 

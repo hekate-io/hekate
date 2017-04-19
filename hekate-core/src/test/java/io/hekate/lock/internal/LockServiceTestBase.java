@@ -16,11 +16,11 @@
 
 package io.hekate.lock.internal;
 
-import io.hekate.HekateInstanceContextTestBase;
+import io.hekate.HekateNodeContextTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopologyHash;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.lock.LockRegionConfig;
 import io.hekate.lock.LockServiceFactory;
 import java.util.HashSet;
@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public abstract class LockServiceTestBase extends HekateInstanceContextTestBase {
+public abstract class LockServiceTestBase extends HekateNodeContextTestBase {
     public interface Configurer {
         void configure(LockServiceFactory factory);
     }
@@ -61,12 +61,12 @@ public abstract class LockServiceTestBase extends HekateInstanceContextTestBase 
         this.ctx = ctx;
     }
 
-    protected HekateTestInstance createInstanceWithLockService() throws Exception {
-        return createInstanceWithLockService(null);
+    protected HekateTestNode createLockNode() throws Exception {
+        return createLockNode(null);
     }
 
-    protected HekateTestInstance createInstanceWithLockService(Configurer configurer) throws Exception {
-        return createInstance(c -> {
+    protected HekateTestNode createLockNode(Configurer configurer) throws Exception {
+        return createNode(c -> {
             LockServiceFactory factory = new LockServiceFactory()
                 .withRetryInterval(10)
                 .withNioThreads(ctx.nioThreads)
@@ -82,12 +82,11 @@ public abstract class LockServiceTestBase extends HekateInstanceContextTestBase 
         });
     }
 
-    protected HekateTestInstance awaitForQueuedLock(String lock, HekateTestInstance owner, List<HekateTestInstance> nodes)
-        throws Exception {
-        AtomicReference<HekateTestInstance> result = new AtomicReference<>();
+    protected HekateTestNode awaitForQueuedLock(String lock, HekateTestNode owner, List<HekateTestNode> nodes) throws Exception {
+        AtomicReference<HekateTestNode> result = new AtomicReference<>();
 
         busyWait("queued lock [lock=" + lock + ']', () -> {
-            for (HekateTestInstance node : nodes) {
+            for (HekateTestNode node : nodes) {
                 List<ClusterNodeId> locks = node.get(DefaultLockService.class).region(REGION_1).getQueuedLocks(lock);
 
                 if (locks.contains(owner.getNode().getId())) {
@@ -105,11 +104,11 @@ public abstract class LockServiceTestBase extends HekateInstanceContextTestBase 
         return result.get();
     }
 
-    protected String getRemotelyManagedLockName(HekateTestInstance node) throws Exception {
+    protected String getRemotelyManagedLockName(HekateTestNode node) throws Exception {
         return getRemotelyManagedLockName("test", node);
     }
 
-    protected String getRemotelyManagedLockName(String lockPrefix, HekateTestInstance node) throws Exception {
+    protected String getRemotelyManagedLockName(String lockPrefix, HekateTestNode node) throws Exception {
         DefaultLockRegion region = node.get(DefaultLockService.class).region(REGION_1);
 
         for (int i = 0; i < BUSY_WAIT_LOOPS; i++) {
@@ -125,7 +124,7 @@ public abstract class LockServiceTestBase extends HekateInstanceContextTestBase 
         throw new AssertionError("Failed to find remotely managed lock.");
     }
 
-    protected HekateTestInstance getLockManagerNode(String lock, List<HekateTestInstance> nodes) {
+    protected HekateTestNode getLockManagerNode(String lock, List<HekateTestNode> nodes) {
         assertTrue(nodes.size() > 1);
 
         ClusterNodeId nodeId = nodes.get(0).get(DefaultLockService.class).region(REGION_1).getLockManagerNode(lock);
@@ -136,7 +135,7 @@ public abstract class LockServiceTestBase extends HekateInstanceContextTestBase 
             .orElseThrow(() -> new RuntimeException("Failed to find lock manager node [lock=" + lock + ']'));
     }
 
-    protected void awaitForLockTopology(List<HekateTestInstance> nodes) throws Exception {
+    protected void awaitForLockTopology(List<HekateTestNode> nodes) throws Exception {
         busyWait("consistent lock topology", () -> {
             Set<ClusterTopologyHash> topologies = new HashSet<>();
 

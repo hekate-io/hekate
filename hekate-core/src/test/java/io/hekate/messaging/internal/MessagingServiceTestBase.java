@@ -16,9 +16,9 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.HekateInstanceContextTestBase;
+import io.hekate.HekateNodeContextTestBase;
 import io.hekate.HekateTestContext;
-import io.hekate.core.HekateTestInstance;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingServiceFactory;
@@ -35,7 +35,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public abstract class MessagingServiceTestBase extends HekateInstanceContextTestBase {
+public abstract class MessagingServiceTestBase extends HekateNodeContextTestBase {
     public interface ChannelConfigurer {
         void configure(MessagingChannelConfig<String> cfg);
     }
@@ -120,7 +120,7 @@ public abstract class MessagingServiceTestBase extends HekateInstanceContextTest
         return createChannel(configurer, null);
     }
 
-    protected TestChannel createChannel(ChannelConfigurer configurer, InstanceConfigurer instanceConfigurer) throws Exception {
+    protected TestChannel createChannel(ChannelConfigurer configurer, NodeConfigurer nodeConfigurer) throws Exception {
         MessagingChannelConfig<String> cfg = createChannelConfig();
 
         if (configurer != null) {
@@ -131,18 +131,18 @@ public abstract class MessagingServiceTestBase extends HekateInstanceContextTest
 
         cfg.setReceiver(channel.getReceiver());
 
-        HekateTestInstance instance = createInstance(c -> {
+        HekateTestNode node = createNode(c -> {
             c.withNodeRole(TEST_NODE_ROLE);
             c.withService(new MetricsServiceFactory());
 
             c.findOrRegister(MessagingServiceFactory.class).withChannel(cfg);
 
-            if (instanceConfigurer != null) {
-                instanceConfigurer.configure(c);
+            if (nodeConfigurer != null) {
+                nodeConfigurer.configure(c);
             }
         });
 
-        channel.initialize(instance);
+        channel.initialize(node);
 
         return channel;
     }
