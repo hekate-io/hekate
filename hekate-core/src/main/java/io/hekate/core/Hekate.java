@@ -288,7 +288,7 @@ public interface Hekate {
      * @throws IllegalStateException If this instance is not in {@link State#JOINING JOINING}, {@link State#UP UP} or {@link State#LEAVING
      * LEAVING} state.
      */
-    ClusterNode getNode() throws IllegalStateException;
+    ClusterNode getLocalNode() throws IllegalStateException;
 
     /**
      * Returns the current state of this instance (see <a href="#lifecycle">instance lifecycle</a>).

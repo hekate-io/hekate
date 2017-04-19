@@ -170,7 +170,7 @@ public class ServiceLifecycleTest extends HekateNodeTestBase {
         });
 
         nodes.stream()
-            .map(Hekate::getNode)
+            .map(Hekate::getLocalNode)
             .sorted(Comparator.comparingInt(ClusterNode::getJoinOrder))
             .forEach(node -> {
                 assertTrue(node.hasRole("a"));

@@ -55,7 +55,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         assertNotNull(channel.getId());
         assertEquals(TEST_CHANNEL_NAME, channel.getName());
         assertNotNull(channel.getCluster());
-        assertThat(channel.getCluster().getTopology().getNodes(), hasItem(testChannel.getNode().getNode()));
+        assertThat(channel.getCluster().getTopology().getNodes(), hasItem(testChannel.getNode().getLocalNode()));
         assertEquals(nioThreads, channel.getNioThreads());
         assertEquals(workerThreads, channel.getWorkerThreads());
         assertNotNull(channel.getExecutor());

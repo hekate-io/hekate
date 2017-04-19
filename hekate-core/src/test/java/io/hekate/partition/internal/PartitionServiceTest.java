@@ -94,9 +94,9 @@ public class PartitionServiceTest extends HekateNodeTestBase {
         Partition partition = mapper.map(1);
 
         assertNotNull(partition);
-        assertEquals(node.getNode(), partition.getPrimaryNode());
+        assertEquals(node.getLocalNode(), partition.getPrimaryNode());
         assertTrue(partition.getBackupNodes().isEmpty());
-        assertEquals(Collections.singletonList(node.getNode()), partition.getNodes());
+        assertEquals(Collections.singletonList(node.getLocalNode()), partition.getNodes());
     }
 
     @Test

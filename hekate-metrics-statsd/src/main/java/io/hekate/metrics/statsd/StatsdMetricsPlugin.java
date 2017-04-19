@@ -142,7 +142,7 @@ public class StatsdMetricsPlugin implements Plugin {
 
     @Override
     public void start(Hekate hekate) throws HekateException {
-        ClusterNode node = hekate.getNode();
+        ClusterNode node = hekate.getLocalNode();
 
         InetSocketAddress netAddress = node.getSocket();
 

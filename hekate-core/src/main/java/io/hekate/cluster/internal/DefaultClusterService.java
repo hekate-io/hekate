@@ -147,7 +147,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     private static final boolean DEBUG = log.isDebugEnabled();
 
     private static final ClusterJoinValidator DEFAULT_JOIN_VALIDATOR = (newNode, local) -> {
-        boolean localLoopback = local.getNode().getSocket().getAddress().isLoopbackAddress();
+        boolean localLoopback = local.getLocalNode().getSocket().getAddress().isLoopbackAddress();
 
         boolean remoteLoopback = newNode.getSocket().getAddress().isLoopbackAddress();
 
@@ -576,7 +576,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     }
 
     @Override
-    public ClusterNode getNode() {
+    public ClusterNode getLocalNode() {
         ClusterNode node = this.node;
 
         if (node == null) {

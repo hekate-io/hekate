@@ -66,7 +66,7 @@ public class TaskServiceJavadocTest extends HekateNodeTestBase {
 
         // Submit runnable task for asynchronous execution.
         TaskFuture<?> run = tasks.run(() ->
-            System.out.println("Running on node " + hekate.getNode())
+            System.out.println("Running on node " + hekate.getLocalNode())
         );
 
         // Await for task completion.
@@ -80,7 +80,7 @@ public class TaskServiceJavadocTest extends HekateNodeTestBase {
 
         // Submit runnable task for asynchronous execution on all cluster nodes.
         TaskFuture<MultiNodeResult<Void>> broadcast = tasks.broadcast(() ->
-            System.out.println("Running on node " + hekate.getNode())
+            System.out.println("Running on node " + hekate.getLocalNode())
         );
 
         // Await for task completion on all nodes.
@@ -94,9 +94,9 @@ public class TaskServiceJavadocTest extends HekateNodeTestBase {
 
         // Submit callable task and obtain a task execution future.
         TaskFuture<ClusterNode> call = tasks.call(() -> {
-            System.out.println("Running on node " + hekate.getNode());
+            System.out.println("Running on node " + hekate.getLocalNode());
 
-            return hekate.getNode();
+            return hekate.getLocalNode();
         });
 
         // Await for task execution and print out its result.
@@ -110,9 +110,9 @@ public class TaskServiceJavadocTest extends HekateNodeTestBase {
 
         // Submit runnable task for asynchronous execution on all cluster nodes.
         TaskFuture<MultiNodeResult<ClusterNode>> broadcast = tasks.aggregate(() -> {
-                System.out.println("Running on node " + hekate.getNode());
+                System.out.println("Running on node " + hekate.getLocalNode());
 
-                return hekate.getNode();
+                return hekate.getLocalNode();
             }
         );
 
@@ -145,22 +145,22 @@ public class TaskServiceJavadocTest extends HekateNodeTestBase {
 
         // Submit task to all remote nodes.
         tasks.forRemotes().broadcast(() ->
-            System.out.println("Running on node " + hekate.getNode())
+            System.out.println("Running on node " + hekate.getLocalNode())
         );
 
         // Submit task to all nodes with 'example_role'.
         tasks.forRole("example_role").broadcast(() ->
-            System.out.println("Running on node " + hekate.getNode())
+            System.out.println("Running on node " + hekate.getLocalNode())
         );
 
         // Multiple filters can be stacked: submit task to all remote nodes with 'example_role'.
         tasks.forRemotes().forRole("example_role").broadcast(() ->
-            System.out.println("Running on node " + hekate.getNode())
+            System.out.println("Running on node " + hekate.getLocalNode())
         );
 
         // Custom filter: submit task to all nodes that have more than 2 CPUs.
         tasks.filter(node -> node.getSysInfo().getCpus() > 2).broadcast(() ->
-            System.out.println("Running on node " + hekate.getNode())
+            System.out.println("Running on node " + hekate.getLocalNode())
         );
         // End:filter_nodes
     }

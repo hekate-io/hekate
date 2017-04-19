@@ -90,10 +90,10 @@ public class HekateNodeTest extends HekateNodeTestBase {
     public void testJoinLeave() throws Exception {
         repeat(50, i -> {
             if (i == 0) {
-                expect(IllegalStateException.class, node::getNode);
+                expect(IllegalStateException.class, node::getLocalNode);
                 expect(IllegalStateException.class, node::getTopology);
             } else {
-                assertNotNull(node.getNode());
+                assertNotNull(node.getLocalNode());
                 assertNotNull(node.getTopology());
             }
 
@@ -101,11 +101,11 @@ public class HekateNodeTest extends HekateNodeTestBase {
 
             node.join();
 
-            assertNotNull(node.getNode());
+            assertNotNull(node.getLocalNode());
             assertSame(Hekate.State.UP, node.getState());
             assertNotNull(node.getTopology());
             assertEquals(1, node.getTopology().getNodes().size());
-            assertTrue(node.getTopology().contains(node.getNode()));
+            assertTrue(node.getTopology().contains(node.getLocalNode()));
 
             node.leave();
         });
@@ -115,10 +115,10 @@ public class HekateNodeTest extends HekateNodeTestBase {
     public void testJoinTerminate() throws Exception {
         repeat(50, i -> {
             if (i == 0) {
-                expect(IllegalStateException.class, node::getNode);
+                expect(IllegalStateException.class, node::getLocalNode);
                 expect(IllegalStateException.class, node::getTopology);
             } else {
-                assertNotNull(node.getNode());
+                assertNotNull(node.getLocalNode());
                 assertNotNull(node.getTopology());
             }
 
@@ -126,12 +126,12 @@ public class HekateNodeTest extends HekateNodeTestBase {
 
             node.join();
 
-            assertNotNull(node.getNode());
-            assertEquals(1, node.getNode().getJoinOrder());
+            assertNotNull(node.getLocalNode());
+            assertEquals(1, node.getLocalNode().getJoinOrder());
             assertSame(Hekate.State.UP, node.getState());
             assertNotNull(node.getTopology());
             assertEquals(1, node.getTopology().getNodes().size());
-            assertTrue(node.getTopology().contains(node.getNode()));
+            assertTrue(node.getTopology().contains(node.getLocalNode()));
 
             node.terminate();
         });
@@ -141,10 +141,10 @@ public class HekateNodeTest extends HekateNodeTestBase {
     public void testJoinFailureWhileLeaving() throws Exception {
         repeat(50, i -> {
             if (i == 0) {
-                expect(IllegalStateException.class, node::getNode);
+                expect(IllegalStateException.class, node::getLocalNode);
                 expect(IllegalStateException.class, node::getTopology);
             } else {
-                assertNotNull(node.getNode());
+                assertNotNull(node.getLocalNode());
                 assertNotNull(node.getTopology());
             }
 
@@ -313,14 +313,14 @@ public class HekateNodeTest extends HekateNodeTestBase {
                 assertTrue(joinFuture.isSuccess());
                 assertTrue(joinFuture.isDone());
 
-                assertNotNull(joined.getNode());
+                assertNotNull(joined.getLocalNode());
                 assertSame(UP, joined.getState());
 
                 ClusterTopology topology = joined.get(ClusterService.class).getTopology();
 
                 assertNotNull(topology);
                 assertEquals(1, topology.getNodes().size());
-                assertTrue(topology.contains(joined.getNode()));
+                assertTrue(topology.contains(joined.getLocalNode()));
             }));
 
             LeaveFuture leaveFuture = node.leaveAsync();
@@ -342,14 +342,14 @@ public class HekateNodeTest extends HekateNodeTestBase {
                 assertTrue(joinFuture.isSuccess());
                 assertTrue(joinFuture.isDone());
 
-                assertNotNull(joined.getNode());
+                assertNotNull(joined.getLocalNode());
                 assertSame(UP, joined.getState());
 
                 ClusterTopology topology = joined.get(ClusterService.class).getTopology();
 
                 assertNotNull(topology);
                 assertEquals(1, topology.getNodes().size());
-                assertTrue(topology.contains(joined.getNode()));
+                assertTrue(topology.contains(joined.getLocalNode()));
             }));
 
             TerminateFuture terminateFuture = node.terminateAsync();

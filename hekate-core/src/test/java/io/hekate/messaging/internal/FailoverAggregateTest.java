@@ -222,7 +222,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
                 assertEquals(result.toString(), 1, result.errors().size());
                 assertEquals(result.toString(), channels.size() - 2, result.results().size());
 
-                Throwable expected = result.errors().get(leaveRef.get().getNode().getNode());
+                Throwable expected = result.errors().get(leaveRef.get().getNode().getLocalNode());
 
                 assertNotNull(result.toString(), expected);
 

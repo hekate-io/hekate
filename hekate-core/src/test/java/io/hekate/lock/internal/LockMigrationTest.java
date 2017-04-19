@@ -76,7 +76,7 @@ public class LockMigrationTest extends LockServiceTestBase {
             nodes.add(createLockNode().join());
         }
 
-        nodes.sort(Comparator.comparingInt(o -> o.getNode().getJoinOrder()));
+        nodes.sort(Comparator.comparingInt(o -> o.getLocalNode().getJoinOrder()));
 
         awaitForTopology(nodes);
 
@@ -88,10 +88,10 @@ public class LockMigrationTest extends LockServiceTestBase {
         nodes.forEach(n -> {
             List<DistributedLock> nodeLocks = new ArrayList<>();
 
-            liveLocks.put(n.getNode(), nodeLocks);
+            liveLocks.put(n.getLocalNode(), nodeLocks);
 
             for (int i = 0; i < 50; i++) {
-                String lockName = "'" + n.getNode().getJoinOrder() + "-" + i + '\'';
+                String lockName = "'" + n.getLocalNode().getJoinOrder() + "-" + i + '\'';
 
                 DistributedLock lockReg1 = n.get(LockService.class).region(REGION_1).getLock(lockName);
 
@@ -101,7 +101,7 @@ public class LockMigrationTest extends LockServiceTestBase {
             }
 
             for (int i = 0; i < 25; i++) {
-                String lockName = "'" + n.getNode().getJoinOrder() + "-" + i + '\'';
+                String lockName = "'" + n.getLocalNode().getJoinOrder() + "-" + i + '\'';
 
                 DistributedLock lockReg2 = n.get(LockService.class).region(REGION_2).getLock(lockName);
 
@@ -333,7 +333,7 @@ public class LockMigrationTest extends LockServiceTestBase {
     public void testMigrationWithQueuedLock() throws Exception {
         CountDownLatch leaveLatch = new CountDownLatch(1);
 
-        DistributedLock existingLock = liveLocks.get(coordinator.getNode()).stream()
+        DistributedLock existingLock = liveLocks.get(coordinator.getLocalNode()).stream()
             .filter(l -> l.getRegion().equals(REGION_1))
             .findFirst().get();
 
@@ -443,8 +443,8 @@ public class LockMigrationTest extends LockServiceTestBase {
 
     private void checkLiveLocksAreBusy() throws Exception {
         boolean busy = runAsyncAndGet(() -> nodes.stream()
-            .filter(n -> liveLocks.containsKey(n.getNode()))
-            .allMatch(n -> liveLocks.get(n.getNode()).stream()
+            .filter(n -> liveLocks.containsKey(n.getLocalNode()))
+            .allMatch(n -> liveLocks.get(n.getLocalNode()).stream()
                 .allMatch(this::checkBusy)
             ));
 

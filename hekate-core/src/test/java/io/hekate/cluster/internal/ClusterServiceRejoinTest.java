@@ -68,7 +68,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
             awaitForTopology(nodes);
 
             for (HekateTestNode hanged : nodes) {
-                ClusterNode hangedNode = hanged.getNode();
+                ClusterNode hangedNode = hanged.getLocalNode();
 
                 AtomicInteger suspectCount = new AtomicInteger();
 
@@ -99,7 +99,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                     }
                 });
 
-                ClusterNodeId oldHangedId = hanged.getNode().getId();
+                ClusterNodeId oldHangedId = hanged.getLocalNode().getId();
 
                 hanged.getClusterGuard().lockWrite();
 
@@ -156,7 +156,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                 CountDownLatch bothUnsuspected = new CountDownLatch(2);
                 AtomicReference<Throwable> unexpectedError = new AtomicReference<>();
 
-                ClusterNode hangedNode = hanged.getNode();
+                ClusterNode hangedNode = hanged.getLocalNode();
 
                 nodes.forEach(n -> n.setGossipSpy(new GossipSpyAdaptor() {
                     @Override
@@ -247,7 +247,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
 
                 hanged.startRecording();
 
-                ClusterNode node = hanged.getNode();
+                ClusterNode node = hanged.getLocalNode();
 
                 CountDownLatch rejoinLatch = new CountDownLatch(1);
                 CountDownLatch rejoinContinueLatch = new CountDownLatch(1);
@@ -326,7 +326,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
 
                 hanged.startRecording();
 
-                ClusterNode node = hanged.getNode();
+                ClusterNode node = hanged.getLocalNode();
 
                 CountDownLatch rejoinLatch = new CountDownLatch(1);
                 CountDownLatch rejoinContinueLatch = new CountDownLatch(1);
@@ -457,7 +457,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
             HekateTestNode hanged = nodes.get(i);
             CountDownLatch failureDetected = new CountDownLatch(1);
 
-            ClusterNode hangedNode = hanged.getNode();
+            ClusterNode hangedNode = hanged.getLocalNode();
 
             List<HekateTestNode> nodesWithoutHanged = nodes.stream().filter(n -> !n.equals(hanged)).collect(toList());
 
@@ -522,7 +522,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                 return node.getState() != DOWN
                     && node.getState() != INITIALIZING
                     && node.getState() != TERMINATING
-                    && !node.getNode().getId().equals(id);
+                    && !node.getLocalNode().getId().equals(id);
             } finally {
                 node.getClusterGuard().unlockRead();
             }

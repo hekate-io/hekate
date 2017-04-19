@@ -66,14 +66,14 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
 
         @Override
         public void onLockAcquire(DistributedLock lock) {
-            say("Lock acquired by " + node.getNode());
+            say("Lock acquired by " + node.getLocalNode());
 
             acquireLatch.countDown();
         }
 
         @Override
         public synchronized void onLockBusy(LockOwnerInfo owner) {
-            say("Lock is busy on " + node.getNode() + " (owner=" + owner + ')');
+            say("Lock is busy on " + node.getLocalNode() + " (owner=" + owner + ')');
 
             owners.add(owner);
 
@@ -82,14 +82,14 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
 
         @Override
         public synchronized void onLockOwnerChange(LockOwnerInfo owner) {
-            say("Lock owner change on " + node.getNode() + " (owner=" + owner + ')');
+            say("Lock owner change on " + node.getLocalNode() + " (owner=" + owner + ')');
 
             owners.add(owner);
         }
 
         @Override
         public void onLockRelease(DistributedLock lock) {
-            say("Lock released on " + node.getNode());
+            say("Lock released on " + node.getLocalNode());
 
             releaseLatch.countDown();
         }
@@ -120,25 +120,25 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
         }
 
         public void awaitAcquire() {
-            say("Awaiting for acquire on " + node.getNode());
+            say("Awaiting for acquire on " + node.getLocalNode());
 
             await(acquireLatch);
         }
 
         public void awaitBusy() {
-            say("Awaiting for busy on " + node.getNode());
+            say("Awaiting for busy on " + node.getLocalNode());
 
             await(busyLatch);
         }
 
         public void awaitRelease() {
-            say("Awaiting for release on " + node.getNode());
+            say("Awaiting for release on " + node.getLocalNode());
 
             await(releaseLatch);
         }
 
         public void awaitOwnerChange(ClusterNode expected) throws Exception {
-            say("Awaiting for lock owner change on " + node.getNode());
+            say("Awaiting for lock owner change on " + node.getLocalNode());
 
             busyWait("lock owner change [expected=" + expected + ", actual=" + getLastOwner() + ']', () -> {
                 synchronized (this) {
@@ -351,7 +351,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
                 await(lockBusyLatch);
 
                 assertNotNull(lockBusyRef.get());
-                assertEquals(ownerNode.getNode(), lockBusyRef.get().getNode());
+                assertEquals(ownerNode.getLocalNode(), lockBusyRef.get().getNode());
                 assertEquals(Thread.currentThread().getId(), lockBusyRef.get().getThreadId());
 
                 // Stop owner node in order to release lock.
@@ -426,7 +426,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
                     // - B, C and D are in the locking queue.
                     TestLockCallback prevLockOwner = nodeCallbacks.get(ownerIdx);
 
-                    ClusterNode prevLockOwnerNode = prevLockOwner.getNode().getNode();
+                    ClusterNode prevLockOwnerNode = prevLockOwner.getNode().getLocalNode();
 
                     // Release A lock.
                     // This will make B the lock owner (since it was the first node in the queue before A stopped).
@@ -452,7 +452,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
                             }
                         } else {
                             // Check that C and D got lock owner change notification.
-                            nodeCallback.awaitOwnerChange(newLockOwner.getNode().getNode());
+                            nodeCallback.awaitOwnerChange(newLockOwner.getNode().getLocalNode());
                         }
                     }
                 }

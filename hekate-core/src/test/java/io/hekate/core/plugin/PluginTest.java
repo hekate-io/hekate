@@ -239,8 +239,8 @@ public class PluginTest extends HekateNodeTestBase {
             }
         }).join();
 
-        assertTrue(node.getNode().hasRole(role));
-        assertEquals(propVal, node.getNode().getProperty(propKey));
+        assertTrue(node.getLocalNode().hasRole(role));
+        assertEquals(propVal, node.getLocalNode().getProperty(propKey));
     }
 
     @Test

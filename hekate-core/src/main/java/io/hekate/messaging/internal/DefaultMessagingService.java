@@ -345,7 +345,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         LoadBalancer<T> loadBalancer = cfg.getLoadBalancer();
         MessagingBackPressureConfig pressureCfg = cfg.getBackPressure();
 
-        ClusterNode localNode = cluster.getNode();
+        ClusterNode localNode = cluster.getLocalNode();
         ClusterView clusterView = cluster.filter(new ChannelNodeFilter(name, filter));
 
         NetworkConnector<MessagingProtocol> connector = net.connector(name);

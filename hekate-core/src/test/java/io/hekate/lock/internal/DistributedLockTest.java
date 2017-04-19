@@ -405,7 +405,7 @@ public class DistributedLockTest extends LockServiceTestBase {
     @Test
     public void testNonReentrantWithDifferentNodes() throws Exception {
         repeat(LOCKS_PER_TEST, i -> repeat(3, j -> nodes.stream()
-            .filter(node -> !node.getNode().equals(lockNode.getNode()))
+            .filter(node -> !node.getLocalNode().equals(lockNode.getLocalNode()))
             .forEach(node -> {
                 region.getLock("test" + i).lock();
 
@@ -688,7 +688,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                 List<HekateTestNode> nodesCopy = new ArrayList<>(nodes);
 
                 for (HekateTestNode node : nodes) {
-                    if (node.getNode().equals(lockNode.getNode())) {
+                    if (node.getLocalNode().equals(lockNode.getLocalNode())) {
                         // Skip lock owner.
                         continue;
                     }
@@ -825,12 +825,12 @@ public class DistributedLockTest extends LockServiceTestBase {
                     try {
                         LockOwnerInfo fromRegion = region.getLockOwner("test").get();
 
-                        assertEquals(lockNode.getNode(), fromRegion.getNode());
+                        assertEquals(lockNode.getLocalNode(), fromRegion.getNode());
                         assertEquals(threadId, fromRegion.getThreadId());
 
                         LockOwnerInfo fromLock = region.getLock("test").getLockOwner().get();
 
-                        assertEquals(lockNode.getNode(), fromLock.getNode());
+                        assertEquals(lockNode.getLocalNode(), fromLock.getNode());
                         assertEquals(threadId, fromLock.getThreadId());
                     } catch (InterruptedException e) {
                         fail("Thread was unexpectedly interrupted.");

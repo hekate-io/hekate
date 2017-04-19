@@ -132,7 +132,7 @@ public class XsdSingleNodeTest extends HekateTestBase {
         assertNotNull(counter);
         assertNotNull(probe);
 
-        assertEquals("some-value", hekate.getNode().getProperty("some-property"));
+        assertEquals("some-value", hekate.getLocalNode().getProperty("some-property"));
 
         say("Done: " + ToString.format(this));
     }

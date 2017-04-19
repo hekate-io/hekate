@@ -32,7 +32,7 @@ public enum SplitBrainAction {
      *
      * <p>
      * Rejoined node will have completely new identity and will be visible to other cluster members as a completely new node. After rejoin
-     * {@link Hekate#getNode()} will have new {@link ClusterNode#getId() identifier} and {@link ClusterNode#getJoinOrder() join order
+     * {@link Hekate#getLocalNode()} will have new {@link ClusterNode#getId() identifier} and {@link ClusterNode#getJoinOrder() join order
      * index}.
      * </p>
      */

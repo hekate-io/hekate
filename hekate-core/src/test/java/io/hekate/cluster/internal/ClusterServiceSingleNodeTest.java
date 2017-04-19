@@ -76,7 +76,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeContextTestBase {
         repeat(50, i -> {
             node.join();
 
-            ClusterNode node = this.node.getNode();
+            ClusterNode node = this.node.getLocalNode();
 
             List<ClusterEvent> events = new CopyOnWriteArrayList<>();
 
@@ -112,7 +112,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeContextTestBase {
         repeat(50, i -> {
             node.join();
 
-            ClusterNode node = this.node.getNode();
+            ClusterNode node = this.node.getLocalNode();
 
             List<ClusterEvent> events = new CopyOnWriteArrayList<>();
 
@@ -154,7 +154,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeContextTestBase {
 
             node.join();
 
-            ClusterNode node = this.node.getNode();
+            ClusterNode node = this.node.getLocalNode();
 
             this.node.leave();
 

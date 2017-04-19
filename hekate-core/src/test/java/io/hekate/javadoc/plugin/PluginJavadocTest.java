@@ -51,7 +51,7 @@ public class PluginJavadocTest extends HekateTestBase {
         @Override
         public void start(Hekate hekate) throws HekateException {
             // Prepare file
-            file = Paths.get(hekate.getNode().getName() + "-cluster.txt");
+            file = Paths.get(hekate.getLocalNode().getName() + "-cluster.txt");
 
             // Register cluster event listener that will update file on join/change cluster events.
             hekate.get(ClusterService.class).addListener(this::updateFile, ClusterEventType.JOIN, ClusterEventType.CHANGE);
@@ -110,7 +110,7 @@ public class PluginJavadocTest extends HekateTestBase {
     }
 
     private void verifyFileContents(Hekate node) throws IOException {
-        List<String> fileNodes = Files.readAllLines(Paths.get(node.getNode().getName() + "-cluster.txt"));
+        List<String> fileNodes = Files.readAllLines(Paths.get(node.getLocalNode().getName() + "-cluster.txt"));
 
         say("File contents: " + fileNodes);
 

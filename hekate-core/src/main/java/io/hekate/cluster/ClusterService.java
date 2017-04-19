@@ -293,7 +293,7 @@ public interface ClusterService extends Service, ClusterView {
      *
      * @return Local cluster node.
      */
-    ClusterNode getNode();
+    ClusterNode getLocalNode();
 
     @Override
     ClusterTopology getTopology();

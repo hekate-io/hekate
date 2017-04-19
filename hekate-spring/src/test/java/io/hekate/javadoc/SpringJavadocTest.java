@@ -138,14 +138,14 @@ public class SpringJavadocTest extends HekateTestBase {
     @Test
     public void testElectionXsd() {
         doTest("javadoc/election/service-xsd.xml", (node, ctx) ->
-            assertEquals(node.getNode(), node.get(ElectionService.class).leader("example.election.group").join())
+            assertEquals(node.getLocalNode(), node.get(ElectionService.class).leader("example.election.group").join())
         );
     }
 
     @Test
     public void testElectionBean() {
         doTest("javadoc/election/service-bean.xml", (node, ctx) ->
-            assertEquals(node.getNode(), node.get(ElectionService.class).leader("example.election.group").join())
+            assertEquals(node.getLocalNode(), node.get(ElectionService.class).leader("example.election.group").join())
         );
     }
 
@@ -182,14 +182,14 @@ public class SpringJavadocTest extends HekateTestBase {
     @Test
     public void testClusterMetricsXsd() {
         doTest("javadoc/metrics/cluster/service-xsd.xml", (node, ctx) ->
-            assertTrue(node.get(ClusterMetricsService.class).forNode(node.getNode()).isPresent())
+            assertTrue(node.get(ClusterMetricsService.class).forNode(node.getLocalNode()).isPresent())
         );
     }
 
     @Test
     public void testClusterMetricsBean() {
         doTest("javadoc/metrics/cluster/service-bean.xml", (node, ctx) ->
-            assertTrue(node.get(ClusterMetricsService.class).forNode(node.getNode()).isPresent())
+            assertTrue(node.get(ClusterMetricsService.class).forNode(node.getLocalNode()).isPresent())
         );
     }
 

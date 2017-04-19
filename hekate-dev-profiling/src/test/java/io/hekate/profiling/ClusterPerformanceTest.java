@@ -99,7 +99,7 @@ public class ClusterPerformanceTest extends HekateTestBase {
 
             it.remove();
 
-            sayTime("Leave " + idx++ + " ~ " + node.getNode().getId(), () -> {
+            sayTime("Leave " + idx++ + " ~ " + node.getLocalNode().getId(), () -> {
                 node.leave();
 
                 for (HekateTestNode clusterService : nodes) {
@@ -172,7 +172,7 @@ public class ClusterPerformanceTest extends HekateTestBase {
         seedNodes.setDelegate(new SeedNodeProviderAdaptor() {
             @Override
             public List<InetSocketAddress> getSeedNodes(String cluster) {
-                return Collections.singletonList(seed.getNode().getSocket());
+                return Collections.singletonList(seed.getLocalNode().getSocket());
             }
         });
 
@@ -212,7 +212,7 @@ public class ClusterPerformanceTest extends HekateTestBase {
                                     ClusterNodeId nodeId = null;
 
                                     try {
-                                        nodeId = node.getNode().getId();
+                                        nodeId = node.getLocalNode().getId();
                                     } catch (IllegalStateException e) {
                                         // No-op.
                                     }
@@ -236,7 +236,7 @@ public class ClusterPerformanceTest extends HekateTestBase {
                             ClusterNodeId nodeId = null;
 
                             try {
-                                nodeId = node.getNode().getId();
+                                nodeId = node.getLocalNode().getId();
                             } catch (IllegalStateException e) {
                                 // No-op.
                             }

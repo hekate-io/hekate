@@ -47,7 +47,7 @@ public class TaskRunTest extends TaskServiceTestBase {
                 TaskService tasks = node.get(TaskService.class);
 
                 TaskFuture<?> future = tasks.run(() -> {
-                    NODES.add(node.getNode());
+                    NODES.add(node.getLocalNode());
 
                     COUNTER.incrementAndGet();
                 });
@@ -76,7 +76,7 @@ public class TaskRunTest extends TaskServiceTestBase {
                 TaskService tasks = node.get(TaskService.class);
 
                 get(tasks.withAffinity(100500).run(() -> {
-                    NODES.add(node.getNode());
+                    NODES.add(node.getLocalNode());
 
                     COUNTER.incrementAndGet();
                 }));
@@ -157,7 +157,7 @@ public class TaskRunTest extends TaskServiceTestBase {
 
         source.awaitForStatus(Hekate.State.DOWN);
 
-        get(target.get(TaskService.class).forNode(target.getNode()).run(() -> REF.set(target)));
+        get(target.get(TaskService.class).forNode(target.getLocalNode()).run(() -> REF.set(target)));
 
         assertSame(target, REF.get());
     }
@@ -255,15 +255,15 @@ public class TaskRunTest extends TaskServiceTestBase {
         get(tasks.run(() -> {
             COUNTER.incrementAndGet();
 
-            NODES.add(node.getNode());
+            NODES.add(node.getLocalNode());
 
             if (NODES.size() < 2) {
                 throw TEST_ERROR;
             }
         }));
 
-        assertTrue(NODES.contains(nodes.get(1).getNode()));
-        assertTrue(NODES.contains(nodes.get(2).getNode()));
+        assertTrue(NODES.contains(nodes.get(1).getLocalNode()));
+        assertTrue(NODES.contains(nodes.get(2).getLocalNode()));
 
         assertEquals(2, COUNTER.get());
     }

@@ -340,7 +340,7 @@ public class CoordinationServiceTest extends HekateNodeContextTestBase {
         await(blockLatch);
 
         HekateTestNode coordinator = Stream.of(n1, n2, n3)
-            .filter(n -> n.getNode().equals(coordinatorRef.get()))
+            .filter(n -> n.getLocalNode().equals(coordinatorRef.get()))
             .findFirst().orElseThrow(AssertionError::new);
 
         LeaveFuture leaveFuture = coordinator.leaveAsync();

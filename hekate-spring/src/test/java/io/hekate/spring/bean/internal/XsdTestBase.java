@@ -57,11 +57,11 @@ public abstract class XsdTestBase extends HekateTestBase {
         assertEquals(2, top1.size());
         assertEquals(2, top2.size());
 
-        assertTrue(top1.contains(node1.getNode()));
-        assertTrue(top1.contains(node2.getNode()));
+        assertTrue(top1.contains(node1.getLocalNode()));
+        assertTrue(top1.contains(node2.getLocalNode()));
 
-        assertTrue(top2.contains(node1.getNode()));
-        assertTrue(top2.contains(node2.getNode()));
+        assertTrue(top2.contains(node1.getLocalNode()));
+        assertTrue(top2.contains(node2.getLocalNode()));
     }
 
     @Override

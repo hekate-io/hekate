@@ -401,7 +401,7 @@ class HekateNode implements Hekate, Serializable {
     }
 
     @Override
-    public ClusterNode getNode() {
+    public ClusterNode getLocalNode() {
         ClusterNode node = this.node;
 
         if (node == null) {

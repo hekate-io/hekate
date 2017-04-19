@@ -58,7 +58,7 @@ public class TaskApplyAllTest extends TaskServiceTestBase {
             for (HekateTestNode node : nodes) {
                 TaskService tasks = node.get(TaskService.class);
 
-                sayHeader("Applying on " + node.getNode().getName() + " [topology=" + node.get(ClusterService.class).getTopology());
+                sayHeader("Applying on " + node.getLocalNode().getName() + " [topology=" + node.get(ClusterService.class).getTopology());
 
                 repeat(10, j -> {
                     // Prepare arguments.
@@ -70,7 +70,7 @@ public class TaskApplyAllTest extends TaskServiceTestBase {
 
                     // Apply.
                     Collection<String> results = get(tasks.applyAll(args, arg ->
-                        node.getNode().getName() + '=' + arg
+                        node.getLocalNode().getName() + '=' + arg
                     ));
 
                     say("Results: " + results);
@@ -273,7 +273,7 @@ public class TaskApplyAllTest extends TaskServiceTestBase {
 
         source.awaitForStatus(Hekate.State.DOWN);
 
-        get(target.get(TaskService.class).forNode(target.getNode()).applyAll(asList(1, 2, 3), arg -> {
+        get(target.get(TaskService.class).forNode(target.getLocalNode()).applyAll(asList(1, 2, 3), arg -> {
             REF.set(target);
 
             return null;

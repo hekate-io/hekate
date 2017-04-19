@@ -73,7 +73,7 @@ public class TestChannel {
 
         node.get(ClusterService.class).addListener(event -> {
             if (event.getType() == ClusterEventType.JOIN) {
-                nodeId = node.getNode().getId();
+                nodeId = node.getLocalNode().getId();
 
                 channel = node.get(DefaultMessagingService.class).channel(MessagingServiceTestBase.TEST_CHANNEL_NAME);
             }
@@ -195,7 +195,7 @@ public class TestChannel {
     }
 
     public void awaitForTopology(List<TestChannel> channels) {
-        node.awaitForTopology(channel.getCluster(), channels.stream().map(c -> c.getNode().getNode()).collect(toList()));
+        node.awaitForTopology(channel.getCluster(), channels.stream().map(c -> c.getNode().getLocalNode()).collect(toList()));
     }
 
     public void checkReceiverError() {

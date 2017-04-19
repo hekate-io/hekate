@@ -169,7 +169,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
             terminated.join();
 
-            ClusterNode terminatedNode = terminated.getNode();
+            ClusterNode terminatedNode = terminated.getLocalNode();
 
             List<HekateTestNode> nodesWithTerminated = new ArrayList<>(nodes);
 
@@ -231,7 +231,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
                     ver++;
                 }
 
-                assertEquals(oldNode.getTopology().getNodes(), nodes.stream().map(Hekate::getNode).collect(Collectors.toSet()));
+                assertEquals(oldNode.getTopology().getNodes(), nodes.stream().map(Hekate::getLocalNode).collect(Collectors.toSet()));
             }
         }
 
@@ -255,7 +255,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
                     ver++;
                 }
 
-                assertEquals(oldNode.getTopology().getNodes(), nodes.stream().map(Hekate::getNode).collect(Collectors.toSet()));
+                assertEquals(oldNode.getTopology().getNodes(), nodes.stream().map(Hekate::getLocalNode).collect(Collectors.toSet()));
             }
         }
 
@@ -327,7 +327,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
             nodes.forEach(n -> n.awaitForTopology(nodes));
 
-            nodes.stream().filter(n -> !n.getNode().equals(added.getNode())).forEach(n -> {
+            nodes.stream().filter(n -> !n.getLocalNode().equals(added.getLocalNode())).forEach(n -> {
                 List<ClusterEvent> events = n.getEvents(ClusterEventType.CHANGE);
 
                 assertEquals(1, events.size());
@@ -337,7 +337,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
                 assertEquals(1, event.getAdded().size());
                 assertEquals(0, event.getRemoved().size());
 
-                assertEquals(added.getNode(), event.getAdded().iterator().next());
+                assertEquals(added.getLocalNode(), event.getAdded().iterator().next());
 
                 n.clearEvents();
             });
@@ -346,7 +346,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         for (Iterator<HekateTestNode> it = nodes.iterator(); it.hasNext(); ) {
             HekateTestNode removed = it.next();
 
-            ClusterNode removedNode = removed.getNode();
+            ClusterNode removedNode = removed.getLocalNode();
 
             it.remove();
 
@@ -606,29 +606,29 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
     @Test
     public void testClusterView() throws Exception {
-        HekateTestNode inst1 = createNode(c -> c.withNodeRole("VIEW_1"));
-        HekateTestNode inst2 = createNode(c -> {
+        HekateTestNode node1 = createNode(c -> c.withNodeRole("VIEW_1"));
+        HekateTestNode node2 = createNode(c -> {
             c.withNodeRole("VIEW_1");
             c.withNodeRole("VIEW_2");
         });
-        HekateTestNode inst3 = createNode(c -> c.withNodeRole("VIEW_1"));
+        HekateTestNode node3 = createNode(c -> c.withNodeRole("VIEW_1"));
 
-        inst1.join();
-        inst2.join();
-        inst3.join();
+        node1.join();
+        node2.join();
+        node3.join();
 
-        awaitForTopology(inst1, inst2, inst3);
+        awaitForTopology(node1, node2, node3);
 
-        ClusterView view = inst1.get(ClusterService.class).filter(n -> n.hasRole("VIEW_1"));
+        ClusterView view = node1.get(ClusterService.class).filter(n -> n.hasRole("VIEW_1"));
 
         assertEquals(2, view.getTopology().getRemoteNodes().size());
-        assertTrue(view.getTopology().getRemoteNodes().contains(inst2.getNode()));
-        assertTrue(view.getTopology().getRemoteNodes().contains(inst3.getNode()));
+        assertTrue(view.getTopology().getRemoteNodes().contains(node2.getLocalNode()));
+        assertTrue(view.getTopology().getRemoteNodes().contains(node3.getLocalNode()));
 
-        view = inst1.get(ClusterService.class).filter(n -> n.hasRole("VIEW_2"));
+        view = node1.get(ClusterService.class).filter(n -> n.hasRole("VIEW_2"));
 
         assertEquals(1, view.getTopology().getRemoteNodes().size());
-        assertTrue(view.getTopology().getRemoteNodes().contains(inst2.getNode()));
+        assertTrue(view.getTopology().getRemoteNodes().contains(node2.getLocalNode()));
 
         CountDownLatch eventsLatch = new CountDownLatch(1);
 
@@ -642,11 +642,11 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             }
         });
 
-        ClusterNode node2 = inst2.getNode();
+        ClusterNode clusterNode2 = node2.getLocalNode();
 
-        inst2.leave();
+        node2.leave();
 
-        inst1.awaitForTopology(inst1, inst3);
+        node1.awaitForTopology(node1, node3);
 
         HekateTestBase.await(eventsLatch);
 
@@ -659,14 +659,14 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         assertNotNull(change);
 
         assertEquals(1, join.getTopology().getRemoteNodes().size());
-        assertTrue(join.getTopology().getRemoteNodes().contains(node2));
+        assertTrue(join.getTopology().getRemoteNodes().contains(clusterNode2));
 
         assertEquals(0, change.getTopology().getRemoteNodes().size());
 
         events.clear();
 
-        inst2.leave();
-        inst1.leave();
+        node2.leave();
+        node1.leave();
 
         assertEquals(1, events.size());
 
@@ -694,11 +694,11 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
                 awaitForTopology(nodes);
 
-                assertEquals(expectedOrder.get(), node.getNode().getJoinOrder());
+                assertEquals(expectedOrder.get(), node.getLocalNode().getJoinOrder());
 
                 nodes.forEach(n -> {
-                    assertEquals(nodes.getFirst().getNode(), n.getTopology().getOldest());
-                    assertEquals(nodes.getLast().getNode(), n.getTopology().getYoungest());
+                    assertEquals(nodes.getFirst().getLocalNode(), n.getTopology().getOldest());
+                    assertEquals(nodes.getLast().getLocalNode(), n.getTopology().getYoungest());
                 });
             });
 
@@ -725,11 +725,11 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
                 awaitForTopology(nodes);
 
-                assertEquals(expectedOrder.get(), node.getNode().getJoinOrder());
+                assertEquals(expectedOrder.get(), node.getLocalNode().getJoinOrder());
 
                 nodes.forEach(n -> {
-                    assertEquals(nodes.getFirst().getNode(), n.getTopology().getOldest());
-                    assertEquals(nodes.getLast().getNode(), n.getTopology().getYoungest());
+                    assertEquals(nodes.getFirst().getLocalNode(), n.getTopology().getOldest());
+                    assertEquals(nodes.getLast().getLocalNode(), n.getTopology().getYoungest());
                 });
             });
 
@@ -757,7 +757,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             assertTrue(node.has(DummyService.class));
             assertNotNull(node.get(DummyService.class));
 
-            assertTrue(node.getNode().hasService(DummyService.class));
+            assertTrue(node.getLocalNode().hasService(DummyService.class));
 
             for (ClusterNode clusterNode : node.getTopology().getRemoteNodes()) {
                 assertTrue(clusterNode.hasService(DummyService.class));
@@ -785,7 +785,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             ClusterJoinRejectedException cause = e.findCause(ClusterJoinRejectedException.class);
 
             assertEquals(rejectReason, cause.getRejectReason());
-            assertEquals(existing.getNode().getAddress(), cause.getRejectedBy());
+            assertEquals(existing.getLocalNode().getAddress(), cause.getRejectedBy());
         }
 
         assertSame(Hekate.State.DOWN, joining.getState());
@@ -831,7 +831,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             ClusterJoinRejectedException cause = e.findCause(ClusterJoinRejectedException.class);
 
             assertEquals(reason, cause.getRejectReason());
-            assertEquals(existing.getNode().getAddress(), cause.getRejectedBy());
+            assertEquals(existing.getLocalNode().getAddress(), cause.getRejectedBy());
         }
 
         assertSame(Hekate.State.DOWN, joining.getState());
@@ -877,7 +877,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             ClusterJoinRejectedException cause = e.findCause(ClusterJoinRejectedException.class);
 
             assertEquals(reason, cause.getRejectReason());
-            assertEquals(existing.getNode().getAddress(), cause.getRejectedBy());
+            assertEquals(existing.getLocalNode().getAddress(), cause.getRejectedBy());
         }
 
         assertSame(Hekate.State.DOWN, joining.getState());
@@ -895,7 +895,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             @Override
             public void onStatusChange(GossipNodeStatus oldStatus, GossipNodeStatus newStatus, int order, Set<ClusterNode> topology) {
                 if (newStatus == GossipNodeStatus.JOINING) {
-                    HekateTestBase.say("Terminating coordinator: " + coordinator.getNode());
+                    HekateTestBase.say("Terminating coordinator: " + coordinator.getLocalNode());
 
                     try {
                         coordinator.terminate();
@@ -923,10 +923,10 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     private void verifyJoinOrder(List<HekateTestNode> nodes) {
         List<HekateTestNode> sorted = new ArrayList<>(nodes);
 
-        sorted.sort(Comparator.comparingInt(o -> o.getNode().getJoinOrder()));
+        sorted.sort(Comparator.comparingInt(o -> o.getLocalNode().getJoinOrder()));
 
         for (int i = 0; i < sorted.size(); i++) {
-            assertEquals(i + 1, sorted.get(i).getNode().getJoinOrder());
+            assertEquals(i + 1, sorted.get(i).getLocalNode().getJoinOrder());
         }
     }
 }

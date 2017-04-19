@@ -49,7 +49,7 @@ public class TaskAggregateTest extends TaskServiceTestBase {
                 MultiNodeResult<Integer> result = get(tasks.aggregate(() -> {
                     int intResult = COUNTER.incrementAndGet();
 
-                    NODES.add(node.getNode());
+                    NODES.add(node.getLocalNode());
 
                     return intResult;
                 }));
@@ -57,10 +57,10 @@ public class TaskAggregateTest extends TaskServiceTestBase {
                 List<Integer> sorted = result.stream().sorted().collect(toList());
 
                 assertEquals(nodes.size(), COUNTER.get());
-                assertTrue(NODES.toString(), NODES.containsAll(nodes.stream().map(Hekate::getNode).collect(toList())));
+                assertTrue(NODES.toString(), NODES.containsAll(nodes.stream().map(Hekate::getLocalNode).collect(toList())));
                 assertTrue(result.isSuccess());
-                nodes.forEach(n -> assertTrue(result.isSuccess(n.getNode())));
-                assertTrue(result.nodes().containsAll(nodes.stream().map(Hekate::getNode).collect(toList())));
+                nodes.forEach(n -> assertTrue(result.isSuccess(n.getLocalNode())));
+                assertTrue(result.nodes().containsAll(nodes.stream().map(Hekate::getLocalNode).collect(toList())));
 
                 assertEquals(sorted.size(), nodes.size());
 
@@ -87,7 +87,7 @@ public class TaskAggregateTest extends TaskServiceTestBase {
                 MultiNodeResult<Integer> affResult = get(tasks.withAffinity(100500).aggregate(() -> {
                     int intResult = COUNTER.incrementAndGet();
 
-                    NODES.add(node.getNode());
+                    NODES.add(node.getLocalNode());
 
                     return intResult;
                 }));
@@ -95,10 +95,10 @@ public class TaskAggregateTest extends TaskServiceTestBase {
                 List<Integer> affSorted = affResult.stream().sorted().collect(toList());
 
                 assertEquals(nodes.size(), COUNTER.get());
-                assertTrue(NODES.toString(), NODES.containsAll(nodes.stream().map(Hekate::getNode).collect(toList())));
+                assertTrue(NODES.toString(), NODES.containsAll(nodes.stream().map(Hekate::getLocalNode).collect(toList())));
                 assertTrue(affResult.isSuccess());
-                nodes.forEach(n -> assertTrue(affResult.isSuccess(n.getNode())));
-                assertTrue(affResult.nodes().containsAll(nodes.stream().map(Hekate::getNode).collect(toList())));
+                nodes.forEach(n -> assertTrue(affResult.isSuccess(n.getLocalNode())));
+                assertTrue(affResult.nodes().containsAll(nodes.stream().map(Hekate::getLocalNode).collect(toList())));
 
                 assertEquals(affSorted.size(), nodes.size());
 
@@ -129,11 +129,11 @@ public class TaskAggregateTest extends TaskServiceTestBase {
                 assertFalse(errResult.isSuccess());
                 assertTrue(errResult.results().isEmpty());
                 nodes.forEach(n -> {
-                    assertFalse(errResult.isSuccess(n.getNode()));
-                    assertNotNull(errResult.errorOf(n.getNode()));
+                    assertFalse(errResult.isSuccess(n.getLocalNode()));
+                    assertNotNull(errResult.errorOf(n.getLocalNode()));
 
-                    assertTrue(errResult.errorOf(n.getNode()).getMessage().contains(TestAssertionError.class.getName()));
-                    assertTrue(errResult.errorOf(n.getNode()).getMessage().contains(TEST_ERROR_MESSAGE));
+                    assertTrue(errResult.errorOf(n.getLocalNode()).getMessage().contains(TestAssertionError.class.getName()));
+                    assertTrue(errResult.errorOf(n.getLocalNode()).getMessage().contains(TEST_ERROR_MESSAGE));
                 });
 
                 NODES.clear();
@@ -153,7 +153,7 @@ public class TaskAggregateTest extends TaskServiceTestBase {
                 TaskService tasks = node.get(TaskService.class);
 
                 MultiNodeResult<Integer> partErrResult = get(tasks.aggregate(() -> {
-                    if (node.get(ClusterService.class).getTopology().getYoungest().equals(node.getNode())) {
+                    if (node.get(ClusterService.class).getTopology().getYoungest().equals(node.getLocalNode())) {
                         throw TEST_ERROR;
                     }
 
@@ -163,16 +163,16 @@ public class TaskAggregateTest extends TaskServiceTestBase {
                 assertFalse(partErrResult.isSuccess());
 
                 nodes.forEach(n -> {
-                    if (n.get(ClusterService.class).getTopology().getYoungest().equals(n.getNode())) {
-                        assertFalse(partErrResult.isSuccess(n.getNode()));
-                        assertNotNull(partErrResult.errorOf(n.getNode()));
-                        assertNotNull(partErrResult.errors().get(n.getNode()));
+                    if (n.get(ClusterService.class).getTopology().getYoungest().equals(n.getLocalNode())) {
+                        assertFalse(partErrResult.isSuccess(n.getLocalNode()));
+                        assertNotNull(partErrResult.errorOf(n.getLocalNode()));
+                        assertNotNull(partErrResult.errors().get(n.getLocalNode()));
 
-                        assertTrue(partErrResult.errorOf(n.getNode()).getMessage().contains(TestAssertionError.class.getName()));
-                        assertTrue(partErrResult.errorOf(n.getNode()).getMessage().contains(TEST_ERROR_MESSAGE));
+                        assertTrue(partErrResult.errorOf(n.getLocalNode()).getMessage().contains(TestAssertionError.class.getName()));
+                        assertTrue(partErrResult.errorOf(n.getLocalNode()).getMessage().contains(TEST_ERROR_MESSAGE));
                     } else {
-                        assertTrue(partErrResult.isSuccess(n.getNode()));
-                        assertNotNull(partErrResult.resultOf(n.getNode()));
+                        assertTrue(partErrResult.isSuccess(n.getLocalNode()));
+                        assertNotNull(partErrResult.resultOf(n.getLocalNode()));
                     }
                 });
 
@@ -204,11 +204,11 @@ public class TaskAggregateTest extends TaskServiceTestBase {
         }));
 
         assertFalse(result.isSuccess());
-        assertEquals(ClosedChannelException.class, result.errorOf(target.getNode()).getClass());
+        assertEquals(ClosedChannelException.class, result.errorOf(target.getLocalNode()).getClass());
 
         source.awaitForStatus(Hekate.State.DOWN);
 
-        get(target.get(TaskService.class).forNode(target.getNode()).aggregate(() -> {
+        get(target.get(TaskService.class).forNode(target.getLocalNode()).aggregate(() -> {
             REF.set(target);
 
             return null;

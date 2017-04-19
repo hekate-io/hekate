@@ -33,7 +33,7 @@ public class MyBean {
 
     @PostConstruct
     public void doSomething() {
-        System.out.println("Hekate node: " + hekate.getNode());
+        System.out.println("Hekate node: " + hekate.getLocalNode());
     }
 }
 //End:example
