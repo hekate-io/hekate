@@ -66,7 +66,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         TestChannel channel = createChannel().join();
 
         // Create a fake TCP client via node's TCP service.
-        NetworkService net = channel.getNode().get(NetworkService.class);
+        NetworkService net = channel.getNode().network();
 
         NetworkConnector<MessagingProtocol> fakeConnector = net.connector(TEST_CHANNEL_NAME);
 

@@ -174,7 +174,7 @@ public class HekateNetworkServiceConfigurer {
 
     /**
      * Returns the factory bean that makes it possible to inject {@link NetworkService} directly into other beans instead of accessing it
-     * via {@link Hekate#get(Class)} method.
+     * via {@link Hekate#network()} method.
      *
      * @return Service bean.
      */

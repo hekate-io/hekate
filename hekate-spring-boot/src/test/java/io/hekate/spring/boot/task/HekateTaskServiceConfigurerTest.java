@@ -42,7 +42,7 @@ public class HekateTaskServiceConfigurerTest extends HekateAutoConfigurerTestBas
         assertNotNull(get("taskService", TaskService.class));
         assertNotNull(get(TaskConfig.class).taskService);
 
-        assertEquals(100500, getNode().get(TaskService.class).call((CallableTask<Integer>)() -> 100500).get().intValue());
+        assertEquals(100500, getNode().tasks().call((CallableTask<Integer>)() -> 100500).get().intValue());
     }
 
     @Test

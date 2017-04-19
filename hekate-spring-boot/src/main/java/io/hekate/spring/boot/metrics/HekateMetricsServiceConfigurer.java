@@ -158,7 +158,7 @@ public class HekateMetricsServiceConfigurer {
 
     /**
      * Returns the factory bean that makes it possible to inject {@link MetricsService} directly into other beans instead of accessing
-     * it via {@link Hekate#get(Class)} method.
+     * it via {@link Hekate#metrics()} method.
      *
      * @return Service bean.
      */

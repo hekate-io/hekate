@@ -25,7 +25,7 @@ import io.hekate.task.TaskService;
 public class TaskServiceBean extends HekateBaseBean<TaskService> {
     @Override
     public TaskService getObject() throws Exception {
-        return getSource().get(TaskService.class);
+        return getSource().tasks();
     }
 
     @Override

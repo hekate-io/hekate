@@ -244,6 +244,83 @@ public interface Hekate {
     }
 
     /**
+     * Returns the {@link ClusterService}.
+     *
+     * @return Service.
+     */
+    ClusterService cluster();
+
+    /**
+     * Returns the {@link TaskService}.
+     *
+     * @return Service.
+     */
+    TaskService tasks();
+
+    /**
+     * Returns the {@link MessagingService}.
+     *
+     * @return Service.
+     */
+    MessagingService messaging();
+
+    /**
+     * Returns the {@link LockService}.
+     *
+     * @return Service.
+     */
+    LockService locks();
+
+    /**
+     * Returns the {@link ElectionService}.
+     *
+     * @return Service.
+     */
+    ElectionService election();
+
+    /**
+     * Returns the {@link CoordinationService}.
+     *
+     * @return Service.
+     */
+    CoordinationService coordination();
+
+    /**
+     * Returns the {@link MetricsService}.
+     *
+     * @return Service.
+     */
+    MetricsService metrics();
+
+    /**
+     * Returns the {@link PartitionService}.
+     *
+     * @return Service.
+     */
+    PartitionService partitions();
+
+    /**
+     * Returns the {@link ClusterMetricsService}.
+     *
+     * @return Service.
+     */
+    ClusterMetricsService clusterMetrics();
+
+    /**
+     * Returns the {@link NetworkService}.
+     *
+     * @return Service.
+     */
+    NetworkService network();
+
+    /**
+     * Returns the {@link CodecService}.
+     *
+     * @return Service.
+     */
+    CodecService codec();
+
+    /**
      * Checks if the {@link Service service} of the specified type is {@link HekateBootstrap#withService(ServiceFactory) registered} within
      * this instance.
      *

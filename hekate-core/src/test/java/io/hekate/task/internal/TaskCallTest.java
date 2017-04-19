@@ -45,9 +45,7 @@ public class TaskCallTest extends TaskServiceTestBase {
             List<HekateTestNode> nodes = createAndJoin(i + 1);
 
             for (HekateTestNode node : nodes) {
-                TaskService tasks = node.get(TaskService.class);
-
-                int got = get(tasks.call(() -> {
+                int got = get(node.tasks().call(() -> {
                     NODES.add(node.getLocalNode());
 
                     return COUNTER.incrementAndGet();
@@ -70,9 +68,7 @@ public class TaskCallTest extends TaskServiceTestBase {
             List<HekateTestNode> nodes = createAndJoin(i + 1);
 
             for (HekateTestNode node : nodes) {
-                TaskService tasks = node.get(TaskService.class);
-
-                int got = get(tasks.withAffinity(100500).call(() -> {
+                int got = get(node.tasks().withAffinity(100500).call(() -> {
                     NODES.add(node.getLocalNode());
 
                     return COUNTER.incrementAndGet();
@@ -95,9 +91,7 @@ public class TaskCallTest extends TaskServiceTestBase {
             List<HekateTestNode> nodes = createAndJoin(i + 1);
 
             for (HekateTestNode node : nodes) {
-                TaskService tasks = node.get(TaskService.class);
-
-                Object mustBeNull = get(tasks.call(() -> {
+                Object mustBeNull = get(node.tasks().call(() -> {
                     COUNTER.incrementAndGet();
 
                     return null;
@@ -120,9 +114,7 @@ public class TaskCallTest extends TaskServiceTestBase {
             List<HekateTestNode> nodes = createAndJoin(i + 1);
 
             for (HekateTestNode node : nodes) {
-                TaskService tasks = node.get(TaskService.class);
-
-                TaskFuture<Object> future = tasks.call(() -> {
+                TaskFuture<Object> future = node.tasks().call(() -> {
                     throw new Exception(TEST_ERROR_MESSAGE);
                 });
 
@@ -142,9 +134,7 @@ public class TaskCallTest extends TaskServiceTestBase {
             List<HekateTestNode> nodes = createAndJoin(i + 1);
 
             for (HekateTestNode node : nodes) {
-                TaskService tasks = node.get(TaskService.class);
-
-                TaskFuture<Object> future = tasks.call(() -> {
+                TaskFuture<Object> future = node.tasks().call(() -> {
                     throw TEST_ERROR;
                 });
 
@@ -164,9 +154,7 @@ public class TaskCallTest extends TaskServiceTestBase {
             List<HekateTestNode> nodes = createAndJoin(i + 2);
 
             for (HekateTestNode node : nodes) {
-                TaskService tasks = node.get(TaskService.class);
-
-                TaskFuture<Object> future = tasks.forRemotes().call(() -> {
+                TaskFuture<Object> future = node.tasks().forRemotes().call(() -> {
                     throw new NonSerializableTestException();
                 });
 
@@ -188,7 +176,7 @@ public class TaskCallTest extends TaskServiceTestBase {
 
         REF.set(source);
 
-        TaskFuture<?> future = source.get(TaskService.class).forRemotes().call(() -> {
+        TaskFuture<?> future = source.tasks().forRemotes().call(() -> {
             try {
                 REF.get().leave();
             } catch (InterruptedException e) {
@@ -202,7 +190,7 @@ public class TaskCallTest extends TaskServiceTestBase {
 
         source.awaitForStatus(Hekate.State.DOWN);
 
-        get(target.get(TaskService.class).forNode(target.getLocalNode()).call(() -> {
+        get(target.tasks().forNode(target.getLocalNode()).call(() -> {
             REF.set(target);
 
             return null;
@@ -219,7 +207,7 @@ public class TaskCallTest extends TaskServiceTestBase {
 
         AtomicInteger attempts = new AtomicInteger();
 
-        TaskService tasks = source.get(TaskService.class).forRemotes().withFailover(ctx -> {
+        TaskService tasks = source.tasks().forRemotes().withFailover(ctx -> {
             attempts.incrementAndGet();
 
             return ctx.getAttempt() < 5 ? ctx.retry() : ctx.fail();
@@ -264,7 +252,7 @@ public class TaskCallTest extends TaskServiceTestBase {
 
         AtomicInteger attempts = new AtomicInteger();
 
-        TaskService tasks = source.get(TaskService.class).forRemotes().withFailover(ctx -> {
+        TaskService tasks = source.tasks().forRemotes().withFailover(ctx -> {
             attempts.incrementAndGet();
 
             return ctx.getAttempt() < 5 ? ctx.retry() : ctx.fail();
@@ -307,7 +295,7 @@ public class TaskCallTest extends TaskServiceTestBase {
 
         HekateTestNode node = nodes.get(0);
 
-        TaskService tasks = node.get(TaskService.class).forRemotes().withFailover(ctx ->
+        TaskService tasks = node.tasks().forRemotes().withFailover(ctx ->
             ctx.retry().withReRoute()
         );
 

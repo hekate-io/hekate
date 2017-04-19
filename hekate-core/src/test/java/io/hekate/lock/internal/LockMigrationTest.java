@@ -21,7 +21,6 @@ import io.hekate.core.HekateFutureException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockRegionConfig;
-import io.hekate.lock.LockService;
 import io.hekate.lock.internal.LockProtocol.MigrationApplyRequest;
 import io.hekate.lock.internal.LockProtocol.MigrationPrepareRequest;
 import java.util.ArrayList;
@@ -93,7 +92,7 @@ public class LockMigrationTest extends LockServiceTestBase {
             for (int i = 0; i < 50; i++) {
                 String lockName = "'" + n.getLocalNode().getJoinOrder() + "-" + i + '\'';
 
-                DistributedLock lockReg1 = n.get(LockService.class).region(REGION_1).getLock(lockName);
+                DistributedLock lockReg1 = n.locks().region(REGION_1).getLock(lockName);
 
                 lockReg1.lock();
 
@@ -103,7 +102,7 @@ public class LockMigrationTest extends LockServiceTestBase {
             for (int i = 0; i < 25; i++) {
                 String lockName = "'" + n.getLocalNode().getJoinOrder() + "-" + i + '\'';
 
-                DistributedLock lockReg2 = n.get(LockService.class).region(REGION_2).getLock(lockName);
+                DistributedLock lockReg2 = n.locks().region(REGION_2).getLock(lockName);
 
                 lockReg2.lock();
 
@@ -322,7 +321,7 @@ public class LockMigrationTest extends LockServiceTestBase {
 
         assertFalse(migrated.get());
 
-        DistributedLock lock = newNode.get(LockService.class).region("otherRegion").getLock("otherLock");
+        DistributedLock lock = newNode.locks().region("otherRegion").getLock("otherLock");
 
         assertTrue(lock.tryLock());
 
@@ -341,7 +340,7 @@ public class LockMigrationTest extends LockServiceTestBase {
         existingLock.unlock();
 
         // Prepare lock.
-        DistributedLock lock = nextAfterCoordinator.get(LockService.class).region(REGION_1).getLock(existingLock.getName());
+        DistributedLock lock = nextAfterCoordinator.locks().region(REGION_1).getLock(existingLock.getName());
 
         AtomicBoolean queuedLocked = new AtomicBoolean();
         CountDownLatch lockLatch = new CountDownLatch(1);

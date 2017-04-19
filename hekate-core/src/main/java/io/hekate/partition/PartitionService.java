@@ -54,7 +54,7 @@ import java.util.List;
  *
  * <h2>Accessing service</h2>
  * <p>
- * {@link PartitionService} can be accessed via the {@link Hekate#get(Class)} method as in the example below:
+ * {@link PartitionService} can be accessed via the {@link Hekate#partitions()} method as in the example below:
  * ${source: partition/PartitionServiceJavadocTest.java#access}
  * </p>
  *

@@ -25,7 +25,7 @@ import io.hekate.spring.bean.HekateBaseBean;
 public class LocalMetricsServiceBean extends HekateBaseBean<MetricsService> {
     @Override
     public MetricsService getObject() throws Exception {
-        return getSource().get(MetricsService.class);
+        return getSource().metrics();
     }
 
     @Override

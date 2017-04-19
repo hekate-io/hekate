@@ -1,7 +1,6 @@
 package io.hekate.cluster.internal;
 
 import io.hekate.HekateNodeTestBase;
-import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
 import io.hekate.cluster.event.ClusterChangeEvent;
@@ -33,9 +32,7 @@ public class FilteredClusterViewTest extends HekateNodeTestBase {
         HekateTestNode node2 = createNode(c -> c.withNodeRole("role2").withNodeRole("all")).join();
         HekateTestNode node3 = createNode(c -> c.withNodeRole("role3").withNodeRole("all")).join();
 
-        ClusterService cluster = node1.get(ClusterService.class);
-
-        ClusterView allRemote = cluster.forRemotes().forRole("all");
+        ClusterView allRemote = node1.cluster().forRemotes().forRole("all");
 
         get(allRemote.futureOf(topology -> topology.size() == 2));
 
@@ -51,7 +48,8 @@ public class FilteredClusterViewTest extends HekateNodeTestBase {
             both(hasItem(node2.getLocalNode()))
                 .and(not(hasItem(node3.getLocalNode())))
         );
-        assertTrue(cluster.forRemotes().forNode(node1.getLocalNode()).getTopology().isEmpty());
+        
+        assertTrue(node1.cluster().forRemotes().forNode(node1.getLocalNode()).getTopology().isEmpty());
 
         ClusterEventListener l1 = mock(ClusterEventListener.class);
         ClusterEventListener l2 = mock(ClusterEventListener.class);
@@ -75,7 +73,7 @@ public class FilteredClusterViewTest extends HekateNodeTestBase {
 
         HekateTestNode node4 = createNode(c -> c.withNodeRole("role4").withNodeRole("all")).join();
 
-        get(cluster.forRemotes().forRole("role4").futureOf(topology -> !topology.isEmpty()));
+        get(node1.cluster().forRemotes().forRole("role4").futureOf(topology -> !topology.isEmpty()));
 
         ArgumentCaptor<ClusterChangeEvent> evt1 = ArgumentCaptor.forClass(ClusterChangeEvent.class);
         ArgumentCaptor<ClusterChangeEvent> evt2 = ArgumentCaptor.forClass(ClusterChangeEvent.class);
@@ -110,7 +108,7 @@ public class FilteredClusterViewTest extends HekateNodeTestBase {
 
         node4.leave();
 
-        get(cluster.forRemotes().forRole("role4").futureOf(ClusterTopology::isEmpty));
+        get(node1.cluster().forRemotes().forRole("role4").futureOf(ClusterTopology::isEmpty));
 
         verify(l1).onEvent(evt1.capture());
         verify(l2).onEvent(evt2.capture());

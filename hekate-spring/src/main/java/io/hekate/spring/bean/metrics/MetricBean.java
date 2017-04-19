@@ -17,7 +17,6 @@
 package io.hekate.spring.bean.metrics;
 
 import io.hekate.metrics.Metric;
-import io.hekate.metrics.MetricsService;
 import io.hekate.spring.bean.HekateBaseBean;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -29,7 +28,7 @@ public class MetricBean extends HekateBaseBean<Metric> {
 
     @Override
     public Metric getObject() throws Exception {
-        return getSource().get(MetricsService.class).metric(name);
+        return getSource().metrics().metric(name);
     }
 
     @Override

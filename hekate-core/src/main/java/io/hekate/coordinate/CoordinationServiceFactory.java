@@ -29,7 +29,7 @@ import java.util.List;
  * Factory for {@link CoordinationService}.
  *
  * <p>
- * This class represents a configurable factory for {@link CoordinationService}. Instances of this class must be {@link
+ * This class represents a configurable factory for {@link CoordinationService}. Instances of this class can can be {@link
  * HekateBootstrap#withService(ServiceFactory) registered} within the {@link HekateBootstrap} in order to make {@link CoordinationService}
  * accessible via {@link Hekate#get(Class)} method.
  * </p>

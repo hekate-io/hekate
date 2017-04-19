@@ -21,8 +21,8 @@ import io.hekate.coordinate.CoordinationContext;
 import io.hekate.coordinate.CoordinationHandler;
 import io.hekate.coordinate.CoordinationProcess;
 import io.hekate.coordinate.CoordinationProcessConfig;
-import io.hekate.coordinate.CoordinationService;
 import io.hekate.coordinate.CoordinationServiceFactory;
+import io.hekate.core.internal.HekateTestNode;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -36,15 +36,15 @@ import static org.mockito.Mockito.mock;
 public class CoordinationServiceSingleNodeTest extends HekateNodeTestBase {
     @Test
     public void testEmptyProcesses() throws Exception {
-        CoordinationService coordination = createNode(boot ->
+        HekateTestNode node = createNode(boot ->
             boot.withService(new CoordinationServiceFactory())
-        ).join().get(CoordinationService.class);
+        ).join();
 
-        assertTrue(coordination.allProcesses().isEmpty());
+        assertTrue(node.coordination().allProcesses().isEmpty());
 
-        assertFalse(coordination.hasProcess("no-such-process"));
+        assertFalse(node.coordination().hasProcess("no-such-process"));
 
-        expect(IllegalArgumentException.class, () -> coordination.process("no-such-process"));
+        expect(IllegalArgumentException.class, () -> node.coordination().process("no-such-process"));
     }
 
     @Test
@@ -57,25 +57,25 @@ public class CoordinationServiceSingleNodeTest extends HekateNodeTestBase {
             return null;
         }).when(handler).coordinate(any());
 
-        CoordinationService coordination = createNode(boot ->
+        HekateTestNode node = createNode(boot ->
             boot.withService(new CoordinationServiceFactory()
                 .withProcess(new CoordinationProcessConfig("process1").withHandler(handler))
                 .withProcess(new CoordinationProcessConfig("process2").withHandler(handler))
             )
-        ).join().get(CoordinationService.class);
+        ).join();
 
-        assertTrue(coordination.hasProcess("process1"));
-        assertTrue(coordination.hasProcess("process2"));
+        assertTrue(node.coordination().hasProcess("process1"));
+        assertTrue(node.coordination().hasProcess("process2"));
 
-        CoordinationProcess process1 = coordination.process("process1");
-        CoordinationProcess process2 = coordination.process("process1");
+        CoordinationProcess process1 = node.coordination().process("process1");
+        CoordinationProcess process2 = node.coordination().process("process1");
 
         assertNotNull(process1);
         assertNotNull(process2);
 
-        assertEquals(2, coordination.allProcesses().size());
-        assertTrue(coordination.allProcesses().contains(process1));
-        assertTrue(coordination.allProcesses().contains(process1));
+        assertEquals(2, node.coordination().allProcesses().size());
+        assertTrue(node.coordination().allProcesses().contains(process1));
+        assertTrue(node.coordination().allProcesses().contains(process1));
 
         get(process1.getFuture());
         get(process2.getFuture());

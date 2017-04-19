@@ -25,7 +25,7 @@ import io.hekate.spring.bean.HekateBaseBean;
 public class ElectionServiceBean extends HekateBaseBean<ElectionService> {
     @Override
     public ElectionService getObject() throws Exception {
-        return getSource().get(ElectionService.class);
+        return getSource().election();
     }
 
     @Override

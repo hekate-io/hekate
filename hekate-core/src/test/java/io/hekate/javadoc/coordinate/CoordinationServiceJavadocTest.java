@@ -133,7 +133,7 @@ public class CoordinationServiceJavadocTest extends HekateNodeTestBase {
         // End:configure
 
         // Start:access
-        CoordinationService coordination = hekate.get(CoordinationService.class);
+        CoordinationService coordination = hekate.coordination();
         // End:access
 
         // Start:future
@@ -155,7 +155,7 @@ public class CoordinationServiceJavadocTest extends HekateNodeTestBase {
                 )
             ).join();
 
-            get(node.get(CoordinationService.class).futureOf("test"));
+            get(node.coordination().futureOf("test"));
         }
     }
 }

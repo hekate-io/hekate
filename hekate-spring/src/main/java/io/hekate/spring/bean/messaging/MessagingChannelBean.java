@@ -18,7 +18,6 @@ package io.hekate.spring.bean.messaging;
 
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
-import io.hekate.messaging.MessagingService;
 import io.hekate.spring.bean.HekateBaseBean;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -30,7 +29,7 @@ public class MessagingChannelBean extends HekateBaseBean<MessagingChannel<?>> {
 
     @Override
     public MessagingChannel<?> getObject() throws Exception {
-        return getSource().get(MessagingService.class).channel(getChannel());
+        return getSource().messaging().channel(getChannel());
     }
 
     @Override

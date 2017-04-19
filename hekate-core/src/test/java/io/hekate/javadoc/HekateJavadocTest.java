@@ -74,13 +74,13 @@ public class HekateJavadocTest extends HekateTestBase {
             .join();
 
         // Get cluster service.
-        ClusterService cluster = hekate.get(ClusterService.class);
+        ClusterService cluster = hekate.cluster();
 
         // Get messaging service.
-        MessagingService messaging = hekate.get(MessagingService.class);
+        MessagingService messaging = hekate.messaging();
 
         // Get task service.
-        TaskService tasks = hekate.get(TaskService.class);
+        TaskService tasks = hekate.tasks();
 
         // ...etc...
         // End:get_service

@@ -42,8 +42,7 @@ public class PartitionServiceTest extends HekateNodeTestBase {
 
     @Test
     public void testEmptyPartitions() throws Exception {
-        PartitionService partitions = createNode(boot -> boot.withService(new PartitionServiceFactory())).join()
-            .get(PartitionService.class);
+        PartitionService partitions = createNode(boot -> boot.withService(new PartitionServiceFactory())).join().partitions();
 
         assertTrue(partitions.allMappers().isEmpty());
 
@@ -54,25 +53,25 @@ public class PartitionServiceTest extends HekateNodeTestBase {
 
     @Test
     public void testMultiplePartitions() throws Exception {
-        PartitionService partitions = createNode(boot ->
+        HekateTestNode node = createNode(boot ->
             boot.withService(new PartitionServiceFactory()
                 .withMapper(new PartitionMapperConfig("mapper1"))
                 .withMapper(new PartitionMapperConfig("mapper2"))
             )
-        ).join().get(PartitionService.class);
+        ).join();
 
-        assertTrue(partitions.hasMapper("mapper1"));
-        assertTrue(partitions.hasMapper("mapper2"));
+        assertTrue(node.partitions().hasMapper("mapper1"));
+        assertTrue(node.partitions().hasMapper("mapper2"));
 
-        PartitionMapper mapper1 = partitions.mapper("mapper1");
-        PartitionMapper mapper2 = partitions.mapper("mapper2");
+        PartitionMapper mapper1 = node.partitions().mapper("mapper1");
+        PartitionMapper mapper2 = node.partitions().mapper("mapper2");
 
         assertNotNull(mapper1);
         assertNotNull(mapper2);
 
-        assertEquals(2, partitions.allMappers().size());
-        assertTrue(partitions.allMappers().contains(mapper1));
-        assertTrue(partitions.allMappers().contains(mapper2));
+        assertEquals(2, node.partitions().allMappers().size());
+        assertTrue(node.partitions().allMappers().contains(mapper1));
+        assertTrue(node.partitions().allMappers().contains(mapper2));
     }
 
     @Test
@@ -87,7 +86,7 @@ public class PartitionServiceTest extends HekateNodeTestBase {
             c.withMapper(cfg);
         }).join();
 
-        PartitionMapper mapper = node.get(PartitionService.class).mapper("test");
+        PartitionMapper mapper = node.partitions().mapper("test");
 
         assertNotNull(mapper);
 
@@ -102,7 +101,7 @@ public class PartitionServiceTest extends HekateNodeTestBase {
     @Test
     public void testUnknownMapper() throws Exception {
         try {
-            createPartitionNode().join().get(PartitionService.class).mapper("unknown");
+            createPartitionNode().join().partitions().mapper("unknown");
 
             fail("Error was expected.");
         } catch (IllegalArgumentException e) {
@@ -138,7 +137,7 @@ public class PartitionServiceTest extends HekateNodeTestBase {
                 Partition first = null;
 
                 for (Hekate node : nodes) {
-                    PartitionMapper mapper = node.get(PartitionService.class).mapper("test" + i);
+                    PartitionMapper mapper = node.partitions().mapper("test" + i);
 
                     assertEquals("test" + i, mapper.getName());
                     assertEquals(partitions, mapper.getPartitions());

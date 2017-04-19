@@ -48,14 +48,14 @@ public class LockServiceJavadocTest extends HekateNodeTestBase {
         // End:configure
 
         // Start:access
-        LockService locks = hekate.get(LockService.class);
+        LockService locks = hekate.locks();
         // End:access
 
         assertNotNull(locks);
 
         // Start:lock
         // Get lock instance with name 'exampleLock' from region 'region1'.
-        DistributedLock lock = locks.region("region1").getLock("exampleLock");
+        DistributedLock lock = hekate.locks().region("region1").getLock("exampleLock");
 
         // Obtain the lock.
         lock.lock();

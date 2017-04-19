@@ -96,7 +96,7 @@ import java.util.List;
  *
  * <h2>Accessing service</h2>
  * <p>
- * {@link ElectionService} can be accessed via {@link Hekate#get(Class)} method as in the example below:
+ * {@link ElectionService} can be accessed via {@link Hekate#election()} method as in the example below:
  * ${source: election/ElectionServiceJavadocTest.java#access}
  * </p>
  *

@@ -40,7 +40,7 @@ public class HekateClusterMetricsServiceConfigurerTest extends HekateAutoConfigu
         assertNotNull(get("clusterMetricsService", ClusterMetricsService.class));
         assertNotNull(get(ClusterMetricsTestConfig.class).clusterMetricsService);
 
-        assertNotNull(getNode().get(ClusterMetricsService.class));
+        assertNotNull(getNode().clusterMetrics());
     }
 
     @Test

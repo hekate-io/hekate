@@ -72,7 +72,7 @@ import java.util.List;
  *
  * <h2>Accessing service</h2>
  * <p>
- * Instances of {@link NetworkService} can be obtained via {@link Hekate#get(Class)} method as in the example below:
+ * Instances of {@link NetworkService} can be obtained via {@link Hekate#network()} method as in the example below:
  * ${source: network/NetworkServiceJavadocTest.java#get_service}
  * </p>
  *

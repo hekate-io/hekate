@@ -25,7 +25,7 @@ import io.hekate.spring.bean.HekateBaseBean;
 public class LockServiceBean extends HekateBaseBean<LockService> {
     @Override
     public LockService getObject() throws Exception {
-        return getSource().get(LockService.class);
+        return getSource().locks();
     }
 
     @Override

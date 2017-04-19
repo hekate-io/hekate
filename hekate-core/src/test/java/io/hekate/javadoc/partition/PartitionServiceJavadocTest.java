@@ -53,7 +53,7 @@ public class PartitionServiceJavadocTest extends HekateNodeTestBase {
         // End:configure
 
         // Start:access
-        PartitionService partitions = hekate.get(PartitionService.class);
+        PartitionService partitions = hekate.partitions();
         // End:access
 
         assertNotNull(partitions);

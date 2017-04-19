@@ -17,7 +17,6 @@
 package io.hekate.javadoc.cluster.event;
 
 import io.hekate.HekateNodeTestBase;
-import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.event.ClusterChangeEvent;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventListener;
@@ -67,7 +66,7 @@ public class ClusterEventListenerJavadocTest extends HekateNodeTestBase {
 
         Hekate node = createNode();
 
-        node.get(ClusterService.class).addListener(new ExampleListener());
+        node.cluster().addListener(new ExampleListener());
 
         node.join();
     }

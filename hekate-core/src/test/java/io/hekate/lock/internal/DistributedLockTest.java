@@ -22,7 +22,6 @@ import io.hekate.core.internal.HekateTestNode;
 import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockOwnerInfo;
 import io.hekate.lock.LockRegion;
-import io.hekate.lock.LockService;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -102,7 +101,7 @@ public class DistributedLockTest extends LockServiceTestBase {
 
         lockNode = nodes.get(0);
 
-        region = lockNode.get(LockService.class).region(REGION_1);
+        region = lockNode.locks().region(REGION_1);
     }
 
     @Test
@@ -410,7 +409,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                 region.getLock("test" + i).lock();
 
                 try {
-                    DistributedLock otherLock = node.get(LockService.class).region(REGION_1).getLock("test" + i);
+                    DistributedLock otherLock = node.locks().region(REGION_1).getLock("test" + i);
 
                     if (otherLock.tryLock()) {
                         otherLock.unlock();
@@ -631,7 +630,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                 asyncUnlock.countDown();
             });
 
-            DistributedLock lock = managerNode.get(LockService.class).region(REGION_1).getLock(lockName);
+            DistributedLock lock = managerNode.locks().region(REGION_1).getLock(lockName);
 
             lockUnlock(lock);
         }
@@ -671,7 +670,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                 asyncUnlock.countDown();
             });
 
-            DistributedLock lock = managerNode.get(LockService.class).region(REGION_1).getLock(lockName);
+            DistributedLock lock = managerNode.locks().region(REGION_1).getLock(lockName);
 
             lockUnlock(lock);
         }
@@ -791,7 +790,7 @@ public class DistributedLockTest extends LockServiceTestBase {
             AtomicBoolean locked = new AtomicBoolean();
 
             runParallel(nodes.size(), 50, i -> {
-                DistributedLock lock = nodes.get(i.getThread()).get(LockService.class).region(REGION_1).getLock("test");
+                DistributedLock lock = nodes.get(i.getThread()).locks().region(REGION_1).getLock("test");
 
                 lock.lock();
 
@@ -820,7 +819,7 @@ public class DistributedLockTest extends LockServiceTestBase {
 
         try {
             nodes.stream()
-                .map(node -> node.get(LockService.class).region(region.getName()))
+                .map(node -> node.locks().region(region.getName()))
                 .forEach(region -> {
                     try {
                         LockOwnerInfo fromRegion = region.getLockOwner("test").get();
@@ -884,7 +883,7 @@ public class DistributedLockTest extends LockServiceTestBase {
         CountDownLatch unlockAsync = new CountDownLatch(1);
 
         Future<Object> async = runAsync(() -> {
-            DistributedLock otherLock = node.get(LockService.class).region(REGION_1).getLock(lockName);
+            DistributedLock otherLock = node.locks().region(REGION_1).getLock(lockName);
 
             otherLock.lock();
 
@@ -909,7 +908,7 @@ public class DistributedLockTest extends LockServiceTestBase {
 
         if (node.getState() == Hekate.State.UP) {
             // Double check that lock can be still be acquired after task is finished.
-            DistributedLock lock = node.get(LockService.class).region(REGION_1).getLock(lockName);
+            DistributedLock lock = node.locks().region(REGION_1).getLock(lockName);
 
             lockUnlock(lock);
         }

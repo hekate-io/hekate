@@ -18,7 +18,6 @@ package io.hekate.core.internal;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterServiceFactoryMock;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
@@ -100,13 +99,13 @@ public class HekateTestNode extends HekateNode {
         if (listener == null) {
             listener = events::add;
 
-            get(ClusterService.class).addListener(listener);
+            cluster().addListener(listener);
         }
     }
 
     public synchronized void stopRecording() {
         if (listener != null) {
-            get(ClusterService.class).removeListener(listener);
+            cluster().removeListener(listener);
 
             listener = null;
         }
@@ -174,10 +173,10 @@ public class HekateTestNode extends HekateNode {
     }
 
     public ClusterTopology getTopology() {
-        return get(ClusterService.class).getTopology();
+        return cluster().getTopology();
     }
 
     private void doAwaitForTopology(List<ClusterNode> nodes) {
-        awaitForTopology(get(ClusterService.class), nodes);
+        awaitForTopology(cluster(), nodes);
     }
 }

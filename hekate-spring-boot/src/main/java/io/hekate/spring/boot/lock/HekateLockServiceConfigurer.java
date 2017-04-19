@@ -157,7 +157,7 @@ public class HekateLockServiceConfigurer {
 
     /**
      * Returns the factory bean that makes it possible to inject {@link LockService} directly into other beans instead of accessing it via
-     * {@link Hekate#get(Class)} method.
+     * {@link Hekate#locks()} method.
      *
      * @return Service bean.
      */

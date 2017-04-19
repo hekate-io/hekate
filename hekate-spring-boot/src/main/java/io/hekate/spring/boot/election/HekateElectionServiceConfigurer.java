@@ -71,7 +71,7 @@ public class HekateElectionServiceConfigurer {
      * @return Service factory.
      */
     @Bean
-    public ElectionServiceFactory leaderServiceFactory() {
+    public ElectionServiceFactory electionServiceFactory() {
         ElectionServiceFactory factory = new ElectionServiceFactory();
 
         factory.setCandidates(candidates);
@@ -81,12 +81,12 @@ public class HekateElectionServiceConfigurer {
 
     /**
      * Returns the factory bean that makes it possible to inject {@link ElectionService} directly into other beans instead of accessing it
-     * via {@link Hekate#get(Class)} method.
+     * via {@link Hekate#election()} method.
      *
      * @return Service bean.
      */
     @Bean
-    public ElectionServiceBean leaderService() {
+    public ElectionServiceBean electionService() {
         return new ElectionServiceBean();
     }
 }

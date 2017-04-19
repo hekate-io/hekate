@@ -63,7 +63,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
                     .withReceiver(new ExampleReceiver())))
             .join();
 
-        hekate.get(MessagingService.class).channel("example").aggregate("example message").get();
+        hekate.messaging().channel("example").aggregate("example message").get();
 
         hekate.leave();
     }
@@ -98,7 +98,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         // End:configure_channel
 
         // Start:access
-        MessagingService messaging = hekate.get(MessagingService.class);
+        MessagingService messaging = hekate.messaging();
         // End:access
 
         // Start:access_channel
@@ -141,9 +141,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
     }
 
     private void exampleUnicast(Hekate hekate) throws Exception {
-        MessagingService messaging = hekate.get(MessagingService.class);
-
-        MessagingChannel<String> channel = messaging.channel("example.channel");
+        MessagingChannel<String> channel = hekate.messaging().channel("example.channel");
 
         unicastRequestSyncExample(channel);
 
@@ -201,9 +199,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
     }
 
     private void broadcastExample(Hekate hekate) throws InterruptedException {
-        MessagingService messaging = hekate.get(MessagingService.class);
-
-        MessagingChannel<String> channel = messaging.channel("example.channel");
+        MessagingChannel<String> channel = hekate.messaging().channel("example.channel");
 
         // Start:aggregate_sync
         try {

@@ -19,7 +19,6 @@ package io.hekate.javadoc.plugin;
 import io.hekate.HekateTestBase;
 import io.hekate.HekateTestProps;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.core.Hekate;
@@ -54,7 +53,7 @@ public class PluginJavadocTest extends HekateTestBase {
             file = Paths.get(hekate.getLocalNode().getName() + "-cluster.txt");
 
             // Register cluster event listener that will update file on join/change cluster events.
-            hekate.get(ClusterService.class).addListener(this::updateFile, ClusterEventType.JOIN, ClusterEventType.CHANGE);
+            hekate.cluster().addListener(this::updateFile, ClusterEventType.JOIN, ClusterEventType.CHANGE);
         }
 
         @Override
@@ -96,13 +95,13 @@ public class PluginJavadocTest extends HekateTestBase {
 
         Hekate n2 = new HekateBootstrap().join();
 
-        get(node.get(ClusterService.class).futureOf(topology -> topology.size() == 2));
+        get(node.cluster().futureOf(topology -> topology.size() == 2));
 
         verifyFileContents(node);
 
         n2.leave();
 
-        get(node.get(ClusterService.class).futureOf(topology -> topology.size() == 1));
+        get(node.cluster().futureOf(topology -> topology.size() == 1));
 
         verifyFileContents(node);
 
@@ -114,7 +113,7 @@ public class PluginJavadocTest extends HekateTestBase {
 
         say("File contents: " + fileNodes);
 
-        List<String> nodes = node.get(ClusterService.class).getTopology().stream().map(ClusterNode::toString).collect(Collectors.toList());
+        List<String> nodes = node.cluster().getTopology().stream().map(ClusterNode::toString).collect(Collectors.toList());
 
         assertEquals(nodes.size(), fileNodes.size());
 

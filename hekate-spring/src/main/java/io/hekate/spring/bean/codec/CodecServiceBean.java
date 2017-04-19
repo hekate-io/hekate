@@ -25,7 +25,7 @@ import io.hekate.spring.bean.HekateBaseBean;
 public class CodecServiceBean extends HekateBaseBean<CodecService> {
     @Override
     public CodecService getObject() throws Exception {
-        return getSource().get(CodecService.class);
+        return getSource().codec();
     }
 
     @Override

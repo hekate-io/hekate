@@ -1,7 +1,6 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNodeId;
-import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.messaging.Message;
@@ -9,7 +8,6 @@ import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.MessagingFutureException;
-import io.hekate.messaging.MessagingService;
 import io.hekate.messaging.UnknownRouteException;
 import io.hekate.messaging.unicast.LoadBalancingException;
 import io.hekate.messaging.unicast.Response;
@@ -641,9 +639,9 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         ResponseCallbackMock toSelf = new ResponseCallbackMock("to-self");
         ResponseCallbackMock toRemote = new ResponseCallbackMock("to-remote");
 
-        channel.getNode().get(ClusterService.class).addListener(event -> {
+        channel.getNode().cluster().addListener(event -> {
             try {
-                MessagingChannel<String> send = event.getHekate().get(MessagingService.class).channel(TEST_CHANNEL_NAME);
+                MessagingChannel<String> send = event.getHekate().messaging().channel(TEST_CHANNEL_NAME);
 
                 if (event.getType() == ClusterEventType.JOIN) {
                     get(send.request("to-self"));

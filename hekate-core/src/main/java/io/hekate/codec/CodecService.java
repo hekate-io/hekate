@@ -32,8 +32,7 @@ import io.hekate.core.service.Service;
  *
  * <h2>Accessing service</h2>
  * <p>
- * {@link CodecService} is one of the {@link Hekate}'s built-in services. Instances of this service can be obtained via {@link
- * Hekate#get(Class)} method as shown in the example below:
+ * Instances of this service can be obtained via {@link Hekate#codec()} method as shown in the example below:
  * ${source: codec/CodecServiceJavadocTest.java#access}
  * </p>
  *

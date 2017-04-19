@@ -75,7 +75,7 @@ import java.util.concurrent.Callable;
  *
  * <h2>Accessing service</h2>
  * <p>
- * {@link TaskService} can be accessed via {@link Hekate#get(Class)} method as in the example below:
+ * {@link TaskService} can be accessed via {@link Hekate#tasks()} method as in the example below:
  * ${source: task/TaskServiceJavadocTest.java#access}
  * </p>
  *

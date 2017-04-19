@@ -53,7 +53,7 @@ public class HekateMetricsPublisherConfigurer {
     public PublicMetrics publicMetrics(Hekate node) {
         return () -> {
             if (node.has(MetricsService.class)) {
-                Map<String, Metric> localMetrics = node.get(MetricsService.class).allMetrics();
+                Map<String, Metric> localMetrics = node.metrics().allMetrics();
 
                 List<org.springframework.boot.actuate.metrics.Metric<?>> publicMetrics = new ArrayList<>(localMetrics.size());
 

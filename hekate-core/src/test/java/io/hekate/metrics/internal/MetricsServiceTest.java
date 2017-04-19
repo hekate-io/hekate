@@ -65,7 +65,7 @@ public class MetricsServiceTest extends HekateNodeTestBase {
 
         node = createMetricsNode().join();
 
-        metrics = node.get(MetricsService.class);
+        metrics = node.metrics();
     }
 
     @Test
@@ -343,7 +343,7 @@ public class MetricsServiceTest extends HekateNodeTestBase {
             c.withConfigProvider(() -> Arrays.asList(new CounterConfig("c1"), new CounterConfig("c2")));
         }).join();
 
-        metrics = node.get(MetricsService.class);
+        metrics = node.metrics();
 
         repeat(5, i -> {
             for (int j = 0; j < 3; j++) {
@@ -359,8 +359,6 @@ public class MetricsServiceTest extends HekateNodeTestBase {
             node.leave();
 
             node.join();
-
-            metrics = node.get(MetricsService.class);
         });
     }
 
@@ -378,8 +376,6 @@ public class MetricsServiceTest extends HekateNodeTestBase {
             node.leave();
 
             node.join();
-
-            metrics = node.get(MetricsService.class);
         });
     }
 
@@ -522,7 +518,7 @@ public class MetricsServiceTest extends HekateNodeTestBase {
 
         node = createMetricsNode(configurer).join();
 
-        metrics = node.get(MetricsService.class);
+        metrics = node.metrics();
     }
 
     private HekateTestNode createMetricsNode() throws Exception {

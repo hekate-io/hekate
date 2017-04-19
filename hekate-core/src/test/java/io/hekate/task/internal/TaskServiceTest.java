@@ -65,7 +65,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
 
         awaitForTopology(local, first, second);
 
-        tasks = local.get(TaskService.class);
+        tasks = local.tasks();
     }
 
     public void testToString() throws Exception {

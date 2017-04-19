@@ -81,7 +81,7 @@ import java.util.Optional;
  *
  * <h2>Accessing service</h2>
  * <p>
- * Cluster metrics service can be accessed via {@link Hekate#get(Class)} method as in the example below:
+ * Cluster metrics service can be accessed via {@link Hekate#clusterMetrics()} method as in the example below:
  * ${source: metrics/cluster/ClusterMetricsServiceJavadocTest.java#access}
  * </p>
  *

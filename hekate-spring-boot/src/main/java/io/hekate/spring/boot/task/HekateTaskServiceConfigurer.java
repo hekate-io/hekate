@@ -71,7 +71,7 @@ public class HekateTaskServiceConfigurer {
 
     /**
      * Returns the factory bean that makes it possible to inject {@link TaskService} directly into other beans instead of accessing it via
-     * {@link Hekate#get(Class)} method.
+     * {@link Hekate#tasks()} method.
      *
      * @return Service bean.
      */

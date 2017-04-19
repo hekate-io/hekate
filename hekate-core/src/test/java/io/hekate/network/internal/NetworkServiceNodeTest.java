@@ -20,7 +20,6 @@ import io.hekate.HekateNodeTestBase;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkConnectorConfig;
-import io.hekate.network.NetworkService;
 import io.hekate.network.NetworkServiceFactory;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -59,7 +58,7 @@ public class NetworkServiceNodeTest extends HekateNodeTestBase {
             CompletableFuture<String> response = new CompletableFuture<>();
             requestRef.set(new CompletableFuture<>());
 
-            NetworkClient<String> client = sender.get(NetworkService.class).<String>connector("test").newClient();
+            NetworkClient<String> client = sender.network().<String>connector("test").newClient();
 
             get(client.connect(receiver.getSocketAddress(), (message, self) ->
                 response.complete(message.decode())

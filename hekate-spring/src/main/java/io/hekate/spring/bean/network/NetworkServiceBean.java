@@ -25,7 +25,7 @@ import io.hekate.spring.bean.HekateBaseBean;
 public class NetworkServiceBean extends HekateBaseBean<NetworkService> {
     @Override
     public NetworkService getObject() throws Exception {
-        return getSource().get(NetworkService.class);
+        return getSource().network();
     }
 
     @Override

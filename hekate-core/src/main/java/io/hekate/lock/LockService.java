@@ -63,7 +63,7 @@ import java.util.List;
  *
  * <h2>Accessing service</h2>
  * <p>
- * {@link LockService} can be accessed via the {@link Hekate#get(Class)} method as in the example below:
+ * {@link LockService} can be accessed via the {@link Hekate#locks()} method as in the example below:
  * ${source: lock/LockServiceJavadocTest.java#access}
  * </p>
  *

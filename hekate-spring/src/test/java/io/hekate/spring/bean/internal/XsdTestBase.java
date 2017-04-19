@@ -17,7 +17,6 @@
 package io.hekate.spring.bean.internal;
 
 import io.hekate.HekateTestBase;
-import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.core.Hekate;
 import org.junit.Test;
@@ -48,11 +47,11 @@ public abstract class XsdTestBase extends HekateTestBase {
         assertNotNull(node1);
         assertNotNull(node2);
 
-        get(node1.get(ClusterService.class).futureOf(top -> top.size() == 2));
-        get(node2.get(ClusterService.class).futureOf(top -> top.size() == 2));
+        get(node1.cluster().futureOf(top -> top.size() == 2));
+        get(node2.cluster().futureOf(top -> top.size() == 2));
 
-        ClusterTopology top1 = node1.get(ClusterService.class).getTopology();
-        ClusterTopology top2 = node2.get(ClusterService.class).getTopology();
+        ClusterTopology top1 = node1.cluster().getTopology();
+        ClusterTopology top2 = node2.cluster().getTopology();
 
         assertEquals(2, top1.size());
         assertEquals(2, top2.size());

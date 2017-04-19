@@ -18,7 +18,6 @@ package io.hekate.spring.bean.lock;
 
 import io.hekate.lock.LockRegion;
 import io.hekate.lock.LockRegionConfig;
-import io.hekate.lock.LockService;
 import io.hekate.spring.bean.HekateBaseBean;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -30,7 +29,7 @@ public class LockRegionBean extends HekateBaseBean<LockRegion> {
 
     @Override
     public LockRegion getObject() throws Exception {
-        return getSource().get(LockService.class).region(getRegion());
+        return getSource().locks().region(getRegion());
     }
 
     @Override

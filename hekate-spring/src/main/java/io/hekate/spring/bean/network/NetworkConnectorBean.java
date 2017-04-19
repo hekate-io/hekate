@@ -18,7 +18,6 @@ package io.hekate.spring.bean.network;
 
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkConnectorConfig;
-import io.hekate.network.NetworkService;
 import io.hekate.spring.bean.HekateBaseBean;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -30,7 +29,7 @@ public class NetworkConnectorBean extends HekateBaseBean<NetworkConnector<?>> {
 
     @Override
     public NetworkConnector<?> getObject() throws Exception {
-        return getSource().get(NetworkService.class).connector(protocol);
+        return getSource().network().connector(protocol);
     }
 
     @Override

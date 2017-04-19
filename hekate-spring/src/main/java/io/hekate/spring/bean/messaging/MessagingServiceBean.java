@@ -25,7 +25,7 @@ import io.hekate.spring.bean.HekateBaseBean;
 public class MessagingServiceBean extends HekateBaseBean<MessagingService> {
     @Override
     public MessagingService getObject() throws Exception {
-        return getSource().get(MessagingService.class);
+        return getSource().messaging();
     }
 
     @Override

@@ -25,7 +25,7 @@ import io.hekate.spring.bean.HekateBaseBean;
 public class ClusterMetricsServiceBean extends HekateBaseBean<ClusterMetricsService> {
     @Override
     public ClusterMetricsService getObject() throws Exception {
-        return getSource().get(ClusterMetricsService.class);
+        return getSource().clusterMetrics();
     }
 
     @Override

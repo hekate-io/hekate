@@ -19,7 +19,6 @@ package io.hekate.cluster.internal;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
-import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventType;
@@ -253,7 +252,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                 CountDownLatch rejoinContinueLatch = new CountDownLatch(1);
                 AtomicReference<Throwable> asyncError = new AtomicReference<>();
 
-                hanged.get(ClusterService.class).addListener(e -> {
+                hanged.cluster().addListener(e -> {
                     if (e.getType() == ClusterEventType.LEAVE) {
                         rejoinLatch.countDown();
 
@@ -332,7 +331,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                 CountDownLatch rejoinContinueLatch = new CountDownLatch(1);
                 AtomicReference<Throwable> asyncError = new AtomicReference<>();
 
-                hanged.get(ClusterService.class).addListener(e -> {
+                hanged.cluster().addListener(e -> {
                     if (e.getType() == ClusterEventType.LEAVE) {
                         rejoinLatch.countDown();
 

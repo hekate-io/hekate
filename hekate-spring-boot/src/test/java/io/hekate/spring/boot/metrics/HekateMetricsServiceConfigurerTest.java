@@ -125,14 +125,14 @@ public class HekateMetricsServiceConfigurerTest extends HekateAutoConfigurerTest
         assertNotNull(get(LocalMetricsTestConfig.InnerBean.class).innerCounter);
         assertNotNull(get(LocalMetricsTestConfig.InnerBean.class).innerMetric);
 
-        assertNotNull(getNode().get(MetricsService.class).metric("test.counter1"));
-        assertNotNull(getNode().get(MetricsService.class).metric("test.counter2"));
+        assertNotNull(getNode().metrics().metric("test.counter1"));
+        assertNotNull(getNode().metrics().metric("test.counter2"));
 
-        assertNotNull(getNode().get(MetricsService.class).getCounter("test.counter1"));
-        assertNotNull(getNode().get(MetricsService.class).getCounter("test.counter2"));
+        assertNotNull(getNode().metrics().getCounter("test.counter1"));
+        assertNotNull(getNode().metrics().getCounter("test.counter2"));
 
-        assertNotNull(getNode().get(MetricsService.class).metric("test.probe1"));
-        assertNotNull(getNode().get(MetricsService.class).metric("test.probe2"));
+        assertNotNull(getNode().metrics().metric("test.probe1"));
+        assertNotNull(getNode().metrics().metric("test.probe2"));
 
         class TestAutowire {
             @Autowired

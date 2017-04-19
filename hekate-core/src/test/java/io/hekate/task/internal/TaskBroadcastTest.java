@@ -17,11 +17,9 @@
 package io.hekate.task.internal;
 
 import io.hekate.HekateTestContext;
-import io.hekate.cluster.ClusterService;
 import io.hekate.core.Hekate;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.task.MultiNodeResult;
-import io.hekate.task.TaskService;
 import java.nio.channels.ClosedChannelException;
 import java.util.List;
 import org.junit.Test;
@@ -44,9 +42,7 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
             List<HekateTestNode> nodes = createAndJoin(i + 1);
 
             for (HekateTestNode node : nodes) {
-                TaskService tasks = node.get(TaskService.class);
-
-                MultiNodeResult<Void> result = get(tasks.broadcast(() -> {
+                MultiNodeResult<Void> result = get(node.tasks().broadcast(() -> {
                     COUNTER.incrementAndGet();
 
                     NODES.add(node.getLocalNode());
@@ -74,9 +70,7 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
             List<HekateTestNode> nodes = createAndJoin(i + 1);
 
             for (HekateTestNode node : nodes) {
-                TaskService tasks = node.get(TaskService.class);
-
-                MultiNodeResult<Void> affResult = get(tasks.withAffinity(100500).broadcast(() -> {
+                MultiNodeResult<Void> affResult = get(node.tasks().withAffinity(100500).broadcast(() -> {
                     COUNTER.incrementAndGet();
 
                     NODES.add(node.getLocalNode());
@@ -102,9 +96,7 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
             List<HekateTestNode> nodes = createAndJoin(i + 1);
 
             for (HekateTestNode node : nodes) {
-                TaskService tasks = node.get(TaskService.class);
-
-                MultiNodeResult<Void> errResult = get(tasks.broadcast(() -> {
+                MultiNodeResult<Void> errResult = get(node.tasks().broadcast(() -> {
                     throw TEST_ERROR;
                 }));
 
@@ -132,10 +124,8 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
             List<HekateTestNode> nodes = createAndJoin(i + 1);
 
             for (HekateTestNode node : nodes) {
-                TaskService tasks = node.get(TaskService.class);
-
-                MultiNodeResult<Void> partErrResult = get(tasks.broadcast(() -> {
-                    if (node.get(ClusterService.class).getTopology().getYoungest().equals(node.getLocalNode())) {
+                MultiNodeResult<Void> partErrResult = get(node.tasks().broadcast(() -> {
+                    if (node.cluster().getTopology().getYoungest().equals(node.getLocalNode())) {
                         throw TEST_ERROR;
                     }
                 }));
@@ -143,7 +133,7 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
                 assertFalse(partErrResult.isSuccess());
 
                 nodes.forEach(n -> {
-                    if (n.get(ClusterService.class).getTopology().getYoungest().equals(n.getLocalNode())) {
+                    if (n.cluster().getTopology().getYoungest().equals(n.getLocalNode())) {
                         assertFalse(partErrResult.isSuccess(n.getLocalNode()));
                         assertNotNull(partErrResult.errorOf(n.getLocalNode()));
                         assertNotNull(partErrResult.errors().get(n.getLocalNode()));
@@ -172,7 +162,7 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
 
         REF.set(source);
 
-        MultiNodeResult<Void> result = get(source.get(TaskService.class).forRemotes().broadcast(() -> {
+        MultiNodeResult<Void> result = get(source.tasks().forRemotes().broadcast(() -> {
             try {
                 REF.get().leave();
             } catch (Exception e) {
@@ -185,7 +175,7 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
 
         source.awaitForStatus(Hekate.State.DOWN);
 
-        get(target.get(TaskService.class).forNode(target.getLocalNode()).broadcast(() -> REF.set(target)));
+        get(target.tasks().forNode(target.getLocalNode()).broadcast(() -> REF.set(target)));
 
         assertSame(target, REF.get());
     }

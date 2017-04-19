@@ -29,7 +29,7 @@ public class CodecServiceJavadocTest extends HekateNodeTestBase {
         Hekate hekate = createNode().join();
 
         // Start:access
-        CodecService codecService = hekate.get(CodecService.class);
+        CodecService codecService = hekate.codec();
         // End:access
 
         assertNotNull(codecService);

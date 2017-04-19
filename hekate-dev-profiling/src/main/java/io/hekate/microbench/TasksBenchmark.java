@@ -111,7 +111,7 @@ public class TasksBenchmark {
 
         @Override
         protected void initialize(List<Hekate> nodes) {
-            tasks = nodes.get(0).get(TaskService.class).forRemotes();
+            tasks = nodes.get(0).tasks().forRemotes();
         }
     }
 

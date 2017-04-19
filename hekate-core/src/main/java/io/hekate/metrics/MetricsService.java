@@ -73,7 +73,7 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
  *
  * <h2>Accessing service</h2>
  * <p>
- * Metrics service can be accessed via {@link Hekate#get(Class)} method as in the example below:
+ * Metrics service can be accessed via {@link Hekate#metrics()} method as in the example below:
  * ${source: metrics/MetricsServiceJavadocTest.java#access}
  * </p>
  *

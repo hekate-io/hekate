@@ -79,8 +79,8 @@ public class HekateNetworkServiceConfigurerTest extends HekateAutoConfigurerTest
         assertEquals("test1", get(NetworkTestConfig.class).connector.getProtocol());
         assertEquals("test2", get(NetworkTestConfig.InnerBean.class).innerConnector.getProtocol());
 
-        assertNotNull(getNode().get(NetworkService.class).connector("test1"));
-        assertNotNull(getNode().get(NetworkService.class).connector("test2"));
+        assertNotNull(getNode().network().connector("test1"));
+        assertNotNull(getNode().network().connector("test2"));
 
         class TestAutowire {
             @Autowired

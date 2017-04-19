@@ -45,7 +45,7 @@ public class TaskServiceJavadocTest extends HekateNodeTestBase {
         // End:configure
 
         // Start:access
-        TaskService tasks = hekate.get(TaskService.class);
+        TaskService tasks = hekate.tasks();
         // End:access
 
         assertNotNull(tasks);
@@ -62,10 +62,8 @@ public class TaskServiceJavadocTest extends HekateNodeTestBase {
 
     private void runExample(Hekate hekate) throws Exception {
         // Start:run_task
-        TaskService tasks = hekate.get(TaskService.class);
-
         // Submit runnable task for asynchronous execution.
-        TaskFuture<?> run = tasks.run(() ->
+        TaskFuture<?> run = hekate.tasks().run(() ->
             System.out.println("Running on node " + hekate.getLocalNode())
         );
 
@@ -76,10 +74,8 @@ public class TaskServiceJavadocTest extends HekateNodeTestBase {
 
     private void broadcastExample(Hekate hekate) throws Exception {
         // Start:broadcast_task
-        TaskService tasks = hekate.get(TaskService.class);
-
         // Submit runnable task for asynchronous execution on all cluster nodes.
-        TaskFuture<MultiNodeResult<Void>> broadcast = tasks.broadcast(() ->
+        TaskFuture<MultiNodeResult<Void>> broadcast = hekate.tasks().broadcast(() ->
             System.out.println("Running on node " + hekate.getLocalNode())
         );
 
@@ -90,10 +86,8 @@ public class TaskServiceJavadocTest extends HekateNodeTestBase {
 
     private void callExample(Hekate hekate) throws Exception {
         // Start:call_task
-        TaskService tasks = hekate.get(TaskService.class);
-
         // Submit callable task and obtain a task execution future.
-        TaskFuture<ClusterNode> call = tasks.call(() -> {
+        TaskFuture<ClusterNode> call = hekate.tasks().call(() -> {
             System.out.println("Running on node " + hekate.getLocalNode());
 
             return hekate.getLocalNode();
@@ -106,10 +100,8 @@ public class TaskServiceJavadocTest extends HekateNodeTestBase {
 
     private void aggregateExample(Hekate hekate) throws Exception {
         // Start:aggregate_task
-        TaskService tasks = hekate.get(TaskService.class);
-
         // Submit runnable task for asynchronous execution on all cluster nodes.
-        TaskFuture<MultiNodeResult<ClusterNode>> broadcast = tasks.aggregate(() -> {
+        TaskFuture<MultiNodeResult<ClusterNode>> broadcast = hekate.tasks().aggregate(() -> {
                 System.out.println("Running on node " + hekate.getLocalNode());
 
                 return hekate.getLocalNode();
@@ -123,13 +115,11 @@ public class TaskServiceJavadocTest extends HekateNodeTestBase {
 
     private void applyExample(Hekate hekate) throws Exception {
         // Start:apply
-        TaskService tasks = hekate.get(TaskService.class);
-
         String text = "some long text";
 
         // Split text into words and count the length of each word.
         // Words counting is distributed among the cluster nodes and is processed in parallel.
-        TaskFuture<Collection<Integer>> apply = tasks.applyAll(text.split(" "), word -> {
+        TaskFuture<Collection<Integer>> apply = hekate.tasks().applyAll(text.split(" "), word -> {
             System.out.println("Processing word: " + word);
 
             return word.length();
@@ -141,25 +131,23 @@ public class TaskServiceJavadocTest extends HekateNodeTestBase {
 
     private void filterNodesExample(Hekate hekate) throws Exception {
         // Start:filter_nodes
-        TaskService tasks = hekate.get(TaskService.class);
-
         // Submit task to all remote nodes.
-        tasks.forRemotes().broadcast(() ->
+        hekate.tasks().forRemotes().broadcast(() ->
             System.out.println("Running on node " + hekate.getLocalNode())
         );
 
         // Submit task to all nodes with 'example_role'.
-        tasks.forRole("example_role").broadcast(() ->
+        hekate.tasks().forRole("example_role").broadcast(() ->
             System.out.println("Running on node " + hekate.getLocalNode())
         );
 
         // Multiple filters can be stacked: submit task to all remote nodes with 'example_role'.
-        tasks.forRemotes().forRole("example_role").broadcast(() ->
+        hekate.tasks().forRemotes().forRole("example_role").broadcast(() ->
             System.out.println("Running on node " + hekate.getLocalNode())
         );
 
         // Custom filter: submit task to all nodes that have more than 2 CPUs.
-        tasks.filter(node -> node.getSysInfo().getCpus() > 2).broadcast(() ->
+        hekate.tasks().filter(node -> node.getSysInfo().getCpus() > 2).broadcast(() ->
             System.out.println("Running on node " + hekate.getLocalNode())
         );
         // End:filter_nodes

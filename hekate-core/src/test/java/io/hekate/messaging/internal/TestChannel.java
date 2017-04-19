@@ -18,7 +18,6 @@ package io.hekate.messaging.internal;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNodeId;
-import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.core.HekateFutureException;
 import io.hekate.core.internal.HekateTestNode;
@@ -71,7 +70,7 @@ public class TestChannel {
     public void initialize(HekateTestNode node) {
         this.node = node;
 
-        node.get(ClusterService.class).addListener(event -> {
+        node.cluster().addListener(event -> {
             if (event.getType() == ClusterEventType.JOIN) {
                 nodeId = node.getLocalNode().getId();
 

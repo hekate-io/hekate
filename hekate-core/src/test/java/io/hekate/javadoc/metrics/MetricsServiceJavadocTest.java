@@ -82,7 +82,7 @@ public class MetricsServiceJavadocTest extends HekateNodeTestBase {
         // End:configure
 
         // Start:access
-        MetricsService metrics = hekate.get(MetricsService.class);
+        MetricsService metrics = hekate.metrics();
         // End:access
 
         ExampleService exampleService = new ExampleService(metrics);

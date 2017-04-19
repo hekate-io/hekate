@@ -20,7 +20,6 @@ import io.hekate.HekateTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterJoinRejectedException;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
@@ -272,9 +271,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     public void testTopologyFuture() throws Exception {
         HekateTestNode node = createNode();
 
-        ClusterService cluster = node.get(ClusterService.class);
-
-        CompletableFuture<ClusterTopology> beforeJoin = cluster.futureOf(topology -> !topology.isEmpty());
+        CompletableFuture<ClusterTopology> beforeJoin = node.cluster().futureOf(topology -> !topology.isEmpty());
 
         assertFalse(beforeJoin.isDone());
 
@@ -282,11 +279,11 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
         get(beforeJoin);
 
-        CompletableFuture<ClusterTopology> afterJoin = cluster.futureOf(topology -> topology.size() == 1);
+        CompletableFuture<ClusterTopology> afterJoin = node.cluster().futureOf(topology -> topology.size() == 1);
 
         get(afterJoin);
 
-        CompletableFuture<ClusterTopology> afterJoinOther = cluster.futureOf(topology -> topology.size() == 2);
+        CompletableFuture<ClusterTopology> afterJoinOther = node.cluster().futureOf(topology -> topology.size() == 2);
 
         assertFalse(afterJoinOther.isDone());
 
@@ -294,13 +291,13 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
         get(afterJoinOther);
 
-        CompletableFuture<ClusterTopology> afterLeave = cluster.futureOf(topology -> false);
+        CompletableFuture<ClusterTopology> afterLeave = node.cluster().futureOf(topology -> false);
 
         node.leave();
 
         assertTrue(afterLeave.isCancelled());
 
-        CompletableFuture<ClusterTopology> afterRejoin = cluster.futureOf(topology -> topology.size() == 1);
+        CompletableFuture<ClusterTopology> afterRejoin = node.cluster().futureOf(topology -> topology.size() == 1);
 
         assertFalse(afterRejoin.isDone());
 
@@ -619,13 +616,13 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
         awaitForTopology(node1, node2, node3);
 
-        ClusterView view = node1.get(ClusterService.class).filter(n -> n.hasRole("VIEW_1"));
+        ClusterView view = node1.cluster().filter(n -> n.hasRole("VIEW_1"));
 
         assertEquals(2, view.getTopology().getRemoteNodes().size());
         assertTrue(view.getTopology().getRemoteNodes().contains(node2.getLocalNode()));
         assertTrue(view.getTopology().getRemoteNodes().contains(node3.getLocalNode()));
 
-        view = node1.get(ClusterService.class).filter(n -> n.hasRole("VIEW_2"));
+        view = node1.cluster().filter(n -> n.hasRole("VIEW_2"));
 
         assertEquals(1, view.getTopology().getRemoteNodes().size());
         assertTrue(view.getTopology().getRemoteNodes().contains(node2.getLocalNode()));

@@ -17,7 +17,6 @@
 package io.hekate.javadoc.metrics.cluster;
 
 import io.hekate.HekateNodeTestBase;
-import io.hekate.cluster.ClusterService;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.metrics.cluster.ClusterMetricsService;
@@ -40,15 +39,12 @@ public class ClusterMetricsServiceJavadocTest extends HekateNodeTestBase {
         // End:configure
 
         // Start:access
-        ClusterMetricsService metrics = hekate.get(ClusterMetricsService.class);
+        ClusterMetricsService metrics = hekate.clusterMetrics();
         // End:access
 
         // Start:usage
-        // Get cluster service.
-        ClusterService cluster = hekate.get(ClusterService.class);
-
         // Iterate over all remote nodes in the cluster.
-        cluster.forRemotes().forEach(node -> {
+        hekate.cluster().forRemotes().forEach(node -> {
             // Use cluster metrics service to get metrics of each node.
             metrics.forNode(node).ifPresent(m ->
                 System.out.println("Metric on node " + m.getNode() + " = " + m.get("example.metric"))

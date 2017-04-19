@@ -18,7 +18,6 @@ package io.hekate.profiling;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNodeId;
-import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventListener;
@@ -395,7 +394,7 @@ public class ClusterPerformanceTest extends HekateTestBase {
 
             HekateTestNode node = createNode(addr);
 
-            node.get(ClusterService.class).addListener(listener);
+            node.cluster().addListener(listener);
 
             joins.add(node.joinAsync());
 
@@ -418,7 +417,7 @@ public class ClusterPerformanceTest extends HekateTestBase {
 
         Hekate node = createNode(addr);
 
-        node.get(ClusterService.class).addListener(listener);
+        node.cluster().addListener(listener);
 
         node.join();
 

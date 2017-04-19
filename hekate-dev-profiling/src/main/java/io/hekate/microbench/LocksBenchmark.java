@@ -21,7 +21,6 @@ import io.hekate.core.HekateBootstrap;
 import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockRegion;
 import io.hekate.lock.LockRegionConfig;
-import io.hekate.lock.LockService;
 import io.hekate.lock.LockServiceFactory;
 import java.util.List;
 import java.util.UUID;
@@ -52,7 +51,7 @@ public class LocksBenchmark {
         @Override
         protected void initialize(List<Hekate> nodes) {
             regions = nodes.stream()
-                .map(n -> n.get(LockService.class).region("test"))
+                .map(n -> n.locks().region("test"))
                 .collect(toList());
         }
     }

@@ -18,15 +18,9 @@ package io.hekate.javadoc;
 
 import io.hekate.HekateTestBase;
 import io.hekate.codec.CodecService;
-import io.hekate.coordinate.CoordinationService;
 import io.hekate.core.Hekate;
-import io.hekate.election.ElectionService;
 import io.hekate.lock.LockRegion;
-import io.hekate.lock.LockService;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.MessagingService;
-import io.hekate.metrics.MetricsService;
-import io.hekate.metrics.cluster.ClusterMetricsService;
 import java.util.function.BiConsumer;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
@@ -73,7 +67,7 @@ public class SpringJavadocTest extends HekateTestBase {
     @Test
     public void testMessagingXsd() {
         doTest("javadoc/messaging/service-xsd.xml", (node, ctx) -> {
-            assertNotNull(node.get(MessagingService.class).channel("example.channel"));
+            assertNotNull(node.messaging().channel("example.channel"));
 
             MessagingChannel<?> channel = ctx.getBean("example.channel", MessagingChannel.class);
 
@@ -84,14 +78,14 @@ public class SpringJavadocTest extends HekateTestBase {
     @Test
     public void testMessagingBean() {
         doTest("javadoc/messaging/service-bean.xml", (node, ctx) ->
-            assertNotNull(node.get(MessagingService.class).channel("example.channel"))
+            assertNotNull(node.messaging().channel("example.channel"))
         );
     }
 
     @Test
     public void testMessagingChannelOptionsXsd() {
         doTest("javadoc/messaging/channel-opts-xsd.xml", (node, ctx) -> {
-            assertNotNull(node.get(MessagingService.class).channel("example.channel"));
+            assertNotNull(node.messaging().channel("example.channel"));
 
             MessagingChannel<?> channel = ctx.getBean("example.channel", MessagingChannel.class);
 
@@ -102,7 +96,7 @@ public class SpringJavadocTest extends HekateTestBase {
     @Test
     public void testMessagingChannelOptionsBean() {
         doTest("javadoc/messaging/channel-opts-bean.xml", (node, ctx) ->
-            assertNotNull(node.get(MessagingService.class).channel("example.channel"))
+            assertNotNull(node.messaging().channel("example.channel"))
         );
     }
 
@@ -119,8 +113,8 @@ public class SpringJavadocTest extends HekateTestBase {
     @Test
     public void testLockXsd() {
         doTest("javadoc/lock/service-xsd.xml", (node, ctx) -> {
-            assertNotNull(node.get(LockService.class).region("region1"));
-            assertNotNull(node.get(LockService.class).region("region2"));
+            assertNotNull(node.locks().region("region1"));
+            assertNotNull(node.locks().region("region2"));
 
             assertNotNull(ctx.getBean("region1", LockRegion.class));
             assertNotNull(ctx.getBean("region2", LockRegion.class));
@@ -130,66 +124,66 @@ public class SpringJavadocTest extends HekateTestBase {
     @Test
     public void testLockBean() {
         doTest("javadoc/lock/service-bean.xml", (node, ctx) -> {
-            assertNotNull(node.get(LockService.class).region("region1"));
-            assertNotNull(node.get(LockService.class).region("region2"));
+            assertNotNull(node.locks().region("region1"));
+            assertNotNull(node.locks().region("region2"));
         });
     }
 
     @Test
     public void testElectionXsd() {
         doTest("javadoc/election/service-xsd.xml", (node, ctx) ->
-            assertEquals(node.getLocalNode(), node.get(ElectionService.class).leader("example.election.group").join())
+            assertEquals(node.getLocalNode(), node.election().leader("example.election.group").join())
         );
     }
 
     @Test
     public void testElectionBean() {
         doTest("javadoc/election/service-bean.xml", (node, ctx) ->
-            assertEquals(node.getLocalNode(), node.get(ElectionService.class).leader("example.election.group").join())
+            assertEquals(node.getLocalNode(), node.election().leader("example.election.group").join())
         );
     }
 
     @Test
     public void testCoordinationXsd() {
         doTest("javadoc/coordinate/service-xsd.xml", (node, ctx) ->
-            assertNotNull(node.get(CoordinationService.class).process("example.process").getFuture().join())
+            assertNotNull(node.coordination().process("example.process").getFuture().join())
         );
     }
 
     @Test
     public void testCoordinationBean() {
         doTest("javadoc/coordinate/service-bean.xml", (node, ctx) ->
-            assertNotNull(node.get(CoordinationService.class).process("example.process").getFuture().join())
+            assertNotNull(node.coordination().process("example.process").getFuture().join())
         );
     }
 
     @Test
     public void testLocalMetricsXsd() {
         doTest("javadoc/metrics/service-xsd.xml", (node, ctx) -> {
-            assertNotNull(node.get(MetricsService.class).getCounter("example.counter"));
-            assertNotNull(node.get(MetricsService.class).metric("example.probe"));
+            assertNotNull(node.metrics().getCounter("example.counter"));
+            assertNotNull(node.metrics().metric("example.probe"));
         });
     }
 
     @Test
     public void testMetricsBean() {
         doTest("javadoc/metrics/service-bean.xml", (node, ctx) -> {
-            assertNotNull(node.get(MetricsService.class).getCounter("example.counter"));
-            assertNotNull(node.get(MetricsService.class).metric("example.probe"));
+            assertNotNull(node.metrics().getCounter("example.counter"));
+            assertNotNull(node.metrics().metric("example.probe"));
         });
     }
 
     @Test
     public void testClusterMetricsXsd() {
         doTest("javadoc/metrics/cluster/service-xsd.xml", (node, ctx) ->
-            assertTrue(node.get(ClusterMetricsService.class).forNode(node.getLocalNode()).isPresent())
+            assertTrue(node.clusterMetrics().forNode(node.getLocalNode()).isPresent())
         );
     }
 
     @Test
     public void testClusterMetricsBean() {
         doTest("javadoc/metrics/cluster/service-bean.xml", (node, ctx) ->
-            assertTrue(node.get(ClusterMetricsService.class).forNode(node.getLocalNode()).isPresent())
+            assertTrue(node.clusterMetrics().forNode(node.getLocalNode()).isPresent())
         );
     }
 

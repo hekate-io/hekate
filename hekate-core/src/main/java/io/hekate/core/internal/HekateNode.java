@@ -30,7 +30,9 @@ import io.hekate.cluster.internal.DefaultClusterNode;
 import io.hekate.cluster.internal.DefaultClusterNodeBuilder;
 import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.codec.CodecFactory;
+import io.hekate.codec.CodecService;
 import io.hekate.codec.internal.DefaultCodecService;
+import io.hekate.coordinate.CoordinationService;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateException;
@@ -51,11 +53,17 @@ import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.core.service.internal.ServiceManager;
+import io.hekate.election.ElectionService;
+import io.hekate.lock.LockService;
 import io.hekate.messaging.MessagingService;
+import io.hekate.metrics.MetricsService;
+import io.hekate.metrics.cluster.ClusterMetricsService;
 import io.hekate.network.NetworkService;
 import io.hekate.network.internal.NetworkBindCallback;
 import io.hekate.network.internal.NetworkServerFailure;
 import io.hekate.network.internal.NetworkServiceManager;
+import io.hekate.partition.PartitionService;
+import io.hekate.task.TaskService;
 import io.hekate.util.StateGuard;
 import io.hekate.util.format.ToString;
 import java.io.ObjectStreamException;
@@ -131,6 +139,28 @@ class HekateNode implements Hekate, Serializable {
     private final Map<String, Object> attributes = Collections.synchronizedMap(new HashMap<>());
 
     private final ClusterEventManager clusterEvents;
+
+    private final NetworkService network;
+
+    private final ClusterService cluster;
+
+    private final TaskService tasks;
+
+    private final MessagingService messaging;
+
+    private final LockService locks;
+
+    private final ElectionService election;
+
+    private final CoordinationService coordination;
+
+    private final MetricsService metrics;
+
+    private final ClusterMetricsService clusterMetrcis;
+
+    private final PartitionService partitions;
+
+    private final CodecService codec;
 
     private boolean joinEventFired;
 
@@ -222,6 +252,13 @@ class HekateNode implements Hekate, Serializable {
         requiredServices.add(NetworkService.class);
         requiredServices.add(ClusterService.class);
         requiredServices.add(MessagingService.class);
+        requiredServices.add(TaskService.class);
+        requiredServices.add(MetricsService.class);
+        requiredServices.add(ClusterMetricsService.class);
+        requiredServices.add(LockService.class);
+        requiredServices.add(ElectionService.class);
+        requiredServices.add(CoordinationService.class);
+        requiredServices.add(PartitionService.class);
 
         // Prepare core services.
         List<Service> coreServices = new ArrayList<>();
@@ -244,6 +281,18 @@ class HekateNode implements Hekate, Serializable {
 
         this.nodeRoles = servicesConfigCtx.getNodeRoles();
         this.nodeProps = servicesConfigCtx.getNodeProperties();
+
+        codec = services.findService(CodecService.class);
+        cluster = services.findService(ClusterService.class);
+        messaging = services.findService(MessagingService.class);
+        network = services.findService(NetworkService.class);
+        locks = services.findService(LockService.class);
+        election = services.findService(ElectionService.class);
+        coordination = services.findService(CoordinationService.class);
+        partitions = services.findService(PartitionService.class);
+        tasks = services.findService(TaskService.class);
+        metrics = services.findService(MetricsService.class);
+        clusterMetrcis = services.findService(ClusterMetricsService.class);
 
         // Get internal service managers.
         net = services.findService(NetworkServiceManager.class);
@@ -317,6 +366,61 @@ class HekateNode implements Hekate, Serializable {
     @Override
     public Hekate leave() throws InterruptedException, HekateFutureException {
         return leaveAsync().get();
+    }
+
+    @Override
+    public ClusterService cluster() {
+        return cluster;
+    }
+
+    @Override
+    public TaskService tasks() {
+        return tasks;
+    }
+
+    @Override
+    public MessagingService messaging() {
+        return messaging;
+    }
+
+    @Override
+    public LockService locks() {
+        return locks;
+    }
+
+    @Override
+    public ElectionService election() {
+        return election;
+    }
+
+    @Override
+    public CoordinationService coordination() {
+        return coordination;
+    }
+
+    @Override
+    public MetricsService metrics() {
+        return metrics;
+    }
+
+    @Override
+    public PartitionService partitions() {
+        return partitions;
+    }
+
+    @Override
+    public ClusterMetricsService clusterMetrics() {
+        return clusterMetrcis;
+    }
+
+    @Override
+    public NetworkService network() {
+        return network;
+    }
+
+    @Override
+    public CodecService codec() {
+        return codec;
     }
 
     @Override

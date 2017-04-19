@@ -94,7 +94,7 @@ import java.util.function.Predicate;
  *
  * <h2>Accessing service</h2>
  * <p>
- * Instances of {@link ClusterService} can be obtained via {@link Hekate#get(Class)} method as in the example below:
+ * Instances of {@link ClusterService} can be obtained via {@link Hekate#cluster()} method as in the example below:
  * ${source: cluster/ClusterServiceJavadocTest.java#get_service}
  * </p>
  *

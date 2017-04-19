@@ -17,6 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.HekateNodeTestBase;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingService;
@@ -31,43 +32,43 @@ import static org.junit.Assert.assertTrue;
 public class MessagingServiceSingleNodeTest extends HekateNodeTestBase {
     @Test
     public void testEmptyChannels() throws Exception {
-        MessagingService messaging = createNode(boot ->
+        HekateTestNode node = createNode(boot ->
             boot.withService(new MessagingServiceFactory())
-        ).join().get(MessagingService.class);
+        ).join();
 
-        assertTrue(messaging.allChannels().isEmpty());
+        assertTrue(node.messaging().allChannels().isEmpty());
 
-        assertFalse(messaging.hasChannel("no-such-channel"));
+        assertFalse(node.messaging().hasChannel("no-such-channel"));
 
-        expect(IllegalArgumentException.class, () -> messaging.channel("no-such-channel"));
+        expect(IllegalArgumentException.class, () -> node.messaging().channel("no-such-channel"));
 
-        assertTrue(messaging.toString(), messaging.toString().startsWith(MessagingService.class.getSimpleName()));
+        assertTrue(node.messaging().toString(), node.messaging().toString().startsWith(MessagingService.class.getSimpleName()));
     }
 
     @Test
     public void testMultipleChannels() throws Exception {
-        MessagingService messaging = createNode(boot ->
+        HekateTestNode node = createNode(boot ->
             boot.withService(new MessagingServiceFactory()
                 .withChannel(new MessagingChannelConfig<>("channel1"))
                 .withChannel(new MessagingChannelConfig<>("channel2"))
             )
-        ).join().get(MessagingService.class);
+        ).join();
 
-        assertTrue(messaging.hasChannel("channel1"));
-        assertTrue(messaging.hasChannel("channel2"));
+        assertTrue(node.messaging().hasChannel("channel1"));
+        assertTrue(node.messaging().hasChannel("channel2"));
 
-        MessagingChannel<Object> channel1 = messaging.channel("channel1");
-        MessagingChannel<Object> channel2 = messaging.channel("channel2");
+        MessagingChannel<Object> channel1 = node.messaging().channel("channel1");
+        MessagingChannel<Object> channel2 = node.messaging().channel("channel2");
 
         assertNotNull(channel1);
         assertNotNull(channel2);
 
-        assertEquals(2, messaging.allChannels().size());
-        assertTrue(messaging.allChannels().contains(channel1));
-        assertTrue(messaging.allChannels().contains(channel2));
+        assertEquals(2, node.messaging().allChannels().size());
+        assertTrue(node.messaging().allChannels().contains(channel1));
+        assertTrue(node.messaging().allChannels().contains(channel2));
 
-        assertTrue(messaging.toString(), messaging.toString().startsWith(MessagingService.class.getSimpleName()));
-        assertTrue(messaging.toString(), messaging.toString().contains("channel1"));
-        assertTrue(messaging.toString(), messaging.toString().contains("channel2"));
+        assertTrue(node.messaging().toString(), node.messaging().toString().startsWith(MessagingService.class.getSimpleName()));
+        assertTrue(node.messaging().toString(), node.messaging().toString().contains("channel1"));
+        assertTrue(node.messaging().toString(), node.messaging().toString().contains("channel2"));
     }
 }

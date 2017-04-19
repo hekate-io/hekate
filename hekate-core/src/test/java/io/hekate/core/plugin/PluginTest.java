@@ -26,7 +26,6 @@ import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.metrics.MetricsServiceFactory;
-import io.hekate.network.NetworkService;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -274,7 +273,7 @@ public class PluginTest extends HekateNodeTestBase {
         HekateTestNode node = createNodeWithPlugin(new TestPlugin() {
             @Override
             public void start(Hekate hekate) throws HekateException {
-                assertNotNull(hekate.get(NetworkService.class));
+                assertNotNull(hekate.network());
 
                 success.set(true);
             }

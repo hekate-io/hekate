@@ -17,7 +17,6 @@
 package io.hekate.core.internal;
 
 import io.hekate.HekateNodeTestBase;
-import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventListener;
@@ -212,7 +211,7 @@ public class HekateNodeTest extends HekateNodeTestBase {
 
         ClusterEventListener listener = events::add;
 
-        node.get(ClusterService.class).addListener(listener);
+        node.cluster().addListener(listener);
 
         for (int i = 0; i < 50; i++) {
             futures.add(node.joinAsync());
@@ -222,7 +221,7 @@ public class HekateNodeTest extends HekateNodeTestBase {
             future.get();
         }
 
-        node.get(ClusterService.class).removeListener(listener);
+        node.cluster().removeListener(listener);
 
         node.leave();
 
@@ -237,7 +236,7 @@ public class HekateNodeTest extends HekateNodeTestBase {
 
         List<ClusterEvent> events = new CopyOnWriteArrayList<>();
 
-        node.get(ClusterService.class).addListener(events::add);
+        node.cluster().addListener(events::add);
 
         List<LeaveFuture> futures = new ArrayList<>();
 
@@ -316,7 +315,7 @@ public class HekateNodeTest extends HekateNodeTestBase {
                 assertNotNull(joined.getLocalNode());
                 assertSame(UP, joined.getState());
 
-                ClusterTopology topology = joined.get(ClusterService.class).getTopology();
+                ClusterTopology topology = joined.cluster().getTopology();
 
                 assertNotNull(topology);
                 assertEquals(1, topology.getNodes().size());
@@ -345,7 +344,7 @@ public class HekateNodeTest extends HekateNodeTestBase {
                 assertNotNull(joined.getLocalNode());
                 assertSame(UP, joined.getState());
 
-                ClusterTopology topology = joined.get(ClusterService.class).getTopology();
+                ClusterTopology topology = joined.cluster().getTopology();
 
                 assertNotNull(topology);
                 assertEquals(1, topology.getNodes().size());

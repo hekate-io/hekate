@@ -26,7 +26,6 @@ import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.cluster.seed.multicast.MulticastSeedNodeProvider;
 import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.cluster.split.SplitBrainDetector;
-import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.service.ServiceFactory;
@@ -39,9 +38,9 @@ import java.util.List;
  * Factory for {@link ClusterService}.
  *
  * <p>
- * This class represents a configurable factory for {@link ClusterService}. Instances of this class must be {@link
- * HekateBootstrap#withService(ServiceFactory) registered} within the {@link HekateBootstrap} in order to make {@link ClusterService}
- * accessible via {@link Hekate#get(Class)} method.
+ * This class represents a configurable factory for {@link ClusterService}. Instances of this class can be
+ * {@link HekateBootstrap#withService(ServiceFactory) registered} within the {@link HekateBootstrap} in order to customize options of the
+ * {@link ClusterService}.
  * </p>
  *
  * <p>

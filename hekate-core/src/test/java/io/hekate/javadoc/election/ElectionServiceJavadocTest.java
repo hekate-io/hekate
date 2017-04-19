@@ -83,10 +83,10 @@ public class ElectionServiceJavadocTest extends HekateNodeTestBase {
 
         // Start:access
         // Get service.
-        ElectionService election = hekate.get(ElectionService.class);
+        ElectionService election = hekate.election();
 
         // Get current leader (or wait up to 3 seconds for leader to be elected).
-        ClusterNode leader = get(election.leader("example.election.group"));
+        ClusterNode leader = election.leader("example.election.group").get();
         // End:access
 
         assertNotNull(leader);

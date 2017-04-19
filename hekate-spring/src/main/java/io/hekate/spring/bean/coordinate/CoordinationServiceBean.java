@@ -25,7 +25,7 @@ import io.hekate.spring.bean.HekateBaseBean;
 public class CoordinationServiceBean extends HekateBaseBean<CoordinationService> {
     @Override
     public CoordinationService getObject() throws Exception {
-        return getSource().get(CoordinationService.class);
+        return getSource().coordination();
     }
 
     @Override

@@ -59,9 +59,7 @@ public class NetworkServiceJavadocTest extends HekateNodeTestBase {
         getServiceExample(hekate);
 
         // Start:ping
-        NetworkService network = hekate.get(NetworkService.class);
-
-        network.ping(new InetSocketAddress("127.0.0.1", 10012), (address, result) -> {
+        hekate.network().ping(new InetSocketAddress("127.0.0.1", 10012), (address, result) -> {
             switch (result) {
                 case SUCCESS: {
                     System.out.println("Node is alive at " + address);
@@ -142,7 +140,7 @@ public class NetworkServiceJavadocTest extends HekateNodeTestBase {
 
         // Start:client_connect_example
         // Get connector by its protocol identifier.
-        NetworkConnector<String> connector = hekate.get(NetworkService.class).connector("example.protocol");
+        NetworkConnector<String> connector = hekate.network().connector("example.protocol");
 
         NetworkClient<String> client = connector.newClient();
 
@@ -176,7 +174,7 @@ public class NetworkServiceJavadocTest extends HekateNodeTestBase {
 
     private void getServiceExample(Hekate hekate) {
         // Start:get_service
-        NetworkService network = hekate.get(NetworkService.class);
+        NetworkService network = hekate.network();
         // End:get_service
 
         assertNotNull(network);

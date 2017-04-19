@@ -17,9 +17,9 @@
 package io.hekate.lock.internal;
 
 import io.hekate.HekateNodeTestBase;
+import io.hekate.core.internal.HekateTestNode;
 import io.hekate.lock.LockRegion;
 import io.hekate.lock.LockRegionConfig;
-import io.hekate.lock.LockService;
 import io.hekate.lock.LockServiceFactory;
 import org.junit.Test;
 
@@ -31,36 +31,36 @@ import static org.junit.Assert.assertTrue;
 public class LockServiceSingleNodeTest extends HekateNodeTestBase {
     @Test
     public void testEmptyRegions() throws Exception {
-        LockService locks = createNode(boot -> boot.withService(new LockServiceFactory())).join().get(LockService.class);
+        HekateTestNode node = createNode(boot -> boot.withService(new LockServiceFactory())).join();
 
-        assertTrue(locks.allRegions().isEmpty());
+        assertTrue(node.locks().allRegions().isEmpty());
 
-        assertFalse(locks.hasRegion("no-such-region"));
+        assertFalse(node.locks().hasRegion("no-such-region"));
 
-        expect(IllegalArgumentException.class, () -> locks.region("no-such-region"));
+        expect(IllegalArgumentException.class, () -> node.locks().region("no-such-region"));
     }
 
     @Test
     public void testMultipleRegions() throws Exception {
-        LockService locks = createNode(boot ->
+        HekateTestNode node = createNode(boot ->
             boot.withService(new LockServiceFactory()
                 .withRegion(new LockRegionConfig("test1"))
                 .withRegion(new LockRegionConfig("test2"))
             )
-        ).join().get(LockService.class);
+        ).join();
 
-        assertTrue(locks.hasRegion("test1"));
-        assertTrue(locks.hasRegion("test2"));
+        assertTrue(node.locks().hasRegion("test1"));
+        assertTrue(node.locks().hasRegion("test2"));
 
-        LockRegion region1 = locks.region("test1");
-        LockRegion region2 = locks.region("test2");
+        LockRegion region1 = node.locks().region("test1");
+        LockRegion region2 = node.locks().region("test2");
 
         assertNotNull(region1);
         assertNotNull(region2);
 
-        assertEquals(2, locks.allRegions().size());
-        assertTrue(locks.allRegions().contains(locks.region("test1")));
-        assertTrue(locks.allRegions().contains(region2));
+        assertEquals(2, node.locks().allRegions().size());
+        assertTrue(node.locks().allRegions().contains(node.locks().region("test1")));
+        assertTrue(node.locks().allRegions().contains(region2));
 
         region1.getLock("lock").lock();
         region2.getLock("lock").lock();

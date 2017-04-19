@@ -19,7 +19,6 @@ package io.hekate.cluster.internal;
 import io.hekate.HekateNodeContextTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
@@ -76,17 +75,17 @@ public class ClusterServiceSingleNodeTest extends HekateNodeContextTestBase {
         repeat(50, i -> {
             node.join();
 
-            ClusterNode node = this.node.getLocalNode();
+            ClusterNode clusterNode = node.getLocalNode();
 
             List<ClusterEvent> events = new CopyOnWriteArrayList<>();
 
             ClusterEventListener listener = events::add;
 
-            this.node.get(ClusterService.class).addListener(listener);
+            node.cluster().addListener(listener);
 
-            this.node.leave();
+            node.leave();
 
-            this.node.get(ClusterService.class).removeListener(listener);
+            node.cluster().removeListener(listener);
 
             assertEquals(2, events.size());
             assertSame(ClusterEventType.JOIN, events.get(0).getType());
@@ -96,14 +95,14 @@ public class ClusterServiceSingleNodeTest extends HekateNodeContextTestBase {
             ClusterLeaveEvent leave = events.get(1).asLeave();
 
             assertEquals(1, join.getTopology().size());
-            assertEquals(node, join.getTopology().getLocalNode());
+            assertEquals(clusterNode, join.getTopology().getLocalNode());
             assertEquals(1, join.getTopology().getLocalNode().getJoinOrder());
-            assertTrue(join.getTopology().contains(node));
+            assertTrue(join.getTopology().contains(clusterNode));
 
             assertEquals(1, leave.getTopology().size());
-            assertEquals(node, leave.getTopology().getLocalNode());
+            assertEquals(clusterNode, leave.getTopology().getLocalNode());
             assertEquals(1, leave.getTopology().getLocalNode().getJoinOrder());
-            assertTrue(leave.getTopology().contains(node));
+            assertTrue(leave.getTopology().contains(clusterNode));
         });
     }
 
@@ -112,17 +111,17 @@ public class ClusterServiceSingleNodeTest extends HekateNodeContextTestBase {
         repeat(50, i -> {
             node.join();
 
-            ClusterNode node = this.node.getLocalNode();
+            ClusterNode clusterNode = this.node.getLocalNode();
 
             List<ClusterEvent> events = new CopyOnWriteArrayList<>();
 
             ClusterEventListener listener = events::add;
 
-            this.node.get(ClusterService.class).addListener(listener);
+            node.cluster().addListener(listener);
 
-            this.node.terminate();
+            node.terminate();
 
-            this.node.get(ClusterService.class).removeListener(listener);
+            node.cluster().removeListener(listener);
 
             assertEquals(2, events.size());
             assertSame(ClusterEventType.JOIN, events.get(0).getType());
@@ -132,14 +131,14 @@ public class ClusterServiceSingleNodeTest extends HekateNodeContextTestBase {
             ClusterLeaveEvent leave = events.get(1).asLeave();
 
             assertEquals(1, join.getTopology().size());
-            assertEquals(node, join.getTopology().getLocalNode());
+            assertEquals(clusterNode, join.getTopology().getLocalNode());
             assertEquals(1, join.getTopology().getLocalNode().getJoinOrder());
-            assertTrue(join.getTopology().contains(node));
+            assertTrue(join.getTopology().contains(clusterNode));
 
             assertEquals(1, leave.getTopology().size());
-            assertEquals(node, leave.getTopology().getLocalNode());
+            assertEquals(clusterNode, leave.getTopology().getLocalNode());
             assertEquals(1, leave.getTopology().getLocalNode().getJoinOrder());
-            assertTrue(leave.getTopology().contains(node));
+            assertTrue(leave.getTopology().contains(clusterNode));
         });
     }
 
@@ -150,15 +149,15 @@ public class ClusterServiceSingleNodeTest extends HekateNodeContextTestBase {
 
             ClusterEventListener listener = events::add;
 
-            node.get(ClusterService.class).addListener(listener);
+            node.cluster().addListener(listener);
 
             node.join();
 
-            ClusterNode node = this.node.getLocalNode();
+            ClusterNode clusterNode = this.node.getLocalNode();
 
-            this.node.leave();
+            node.leave();
 
-            this.node.get(ClusterService.class).removeListener(listener);
+            node.cluster().removeListener(listener);
 
             assertEquals(2, events.size());
             assertSame(ClusterEventType.JOIN, events.get(0).getType());
@@ -168,16 +167,16 @@ public class ClusterServiceSingleNodeTest extends HekateNodeContextTestBase {
             ClusterLeaveEvent leave = events.get(1).asLeave();
 
             assertEquals(1, join.getTopology().size());
-            assertEquals(node, join.getTopology().getLocalNode());
-            assertEquals(node, join.getTopology().getLocalNode());
-            assertTrue(join.getTopology().contains(node));
-            assertFalse(join.getTopology().getRemoteNodes().contains(node));
+            assertEquals(clusterNode, join.getTopology().getLocalNode());
+            assertEquals(clusterNode, join.getTopology().getLocalNode());
+            assertTrue(join.getTopology().contains(clusterNode));
+            assertFalse(join.getTopology().getRemoteNodes().contains(clusterNode));
 
             assertEquals(1, leave.getTopology().size());
-            assertEquals(node, leave.getTopology().getLocalNode());
+            assertEquals(clusterNode, leave.getTopology().getLocalNode());
             assertEquals(1, join.getTopology().getLocalNode().getJoinOrder());
-            assertTrue(leave.getTopology().contains(node));
-            assertFalse(leave.getTopology().getRemoteNodes().contains(node));
+            assertTrue(leave.getTopology().contains(clusterNode));
+            assertFalse(leave.getTopology().getRemoteNodes().contains(clusterNode));
         });
     }
 
@@ -188,13 +187,13 @@ public class ClusterServiceSingleNodeTest extends HekateNodeContextTestBase {
 
             ClusterEventListener listener = event -> statuses.add(node.getState());
 
-            node.get(ClusterService.class).addListener(listener);
+            node.cluster().addListener(listener);
 
             node.join();
 
             node.leave();
 
-            node.get(ClusterService.class).removeListener(listener);
+            node.cluster().removeListener(listener);
 
             assertEquals(2, statuses.size());
             assertSame(State.UP, statuses.get(0));

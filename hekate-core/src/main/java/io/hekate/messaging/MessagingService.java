@@ -48,7 +48,7 @@ import java.util.List;
  *
  * <h2>Accessing service</h2>
  * <p>
- * Messaging service can be accessed via {@link Hekate#get(Class)} method as in the example below:
+ * Messaging service can be accessed via {@link Hekate#messaging()} method as in the example below:
  * ${source: messaging/MessagingServiceJavadocTest.java#access}
  * </p>
  *

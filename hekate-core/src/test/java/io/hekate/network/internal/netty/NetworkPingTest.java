@@ -19,7 +19,6 @@ package io.hekate.network.internal.netty;
 import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
 import io.hekate.core.internal.HekateTestNode;
-import io.hekate.network.NetworkService;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.network.PingCallback;
 import io.hekate.network.PingResult;
@@ -81,14 +80,12 @@ public class NetworkPingTest extends HekateNodeTestBase {
         for (HekateTestNode source : nodes) {
             List<TestPingCallback> callbacks = new ArrayList<>();
 
-            NetworkService netService = source.get(NetworkService.class);
-
             for (HekateTestNode target : nodes) {
                 TestPingCallback callback = new TestPingCallback();
 
                 callbacks.add(callback);
 
-                netService.ping(target.getSocketAddress(), callback);
+                source.network().ping(target.getSocketAddress(), callback);
             }
 
             for (TestPingCallback callback : callbacks) {
@@ -107,7 +104,7 @@ public class NetworkPingTest extends HekateNodeTestBase {
 
         TestPingCallback callback = new TestPingCallback();
 
-        hekate.get(NetworkService.class).ping(new InetSocketAddress("127.0.0.1", 12765), callback);
+        hekate.network().ping(new InetSocketAddress("127.0.0.1", 12765), callback);
 
         assertSame(PingResult.FAILURE, callback.get());
     }
@@ -118,7 +115,7 @@ public class NetworkPingTest extends HekateNodeTestBase {
 
         TestPingCallback callback = new TestPingCallback();
 
-        hekate.get(NetworkService.class).ping(new InetSocketAddress("non-existing-host.com", 12765), callback);
+        hekate.network().ping(new InetSocketAddress("non-existing-host.com", 12765), callback);
 
         assertSame(PingResult.FAILURE, callback.get());
     }
@@ -129,7 +126,7 @@ public class NetworkPingTest extends HekateNodeTestBase {
 
         TestPingCallback callback = new TestPingCallback();
 
-        hekate.get(NetworkService.class).ping(new InetSocketAddress("hekate.io", 12765), callback);
+        hekate.network().ping(new InetSocketAddress("hekate.io", 12765), callback);
 
         assertSame(PingResult.TIMEOUT, callback.get());
     }
