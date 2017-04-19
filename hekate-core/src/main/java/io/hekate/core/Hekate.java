@@ -46,15 +46,16 @@ import java.util.Set;
  *
  * <h2>Instantiation</h2>
  * <p>
- * Instances of this interface can be constructed by calling {@link HekateBootstrap#join()} method (or its {@link
- * HekateBootstrap#joinAsync() asynchronous equivalent}). This method builds a new {@link Hekate}instance and joins it to a cluster.
- * It is possible to create and start multiple {@link Hekate} instances within a single JVM. Each instance represents an independent
- * cluster node with its own set of resources (threads, sockets, etc).
+ * Instances of this interface can be constructed by calling the {@link HekateBootstrap#join()} method (or its {@link
+ * HekateBootstrap#joinAsync() asynchronous equivalent}). This method creates a new {@link Hekate} instance and joins it to the cluster.
+ * It is possible to create and run multiple {@link Hekate} instances within a single JVM. Each such instance is an independent cluster
+ * node
+ * with its own set of resources (threads, sockets, etc).
  * </p>
  *
  * <p>
- * If application is running on top of the <a href="http://projects.spring.io/spring-framework" target="_blank">Spring Framework</a> then
- * it is possible to use Spring Framework integration that is provided by the
+ * If the application runs on top of the <a href="http://projects.spring.io/spring-framework" target="_blank">Spring Framework</a>, then
+ * you can use the Spring Framework integration provided by the
  * <a href="{@docRoot}/io/hekate/spring/bean/HekateSpringBootstrap.html">HekateSpringBootstrap</a> class (please see its documentation for
  * more details).
  * </p>
@@ -82,14 +83,14 @@ import java.util.Set;
  *
  * <h2>Configuration</h2>
  * <p>
- * Configuration options for {@link Hekate} instance can be specified via properties of {@link HekateBootstrap} class.
+ * Configuration options for the {@link Hekate} instance can be specified via properties of the {@link HekateBootstrap} class.
  * This class provides bean-style properties with getters/setters (for <a href="http://projects.spring.io/spring-framework"
  * target="_blank">Spring Framework</a> XML files) as well as <a href="https://en.wikipedia.org/wiki/Fluent_interface"
  * target="_blank">fluent</a>-style API for programmatic configuration via Java code.
  * </p>
  *
  * <p>
- * Key configuration options are:
+ * The key configuration options are:
  * </p>
  * <ul>
  * <li>{@link HekateBootstrap#setClusterName(String) Cluster name}</li>
@@ -154,24 +155,24 @@ import java.util.Set;
  * <a name="lifecycle"></a>
  * <h2>Lifecycle</h2>
  * <p>
- * Lifecycle of each {@link Hekate} instance is controlled by the following methods:
+ * The lifecycle of each {@link Hekate} instance is controlled in the following methods:
  * </p>
  * <ul>
  * <li>{@link #join()} - initializes this instance and joins the cluster. Usually this methods shouldn't be called manually unless you
  * instructed this instance to {@link #leave() leave} the cluster and then want it to join back.</li>
  *
- * <li>{@link #leave()} - leaves the cluster and then {@link #terminate() terminates} this instance. This is the recommended way of
- * graceful
- * shutdown.</li>
+ * <li>{@link #leave()} - leaves the cluster and then {@link #terminate() terminates} this instance. This is the recommended way to
+ * shutdown
+ * gracefully.</li>
  *
- * <li>{@link #terminate()} - terminates this instance bypassing the cluster leave protocol (i.e. remote nodes will notice that this node
- * left the cluster only based on their failure detection settings). In general it is recommended to use {@link #leave() graceful} shutdown
- * and to use this method for abnormal termination (f.e. in case of unrecoverable error) or for testing purposes to emulate cluster node
- * failures.</li>
+ * <li>{@link #terminate()} - terminates this instance, bypassing the cluster leave protocol (i.e. remote nodes will notice that this node
+ * left the cluster only based on their failure detection settings). In general, it is recommended to use {@link #leave() graceful}
+ * shutdown and use this method for abnormal termination (f.e. in case of unrecoverable error) or for testing purposes to emulate failures
+ * of cluster nodes.</li>
  * </ul>
  *
  * <p>
- * Each {@link Hekate} instance goes thorough the following lifecycle stages:
+ * Each instance of {@link Hekate} goes through the following stages of the life cycle:
  * </p>
  * <ul>
  * <li>{@link State#DOWN} - initial state</li>
@@ -190,15 +191,15 @@ import java.util.Set;
  * </ul>
  *
  * <p>
- * Current state of {@link Hekate} instance can be inspected via {@link Hekate#getState()} and monitored via {@link
- * #addListener(LifecycleListener)} methods.
+ * The Current state of the {@link Hekate} instance can be inspected via {@link Hekate#getState()} method. State changes can be monitored
+ * via {@link #addListener(LifecycleListener)} methods.
  * </p>
  *
  * @see HekateBootstrap
  */
 public interface Hekate {
     /**
-     * Lifecycle state of {@link Hekate} instance.
+     * State of the {@link Hekate} instance life cycle.
      * <p>
      * {@link #DOWN} &rarr; {@link #INITIALIZING} &rarr; {@link #JOINING} &rarr; {@link #UP} &rarr; {@link #LEAVING} &rarr; {@link
      * #TERMINATING}
@@ -214,7 +215,7 @@ public interface Hekate {
         /** Initializing services and starting {@link SeedNodeProvider seed nodes} discovery . */
         INITIALIZING,
 
-        /** Initiated the cluster join protocol with one of {@link SeedNodeProvider seed nodes}. */
+        /** Initiated the cluster joining with one of the {@link SeedNodeProvider seed nodes}. */
         JOINING,
 
         /** Up and running. */
@@ -223,7 +224,7 @@ public interface Hekate {
         /** Started leaving the cluster. */
         LEAVING,
 
-        /** Left the cluster and started terminating services. Will switch to {@link #DOWN} once completed. */
+        /** Left the cluster and started terminating services. Switches to the {@link #DOWN} state once the termination is complete. */
         TERMINATING
     }
 
@@ -243,39 +244,39 @@ public interface Hekate {
     }
 
     /**
-     * Checks if a {@link Service service} of the specified type is {@link HekateBootstrap#withService(ServiceFactory) registered} within
+     * Checks if the {@link Service service} of the specified type is {@link HekateBootstrap#withService(ServiceFactory) registered} within
      * this instance.
      *
-     * @param service Service class.
-     * @param <T> Concrete service type.
+     * @param service Service type.
+     * @param <T> Service type.
      *
-     * @return {@code true} if service exists.
+     * @return {@code true} if service is registered.
      */
     <T extends Service> boolean has(Class<T> service);
 
     /**
-     * Returns a {@link Service service} of the specified type (for example {@link ClusterService}, {@link MessagingService} etc).
-     * Throws {@link IllegalArgumentException} if such service is not {@link HekateBootstrap#withService(ServiceFactory) registered}.
+     * Returns the {@link Service service} of the specified type (f.e. {@link ClusterService}, {@link MessagingService} etc).
+     * Throws an {@link IllegalArgumentException} if such a service is not {@link HekateBootstrap#withService(ServiceFactory) registered}.
      *
-     * @param service Service class.
-     * @param <T> Concrete service type.
+     * @param service Service type.
+     * @param <T> Service type.
      *
      * @return Service instance.
      *
-     * @throws IllegalArgumentException If service of the specified type doesn't exist (use {@link #has(Class)} to check if service
+     * @throws IllegalArgumentException If service of the specified type doesn't exist (use {@link #has(Class)} to check if the service
      * exists).
      * @see #has(Class)
-     * @see HekateBootstrap#withService(ServiceFactory)
+     * @see HekateBootstrap#setServices(List)
      */
     <T extends Service> T get(Class<T> service) throws IllegalArgumentException;
 
     /**
-     * Returns types of all registered services.
+     * Returns the types of all registered services.
      *
      * @return Immutable set of service types.
      *
      * @see #get(Class)
-     * @see HekateBootstrap#withService(ServiceFactory)
+     * @see HekateBootstrap#setServices(List)
      */
     Set<Class<? extends Service>> getServiceTypes();
 
@@ -303,7 +304,7 @@ public interface Hekate {
      *
      * <p>
      * Note that such attributes are NOT cluster-wide and are not visible to other nodes of the cluster.
-     * Please see {@link ClusterNode#getProperties()} for cluster-wide properties support.
+     * Please see the {@link ClusterNode#getProperties()} method for cluster-wide properties support.
      * </p>
      *
      * @param name Attribute name.
@@ -335,7 +336,7 @@ public interface Hekate {
      * Asynchronously initializes this instance and joins the cluster.
      *
      * <p>
-     * {@link JoinFuture} object that is returned by this method can be used to get a result of this operation.
+     * The {@link JoinFuture} object returned by this method can be used to obtain the result of this operation.
      * </p>
      *
      * @return Future of this operation.
@@ -348,7 +349,7 @@ public interface Hekate {
      * Synchronously initializes this instance and joins the cluster.
      *
      * <p>
-     * This method is merely a shortcut to the following call sequence:
+     * This method is simply a shortcut for the following sequence of method calls:
      * ${source: HekateJavadocTest.java#sync_join}
      * </p>
      *
@@ -364,7 +365,7 @@ public interface Hekate {
      * Asynchronously leaves the cluster and terminates this instance.
      *
      * <p>
-     * {@link LeaveFuture} object that is returned by this method can be used to get a result of this operation.
+     * The {@link LeaveFuture} object returned by this method can be used to obtain the result of this operation.
      * </p>
      *
      * @return Future of this operation.
@@ -375,7 +376,7 @@ public interface Hekate {
      * Synchronously leaves the cluster and terminates this instance.
      *
      * <p>
-     * This method is merely a shortcut to the following call sequence:
+     * This method is simply a shortcut for the following sequence of method calls:
      * ${source: HekateJavadocTest.java#sync_leave}
      * </p>
      *
@@ -392,12 +393,12 @@ public interface Hekate {
      *
      * <p>
      * Note that this method bypasses the cluster leave protocol and remote nodes will notice that this node left the cluster only based on
-     * their failure detection settings. In general it is recommended to use {@link #leave() graceful} shutdown and to use this method for
-     * abnormal termination (f.e. in case of unrecoverable error) or for testing purposes to emulate cluster node failures.
+     * the failure detection settings. In general it is recommended to use {@link #leave() graceful} shutdown and use this method for
+     * abnormal termination (f.e. in case of unrecoverable error) or for testing purposes to emulate failures of cluster nodes.
      * </p>
      *
      * <p>
-     * {@link TerminateFuture} object that is returned by this method can be used to get a result of this operation.
+     * The {@link TerminateFuture} object returned by this method can be used to obtain the result of this operation.
      * </p>
      *
      * @return This instance.
@@ -408,14 +409,14 @@ public interface Hekate {
      * Synchronously terminates this instance.
      *
      * <p>
-     * This method is merely a shortcut to the following call sequence:
+     * This method is simply a shortcut for the following sequence of method calls:
      * ${source: HekateJavadocTest.java#sync_terminate}
      * </p>
      *
      * <p>
      * Note that this method bypasses the cluster leave protocol and remote nodes will notice that this node left the cluster only based on
-     * their failure detection settings. In general it is recommended to use {@link #leave() graceful} shutdown and to use this method for
-     * abnormal termination (f.e. in case of unrecoverable error) or for testing purposes to emulate cluster node failures.
+     * the failure detection settings. In general it is recommended to use {@link #leave() graceful} shutdown and use this method for
+     * abnormal termination (f.e. in case of unrecoverable error) or for testing purposes to emulate failures of cluster nodes.
      * </p>
      *
      * @return This instance.
