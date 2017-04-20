@@ -35,6 +35,7 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 public class MessagingBenchmark {
+    @SuppressWarnings("unused")
     public enum Mode {
         NIO_1_WORKER_1(1, 1),
         NIO_1_WORKER_0(1, 0),
@@ -58,8 +59,8 @@ public class MessagingBenchmark {
             "NIO_1_WORKER_0",
             "NIO_2_WORKER_0",
             "NIO_1_WORKER_4",
-            "NIO_2_WORKER_4"}
-        )
+            "NIO_2_WORKER_4"
+        })
         private Mode mode;
 
         private MessagingChannel<byte[]> channel;

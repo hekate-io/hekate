@@ -39,6 +39,7 @@ public class TasksBenchmark {
         FST
     }
 
+    @SuppressWarnings("unused")
     public enum Mode {
         WORKER_2_KRYO(1, 4, CodecType.KRYO),
         WORKER_2_FST(1, 4, CodecType.FST),
@@ -67,8 +68,8 @@ public class TasksBenchmark {
             "WORKER_2_JDK",
             "WORKER_8_KRYO",
             "WORKER_8_FST",
-            "WORKER_8_JDK"}
-        )
+            "WORKER_8_JDK"
+        })
         private Mode mode;
 
         private TaskService tasks;

@@ -89,7 +89,7 @@
         <maven.deploy.plugin.version>2.8.2</maven.deploy.plugin.version>
         <maven.findbugs.plugin.version>3.0.4</maven.findbugs.plugin.version>
         <maven.checkstyle.plugin.version>2.17</maven.checkstyle.plugin.version>
-        <maven.checkstyle.plugin.lib.version>7.0</maven.checkstyle.plugin.lib.version>
+        <maven.checkstyle.plugin.lib.version>7.6.1</maven.checkstyle.plugin.lib.version>
     </properties>
 
     <dependencyManagement>

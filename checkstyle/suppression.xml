@@ -22,7 +22,7 @@
     <suppress checks="JavadocMethod|JavadocType|JavadocPackage|JavadocVariable"
         files=".*[\\/]internal[\\/].*"/>
 
-    <!-- Suppression for tests. -->
+    <!-- Suppression for tests and benchmarks. -->
     <suppress checks="JavadocMethod|JavadocType|JavadocPackage|JavadocVariable|IllegalThrows|VisibilityModifier"
-        files=".*[\\/]test[\\/].*"/>
+        files=".*[\\/](test|microbench)[\\/].*"/>
 </suppressions>
