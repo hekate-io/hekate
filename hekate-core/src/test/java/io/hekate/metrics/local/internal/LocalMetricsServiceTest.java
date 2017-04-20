@@ -46,7 +46,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
 
 public class LocalMetricsServiceTest extends HekateNodeTestBase {
     public interface MetricsConfigurer {
@@ -54,6 +53,8 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
     }
 
     public static final int TEST_METRICS_REFRESH_INTERVAL = 25;
+
+    private final AtomicReference<Exchanger<MetricsUpdateEvent>> asyncEventRef = new AtomicReference<>();
 
     private LocalMetricsService metrics;
 
@@ -383,29 +384,15 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
     public void testPreConfiguredListeners() throws Exception {
         AtomicLong probe = new AtomicLong(100);
 
-        AtomicReference<Exchanger<MetricsUpdateEvent>> asyncRef = new AtomicReference<>(new Exchanger<>());
-
         restart(c -> {
             c.withMetric(new CounterConfig("c"));
             c.withMetric(new ProbeConfig("p").withInitValue(100).withProbe(probe::get));
-            c.withListener(event -> {
-                try {
-                    Exchanger<MetricsUpdateEvent> async = asyncRef.get();
-
-                    if (async != null) {
-                        if (async.exchange(event) != null) {
-                            asyncRef.set(null);
-                        }
-                    }
-                } catch (InterruptedException e) {
-                    // No-op.
-                }
-            });
+            c.withListener(this::putAsyncEvent);
         });
 
         metrics.getCounter("c").add(1000);
 
-        MetricsUpdateEvent event = asyncRef.get().exchange(null);
+        MetricsUpdateEvent event = getAsyncEvent();
 
         Map<String, Metric> snapshot = event.allMetrics();
 
@@ -417,26 +404,21 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         assertSame(snapshot.get("c"), event.metric("c"));
         assertSame(snapshot.get("p"), event.metric("p"));
 
-        this.metrics.getCounter("c").add(1000);
+        metrics.getCounter("c").add(1000);
         probe.set(200);
 
-        snapshot = asyncRef.get().exchange(null).allMetrics();
+        snapshot = getAsyncEvent().allMetrics();
 
         assertEquals(2000, snapshot.get("c").getValue());
         assertEquals(200, snapshot.get("p").getValue());
-
-        // Unblock listener (exchange with a non-null object).
-        asyncRef.get().exchange(mock(MetricsUpdateEvent.class));
 
         node.leave();
 
         probe.set(100);
 
-        asyncRef.set(new Exchanger<>());
-
         node.join();
 
-        snapshot = asyncRef.get().exchange(null).allMetrics();
+        snapshot = getAsyncEvent().allMetrics();
 
         assertEquals(0, snapshot.get("c").getValue());
         assertEquals(100, snapshot.get("p").getValue());
@@ -451,25 +433,11 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
 
         metrics.getCounter("c").add(1000);
 
-        AtomicReference<Exchanger<MetricsUpdateEvent>> asyncRef = new AtomicReference<>(new Exchanger<>());
-
-        MetricsListener listener = event -> {
-            try {
-                Exchanger<MetricsUpdateEvent> async = asyncRef.get();
-
-                if (async != null) {
-                    if (async.exchange(event) != null) {
-                        asyncRef.set(null);
-                    }
-                }
-            } catch (InterruptedException e) {
-                // No-op.
-            }
-        };
+        MetricsListener listener = this::putAsyncEvent;
 
         metrics.addListener(listener);
 
-        MetricsUpdateEvent event1 = asyncRef.get().exchange(null);
+        MetricsUpdateEvent event1 = getAsyncEvent();
 
         Map<String, Metric> snapshot = event1.allMetrics();
 
@@ -481,7 +449,7 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         metrics.getCounter("c").add(1000);
         probe.set(200);
 
-        MetricsUpdateEvent event2 = asyncRef.get().exchange(null);
+        MetricsUpdateEvent event2 = getAsyncEvent();
 
         assertTrue(event1.getTick() < event2.getTick());
 
@@ -496,21 +464,34 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         metrics.getCounter("c").add(1000);
 
         expect(TimeoutException.class, () ->
-            asyncRef.get().exchange(null, TEST_METRICS_REFRESH_INTERVAL * 2, TimeUnit.MILLISECONDS)
+            getAsyncEvent(TEST_METRICS_REFRESH_INTERVAL * 2, TimeUnit.MILLISECONDS)
         );
-
-        // Make sure that listener is not blocked.
-        try {
-            asyncRef.get().exchange(mock(MetricsUpdateEvent.class), TEST_METRICS_REFRESH_INTERVAL, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e) {
-            // Ignore.
-        }
     }
 
     protected void awaitForMetric(long val, Metric metric) throws Exception {
         busyWait("metric value [value=" + val + ", metric=" + metric + ']', () ->
             val == metric.getValue()
         );
+    }
+
+    private void putAsyncEvent(MetricsUpdateEvent event) {
+        try {
+            Exchanger<MetricsUpdateEvent> async = asyncEventRef.getAndSet(null);
+
+            if (async != null) {
+                async.exchange(event);
+            }
+        } catch (InterruptedException e) {
+            // No-op.
+        }
+    }
+
+    private MetricsUpdateEvent getAsyncEvent() throws Exception {
+        return getAsyncEvent(3, TimeUnit.SECONDS);
+    }
+
+    private MetricsUpdateEvent getAsyncEvent(long timeout, TimeUnit unit) throws Exception {
+        return asyncEventRef.updateAndGet(old -> new Exchanger<>()).exchange(null, timeout, unit);
     }
 
     private void restart(MetricsConfigurer configurer) throws Exception {
