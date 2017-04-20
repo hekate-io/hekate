@@ -143,42 +143,42 @@ public interface ClusterNode extends Comparable<ClusterNode> {
     boolean hasProperty(String name);
 
     /**
-     * Returns {@code true} if this node has the specified {@link Service} (see {@link #getServices()}).
+     * Returns {@code true} if this node has a service of the specified type.
      *
-     * @param type Service type (must be an interface).
+     * @param type Service type (must be an interface that extends {@link Service}).
      *
-     * @return {@code true} if this node has the specified {@link Service}.
+     * @return {@code true} if this node has a service of the specified type.
      *
      * @see #getServices()
      */
     boolean hasService(Class<? extends Service> type);
 
     /**
-     * Returns {@code true} if this node has {@link Service} with the specified interface name (see {@link #getServices()}).
+     * Returns {@code true} if this node has a service with the specified interface name.
      *
-     * @param type Service type name (must be an interface).
+     * @param type Service {@link Class#getCanonicalName() type name} (must be an interface that extends {@link Service}).
      *
-     * @return {@code true} if this node has {@link Service} with the specified name.
+     * @return {@code true} if this node has a service with the specified interface name.
      *
      * @see #getServices()
      */
     boolean hasService(String type);
 
     /**
-     * Returns service information for the specified {@link Service} interface name (see {@link #getServices()}).
+     * Returns the service information for the specified interface name.
      *
-     * @param type Service type name (must be an interface).
+     * @param type Service {@link Class#getCanonicalName() type name} (must be an interface that extends {@link Service}).
      *
-     * @return Service instance or {@code null} if there is no such service.
+     * @return Service information or {@code null} if there is no such service.
      *
      * @see #getServices()
      */
     ClusterNodeService getService(String type);
 
     /**
-     * Returns service information for the specified {@link Service} type (see {@link #getServices()}).
+     * Returns the service information for the specified type.
      *
-     * @param type Service type (must be an interface).
+     * @param type Service type (must be an interface that extends {@link Service}).
      *
      * @return Service instance or {@code null} if there is no such service.
      *
@@ -187,23 +187,23 @@ public interface ClusterNode extends Comparable<ClusterNode> {
     ClusterNodeService getService(Class<? extends Service> type);
 
     /**
-     * Returns the immutable map with services that are provided by this node (keyed by {@link ClusterNodeService#getType() service type}).
+     * Returns the immutable map of services that are provided by this node, with the {@link ClusterNodeService#getType() service type} as
+     * the key.
      *
-     * <p>
-     * Services can be configured via {@link HekateBootstrap#setServices(List)} method.
-     * </p>
+     * @return Immutable map of services.
      *
-     * @return Immutable map of services keyed by {@link ClusterNodeService#getType() service type}.
+     * @see HekateBootstrap#setServices(List)
      */
     Map<String, ClusterNodeService> getServices();
 
     /**
-     * Returns the cluster join order. Join order has 1-based indexing so that first node that join the cluster has value 1, second node
-     * has value 2 and so on. Value of this property is initialized only when node joins the cluster and is NOT updated if preceding
-     * (older) node leaves the cluster.
+     * Returns the cluster join order. Indexing the join order begins with 1, so the first node that joins the cluster has a value of 1,
+     * the
+     * second node has a value of 2, and so on. The value of this property is initialized only when the node joins the cluster and is NOT
+     * updated if the previous (old) node leaves the cluster.
      *
      * <p>
-     * Note that by default the value of this property is 0 and is initialized to its real value only when node switches to
+     * Note that the default value for this property is 0 and it is initialized with its actual value only when the node switches to the
      * {@link State#UP} state.
      * </p>
      *

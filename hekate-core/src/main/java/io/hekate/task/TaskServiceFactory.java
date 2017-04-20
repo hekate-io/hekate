@@ -30,6 +30,8 @@ import io.hekate.util.format.ToString;
  * @see TaskService
  */
 public class TaskServiceFactory implements ServiceFactory<TaskService> {
+    private boolean localExecutionEnabled = true;
+
     private int workerThreads = Runtime.getRuntime().availableProcessors();
 
     private int nioThreads;
@@ -37,6 +39,46 @@ public class TaskServiceFactory implements ServiceFactory<TaskService> {
     private int idleSocketTimeout;
 
     private CodecFactory<Object> taskCodec;
+
+    /**
+     * Returns <tt>true</tt> if local execution of tasks is enabled (see {@link #setLocalExecutionEnabled(boolean)}).
+     *
+     * @return <tt>true</tt> if local execution of tasks is enabled.
+     */
+    public boolean isLocalExecutionEnabled() {
+        return localExecutionEnabled;
+    }
+
+    /**
+     * Sets the flag indicating that task execution should be enabled on this node.
+     *
+     * <p>
+     * If execution of tasks is disabled then the service will be able to submit tasks to remote nodes but will not accepts tasks from them
+     * (i.e. service will act as a client).
+     * </p>
+     *
+     * <p>
+     * Default value of this parameter is {@code true}.
+     * </p>
+     *
+     * @param localExecutionEnabled {@code true} to enable or {@code false} to disable execution of tasks on the local node.
+     */
+    public void setLocalExecutionEnabled(boolean localExecutionEnabled) {
+        this.localExecutionEnabled = localExecutionEnabled;
+    }
+
+    /**
+     * Fluent-style version of {@link #setLocalExecutionEnabled(boolean)}.
+     *
+     * @param localExecutionEnabled {@code true} to enable or {@code false} to disable execution of tasks on the local node.
+     *
+     * @return This instance.
+     */
+    public TaskServiceFactory withLocalExecutionEnabled(boolean localExecutionEnabled) {
+        setLocalExecutionEnabled(localExecutionEnabled);
+
+        return this;
+    }
 
     /**
      * Returns the worker thread pool size (see {@link #setWorkerThreads(int)}).

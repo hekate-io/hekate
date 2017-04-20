@@ -22,12 +22,26 @@ import io.hekate.codec.JavaCodecFactory;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class TaskServiceFactoryTest extends HekateTestBase {
     private final TaskServiceFactory factory = new TaskServiceFactory();
+
+    @Test
+    public void testLocalExecutionEnabled() {
+        assertTrue(factory.isLocalExecutionEnabled());
+
+        factory.setLocalExecutionEnabled(false);
+
+        assertFalse(factory.isLocalExecutionEnabled());
+
+        assertSame(factory, factory.withLocalExecutionEnabled(true));
+
+        assertTrue(factory.isLocalExecutionEnabled());
+    }
 
     @Test
     public void testIdleSocketTimeout() {

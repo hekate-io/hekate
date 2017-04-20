@@ -40,10 +40,7 @@ import io.hekate.util.format.ToString;
  * @see ClusterMetricsService
  */
 public class ClusterMetricsServiceFactory implements ServiceFactory<ClusterMetricsService> {
-    /** Default value (={@value}) in milliseconds for {@link #setReplicationInterval(long)}. */
-    public static final int DEFAULT_REPLICATION_INTERVAL = 1000;
-
-    private long replicationInterval = DEFAULT_REPLICATION_INTERVAL;
+    private long replicationInterval;
 
     private MetricFilter replicationFilter;
 
@@ -60,7 +57,7 @@ public class ClusterMetricsServiceFactory implements ServiceFactory<ClusterMetri
      * Sets the time interval in milliseconds for metrics replication over the cluster.
      *
      * <p>
-     * Value of this parameter must be above zero. Default value of {@value #DEFAULT_REPLICATION_INTERVAL}.
+     * If value of this parameter is less than or equals to zero (default value) then cluster metrics will be disabled.
      * </p>
      *
      * @param replicationInterval Time interval in milliseconds.

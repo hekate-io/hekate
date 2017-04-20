@@ -23,7 +23,6 @@ import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterView;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.core.internal.util.Waiting;
@@ -232,10 +231,6 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     public DefaultClusterMetricsService(ClusterMetricsServiceFactory factory) {
         assert factory != null : "Factory is null.";
 
-        ConfigCheck check = ConfigCheck.get(ClusterMetricsServiceFactory.class);
-
-        check.positive(factory.getReplicationInterval(), "replication interval");
-
         replicationInterval = factory.getReplicationInterval();
         filter = factory.getReplicationFilter();
     }
@@ -249,118 +244,130 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
     @Override
     public Collection<MessagingChannelConfig<?>> configureMessaging() {
-        MessagingChannelConfig<MetricsProtocol> channelCfg = new MessagingChannelConfig<>();
+        if (isEnabled()) {
+            MessagingChannelConfig<MetricsProtocol> channelCfg = new MessagingChannelConfig<>();
 
-        channelCfg.setName(MetricsProtocolCodec.PROTOCOL_ID);
-        channelCfg.setLogCategory(getClass().getName());
-        channelCfg.setMessageCodec(MetricsProtocolCodec::new);
-        channelCfg.setIdleTimeout(replicationInterval * IDLE_TIMEOUT_MULTIPLY);
-        channelCfg.setReceiver(this::handleMessage);
-        channelCfg.setClusterFilter(METRICS_SUPPORT_FILTER);
-        channelCfg.setWorkerThreads(1);
+            channelCfg.setName(MetricsProtocolCodec.PROTOCOL_ID);
+            channelCfg.setLogCategory(getClass().getName());
+            channelCfg.setMessageCodec(MetricsProtocolCodec::new);
+            channelCfg.setIdleTimeout(replicationInterval * IDLE_TIMEOUT_MULTIPLY);
+            channelCfg.setReceiver(this::handleMessage);
+            channelCfg.setClusterFilter(METRICS_SUPPORT_FILTER);
+            channelCfg.setWorkerThreads(1);
 
-        return Collections.singleton(channelCfg);
+            return Collections.singleton(channelCfg);
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     @Override
     public void initialize(InitializationContext ctx) throws HekateException {
-        guard.lockWrite();
+        if (isEnabled()) {
+            guard.lockWrite();
 
-        try {
-            guard.becomeInitialized();
+            try {
+                guard.becomeInitialized();
 
-            if (DEBUG) {
-                log.debug("Initializing...");
-            }
-
-            channel = messaging.channel(MetricsProtocolCodec.PROTOCOL_ID);
-
-            localNode = ctx.getNode().getId();
-
-            cluster.addListener(event -> updateTopology(event.getTopology().getNodes()));
-
-            localMetrics.addListener(event -> {
-                try {
-                    updateLocalMetrics(event.allMetrics());
-                } catch (RuntimeException | Error e) {
-                    log.error("Got an unexpected runtime error while updating local metrics.", e);
+                if (DEBUG) {
+                    log.debug("Initializing...");
                 }
-            });
 
-            worker = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("MetricsCluster"));
+                channel = messaging.channel(MetricsProtocolCodec.PROTOCOL_ID);
 
-            worker.scheduleAtFixedRate(() -> {
-                try {
-                    publishMetrics();
-                } catch (RuntimeException | Error e) {
-                    log.error("Got an unexpected runtime error while publishing metrics.", e);
+                localNode = ctx.getNode().getId();
+
+                cluster.addListener(event -> updateTopology(event.getTopology().getNodes()));
+
+                localMetrics.addListener(event -> {
+                    try {
+                        updateLocalMetrics(event.allMetrics());
+                    } catch (RuntimeException | Error e) {
+                        log.error("Got an unexpected runtime error while updating local metrics.", e);
+                    }
+                });
+
+                worker = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("MetricsCluster"));
+
+                worker.scheduleAtFixedRate(() -> {
+                    try {
+                        publishMetrics();
+                    } catch (RuntimeException | Error e) {
+                        log.error("Got an unexpected runtime error while publishing metrics.", e);
+                    }
+                }, replicationInterval, replicationInterval, TimeUnit.MILLISECONDS);
+
+                if (DEBUG) {
+                    log.debug("Initialized.");
                 }
-            }, replicationInterval, replicationInterval, TimeUnit.MILLISECONDS);
-
-            if (DEBUG) {
-                log.debug("Initialized.");
+            } finally {
+                guard.unlockWrite();
             }
-        } finally {
-            guard.unlockWrite();
         }
     }
 
     @Override
     public void terminate() throws HekateException {
-        Waiting waiting = null;
+        if (isEnabled()) {
+            Waiting waiting = null;
 
-        guard.lockWrite();
+            guard.lockWrite();
 
-        try {
-            if (guard.becomeTerminated()) {
-                if (DEBUG) {
-                    log.debug("Terminating...");
-                }
+            try {
+                if (guard.becomeTerminated()) {
+                    if (DEBUG) {
+                        log.debug("Terminating...");
+                    }
 
-                if (worker != null) {
-                    waiting = Utils.shutdown(worker);
+                    if (worker != null) {
+                        waiting = Utils.shutdown(worker);
+
+                        worker = null;
+                    }
+
+                    replicas.clear();
 
                     worker = null;
+                    next = null;
+                    channel = null;
+                    localNode = null;
                 }
-
-                replicas.clear();
-
-                worker = null;
-                next = null;
-                channel = null;
-                localNode = null;
+            } finally {
+                guard.unlockWrite();
             }
-        } finally {
-            guard.unlockWrite();
-        }
 
-        if (waiting != null) {
-            waiting.awaitUninterruptedly();
+            if (waiting != null) {
+                waiting.awaitUninterruptedly();
 
-            if (DEBUG) {
-                log.debug("Terminated.");
+                if (DEBUG) {
+                    log.debug("Terminated.");
+                }
             }
         }
     }
 
     @Override
     public Optional<ClusterNodeMetrics> forNode(ClusterNodeId node) {
-        ArgAssert.notNull(node, "Node");
+        if (isEnabled()) {
+            ArgAssert.notNull(node, "Node");
 
-        guard.lockReadWithStateCheck();
+            guard.lockReadWithStateCheck();
 
-        try {
-            Replica replica = replicas.get(node);
+            try {
+                Replica replica = replicas.get(node);
 
-            if (replica != null) {
-                synchronized (replica) {
-                    return replica.getPublicMetrics();
+                if (replica != null) {
+                    synchronized (replica) {
+                        return replica.getPublicMetrics();
+                    }
                 }
-            }
 
+                return Optional.empty();
+            } finally {
+                guard.unlockRead();
+            }
+        } else {
             return Optional.empty();
-        } finally {
-            guard.unlockRead();
         }
     }
 
@@ -373,24 +380,28 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
     @Override
     public List<ClusterNodeMetrics> forAll() {
-        guard.lockReadWithStateCheck();
+        if (isEnabled()) {
+            guard.lockReadWithStateCheck();
 
-        try {
-            List<ClusterNodeMetrics> metrics = new ArrayList<>(replicas.size());
+            try {
+                List<ClusterNodeMetrics> metrics = new ArrayList<>(replicas.size());
 
-            replicas.values().forEach(replica -> {
-                Optional<ClusterNodeMetrics> metricsOpt;
+                replicas.values().forEach(replica -> {
+                    Optional<ClusterNodeMetrics> metricsOpt;
 
-                synchronized (replica) {
-                    metricsOpt = replica.getPublicMetrics();
-                }
+                    synchronized (replica) {
+                        metricsOpt = replica.getPublicMetrics();
+                    }
 
-                metricsOpt.ifPresent(metrics::add);
-            });
+                    metricsOpt.ifPresent(metrics::add);
+                });
 
-            return metrics;
-        } finally {
-            guard.unlockRead();
+                return metrics;
+            } finally {
+                guard.unlockRead();
+            }
+        } else {
+            return Collections.emptyList();
         }
     }
 
@@ -398,33 +409,37 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     public List<ClusterNodeMetrics> forAll(MetricFilter filter) {
         ArgAssert.notNull(filter, "Filter");
 
-        guard.lockReadWithStateCheck();
+        if (isEnabled()) {
+            guard.lockReadWithStateCheck();
 
-        try {
-            List<ClusterNodeMetrics> metrics = new ArrayList<>(replicas.size());
+            try {
+                List<ClusterNodeMetrics> metrics = new ArrayList<>(replicas.size());
 
-            replicas.values().forEach(replica -> {
-                    Optional<ClusterNodeMetrics> metricsOpt;
+                replicas.values().forEach(replica -> {
+                        Optional<ClusterNodeMetrics> metricsOpt;
 
-                    synchronized (replica) {
-                        metricsOpt = replica.getPublicMetrics();
-                    }
-
-                metricsOpt.ifPresent(nodeMetrics -> {
-                    for (Metric metric : nodeMetrics.allMetrics().values()) {
-                        if (filter.accept(metric)) {
-                            metrics.add(nodeMetrics);
-
-                            break;
+                        synchronized (replica) {
+                            metricsOpt = replica.getPublicMetrics();
                         }
-                    }
-                });
-                }
-            );
 
-            return metrics;
-        } finally {
-            guard.unlockRead();
+                        metricsOpt.ifPresent(nodeMetrics -> {
+                            for (Metric metric : nodeMetrics.allMetrics().values()) {
+                                if (filter.accept(metric)) {
+                                    metrics.add(nodeMetrics);
+
+                                    break;
+                                }
+                            }
+                        });
+                    }
+                );
+
+                return metrics;
+            } finally {
+                guard.unlockRead();
+            }
+        } else {
+            return Collections.emptyList();
         }
     }
 
@@ -629,6 +644,10 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
             });
 
         return pushBack;
+    }
+
+    private boolean isEnabled() {
+        return replicationInterval > 0;
     }
 
     private static MetricsUpdate newUpdate(Replica replica) {

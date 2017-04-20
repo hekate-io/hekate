@@ -23,6 +23,7 @@ import io.hekate.cluster.seed.SeedNodeProviderMock;
 import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.network.NetworkServiceFactory;
+import io.hekate.task.TaskServiceFactory;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -106,29 +107,31 @@ public class HekateNodeTestBase extends HekateTestBase {
         bootstrap.setClusterName("test");
         bootstrap.setNodeName("node-" + address.getPort() + '-' + allNodes.size());
 
-        DefaultFailureDetectorConfig fdCfg = new DefaultFailureDetectorConfig();
+        bootstrap.withService(ClusterServiceFactory.class, cluster -> {
+            DefaultFailureDetectorConfig fdCfg = new DefaultFailureDetectorConfig();
 
-        fdCfg.setHeartbeatInterval(100);
-        fdCfg.setHeartbeatLossThreshold(3);
+            fdCfg.setHeartbeatInterval(100);
+            fdCfg.setHeartbeatLossThreshold(3);
 
-        ClusterServiceFactory cluster = bootstrap.find(ClusterServiceFactory.class).get();
+            cluster.setGossipInterval(100);
+            cluster.setSpeedUpGossipSize(10);
+            cluster.setSeedNodeProvider(seedNodes);
+            cluster.setSplitBrainAction(SplitBrainAction.REJOIN);
+            cluster.setFailureDetector(new DefaultFailureDetector(fdCfg));
+        });
 
-        cluster.setGossipInterval(100);
-        cluster.setSpeedUpGossipSize(10);
-        cluster.setSeedNodeProvider(seedNodes);
-        cluster.setSplitBrainAction(SplitBrainAction.REJOIN);
-        cluster.setFailureDetector(new DefaultFailureDetector(fdCfg));
+        bootstrap.withService(NetworkServiceFactory.class, net -> {
+            net.setHost(address.getAddress().getHostAddress());
+            net.setPort(address.getPort());
+            net.setConnectTimeout(300);
+            net.setHeartbeatInterval(100);
+            net.setHeartbeatLossThreshold(3);
+            net.setAcceptRetryInterval(0);
+        });
 
-        NetworkServiceFactory net = new NetworkServiceFactory();
-
-        net.setHost(address.getAddress().getHostAddress());
-        net.setPort(address.getPort());
-        net.setConnectTimeout(300);
-        net.setHeartbeatInterval(100);
-        net.setHeartbeatLossThreshold(3);
-        net.setAcceptRetryInterval(0);
-
-        bootstrap.withService(net);
+        bootstrap.withService(TaskServiceFactory.class, tasks -> {
+            tasks.setLocalExecutionEnabled(false);
+        });
 
         if (configurer != null) {
             configurer.configure(bootstrap);

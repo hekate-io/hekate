@@ -52,16 +52,16 @@ public class ClusterMetricsServiceTest extends HekateNodeContextTestBase {
 
     @Test
     public void testAddMetrics() throws Exception {
-        HekateTestNode inst1 = createNodeWithMetrics();
-        HekateTestNode inst2 = createNodeWithMetrics();
-        HekateTestNode inst3 = createNodeWithMetrics();
+        HekateTestNode inst1 = createNodeWithMetrics().join();
+        HekateTestNode inst2 = createNodeWithMetrics().join();
+        HekateTestNode inst3 = createNodeWithMetrics().join();
 
         awaitForTopology(inst1, inst2, inst3);
 
         repeat(5, i -> {
-            CounterMetric c1 = inst1.join().metrics().register(new CounterConfig("c1_" + i));
-            CounterMetric c2 = inst2.join().metrics().register(new CounterConfig("c2_" + i));
-            CounterMetric c3 = inst3.join().metrics().register(new CounterConfig("c3_" + i));
+            CounterMetric c1 = inst1.metrics().register(new CounterConfig("c1_" + i));
+            CounterMetric c2 = inst2.metrics().register(new CounterConfig("c2_" + i));
+            CounterMetric c3 = inst3.metrics().register(new CounterConfig("c3_" + i));
 
             awaitForReplicatedMetric("c1_" + i, 0, inst1, Arrays.asList(inst1, inst2, inst3));
             awaitForReplicatedMetric("c2_" + i, 0, inst2, Arrays.asList(inst1, inst2, inst3));
@@ -87,18 +87,16 @@ public class ClusterMetricsServiceTest extends HekateNodeContextTestBase {
 
     @Test
     public void testMetricsWithNoMetricsNode() throws Exception {
-        HekateTestNode inst1 = createNodeWithMetrics();
-        HekateTestNode inst2 = createNodeWithMetrics();
+        HekateTestNode inst1 = createNodeWithMetrics().join();
+        HekateTestNode inst2 = createNodeWithMetrics().join();
 
-        HekateTestNode noMetricsNode = createNode();
-
-        noMetricsNode.join();
+        HekateTestNode noMetricsNode = createNode().join();
 
         awaitForTopology(inst1, inst2, noMetricsNode);
 
         repeat(5, i -> {
-            CounterMetric c1 = inst1.join().metrics().register(new CounterConfig("c1_" + i));
-            CounterMetric c2 = inst2.join().metrics().register(new CounterConfig("c2_" + i));
+            CounterMetric c1 = inst1.metrics().register(new CounterConfig("c1_" + i));
+            CounterMetric c2 = inst2.metrics().register(new CounterConfig("c2_" + i));
 
             awaitForReplicatedMetric("c1_" + i, 0, inst1, Arrays.asList(inst1, inst2));
             awaitForReplicatedMetric("c2_" + i, 0, inst2, Arrays.asList(inst1, inst2));
@@ -119,8 +117,8 @@ public class ClusterMetricsServiceTest extends HekateNodeContextTestBase {
 
     @Test
     public void testMetricsFilter() throws Exception {
-        HekateTestNode inst1 = createNodeWithMetrics(f -> f.setReplicationFilter(m -> m.getName().startsWith("c")));
-        HekateTestNode inst2 = createNodeWithMetrics(f -> f.setReplicationFilter(m -> m.getName().startsWith("c")));
+        HekateTestNode inst1 = createNodeWithMetrics(f -> f.setReplicationFilter(m -> m.getName().startsWith("c"))).join();
+        HekateTestNode inst2 = createNodeWithMetrics(f -> f.setReplicationFilter(m -> m.getName().startsWith("c"))).join();
 
         ClusterMetricsService cs1 = inst1.clusterMetrics();
         ClusterMetricsService cs2 = inst2.clusterMetrics();
@@ -128,11 +126,11 @@ public class ClusterMetricsServiceTest extends HekateNodeContextTestBase {
         awaitForTopology(inst1, inst2);
 
         repeat(5, i -> {
-            CounterMetric no1 = inst1.join().metrics().register(new CounterConfig("no1_" + i));
-            CounterMetric no2 = inst2.join().metrics().register(new CounterConfig("no2_" + i));
+            CounterMetric no1 = inst1.metrics().register(new CounterConfig("no1_" + i));
+            CounterMetric no2 = inst2.metrics().register(new CounterConfig("no2_" + i));
 
-            CounterMetric c1 = inst1.join().metrics().register(new CounterConfig("c1_" + i));
-            CounterMetric c2 = inst2.join().metrics().register(new CounterConfig("c2_" + i));
+            CounterMetric c1 = inst1.metrics().register(new CounterConfig("c1_" + i));
+            CounterMetric c2 = inst2.metrics().register(new CounterConfig("c2_" + i));
 
             awaitForReplicatedMetric("c1_" + i, 0, inst1, Arrays.asList(inst1, inst2));
             awaitForReplicatedMetric("c2_" + i, 0, inst2, Arrays.asList(inst1, inst2));
@@ -165,8 +163,8 @@ public class ClusterMetricsServiceTest extends HekateNodeContextTestBase {
 
     @Test
     public void testGetMetricsWithFilter() throws Exception {
-        HekateTestNode inst1 = createNodeWithMetrics();
-        HekateTestNode inst2 = createNodeWithMetrics();
+        HekateTestNode inst1 = createNodeWithMetrics().join();
+        HekateTestNode inst2 = createNodeWithMetrics().join();
 
         ClusterMetricsService cs1 = inst1.clusterMetrics();
         ClusterMetricsService cs2 = inst2.clusterMetrics();
@@ -174,11 +172,11 @@ public class ClusterMetricsServiceTest extends HekateNodeContextTestBase {
         awaitForTopology(inst1, inst2);
 
         repeat(5, i -> {
-            inst1.join().metrics().register(new CounterConfig("no1_" + i));
-            inst2.join().metrics().register(new CounterConfig("no2_" + i));
+            inst1.metrics().register(new CounterConfig("no1_" + i));
+            inst2.metrics().register(new CounterConfig("no2_" + i));
 
-            inst1.join().metrics().register(new CounterConfig("c1_" + i));
-            inst2.join().metrics().register(new CounterConfig("c2_" + i));
+            inst1.metrics().register(new CounterConfig("c1_" + i));
+            inst2.metrics().register(new CounterConfig("c2_" + i));
 
             awaitForReplicatedMetric("c1_" + i, 0, inst1, Arrays.asList(inst1, inst2));
             awaitForReplicatedMetric("c2_" + i, 0, inst2, Arrays.asList(inst1, inst2));
@@ -212,11 +210,9 @@ public class ClusterMetricsServiceTest extends HekateNodeContextTestBase {
                 probe.set(i);
             }
 
-            HekateTestNode node = createNodeWithMetrics();
+            HekateTestNode node = createNodeWithMetrics().join();
 
             nodes.add(node);
-
-            node.join();
 
             services.add(node.metrics());
             clusterServices.add(node.clusterMetrics());
@@ -337,16 +333,14 @@ public class ClusterMetricsServiceTest extends HekateNodeContextTestBase {
     public void testTerminateNode() throws Exception {
         disableNodeFailurePostCheck();
 
-        HekateTestNode inst1 = createNodeWithMetrics();
-        HekateTestNode inst2 = createNodeWithMetrics();
-        HekateTestNode inst3 = createNodeWithMetrics();
-
-        inst3.join();
+        HekateTestNode inst1 = createNodeWithMetrics().join();
+        HekateTestNode inst2 = createNodeWithMetrics().join();
+        HekateTestNode inst3 = createNodeWithMetrics().join();
 
         awaitForTopology(inst1, inst2, inst3);
 
-        CounterMetric c1 = inst1.join().metrics().register(new CounterConfig("c1"));
-        CounterMetric c2 = inst2.join().metrics().register(new CounterConfig("c2"));
+        CounterMetric c1 = inst1.metrics().register(new CounterConfig("c1"));
+        CounterMetric c2 = inst2.metrics().register(new CounterConfig("c2"));
 
         c1.add(1);
         c2.add(2);

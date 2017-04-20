@@ -18,8 +18,7 @@ package io.hekate.task.internal;
 
 import io.hekate.HekateTestContext;
 import io.hekate.core.internal.HekateTestNode;
-import io.hekate.lock.LockService;
-import io.hekate.lock.LockServiceFactory;
+import io.hekate.core.service.Service;
 import io.hekate.task.TaskService;
 import java.util.concurrent.CompletableFuture;
 import org.junit.Test;
@@ -33,6 +32,10 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class TaskServiceTest extends TaskServiceTestBase {
+    private interface DummyService extends Service {
+        // No-op.
+    }
+
     private HekateTestNode local;
 
     private HekateTestNode first;
@@ -54,7 +57,11 @@ public class TaskServiceTest extends TaskServiceTestBase {
         first = createTaskNode(c -> c.withNodeRole("all").withNodeRole("role1")
             .withNodeProperty("prop", "val1")
             .withNodeProperty("unique-prop", "val")
-            .withService(new LockServiceFactory())
+            .withService(() -> {
+                return new DummyService() {
+                    // No-op.
+                };
+            })
         );
 
         second = createTaskNode(c -> c.withNodeRole("all").withNodeRole("role2")
@@ -143,7 +150,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
             )
         );
 
-        assertThat(get(tasks.forService(LockService.class).aggregate(local::getLocalNode)).results(),
+        assertThat(get(tasks.forService(DummyService.class).aggregate(local::getLocalNode)).results(),
             allOf(
                 hasItems(first.getLocalNode()),
                 not(hasItems(local.getLocalNode(), second.getLocalNode()))

@@ -17,17 +17,20 @@
 package io.hekate.metrics.cluster;
 
 import io.hekate.HekateTestBase;
+import io.hekate.metrics.MetricFilter;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.mockito.Mockito.mock;
 
 public class ClusterMetricsServiceFactoryTest extends HekateTestBase {
     private final ClusterMetricsServiceFactory factory = new ClusterMetricsServiceFactory();
 
     @Test
     public void testReplicationInterval() {
-        assertEquals(ClusterMetricsServiceFactory.DEFAULT_REPLICATION_INTERVAL, factory.getReplicationInterval());
+        assertEquals(0, factory.getReplicationInterval());
 
         factory.setReplicationInterval(100000);
 
@@ -36,5 +39,24 @@ public class ClusterMetricsServiceFactoryTest extends HekateTestBase {
         assertSame(factory, factory.withReplicationInterval(2000));
 
         assertEquals(2000, factory.getReplicationInterval());
+    }
+
+    @Test
+    public void testReplicationFilter() {
+        MetricFilter f = mock(MetricFilter.class);
+
+        assertNull(factory.getReplicationFilter());
+
+        factory.setReplicationFilter(f);
+
+        assertSame(f, factory.getReplicationFilter());
+
+        factory.setReplicationFilter(null);
+
+        assertNull(factory.getReplicationFilter());
+
+        assertSame(factory, factory.withReplicationFilter(f));
+
+        assertSame(f, factory.getReplicationFilter());
     }
 }

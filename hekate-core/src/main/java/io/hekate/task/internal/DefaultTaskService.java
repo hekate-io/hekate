@@ -122,6 +122,8 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
 
     private static final String CHANNEL_NAME = "hekate.task";
 
+    private final boolean localExecutionEnabled;
+
     private final int workerThreadPoolSize;
 
     private final int nioThreadPoolSize;
@@ -149,6 +151,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
         check.notNull(factory, "factory");
         check.positive(factory.getWorkerThreads(), "worker thread pool size");
 
+        localExecutionEnabled = factory.isLocalExecutionEnabled();
         workerThreadPoolSize = factory.getWorkerThreads();
         nioThreadPoolSize = factory.getNioThreads();
         idleSocketTimeout = factory.getIdleSocketTimeout();
@@ -168,7 +171,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
 
     @Override
     public Collection<MessagingChannelConfig<?>> configureMessaging() {
-        return Collections.singleton(new MessagingChannelConfig<TaskProtocol>()
+        MessagingChannelConfig<TaskProtocol> cfg = new MessagingChannelConfig<TaskProtocol>()
             .withName(CHANNEL_NAME)
             .withLogCategory(getClass().getName())
             .withClusterFilter(n -> n.hasService(TaskService.class))
@@ -176,7 +179,6 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
             .withNioThreads(nioThreadPoolSize)
             .withWorkerThreads(workerThreadPoolSize)
             .withMessageCodec(() -> new TaskProtocolCodec(codec.createCodec()))
-            .withReceiver(this::handleMessage)
             .withLoadBalancer((msg, ctx) -> {
                 List<ClusterNode> nodes = ctx.getSortedList();
 
@@ -207,8 +209,13 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
 
                     return nodes.get(idx).getId();
                 }
-            })
-        );
+            });
+
+        if (localExecutionEnabled) {
+            cfg.withReceiver(this::handleMessage);
+        }
+
+        return Collections.singleton(cfg);
     }
 
     @Override

@@ -101,7 +101,9 @@ public abstract class TaskServiceTestBase extends HekateNodeContextTestBase {
 
     protected HekateTestNode createTaskNode(NodeConfigurer configurer) throws Exception {
         return createNode(c -> {
-            c.withService(new TaskServiceFactory());
+            c.withService(TaskServiceFactory.class, tasks -> {
+                tasks.withLocalExecutionEnabled(true);
+            });
 
             if (configurer != null) {
                 configurer.configure(c);
