@@ -18,9 +18,9 @@ package io.hekate.cluster.internal;
 
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.internal.gossip.GossipProtocol;
-import io.hekate.metrics.CounterConfig;
-import io.hekate.metrics.CounterMetric;
-import io.hekate.metrics.MetricsService;
+import io.hekate.metrics.local.CounterConfig;
+import io.hekate.metrics.local.CounterMetric;
+import io.hekate.metrics.local.LocalMetricsService;
 import java.util.EnumMap;
 
 public class ClusterMetricsCallback {
@@ -30,7 +30,7 @@ public class ClusterMetricsCallback {
 
     private final CounterMetric topologyVersion;
 
-    public ClusterMetricsCallback(MetricsService service) {
+    public ClusterMetricsCallback(LocalMetricsService service) {
         counters = new EnumMap<>(GossipProtocol.Type.class);
 
         topologySize = service.register(new CounterConfig("hekate.cluster.topology.size"));
@@ -61,7 +61,7 @@ public class ClusterMetricsCallback {
         topologyVersion.add(verDiff);
     }
 
-    private void register(GossipProtocol.Type type, String name, MetricsService service) {
+    private void register(GossipProtocol.Type type, String name, LocalMetricsService service) {
         CounterMetric counter = service.register(new CounterConfig(name).withAutoReset(true));
 
         counters.put(type, counter);

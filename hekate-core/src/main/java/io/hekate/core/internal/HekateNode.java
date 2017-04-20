@@ -56,8 +56,8 @@ import io.hekate.core.service.internal.ServiceManager;
 import io.hekate.election.ElectionService;
 import io.hekate.lock.LockService;
 import io.hekate.messaging.MessagingService;
-import io.hekate.metrics.MetricsService;
 import io.hekate.metrics.cluster.ClusterMetricsService;
+import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.NetworkService;
 import io.hekate.network.internal.NetworkBindCallback;
 import io.hekate.network.internal.NetworkServerFailure;
@@ -154,7 +154,7 @@ class HekateNode implements Hekate, Serializable {
 
     private final CoordinationService coordination;
 
-    private final MetricsService metrics;
+    private final LocalMetricsService metrics;
 
     private final ClusterMetricsService clusterMetrcis;
 
@@ -253,7 +253,7 @@ class HekateNode implements Hekate, Serializable {
         requiredServices.add(ClusterService.class);
         requiredServices.add(MessagingService.class);
         requiredServices.add(TaskService.class);
-        requiredServices.add(MetricsService.class);
+        requiredServices.add(LocalMetricsService.class);
         requiredServices.add(ClusterMetricsService.class);
         requiredServices.add(LockService.class);
         requiredServices.add(ElectionService.class);
@@ -291,7 +291,7 @@ class HekateNode implements Hekate, Serializable {
         coordination = services.findService(CoordinationService.class);
         partitions = services.findService(PartitionService.class);
         tasks = services.findService(TaskService.class);
-        metrics = services.findService(MetricsService.class);
+        metrics = services.findService(LocalMetricsService.class);
         clusterMetrcis = services.findService(ClusterMetricsService.class);
 
         // Get internal service managers.
@@ -399,7 +399,7 @@ class HekateNode implements Hekate, Serializable {
     }
 
     @Override
-    public MetricsService metrics() {
+    public LocalMetricsService localMetrics() {
         return metrics;
     }
 

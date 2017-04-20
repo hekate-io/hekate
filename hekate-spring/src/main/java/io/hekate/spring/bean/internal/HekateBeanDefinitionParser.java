@@ -45,10 +45,10 @@ import io.hekate.lock.LockServiceFactory;
 import io.hekate.messaging.MessagingBackPressureConfig;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingServiceFactory;
-import io.hekate.metrics.CounterConfig;
-import io.hekate.metrics.MetricsServiceFactory;
-import io.hekate.metrics.ProbeConfig;
 import io.hekate.metrics.cluster.ClusterMetricsServiceFactory;
+import io.hekate.metrics.local.CounterConfig;
+import io.hekate.metrics.local.LocalMetricsServiceFactory;
+import io.hekate.metrics.local.ProbeConfig;
 import io.hekate.network.NetworkConnectorConfig;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.network.address.DefaultAddressSelector;
@@ -156,7 +156,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         parseLockService(rootEl, ctx).ifPresent(services::add);
         parseCoordinationService(rootEl, ctx).ifPresent(services::add);
         parseElectionService(rootEl, ctx).ifPresent(services::add);
-        parseMetricsService(rootEl, ctx).ifPresent(services::add);
+        parseLocalMetricsService(rootEl, ctx).ifPresent(services::add);
         parseClusterMetricsService(rootEl, ctx).ifPresent(services::add);
 
         getSubElements(rootEl, "custom-services", "service").forEach(serviceEl ->
@@ -907,11 +907,11 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         }
     }
 
-    private Optional<RuntimeBeanReference> parseMetricsService(Element rootEl, ParserContext ctx) {
-        Element metricsEl = getChildElementByTagName(rootEl, "metrics");
+    private Optional<RuntimeBeanReference> parseLocalMetricsService(Element rootEl, ParserContext ctx) {
+        Element metricsEl = getChildElementByTagName(rootEl, "local-metrics");
 
         if (metricsEl != null) {
-            BeanDefinitionBuilder metrics = newBean(MetricsServiceFactory.class, metricsEl);
+            BeanDefinitionBuilder metrics = newBean(LocalMetricsServiceFactory.class, metricsEl);
 
             ManagedList<RuntimeBeanReference> allMetrics = new ManagedList<>();
             ManagedList<RuntimeBeanReference> listeners = new ManagedList<>();

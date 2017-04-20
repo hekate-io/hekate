@@ -74,7 +74,7 @@
                         </bean>
                     </property>
                 </bean>
-                <bean class="io.hekate.metrics.MetricsServiceFactory">
+                <bean class="io.hekate.metrics.local.LocalMetricsServiceFactory">
                     <property name="refreshInterval" value="1000"/>
                 </bean>
                 <bean class="io.hekate.metrics.cluster.ClusterMetricsServiceFactory">

@@ -17,9 +17,9 @@
 package io.hekate.spring.boot.metrics.influxdb;
 
 import io.hekate.HekateTestProps;
-import io.hekate.metrics.MetricsService;
 import io.hekate.metrics.influxdb.InfluxDbMetricsConfig;
 import io.hekate.metrics.influxdb.InfluxDbMetricsPlugin;
+import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
 import io.hekate.spring.boot.HekateTestConfigBase;
 import org.junit.Assume;
@@ -58,7 +58,7 @@ public class InfluxDbMetricsPluginConfigurerTest extends HekateAutoConfigurerTes
             "hekate.metrics.influxdb.timeout:100501"
         }, InfluxDbTestConfig.class);
 
-        assertNotNull(get(MetricsService.class));
+        assertNotNull(get(LocalMetricsService.class));
         assertNotNull(get(InfluxDbMetricsPlugin.class));
 
         InfluxDbMetricsConfig cfg = get(InfluxDbMetricsConfig.class);

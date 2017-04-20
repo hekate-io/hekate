@@ -16,6 +16,7 @@
 
 package io.hekate.metrics;
 
+import io.hekate.metrics.local.MetricConfigBase;
 import java.util.Map;
 
 /**

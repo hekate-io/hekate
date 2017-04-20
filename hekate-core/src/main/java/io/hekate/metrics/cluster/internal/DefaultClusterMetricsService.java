@@ -38,13 +38,13 @@ import io.hekate.messaging.MessagingConfigProvider;
 import io.hekate.messaging.MessagingService;
 import io.hekate.metrics.Metric;
 import io.hekate.metrics.MetricFilter;
-import io.hekate.metrics.MetricsService;
 import io.hekate.metrics.cluster.ClusterMetricsService;
 import io.hekate.metrics.cluster.ClusterMetricsServiceFactory;
 import io.hekate.metrics.cluster.ClusterNodeMetrics;
 import io.hekate.metrics.cluster.internal.MetricsProtocol.UpdateRequest;
 import io.hekate.metrics.cluster.internal.MetricsProtocol.UpdateResponse;
-import io.hekate.metrics.internal.StaticMetric;
+import io.hekate.metrics.local.LocalMetricsService;
+import io.hekate.metrics.local.internal.StaticMetric;
 import io.hekate.util.StateGuard;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -208,7 +208,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     private final AtomicLong localVerSeq = new AtomicLong();
 
     @ToStringIgnore
-    private MetricsService localMetrics;
+    private LocalMetricsService localMetrics;
 
     @ToStringIgnore
     private MessagingService messaging;
@@ -237,7 +237,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
     @Override
     public void resolve(DependencyContext ctx) {
-        localMetrics = ctx.require(MetricsService.class);
+        localMetrics = ctx.require(LocalMetricsService.class);
         messaging = ctx.require(MessagingService.class);
         cluster = ctx.require(ClusterService.class).filter(METRICS_SUPPORT_FILTER);
     }

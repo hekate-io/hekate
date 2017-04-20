@@ -23,7 +23,7 @@ import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.unicast.LoadBalancers;
-import io.hekate.metrics.MetricsServiceFactory;
+import io.hekate.metrics.local.LocalMetricsServiceFactory;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -90,7 +90,7 @@ public class MessagingBenchmark {
             boot.withService(new MessagingServiceFactory()
                 .withChannel(channel)
             );
-            boot.withService(new MetricsServiceFactory());
+            boot.withService(new LocalMetricsServiceFactory());
         }
 
         @Override

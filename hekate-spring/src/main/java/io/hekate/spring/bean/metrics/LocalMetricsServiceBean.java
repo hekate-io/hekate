@@ -16,20 +16,20 @@
 
 package io.hekate.spring.bean.metrics;
 
-import io.hekate.metrics.MetricsService;
+import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.spring.bean.HekateBaseBean;
 
 /**
- * Imports {@link MetricsService} into a Spring context.
+ * Imports {@link LocalMetricsService} into a Spring context.
  */
-public class LocalMetricsServiceBean extends HekateBaseBean<MetricsService> {
+public class LocalMetricsServiceBean extends HekateBaseBean<LocalMetricsService> {
     @Override
-    public MetricsService getObject() throws Exception {
-        return getSource().metrics();
+    public LocalMetricsService getObject() throws Exception {
+        return getSource().localMetrics();
     }
 
     @Override
-    public Class<MetricsService> getObjectType() {
-        return MetricsService.class;
+    public Class<LocalMetricsService> getObjectType() {
+        return LocalMetricsService.class;
     }
 }

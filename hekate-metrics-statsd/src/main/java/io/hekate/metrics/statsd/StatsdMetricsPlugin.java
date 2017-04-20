@@ -23,8 +23,8 @@ import io.hekate.core.HekateException;
 import io.hekate.core.plugin.Plugin;
 import io.hekate.metrics.Metric;
 import io.hekate.metrics.MetricFilter;
-import io.hekate.metrics.MetricsService;
-import io.hekate.metrics.MetricsServiceFactory;
+import io.hekate.metrics.local.LocalMetricsService;
+import io.hekate.metrics.local.LocalMetricsServiceFactory;
 import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -35,14 +35,14 @@ import java.util.List;
  *
  * <h2>Overview</h2>
  * <p>
- * This plugin provides support for publishing metrics from {@link MetricsService} to
+ * This plugin provides support for publishing metrics from {@link LocalMetricsService} to
  * <a href="https://github.com/etsy/statsd" target="_blank">StatsD</a>.
  * </p>
  *
  * <p>
- * Metrics are asynchronously published once per {@link MetricsServiceFactory#setRefreshInterval(long)} interval. On each tick the snapshot
- * of current metrics is placed into a bounded queue of {@link StatsdMetricsConfig#setMaxQueueSize(int)} size. If queue is full (i.e.
- * publishing is slow due to some networking issues) then new metrics are dropped until there is more space in the queue.
+ * Metrics are asynchronously published once per {@link LocalMetricsServiceFactory#setRefreshInterval(long)} interval. On each tick the
+ * snapshot of current metrics is placed into a bounded queue of {@link StatsdMetricsConfig#setMaxQueueSize(int)} size. If queue is full
+ * (i.e. publishing is slow due to some networking issues) then new metrics are dropped until there is more space in the queue.
  * </p>
  *
  * <p>
@@ -133,7 +133,7 @@ public class StatsdMetricsPlugin implements Plugin {
 
     @Override
     public void install(HekateBootstrap boot) {
-        boot.withService(MetricsServiceFactory.class, metrics ->
+        boot.withService(LocalMetricsServiceFactory.class, metrics ->
             metrics.withListener(event ->
                 publisher.publish(event.allMetrics().values())
             )

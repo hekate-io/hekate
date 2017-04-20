@@ -20,7 +20,7 @@ import io.hekate.codec.kryo.KryoCodecFactory;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateFutureException;
-import io.hekate.metrics.MetricsServiceFactory;
+import io.hekate.metrics.local.LocalMetricsServiceFactory;
 import java.util.ArrayList;
 import java.util.List;
 import org.openjdk.jmh.annotations.Scope;
@@ -50,7 +50,7 @@ public abstract class MultiNodeBenchmarkContext {
             HekateBootstrap boot = new HekateBootstrap()
                 .withNodeName("node" + i)
                 .withDefaultCodec(new KryoCodecFactory<>())
-                .withService(new MetricsServiceFactory());
+                .withService(new LocalMetricsServiceFactory());
 
             configure(i, boot);
 

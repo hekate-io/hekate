@@ -65,7 +65,7 @@ import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.TerminatingService;
-import io.hekate.metrics.MetricsService;
+import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.NetworkConfigProvider;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkConnectorConfig;
@@ -210,7 +210,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     private NetworkService net;
 
     @ToStringIgnore
-    private MetricsService metrics;
+    private LocalMetricsService metrics;
 
     @ToStringIgnore
     private ClusterMetricsCallback metricsCallback;
@@ -295,7 +295,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     public void resolve(DependencyContext ctx) {
         net = ctx.require(NetworkService.class);
 
-        metrics = ctx.optional(MetricsService.class);
+        metrics = ctx.optional(LocalMetricsService.class);
     }
 
     @Override

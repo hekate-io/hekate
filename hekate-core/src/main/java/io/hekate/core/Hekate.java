@@ -31,8 +31,8 @@ import io.hekate.election.ElectionService;
 import io.hekate.inject.InjectionService;
 import io.hekate.lock.LockService;
 import io.hekate.messaging.MessagingService;
-import io.hekate.metrics.MetricsService;
 import io.hekate.metrics.cluster.ClusterMetricsService;
+import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.NetworkService;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.partition.PartitionService;
@@ -139,7 +139,7 @@ import java.util.Set;
  * <li><b>{@link LockService}</b> - provides support for distributed locks</li>
  * <li><b>{@link ElectionService}</b> - provides support for cluster-wide leader election (aka cluster singleton)</li>
  * <li><b>{@link CoordinationService}</b> - provides support for implementing distributed coordination protocols</li>
- * <li><b>{@link MetricsService}</b> -  provides support for managing user-defined metrics</li>
+ * <li><b>{@link LocalMetricsService}</b> -  provides support for managing user-defined metrics</li>
  * <li><b>{@link ClusterMetricsService}</b> - provides access to metrics of remote cluster nodes</li>
  * <li><b>{@link NetworkService}</b> - provides configuration options and low level API for network communications</li>
  * <li><b>{@link PartitionService}</b> - provides support for consistent mapping and routing of messages among the cluster nodes</li>
@@ -286,18 +286,11 @@ public interface Hekate {
     CoordinationService coordination();
 
     /**
-     * Returns the {@link MetricsService}.
+     * Returns the {@link LocalMetricsService}.
      *
      * @return Service.
      */
-    MetricsService metrics();
-
-    /**
-     * Returns the {@link PartitionService}.
-     *
-     * @return Service.
-     */
-    PartitionService partitions();
+    LocalMetricsService localMetrics();
 
     /**
      * Returns the {@link ClusterMetricsService}.
@@ -305,6 +298,13 @@ public interface Hekate {
      * @return Service.
      */
     ClusterMetricsService clusterMetrics();
+
+    /**
+     * Returns the {@link PartitionService}.
+     *
+     * @return Service.
+     */
+    PartitionService partitions();
 
     /**
      * Returns the {@link NetworkService}.

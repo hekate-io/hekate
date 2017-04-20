@@ -17,7 +17,7 @@
 package io.hekate.metrics.statsd;
 
 import io.hekate.metrics.MetricFilter;
-import io.hekate.metrics.MetricsServiceFactory;
+import io.hekate.metrics.local.LocalMetricsServiceFactory;
 import io.hekate.util.format.ToString;
 
 /**
@@ -164,9 +164,9 @@ public class StatsdMetricsConfig {
      * Sets the the maximum size of a queue to buffer metrics for asynchronous publishing.
      *
      * <p>
-     * On every {@link MetricsServiceFactory#setRefreshInterval(long)} tick a new entry with the snapshot of current metrics is added to
-     * the queue of this size. If there is no more space in the queue (f.e. due to some networking issues) then such entries will be dropped
-     * and will not be published to StatsD.
+     * On every {@link LocalMetricsServiceFactory#setRefreshInterval(long)} tick a new entry with the snapshot of current metrics is added
+     * to the queue of this size. If there is no more space in the queue (f.e. due to some networking issues) then such entries will be
+     * dropped and will not be published to StatsD.
      * </p>
      *
      * <p>

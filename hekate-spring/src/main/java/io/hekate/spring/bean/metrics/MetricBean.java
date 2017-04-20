@@ -28,7 +28,7 @@ public class MetricBean extends HekateBaseBean<Metric> {
 
     @Override
     public Metric getObject() throws Exception {
-        return getSource().metrics().metric(name);
+        return getSource().localMetrics().metric(name);
     }
 
     @Override

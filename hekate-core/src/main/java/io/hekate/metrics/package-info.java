@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains {@link io.hekate.metrics.MetricsService} API.
+ * Contains common metrics API.
  */
 package io.hekate.metrics;

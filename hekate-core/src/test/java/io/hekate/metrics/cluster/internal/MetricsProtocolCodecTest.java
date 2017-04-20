@@ -22,7 +22,7 @@ import io.hekate.codec.StreamDataReader;
 import io.hekate.codec.StreamDataWriter;
 import io.hekate.metrics.cluster.internal.MetricsProtocol.UpdateRequest;
 import io.hekate.metrics.cluster.internal.MetricsProtocol.UpdateResponse;
-import io.hekate.metrics.internal.StaticMetric;
+import io.hekate.metrics.local.internal.StaticMetric;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;

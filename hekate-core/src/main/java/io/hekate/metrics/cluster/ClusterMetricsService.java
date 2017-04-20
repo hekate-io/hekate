@@ -23,7 +23,7 @@ import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.DefaultServiceFactory;
 import io.hekate.core.service.Service;
 import io.hekate.metrics.MetricFilter;
-import io.hekate.metrics.MetricsService;
+import io.hekate.metrics.local.LocalMetricsService;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,7 +32,7 @@ import java.util.Optional;
  *
  * <h2>Overview</h2>
  * <p>
- * {@link ClusterMetricsService} service provides support for making metrics of {@link MetricsService} available to other
+ * {@link ClusterMetricsService} service provides support for making metrics of {@link LocalMetricsService} available to other
  * remote nodes in the cluster. It {@link ClusterMetricsServiceFactory#setReplicationInterval(long) periodically} replicates snapshots of
  * metrics data between the cluster nodes so that applications could implement their own monitoring and load balancing schemes based on
  * their view of the overall cluster performance.
@@ -45,7 +45,7 @@ import java.util.Optional;
  * </p>
  *
  * <p>
- * For more details about metrics and their usage please see the documentation of {@link MetricsService}.
+ * For more details about metrics and their usage please see the documentation of {@link LocalMetricsService}.
  * </p>
  *
  * <h2>Service configuration</h2>
@@ -109,7 +109,7 @@ import java.util.Optional;
  * </p>
  *
  * @see ClusterMetricsServiceFactory
- * @see MetricsService
+ * @see LocalMetricsService
  */
 @DefaultServiceFactory(ClusterMetricsServiceFactory.class)
 public interface ClusterMetricsService extends Service {

@@ -16,14 +16,16 @@
 
 package io.hekate.metrics;
 
+import io.hekate.metrics.local.LocalMetricsService;
+
 /**
  * Metric value.
  *
  * <p>
- * Please see the documentation of {@link MetricsService} interface for more details about metrics.
+ * Please see the documentation of {@link LocalMetricsService} interface for more details about metrics.
  * </p>
  *
- * @see MetricsService
+ * @see LocalMetricsService
  */
 public interface Metric {
     /**

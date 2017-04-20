@@ -17,7 +17,7 @@
 package io.hekate.metrics.cluster.internal;
 
 import io.hekate.cluster.ClusterNodeId;
-import io.hekate.metrics.internal.StaticMetric;
+import io.hekate.metrics.local.internal.StaticMetric;
 import io.hekate.util.format.ToString;
 import java.util.Map;
 

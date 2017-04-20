@@ -101,7 +101,7 @@
         </election>
 
         <!-- Local metrics service. -->
-        <metrics refresh-interval-ms="1000">
+        <local-metrics refresh-interval-ms="1000">
             <counters>
                 <counter name="counter1"/>
             </counters>
@@ -110,10 +110,10 @@
                     <s:bean class="foo.bar.SomeProbe"/>
                 </probe>
             </probes>
-        </metrics>
+        </local-metrics>
 
         <!-- Cluster metrics service. -->
         <cluster-metrics replication-interval-ms="1000"/>
     </node>
 </s:beans>
-    <!--End:example-->
+<!--End:example-->

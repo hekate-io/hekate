@@ -26,10 +26,10 @@ import io.hekate.lock.LockRegion;
 import io.hekate.lock.LockService;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingService;
-import io.hekate.metrics.CounterMetric;
 import io.hekate.metrics.Metric;
-import io.hekate.metrics.MetricsService;
 import io.hekate.metrics.cluster.ClusterMetricsService;
+import io.hekate.metrics.local.CounterMetric;
+import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkService;
 import io.hekate.task.TaskService;
@@ -71,7 +71,7 @@ public class XsdSingleNodeTest extends HekateTestBase {
 
     @Autowired
     @Qualifier("metrics")
-    private MetricsService metrics;
+    private LocalMetricsService metrics;
 
     @Autowired
     @Qualifier("clusterMetrics")

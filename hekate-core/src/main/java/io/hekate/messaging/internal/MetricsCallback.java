@@ -16,9 +16,9 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.metrics.CounterConfig;
-import io.hekate.metrics.CounterMetric;
-import io.hekate.metrics.MetricsService;
+import io.hekate.metrics.local.CounterConfig;
+import io.hekate.metrics.local.CounterMetric;
+import io.hekate.metrics.local.LocalMetricsService;
 
 class MetricsCallback {
     private final CounterMetric pending;
@@ -27,7 +27,7 @@ class MetricsCallback {
 
     private final CounterMetric retry;
 
-    public MetricsCallback(String name, MetricsService metrics) {
+    public MetricsCallback(String name, LocalMetricsService metrics) {
         pending = metrics.register(new CounterConfig(name + ".msg.pending"));
         asyncQueue = metrics.register(new CounterConfig(name + ".msg.work.queue"));
         retry = metrics.register(new CounterConfig(name + ".msg.retry").withAutoReset(true));

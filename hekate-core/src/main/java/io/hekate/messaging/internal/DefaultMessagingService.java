@@ -50,7 +50,7 @@ import io.hekate.messaging.MessagingOverflowPolicy;
 import io.hekate.messaging.MessagingService;
 import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.unicast.LoadBalancer;
-import io.hekate.metrics.MetricsService;
+import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.NetworkConfigProvider;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkConnectorConfig;
@@ -105,7 +105,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     private ClusterService cluster;
 
-    private MetricsService metrics;
+    private LocalMetricsService metrics;
 
     public DefaultMessagingService(MessagingServiceFactory factory) {
         assert factory != null : "Factory is null.";
@@ -123,7 +123,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         cluster = ctx.require(ClusterService.class);
         codecService = ctx.require(CodecService.class);
 
-        metrics = ctx.optional(MetricsService.class);
+        metrics = ctx.optional(LocalMetricsService.class);
     }
 
     @Override

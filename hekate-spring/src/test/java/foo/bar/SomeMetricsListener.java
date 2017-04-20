@@ -16,8 +16,8 @@
 
 package foo.bar;
 
-import io.hekate.metrics.MetricsListener;
-import io.hekate.metrics.MetricsUpdateEvent;
+import io.hekate.metrics.local.MetricsListener;
+import io.hekate.metrics.local.MetricsUpdateEvent;
 
 public class SomeMetricsListener implements MetricsListener {
     @Override

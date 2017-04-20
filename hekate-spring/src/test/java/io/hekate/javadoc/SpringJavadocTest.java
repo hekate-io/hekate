@@ -159,17 +159,17 @@ public class SpringJavadocTest extends HekateTestBase {
 
     @Test
     public void testLocalMetricsXsd() {
-        doTest("javadoc/metrics/service-xsd.xml", (node, ctx) -> {
-            assertNotNull(node.metrics().getCounter("example.counter"));
-            assertNotNull(node.metrics().metric("example.probe"));
+        doTest("javadoc/metrics/local/service-xsd.xml", (node, ctx) -> {
+            assertNotNull(node.localMetrics().getCounter("example.counter"));
+            assertNotNull(node.localMetrics().metric("example.probe"));
         });
     }
 
     @Test
-    public void testMetricsBean() {
-        doTest("javadoc/metrics/service-bean.xml", (node, ctx) -> {
-            assertNotNull(node.metrics().getCounter("example.counter"));
-            assertNotNull(node.metrics().metric("example.probe"));
+    public void testLocalMetricsBean() {
+        doTest("javadoc/metrics/local/service-bean.xml", (node, ctx) -> {
+            assertNotNull(node.localMetrics().getCounter("example.counter"));
+            assertNotNull(node.localMetrics().metric("example.probe"));
         });
     }
 

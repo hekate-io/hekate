@@ -16,7 +16,7 @@
 
 package foo.bar;
 
-import io.hekate.metrics.Probe;
+import io.hekate.metrics.local.Probe;
 
 public class SomeProbe implements Probe {
     @Override

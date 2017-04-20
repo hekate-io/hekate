@@ -15,6 +15,6 @@
  */
 
 /**
- * Auto-configuration for {@link io.hekate.metrics.cluster.ClusterMetricsService}.
+ * Auto-configuration for {@link io.hekate.metrics.local.LocalMetricsService}.
  */
 package io.hekate.spring.boot.metrics.cluster;

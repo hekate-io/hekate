@@ -22,7 +22,7 @@ import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingServiceFactory;
-import io.hekate.metrics.MetricsServiceFactory;
+import io.hekate.metrics.local.LocalMetricsServiceFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -133,7 +133,7 @@ public abstract class MessagingServiceTestBase extends HekateNodeContextTestBase
 
         HekateTestNode node = createNode(c -> {
             c.withNodeRole(TEST_NODE_ROLE);
-            c.withService(new MetricsServiceFactory());
+            c.withService(new LocalMetricsServiceFactory());
 
             c.findOrRegister(MessagingServiceFactory.class).withChannel(cfg);
 

@@ -21,7 +21,7 @@ import io.hekate.codec.Codec;
 import io.hekate.codec.CodecUtils;
 import io.hekate.codec.DataReader;
 import io.hekate.codec.DataWriter;
-import io.hekate.metrics.internal.StaticMetric;
+import io.hekate.metrics.local.internal.StaticMetric;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;

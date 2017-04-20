@@ -17,7 +17,7 @@
 package io.hekate.metrics.influxdb;
 
 import io.hekate.metrics.MetricFilter;
-import io.hekate.metrics.MetricsServiceFactory;
+import io.hekate.metrics.local.LocalMetricsServiceFactory;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 
@@ -183,8 +183,8 @@ public class InfluxDbMetricsConfig {
      * Sets the the maximum size of a queue to buffer metrics for asynchronous publishing.
      *
      * <p>
-     * On every {@link MetricsServiceFactory#setRefreshInterval(long)} tick a new entry with the snapshot of current metrics is added to
-     * the queue of this size. If there is no more space in the queue (f.e. due to slow network connection between the publisher and
+     * On every {@link LocalMetricsServiceFactory#setRefreshInterval(long)} tick a new entry with the snapshot of current metrics is added
+     * to the queue of this size. If there is no more space in the queue (f.e. due to slow network connection between the publisher and
      * InfluxDB) then such entries will be dropped and will not be published to InfluxDB.
      * </p>
      *

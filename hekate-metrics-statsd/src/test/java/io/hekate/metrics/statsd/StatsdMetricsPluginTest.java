@@ -17,8 +17,8 @@
 package io.hekate.metrics.statsd;
 
 import io.hekate.core.internal.HekateTestNode;
-import io.hekate.metrics.MetricsServiceFactory;
-import io.hekate.metrics.ProbeConfig;
+import io.hekate.metrics.local.LocalMetricsServiceFactory;
+import io.hekate.metrics.local.ProbeConfig;
 import java.net.InetAddress;
 import java.util.concurrent.CountDownLatch;
 import org.junit.Test;
@@ -39,7 +39,7 @@ public class StatsdMetricsPluginTest extends StatsdMetricsTestBase {
                 .withFilter(metric -> metric.getName().equals("test_metric")))
             );
 
-            boot.findOrRegister(MetricsServiceFactory.class)
+            boot.findOrRegister(LocalMetricsServiceFactory.class)
                 .withRefreshInterval(100)
                 .withMetric(new ProbeConfig("test_metric")
                     .withProbe(() -> 1000)

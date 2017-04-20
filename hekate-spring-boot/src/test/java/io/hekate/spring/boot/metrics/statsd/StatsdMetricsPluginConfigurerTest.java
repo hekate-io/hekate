@@ -16,7 +16,7 @@
 
 package io.hekate.spring.boot.metrics.statsd;
 
-import io.hekate.metrics.MetricsService;
+import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.metrics.statsd.StatsdMetricsConfig;
 import io.hekate.metrics.statsd.StatsdMetricsPlugin;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
@@ -43,7 +43,7 @@ public class StatsdMetricsPluginConfigurerTest extends HekateAutoConfigurerTestB
             "hekate.metrics.statsd.max-queue-size:100501",
         }, StatsdTestConfig.class);
 
-        assertNotNull(get(MetricsService.class));
+        assertNotNull(get(LocalMetricsService.class));
         assertNotNull(get(StatsdMetricsPlugin.class));
 
         StatsdMetricsConfig cfg = get(StatsdMetricsConfig.class);

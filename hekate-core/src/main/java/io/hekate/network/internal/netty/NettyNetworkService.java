@@ -34,9 +34,9 @@ import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.TerminatingService;
-import io.hekate.metrics.CounterConfig;
-import io.hekate.metrics.CounterMetric;
-import io.hekate.metrics.MetricsService;
+import io.hekate.metrics.local.CounterConfig;
+import io.hekate.metrics.local.CounterMetric;
+import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkClientCallback;
 import io.hekate.network.NetworkConfigProvider;
@@ -259,7 +259,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
     public void resolve(DependencyContext ctx) {
         codecService = ctx.require(CodecService.class);
 
-        MetricsService metricsService = ctx.optional(MetricsService.class);
+        LocalMetricsService metricsService = ctx.optional(LocalMetricsService.class);
 
         if (metricsService != null) {
             metrics = createMetricsAdaptor(metricsService);
@@ -660,7 +660,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
         return new ConnectorRegistration<>(protocol, !useCoreGroup ? eventLoopGroup : null, connector, handlerCfg);
     }
 
-    private NettyMetricsAdaptor createMetricsAdaptor(MetricsService metrics) {
+    private NettyMetricsAdaptor createMetricsAdaptor(LocalMetricsService metrics) {
         // Overall bytes metrics.
         CounterMetric allBytesSent = counter(NettyMetricsAdaptor.BYTES_OUT, true, metrics);
         CounterMetric allBytesReceived = counter(NettyMetricsAdaptor.BYTES_IN, true, metrics);
@@ -780,11 +780,11 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
         }
     }
 
-    private static CounterMetric counter(String name, boolean autoReset, MetricsService metrics) {
+    private static CounterMetric counter(String name, boolean autoReset, LocalMetricsService metrics) {
         return counter(name, null, null, autoReset, metrics);
     }
 
-    private static CounterMetric counter(String name, String protocol, Boolean server, boolean autoReset, MetricsService metrics) {
+    private static CounterMetric counter(String name, String protocol, Boolean server, boolean autoReset, LocalMetricsService metrics) {
         String counterName = "";
 
         if (protocol != null) {

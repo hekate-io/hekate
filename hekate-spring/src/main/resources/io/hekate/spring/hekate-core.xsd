@@ -149,10 +149,10 @@
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="metrics" type="localMetricsServiceType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="local-metrics" type="localMetricsServiceType" minOccurs="0" maxOccurs="1">
                 <xsd:annotation>
                     <xsd:documentation>
-                        Registers 'io.hekate.metrics.MetricsServiceFactory'.
+                        Registers 'io.hekate.metrics.local.LocalMetricsServiceFactory.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>

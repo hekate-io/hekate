@@ -17,8 +17,8 @@
 package io.hekate.metrics.influxdb;
 
 import io.hekate.core.internal.HekateTestNode;
-import io.hekate.metrics.MetricsServiceFactory;
-import io.hekate.metrics.ProbeConfig;
+import io.hekate.metrics.local.LocalMetricsServiceFactory;
+import io.hekate.metrics.local.ProbeConfig;
 import java.util.concurrent.CountDownLatch;
 import org.junit.Test;
 
@@ -36,7 +36,7 @@ public class InfluxDbMetricsPluginTest extends InfluxDbMetricsTestBase {
                 .withPassword(password))
             );
 
-            boot.findOrRegister(MetricsServiceFactory.class)
+            boot.findOrRegister(LocalMetricsServiceFactory.class)
                 .withRefreshInterval(100)
                 .withMetric(new ProbeConfig("test_metric")
                     .withProbe(() -> 1000)

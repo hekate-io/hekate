@@ -25,7 +25,7 @@ import io.hekate.core.HekateFutureException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
-import io.hekate.metrics.MetricsServiceFactory;
+import io.hekate.metrics.local.LocalMetricsServiceFactory;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -248,13 +248,13 @@ public class PluginTest extends HekateNodeTestBase {
             @Override
             public void install(HekateBootstrap boot) {
                 // Check that service factory is not registered yet.
-                assertFalse(boot.find(MetricsServiceFactory.class).isPresent());
+                assertFalse(boot.find(LocalMetricsServiceFactory.class).isPresent());
 
                 // Should register new service factory.
-                boot.withService(MetricsServiceFactory.class, Assert::assertNotNull);
+                boot.withService(LocalMetricsServiceFactory.class, Assert::assertNotNull);
 
                 // Check that service factory is now available.
-                assertTrue(boot.find(MetricsServiceFactory.class).isPresent());
+                assertTrue(boot.find(LocalMetricsServiceFactory.class).isPresent());
 
                 // Check that specifying a non-instantiable service factory would throw an error.
                 expect(HekateConfigurationException.class, () -> boot.withService(NonInstantiableServiceFactory.class, f ->

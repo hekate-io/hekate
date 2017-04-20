@@ -16,8 +16,8 @@
 
 package io.hekate.spring.bean.metrics;
 
-import io.hekate.metrics.CounterConfig;
-import io.hekate.metrics.CounterMetric;
+import io.hekate.metrics.local.CounterConfig;
+import io.hekate.metrics.local.CounterMetric;
 import io.hekate.spring.bean.HekateBaseBean;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -29,7 +29,7 @@ public class CounterMetricBean extends HekateBaseBean<CounterMetric> {
 
     @Override
     public CounterMetric getObject() throws Exception {
-        return getSource().metrics().getCounter(name);
+        return getSource().localMetrics().getCounter(name);
     }
 
     @Override
