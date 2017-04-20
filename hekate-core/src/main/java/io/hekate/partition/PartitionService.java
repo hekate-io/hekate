@@ -47,8 +47,8 @@ import java.util.List;
  *
  * <h2>Service configuration</h2>
  * <p>
- * {@link PartitionService} can be configured and registered within the {@link HekateBootstrap} via the {@link PartitionServiceFactory}
- * class as in the example below:
+ * {@link PartitionService} can be configured and registered in {@link HekateBootstrap} with the help of {@link PartitionServiceFactory} as
+ * shown in the example below:
  * ${source: partition/PartitionServiceJavadocTest.java#configure}
  * </p>
  *

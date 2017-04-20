@@ -17,7 +17,6 @@
 package io.hekate.coordinate;
 
 import io.hekate.coordinate.internal.DefaultCoordinationService;
-import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.network.NetworkService;
@@ -29,9 +28,9 @@ import java.util.List;
  * Factory for {@link CoordinationService}.
  *
  * <p>
- * This class represents a configurable factory for {@link CoordinationService}. Instances of this class can can be {@link
- * HekateBootstrap#withService(ServiceFactory) registered} within the {@link HekateBootstrap} in order to make {@link CoordinationService}
- * accessible via {@link Hekate#get(Class)} method.
+ * This class represents a configurable factory for {@link CoordinationService}. Instances of this class can be
+ * {@link HekateBootstrap#withService(ServiceFactory) registered} within the {@link HekateBootstrap} in order to customize options of the
+ * {@link CoordinationService}.
  * </p>
  *
  * <p>

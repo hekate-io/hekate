@@ -50,7 +50,7 @@ import java.util.Optional;
  *
  * <h2>Service configuration</h2>
  * <p>
- * Cluster metrics service can be registered and configured in {@link HekateBootstrap} with the help of {@link
+ * Cluster metrics service can be configured and registered in {@link HekateBootstrap} with the help of {@link
  * ClusterMetricsServiceFactory} as shown in the example below:
  * </p>
  *

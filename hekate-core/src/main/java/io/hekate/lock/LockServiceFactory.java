@@ -16,7 +16,6 @@
 
 package io.hekate.lock;
 
-import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.lock.internal.DefaultLockService;
@@ -30,9 +29,9 @@ import java.util.List;
  * Factory for {@link LockService}.
  *
  * <p>
- * This class represents a configurable factory for {@link LockService}. Instances of this class must be {@link
- * HekateBootstrap#withService(ServiceFactory) registered} within the {@link HekateBootstrap} in order to make {@link LockService}
- * accessible via {@link Hekate#get(Class)} method.
+ * This class represents a configurable factory for {@link LockService}. Instances of this class can be
+ * {@link HekateBootstrap#withService(ServiceFactory) registered} within the {@link HekateBootstrap} in order to customize options of the
+ * {@link LockService}.
  * </p>
  *
  * <p>

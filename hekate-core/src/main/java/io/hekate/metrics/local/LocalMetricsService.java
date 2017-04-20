@@ -44,7 +44,7 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
  *
  * <h2>Service configuration</h2>
  * <p>
- * Metrics service can be registered and configured in {@link HekateBootstrap} with the help of {@link LocalMetricsServiceFactory} as shown
+ * Metrics service can be configured and registered in {@link HekateBootstrap} with the help of {@link LocalMetricsServiceFactory} as shown
  * in the example below:
  * </p>
  *

@@ -27,6 +27,16 @@ import io.hekate.util.format.ToString;
 /**
  * Configurable factory for {@link TaskService}.
  *
+ * <p>
+ * This class represents a configurable factory for {@link TaskService}. Instances of this class can be
+ * {@link HekateBootstrap#withService(ServiceFactory) registered} within the {@link HekateBootstrap} in order to customize options of the
+ * {@link TaskService}.
+ * </p>
+ *
+ * <p>
+ * For more details about the {@link TaskService} and its capabilities please see the documentation of {@link TaskService} interface.
+ * </p>
+ *
  * @see TaskService
  */
 public class TaskServiceFactory implements ServiceFactory<TaskService> {
