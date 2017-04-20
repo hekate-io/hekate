@@ -25,7 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 public class HekateTaskServiceConfigurerTest extends HekateAutoConfigurerTestBase {
@@ -36,19 +35,12 @@ public class HekateTaskServiceConfigurerTest extends HekateAutoConfigurerTestBas
     }
 
     @Test
-    public void testEnabled() throws Exception {
+    public void test() throws Exception {
         registerAndRefresh(new String[]{"hekate.task.enable:true"}, TaskConfig.class);
 
         assertNotNull(get("taskService", TaskService.class));
         assertNotNull(get(TaskConfig.class).taskService);
 
         assertEquals(100500, getNode().tasks().call((CallableTask<Integer>)() -> 100500).get().intValue());
-    }
-
-    @Test
-    public void testDisabledByDefault() throws Exception {
-        registerAndRefresh(TaskConfig.class);
-
-        assertFalse(getNode().has(TaskService.class));
     }
 }

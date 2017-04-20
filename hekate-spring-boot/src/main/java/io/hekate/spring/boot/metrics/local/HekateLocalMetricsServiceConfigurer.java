@@ -55,7 +55,7 @@ import org.springframework.stereotype.Component;
  *
  * <h2>Configuration properties</h2>
  * <p>
- * It is possible to configure {@link LocalMetricsServiceFactory} via application properties prefixed with {@code 'hekate.metrics'}
+ * It is possible to configure {@link LocalMetricsServiceFactory} via application properties prefixed with {@code 'hekate.metrics.local'}
  * (for example {@link LocalMetricsServiceFactory#setRefreshInterval(long) 'hekate.metrics.local.refresh-interval'})
  * </p>
  *

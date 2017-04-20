@@ -24,20 +24,12 @@ import io.hekate.spring.boot.ConditionalOnHekateEnabled;
 import io.hekate.spring.boot.HekateConfigurer;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
  * <span class="startHere">&laquo; start here</span>Auto-configuration for {@link ClusterMetricsService}.
- *
- * <h2>Overview</h2>
- * <p>
- * This auto-configuration constructs a {@link Bean} of {@link ClusterMetricsServiceFactory} type. This auto-configuration is disabled by
- * default and should be explicitly enabled by setting {@code 'hekate.metrics.cluster.enable'} configuration property to {@code true}.
- * </p>
- *
  *
  * <h2>Configuration properties</h2>
  * <p>
@@ -53,7 +45,6 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnHekateEnabled
 @AutoConfigureBefore(HekateConfigurer.class)
 @ConditionalOnMissingBean(ClusterMetricsServiceFactory.class)
-@ConditionalOnProperty(value = "hekate.metrics.cluster.enable", havingValue = "true")
 public class HekateClusterMetricsServiceConfigurer {
     /**
      * Constructs the {@link ClusterMetricsServiceFactory}.

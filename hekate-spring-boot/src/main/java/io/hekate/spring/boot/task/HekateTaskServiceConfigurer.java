@@ -24,7 +24,6 @@ import io.hekate.task.TaskService;
 import io.hekate.task.TaskServiceFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,21 +31,16 @@ import org.springframework.context.annotation.Configuration;
 /**
  * <span class="startHere">&laquo; start here</span>Auto-configuration for {@link TaskService}.
  *
- * <h2>Overview</h2>
- * <p>
- * This auto-configuration constructs a {@link Bean} of {@link TaskServiceFactory} type. This auto-configuration is disabled by default and
- * should be explicitly enabled by setting {@code 'hekate.task.enable'} configuration property to {@code true}.
- * </p>
- *
  * <h2>Configuration properties</h2>
  * <p>
  * It is possible to configure {@link TaskServiceFactory} via application properties prefixed with {@code 'hekate.task'}.
  * For example:
  * </p>
  * <ul>
- * <li>{@link TaskServiceFactory#setWorkerThreads(int) 'hekate.task.worker-thread-pool-size'}</li>
- * <li>{@link TaskServiceFactory#setNioThreads(int) 'hekate.task.nio-thread-pool-size'}</li>
- * <li>{@link TaskServiceFactory#setIdleSocketTimeout(int) 'hekate.task.idle-socket-pool-timeout'}</li>
+ * <li>{@link TaskServiceFactory#setWorkerThreads(int) 'hekate.task.worker-threads'}</li>
+ * <li>{@link TaskServiceFactory#setNioThreads(int) 'hekate.task.nio-threads'}</li>
+ * <li>{@link TaskServiceFactory#setIdleSocketTimeout(int) 'hekate.task.idle-socket-timeout'}</li>
+ * <li>{@link TaskServiceFactory#setLocalExecutionEnabled(boolean) 'hekate.task.local-execution-enabled'}</li>
  * </ul>
  *
  * @see TaskService
@@ -56,7 +50,6 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnHekateEnabled
 @AutoConfigureBefore(HekateConfigurer.class)
 @ConditionalOnMissingBean(TaskServiceFactory.class)
-@ConditionalOnProperty(value = "hekate.task.enable", havingValue = "true")
 public class HekateTaskServiceConfigurer {
     /**
      * Constructs the {@link TaskServiceFactory}.

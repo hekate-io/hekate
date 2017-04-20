@@ -30,13 +30,15 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class MessagingServiceSingleNodeTest extends HekateNodeTestBase {
+    private static final int BUILT_IN_CHANNELS = 1; // <-- Task service always registers one channel.
+
     @Test
     public void testEmptyChannels() throws Exception {
         HekateTestNode node = createNode(boot ->
             boot.withService(new MessagingServiceFactory())
         ).join();
 
-        assertTrue(node.messaging().allChannels().isEmpty());
+        assertEquals(BUILT_IN_CHANNELS, node.messaging().allChannels().size());
 
         assertFalse(node.messaging().hasChannel("no-such-channel"));
 
@@ -63,7 +65,7 @@ public class MessagingServiceSingleNodeTest extends HekateNodeTestBase {
         assertNotNull(channel1);
         assertNotNull(channel2);
 
-        assertEquals(2, node.messaging().allChannels().size());
+        assertEquals(2 + BUILT_IN_CHANNELS, node.messaging().allChannels().size());
         assertTrue(node.messaging().allChannels().contains(channel1));
         assertTrue(node.messaging().allChannels().contains(channel2));
 

@@ -55,6 +55,17 @@ import org.springframework.stereotype.Component;
  * LockServiceFactory} type and if there is at least one {@link Bean} of {@link LockRegionConfig} type within the application context.
  * </p>
  *
+ * <h2>Configuration properties</h2>
+ * <p>
+ * It is possible to configure {@link LockServiceFactory} via application properties prefixed with {@code 'hekate.locks'}.
+ * For example:
+ * </p>
+ * <ul>
+ * <li>{@link LockServiceFactory#setNioThreads(int) 'hekate.locks.nio-threads'}</li>
+ * <li>{@link LockServiceFactory#setWorkerThreads(int) 'hekate.locks.worker-threads'}</li>
+ * <li>{@link LockServiceFactory#setRetryInterval(long) 'hekate.locks.retry-interval'}</li>
+ * </ul>
+ *
  * <h2>Locks injections</h2>
  * <p>
  * This auto-configuration provides support for injecting beans of {@link LockRegion} and {@link DistributedLock} type into other beans with

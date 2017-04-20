@@ -23,7 +23,6 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 public class HekateClusterMetricsServiceConfigurerTest extends HekateAutoConfigurerTestBase {
@@ -34,19 +33,12 @@ public class HekateClusterMetricsServiceConfigurerTest extends HekateAutoConfigu
     }
 
     @Test
-    public void testEnabled() throws Exception {
-        registerAndRefresh(new String[]{"hekate.metrics.cluster.enable:true"}, ClusterMetricsTestConfig.class);
+    public void test() throws Exception {
+        registerAndRefresh(ClusterMetricsTestConfig.class);
 
         assertNotNull(get("clusterMetricsService", ClusterMetricsService.class));
         assertNotNull(get(ClusterMetricsTestConfig.class).clusterMetricsService);
 
         assertNotNull(getNode().clusterMetrics());
-    }
-
-    @Test
-    public void testDisabledByDefault() throws Exception {
-        registerAndRefresh(ClusterMetricsTestConfig.class);
-
-        assertFalse(getNode().has(ClusterMetricsService.class));
     }
 }
