@@ -154,9 +154,9 @@ class HekateNode implements Hekate, Serializable {
 
     private final CoordinationService coordination;
 
-    private final LocalMetricsService metrics;
+    private final LocalMetricsService localMetrics;
 
-    private final ClusterMetricsService clusterMetrcis;
+    private final ClusterMetricsService clusterMetrics;
 
     private final PartitionService partitions;
 
@@ -291,8 +291,8 @@ class HekateNode implements Hekate, Serializable {
         coordination = services.findService(CoordinationService.class);
         partitions = services.findService(PartitionService.class);
         tasks = services.findService(TaskService.class);
-        metrics = services.findService(LocalMetricsService.class);
-        clusterMetrcis = services.findService(ClusterMetricsService.class);
+        localMetrics = services.findService(LocalMetricsService.class);
+        clusterMetrics = services.findService(ClusterMetricsService.class);
 
         // Get internal service managers.
         net = services.findService(NetworkServiceManager.class);
@@ -400,7 +400,7 @@ class HekateNode implements Hekate, Serializable {
 
     @Override
     public LocalMetricsService localMetrics() {
-        return metrics;
+        return localMetrics;
     }
 
     @Override
@@ -410,7 +410,7 @@ class HekateNode implements Hekate, Serializable {
 
     @Override
     public ClusterMetricsService clusterMetrics() {
-        return clusterMetrcis;
+        return clusterMetrics;
     }
 
     @Override
