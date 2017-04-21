@@ -120,7 +120,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private static final String CHANNEL_NAME = "hekate.task";
+    private static final String CHANNEL_NAME = "hekate.tasks";
 
     private final boolean localExecutionEnabled;
 

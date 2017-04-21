@@ -84,7 +84,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private static final String LOCK_PREFIX = "hekate.lock";
+    private static final String LOCK_PREFIX = "hekate.locks";
 
     private final StateGuard guard = new StateGuard(LockService.class);
 
