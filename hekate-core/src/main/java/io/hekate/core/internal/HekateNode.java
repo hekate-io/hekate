@@ -25,7 +25,6 @@ import io.hekate.cluster.event.ClusterChangeEvent;
 import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.event.ClusterJoinEvent;
-import io.hekate.cluster.event.ClusterLeaveEvent;
 import io.hekate.cluster.internal.DefaultClusterNode;
 import io.hekate.cluster.internal.DefaultClusterNodeBuilder;
 import io.hekate.cluster.internal.DefaultClusterTopology;
@@ -46,7 +45,6 @@ import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Utils;
-import io.hekate.core.internal.util.Waiting;
 import io.hekate.core.service.ClusterContext;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.Service;
@@ -69,7 +67,6 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -77,7 +74,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
@@ -92,6 +89,7 @@ import static io.hekate.core.Hekate.State.TERMINATING;
 import static io.hekate.core.Hekate.State.UP;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.synchronizedMap;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toSet;
@@ -137,7 +135,7 @@ class HekateNode implements Hekate, Serializable {
 
     private final AtomicReference<TerminateFuture> terminateFutureRef = new AtomicReference<>();
 
-    private final Map<String, Object> attributes = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, Object> attributes = synchronizedMap(new HashMap<>());
 
     private final ClusterEventManager clusterEvents;
 
@@ -162,8 +160,6 @@ class HekateNode implements Hekate, Serializable {
     private final PartitionService partitions;
 
     private final CodecService codec;
-
-    private boolean joinEventFired;
 
     private boolean preTerminated;
 
@@ -274,6 +270,72 @@ class HekateNode implements Hekate, Serializable {
     }
 
     @Override
+    public ClusterNode getLocalNode() {
+        ClusterNode node = this.node;
+
+        if (node == null) {
+            throw new IllegalStateException(Hekate.class.getSimpleName() + " is not initialized.");
+        }
+
+        return node;
+    }
+
+    @Override
+    public ClusterService cluster() {
+        return cluster;
+    }
+
+    @Override
+    public TaskService tasks() {
+        return tasks;
+    }
+
+    @Override
+    public MessagingService messaging() {
+        return messaging;
+    }
+
+    @Override
+    public LockService locks() {
+        return locks;
+    }
+
+    @Override
+    public ElectionService election() {
+        return election;
+    }
+
+    @Override
+    public CoordinationService coordination() {
+        return coordination;
+    }
+
+    @Override
+    public LocalMetricsService localMetrics() {
+        return localMetrics;
+    }
+
+    @Override
+    public PartitionService partitions() {
+        return partitions;
+    }
+
+    @Override
+    public ClusterMetricsService clusterMetrics() {
+        return clusterMetrics;
+    }
+
+    @Override
+    public NetworkService network() {
+        return network;
+    }
+
+    @Override
+    public CodecService codec() {
+        return codec;
+    }
+
+    @Override
     public JoinFuture joinAsync() {
         return doJoin(false);
     }
@@ -339,61 +401,6 @@ class HekateNode implements Hekate, Serializable {
     @Override
     public Hekate leave() throws InterruptedException, HekateFutureException {
         return leaveAsync().get();
-    }
-
-    @Override
-    public ClusterService cluster() {
-        return cluster;
-    }
-
-    @Override
-    public TaskService tasks() {
-        return tasks;
-    }
-
-    @Override
-    public MessagingService messaging() {
-        return messaging;
-    }
-
-    @Override
-    public LockService locks() {
-        return locks;
-    }
-
-    @Override
-    public ElectionService election() {
-        return election;
-    }
-
-    @Override
-    public CoordinationService coordination() {
-        return coordination;
-    }
-
-    @Override
-    public LocalMetricsService localMetrics() {
-        return localMetrics;
-    }
-
-    @Override
-    public PartitionService partitions() {
-        return partitions;
-    }
-
-    @Override
-    public ClusterMetricsService clusterMetrics() {
-        return clusterMetrics;
-    }
-
-    @Override
-    public NetworkService network() {
-        return network;
-    }
-
-    @Override
-    public CodecService codec() {
-        return codec;
     }
 
     @Override
@@ -477,17 +484,6 @@ class HekateNode implements Hekate, Serializable {
         return false;
     }
 
-    @Override
-    public ClusterNode getLocalNode() {
-        ClusterNode node = this.node;
-
-        if (node == null) {
-            throw new IllegalStateException(Hekate.class.getSimpleName() + " is not initialized.");
-        }
-
-        return node;
-    }
-
     protected Object writeReplace() throws ObjectStreamException {
         return SerializationHandle.INSTANCE;
     }
@@ -550,7 +546,9 @@ class HekateNode implements Hekate, Serializable {
             // Make sure that we are still initializing (lifecycle listener could request for leave/termination).
             if (isInitializingForNodeId(localNodeId)) {
                 // Schedule asynchronous initialization and join.
-                runOnSysThread(() -> selectAddressAndBind(localNodeId));
+                runOnSysThread(() ->
+                    selectAddressAndBind(localNodeId)
+                );
             }
 
             return joinFuture.fork();
@@ -583,7 +581,9 @@ class HekateNode implements Hekate, Serializable {
 
                             try {
                                 if (state.get() == INITIALIZING) {
-                                    runOnSysThread(() -> initialize(address, localNodeId));
+                                    runOnSysThread(() ->
+                                        initialize(address, localNodeId)
+                                    );
                                 } else {
                                     if (DEBUG) {
                                         log.debug("Stopped initialization sequence due to a concurrent leave/terminate event.");
@@ -743,15 +743,14 @@ class HekateNode implements Hekate, Serializable {
                                     + "[size={}, join-order={}, topology-ver={}, topology={}]", size, joinOrder, ver, nodesStr);
                             }
 
-                            joinEventFired = true;
-
                             ClusterJoinEvent join = new ClusterJoinEvent(newTopology);
 
-                            clusterEvents.fireAsync(join, () -> {
-                                    // Notify join future only after the initial join event has been processed by all listeners.
-                                    runOnSysThread(() -> localJoinFuture.complete(HekateNode.this));
-                                }
-                            );
+                            clusterEvents.fireAsync(join).thenRun(() -> {
+                                // Notify join future only after the initial join event has been processed by all listeners.
+                                runOnSysThread(() ->
+                                    localJoinFuture.complete(HekateNode.this)
+                                );
+                            });
 
                             notifyOnLifecycleChange();
 
@@ -775,7 +774,7 @@ class HekateNode implements Hekate, Serializable {
                     guard.lockWrite();
 
                     try {
-                        if (joinEventFired) {
+                        if (clusterEvents.isJoinEventFired()) {
                             DefaultClusterTopology lastTopology = topology;
 
                             DefaultClusterTopology newTopology = lastTopology.updateIfModified(nodes);
@@ -940,7 +939,9 @@ class HekateNode implements Hekate, Serializable {
 
                 notifyOnLifecycleChange();
 
-                runOnSysThread(() -> doTerminate(cause, future));
+                runOnSysThread(() ->
+                    doTerminate(cause, future)
+                );
 
                 return future.fork();
             } else if (state.get() == TERMINATING) {
@@ -972,20 +973,9 @@ class HekateNode implements Hekate, Serializable {
 
     private void doLeave() {
         if (state.get() == LEAVING) {
-            ensureLeaveEventFired(() -> runOnSysThread(this::preTerminateServices));
-        }
-    }
-
-    private void ensureLeaveEventFired(Runnable doAfterFired) {
-        // If join event was fired then we need to fire leave event too.
-        if (joinEventFired) {
-            joinEventFired = false;
-
-            ClusterLeaveEvent event = new ClusterLeaveEvent(topology, emptySet(), emptySet());
-
-            clusterEvents.fireAsync(event, doAfterFired);
-        } else {
-            doAfterFired.run();
+            clusterEvents.ensureLeaveEventFired(topology).thenRun(() ->
+                runOnSysThread(this::preTerminateServices)
+            );
         }
     }
 
@@ -1012,11 +1002,11 @@ class HekateNode implements Hekate, Serializable {
             }
         }
 
-        CountDownLatch latch = new CountDownLatch(1);
-
-        ensureLeaveEventFired(latch::countDown);
-
-        ((Waiting)latch::await).awaitUninterruptedly();
+        try {
+            Utils.getUninterruptedly(clusterEvents.ensureLeaveEventFired(topology));
+        } catch (ExecutionException e) {
+            log.error("Got an unexpected error while awaiting for cluster leave event processing.", e);
+        }
 
         preTerminateServices();
 

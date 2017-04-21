@@ -21,6 +21,7 @@ import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.event.ClusterJoinEvent;
+import io.hekate.cluster.event.ClusterLeaveEvent;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.Utils;
@@ -29,14 +30,18 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static java.util.Collections.emptySet;
 
 class ClusterEventManager {
     private static class FilteredListener implements ClusterEventListener {
@@ -97,20 +102,26 @@ class ClusterEventManager {
 
     private final ThreadLocal<Boolean> inAsync = new ThreadLocal<>();
 
+    private final AtomicBoolean joinEventFired = new AtomicBoolean();
+
     private final List<FilteredListener> listeners = new CopyOnWriteArrayList<>();
 
     private volatile ExecutorService worker;
 
     private volatile ClusterTopology lastTopology;
 
-    public void fireAsync(ClusterEvent event) {
-        fireAsync(event, null);
-    }
-
-    public void fireAsync(ClusterEvent event, Runnable onComplete) {
+    public CompletableFuture<?> fireAsync(ClusterEvent event) {
         if (DEBUG) {
             log.debug("Scheduled cluster event for asynchronous processing [event={}]", event);
         }
+
+        if (event.getType() == ClusterEventType.JOIN) {
+            joinEventFired.set(true);
+        } else if (event.getType() == ClusterEventType.LEAVE) {
+            joinEventFired.set(false);
+        }
+
+        CompletableFuture<?> future = new CompletableFuture<>();
 
         worker.execute(() -> {
             inAsync.set(true);
@@ -130,17 +141,32 @@ class ClusterEventManager {
                     }
                 }
 
-                if (onComplete != null) {
-                    try {
-                        onComplete.run();
-                    } catch (Throwable t) {
-                        log.error("Failed to notify on complete callback.", t);
-                    }
+                try {
+                    future.complete(null);
+                } catch (Throwable t) {
+                    log.error("Failed to notify cluster event processing future [event={}]", event, t);
                 }
             } finally {
                 inAsync.remove();
             }
         });
+
+        return future;
+    }
+
+    public CompletableFuture<?> ensureLeaveEventFired(ClusterTopology topology) {
+        // If join event had been fired then we need to fire leave event too.
+        if (joinEventFired.compareAndSet(true, false)) {
+            ClusterLeaveEvent event = new ClusterLeaveEvent(topology, emptySet(), emptySet());
+
+            return fireAsync(event);
+        } else {
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    public boolean isJoinEventFired() {
+        return joinEventFired.get();
     }
 
     public void addListener(ClusterEventListener listener) {
