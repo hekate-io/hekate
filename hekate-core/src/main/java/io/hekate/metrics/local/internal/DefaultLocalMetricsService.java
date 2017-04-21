@@ -278,7 +278,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
     }
 
     @Override
-    public CounterMetric getCounter(String name) {
+    public CounterMetric counter(String name) {
         guard.lockReadWithStateCheck();
 
         try {

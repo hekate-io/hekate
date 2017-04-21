@@ -56,7 +56,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 public @interface NamedCounter {
     /**
      * Specifies the {@link CounterConfig#setName(String) name} of a {@link CounterMetric} that should be injected (see {@link
-     * LocalMetricsService#getCounter(String)}).
+     * LocalMetricsService#counter(String)}).
      *
      * @return Name of a {@link CounterMetric}.
      */

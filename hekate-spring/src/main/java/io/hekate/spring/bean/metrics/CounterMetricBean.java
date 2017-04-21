@@ -29,7 +29,7 @@ public class CounterMetricBean extends HekateBaseBean<CounterMetric> {
 
     @Override
     public CounterMetric getObject() throws Exception {
-        return getSource().localMetrics().getCounter(name);
+        return getSource().localMetrics().counter(name);
     }
 
     @Override

@@ -200,7 +200,7 @@ public class ClusterMetricsServiceTest extends HekateNodeContextTestBase {
 
         repeat(5, i -> {
             for (LocalMetricsService metrics : services) {
-                metrics.getCounter("c").add(1);
+                metrics.counter("c").add(1);
             }
 
             for (AtomicInteger probe : probes) {
@@ -221,7 +221,7 @@ public class ClusterMetricsServiceTest extends HekateNodeContextTestBase {
             node.localMetrics().register(new CounterConfig("c"));
             node.localMetrics().register(new ProbeConfig("p").withProbe(probe::get).withInitValue(i));
 
-            node.localMetrics().getCounter("c").add(i);
+            node.localMetrics().counter("c").add(i);
 
             awaitForClusterMetric("c", i, nodes);
             awaitForClusterMetric("p", i, nodes);
@@ -251,7 +251,7 @@ public class ClusterMetricsServiceTest extends HekateNodeContextTestBase {
             long oldVal = 4;
 
             for (LocalMetricsService metrics : services) {
-                metrics.getCounter("c").add(100000);
+                metrics.counter("c").add(100000);
             }
 
             for (AtomicInteger probe : probes) {
@@ -262,7 +262,7 @@ public class ClusterMetricsServiceTest extends HekateNodeContextTestBase {
             awaitForClusterMetric("p", 100000 + i, nodes);
 
             for (LocalMetricsService metrics : services) {
-                metrics.getCounter("c").subtract(100000);
+                metrics.counter("c").subtract(100000);
             }
 
             for (AtomicInteger probe : probes) {
@@ -285,7 +285,7 @@ public class ClusterMetricsServiceTest extends HekateNodeContextTestBase {
             long oldVal = 4;
 
             for (LocalMetricsService metrics : services) {
-                metrics.getCounter("c").add(1000);
+                metrics.counter("c").add(1000);
             }
 
             for (AtomicInteger probe : probes) {
@@ -314,7 +314,7 @@ public class ClusterMetricsServiceTest extends HekateNodeContextTestBase {
             }
 
             for (LocalMetricsService metrics : services) {
-                metrics.getCounter("c").subtract(1000);
+                metrics.counter("c").subtract(1000);
             }
 
             for (AtomicInteger probe : probes) {

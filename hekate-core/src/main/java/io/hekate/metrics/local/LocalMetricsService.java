@@ -201,7 +201,7 @@ public interface LocalMetricsService extends Service, MetricsSource {
      *
      * @return Counter or {@code null} if there is no such counter.
      */
-    CounterMetric getCounter(String name);
+    CounterMetric counter(String name);
 
     /**
      * Registers the specified listener.

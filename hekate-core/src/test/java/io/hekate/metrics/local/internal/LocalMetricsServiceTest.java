@@ -323,7 +323,7 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
             assertEquals("c" + j, metrics.metric("c" + j).getName());
             assertEquals(0, metrics.metric("c" + j).getValue());
 
-            metrics.getCounter("c" + j).add(1000);
+            metrics.counter("c" + j).add(1000);
         }
 
         awaitForMetric(1000, metrics.metric("c0"));
@@ -352,7 +352,7 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
                 assertEquals("c" + j, metrics.metric("c" + j).getName());
                 assertEquals(0, metrics.metric("c" + j).getValue());
 
-                metrics.getCounter("c" + j).add(10);
+                metrics.counter("c" + j).add(10);
 
                 assertEquals(10, metrics.metric("c" + j).getValue());
             }
@@ -390,7 +390,7 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
             c.withListener(this::putAsyncEvent);
         });
 
-        metrics.getCounter("c").add(1000);
+        metrics.counter("c").add(1000);
 
         MetricsUpdateEvent event = getAsyncEvent();
 
@@ -404,7 +404,7 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         assertSame(snapshot.get("c"), event.metric("c"));
         assertSame(snapshot.get("p"), event.metric("p"));
 
-        metrics.getCounter("c").add(1000);
+        metrics.counter("c").add(1000);
         probe.set(200);
 
         snapshot = getAsyncEvent().allMetrics();
@@ -431,7 +431,7 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         metrics.register(new CounterConfig("c"));
         metrics.register(new ProbeConfig("p").withInitValue(100).withProbe(probe::get));
 
-        metrics.getCounter("c").add(1000);
+        metrics.counter("c").add(1000);
 
         MetricsListener listener = this::putAsyncEvent;
 
@@ -446,7 +446,7 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         assertEquals(1000, snapshot.get("c").getValue());
         assertEquals(100, snapshot.get("p").getValue());
 
-        metrics.getCounter("c").add(1000);
+        metrics.counter("c").add(1000);
         probe.set(200);
 
         MetricsUpdateEvent event2 = getAsyncEvent();
@@ -461,7 +461,7 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         metrics.removeListener(listener);
 
         probe.set(100);
-        metrics.getCounter("c").add(1000);
+        metrics.counter("c").add(1000);
 
         expect(TimeoutException.class, () ->
             getAsyncEvent(TEST_METRICS_REFRESH_INTERVAL * 2, TimeUnit.MILLISECONDS)

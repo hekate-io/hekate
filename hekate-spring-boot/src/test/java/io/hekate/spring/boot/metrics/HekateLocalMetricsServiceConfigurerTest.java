@@ -62,12 +62,12 @@ public class HekateLocalMetricsServiceConfigurerTest extends HekateAutoConfigure
 
         @Bean
         public CounterMetric counter1(LocalMetricsService metricsService) {
-            return metricsService.getCounter("test.counter1");
+            return metricsService.counter("test.counter1");
         }
 
         @Bean
         public CounterMetric counter2(LocalMetricsService metricsService) {
-            return metricsService.getCounter("test.counter2");
+            return metricsService.counter("test.counter2");
         }
 
         @Bean
@@ -130,8 +130,8 @@ public class HekateLocalMetricsServiceConfigurerTest extends HekateAutoConfigure
         assertNotNull(getNode().localMetrics().metric("test.counter1"));
         assertNotNull(getNode().localMetrics().metric("test.counter2"));
 
-        assertNotNull(getNode().localMetrics().getCounter("test.counter1"));
-        assertNotNull(getNode().localMetrics().getCounter("test.counter2"));
+        assertNotNull(getNode().localMetrics().counter("test.counter1"));
+        assertNotNull(getNode().localMetrics().counter("test.counter2"));
 
         assertNotNull(getNode().localMetrics().metric("test.probe1"));
         assertNotNull(getNode().localMetrics().metric("test.probe2"));
