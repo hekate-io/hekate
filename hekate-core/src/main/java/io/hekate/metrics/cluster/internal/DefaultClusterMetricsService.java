@@ -78,7 +78,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
         private Map<String, StaticMetric> metrics;
 
-        private Optional<ClusterNodeMetrics> publicMetrics = Optional.empty();
+        private volatile Optional<ClusterNodeMetrics> publicMetrics = Optional.empty();
 
         public Replica(ClusterNode node) {
             this.node = node;
@@ -359,15 +359,13 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
         ArgAssert.notNull(node, "Node");
 
         if (enabled) {
-            guard.lockReadWithStateCheck();
+            guard.lockRead();
 
             try {
                 Replica replica = replicas.get(node);
 
                 if (replica != null) {
-                    synchronized (replica) {
-                        return replica.getPublicMetrics();
-                    }
+                    return replica.getPublicMetrics();
                 }
 
                 return Optional.empty();
@@ -389,20 +387,14 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     @Override
     public List<ClusterNodeMetrics> all() {
         if (enabled) {
-            guard.lockReadWithStateCheck();
+            guard.lockRead();
 
             try {
                 List<ClusterNodeMetrics> metrics = new ArrayList<>(replicas.size());
 
-                replicas.values().forEach(replica -> {
-                    Optional<ClusterNodeMetrics> metricsOpt;
-
-                    synchronized (replica) {
-                        metricsOpt = replica.getPublicMetrics();
-                    }
-
-                    metricsOpt.ifPresent(metrics::add);
-                });
+                replicas.values().forEach(r ->
+                    r.getPublicMetrics().ifPresent(metrics::add)
+                );
 
                 return metrics;
             } finally {
@@ -418,28 +410,21 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
         ArgAssert.notNull(filter, "Filter");
 
         if (enabled) {
-            guard.lockReadWithStateCheck();
+            guard.lockRead();
 
             try {
                 List<ClusterNodeMetrics> metrics = new ArrayList<>(replicas.size());
 
-                replicas.values().forEach(replica -> {
-                        Optional<ClusterNodeMetrics> metricsOpt;
+                replicas.values().forEach(r ->
+                    r.getPublicMetrics().ifPresent(node -> {
+                        for (Metric metric : node.allMetrics().values()) {
+                            if (filter.accept(metric)) {
+                                metrics.add(node);
 
-                        synchronized (replica) {
-                            metricsOpt = replica.getPublicMetrics();
-                        }
-
-                        metricsOpt.ifPresent(nodeMetrics -> {
-                            for (Metric metric : nodeMetrics.allMetrics().values()) {
-                                if (filter.accept(metric)) {
-                                    metrics.add(nodeMetrics);
-
-                                    break;
-                                }
+                                break;
                             }
-                        });
-                    }
+                        }
+                    })
                 );
 
                 return metrics;
@@ -448,18 +433,6 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
             }
         } else {
             return Collections.emptyList();
-        }
-    }
-
-    private void updateLocalMetrics(Map<String, Metric> metrics) {
-        guard.lockWrite();
-
-        try {
-            if (guard.isInitialized()) {
-                doUpdateLocalMetrics(metrics);
-            }
-        } finally {
-            guard.unlockWrite();
         }
     }
 
@@ -472,6 +445,18 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
             }
         } finally {
             guard.unlockRead();
+        }
+    }
+
+    private void updateLocalMetrics(Map<String, Metric> metrics) {
+        guard.lockWrite();
+
+        try {
+            if (guard.isInitialized()) {
+                doUpdateLocalMetrics(metrics);
+            }
+        } finally {
+            guard.unlockWrite();
         }
     }
 
