@@ -109,7 +109,9 @@ public class ServiceManager {
         // Configure services.
         ServiceConfigurationContext cfgCtx = new ServiceConfigurationContext(this);
 
-        handlers.forEach(handler -> handler.configure(cfgCtx));
+        handlers.forEach(handler ->
+            handler.configure(cfgCtx)
+        );
 
         servicesInfo = unmodifiableMap(cfgCtx.getServicesInfo());
 
