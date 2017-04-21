@@ -22,6 +22,7 @@ import io.hekate.cluster.health.DefaultFailureDetectorConfig;
 import io.hekate.cluster.seed.SeedNodeProviderMock;
 import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.core.internal.HekateTestNode;
+import io.hekate.metrics.cluster.ClusterMetricsServiceFactory;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.task.TaskServiceFactory;
 import java.net.InetSocketAddress;
@@ -132,6 +133,10 @@ public class HekateNodeTestBase extends HekateTestBase {
         bootstrap.withService(TaskServiceFactory.class, tasks -> {
             tasks.setLocalExecutionEnabled(false);
         });
+
+        bootstrap.withService(ClusterMetricsServiceFactory.class, metrics ->
+            metrics.setEnabled(false)
+        );
 
         if (configurer != null) {
             configurer.configure(bootstrap);

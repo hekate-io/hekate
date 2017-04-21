@@ -46,7 +46,7 @@ public class ClusterMetricsServiceFactory implements ServiceFactory<ClusterMetri
 
     private MetricFilter replicationFilter;
 
-    private boolean enabled;
+    private boolean enabled = true;
 
     /**
      * Returns {@code true} if cluster metrics should be enabled on this node (see {@link #setEnabled(boolean)}).

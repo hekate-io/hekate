@@ -369,6 +369,7 @@ public class ClusterMetricsServiceTest extends HekateNodeContextTestBase {
             );
 
             boot.withService(ClusterMetricsServiceFactory.class, metrics -> {
+                metrics.setEnabled(true);
                 metrics.setReplicationInterval(TEST_METRICS_REFRESH_INTERVAL);
 
                 if (configurer != null) {
