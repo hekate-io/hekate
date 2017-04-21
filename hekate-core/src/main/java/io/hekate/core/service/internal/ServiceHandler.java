@@ -83,13 +83,13 @@ class ServiceHandler {
 
             try {
                 if (service instanceof ConfigurableService) {
-                    ConfigurableService configuring = (ConfigurableService)service;
+                    ConfigurableService conf = (ConfigurableService)service;
 
                     if (DEBUG) {
                         log.debug("Configuring service [service={}]", service);
                     }
 
-                    configuring.configure(ctx);
+                    conf.configure(ctx);
                 }
             } finally {
                 ctx.close();
@@ -103,9 +103,9 @@ class ServiceHandler {
                 log.debug("Pre-initializing service [service={}]", service);
             }
 
-            InitializingService initializing = (InitializingService)service;
+            InitializingService init = (InitializingService)service;
 
-            initializing.preInitialize(ctx);
+            init.preInitialize(ctx);
         }
     }
 
@@ -115,9 +115,9 @@ class ServiceHandler {
                 log.debug("Initializing service [service={}]", service);
             }
 
-            InitializingService initializing = (InitializingService)service;
+            InitializingService init = (InitializingService)service;
 
-            initializing.initialize(ctx);
+            init.initialize(ctx);
         }
 
         log.info("Initialized {}", service);
@@ -129,9 +129,9 @@ class ServiceHandler {
                 log.debug("Post-initializing service [service={}]", service);
             }
 
-            InitializingService initializing = (InitializingService)service;
+            InitializingService init = (InitializingService)service;
 
-            initializing.postInitialize(ctx);
+            init.postInitialize(ctx);
         }
     }
 
@@ -141,12 +141,12 @@ class ServiceHandler {
                 log.debug("Pre-terminating service [service={}]", service);
             }
 
-            TerminatingService terminating = (TerminatingService)service;
+            TerminatingService term = (TerminatingService)service;
 
             try {
-                terminating.preTerminate();
+                term.preTerminate();
             } catch (HekateException | RuntimeException | Error e) {
-                log.error("Failed to pre-terminate service [service={}]", terminating, e);
+                log.error("Failed to pre-terminate service [service={}]", term, e);
             }
         }
     }
@@ -157,12 +157,12 @@ class ServiceHandler {
                 log.debug("Terminating service [service={}]", service);
             }
 
-            TerminatingService terminating = (TerminatingService)service;
+            TerminatingService term = (TerminatingService)service;
 
             try {
-                terminating.terminate();
+                term.terminate();
             } catch (HekateException | RuntimeException | Error e) {
-                log.error("Failed to terminate service [service={}]", terminating, e);
+                log.error("Failed to terminate service [service={}]", term, e);
             }
         }
 
@@ -177,12 +177,12 @@ class ServiceHandler {
                 log.debug("Post-terminating service [service={}]", service);
             }
 
-            TerminatingService terminating = (TerminatingService)service;
+            TerminatingService term = (TerminatingService)service;
 
             try {
-                terminating.postTerminate();
+                term.postTerminate();
             } catch (HekateException | RuntimeException | Error e) {
-                log.error("Failed to post-terminate service [service={}]", terminating, e);
+                log.error("Failed to post-terminate service [service={}]", term, e);
             }
         }
     }

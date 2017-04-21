@@ -44,6 +44,10 @@ class DefaultCoordinationContext implements CoordinationContext {
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
+    private final CoordinationMember coordinator;
+
+    private final List<CoordinationMember> members;
+
     @ToStringIgnore
     private final String name;
 
@@ -55,12 +59,6 @@ class DefaultCoordinationContext implements CoordinationContext {
 
     @ToStringIgnore
     private final CoordinationMember localMember;
-
-    private final int membersSize;
-
-    private final CoordinationMember coordinator;
-
-    private final List<CoordinationMember> members;
 
     @ToStringIgnore
     private final Map<ClusterNodeId, DefaultCoordinationMember> membersById;
@@ -98,8 +96,6 @@ class DefaultCoordinationContext implements CoordinationContext {
         });
 
         this.members = Collections.unmodifiableList(new ArrayList<>(membersById.values()));
-
-        this.membersSize = members.size();
 
         Optional<CoordinationMember> localMemberOpt = members.stream().filter(m -> m.getNode().isLocal()).findFirst();
         Optional<CoordinationMember> coordinatorOpt = members.stream().filter(CoordinationMember::isCoordinator).findFirst();
@@ -171,7 +167,7 @@ class DefaultCoordinationContext implements CoordinationContext {
 
     @Override
     public int getSize() {
-        return membersSize;
+        return members.size();
     }
 
     @Override

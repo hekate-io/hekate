@@ -31,7 +31,7 @@ class PluginManager {
     private static class PluginState {
         private final Plugin plugin;
 
-        private boolean initialized;
+        private boolean started;
 
         public PluginState(Plugin plugin) {
             this.plugin = plugin;
@@ -50,13 +50,13 @@ class PluginManager {
                 log.debug("Starting [plugin={}]", plugin);
             }
 
-            initialized = true;
+            started = true;
 
             plugin.start(instance);
         }
 
         public void stop() {
-            if (initialized) {
+            if (started) {
                 if (DEBUG) {
                     log.debug("Stopping [plugin={}]", plugin);
                 }
@@ -66,7 +66,7 @@ class PluginManager {
                 } catch (HekateException e) {
                     log.error("Failed to stop plugin [plugin={}]", plugin, e);
                 } finally {
-                    initialized = false;
+                    started = false;
                 }
             }
         }
@@ -94,7 +94,7 @@ class PluginManager {
 
     public void install() {
         if (DEBUG) {
-            log.debug("Preparing plugins...");
+            log.debug("Installing plugins...");
         }
 
         for (PluginState plugin : plugins) {
@@ -102,7 +102,7 @@ class PluginManager {
         }
 
         if (DEBUG) {
-            log.debug("Done preparing plugins.");
+            log.debug("Done installing plugins.");
         }
     }
 

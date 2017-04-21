@@ -24,24 +24,25 @@ import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.Collections.unmodifiableMap;
+import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toSet;
 
 class ServiceConfigurationContext implements ConfigurationContext {
-    private static class ServiceElement {
+    private static class ServiceInfo {
         private final Set<String> serviceTypes;
 
         private final Object instance;
 
-        private final ServiceElement parent;
+        private final ServiceInfo parent;
 
-        public ServiceElement(Object instance, Set<String> serviceTypes, ServiceElement parent) {
+        public ServiceInfo(Object instance, Set<String> serviceTypes, ServiceInfo parent) {
             this.serviceTypes = serviceTypes;
             this.instance = instance;
             this.parent = parent;
@@ -55,18 +56,18 @@ class ServiceConfigurationContext implements ConfigurationContext {
             return instance;
         }
 
-        public ServiceElement getParent() {
+        public ServiceInfo getParent() {
             return parent;
         }
     }
 
-    private final Map<String, Map<String, Set<String>>> serviceProps = new HashMap<>();
+    private final Map<String, Map<String, Set<String>>> props = new HashMap<>();
 
     @ToStringIgnore
     private final ServiceManager manager;
 
     @ToStringIgnore
-    private ServiceElement currentService;
+    private ServiceInfo current;
 
     public ServiceConfigurationContext(ServiceManager manager) {
         this.manager = manager;
@@ -79,10 +80,8 @@ class ServiceConfigurationContext implements ConfigurationContext {
         if (value != null && !value.isEmpty()) {
             checkState();
 
-            currentService.getServiceTypes().forEach(type -> {
-                Map<String, Set<String>> props = serviceProps.get(type);
-
-                Set<String> values = props.computeIfAbsent(name, k -> new HashSet<>());
+            current.getServiceTypes().forEach(type -> {
+                Set<String> values = props.get(type).computeIfAbsent(name, k -> new HashSet<>());
 
                 values.add(value);
             });
@@ -112,51 +111,53 @@ class ServiceConfigurationContext implements ConfigurationContext {
     }
 
     public void prepare(Object service) {
-        Set<Class<? extends Service>> interfaces = getServiceInterfaces(service);
+        Set<String> typeNames = serviceInterfaces(service).stream()
+            .map(Class::getCanonicalName)
+            .collect(toSet());
 
-        Set<String> serviceTypes = interfaces.stream().map(Class::getCanonicalName).collect(toSet());
+        typeNames.forEach(type ->
+            props.put(type, new HashMap<>())
+        );
 
-        currentService = new ServiceElement(service, serviceTypes, currentService);
-
-        serviceTypes.forEach(type -> serviceProps.put(type, new HashMap<>()));
+        current = new ServiceInfo(service, typeNames, current);
     }
 
     public void close() {
-        currentService = currentService.getParent();
+        current = current.getParent();
     }
 
     public Map<String, ClusterNodeService> getServicesInfo() {
         Map<String, ClusterNodeService> info = new HashMap<>();
 
-        serviceProps.forEach((type, props) -> {
+        props.forEach((type, props) -> {
             Map<String, Set<String>> propsCopy = new HashMap<>();
 
-            props.forEach((propName, propVal) -> propsCopy.put(propName, Collections.unmodifiableSet(new HashSet<>(propVal))));
+            props.forEach((name, val) ->
+                propsCopy.put(name, unmodifiableSet(new HashSet<>(val)))
+            );
 
-            info.put(type, new DefaultClusterNodeService(type, Collections.unmodifiableMap(propsCopy)));
+            info.put(type, new DefaultClusterNodeService(type, unmodifiableMap(propsCopy)));
         });
 
         return info;
     }
 
     private void checkState() {
-        if (currentService == null) {
+        if (current == null) {
             throw new IllegalStateException("Configuration context can be accessed during service configuration.");
         }
     }
 
-    private static Set<Class<? extends Service>> getServiceInterfaces(Object service) {
-        Class<?> serviceType = service.getClass();
+    private static Set<Class<? extends Service>> serviceInterfaces(Object service) {
+        Set<Class<? extends Service>> faces = new HashSet<>();
 
-        Set<Class<? extends Service>> interfaces = new HashSet<>();
-
-        for (Class<?> type : serviceType.getInterfaces()) {
+        for (Class<?> type : service.getClass().getInterfaces()) {
             if (!Service.class.equals(type) && Service.class.isAssignableFrom(type)) {
-                interfaces.add(type.asSubclass(Service.class));
+                faces.add(type.asSubclass(Service.class));
             }
         }
 
-        return interfaces;
+        return faces;
     }
 
     @Override
