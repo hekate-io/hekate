@@ -68,7 +68,7 @@
         <!-- Test dependencies.-->
         <junit.version>4.12</junit.version>
         <mockito.version>1.10.19</mockito.version>
-        <jmh.version>1.17.4</jmh.version>
+        <jmh.version>1.18</jmh.version>
         <h2.version>1.4.193</h2.version>
 
         <!-- Maven plugins.-->
