@@ -92,6 +92,7 @@ import static io.hekate.core.Hekate.State.LEAVING;
 import static io.hekate.core.Hekate.State.TERMINATING;
 import static io.hekate.core.Hekate.State.UP;
 import static java.util.Collections.emptySet;
+import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toSet;
 
@@ -200,9 +201,6 @@ class HekateNode implements Hekate, Serializable {
         // System info.
         sysInfo = DefaultSystemInfo.getLocalInfo();
 
-        // Codec factory.
-        CodecFactory<Object> wrappedCodecFactory = HekateCodecHelper.wrap(cfg.getDefaultCodec(), this);
-
         // Node roles.
         Set<String> roles;
 
@@ -244,44 +242,19 @@ class HekateNode implements Hekate, Serializable {
         }
 
         // Cluster event manager.
-        this.clusterEvents = new ClusterEventManager();
+        clusterEvents = new ClusterEventManager();
 
-        // Prepare built-in services.
-        List<Class<? extends Service>> requiredServices = new ArrayList<>();
-
-        requiredServices.add(NetworkService.class);
-        requiredServices.add(ClusterService.class);
-        requiredServices.add(MessagingService.class);
-        requiredServices.add(TaskService.class);
-        requiredServices.add(LocalMetricsService.class);
-        requiredServices.add(ClusterMetricsService.class);
-        requiredServices.add(LockService.class);
-        requiredServices.add(ElectionService.class);
-        requiredServices.add(CoordinationService.class);
-        requiredServices.add(PartitionService.class);
-
-        // Prepare core services.
-        List<Service> coreServices = new ArrayList<>();
-
-        coreServices.add(new DefaultCodecService(wrappedCodecFactory));
-
-        // Prepare custom services.
-        List<ServiceFactory<? extends Service>> serviceFactories = new ArrayList<>();
-
-        if (cfg.getServices() != null) {
-            // Filter out null values.
-            Utils.nullSafe(cfg.getServices()).forEach(serviceFactories::add);
-        }
-
-        // Services manager.
-        services = new ServiceManager(coreServices, requiredServices, serviceFactories);
+        // Service manager.
+        services = createServiceManager(cfg);
 
         // Instantiate services.
-        ConfigurationContext servicesConfigCtx = services.instantiate(roles, props);
+        ConfigurationContext servicesCtx = services.instantiate(roles, props);
 
-        this.nodeRoles = servicesConfigCtx.getNodeRoles();
-        this.nodeProps = servicesConfigCtx.getNodeProperties();
+        // Node roles/properties (must be after services instantiation since services can register their own properties and roles).
+        nodeRoles = servicesCtx.getNodeRoles();
+        nodeProps = servicesCtx.getNodeProperties();
 
+        // Core services.
         codec = services.findService(CodecService.class);
         cluster = services.findService(ClusterService.class);
         messaging = services.findService(MessagingService.class);
@@ -1159,6 +1132,38 @@ class HekateNode implements Hekate, Serializable {
                 log.error("Got an unexpected runtime error.", e);
             }
         });
+    }
+
+    private ServiceManager createServiceManager(HekateBootstrap cfg) {
+        // Codec factory.
+        CodecFactory<Object> defaultCodec = HekateCodecHelper.wrap(cfg.getDefaultCodec(), this);
+
+        // Prepare built-in services.
+        List<Service> builtIn = singletonList(new DefaultCodecService(defaultCodec));
+
+        // Prepare core services.
+        List<Class<? extends Service>> core = new ArrayList<>();
+
+        core.add(NetworkService.class);
+        core.add(ClusterService.class);
+        core.add(MessagingService.class);
+        core.add(TaskService.class);
+        core.add(LocalMetricsService.class);
+        core.add(ClusterMetricsService.class);
+        core.add(LockService.class);
+        core.add(ElectionService.class);
+        core.add(CoordinationService.class);
+        core.add(PartitionService.class);
+
+        // Prepare custom services.
+        List<ServiceFactory<? extends Service>> factories = new ArrayList<>();
+
+        if (cfg.getServices() != null) {
+            // Filter out null values.
+            Utils.nullSafe(cfg.getServices()).forEach(factories::add);
+        }
+
+        return new ServiceManager(builtIn, core, factories);
     }
 
     private Set<ClusterNode> getDiff(Set<ClusterNode> oldNodes, Set<ClusterNode> newNodes) {

@@ -53,24 +53,24 @@ public class ServiceManager {
 
     private final StampedLock lookupLock = new StampedLock();
 
-    private final List<? extends Service> coreServices;
+    private final List<? extends Service> builtInServices;
 
     private final List<ServiceFactory<?>> factories;
 
-    private final List<Class<? extends Service>> requiredServices;
+    private final List<Class<? extends Service>> coreServices;
 
     private Map<String, ClusterNodeService> servicesInfo;
 
     private Set<Class<? extends Service>> serviceTypes;
 
-    public ServiceManager(List<? extends Service> coreServices, List<Class<? extends Service>> requiredServices,
-        List<? extends ServiceFactory<? extends Service>> factories) {
+    public ServiceManager(List<? extends Service> builtInServices, List<Class<? extends Service>> coreServices,
+        List<? extends ServiceFactory<?>> factories) {
+        assert builtInServices != null : "Built-in services list is null.";
         assert coreServices != null : "Core services list is null.";
-        assert requiredServices != null : "Required services list is null.";
         assert factories != null : "Service factories list is null.";
 
+        this.builtInServices = builtInServices;
         this.coreServices = coreServices;
-        this.requiredServices = requiredServices;
         this.factories = new ArrayList<>(factories);
     }
 
@@ -79,8 +79,8 @@ public class ServiceManager {
             log.debug("Instantiating services...");
         }
 
-        // Register core services.
-        coreServices.forEach(this::registerService);
+        // Register built-in services.
+        builtInServices.forEach(this::registerService);
 
         // Instantiate services.
         for (ServiceFactory<? extends Service> factory : factories) {
@@ -91,8 +91,8 @@ public class ServiceManager {
             registerService(factory.createService());
         }
 
-        // Ensure that required services are registered.
-        requiredServices.forEach(this::findOrCreateService);
+        // Ensure that all core services are registered.
+        coreServices.forEach(this::findOrCreateService);
 
         // Resolve dependencies.
         ServiceDependencyContext depCtx = new ServiceDependencyContext(this);
