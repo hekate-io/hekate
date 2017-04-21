@@ -226,7 +226,23 @@ public class HekateBootstrapTest extends HekateTestBase {
         List<Hekate> nodes = new LinkedList<>();
 
         try {
-            repeat(3, i -> nodes.add(new HekateBootstrap().join()));
+            repeat(3, i -> {
+                Hekate node = new HekateBootstrap().join();
+
+                assertNotNull(node.cluster());
+                assertNotNull(node.network());
+                assertNotNull(node.messaging());
+                assertNotNull(node.tasks());
+                assertNotNull(node.locks());
+                assertNotNull(node.coordination());
+                assertNotNull(node.election());
+                assertNotNull(node.partitions());
+                assertNotNull(node.codec());
+                assertNotNull(node.localMetrics());
+                assertNotNull(node.clusterMetrics());
+
+                nodes.add(node);
+            });
         } finally {
             for (Hekate node : nodes) {
                 try {
