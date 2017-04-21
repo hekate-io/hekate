@@ -59,7 +59,7 @@ public abstract class NetworkTestBase extends HekateTestBase {
 
     public static final String TEST_PROTOCOL = "test";
 
-    public static final int NIO_WORKER_THREAD_POOL_SIZE = 8;
+    public static final int NIO_THREADS = 8;
 
     private final AtomicInteger portsSeq = new AtomicInteger(10000);
 
@@ -69,9 +69,9 @@ public abstract class NetworkTestBase extends HekateTestBase {
 
     private final HekateTestContext ctx;
 
-    private EventLoopGroup acceptorEventLoopGroup;
+    private EventLoopGroup acceptorThreads;
 
-    private EventLoopGroup workerEventLoopGroup;
+    private EventLoopGroup nioThreads;
 
     public NetworkTestBase(HekateTestContext ctx) {
         this.ctx = ctx;
@@ -84,8 +84,8 @@ public abstract class NetworkTestBase extends HekateTestBase {
 
     @Before
     public void setUp() throws Exception {
-        acceptorEventLoopGroup = newEventLoop(1);
-        workerEventLoopGroup = newEventLoop(NIO_WORKER_THREAD_POOL_SIZE);
+        acceptorThreads = newEventLoop(1);
+        nioThreads = newEventLoop(NIO_THREADS);
     }
 
     @After
@@ -102,8 +102,8 @@ public abstract class NetworkTestBase extends HekateTestBase {
 
         servers.clear();
 
-        get(acceptorEventLoopGroup.shutdownGracefully(0, MAX_VALUE, MILLISECONDS));
-        get(workerEventLoopGroup.shutdownGracefully(0, MAX_VALUE, MILLISECONDS));
+        get(acceptorThreads.shutdownGracefully(0, MAX_VALUE, MILLISECONDS));
+        get(nioThreads.shutdownGracefully(0, MAX_VALUE, MILLISECONDS));
     }
 
     @SuppressWarnings("unchecked")
@@ -121,10 +121,6 @@ public abstract class NetworkTestBase extends HekateTestBase {
 
     protected InetSocketAddress newServerAddress() throws UnknownHostException {
         return new InetSocketAddress(InetAddress.getLocalHost(), 10001 + portsSeq.incrementAndGet());
-    }
-
-    protected NetworkServer createAndConfigureServerHandler(HandlerConfigurer<String> configurer) {
-        return createAndConfigureServer(createHandler((msg, from) -> { /* No-op. */ }), configurer, null);
     }
 
     protected NetworkServer createAndConfigureServerHandler(HandlerConfigurer<String> handler, ServerConfigurer server) {
@@ -155,8 +151,8 @@ public abstract class NetworkTestBase extends HekateTestBase {
 
         NettyServerFactory factory = new NettyServerFactory();
 
-        factory.setAcceptorEventLoopGroup(acceptorEventLoopGroup);
-        factory.setWorkerEventLoopGroup(workerEventLoopGroup);
+        factory.setAcceptorEventLoopGroup(acceptorThreads);
+        factory.setWorkerEventLoopGroup(nioThreads);
         factory.addHandler(handler);
 
         if (serverConfigurer != null) {
@@ -194,7 +190,7 @@ public abstract class NetworkTestBase extends HekateTestBase {
         factory.setProtocol(TEST_PROTOCOL);
         factory.setConnectTimeout(500);
         factory.setCodecFactory(createStringCodecFactory());
-        factory.setEventLoopGroup(workerEventLoopGroup);
+        factory.setEventLoopGroup(nioThreads);
 
         if (configurer != null) {
             configurer.configure(factory);
