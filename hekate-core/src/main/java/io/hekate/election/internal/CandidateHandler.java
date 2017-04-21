@@ -83,7 +83,9 @@ class CandidateHandler implements AsyncLockCallback {
         void onLeaderChange(ClusterNode leader) {
             this.leader.set(leader);
 
-            listeners.forEach(listener -> listener.onLeaderChange(this));
+            listeners.forEach(listener ->
+                listener.onLeaderChange(this)
+            );
         }
 
         @Override

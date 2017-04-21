@@ -118,6 +118,8 @@ class CoordinationProtocolCodec implements Codec<CoordinationProtocol> {
     }
 
     private Codec<Object> getCodec(String process) {
-        return codecs.computeIfAbsent(process, k -> codecFactories.get(process).createCodec());
+        return codecs.computeIfAbsent(process, k ->
+            codecFactories.get(process).createCodec()
+        );
     }
 }

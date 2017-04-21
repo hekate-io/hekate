@@ -115,7 +115,9 @@ class DefaultCoordinationContext implements CoordinationContext {
 
         BroadcastCallbackAdaptor callbackAdaptor = new BroadcastCallbackAdaptor(members.size(), callback);
 
-        members.forEach(member -> member.request(request, callbackAdaptor));
+        members.forEach(member ->
+            member.request(request, callbackAdaptor)
+        );
     }
 
     @Override
