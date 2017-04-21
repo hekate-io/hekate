@@ -39,9 +39,50 @@ import io.hekate.util.format.ToString;
  * @see ClusterMetricsService
  */
 public class ClusterMetricsServiceFactory implements ServiceFactory<ClusterMetricsService> {
-    private long replicationInterval;
+    /** Default {@value} in milliseconds for {@link #setReplicationInterval(long)}. */
+    public static final long DEFAULT_REPLICATION_INTERVAL = 1000;
+
+    private long replicationInterval = DEFAULT_REPLICATION_INTERVAL;
 
     private MetricFilter replicationFilter;
+
+    private boolean enabled;
+
+    /**
+     * Returns {@code true} if cluster metrics should be enabled on this node (see {@link #setEnabled(boolean)}).
+     *
+     * @return {@code true} if cluster metrics should be enabled.
+     */
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    /**
+     * Sets the flag indicating whether cluster metrics should be enabled or disabled.
+     *
+     * <p>
+     * If disabled, then this node will not be able to see metrics of other nodes and other nodes will not be able to see metrics of this
+     * node. Default value of this parameter is {@code true}.
+     * </p>
+     *
+     * @param enabled {@code true} if cluster metrics should be enabled.
+     */
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    /**
+     * Fluent-style version of {@link #setEnabled(boolean)}.
+     *
+     * @param enabled {@code true} if cluster metrics should be enabled.
+     *
+     * @return This instance.
+     */
+    public ClusterMetricsServiceFactory withEnabled(boolean enabled) {
+        setEnabled(enabled);
+
+        return this;
+    }
 
     /**
      * Returns the time interval in milliseconds for metrics replication over the cluster {@link #setReplicationInterval(long)}.
@@ -56,7 +97,7 @@ public class ClusterMetricsServiceFactory implements ServiceFactory<ClusterMetri
      * Sets the time interval in milliseconds for metrics replication over the cluster.
      *
      * <p>
-     * If value of this parameter is less than or equals to zero (default value) then cluster metrics will be disabled.
+     * Value of this parameter must be above zero. Default value if {@value #DEFAULT_REPLICATION_INTERVAL}.
      * </p>
      *
      * @param replicationInterval Time interval in milliseconds.

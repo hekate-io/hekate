@@ -23,6 +23,7 @@ import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterView;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.core.internal.util.Waiting;
@@ -194,6 +195,8 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
     private static final ClusterNodeFilter METRICS_SUPPORT_FILTER = n -> n.hasService(ClusterMetricsService.class);
 
+    private final boolean enabled;
+
     private final long replicationInterval;
 
     private final MetricFilter filter;
@@ -231,6 +234,11 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     public DefaultClusterMetricsService(ClusterMetricsServiceFactory factory) {
         assert factory != null : "Factory is null.";
 
+        ConfigCheck check = ConfigCheck.get(ClusterMetricsServiceFactory.class);
+
+        check.positive(factory.getReplicationInterval(), "replication interval");
+
+        enabled = factory.isEnabled();
         replicationInterval = factory.getReplicationInterval();
         filter = factory.getReplicationFilter();
     }
@@ -244,7 +252,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
     @Override
     public Collection<MessagingChannelConfig<?>> configureMessaging() {
-        if (isEnabled()) {
+        if (enabled) {
             MessagingChannelConfig<MetricsProtocol> channelCfg = new MessagingChannelConfig<>();
 
             channelCfg.setName(MetricsProtocolCodec.PROTOCOL_ID);
@@ -263,7 +271,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
     @Override
     public void initialize(InitializationContext ctx) throws HekateException {
-        if (isEnabled()) {
+        if (enabled) {
             guard.lockWrite();
 
             try {
@@ -308,7 +316,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
     @Override
     public void terminate() throws HekateException {
-        if (isEnabled()) {
+        if (enabled) {
             Waiting waiting = null;
 
             guard.lockWrite();
@@ -350,7 +358,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     public Optional<ClusterNodeMetrics> of(ClusterNodeId node) {
         ArgAssert.notNull(node, "Node");
 
-        if (isEnabled()) {
+        if (enabled) {
             guard.lockReadWithStateCheck();
 
             try {
@@ -380,7 +388,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
     @Override
     public List<ClusterNodeMetrics> all() {
-        if (isEnabled()) {
+        if (enabled) {
             guard.lockReadWithStateCheck();
 
             try {
@@ -409,7 +417,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     public List<ClusterNodeMetrics> all(MetricFilter filter) {
         ArgAssert.notNull(filter, "Filter");
 
-        if (isEnabled()) {
+        if (enabled) {
             guard.lockReadWithStateCheck();
 
             try {
@@ -644,10 +652,6 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
             });
 
         return pushBack;
-    }
-
-    private boolean isEnabled() {
-        return replicationInterval > 0;
     }
 
     private static MetricsUpdate newUpdate(Replica replica) {

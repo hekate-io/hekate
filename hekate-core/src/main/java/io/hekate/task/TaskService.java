@@ -47,11 +47,6 @@ import java.util.concurrent.Callable;
  * below.
  * </p>
  *
- * <p>
- * <b>Note:</b> {@link TaskService} must be configured on each node that should participate in tasks execution. Nodes that do not have this
- * service will not be selected as task execution targets.
- * </p>
- *
  * <div class="tabs">
  * <ul>
  * <li><a href="#configure-java">Java</a></li>

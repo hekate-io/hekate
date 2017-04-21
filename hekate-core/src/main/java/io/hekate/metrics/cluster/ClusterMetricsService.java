@@ -32,16 +32,14 @@ import java.util.Optional;
  *
  * <h2>Overview</h2>
  * <p>
- * {@link ClusterMetricsService} service provides support for making metrics of {@link LocalMetricsService} available to other
- * remote nodes in the cluster. It {@link ClusterMetricsServiceFactory#setReplicationInterval(long) periodically} replicates snapshots of
- * metrics data between the cluster nodes so that applications could implement their own monitoring and load balancing schemes based on
- * their view of the overall cluster performance.
+ * The {@link ClusterMetricsService} provides support for making the {@link LocalMetricsService}'s metrics visible to other nodes of the
+ * cluster. It periodically replicates snapshots of metrics data between cluster nodes so that applications can implement their own
+ * monitoring and load balancing schemes based on their view of the overall cluster performance.
  * </p>
  *
  * <p>
- * <b>Note:</b> Metrics replication is performed only among those nodes that have {@link ClusterMetricsService} enabled. Nodes that do not
- * have this service in their configuration will not be able to see metrics of remote nodes and will not be able to publish their own
- * metrics to remote nodes.
+ * <b>Note:</b> Metrics replication is performed only among those nodes that have metrics replication
+ * {@link ClusterMetricsServiceFactory#setEnabled(boolean) enabled}.
  * </p>
  *
  * <p>
@@ -114,7 +112,7 @@ import java.util.Optional;
 @DefaultServiceFactory(ClusterMetricsServiceFactory.class)
 public interface ClusterMetricsService extends Service {
     /**
-     * Returns metrics of the specified cluster node.
+     * Returns the metrics of the specified cluster node.
      *
      * @param nodeId Cluster node identifier.
      *
@@ -123,7 +121,7 @@ public interface ClusterMetricsService extends Service {
     Optional<ClusterNodeMetrics> of(ClusterNodeId nodeId);
 
     /**
-     * Returns metrics of the specified cluster node.
+     * Returns the metrics of the specified cluster node.
      *
      * @param node Cluster node.
      *
@@ -132,19 +130,19 @@ public interface ClusterMetricsService extends Service {
     Optional<ClusterNodeMetrics> of(ClusterNode node);
 
     /**
-     * Returns metrics of all nodes that this service is aware of. Returns an empty list if there are no metrics available.
+     * Returns the metrics of all nodes known to this service. Returns an empty list if there are no metrics available.
      *
      * @return List of all cluster node metrics or an empty lists.
      */
     List<ClusterNodeMetrics> all();
 
     /**
-     * Returns metrics of those nodes that have metrics matching the specified filter. Returns an empty list if there are no such
+     * Returns the metrics of those nodes that have metrics that match the specified filter. Returns an empty list if there are no such
      * nodes.
      *
      * @param filter Filter.
      *
-     * @return List of all cluster node metrics or an empty lists.
+     * @return List of cluster node metrics or an empty lists.
      */
     List<ClusterNodeMetrics> all(MetricFilter filter);
 }

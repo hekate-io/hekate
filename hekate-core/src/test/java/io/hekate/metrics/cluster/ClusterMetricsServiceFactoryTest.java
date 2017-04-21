@@ -21,16 +21,31 @@ import io.hekate.metrics.MetricFilter;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 public class ClusterMetricsServiceFactoryTest extends HekateTestBase {
     private final ClusterMetricsServiceFactory factory = new ClusterMetricsServiceFactory();
 
     @Test
+    public void testEnabled() {
+        assertTrue(factory.isEnabled());
+
+        factory.setEnabled(false);
+
+        assertFalse(factory.isEnabled());
+
+        assertSame(factory, factory.withEnabled(true));
+
+        assertTrue(factory.isEnabled());
+    }
+
+    @Test
     public void testReplicationInterval() {
-        assertEquals(0, factory.getReplicationInterval());
+        assertEquals(ClusterMetricsServiceFactory.DEFAULT_REPLICATION_INTERVAL, factory.getReplicationInterval());
 
         factory.setReplicationInterval(100000);
 
