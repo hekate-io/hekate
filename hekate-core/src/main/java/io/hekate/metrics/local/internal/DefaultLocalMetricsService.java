@@ -120,7 +120,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
 
             listeners.addAll(initListeners);
 
-            worker = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("Metrics"));
+            worker = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("LocalMetrics"));
 
             worker.scheduleAtFixedRate(() -> {
                 try {

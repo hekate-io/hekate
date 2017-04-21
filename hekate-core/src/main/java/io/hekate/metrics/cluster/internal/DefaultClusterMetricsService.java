@@ -285,7 +285,9 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
                 localNode = ctx.getNode().getId();
 
-                cluster.addListener(event -> updateTopology(event.getTopology().getNodes()));
+                cluster.addListener(event ->
+                    updateTopology(event.getTopology().getNodes())
+                );
 
                 localMetrics.addListener(event -> {
                     try {
@@ -295,7 +297,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
                     }
                 });
 
-                worker = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("MetricsCluster"));
+                worker = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("ClusterMetrics"));
 
                 worker.scheduleAtFixedRate(() -> {
                     try {
