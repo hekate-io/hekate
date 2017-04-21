@@ -244,7 +244,7 @@ class HekateNode implements Hekate, Serializable {
         }
 
         // Cluster event manager.
-        this.clusterEvents = new ClusterEventManager(this);
+        this.clusterEvents = new ClusterEventManager();
 
         // Prepare built-in services.
         List<Class<? extends Service>> requiredServices = new ArrayList<>();
@@ -772,7 +772,7 @@ class HekateNode implements Hekate, Serializable {
 
                             joinEventFired = true;
 
-                            ClusterJoinEvent join = new ClusterJoinEvent(HekateNode.this, newTopology);
+                            ClusterJoinEvent join = new ClusterJoinEvent(newTopology);
 
                             clusterEvents.fireAsync(join, () -> {
                                     // Notify join future only after the initial join event has been processed by all listeners.
@@ -831,7 +831,7 @@ class HekateNode implements Hekate, Serializable {
                                         size, added, removed, version, addresses);
                                 }
 
-                                ClusterChangeEvent event = new ClusterChangeEvent(HekateNode.this, newTopology, added, removed);
+                                ClusterChangeEvent event = new ClusterChangeEvent(newTopology, added, removed);
 
                                 clusterEvents.fireAsync(event);
 
@@ -1008,7 +1008,7 @@ class HekateNode implements Hekate, Serializable {
         if (joinEventFired) {
             joinEventFired = false;
 
-            ClusterLeaveEvent event = new ClusterLeaveEvent(HekateNode.this, topology, emptySet(), emptySet());
+            ClusterLeaveEvent event = new ClusterLeaveEvent(topology, emptySet(), emptySet());
 
             clusterEvents.fireAsync(event, doAfterFired);
         } else {

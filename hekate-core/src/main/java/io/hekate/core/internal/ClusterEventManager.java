@@ -21,7 +21,6 @@ import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.event.ClusterJoinEvent;
-import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.Utils;
@@ -100,15 +99,9 @@ class ClusterEventManager {
 
     private final List<FilteredListener> listeners = new CopyOnWriteArrayList<>();
 
-    private final Hekate hekate;
-
     private volatile ExecutorService worker;
 
     private volatile ClusterTopology lastTopology;
-
-    public ClusterEventManager(Hekate hekate) {
-        this.hekate = hekate;
-    }
 
     public void fireAsync(ClusterEvent event) {
         fireAsync(event, null);
@@ -303,7 +296,7 @@ class ClusterEventManager {
 
                     if (lastTopology != null) {
                         try {
-                            listener.onEvent(new ClusterJoinEvent(hekate, lastTopology));
+                            listener.onEvent(new ClusterJoinEvent(lastTopology));
                         } catch (Throwable t) {
                             log.error("Failed to notify cluster event listener [listener={}]", listener, t);
                         }

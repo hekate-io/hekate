@@ -18,7 +18,6 @@ package io.hekate.cluster.event;
 
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.core.Hekate;
 
 /**
  * Cluster join event.
@@ -36,11 +35,10 @@ public class ClusterJoinEvent extends ClusterEventBase {
     /**
      * Constructs a new instance.
      *
-     * @param hekate {@link Hekate} instance where this event occurred.
      * @param topology Topology.
      */
-    public ClusterJoinEvent(Hekate hekate, ClusterTopology topology) {
-        super(hekate, topology);
+    public ClusterJoinEvent(ClusterTopology topology) {
+        super(topology);
     }
 
     /**

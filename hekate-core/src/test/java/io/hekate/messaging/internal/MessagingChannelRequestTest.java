@@ -641,7 +641,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         channel.getNode().cluster().addListener(event -> {
             try {
-                MessagingChannel<String> send = event.getHekate().messaging().channel(TEST_CHANNEL_NAME);
+                MessagingChannel<String> send = channel.getNode().messaging().channel(TEST_CHANNEL_NAME);
 
                 if (event.getType() == ClusterEventType.JOIN) {
                     get(send.request("to-self"));

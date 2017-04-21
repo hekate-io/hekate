@@ -69,7 +69,7 @@ public class ClusterEventManagerTest extends HekateTestBase {
 
     private static final ClusterEventType[] EMPTY_EVENT_TYPES = new ClusterEventType[0];
 
-    private final ClusterEventManager mgr = new ClusterEventManager(null);
+    private final ClusterEventManager mgr = new ClusterEventManager();
 
     private final TestThreadFactory threads = new TestThreadFactory();
 
@@ -426,19 +426,19 @@ public class ClusterEventManagerTest extends HekateTestBase {
     }
 
     private ClusterJoinEvent newJoinEvent() throws Exception {
-        return new ClusterJoinEvent(null, newTopology());
+        return new ClusterJoinEvent(newTopology());
     }
 
     private ClusterChangeEvent newChangeEvent() throws Exception {
         ClusterTopology topology = newTopology();
 
-        return new ClusterChangeEvent(null, topology, topology.getNodes(), Collections.emptySet());
+        return new ClusterChangeEvent(topology, topology.getNodes(), Collections.emptySet());
     }
 
     private ClusterLeaveEvent newLeaveEvent() throws Exception {
         ClusterTopology topology = newTopology();
 
-        return new ClusterLeaveEvent(null, topology, Collections.emptySet(), Collections.singleton(topology.getLocalNode()));
+        return new ClusterLeaveEvent(topology, Collections.emptySet(), Collections.singleton(topology.getLocalNode()));
     }
 
     private ClusterTopology newTopology() throws Exception {

@@ -19,7 +19,6 @@ package io.hekate.cluster.event;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.core.Hekate;
 import java.util.Set;
 
 /**
@@ -42,13 +41,12 @@ public class ClusterLeaveEvent extends ClusterEventBase {
     /**
      * Constructs a new instance.
      *
-     * @param hekate {@link Hekate} instance where this event occurred.
      * @param topology Topology.
      * @param added Set of newly joined nodes (see {@link #getAdded()}).
      * @param removed Set of nodes that left the cluster (see {@link #getRemoved()}).
      */
-    public ClusterLeaveEvent(Hekate hekate, ClusterTopology topology, Set<ClusterNode> added, Set<ClusterNode> removed) {
-        super(hekate, topology);
+    public ClusterLeaveEvent(ClusterTopology topology, Set<ClusterNode> added, Set<ClusterNode> removed) {
+        super(topology);
 
         this.added = added;
         this.removed = removed;
