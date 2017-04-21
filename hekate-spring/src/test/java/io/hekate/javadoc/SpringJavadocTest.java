@@ -176,14 +176,14 @@ public class SpringJavadocTest extends HekateTestBase {
     @Test
     public void testClusterMetricsXsd() {
         doTest("javadoc/metrics/cluster/service-xsd.xml", (node, ctx) ->
-            assertTrue(node.clusterMetrics().forNode(node.getLocalNode()).isPresent())
+            assertTrue(node.clusterMetrics().of(node.getLocalNode()).isPresent())
         );
     }
 
     @Test
     public void testClusterMetricsBean() {
         doTest("javadoc/metrics/cluster/service-bean.xml", (node, ctx) ->
-            assertTrue(node.clusterMetrics().forNode(node.getLocalNode()).isPresent())
+            assertTrue(node.clusterMetrics().of(node.getLocalNode()).isPresent())
         );
     }
 

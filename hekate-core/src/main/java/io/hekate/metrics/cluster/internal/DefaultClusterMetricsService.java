@@ -347,10 +347,10 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     }
 
     @Override
-    public Optional<ClusterNodeMetrics> forNode(ClusterNodeId node) {
-        if (isEnabled()) {
-            ArgAssert.notNull(node, "Node");
+    public Optional<ClusterNodeMetrics> of(ClusterNodeId node) {
+        ArgAssert.notNull(node, "Node");
 
+        if (isEnabled()) {
             guard.lockReadWithStateCheck();
 
             try {
@@ -372,14 +372,14 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     }
 
     @Override
-    public Optional<ClusterNodeMetrics> forNode(ClusterNode node) {
+    public Optional<ClusterNodeMetrics> of(ClusterNode node) {
         ArgAssert.notNull(node, "Node");
 
-        return forNode(node.getId());
+        return of(node.getId());
     }
 
     @Override
-    public List<ClusterNodeMetrics> forAll() {
+    public List<ClusterNodeMetrics> all() {
         if (isEnabled()) {
             guard.lockReadWithStateCheck();
 
@@ -406,7 +406,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     }
 
     @Override
-    public List<ClusterNodeMetrics> forAll(MetricFilter filter) {
+    public List<ClusterNodeMetrics> all(MetricFilter filter) {
         ArgAssert.notNull(filter, "Filter");
 
         if (isEnabled()) {

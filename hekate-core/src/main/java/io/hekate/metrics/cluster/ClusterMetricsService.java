@@ -120,7 +120,7 @@ public interface ClusterMetricsService extends Service {
      *
      * @return Metrics.
      */
-    Optional<ClusterNodeMetrics> forNode(ClusterNodeId nodeId);
+    Optional<ClusterNodeMetrics> of(ClusterNodeId nodeId);
 
     /**
      * Returns metrics of the specified cluster node.
@@ -129,14 +129,14 @@ public interface ClusterMetricsService extends Service {
      *
      * @return Metrics.
      */
-    Optional<ClusterNodeMetrics> forNode(ClusterNode node);
+    Optional<ClusterNodeMetrics> of(ClusterNode node);
 
     /**
      * Returns metrics of all nodes that this service is aware of. Returns an empty list if there are no metrics available.
      *
      * @return List of all cluster node metrics or an empty lists.
      */
-    List<ClusterNodeMetrics> forAll();
+    List<ClusterNodeMetrics> all();
 
     /**
      * Returns metrics of those nodes that have metrics matching the specified filter. Returns an empty list if there are no such
@@ -146,5 +146,5 @@ public interface ClusterMetricsService extends Service {
      *
      * @return List of all cluster node metrics or an empty lists.
      */
-    List<ClusterNodeMetrics> forAll(MetricFilter filter);
+    List<ClusterNodeMetrics> all(MetricFilter filter);
 }
