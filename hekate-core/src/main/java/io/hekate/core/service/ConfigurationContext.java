@@ -16,11 +16,8 @@
 
 package io.hekate.core.service;
 
-import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeService;
 import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Context for {@link ConfigurableService}.
@@ -28,39 +25,6 @@ import java.util.Set;
  * @see ConfigurableService#configure(ConfigurationContext)
  */
 public interface ConfigurationContext {
-    /**
-     * Returns the immutable set of {@link ClusterNode#getRoles() node roles}.
-     *
-     * @return Immutable set of {@link ClusterNode#getRoles() node roles}.
-     *
-     * @see #addNodeRole(String)
-     */
-    Set<String> getNodeRoles();
-
-    /**
-     * Adds the specified {@link ClusterNode#getRoles() node role}.
-     *
-     * @param role Role.
-     */
-    void addNodeRole(String role);
-
-    /**
-     * Returns the immutable map of {@link ClusterNode#getProperties() node properties}.
-     *
-     * @return Immutable map of {@link ClusterNode#getProperties() node properties}.
-     *
-     * @see #addNodeProperty(String, String)
-     */
-    Map<String, String> getNodeProperties();
-
-    /**
-     * Adds the specified {@link ClusterNode#getProperties() node property}.
-     *
-     * @param name Property name.
-     * @param value Property value.
-     */
-    void addNodeProperty(String name, String value);
-
     /**
      * Adds the specified {@link ClusterNodeService#getProperties() service property}.
      *

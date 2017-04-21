@@ -738,7 +738,7 @@ public class ServiceManagerTest extends HekateTestBase {
 
         ServiceManager manager = new ServiceManager(services, Collections.emptyList(), factories);
 
-        manager.instantiate(Collections.emptySet(), Collections.emptyMap());
+        manager.instantiate();
 
         return manager;
     }

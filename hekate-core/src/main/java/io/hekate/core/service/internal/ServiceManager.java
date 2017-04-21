@@ -19,7 +19,6 @@ package io.hekate.core.service.internal;
 import io.hekate.cluster.ClusterNodeService;
 import io.hekate.core.HekateConfigurationException;
 import io.hekate.core.HekateException;
-import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.DefaultServiceFactory;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.Service;
@@ -74,7 +73,7 @@ public class ServiceManager {
         this.factories = new ArrayList<>(factories);
     }
 
-    public ConfigurationContext instantiate(Set<String> roles, Map<String, String> nodeProps) {
+    public void instantiate() {
         if (DEBUG) {
             log.debug("Instantiating services...");
         }
@@ -108,19 +107,17 @@ public class ServiceManager {
         handlers.forEach(initOrder::register);
 
         // Configure services.
-        ServiceConfigurationContext configCtx = new ServiceConfigurationContext(roles, nodeProps, this);
+        ServiceConfigurationContext cfgCtx = new ServiceConfigurationContext(this);
 
-        handlers.forEach(handler -> handler.configure(configCtx));
+        handlers.forEach(handler -> handler.configure(cfgCtx));
 
-        servicesInfo = unmodifiableMap(configCtx.getServicesInfo());
+        servicesInfo = unmodifiableMap(cfgCtx.getServicesInfo());
 
         serviceTypes = unmodifiableSet(depCtx.getServiceTypes());
 
         if (DEBUG) {
             log.debug("Instantiated services.");
         }
-
-        return configCtx;
     }
 
     public void preInitialize(InitializationContext ctx) throws HekateException {

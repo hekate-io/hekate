@@ -48,7 +48,6 @@ import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.core.service.ClusterContext;
-import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
@@ -93,6 +92,7 @@ import static io.hekate.core.Hekate.State.TERMINATING;
 import static io.hekate.core.Hekate.State.UP;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toSet;
 
@@ -241,6 +241,10 @@ class HekateNode implements Hekate, Serializable {
             });
         }
 
+        // Node roles/properties.
+        nodeRoles = unmodifiableSet(roles);
+        nodeProps = unmodifiableMap(props);
+
         // Cluster event manager.
         clusterEvents = new ClusterEventManager();
 
@@ -248,11 +252,7 @@ class HekateNode implements Hekate, Serializable {
         services = createServiceManager(cfg);
 
         // Instantiate services.
-        ConfigurationContext servicesCtx = services.instantiate(roles, props);
-
-        // Node roles/properties (must be after services instantiation since services can register their own properties and roles).
-        nodeRoles = servicesCtx.getNodeRoles();
-        nodeProps = servicesCtx.getNodeProperties();
+        services.instantiate();
 
         // Core services.
         codec = services.findService(CodecService.class);

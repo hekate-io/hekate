@@ -60,10 +60,6 @@ class ServiceConfigurationContext implements ConfigurationContext {
         }
     }
 
-    private final Set<String> roles;
-
-    private final Map<String, String> properties;
-
     private final Map<String, Map<String, Set<String>>> serviceProps = new HashMap<>();
 
     @ToStringIgnore
@@ -72,46 +68,8 @@ class ServiceConfigurationContext implements ConfigurationContext {
     @ToStringIgnore
     private ServiceElement currentService;
 
-    public ServiceConfigurationContext(Set<String> roles, Map<String, String> properties, ServiceManager manager) {
-        this.roles = new HashSet<>(roles);
-        this.properties = new HashMap<>(properties);
+    public ServiceConfigurationContext(ServiceManager manager) {
         this.manager = manager;
-    }
-
-    @Override
-    public Set<String> getNodeRoles() {
-        return Collections.unmodifiableSet(new HashSet<>(roles));
-    }
-
-    @Override
-    public void addNodeRole(String role) {
-        ArgAssert.notNull(role, "Role");
-
-        checkState();
-
-        roles.add(role.trim());
-    }
-
-    @Override
-    public Map<String, String> getNodeProperties() {
-        return Collections.unmodifiableMap(new HashMap<>(properties));
-    }
-
-    @Override
-    public void addNodeProperty(String name, String value) {
-        checkState();
-
-        if (name != null) {
-            name = name.trim();
-        }
-
-        if (value != null) {
-            value = value.trim();
-        }
-
-        ArgAssert.check(!properties.containsKey(name), "Property name already registered [name=" + name + ']');
-
-        properties.put(name, value);
     }
 
     @Override

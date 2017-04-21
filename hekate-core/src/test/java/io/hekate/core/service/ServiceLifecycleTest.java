@@ -60,32 +60,18 @@ public class ServiceLifecycleTest extends HekateNodeTestBase {
 
         private final AtomicInteger terminated = new AtomicInteger();
 
-        private final Set<String> initRoles;
+        private final Map<String, List<String>> initProps;
 
-        private final Map<String, String> initProps;
-
-        private final Map<String, List<String>> initServiceProps;
-
-        public TestServiceBase(Set<String> initRoles, Map<String, String> initProps, Map<String, List<String>> initServiceProps) {
-            this.initRoles = initRoles;
+        public TestServiceBase(Map<String, List<String>> initProps) {
             this.initProps = initProps;
-            this.initServiceProps = initServiceProps;
         }
 
         @Override
         public void configure(ConfigurationContext ctx) {
             configured.incrementAndGet();
 
-            if (initRoles != null) {
-                initRoles.forEach(ctx::addNodeRole);
-            }
-
             if (initProps != null) {
-                initProps.forEach(ctx::addNodeProperty);
-            }
-
-            if (initServiceProps != null) {
-                initServiceProps.forEach((name, values) -> values.forEach(val -> ctx.addServiceProperty(name, val)));
+                initProps.forEach((name, values) -> values.forEach(val -> ctx.addServiceProperty(name, val)));
             }
         }
 
@@ -113,22 +99,22 @@ public class ServiceLifecycleTest extends HekateNodeTestBase {
     }
 
     private static class DefaultServiceA extends TestServiceBase implements ServiceA {
-        public DefaultServiceA(Set<String> initRoles, Map<String, String> initProps, Map<String, List<String>> initServiceProps) {
-            super(initRoles, initProps, initServiceProps);
+        public DefaultServiceA(Map<String, List<String>> initServiceProps) {
+            super(initServiceProps);
         }
     }
 
     private static class DefaultServiceB extends TestServiceBase implements ServiceB {
-        public DefaultServiceB(Set<String> initRoles, Map<String, String> initProps, Map<String, List<String>> initServiceProps) {
-            super(initRoles, initProps, initServiceProps);
+        public DefaultServiceB(Map<String, List<String>> initServiceProps) {
+            super(initServiceProps);
         }
     }
 
     @Test
     public void testLifecycle() throws Exception {
         Hekate node = createNode(c -> {
-            c.withService(() -> new DefaultServiceA(null, null, null));
-            c.withService(() -> new DefaultServiceB(null, null, null));
+            c.withService(() -> new DefaultServiceA(null));
+            c.withService(() -> new DefaultServiceB(null));
         }).join();
 
         ServiceA serviceA = node.get(ServiceA.class);
@@ -158,8 +144,8 @@ public class ServiceLifecycleTest extends HekateNodeTestBase {
             HekateTestNode node = createNode(c -> {
                 String strIdx = String.valueOf(i + 1);
 
-                c.withService(() -> new DefaultServiceA(toSet("a", "A"), singletonMap("a", "A"), singletonMap("_A", asList("a", strIdx))));
-                c.withService(() -> new DefaultServiceB(toSet("b", "B"), singletonMap("b", "B"), singletonMap("_B", asList("b", strIdx))));
+                c.withService(() -> new DefaultServiceA(singletonMap("A", asList("a", strIdx))));
+                c.withService(() -> new DefaultServiceB(singletonMap("B", asList("b", strIdx))));
             });
 
             nodes.add(node);
@@ -173,17 +159,6 @@ public class ServiceLifecycleTest extends HekateNodeTestBase {
             .map(Hekate::getLocalNode)
             .sorted(Comparator.comparingInt(ClusterNode::getJoinOrder))
             .forEach(node -> {
-                assertTrue(node.hasRole("a"));
-                assertTrue(node.hasRole("A"));
-                assertTrue(node.hasRole("b"));
-                assertTrue(node.hasRole("B"));
-
-                assertTrue(node.hasProperty("a"));
-                assertTrue(node.hasProperty("b"));
-
-                assertEquals("A", node.getProperty("a"));
-                assertEquals("B", node.getProperty("b"));
-
                 ClusterNodeService serviceA = node.getService(ServiceA.class);
                 ClusterNodeService serviceB = node.getService(ServiceB.class);
 
@@ -192,8 +167,8 @@ public class ServiceLifecycleTest extends HekateNodeTestBase {
 
                 String joinOrderStr = String.valueOf(node.getJoinOrder());
 
-                Set<String> propA = serviceA.getProperty("_A");
-                Set<String> propB = serviceB.getProperty("_B");
+                Set<String> propA = serviceA.getProperty("A");
+                Set<String> propB = serviceB.getProperty("B");
 
                 say("Checking [join-order=" + joinOrderStr + ", prop-A=" + propA + ", prop-B=" + propB + ']');
 
