@@ -29,7 +29,7 @@
     </parent>
 
     <modules>
-        <module>hekate-dev</module>
+        <module>hekate-dev-build</module>
         <module>hekate-dev-profiling</module>
         <module>hekate-core</module>
         <module>hekate-spring</module>

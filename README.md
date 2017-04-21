@@ -96,7 +96,7 @@ For now, the most detailed documentation is provided as part of javadocs. Comple
   - cd to the project's root folder
   - make a copy of `test.properties` file with name `my_test.properties`
   - edit `my_test.properties` according to your environment
-  - run `docker-compose up` to prepare Docker-based testing infrastructure
+  - run `docker-compose up -d` to prepare Docker-based testing infrastructure
   - run `mvnw clean package`
   - see `target/hekate-<version>.zip` for build results
 
@@ -131,6 +131,6 @@ For now, the most detailed documentation is provided as part of javadocs. Comple
 
 ### Development modules:
 
-  * `hekate-dev     `       - Utilities for maven project build.
+  * `hekate-dev-build     ` - Utilities for maven project build.
   
   * `hekate-dev-profiling`  - Performance profiling and benchmarks.

@@ -514,7 +514,7 @@
                     <resourcesArtifacts>
                         <resourceArtifact>
                             <groupId>io.hekate</groupId>
-                            <artifactId>hekate-dev</artifactId>
+                            <artifactId>hekate-dev-build</artifactId>
                             <version>${project.version}</version>
                         </resourceArtifact>
                     </resourcesArtifacts>
