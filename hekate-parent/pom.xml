@@ -22,17 +22,40 @@
     <artifactId>hekate-parent</artifactId>
     <packaging>pom</packaging>
     <version>1.0.0-SNAPSHOT</version>
-    <url>${project.http.url}</url>
-    <organization>
-        <name>Hekate.io</name>
-    </organization>
 
+    <name>Hekate.io</name>
+    <description>Java library for cluster communications and computing.</description>
+    <url>${project.http.url}</url>
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
             <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
+    <scm>
+        <url>https://github.com/hekate-io/hekate</url>
+        <connection>scm:git:git://github.com/hekate-io/hekate.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/hekate-io/hekate.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+    <issueManagement>
+        <system>Github</system>
+        <url>https://github.com/hekate-io/hekate/issues</url>
+    </issueManagement>
+    <organization>
+        <name>The Hekate Project</name>
+        <url>http://hekate.io/</url>
+    </organization>
+    <developers>
+        <developer>
+            <id>hekate.io</id>
+            <name>The Hekate Project Contributors</name>
+            <email>hekate.dev@gmail.com</email>
+            <url>http://hekate.io/</url>
+            <organization>The Hekate Project</organization>
+            <organizationUrl>http://hekate.io/</organizationUrl>
+        </developer>
+    </developers>
 
     <modules>
         <module>../hekate-core</module>
@@ -46,7 +69,7 @@
 
     <properties>
         <!-- Generic properties. -->
-        <project.http.url>http://hekate.io</project.http.url>
+        <project.http.url>https://github.com/hekate-io/hekate</project.http.url>
 
         <!-- Source code properties.-->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -90,6 +113,8 @@
         <maven.findbugs.plugin.version>3.0.4</maven.findbugs.plugin.version>
         <maven.checkstyle.plugin.version>2.17</maven.checkstyle.plugin.version>
         <maven.checkstyle.plugin.lib.version>7.6.1</maven.checkstyle.plugin.lib.version>
+        <maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
+        <maven.nexus.staging.plugin.version>1.6.7</maven.nexus.staging.plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -380,6 +405,57 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile>
+            <!--
+             Maven deployment profile.
+            -->
+            <id>release</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <distributionManagement>
+                <snapshotRepository>
+                    <id>ossrh</id>
+                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+                </snapshotRepository>
+                <repository>
+                    <id>ossrh</id>
+                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+                </repository>
+            </distributionManagement>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${maven.gpg.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>${maven.nexus.staging.plugin.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>false</autoReleaseAfterClose>
+                            <skipLocalStaging>true</skipLocalStaging>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <build>
@@ -563,7 +639,7 @@
                     </bottom>
                     <doctitle>Hekate ${project.version}</doctitle>
                     <windowtitle>Hekate ${project.version}</windowtitle>
-                    <overview>${basedir}/hekate-dev/src/main/javadoc/overview.html</overview>
+                    <overview>${basedir}/hekate-dev-build/src/main/javadoc/overview.html</overview>
                     <groups>
                         <group>
                             <title>Core API</title>
@@ -644,7 +720,7 @@
                 <dependencies>
                     <dependency>
                         <groupId>io.hekate</groupId>
-                        <artifactId>hekate-dev</artifactId>
+                        <artifactId>hekate-dev-build</artifactId>
                         <version>${project.version}</version>
                     </dependency>
                 </dependencies>
@@ -767,15 +843,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <version>${maven.deploy.plugin.version}</version>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
             </plugin>
         </plugins>
     </build>
