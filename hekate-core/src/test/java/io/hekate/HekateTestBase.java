@@ -150,8 +150,8 @@ public abstract class HekateTestBase {
         }
     }
 
-    /** Maximum timeout in {@link TimeUnit#SECONDS} for each individual test case (see {@link #testTimeoutRule}). */
-    public static final int MAX_TEST_TIMEOUT_SEC = 2;
+    /** Maximum timeout in {@link TimeUnit#MINUTES} for each individual test case (see {@link #testTimeoutRule}). */
+    public static final int MAX_TEST_TIMEOUT = 5;
 
     /** Maximum number of loop for {@link #busyWait(String, Callable)}. */
     public static final int BUSY_WAIT_LOOPS = 200;
@@ -216,9 +216,9 @@ public abstract class HekateTestBase {
         KNOWN_THREAD_PREFIXES.add("H2 Close".toLowerCase());
     }
 
-    /** Test timeout rule (see {@link #MAX_TEST_TIMEOUT_SEC}). */
+    /** Test timeout rule (see {@link #MAX_TEST_TIMEOUT}). */
     @Rule
-    public final Timeout testTimeoutRule = new Timeout(MAX_TEST_TIMEOUT_SEC, TimeUnit.MINUTES);
+    public final Timeout testTimeoutRule = new Timeout(MAX_TEST_TIMEOUT, TimeUnit.MINUTES);
 
     /** Prints info about the currently running test. */
     @Rule

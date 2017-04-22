@@ -16,7 +16,6 @@
 
 package io.hekate.cluster.seed.jclouds;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Module;
 import io.hekate.cluster.ClusterService;
@@ -46,7 +45,6 @@ import java.util.stream.Collectors;
 import org.jclouds.ContextBuilder;
 import org.jclouds.compute.ComputeService;
 import org.jclouds.compute.ComputeServiceContext;
-import org.jclouds.compute.domain.ComputeMetadata;
 import org.jclouds.compute.domain.NodeMetadata;
 import org.jclouds.domain.Location;
 import org.jclouds.domain.LocationScope;
@@ -174,9 +172,9 @@ public class CloudSeedNodeProvider implements SeedNodeProvider {
             try {
                 ComputeService compute = ctx.getComputeService();
 
-                Set<String> hosts = listNodesDetailsMatching(compute, Objects::nonNull).stream()
+                Set<String> hosts = compute.listNodesDetailsMatching(Objects::nonNull).stream()
                     .filter(node -> {
-                        if (node.getStatus() != NodeMetadata.Status.RUNNING) {
+                        if (!acceptState(node)) {
                             return false;
                         }
 
@@ -253,8 +251,8 @@ public class CloudSeedNodeProvider implements SeedNodeProvider {
     }
 
     // Package level for testing purposes.
-    Set<? extends NodeMetadata> listNodesDetailsMatching(ComputeService compute, Predicate<ComputeMetadata> filter) {
-        return compute.listNodesDetailsMatching(filter);
+    boolean acceptState(NodeMetadata node) {
+        return node.getStatus() == NodeMetadata.Status.RUNNING;
     }
 
     private boolean acceptLocation(Location location, Set<String> names, LocationScope scope) {
