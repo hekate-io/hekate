@@ -18,7 +18,6 @@ package io.hekate.cluster.seed.jclouds;
 
 import io.hekate.HekateTestProps;
 import io.hekate.cluster.seed.PersistentSeedNodeProviderCommonTest;
-import io.hekate.cluster.seed.jclouds.aws.AwsCredentialsSupplier;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 
@@ -33,7 +32,7 @@ public class AwsCloudStoreSeedNodeProviderTest extends PersistentSeedNodeProvide
         CloudStoreSeedNodeProviderConfig cfg = new CloudStoreSeedNodeProviderConfig()
             .withProvider("aws-s3")
             .withContainer(HekateTestProps.get("AWS_TEST_BUCKET"))
-            .withCredentials(new AwsCredentialsSupplier()
+            .withCredentials(new BasicCredentialsSupplier()
                 .withIdentity(HekateTestProps.get("AWS_TEST_ACCESS_KEY"))
                 .withCredential(HekateTestProps.get("AWS_TEST_SECRET_KEY"))
             )
