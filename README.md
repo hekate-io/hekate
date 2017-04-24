@@ -109,9 +109,9 @@ For now, the most detailed documentation is provided as part of javadocs. Comple
   * `[hekate-core]`              - Core functionality.
   
   * `[hekate-spring]`            - Integration with with [Spring Framework](http://projects.spring.io/spring-framework/) 
-                                   (custom XML schema + adaptor beans).
+                                   (custom XML schema + bean adaptors).
   
-  * `[hekate-spring-boot]`       - Auto-configurations for [Spring Boot](https://projects.spring.io/spring-boot/) auto-configuration.
+  * `[hekate-spring-boot]`       - Auto-configuration for [Spring Boot](https://projects.spring.io/spring-boot/).
 
   * `[hekate-codec-kryo]`        - Integration with [Kryo](https://github.com/EsotericSoftware/kryo) for data serialization.
   
@@ -125,8 +125,6 @@ For now, the most detailed documentation is provided as part of javadocs. Comple
   * `[hekate-metrics-influxdb]`  - Metrics publishing to [InfluxDB](https://www.influxdata.com) time-series data storage.
   
   * `[hekate-metrics-statsd]`    - Metrics publishing to [StatsD](https://github.com/etsy/statsd) statistics aggregation daemon.
-  
-  * `[hekate-standalone]`        - Support classes for running as a standalone application.
   
 
 ### Development modules:

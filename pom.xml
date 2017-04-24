@@ -41,7 +41,6 @@
         <module>hekate-jclouds-aws</module>
         <module>hekate-metrics-influxdb</module>
         <module>hekate-metrics-statsd</module>
-        <module>hekate-standalone</module>
     </modules>
 
     <dependencies>
@@ -93,17 +92,9 @@
             <artifactId>hekate-metrics-statsd</artifactId>
             <version>${project.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>hekate-standalone</artifactId>
-            <version>${project.version}</version>
-        </dependency>
     </dependencies>
 
     <build>
-        <finalName>${project.artifactId}-${project.version}</finalName>
-
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -118,27 +109,6 @@
                         <phase>prepare-package</phase>
                     </execution>
                 </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>${maven.assembly.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <descriptors>
-                        <descriptor>${project.basedir}/assembly.xml</descriptor>
-                    </descriptors>
-                    <appendAssemblyId>false</appendAssemblyId>
-                    <attach>false</attach>
-                </configuration>
             </plugin>
 
             <plugin>
@@ -162,7 +132,7 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>
                 <version>${maven.findbugs.plugin.version}</version>
-                <configuration>
+                <configuration combine.self="override">
                     <skip>true</skip>
                 </configuration>
             </plugin>
@@ -171,7 +141,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>${maven.checkstyle.plugin.version}</version>
-                <configuration>
+                <configuration combine.self="override">
                     <skip>true</skip>
                 </configuration>
             </plugin>
