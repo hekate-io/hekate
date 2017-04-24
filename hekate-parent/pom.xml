@@ -57,16 +57,6 @@
         </developer>
     </developers>
 
-    <modules>
-        <module>../hekate-core</module>
-        <module>../hekate-spring</module>
-        <module>../hekate-codec-kryo</module>
-        <module>../hekate-codec-fst</module>
-        <module>../hekate-jclouds-core</module>
-        <module>../hekate-jclouds-aws</module>
-        <module>../hekate-standalone</module>
-    </modules>
-
     <properties>
         <!-- Generic properties. -->
         <project.http.url>https://github.com/hekate-io/hekate</project.http.url>
@@ -788,15 +778,11 @@
                                     <fileset dir="${project.build.directory}/site/apidocs" includes="**/dev/**.*"/>
                                 </delete>
 
-                                <replace dir="${project.build.directory}/site/apidocs" token="REPLACE_VERSION" value="${project.version}">
-                                    <include name="**/*.html"/>
-                                </replace>
+                                <replace dir="${project.build.directory}/site/apidocs">
+                                    <replacefilter token="REPLACE_VERSION" value="${project.version}"/>
+                                    <replacefilter token="replace-me-with-script" value="script"/>
+                                    <replacefilter token="replace-me-with-js" value="javascript"/>
 
-                                <replace dir="${project.build.directory}/site/apidocs" token="replace-me-with-script" value="script">
-                                    <include name="**/*.html"/>
-                                </replace>
-
-                                <replace dir="${project.build.directory}/site/apidocs" token="replace-me-with-js" value="javascript">
                                     <include name="**/*.html"/>
                                 </replace>
 

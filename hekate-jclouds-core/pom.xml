@@ -18,7 +18,7 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <name>Hekate JClouds Core</name>
+    <name>Hekate jClouds Core</name>
     <artifactId>hekate-jclouds-core</artifactId>
     <packaging>jar</packaging>
     <url>${project.http.url}</url>
@@ -58,18 +58,42 @@
             <artifactId>jclouds-slf4j</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.jclouds.provider</groupId>
+            <artifactId>aws-ec2</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.jclouds.provider</groupId>
+            <artifactId>aws-s3</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-core</artifactId>
+            <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl-over-slf4j</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- Test dependencies.-->
         <dependency>
             <artifactId>hekate-core</artifactId>
             <groupId>${project.groupId}</groupId>
             <version>${project.version}</version>
             <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.jclouds.api</groupId>
-            <artifactId>filesystem</artifactId>
             <scope>test</scope>
         </dependency>
 
