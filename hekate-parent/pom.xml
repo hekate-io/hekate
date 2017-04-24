@@ -354,7 +354,7 @@
                         <executions>
                             <execution>
                                 <id>check</id>
-                                <phase>validate</phase>
+                                <phase>prepare-package</phase>
                                 <goals>
                                     <goal>check</goal>
                                 </goals>
@@ -385,7 +385,7 @@
                         <executions>
                             <execution>
                                 <id>check</id>
-                                <phase>validate</phase>
+                                <phase>prepare-package</phase>
                                 <goals>
                                     <goal>check</goal>
                                 </goals>
