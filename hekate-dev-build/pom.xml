@@ -49,6 +49,7 @@
             </plugin>
 
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <configuration>
                     <skip>true</skip>
@@ -61,7 +62,7 @@
                 <version>${maven.build.helper.plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>attach-jar-javadoc-artifacts</id>
+                        <id>attach-javadoc-jar</id>
                         <goals>
                             <goal>attach-artifact</goal>
                         </goals>

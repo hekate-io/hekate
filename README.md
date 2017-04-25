@@ -89,7 +89,6 @@ For now, the most detailed documentation is provided as part of javadocs. Comple
 
  - cd to the project's root folder
  - run `mvnw clean package -DskipTests=true`
- - see `target/hekate-<version>.zip` for build results
  
 ### Building project (with tests):
  
@@ -98,13 +97,10 @@ For now, the most detailed documentation is provided as part of javadocs. Comple
   - edit `my_test.properties` according to your environment
   - run `docker-compose up -d` to prepare Docker-based testing infrastructure
   - run `mvnw clean package`
-  - see `target/hekate-<version>.zip` for build results
 
 ## Source code structure
 
 ### Main modules:
-
-  * `[hekate-parent]`            - Parent module with maven dependencies management.
 
   * `[hekate-core]`              - Core functionality.
   
@@ -125,6 +121,10 @@ For now, the most detailed documentation is provided as part of javadocs. Comple
   * `[hekate-metrics-influxdb]`  - Metrics publishing to [InfluxDB](https://www.influxdata.com) time-series data storage.
   
   * `[hekate-metrics-statsd]`    - Metrics publishing to [StatsD](https://github.com/etsy/statsd) statistics aggregation daemon.
+
+  * `[hekate-parent]`            - Parent module with maven dependencies management.
+
+  * `[hekate-all]`               - All-in-One aggregate module.
   
 
 ### Development modules:

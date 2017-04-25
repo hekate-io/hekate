@@ -103,6 +103,7 @@
         <maven.findbugs.plugin.version>3.0.4</maven.findbugs.plugin.version>
         <maven.checkstyle.plugin.version>2.17</maven.checkstyle.plugin.version>
         <maven.checkstyle.plugin.lib.version>7.6.1</maven.checkstyle.plugin.lib.version>
+        <maven.clean.plugin.version>3.0.0</maven.clean.plugin.version>
         <maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
         <maven.nexus.staging.plugin.version>1.6.7</maven.nexus.staging.plugin.version>
     </properties>
@@ -729,34 +730,22 @@
                     <arguments>
                         <argument>${project.build.directory}/site/apidocs</argument>
                         <argument>
-                            ${project.basedir}/src/test/java/io/hekate/javadoc;
-                            ${project.basedir}/src/test/resources/javadoc;
-                            ${project.basedir}/hekate-core/src/test/java/io/hekate/javadoc;
-                            ${project.basedir}/hekate-core/src/test/resources/javadoc;
-                            ${project.basedir}/hekate-spring/src/test/java/io/hekate/javadoc;
-                            ${project.basedir}/hekate-spring/src/test/resources/javadoc;
-                            ${project.basedir}/hekate-spring-boot/src/test/java/io/hekate/javadoc;
-                            ${project.basedir}/hekate-spring-boot/src/test/resources/javadoc;
-                            ${project.basedir}/hekate-codec-kryo/src/test/java/io/hekate/javadoc;
-                            ${project.basedir}/hekate-codec-kryo/src/test/resources/javadoc;
-                            ${project.basedir}/hekate-codec-fst/src/test/java/io/hekate/javadoc;
-                            ${project.basedir}/hekate-codec-fst/src/test/resources/javadoc;
-                            ${project.basedir}/hekate-metrics-influxdb/src/test/java/io/hekate/javadoc;
-                            ${project.basedir}/hekate-metrics-influxdb/src/test/resources/javadoc;
-                            ${project.basedir}/hekate-metrics-statsd/src/test/java/io/hekate/javadoc;
-                            ${project.basedir}/hekate-metrics-statsd/src/test/resources/javadoc;
-                            hekate-spring/src/test/java/io/hekate/javadoc;
-                            hekate-spring/src/test/resources/javadoc;
-                            hekate-spring-boot/src/test/java/io/hekate/javadoc;
-                            hekate-spring-boot/src/test/resources/javadoc;
-                            hekate-codec-kryo/src/test/java/io/hekate/javadoc;
-                            hekate-codec-kryo/src/test/resources/javadoc;
-                            hekate-codec-fst/src/test/java/io/hekate/javadoc;
-                            hekate-codec-fst/src/test/resources/javadoc;
-                            hekate-metrics-influxdb/src/test/java/io/hekate/javadoc;
-                            hekate-metrics-influxdb/src/test/resources/javadoc;
-                            hekate-metrics-statsd/src/test/java/io/hekate/javadoc;
-                            hekate-metrics-statsd/src/test/resources/javadoc;
+                            ${project.parent.basedir}/../src/test/java/io/hekate/javadoc;
+                            ${project.parent.basedir}/../src/test/resources/javadoc;
+                            ${project.parent.basedir}/../hekate-core/src/test/java/io/hekate/javadoc;
+                            ${project.parent.basedir}/../hekate-core/src/test/resources/javadoc;
+                            ${project.parent.basedir}/../hekate-spring/src/test/java/io/hekate/javadoc;
+                            ${project.parent.basedir}/../hekate-spring/src/test/resources/javadoc;
+                            ${project.parent.basedir}/../hekate-spring-boot/src/test/java/io/hekate/javadoc;
+                            ${project.parent.basedir}/../hekate-spring-boot/src/test/resources/javadoc;
+                            ${project.parent.basedir}/../hekate-codec-kryo/src/test/java/io/hekate/javadoc;
+                            ${project.parent.basedir}/../hekate-codec-kryo/src/test/resources/javadoc;
+                            ${project.parent.basedir}/../hekate-codec-fst/src/test/java/io/hekate/javadoc;
+                            ${project.parent.basedir}/../hekate-codec-fst/src/test/resources/javadoc;
+                            ${project.parent.basedir}/../hekate-metrics-influxdb/src/test/java/io/hekate/javadoc;
+                            ${project.parent.basedir}/../hekate-metrics-influxdb/src/test/resources/javadoc;
+                            ${project.parent.basedir}/../hekate-metrics-statsd/src/test/java/io/hekate/javadoc;
+                            ${project.parent.basedir}/../hekate-metrics-statsd/src/test/resources/javadoc;
                         </argument>
                     </arguments>
                 </configuration>
@@ -800,7 +789,7 @@
                 <version>${maven.build.helper.plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>attach-jar-javadoc-artifacts</id>
+                        <id>attach-javadoc-jar</id>
                         <phase>prepare-package</phase>
                         <goals>
                             <goal>attach-artifact</goal>
@@ -824,6 +813,7 @@
                 <version>${maven.source.plugin.version}</version>
                 <executions>
                     <execution>
+                        <id>package-sources</id>
                         <goals>
                             <goal>jar-no-fork</goal>
                         </goals>
