@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the {@link io.hekate.codec.CodecService} API.
+ * {@link io.hekate.codec.CodecService} API.
  */
 package io.hekate.codec;

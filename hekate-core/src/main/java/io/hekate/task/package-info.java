@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the {@link io.hekate.task.TaskService} API.
+ * {@link io.hekate.task.TaskService} API.
  */
 package io.hekate.task;

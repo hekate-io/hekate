@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the implementation of the multicast-based seed node provider.
+ * Multicast-based seed node provider.
  */
 package io.hekate.cluster.seed.multicast;

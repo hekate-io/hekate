@@ -15,7 +15,6 @@
  */
 
 /**
- * Contains integration API for <a href="http://ruedigermoeller.github.io/fast-serialization/" target="_blank">Fast-serialization</a>
- * framework.
+ * Integration with <a href="http://ruedigermoeller.github.io/fast-serialization/" target="_blank">Fast-serialization</a> framework.
  */
 package io.hekate.codec.fst;

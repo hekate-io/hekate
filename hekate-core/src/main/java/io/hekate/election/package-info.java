@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the {@link io.hekate.election.ElectionService} API.
+ * {@link io.hekate.election.ElectionService} API.
  */
 package io.hekate.election;

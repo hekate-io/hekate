@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains integration API for <a href="https://github.com/EsotericSoftware/kryo" target="_blank">Kryo</a> serialization framework.
+ * Integration with <a href="https://github.com/EsotericSoftware/kryo" target="_blank">Kryo</a> serialization framework.
  */
 package io.hekate.codec.kryo;

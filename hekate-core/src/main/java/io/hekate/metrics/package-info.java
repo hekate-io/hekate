@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains a common metrics API.
+ * Common API for metrics.
  */
 package io.hekate.metrics;

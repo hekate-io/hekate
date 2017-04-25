@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains {@link io.hekate.network.NetworkService} API.
+ * {@link io.hekate.network.NetworkService} API.
  */
 package io.hekate.network;

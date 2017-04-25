@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the network address resolution API.
+ * Network address resolution API.
  */
 package io.hekate.network.address;

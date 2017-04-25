@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the {@link io.hekate.metrics.local.LocalMetricsService} API.
+ * {@link io.hekate.metrics.local.LocalMetricsService} API.
  */
 package io.hekate.metrics.local;

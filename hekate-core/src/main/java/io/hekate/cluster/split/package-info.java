@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the cluster split-brain detection API.
+ * Cluster split-brain detection API.
  */
 package io.hekate.cluster.split;

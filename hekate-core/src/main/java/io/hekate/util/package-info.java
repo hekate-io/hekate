@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains common helpers and utilities.
+ * Common helpers and utilities.
  */
 package io.hekate.util;

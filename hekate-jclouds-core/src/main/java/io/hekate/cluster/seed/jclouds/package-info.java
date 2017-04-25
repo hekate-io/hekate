@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the implementation of the <a href="http://jclouds.apache.org/" target="_blank">Apache JClouds</a>-based seed node provider.
+ * <a href="http://jclouds.apache.org/" target="_blank">Apache JClouds</a>-based seed node provider.
  */
 package io.hekate.cluster.seed.jclouds;

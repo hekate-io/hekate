@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the {@link io.hekate.lock.LockService} API.
+ * {@link io.hekate.lock.LockService} API.
  */
 package io.hekate.lock;

@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the implementation of the file system-based seed node provider.
+ * Filesystem-based seed node provider.
  */
 package io.hekate.cluster.seed.fs;

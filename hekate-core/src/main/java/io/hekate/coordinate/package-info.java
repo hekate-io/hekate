@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the {@link io.hekate.coordinate.CoordinationService} API.
+ * {@link io.hekate.coordinate.CoordinationService} API.
  */
 package io.hekate.coordinate;
