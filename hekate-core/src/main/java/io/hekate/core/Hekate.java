@@ -123,8 +123,7 @@ import java.util.Set;
  * <h2>Services</h2>
  * <p>
  * Services in {@link Hekate} are represented by sub-classes of the {@link Service} interface. Each service has a configurable {@link
- * ServiceFactory} that can be registered within a {@link HekateBootstrap} instance. Such approach allows a fine grained control over
- * resources utilization and functionality that is provided by each individual {@link Hekate} instance.
+ * ServiceFactory} that can be registered within a {@link HekateBootstrap} instance via {@link HekateBootstrap#setServices(List)} method.
  * </p>
  *
  * <p>
