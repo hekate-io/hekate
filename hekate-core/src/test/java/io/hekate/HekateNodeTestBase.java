@@ -130,9 +130,9 @@ public class HekateNodeTestBase extends HekateTestBase {
             net.setAcceptRetryInterval(0);
         });
 
-        bootstrap.withService(TaskServiceFactory.class, tasks -> {
-            tasks.setLocalExecutionEnabled(false);
-        });
+        bootstrap.withService(TaskServiceFactory.class, tasks ->
+            tasks.setLocalExecutionEnabled(false)
+        );
 
         bootstrap.withService(ClusterMetricsServiceFactory.class, metrics ->
             metrics.setEnabled(false)
