@@ -18,10 +18,11 @@ before_install:
 install: true
 
 script:
-  - ./mvnw clean install
+  - 'rm -rf $HOME/.m2/repository/io/hekate'
+  - './mvnw clean install'
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+  - 'bash <(curl -s https://codecov.io/bash)'
 
 branches:
   except:
