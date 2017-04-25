@@ -21,8 +21,8 @@ import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
+import io.hekate.task.TaskFuture;
 import io.hekate.task.TaskServiceFactory;
-import java.util.concurrent.CompletableFuture;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +48,7 @@ public class TaskInjectionJavadocTest extends HekateTestBase {
 
         try {
             // Start:execute
-            CompletableFuture<?> future = hekate.tasks().forRemotes().run(new ExampleTask());
+            TaskFuture<?> future = hekate.tasks().forRemotes().run(new ExampleTask());
 
             future.get();
             // End:execute

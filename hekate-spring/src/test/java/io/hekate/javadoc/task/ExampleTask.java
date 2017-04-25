@@ -24,7 +24,7 @@ import io.hekate.task.RunnableTask;
 import org.springframework.beans.factory.annotation.Autowired;
 
 // Start:task
-@HekateInject // <-- Enables injection on instances of this class.
+@HekateInject // <-- Enables injection.
 public class ExampleTask implements RunnableTask {
     private static final long serialVersionUID = 1;
 
@@ -33,7 +33,7 @@ public class ExampleTask implements RunnableTask {
     private Hekate remoteNode;
 
     @Autowired
-    // Service of a remote Hekate node.
+    // Service of a remote node.
     private MessagingService messaging;
 
     @Autowired
@@ -42,9 +42,9 @@ public class ExampleTask implements RunnableTask {
 
     @Override
     public void run() {
-        assert remoteNode != null;
-        assert messaging != null;
-        assert someBean != null;
+        System.out.println("Executing on node " + remoteNode);
+        System.out.println("Service: " + messaging);
+        System.out.println("Bean: " + someBean);
 
         // ... do some work with injected components...
     }
