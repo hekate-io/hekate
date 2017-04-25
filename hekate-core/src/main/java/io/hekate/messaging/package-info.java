@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains {@link io.hekate.messaging.MessagingService} API.
+ * Contains the {@link io.hekate.messaging.MessagingService} API.
  */
 package io.hekate.messaging;

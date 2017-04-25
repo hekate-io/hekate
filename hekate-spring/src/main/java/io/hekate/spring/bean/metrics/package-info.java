@@ -15,6 +15,6 @@
  */
 
 /**
- * Support for importing metrics service into a Spring context.
+ * Support for importing the metrics service into the Spring context.
  */
 package io.hekate.spring.bean.metrics;

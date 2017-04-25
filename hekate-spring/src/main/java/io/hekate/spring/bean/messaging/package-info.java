@@ -15,6 +15,6 @@
  */
 
 /**
- * Support for importing {@link io.hekate.messaging.MessagingService} into a Spring context.
+ * Support for importing the {@link io.hekate.messaging.MessagingService} into the Spring context.
  */
 package io.hekate.spring.bean.messaging;

@@ -15,6 +15,6 @@
  */
 
 /**
- * Support for importing {@link io.hekate.lock.LockService} into a Spring context.
+ * Support for importing the {@link io.hekate.lock.LockService} into the Spring context.
  */
 package io.hekate.spring.bean.lock;

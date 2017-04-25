@@ -35,6 +35,7 @@
     </properties>
 
     <dependencies>
+        <!-- Aggregated modules. -->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>hekate-core</artifactId>
@@ -45,6 +46,13 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>hekate-spring</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>hekate-spring-boot</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
@@ -88,6 +96,13 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>hekate-metrics-statsd</artifactId>
             <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Optional dependencies explicitly to avoid Javadoc errors. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-actuator</artifactId>
             <optional>true</optional>
         </dependency>
     </dependencies>

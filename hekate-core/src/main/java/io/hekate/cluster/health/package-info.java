@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains cluster node failure detection API.
+ * Contains a cluster node failure detection API.
  */
 package io.hekate.cluster.health;

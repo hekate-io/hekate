@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains core {@link io.hekate.core.service.Service services} API.
+ * Contains the core {@link io.hekate.core.service.Service services} API.
  */
 package io.hekate.core.service;

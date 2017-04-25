@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains broadcast messaging API.
+ * Contains the broadcast messaging API.
  */
 package io.hekate.messaging.broadcast;

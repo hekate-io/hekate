@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains seed node provider API.
+ * Contains the seed node provider API.
  */
 package io.hekate.cluster.seed;

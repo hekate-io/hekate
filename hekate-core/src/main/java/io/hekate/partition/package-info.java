@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains {@link io.hekate.partition.PartitionService} API.
+ * Contains the {@link io.hekate.partition.PartitionService} API.
  */
 package io.hekate.partition;

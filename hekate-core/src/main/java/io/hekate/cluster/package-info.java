@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains {@link io.hekate.cluster.ClusterService} API.
+ * Contains the {@link io.hekate.cluster.ClusterService} API.
  */
 package io.hekate.cluster;

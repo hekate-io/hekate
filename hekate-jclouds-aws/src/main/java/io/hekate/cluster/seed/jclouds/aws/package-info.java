@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains AWS-specific extensions of seed node provider API.
+ * Contains AWS-specific extensions of the seed node provider API.
  */
 package io.hekate.cluster.seed.jclouds.aws;

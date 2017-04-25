@@ -15,6 +15,6 @@
  */
 
 /**
- * Support for importing {@link io.hekate.task.TaskService} into a Spring context.
+ * Support for importing the {@link io.hekate.task.TaskService} into the Spring context.
  */
 package io.hekate.spring.bean.task;

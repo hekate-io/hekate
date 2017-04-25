@@ -15,6 +15,6 @@
  */
 
 /**
- * Support for importing {@link io.hekate.network.NetworkService} into a Spring context.
+ * Support for importing the {@link io.hekate.network.NetworkService} into the Spring context.
  */
 package io.hekate.spring.bean.network;

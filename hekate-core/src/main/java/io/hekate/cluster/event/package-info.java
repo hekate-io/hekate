@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains cluster events handling API.
+ * Contains an API for handling cluster events.
  */
 package io.hekate.cluster.event;

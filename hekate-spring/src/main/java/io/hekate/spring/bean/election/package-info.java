@@ -15,6 +15,6 @@
  */
 
 /**
- * Support for importing {@link io.hekate.election.ElectionService} into a Spring context.
+ * Support for importing the {@link io.hekate.election.ElectionService} into the Spring context.
  */
 package io.hekate.spring.bean.election;

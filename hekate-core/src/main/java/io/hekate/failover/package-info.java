@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains general purpose failover API.
+ * Contains the general-purpose failover API.
  */
 package io.hekate.failover;

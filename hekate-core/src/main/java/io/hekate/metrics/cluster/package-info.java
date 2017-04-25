@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains {@link io.hekate.metrics.cluster.ClusterMetricsService} API.
+ * Contains the {@link io.hekate.metrics.cluster.ClusterMetricsService} API.
  */
 package io.hekate.metrics.cluster;

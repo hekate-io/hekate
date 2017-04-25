@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains unicast messaging API.
+ * Contains the unicast messaging API.
  */
 package io.hekate.messaging.unicast;

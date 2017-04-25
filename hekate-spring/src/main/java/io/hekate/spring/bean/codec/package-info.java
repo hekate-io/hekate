@@ -15,6 +15,6 @@
  */
 
 /**
- * Support for importing {@link io.hekate.codec.CodecService} into a Spring context.
+ * Support for importing the {@link io.hekate.codec.CodecService} into the Spring context.
  */
 package io.hekate.spring.bean.codec;

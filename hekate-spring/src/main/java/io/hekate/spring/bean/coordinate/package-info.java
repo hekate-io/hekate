@@ -15,6 +15,6 @@
  */
 
 /**
- * Support for importing {@link io.hekate.coordinate.CoordinationService} into a Spring context.
+ * Support for importing the {@link io.hekate.coordinate.CoordinationService} into the Spring context.
  */
 package io.hekate.spring.bean.coordinate;

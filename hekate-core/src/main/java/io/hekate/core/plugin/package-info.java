@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains {@link io.hekate.core.plugin.Plugin plugins} API.
+ * Contains the core {@link io.hekate.core.plugin.Plugin plugins} API.
  */
 package io.hekate.core.plugin;
