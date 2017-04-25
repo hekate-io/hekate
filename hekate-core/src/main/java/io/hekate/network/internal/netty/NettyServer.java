@@ -340,16 +340,6 @@ class NettyServer implements NetworkServer {
         return Collections.emptyList();
     }
 
-    public NettyMetricsAdaptor getMetrics() {
-        lock.lock();
-
-        try {
-            return metrics;
-        } finally {
-            lock.unlock();
-        }
-    }
-
     public void setMetrics(NettyMetricsAdaptor metrics) {
         lock.lock();
 

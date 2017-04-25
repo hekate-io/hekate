@@ -75,6 +75,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
         tasks = local.tasks();
     }
 
+    @Test
     public void testToString() throws Exception {
         assertTrue(tasks.toString(), tasks.toString().startsWith(TaskService.class.getSimpleName()));
 

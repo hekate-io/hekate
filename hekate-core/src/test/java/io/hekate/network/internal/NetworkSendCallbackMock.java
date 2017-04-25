@@ -109,10 +109,6 @@ public class NetworkSendCallbackMock<T> implements NetworkSendCallback<T> {
         assertTrue(message.toString(), failedMessages.stream().anyMatch(f -> f.message.equals(message)));
     }
 
-    public List<T> getFailed() {
-        return failedMessages.stream().map(f -> f.message).collect(Collectors.toList());
-    }
-
     public void reset() {
         sentMessages.clear();
         failedMessages.clear();

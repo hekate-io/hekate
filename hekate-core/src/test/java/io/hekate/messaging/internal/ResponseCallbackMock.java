@@ -67,8 +67,4 @@ public class ResponseCallbackMock implements ResponseCallback<String> {
             }
         }
     }
-
-    protected void fail(Throwable error) {
-        latch.completeExceptionally(error);
-    }
 }

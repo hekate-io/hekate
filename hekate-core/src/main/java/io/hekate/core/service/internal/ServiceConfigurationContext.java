@@ -38,22 +38,15 @@ class ServiceConfigurationContext implements ConfigurationContext {
     private static class ServiceInfo {
         private final Set<String> serviceTypes;
 
-        private final Object instance;
-
         private final ServiceInfo parent;
 
-        public ServiceInfo(Object instance, Set<String> serviceTypes, ServiceInfo parent) {
+        public ServiceInfo(Set<String> serviceTypes, ServiceInfo parent) {
             this.serviceTypes = serviceTypes;
-            this.instance = instance;
             this.parent = parent;
         }
 
         public Set<String> getServiceTypes() {
             return serviceTypes;
-        }
-
-        public Object getInstance() {
-            return instance;
         }
 
         public ServiceInfo getParent() {
@@ -119,7 +112,7 @@ class ServiceConfigurationContext implements ConfigurationContext {
             props.put(type, new HashMap<>())
         );
 
-        current = new ServiceInfo(service, typeNames, current);
+        current = new ServiceInfo(typeNames, current);
     }
 
     public void close() {

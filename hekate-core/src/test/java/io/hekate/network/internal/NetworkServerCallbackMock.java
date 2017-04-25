@@ -30,16 +30,8 @@ public class NetworkServerCallbackMock implements NetworkServerCallback {
 
     private final List<Throwable> errors = new CopyOnWriteArrayList<>();
 
-    public int getStarts() {
-        return starts.get();
-    }
-
     public void assertStarts(int starts) {
         assertEquals(starts, this.starts.get());
-    }
-
-    public int getStops() {
-        return stops.get();
     }
 
     public void assertStops(int stops) {
@@ -54,22 +46,8 @@ public class NetworkServerCallbackMock implements NetworkServerCallback {
         assertTrue(errors.isEmpty());
     }
 
-    public void assertMaxErrors(int maxErrors) {
-        assertTrue("expected MAX errors=" + maxErrors + ", real errors=" + errors.size(), errors.size() <= maxErrors);
-    }
-
-    public void assertMinErrors(int minErrors) {
-        assertTrue("expected MIN errors=" + minErrors + ", real errors=" + errors.size(), errors.size() >= minErrors);
-    }
-
     public List<Throwable> getErrors() {
         return errors;
-    }
-
-    public void reset() {
-        starts.set(0);
-        stops.set(0);
-        errors.clear();
     }
 
     @Override

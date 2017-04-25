@@ -66,16 +66,8 @@ public class NetworkClientCallbackMock<T> implements NetworkClientCallback<T> {
         return messages;
     }
 
-    public int getConnects() {
-        return connects.get();
-    }
-
     public void assertConnects(int n) {
         assertEquals(n, connects.get());
-    }
-
-    public int getDisconnects() {
-        return disconnects.get();
     }
 
     public InetSocketAddress getLastLocalAddress() {
@@ -123,10 +115,6 @@ public class NetworkClientCallbackMock<T> implements NetworkClientCallback<T> {
 
     public void assertMaxErrors(int maxErrors) {
         assertTrue("expected MAX errors=" + maxErrors + ", real errors=" + errors.size(), errors.size() <= maxErrors);
-    }
-
-    public void assertMinErrors(int minErrors) {
-        assertTrue("expected MIN errors=" + minErrors + ", real errors=" + errors.size(), errors.size() >= minErrors);
     }
 
     public List<Throwable> getErrors() {

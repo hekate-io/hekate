@@ -42,20 +42,12 @@ public class NettyServerFactory extends NetworkServerConfig {
         return handlers;
     }
 
-    public void setHandlers(List<NettyServerHandlerConfig<?>> handlers) {
-        this.handlers = handlers;
-    }
-
     public void addHandler(NettyServerHandlerConfig<?> handler) {
         if (handlers == null) {
             handlers = new LinkedList<>();
         }
 
         handlers.add(handler);
-    }
-
-    public boolean removeHandler(NettyServerHandlerConfig<?> handler) {
-        return handlers != null && handlers.remove(handler);
     }
 
     public EventLoopGroup getAcceptorEventLoopGroup() {

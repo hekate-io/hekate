@@ -29,8 +29,7 @@ import java.net.InetSocketAddress;
  *
  * <p>
  * <b>Note:</b> all {@link #equals(Object) equality} and {@link #compareTo(ClusterAddress) comparison} operations are based on {@link
- * ClusterNodeId} value. In order to check for network address equality please consider using {@link #isSameSocket(ClusterAddress)}
- * method.
+ * ClusterNodeId} value.
  * </p>
  *
  * @see ClusterNode#getAddress()
@@ -72,17 +71,6 @@ public class ClusterAddress implements Comparable<ClusterAddress>, Serializable 
      */
     public InetSocketAddress getSocket() {
         return socket;
-    }
-
-    /**
-     * Returns {@code true} if this instance has the same {@link #getSocket() socket address} with the specified one.
-     *
-     * @param other Other address.
-     *
-     * @return {@code true} if this instance has the same {@link #getSocket() socket address} with the specified one.
-     */
-    public boolean isSameSocket(ClusterAddress other) {
-        return socket.equals(other.getSocket());
     }
 
     /**

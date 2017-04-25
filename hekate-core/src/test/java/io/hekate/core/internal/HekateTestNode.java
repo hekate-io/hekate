@@ -137,10 +137,6 @@ public class HekateTestNode extends HekateNode {
         doAwaitForTopology(Arrays.stream(nodes).map(Hekate::getLocalNode).collect(toList()));
     }
 
-    public void awaitForTopology(ClusterNode... nodes) {
-        doAwaitForTopology(Arrays.asList(nodes));
-    }
-
     public void awaitForTopology(List<? extends Hekate> nodes) {
         doAwaitForTopology(nodes.stream().map(Hekate::getLocalNode).collect(toList()));
     }

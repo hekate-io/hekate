@@ -36,8 +36,4 @@ class ServiceInitOrder {
     public List<ServiceHandler> getOrder() {
         return order;
     }
-
-    public void clear() {
-        order.clear();
-    }
 }

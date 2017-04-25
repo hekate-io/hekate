@@ -728,10 +728,6 @@ class DefaultLockRegion implements LockRegion {
         }
     }
 
-    public ClusterNodeId getNode() {
-        return localNode;
-    }
-
     private boolean awaitForInitialMigration() throws InterruptedException {
         while (true) {
             boolean needToWait = false;

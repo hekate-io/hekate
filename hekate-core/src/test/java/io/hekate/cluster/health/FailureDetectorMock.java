@@ -35,18 +35,6 @@ public class FailureDetectorMock implements FailureDetector {
 
             suspectedBy.add(by);
         }
-
-        public void markAlive(ClusterNodeId by, ClusterNodeId id) {
-            Set<ClusterNodeId> bySet = failedNodes.get(id);
-
-            if (bySet != null) {
-                bySet.remove(by);
-
-                if (bySet.isEmpty()) {
-                    failedNodes.remove(id);
-                }
-            }
-        }
     }
 
     private final ClusterNode node;
