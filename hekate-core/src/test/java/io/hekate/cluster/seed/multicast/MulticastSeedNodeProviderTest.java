@@ -76,7 +76,7 @@ public class MulticastSeedNodeProviderTest extends SeedNodeProviderCommonTest<Mu
 
     public static final int DISCOVERY_INTERVAL = 50;
 
-    public static final int RESPONSE_WAIT_TIME = 100;
+    public static final int RESPONSE_WAIT_TIME = 150;
 
     private static final Map<InetAddress, NetworkInterface> INTERFACES_CACHE = new ConcurrentHashMap<>();
 
