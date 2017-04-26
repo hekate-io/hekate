@@ -17,6 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNodeId;
+import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
@@ -37,6 +38,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -219,5 +221,49 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         Optional.ofNullable(errRef.exchange(null)).ifPresent(e -> {
             throw new AssertionError(e);
         });
+    }
+
+    @Test
+    public void testGetAffinity() throws Exception {
+        MessagingChannel<String> channel = createChannel().join().get();
+
+        assertNull(channel.getAffinity());
+        assertNull(channel.forRemotes().getAffinity());
+
+        assertEquals("affinity1", channel.withAffinity("affinity1").getAffinity());
+        assertNull(channel.getAffinity());
+        assertNull(channel.forRemotes().getAffinity());
+
+        assertEquals("affinity2", channel.forRemotes().withAffinity("affinity2").getAffinity());
+        assertNull(channel.getAffinity());
+        assertNull(channel.forRemotes().getAffinity());
+
+        assertEquals("affinity3", channel.forRemotes().withAffinity("affinity3").forRemotes().getAffinity());
+        assertNull(channel.getAffinity());
+        assertNull(channel.forRemotes().getAffinity());
+    }
+
+    @Test
+    public void testGetFailover() throws Exception {
+        MessagingChannel<String> channel = createChannel().join().get();
+
+        assertNull(channel.getFailover());
+        assertNull(channel.forRemotes().getFailover());
+
+        FailoverPolicy p1 = context -> null;
+        FailoverPolicy p2 = context -> null;
+        FailoverPolicy p3 = context -> null;
+
+        assertSame(p1, channel.withFailover(p1).getFailover());
+        assertNull(channel.getFailover());
+        assertNull(channel.forRemotes().getFailover());
+
+        assertSame(p2, channel.forRemotes().withFailover(p2).getFailover());
+        assertNull(channel.getFailover());
+        assertNull(channel.forRemotes().getFailover());
+
+        assertSame(p3, channel.forRemotes().withFailover(p3).forRemotes().getFailover());
+        assertNull(channel.getFailover());
+        assertNull(channel.forRemotes().getFailover());
     }
 }

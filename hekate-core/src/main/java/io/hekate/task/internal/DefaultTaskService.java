@@ -274,6 +274,11 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
     }
 
     @Override
+    public FailoverPolicy getFailover() {
+        return getRootExecutor().getFailover();
+    }
+
+    @Override
     public TaskFuture<MultiNodeResult<Void>> broadcast(RunnableTask task) {
         return getRootExecutor().broadcast(task);
     }
@@ -286,6 +291,11 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
     @Override
     public TaskService withAffinity(Object affinityKey) {
         return getRootExecutor().withAffinity(affinityKey);
+    }
+
+    @Override
+    public Object getAffinity() {
+        return getRootExecutor().getAffinity();
     }
 
     @Override

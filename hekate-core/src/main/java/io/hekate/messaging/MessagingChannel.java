@@ -228,6 +228,13 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     <C extends T> MessagingChannel<C> withAffinity(Object affinityKey);
 
     /**
+     * Returns the affinity key that was set via {@link #withAffinity(Object)}.
+     *
+     * @return Affinity key or {@code null}, if no affinity is specified.
+     */
+    Object getAffinity();
+
+    /**
      * Returns a new lightweight wrapper of this channel that will use the specified failover policy and will inherit all other options from
      * this instance.
      *
@@ -252,6 +259,13 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @see MessagingChannelConfig#setFailoverPolicy(FailoverPolicy)
      */
     <C extends T> MessagingChannel<C> withFailover(FailoverPolicyBuilder policy);
+
+    /**
+     * Returns the failover policy that was set via {@link #withFailover(FailoverPolicy)}.
+     *
+     * @return Failover policy or {@code null}, if no policy is specified..
+     */
+    FailoverPolicy getFailover();
 
     /**
      * Returns a new lightweight wrapper of this channel that will use the specified timeout value and will inherit all other options from

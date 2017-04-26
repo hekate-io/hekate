@@ -19,6 +19,7 @@ package io.hekate.task.internal;
 import io.hekate.HekateTestContext;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.service.Service;
+import io.hekate.failover.FailoverPolicy;
 import io.hekate.task.TaskService;
 import java.util.concurrent.CompletableFuture;
 import org.junit.Test;
@@ -28,6 +29,8 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -191,5 +194,45 @@ public class TaskServiceTest extends TaskServiceTestBase {
                 not(hasItems(local.getLocalNode()))
             )
         );
+    }
+
+    @Test
+    public void testGetAffinity() throws Exception {
+        assertNull(tasks.getAffinity());
+        assertNull(tasks.forRemotes().getAffinity());
+
+        assertEquals("affinity1", tasks.withAffinity("affinity1").getAffinity());
+        assertNull(tasks.getAffinity());
+        assertNull(tasks.forRemotes().getAffinity());
+
+        assertEquals("affinity2", tasks.forRemotes().withAffinity("affinity2").getAffinity());
+        assertNull(tasks.getAffinity());
+        assertNull(tasks.forRemotes().getAffinity());
+
+        assertEquals("affinity3", tasks.forRemotes().withAffinity("affinity3").forRemotes().getAffinity());
+        assertNull(tasks.getAffinity());
+        assertNull(tasks.forRemotes().getAffinity());
+    }
+
+    @Test
+    public void testGetFailover() throws Exception {
+        assertNull(tasks.getFailover());
+        assertNull(tasks.forRemotes().getFailover());
+
+        FailoverPolicy p1 = context -> null;
+        FailoverPolicy p2 = context -> null;
+        FailoverPolicy p3 = context -> null;
+
+        assertSame(p1, tasks.withFailover(p1).getFailover());
+        assertNull(tasks.getFailover());
+        assertNull(tasks.forRemotes().getFailover());
+
+        assertSame(p2, tasks.forRemotes().withFailover(p2).getFailover());
+        assertNull(tasks.getFailover());
+        assertNull(tasks.forRemotes().getFailover());
+
+        assertSame(p3, tasks.forRemotes().withFailover(p3).forRemotes().getFailover());
+        assertNull(tasks.getFailover());
+        assertNull(tasks.forRemotes().getFailover());
     }
 }

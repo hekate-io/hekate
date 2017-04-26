@@ -317,6 +317,13 @@ public interface TaskService extends Service, ClusterFilterSupport<TaskService> 
     TaskService withAffinity(Object affinityKey);
 
     /**
+     * Returns the affinity key that was set via {@link #withAffinity(Object)}.
+     *
+     * @return Affinity key or {@code null}, if no affinity is specified.
+     */
+    Object getAffinity();
+
+    /**
      * Returns a new lightweight wrapper that will use the specified failover policy and will inherit all cluster filtering options from
      * this instance.
      *
@@ -335,4 +342,11 @@ public interface TaskService extends Service, ClusterFilterSupport<TaskService> 
      * @return Wrapper of this instance that will use the specified failover policy.
      */
     TaskService withFailover(FailoverPolicyBuilder builder);
+
+    /**
+     * Returns the failover policy that was set via {@link #withFailover(FailoverPolicy)}.
+     *
+     * @return Failover policy or {@code null}, if no policy is specified..
+     */
+    FailoverPolicy getFailover();
 }

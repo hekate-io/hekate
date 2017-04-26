@@ -152,6 +152,11 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
+    public Object getAffinity() {
+        return affinityKey;
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public <C extends T> DefaultMessagingChannel<C> withLoadBalancer(LoadBalancer<C> balancer) {
         return new DefaultMessagingChannel(gateway, cluster, balancer, failover, timeout, affinityKey);
@@ -171,6 +176,11 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     @Override
     public <C extends T> DefaultMessagingChannel<C> withFailover(FailoverPolicyBuilder policy) {
         return withFailover(policy.build());
+    }
+
+    @Override
+    public FailoverPolicy getFailover() {
+        return failover;
     }
 
     @Override

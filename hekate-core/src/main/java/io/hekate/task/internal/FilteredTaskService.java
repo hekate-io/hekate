@@ -181,6 +181,11 @@ class FilteredTaskService implements TaskService {
     }
 
     @Override
+    public Object getAffinity() {
+        return channel.getAffinity();
+    }
+
+    @Override
     public TaskService withFailover(FailoverPolicy policy) {
         return new FilteredTaskService(this, channel.withFailover(policy));
     }
@@ -188,6 +193,11 @@ class FilteredTaskService implements TaskService {
     @Override
     public TaskService withFailover(FailoverPolicyBuilder builder) {
         return new FilteredTaskService(this, channel.withFailover(builder));
+    }
+
+    @Override
+    public FailoverPolicy getFailover() {
+        return channel.getFailover();
     }
 
     @Override
