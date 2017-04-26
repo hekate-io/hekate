@@ -263,7 +263,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     /**
      * Returns the failover policy that was set via {@link #withFailover(FailoverPolicy)}.
      *
-     * @return Failover policy or {@code null}, if no policy is specified..
+     * @return Failover policy or {@code null}, if no policy is specified.
      */
     FailoverPolicy getFailover();
 
@@ -289,6 +289,15 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @see MessagingChannelConfig#setMessagingTimeout(long)
      */
     MessagingChannel<T> withTimeout(long timeout, TimeUnit unit);
+
+    /**
+     * Returns the timeout value in milliseconds.
+     *
+     * @return Timeout in milliseconds or 0, if timeout was not specified.
+     *
+     * @see #withTimeout(long, TimeUnit)
+     */
+    long getTimeout();
 
     /**
      * Returns a new lightweight wrapper of this channel that will use the specified load balancer and will inherit all other options from

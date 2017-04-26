@@ -30,6 +30,7 @@ import io.hekate.network.internal.NetworkClientCallbackMock;
 import java.net.InetSocketAddress;
 import java.util.Optional;
 import java.util.concurrent.Exchanger;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
@@ -50,7 +51,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
     @Test
     public void testChannel() throws Exception {
-        TestChannel testChannel = createChannel().join();
+        TestChannel testChannel = createChannel(c -> c.withMessagingTimeout(100500)).join();
 
         MessagingChannel<String> channel = testChannel.get();
 
@@ -61,6 +62,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         assertEquals(nioThreads, channel.getNioThreads());
         assertEquals(workerThreads, channel.getWorkerThreads());
         assertNotNull(channel.getExecutor());
+        assertEquals(100500, channel.getTimeout());
     }
 
     @Test
@@ -265,5 +267,21 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         assertSame(p3, channel.forRemotes().withFailover(p3).forRemotes().getFailover());
         assertNull(channel.getFailover());
         assertNull(channel.forRemotes().getFailover());
+    }
+
+    @Test
+    public void testGetTimeout() throws Exception {
+        MessagingChannel<String> channel = createChannel().join().get();
+
+        assertEquals(0, channel.getTimeout());
+
+        assertEquals(1000, channel.withTimeout(1, TimeUnit.SECONDS).getTimeout());
+        assertEquals(0, channel.getTimeout());
+
+        assertEquals(2000, channel.forRemotes().withTimeout(2, TimeUnit.SECONDS).getTimeout());
+        assertEquals(0, channel.getTimeout());
+
+        assertEquals(3000, channel.forRemotes().withTimeout(3, TimeUnit.SECONDS).forRemotes().getTimeout());
+        assertEquals(0, channel.getTimeout());
     }
 }

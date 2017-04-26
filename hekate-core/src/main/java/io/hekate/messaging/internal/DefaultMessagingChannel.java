@@ -191,6 +191,11 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
+    public long getTimeout() {
+        return timeout;
+    }
+
+    @Override
     public DefaultMessagingChannel<T> filterAll(ClusterFilter filter) {
         ArgAssert.notNull(filter, "Filter");
 
