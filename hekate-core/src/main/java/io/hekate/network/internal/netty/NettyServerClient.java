@@ -208,7 +208,31 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        if (serverHandler == null) {
+        if (isHandshakeDone()) {
+            if (msg instanceof Heartbeat) {
+                if (trace) {
+                    log.trace("Received network heartbeat from client [from={}]", address());
+                }
+            } else {
+                NettyMessage netMsg = (NettyMessage)msg;
+
+                netMsg.prepare(log);
+
+                if (trace) {
+                    log.trace("Message buffer prepared [from={}, message={}]", address(), netMsg);
+                }
+
+                if (metrics != null) {
+                    metrics.onMessageReceived();
+                }
+
+                try {
+                    serverHandler.onMessage(netMsg, this);
+                } finally {
+                    netMsg.release();
+                }
+            }
+        } else {
             if (debug) {
                 log.debug("Received network handshake request [from={}, message={}]", address(), msg);
             }
@@ -274,30 +298,6 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                     });
                 }
             }
-        } else {
-            if (msg instanceof Heartbeat) {
-                if (trace) {
-                    log.trace("Received network heartbeat from client [from={}]", address());
-                }
-            } else {
-                NettyMessage netMsg = (NettyMessage)msg;
-
-                netMsg.prepare(log);
-
-                if (trace) {
-                    log.trace("Message buffer prepared [from={}, message={}]", address(), netMsg);
-                }
-
-                if (metrics != null) {
-                    metrics.onMessageReceived();
-                }
-
-                try {
-                    serverHandler.onMessage(netMsg, this);
-                } finally {
-                    netMsg.release();
-                }
-            }
         }
     }
 
@@ -339,7 +339,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             IdleStateEvent idle = (IdleStateEvent)evt;
 
             if (idle.state() == IdleState.WRITER_IDLE) {
-                if (hbFlushed) {
+                if (hbFlushed && isHandshakeDone()) {
                     // Make sure that we don't push multiple heartbeats to the network buffer simultaneously.
                     // Need to perform this check since remote peer can hang and stop reading
                     // while this channel will still be trying to put more and more heartbeats on its send buffer.
@@ -409,6 +409,10 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         }
 
         return future;
+    }
+
+    private boolean isHandshakeDone() {
+        return serverHandler != null;
     }
 
     private void pauseReceiver(boolean pause, Consumer<NetworkEndpoint<Object>> callback) {

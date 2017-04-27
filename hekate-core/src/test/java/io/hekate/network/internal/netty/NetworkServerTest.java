@@ -31,8 +31,11 @@ import io.hekate.network.internal.NetworkServerFailure;
 import io.hekate.network.internal.NetworkServerHandlerConfig;
 import io.hekate.network.internal.NetworkTestBase;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -458,7 +461,7 @@ public class NetworkServerTest extends NetworkTestBase {
     }
 
     @Test
-    public void testServerClientInExternalContext() throws Exception {
+    public void testServerClientInExternalThread() throws Exception {
         NetworkServer server = createServer();
 
         CompletableFuture<NetworkEndpoint<String>> latch = new CompletableFuture<>();
@@ -575,6 +578,29 @@ public class NetworkServerTest extends NetworkTestBase {
             assertSame(NetworkClient.State.DISCONNECTED, p1c2.getState());
             assertSame(NetworkClient.State.DISCONNECTED, p2c1.getState());
             assertSame(NetworkClient.State.DISCONNECTED, p2c2.getState());
+        });
+    }
+
+    @Test
+    public void testInvalidMagicBytes() throws Exception {
+        InetSocketAddress addr = newServerAddress();
+
+        NetworkServer server = createServer();
+
+        server.start(addr, new NetworkServerCallbackMock()).get();
+
+        repeat(3, i -> {
+            try (
+                Socket socket = new Socket(addr.getAddress(), addr.getPort());
+                OutputStream out = socket.getOutputStream();
+                InputStream in = socket.getInputStream()
+            ) {
+                // Invalid magic bytes.
+                out.write(new byte[]{1, 2, 3, 4, 5, 6, 7});
+                out.flush();
+
+                assertEquals(-1, in.read());
+            }
         });
     }
 

@@ -416,11 +416,12 @@ class NettyServer implements NetworkServer {
 
                     NetworkProtocolCodec codec = new NetworkProtocolCodec(codecs);
 
+                    pipeline.addLast(new MagicBytesDecoder());
                     pipeline.addLast(codec.getEncoder());
                     pipeline.addLast(codec.getDecoder());
 
-                    NettyServerClient client = new NettyServerClient(remoteAddress, localAddress, hbInterval, hbLossThreshold,
-                        hbDisabled, handlers);
+                    NettyServerClient client = new NettyServerClient(remoteAddress, localAddress, hbInterval, hbLossThreshold, hbDisabled,
+                        handlers);
 
                     pipeline.addLast(client);
 
