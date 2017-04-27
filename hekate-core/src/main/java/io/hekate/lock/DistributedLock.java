@@ -30,7 +30,7 @@ import java.util.concurrent.locks.Lock;
  * <p>
  * Distributed locks provide support for controlling access to a shared resource or a critical section at the cluster-wide level. At any
  * point in time only one thread on any cluster node can gain a lock with the same name. All other threads either running on the same node
- * or on remote nodes will be awaiting for the lock to be released before getting a chance to obtain the lock.
+ * or on remote nodes will await for the lock to be released before getting a chance to obtain the lock.
  * </p>
  *
  * <p>

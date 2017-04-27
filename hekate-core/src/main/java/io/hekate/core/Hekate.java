@@ -44,6 +44,13 @@ import java.util.Set;
 /**
  * <span class="startHere">&laquo; start here</span>Main entry point to Hekate services.
  *
+ * <h2>Overview</h2>
+ * <p>
+ * Hekate is a Java library for cluster communications and computing. It provides a number of services for building a cluster of
+ * interrelated processes, messaging and execution of distributed tasks. This interface is the main entry point for accessing these
+ * <a href="#services">services</a>.
+ * </p>
+ *
  * <h2>Instantiation</h2>
  * <p>
  * Instances of this interface can be constructed by calling the {@link HekateBootstrap#join()} method (or its {@link
