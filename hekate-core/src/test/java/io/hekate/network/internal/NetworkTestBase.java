@@ -92,18 +92,20 @@ public abstract class NetworkTestBase extends HekateTestBase {
     public void tearDown() throws Exception {
         portsSeq.set(0);
 
-        for (NetworkClient<?> client : clients) {
-            client.disconnect().get();
+        try {
+            for (NetworkClient<?> client : clients) {
+                client.disconnect().get();
+            }
+
+            for (NetworkServer server : servers) {
+                server.stop().get();
+            }
+
+            servers.clear();
+        } finally {
+            get(acceptorThreads.shutdownGracefully(0, MAX_VALUE, MILLISECONDS));
+            get(nioThreads.shutdownGracefully(0, MAX_VALUE, MILLISECONDS));
         }
-
-        for (NetworkServer server : servers) {
-            server.stop().get();
-        }
-
-        servers.clear();
-
-        get(acceptorThreads.shutdownGracefully(0, MAX_VALUE, MILLISECONDS));
-        get(nioThreads.shutdownGracefully(0, MAX_VALUE, MILLISECONDS));
     }
 
     @SuppressWarnings("unchecked")

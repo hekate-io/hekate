@@ -128,6 +128,7 @@ public class HekateNodeTestBase extends HekateTestBase {
             net.setHeartbeatInterval(100);
             net.setHeartbeatLossThreshold(3);
             net.setAcceptRetryInterval(0);
+            net.setNioThreads(3);
         });
 
         bootstrap.withService(TaskServiceFactory.class, tasks ->
