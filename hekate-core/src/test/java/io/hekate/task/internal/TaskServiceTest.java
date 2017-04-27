@@ -22,6 +22,7 @@ import io.hekate.core.service.Service;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.task.TaskService;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import static java.util.Collections.singleton;
@@ -234,5 +235,19 @@ public class TaskServiceTest extends TaskServiceTestBase {
         assertSame(p3, tasks.forRemotes().withFailover(p3).forRemotes().getFailover());
         assertNull(tasks.getFailover());
         assertNull(tasks.forRemotes().getFailover());
+    }
+
+    @Test
+    public void testGetTimeout() throws Exception {
+        assertEquals(0, tasks.getTimeout());
+
+        assertEquals(1000, tasks.withTimeout(1, TimeUnit.SECONDS).getTimeout());
+        assertEquals(0, tasks.getTimeout());
+
+        assertEquals(2000, tasks.forRemotes().withTimeout(2, TimeUnit.SECONDS).getTimeout());
+        assertEquals(0, tasks.getTimeout());
+
+        assertEquals(3000, tasks.forRemotes().withTimeout(3, TimeUnit.SECONDS).forRemotes().getTimeout());
+        assertEquals(0, tasks.getTimeout());
     }
 }

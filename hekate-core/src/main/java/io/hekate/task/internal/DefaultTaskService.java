@@ -58,6 +58,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -276,6 +277,16 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
     @Override
     public FailoverPolicy getFailover() {
         return getRootExecutor().getFailover();
+    }
+
+    @Override
+    public TaskService withTimeout(long timeout, TimeUnit unit) {
+        return getRootExecutor().withTimeout(timeout, unit);
+    }
+
+    @Override
+    public long getTimeout() {
+        return getRootExecutor().getTimeout();
     }
 
     @Override

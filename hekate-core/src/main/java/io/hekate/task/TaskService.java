@@ -30,6 +30,7 @@ import io.hekate.inject.InjectionService;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <span class="startHere">&laquo; start here</span>Distributed task execution service.
@@ -349,4 +350,32 @@ public interface TaskService extends Service, ClusterFilterSupport<TaskService> 
      * @return Failover policy or {@code null}, if no policy is specified..
      */
     FailoverPolicy getFailover();
+
+    /**
+     * Returns a new lightweight wrapper that will use the specified timeout value and will inherit all cluster filtering options from
+     * this instance.
+     *
+     * <p>
+     * If the message exchange operation can not be completed at the specified timeout then such operation will end up an error.
+     * </p>
+     *
+     * <p>
+     * Specifying a negative or zero value disables the timeout check.
+     * </p>
+     *
+     * @param timeout Timeout.
+     * @param unit Unit.
+     *
+     * @return Wrapper of this instance that will use the specified failover policy.
+     */
+    TaskService withTimeout(long timeout, TimeUnit unit);
+
+    /**
+     * Returns the timeout value in milliseconds.
+     *
+     * @return Timeout in milliseconds or 0, if timeout was not specified.
+     *
+     * @see #withTimeout(long, TimeUnit)
+     */
+    long getTimeout();
 }

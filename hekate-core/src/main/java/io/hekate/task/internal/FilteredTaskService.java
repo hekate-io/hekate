@@ -46,6 +46,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 class FilteredTaskService implements TaskService {
     private static class SingleTaskFuture<T> extends TaskFuture<T> implements ResponseCallback<TaskProtocol> {
@@ -198,6 +199,16 @@ class FilteredTaskService implements TaskService {
     @Override
     public FailoverPolicy getFailover() {
         return channel.getFailover();
+    }
+
+    @Override
+    public TaskService withTimeout(long timeout, TimeUnit unit) {
+        return new FilteredTaskService(this, channel.withTimeout(timeout, unit));
+    }
+
+    @Override
+    public long getTimeout() {
+        return channel.getTimeout();
     }
 
     @Override
