@@ -24,6 +24,8 @@ class MagicBytesDecoder extends ByteToMessageDecoder {
                     log.warn("Rejecting connection from an unknown software [address={}]", address);
                 }
 
+                in.skipBytes(in.readableBytes());
+
                 ctx.close();
             }
         }
