@@ -153,6 +153,8 @@ public abstract class NetworkTestBase extends HekateTestBase {
 
         NettyServerFactory factory = new NettyServerFactory();
 
+        factory.setHeartbeatInterval(200);
+        factory.setHeartbeatLossThreshold(3);
         factory.setAcceptorEventLoopGroup(acceptorThreads);
         factory.setWorkerEventLoopGroup(nioThreads);
         factory.addHandler(handler);

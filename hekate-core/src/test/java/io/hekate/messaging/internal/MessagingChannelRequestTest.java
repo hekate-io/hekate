@@ -238,25 +238,21 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
     @Test
     public void testNoFailuresWithSmallIdleTimeout() throws Exception {
-        repeat(3, j -> {
-            int idleTimeout = 1 + j;
+        TestChannel sender = createChannel(c -> c.setIdleTimeout(1)).join();
 
-            TestChannel sender = createChannel(c -> c.setIdleTimeout(idleTimeout)).join();
+        TestChannel receiver = createChannel(c -> {
+            c.setIdleTimeout(1);
+            c.setReceiver(msg -> msg.reply("ok"));
+        }).join();
 
-            TestChannel receiver = createChannel(c -> {
-                c.setIdleTimeout(idleTimeout);
-                c.setReceiver(msg -> msg.reply("ok"));
-            }).join();
+        awaitForChannelsTopology(sender, receiver);
 
-            awaitForChannelsTopology(sender, receiver);
+        runParallel(4, 500, s ->
+            sender.request(receiver.getNodeId(), "test").get()
+        );
 
-            runParallel(4, 2500, s ->
-                sender.request(receiver.getNodeId(), "test").get()
-            );
-
-            sender.leave();
-            receiver.leave();
-        });
+        sender.leave();
+        receiver.leave();
     }
 
     @Test

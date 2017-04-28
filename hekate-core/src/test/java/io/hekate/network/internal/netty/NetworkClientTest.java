@@ -340,7 +340,7 @@ public class NetworkClientTest extends NetworkTestBase {
             callback.assertDisconnects(0);
             callback.assertNoErrors();
 
-            sleep(hbInterval * hbLossThreshold * 5);
+            sleep(hbInterval * hbLossThreshold * 3);
 
             assertSame(NetworkClient.State.CONNECTED, client.getState());
             assertEquals(0, callback.getMessages().size());
@@ -378,7 +378,7 @@ public class NetworkClientTest extends NetworkTestBase {
             callback.assertDisconnects(0);
             callback.assertNoErrors();
 
-            repeat(hbLossThreshold + 5, h -> {
+            repeat(hbLossThreshold + 2, h -> {
                 assertSame(NetworkClient.State.CONNECTED, client.getState());
 
                 client.send("A");
@@ -542,9 +542,8 @@ public class NetworkClientTest extends NetworkTestBase {
 
             assertSame(NetworkClient.State.CONNECTED, client.getState());
 
-            sleep(hbInterval * hbLossThreshold * 3);
+            busyWait("disconnect", () -> client.getState() == NetworkClient.State.DISCONNECTED);
 
-            assertSame(NetworkClient.State.DISCONNECTED, client.getState());
             assertEquals(0, callback.getMessages().size());
 
             callback.assertConnects(1);
@@ -771,27 +770,21 @@ public class NetworkClientTest extends NetworkTestBase {
 
         server.start(newServerAddress()).get();
 
-        for (int i = 0; i < 10; i++) {
-            for (int j = 20; j >= 0; j--) {
-                NetworkClient<String> client = createClient();
+        for (int i = 20; i >= 0; i--) {
+            NetworkClient<String> client = createClient();
 
-                NetworkClientCallbackMock<String> callback = new NetworkClientCallbackMock<>();
+            NetworkClientCallbackMock<String> callback = new NetworkClientCallbackMock<>();
 
-                NetworkFuture<String> connect = client.connect(server.getAddress(), callback);
+            NetworkFuture<String> connect = client.connect(server.getAddress(), callback);
 
-                if (j > 0) {
-                    sleep(j);
-                }
+            NetworkFuture<String> disconnect = client.disconnect();
 
-                NetworkFuture<String> disconnect = client.disconnect();
+            get(disconnect);
+            get(connect);
 
-                disconnect.get();
-                connect.get();
+            assertSame(NetworkClient.State.DISCONNECTED, client.getState());
 
-                assertSame(NetworkClient.State.DISCONNECTED, client.getState());
-
-                callback.assertErrors(0);
-            }
+            callback.assertErrors(0);
         }
     }
 

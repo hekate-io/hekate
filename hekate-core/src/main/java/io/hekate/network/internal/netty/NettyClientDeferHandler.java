@@ -60,6 +60,8 @@ class NettyClientDeferHandler<T> extends ChannelDuplexHandler {
 
     private Queue<DeferredMessage> deferred = new ArrayDeque<>();
 
+    private boolean needToFlush;
+
     private Throwable deferredError;
 
     public NettyClientDeferHandler(String id, Logger log) {
@@ -77,6 +79,8 @@ class NettyClientDeferHandler<T> extends ChannelDuplexHandler {
                 log.debug("Writing message directly to the channel [address={}, message={}]", id, msg);
             }
 
+            needToFlush = true;
+
             super.write(ctx, msg, promise);
         } else {
             if (debug) {
@@ -89,7 +93,11 @@ class NettyClientDeferHandler<T> extends ChannelDuplexHandler {
 
     @Override
     public void flush(ChannelHandlerContext ctx) throws Exception {
-        // No-op.
+        if (needToFlush) {
+            needToFlush = false;
+
+            super.flush(ctx);
+        }
     }
 
     @Override

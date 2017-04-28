@@ -75,7 +75,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
                 sendCallback.awaitForSent(msg);
 
                 // Await for some time before checking that message wasn't received.
-                sleep(300);
+                sleep(50);
 
                 // Check that message was not received.
                 receiver.assertNotReceived(client, msg);
@@ -284,7 +284,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
                 sendCallback.awaitForSent(msg);
 
                 // Await for some time before checking that message wasn't received.
-                sleep(300);
+                sleep(50);
 
                 // Check that message was not received.
                 assertTrue(clientCallback.getMessages().isEmpty());
@@ -350,7 +350,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
 
             pause(remote);
 
-            sleep(hbInterval * hbLossThreshold * 3);
+            sleep(hbInterval * hbLossThreshold * 2);
 
             assertSame(NetworkClient.State.CONNECTED, client.getState());
             assertEquals(0, clientCallback.getMessages().size());
@@ -417,7 +417,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
 
             pause(client);
 
-            sleep(hbInterval * hbLossThreshold * 3);
+            sleep(hbInterval * hbLossThreshold * 2);
 
             assertSame(NetworkClient.State.CONNECTED, client.getState());
             assertEquals(0, clientCallback.getMessages().size());

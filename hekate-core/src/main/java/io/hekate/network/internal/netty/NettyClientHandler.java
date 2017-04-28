@@ -22,6 +22,7 @@ import io.hekate.network.internal.netty.NetworkProtocol.HandshakeAccept;
 import io.hekate.network.internal.netty.NetworkProtocol.HandshakeReject;
 import io.hekate.network.internal.netty.NetworkProtocol.HandshakeRequest;
 import io.hekate.network.internal.netty.NetworkProtocol.Heartbeat;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ConnectTimeoutException;
@@ -29,8 +30,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeUnit;
@@ -67,7 +66,7 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
 
     private final NetworkClientCallback<T> callback;
 
-    private final GenericFutureListener<Future<? super Void>> heartbeatFlushListener;
+    private final ChannelFutureListener heartbeatFlushListener;
 
     private boolean heartbeatFlushed = true;
 
@@ -93,7 +92,13 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
         this.debug = log.isDebugEnabled();
         this.trace = log.isTraceEnabled();
 
-        heartbeatFlushListener = future -> heartbeatFlushed = true;
+        heartbeatFlushListener = future -> {
+            heartbeatFlushed = true;
+
+            if (!future.isSuccess() && future.channel().isOpen()) {
+                future.channel().pipeline().fireExceptionCaught(future.cause());
+            }
+        };
     }
 
     @Override
