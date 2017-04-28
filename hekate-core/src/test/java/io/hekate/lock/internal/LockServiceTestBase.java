@@ -18,8 +18,8 @@ package io.hekate.lock.internal;
 
 import io.hekate.HekateNodeContextTestBase;
 import io.hekate.HekateTestContext;
-import io.hekate.cluster.ClusterNodeId;
-import io.hekate.cluster.ClusterTopologyHash;
+import io.hekate.cluster.ClusterHash;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.lock.LockRegionConfig;
 import io.hekate.lock.LockServiceFactory;
@@ -87,7 +87,7 @@ public abstract class LockServiceTestBase extends HekateNodeContextTestBase {
 
         busyWait("queued lock [lock=" + lock + ']', () -> {
             for (HekateTestNode node : nodes) {
-                List<ClusterNodeId> locks = node.get(DefaultLockService.class).region(REGION_1).getQueuedLocks(lock);
+                List<ClusterUuid> locks = node.get(DefaultLockService.class).region(REGION_1).getQueuedLocks(lock);
 
                 if (locks.contains(owner.getLocalNode().getId())) {
                     result.set(node);
@@ -127,7 +127,7 @@ public abstract class LockServiceTestBase extends HekateNodeContextTestBase {
     protected HekateTestNode getLockManagerNode(String lock, List<HekateTestNode> nodes) {
         assertTrue(nodes.size() > 1);
 
-        ClusterNodeId nodeId = nodes.get(0).get(DefaultLockService.class).region(REGION_1).getLockManagerNode(lock);
+        ClusterUuid nodeId = nodes.get(0).get(DefaultLockService.class).region(REGION_1).getLockManagerNode(lock);
 
         return nodes.stream()
             .filter(n -> n.getLocalNode().getId().equals(nodeId))
@@ -137,10 +137,10 @@ public abstract class LockServiceTestBase extends HekateNodeContextTestBase {
 
     protected void awaitForLockTopology(List<HekateTestNode> nodes) throws Exception {
         busyWait("consistent lock topology", () -> {
-            Set<ClusterTopologyHash> topologies = new HashSet<>();
+            Set<ClusterHash> topologies = new HashSet<>();
 
             nodes.forEach(n -> {
-                ClusterTopologyHash topology = n.get(DefaultLockService.class).region(REGION_1).getEffectiveTopology();
+                ClusterHash topology = n.get(DefaultLockService.class).region(REGION_1).getEffectiveTopology();
 
                 topologies.add(topology);
             });

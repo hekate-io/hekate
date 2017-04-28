@@ -16,9 +16,9 @@
 
 package io.hekate.core.service.internal;
 
-import io.hekate.cluster.ClusterNodeService;
 import io.hekate.core.HekateConfigurationException;
 import io.hekate.core.HekateException;
+import io.hekate.core.ServiceInfo;
 import io.hekate.core.service.DefaultServiceFactory;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.Service;
@@ -58,7 +58,7 @@ public class ServiceManager {
 
     private final List<Class<? extends Service>> coreServices;
 
-    private Map<String, ClusterNodeService> servicesInfo;
+    private Map<String, ServiceInfo> servicesInfo;
 
     private Set<Class<? extends Service>> serviceTypes;
 
@@ -266,7 +266,7 @@ public class ServiceManager {
         return service != NULL_SERVICE ? type.cast(service) : null;
     }
 
-    public Map<String, ClusterNodeService> getServicesInfo() {
+    public Map<String, ServiceInfo> getServicesInfo() {
         return servicesInfo;
     }
 

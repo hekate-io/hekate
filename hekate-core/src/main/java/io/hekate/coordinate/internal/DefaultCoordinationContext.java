@@ -17,8 +17,8 @@
 package io.hekate.coordinate.internal;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.coordinate.CoordinationBroadcastCallback;
 import io.hekate.coordinate.CoordinationContext;
 import io.hekate.coordinate.CoordinationHandler;
@@ -61,7 +61,7 @@ class DefaultCoordinationContext implements CoordinationContext {
     private final CoordinationMember localMember;
 
     @ToStringIgnore
-    private final Map<ClusterNodeId, DefaultCoordinationMember> membersById;
+    private final Map<ClusterUuid, DefaultCoordinationMember> membersById;
 
     @ToStringIgnore
     private final CompletableFuture<Void> future = new CompletableFuture<>();
@@ -163,7 +163,7 @@ class DefaultCoordinationContext implements CoordinationContext {
     }
 
     @Override
-    public CoordinationMember getMember(ClusterNodeId nodeId) {
+    public CoordinationMember getMember(ClusterUuid nodeId) {
         return membersById.get(nodeId);
     }
 

@@ -18,10 +18,10 @@ package io.hekate.coordinate.internal;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.internal.DefaultClusterHash;
 import io.hekate.cluster.internal.DefaultClusterTopology;
-import io.hekate.cluster.internal.DefaultClusterTopologyHash;
 import io.hekate.coordinate.CoordinationHandler;
 import io.hekate.coordinate.CoordinationMember;
 import io.hekate.coordinate.CoordinationRequest;
@@ -149,7 +149,7 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
 
     @Test
     public void testProcessMessage() throws Exception {
-        ClusterNodeId from = topology.getLast().getId();
+        ClusterUuid from = topology.getLast().getId();
 
         Request req = new Request("test", from, topology.getHash(), "message");
 
@@ -173,7 +173,7 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
 
     @Test
     public void testProcessMessageRejectNotPrepared() throws Exception {
-        ClusterNodeId from = topology.getLast().getId();
+        ClusterUuid from = topology.getLast().getId();
 
         Request req = new Request("test", from, topology.getHash(), "ignore");
 
@@ -188,9 +188,9 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
 
     @Test
     public void testProcessMessageRejectWrongTopology() throws Exception {
-        ClusterNodeId from = topology.getLast().getId();
+        ClusterUuid from = topology.getLast().getId();
 
-        DefaultClusterTopologyHash wrongTopology = new DefaultClusterTopologyHash(toSet(newNode()));
+        DefaultClusterHash wrongTopology = new DefaultClusterHash(toSet(newNode()));
 
         Request req = new Request("test", from, wrongTopology, "ignore");
 
@@ -209,7 +209,7 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
 
     @Test
     public void testProcessMessageRejectCanceled() throws Exception {
-        ClusterNodeId from = topology.getNodes().get(topology.getNodes().size() - 1).getId();
+        ClusterUuid from = topology.getNodes().get(topology.getNodes().size() - 1).getId();
 
         Request req = new Request("test", from, topology.getHash(), "ignore");
 

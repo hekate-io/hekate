@@ -18,9 +18,9 @@ package io.hekate.core.service;
 
 import io.hekate.HekateNodeTestBase;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeService;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
+import io.hekate.core.ServiceInfo;
 import io.hekate.core.internal.HekateTestNode;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -159,8 +159,8 @@ public class ServiceLifecycleTest extends HekateNodeTestBase {
             .map(Hekate::getLocalNode)
             .sorted(Comparator.comparingInt(ClusterNode::getJoinOrder))
             .forEach(node -> {
-                ClusterNodeService serviceA = node.getService(ServiceA.class);
-                ClusterNodeService serviceB = node.getService(ServiceB.class);
+                ServiceInfo serviceA = node.getService(ServiceA.class);
+                ServiceInfo serviceB = node.getService(ServiceB.class);
 
                 assertNotNull(serviceA);
                 assertNotNull(serviceB);

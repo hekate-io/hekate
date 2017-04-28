@@ -16,10 +16,10 @@
 
 package io.hekate.lock.internal;
 
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 
 interface LockIdentity {
-    ClusterNodeId getNode();
+    ClusterUuid getNode();
 
     long getLockId();
 

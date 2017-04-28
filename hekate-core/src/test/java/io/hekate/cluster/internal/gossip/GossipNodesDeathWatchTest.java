@@ -18,7 +18,7 @@ package io.hekate.cluster.internal.gossip;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,7 +26,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 
 public class GossipNodesDeathWatchTest extends HekateTestBase {
-    private ClusterNodeId id;
+    private ClusterUuid id;
 
     private GossipNodeState n1;
 
@@ -91,7 +91,7 @@ public class GossipNodesDeathWatchTest extends HekateTestBase {
 
         watch.update(gossip);
 
-        List<ClusterNodeId> terminated = watch.terminateNodes();
+        List<ClusterUuid> terminated = watch.terminateNodes();
 
         assertTrue(terminated.contains(n2.getId()));
         assertTrue(terminated.contains(n3.getId()));

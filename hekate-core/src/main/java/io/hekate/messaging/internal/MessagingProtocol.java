@@ -16,11 +16,11 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageQueueOverflowException;
+import io.hekate.messaging.MessagingChanneUuid;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.SendCallback;
@@ -211,20 +211,20 @@ abstract class MessagingProtocol {
     }
 
     static class Connect extends MessagingProtocol {
-        private final ClusterNodeId to;
+        private final ClusterUuid to;
 
-        private final MessagingChannelId channelId;
+        private final MessagingChanneUuid channelId;
 
-        public Connect(ClusterNodeId to, MessagingChannelId channelId) {
+        public Connect(ClusterUuid to, MessagingChanneUuid channelId) {
             this.to = to;
             this.channelId = channelId;
         }
 
-        public ClusterNodeId getTo() {
+        public ClusterUuid getTo() {
             return to;
         }
 
-        public MessagingChannelId getChannelId() {
+        public MessagingChanneUuid getChannelId() {
             return channelId;
         }
 

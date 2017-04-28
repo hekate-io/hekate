@@ -18,8 +18,8 @@ package io.hekate.cluster.internal;
 
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterServiceFactory;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.internal.gossip.GossipNodeStatus;
@@ -98,7 +98,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                     }
                 });
 
-                ClusterNodeId oldHangedId = hanged.getLocalNode().getId();
+                ClusterUuid oldHangedId = hanged.getLocalNode().getId();
 
                 hanged.getClusterGuard().lockWrite();
 
@@ -513,7 +513,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
         });
     }
 
-    private void awaitForNodeChange(ClusterNodeId id, HekateTestNode node) throws Exception {
+    private void awaitForNodeChange(ClusterUuid id, HekateTestNode node) throws Exception {
         busyWait("node change from " + id, () -> {
             assertTrue(node.getClusterGuard().tryLockRead(3, TimeUnit.SECONDS));
 

@@ -23,13 +23,13 @@ import io.hekate.util.UuidBase;
  *
  * @see ClusterNode#getId()
  */
-public class ClusterNodeId extends UuidBase<ClusterNodeId> implements HasClusterNodeId {
+public class ClusterUuid extends UuidBase<ClusterUuid> implements HasClusterUuid {
     private static final long serialVersionUID = 1;
 
     /**
      * Constructs new random identifier.
      */
-    public ClusterNodeId() {
+    public ClusterUuid() {
         // No-op.
     }
 
@@ -39,7 +39,7 @@ public class ClusterNodeId extends UuidBase<ClusterNodeId> implements HasCluster
      * @param hiBits Higher bits (see {@link #getHiBits()}).
      * @param loBits Lower bits (see {@link #getLoBits()}).
      */
-    public ClusterNodeId(long hiBits, long loBits) {
+    public ClusterUuid(long hiBits, long loBits) {
         super(hiBits, loBits);
     }
 
@@ -52,12 +52,12 @@ public class ClusterNodeId extends UuidBase<ClusterNodeId> implements HasCluster
      *
      * @param s String (see {@link #toString()}).
      */
-    public ClusterNodeId(String s) {
+    public ClusterUuid(String s) {
         super(s);
     }
 
     @Override
-    public ClusterNodeId asClusterNodeId() {
+    public ClusterUuid asClusterUuid() {
         return this;
     }
 }

@@ -23,13 +23,13 @@ import io.hekate.util.UuidBase;
  *
  * @see MessagingChannel#getId()
  */
-public class MessagingChannelId extends UuidBase<MessagingChannelId> {
+public class MessagingChanneUuid extends UuidBase<MessagingChanneUuid> {
     private static final long serialVersionUID = 1;
 
     /**
      * Constructs new random identifier.
      */
-    public MessagingChannelId() {
+    public MessagingChanneUuid() {
         // No-op.
     }
 
@@ -39,7 +39,7 @@ public class MessagingChannelId extends UuidBase<MessagingChannelId> {
      * @param hiBits Higher bits (see {@link #getHiBits()}).
      * @param loBits Lower bits (see {@link #getLoBits()}).
      */
-    public MessagingChannelId(long hiBits, long loBits) {
+    public MessagingChanneUuid(long hiBits, long loBits) {
         super(hiBits, loBits);
     }
 
@@ -52,7 +52,7 @@ public class MessagingChannelId extends UuidBase<MessagingChannelId> {
      *
      * @param s String (see {@link #toString()}).
      */
-    public MessagingChannelId(String s) {
+    public MessagingChanneUuid(String s) {
         super(s);
     }
 }

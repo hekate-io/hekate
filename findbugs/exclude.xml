@@ -29,6 +29,6 @@
     <!-- Excluded for performance reasons. -->
     <Match>
         <Bug pattern="EI_EXPOSE_REP2"/>
-        <Class name="io.hekate.cluster.internal.DefaultClusterTopologyHash"/>
+        <Class name="io.hekate.cluster.internal.DefaultClusterHash"/>
     </Match>
 </FindBugsFilter>

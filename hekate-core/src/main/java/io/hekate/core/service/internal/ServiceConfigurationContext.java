@@ -16,7 +16,6 @@
 
 package io.hekate.core.service.internal;
 
-import io.hekate.cluster.ClusterNodeService;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.Service;
@@ -119,8 +118,8 @@ class ServiceConfigurationContext implements ConfigurationContext {
         current = current.getParent();
     }
 
-    public Map<String, ClusterNodeService> getServicesInfo() {
-        Map<String, ClusterNodeService> info = new HashMap<>();
+    public Map<String, io.hekate.core.ServiceInfo> getServicesInfo() {
+        Map<String, io.hekate.core.ServiceInfo> info = new HashMap<>();
 
         props.forEach((type, props) -> {
             Map<String, Set<String>> propsCopy = new HashMap<>();
@@ -129,7 +128,7 @@ class ServiceConfigurationContext implements ConfigurationContext {
                 propsCopy.put(name, unmodifiableSet(new HashSet<>(val)))
             );
 
-            info.put(type, new DefaultClusterNodeService(type, unmodifiableMap(propsCopy)));
+            info.put(type, new DefaultServiceInfo(type, unmodifiableMap(propsCopy)));
         });
 
         return info;

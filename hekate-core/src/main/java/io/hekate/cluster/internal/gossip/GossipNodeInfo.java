@@ -16,12 +16,12 @@
 
 package io.hekate.cluster.internal.gossip;
 
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 
 public class GossipNodeInfo extends GossipNodeInfoBase {
     private static final long serialVersionUID = 1;
 
-    private final ClusterNodeId id;
+    private final ClusterUuid id;
 
     private final GossipNodeStatus status;
 
@@ -29,14 +29,14 @@ public class GossipNodeInfo extends GossipNodeInfoBase {
 
     private volatile String toStringCache;
 
-    public GossipNodeInfo(ClusterNodeId id, GossipNodeStatus status, long version) {
+    public GossipNodeInfo(ClusterUuid id, GossipNodeStatus status, long version) {
         this.id = id;
         this.status = status;
         this.version = version;
     }
 
     @Override
-    public ClusterNodeId getId() {
+    public ClusterUuid getId() {
         return id;
     }
 

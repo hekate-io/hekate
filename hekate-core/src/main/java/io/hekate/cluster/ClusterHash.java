@@ -14,23 +14,18 @@
  * under the License.
  */
 
-package io.hekate.messaging;
+package io.hekate.cluster;
 
-import io.hekate.util.UuidTestBase;
-
-public class MessagingChannelIdTest extends UuidTestBase<MessagingChannelId> {
-    @Override
-    protected MessagingChannelId newUuid() {
-        return new MessagingChannelId();
-    }
-
-    @Override
-    protected MessagingChannelId newUuid(long hi, long lo) {
-        return new MessagingChannelId(hi, lo);
-    }
-
-    @Override
-    protected MessagingChannelId newUuid(String s) {
-        return new MessagingChannelId(s);
-    }
+/**
+ * Cryptographic hash of the {@link ClusterTopology}.
+ *
+ * @see ClusterTopology#getHash()
+ */
+public interface ClusterHash {
+    /**
+     * Returns a copy of the bytes of this hash.
+     *
+     * @return Bytes copy.
+     */
+    byte[] getBytes();
 }

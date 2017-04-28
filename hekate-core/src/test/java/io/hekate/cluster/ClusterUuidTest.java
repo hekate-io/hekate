@@ -16,16 +16,21 @@
 
 package io.hekate.cluster;
 
-/**
- * Hash value of the cluster topology.
- *
- * @see ClusterTopology#getHash()
- */
-public interface ClusterTopologyHash {
-    /**
-     * Returns a copy of hash bytes.
-     *
-     * @return Hash bytes copy.
-     */
-    byte[] getBytes();
+import io.hekate.util.UuidTestBase;
+
+public class ClusterUuidTest extends UuidTestBase<ClusterUuid> {
+    @Override
+    protected ClusterUuid newUuid() {
+        return new ClusterUuid();
+    }
+
+    @Override
+    protected ClusterUuid newUuid(long hi, long lo) {
+        return new ClusterUuid(hi, lo);
+    }
+
+    @Override
+    protected ClusterUuid newUuid(String s) {
+        return new ClusterUuid(s);
+    }
 }

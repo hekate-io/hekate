@@ -16,7 +16,7 @@
 
 package io.hekate.cluster.internal.gossip;
 
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -27,27 +27,27 @@ import static io.hekate.cluster.internal.gossip.ComparisonResult.CONCURRENT;
 import static io.hekate.cluster.internal.gossip.ComparisonResult.SAME;
 
 public abstract class GossipBase {
-    public abstract Map<ClusterNodeId, ? extends GossipNodeInfoBase> getMembersInfo();
+    public abstract Map<ClusterUuid, ? extends GossipNodeInfoBase> getMembersInfo();
 
-    public abstract Set<ClusterNodeId> getSeen();
+    public abstract Set<ClusterUuid> getSeen();
 
     public abstract long getVersion();
 
-    public abstract Set<ClusterNodeId> getRemoved();
+    public abstract Set<ClusterUuid> getRemoved();
 
-    public boolean hasSeen(ClusterNodeId id) {
+    public boolean hasSeen(ClusterUuid id) {
         assert id != null : "Node id is null.";
 
         return getSeen().contains(id);
     }
 
-    public boolean hasSeen(Set<ClusterNodeId> ids) {
+    public boolean hasSeen(Set<ClusterUuid> ids) {
         assert ids != null : "Nodes set is null.";
 
         return getSeen().containsAll(ids);
     }
 
-    public boolean hasMember(ClusterNodeId id) {
+    public boolean hasMember(ClusterUuid id) {
         return getMembersInfo().containsKey(id);
     }
 
@@ -58,10 +58,10 @@ public abstract class GossipBase {
     }
 
     private static ComparisonResult compareVersions(GossipBase g1, GossipBase g2) {
-        Map<ClusterNodeId, ? extends GossipNodeInfoBase> members1 = g1.getMembersInfo();
-        Map<ClusterNodeId, ? extends GossipNodeInfoBase> members2 = g2.getMembersInfo();
+        Map<ClusterUuid, ? extends GossipNodeInfoBase> members1 = g1.getMembersInfo();
+        Map<ClusterUuid, ? extends GossipNodeInfoBase> members2 = g2.getMembersInfo();
 
-        Set<ClusterNodeId> allIds = new HashSet<>();
+        Set<ClusterUuid> allIds = new HashSet<>();
 
         allIds.addAll(members1.keySet());
         allIds.addAll(members2.keySet());
@@ -69,7 +69,7 @@ public abstract class GossipBase {
         long ver1 = g1.getVersion();
         long ver2 = g2.getVersion();
 
-        Set<ClusterNodeId> removed;
+        Set<ClusterUuid> removed;
 
         ComparisonResult result;
 
@@ -87,7 +87,7 @@ public abstract class GossipBase {
             removed = g2.getRemoved();
         }
 
-        for (ClusterNodeId id : allIds) {
+        for (ClusterUuid id : allIds) {
             GossipNodeInfoBase n1 = members1.get(id);
             GossipNodeInfoBase n2 = members2.get(id);
 

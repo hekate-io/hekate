@@ -18,7 +18,7 @@ package io.hekate.cluster.internal.gossip;
 
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.health.FailureDetector;
 import io.hekate.cluster.internal.DefaultClusterNode;
 import io.hekate.cluster.internal.gossip.GossipProtocol.JoinAccept;
@@ -61,7 +61,7 @@ public class GossipManager {
 
     private final ClusterAddress address;
 
-    private final ClusterNodeId id;
+    private final ClusterUuid id;
 
     private final FailureDetector healthManager;
 
@@ -458,7 +458,7 @@ public class GossipManager {
                     replyWithDigest = true;
                 }
 
-                Set<ClusterNodeId> remoteSeen = remote.getSeen();
+                Set<ClusterUuid> remoteSeen = remote.getSeen();
 
                 if (!localGossip.hasSeen(remoteSeen)) {
                     updateLocalGossip(localGossip.seen(remoteSeen));
@@ -600,12 +600,12 @@ public class GossipManager {
 
             GossipNodeState localNodeState = localGossip.getMember(id);
 
-            Set<ClusterNodeId> oldSuspects = localNodeState.getSuspected();
+            Set<ClusterUuid> oldSuspects = localNodeState.getSuspected();
 
-            Set<ClusterNodeId> newSuspects = new HashSet<>();
+            Set<ClusterUuid> newSuspects = new HashSet<>();
 
             localGossip.stream().forEach(m -> {
-                ClusterNodeId nodeId = m.getId();
+                ClusterUuid nodeId = m.getId();
 
                 if (!id.equals(nodeId)) {
                     boolean isAlive = healthManager.isAlive(m.getNodeAddress());
@@ -641,7 +641,7 @@ public class GossipManager {
                     log.trace("Checking for terminated nodes.");
                 }
 
-                List<ClusterNodeId> terminated = deathWatch.terminateNodes();
+                List<ClusterUuid> terminated = deathWatch.terminateNodes();
 
                 // Set state of terminated nodes to DOWN.
                 if (!terminated.isEmpty()) {
@@ -720,7 +720,7 @@ public class GossipManager {
         return node.getAddress();
     }
 
-    public ClusterNodeId getId() {
+    public ClusterUuid getId() {
         return id;
     }
 
@@ -788,7 +788,7 @@ public class GossipManager {
         if (!nodes.isEmpty()) {
             GossipNodeState fromNode = localGossip.getMember(node.getId());
 
-            Set<ClusterNodeId> seen = localGossip.getSeen();
+            Set<ClusterUuid> seen = localGossip.getSeen();
 
             Collection<GossipNodeState> selected = policy.selectNodes(size, fromNode, nodes, seen);
 
@@ -825,7 +825,7 @@ public class GossipManager {
                 }
 
                 List<GossipNodeState> modified = new ArrayList<>();
-                Set<ClusterNodeId> removed = new HashSet<>();
+                Set<ClusterUuid> removed = new HashSet<>();
 
                 AtomicInteger maxOrder = new AtomicInteger(localGossip.getMaxJoinOrder());
 

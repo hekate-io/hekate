@@ -16,7 +16,7 @@
 
 package io.hekate.metrics.cluster.internal;
 
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.util.format.ToString;
 import java.util.List;
 
@@ -32,7 +32,7 @@ abstract class MetricsProtocol {
 
         private final List<MetricsUpdate> updates;
 
-        public UpdateRequest(ClusterNodeId from, long targetVer, List<MetricsUpdate> updates) {
+        public UpdateRequest(ClusterUuid from, long targetVer, List<MetricsUpdate> updates) {
             super(from);
 
             this.targetVer = targetVer;
@@ -61,7 +61,7 @@ abstract class MetricsProtocol {
     static class UpdateResponse extends MetricsProtocol {
         private final List<MetricsUpdate> metrics;
 
-        public UpdateResponse(ClusterNodeId from, List<MetricsUpdate> metrics) {
+        public UpdateResponse(ClusterUuid from, List<MetricsUpdate> metrics) {
             super(from);
             this.metrics = metrics;
         }
@@ -81,15 +81,15 @@ abstract class MetricsProtocol {
         }
     }
 
-    private final ClusterNodeId from;
+    private final ClusterUuid from;
 
-    public MetricsProtocol(ClusterNodeId from) {
+    public MetricsProtocol(ClusterUuid from) {
         this.from = from;
     }
 
     public abstract Type getType();
 
-    public ClusterNodeId getFrom() {
+    public ClusterUuid getFrom() {
         return from;
     }
 }

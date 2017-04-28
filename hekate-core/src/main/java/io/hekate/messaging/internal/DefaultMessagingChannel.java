@@ -22,8 +22,8 @@ import io.hekate.cluster.ClusterView;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverPolicyBuilder;
+import io.hekate.messaging.MessagingChanneUuid;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.AggregateFuture;
 import io.hekate.messaging.broadcast.BroadcastCallback;
@@ -136,7 +136,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
-    public MessagingChannelId getId() {
+    public MessagingChanneUuid getId() {
         return gateway.getId();
     }
 

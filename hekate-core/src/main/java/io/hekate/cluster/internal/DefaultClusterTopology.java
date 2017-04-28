@@ -17,12 +17,12 @@
 package io.hekate.cluster.internal;
 
 import io.hekate.cluster.ClusterFilter;
+import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterTopologyHash;
-import io.hekate.cluster.HasClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.HasClusterUuid;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -54,11 +54,11 @@ import static java.util.Collections.unmodifiableSet;
 public final class DefaultClusterTopology implements ClusterTopology, Serializable {
     private static final Comparator<ClusterNode> JOIN_ORDER_COMPARATOR = Comparator.comparingInt(ClusterNode::getJoinOrder);
 
-    private static final Comparator<HasClusterNodeId> HAS_NODE_ID_COMPARATOR = Comparator.comparing(HasClusterNodeId::asClusterNodeId);
+    private static final Comparator<HasClusterUuid> HAS_NODE_ID_COMPARATOR = Comparator.comparing(HasClusterUuid::asClusterUuid);
 
     private static final long serialVersionUID = 1;
 
-    private static final ClusterTopologyHash EMPTY_HASH = new DefaultClusterTopologyHash(emptySet());
+    private static final ClusterHash EMPTY_HASH = new DefaultClusterHash(emptySet());
 
     private static final ClusterNode NOT_A_NODE = (ClusterNode)Proxy.newProxyInstance(ClusterNode.class.getClassLoader(),
         new Class[]{ClusterNode.class}, (proxy, method, args) -> {
@@ -88,7 +88,7 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
     private transient NavigableSet<ClusterNode> joinOrderCache;
 
     @ToStringIgnore
-    private transient ClusterTopologyHash hashCache;
+    private transient ClusterHash hashCache;
 
     private DefaultClusterTopology(long version, Set<ClusterNode> nodes) {
         this(version, new ArrayList<>(nodes), false);
@@ -142,14 +142,14 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
     }
 
     @Override
-    public ClusterTopologyHash getHash() {
-        ClusterTopologyHash hash = this.hashCache;
+    public ClusterHash getHash() {
+        ClusterHash hash = this.hashCache;
 
         if (hash == null) {
             if (nodes.isEmpty()) {
                 hash = EMPTY_HASH;
             } else {
-                hash = new DefaultClusterTopologyHash(nodes);
+                hash = new DefaultClusterHash(nodes);
             }
 
             this.hashCache = hash;
@@ -303,12 +303,12 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
     }
 
     @Override
-    public boolean contains(ClusterNodeId id) {
+    public boolean contains(ClusterUuid id) {
         return Collections.binarySearch(nodes, id, HAS_NODE_ID_COMPARATOR) >= 0;
     }
 
     @Override
-    public ClusterNode get(ClusterNodeId id) {
+    public ClusterNode get(ClusterUuid id) {
         int idx = Collections.binarySearch(nodes, id, HAS_NODE_ID_COMPARATOR);
 
         if (idx < 0) {

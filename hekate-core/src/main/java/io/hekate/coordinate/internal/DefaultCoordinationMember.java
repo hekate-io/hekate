@@ -16,10 +16,10 @@
 
 package io.hekate.coordinate.internal;
 
+import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterTopologyHash;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.coordinate.CoordinationMember;
 import io.hekate.coordinate.CoordinationRequestCallback;
 import io.hekate.core.internal.util.ArgAssert;
@@ -126,10 +126,10 @@ class DefaultCoordinationMember implements CoordinationMember {
         }
 
         if (enqueued) {
-            ClusterNodeId from = node.getId();
-            ClusterTopologyHash topologyHash = topology.getHash();
+            ClusterUuid from = node.getId();
+            ClusterHash clusterHash = topology.getHash();
 
-            CoordinationProtocol.Request req = new CoordinationProtocol.Request(processName, from, topologyHash, request);
+            CoordinationProtocol.Request req = new CoordinationProtocol.Request(processName, from, clusterHash, request);
 
             channel.request(req, new ResponseCallback<CoordinationProtocol>() {
                 @Override

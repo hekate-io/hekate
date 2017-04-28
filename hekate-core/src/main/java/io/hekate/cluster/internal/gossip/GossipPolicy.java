@@ -16,7 +16,7 @@
 
 package io.hekate.cluster.internal.gossip;
 
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -32,7 +32,7 @@ public interface GossipPolicy {
     GossipPolicy RANDOM_PREFER_UNSEEN = new GossipPolicy() {
         @Override
         public Collection<GossipNodeState> selectNodes(int size, GossipNodeState fromNode, List<GossipNodeState> nodes,
-            Set<ClusterNodeId> seen) {
+            Set<ClusterUuid> seen) {
             assert size > 0 : "Size must be above zero [size=" + size + ']';
             assert fromNode != null : "From node is null.";
             assert seen != null : "Seen list is null.";
@@ -86,7 +86,7 @@ public interface GossipPolicy {
     GossipPolicy RANDOM_UNSEEN_NON_DOWN = new GossipPolicy() {
         @Override
         public Collection<GossipNodeState> selectNodes(int size, GossipNodeState fromNode, List<GossipNodeState> nodes,
-            Set<ClusterNodeId> seen) {
+            Set<ClusterUuid> seen) {
             assert size > 0 : "Size must be above zero [size=" + size + ']';
             assert fromNode != null : "From node is null.";
             assert seen != null : "Seen list is null.";
@@ -119,7 +119,7 @@ public interface GossipPolicy {
     GossipPolicy RANDOM_UNSEEN = new GossipPolicy() {
         @Override
         public Collection<GossipNodeState> selectNodes(int size, GossipNodeState fromNode, List<GossipNodeState> nodes,
-            Set<ClusterNodeId> seen) {
+            Set<ClusterUuid> seen) {
             assert size > 0 : "Size must be above zero [size=" + size + ']';
             assert fromNode != null : "From node is null.";
             assert seen != null : "Seen list is null.";
@@ -152,7 +152,7 @@ public interface GossipPolicy {
     GossipPolicy ON_DOWN = new GossipPolicy() {
         @Override
         public Collection<GossipNodeState> selectNodes(int size, GossipNodeState fromNode, List<GossipNodeState> nodes,
-            Set<ClusterNodeId> seen) {
+            Set<ClusterUuid> seen) {
             assert size > 0 : "Size must be above zero [size=" + size + ']';
             assert fromNode != null : "From node is null.";
             assert seen != null : "Seen list is null.";
@@ -193,5 +193,5 @@ public interface GossipPolicy {
         }
     };
 
-    Collection<GossipNodeState> selectNodes(int size, GossipNodeState fromNode, List<GossipNodeState> allNodes, Set<ClusterNodeId> seen);
+    Collection<GossipNodeState> selectNodes(int size, GossipNodeState fromNode, List<GossipNodeState> allNodes, Set<ClusterUuid> seen);
 }

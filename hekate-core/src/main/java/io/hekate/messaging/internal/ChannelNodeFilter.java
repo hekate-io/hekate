@@ -18,7 +18,7 @@ package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
-import io.hekate.cluster.ClusterNodeService;
+import io.hekate.core.ServiceInfo;
 import io.hekate.messaging.MessagingService;
 import java.util.Set;
 
@@ -38,7 +38,7 @@ class ChannelNodeFilter implements ClusterNodeFilter {
 
     @Override
     public boolean accept(ClusterNode node) {
-        ClusterNodeService service = node.getService(MessagingService.class);
+        ServiceInfo service = node.getService(MessagingService.class);
 
         if (service != null) {
             Set<String> channels = service.getProperty(CHANNELS_PROPERTY);

@@ -17,13 +17,13 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.HekateTestBase;
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.core.HekateFutureException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.MessageReceiver;
+import io.hekate.messaging.MessagingChanneUuid;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.unicast.LoadBalancer;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
@@ -47,7 +47,7 @@ public class TestChannel {
 
     private volatile DefaultMessagingChannel<String> channel;
 
-    private volatile ClusterNodeId nodeId;
+    private volatile ClusterUuid nodeId;
 
     private volatile Throwable receiverError;
 
@@ -87,7 +87,7 @@ public class TestChannel {
         return channel.withLoadBalancer(balancer);
     }
 
-    public ClusterNodeId getNodeId() {
+    public ClusterUuid getNodeId() {
         return nodeId;
     }
 
@@ -115,7 +115,7 @@ public class TestChannel {
         return this;
     }
 
-    public MessagingChannelId getId() {
+    public MessagingChanneUuid getId() {
         return channel.getId();
     }
 
@@ -127,23 +127,23 @@ public class TestChannel {
         return channel.getWorkerThreads();
     }
 
-    public SendFuture send(ClusterNodeId nodeId, String msg) {
+    public SendFuture send(ClusterUuid nodeId, String msg) {
         return channel.forNode(nodeId).send(msg);
     }
 
-    public void send(ClusterNodeId nodeId, String msg, SendCallback callback) {
+    public void send(ClusterUuid nodeId, String msg, SendCallback callback) {
         channel.forNode(nodeId).send(msg, callback);
     }
 
-    public ResponseFuture<String> request(ClusterNodeId nodeId, String msg) {
+    public ResponseFuture<String> request(ClusterUuid nodeId, String msg) {
         return channel.forNode(nodeId).request(msg);
     }
 
-    public void request(ClusterNodeId nodeId, String msg, ResponseCallback<String> callback) {
+    public void request(ClusterUuid nodeId, String msg, ResponseCallback<String> callback) {
         channel.forNode(nodeId).request(msg, callback);
     }
 
-    public Response<String> requestWithSyncCallback(ClusterNodeId nodeId, String msg) throws Exception {
+    public Response<String> requestWithSyncCallback(ClusterUuid nodeId, String msg) throws Exception {
         ResponseCallbackMock callback = new ResponseCallbackMock(msg);
 
         channel.forNode(nodeId).request(msg, callback);
@@ -157,7 +157,7 @@ public class TestChannel {
         }
     }
 
-    public void sendWithSyncCallback(ClusterNodeId nodeId, String msg) throws Exception {
+    public void sendWithSyncCallback(ClusterUuid nodeId, String msg) throws Exception {
         SendCallbackMock callback = new SendCallbackMock();
 
         send(nodeId, msg, callback);

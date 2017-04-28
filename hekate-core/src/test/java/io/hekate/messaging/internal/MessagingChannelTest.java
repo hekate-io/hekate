@@ -16,10 +16,10 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.failover.FailoverPolicy;
+import io.hekate.messaging.MessagingChanneUuid;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.internal.MessagingProtocol.Connect;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
@@ -78,13 +78,13 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
             NetworkClient<MessagingProtocol> fakeClient = fakeConnector.newClient();
 
             // Try connect to a node by using an invalid node ID.
-            ClusterNodeId invalidNodeId = newNodeId();
+            ClusterUuid invalidNodeId = newNodeId();
 
             InetSocketAddress socketAddress = channel.getNode().getSocketAddress();
 
             NetworkClientCallbackMock<MessagingProtocol> callback = new NetworkClientCallbackMock<>();
 
-            MessagingChannelId sourceId = new MessagingChannelId();
+            MessagingChanneUuid sourceId = new MessagingChanneUuid();
 
             fakeClient.connect(socketAddress, new Connect(invalidNodeId, sourceId), callback);
 

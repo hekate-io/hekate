@@ -17,11 +17,11 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterFilter;
+import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterTopologyHash;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.unicast.LoadBalancerContext;
 import io.hekate.util.format.ToString;
@@ -83,7 +83,7 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
     }
 
     @Override
-    public ClusterTopologyHash getHash() {
+    public ClusterHash getHash() {
         return topology.getHash();
     }
 
@@ -133,12 +133,12 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
     }
 
     @Override
-    public boolean contains(ClusterNodeId node) {
+    public boolean contains(ClusterUuid node) {
         return topology.contains(node);
     }
 
     @Override
-    public ClusterNode get(ClusterNodeId id) {
+    public ClusterNode get(ClusterUuid id) {
         return topology.get(id);
     }
 

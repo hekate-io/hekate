@@ -23,13 +23,8 @@ import java.net.InetSocketAddress;
  * Address of a {@link ClusterNode}.
  *
  * <p>
- * This address includes both {@link ClusterNodeId} of the node and its {@link InetSocketAddress} that can be used to establish TCP network
- * connections.
- * </p>
- *
- * <p>
- * <b>Note:</b> all {@link #equals(Object) equality} and {@link #compareTo(ClusterAddress) comparison} operations are based on {@link
- * ClusterNodeId} value.
+ * This address includes both the {@link #getId() node ID} and the {@link #getSocket() socket address} that can be used to establish network
+ * connections with this node.
  * </p>
  *
  * @see ClusterNode#getAddress()
@@ -39,7 +34,7 @@ public class ClusterAddress implements Comparable<ClusterAddress>, Serializable 
 
     private final InetSocketAddress socket;
 
-    private final ClusterNodeId id;
+    private final ClusterUuid id;
 
     /**
      * Constructs new instance with the specified network address and node identifier.
@@ -47,7 +42,7 @@ public class ClusterAddress implements Comparable<ClusterAddress>, Serializable 
      * @param socket Network address of {@link ClusterNode}.
      * @param id Unique identifier of {@link ClusterNode}.
      */
-    public ClusterAddress(InetSocketAddress socket, ClusterNodeId id) {
+    public ClusterAddress(InetSocketAddress socket, ClusterUuid id) {
         assert socket != null : "Address is null.";
         assert id != null : "ID is null.";
 
@@ -60,7 +55,7 @@ public class ClusterAddress implements Comparable<ClusterAddress>, Serializable 
      *
      * @return Unique identifier of {@link ClusterNode}.
      */
-    public ClusterNodeId getId() {
+    public ClusterUuid getId() {
         return id;
     }
 
@@ -82,11 +77,13 @@ public class ClusterAddress implements Comparable<ClusterAddress>, Serializable 
     }
 
     /**
-     * Returns {@code true} if the specified object is of {@link ClusterAddress} type and has the same {@link #getId() node identifier}.
+     * Returns {@code true} if the specified object is of {@link ClusterAddress} type and has the same {@link #getId() identifier} as this
+     * object.
      *
      * @param o Object.
      *
-     * @return {@code true} if the specified object is of {@link ClusterAddress} type and has the same {@link #getId() node identifier}.
+     * @return {@code true} if the specified object is of {@link ClusterAddress} type and has the same {@link #getId() identifier} as this
+     * object.
      */
     @Override
     public boolean equals(Object o) {
@@ -104,7 +101,7 @@ public class ClusterAddress implements Comparable<ClusterAddress>, Serializable 
     }
 
     /**
-     * Returns the hash code of {@link #getId() node identifier}.
+     * Returns the hash code of the {@link #getId() node identifier}.
      */
     @Override
     public int hashCode() {

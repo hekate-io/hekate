@@ -18,8 +18,8 @@ package io.hekate.task.internal;
 
 import io.hekate.cluster.ClusterFilter;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverPolicyBuilder;
@@ -294,11 +294,11 @@ class FilteredTaskService implements TaskService {
 
         int taskCapacity = argsSize / nodesSize + 1;
 
-        Map<ClusterNodeId, ApplyTask> msgByNode = new HashMap<>(Math.min(nodesSize, argsSize), 1.0f);
+        Map<ClusterUuid, ApplyTask> msgByNode = new HashMap<>(Math.min(nodesSize, argsSize), 1.0f);
 
         for (Iterator<T> argIt = args.iterator(); argIt.hasNext(); ) {
             for (Iterator<ClusterNode> topologyIt = nodes.iterator(); topologyIt.hasNext() && argIt.hasNext(); ) {
-                ClusterNodeId nodeId = topologyIt.next().getId();
+                ClusterUuid nodeId = topologyIt.next().getId();
                 T arg = argIt.next();
 
                 ArgAssert.check(arg != null, "Arguments collection contains null value.");

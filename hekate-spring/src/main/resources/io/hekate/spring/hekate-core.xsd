@@ -208,7 +208,7 @@
         <xsd:attribute name="id" type="xsd:string" use="optional">
             <xsd:annotation>
                 <xsd:documentation>
-                    The unique identifier for the service bean.
+                    The unique identifier of a service bean.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>

@@ -17,10 +17,10 @@
 package io.hekate.cluster.internal;
 
 import io.hekate.cluster.ClusterAddress;
+import io.hekate.cluster.ClusterJvmInfo;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
-import io.hekate.cluster.ClusterNodeService;
-import io.hekate.core.SystemInfo;
+import io.hekate.cluster.ClusterUuid;
+import io.hekate.core.ServiceInfo;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.core.service.Service;
 import io.hekate.util.format.ToString;
@@ -41,12 +41,12 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
         }
     }
 
-    private static class SystemInfoFormatter implements ToStringFormat.Formatter {
+    private static class HostInfoFormatter implements ToStringFormat.Formatter {
         @Override
         public String format(Object val) {
-            SystemInfo info = (SystemInfo)val;
+            ClusterJvmInfo info = (ClusterJvmInfo)val;
 
-            return SystemInfo.class.getSimpleName()
+            return ClusterJvmInfo.class.getSimpleName()
                 + "[cpus=" + info.getCpus()
                 + ", mem=" + Utils.byteSizeFormat(info.getMaxMemory())
                 + ", os=" + info.getOsName()
@@ -69,10 +69,10 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     private final Map<String, String> properties;
 
     @ToStringIgnore
-    private final Map<String, ClusterNodeService> services;
+    private final Map<String, ServiceInfo> services;
 
-    @ToStringFormat(SystemInfoFormatter.class)
-    private final SystemInfo sysInfo;
+    @ToStringFormat(HostInfoFormatter.class)
+    private final ClusterJvmInfo jvmInfo;
 
     @ToStringIgnore
     private final boolean local;
@@ -81,12 +81,12 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     private volatile int joinOrder;
 
     public DefaultClusterNode(ClusterAddress address, String name, boolean localNode, int joinOrder, Set<String> roles,
-        Map<String, String> properties, Map<String, ClusterNodeService> services, SystemInfo sysInfo) {
+        Map<String, String> properties, Map<String, ServiceInfo> services, ClusterJvmInfo jvmInfo) {
         assert address != null : "Address is null.";
         assert roles != null : "Node roles are null.";
         assert properties != null : "Node properties are null.";
         assert services != null : "Node services are null.";
-        assert sysInfo != null : "Node system info is null.";
+        assert jvmInfo != null : "JVM info is null.";
 
         this.address = address;
         this.name = name != null ? name : "";
@@ -95,7 +95,7 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
         this.roles = roles;
         this.properties = properties;
         this.services = services;
-        this.sysInfo = sysInfo;
+        this.jvmInfo = jvmInfo;
     }
 
     public DefaultClusterNode(ClusterNode src) {
@@ -105,11 +105,11 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
         this.properties = src.getProperties();
         this.roles = src.getRoles();
         this.services = src.getServices();
-        this.sysInfo = src.getSysInfo();
+        this.jvmInfo = src.getJvmInfo();
     }
 
     @Override
-    public ClusterNodeId getId() {
+    public ClusterUuid getId() {
         return address.getId();
     }
 
@@ -168,17 +168,17 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     }
 
     @Override
-    public ClusterNodeService getService(String type) {
+    public ServiceInfo getService(String type) {
         return services.get(type);
     }
 
     @Override
-    public ClusterNodeService getService(Class<? extends Service> type) {
+    public ServiceInfo getService(Class<? extends Service> type) {
         return getService(type.getCanonicalName());
     }
 
     @Override
-    public Map<String, ClusterNodeService> getServices() {
+    public Map<String, ServiceInfo> getServices() {
         return services;
     }
 
@@ -193,8 +193,8 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     }
 
     @Override
-    public SystemInfo getSysInfo() {
-        return sysInfo;
+    public ClusterJvmInfo getJvmInfo() {
+        return jvmInfo;
     }
 
     @Override
@@ -207,7 +207,7 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     }
 
     @Override
-    public ClusterNodeId asClusterNodeId() {
+    public ClusterUuid asClusterUuid() {
         return getId();
     }
 

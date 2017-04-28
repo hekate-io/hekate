@@ -16,7 +16,7 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.failover.FailoverContext;
 import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.failover.FailureInfo;
@@ -145,7 +145,7 @@ public class FailoverRequestTest extends FailoverTestBase {
     public void testNoFailoverOfRoutingErrors() throws Exception {
         AtomicInteger failoverCalls = new AtomicInteger();
 
-        ClusterNodeId unknown = newNodeId();
+        ClusterUuid unknown = newNodeId();
 
         try {
             sender.get().forNode(unknown)

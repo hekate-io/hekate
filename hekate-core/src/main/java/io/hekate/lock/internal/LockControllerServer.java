@@ -16,7 +16,7 @@
 
 package io.hekate.lock.internal;
 
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.lock.internal.LockProtocol.LockOwnerResponse;
 import io.hekate.lock.internal.LockProtocol.LockRequest;
 import io.hekate.lock.internal.LockProtocol.LockResponse;
@@ -41,20 +41,20 @@ import static java.util.stream.Collectors.toList;
 
 class LockControllerServer {
     private static class LockHolder implements LockIdentity {
-        private final ClusterNodeId node;
+        private final ClusterUuid node;
 
         private final long lockId;
 
         private final long threadId;
 
-        public LockHolder(ClusterNodeId node, long lockId, long threadId) {
+        public LockHolder(ClusterUuid node, long lockId, long threadId) {
             this.node = node;
             this.lockId = lockId;
             this.threadId = threadId;
         }
 
         @Override
-        public ClusterNodeId getNode() {
+        public ClusterUuid getNode() {
             return node;
         }
 
@@ -379,7 +379,7 @@ class LockControllerServer {
         }
     }
 
-    public void update(Set<ClusterNodeId> liveNodes) {
+    public void update(Set<ClusterUuid> liveNodes) {
         sync.lock();
 
         try {
@@ -428,7 +428,7 @@ class LockControllerServer {
     }
 
     // Package level for testing purposes.
-    List<ClusterNodeId> getQueuedLocks() {
+    List<ClusterUuid> getQueuedLocks() {
         sync.lock();
 
         try {

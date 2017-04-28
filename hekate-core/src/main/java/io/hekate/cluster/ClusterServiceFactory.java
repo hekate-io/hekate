@@ -368,8 +368,8 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
     }
 
     /**
-     * Returns the maximum amount of nodes in the cluster when gossip protocol can be speeded up by sending messages at a higher rate so
-     * that cluster could converge faster (see {@link #setSpeedUpGossipSize(int)}).
+     * Returns the maximum amount of nodes in the cluster for the gossip protocol to speeded up by sending messages at a higher rate so
+     * that the cluster could converge faster (see {@link #setSpeedUpGossipSize(int)}).
      *
      * @return The maximum amount of nodes in the cluster when gossip protocol can be speeded up.
      */
@@ -378,8 +378,8 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
     }
 
     /**
-     * Sets the maximum amount of nodes in the cluster when gossip protocol can be speeded up by sending messages at a higher rate so that
-     * cluster could converge faster.
+     * Sets the maximum amount of nodes in the cluster for the gossip protocol to speeded up by sending messages at a higher rate so that
+     * the cluster could converge faster.
      *
      * <p>
      * If this parameter is set to a positive value and the current cluster size is less than the specified value then local node will send

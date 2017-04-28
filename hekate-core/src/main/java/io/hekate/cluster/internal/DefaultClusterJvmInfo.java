@@ -14,17 +14,17 @@
  * under the License.
  */
 
-package io.hekate.core.internal;
+package io.hekate.cluster.internal;
 
-import io.hekate.core.SystemInfo;
+import io.hekate.cluster.ClusterJvmInfo;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.util.format.ToString;
 import java.io.Serializable;
 
-public class DefaultSystemInfo implements Serializable, SystemInfo {
+public class DefaultClusterJvmInfo implements Serializable, ClusterJvmInfo {
     private static final long serialVersionUID = 1L;
 
-    private static final DefaultSystemInfo LOCAL_INFO;
+    private static final DefaultClusterJvmInfo LOCAL_INFO;
 
     static {
         int cpus = Runtime.getRuntime().availableProcessors();
@@ -37,7 +37,7 @@ public class DefaultSystemInfo implements Serializable, SystemInfo {
         String osArch = getProperty("os.arch");
         String pid = Utils.getPid();
 
-        LOCAL_INFO = new DefaultSystemInfo(
+        LOCAL_INFO = new DefaultClusterJvmInfo(
             cpus,
             maxMemory,
             osName,
@@ -69,7 +69,7 @@ public class DefaultSystemInfo implements Serializable, SystemInfo {
 
     private final String jvmVendor;
 
-    public DefaultSystemInfo(int cpus, long maxMemory, String osName, String osArch, String osVersion, String jvmVersion,
+    public DefaultClusterJvmInfo(int cpus, long maxMemory, String osName, String osArch, String osVersion, String jvmVersion,
         String jvmName, String jvmVendor, String pid) {
         this.cpus = cpus;
         this.maxMemory = maxMemory;
@@ -82,7 +82,7 @@ public class DefaultSystemInfo implements Serializable, SystemInfo {
         this.pid = pid;
     }
 
-    public static DefaultSystemInfo getLocalInfo() {
+    public static DefaultClusterJvmInfo getLocalInfo() {
         return LOCAL_INFO;
     }
 
@@ -143,6 +143,6 @@ public class DefaultSystemInfo implements Serializable, SystemInfo {
 
     @Override
     public String toString() {
-        return ToString.format(SystemInfo.class, this);
+        return ToString.format(ClusterJvmInfo.class, this);
     }
 }

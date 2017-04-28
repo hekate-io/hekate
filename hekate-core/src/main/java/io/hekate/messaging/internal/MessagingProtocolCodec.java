@@ -16,12 +16,12 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.codec.Codec;
 import io.hekate.codec.CodecUtils;
 import io.hekate.codec.DataReader;
 import io.hekate.codec.DataWriter;
-import io.hekate.messaging.MessagingChannelId;
+import io.hekate.messaging.MessagingChanneUuid;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
 import io.hekate.messaging.internal.MessagingProtocol.AffinitySubscribe;
@@ -82,9 +82,9 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
         switch (msgType) {
             case CONNECT: {
-                ClusterNodeId to = CodecUtils.readNodeId(in);
+                ClusterUuid to = CodecUtils.readNodeId(in);
 
-                MessagingChannelId sourceId = decodeSourceId(in);
+                MessagingChanneUuid sourceId = decodeSourceId(in);
 
                 return new Connect(to, sourceId);
             }
@@ -244,15 +244,15 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
         }
     }
 
-    private void encodeSourceId(MessagingChannelId sourceId, DataWriter out) throws IOException {
+    private void encodeSourceId(MessagingChanneUuid sourceId, DataWriter out) throws IOException {
         out.writeLong(sourceId.getHiBits());
         out.writeLong(sourceId.getLoBits());
     }
 
-    private MessagingChannelId decodeSourceId(DataReader in) throws IOException {
+    private MessagingChanneUuid decodeSourceId(DataReader in) throws IOException {
         long sourceHiBits = in.readLong();
         long sourceLoBits = in.readLong();
 
-        return new MessagingChannelId(sourceHiBits, sourceLoBits);
+        return new MessagingChanneUuid(sourceHiBits, sourceLoBits);
     }
 }

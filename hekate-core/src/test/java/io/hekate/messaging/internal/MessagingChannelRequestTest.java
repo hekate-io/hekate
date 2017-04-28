@@ -16,7 +16,7 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.messaging.Message;
@@ -750,7 +750,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        ClusterNodeId invalidNodeId = newNodeId();
+        ClusterUuid invalidNodeId = newNodeId();
 
         repeat(3, i -> {
             ResponseFuture<String> future = sender.withLoadBalancer((msg, topology) -> invalidNodeId).request("failed" + i);

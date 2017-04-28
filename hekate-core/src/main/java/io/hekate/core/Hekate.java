@@ -409,13 +409,6 @@ public interface Hekate {
     <A> A getAttribute(String name);
 
     /**
-     * Returns the system information.
-     *
-     * @return System information.
-     */
-    SystemInfo getSysInfo();
-
-    /**
      * Asynchronously initializes this instance and joins the cluster.
      *
      * <p>

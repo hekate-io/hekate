@@ -17,7 +17,7 @@
 package io.hekate.cluster.internal.gossip;
 
 import io.hekate.HekateTestBase;
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -143,8 +143,8 @@ public class GossipNodeStateTest extends HekateTestBase {
     public void testUpdateSuspected() throws Exception {
         GossipNodeState s = new GossipNodeState(newNode(), GossipNodeStatus.JOINING);
 
-        ClusterNodeId id1 = newNodeId();
-        ClusterNodeId id2 = newNodeId();
+        ClusterUuid id1 = newNodeId();
+        ClusterUuid id2 = newNodeId();
 
         s = s.suspected(id1);
 
@@ -189,8 +189,8 @@ public class GossipNodeStateTest extends HekateTestBase {
     public void testRemoveUnknownSuspected() throws Exception {
         GossipNodeState s1 = new GossipNodeState(newNode(), GossipNodeStatus.JOINING);
 
-        ClusterNodeId id1 = newNodeId();
-        ClusterNodeId id2 = newNodeId();
+        ClusterUuid id1 = newNodeId();
+        ClusterUuid id2 = newNodeId();
 
         s1 = s1.suspected(id1);
 

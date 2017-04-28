@@ -158,7 +158,7 @@ public final class ClusterFilters {
      *
      * @return Filter.
      */
-    public static ClusterFilter forNode(ClusterNodeId nodeId) {
+    public static ClusterFilter forNode(ClusterUuid nodeId) {
         ArgAssert.notNull(nodeId, "Node");
 
         return nodes -> {

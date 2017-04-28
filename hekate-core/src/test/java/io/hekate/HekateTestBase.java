@@ -18,8 +18,7 @@ package io.hekate;
 
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
-import io.hekate.cluster.ClusterNodeService;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.internal.DefaultClusterNode;
 import io.hekate.cluster.internal.DefaultClusterNodeBuilder;
 import io.hekate.codec.Codec;
@@ -28,6 +27,7 @@ import io.hekate.codec.DataReader;
 import io.hekate.codec.DataWriter;
 import io.hekate.codec.SingletonCodecFactory;
 import io.hekate.core.HekateException;
+import io.hekate.core.ServiceInfo;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Utils;
 import java.io.File;
@@ -334,12 +334,12 @@ public abstract class HekateTestBase {
         assertAllThreadsStopped();
     }
 
-    protected static ClusterNodeId newNodeId() {
-        return new ClusterNodeId();
+    protected static ClusterUuid newNodeId() {
+        return new ClusterUuid();
     }
 
-    protected static ClusterNodeId newNodeId(int order) {
-        return new ClusterNodeId(0, order);
+    protected static ClusterUuid newNodeId(int order) {
+        return new ClusterUuid(0, order);
     }
 
     protected static void say(Object msg) {
@@ -492,7 +492,7 @@ public abstract class HekateTestBase {
         return newNode(null, false, null, newAddress(order));
     }
 
-    protected ClusterNode newNode(ClusterNodeId nodeId) throws Exception {
+    protected ClusterNode newNode(ClusterUuid nodeId) throws Exception {
         return newNode(nodeId, false, null, null);
     }
 
@@ -508,12 +508,12 @@ public abstract class HekateTestBase {
         return newNode(null, local, transform, addr);
     }
 
-    protected ClusterNode newNode(ClusterNodeId nodeId, boolean local, Consumer<DefaultClusterNodeBuilder> transform, ClusterAddress addr)
+    protected ClusterNode newNode(ClusterUuid nodeId, boolean local, Consumer<DefaultClusterNodeBuilder> transform, ClusterAddress addr)
         throws Exception {
         return newNode(nodeId, local, transform, addr, DefaultClusterNode.NON_JOINED_ORDER);
     }
 
-    protected ClusterNode newNode(ClusterNodeId nodeId, boolean local, Consumer<DefaultClusterNodeBuilder> transform, ClusterAddress addr,
+    protected ClusterNode newNode(ClusterUuid nodeId, boolean local, Consumer<DefaultClusterNodeBuilder> transform, ClusterAddress addr,
         int joinOrder) throws Exception {
         if (nodeId == null) {
             nodeId = newNodeId();
@@ -546,7 +546,7 @@ public abstract class HekateTestBase {
             props.put("test-prop-2", "test-val-2");
             props.put("test-prop-3", "test-val-3");
 
-            Map<String, ClusterNodeService> services = Collections.emptyMap();
+            Map<String, ServiceInfo> services = Collections.emptyMap();
 
             return builder.withRoles(roles).withProperties(props).withServices(services).createNode();
         } else {
@@ -560,7 +560,7 @@ public abstract class HekateTestBase {
         return newNode(true, null, null);
     }
 
-    protected ClusterNode newLocalNode(ClusterNodeId nodeId) throws Exception {
+    protected ClusterNode newLocalNode(ClusterUuid nodeId) throws Exception {
         return newNode(nodeId, true, null, null);
     }
 

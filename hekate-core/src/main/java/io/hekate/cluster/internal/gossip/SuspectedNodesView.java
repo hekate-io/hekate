@@ -16,7 +16,7 @@
 
 package io.hekate.cluster.internal.gossip;
 
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.util.format.ToString;
 import java.util.Collections;
 import java.util.Map;
@@ -25,15 +25,15 @@ import java.util.Set;
 public class SuspectedNodesView {
     public static final SuspectedNodesView EMPTY = new SuspectedNodesView(Collections.emptyMap());
 
-    private final Map<ClusterNodeId, Set<ClusterNodeId>> suspected;
+    private final Map<ClusterUuid, Set<ClusterUuid>> suspected;
 
-    public SuspectedNodesView(Map<ClusterNodeId, Set<ClusterNodeId>> suspected) {
+    public SuspectedNodesView(Map<ClusterUuid, Set<ClusterUuid>> suspected) {
         assert suspected != null : "Suspect map is null.";
 
         this.suspected = suspected;
     }
 
-    public Set<ClusterNodeId> getSuspecting(ClusterNodeId id) {
+    public Set<ClusterUuid> getSuspecting(ClusterUuid id) {
         return suspected.get(id);
     }
 
@@ -41,7 +41,7 @@ public class SuspectedNodesView {
         return suspected.isEmpty();
     }
 
-    public Set<ClusterNodeId> getSuspected() {
+    public Set<ClusterUuid> getSuspected() {
         return suspected.keySet();
     }
 

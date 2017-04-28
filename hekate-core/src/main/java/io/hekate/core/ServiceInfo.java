@@ -14,18 +14,18 @@
  * under the License.
  */
 
-package io.hekate.cluster;
+package io.hekate.core;
 
-import io.hekate.core.Hekate;
+import io.hekate.cluster.ClusterNode;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * Provides information about a {@link Hekate#get(Class) service} that is running on a particular cluster node.
+ * Provides information about a {@link Hekate#get(Class) service} that is running on the cluster node.
  *
  * @see ClusterNode#getServices()
  */
-public interface ClusterNodeService {
+public interface ServiceInfo {
     /**
      * Returns the service class name.
      *
@@ -41,7 +41,7 @@ public interface ClusterNodeService {
     Map<String, Set<String>> getProperties();
 
     /**
-     * Returns the immutable set of property values.
+     * Returns an immutable set of property values.
      *
      * @param name Property name.
      *

@@ -110,13 +110,13 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
     }
 
     /**
-     * Applies {@link ClusterFilters#forNode(ClusterNodeId)} to this instance.
+     * Applies {@link ClusterFilters#forNode(ClusterUuid)} to this instance.
      *
      * @param id Node.
      *
      * @return Filtered instance.
      */
-    default T forNode(ClusterNodeId id) {
+    default T forNode(ClusterUuid id) {
         return filterAll(ClusterFilters.forNode(id));
     }
 

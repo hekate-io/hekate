@@ -16,10 +16,10 @@
 
 package io.hekate.lock.internal;
 
+import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterTopologyHash;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockOwnerInfo;
 import io.hekate.lock.internal.LockProtocol.LockRequest;
@@ -68,7 +68,7 @@ class LockControllerClient {
 
     private final long threadId;
 
-    private final ClusterNodeId node;
+    private final ClusterUuid node;
 
     private final long lockTimeout;
 
@@ -96,11 +96,11 @@ class LockControllerClient {
     private LockOwnerInfo lockOwner;
 
     @ToStringIgnore
-    private ClusterNodeId managedBy;
+    private ClusterUuid managedBy;
 
     private Status status = Status.UNLOCKED;
 
-    public LockControllerClient(long lockId, ClusterNodeId node, long threadId, DistributedLock lock,
+    public LockControllerClient(long lockId, ClusterUuid node, long threadId, DistributedLock lock,
         MessagingChannel<LockProtocol> channel, long lockTimeout, AsyncLockCallbackAdaptor callback, UnlockCallback unlockCallback) {
         assert node != null : "Cluster node is null.";
         assert lock != null : "Lock is null.";
@@ -135,7 +135,7 @@ class LockControllerClient {
         return threadId;
     }
 
-    public ClusterNodeId getManagedBy() {
+    public ClusterUuid getManagedBy() {
         lock.lock();
 
         try {
@@ -153,11 +153,11 @@ class LockControllerClient {
         return unlockFuture;
     }
 
-    public ClusterNodeId getNode() {
+    public ClusterUuid getNode() {
         return node;
     }
 
-    public void update(ClusterNodeId managedBy, ClusterTopology topology) {
+    public void update(ClusterUuid managedBy, ClusterTopology topology) {
         lock.lock();
 
         try {
@@ -278,7 +278,7 @@ class LockControllerClient {
         }
     }
 
-    private boolean becomeLocked(ClusterTopologyHash requestTopology) {
+    private boolean becomeLocked(ClusterHash requestTopology) {
         boolean complete = false;
 
         lock.lock();
@@ -335,7 +335,7 @@ class LockControllerClient {
         return true;
     }
 
-    private boolean notifyOnLockBusy(ClusterNodeId ownerId, long ownerThreadId, ClusterTopologyHash requestTopology) {
+    private boolean notifyOnLockBusy(ClusterUuid ownerId, long ownerThreadId, ClusterHash requestTopology) {
         if (callback != null) {
             lock.lock();
 
@@ -371,7 +371,7 @@ class LockControllerClient {
         becomeUnlocked(null);
     }
 
-    private boolean becomeUnlocked(ClusterTopologyHash requestTopology) {
+    private boolean becomeUnlocked(ClusterHash requestTopology) {
         Boolean complete = null;
 
         lock.lock();

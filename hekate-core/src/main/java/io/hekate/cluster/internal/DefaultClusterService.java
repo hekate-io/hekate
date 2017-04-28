@@ -21,10 +21,10 @@ import io.hekate.cluster.ClusterFilter;
 import io.hekate.cluster.ClusterJoinRejectedException;
 import io.hekate.cluster.ClusterJoinValidator;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.ClusterView;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventListener;
@@ -183,7 +183,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     private final List<ClusterJoinValidator> joinValidators;
 
     @ToStringIgnore
-    private final Set<ClusterNodeId> asyncJoinValidations = Collections.synchronizedSet(new HashSet<>());
+    private final Set<ClusterUuid> asyncJoinValidations = Collections.synchronizedSet(new HashSet<>());
 
     @ToStringIgnore
     private final GossipListener gossipSpy;
@@ -192,7 +192,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     private final StateGuard guard;
 
     @ToStringIgnore
-    private final AtomicReference<ClusterNodeId> localNodeIdRef = new AtomicReference<>();
+    private final AtomicReference<ClusterUuid> localNodeIdRef = new AtomicReference<>();
 
     @ToStringIgnore
     private final List<ClusterEventListener> initListeners;
@@ -1287,7 +1287,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     private void validateAndProcessAsync(JoinRequest request) {
         assert request != null : "Request is null";
 
-        ClusterNodeId joiningNodeId = request.getFrom().getId();
+        ClusterUuid joiningNodeId = request.getFrom().getId();
 
         // Check that request validation is not running yet for the joining node.
         if (!asyncJoinValidations.contains(joiningNodeId)) {

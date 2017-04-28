@@ -17,8 +17,8 @@
 package io.hekate.coordinate;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.cluster.ClusterUuid;
 import java.util.List;
 
 /**
@@ -91,7 +91,7 @@ public interface CoordinationContext {
      *
      * @return Member or {@code null} if there is no such member.
      */
-    CoordinationMember getMember(ClusterNodeId nodeId);
+    CoordinationMember getMember(ClusterUuid nodeId);
 
     /**
      * Returns the size of {@link #getMembers()}.

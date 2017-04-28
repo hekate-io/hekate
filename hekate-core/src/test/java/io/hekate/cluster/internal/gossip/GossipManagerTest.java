@@ -19,7 +19,7 @@ package io.hekate.cluster.internal.gossip;
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.health.FailureDetector;
 import io.hekate.cluster.health.FailureDetectorMock;
 import io.hekate.cluster.internal.DefaultClusterNodeBuilder;
@@ -944,7 +944,7 @@ public class GossipManagerTest extends HekateTestBase {
     private void gossipTillSameVersion(List<GossipManager> nodes) {
         assertTrue(nodes.size() > 1);
 
-        Map<ClusterNodeId, GossipManager> nodesById = nodes.stream().collect(Collectors.toMap(GossipManager::getId, m -> m));
+        Map<ClusterUuid, GossipManager> nodesById = nodes.stream().collect(Collectors.toMap(GossipManager::getId, m -> m));
 
         int i = 0;
 
@@ -1022,7 +1022,7 @@ public class GossipManagerTest extends HekateTestBase {
     private GossipManager createManager(int port, String cluster) throws Exception {
         InetSocketAddress socketAddress = newSocketAddress(port);
 
-        ClusterAddress address = new ClusterAddress(socketAddress, new ClusterNodeId(0, port));
+        ClusterAddress address = new ClusterAddress(socketAddress, new ClusterUuid(0, port));
 
         ClusterNode node = new DefaultClusterNodeBuilder()
             .withAddress(address)

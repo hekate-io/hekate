@@ -17,7 +17,7 @@
 package io.hekate.messaging.unicast;
 
 import io.hekate.cluster.ClusterNodeFilter;
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.core.HekateException;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
@@ -69,5 +69,5 @@ public interface LoadBalancer<T> {
      *
      * @throws HekateException if failed to perform message routing.
      */
-    ClusterNodeId route(T message, LoadBalancerContext ctx) throws HekateException;
+    ClusterUuid route(T message, LoadBalancerContext ctx) throws HekateException;
 }

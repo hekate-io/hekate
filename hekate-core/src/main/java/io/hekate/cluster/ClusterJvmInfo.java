@@ -14,21 +14,18 @@
  * under the License.
  */
 
-package io.hekate.core;
-
-import io.hekate.cluster.ClusterNode;
+package io.hekate.cluster;
 
 /**
- * System information.
+ * Information about the JVM process of the {@link ClusterNode}.
  *
- * @see Hekate#getSysInfo()
- * @see ClusterNode#getSysInfo()
+ * @see ClusterNode#getJvmInfo()
  */
-public interface SystemInfo {
+public interface ClusterJvmInfo {
     /**
-     * Returns the number of processors available to the Java virtual machine.
+     * Returns the number of CPUs that are available to the Java virtual machine.
      *
-     * @return Number of processors available to the Java virtual machine.
+     * @return Number of CPUs that are available to the Java virtual machine.
      *
      * @see Runtime#availableProcessors()
      */
@@ -44,7 +41,7 @@ public interface SystemInfo {
     long getMaxMemory();
 
     /**
-     * Returns the operating system name ('os.name' {@link System#getProperty(String) system property}).
+     * Returns the name of an operating system ('os.name' {@link System#getProperty(String) system property}).
      *
      * @return Operating system name or an empty string if such information is not available.
      */

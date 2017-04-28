@@ -16,7 +16,7 @@
 
 package io.hekate.metrics.cluster.internal;
 
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.codec.Codec;
 import io.hekate.codec.CodecUtils;
 import io.hekate.codec.DataReader;
@@ -81,7 +81,7 @@ class MetricsProtocolCodec implements Codec<MetricsProtocol> {
     public MetricsProtocol decode(DataReader in) throws IOException {
         MetricsProtocol.Type type = TYPES_CACHE[in.readByte()];
 
-        ClusterNodeId from = CodecUtils.readNodeId(in);
+        ClusterUuid from = CodecUtils.readNodeId(in);
 
         switch (type) {
             case UPDATE_REQUEST: {
@@ -112,7 +112,7 @@ class MetricsProtocolCodec implements Codec<MetricsProtocol> {
 
             for (int i = 0; i < updatesSize; i++) {
                 // Node.
-                ClusterNodeId node = CodecUtils.readNodeId(in);
+                ClusterUuid node = CodecUtils.readNodeId(in);
 
                 // Metrics version.
                 long ver = in.readLong();

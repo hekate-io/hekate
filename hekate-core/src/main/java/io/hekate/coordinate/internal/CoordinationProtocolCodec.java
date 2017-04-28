@@ -16,8 +16,8 @@
 
 package io.hekate.coordinate.internal;
 
-import io.hekate.cluster.ClusterNodeId;
-import io.hekate.cluster.ClusterTopologyHash;
+import io.hekate.cluster.ClusterHash;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.codec.Codec;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecUtils;
@@ -94,8 +94,8 @@ class CoordinationProtocolCodec implements Codec<CoordinationProtocol> {
             case REQUEST: {
                 String process = in.readUTF();
 
-                ClusterNodeId from = CodecUtils.readNodeId(in);
-                ClusterTopologyHash hash = CodecUtils.readTopologyHash(in);
+                ClusterUuid from = CodecUtils.readNodeId(in);
+                ClusterHash hash = CodecUtils.readTopologyHash(in);
 
                 Object request = getCodec(process).decode(in);
 

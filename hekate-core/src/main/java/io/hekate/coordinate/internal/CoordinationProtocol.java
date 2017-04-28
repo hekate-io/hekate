@@ -16,8 +16,8 @@
 
 package io.hekate.coordinate.internal;
 
-import io.hekate.cluster.ClusterNodeId;
-import io.hekate.cluster.ClusterTopologyHash;
+import io.hekate.cluster.ClusterHash;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.util.format.ToString;
 
 abstract class CoordinationProtocol {
@@ -32,13 +32,13 @@ abstract class CoordinationProtocol {
     static class Request extends CoordinationProtocol {
         private final String processName;
 
-        private final ClusterNodeId from;
+        private final ClusterUuid from;
 
-        private final ClusterTopologyHash topology;
+        private final ClusterHash topology;
 
         private final Object request;
 
-        public Request(String processName, ClusterNodeId from, ClusterTopologyHash topology, Object request) {
+        public Request(String processName, ClusterUuid from, ClusterHash topology, Object request) {
             this.processName = processName;
             this.from = from;
             this.topology = topology;
@@ -49,11 +49,11 @@ abstract class CoordinationProtocol {
             return processName;
         }
 
-        public ClusterNodeId getFrom() {
+        public ClusterUuid getFrom() {
             return from;
         }
 
-        public ClusterTopologyHash getTopology() {
+        public ClusterHash getTopology() {
             return topology;
         }
 

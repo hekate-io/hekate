@@ -147,7 +147,7 @@ public class TaskServiceJavadocTest extends HekateNodeTestBase {
         );
 
         // Custom filter: submit task to all nodes that have more than 2 CPUs.
-        hekate.tasks().filter(node -> node.getSysInfo().getCpus() > 2).broadcast(() ->
+        hekate.tasks().filter(node -> node.getJvmInfo().getCpus() > 2).broadcast(() ->
             System.out.println("Running on node " + hekate.getLocalNode())
         );
         // End:filter_nodes

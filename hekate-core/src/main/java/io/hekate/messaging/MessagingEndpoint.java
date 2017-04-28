@@ -33,7 +33,7 @@ public interface MessagingEndpoint<T> {
      *
      * @return Universally unique identifier of a remote channel.
      */
-    MessagingChannelId getRemoteId();
+    MessagingChanneUuid getRemoteId();
 
     /**
      * Returns the custom context object that was set via {@link #setContext(Object)}.

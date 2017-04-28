@@ -16,7 +16,7 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.core.HekateFutureException;
 import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.messaging.broadcast.AggregateResult;
@@ -89,7 +89,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
 
         failures.set(channels.size() * 3);
 
-        Map<ClusterNodeId, List<Long>> times = new HashMap<>();
+        Map<ClusterUuid, List<Long>> times = new HashMap<>();
 
         channels.forEach(c -> times.put(c.getNodeId(), Collections.synchronizedList(new ArrayList<>())));
 

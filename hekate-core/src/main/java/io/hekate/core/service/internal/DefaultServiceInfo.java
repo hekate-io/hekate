@@ -16,13 +16,13 @@
 
 package io.hekate.core.service.internal;
 
-import io.hekate.cluster.ClusterNodeService;
+import io.hekate.core.ServiceInfo;
 import io.hekate.util.format.ToStringIgnore;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 
-public class DefaultClusterNodeService implements ClusterNodeService, Serializable {
+public class DefaultServiceInfo implements ServiceInfo, Serializable {
     private static final long serialVersionUID = 1;
 
     @ToStringIgnore
@@ -30,7 +30,7 @@ public class DefaultClusterNodeService implements ClusterNodeService, Serializab
 
     private final Map<String, Set<String>> props;
 
-    public DefaultClusterNodeService(String type, Map<String, Set<String>> props) {
+    public DefaultServiceInfo(String type, Map<String, Set<String>> props) {
         assert type != null : "Service type is null.";
         assert props != null : "Service properties are null.";
 

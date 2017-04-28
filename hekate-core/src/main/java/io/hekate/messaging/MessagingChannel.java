@@ -59,7 +59,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return Universally unique identifier of this channel.
      */
-    MessagingChannelId getId();
+    MessagingChanneUuid getId();
 
     /**
      * Returns the channel name.

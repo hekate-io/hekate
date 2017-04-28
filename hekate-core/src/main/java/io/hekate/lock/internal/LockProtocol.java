@@ -16,8 +16,8 @@
 
 package io.hekate.lock.internal;
 
-import io.hekate.cluster.ClusterNodeId;
-import io.hekate.cluster.ClusterTopologyHash;
+import io.hekate.cluster.ClusterHash;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.List;
@@ -49,7 +49,7 @@ abstract class LockProtocol {
             this(region, lockName, null);
         }
 
-        public LockOwnerRequest(String region, String lockName, ClusterTopologyHash topology) {
+        public LockOwnerRequest(String region, String lockName, ClusterHash topology) {
             super(region, lockName);
 
             setTopology(topology);
@@ -70,11 +70,11 @@ abstract class LockProtocol {
 
         private final long threadId;
 
-        private final ClusterNodeId owner;
+        private final ClusterUuid owner;
 
         private final LockOwnerResponse.Status status;
 
-        public LockOwnerResponse(long threadId, ClusterNodeId owner,
+        public LockOwnerResponse(long threadId, ClusterUuid owner,
             LockOwnerResponse.Status status) {
             this.threadId = threadId;
             this.owner = owner;
@@ -85,7 +85,7 @@ abstract class LockProtocol {
             return threadId;
         }
 
-        public ClusterNodeId getOwner() {
+        public ClusterUuid getOwner() {
             return owner;
         }
 
@@ -104,7 +104,7 @@ abstract class LockProtocol {
 
         private final String lockName;
 
-        private ClusterTopologyHash topology;
+        private ClusterHash topology;
 
         public LockRequestBase(String region, String lockName) {
             this.region = region;
@@ -119,11 +119,11 @@ abstract class LockProtocol {
             return lockName;
         }
 
-        public ClusterTopologyHash getTopology() {
+        public ClusterHash getTopology() {
             return topology;
         }
 
-        public void setTopology(ClusterTopologyHash topology) {
+        public void setTopology(ClusterHash topology) {
             this.topology = topology;
         }
     }
@@ -131,7 +131,7 @@ abstract class LockProtocol {
     static class LockRequest extends LockRequestBase implements LockIdentity {
         private final long lockId;
 
-        private final ClusterNodeId node;
+        private final ClusterUuid node;
 
         private final long timeout;
 
@@ -139,12 +139,12 @@ abstract class LockProtocol {
 
         private final long threadId;
 
-        public LockRequest(long lockId, String region, String lockName, ClusterNodeId node, long timeout, boolean withFeedback,
+        public LockRequest(long lockId, String region, String lockName, ClusterUuid node, long timeout, boolean withFeedback,
             long threadId) {
             this(lockId, region, lockName, node, timeout, null, withFeedback, threadId);
         }
 
-        public LockRequest(long lockId, String region, String lockName, ClusterNodeId node, long timeout, ClusterTopologyHash topology,
+        public LockRequest(long lockId, String region, String lockName, ClusterUuid node, long timeout, ClusterHash topology,
             boolean withFeedback, long threadId) {
             super(region, lockName);
 
@@ -163,7 +163,7 @@ abstract class LockProtocol {
         }
 
         @Override
-        public ClusterNodeId getNode() {
+        public ClusterUuid getNode() {
             return node;
         }
 
@@ -203,11 +203,11 @@ abstract class LockProtocol {
 
         private final LockResponse.Status status;
 
-        private final ClusterNodeId owner;
+        private final ClusterUuid owner;
 
         private final long ownerThreadId;
 
-        public LockResponse(LockResponse.Status status, ClusterNodeId owner, long ownerThreadId) {
+        public LockResponse(LockResponse.Status status, ClusterUuid owner, long ownerThreadId) {
             this.status = status;
             this.owner = owner;
             this.ownerThreadId = ownerThreadId;
@@ -217,7 +217,7 @@ abstract class LockProtocol {
             return status;
         }
 
-        public ClusterNodeId getOwner() {
+        public ClusterUuid getOwner() {
             return owner;
         }
 
@@ -234,13 +234,13 @@ abstract class LockProtocol {
     static class UnlockRequest extends LockRequestBase implements LockIdentity {
         private final long lockId;
 
-        private final ClusterNodeId node;
+        private final ClusterUuid node;
 
-        public UnlockRequest(long lockId, String region, String lockName, ClusterNodeId node) {
+        public UnlockRequest(long lockId, String region, String lockName, ClusterUuid node) {
             this(lockId, region, lockName, node, null);
         }
 
-        public UnlockRequest(long lockId, String region, String lockName, ClusterNodeId node, ClusterTopologyHash topology) {
+        public UnlockRequest(long lockId, String region, String lockName, ClusterUuid node, ClusterHash topology) {
             super(region, lockName);
 
             this.lockId = lockId;
@@ -261,7 +261,7 @@ abstract class LockProtocol {
         }
 
         @Override
-        public ClusterNodeId getNode() {
+        public ClusterUuid getNode() {
             return node;
         }
 
@@ -316,13 +316,13 @@ abstract class LockProtocol {
     static class MigrationPrepareRequest extends MigrationRequest {
         private final boolean firstPass;
 
-        private final Map<ClusterNodeId, ClusterTopologyHash> topologies;
+        private final Map<ClusterUuid, ClusterHash> topologies;
 
         @ToStringIgnore
         private final List<LockMigrationInfo> locks;
 
         public MigrationPrepareRequest(String region, LockMigrationKey key, boolean firstPass,
-            Map<ClusterNodeId, ClusterTopologyHash> topologies, List<LockMigrationInfo> locks) {
+            Map<ClusterUuid, ClusterHash> topologies, List<LockMigrationInfo> locks) {
             super(region, key);
 
             this.firstPass = firstPass;
@@ -338,7 +338,7 @@ abstract class LockProtocol {
             return locks;
         }
 
-        public Map<ClusterNodeId, ClusterTopologyHash> getTopologies() {
+        public Map<ClusterUuid, ClusterHash> getTopologies() {
             return topologies;
         }
 

@@ -18,7 +18,7 @@ package io.hekate.cluster;
 
 import io.hekate.core.Hekate.State;
 import io.hekate.core.HekateBootstrap;
-import io.hekate.core.SystemInfo;
+import io.hekate.core.ServiceInfo;
 import io.hekate.core.service.Service;
 import io.hekate.network.NetworkServiceFactory;
 import java.net.InetSocketAddress;
@@ -32,13 +32,13 @@ import java.util.Set;
  * @see ClusterTopology
  * @see ClusterService
  */
-public interface ClusterNode extends Comparable<ClusterNode>, HasClusterNodeId {
+public interface ClusterNode extends Comparable<ClusterNode>, HasClusterUuid {
     /**
      * Returns the universally unique identifier of this node.
      *
      * @return Universally unique identifier of this node.
      */
-    ClusterNodeId getId();
+    ClusterUuid getId();
 
     /**
      * Returns the optional name of this node. Returns an empty string if this node doesn't have a configured name.
@@ -85,11 +85,11 @@ public interface ClusterNode extends Comparable<ClusterNode>, HasClusterNodeId {
     InetSocketAddress getSocket();
 
     /**
-     * Returns system information of this node.
+     * Returns information about the JVM of this node.
      *
-     * @return System information of this node.
+     * @return Information about the JVM of this node.
      */
-    SystemInfo getSysInfo();
+    ClusterJvmInfo getJvmInfo();
 
     /**
      * Returns the immutable set of roles that are configured for this node. Returns an empty set if roles are not configured for this
@@ -173,7 +173,7 @@ public interface ClusterNode extends Comparable<ClusterNode>, HasClusterNodeId {
      *
      * @see #getServices()
      */
-    ClusterNodeService getService(String type);
+    ServiceInfo getService(String type);
 
     /**
      * Returns the service information for the specified type.
@@ -184,17 +184,17 @@ public interface ClusterNode extends Comparable<ClusterNode>, HasClusterNodeId {
      *
      * @see #getServices()
      */
-    ClusterNodeService getService(Class<? extends Service> type);
+    ServiceInfo getService(Class<? extends Service> type);
 
     /**
-     * Returns the immutable map of services that are provided by this node, with the {@link ClusterNodeService#getType() service type} as
+     * Returns the immutable map of services that are provided by this node, with the {@link ServiceInfo#getType() service type} as
      * the key.
      *
      * @return Immutable map of services.
      *
      * @see HekateBootstrap#setServices(List)
      */
-    Map<String, ClusterNodeService> getServices();
+    Map<String, ServiceInfo> getServices();
 
     /**
      * Returns the cluster join order. Indexing the join order begins with 1, so the first node that joins the cluster has a value of 1,

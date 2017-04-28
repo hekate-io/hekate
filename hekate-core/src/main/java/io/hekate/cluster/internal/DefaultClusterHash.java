@@ -16,9 +16,9 @@
 
 package io.hekate.cluster.internal;
 
+import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
-import io.hekate.cluster.ClusterTopologyHash;
+import io.hekate.cluster.ClusterUuid;
 import java.io.Serializable;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 
-public class DefaultClusterTopologyHash implements ClusterTopologyHash, Serializable {
+public class DefaultClusterHash implements ClusterHash, Serializable {
     private static final ThreadLocal<MessageDigest> THREAD_LOCAL_DIGEST = ThreadLocal.withInitial(() -> {
         try {
             return MessageDigest.getInstance("SHA-256");
@@ -41,7 +41,7 @@ public class DefaultClusterTopologyHash implements ClusterTopologyHash, Serializ
 
     private int hash;
 
-    public DefaultClusterTopologyHash(Collection<ClusterNode> nodes) {
+    public DefaultClusterHash(Collection<ClusterNode> nodes) {
         MessageDigest digest = THREAD_LOCAL_DIGEST.get();
 
         ClusterNode[] sorted = nodes.toArray(new ClusterNode[nodes.size()]);
@@ -53,7 +53,7 @@ public class DefaultClusterTopologyHash implements ClusterTopologyHash, Serializ
         byte[] buf = new byte[len * Long.BYTES * 2];
 
         for (int i = 0, idx = 0; i < len; i++) {
-            ClusterNodeId id = sorted[i].getId();
+            ClusterUuid id = sorted[i].getId();
 
             idx = setBytes(id.getHiBits(), idx, buf);
             idx = setBytes(id.getLoBits(), idx, buf);
@@ -62,7 +62,7 @@ public class DefaultClusterTopologyHash implements ClusterTopologyHash, Serializ
         this.bytes = digest.digest(buf);
     }
 
-    public DefaultClusterTopologyHash(byte[] bytes) {
+    public DefaultClusterHash(byte[] bytes) {
         this.bytes = bytes;
     }
 
@@ -96,11 +96,11 @@ public class DefaultClusterTopologyHash implements ClusterTopologyHash, Serializ
             return true;
         }
 
-        if (!(o instanceof DefaultClusterTopologyHash)) {
+        if (!(o instanceof DefaultClusterHash)) {
             return false;
         }
 
-        DefaultClusterTopologyHash that = (DefaultClusterTopologyHash)o;
+        DefaultClusterHash that = (DefaultClusterHash)o;
 
         return Arrays.equals(bytes, that.bytes);
     }

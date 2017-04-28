@@ -18,13 +18,14 @@ package io.hekate.core.internal;
 
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.event.ClusterChangeEvent;
 import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.event.ClusterJoinEvent;
+import io.hekate.cluster.internal.DefaultClusterJvmInfo;
 import io.hekate.cluster.internal.DefaultClusterNode;
 import io.hekate.cluster.internal.DefaultClusterNodeBuilder;
 import io.hekate.cluster.internal.DefaultClusterTopology;
@@ -39,7 +40,6 @@ import io.hekate.core.HekateFutureException;
 import io.hekate.core.HekateVersion;
 import io.hekate.core.JoinFuture;
 import io.hekate.core.LeaveFuture;
-import io.hekate.core.SystemInfo;
 import io.hekate.core.TerminateFuture;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
@@ -118,8 +118,6 @@ class HekateNode implements Hekate, Serializable {
 
     private final Map<String, String> nodeProps;
 
-    private final SystemInfo sysInfo;
-
     private final NetworkServiceManager net;
 
     private final PluginManager plugins;
@@ -168,7 +166,7 @@ class HekateNode implements Hekate, Serializable {
 
     private LeaveFuture leaveFuture = new LeaveFuture();
 
-    private ClusterNodeId nodeId;
+    private ClusterUuid nodeId;
 
     private volatile DefaultClusterTopology topology;
 
@@ -194,9 +192,6 @@ class HekateNode implements Hekate, Serializable {
         // Basic properties.
         this.nodeName = cfg.getNodeName() != null ? cfg.getNodeName().trim() : "";
         this.clusterName = cfg.getClusterName().trim();
-
-        // System info.
-        sysInfo = DefaultSystemInfo.getLocalInfo();
 
         // Node roles.
         Set<String> roles;
@@ -447,11 +442,6 @@ class HekateNode implements Hekate, Serializable {
     }
 
     @Override
-    public SystemInfo getSysInfo() {
-        return sysInfo;
-    }
-
-    @Override
     public TerminateFuture terminateAsync() {
         return doTerminateAsync(null);
     }
@@ -532,7 +522,7 @@ class HekateNode implements Hekate, Serializable {
             }
 
             // Generate new ID for this node.
-            ClusterNodeId localNodeId = new ClusterNodeId();
+            ClusterUuid localNodeId = new ClusterUuid();
 
             nodeId = localNodeId;
 
@@ -558,7 +548,7 @@ class HekateNode implements Hekate, Serializable {
         }
     }
 
-    private void selectAddressAndBind(ClusterNodeId localNodeId) {
+    private void selectAddressAndBind(ClusterUuid localNodeId) {
         try {
             guard.lockWrite();
 
@@ -619,7 +609,7 @@ class HekateNode implements Hekate, Serializable {
         }
     }
 
-    private void initialize(InetSocketAddress nodeAddress, ClusterNodeId localNodeId) {
+    private void initialize(InetSocketAddress nodeAddress, ClusterUuid localNodeId) {
 
         try {
             InitializationContext ctx = null;
@@ -641,7 +631,7 @@ class HekateNode implements Hekate, Serializable {
                         .withRoles(nodeRoles)
                         .withProperties(nodeProps)
                         .withServices(services.getServicesInfo())
-                        .withSysInfo(sysInfo)
+                        .withSysInfo(DefaultClusterJvmInfo.getLocalInfo())
                         .createNode();
 
                     node = localNode;
@@ -1101,7 +1091,7 @@ class HekateNode implements Hekate, Serializable {
         localTerminateFuture.complete(this);
     }
 
-    private boolean isInitializingForNodeId(ClusterNodeId localNodeId) {
+    private boolean isInitializingForNodeId(ClusterUuid localNodeId) {
         return state.get() == INITIALIZING && localNodeId.equals(nodeId);
     }
 

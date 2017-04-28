@@ -16,7 +16,7 @@
 
 package io.hekate.cluster.internal.gossip;
 
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,14 +25,14 @@ import java.util.Set;
 public class GossipDigest extends GossipBase {
     private final long version;
 
-    private final Map<ClusterNodeId, GossipNodeInfo> members;
+    private final Map<ClusterUuid, GossipNodeInfo> members;
 
-    private final Set<ClusterNodeId> removed;
+    private final Set<ClusterUuid> removed;
 
-    private final Set<ClusterNodeId> seen;
+    private final Set<ClusterUuid> seen;
 
-    public GossipDigest(long version, Map<ClusterNodeId, GossipNodeInfo> members, Set<ClusterNodeId> removed,
-        Set<ClusterNodeId> seen) {
+    public GossipDigest(long version, Map<ClusterUuid, GossipNodeInfo> members, Set<ClusterUuid> removed,
+        Set<ClusterUuid> seen) {
         assert members != null : "Members map is null.";
         assert removed != null : "Removed set is null.";
         assert seen != null : "Seen set is null.";
@@ -46,17 +46,17 @@ public class GossipDigest extends GossipBase {
     public GossipDigest(Gossip gossip) {
         assert gossip != null : "Gossip is null.";
 
-        Map<ClusterNodeId, GossipNodeState> members = gossip.getMembers();
+        Map<ClusterUuid, GossipNodeState> members = gossip.getMembers();
 
-        Map<ClusterNodeId, GossipNodeInfo> membersInfo;
+        Map<ClusterUuid, GossipNodeInfo> membersInfo;
 
         if (members.isEmpty()) {
             membersInfo = Collections.emptyMap();
         } else {
             membersInfo = new HashMap<>(members.size(), 1.0f);
 
-            for (Map.Entry<ClusterNodeId, GossipNodeState> e : members.entrySet()) {
-                ClusterNodeId id = e.getKey();
+            for (Map.Entry<ClusterUuid, GossipNodeState> e : members.entrySet()) {
+                ClusterUuid id = e.getKey();
                 GossipNodeState node = e.getValue();
 
                 membersInfo.put(id, new GossipNodeInfo(node.getId(), node.getStatus(), node.getVersion()));
@@ -72,12 +72,12 @@ public class GossipDigest extends GossipBase {
     }
 
     @Override
-    public Map<ClusterNodeId, GossipNodeInfo> getMembersInfo() {
+    public Map<ClusterUuid, GossipNodeInfo> getMembersInfo() {
         return members;
     }
 
     @Override
-    public Set<ClusterNodeId> getSeen() {
+    public Set<ClusterUuid> getSeen() {
         return seen;
     }
 
@@ -87,7 +87,7 @@ public class GossipDigest extends GossipBase {
     }
 
     @Override
-    public Set<ClusterNodeId> getRemoved() {
+    public Set<ClusterUuid> getRemoved() {
         return removed;
     }
 

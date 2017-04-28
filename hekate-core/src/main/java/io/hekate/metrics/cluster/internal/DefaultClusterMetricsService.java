@@ -18,8 +18,8 @@ package io.hekate.metrics.cluster.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterService;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.ClusterView;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
@@ -109,21 +109,21 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     }
 
     private static class ReplicationTarget {
-        private final ClusterNodeId to;
+        private final ClusterUuid to;
 
         private final MessagingChannel<MetricsProtocol> channel;
 
-        private final ClusterNodeId localNode;
+        private final ClusterUuid localNode;
 
-        private final Map<ClusterNodeId, Long> sentVersions = new HashMap<>();
+        private final Map<ClusterUuid, Long> sentVersions = new HashMap<>();
 
-        public ReplicationTarget(ClusterNodeId to, MessagingChannel<MetricsProtocol> channel, ClusterNodeId localNode) {
+        public ReplicationTarget(ClusterUuid to, MessagingChannel<MetricsProtocol> channel, ClusterUuid localNode) {
             this.to = to;
             this.channel = channel;
             this.localNode = localNode;
         }
 
-        public ClusterNodeId getTo() {
+        public ClusterUuid getTo() {
             return to;
         }
 
@@ -143,7 +143,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
                     synchronized (replica) {
                         if (replica.getMetrics() != null && !replica.getMetrics().isEmpty()) {
-                            ClusterNodeId nodeId = replica.getNode().getId();
+                            ClusterUuid nodeId = replica.getNode().getId();
 
                             Long prevVer = sentVersions.get(nodeId);
 
@@ -175,7 +175,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
         public void update(Replica replica) {
             synchronized (sentVersions) {
                 synchronized (replica) {
-                    ClusterNodeId nodeId = replica.getNode().getId();
+                    ClusterUuid nodeId = replica.getNode().getId();
 
                     Long oldVer = sentVersions.get(nodeId);
 
@@ -205,7 +205,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     private final StateGuard guard = new StateGuard(ClusterService.class);
 
     @ToStringIgnore
-    private final Map<ClusterNodeId, Replica> replicas = new HashMap<>();
+    private final Map<ClusterUuid, Replica> replicas = new HashMap<>();
 
     @ToStringIgnore
     private final AtomicLong localVerSeq = new AtomicLong();
@@ -229,7 +229,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     private ScheduledExecutorService worker;
 
     @ToStringIgnore
-    private ClusterNodeId localNode;
+    private ClusterUuid localNode;
 
     public DefaultClusterMetricsService(ClusterMetricsServiceFactory factory) {
         assert factory != null : "Factory is null.";
@@ -357,7 +357,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     }
 
     @Override
-    public Optional<ClusterNodeMetrics> of(ClusterNodeId node) {
+    public Optional<ClusterNodeMetrics> of(ClusterUuid node) {
         ArgAssert.notNull(node, "Node");
 
         if (enabled) {
@@ -494,7 +494,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
         try {
             if (guard.isInitialized()) {
-                Set<ClusterNodeId> ids = nodes.stream().map(ClusterNode::getId).collect(toSet());
+                Set<ClusterUuid> ids = nodes.stream().map(ClusterNode::getId).collect(toSet());
 
                 replicas.keySet().retainAll(ids);
 
@@ -508,9 +508,9 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
                     doUpdateLocalMetrics(localMetrics.allMetrics());
                 }
 
-                NavigableSet<ClusterNodeId> ring = new TreeSet<>(ids);
+                NavigableSet<ClusterUuid> ring = new TreeSet<>(ids);
 
-                ClusterNodeId newNext = ring.tailSet(localNode, false).stream()
+                ClusterUuid newNext = ring.tailSet(localNode, false).stream()
                     .findFirst()
                     .orElse(ring.headSet(localNode, false).stream()
                         .findFirst()
@@ -581,7 +581,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
         }
     }
 
-    private List<MetricsUpdate> processUpdates(ClusterNodeId from, List<MetricsUpdate> updates, boolean withPushBack, long localVer) {
+    private List<MetricsUpdate> processUpdates(ClusterUuid from, List<MetricsUpdate> updates, boolean withPushBack, long localVer) {
         List<MetricsUpdate> pushBack;
 
         if (withPushBack) {
@@ -601,7 +601,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
         updates.stream()
             .filter(update -> !update.getNode().equals(localNode))
             .forEach(update -> {
-                ClusterNodeId node = update.getNode();
+                ClusterUuid node = update.getNode();
 
                 Replica replica = replicas.get(node);
 

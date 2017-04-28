@@ -16,7 +16,7 @@
 
 package io.hekate.core.service;
 
-import io.hekate.cluster.ClusterNodeService;
+import io.hekate.core.ServiceInfo;
 import java.util.Collection;
 
 /**
@@ -26,7 +26,7 @@ import java.util.Collection;
  */
 public interface ConfigurationContext {
     /**
-     * Adds the specified {@link ClusterNodeService#getProperties() service property}.
+     * Adds the specified {@link ServiceInfo#getProperties() service property}.
      *
      * @param name Property name.
      * @param value Property value.

@@ -17,7 +17,6 @@
 package io.hekate.coordinate.internal;
 
 import io.hekate.cluster.ClusterNodeFilter;
-import io.hekate.cluster.ClusterNodeService;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
@@ -33,6 +32,7 @@ import io.hekate.coordinate.CoordinationProcessConfig;
 import io.hekate.coordinate.CoordinationService;
 import io.hekate.coordinate.CoordinationServiceFactory;
 import io.hekate.core.HekateException;
+import io.hekate.core.ServiceInfo;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
@@ -344,7 +344,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
             if (guard.isInitialized()) {
                 processes.values().forEach(process -> {
                     ClusterTopology topology = event.getTopology().filter(node -> {
-                        ClusterNodeService service = node.getService(CoordinationService.class);
+                        ServiceInfo service = node.getService(CoordinationService.class);
 
                         return service.getProperty(PROCESSES_PROPERTY).contains(process.getName());
                     });

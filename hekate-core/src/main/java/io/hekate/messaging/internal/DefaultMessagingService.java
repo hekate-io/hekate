@@ -18,8 +18,8 @@ package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterService;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.ClusterView;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventType;
@@ -41,9 +41,9 @@ import io.hekate.core.service.TerminatingService;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingBackPressureConfig;
+import io.hekate.messaging.MessagingChanneUuid;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
-import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingConfigProvider;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.MessagingOverflowPolicy;
@@ -97,7 +97,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     private ScheduledThreadPoolExecutor timer;
 
-    private ClusterNodeId nodeId;
+    private ClusterUuid nodeId;
 
     private CodecService codecService;
 
@@ -513,7 +513,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                         return;
                     }
 
-                    MessagingChannelId channelId = connect.getChannelId();
+                    MessagingChanneUuid channelId = connect.getChannelId();
 
                     MessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(channelId, gateway.getChannel());
 

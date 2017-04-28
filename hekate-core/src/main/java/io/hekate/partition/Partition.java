@@ -17,8 +17,8 @@
 package io.hekate.partition;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.cluster.ClusterUuid;
 import java.util.List;
 
 /**
@@ -66,7 +66,7 @@ public interface Partition extends Comparable<Partition> {
      *
      * @return primary node identifier (see {@link ClusterNode#getId()})
      */
-    ClusterNodeId getPrimaryNodeId();
+    ClusterUuid getPrimaryNodeId();
 
     /**
      * Returns {@code true} if the specified node is primary for this partition (see {@link #getPrimaryNode()}).
@@ -84,7 +84,7 @@ public interface Partition extends Comparable<Partition> {
      *
      * @return {@code true} if the specified node is primary for this partition (see {@link #getPrimaryNode()}).
      */
-    boolean isPrimary(ClusterNodeId node);
+    boolean isPrimary(ClusterUuid node);
 
     /**
      * Returns the set of backup nodes for this partition.

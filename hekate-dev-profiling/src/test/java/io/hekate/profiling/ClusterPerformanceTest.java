@@ -17,8 +17,8 @@
 package io.hekate.profiling;
 
 import io.hekate.HekateTestBase;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterServiceFactory;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.health.DefaultFailureDetector;
@@ -208,7 +208,7 @@ public class ClusterPerformanceTest extends HekateTestBase {
                                 Hekate started = node.joinAsync().get(30, TimeUnit.SECONDS);
 
                                 if (started == null) {
-                                    ClusterNodeId nodeId = null;
+                                    ClusterUuid nodeId = null;
 
                                     try {
                                         nodeId = node.getLocalNode().getId();
@@ -232,7 +232,7 @@ public class ClusterPerformanceTest extends HekateTestBase {
                         lock.readLock().lock();
 
                         try {
-                            ClusterNodeId nodeId = null;
+                            ClusterUuid nodeId = null;
 
                             try {
                                 nodeId = node.getLocalNode().getId();
@@ -240,7 +240,7 @@ public class ClusterPerformanceTest extends HekateTestBase {
                                 // No-op.
                             }
 
-                            final ClusterNodeId finalNodeId = nodeId;
+                            final ClusterUuid finalNodeId = nodeId;
 
                             sayTime("Stopped: " + port, () -> {
                                 Hekate stopped1 = node.leaveAsync().get(30, TimeUnit.SECONDS);

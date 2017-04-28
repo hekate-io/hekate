@@ -16,8 +16,8 @@
 
 package io.hekate.lock.internal;
 
-import io.hekate.cluster.ClusterNodeId;
-import io.hekate.cluster.ClusterTopologyHash;
+import io.hekate.cluster.ClusterHash;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.codec.Codec;
 import io.hekate.codec.CodecUtils;
 import io.hekate.codec.DataReader;
@@ -130,7 +130,7 @@ class LockProtocolCodec implements Codec<LockProtocol> {
 
                 out.writeLong(response.getThreadId());
 
-                ClusterNodeId owner = response.getOwner();
+                ClusterUuid owner = response.getOwner();
 
                 if (owner == null) {
                     out.writeBoolean(false);
@@ -196,9 +196,9 @@ class LockProtocolCodec implements Codec<LockProtocol> {
                 boolean withFeedback = in.readBoolean();
                 long threadId = in.readLong();
 
-                ClusterTopologyHash topology = CodecUtils.readTopologyHash(in);
+                ClusterHash topology = CodecUtils.readTopologyHash(in);
 
-                ClusterNodeId node = CodecUtils.readNodeId(in);
+                ClusterUuid node = CodecUtils.readNodeId(in);
 
                 return new LockRequest(lockId, region, lockName, node, timeout, topology, withFeedback, threadId);
             }
@@ -207,7 +207,7 @@ class LockProtocolCodec implements Codec<LockProtocol> {
 
                 long threadId = in.readLong();
 
-                ClusterNodeId owner = null;
+                ClusterUuid owner = null;
 
                 if (in.readBoolean()) {
                     owner = CodecUtils.readNodeId(in);
@@ -220,9 +220,9 @@ class LockProtocolCodec implements Codec<LockProtocol> {
                 String region = in.readUTF();
                 String lockName = in.readUTF();
 
-                ClusterTopologyHash topology = CodecUtils.readTopologyHash(in);
+                ClusterHash topology = CodecUtils.readTopologyHash(in);
 
-                ClusterNodeId node = CodecUtils.readNodeId(in);
+                ClusterUuid node = CodecUtils.readNodeId(in);
 
                 return new UnlockRequest(lockId, region, lockName, node, topology);
             }
@@ -235,14 +235,14 @@ class LockProtocolCodec implements Codec<LockProtocol> {
                 String region = in.readUTF();
                 String lockName = in.readUTF();
 
-                ClusterTopologyHash topology = CodecUtils.readTopologyHash(in);
+                ClusterHash topology = CodecUtils.readTopologyHash(in);
 
                 return new LockOwnerRequest(region, lockName, topology);
             }
             case OWNER_RESPONSE: {
                 long threadId = in.readLong();
 
-                ClusterNodeId owner = null;
+                ClusterUuid owner = null;
 
                 if (in.readBoolean()) {
                     owner = CodecUtils.readNodeId(in);
@@ -259,7 +259,7 @@ class LockProtocolCodec implements Codec<LockProtocol> {
 
                 boolean firstPass = in.readBoolean();
 
-                Map<ClusterNodeId, ClusterTopologyHash> topologies = decodeTopologies(in);
+                Map<ClusterUuid, ClusterHash> topologies = decodeTopologies(in);
 
                 List<LockMigrationInfo> locks = decodeLocksInfo(in);
 
@@ -294,19 +294,19 @@ class LockProtocolCodec implements Codec<LockProtocol> {
     }
 
     private LockMigrationKey decodeKey(DataReader in) throws IOException {
-        ClusterNodeId node = CodecUtils.readNodeId(in);
+        ClusterUuid node = CodecUtils.readNodeId(in);
 
-        ClusterTopologyHash topology = CodecUtils.readTopologyHash(in);
+        ClusterHash topology = CodecUtils.readTopologyHash(in);
 
         long id = in.readLong();
 
         return new LockMigrationKey(node, topology, id);
     }
 
-    private void encodeTopologies(Map<ClusterNodeId, ClusterTopologyHash> topologies, DataWriter out) throws IOException {
+    private void encodeTopologies(Map<ClusterUuid, ClusterHash> topologies, DataWriter out) throws IOException {
         out.writeInt(topologies.size());
 
-        for (Map.Entry<ClusterNodeId, ClusterTopologyHash> e : topologies.entrySet()) {
+        for (Map.Entry<ClusterUuid, ClusterHash> e : topologies.entrySet()) {
             CodecUtils.writeNodeId(e.getKey(), out);
 
             if (e.getValue() == null) {
@@ -319,18 +319,18 @@ class LockProtocolCodec implements Codec<LockProtocol> {
         }
     }
 
-    private Map<ClusterNodeId, ClusterTopologyHash> decodeTopologies(DataReader in) throws IOException {
+    private Map<ClusterUuid, ClusterHash> decodeTopologies(DataReader in) throws IOException {
         int size = in.readInt();
 
-        Map<ClusterNodeId, ClusterTopologyHash> topologies;
+        Map<ClusterUuid, ClusterHash> topologies;
 
         if (size > 0) {
             topologies = new HashMap<>(size, 1.0f);
 
             for (int i = 0; i < size; i++) {
-                ClusterNodeId nodeId = CodecUtils.readNodeId(in);
+                ClusterUuid nodeId = CodecUtils.readNodeId(in);
 
-                ClusterTopologyHash topology = null;
+                ClusterHash topology = null;
 
                 if (in.readBoolean()) {
                     topology = CodecUtils.readTopologyHash(in);
@@ -370,7 +370,7 @@ class LockProtocolCodec implements Codec<LockProtocol> {
                 long lockId = in.readLong();
                 long threadId = in.readLong();
 
-                ClusterNodeId node = CodecUtils.readNodeId(in);
+                ClusterUuid node = CodecUtils.readNodeId(in);
 
                 locks.add(new LockMigrationInfo(name, lockId, node, threadId));
             }

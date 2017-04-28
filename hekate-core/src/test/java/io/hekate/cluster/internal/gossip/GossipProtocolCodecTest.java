@@ -18,6 +18,7 @@ package io.hekate.cluster.internal.gossip;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterAddress;
+import io.hekate.cluster.ClusterJvmInfo;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.internal.DefaultClusterNodeBuilder;
 import io.hekate.cluster.internal.gossip.GossipProtocol.HeartbeatReply;
@@ -29,7 +30,6 @@ import io.hekate.cluster.internal.gossip.GossipProtocol.Update;
 import io.hekate.cluster.internal.gossip.GossipProtocol.UpdateDigest;
 import io.hekate.codec.StreamDataReader;
 import io.hekate.codec.StreamDataWriter;
-import io.hekate.core.SystemInfo;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
@@ -202,7 +202,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
             g1.getMembers().values().forEach(n1 -> {
                 ClusterNode n2 = g2.getMember(n1.getId()).getNode();
 
-                assertSystemInfoEquals(n1.getNode().getSysInfo(), n2.getSysInfo());
+                assertSystemInfoEquals(n1.getNode().getJvmInfo(), n2.getJvmInfo());
 
                 assertTrue(n2.getProperties().isEmpty());
                 assertTrue(n2.getRoles().isEmpty());
@@ -243,7 +243,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
             g1.getMembers().values().forEach(n1 -> {
                 ClusterNode n2 = g2.getMember(n1.getId()).getNode();
 
-                assertSystemInfoEquals(n1.getNode().getSysInfo(), n2.getSysInfo());
+                assertSystemInfoEquals(n1.getNode().getJvmInfo(), n2.getJvmInfo());
 
                 assertTrue(n2.getRoles().isEmpty());
 
@@ -289,7 +289,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
             g1.getMembers().values().forEach(n1 -> {
                 ClusterNode n2 = g2.getMember(n1.getId()).getNode();
 
-                assertSystemInfoEquals(n1.getNode().getSysInfo(), n2.getSysInfo());
+                assertSystemInfoEquals(n1.getNode().getJvmInfo(), n2.getJvmInfo());
 
                 assertTrue(n2.getRoles().isEmpty());
 
@@ -334,7 +334,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
             g1.getMembers().values().forEach(n1 -> {
                 ClusterNode n2 = g2.getMember(n1.getId()).getNode();
 
-                assertSystemInfoEquals(n1.getNode().getSysInfo(), n2.getSysInfo());
+                assertSystemInfoEquals(n1.getNode().getJvmInfo(), n2.getJvmInfo());
 
                 assertTrue(n2.getProperties().isEmpty());
 
@@ -461,7 +461,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
         return g1;
     }
 
-    private void assertSystemInfoEquals(SystemInfo s1, SystemInfo s2) {
+    private void assertSystemInfoEquals(ClusterJvmInfo s1, ClusterJvmInfo s2) {
         assertEquals(s1.getCpus(), s2.getCpus());
         assertEquals(s1.getMaxMemory(), s2.getMaxMemory());
         assertEquals(s1.getOsName(), s2.getOsName());

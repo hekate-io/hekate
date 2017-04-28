@@ -17,9 +17,10 @@
 package io.hekate.cluster.internal.gossip;
 
 import io.hekate.cluster.ClusterAddress;
+import io.hekate.cluster.ClusterJvmInfo;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
-import io.hekate.cluster.ClusterNodeService;
+import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.internal.DefaultClusterJvmInfo;
 import io.hekate.cluster.internal.DefaultClusterNode;
 import io.hekate.cluster.internal.gossip.GossipProtocol.Connect;
 import io.hekate.cluster.internal.gossip.GossipProtocol.HeartbeatReply;
@@ -33,9 +34,8 @@ import io.hekate.codec.Codec;
 import io.hekate.codec.CodecUtils;
 import io.hekate.codec.DataReader;
 import io.hekate.codec.DataWriter;
-import io.hekate.core.SystemInfo;
-import io.hekate.core.internal.DefaultSystemInfo;
-import io.hekate.core.service.internal.DefaultClusterNodeService;
+import io.hekate.core.ServiceInfo;
+import io.hekate.core.service.internal.DefaultServiceInfo;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collections;
@@ -56,11 +56,11 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
 
     private final Map<String, Integer> writeStringDict = new HashMap<>();
 
-    private final AtomicReference<ClusterNodeId> localNodeIdRef;
+    private final AtomicReference<ClusterUuid> localNodeIdRef;
 
-    private ClusterNodeId localNodeId;
+    private ClusterUuid localNodeId;
 
-    public GossipProtocolCodec(AtomicReference<ClusterNodeId> localNodeIdRef) {
+    public GossipProtocolCodec(AtomicReference<ClusterUuid> localNodeIdRef) {
         assert localNodeIdRef != null : "Local node ID is null.";
 
         this.localNodeIdRef = localNodeIdRef;
@@ -180,7 +180,7 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
 
             switch (msgType) {
                 case CONNECT: {
-                    ClusterNodeId nodeId = CodecUtils.readNodeId(in);
+                    ClusterUuid nodeId = CodecUtils.readNodeId(in);
 
                     result = new Connect(nodeId);
 
@@ -295,14 +295,14 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         out.writeInt(gossip.getMaxJoinOrder());
 
         // Members.
-        Map<ClusterNodeId, GossipNodeState> members = gossip.getMembers();
+        Map<ClusterUuid, GossipNodeState> members = gossip.getMembers();
 
         int membersSize = members.size();
 
         out.writeInt(membersSize);
 
         if (membersSize > 0) {
-            Set<ClusterNodeId> seen = gossip.getSeen();
+            Set<ClusterUuid> seen = gossip.getSeen();
 
             for (GossipNodeState member : members.values()) {
                 encodeNodeState(member, seen, out);
@@ -321,9 +321,9 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         int maxJoinOrder = in.readInt();
 
         // Members.
-        Map<ClusterNodeId, GossipNodeState> members;
+        Map<ClusterUuid, GossipNodeState> members;
 
-        Set<ClusterNodeId> seen;
+        Set<ClusterUuid> seen;
 
         int membersSize = in.readInt();
 
@@ -354,7 +354,7 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         }
 
         // Removed.
-        Set<ClusterNodeId> removed = decodeNodeIdSet(in);
+        Set<ClusterUuid> removed = decodeNodeIdSet(in);
 
         return new Gossip(version, members, removed, seen, maxJoinOrder);
     }
@@ -364,14 +364,14 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         out.writeLong(digest.getVersion());
 
         // Members.
-        Map<ClusterNodeId, GossipNodeInfo> members = digest.getMembersInfo();
+        Map<ClusterUuid, GossipNodeInfo> members = digest.getMembersInfo();
 
         int membersSize = members.size();
 
         out.writeInt(membersSize);
 
         if (membersSize > 0) {
-            Set<ClusterNodeId> seen = digest.getSeen();
+            Set<ClusterUuid> seen = digest.getSeen();
 
             for (GossipNodeInfo node : members.values()) {
                 encodeNodeInfo(node, seen, out);
@@ -387,9 +387,9 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         long version = in.readLong();
 
         // Members.
-        Map<ClusterNodeId, GossipNodeInfo> members;
+        Map<ClusterUuid, GossipNodeInfo> members;
 
-        Set<ClusterNodeId> seen;
+        Set<ClusterUuid> seen;
 
         int membersSize = in.readInt();
 
@@ -420,12 +420,12 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         }
 
         // Removed.
-        Set<ClusterNodeId> removed = decodeNodeIdSet(in);
+        Set<ClusterUuid> removed = decodeNodeIdSet(in);
 
         return new GossipDigest(version, members, removed, seen);
     }
 
-    private void encodeNodeState(GossipNodeState member, Set<ClusterNodeId> seen, DataWriter out)
+    private void encodeNodeState(GossipNodeState member, Set<ClusterUuid> seen, DataWriter out)
         throws IOException {
         // Node.
         encodeNode(member.getNode(), out);
@@ -443,7 +443,7 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         encodeNodeIdSet(member.getSuspected(), out);
     }
 
-    private GossipNodeState decodeNodeState(Set<ClusterNodeId> seen, DataReader in) throws IOException {
+    private GossipNodeState decodeNodeState(Set<ClusterUuid> seen, DataReader in) throws IOException {
         // Node.
         ClusterNode node = decodeNode(in);
 
@@ -459,14 +459,14 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         }
 
         // Suspected.
-        Set<ClusterNodeId> suspected = decodeNodeIdSet(in);
+        Set<ClusterUuid> suspected = decodeNodeIdSet(in);
 
         return new GossipNodeState(node, status, version, suspected);
     }
 
-    private void encodeNodeInfo(GossipNodeInfo node, Set<ClusterNodeId> seen, DataWriter out)
+    private void encodeNodeInfo(GossipNodeInfo node, Set<ClusterUuid> seen, DataWriter out)
         throws IOException {
-        ClusterNodeId id = node.getId();
+        ClusterUuid id = node.getId();
 
         CodecUtils.writeNodeId(id, out);
 
@@ -475,8 +475,8 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         out.writeBoolean(seen.contains(id));
     }
 
-    private GossipNodeInfo decodeNodeInfo(Set<ClusterNodeId> seen, DataReader in) throws IOException {
-        ClusterNodeId id = CodecUtils.readNodeId(in);
+    private GossipNodeInfo decodeNodeInfo(Set<ClusterUuid> seen, DataReader in) throws IOException {
+        ClusterUuid id = CodecUtils.readNodeId(in);
 
         long version = in.readLong();
 
@@ -538,14 +538,14 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         }
 
         // Services.
-        Map<String, ClusterNodeService> services = node.getServices();
+        Map<String, ServiceInfo> services = node.getServices();
 
         int servicesSize = services.size();
 
         out.writeInt(servicesSize);
 
         if (servicesSize > 0) {
-            for (ClusterNodeService service : services.values()) {
+            for (ServiceInfo service : services.values()) {
                 writeStringWithDictionary(service.getType(), out);
 
                 Map<String, Set<String>> serviceProps = service.getProperties();
@@ -565,7 +565,7 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         }
 
         // System info.
-        SystemInfo sysInfo = node.getSysInfo();
+        ClusterJvmInfo sysInfo = node.getJvmInfo();
 
         out.writeInt(sysInfo.getCpus());
         out.writeLong(sysInfo.getMaxMemory());
@@ -593,7 +593,7 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         // Order.
         int order = in.readInt();
 
-        ClusterNodeId localNodeId = this.localNodeId;
+        ClusterUuid localNodeId = this.localNodeId;
 
         if (localNodeId == null) {
             localNodeId = this.localNodeId = localNodeIdRef.get();
@@ -631,7 +631,7 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         }
 
         // Services.
-        Map<String, ClusterNodeService> services;
+        Map<String, ServiceInfo> services;
 
         int servicesSize = in.readInt();
 
@@ -661,7 +661,7 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
                     serviceProps = Collections.emptyMap();
                 }
 
-                services.put(type, new DefaultClusterNodeService(type, serviceProps));
+                services.put(type, new DefaultServiceInfo(type, serviceProps));
             }
 
             services = Collections.unmodifiableMap(services);
@@ -681,7 +681,7 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         String jvmVendor = readStringWithDictionary(in);
         String pid = readStringWithDictionary(in);
 
-        SystemInfo systemInfo = new DefaultSystemInfo(
+        ClusterJvmInfo systemInfo = new DefaultClusterJvmInfo(
             cpus,
             maxMemory,
             osName,
@@ -698,25 +698,25 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         return new DefaultClusterNode(addr, nodeName, localNode, order, roles, props, services, systemInfo);
     }
 
-    private void encodeNodeIdSet(Set<ClusterNodeId> set, DataWriter out) throws IOException {
+    private void encodeNodeIdSet(Set<ClusterUuid> set, DataWriter out) throws IOException {
         int size = set.size();
 
         out.writeInt(size);
 
         if (size > 0) {
-            for (ClusterNodeId id : set) {
+            for (ClusterUuid id : set) {
                 CodecUtils.writeNodeId(id, out);
             }
         }
     }
 
-    private Set<ClusterNodeId> decodeNodeIdSet(DataReader in) throws IOException {
+    private Set<ClusterUuid> decodeNodeIdSet(DataReader in) throws IOException {
         int size = in.readInt();
 
         if (size == 1) {
             return Collections.singleton(CodecUtils.readNodeId(in));
         } else if (size > 0) {
-            Set<ClusterNodeId> set = new HashSet<>(size, 1.0f);
+            Set<ClusterUuid> set = new HashSet<>(size, 1.0f);
 
             for (int i = 0; i < size; i++) {
                 set.add(CodecUtils.readNodeId(in));

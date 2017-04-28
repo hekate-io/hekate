@@ -17,7 +17,7 @@
 package io.hekate.cluster.internal.gossip;
 
 import io.hekate.cluster.ClusterAddress;
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.internal.gossip.GossipProtocol.Connect;
 import io.hekate.cluster.internal.gossip.GossipProtocol.GossipMessage;
 import io.hekate.core.internal.util.Utils;
@@ -80,7 +80,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
     private final Object mux = new Object();
 
-    private final Map<ClusterNodeId, EndpointHolder> clients = new HashMap<>();
+    private final Map<ClusterUuid, EndpointHolder> clients = new HashMap<>();
 
     private final Callback callback;
 
@@ -109,7 +109,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
             @Override
             public void onDisconnect(NetworkClient<GossipProtocol> client, Optional<Throwable> cause) {
-                ClusterNodeId id = client.getContext();
+                ClusterUuid id = client.getContext();
 
                 if (id != null) {
                     if (DEBUG) {
@@ -136,7 +136,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
     public void send(GossipMessage msg, Runnable onComplete) {
         ClusterAddress addr = msg.getTo();
 
-        ClusterNodeId id = addr.getId();
+        ClusterUuid id = addr.getId();
 
         Callback localCallback;
 
@@ -233,7 +233,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
         if (msg.getType() == GossipProtocol.Type.CONNECT) {
             Connect connect = (Connect)msg;
 
-            ClusterNodeId id = connect.getNodeId();
+            ClusterUuid id = connect.getNodeId();
 
             if (id == null) {
                 if (DEBUG) {
@@ -282,7 +282,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
     @Override
     public void onDisconnect(NetworkEndpoint<GossipProtocol> client) {
-        ClusterNodeId id = client.getContext();
+        ClusterUuid id = client.getContext();
 
         if (id != null) {
             if (DEBUG) {

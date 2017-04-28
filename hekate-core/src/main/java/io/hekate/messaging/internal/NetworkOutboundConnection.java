@@ -17,7 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterAddress;
-import io.hekate.messaging.MessagingChannelId;
+import io.hekate.messaging.MessagingChanneUuid;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.internal.MessagingProtocol.Connect;
 import io.hekate.network.NetworkClient;
@@ -34,7 +34,7 @@ class NetworkOutboundConnection<T> extends NetworkConnectionBase<T> {
 
     private final NetworkClient<MessagingProtocol> net;
 
-    private final MessagingChannelId channelId;
+    private final MessagingChanneUuid channelId;
 
     private final Object mux = new Object();
 

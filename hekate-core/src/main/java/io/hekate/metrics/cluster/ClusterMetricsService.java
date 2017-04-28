@@ -17,7 +17,7 @@
 package io.hekate.metrics.cluster;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.DefaultServiceFactory;
@@ -118,7 +118,7 @@ public interface ClusterMetricsService extends Service {
      *
      * @return Metrics.
      */
-    Optional<ClusterNodeMetrics> of(ClusterNodeId nodeId);
+    Optional<ClusterNodeMetrics> of(ClusterUuid nodeId);
 
     /**
      * Returns the metrics of the specified cluster node.

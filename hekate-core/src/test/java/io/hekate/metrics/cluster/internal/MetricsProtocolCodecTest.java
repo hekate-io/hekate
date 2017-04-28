@@ -17,7 +17,7 @@
 package io.hekate.metrics.cluster.internal;
 
 import io.hekate.HekateTestBase;
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.codec.StreamDataReader;
 import io.hekate.codec.StreamDataWriter;
 import io.hekate.metrics.cluster.internal.MetricsProtocol.UpdateRequest;
@@ -40,7 +40,7 @@ public class MetricsProtocolCodecTest extends HekateTestBase {
     @Test
     public void testResponsePushBackUpdatesOnly() throws Exception {
         repeat(3, i -> {
-            ClusterNodeId from = newNodeId();
+            ClusterUuid from = newNodeId();
 
             List<MetricsUpdate> updates = newMetricUpdates();
 

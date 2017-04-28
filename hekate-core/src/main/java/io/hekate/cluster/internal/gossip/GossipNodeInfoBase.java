@@ -16,13 +16,13 @@
 
 package io.hekate.cluster.internal.gossip;
 
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import java.io.Serializable;
 
 public abstract class GossipNodeInfoBase implements Serializable {
     private static final long serialVersionUID = 1;
 
-    public abstract ClusterNodeId getId();
+    public abstract ClusterUuid getId();
 
     public abstract GossipNodeStatus getStatus();
 

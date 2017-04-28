@@ -17,8 +17,8 @@
 package io.hekate.partition.internal;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.partition.Partition;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -75,7 +75,7 @@ class DefaultPartition implements Partition {
     }
 
     @Override
-    public ClusterNodeId getPrimaryNodeId() {
+    public ClusterUuid getPrimaryNodeId() {
         return primary.getId();
     }
 
@@ -85,7 +85,7 @@ class DefaultPartition implements Partition {
     }
 
     @Override
-    public boolean isPrimary(ClusterNodeId node) {
+    public boolean isPrimary(ClusterUuid node) {
         return primary.getId().equals(node);
     }
 

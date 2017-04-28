@@ -17,8 +17,8 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.ClusterView;
 import io.hekate.codec.CodecException;
 import io.hekate.core.HekateException;
@@ -32,9 +32,9 @@ import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessageQueueTimeoutException;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessageTimeoutException;
+import io.hekate.messaging.MessagingChanneUuid;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelClosedException;
-import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.UnknownRouteException;
 import io.hekate.messaging.broadcast.AggregateCallback;
@@ -176,7 +176,7 @@ class MessagingGateway<T> {
     private final String name;
 
     @ToStringIgnore
-    private final MessagingChannelId id;
+    private final MessagingChanneUuid id;
 
     @ToStringIgnore
     private final ClusterNode localNode;
@@ -194,7 +194,7 @@ class MessagingGateway<T> {
     private final CloseCallback onBeforeClose;
 
     @ToStringIgnore
-    private final Map<ClusterNodeId, MessagingClient<T>> clients = new HashMap<>();
+    private final Map<ClusterUuid, MessagingClient<T>> clients = new HashMap<>();
 
     @ToStringIgnore
     private final boolean checkIdle;
@@ -239,7 +239,7 @@ class MessagingGateway<T> {
         assert cluster != null : "Cluster view is null.";
         assert async != null : "Executor is null.";
 
-        this.id = new MessagingChannelId();
+        this.id = new MessagingChanneUuid();
         this.name = name;
         this.net = net;
         this.localNode = localNode;
@@ -256,7 +256,7 @@ class MessagingGateway<T> {
         this.channel = new DefaultMessagingChannel<>(this, this.cluster, loadBalancer, failoverPolicy, defaultTimeout, null);
     }
 
-    public MessagingChannelId getId() {
+    public MessagingChanneUuid getId() {
         return id;
     }
 
@@ -855,7 +855,7 @@ class MessagingGateway<T> {
     }
 
     // This method is for testing purposes only.
-    MessagingClient<T> getClient(ClusterNodeId nodeId) throws MessagingException {
+    MessagingClient<T> getClient(ClusterUuid nodeId) throws MessagingException {
         long readLock = lock.readLock();
 
         try {
@@ -914,7 +914,7 @@ class MessagingGateway<T> {
 
         while (true) {
             // Perform routing in unlocked context in order to prevent cluster events blocking.
-            ClusterNodeId targetId;
+            ClusterUuid targetId;
 
             if (balancer == null) {
                 // If balancer not specified then try to use cluster topology directly (must contain only one node).

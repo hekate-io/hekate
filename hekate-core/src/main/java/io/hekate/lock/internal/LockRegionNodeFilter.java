@@ -18,7 +18,7 @@ package io.hekate.lock.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
-import io.hekate.cluster.ClusterNodeService;
+import io.hekate.core.ServiceInfo;
 import io.hekate.lock.LockService;
 import io.hekate.util.format.ToString;
 import java.util.Set;
@@ -35,7 +35,7 @@ class LockRegionNodeFilter implements ClusterNodeFilter {
     @Override
     public boolean accept(ClusterNode node) {
         if (DefaultLockService.NODE_FILTER.accept(node)) {
-            ClusterNodeService service = node.getService(LockService.class);
+            ServiceInfo service = node.getService(LockService.class);
 
             if (service != null) {
                 Set<String> regions = service.getProperty(DefaultLockService.REGIONS_PROPERTY);

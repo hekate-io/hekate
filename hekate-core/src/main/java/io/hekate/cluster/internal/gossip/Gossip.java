@@ -17,7 +17,7 @@
 package io.hekate.cluster.internal.gossip;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterUuid;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,11 +39,11 @@ import static java.util.Collections.unmodifiableSet;
 public class Gossip extends GossipBase {
     private final long version;
 
-    private final Map<ClusterNodeId, GossipNodeState> members;
+    private final Map<ClusterUuid, GossipNodeState> members;
 
-    private final Set<ClusterNodeId> removed;
+    private final Set<ClusterUuid> removed;
 
-    private final Set<ClusterNodeId> seen;
+    private final Set<ClusterUuid> seen;
 
     private final int maxJoinOrder;
 
@@ -59,7 +59,7 @@ public class Gossip extends GossipBase {
         removed = emptySet();
     }
 
-    public Gossip(long version, Map<ClusterNodeId, GossipNodeState> members, Set<ClusterNodeId> removed, Set<ClusterNodeId> seen,
+    public Gossip(long version, Map<ClusterUuid, GossipNodeState> members, Set<ClusterUuid> removed, Set<ClusterUuid> seen,
         int maxJoinOrder) {
         assert members != null : "Members map is null.";
         assert removed != null : "Removed set is null.";
@@ -76,13 +76,13 @@ public class Gossip extends GossipBase {
         return maxJoinOrder;
     }
 
-    public GossipNodeState getMember(ClusterNodeId id) {
+    public GossipNodeState getMember(ClusterUuid id) {
         assert id != null : "Node id is null.";
 
         return members.get(id);
     }
 
-    public Map<ClusterNodeId, GossipNodeState> getMembers() {
+    public Map<ClusterUuid, GossipNodeState> getMembers() {
         return members;
     }
 
@@ -91,7 +91,7 @@ public class Gossip extends GossipBase {
     }
 
     @Override
-    public Map<ClusterNodeId, ? extends GossipNodeInfoBase> getMembersInfo() {
+    public Map<ClusterUuid, ? extends GossipNodeInfoBase> getMembersInfo() {
         return members;
     }
 
@@ -100,7 +100,7 @@ public class Gossip extends GossipBase {
     }
 
     @Override
-    public Set<ClusterNodeId> getSeen() {
+    public Set<ClusterUuid> getSeen() {
         return seen;
     }
 
@@ -110,20 +110,20 @@ public class Gossip extends GossipBase {
     }
 
     @Override
-    public Set<ClusterNodeId> getRemoved() {
+    public Set<ClusterUuid> getRemoved() {
         return removed;
     }
 
-    public Gossip merge(ClusterNodeId nodeId, Gossip other) {
+    public Gossip merge(ClusterUuid nodeId, Gossip other) {
         assert nodeId != null : "Node id is null.";
         assert other != null : "Other gossip is null.";
 
-        Map<ClusterNodeId, GossipNodeState> thisMembers = getMembers();
-        Map<ClusterNodeId, GossipNodeState> otherMembers = other.getMembers();
+        Map<ClusterUuid, GossipNodeState> thisMembers = getMembers();
+        Map<ClusterUuid, GossipNodeState> otherMembers = other.getMembers();
 
-        Set<ClusterNodeId> removed = getVersion() > other.getVersion() ? getRemoved() : other.getRemoved();
+        Set<ClusterUuid> removed = getVersion() > other.getVersion() ? getRemoved() : other.getRemoved();
 
-        Map<ClusterNodeId, GossipNodeState> newMembers = new HashMap<>();
+        Map<ClusterUuid, GossipNodeState> newMembers = new HashMap<>();
 
         thisMembers.forEach((id, member) -> {
             GossipNodeState otherMember = otherMembers.get(id);
@@ -140,7 +140,7 @@ public class Gossip extends GossipBase {
         otherMembers.entrySet().stream()
             .filter(e -> !newMembers.containsKey(e.getKey()))
             .forEach(e -> {
-                ClusterNodeId id = e.getKey();
+                ClusterUuid id = e.getKey();
 
                 if (!removed.contains(id)) {
                     newMembers.put(e.getKey(), e.getValue());
@@ -150,9 +150,9 @@ public class Gossip extends GossipBase {
         GossipNodeState state = newMembers.get(nodeId);
 
         if (state != null && state.hasSuspected()) {
-            Set<ClusterNodeId> unsuspected = null;
+            Set<ClusterUuid> unsuspected = null;
 
-            for (ClusterNodeId suspected : state.getSuspected()) {
+            for (ClusterUuid suspected : state.getSuspected()) {
                 if (!newMembers.containsKey(suspected)) {
                     if (unsuspected == null) {
                         unsuspected = new HashSet<>();
@@ -169,7 +169,7 @@ public class Gossip extends GossipBase {
 
         long newVersion = Math.max(getVersion(), other.getVersion());
 
-        Set<ClusterNodeId> newSeen = new HashSet<>();
+        Set<ClusterUuid> newSeen = new HashSet<>();
 
         thisMembers.values().forEach(m -> {
             if (m.getStatus() == DOWN && hasSeen(m.getId()) && newMembers.containsKey(m.getId())) {
@@ -198,16 +198,16 @@ public class Gossip extends GossipBase {
         return new Gossip(version, members, removed, seen, maxJoinOrder);
     }
 
-    public Gossip update(ClusterNodeId id, GossipNodeState modified) {
+    public Gossip update(ClusterUuid id, GossipNodeState modified) {
         return update(id, Collections.singletonList(modified));
     }
 
-    public Gossip update(ClusterNodeId id, List<GossipNodeState> modified) {
+    public Gossip update(ClusterUuid id, List<GossipNodeState> modified) {
         assert id != null : "Node id is null.";
         assert modified != null : "Modified nodes list is null.";
         assert modified.stream().noneMatch(Objects::isNull) : "Modified nodes list contains null value.";
 
-        Set<ClusterNodeId> newSeen = new HashSet<>();
+        Set<ClusterUuid> newSeen = new HashSet<>();
 
         members.values().forEach(m -> {
             if (m.getStatus() == DOWN && hasSeen(m.getId())) {
@@ -217,20 +217,20 @@ public class Gossip extends GossipBase {
 
         newSeen.add(id);
 
-        Map<ClusterNodeId, GossipNodeState> newMembers = new HashMap<>(members);
+        Map<ClusterUuid, GossipNodeState> newMembers = new HashMap<>(members);
 
         modified.forEach(s -> newMembers.put(s.getId(), s));
 
         return new Gossip(version, unmodifiableMap(newMembers), removed, unmodifiableSet(newSeen), maxJoinOrder);
     }
 
-    public Gossip purge(ClusterNodeId id, Set<ClusterNodeId> removed) {
+    public Gossip purge(ClusterUuid id, Set<ClusterUuid> removed) {
         assert id != null : "Node id is null.";
         assert removed != null : "Removed nodes set is null.";
         assert !removed.isEmpty() : "Removed nodes set is empty.";
         assert removed.stream().noneMatch(Objects::isNull) : "Removed nodes set contains null value.";
 
-        Set<ClusterNodeId> newSeen = new HashSet<>();
+        Set<ClusterUuid> newSeen = new HashSet<>();
 
         members.values().forEach(m -> {
             if (m.getStatus() == DOWN && !removed.contains(m.getId()) && hasSeen(m.getId())) {
@@ -240,7 +240,7 @@ public class Gossip extends GossipBase {
 
         newSeen.add(id);
 
-        Map<ClusterNodeId, GossipNodeState> newMembers = new HashMap<>(members);
+        Map<ClusterUuid, GossipNodeState> newMembers = new HashMap<>(members);
 
         GossipNodeState nodeState = newMembers.get(id);
 
@@ -250,7 +250,7 @@ public class Gossip extends GossipBase {
 
         newMembers.keySet().removeAll(removed);
 
-        Set<ClusterNodeId> newRemoved = new HashSet<>(removed);
+        Set<ClusterUuid> newRemoved = new HashSet<>(removed);
 
         newRemoved = unmodifiableSet(newRemoved);
         newMembers = unmodifiableMap(newMembers);
@@ -258,13 +258,13 @@ public class Gossip extends GossipBase {
         return new Gossip(version + 1, newMembers, newRemoved, newSeen, maxJoinOrder);
     }
 
-    public Gossip seen(ClusterNodeId id) {
+    public Gossip seen(ClusterUuid id) {
         assert hasMember(id) : "Node is not a member [id=" + id + ", members=" + members.values() + ']';
 
         if (this.seen.contains(id)) {
             return this;
         } else {
-            Set<ClusterNodeId> newSeen = new HashSet<>(this.seen);
+            Set<ClusterUuid> newSeen = new HashSet<>(this.seen);
 
             newSeen.add(id);
 
@@ -272,7 +272,7 @@ public class Gossip extends GossipBase {
         }
     }
 
-    public Gossip seen(Collection<ClusterNodeId> seen) {
+    public Gossip seen(Collection<ClusterUuid> seen) {
         assert seen != null : "Seen nodes list is null.";
         assert seen.stream().noneMatch(Objects::isNull) : "Seen nodes list contains null value.";
         assert members.keySet().containsAll(seen) : "Seen nodes are not members [seen=" + seen + ", members=" + members.values() + ']';
@@ -280,7 +280,7 @@ public class Gossip extends GossipBase {
         if (this.seen.containsAll(seen)) {
             return this;
         } else {
-            Set<ClusterNodeId> newSeen = new HashSet<>(this.seen);
+            Set<ClusterUuid> newSeen = new HashSet<>(this.seen);
 
             newSeen.addAll(seen);
 
@@ -288,15 +288,15 @@ public class Gossip extends GossipBase {
         }
     }
 
-    public Gossip inheritSeen(ClusterNodeId id, GossipBase other) {
+    public Gossip inheritSeen(ClusterUuid id, GossipBase other) {
         assert id != null : "Cluster node id is null.";
         assert other != null : "Other gossip is null.";
         assert hasMember(id) : "Seen node is not within members list.";
 
-        Set<ClusterNodeId> newSeen = null;
+        Set<ClusterUuid> newSeen = null;
 
         for (GossipNodeInfoBase s : other.getMembersInfo().values()) {
-            ClusterNodeId otherId = s.getId();
+            ClusterUuid otherId = s.getId();
 
             if (s.getStatus() == DOWN && hasMember(otherId) && !hasSeen(otherId) && other.hasSeen(otherId)) {
                 if (newSeen == null) {
@@ -326,9 +326,9 @@ public class Gossip extends GossipBase {
         if (convergent == null) {
             convergent = true;
 
-            Set<ClusterNodeId> seen = this.seen;
+            Set<ClusterUuid> seen = this.seen;
 
-            Set<ClusterNodeId> allSuspected = null;
+            Set<ClusterUuid> allSuspected = null;
 
             for (GossipNodeState node : members.values()) {
                 if (!seen.contains(node.getId())) {
@@ -356,15 +356,15 @@ public class Gossip extends GossipBase {
         return convergent;
     }
 
-    public Set<ClusterNodeId> getAllSuspected() {
-        Set<ClusterNodeId> allFailed = new HashSet<>();
+    public Set<ClusterUuid> getAllSuspected() {
+        Set<ClusterUuid> allFailed = new HashSet<>();
 
         members.values().forEach(m -> allFailed.addAll(m.getSuspected()));
 
         return allFailed;
     }
 
-    public boolean isCoordinator(ClusterNodeId localNode) {
+    public boolean isCoordinator(ClusterUuid localNode) {
         assert localNode != null : "Local node id is null.";
 
         ClusterNode coordinator = getCoordinator(localNode);
@@ -372,8 +372,8 @@ public class Gossip extends GossipBase {
         return coordinator != null && coordinator.getId().equals(localNode);
     }
 
-    public ClusterNode getCoordinator(ClusterNodeId localNode) {
-        Set<ClusterNodeId> allSuspected = getAllSuspected();
+    public ClusterNode getCoordinator(ClusterUuid localNode) {
+        Set<ClusterUuid> allSuspected = getAllSuspected();
 
         // Ignore false suspicions of the local node.
         allSuspected.remove(localNode);
@@ -386,18 +386,18 @@ public class Gossip extends GossipBase {
     }
 
     public SuspectedNodesView getSuspectedView() {
-        Map<ClusterNodeId, Set<ClusterNodeId>> suspected = null;
+        Map<ClusterUuid, Set<ClusterUuid>> suspected = null;
 
         for (GossipNodeState s : members.values()) {
-            Set<ClusterNodeId> nodeSuspected = s.getSuspected();
+            Set<ClusterUuid> nodeSuspected = s.getSuspected();
 
             if (!nodeSuspected.isEmpty()) {
                 if (suspected == null) {
                     suspected = new HashMap<>();
                 }
 
-                for (ClusterNodeId id : nodeSuspected) {
-                    Set<ClusterNodeId> suspectedBy = suspected.computeIfAbsent(id, k -> new HashSet<>());
+                for (ClusterUuid id : nodeSuspected) {
+                    Set<ClusterUuid> suspectedBy = suspected.computeIfAbsent(id, k -> new HashSet<>());
 
                     suspectedBy.add(s.getId());
                 }
@@ -415,7 +415,7 @@ public class Gossip extends GossipBase {
         return SuspectedNodesView.EMPTY;
     }
 
-    public boolean isSuspected(ClusterNodeId id) {
+    public boolean isSuspected(ClusterUuid id) {
         assert id != null : "Cluster node id is null.";
 
         for (GossipNodeState n : members.values()) {

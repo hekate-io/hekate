@@ -39,14 +39,14 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface ClusterContext {
     /**
-     * Asynchronously notifies on {@link ClusterService} started joining to the cluster.
+     * Asynchronously notifies this context that {@link ClusterService} has started joining the cluster.
      *
      * @return Future object that gets completed once notification is processed.
      */
     CompletableFuture<Boolean> onStartJoining();
 
     /**
-     * Asynchronously notifies on {@link ClusterService} successful join to the cluster.
+     * Asynchronously notifies this context that {@link ClusterService} has successfully joined the cluster.
      *
      * @param joinOrder Join order of the local node (see {@link ClusterNode#getJoinOrder()}).
      * @param newTopology Initial topology.
@@ -56,11 +56,11 @@ public interface ClusterContext {
     CompletableFuture<ClusterJoinEvent> onJoin(int joinOrder, Set<ClusterNode> newTopology);
 
     /**
-     * Asynchronously notifies on cluster topology change.
+     * Fires the {@link ClusterChangeEvent}.
      *
      * @param newTopology New topology.
      *
-     * @return Future object that gets completed once notification is processed.
+     * @return Future object that gets completed after processing the cluster event.
      */
     CompletableFuture<ClusterChangeEvent> onTopologyChange(Set<ClusterNode> newTopology);
 

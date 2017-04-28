@@ -44,31 +44,32 @@ import java.util.stream.Stream;
  */
 public interface ClusterTopology extends Iterable<ClusterNode> {
     /**
-     * Returns the topology version.
+     * Returns the version of this topology.
      *
      * <p>
-     * This method is provided in order to enable optimistic checks on cluster topology changes. Value of this property is monotonically
-     * incremented whenever a new snapshot is created due to cluster membership changes.
+     * This method provides support for tacking changes of the cluster topology. The value of this property is
+     * monotonically incremented each time when the cluster topology changes.
      * </p>
      *
      * <p>
-     * <b>Note:</b> Version counter is local to each node and can differ from node to node.
+     * <b>Note:</b> Version is local to each node and can differ from node to node.
      * </p>
      *
-     * @return Topology version.
+     * @return Version this topology.
      */
     long getVersion();
 
     /**
-     * Returns the SHA-256 hash of all {@link ClusterNode#getId() cluster node identifiers} from this topology.
+     * Returns the SHA-256 hash of all {@link ClusterNode#getId() cluster node identifiers} of this topology.
      *
      * <p>
-     * If topology is {@link #filter(ClusterNodeFilter) filtered} then only nodes matching the filter will be used for hash calculation.
+     * If this topology is {@link #filter(ClusterNodeFilter) filtered} then only those nodes that match the filter criteria will be used to
+     * compute the hash.
      * </p>
      *
      * @return SHA-256 hash of this topology.
      */
-    ClusterTopologyHash getHash();
+    ClusterHash getHash();
 
     /**
      * Returns local node or {@code null} if local node is not within this topology.
@@ -83,7 +84,7 @@ public interface ClusterTopology extends Iterable<ClusterNode> {
      * Returns an immutable list of all nodes with consistent ordering based on {@link ClusterNode#compareTo(Object)} method. Returns an
      * empty list if there are no nodes within this topology.
      *
-     * @return Returns the immutable list of all nodes with consistent ordering or an empty list if there are no nodes within this topology.
+     * @return Immutable list of all nodes with consistent ordering or an empty list if there are no nodes within this topology.
      */
     List<ClusterNode> getNodes();
 
@@ -151,16 +152,16 @@ public interface ClusterTopology extends Iterable<ClusterNode> {
      *
      * @return {@code true} if this topology contains a node with the specified identifier.
      */
-    boolean contains(ClusterNodeId id);
+    boolean contains(ClusterUuid id);
 
     /**
      * Returns the node for the specified identifier or {@code null} if there is no such node within this topology.
      *
      * @param id Node identifier.
      *
-     * @return node for the specified identifier or {@code null} if there is no such node within this topology.
+     * @return Node for the specified identifier or {@code null} if there is no such node within this topology.
      */
-    ClusterNode get(ClusterNodeId id);
+    ClusterNode get(ClusterUuid id);
 
     /**
      * Returns the number of nodes in this topology.
@@ -177,41 +178,41 @@ public interface ClusterTopology extends Iterable<ClusterNode> {
     boolean isEmpty();
 
     /**
-     * Returns the oldest node from this topology. Returns {@code null} if there are no nodes within this topology.
+     * Returns the oldest node of this topology. Returns {@code null} if this topology is empty.
      *
      * <p>
-     * Oldest node is the node with the lowest {@link ClusterNode#getJoinOrder() join order} value.
+     * The oldest node is the node with the lowest {@link ClusterNode#getJoinOrder() join order}.
      * </p>
      *
-     * @return Oldest node from this topology or {@code null} if there are no nodes within this topology.
+     * @return Oldest node of this topology or {@code null} if this topology is empty.
      */
     ClusterNode getOldest();
 
     /**
-     * Returns the youngest node from this topology. Returns {@code null} if there are no nodes within this topology.
+     * Returns the youngest node of this topology. Returns {@code null} if this topology is empty.
      *
      * <p>
-     * Youngest node is the node with the highest {@link ClusterNode#getJoinOrder() join order} value.
+     * The youngest node is the node with the highest {@link ClusterNode#getJoinOrder() join order}.
      * </p>
      *
-     * @return Youngest node within from this topology or {@code null} if there are no nodes within this topology.
+     * @return Youngest node within of this topology or {@code null} if this topology is empty.
      */
     ClusterNode getYoungest();
 
     /**
-     * Returns a random node from this topology. Returns {@code null} if this topology doesn't contain any nodes.
+     * Returns a random node of this topology. Returns {@code null} if this topology is empty.
      *
      * @return Random node or {@code null} if this topology is empty.
      */
     ClusterNode getRandom();
 
     /**
-     * Returns a copy of this topology containing only those nodes that match the specified filter. The {@link #getVersion() topology
+     * Returns a copy of this topology that contains only those nodes that match the specified filter. The {@link #getVersion() topology
      * version} will be preserved in the returned copy.
      *
      * @param filter Filter.
      *
-     * @return Copy of this topology containing only those nodes that match the specified filter.
+     * @return Copy of this topology that contains only those nodes that match the specified filter.
      */
     ClusterTopology filterAll(ClusterFilter filter);
 
@@ -221,7 +222,7 @@ public interface ClusterTopology extends Iterable<ClusterNode> {
      *
      * @param filter Filter.
      *
-     * @return Copy of this topology containing only those nodes that match the specified filter.
+     * @return Copy of this topology that contains only those nodes that match the specified filter.
      */
     ClusterTopology filter(ClusterNodeFilter filter);
 }
