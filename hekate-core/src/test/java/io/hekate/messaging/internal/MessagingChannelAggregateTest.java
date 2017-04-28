@@ -305,7 +305,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
 
                     await(joinLatch);
 
-                    return new HashSet<>(nodes);
+                    return nodes;
                 }).aggregate("test-join" + i, joinCallback);
 
                 return null;
@@ -348,7 +348,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
 
                     await(leaveLatch);
 
-                    return new HashSet<>(nodes);
+                    return nodes;
                 }).aggregate("test-join" + i, leaveCallback);
 
                 return null;

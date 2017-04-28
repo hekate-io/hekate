@@ -106,6 +106,6 @@ public class DefaultClusterTopologyTest extends ClusterTopologyTestBase {
 
     @Override
     protected DefaultClusterTopology newTopology(int version, Set<ClusterNode> nodes) {
-        return new DefaultClusterTopology(version, nodes);
+        return DefaultClusterTopology.of(version, nodes);
     }
 }

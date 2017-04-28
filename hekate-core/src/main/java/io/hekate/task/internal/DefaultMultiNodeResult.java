@@ -20,18 +20,19 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.task.MultiNodeResult;
 import io.hekate.util.format.ToString;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
 class DefaultMultiNodeResult<T> implements MultiNodeResult<T> {
-    private final Set<ClusterNode> nodes;
+    private final List<ClusterNode> nodes;
 
     private final Map<ClusterNode, T> results;
 
     private final Map<ClusterNode, Throwable> errors;
 
-    public DefaultMultiNodeResult(Set<ClusterNode> nodes, Map<ClusterNode, Throwable> errors, Map<ClusterNode, T> results) {
+    public DefaultMultiNodeResult(List<ClusterNode> nodes, Map<ClusterNode, Throwable> errors, Map<ClusterNode, T> results) {
         assert nodes != null : "Nodes set is null.";
         assert errors != null : "Errors map is null.";
         assert results != null : "Result map is null.";
@@ -42,7 +43,7 @@ class DefaultMultiNodeResult<T> implements MultiNodeResult<T> {
     }
 
     @Override
-    public Set<ClusterNode> nodes() {
+    public List<ClusterNode> nodes() {
         return nodes;
     }
 

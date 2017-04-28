@@ -33,6 +33,7 @@ import io.hekate.util.format.ToStringIgnore;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
@@ -71,8 +72,8 @@ class FilteredClusterView implements ClusterView {
                     case LEAVE: {
                         ClusterLeaveEvent leave = event.asLeave();
 
-                        Set<ClusterNode> added = filterToImmutable(leave.getAdded());
-                        Set<ClusterNode> removed = filterToImmutable(leave.getRemoved());
+                        List<ClusterNode> added = filterToImmutable(leave.getAdded());
+                        List<ClusterNode> removed = filterToImmutable(leave.getRemoved());
 
                         delegate.onEvent(new ClusterLeaveEvent(topology, added, removed));
 
@@ -81,8 +82,8 @@ class FilteredClusterView implements ClusterView {
                     case CHANGE: {
                         ClusterChangeEvent change = event.asChange();
 
-                        Set<ClusterNode> added = filterToImmutable(change.getAdded());
-                        Set<ClusterNode> removed = filterToImmutable(change.getRemoved());
+                        List<ClusterNode> added = filterToImmutable(change.getAdded());
+                        List<ClusterNode> removed = filterToImmutable(change.getRemoved());
 
                         delegate.onEvent(new ClusterChangeEvent(topology, added, removed));
 
@@ -95,10 +96,10 @@ class FilteredClusterView implements ClusterView {
             }
         }
 
-        private Set<ClusterNode> filterToImmutable(Set<ClusterNode> nodes) {
-            Set<ClusterNode> filtered = filter.apply(nodes);
+        private List<ClusterNode> filterToImmutable(List<ClusterNode> nodes) {
+            List<ClusterNode> filtered = filter.apply(nodes);
 
-            return filtered.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(nodes);
+            return filtered.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(nodes);
         }
 
         private ClusterEventListener unwrap() {

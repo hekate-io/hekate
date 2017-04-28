@@ -73,7 +73,7 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
     public void testContent() throws Exception {
         assertEquals(topology.getLocalNode(), ctx.getLocalMember().getNode());
         assertTrue(ctx.isCoordinator());
-        assertEquals(topology.getSorted().first(), ctx.getCoordinator().getNode());
+        assertEquals(topology.getNodes().get(0), ctx.getCoordinator().getNode());
         assertEquals(3, ctx.getMembers().size());
         assertEquals(3, ctx.getSize());
         assertTrue(ctx.getMembers().stream().map(CoordinationMember::getNode).allMatch(topology::contains));
@@ -149,7 +149,7 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
 
     @Test
     public void testProcessMessage() throws Exception {
-        ClusterNodeId from = this.topology.getSorted().last().getId();
+        ClusterNodeId from = topology.getLast().getId();
 
         Request req = new Request("test", from, topology.getHash(), "message");
 
@@ -173,7 +173,9 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
 
     @Test
     public void testProcessMessageRejectNotPrepared() throws Exception {
-        Request req = new Request("test", this.topology.getSorted().last().getId(), topology.getHash(), "ignore");
+        ClusterNodeId from = topology.getLast().getId();
+
+        Request req = new Request("test", from, topology.getHash(), "ignore");
 
         Message<CoordinationProtocol> msg = newRequest(req);
 
@@ -186,9 +188,11 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
 
     @Test
     public void testProcessMessageRejectWrongTopology() throws Exception {
+        ClusterNodeId from = topology.getLast().getId();
+
         DefaultClusterTopologyHash wrongTopology = new DefaultClusterTopologyHash(toSet(newNode()));
 
-        Request req = new Request("test", this.topology.getSorted().last().getId(), wrongTopology, "ignore");
+        Request req = new Request("test", from, wrongTopology, "ignore");
 
         Message<CoordinationProtocol> msg = newRequest(req);
 
@@ -205,7 +209,9 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
 
     @Test
     public void testProcessMessageRejectCanceled() throws Exception {
-        Request req = new Request("test", this.topology.getSorted().last().getId(), topology.getHash(), "ignore");
+        ClusterNodeId from = topology.getNodes().get(topology.getNodes().size() - 1).getId();
+
+        Request req = new Request("test", from, topology.getHash(), "ignore");
 
         Message<CoordinationProtocol> msg = newRequest(req);
 
@@ -227,7 +233,7 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
         ClusterNode n2 = newNode(newNodeId(2));
         ClusterNode n3 = newNode(newNodeId(3));
 
-        return new DefaultClusterTopology(1, toSet(n1, n2, n3));
+        return DefaultClusterTopology.of(1, toSet(n1, n2, n3));
     }
 
     private Message<CoordinationProtocol> newRequest(Request request) {

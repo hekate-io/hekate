@@ -50,6 +50,6 @@ public class LoadBalancersTest extends HekateTestBase {
     }
 
     private LoadBalancerContext newContext(Set<ClusterNode> nodesSet) {
-        return new LoadBalancerContextBridge(100, null, new DefaultClusterTopology(1, nodesSet));
+        return new LoadBalancerContextBridge(100, null, DefaultClusterTopology.of(1, nodesSet));
     }
 }

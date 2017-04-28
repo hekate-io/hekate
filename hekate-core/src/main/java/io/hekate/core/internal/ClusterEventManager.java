@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.util.Collections.emptySet;
+import static java.util.Collections.emptyList;
 
 class ClusterEventManager {
     private static class FilteredListener implements ClusterEventListener {
@@ -157,7 +157,7 @@ class ClusterEventManager {
     public CompletableFuture<?> ensureLeaveEventFired(ClusterTopology topology) {
         // If join event had been fired then we need to fire leave event too.
         if (joinEventFired.compareAndSet(true, false)) {
-            ClusterLeaveEvent event = new ClusterLeaveEvent(topology, emptySet(), emptySet());
+            ClusterLeaveEvent event = new ClusterLeaveEvent(topology, emptyList(), emptyList());
 
             return fireAsync(event);
         } else {

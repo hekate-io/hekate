@@ -26,7 +26,6 @@ import io.hekate.cluster.event.ClusterJoinEvent;
 import io.hekate.cluster.event.ClusterLeaveEvent;
 import io.hekate.cluster.internal.DefaultClusterTopology;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadFactory;
@@ -34,6 +33,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.After;
 import org.junit.Test;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 public class ClusterEventManagerTest extends HekateTestBase {
@@ -432,16 +433,16 @@ public class ClusterEventManagerTest extends HekateTestBase {
     private ClusterChangeEvent newChangeEvent() throws Exception {
         ClusterTopology topology = newTopology();
 
-        return new ClusterChangeEvent(topology, topology.getNodes(), Collections.emptySet());
+        return new ClusterChangeEvent(topology, topology.getNodes(), emptyList());
     }
 
     private ClusterLeaveEvent newLeaveEvent() throws Exception {
         ClusterTopology topology = newTopology();
 
-        return new ClusterLeaveEvent(topology, Collections.emptySet(), Collections.singleton(topology.getLocalNode()));
+        return new ClusterLeaveEvent(topology, emptyList(), singletonList(topology.getLocalNode()));
     }
 
     private ClusterTopology newTopology() throws Exception {
-        return new DefaultClusterTopology(1, toSet(newNode(), newNode(), newNode()));
+        return DefaultClusterTopology.of(1, toSet(newNode(), newNode(), newNode()));
     }
 }

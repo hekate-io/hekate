@@ -28,7 +28,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.both;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -105,11 +105,11 @@ public class FilteredClusterViewTest extends HekateNodeTestBase {
             both(hasItems(node2.getLocalNode(), node3.getLocalNode(), node4.getLocalNode()))
                 .and(not(hasItem(node1.getLocalNode())))
         );
-        assertEquals(evt1.getValue().getAdded(), singleton(node4.getLocalNode()));
+        assertEquals(evt1.getValue().getAdded(), singletonList(node4.getLocalNode()));
         assertTrue(evt1.getValue().getRemoved().isEmpty());
 
-        assertEquals(evt2.getValue().getTopology().getNodes(), singleton(node4.getLocalNode()));
-        assertEquals(evt2.getValue().getAdded(), singleton(node4.getLocalNode()));
+        assertEquals(evt2.getValue().getTopology().getNodes(), singletonList(node4.getLocalNode()));
+        assertEquals(evt2.getValue().getAdded(), singletonList(node4.getLocalNode()));
         assertTrue(evt2.getValue().getRemoved().isEmpty());
 
         assertTrue(evt3.getValue().getTopology().isEmpty());
@@ -136,10 +136,10 @@ public class FilteredClusterViewTest extends HekateNodeTestBase {
                 .and(not(hasItem(node4.getLocalNode())))
         );
         assertTrue(evt1.getValue().getAdded().isEmpty());
-        assertEquals(evt1.getValue().getRemoved(), singleton(node4.getLocalNode()));
+        assertEquals(evt1.getValue().getRemoved(), singletonList(node4.getLocalNode()));
 
         assertTrue(evt2.getValue().getTopology().isEmpty());
-        assertEquals(evt2.getValue().getRemoved(), singleton(node4.getLocalNode()));
+        assertEquals(evt2.getValue().getRemoved(), singletonList(node4.getLocalNode()));
         assertTrue(evt2.getValue().getAdded().isEmpty());
 
         assertTrue(evt3.getValue().getTopology().isEmpty());

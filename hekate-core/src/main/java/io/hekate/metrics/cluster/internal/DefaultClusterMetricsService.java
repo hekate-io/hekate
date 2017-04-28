@@ -489,7 +489,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
         }
     }
 
-    private void updateTopology(Set<ClusterNode> nodes) {
+    private void updateTopology(List<ClusterNode> nodes) {
         guard.lockWrite();
 
         try {

@@ -19,8 +19,8 @@ package io.hekate.task;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -39,12 +39,12 @@ import java.util.stream.Stream;
  */
 public interface MultiNodeResult<T> {
     /**
-     * Returns the set of nodes that participated in the task execution. The nodes are selected based on the filtering rules that were
+     * Returns the list of nodes that participated in the task execution. The nodes are selected based on the filtering rules that were
      * applied to the {@link TaskService} (see {@link TaskService#filter(ClusterNodeFilter)}).
      *
-     * @return Set of nodes or an empty set if no nodes were selected for task execution.
+     * @return List of nodes or an empty set if no nodes were selected for task execution.
      */
-    Set<ClusterNode> nodes();
+    List<ClusterNode> nodes();
 
     /**
      * Returns {@code true} if the task was successfully executed by all nodes and there were no failures. If this method returns

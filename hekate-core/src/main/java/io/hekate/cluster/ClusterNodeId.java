@@ -23,7 +23,7 @@ import io.hekate.util.UuidBase;
  *
  * @see ClusterNode#getId()
  */
-public class ClusterNodeId extends UuidBase<ClusterNodeId> {
+public class ClusterNodeId extends UuidBase<ClusterNodeId> implements HasClusterNodeId {
     private static final long serialVersionUID = 1;
 
     /**
@@ -54,5 +54,10 @@ public class ClusterNodeId extends UuidBase<ClusterNodeId> {
      */
     public ClusterNodeId(String s) {
         super(s);
+    }
+
+    @Override
+    public ClusterNodeId asClusterNodeId() {
+        return this;
     }
 }

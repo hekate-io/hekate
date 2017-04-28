@@ -181,7 +181,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
             .withWorkerThreads(workerThreadPoolSize)
             .withMessageCodec(() -> new TaskProtocolCodec(codec.createCodec()))
             .withLoadBalancer((msg, ctx) -> {
-                List<ClusterNode> nodes = ctx.getSortedList();
+                List<ClusterNode> nodes = ctx.getNodes();
 
                 int size = nodes.size();
 

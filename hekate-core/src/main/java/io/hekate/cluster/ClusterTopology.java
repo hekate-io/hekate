@@ -19,10 +19,26 @@ package io.hekate.cluster;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
- * Immutable snapshot of a cluster topology.
+ * Immutable snapshot of the cluster topology.
+ *
+ * <p>
+ * Nodes within the cluster topology are sorted based on the comparison rule of {@link ClusterNode#compareTo(ClusterNode)} method.
+ * This rule applies to the following methods:
+ * </p>
+ * <ul>
+ * <li>{@link #getNodes()}</li>
+ * <li>{@link #stream()}</li>
+ * <li>{@link #forEach(Consumer)}</li>
+ * <li>{@link #iterator()}</li>
+ * <li>{@link #spliterator()}</li>
+ * <li>{@link #getRemoteNodes()}</li>
+ * <li>{@link #getFirst()}</li>
+ * <li>{@link #getLast()}</li>
+ * </ul>
  *
  * @see ClusterService#getTopology()
  */
@@ -64,62 +80,53 @@ public interface ClusterTopology extends Iterable<ClusterNode> {
     ClusterNode getLocalNode();
 
     /**
-     * Returns the immutable set of all nodes within this topology. Returns an empty set if there are no nodes within this topology.
+     * Returns an immutable list of all nodes with consistent ordering based on {@link ClusterNode#compareTo(Object)} method. Returns an
+     * empty list if there are no nodes within this topology.
      *
-     * @return Immutable set of all nodes within this topology or an empty set if there are no nodes within this topology.
+     * @return Returns the immutable list of all nodes with consistent ordering or an empty list if there are no nodes within this topology.
      */
-    Set<ClusterNode> getNodes();
+    List<ClusterNode> getNodes();
 
     /**
-     * Returns the immutable list of all nodes within this topology. Returns an empty list if there are no nodes within this topology.
+     * Returns the first node of the {@link #getNodes()} list or {@code null} if this topology is empty.
      *
-     * @return Immutable list of all nodes within this topology or an empty list if there are no nodes within this topology.
+     * @return The first node of the {@link #getNodes()} list or {@code null} if this topology is empty.
      */
-    List<ClusterNode> getNodesList();
+    ClusterNode getFirst();
 
     /**
-     * Returns the immutable set of remote node within this topology. Returns an empty set if there are no remote nodes within this
-     * topology.
+     * Returns the last node of the {@link #getNodes()} list or {@code null} if this topology is empty.
      *
-     * @return Immutable set of remote node within this topology or an empty set if there are no remote nodes within this topology..
+     * @return The last node of the {@link #getNodes()} list or {@code null} if this topology is empty.
+     */
+    ClusterNode getLast();
+
+    /**
+     * Returns an immutable set of all nodes within this topology. Returns an empty set if there are no nodes within this topology.
+     *
+     * @return Immutable set of all nodes within this topology or an empty list if there are no nodes within this topology.
+     */
+    Set<ClusterNode> getNodeSet();
+
+    /**
+     * Returns an immutable list of remote nodes within this topology ordered by their {@link ClusterNode#getId() identifiers}. Returns an
+     * empty list if there are no remote nodes within this topology.
+     *
+     * @return Immutable list of remotes node within this topology ordered by their {@link ClusterNode#getId() identifiers} or an empty list
+     * if there are no remote nodes within this topology..
      *
      * @see ClusterNode#isLocal()
      */
-    Set<ClusterNode> getRemoteNodes();
+    List<ClusterNode> getRemoteNodes();
 
     /**
-     * Returns the immutable set of all nodes ordered by their {@link ClusterNode#getJoinOrder() join order}. The first element in this set
+     * Returns an immutable set of all nodes ordered by their {@link ClusterNode#getJoinOrder() join order}. The first element in this set
      * is the oldest node. Returns an empty set if there are no nodes within this topology.
      *
      * @return Immutable set of all nodes ordered by their {@link ClusterNode#getJoinOrder() join order} or an empty set if there are no
      * nodes within this topology.
      */
     NavigableSet<ClusterNode> getJoinOrder();
-
-    /**
-     * Returns the immutable list of all nodes ordered by their {@link ClusterNode#getJoinOrder() join order}. The first element in this
-     * list is the oldest node. Returns an empty list if there are no nodes within this topology.
-     *
-     * @return Immutable list of all nodes ordered by their {@link ClusterNode#getJoinOrder() join order} or an empty list if there are no
-     * nodes within this topology.
-     */
-    List<ClusterNode> getJoinOrderList();
-
-    /**
-     * Returns the immutable set of all nodes with consistent ordering based on {@link ClusterNode#compareTo(Object)} method. Returns an
-     * empty set if there are no nodes within this topology.
-     *
-     * @return Returns the immutable set of all nodes with consistent ordering or an empty set if there are no nodes within this topology.
-     */
-    NavigableSet<ClusterNode> getSorted();
-
-    /**
-     * Returns the immutable list of all nodes with consistent ordering based on {@link ClusterNode#compareTo(Object)} method. Returns an
-     * empty list if there are no nodes within this topology.
-     *
-     * @return Returns the immutable list of all nodes with consistent ordering or an empty list if there are no nodes within this topology.
-     */
-    List<ClusterNode> getSortedList();
 
     /**
      * Returns {@link Stream} of all nodes from this topology.
@@ -140,11 +147,11 @@ public interface ClusterTopology extends Iterable<ClusterNode> {
     /**
      * Returns {@code true} if this topology contains a node with the specified identifier.
      *
-     * @param node Node identifier to check.
+     * @param id Node identifier to check.
      *
      * @return {@code true} if this topology contains a node with the specified identifier.
      */
-    boolean contains(ClusterNodeId node);
+    boolean contains(ClusterNodeId id);
 
     /**
      * Returns the node for the specified identifier or {@code null} if there is no such node within this topology.

@@ -17,7 +17,9 @@
 package io.hekate.cluster;
 
 import io.hekate.HekateTestBase;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TreeSet;
@@ -45,10 +47,9 @@ public abstract class ClusterTopologyTestBase extends HekateTestBase {
 
         assertEquals(0, t.size());
         assertTrue(t.getNodes().isEmpty());
-        assertTrue(t.getNodesList().isEmpty());
+        assertTrue(t.getNodeSet().isEmpty());
         assertTrue(t.getRemoteNodes().isEmpty());
         assertTrue(t.getJoinOrder().isEmpty());
-        assertTrue(t.getSorted().isEmpty());
         assertFalse(t.contains(newNode()));
         assertFalse(t.contains(newNodeId()));
         assertFalse(t.iterator().hasNext());
@@ -70,20 +71,14 @@ public abstract class ClusterTopologyTestBase extends HekateTestBase {
 
         assertEquals(1, t.size());
         assertEquals(1, t.getNodes().size());
-        assertEquals(1, t.getNodesList().size());
         assertTrue(t.getNodes().contains(n));
+
+        assertEquals(1, t.getNodeSet().size());
 
         assertEquals(0, t.getRemoteNodes().size());
 
         assertEquals(1, t.getJoinOrder().size());
         assertTrue(t.getJoinOrder().contains(n));
-        assertEquals(1, t.getJoinOrderList().size());
-        assertTrue(t.getJoinOrderList().contains(n));
-
-        assertEquals(1, t.getSorted().size());
-        assertTrue(t.getSorted().contains(n));
-        assertEquals(1, t.getSortedList().size());
-        assertTrue(t.getSortedList().contains(n));
 
         assertEquals(n, t.getLocalNode());
         assertEquals(n, t.getYoungest());
@@ -104,7 +99,7 @@ public abstract class ClusterTopologyTestBase extends HekateTestBase {
 
         assertEquals(1, t.size());
         assertEquals(1, t.getNodes().size());
-        assertEquals(1, t.getNodesList().size());
+        assertEquals(1, t.getNodeSet().size());
         assertTrue(t.getNodes().contains(n));
 
         assertEquals(1, t.getRemoteNodes().size());
@@ -112,13 +107,6 @@ public abstract class ClusterTopologyTestBase extends HekateTestBase {
 
         assertEquals(1, t.getJoinOrder().size());
         assertTrue(t.getJoinOrder().contains(n));
-        assertEquals(1, t.getJoinOrderList().size());
-        assertTrue(t.getJoinOrderList().contains(n));
-
-        assertEquals(1, t.getSorted().size());
-        assertTrue(t.getSorted().contains(n));
-        assertEquals(1, t.getSortedList().size());
-        assertTrue(t.getSortedList().contains(n));
 
         assertNull(t.getLocalNode());
 
@@ -131,7 +119,7 @@ public abstract class ClusterTopologyTestBase extends HekateTestBase {
 
     @Test
     public void testMultipleNodes() throws Exception {
-        NavigableSet<ClusterNode> remoteNodes = new TreeSet<>();
+        List<ClusterNode> remoteNodes = new ArrayList<>();
 
         ClusterNode oldest = newNode(n -> n.withJoinOrder(1));
 
@@ -139,6 +127,8 @@ public abstract class ClusterTopologyTestBase extends HekateTestBase {
         remoteNodes.add(newNode(n -> n.withJoinOrder(2)));
         remoteNodes.add(newNode(n -> n.withJoinOrder(3)));
         remoteNodes.add(newNode(n -> n.withJoinOrder(4)));
+
+        Collections.sort(remoteNodes);
 
         NavigableSet<ClusterNode> allNodes = new TreeSet<>(remoteNodes);
 
@@ -153,23 +143,18 @@ public abstract class ClusterTopologyTestBase extends HekateTestBase {
 
         assertEquals(allNodes.size(), t.size());
         assertEquals(allNodes.size(), t.getNodes().size());
-        assertEquals(allNodes.size(), t.getNodesList().size());
-        assertEquals(allNodes, t.getNodes());
+        assertEquals(allNodes.size(), t.getNodeSet().size());
 
         assertEquals(remoteNodes, t.getRemoteNodes());
 
         assertEquals(allNodes, t.getJoinOrder());
         assertEquals(oldest, t.getJoinOrder().first());
         assertEquals(localNode, t.getJoinOrder().last());
-        assertEquals(oldest, t.getJoinOrderList().get(0));
         assertEquals(localNode, t.getJoinOrder().last());
-        assertEquals(localNode, t.getJoinOrderList().get(t.getJoinOrderList().size() - 1));
 
-        assertEquals(allNodes, t.getSorted());
-        assertEquals(allNodes.first(), t.getSorted().first());
-        assertEquals(allNodes.first(), t.getSortedList().get(0));
-        assertEquals(allNodes.last(), t.getSorted().last());
-        assertEquals(allNodes.last(), t.getSortedList().get(t.getSortedList().size() - 1));
+        assertEquals(new ArrayList<>(allNodes), t.getNodes());
+        assertEquals(allNodes.first(), t.getNodes().get(0));
+        assertEquals(allNodes.last(), t.getNodes().get(t.getNodes().size() - 1));
 
         assertEquals(localNode, t.getLocalNode());
 

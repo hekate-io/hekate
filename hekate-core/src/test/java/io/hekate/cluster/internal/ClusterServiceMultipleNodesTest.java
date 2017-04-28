@@ -52,7 +52,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import org.junit.Test;
 
 import static java.util.stream.Collectors.toList;
@@ -230,7 +229,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
                     ver++;
                 }
 
-                assertEquals(oldNode.getTopology().getNodes(), nodes.stream().map(Hekate::getLocalNode).collect(Collectors.toSet()));
+                assertEquals(oldNode.getTopology().getNodes(), nodes.stream().map(Hekate::getLocalNode).sorted().collect(toList()));
             }
         }
 
@@ -254,7 +253,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
                     ver++;
                 }
 
-                assertEquals(oldNode.getTopology().getNodes(), nodes.stream().map(Hekate::getLocalNode).collect(Collectors.toSet()));
+                assertEquals(oldNode.getTopology().getNodes(), nodes.stream().map(Hekate::getLocalNode).sorted().collect(toList()));
             }
         }
 

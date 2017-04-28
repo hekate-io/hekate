@@ -1457,7 +1457,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     }
 
     private boolean isCoordinator(ClusterTopology topology) {
-        return topology.getSorted().first().equals(node);
+        return topology.getFirst().equals(node);
     }
 
     private void runOnGossipThread(Runnable task) {

@@ -36,8 +36,9 @@ public class LoadBalancerJavadocTest extends HekateTestBase {
             // Calculate position of a destination node within the cluster topology.
             int idx = Math.abs(message.hashCode() % ctx.size());
 
-            // Select the destination node.
-            return ctx.getTopology().getSortedList().get(idx).getId();
+            // Select the destination node
+            // Note that nodes are always sorted by their IDs within the topology.
+            return ctx.getTopology().getNodes().get(idx).getId();
         }
     }
     // End:load_balancer
@@ -46,7 +47,7 @@ public class LoadBalancerJavadocTest extends HekateTestBase {
     public void exampleLoadBalancer() throws Exception {
         ExampleLoadBalancer balancer = new ExampleLoadBalancer();
 
-        ClusterTopology topology = new DefaultClusterTopology(1, toSet(newNode(), newNode(), newNode()));
+        ClusterTopology topology = DefaultClusterTopology.of(1, toSet(newNode(), newNode(), newNode()));
 
         LoadBalancerContext ctx = new LoadBalancerContextBridge(100, null, topology);
 

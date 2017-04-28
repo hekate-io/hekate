@@ -20,7 +20,6 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.messaging.broadcast.BroadcastCallback;
 import io.hekate.messaging.broadcast.BroadcastResult;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -235,7 +234,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
                     await(joinLatch);
 
-                    return new HashSet<>(nodes);
+                    return nodes;
                 }).broadcast("test-join" + i, joinCallback);
 
                 return null;
@@ -278,7 +277,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
                     await(leaveLatch);
 
-                    return new HashSet<>(nodes);
+                    return nodes;
                 }).broadcast("test-join" + i, leaveCallback);
 
                 return null;

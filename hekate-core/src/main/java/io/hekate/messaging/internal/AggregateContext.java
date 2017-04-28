@@ -25,13 +25,13 @@ import io.hekate.util.format.ToStringIgnore;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toList;
 
 class AggregateContext<T> implements AggregateResult<T> {
     private static final Logger log = LoggerFactory.getLogger(AggregateContext.class);
@@ -43,11 +43,11 @@ class AggregateContext<T> implements AggregateResult<T> {
     @ToStringIgnore
     private final AggregateCallback<T> callback;
 
-    private Set<ClusterNode> nodes;
+    private List<ClusterNode> nodes;
 
     private Map<ClusterNode, Throwable> errors;
 
-    public AggregateContext(T request, Set<ClusterNode> nodes, AggregateCallback<T> callback) {
+    public AggregateContext(T request, List<ClusterNode> nodes, AggregateCallback<T> callback) {
         assert request != null : "Request is null.";
         assert nodes != null : "Nodes set is null.";
         assert !nodes.isEmpty() : "Nodes set is empty.";
@@ -65,7 +65,7 @@ class AggregateContext<T> implements AggregateResult<T> {
     }
 
     @Override
-    public Set<ClusterNode> nodes() {
+    public List<ClusterNode> nodes() {
         synchronized (this) {
             return nodes;
         }
@@ -123,7 +123,7 @@ class AggregateContext<T> implements AggregateResult<T> {
 
     public boolean forgetNode(ClusterNode node) {
         synchronized (this) {
-            nodes = Collections.unmodifiableSet(nodes.stream().filter(n -> !n.equals(node)).collect(toSet()));
+            nodes = Collections.unmodifiableList(nodes.stream().filter(n -> !n.equals(node)).collect(toList()));
 
             return isReady();
         }

@@ -68,7 +68,6 @@ import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -87,9 +86,11 @@ import static io.hekate.core.Hekate.State.JOINING;
 import static io.hekate.core.Hekate.State.LEAVING;
 import static io.hekate.core.Hekate.State.TERMINATING;
 import static io.hekate.core.Hekate.State.UP;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.synchronizedMap;
+import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toSet;
@@ -646,7 +647,7 @@ class HekateNode implements Hekate, Serializable {
                     node = localNode;
 
                     // Prepare initial (empty) topology.
-                    topology = new DefaultClusterTopology(0, emptySet());
+                    topology = DefaultClusterTopology.empty();
 
                     if (log.isInfoEnabled()) {
                         log.info("Initialized local node info [node={}]", localNode.toDetailedString());
@@ -788,11 +789,11 @@ class HekateNode implements Hekate, Serializable {
                                     log.debug("Updated local topology [topology={}]", newTopology);
                                 }
 
-                                Set<ClusterNode> oldNodes = lastTopology.getNodes();
-                                Set<ClusterNode> newNodes = newTopology.getNodes();
+                                Set<ClusterNode> oldNodes = lastTopology.getNodeSet();
+                                Set<ClusterNode> newNodes = newTopology.getNodeSet();
 
-                                Set<ClusterNode> removed = getDiff(oldNodes, newNodes);
-                                Set<ClusterNode> added = getDiff(newNodes, oldNodes);
+                                List<ClusterNode> removed = getDiff(oldNodes, newNodes);
+                                List<ClusterNode> added = getDiff(newNodes, oldNodes);
 
                                 if (log.isInfoEnabled()) {
                                     int size = topology.size();
@@ -1156,26 +1157,26 @@ class HekateNode implements Hekate, Serializable {
         return new ServiceManager(builtIn, core, factories);
     }
 
-    private Set<ClusterNode> getDiff(Set<ClusterNode> oldNodes, Set<ClusterNode> newNodes) {
-        Set<ClusterNode> removed = null;
+    private List<ClusterNode> getDiff(Set<ClusterNode> oldNodes, Set<ClusterNode> newNodes) {
+        List<ClusterNode> removed = null;
 
         for (ClusterNode oldNode : oldNodes) {
             if (!newNodes.contains(oldNode)) {
                 if (removed == null) {
-                    removed = new HashSet<>(oldNodes.size(), 1.0f);
+                    removed = new ArrayList<>(oldNodes.size());
                 }
 
                 removed.add(oldNode);
             }
         }
 
-        return removed != null ? unmodifiableSet(removed) : emptySet();
+        return removed != null ? unmodifiableList(removed) : emptyList();
     }
 
     private String toAddressesString(ClusterTopology topology) {
         StringBuilder buf = new StringBuilder();
 
-        topology.getSorted().forEach(n -> {
+        topology.getNodes().forEach(n -> {
             if (buf.length() > 0) {
                 buf.append(", ");
             }

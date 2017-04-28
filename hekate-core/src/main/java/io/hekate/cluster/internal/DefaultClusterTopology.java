@@ -22,6 +22,7 @@ import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterTopologyHash;
+import io.hekate.cluster.HasClusterNodeId;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -30,11 +31,9 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.NavigableSet;
 import java.util.Set;
 import java.util.Spliterator;
@@ -49,12 +48,13 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
-import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableNavigableSet;
 import static java.util.Collections.unmodifiableSet;
 
-public class DefaultClusterTopology implements ClusterTopology, Serializable {
-    public static final Comparator<ClusterNode> JOIN_ORDER_COMPARATOR = Comparator.comparingInt(ClusterNode::getJoinOrder);
+public final class DefaultClusterTopology implements ClusterTopology, Serializable {
+    private static final Comparator<ClusterNode> JOIN_ORDER_COMPARATOR = Comparator.comparingInt(ClusterNode::getJoinOrder);
+
+    private static final Comparator<HasClusterNodeId> HAS_NODE_ID_COMPARATOR = Comparator.comparing(HasClusterNodeId::asClusterNodeId);
 
     private static final long serialVersionUID = 1;
 
@@ -67,16 +67,13 @@ public class DefaultClusterTopology implements ClusterTopology, Serializable {
 
     private final long version;
 
-    private final Set<ClusterNode> nodes;
+    private final List<ClusterNode> nodes;
 
     @ToStringIgnore
     private transient ClusterNode localNodeCache;
 
     @ToStringIgnore
-    private transient List<ClusterNode> nodesListCache;
-
-    @ToStringIgnore
-    private transient Map<ClusterNodeId, ClusterNode> nodesByIdCache;
+    private transient Set<ClusterNode> nodeSetCache;
 
     @ToStringIgnore
     private transient ClusterNode oldestNodeCache;
@@ -85,28 +82,19 @@ public class DefaultClusterTopology implements ClusterTopology, Serializable {
     private transient ClusterNode youngestNodeCache;
 
     @ToStringIgnore
-    private transient Set<ClusterNode> remoteNodesCache;
+    private transient List<ClusterNode> remoteNodesCache;
 
     @ToStringIgnore
     private transient NavigableSet<ClusterNode> joinOrderCache;
 
     @ToStringIgnore
-    private transient List<ClusterNode> joinOrderListCache;
-
-    @ToStringIgnore
-    private transient NavigableSet<ClusterNode> sortedCache;
-
-    @ToStringIgnore
-    private transient List<ClusterNode> sortedListCache;
-
-    @ToStringIgnore
     private transient ClusterTopologyHash hashCache;
 
-    public DefaultClusterTopology(long version, Set<ClusterNode> nodes) {
-        this(version, nodes, false);
+    private DefaultClusterTopology(long version, Set<ClusterNode> nodes) {
+        this(version, new ArrayList<>(nodes), false);
     }
 
-    private DefaultClusterTopology(long version, Set<ClusterNode> nodes, boolean safe) {
+    private DefaultClusterTopology(long version, List<ClusterNode> nodes, boolean safe) {
         assert nodes != null : "Nodes list is null.";
 
         this.version = version;
@@ -117,21 +105,27 @@ public class DefaultClusterTopology implements ClusterTopology, Serializable {
             int size = nodes.size();
 
             if (size == 0) {
-                this.nodes = emptySet();
+                this.nodes = emptyList();
             } else if (size == 1) {
-                this.nodes = singleton(nodes.iterator().next());
+                this.nodes = singletonList(nodes.get(0));
             } else {
-                Set<ClusterNode> copy = new HashSet<>(size, 1.0f);
+                List<ClusterNode> copy = new ArrayList<>(nodes);
 
-                copy.addAll(nodes);
-
-                this.nodes = unmodifiableSet(copy);
+                this.nodes = sortedUnmodifiableList(copy);
             }
         }
     }
 
+    public static DefaultClusterTopology of(long version, Set<ClusterNode> nodes) {
+        return new DefaultClusterTopology(version, new ArrayList<>(nodes), false);
+    }
+
+    public static DefaultClusterTopology empty() {
+        return new DefaultClusterTopology(0, emptyList(), true);
+    }
+
     public DefaultClusterTopology updateIfModified(Set<ClusterNode> newNodes) {
-        if (!nodes.equals(newNodes)) {
+        if (!getNodeSet().equals(newNodes)) {
             return update(newNodes);
         }
 
@@ -188,25 +182,37 @@ public class DefaultClusterTopology implements ClusterTopology, Serializable {
     }
 
     @Override
-    public Set<ClusterNode> getNodes() {
+    public List<ClusterNode> getNodes() {
         return nodes;
     }
 
     @Override
-    public List<ClusterNode> getNodesList() {
-        List<ClusterNode> nodesList = this.nodesListCache;
+    public ClusterNode getFirst() {
+        return nodes.isEmpty() ? null : nodes.get(0);
+    }
 
-        if (nodesList == null) {
+    @Override
+    public ClusterNode getLast() {
+        return nodes.isEmpty() ? null : nodes.get(nodes.size() - 1);
+    }
+
+    @Override
+    public Set<ClusterNode> getNodeSet() {
+        Set<ClusterNode> nodeSet = this.nodeSetCache;
+
+        if (nodeSet == null) {
             if (nodes.isEmpty()) {
-                nodesList = emptyList();
+                nodeSet = emptySet();
+            } else if (nodes.size() == 1) {
+                nodeSet = singleton(nodes.get(0));
             } else {
-                nodesList = new ArrayList<>(nodes);
+                nodeSet = unmodifiableSet(new HashSet<>(nodes));
             }
 
-            this.nodesListCache = unmodifiableList(nodesList);
+            this.nodeSetCache = nodeSet;
         }
 
-        return nodesList;
+        return nodeSet;
     }
 
     @Override
@@ -231,45 +237,6 @@ public class DefaultClusterTopology implements ClusterTopology, Serializable {
     }
 
     @Override
-    public List<ClusterNode> getJoinOrderList() {
-        List<ClusterNode> joinOrderList = this.joinOrderListCache;
-
-        if (joinOrderList == null) {
-            this.joinOrderListCache = joinOrderList = getNodesAsSortedList(JOIN_ORDER_COMPARATOR);
-        }
-
-        return joinOrderList;
-    }
-
-    @Override
-    public NavigableSet<ClusterNode> getSorted() {
-        NavigableSet<ClusterNode> sorted = this.sortedCache;
-
-        if (sorted == null) {
-            if (nodes.isEmpty()) {
-                sorted = emptyNavigableSet();
-            } else {
-                sorted = unmodifiableNavigableSet(new TreeSet<>(nodes));
-            }
-
-            this.sortedCache = sorted;
-        }
-
-        return sorted;
-    }
-
-    @Override
-    public List<ClusterNode> getSortedList() {
-        List<ClusterNode> sortedList = this.sortedListCache;
-
-        if (sortedList == null) {
-            this.sortedListCache = sortedList = getNodesAsSortedList(null);
-        }
-
-        return sortedList;
-    }
-
-    @Override
     public Stream<ClusterNode> stream() {
         return nodes.stream();
     }
@@ -290,27 +257,27 @@ public class DefaultClusterTopology implements ClusterTopology, Serializable {
     }
 
     @Override
-    public Set<ClusterNode> getRemoteNodes() {
-        Set<ClusterNode> remoteNodes = this.remoteNodesCache;
+    public List<ClusterNode> getRemoteNodes() {
+        List<ClusterNode> remoteNodes = this.remoteNodesCache;
 
         if (remoteNodes == null) {
             int size = nodes.size();
 
             if (size == 0) {
-                remoteNodes = emptySet();
+                remoteNodes = emptyList();
             } else if (size == 1) {
-                ClusterNode node = nodes.iterator().next();
+                ClusterNode node = nodes.get(0);
 
                 if (node.isLocal()) {
-                    remoteNodes = emptySet();
+                    remoteNodes = emptyList();
                 } else {
-                    remoteNodes = singleton(node);
+                    remoteNodes = singletonList(node);
                 }
             } else {
                 for (ClusterNode node : nodes) {
                     if (!node.isLocal()) {
                         if (remoteNodes == null) {
-                            remoteNodes = new HashSet<>(size, 1.0f);
+                            remoteNodes = new ArrayList<>(size);
                         }
 
                         remoteNodes.add(node);
@@ -318,9 +285,9 @@ public class DefaultClusterTopology implements ClusterTopology, Serializable {
                 }
 
                 if (remoteNodes == null) {
-                    remoteNodes = emptySet();
+                    remoteNodes = emptyList();
                 } else {
-                    remoteNodes = unmodifiableSet(remoteNodes);
+                    remoteNodes = unmodifiableList(remoteNodes);
                 }
             }
 
@@ -332,17 +299,23 @@ public class DefaultClusterTopology implements ClusterTopology, Serializable {
 
     @Override
     public boolean contains(ClusterNode node) {
-        return nodes.contains(node);
+        return Collections.binarySearch(nodes, node) >= 0;
     }
 
     @Override
-    public boolean contains(ClusterNodeId node) {
-        return getNodesById().containsKey(node);
+    public boolean contains(ClusterNodeId id) {
+        return Collections.binarySearch(nodes, id, HAS_NODE_ID_COMPARATOR) >= 0;
     }
 
     @Override
     public ClusterNode get(ClusterNodeId id) {
-        return getNodesById().get(id);
+        int idx = Collections.binarySearch(nodes, id, HAS_NODE_ID_COMPARATOR);
+
+        if (idx < 0) {
+            return null;
+        }
+
+        return nodes.get(idx);
     }
 
     @Override
@@ -365,7 +338,7 @@ public class DefaultClusterTopology implements ClusterTopology, Serializable {
             if (size == 0) {
                 oldest = NOT_A_NODE;
             } else if (size == 1) {
-                oldest = nodes.iterator().next();
+                oldest = nodes.get(0);
             } else if (size > 1) {
                 for (ClusterNode node : nodes) {
                     if (oldest == null || oldest.getJoinOrder() > node.getJoinOrder()) {
@@ -390,7 +363,7 @@ public class DefaultClusterTopology implements ClusterTopology, Serializable {
             if (size == 0) {
                 youngest = NOT_A_NODE;
             } else if (size == 1) {
-                youngest = nodes.iterator().next();
+                youngest = nodes.get(0);
             } else if (size > 1) {
                 for (ClusterNode node : nodes) {
                     if (youngest == null || youngest.getJoinOrder() < node.getJoinOrder()) {
@@ -410,14 +383,12 @@ public class DefaultClusterTopology implements ClusterTopology, Serializable {
         if (nodes.isEmpty()) {
             return null;
         } else {
-            List<ClusterNode> nodeList = getNodesList();
-
-            int size = nodeList.size();
+            int size = nodes.size();
 
             if (size == 1) {
-                return nodeList.get(0);
+                return nodes.get(0);
             } else {
-                return nodeList.get(ThreadLocalRandom.current().nextInt(size));
+                return nodes.get(ThreadLocalRandom.current().nextInt(size));
             }
         }
     }
@@ -430,27 +401,27 @@ public class DefaultClusterTopology implements ClusterTopology, Serializable {
             return this;
         }
 
-        Set<ClusterNode> filtered = filter.apply(nodes);
+        List<ClusterNode> filtered = filter.apply(nodes);
 
         if (filtered.size() == nodes.size()) {
             return this;
         }
 
-        return new DefaultClusterTopology(version, filtered);
+        return new DefaultClusterTopology(version, filtered, false);
     }
 
     @Override
     public ClusterTopology filter(ClusterNodeFilter filter) {
         ArgAssert.notNull(filter, "Filter");
 
-        Set<ClusterNode> filtered = null;
+        List<ClusterNode> filtered = null;
 
         int size = nodes.size();
 
         for (ClusterNode node : nodes) {
             if (filter.accept(node)) {
                 if (filtered == null) {
-                    filtered = new HashSet<>(size, 1.0f);
+                    filtered = new ArrayList<>(size);
                 }
 
                 filtered.add(node);
@@ -458,61 +429,21 @@ public class DefaultClusterTopology implements ClusterTopology, Serializable {
         }
 
         if (filtered == null) {
-            filtered = emptySet();
+            filtered = emptyList();
         } else if (filtered.size() == size) {
             // Minor optimization to preserve values cached within this instance.
             return this;
         } else {
-            filtered = unmodifiableSet(filtered);
+            filtered = sortedUnmodifiableList(filtered);
         }
 
         return new DefaultClusterTopology(version, filtered, true);
     }
 
-    private List<ClusterNode> getNodesAsSortedList(Comparator<ClusterNode> comparator) {
-        List<ClusterNode> joinOrderList;
+    private List<ClusterNode> sortedUnmodifiableList(List<ClusterNode> copy) {
+        copy.sort(ClusterNode::compareTo);
 
-        if (nodes.isEmpty()) {
-            joinOrderList = emptyList();
-        } else if (nodes.size() == 1) {
-            joinOrderList = singletonList(nodes.iterator().next());
-        } else {
-            joinOrderList = new ArrayList<>(nodes);
-
-            joinOrderList.sort(comparator);
-
-            joinOrderList = unmodifiableList(joinOrderList);
-        }
-
-        return joinOrderList;
-    }
-
-    private Map<ClusterNodeId, ClusterNode> getNodesById() {
-        Map<ClusterNodeId, ClusterNode> nodesById = this.nodesByIdCache;
-
-        if (nodesById == null) {
-            int size = nodes.size();
-
-            if (size == 0) {
-                nodesById = Collections.emptyMap();
-            } else if (size == 1) {
-                ClusterNode node = nodes.iterator().next();
-
-                nodesById = Collections.singletonMap(node.getId(), node);
-            } else {
-                nodesById = new HashMap<>(size, 1.0f);
-
-                for (ClusterNode node : nodes) {
-                    nodesById.put(node.getId(), node);
-                }
-
-                nodesById = unmodifiableMap(nodesById);
-            }
-
-            this.nodesByIdCache = nodesById;
-        }
-
-        return nodesById;
+        return unmodifiableList(copy);
     }
 
     @Override

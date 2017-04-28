@@ -21,8 +21,8 @@ import io.hekate.messaging.broadcast.AggregateResult;
 import io.hekate.util.format.ToString;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 class EmptyAggregateResult<T> implements AggregateResult<T> {
@@ -40,8 +40,8 @@ class EmptyAggregateResult<T> implements AggregateResult<T> {
     }
 
     @Override
-    public Set<ClusterNode> nodes() {
-        return Collections.emptySet();
+    public List<ClusterNode> nodes() {
+        return Collections.emptyList();
     }
 
     @Override

@@ -85,7 +85,7 @@ class DefaultCoordinationContext implements CoordinationContext {
 
         membersById = new HashMap<>(topology.size(), 1.0f);
 
-        topology.getSorted().forEach(node -> {
+        topology.getNodes().forEach(node -> {
             // First node is the coordinator.
             boolean coordinator = membersById.isEmpty();
 

@@ -93,38 +93,33 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
     }
 
     @Override
-    public Set<ClusterNode> getNodes() {
+    public List<ClusterNode> getNodes() {
         return topology.getNodes();
     }
 
     @Override
-    public List<ClusterNode> getNodesList() {
-        return topology.getNodesList();
+    public ClusterNode getFirst() {
+        return topology.getFirst();
     }
 
     @Override
-    public Set<ClusterNode> getRemoteNodes() {
+    public ClusterNode getLast() {
+        return topology.getLast();
+    }
+
+    @Override
+    public Set<ClusterNode> getNodeSet() {
+        return topology.getNodeSet();
+    }
+
+    @Override
+    public List<ClusterNode> getRemoteNodes() {
         return topology.getRemoteNodes();
     }
 
     @Override
     public NavigableSet<ClusterNode> getJoinOrder() {
         return topology.getJoinOrder();
-    }
-
-    @Override
-    public List<ClusterNode> getJoinOrderList() {
-        return topology.getJoinOrderList();
-    }
-
-    @Override
-    public NavigableSet<ClusterNode> getSorted() {
-        return topology.getSorted();
-    }
-
-    @Override
-    public List<ClusterNode> getSortedList() {
-        return topology.getSortedList();
     }
 
     @Override

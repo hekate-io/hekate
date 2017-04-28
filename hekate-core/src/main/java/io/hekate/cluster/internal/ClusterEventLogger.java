@@ -27,7 +27,6 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,8 +62,8 @@ class ClusterEventLogger implements ClusterEventListener {
                 case LEAVE: {
                     ClusterLeaveEvent leave = event.asLeave();
 
-                    Set<ClusterNode> added = leave.getAdded();
-                    Set<ClusterNode> removed = leave.getRemoved();
+                    List<ClusterNode> added = leave.getAdded();
+                    List<ClusterNode> removed = leave.getRemoved();
 
                     log.info("{}", toDetailedString("Leave topology", event.getTopology(), added, removed));
 
@@ -73,8 +72,8 @@ class ClusterEventLogger implements ClusterEventListener {
                 case CHANGE: {
                     ClusterChangeEvent change = event.asChange();
 
-                    Set<ClusterNode> added = change.getAdded();
-                    Set<ClusterNode> removed = change.getRemoved();
+                    List<ClusterNode> added = change.getAdded();
+                    List<ClusterNode> removed = change.getRemoved();
 
                     log.info("{}", toDetailedString("Topology change", event.getTopology(), added, removed));
 
@@ -87,7 +86,7 @@ class ClusterEventLogger implements ClusterEventListener {
         }
     }
 
-    private String toDetailedString(String eventType, ClusterTopology topology, Set<ClusterNode> added, Set<ClusterNode> removed) {
+    private String toDetailedString(String eventType, ClusterTopology topology, List<ClusterNode> added, List<ClusterNode> removed) {
         String nl = System.lineSeparator();
 
         StringBuilder buf = new StringBuilder();

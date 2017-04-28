@@ -54,9 +54,7 @@ public class DefaultLoadBalancerContextTest extends ClusterTopologyTestBase {
         return newContext(100, "test", version, nodes, null);
     }
 
-    private DefaultLoadBalancerContext newContext(int affinity, Object affinityKey, int version, Set<ClusterNode> nodes,
-        FailureInfo details) {
-        return new DefaultLoadBalancerContext(affinity, affinityKey, new DefaultClusterTopology(version, nodes),
-            Optional.ofNullable(details));
+    private DefaultLoadBalancerContext newContext(int affinity, Object affinityKey, int ver, Set<ClusterNode> nodes, FailureInfo failure) {
+        return new DefaultLoadBalancerContext(affinity, affinityKey, DefaultClusterTopology.of(ver, nodes), Optional.ofNullable(failure));
     }
 }

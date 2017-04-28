@@ -16,8 +16,7 @@
 
 package io.hekate.cluster;
 
-import java.util.Collection;
-import java.util.Set;
+import java.util.List;
 
 /**
  * Interface for filtering groups of cluster nodes.
@@ -34,5 +33,5 @@ public interface ClusterFilter {
      *
      * @return New set of nodes that were accepted by this filter or an empty set if none of the nodes were accepted.
      */
-    Set<ClusterNode> apply(Collection<ClusterNode> nodes);
+    List<ClusterNode> apply(List<ClusterNode> nodes);
 }

@@ -350,7 +350,7 @@ class MessagingGateway<T> {
         assert opts != null : "Messaging options must be not null.";
         assert callback != null : "Callback must be not null.";
 
-        Set<ClusterNode> nodes = opts.cluster().getTopology().getNodes();
+        Set<ClusterNode> nodes = opts.cluster().getTopology().getNodeSet();
 
         if (nodes.isEmpty()) {
             callback.onComplete(null, new EmptyBroadcastResult<>(message));
@@ -395,7 +395,7 @@ class MessagingGateway<T> {
         assert opts != null : "Messaging options must be not null.";
         assert callback != null : "Callback must be not null.";
 
-        Set<ClusterNode> nodes = opts.cluster().getTopology().getNodes();
+        List<ClusterNode> nodes = opts.cluster().getTopology().getNodes();
 
         if (nodes.isEmpty()) {
             callback.onComplete(null, new EmptyAggregateResult<>(message));
@@ -786,7 +786,7 @@ class MessagingGateway<T> {
                         log.debug("Updating topology [channel={}, topology={}]", name, newTopology);
                     }
 
-                    Set<ClusterNode> newNodes = newTopology.getNodes();
+                    Set<ClusterNode> newNodes = newTopology.getNodeSet();
 
                     Set<ClusterNode> added = null;
                     Set<ClusterNode> removed = null;
@@ -929,7 +929,7 @@ class MessagingGateway<T> {
                 }
 
                 // Select the only one node from the cluster topology.
-                targetId = topology.getNodes().iterator().next().getId();
+                targetId = topology.getFirst().getId();
             } else {
                 LoadBalancerContext balancerCtx = new DefaultLoadBalancerContext(ctx, topology, Optional.ofNullable(prevErr));
 

@@ -19,7 +19,7 @@ package io.hekate.cluster.event;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
-import java.util.Set;
+import java.util.List;
 
 /**
  * Cluster leave event.
@@ -34,18 +34,18 @@ import java.util.Set;
 public class ClusterLeaveEvent extends ClusterEventBase {
     private static final long serialVersionUID = 1;
 
-    private final Set<ClusterNode> added;
+    private final List<ClusterNode> added;
 
-    private final Set<ClusterNode> removed;
+    private final List<ClusterNode> removed;
 
     /**
      * Constructs a new instance.
      *
      * @param topology Topology.
-     * @param added Set of newly joined nodes (see {@link #getAdded()}).
-     * @param removed Set of nodes that left the cluster (see {@link #getRemoved()}).
+     * @param added List of newly joined nodes (see {@link #getAdded()}).
+     * @param removed List of nodes that left the cluster (see {@link #getRemoved()}).
      */
-    public ClusterLeaveEvent(ClusterTopology topology, Set<ClusterNode> added, Set<ClusterNode> removed) {
+    public ClusterLeaveEvent(ClusterTopology topology, List<ClusterNode> added, List<ClusterNode> removed) {
         super(topology);
 
         this.added = added;
@@ -53,20 +53,20 @@ public class ClusterLeaveEvent extends ClusterEventBase {
     }
 
     /**
-     * Returns the set of new nodes that joined the cluster.
+     * Returns the list of new nodes that joined the cluster.
      *
-     * @return Set of new nodes that joined the cluster.
+     * @return List of new nodes that joined the cluster.
      */
-    public Set<ClusterNode> getAdded() {
+    public List<ClusterNode> getAdded() {
         return added;
     }
 
     /**
-     * Returns the set of nodes that left the cluster.
+     * Returns the list of nodes that left the cluster.
      *
-     * @return Set of nodes that left the cluster.
+     * @return List of nodes that left the cluster.
      */
-    public Set<ClusterNode> getRemoved() {
+    public List<ClusterNode> getRemoved() {
         return removed;
     }
 

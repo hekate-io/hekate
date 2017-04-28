@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
-import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.not;
@@ -96,8 +96,8 @@ public class TaskServiceTest extends TaskServiceTestBase {
 
     @Test
     public void testFilterAll() throws Exception {
-        assertEquals(first.getLocalNode(), get(tasks.filterAll(n -> singleton(first.getLocalNode())).call(local::getLocalNode)));
-        assertEquals(second.getLocalNode(), get(tasks.filterAll(n -> singleton(second.getLocalNode())).call(local::getLocalNode)));
+        assertEquals(first.getLocalNode(), get(tasks.filterAll(n -> singletonList(first.getLocalNode())).call(local::getLocalNode)));
+        assertEquals(second.getLocalNode(), get(tasks.filterAll(n -> singletonList(second.getLocalNode())).call(local::getLocalNode)));
     }
 
     @Test

@@ -18,15 +18,14 @@ package io.hekate.cluster;
 
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.service.Service;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
+import java.util.List;
 import java.util.NavigableSet;
-import java.util.Set;
 import java.util.TreeSet;
 
-import static java.util.Collections.emptySet;
-import static java.util.Collections.singleton;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 /**
  * Predefined cluster filters.
@@ -40,15 +39,15 @@ public final class ClusterFilters {
         }
 
         @Override
-        public Set<ClusterNode> apply(Collection<ClusterNode> nodes) {
+        public List<ClusterNode> apply(List<ClusterNode> nodes) {
             int size = nodes.size();
 
             if (size == 0) {
-                return emptySet();
+                return emptyList();
             } else if (size == 1) {
-                ClusterNode node = nodes.iterator().next();
+                ClusterNode node = nodes.get(0);
 
-                return node.isLocal() ? singleton(node) : emptySet();
+                return node.isLocal() ? singletonList(node) : emptyList();
             } else {
                 ClusterNode local = null;
 
@@ -63,7 +62,7 @@ public final class ClusterFilters {
                 }
 
                 if (local == null) {
-                    return emptySet();
+                    return emptyList();
                 } else {
                     ClusterNode next = sortedNodes.higher(local);
 
@@ -71,7 +70,7 @@ public final class ClusterFilters {
                         next = sortedNodes.first();
                     }
 
-                    return singleton(next);
+                    return singletonList(next);
                 }
             }
         }
@@ -89,7 +88,7 @@ public final class ClusterFilters {
 
     private static final ClusterFilter OLDEST = nodes -> {
         if (nodes.isEmpty()) {
-            return emptySet();
+            return emptyList();
         }
 
         ClusterNode oldest = null;
@@ -100,12 +99,12 @@ public final class ClusterFilters {
             }
         }
 
-        return singleton(oldest);
+        return singletonList(oldest);
     };
 
     private static final ClusterFilter YOUNGEST = nodes -> {
         if (nodes.isEmpty()) {
-            return emptySet();
+            return emptyList();
         }
 
         ClusterNode youngest = null;
@@ -116,7 +115,7 @@ public final class ClusterFilters {
             }
         }
 
-        return singleton(youngest);
+        return singletonList(youngest);
     };
 
     private ClusterFilters() {
@@ -164,15 +163,15 @@ public final class ClusterFilters {
 
         return nodes -> {
             if (nodes.isEmpty()) {
-                return emptySet();
+                return emptyList();
             } else {
                 for (ClusterNode node : nodes) {
                     if (node.getId().equals(nodeId)) {
-                        return singleton(node);
+                        return singletonList(node);
                     }
                 }
 
-                return emptySet();
+                return emptyList();
             }
         };
     }
@@ -189,9 +188,9 @@ public final class ClusterFilters {
 
         return nodes -> {
             if (nodes.isEmpty() || !nodes.contains(node)) {
-                return emptySet();
+                return emptyList();
             } else {
-                return singleton(node);
+                return singletonList(node);
             }
         };
     }
@@ -225,7 +224,7 @@ public final class ClusterFilters {
         ArgAssert.notNull(filter, "Filter");
 
         return nodes -> {
-            Set<ClusterNode> result = null;
+            List<ClusterNode> result = null;
 
             for (ClusterNode node : nodes) {
                 if (filter.accept(node)) {
@@ -233,17 +232,17 @@ public final class ClusterFilters {
                         int size = nodes.size();
 
                         if (size == 1) {
-                            return singleton(node);
+                            return singletonList(node);
                         }
 
-                        result = new HashSet<>(size, 1.0f);
+                        result = new ArrayList<>(size);
                     }
 
                     result.add(node);
                 }
             }
 
-            return result != null ? result : emptySet();
+            return result != null ? result : emptyList();
         };
     }
 
