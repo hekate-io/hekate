@@ -66,7 +66,7 @@ public class InfluxDbMetricsPublisherTest extends InfluxDbMetricsTestBase {
 
     private InfluxDbMetricsPublisher publisher;
 
-    private WriteDelegate writeDelegate;
+    private volatile WriteDelegate writeDelegate;
 
     @Before
     @Override

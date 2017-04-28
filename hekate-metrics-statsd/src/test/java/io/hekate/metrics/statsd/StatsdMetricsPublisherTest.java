@@ -44,7 +44,7 @@ public class StatsdMetricsPublisherTest extends StatsdMetricsTestBase {
 
     private StatsdMetricsPublisher publisher;
 
-    private WriteDelegate writeDelegate;
+    private volatile WriteDelegate writeDelegate;
 
     @Before
     @Override
