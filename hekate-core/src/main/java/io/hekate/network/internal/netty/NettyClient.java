@@ -137,7 +137,13 @@ class NettyClient<T> implements NetworkClient<T> {
 
                 firstError = future.cause();
 
-                becomeDisconnected();
+                ChannelPipeline pipeline = future.channel().pipeline();
+
+                if (pipeline.names().contains(NettyClientStateHandler.class.getName())) {
+                    pipeline.fireExceptionCaught(firstError);
+                } else {
+                    becomeDisconnected();
+                }
             }
         }
 
@@ -196,6 +202,11 @@ class NettyClient<T> implements NetworkClient<T> {
             if (firstError != null) {
                 // Handle only the very first error.
                 return;
+            }
+
+            // Propagate exception through the pipeline if there are some other handlers.
+            if (ctx.pipeline().last() != this) {
+                ctx.fireExceptionCaught(error);
             }
 
             if (error instanceof CodecException) {
@@ -665,7 +676,7 @@ class NettyClient<T> implements NetworkClient<T> {
 
                     pipeline.addLast(msgHandler);
                     pipeline.addLast(NettyClientDeferHandler.class.getName(), deferHandler);
-                    pipeline.addLast(stateHandler);
+                    pipeline.addLast(NettyClientStateHandler.class.getName(), stateHandler);
                 }
             });
 

@@ -126,7 +126,7 @@ class NettyClientDeferHandler<T> extends ChannelDuplexHandler {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         if (trace) {
-            log.trace("Deferred handler got exception caught event [address={}]", id, cause);
+            log.trace("Deferred handler got exception caught event [address={}, cause={}]", id, cause.toString());
         }
 
         if (deferredError == null) {

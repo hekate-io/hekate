@@ -87,6 +87,46 @@ public class NetworkClientTest extends NetworkTestBase {
     }
 
     @Test
+    public void testSendToUnknown() throws Exception {
+        NetworkClient<String> client = createClient(f -> f.setConnectTimeout(Integer.MAX_VALUE));
+
+        repeat(3, i -> {
+            NetworkClientCallbackMock<String> callback = new NetworkClientCallbackMock<>();
+
+            assertSame(NetworkClient.State.DISCONNECTED, client.getState());
+
+            NetworkFuture<String> future = client.connect(new InetSocketAddress(InetAddress.getLocalHost(), 15001), callback);
+
+            NetworkSendCallbackMock<String> sendCallback = new NetworkSendCallbackMock<>();
+
+            client.send("aaa", sendCallback);
+
+            try {
+                future.get();
+
+                fail("Error was expected");
+            } catch (ExecutionException e) {
+                assertTrue(e.getCause().toString(), Utils.isCausedBy(e, ConnectException.class));
+            }
+
+            sendCallback.awaitForErrors("aaa");
+
+            Throwable sendErr = sendCallback.getFailure("aaa");
+
+            assertNotNull(sendErr);
+            assertTrue(getStacktrace(sendErr), Utils.isCausedBy(sendErr, ConnectException.class));
+
+            assertSame(NetworkClient.State.DISCONNECTED, client.getState());
+            assertNull(client.getRemoteAddress());
+            assertNull(client.getLocalAddress());
+            callback.assertConnects(0);
+            callback.assertDisconnects(1);
+            callback.assertErrors(1);
+            callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof ConnectException));
+        });
+    }
+
+    @Test
     public void testConnectTimeoutFailure() throws Exception {
         NetworkClient<String> client = createClient(f -> f.setConnectTimeout(1));
 
