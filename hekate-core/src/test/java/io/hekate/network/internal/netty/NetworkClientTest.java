@@ -99,22 +99,22 @@ public class NetworkClientTest extends NetworkTestBase {
 
             NetworkSendCallbackMock<String> sendCallback = new NetworkSendCallbackMock<>();
 
-            client.send("aaa", sendCallback);
+            client.send("test", sendCallback);
 
             try {
                 future.get();
 
                 fail("Error was expected");
             } catch (ExecutionException e) {
-                assertTrue(e.getCause().toString(), Utils.isCausedBy(e, ConnectException.class));
+                assertTrue(e.getCause().toString(), Utils.isCausedBy(e, IOException.class));
             }
 
-            sendCallback.awaitForErrors("aaa");
+            sendCallback.awaitForErrors("test");
 
-            Throwable sendErr = sendCallback.getFailure("aaa");
+            Throwable sendErr = sendCallback.getFailure("test");
 
             assertNotNull(sendErr);
-            assertTrue(getStacktrace(sendErr), Utils.isCausedBy(sendErr, ConnectException.class));
+            assertTrue(getStacktrace(sendErr), Utils.isCausedBy(sendErr, IOException.class));
 
             assertSame(NetworkClient.State.DISCONNECTED, client.getState());
             assertNull(client.getRemoteAddress());
