@@ -126,6 +126,8 @@ abstract class NetworkProtocol {
         }
     }
 
+    public static final int VERSION = 1;
+
     public abstract Type getType();
 
     @Override

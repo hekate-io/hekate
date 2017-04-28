@@ -585,7 +585,9 @@ public class NetworkServerTest extends NetworkTestBase {
     public void testInvalidMagicBytes() throws Exception {
         InetSocketAddress addr = newServerAddress();
 
-        NetworkServer server = createServer();
+        NetworkServer server = createAndConfigureServer(cfg ->
+            cfg.setDisableHeartbeats(true)
+        );
 
         server.start(addr, new NetworkServerCallbackMock()).get();
 
@@ -596,6 +598,37 @@ public class NetworkServerTest extends NetworkTestBase {
                 InputStream in = socket.getInputStream()
             ) {
                 // Invalid magic bytes.
+                out.write(new byte[]{1, 2, 3, 4, 5, 6, 7});
+                out.flush();
+
+                assertEquals(-1, in.read());
+            }
+        });
+    }
+
+    @Test
+    public void testInvalidProtocolVersion() throws Exception {
+        InetSocketAddress addr = newServerAddress();
+
+        NetworkServer server = createAndConfigureServer(cfg ->
+            cfg.setDisableHeartbeats(true)
+        );
+
+        server.start(addr, new NetworkServerCallbackMock()).get();
+
+        repeat(3, i -> {
+            try (
+                Socket socket = new Socket(addr.getAddress(), addr.getPort());
+                OutputStream out = socket.getOutputStream();
+                InputStream in = socket.getInputStream()
+            ) {
+                // Valid magic bytes
+                out.write((byte)(Utils.MAGIC_BYTES >> 24));
+                out.write((byte)(Utils.MAGIC_BYTES >> 16));
+                out.write((byte)(Utils.MAGIC_BYTES >> 8));
+                out.write((byte)Utils.MAGIC_BYTES);
+
+                // Invalid version.
                 out.write(new byte[]{1, 2, 3, 4, 5, 6, 7});
                 out.flush();
 

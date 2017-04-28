@@ -669,7 +669,7 @@ class NettyClient<T> implements NetworkClient<T> {
                         });
                     }
 
-                    pipeline.addLast(MagicBytesEncoder.INSTANCE);
+                    pipeline.addLast(NetworkVersionEncoder.INSTANCE);
                     pipeline.addLast(DECODER_HANDLER_ID, netCodec.getDecoder());
                     pipeline.addLast(ENCODER_HANDLER_ID, netCodec.getEncoder());
 

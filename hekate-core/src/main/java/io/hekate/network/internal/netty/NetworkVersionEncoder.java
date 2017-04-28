@@ -8,16 +8,21 @@ import io.netty.handler.codec.MessageToMessageEncoder;
 import java.util.List;
 
 @Sharable
-final class MagicBytesEncoder extends MessageToMessageEncoder<ByteBuf> {
-    public static final MagicBytesEncoder INSTANCE = new MagicBytesEncoder();
+final class NetworkVersionEncoder extends MessageToMessageEncoder<ByteBuf> {
+    public static final NetworkVersionEncoder INSTANCE = new NetworkVersionEncoder();
 
-    private MagicBytesEncoder() {
+    private NetworkVersionEncoder() {
         // No-op.
     }
 
     @Override
     protected void encode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) throws Exception {
-        out.add(ctx.alloc().ioBuffer(4, 4).writeInt(Utils.MAGIC_BYTES));
+        int bufSize = Integer.BYTES * 2;
+
+        out.add(ctx.alloc().ioBuffer(bufSize, bufSize)
+            .writeInt(Utils.MAGIC_BYTES)
+            .writeInt(NetworkProtocol.VERSION)
+        );
 
         out.add(msg.retain());
 

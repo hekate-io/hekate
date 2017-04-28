@@ -416,7 +416,7 @@ class NettyServer implements NetworkServer {
 
                     NetworkProtocolCodec codec = new NetworkProtocolCodec(codecs);
 
-                    pipeline.addLast(new MagicBytesDecoder());
+                    pipeline.addLast(new NetworkVersionDecoder());
                     pipeline.addLast(codec.getEncoder());
                     pipeline.addLast(codec.getDecoder());
 
