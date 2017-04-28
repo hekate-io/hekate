@@ -530,11 +530,10 @@ class NettyClient<T> implements NetworkClient<T> {
                 notifyOnReceivePause(pause, callback, channel);
             } else {
                 eventLoop.execute(() -> {
-                        channel.config().setAutoRead(!pause);
+                    channel.config().setAutoRead(!pause);
 
-                        notifyOnReceivePause(pause, callback, channel);
-                    }
-                );
+                    notifyOnReceivePause(pause, callback, channel);
+                });
             }
         } else if (callback != null) {
             callback.accept(this);
