@@ -221,11 +221,10 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * </p>
      *
      * @param affinityKey Affinity key (if {@code null} then affinity key will be cleared).
-     * @param <C> Channel type.
      *
      * @return Channel wrapper.
      */
-    <C extends T> MessagingChannel<C> withAffinity(Object affinityKey);
+    MessagingChannel<T> withAffinity(Object affinityKey);
 
     /**
      * Returns the affinity key that was set via {@link #withAffinity(Object)}.
@@ -239,26 +238,24 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * this instance.
      *
      * @param policy Failover policy.
-     * @param <C> Channel type.
      *
      * @return Channel wrapper.
      *
      * @see MessagingChannelConfig#setFailoverPolicy(FailoverPolicy)
      */
-    <C extends T> MessagingChannel<C> withFailover(FailoverPolicy policy);
+    MessagingChannel<T> withFailover(FailoverPolicy policy);
 
     /**
      * Returns a new lightweight wrapper of this channel that will use the specified failover policy and will inherit all other options from
      * this instance.
      *
      * @param policy Failover policy.
-     * @param <C> Channel type.
      *
      * @return Channel wrapper.
      *
      * @see MessagingChannelConfig#setFailoverPolicy(FailoverPolicy)
      */
-    <C extends T> MessagingChannel<C> withFailover(FailoverPolicyBuilder policy);
+    MessagingChannel<T> withFailover(FailoverPolicyBuilder policy);
 
     /**
      * Returns the failover policy that was set via {@link #withFailover(FailoverPolicy)}.
@@ -303,13 +300,12 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * this instance.
      *
      * @param balancer Load balancer.
-     * @param <C> Channel type.
      *
      * @return Channel wrapper.
      *
      * @see MessagingChannelConfig#setLoadBalancer(LoadBalancer)
      */
-    <C extends T> MessagingChannel<C> withLoadBalancer(LoadBalancer<C> balancer);
+    MessagingChannel<T> withLoadBalancer(LoadBalancer<T> balancer);
 
     /**
      * Returns the asynchronous task executor of this channel.

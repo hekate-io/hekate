@@ -146,9 +146,8 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <C extends T> MessagingChannel<C> withAffinity(Object affinityKey) {
-        return new DefaultMessagingChannel(gateway, cluster, balancer, failover, timeout, affinityKey);
+    public DefaultMessagingChannel<T> withAffinity(Object affinityKey) {
+        return new DefaultMessagingChannel<>(gateway, cluster, balancer, failover, timeout, affinityKey);
     }
 
     @Override
@@ -157,9 +156,8 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <C extends T> DefaultMessagingChannel<C> withLoadBalancer(LoadBalancer<C> balancer) {
-        return new DefaultMessagingChannel(gateway, cluster, balancer, failover, timeout, affinityKey);
+    public DefaultMessagingChannel<T> withLoadBalancer(LoadBalancer<T> balancer) {
+        return new DefaultMessagingChannel<>(gateway, cluster, balancer, failover, timeout, affinityKey);
     }
 
     @Override
@@ -168,13 +166,12 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <C extends T> DefaultMessagingChannel<C> withFailover(FailoverPolicy policy) {
-        return new DefaultMessagingChannel(gateway, cluster, balancer, policy, timeout, affinityKey);
+    public DefaultMessagingChannel<T> withFailover(FailoverPolicy policy) {
+        return new DefaultMessagingChannel<>(gateway, cluster, balancer, policy, timeout, affinityKey);
     }
 
     @Override
-    public <C extends T> DefaultMessagingChannel<C> withFailover(FailoverPolicyBuilder policy) {
+    public DefaultMessagingChannel<T> withFailover(FailoverPolicyBuilder policy) {
         return withFailover(policy.build());
     }
 
