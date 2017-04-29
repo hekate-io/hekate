@@ -140,12 +140,12 @@ import java.util.List;
  * <a href="#aggregate">Aggregation</a> - bidirectional node to many nodes communication
  * </li>
  * <li>
- * <a href="#broadcast">Broadcasting</a> - bidirectional node to many nodes communication
+ * <a href="#broadcast">Broadcasting</a> - unidirectional node to many nodes communication
  * </li>
  * </ul>
  *
  * <a name="request_response"></a>
- * <h3>Node-to-node: Request/Response</h3>
+ * <h3>Request/Response</h3>
  * <p>
  * {@link MessagingChannel#request(Object)} can be used for bidirectional communications with remote nodes using the request-response
  * pattern:
@@ -158,7 +158,7 @@ import java.util.List;
  * </p>
  *
  * <a name="send_and_forget"></a>
- * <h3>Node-to-node: Send and Forget</h3>
+ * <h3>Send and Forget</h3>
  * <p>
  * {@link MessagingChannel#send(Object)} provides support for unidirectional communications (i.e. when remote node doesn't need to send
  * any reply) using the send and forget approach:
@@ -171,7 +171,7 @@ import java.util.List;
  * </p>
  *
  * <a name="aggregate"></a>
- * <h3>Node-to-many: Aggregation</h3>
+ * <h3>Aggregation</h3>
  * <p>
  * {@link MessagingChannel#aggregate(Object)} can be used for bidirectional communications by submitting a message to multiple nodes and
  * gathering (aggregating) replies from those nodes. Results of such aggregation are represented by the {@link AggregateResult} interface.
@@ -189,7 +189,7 @@ import java.util.List;
  * </p>
  *
  * <a name="broadcast"></a>
- * <h3>Node-to-many: Broadcasting</h3>
+ * <h3>Broadcasting</h3>
  * <p>
  * {@link MessagingChannel#broadcast(Object)} provides support for unidirectional broadcasting (i.e. when remote nodes do not need to send
  * a reply and no aggregation should take place) using the fire and forget approach.
@@ -266,12 +266,12 @@ import java.util.List;
  * </ul>
  *
  * <p>
- * <b>NOTICE:</b> For {@link MessagingChannel#send(Object, SendCallback) send(...)} and {@link MessagingChannel#request(Object,
- * ResponseCallback) request(...)} (unicast operations) it is important to make sure that there is no uncertainty in which node should
- * receive a message. If there are multiple receivers visible to a {@link MessagingChannel} instance then unicast operation will fail with
- * {@link TooManyRoutesException}. Besides channel topology filtering it is possible to
- * {@link MessagingChannel#withLoadBalancer(LoadBalancer) specify} an instance of {@link LoadBalancer} interface that can apply
- * additional rules on which node should be used as a destination for each particular messaging operation.
+ * <b>NOTICE:</b> For unicast operations (like {@link MessagingChannel#send(Object, SendCallback) send(...)} and
+ * {@link MessagingChannel#request(Object, ResponseCallback) request(...)}) it is important to make sure that there is no uncertainty in
+ * which node should receive a message. If there are multiple receivers visible to a {@link MessagingChannel} instance then unicast
+ * operation will fail with {@link TooManyRoutesException}. Besides channel topology filtering it is possible to
+ * {@link MessagingChannel#withLoadBalancer(LoadBalancer) specify} an instance of {@link LoadBalancer} interface that can apply additional
+ * rules on which node should be used as a destination for each particular messaging operation.
  * </p>
  *
  * <h2>Thread pooling</h2>
@@ -287,33 +287,9 @@ import java.util.List;
  * <li>
  * <b>Worker thread pool</b> - Optional thread pool to offload messages processing work from NIO threads. The size of this pool is
  * controlled by the {@link MessagingChannelConfig#setWorkerThreads(int)} configuration option. It is recommended to set this parameter in
- * those cases where message processing is a heavy operation that can block NIO thread for a long time.
+ * case if message processing is a heavy operation that can block NIO thread for a long time.
  * </li>
  * </ul>
- *
- * <p>
- * Below is the example of how those options can be configured for a messaging channel.
- * </p>
- * <div class="tabs">
- * <ul>
- * <li><a href="#channel-opts-java">Java</a></li>
- * <li><a href="#channel-opts-xsd">Spring XSD</a></li>
- * <li><a href="#channel-opts-bean">Spring bean</a></li>
- * </ul>
- * <div id="channel-opts-java">
- * ${source: messaging/MessagingServiceJavadocTest.java#channel_options}
- * </div>
- * <div id="channel-opts-xsd">
- * <b>Note:</b> This example requires Spring Framework integration
- * (see <a href="{@docRoot}/io/hekate/spring/bean/HekateSpringBootstrap.html">HekateSpringBootstrap</a>).
- * ${source: messaging/channel-opts-xsd.xml#example}
- * </div>
- * <div id="channel-opts-bean">
- * <b>Note:</b> This example requires Spring Framework integration
- * (see <a href="{@docRoot}/io/hekate/spring/bean/HekateSpringBootstrap.html">HekateSpringBootstrap</a>).
- * ${source: messaging/channel-opts-bean.xml#example}
- * </div>
- * </div>
  *
  * <h2>Messaging failover</h2>
  * <p>

@@ -43,9 +43,9 @@ public abstract class AnnotationInjectorBase<A extends Annotation> implements Be
         this.beanType = beanType;
     }
 
-    protected abstract String getInjectedBeanName(A annotation);
+    protected abstract String injectedBeanName(A annotation);
 
-    protected abstract Object getQualifierValue(A annotation);
+    protected abstract Object qualifierValue(A annotation);
 
     protected abstract void configure(BeanDefinitionBuilder builder, A annotation);
 
@@ -90,7 +90,7 @@ public abstract class AnnotationInjectorBase<A extends Annotation> implements Be
 
                     if (!annotations.isEmpty()) {
                         annotations.forEach(annotation -> {
-                            String injectedBeanName = getInjectedBeanName(annotation);
+                            String injectedBeanName = injectedBeanName(annotation);
 
                             if (!beanRegistry.isBeanNameInUse(injectedBeanName)) {
                                 BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(beanType);
@@ -99,7 +99,7 @@ public abstract class AnnotationInjectorBase<A extends Annotation> implements Be
 
                                 AbstractBeanDefinition injectorDef = builder.getBeanDefinition();
 
-                                Object qualifierVal = getQualifierValue(annotation);
+                                Object qualifierVal = qualifierValue(annotation);
 
                                 AutowireCandidateQualifier qualifier;
 

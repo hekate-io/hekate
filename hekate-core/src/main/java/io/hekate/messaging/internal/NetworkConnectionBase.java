@@ -35,12 +35,12 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
     private final SendPressureGuard pressureGuard;
 
     public NetworkConnectionBase(NetworkEndpoint<MessagingProtocol> net, MessagingGateway<T> gateway, MessagingEndpoint<T> messaging) {
-        super(gateway, gateway.getAsync(), messaging);
+        super(gateway, gateway.async(), messaging);
 
         assert net != null : "Endpoint is null.";
 
         this.net = net;
-        this.pressureGuard = gateway.getSendPressureGuard();
+        this.pressureGuard = gateway.sendGuard();
     }
 
     @Override
@@ -55,9 +55,9 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
         Request<T> msg;
 
         if (ctx.hasAffinity()) {
-            msg = new AffinityRequest<>(ctx.affinity(), handle.getId(), ctx.message());
+            msg = new AffinityRequest<>(ctx.affinity(), handle.id(), ctx.message());
         } else {
-            msg = new Request<>(handle.getId(), ctx.message());
+            msg = new Request<>(handle.id(), ctx.message());
         }
 
         msg.prepareSend(handle, this);
@@ -72,9 +72,9 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
         Subscribe<T> msg;
 
         if (ctx.hasAffinity()) {
-            msg = new AffinitySubscribe<>(ctx.affinity(), handle.getId(), ctx.message());
+            msg = new AffinitySubscribe<>(ctx.affinity(), handle.id(), ctx.message());
         } else {
-            msg = new Subscribe<>(handle.getId(), ctx.message());
+            msg = new Subscribe<>(handle.id(), ctx.message());
         }
 
         msg.prepareSend(handle, this);
@@ -115,7 +115,7 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
         net.send(msg, msg /* <-- Message itself is a callback.*/);
     }
 
-    public SendPressureGuard getPressureGuard() {
+    public SendPressureGuard pressureGuard() {
         return pressureGuard;
     }
 

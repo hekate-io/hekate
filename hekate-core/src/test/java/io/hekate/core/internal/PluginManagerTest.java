@@ -219,8 +219,8 @@ public class PluginManagerTest extends HekateTestBase {
 
         mgr.install();
 
-        assertTrue(mgr.getBoot().getNodeRoles().contains("test_role"));
-        assertEquals("test_val", mgr.getBoot().getNodeProperties().get("test_prop"));
+        assertTrue(mgr.bootstrap().getNodeRoles().contains("test_role"));
+        assertEquals("test_val", mgr.bootstrap().getNodeProperties().get("test_prop"));
     }
 
     private PluginManager createManager(Plugin... plugins) {

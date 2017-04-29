@@ -17,7 +17,7 @@
 package io.hekate.cluster.internal.gossip;
 
 import io.hekate.HekateTestBase;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -58,14 +58,14 @@ public class GossipNodeStateTest extends HekateTestBase {
     @Test
     public void testCompareVersion() throws Exception {
         GossipNodeState s1 = new GossipNodeState(newNode(), GossipNodeStatus.JOINING);
-        GossipNodeState s2 = s1.suspected(newNodeId());
+        GossipNodeState s2 = s1.suspect(newNodeId());
 
         assertNotSame(s2, s1);
 
         assertSame(ComparisonResult.BEFORE, s1.compare(s2));
         assertSame(ComparisonResult.AFTER, s2.compare(s1));
 
-        GossipNodeState s3 = s2.unsuspected(s2.getSuspected());
+        GossipNodeState s3 = s2.unsuspected(s2.suspected());
 
         assertNotSame(s2, s1);
 
@@ -78,12 +78,12 @@ public class GossipNodeStateTest extends HekateTestBase {
         GossipNodeState s1 = new GossipNodeState(newNode(), GossipNodeStatus.JOINING);
         GossipNodeState s2 = new GossipNodeState(newNode(), GossipNodeStatus.UP);
 
-        s1 = s1.suspected(newNodeId());
+        s1 = s1.suspect(newNodeId());
 
         assertSame(ComparisonResult.CONCURRENT, s1.compare(s2));
         assertSame(ComparisonResult.CONCURRENT, s2.compare(s1));
 
-        s1 = s1.unsuspected(s1.getSuspected());
+        s1 = s1.unsuspected(s1.suspected());
 
         assertSame(ComparisonResult.CONCURRENT, s1.compare(s2));
         assertSame(ComparisonResult.CONCURRENT, s2.compare(s1));
@@ -94,7 +94,7 @@ public class GossipNodeStateTest extends HekateTestBase {
         GossipNodeState s1 = new GossipNodeState(newNode(), GossipNodeStatus.JOINING);
         GossipNodeState s2 = new GossipNodeState(newNode(), GossipNodeStatus.UP);
 
-        s1 = s1.suspected(newNodeId());
+        s1 = s1.suspect(newNodeId());
 
         assertSame(ComparisonResult.CONCURRENT, s1.compare(s2));
         assertSame(ComparisonResult.CONCURRENT, s2.compare(s1));
@@ -107,8 +107,8 @@ public class GossipNodeStateTest extends HekateTestBase {
         assertSame(ComparisonResult.AFTER, s3.compare(s1));
         assertSame(ComparisonResult.AFTER, s3.compare(s2));
 
-        assertSame(GossipNodeStatus.UP, s3.getStatus());
-        assertEquals(s1.getSuspected(), s3.getSuspected());
+        assertSame(GossipNodeStatus.UP, s3.status());
+        assertEquals(s1.suspected(), s3.suspected());
 
         GossipNodeState s4 = s2.merge(s3);
 
@@ -118,69 +118,69 @@ public class GossipNodeStateTest extends HekateTestBase {
         assertSame(ComparisonResult.AFTER, s4.compare(s1));
         assertSame(ComparisonResult.AFTER, s4.compare(s2));
 
-        assertSame(GossipNodeStatus.UP, s4.getStatus());
-        assertEquals(s1.getSuspected(), s4.getSuspected());
+        assertSame(GossipNodeStatus.UP, s4.status());
+        assertEquals(s1.suspected(), s4.suspected());
     }
 
     @Test
     public void testUpdateState() throws Exception {
         GossipNodeState s1 = new GossipNodeState(newNode(), GossipNodeStatus.JOINING);
 
-        assertSame(GossipNodeStatus.JOINING, s1.getStatus());
+        assertSame(GossipNodeStatus.JOINING, s1.status());
 
         GossipNodeState s2 = s1.status(GossipNodeStatus.JOINING);
 
         assertSame(s1, s2);
-        assertSame(GossipNodeStatus.JOINING, s1.getStatus());
+        assertSame(GossipNodeStatus.JOINING, s1.status());
 
         GossipNodeState s3 = s1.status(GossipNodeStatus.UP);
 
         assertNotSame(s1, s3);
-        assertSame(GossipNodeStatus.UP, s3.getStatus());
+        assertSame(GossipNodeStatus.UP, s3.status());
     }
 
     @Test
     public void testUpdateSuspected() throws Exception {
         GossipNodeState s = new GossipNodeState(newNode(), GossipNodeStatus.JOINING);
 
-        ClusterUuid id1 = newNodeId();
-        ClusterUuid id2 = newNodeId();
+        ClusterNodeId id1 = newNodeId();
+        ClusterNodeId id2 = newNodeId();
 
-        s = s.suspected(id1);
+        s = s.suspect(id1);
 
         assertTrue(s.hasSuspected());
-        assertEquals(1, s.getSuspected().size());
-        assertTrue(s.getSuspected().contains(id1));
+        assertEquals(1, s.suspected().size());
+        assertTrue(s.suspected().contains(id1));
         assertTrue(s.isSuspected(id1));
 
         s = s.status(GossipNodeStatus.UP);
 
         assertTrue(s.hasSuspected());
-        assertEquals(1, s.getSuspected().size());
-        assertTrue(s.getSuspected().contains(id1));
+        assertEquals(1, s.suspected().size());
+        assertTrue(s.suspected().contains(id1));
         assertTrue(s.isSuspected(id1));
 
-        s = s.suspected(toSet(id1, id2));
+        s = s.suspect(toSet(id1, id2));
 
         assertTrue(s.hasSuspected());
-        assertEquals(2, s.getSuspected().size());
-        assertTrue(s.getSuspected().contains(id1));
-        assertTrue(s.getSuspected().contains(id2));
+        assertEquals(2, s.suspected().size());
+        assertTrue(s.suspected().contains(id1));
+        assertTrue(s.suspected().contains(id2));
         assertTrue(s.isSuspected(id1));
         assertTrue(s.isSuspected(id2));
 
         s = s.unsuspected(id1);
 
         assertTrue(s.hasSuspected());
-        assertEquals(1, s.getSuspected().size());
-        assertTrue(s.getSuspected().contains(id2));
+        assertEquals(1, s.suspected().size());
+        assertTrue(s.suspected().contains(id2));
         assertTrue(s.isSuspected(id2));
         assertFalse(s.isSuspected(id1));
 
         s = s.unsuspected(id2);
 
         assertFalse(s.hasSuspected());
-        assertEquals(0, s.getSuspected().size());
+        assertEquals(0, s.suspected().size());
         assertFalse(s.isSuspected(id2));
         assertFalse(s.isSuspected(id1));
     }
@@ -189,14 +189,14 @@ public class GossipNodeStateTest extends HekateTestBase {
     public void testRemoveUnknownSuspected() throws Exception {
         GossipNodeState s1 = new GossipNodeState(newNode(), GossipNodeStatus.JOINING);
 
-        ClusterUuid id1 = newNodeId();
-        ClusterUuid id2 = newNodeId();
+        ClusterNodeId id1 = newNodeId();
+        ClusterNodeId id2 = newNodeId();
 
-        s1 = s1.suspected(id1);
+        s1 = s1.suspect(id1);
 
         assertTrue(s1.hasSuspected());
-        assertEquals(1, s1.getSuspected().size());
-        assertTrue(s1.getSuspected().contains(id1));
+        assertEquals(1, s1.suspected().size());
+        assertTrue(s1.suspected().contains(id1));
         assertTrue(s1.isSuspected(id1));
 
         assertSame(s1, s1.unsuspected(id2));

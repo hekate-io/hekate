@@ -18,7 +18,7 @@ package io.hekate.messaging;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.messaging.internal.LoadBalancerContextBridge;
 import io.hekate.messaging.unicast.LoadBalancerContext;
@@ -38,7 +38,7 @@ public class LoadBalancersTest extends HekateTestBase {
 
         LoadBalancerContext ctx = newContext(toSet(node1, node2, node3));
 
-        ClusterUuid nodeId = LoadBalancers.toRandom().route("msg", ctx);
+        ClusterNodeId nodeId = LoadBalancers.toRandom().route("msg", ctx);
 
         assertNotNull(nodeId);
         assertTrue(ctx.contains(nodeId));

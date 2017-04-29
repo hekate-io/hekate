@@ -20,7 +20,7 @@ import io.hekate.util.format.ToString;
 import java.util.regex.Pattern;
 
 /**
- * Implementation of {@link MetricFilter} that uses a regular expression to match against a {@link Metric#getName()}.
+ * Implementation of {@link MetricFilter} that uses a regular expression to match against a {@link Metric#name()}.
  */
 public class MetricRegexFilter implements MetricFilter {
     private final Pattern pattern;
@@ -36,7 +36,7 @@ public class MetricRegexFilter implements MetricFilter {
 
     @Override
     public boolean accept(Metric metric) {
-        return pattern.matcher(metric.getName()).matches();
+        return pattern.matcher(metric.name()).matches();
     }
 
     /**

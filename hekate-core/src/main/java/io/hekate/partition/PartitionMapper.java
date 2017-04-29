@@ -47,8 +47,8 @@ public interface PartitionMapper {
      *
      * @return Partition.
      *
-     * @see Partition#getPrimaryNode()
-     * @see Partition#getBackupNodes()
+     * @see Partition#primaryNode()
+     * @see Partition#backupNodes()
      */
     Partition map(Object key);
 
@@ -62,7 +62,7 @@ public interface PartitionMapper {
      *
      * @return Name of this mapper.
      */
-    String getName();
+    String name();
 
     /**
      * Returns the total amount of partitions that are managed by this mapper.
@@ -73,7 +73,7 @@ public interface PartitionMapper {
      *
      * @return Total amount of partitions that are managed by this mapper.
      */
-    int getPartitions();
+    int partitions();
 
     /**
      * Returns the amount of backup nodes that should be assigned to each partition.
@@ -84,19 +84,19 @@ public interface PartitionMapper {
      *
      * @return Amount of backup nodes that should be assigned to each partition.
      */
-    int getBackupNodes();
+    int backupNodes();
 
     /**
      * Returns the cluster topology as it is visible to this mapper.
      *
      * <p>
-     * If mapper is a {@link #getSnapshot() snapshot} then this method will always return the same topology at the time when the snapshot
+     * If mapper is a {@link #snapshot() snapshot} then this method will always return the same topology at the time when the snapshot
      * was created. If mapper is a live mapper then it will always return the latest cluster topology.
      * </p>
      *
      * @return Cluster topology.
      */
-    ClusterTopology getTopology();
+    ClusterTopology topology();
 
     /**
      * Creates a point in time copy of this mapper. The returned snapshot is immutable and will not change its partitions mapping even if
@@ -106,14 +106,14 @@ public interface PartitionMapper {
      *
      * @see #isSnapshot()
      */
-    PartitionMapper getSnapshot();
+    PartitionMapper snapshot();
 
     /**
-     * Returns {@code true} if this instance is a {@link #getSnapshot() snapshot}.
+     * Returns {@code true} if this instance is a {@link #snapshot() snapshot}.
      *
-     * @return {@code true} if this instance is a {@link #getSnapshot() snapshot}.
+     * @return {@code true} if this instance is a {@link #snapshot() snapshot}.
      *
-     * @see #getSnapshot()
+     * @see #snapshot()
      */
     boolean isSnapshot();
 }

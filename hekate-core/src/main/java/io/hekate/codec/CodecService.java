@@ -47,5 +47,5 @@ public interface CodecService extends Service {
      *
      * @return Codec factory.
      */
-    <T> CodecFactory<T> getCodecFactory();
+    <T> CodecFactory<T> codecFactory();
 }

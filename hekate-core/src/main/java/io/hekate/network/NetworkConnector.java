@@ -46,7 +46,7 @@ public interface NetworkConnector<T> {
      *
      * @see NetworkConnectorConfig#setProtocol(String)
      */
-    String getProtocol();
+    String protocol();
 
     /**
      * Creates a new {@link NetworkClient} instance.
@@ -62,5 +62,5 @@ public interface NetworkConnector<T> {
      *
      * @see NetworkConnectorConfig#setServerHandler(NetworkServerHandler)
      */
-    Optional<NetworkServerHandler<T>> getServerHandler();
+    Optional<NetworkServerHandler<T>> serverHandler();
 }

@@ -93,7 +93,7 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
         Hekate node = getNode();
 
         assertNotNull(node);
-        assertSame(Hekate.State.UP, node.getState());
+        assertSame(Hekate.State.UP, node.state());
 
         DefaultTestConfig app = get(DefaultTestConfig.class);
 
@@ -120,7 +120,7 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
     public void testAddressSelectorConfig() {
         registerAndRefresh(AddressSelectorConfigTestConfig.class);
 
-        assertEquals("test", get(DefaultAddressSelector.class).getInterfaceNotMatch());
+        assertEquals("test", get(DefaultAddressSelector.class).interfaceNotMatch());
     }
 
     @Test

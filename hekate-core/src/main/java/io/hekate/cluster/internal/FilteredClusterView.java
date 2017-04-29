@@ -58,12 +58,12 @@ class FilteredClusterView implements ClusterView {
 
         @Override
         public void onEvent(ClusterEvent event) throws HekateException {
-            boolean notify = eventTypes.isEmpty() || eventTypes.contains(event.getType());
+            boolean notify = eventTypes.isEmpty() || eventTypes.contains(event.type());
 
             if (notify) {
-                ClusterTopology topology = event.getTopology().filterAll(filter);
+                ClusterTopology topology = event.topology().filterAll(filter);
 
-                switch (event.getType()) {
+                switch (event.type()) {
                     case JOIN: {
                         delegate.onEvent(new ClusterJoinEvent(topology));
 
@@ -72,8 +72,8 @@ class FilteredClusterView implements ClusterView {
                     case LEAVE: {
                         ClusterLeaveEvent leave = event.asLeave();
 
-                        List<ClusterNode> added = filterToImmutable(leave.getAdded());
-                        List<ClusterNode> removed = filterToImmutable(leave.getRemoved());
+                        List<ClusterNode> added = filterToImmutable(leave.added());
+                        List<ClusterNode> removed = filterToImmutable(leave.removed());
 
                         delegate.onEvent(new ClusterLeaveEvent(topology, added, removed));
 
@@ -82,8 +82,8 @@ class FilteredClusterView implements ClusterView {
                     case CHANGE: {
                         ClusterChangeEvent change = event.asChange();
 
-                        List<ClusterNode> added = filterToImmutable(change.getAdded());
-                        List<ClusterNode> removed = filterToImmutable(change.getRemoved());
+                        List<ClusterNode> added = filterToImmutable(change.added());
+                        List<ClusterNode> removed = filterToImmutable(change.removed());
 
                         delegate.onEvent(new ClusterChangeEvent(topology, added, removed));
 
@@ -162,12 +162,12 @@ class FilteredClusterView implements ClusterView {
     }
 
     @Override
-    public ClusterTopology getTopology() {
-        ClusterTopology parentTopology = parent.getTopology();
+    public ClusterTopology topology() {
+        ClusterTopology parentTopology = parent.topology();
 
         ClusterTopology cached = this.topologyCache;
 
-        if (cached == null || cached.getVersion() < parentTopology.getVersion()) {
+        if (cached == null || cached.version() < parentTopology.version()) {
             ClusterTopology newFiltered = parentTopology.filterAll(filter);
 
             this.topologyCache = newFiltered;
@@ -213,7 +213,7 @@ class FilteredClusterView implements ClusterView {
     @Override
     public String toString() {
         // Update cache.
-        getTopology();
+        topology();
 
         return ToString.format(this);
     }

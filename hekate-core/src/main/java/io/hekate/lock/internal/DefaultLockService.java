@@ -209,7 +209,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
             }
 
             if (!regionsConfig.isEmpty()) {
-                ClusterNode node = ctx.getNode();
+                ClusterNode node = ctx.localNode();
 
                 cluster.addListener(evt -> processTopologyChange(), ClusterEventType.JOIN, ClusterEventType.CHANGE);
 
@@ -228,7 +228,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
                     PartitionMapper mapper = partitions.mapper(LOCK_PREFIX + '.' + name);
 
-                    regions.put(name, new DefaultLockRegion(name, node.getId(), scheduler, mapper, channel, retryInterval));
+                    regions.put(name, new DefaultLockRegion(name, node.id(), scheduler, mapper, channel, retryInterval));
                 });
             }
 
@@ -328,14 +328,14 @@ public class DefaultLockService implements LockService, InitializingService, Dep
         guard.lockRead();
 
         try {
-            LockProtocol.Type type = msg.get().getType();
+            LockProtocol.Type type = msg.get().type();
 
             switch (type) {
                 case LOCK_REQUEST: {
                     LockRequest request = msg.get(LockRequest.class);
 
                     if (guard.isInitialized()) {
-                        DefaultLockRegion region = regions.get(request.getRegion());
+                        DefaultLockRegion region = regions.get(request.region());
 
                         if (region == null) {
                             throw new IllegalStateException("Received lock request for unsupported region: " + request);
@@ -352,7 +352,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                     UnlockRequest request = msg.get(UnlockRequest.class);
 
                     if (guard.isInitialized()) {
-                        DefaultLockRegion region = regions.get(request.getRegion());
+                        DefaultLockRegion region = regions.get(request.region());
 
                         if (region == null) {
                             throw new IllegalStateException("Received lock request for unsupported region: " + request);
@@ -369,7 +369,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                     LockOwnerRequest request = msg.get(LockOwnerRequest.class);
 
                     if (guard.isInitialized()) {
-                        DefaultLockRegion region = regions.get(request.getRegion());
+                        DefaultLockRegion region = regions.get(request.region());
 
                         if (region == null) {
                             throw new IllegalStateException("Received lock owner request for unsupported region: " + request);
@@ -386,7 +386,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                     MigrationPrepareRequest request = msg.get(MigrationPrepareRequest.class);
 
                     if (guard.isInitialized()) {
-                        DefaultLockRegion region = regions.get(request.getRegion());
+                        DefaultLockRegion region = regions.get(request.region());
 
                         if (region == null) {
                             throw new IllegalStateException("Received migration prepare request for unsupported region: " + request);
@@ -403,7 +403,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                     MigrationApplyRequest request = msg.get(MigrationApplyRequest.class);
 
                     if (guard.isInitialized()) {
-                        DefaultLockRegion region = regions.get(request.getRegion());
+                        DefaultLockRegion region = regions.get(request.region());
 
                         if (region == null) {
                             throw new IllegalStateException("Received migration prepare request for unsupported region: " + request);

@@ -40,31 +40,10 @@ import java.util.List;
  * leader.
  * </p>
  *
- * <h2>Leader election</h2>
+ * <h2>Accessing service</h2>
  * <p>
- * Leader election process starts right after the node joins the cluster. If leader has been already elected by that time then {@link
- * Candidate} switches to the {@link Candidate#becomeFollower(FollowerContext) folower} state. If this is the first node in the election
- * group then {@link Candidate} switches to the {@link Candidate#becomeLeader(LeaderContext) leader} state. If multiple nodes are joining
- * the cluster at the same time then only one of them will be elected as a leader and all other nodes will switch to the follower state.
- * </p>
- *
- * <p>
- * If {@link Candidate} won elections and became a group leader then it will remain in this state until its cluster node is
- * {@link Hekate#leave() stopped} or until it yields its leadership by calling {@link LeaderContext#yieldLeadership()}. In the first case
- * some other node will be elected as a new leader and will be notified via {@link Candidate#becomeLeader(LeaderContext)} method. In the
- * second case leadership will be withdrawn and with high probability some other node will become a new leader. If no other node could win
- * elections then the same node will become leader again and its {@link Candidate#becomeLeader(LeaderContext)} method will be called.
- * </p>
- *
- * <p>
- * When {@link Candidate} switches to the follower state then it can optionally register a leader change listener via {@link
- * FollowerContext#addLeaderChangeListener(LeaderChangeListener)}. This listener will be notified every time when leadership gets
- * transferred from one remote node to another remote node.
- * </p>
- *
- * <p>
- * Below is the example of {@link Candidate} interface implementation:
- * ${source: election/ElectionServiceJavadocTest.java#candidate}
+ * {@link ElectionService} can be accessed via {@link Hekate#election()} method as in the example below:
+ * ${source: election/ElectionServiceJavadocTest.java#access}
  * </p>
  *
  * <h2>Service configuration</h2>
@@ -94,10 +73,31 @@ import java.util.List;
  * </div>
  * </div>
  *
- * <h2>Accessing service</h2>
+ * <h2>Leader election</h2>
  * <p>
- * {@link ElectionService} can be accessed via {@link Hekate#election()} method as in the example below:
- * ${source: election/ElectionServiceJavadocTest.java#access}
+ * Leader election process starts right after the node joins the cluster. If leader has been already elected by that time then {@link
+ * Candidate} switches to the {@link Candidate#becomeFollower(FollowerContext) folower} state. If this is the first node in the election
+ * group then {@link Candidate} switches to the {@link Candidate#becomeLeader(LeaderContext) leader} state. If multiple nodes are joining
+ * the cluster at the same time then only one of them will be elected as a leader and all other nodes will switch to the follower state.
+ * </p>
+ *
+ * <p>
+ * If {@link Candidate} won elections and became a group leader then it will remain in this state until its cluster node is
+ * {@link Hekate#leave() stopped} or until it yields its leadership by calling {@link LeaderContext#yieldLeadership()}. In the first case
+ * some other node will be elected as a new leader and will be notified via {@link Candidate#becomeLeader(LeaderContext)} method. In the
+ * second case leadership will be withdrawn and with high probability some other node will become a new leader. If no other node could win
+ * elections then the same node will become leader again and its {@link Candidate#becomeLeader(LeaderContext)} method will be called.
+ * </p>
+ *
+ * <p>
+ * When {@link Candidate} switches to the follower state then it can optionally register a leader change listener via {@link
+ * FollowerContext#addListener(LeaderChangeListener)}. This listener will be notified every time when leadership gets
+ * transferred from one remote node to another remote node.
+ * </p>
+ *
+ * <p>
+ * Below is the example of {@link Candidate} interface implementation:
+ * ${source: election/ElectionServiceJavadocTest.java#candidate}
  * </p>
  *
  * <h2>Leader election process details</h2>

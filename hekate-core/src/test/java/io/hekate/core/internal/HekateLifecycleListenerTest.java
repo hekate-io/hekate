@@ -45,7 +45,7 @@ public class HekateLifecycleListenerTest extends HekateNodeTestBase {
         repeat(3, i -> {
             List<Hekate.State> state = Collections.synchronizedList(new ArrayList<>());
 
-            Hekate.LifecycleListener listener = hekate -> state.add(hekate.getState());
+            Hekate.LifecycleListener listener = hekate -> state.add(hekate.state());
 
             node.addListener(listener);
 
@@ -88,7 +88,7 @@ public class HekateLifecycleListenerTest extends HekateNodeTestBase {
             List<Hekate.State> state = Collections.synchronizedList(new ArrayList<>());
 
             Hekate.LifecycleListener listener = hekate -> {
-                state.add(hekate.getState());
+                state.add(hekate.state());
 
                 throw TEST_ERROR;
             };
@@ -130,7 +130,7 @@ public class HekateLifecycleListenerTest extends HekateNodeTestBase {
             CountDownLatch notified = new CountDownLatch(1);
 
             Hekate.LifecycleListener listener = changed -> {
-                if (changed.getState() == state) {
+                if (changed.state() == state) {
                     notified.countDown();
 
                     changed.leaveAsync();
@@ -175,7 +175,7 @@ public class HekateLifecycleListenerTest extends HekateNodeTestBase {
 
             Hekate.LifecycleListener listener = changed -> {
                 try {
-                    if (changed.getState() == state) {
+                    if (changed.state() == state) {
                         notified.countDown();
 
                         changed.terminateAsync();

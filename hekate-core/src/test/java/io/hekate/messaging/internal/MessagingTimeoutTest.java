@@ -46,7 +46,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel(c -> c.withMessagingTimeout(1)).join();
 
-        assertEquals(1, sender.get().getTimeout());
+        assertEquals(1, sender.get().timeout());
 
         repeat(5, i -> {
             hangLatchRef.set(new CountDownLatch(1));
@@ -71,7 +71,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel(c -> c.withMessagingTimeout(1000)).join();
 
-        assertEquals(1000, sender.get().getTimeout());
+        assertEquals(1000, sender.get().timeout());
 
         repeat(5, i ->
             get(sender.get().forRemotes().request("request-" + i))
@@ -92,7 +92,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel(c -> c.withMessagingTimeout(150)).join();
 
-        assertEquals(150, sender.get().getTimeout());
+        assertEquals(150, sender.get().timeout());
 
         repeat(3, i -> {
             SubscribeFuture<String> future = sender.get().forRemotes().subscribe("must-fail-" + i);
@@ -117,7 +117,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel(c -> c.withMessagingTimeout(1)).join();
 
-        assertEquals(1, sender.get().getTimeout());
+        assertEquals(1, sender.get().timeout());
 
         repeat(5, i -> {
             try {
@@ -138,7 +138,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel(c -> c.withMessagingTimeout(1000)).join();
 
-        assertEquals(1000, sender.get().getTimeout());
+        assertEquals(1000, sender.get().timeout());
 
         repeat(5, i ->
             get(sender.get().forRemotes().request("request-" + i))

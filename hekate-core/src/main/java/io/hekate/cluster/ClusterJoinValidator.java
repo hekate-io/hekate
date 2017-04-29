@@ -32,7 +32,7 @@ import java.util.List;
  * such a request it asks all of its registered validators to check validity of the joining node by calling their {@link
  * #acceptJoin(ClusterNode, Hekate)} method. If any validator returns a non-null reject reason then joining node will be rejected and
  * {@link ClusterJoinRejectedException} will be thrown on its side. Information about the reject reason can be obtained via {@link
- * ClusterJoinRejectedException#getRejectReason()} method.
+ * ClusterJoinRejectedException#rejectReason()} method.
  * </p>
  *
  * <p>
@@ -53,10 +53,10 @@ public interface ClusterJoinValidator {
      * Called when a new node tries to join the cluster. Returns {@code null} if new node should be accepted or an arbitrary string
      * indicating the reject reason.
      *
-     * @param newNode New node that is trying to join the cluster.
+     * @param joining New node that is trying to join the cluster.
      * @param local {@link Hekate} instance that this acceptor belongs to.
      *
      * @return Reject reason if node should be rejected or {@code null} if node should be accepted.
      */
-    String acceptJoin(ClusterNode newNode, Hekate local);
+    String acceptJoin(ClusterNode joining, Hekate local);
 }

@@ -182,8 +182,8 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
             fail("Error was expected.");
         } catch (RejectedReplyException e) {
-            assertTrue(e.getReply().isPresent());
-            assertEquals("test-reply", e.getReply().get());
+            assertTrue(e.reply().isPresent());
+            assertEquals("test-reply", e.reply().get());
         }
 
         assertEquals(1, accepts.get());

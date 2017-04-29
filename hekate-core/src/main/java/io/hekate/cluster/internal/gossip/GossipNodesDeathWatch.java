@@ -16,7 +16,7 @@
 
 package io.hekate.cluster.internal.gossip;
 
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.util.format.ToString;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,13 +34,13 @@ import static java.util.stream.Collectors.toSet;
 
 public class GossipNodesDeathWatch {
     private static class Suspect {
-        private final ClusterUuid id;
+        private final ClusterNodeId id;
 
-        private final Set<ClusterUuid> suspectedBy;
+        private final Set<ClusterNodeId> suspectedBy;
 
         private final long timestamp;
 
-        public Suspect(ClusterUuid id, Set<ClusterUuid> suspectedBy, long timestamp) {
+        public Suspect(ClusterNodeId id, Set<ClusterNodeId> suspectedBy, long timestamp) {
             assert id != null : "Node id is null.";
             assert suspectedBy != null : "Suspected by nodes list is null.";
             assert !suspectedBy.isEmpty() : "Suspected by nodes list is empty.";
@@ -50,26 +50,26 @@ public class GossipNodesDeathWatch {
             this.timestamp = timestamp;
         }
 
-        public ClusterUuid getId() {
+        public ClusterNodeId id() {
             return id;
         }
 
-        public long getTimestamp() {
+        public long timestamp() {
             return timestamp;
         }
 
-        public boolean isSuspectBySame(Set<ClusterUuid> other) {
+        public boolean isSuspectBySame(Set<ClusterNodeId> other) {
             assert other != null : "Other nodes list is null.";
 
             return suspectedBy.size() == other.size() && suspectedBy.containsAll(other) && other.containsAll(suspectedBy);
         }
 
-        public boolean isDead(Set<ClusterUuid> liveNodes, int quorum) {
+        public boolean isDead(Set<ClusterNodeId> liveNodes, int quorum) {
             int realQuorum = Math.min(liveNodes.size(), quorum);
 
             int liveSuspected = 0;
 
-            for (ClusterUuid node : suspectedBy) {
+            for (ClusterNodeId node : suspectedBy) {
                 if (liveNodes.contains(node)) {
                     liveSuspected++;
                 }
@@ -88,17 +88,17 @@ public class GossipNodesDeathWatch {
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private final ClusterUuid localNodeId;
+    private final ClusterNodeId localNodeId;
 
     private final long maxFailedNodeTimeout;
 
     private final int quorumSize;
 
-    private final Map<ClusterUuid, Suspect> suspects = new HashMap<>();
+    private final Map<ClusterNodeId, Suspect> suspects = new HashMap<>();
 
-    private Set<ClusterUuid> liveNodes = Collections.emptySet();
+    private Set<ClusterNodeId> liveNodes = Collections.emptySet();
 
-    public GossipNodesDeathWatch(ClusterUuid localNodeId, int quorumSize, long maxFailedNodeTimeout) {
+    public GossipNodesDeathWatch(ClusterNodeId localNodeId, int quorumSize, long maxFailedNodeTimeout) {
         assert localNodeId != null : "Local node id is null.";
         assert quorumSize > 0 : "Quorum size must be above zero.";
 
@@ -110,17 +110,17 @@ public class GossipNodesDeathWatch {
     public void update(Gossip gossip) {
         assert gossip != null : "Gossip is null.";
 
-        SuspectedNodesView view = gossip.getSuspectedView();
+        SuspectedNodesView view = gossip.suspectedView();
 
-        Set<ClusterUuid> newSuspects = view.getSuspected().stream()
+        Set<ClusterNodeId> newSuspects = view.suspected().stream()
             .filter(suspectId -> !localNodeId.equals(suspectId) && gossip.hasMember(suspectId))
             .collect(toSet());
 
-        Set<ClusterUuid> newLiveNodes = new HashSet<>();
+        Set<ClusterNodeId> newLiveNodes = new HashSet<>();
 
         gossip.stream()
-            .map(GossipNodeState::getId)
-            .filter(id -> !newSuspects.contains(id) || !view.getSuspecting(id).contains(localNodeId))
+            .map(GossipNodeState::id)
+            .filter(id -> !newSuspects.contains(id) || !view.suspecting(id).contains(localNodeId))
             .forEach(newLiveNodes::add);
 
         newLiveNodes.add(localNodeId);
@@ -138,7 +138,7 @@ public class GossipNodesDeathWatch {
         for (Iterator<Suspect> it = suspects.values().iterator(); it.hasNext(); ) {
             Suspect suspect = it.next();
 
-            if (!newSuspects.contains(suspect.getId())) {
+            if (!newSuspects.contains(suspect.id())) {
                 if (DEBUG) {
                     log.debug("Node is not suspected anymore [suspect={}]", suspect);
                 }
@@ -149,10 +149,10 @@ public class GossipNodesDeathWatch {
 
         long now = System.nanoTime();
 
-        for (ClusterUuid suspectId : newSuspects) {
+        for (ClusterNodeId suspectId : newSuspects) {
             Suspect existing = suspects.get(suspectId);
 
-            Set<ClusterUuid> suspectedBy = view.getSuspecting(suspectId);
+            Set<ClusterNodeId> suspectedBy = view.suspecting(suspectId);
 
             Suspect newSuspect = null;
 
@@ -176,8 +176,8 @@ public class GossipNodesDeathWatch {
         }
     }
 
-    public List<ClusterUuid> terminateNodes() {
-        List<ClusterUuid> terminated = null;
+    public List<ClusterNodeId> terminateNodes() {
+        List<ClusterNodeId> terminated = null;
 
         if (!suspects.isEmpty()) {
             if (DEBUG) {
@@ -189,13 +189,13 @@ public class GossipNodesDeathWatch {
             for (Iterator<Suspect> it = suspects.values().iterator(); it.hasNext(); ) {
                 Suspect suspect = it.next();
 
-                if (now - suspect.getTimestamp() >= maxFailedNodeTimeout) {
+                if (now - suspect.timestamp() >= maxFailedNodeTimeout) {
                     if (suspect.isDead(liveNodes, quorumSize)) {
                         if (terminated == null) {
                             terminated = new ArrayList<>();
                         }
 
-                        terminated.add(suspect.getId());
+                        terminated.add(suspect.id());
 
                         it.remove();
 

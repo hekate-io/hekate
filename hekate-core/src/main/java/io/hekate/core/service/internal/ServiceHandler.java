@@ -47,7 +47,7 @@ class ServiceHandler {
         this.initOrder = initOrder;
     }
 
-    public Service getService() {
+    public Service service() {
         return service;
     }
 

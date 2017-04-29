@@ -62,7 +62,7 @@ public class HekateThreadFactory implements ThreadFactory, ForkJoinWorkerThreadF
         if ((nodeName == null || nodeName.isEmpty()) && Thread.currentThread() instanceof HekateNodeNameAwareThread) {
             HekateNodeNameAwareThread parent = (HekateNodeNameAwareThread)Thread.currentThread();
 
-            nodeName = parent.getNodeName();
+            nodeName = parent.nodeName();
         }
 
         return nodeName == null ? "" : nodeName;

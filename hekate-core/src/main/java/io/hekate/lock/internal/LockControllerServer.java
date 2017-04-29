@@ -16,7 +16,7 @@
 
 package io.hekate.lock.internal;
 
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.lock.internal.LockProtocol.LockOwnerResponse;
 import io.hekate.lock.internal.LockProtocol.LockRequest;
 import io.hekate.lock.internal.LockProtocol.LockResponse;
@@ -41,30 +41,30 @@ import static java.util.stream.Collectors.toList;
 
 class LockControllerServer {
     private static class LockHolder implements LockIdentity {
-        private final ClusterUuid node;
+        private final ClusterNodeId node;
 
         private final long lockId;
 
         private final long threadId;
 
-        public LockHolder(ClusterUuid node, long lockId, long threadId) {
+        public LockHolder(ClusterNodeId node, long lockId, long threadId) {
             this.node = node;
             this.lockId = lockId;
             this.threadId = threadId;
         }
 
         @Override
-        public ClusterUuid getNode() {
+        public ClusterNodeId node() {
             return node;
         }
 
         @Override
-        public long getThreadId() {
+        public long threadId() {
             return threadId;
         }
 
         @Override
-        public long getLockId() {
+        public long lockId() {
             return lockId;
         }
 
@@ -89,20 +89,20 @@ class LockControllerServer {
             this.timeoutFuture = timeoutFuture;
         }
 
-        public Message<LockProtocol> getMessage() {
+        public Message<LockProtocol> message() {
             return message;
         }
 
-        public LockRequest getRequest() {
+        public LockRequest request() {
             return request;
         }
 
-        public ScheduledFuture<?> getTimeoutFuture() {
+        public ScheduledFuture<?> timeoutFuture() {
             return timeoutFuture;
         }
 
-        public boolean isWithFeedback() {
-            return request.isWithFeedback();
+        public boolean requiresFeedback() {
+            return request.feedback();
         }
 
         public void cancelTimeout() {
@@ -178,7 +178,7 @@ class LockControllerServer {
 
         try {
             if (lockedBy == null) {
-                lockedBy = new LockHolder(lock.getNode(), lock.getLockId(), lock.getThreadId());
+                lockedBy = new LockHolder(lock.node(), lock.lockId(), lock.threadId());
 
                 if (DEBUG) {
                     log.debug("Migrated lock [lock={}]", lockedBy);
@@ -217,10 +217,10 @@ class LockControllerServer {
                     for (ListIterator<LockQueueEntry> it = queue.listIterator(); it.hasNext(); ) {
                         LockQueueEntry oldEntry = it.next();
 
-                        LockRequest oldRequest = oldEntry.getRequest();
+                        LockRequest oldRequest = oldEntry.request();
 
                         if (oldRequest.isSameLock(request)) {
-                            LockQueueEntry newEntry = new LockQueueEntry(request, msg, oldEntry.getTimeoutFuture());
+                            LockQueueEntry newEntry = new LockQueueEntry(request, msg, oldEntry.timeoutFuture());
 
                             it.set(newEntry);
 
@@ -228,12 +228,12 @@ class LockControllerServer {
                                 log.debug("Replaced lock request in the queue [old={}, new={}, queue={}]", oldEntry, newEntry, queue);
                             }
 
-                            reply(oldEntry.getMessage(), newResponse(LockResponse.Status.REPLACED));
+                            reply(oldEntry.message(), newResponse(LockResponse.Status.REPLACED));
 
                             replaced = true;
 
-                            if (request.isWithFeedback()) {
-                                replyPartial(newEntry.getMessage(), newResponse(LockResponse.Status.LOCK_INFO));
+                            if (request.feedback()) {
+                                replyPartial(newEntry.message(), newResponse(LockResponse.Status.LOCK_INFO));
                             }
 
                             break;
@@ -242,14 +242,14 @@ class LockControllerServer {
                 }
 
                 if (!replaced) {
-                    if (request.getTimeout() == DefaultLockRegion.TIMEOUT_IMMEDIATE) {
+                    if (request.timeout() == DefaultLockRegion.TIMEOUT_IMMEDIATE) {
                         if (DEBUG) {
                             log.debug("Rejecting lock request with immediate timeout [request={}]", request);
                         }
 
                         // Immediately expire.
                         reply(msg, newResponse(LockResponse.Status.BUSY));
-                    } else if (request.getTimeout() == DefaultLockRegion.TIMEOUT_UNBOUND) {
+                    } else if (request.timeout() == DefaultLockRegion.TIMEOUT_UNBOUND) {
                         // Enqueue without any timeouts.
                         LockQueueEntry entry = new LockQueueEntry(request, msg, null);
 
@@ -259,8 +259,8 @@ class LockControllerServer {
                             log.debug("Added lock request to the locking queue [new={}, queue={}]", entry, queue);
                         }
 
-                        if (request.isWithFeedback()) {
-                            replyPartial(entry.getMessage(), newResponse(LockResponse.Status.LOCK_INFO));
+                        if (request.feedback()) {
+                            replyPartial(entry.message(), newResponse(LockResponse.Status.LOCK_INFO));
                         }
                     } else {
                         // Register timeout handler.
@@ -271,11 +271,11 @@ class LockControllerServer {
                                 for (Iterator<LockQueueEntry> it = queue.iterator(); it.hasNext(); ) {
                                     LockQueueEntry entry = it.next();
 
-                                    LockRequest entryRequest = entry.getRequest();
+                                    LockRequest entryRequest = entry.request();
 
-                                    if (request.isSameLock(entryRequest) && entry.getTimeoutFuture() != null) {
-                                        if (entry.getMessage().mustReply()) {
-                                            reply(entry.getMessage(), newResponse(LockResponse.Status.TIMEOUT));
+                                    if (request.isSameLock(entryRequest) && entry.timeoutFuture() != null) {
+                                        if (entry.message().mustReply()) {
+                                            reply(entry.message(), newResponse(LockResponse.Status.TIMEOUT));
                                         }
 
                                         it.remove();
@@ -288,7 +288,7 @@ class LockControllerServer {
                             } finally {
                                 sync.unlock();
                             }
-                        }, request.getTimeout(), TimeUnit.NANOSECONDS);
+                        }, request.timeout(), TimeUnit.NANOSECONDS);
 
                         LockQueueEntry entry = new LockQueueEntry(request, msg, future);
 
@@ -298,8 +298,8 @@ class LockControllerServer {
                             log.debug("Added lock request with timeout to the locking queue [new={}, queue={}]", entry, queue);
                         }
 
-                        if (entry.isWithFeedback()) {
-                            replyPartial(entry.getMessage(), newResponse(LockResponse.Status.LOCK_INFO));
+                        if (entry.requiresFeedback()) {
+                            replyPartial(entry.message(), newResponse(LockResponse.Status.LOCK_INFO));
                         }
                     }
                 }
@@ -332,7 +332,7 @@ class LockControllerServer {
                     for (Iterator<LockQueueEntry> it = queue.iterator(); it.hasNext(); ) {
                         LockQueueEntry oldEntry = it.next();
 
-                        if (oldEntry.getRequest().isSameLock(request)) {
+                        if (oldEntry.request().isSameLock(request)) {
                             it.remove();
 
                             oldEntry.cancelTimeout();
@@ -341,7 +341,7 @@ class LockControllerServer {
                                 log.debug("Removed from lock queue [entry={}, queue={}]", oldEntry, queue);
                             }
 
-                            reply(oldEntry.getMessage(), newResponse(LockResponse.Status.REPLACED));
+                            reply(oldEntry.message(), newResponse(LockResponse.Status.REPLACED));
 
                             break;
                         }
@@ -372,14 +372,14 @@ class LockControllerServer {
                     log.debug("Disposed lock queue entry [entry={}]", entry);
                 }
 
-                reply(entry.getMessage(), newResponse(LockResponse.Status.RETRY));
+                reply(entry.message(), newResponse(LockResponse.Status.RETRY));
             }
         } finally {
             sync.unlock();
         }
     }
 
-    public void update(Set<ClusterUuid> liveNodes) {
+    public void update(Set<ClusterNodeId> liveNodes) {
         sync.lock();
 
         try {
@@ -390,9 +390,9 @@ class LockControllerServer {
             for (Iterator<LockQueueEntry> it = queue.iterator(); it.hasNext(); ) {
                 LockQueueEntry entry = it.next();
 
-                LockRequest request = entry.getRequest();
+                LockRequest request = entry.request();
 
-                if (!liveNodes.contains(request.getNode())) {
+                if (!liveNodes.contains(request.node())) {
                     entry.cancelTimeout();
 
                     it.remove();
@@ -403,7 +403,7 @@ class LockControllerServer {
                 }
             }
 
-            if (lockedBy != null && !liveNodes.contains(lockedBy.getNode())) {
+            if (lockedBy != null && !liveNodes.contains(lockedBy.node())) {
                 lockedBy = null;
 
                 processQueue();
@@ -420,7 +420,7 @@ class LockControllerServer {
             if (lockedBy == null) {
                 reply(msg, new LockOwnerResponse(0, null, LockOwnerResponse.Status.OK));
             } else {
-                reply(msg, new LockOwnerResponse(lockedBy.getThreadId(), lockedBy.getNode(), LockOwnerResponse.Status.OK));
+                reply(msg, new LockOwnerResponse(lockedBy.threadId(), lockedBy.node(), LockOwnerResponse.Status.OK));
             }
         } finally {
             sync.unlock();
@@ -428,11 +428,11 @@ class LockControllerServer {
     }
 
     // Package level for testing purposes.
-    List<ClusterUuid> getQueuedLocks() {
+    List<ClusterNodeId> enqueuedLocks() {
         sync.lock();
 
         try {
-            return queue.stream().map(e -> e.getRequest().getNode()).collect(toList());
+            return queue.stream().map(e -> e.request().node()).collect(toList());
         } finally {
             sync.unlock();
         }
@@ -443,24 +443,24 @@ class LockControllerServer {
 
         entry.cancelTimeout();
 
-        LockRequest request = entry.getRequest();
+        LockRequest request = entry.request();
 
-        lockedBy = new LockHolder(request.getNode(), request.getLockId(), request.getThreadId());
+        lockedBy = new LockHolder(request.node(), request.lockId(), request.threadId());
 
         if (DEBUG) {
             log.debug("Locked [new-owner={}, queue={}]", lockedBy, queue);
         }
 
-        reply(entry.getMessage(), newResponse(LockResponse.Status.OK));
+        reply(entry.message(), newResponse(LockResponse.Status.OK));
 
         queue.stream()
-            .filter(LockQueueEntry::isWithFeedback)
+            .filter(LockQueueEntry::requiresFeedback)
             .forEach(other -> {
                 if (DEBUG) {
                     log.debug("Notifying queue entry on lock owner change [queue-entry={}]", other);
                 }
 
-                replyPartial(other.getMessage(), newResponse(LockResponse.Status.LOCK_INFO));
+                replyPartial(other.message(), newResponse(LockResponse.Status.LOCK_INFO));
             });
     }
 
@@ -506,7 +506,7 @@ class LockControllerServer {
         if (lockedBy == null) {
             return new LockResponse(status, null, 0);
         } else {
-            return new LockResponse(status, lockedBy.getNode(), lockedBy.getThreadId());
+            return new LockResponse(status, lockedBy.node(), lockedBy.threadId());
         }
     }
 

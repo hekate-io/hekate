@@ -60,17 +60,17 @@ public class PartitionServiceJavadocTest extends HekateNodeTestBase {
 
         // Start:usage
         // Get mapper by its name.
-        PartitionMapper mapper = partitions.mapper("mapper1");
+        PartitionMapper mapper = hekate.partitions().mapper("mapper1");
 
         // Map some imaginary data key to a partition.
         Partition partition = mapper.map("someDataKey1");
 
-        System.out.println("Primary node: " + partition.getPrimaryNode());
-        System.out.println("Backup nodes: " + partition.getBackupNodes());
+        System.out.println("Primary node: " + partition.primaryNode());
+        System.out.println("Backup nodes: " + partition.backupNodes());
         // End:usage
 
         //Start:get_primary_id
-        partition.getPrimaryNode().getId();
+        partition.primaryNode().id();
         //End:get_primary_id
 
         hekate.leave();

@@ -22,6 +22,7 @@ import io.hekate.messaging.MessagingFutureException;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 /**
  * Asynchronous result of {@link MessagingChannel#aggregate(Object) aggregate(...)} operation.
@@ -69,5 +70,18 @@ public class AggregateFuture<T> extends MessagingFuture<AggregateResult<T>> {
      */
     public Collection<T> resultsUninterruptedly() throws MessagingFutureException {
         return getUninterruptedly().results();
+    }
+
+    /**
+     * Awaits for the asynchronous aggregation to complete and performs the given action for each element of the aggregation {@link
+     * #results() results}.
+     *
+     * @param action The action to be performed for each result.
+     *
+     * @throws MessagingFutureException Signals that aggregation failed.
+     * @throws InterruptedException Signals that the thread was interrupted while waiting for aggregation to complete.
+     */
+    public void forEach(Consumer<? super T> action) throws InterruptedException, MessagingFutureException {
+        results().forEach(action);
     }
 }

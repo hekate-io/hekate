@@ -23,7 +23,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
 //Start:example
-@EnableHekate
+@EnableHekate // <-- Important!!!
 @SpringBootApplication
 public class MyApplication {
     public static void main(String[] args) {
@@ -31,8 +31,8 @@ public class MyApplication {
     }
 
     @Bean
-    public MyBean myComponent(Hekate hekate) {
-        return new MyBean(hekate);
+    public MyComponent myComponent(Hekate hekate) {
+        return new MyComponent(hekate);
     }
 }
 //End:example

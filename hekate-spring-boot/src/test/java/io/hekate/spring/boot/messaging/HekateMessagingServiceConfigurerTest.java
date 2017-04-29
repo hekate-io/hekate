@@ -93,9 +93,9 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
         assertNotNull(get(MessagingTestConfig.InnerBean.class).innerChannel);
         assertNotNull(get(MessagingTestConfig.InnerComponent.class).channel);
 
-        assertEquals("test1", get(MessagingTestConfig.class).channel.getName());
-        assertEquals("test2", get(MessagingTestConfig.InnerBean.class).innerChannel.getName());
-        assertEquals("test3", get(MessagingTestConfig.InnerComponent.class).channel.getName());
+        assertEquals("test1", get(MessagingTestConfig.class).channel.name());
+        assertEquals("test2", get(MessagingTestConfig.InnerBean.class).innerChannel.name());
+        assertEquals("test3", get(MessagingTestConfig.InnerComponent.class).channel.name());
 
         assertNotNull(getNode().messaging().channel("test1"));
         assertNotNull(getNode().messaging().channel("test2"));

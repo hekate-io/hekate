@@ -81,7 +81,7 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
     static class JoinValidatorTestConfig extends HekateTestConfigBase {
         private static class TestJoinValidator implements ClusterJoinValidator {
             @Override
-            public String acceptJoin(ClusterNode newNode, Hekate local) {
+            public String acceptJoin(ClusterNode joining, Hekate local) {
                 return null;
             }
         }
@@ -122,7 +122,7 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
 
         DefaultFailureDetector detector = (DefaultFailureDetector)getNode().get(DefaultClusterService.class).getFailureDetector();
 
-        assertEquals(FailureDetectorConfigTestConfig.HEARTBEAT_INTERVAL, detector.getHeartbeatInterval());
+        assertEquals(FailureDetectorConfigTestConfig.HEARTBEAT_INTERVAL, detector.heartbeatInterval());
     }
 
     @Test

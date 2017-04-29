@@ -26,11 +26,11 @@ class NetworkInboundConnection<T> extends NetworkConnectionBase<T> {
     }
 
     public void onConnect() {
-        gateway().getReceiver().onConnect(getEndpoint());
+        gateway().receiver().onConnect(endpoint());
     }
 
     public void onDisconnect() {
-        gateway().getReceiver().onDisconnect(getEndpoint());
+        gateway().receiver().onDisconnect(endpoint());
 
         discardRequests(new ClosedChannelException());
 

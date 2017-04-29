@@ -50,7 +50,7 @@ public interface MetricsSource {
     default long get(String name, long defaultVal) {
         Metric metric = metric(name);
 
-        return metric != null ? metric.getValue() : defaultVal;
+        return metric != null ? metric.value() : defaultVal;
     }
 
     /**

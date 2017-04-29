@@ -133,7 +133,7 @@ public class HekateBootstrap {
      *
      * @param nodeName Node name.
      *
-     * @see ClusterNode#getName()
+     * @see ClusterNode#name()
      */
     public void setNodeName(String nodeName) {
         this.nodeName = nodeName;
@@ -211,13 +211,13 @@ public class HekateBootstrap {
      *
      * <p>
      * Roles are string identifiers that can be used for logical grouping of cluster nodes. Roles of each node are visible to all other
-     * cluster members via {@link ClusterNode#getRoles()} and can be used by applications to operate on a sub-set of cluster nodes with
+     * cluster members via {@link ClusterNode#roles()} and can be used by applications to operate on a sub-set of cluster nodes with
      * specific role(s) (see {@link ClusterView#forRole(String)}).
      * </p>
      *
      * @param nodeRoles Set of roles.
      *
-     * @see ClusterNode#getRoles()
+     * @see ClusterNode#roles()
      * @see ClusterTopology#filter(ClusterNodeFilter)
      */
     public void setNodeRoles(Set<String> nodeRoles) {
@@ -256,12 +256,12 @@ public class HekateBootstrap {
      * Sets node's properties.
      *
      * <p>
-     * Properties of each node are visible to all other cluster members via {@link ClusterNode#getProperties()}.
+     * Properties of each node are visible to all other cluster members via {@link ClusterNode#properties()}.
      * </p>
      *
      * @param nodeProperties Map of local node properties.
      *
-     * @see ClusterNode#getProperties()
+     * @see ClusterNode#properties()
      * @see #setNodePropertyProviders(List)
      */
     public void setNodeProperties(Map<String, String> nodeProperties) {

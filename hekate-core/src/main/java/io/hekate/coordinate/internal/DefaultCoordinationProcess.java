@@ -178,7 +178,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
                 DefaultCoordinationContext oldCtx = this.ctx;
 
                 if (oldCtx != null) {
-                    if (oldCtx.getTopology().equals(newTopology)) {
+                    if (oldCtx.topology().equals(newTopology)) {
                         topologyChanged = false;
                     } else {
                         oldCtx.cancel();
@@ -223,18 +223,18 @@ class DefaultCoordinationProcess implements CoordinationProcess {
     }
 
     @Override
-    public String getName() {
+    public String name() {
         return name;
     }
 
     @Override
-    public CoordinationFuture getFuture() {
+    public CoordinationFuture future() {
         return future.fork();
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T extends CoordinationHandler> T getHandler() {
+    public <T extends CoordinationHandler> T handler() {
         return (T)handler;
     }
 }

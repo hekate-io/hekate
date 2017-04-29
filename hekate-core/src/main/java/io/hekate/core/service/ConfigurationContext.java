@@ -26,7 +26,7 @@ import java.util.Collection;
  */
 public interface ConfigurationContext {
     /**
-     * Adds the specified {@link ServiceInfo#getProperties() service property}.
+     * Adds the specified {@link ServiceInfo#properties() service property}.
      *
      * @param name Property name.
      * @param value Property value.

@@ -18,7 +18,7 @@ package io.hekate;
 
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.internal.DefaultClusterNode;
 import io.hekate.cluster.internal.DefaultClusterNodeBuilder;
 import io.hekate.codec.Codec;
@@ -334,12 +334,12 @@ public abstract class HekateTestBase {
         assertAllThreadsStopped();
     }
 
-    protected static ClusterUuid newNodeId() {
-        return new ClusterUuid();
+    protected static ClusterNodeId newNodeId() {
+        return new ClusterNodeId();
     }
 
-    protected static ClusterUuid newNodeId(int order) {
-        return new ClusterUuid(0, order);
+    protected static ClusterNodeId newNodeId(int order) {
+        return new ClusterNodeId(0, order);
     }
 
     protected static void say(Object msg) {
@@ -375,7 +375,7 @@ public abstract class HekateTestBase {
     }
 
     protected static String getStacktrace(Throwable error) {
-        return Utils.getStackTrace(error);
+        return Utils.stackTrace(error);
     }
 
     protected static List<NetworkInterface> getNetworkInterfaces() throws SocketException {
@@ -492,7 +492,7 @@ public abstract class HekateTestBase {
         return newNode(null, false, null, newAddress(order));
     }
 
-    protected ClusterNode newNode(ClusterUuid nodeId) throws Exception {
+    protected ClusterNode newNode(ClusterNodeId nodeId) throws Exception {
         return newNode(nodeId, false, null, null);
     }
 
@@ -508,12 +508,12 @@ public abstract class HekateTestBase {
         return newNode(null, local, transform, addr);
     }
 
-    protected ClusterNode newNode(ClusterUuid nodeId, boolean local, Consumer<DefaultClusterNodeBuilder> transform, ClusterAddress addr)
+    protected ClusterNode newNode(ClusterNodeId nodeId, boolean local, Consumer<DefaultClusterNodeBuilder> transform, ClusterAddress addr)
         throws Exception {
         return newNode(nodeId, local, transform, addr, DefaultClusterNode.NON_JOINED_ORDER);
     }
 
-    protected ClusterNode newNode(ClusterUuid nodeId, boolean local, Consumer<DefaultClusterNodeBuilder> transform, ClusterAddress addr,
+    protected ClusterNode newNode(ClusterNodeId nodeId, boolean local, Consumer<DefaultClusterNodeBuilder> transform, ClusterAddress addr,
         int joinOrder) throws Exception {
         if (nodeId == null) {
             nodeId = newNodeId();
@@ -525,7 +525,7 @@ public abstract class HekateTestBase {
             addr = new ClusterAddress(sockAddr, nodeId);
         }
 
-        String name = "node" + addr.getSocket().getPort();
+        String name = "node" + addr.socket().getPort();
 
         DefaultClusterNodeBuilder builder = new DefaultClusterNodeBuilder()
             .withAddress(addr)
@@ -560,7 +560,7 @@ public abstract class HekateTestBase {
         return newNode(true, null, null);
     }
 
-    protected ClusterNode newLocalNode(ClusterUuid nodeId) throws Exception {
+    protected ClusterNode newLocalNode(ClusterNodeId nodeId) throws Exception {
         return newNode(nodeId, true, null, null);
     }
 
@@ -631,7 +631,7 @@ public abstract class HekateTestBase {
         } catch (AssertionError e) {
             throw e;
         } catch (Throwable t) {
-            assertSame(Utils.getStackTrace(t), error, t.getClass());
+            assertSame(Utils.stackTrace(t), error, t.getClass());
 
             if (message != null) {
                 assertNotNull(t.toString(), t.getMessage());
@@ -648,7 +648,7 @@ public abstract class HekateTestBase {
         } catch (AssertionError e) {
             throw e;
         } catch (Throwable t) {
-            assertSame(Utils.getStackTrace(t), error, t.getClass());
+            assertSame(Utils.stackTrace(t), error, t.getClass());
 
             assertNotNull(t.toString(), t.getMessage());
             assertEquals(message, t.getMessage());

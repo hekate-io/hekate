@@ -18,7 +18,7 @@ package io.hekate.cluster.health;
 
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.core.HekateException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -28,10 +28,10 @@ import java.util.Set;
 
 public class FailureDetectorMock implements FailureDetector {
     public static class GlobalNodesState {
-        private final Map<ClusterUuid, Set<ClusterUuid>> failedNodes = new HashMap<>();
+        private final Map<ClusterNodeId, Set<ClusterNodeId>> failedNodes = new HashMap<>();
 
-        public void markFailed(ClusterUuid by, ClusterUuid id) {
-            Set<ClusterUuid> suspectedBy = failedNodes.computeIfAbsent(id, k -> new HashSet<>());
+        public void markFailed(ClusterNodeId by, ClusterNodeId id) {
+            Set<ClusterNodeId> suspectedBy = failedNodes.computeIfAbsent(id, k -> new HashSet<>());
 
             suspectedBy.add(by);
         }
@@ -52,12 +52,12 @@ public class FailureDetectorMock implements FailureDetector {
     }
 
     @Override
-    public long getHeartbeatInterval() {
+    public long heartbeatInterval() {
         return 0;
     }
 
     @Override
-    public int getFailureDetectionQuorum() {
+    public int failureQuorum() {
         return 0;
     }
 
@@ -68,9 +68,9 @@ public class FailureDetectorMock implements FailureDetector {
 
     @Override
     public boolean isAlive(ClusterAddress remote) {
-        ClusterUuid id = remote.getId();
+        ClusterNodeId id = remote.id();
 
-        return !globalState.failedNodes.containsKey(id) || !globalState.failedNodes.get(id).contains(node.getId());
+        return !globalState.failedNodes.containsKey(id) || !globalState.failedNodes.get(id).contains(node.id());
     }
 
     @Override

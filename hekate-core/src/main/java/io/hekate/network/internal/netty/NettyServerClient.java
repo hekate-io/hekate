@@ -141,17 +141,17 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
     }
 
     @Override
-    public String getProtocol() {
+    public String protocol() {
         return protocol;
     }
 
     @Override
-    public InetSocketAddress getRemoteAddress() {
+    public InetSocketAddress remoteAddress() {
         return remoteAddress;
     }
 
     @Override
-    public InetSocketAddress getLocalAddress() {
+    public InetSocketAddress localAddress() {
         return localAddress;
     }
 
@@ -246,7 +246,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                 protocol = null;
                 handlerReg = null;
             } else {
-                this.protocol = protocol = request.getProtocol();
+                this.protocol = protocol = request.protocol();
 
                 handlerReg = handlers.get(protocol);
             }
@@ -261,7 +261,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                 ctx.writeAndFlush(reject).addListener(ChannelFutureListener.CLOSE);
             } else {
                 // Check if we need to re-bind this channel to another thread.
-                EventLoopGroup eventLoop = handlerReg.getConfig().getEventLoopGroup();
+                EventLoopGroup eventLoop = handlerReg.config().getEventLoopGroup();
 
                 if (eventLoop == null) {
                     init(ctx.channel(), request, handlerReg);
@@ -486,7 +486,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
     }
 
     private void init(Channel channel, HandshakeRequest request, HandlerRegistration handlerReg) {
-        NettyServerHandlerConfig<Object> cfg = handlerReg.getConfig();
+        NettyServerHandlerConfig<Object> cfg = handlerReg.config();
 
         if (cfg.getLoggerCategory() != null) {
             log = LoggerFactory.getLogger(cfg.getLoggerCategory());
@@ -502,8 +502,8 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         this.eventLoop = channel.eventLoop();
         this.serverHandler = cfg.getHandler();
         this.handlerReg = handlerReg;
-        this.metrics = handlerReg.getMetrics();
-        this.codec = request.getCodec();
+        this.metrics = handlerReg.metrics();
+        this.codec = request.codec();
 
         // Register this client.
         handlerReg.add(this);
@@ -523,7 +523,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         // Accept handshake.
         channel.writeAndFlush(new HandshakeAccept(hbInterval, hbLossThreshold, hbDisabled));
 
-        serverHandler.onConnect(request.getPayload(), this);
+        serverHandler.onConnect(request.payload(), this);
     }
 
     private void doSend(Object msg, NetworkSendCallback<Object> onSend) {

@@ -17,7 +17,7 @@
 package io.hekate.metrics.cluster.internal;
 
 import io.hekate.HekateTestBase;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.codec.StreamDataReader;
 import io.hekate.codec.StreamDataWriter;
 import io.hekate.metrics.cluster.internal.MetricsProtocol.UpdateRequest;
@@ -40,7 +40,7 @@ public class MetricsProtocolCodecTest extends HekateTestBase {
     @Test
     public void testResponsePushBackUpdatesOnly() throws Exception {
         repeat(3, i -> {
-            ClusterUuid from = newNodeId();
+            ClusterNodeId from = newNodeId();
 
             List<MetricsUpdate> updates = newMetricUpdates();
 
@@ -48,9 +48,9 @@ public class MetricsProtocolCodecTest extends HekateTestBase {
 
             UpdateResponse decoded = encodeDecode(response);
 
-            assertEquals(from, decoded.getFrom());
+            assertEquals(from, decoded.from());
 
-            assertEqualsMetricUpdates(updates, decoded.getMetrics());
+            assertEqualsMetricUpdates(updates, decoded.metrics());
         });
     }
 
@@ -63,10 +63,10 @@ public class MetricsProtocolCodecTest extends HekateTestBase {
 
             UpdateRequest decoded = encodeDecode(request);
 
-            assertEquals(request.getFrom(), decoded.getFrom());
-            assertEquals(i, decoded.getTargetVer());
+            assertEquals(request.from(), decoded.from());
+            assertEquals(i, decoded.targetVer());
 
-            assertEqualsMetricUpdates(updates, decoded.getUpdates());
+            assertEqualsMetricUpdates(updates, decoded.updates());
         });
     }
 
@@ -79,10 +79,10 @@ public class MetricsProtocolCodecTest extends HekateTestBase {
             MetricsUpdate u1 = updates1.get(i);
             MetricsUpdate u2 = updates2.get(i);
 
-            assertEquals(u1.getNode(), u2.getNode());
-            assertEquals(u1.getVersion(), u2.getVersion());
+            assertEquals(u1.node(), u2.node());
+            assertEquals(u1.version(), u2.version());
 
-            assertEquals(u1.getMetrics().size(), u2.getMetrics().size());
+            assertEquals(u1.metrics().size(), u2.metrics().size());
 
             assertEqualsUpdates(u1, u2);
             assertEqualsUpdates(u2, u1);
@@ -90,13 +90,13 @@ public class MetricsProtocolCodecTest extends HekateTestBase {
     }
 
     private void assertEqualsUpdates(MetricsUpdate u1, MetricsUpdate u2) {
-        for (String name : u1.getMetrics().keySet()) {
-            StaticMetric m1 = u1.getMetrics().get(name);
-            StaticMetric m2 = u2.getMetrics().get(name);
+        for (String name : u1.metrics().keySet()) {
+            StaticMetric m1 = u1.metrics().get(name);
+            StaticMetric m2 = u2.metrics().get(name);
 
             assertNotNull(m2);
-            assertEquals(m1.getName(), m2.getName());
-            assertEquals(m1.getValue(), m2.getValue());
+            assertEquals(m1.name(), m2.name());
+            assertEquals(m1.value(), m2.value());
         }
     }
 

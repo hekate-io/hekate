@@ -95,7 +95,7 @@ public interface FailureResolution {
      *
      * @see #withDelay(long)
      */
-    long getDelay();
+    long delay();
 
     /**
      * Returns the routing policy that should be applied during failover.
@@ -106,5 +106,5 @@ public interface FailureResolution {
      * @see #withSameNodeIfExists()
      * @see #withReRoute()
      */
-    FailoverRoutingPolicy getRoutingPolicy();
+    FailoverRoutingPolicy routing();
 }

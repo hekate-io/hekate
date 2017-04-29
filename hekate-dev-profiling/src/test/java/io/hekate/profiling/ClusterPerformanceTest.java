@@ -17,8 +17,8 @@
 package io.hekate.profiling;
 
 import io.hekate.HekateTestBase;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterServiceFactory;
-import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.health.DefaultFailureDetector;
@@ -98,7 +98,7 @@ public class ClusterPerformanceTest extends HekateTestBase {
 
             it.remove();
 
-            sayTime("Leave " + idx++ + " ~ " + node.getLocalNode().getId(), () -> {
+            sayTime("Leave " + idx++ + " ~ " + node.localNode().id(), () -> {
                 node.leave();
 
                 for (HekateTestNode clusterService : nodes) {
@@ -170,8 +170,8 @@ public class ClusterPerformanceTest extends HekateTestBase {
 
         seedNodes.setDelegate(new SeedNodeProviderAdaptor() {
             @Override
-            public List<InetSocketAddress> getSeedNodes(String cluster) {
-                return Collections.singletonList(seed.getLocalNode().getSocket());
+            public List<InetSocketAddress> findSeedNodes(String cluster) {
+                return Collections.singletonList(seed.localNode().socket());
             }
         });
 
@@ -208,10 +208,10 @@ public class ClusterPerformanceTest extends HekateTestBase {
                                 Hekate started = node.joinAsync().get(30, TimeUnit.SECONDS);
 
                                 if (started == null) {
-                                    ClusterUuid nodeId = null;
+                                    ClusterNodeId nodeId = null;
 
                                     try {
-                                        nodeId = node.getLocalNode().getId();
+                                        nodeId = node.localNode().id();
                                     } catch (IllegalStateException e) {
                                         // No-op.
                                     }
@@ -232,15 +232,15 @@ public class ClusterPerformanceTest extends HekateTestBase {
                         lock.readLock().lock();
 
                         try {
-                            ClusterUuid nodeId = null;
+                            ClusterNodeId nodeId = null;
 
                             try {
-                                nodeId = node.getLocalNode().getId();
+                                nodeId = node.localNode().id();
                             } catch (IllegalStateException e) {
                                 // No-op.
                             }
 
-                            final ClusterUuid finalNodeId = nodeId;
+                            final ClusterNodeId finalNodeId = nodeId;
 
                             sayTime("Stopped: " + port, () -> {
                                 Hekate stopped1 = node.leaveAsync().get(30, TimeUnit.SECONDS);
@@ -276,13 +276,13 @@ public class ClusterPerformanceTest extends HekateTestBase {
 
             try {
                 List<HekateTestNode> nonDown = nodes.stream()
-                    .filter(node -> node.getState() != Hekate.State.DOWN)
+                    .filter(node -> node.state() != Hekate.State.DOWN)
                     .collect(toList());
 
                 nonDown.add(seed);
 
                 sayTime("Consistent topology of " + nonDown.size() + " nodes", () -> nonDown.forEach(node -> {
-                    assertSame(Hekate.State.UP, node.getState());
+                    assertSame(Hekate.State.UP, node.state());
 
                     node.awaitForTopology(nonDown);
                 }));
@@ -368,7 +368,7 @@ public class ClusterPerformanceTest extends HekateTestBase {
 
             @Override
             public void onEvent(ClusterEvent event) {
-                switch (event.getType()) {
+                switch (event.type()) {
                     case JOIN: {
                         say("Joined " + cnt.incrementAndGet());
 

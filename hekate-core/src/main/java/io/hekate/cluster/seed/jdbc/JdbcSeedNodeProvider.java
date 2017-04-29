@@ -100,7 +100,7 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider {
     }
 
     @Override
-    public List<InetSocketAddress> getSeedNodes(String cluster) throws HekateException {
+    public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
         try (
             Connection conn = ds.getConnection();
             PreparedStatement st = conn.prepareStatement(selSql)
@@ -149,17 +149,17 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider {
     }
 
     @Override
-    public long getCleanupInterval() {
+    public long cleanupInterval() {
         return cleanupInterval;
     }
 
     @Override
-    public void registerRemoteAddress(String cluster, InetSocketAddress node) throws HekateException {
+    public void registerRemote(String cluster, InetSocketAddress node) throws HekateException {
         doRegister(cluster, node);
     }
 
     @Override
-    public void unregisterRemoteAddress(String cluster, InetSocketAddress node) throws HekateException {
+    public void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException {
         doUnregister(cluster, node);
     }
 

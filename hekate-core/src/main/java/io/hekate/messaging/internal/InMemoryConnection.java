@@ -29,7 +29,7 @@ import io.hekate.network.NetworkFuture;
 
 class InMemoryConnection<T> extends MessagingConnectionBase<T> {
     public InMemoryConnection(MessagingGateway<T> gateway, MessagingExecutor async) {
-        super(gateway, async, new DefaultMessagingEndpoint<>(gateway.getId(), gateway.getChannel()));
+        super(gateway, async, new DefaultMessagingEndpoint<>(gateway.id(), gateway.channel()));
     }
 
     @Override
@@ -67,9 +67,9 @@ class InMemoryConnection<T> extends MessagingConnectionBase<T> {
         Request<T> msg;
 
         if (ctx.hasAffinity()) {
-            msg = new AffinityRequest<>(ctx.affinity(), handle.getId(), ctx.message());
+            msg = new AffinityRequest<>(ctx.affinity(), handle.id(), ctx.message());
         } else {
-            msg = new Request<>(handle.getId(), ctx.message());
+            msg = new Request<>(handle.id(), ctx.message());
         }
 
         onAsyncEnqueue();
@@ -88,9 +88,9 @@ class InMemoryConnection<T> extends MessagingConnectionBase<T> {
         Subscribe<T> msg;
 
         if (ctx.hasAffinity()) {
-            msg = new AffinitySubscribe<>(ctx.affinity(), handle.getId(), ctx.message());
+            msg = new AffinitySubscribe<>(ctx.affinity(), handle.id(), ctx.message());
         } else {
-            msg = new Subscribe<>(handle.getId(), ctx.message());
+            msg = new Subscribe<>(handle.id(), ctx.message());
         }
 
         onAsyncEnqueue();

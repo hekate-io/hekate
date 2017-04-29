@@ -63,6 +63,6 @@ public class HekateCoordinationServiceConfigurerTest extends HekateAutoConfigure
 
         assertNotNull(get("coordinationService", CoordinationService.class));
         assertNotNull(get(CoordinationTestConfig.class).coordinationService);
-        assertNotNull(getNode().coordination().process("test.process").getFuture().get());
+        assertNotNull(getNode().coordination().process("test.process").future().get());
     }
 }

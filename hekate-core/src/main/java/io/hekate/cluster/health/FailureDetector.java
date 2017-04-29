@@ -39,12 +39,12 @@ import java.util.Set;
  * <li>When cluster service starts or if cluster service detects that there are changes in the cluster topology it calls {@link
  * #update(Set)} method so that failure detector could update its internal state of monitored nodes.</li>
  *
- * <li>Once per {@link #getHeartbeatInterval() heartbeat interval} cluster service calls {@link #isAlive(ClusterAddress)} method to check
+ * <li>Once per {@link #heartbeatInterval() heartbeat interval} cluster service calls {@link #isAlive(ClusterAddress)} method to check
  * if particular remote node is alive. If {@code false} is returned by this method then such node will be marked as suspected to be failed
- * and this information will be shared with other cluster members. If node failure is suspected by the {@link #getFailureDetectionQuorum()}
+ * and this information will be shared with other cluster members. If node failure is suspected by the {@link #failureQuorum()}
  * amount of nodes then such node will be marked as failed and will be removed from the cluster.</li>
  *
- * <li>Once per {@link #getHeartbeatInterval() heartbeat interval} cluster service calls {@link #heartbeatTick()} method.  If this method
+ * <li>Once per {@link #heartbeatInterval() heartbeat interval} cluster service calls {@link #heartbeatTick()} method.  If this method
  * returns a non-empty list of cluster node addresses then heartbeat request message will be sent to each of those nodes.</li>
  *
  * <li>When cluster service receives a heartbeat request message from a remote node then it calls #{@link
@@ -84,7 +84,7 @@ public interface FailureDetector {
      *
      * @return Time interval in milliseconds between heartbeat sending rounds.
      */
-    long getHeartbeatInterval();
+    long heartbeatInterval();
 
     /**
      * Return the amount of nodes that should agree on some particular node failure before removing such node from the cluster.
@@ -96,7 +96,7 @@ public interface FailureDetector {
      *
      * @return Amount of nodes that should agree on some particular node failure before removing such node from the cluster.
      */
-    int getFailureDetectionQuorum();
+    int failureQuorum();
 
     /**
      * Terminates this failure detector.
@@ -118,7 +118,7 @@ public interface FailureDetector {
      *
      * <p>
      * Note that the specified addresses set can include nodes that just started joining and are not within cluster service's {@link
-     * ClusterService#getTopology() topology}.
+     * ClusterService#topology() topology}.
      * </p>
      *
      * @param nodes Cluster node addresses.
@@ -129,7 +129,7 @@ public interface FailureDetector {
      * Runs a heartbeat tick and returns a set of cluster node addresses that should received a heartbeat request message.
      *
      * <p>
-     * The time interval between heartbeat ticks is controlled by {@link #getHeartbeatInterval()} method.
+     * The time interval between heartbeat ticks is controlled by {@link #heartbeatInterval()} method.
      * </p>
      *
      * @return Set of cluster node addresses for heartbeat request message sending.

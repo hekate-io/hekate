@@ -21,9 +21,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Provides information about a {@link Hekate#get(Class) service} that is running on the cluster node.
+ * Provides information about a {@link Hekate#get(Class) service}.
  *
- * @see ClusterNode#getServices()
+ * @see ClusterNode#services()
  */
 public interface ServiceInfo {
     /**
@@ -31,14 +31,14 @@ public interface ServiceInfo {
      *
      * @return Service class name.
      */
-    String getType();
+    String type();
 
     /**
      * Returns an immutable map of service properties.
      *
      * @return Service properties.
      */
-    Map<String, Set<String>> getProperties();
+    Map<String, Set<String>> properties();
 
     /**
      * Returns an immutable set of property values.
@@ -47,5 +47,5 @@ public interface ServiceInfo {
      *
      * @return Immutable set of property values.
      */
-    Set<String> getProperty(String name);
+    Set<String> property(String name);
 }

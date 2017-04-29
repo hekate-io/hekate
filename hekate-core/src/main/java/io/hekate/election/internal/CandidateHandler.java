@@ -55,24 +55,24 @@ class CandidateHandler implements AsyncLockCallback {
         }
 
         @Override
-        public ClusterNode getLeader() {
+        public ClusterNode leader() {
             return leader.get();
         }
 
         @Override
-        public ClusterNode getLocalNode() {
+        public ClusterNode localNode() {
             return localNode;
         }
 
         @Override
-        public void addLeaderChangeListener(LeaderChangeListener listener) {
+        public void addListener(LeaderChangeListener listener) {
             ArgAssert.notNull(listener, "Listener");
 
             listeners.add(listener);
         }
 
         @Override
-        public boolean removeLeaderChangeListener(LeaderChangeListener listener) {
+        public boolean removeListener(LeaderChangeListener listener) {
             if (listener != null) {
                 return listeners.remove(listener);
             }
@@ -98,7 +98,7 @@ class CandidateHandler implements AsyncLockCallback {
         private boolean disposed;
 
         @Override
-        public ClusterNode getLocalNode() {
+        public ClusterNode localNode() {
             return localNode;
         }
 
@@ -176,7 +176,7 @@ class CandidateHandler implements AsyncLockCallback {
     @Override
     public void onLockBusy(LockOwnerInfo owner) {
         if (!terminated) {
-            ClusterNode leader = owner.getNode();
+            ClusterNode leader = owner.node();
 
             if (log.isInfoEnabled()) {
                 log.info("Switching to follower state [group={}, leader={}, candidate={}]", group, leader, candidate);
@@ -197,8 +197,8 @@ class CandidateHandler implements AsyncLockCallback {
     @Override
     public void onLockOwnerChange(LockOwnerInfo owner) {
         if (!terminated) {
-            ClusterNode oldLeader = followerCtx.getLeader();
-            ClusterNode newLeader = owner.getNode();
+            ClusterNode oldLeader = followerCtx.leader();
+            ClusterNode newLeader = owner.node();
 
             updateLeaderFuture(newLeader);
 
@@ -267,7 +267,7 @@ class CandidateHandler implements AsyncLockCallback {
         return () -> worker.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
     }
 
-    public LeaderFuture getLeaderFuture() {
+    public LeaderFuture leaderFuture() {
         return leaderFuture.fork();
     }
 

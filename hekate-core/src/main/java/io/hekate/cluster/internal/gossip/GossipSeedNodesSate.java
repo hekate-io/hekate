@@ -45,15 +45,15 @@ public class GossipSeedNodesSate {
             this.status = Status.NEW;
         }
 
-        public InetSocketAddress getAddress() {
+        public InetSocketAddress address() {
             return address;
         }
 
-        public Status getStatus() {
+        public Status status() {
             return status;
         }
 
-        public void setStatus(Status status) {
+        public void updateStatus(Status status) {
             this.status = status;
         }
 
@@ -109,27 +109,27 @@ public class GossipSeedNodesSate {
 
     public boolean isSelfJoin() {
         return triedAllNodes() && seeds.stream()
-            .filter(s -> s.getStatus() != Status.FAILED && s.getStatus() != Status.BAN)
+            .filter(s -> s.status() != Status.FAILED && s.status() != Status.BAN)
             .limit(1)
-            .anyMatch(s -> s.getAddress().equals(localAddress));
+            .anyMatch(s -> s.address().equals(localAddress));
     }
 
-    public InetSocketAddress getNextSeed() {
+    public InetSocketAddress nextSeed() {
         // TODO: Prefer RETRY nodes if already tried all nodes.
 
         if (lastTried != null) {
             lastTried = seeds.stream()
-                .filter(s -> s.getStatus() != Status.BAN && !s.getAddress().equals(localAddress) && compare(s.getAddress(), lastTried) > 0)
+                .filter(s -> s.status() != Status.BAN && !s.address().equals(localAddress) && compare(s.address(), lastTried) > 0)
                 .findFirst()
-                .map(SeedNodeStatus::getAddress)
+                .map(SeedNodeStatus::address)
                 .orElse(null);
         }
 
         if (lastTried == null) {
             lastTried = seeds.stream()
-                .filter(s -> s.getStatus() != Status.BAN && !s.getAddress().equals(localAddress))
+                .filter(s -> s.status() != Status.BAN && !s.address().equals(localAddress))
                 .findFirst()
-                .map(SeedNodeStatus::getAddress)
+                .map(SeedNodeStatus::address)
                 .orElse(null);
         }
 
@@ -144,40 +144,40 @@ public class GossipSeedNodesSate {
         this.seeds = uniqueAddresses.stream()
             // Preserve state of previously checked addresses.
             .map(address -> seeds.stream()
-                .filter(s -> s.getAddress().equals(address))
+                .filter(s -> s.address().equals(address))
                 .findFirst()
                 // ...or create new initial state for new addresses.
                 .orElse(new SeedNodeStatus(address)))
             .sorted()
             .collect(Collectors.toList());
 
-        if (lastTried != null && seeds.stream().noneMatch(s -> s.getAddress().equals(lastTried))) {
+        if (lastTried != null && seeds.stream().noneMatch(s -> s.address().equals(lastTried))) {
             lastTried = null;
         }
     }
 
     public void onReject(InetSocketAddress seed) {
         seeds.stream()
-            .filter(s -> s.getStatus() != Status.BAN && s.getAddress().equals(seed))
+            .filter(s -> s.status() != Status.BAN && s.address().equals(seed))
             .findFirst()
-            .ifPresent(s -> s.setStatus(Status.RETRY));
+            .ifPresent(s -> s.updateStatus(Status.RETRY));
     }
 
     public void onFailure(InetSocketAddress seed) {
         seeds.stream()
-            .filter(s -> s.getStatus() != Status.BAN && s.getAddress().equals(seed))
+            .filter(s -> s.status() != Status.BAN && s.address().equals(seed))
             .findFirst()
-            .ifPresent(s -> s.setStatus(Status.FAILED));
+            .ifPresent(s -> s.updateStatus(Status.FAILED));
     }
 
     public void onBan(InetSocketAddress seed) {
-        seeds.stream().filter(s -> s.getAddress().equals(seed))
+        seeds.stream().filter(s -> s.address().equals(seed))
             .findFirst()
-            .ifPresent(s -> s.setStatus(Status.BAN));
+            .ifPresent(s -> s.updateStatus(Status.BAN));
     }
 
     private boolean triedAllNodes() {
-        return seeds.stream().allMatch(s -> s.getAddress().equals(localAddress) || s.getStatus() != Status.NEW);
+        return seeds.stream().allMatch(s -> s.address().equals(localAddress) || s.status() != Status.NEW);
     }
 
     private static int compare(InetSocketAddress a1, InetSocketAddress a2) {

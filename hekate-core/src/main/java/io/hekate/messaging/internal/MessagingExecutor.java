@@ -27,5 +27,5 @@ interface MessagingExecutor {
 
     void awaitTermination() throws InterruptedException;
 
-    int getThreadPoolSize();
+    int poolSize();
 }

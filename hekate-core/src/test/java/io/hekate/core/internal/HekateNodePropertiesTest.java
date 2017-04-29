@@ -36,10 +36,10 @@ public class HekateNodePropertiesTest extends HekateNodeTestBase {
             )
         ).join();
 
-        assertTrue(node.getLocalNode().hasRole("role1"));
-        assertTrue(node.getLocalNode().hasRole("role2"));
-        assertEquals("val1", node.getLocalNode().getProperty("prop1"));
-        assertEquals("val2", node.getLocalNode().getProperty("prop2"));
-        assertEquals("val3", node.getLocalNode().getProperty("prop3"));
+        assertTrue(node.localNode().hasRole("role1"));
+        assertTrue(node.localNode().hasRole("role2"));
+        assertEquals("val1", node.localNode().property("prop1"));
+        assertEquals("val2", node.localNode().property("prop2"));
+        assertEquals("val3", node.localNode().property("prop3"));
     }
 }

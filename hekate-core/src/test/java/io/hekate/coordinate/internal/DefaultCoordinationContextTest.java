@@ -18,8 +18,8 @@ package io.hekate.coordinate.internal;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.internal.DefaultClusterHash;
 import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.coordinate.CoordinationHandler;
@@ -71,15 +71,15 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
 
     @Test
     public void testContent() throws Exception {
-        assertEquals(topology.getLocalNode(), ctx.getLocalMember().getNode());
+        assertEquals(topology.localNode(), ctx.localMember().node());
         assertTrue(ctx.isCoordinator());
-        assertEquals(topology.getNodes().get(0), ctx.getCoordinator().getNode());
-        assertEquals(3, ctx.getMembers().size());
-        assertEquals(3, ctx.getSize());
-        assertTrue(ctx.getMembers().stream().map(CoordinationMember::getNode).allMatch(topology::contains));
-        assertEquals(topology, ctx.getTopology());
-        assertEquals(topology.getYoungest(), ctx.getMember(topology.getYoungest()).getNode());
-        assertEquals(topology.getYoungest().getId(), ctx.getMember(topology.getYoungest()).getNode().getId());
+        assertEquals(topology.nodes().get(0), ctx.coordinator().node());
+        assertEquals(3, ctx.members().size());
+        assertEquals(3, ctx.size());
+        assertTrue(ctx.members().stream().map(CoordinationMember::node).allMatch(topology::contains));
+        assertEquals(topology, ctx.topology());
+        assertEquals(topology.youngest(), ctx.memberOf(topology.youngest()).node());
+        assertEquals(topology.youngest().id(), ctx.memberOf(topology.youngest()).node().id());
     }
 
     @Test
@@ -149,9 +149,9 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
 
     @Test
     public void testProcessMessage() throws Exception {
-        ClusterUuid from = topology.getLast().getId();
+        ClusterNodeId from = topology.last().id();
 
-        Request req = new Request("test", from, topology.getHash(), "message");
+        Request req = new Request("test", from, topology.hash(), "message");
 
         Message<CoordinationProtocol> msg = newRequest(req);
 
@@ -166,16 +166,16 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
         verify(handler).process(captor.capture(), eq(ctx));
 
         assertEquals("message", captor.getValue().get());
-        assertEquals(from, captor.getValue().getFrom().getNode().getId());
+        assertEquals(from, captor.getValue().from().node().id());
 
         verifyNoMoreInteractions(handler);
     }
 
     @Test
     public void testProcessMessageRejectNotPrepared() throws Exception {
-        ClusterUuid from = topology.getLast().getId();
+        ClusterNodeId from = topology.last().id();
 
-        Request req = new Request("test", from, topology.getHash(), "ignore");
+        Request req = new Request("test", from, topology.hash(), "ignore");
 
         Message<CoordinationProtocol> msg = newRequest(req);
 
@@ -188,7 +188,7 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
 
     @Test
     public void testProcessMessageRejectWrongTopology() throws Exception {
-        ClusterUuid from = topology.getLast().getId();
+        ClusterNodeId from = topology.last().id();
 
         DefaultClusterHash wrongTopology = new DefaultClusterHash(toSet(newNode()));
 
@@ -209,9 +209,9 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
 
     @Test
     public void testProcessMessageRejectCanceled() throws Exception {
-        ClusterUuid from = topology.getNodes().get(topology.getNodes().size() - 1).getId();
+        ClusterNodeId from = topology.nodes().get(topology.nodes().size() - 1).id();
 
-        Request req = new Request("test", from, topology.getHash(), "ignore");
+        Request req = new Request("test", from, topology.hash(), "ignore");
 
         Message<CoordinationProtocol> msg = newRequest(req);
 

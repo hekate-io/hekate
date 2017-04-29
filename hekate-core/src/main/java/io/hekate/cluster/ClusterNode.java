@@ -32,16 +32,16 @@ import java.util.Set;
  * @see ClusterTopology
  * @see ClusterService
  */
-public interface ClusterNode extends Comparable<ClusterNode>, HasClusterUuid {
+public interface ClusterNode extends Comparable<ClusterNode>, HasClusterNodeId {
     /**
      * Returns the universally unique identifier of this node.
      *
      * @return Universally unique identifier of this node.
      */
-    ClusterUuid getId();
+    ClusterNodeId id();
 
     /**
-     * Returns the optional name of this node. Returns an empty string if this node doesn't have a configured name.
+     * Returns the name of this node. Returns an empty string if this node doesn't have a configured name.
      *
      * <p>
      * Value of this property can be configured via {@link HekateBootstrap#setNodeName(String)} method.
@@ -49,7 +49,7 @@ public interface ClusterNode extends Comparable<ClusterNode>, HasClusterUuid {
      *
      * @return Name of this node or an empty string if node name is not configured.
      */
-    String getName();
+    String name();
 
     /**
      * Returns {@code true} if this is a local node.
@@ -71,25 +71,25 @@ public interface ClusterNode extends Comparable<ClusterNode>, HasClusterUuid {
      *
      * @return Network address of this node.
      */
-    ClusterAddress getAddress();
+    ClusterAddress address();
 
     /**
      * Returns the network socket address of this node.
      *
      * <p>
-     * This is a shortcut for {@link #getAddress()}.{@link ClusterAddress#getSocket() getSocket()}
+     * This is a shortcut for {@link #address()}.{@link ClusterAddress#socket() getSocket()}
      * </p>
      *
      * @return Network socket address of this node.
      */
-    InetSocketAddress getSocket();
+    InetSocketAddress socket();
 
     /**
      * Returns information about the JVM of this node.
      *
      * @return Information about the JVM of this node.
      */
-    ClusterJvmInfo getJvmInfo();
+    ClusterNodeRuntime runtime();
 
     /**
      * Returns the immutable set of roles that are configured for this node. Returns an empty set if roles are not configured for this
@@ -101,10 +101,10 @@ public interface ClusterNode extends Comparable<ClusterNode>, HasClusterUuid {
      *
      * @return Immutable set of node roles aor an empty set if roles are not configured.
      */
-    Set<String> getRoles();
+    Set<String> roles();
 
     /**
-     * Returns {@code true} if this node has the specified role (see {@link #getRoles()}).
+     * Returns {@code true} if this node has the specified role (see {@link #roles()}).
      *
      * @param role Role.
      *
@@ -122,19 +122,19 @@ public interface ClusterNode extends Comparable<ClusterNode>, HasClusterUuid {
      *
      * @return Immutable map of node properties or an empty map if properties are not configured.
      */
-    Map<String, String> getProperties();
+    Map<String, String> properties();
 
     /**
-     * Returns value for the specified property name (see {@link #getProperties()}).
+     * Returns value for the specified property name (see {@link #properties()}).
      *
      * @param name Property name.
      *
      * @return Property value or {@code null} if there is no such property.
      */
-    String getProperty(String name);
+    String property(String name);
 
     /**
-     * Returns {@code true} if this node has a property with the specified name (see {@link #getProperties()}).
+     * Returns {@code true} if this node has a property with the specified name (see {@link #properties()}).
      *
      * @param name Property name.
      *
@@ -149,7 +149,7 @@ public interface ClusterNode extends Comparable<ClusterNode>, HasClusterUuid {
      *
      * @return {@code true} if this node has a service of the specified type.
      *
-     * @see #getServices()
+     * @see #services()
      */
     boolean hasService(Class<? extends Service> type);
 
@@ -160,7 +160,7 @@ public interface ClusterNode extends Comparable<ClusterNode>, HasClusterUuid {
      *
      * @return {@code true} if this node has a service with the specified interface name.
      *
-     * @see #getServices()
+     * @see #services()
      */
     boolean hasService(String type);
 
@@ -171,9 +171,9 @@ public interface ClusterNode extends Comparable<ClusterNode>, HasClusterUuid {
      *
      * @return Service information or {@code null} if there is no such service.
      *
-     * @see #getServices()
+     * @see #services()
      */
-    ServiceInfo getService(String type);
+    ServiceInfo service(String type);
 
     /**
      * Returns the service information for the specified type.
@@ -182,19 +182,19 @@ public interface ClusterNode extends Comparable<ClusterNode>, HasClusterUuid {
      *
      * @return Service instance or {@code null} if there is no such service.
      *
-     * @see #getServices()
+     * @see #services()
      */
-    ServiceInfo getService(Class<? extends Service> type);
+    ServiceInfo service(Class<? extends Service> type);
 
     /**
-     * Returns the immutable map of services that are provided by this node, with the {@link ServiceInfo#getType() service type} as
+     * Returns the immutable map of services that are provided by this node, with the {@link ServiceInfo#type() service type} as
      * the key.
      *
      * @return Immutable map of services.
      *
      * @see HekateBootstrap#setServices(List)
      */
-    Map<String, ServiceInfo> getServices();
+    Map<String, ServiceInfo> services();
 
     /**
      * Returns the cluster join order. Indexing the join order begins with 1, so the first node that joins the cluster has a value of 1,
@@ -209,14 +209,14 @@ public interface ClusterNode extends Comparable<ClusterNode>, HasClusterUuid {
      *
      * @return Cluster join order or 0 if node is not joined yet.
      */
-    int getJoinOrder();
+    int joinOrder();
 
     /**
-     * Compares this node with the specified one based on {@link #getId()} value.
+     * Compares this node with the specified one based on {@link #id()} value.
      *
      * @param o Other node.
      *
-     * @return Result of {@link #getId()} values comparison.
+     * @return Result of {@link #id()} values comparison.
      */
     @Override
     int compareTo(ClusterNode o);

@@ -23,12 +23,12 @@ package io.hekate.failover;
  */
 public enum FailoverRoutingPolicy {
     /**
-     * Do not try to re-route and always use the same {@link FailureInfo#getFailedNode() node}.
+     * Do not try to re-route and always use the same {@link FailureInfo#failedNode() node}.
      */
     RETRY_SAME_NODE,
 
     /**
-     * If {@link FailureInfo#getFailedNode() failed node} is still within the cluster topology then try using it. If failed node left the
+     * If {@link FailureInfo#failedNode() failed node} is still within the cluster topology then try using it. If failed node left the
      * cluster topology then preform re-routing.
      */
     PREFER_SAME_NODE,

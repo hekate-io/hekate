@@ -65,14 +65,14 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
 
         @Override
         public void onLockAcquire(DistributedLock lock) {
-            say("Lock acquired by " + node.getLocalNode());
+            say("Lock acquired by " + node.localNode());
 
             acquireLatch.countDown();
         }
 
         @Override
         public synchronized void onLockBusy(LockOwnerInfo owner) {
-            say("Lock is busy on " + node.getLocalNode() + " (owner=" + owner + ')');
+            say("Lock is busy on " + node.localNode() + " (owner=" + owner + ')');
 
             owners.add(owner);
 
@@ -81,14 +81,14 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
 
         @Override
         public synchronized void onLockOwnerChange(LockOwnerInfo owner) {
-            say("Lock owner change on " + node.getLocalNode() + " (owner=" + owner + ')');
+            say("Lock owner change on " + node.localNode() + " (owner=" + owner + ')');
 
             owners.add(owner);
         }
 
         @Override
         public void onLockRelease(DistributedLock lock) {
-            say("Lock released on " + node.getLocalNode());
+            say("Lock released on " + node.localNode());
 
             releaseLatch.countDown();
         }
@@ -99,7 +99,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
 
             worker.execute(() -> {
                 try {
-                    DistributedLock lock = node.locks().region(lockRegion).getLock(lockName);
+                    DistributedLock lock = node.locks().region(lockRegion).get(lockName);
 
                     if (lock.isHeldByCurrentThread()) {
                         lock.unlock();
@@ -119,31 +119,31 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
         }
 
         public void awaitAcquire() {
-            say("Awaiting for acquire on " + node.getLocalNode());
+            say("Awaiting for acquire on " + node.localNode());
 
             await(acquireLatch);
         }
 
         public void awaitBusy() {
-            say("Awaiting for busy on " + node.getLocalNode());
+            say("Awaiting for busy on " + node.localNode());
 
             await(busyLatch);
         }
 
         public void awaitRelease() {
-            say("Awaiting for release on " + node.getLocalNode());
+            say("Awaiting for release on " + node.localNode());
 
             await(releaseLatch);
         }
 
         public void awaitOwnerChange(ClusterNode expected) throws Exception {
-            say("Awaiting for lock owner change on " + node.getLocalNode());
+            say("Awaiting for lock owner change on " + node.localNode());
 
             busyWait("lock owner change [expected=" + expected + ", actual=" + getLastOwner() + ']', () -> {
                 synchronized (this) {
                     LockOwnerInfo last = getLastOwner();
 
-                    return last != null && last.getNode().equals(expected);
+                    return last != null && last.node().equals(expected);
                 }
             });
         }
@@ -179,7 +179,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
     public void testLock() throws Throwable {
         HekateTestNode node = createLockNode().join();
 
-        DistributedLock lock = node.locks().region(REGION_1).getLock("test");
+        DistributedLock lock = node.locks().region(REGION_1).get("test");
 
         ExecutorService worker = Executors.newSingleThreadExecutor(new HekateThreadFactory("lock-test"));
 
@@ -232,7 +232,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
     public void testReleaseOnNodeTermination() throws Throwable {
         HekateTestNode node = createLockNode().join();
 
-        DistributedLock lock = node.locks().region(REGION_1).getLock("test");
+        DistributedLock lock = node.locks().region(REGION_1).get("test");
 
         ExecutorService worker = Executors.newSingleThreadExecutor(new HekateThreadFactory("lock-test"));
 
@@ -287,8 +287,8 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
         HekateTestNode ownerNode = createLockNode().join();
         HekateTestNode waitingNode = createLockNode().join();
 
-        DistributedLock ownerLock = ownerNode.locks().region(REGION_1).getLock("test");
-        DistributedLock waitingLock = waitingNode.locks().region(REGION_1).getLock("test");
+        DistributedLock ownerLock = ownerNode.locks().region(REGION_1).get("test");
+        DistributedLock waitingLock = waitingNode.locks().region(REGION_1).get("test");
 
         ownerLock.lock();
 
@@ -350,8 +350,8 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
                 await(lockBusyLatch);
 
                 assertNotNull(lockBusyRef.get());
-                assertEquals(ownerNode.getLocalNode(), lockBusyRef.get().getNode());
-                assertEquals(Thread.currentThread().getId(), lockBusyRef.get().getThreadId());
+                assertEquals(ownerNode.localNode(), lockBusyRef.get().node());
+                assertEquals(Thread.currentThread().getId(), lockBusyRef.get().threadId());
 
                 // Stop owner node in order to release lock.
                 ownerNode.leave();
@@ -405,7 +405,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
 
                 HekateTestNode node = callback.getNode();
 
-                DistributedLock lock = node.locks().region(REGION_1).getLock("test");
+                DistributedLock lock = node.locks().region(REGION_1).get("test");
 
                 lock.lockAsync(callback.getWorker(), callback);
 
@@ -425,7 +425,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
                     // - B, C and D are in the locking queue.
                     TestLockCallback prevLockOwner = nodeCallbacks.get(ownerIdx);
 
-                    ClusterNode prevLockOwnerNode = prevLockOwner.getNode().getLocalNode();
+                    ClusterNode prevLockOwnerNode = prevLockOwner.getNode().localNode();
 
                     // Release A lock.
                     // This will make B the lock owner (since it was the first node in the queue before A stopped).
@@ -447,11 +447,11 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
 
                             // Check that there was no redundant notification of lock owner change (except for the very first lock).
                             if (ownerIdx > 0) {
-                                assertEquals(prevLockOwnerNode, newLockOwner.getLastOwner().getNode());
+                                assertEquals(prevLockOwnerNode, newLockOwner.getLastOwner().node());
                             }
                         } else {
                             // Check that C and D got lock owner change notification.
-                            nodeCallback.awaitOwnerChange(newLockOwner.getNode().getLocalNode());
+                            nodeCallback.awaitOwnerChange(newLockOwner.getNode().localNode());
                         }
                     }
                 }
@@ -481,9 +481,9 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
 
         ExecutorService worker = Executors.newSingleThreadExecutor(new HekateThreadFactory("test-lock"));
 
-        DistributedLock lock1 = node1.locks().region(REGION_1).getLock("test");
-        DistributedLock lock2 = node2.locks().region(REGION_1).getLock("test");
-        DistributedLock lock3 = node3.locks().region(REGION_1).getLock("test");
+        DistributedLock lock1 = node1.locks().region(REGION_1).get("test");
+        DistributedLock lock2 = node2.locks().region(REGION_1).get("test");
+        DistributedLock lock3 = node3.locks().region(REGION_1).get("test");
 
         // Obtain initial lock.
         lock1.lock();

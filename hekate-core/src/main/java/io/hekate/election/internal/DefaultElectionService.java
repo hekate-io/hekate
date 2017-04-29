@@ -145,7 +145,7 @@ public class DefaultElectionService implements ElectionService, DependentService
             guard.becomeInitialized();
 
             if (!candidatesConfig.isEmpty()) {
-                localNode = ctx.getNode();
+                localNode = ctx.localNode();
 
                 candidatesConfig.forEach(this::doRegister);
             }
@@ -217,10 +217,10 @@ public class DefaultElectionService implements ElectionService, DependentService
 
     @Override
     public LeaderFuture leader(String group) {
-        return getRequiredHandler(group).getLeaderFuture();
+        return handler(group).leaderFuture();
     }
 
-    private CandidateHandler getRequiredHandler(String group) {
+    private CandidateHandler handler(String group) {
         ArgAssert.notNull(group, "Group name");
 
         CandidateHandler handler;
@@ -250,7 +250,7 @@ public class DefaultElectionService implements ElectionService, DependentService
         String group = cfg.getGroup().trim();
         Candidate candidate = cfg.getCandidate();
 
-        DistributedLock lock = locks.region(ELECTION_LOCK_REGION).getLock(group);
+        DistributedLock lock = locks.region(ELECTION_LOCK_REGION).get(group);
 
         ExecutorService worker = Executors.newSingleThreadExecutor(new HekateThreadFactory(ELECTION_THREAD_PREFIX + '-' + group));
 

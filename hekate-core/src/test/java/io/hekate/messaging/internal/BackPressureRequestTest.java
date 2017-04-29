@@ -205,7 +205,7 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
-            assertTrue(Utils.getStackTrace(e), e.isCausedBy(MessagingChannelClosedException.class));
+            assertTrue(Utils.stackTrace(e), e.isCausedBy(MessagingChannelClosedException.class));
         }
     }
 

@@ -58,10 +58,10 @@ abstract class MessagingConnectionBase<T> {
 
         this.gateway = gateway;
         this.async = async;
-        this.receiver = gateway.getReceiver();
+        this.receiver = gateway.receiver();
         this.endpoint = endpoint;
-        this.metrics = gateway.getMetrics();
-        this.pressureGuard = gateway.getReceivePressureGuard();
+        this.metrics = gateway.metrics();
+        this.pressureGuard = gateway.receiveGuard();
 
         this.requests = new RequestRegistry<>(metrics);
     }
@@ -237,7 +237,7 @@ abstract class MessagingConnectionBase<T> {
 
                     if (handle != null) {
                         if (async.isAsync()) {
-                            MessagingWorker worker = handle.getWorker();
+                            MessagingWorker worker = handle.worker();
 
                             onReceiveAsyncEnqueue(from);
 
@@ -260,7 +260,7 @@ abstract class MessagingConnectionBase<T> {
 
                     if (handle != null) {
                         if (async.isAsync()) {
-                            MessagingWorker worker = handle.getWorker();
+                            MessagingWorker worker = handle.worker();
 
                             onReceiveAsyncEnqueue(from);
 
@@ -325,7 +325,7 @@ abstract class MessagingConnectionBase<T> {
             if (async.isAsync()) {
                 onAsyncEnqueue();
 
-                handle.getWorker().execute(() -> {
+                handle.worker().execute(() -> {
                     onAsyncDequeue();
 
                     doNotifyOnReplyFailure(handle, err);
@@ -340,7 +340,7 @@ abstract class MessagingConnectionBase<T> {
         return !requests.isEmpty();
     }
 
-    public MessagingEndpoint<T> getEndpoint() {
+    public MessagingEndpoint<T> endpoint() {
         return endpoint;
     }
 
@@ -352,7 +352,7 @@ abstract class MessagingConnectionBase<T> {
         List<RequestHandle<T>> discarded = requests.unregisterEpoch(epoch);
 
         for (RequestHandle<T> handle : discarded) {
-            MessagingWorker worker = handle.getWorker();
+            MessagingWorker worker = handle.worker();
 
             if (async.isAsync()) {
                 onAsyncEnqueue();
@@ -402,9 +402,9 @@ abstract class MessagingConnectionBase<T> {
     protected void doReceiveResponse(RequestHandle<T> request, FinalResponse<T> msg) {
         if (request.isRegistered()) {
             try {
-                msg.prepareReceive(this, request.getMessage());
+                msg.prepareReceive(this, request.message());
 
-                request.getCallback().onComplete(request, null, msg);
+                request.callback().onComplete(request, null, msg);
             } catch (RuntimeException | Error e) {
                 log.error("Got an unexpected runtime error during response processing [message={}]", msg, e);
             }
@@ -413,15 +413,15 @@ abstract class MessagingConnectionBase<T> {
 
     protected void doReceiveResponseChunk(RequestHandle<T> request, ResponseChunk<T> msg) {
         if (request.isRegistered()) {
-            if (request.getContext().opts().hasTimeout()) {
+            if (request.context().opts().hasTimeout()) {
                 // Reset timeout on every response chunk.
-                gateway().scheduleTimeout(request.getContext(), request.getCallback());
+                gateway().scheduleTimeout(request.context(), request.callback());
             }
 
             try {
-                msg.prepareReceive(this, request.getMessage());
+                msg.prepareReceive(this, request.message());
 
-                request.getCallback().onComplete(request, null, msg);
+                request.callback().onComplete(request, null, msg);
             } catch (RuntimeException | Error e) {
                 log.error("Got an unexpected runtime error during response chunk processing [message={}]", msg, e);
 
@@ -478,17 +478,17 @@ abstract class MessagingConnectionBase<T> {
 
     private void doNotifyOnReplyFailure(RequestHandle<T> handle, Throwable error) {
         try {
-            handle.getCallback().onComplete(handle, error, null);
+            handle.callback().onComplete(handle, error, null);
         } catch (RuntimeException | Error e) {
-            log.error("Got an unexpected runtime error during message processing [message={}]", handle.getMessage(), e);
+            log.error("Got an unexpected runtime error during message processing [message={}]", handle.message(), e);
         }
     }
 
     private void doDiscardRequest(Throwable cause, RequestHandle<T> handle) {
-        T message = handle.getMessage();
+        T message = handle.message();
 
         try {
-            handle.getCallback().onComplete(handle, cause, null);
+            handle.callback().onComplete(handle, cause, null);
         } catch (RuntimeException | Error e) {
             log.error("Failed to notify callback on response failure [message={}]", message, e);
         }

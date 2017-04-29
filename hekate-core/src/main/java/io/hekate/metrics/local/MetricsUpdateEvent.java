@@ -29,5 +29,5 @@ public interface MetricsUpdateEvent extends MetricsSource {
      *
      * @return Sequence number of this event.
      */
-    int getTick();
+    int tick();
 }

@@ -96,7 +96,7 @@ import java.util.List;
  *
  * <h2>Metrics names and tags</h2>
  * <p>
- * Metric {@link Metric#getName() names} are escaped so that all characters that are not letters, digits or dots (.) are replaced with
+ * Metric {@link Metric#name() names} are escaped so that all characters that are not letters, digits or dots (.) are replaced with
  * underscores (_).
  * </p>
  *
@@ -106,7 +106,7 @@ import java.util.List;
  *
  * <ul>
  * <li>{@value #NODE_ADDRESS_TAG} - contains the network address of a publisher node</li>
- * <li>{@value #NODE_NAME_TAG} - contains the name of a publisher node (see {@link ClusterNode#getName()})</li>
+ * <li>{@value #NODE_NAME_TAG} - contains the name of a publisher node (see {@link ClusterNode#name()})</li>
  * </ul>
  *
  * <h2>Metrics filtering</h2>
@@ -126,7 +126,7 @@ public class InfluxDbMetricsPlugin implements Plugin {
     /** Name of a tag ({@value}) that gets attached to each metric and holds the network address of a publishing node. */
     public static final String NODE_ADDRESS_TAG = "node_address";
 
-    /** Name of a field ({@value}) to store the metric value (see {@link Metric#getValue()}). */
+    /** Name of a field ({@value}) to store the metric value (see {@link Metric#value()}). */
     public static final String METRIC_VALUE_FIELD = "value";
 
     private final InfluxDbMetricsPublisher publisher;
@@ -151,11 +151,11 @@ public class InfluxDbMetricsPlugin implements Plugin {
 
     @Override
     public void start(Hekate hekate) throws HekateException {
-        ClusterNode node = hekate.getLocalNode();
+        ClusterNode node = hekate.localNode();
 
-        InetSocketAddress netAddress = node.getSocket();
+        InetSocketAddress netAddress = node.socket();
 
-        publisher.start(node.getName(), netAddress.getAddress().getHostAddress(), netAddress.getPort());
+        publisher.start(node.name(), netAddress.getAddress().getHostAddress(), netAddress.getPort());
     }
 
     @Override

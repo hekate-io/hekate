@@ -38,12 +38,12 @@ class NettyServerFailure implements NetworkServerFailure {
         }
 
         @Override
-        public long getRetryDelay() {
+        public long retryDelay() {
             return retryDelay;
         }
 
         @Override
-        public InetSocketAddress getRetryAddress() {
+        public InetSocketAddress retryAddress() {
             return retryAddress;
         }
 
@@ -75,17 +75,17 @@ class NettyServerFailure implements NetworkServerFailure {
     }
 
     @Override
-    public Throwable getCause() {
+    public Throwable cause() {
         return cause;
     }
 
     @Override
-    public int getAttempt() {
+    public int attempt() {
         return attempt;
     }
 
     @Override
-    public InetSocketAddress getLastTriedAddress() {
+    public InetSocketAddress lastTriedAddress() {
         return lastTriedAddress;
     }
 

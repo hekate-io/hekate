@@ -16,21 +16,21 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.messaging.MessagingChanneUuid;
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 
 class DefaultMessagingEndpoint<T> implements MessagingEndpoint<T> {
     @ToStringIgnore
-    private final MessagingChanneUuid channelId;
+    private final MessagingChannelId channelId;
 
     private final MessagingChannel<T> channel;
 
     private volatile Object userContext;
 
-    public DefaultMessagingEndpoint(MessagingChanneUuid channelId, MessagingChannel<T> channel) {
+    public DefaultMessagingEndpoint(MessagingChannelId channelId, MessagingChannel<T> channel) {
         assert channelId != null : "Channel ID is null.";
         assert channel != null : "Channel is null.";
 
@@ -39,7 +39,7 @@ class DefaultMessagingEndpoint<T> implements MessagingEndpoint<T> {
     }
 
     @Override
-    public MessagingChanneUuid getRemoteId() {
+    public MessagingChannelId remoteId() {
         return channelId;
     }
 
@@ -55,7 +55,7 @@ class DefaultMessagingEndpoint<T> implements MessagingEndpoint<T> {
     }
 
     @Override
-    public MessagingChannel<T> getChannel() {
+    public MessagingChannel<T> channel() {
         return channel;
     }
 

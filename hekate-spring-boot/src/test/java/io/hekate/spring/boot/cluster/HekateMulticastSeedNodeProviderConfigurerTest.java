@@ -50,8 +50,8 @@ public class HekateMulticastSeedNodeProviderConfigurerTest extends HekateAutoCon
 
         MulticastSeedNodeProvider provider = (MulticastSeedNodeProvider)getNode().get(DefaultClusterService.class).getSeedNodeProvider();
 
-        assertEquals(10, provider.getInterval());
-        assertEquals(20, provider.getWaitTime());
+        assertEquals(10, provider.interval());
+        assertEquals(20, provider.waitTime());
     }
 
     @Test

@@ -65,7 +65,7 @@ class SpringInjectionService implements InjectionService, ConfigurableService {
         // Expose services for autowiring.
         ConfigurableListableBeanFactory factory = autowireCtx.getBeanFactory();
 
-        getUniqueServices(ctx).forEach(service -> {
+        uniqueServices(ctx).forEach(service -> {
             factory.registerResolvableDependency(service.getClass(), service);
 
             for (Class<?> type : service.getClass().getInterfaces()) {
@@ -80,7 +80,7 @@ class SpringInjectionService implements InjectionService, ConfigurableService {
         autowire = autowireCtx.getAutowireCapableBeanFactory();
     }
 
-    private Set<Service> getUniqueServices(ConfigurationContext ctx) {
+    private Set<Service> uniqueServices(ConfigurationContext ctx) {
         Collection<Service> services = ctx.findComponents(Service.class);
 
         Map<Service, Void> uniqueServices = new IdentityHashMap<>(services.size());

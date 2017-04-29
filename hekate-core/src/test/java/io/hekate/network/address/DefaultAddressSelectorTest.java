@@ -252,7 +252,7 @@ public class DefaultAddressSelectorTest extends HekateTestBase {
         // Override getNetworkInterfaces() to use cached list and speedup tests.
         return new DefaultAddressSelector(selectorCfg) {
             @Override
-            List<NetworkInterface> getNetworkInterfaces() throws SocketException {
+            List<NetworkInterface> networkInterfaces() throws SocketException {
                 return networkInterfaces;
             }
         };

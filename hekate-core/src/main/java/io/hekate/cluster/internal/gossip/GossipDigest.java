@@ -16,7 +16,7 @@
 
 package io.hekate.cluster.internal.gossip;
 
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,14 +25,14 @@ import java.util.Set;
 public class GossipDigest extends GossipBase {
     private final long version;
 
-    private final Map<ClusterUuid, GossipNodeInfo> members;
+    private final Map<ClusterNodeId, GossipNodeInfo> members;
 
-    private final Set<ClusterUuid> removed;
+    private final Set<ClusterNodeId> removed;
 
-    private final Set<ClusterUuid> seen;
+    private final Set<ClusterNodeId> seen;
 
-    public GossipDigest(long version, Map<ClusterUuid, GossipNodeInfo> members, Set<ClusterUuid> removed,
-        Set<ClusterUuid> seen) {
+    public GossipDigest(long version, Map<ClusterNodeId, GossipNodeInfo> members, Set<ClusterNodeId> removed,
+        Set<ClusterNodeId> seen) {
         assert members != null : "Members map is null.";
         assert removed != null : "Removed set is null.";
         assert seen != null : "Seen set is null.";
@@ -46,48 +46,48 @@ public class GossipDigest extends GossipBase {
     public GossipDigest(Gossip gossip) {
         assert gossip != null : "Gossip is null.";
 
-        Map<ClusterUuid, GossipNodeState> members = gossip.getMembers();
+        Map<ClusterNodeId, GossipNodeState> members = gossip.members();
 
-        Map<ClusterUuid, GossipNodeInfo> membersInfo;
+        Map<ClusterNodeId, GossipNodeInfo> membersInfo;
 
         if (members.isEmpty()) {
             membersInfo = Collections.emptyMap();
         } else {
             membersInfo = new HashMap<>(members.size(), 1.0f);
 
-            for (Map.Entry<ClusterUuid, GossipNodeState> e : members.entrySet()) {
-                ClusterUuid id = e.getKey();
+            for (Map.Entry<ClusterNodeId, GossipNodeState> e : members.entrySet()) {
+                ClusterNodeId id = e.getKey();
                 GossipNodeState node = e.getValue();
 
-                membersInfo.put(id, new GossipNodeInfo(node.getId(), node.getStatus(), node.getVersion()));
+                membersInfo.put(id, new GossipNodeInfo(node.id(), node.status(), node.version()));
             }
 
             membersInfo = Collections.unmodifiableMap(membersInfo);
         }
 
-        this.version = gossip.getVersion();
+        this.version = gossip.version();
         this.members = membersInfo;
-        this.removed = gossip.getRemoved();
-        this.seen = gossip.getSeen();
+        this.removed = gossip.removed();
+        this.seen = gossip.seen();
     }
 
     @Override
-    public Map<ClusterUuid, GossipNodeInfo> getMembersInfo() {
+    public Map<ClusterNodeId, GossipNodeInfo> membersInfo() {
         return members;
     }
 
     @Override
-    public Set<ClusterUuid> getSeen() {
+    public Set<ClusterNodeId> seen() {
         return seen;
     }
 
     @Override
-    public long getVersion() {
+    public long version() {
         return version;
     }
 
     @Override
-    public Set<ClusterUuid> getRemoved() {
+    public Set<ClusterNodeId> removed() {
         return removed;
     }
 

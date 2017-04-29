@@ -47,7 +47,7 @@ public class ElectionServiceTest extends HekateNodeContextTestBase {
     @Test
     public void testConcurrentElectionWithLeave() throws Exception {
         doTestConcurrentElection(node -> {
-            say("Leave " + node.getLocalNode());
+            say("Leave " + node.localNode());
 
             try {
                 get(node.leaveAsync());
@@ -62,7 +62,7 @@ public class ElectionServiceTest extends HekateNodeContextTestBase {
         disableNodeFailurePostCheck();
 
         doTestConcurrentElection(node -> {
-            say("Terminate " + node.getLocalNode());
+            say("Terminate " + node.localNode());
 
             try {
                 get(node.terminateAsync());
@@ -79,13 +79,13 @@ public class ElectionServiceTest extends HekateNodeContextTestBase {
         CandidateMock candidate = getCandidate(node);
 
         for (int i = 0; i < 3; i++) {
-            assertEquals(node.getLocalNode(), get(node.election().leader(GROUP)));
+            assertEquals(node.localNode(), get(node.election().leader(GROUP)));
 
             candidate.yieldLeadership();
 
             candidate.awaitForBecomeLeader();
 
-            assertEquals(node.getLocalNode(), get(node.election().leader(GROUP)));
+            assertEquals(node.localNode(), get(node.election().leader(GROUP)));
         }
     }
 
@@ -103,8 +103,8 @@ public class ElectionServiceTest extends HekateNodeContextTestBase {
             say("Iteration: " + i);
 
             // Make sure that node1 is the leader.
-            assertEquals(node1.getLocalNode(), get(node1.election().leader(GROUP)));
-            assertEquals(node1.getLocalNode(), get(node2.election().leader(GROUP)));
+            assertEquals(node1.localNode(), get(node1.election().leader(GROUP)));
+            assertEquals(node1.localNode(), get(node2.election().leader(GROUP)));
 
             CandidateMock candidate1 = getCandidate(node1);
             CandidateMock candidate2 = getCandidate(node2);
@@ -113,15 +113,15 @@ public class ElectionServiceTest extends HekateNodeContextTestBase {
             candidate1.yieldLeadership();
 
             // Await for leadership change.
-            candidate1.awaitForLeaderChange(node1.getLocalNode());
-            candidate2.awaitForLeaderChange(node1.getLocalNode());
+            candidate1.awaitForLeaderChange(node1.localNode());
+            candidate2.awaitForLeaderChange(node1.localNode());
 
             // Verify that node2 became the leader.
             assertTrue(candidate1.isFollower());
             assertTrue(candidate2.isLeader());
 
-            awaitForLeaderFuture(node2.getLocalNode(), node1);
-            awaitForLeaderFuture(node2.getLocalNode(), node2);
+            awaitForLeaderFuture(node2.localNode(), node1);
+            awaitForLeaderFuture(node2.localNode(), node2);
 
             // Invert nodes for the next iteration.
             HekateTestNode temp = node1;
@@ -143,8 +143,8 @@ public class ElectionServiceTest extends HekateNodeContextTestBase {
             HekateTestNode node2 = createElectionNode().join();
 
             // Make sure that node1 is the leader.
-            assertEquals(node1.getLocalNode(), get(node1.election().leader(GROUP)));
-            assertEquals(node1.getLocalNode(), get(node2.election().leader(GROUP)));
+            assertEquals(node1.localNode(), get(node1.election().leader(GROUP)));
+            assertEquals(node1.localNode(), get(node2.election().leader(GROUP)));
 
             CandidateMock candidate1 = getCandidate(node1);
             CandidateMock candidate2 = getCandidate(node2);
@@ -153,15 +153,15 @@ public class ElectionServiceTest extends HekateNodeContextTestBase {
             candidate1.yieldLeadership();
 
             // Await for leadership change.
-            candidate1.awaitForLeaderChange(node1.getLocalNode());
-            candidate2.awaitForLeaderChange(node1.getLocalNode());
+            candidate1.awaitForLeaderChange(node1.localNode());
+            candidate2.awaitForLeaderChange(node1.localNode());
 
             // Verify that node2 became the leader.
             assertTrue(candidate1.isFollower());
             assertTrue(candidate2.isLeader());
 
-            awaitForLeaderFuture(node2.getLocalNode(), node1);
-            awaitForLeaderFuture(node2.getLocalNode(), node2);
+            awaitForLeaderFuture(node2.localNode(), node1);
+            awaitForLeaderFuture(node2.localNode(), node2);
 
             node1.leave();
             node2.leave();
@@ -182,11 +182,11 @@ public class ElectionServiceTest extends HekateNodeContextTestBase {
             HekateTestNode follower = createElectionNode().join();
 
             // Verify leader.
-            assertEquals(leader.getLocalNode(), get(follower.election().leader(GROUP)));
+            assertEquals(leader.localNode(), get(follower.election().leader(GROUP)));
 
             CandidateMock followerCandidate = getCandidate(follower);
 
-            ClusterNode oldLeader = leader.getLocalNode();
+            ClusterNode oldLeader = leader.localNode();
 
             // Leader leaves the cluster.
             leader.leave();
@@ -197,7 +197,7 @@ public class ElectionServiceTest extends HekateNodeContextTestBase {
             // Verify that follower became the new leader.
             assertTrue(followerCandidate.isLeader());
 
-            awaitForLeaderFuture(follower.getLocalNode(), follower);
+            awaitForLeaderFuture(follower.localNode(), follower);
 
             // Old follower becomes a new leader of the next iteration.
             leader = follower;
@@ -230,11 +230,11 @@ public class ElectionServiceTest extends HekateNodeContextTestBase {
 
                 leaders.add(leader);
 
-                assertTrue(nodes.stream().anyMatch(n -> n.getLocalNode().equals(leader)));
+                assertTrue(nodes.stream().anyMatch(n -> n.localNode().equals(leader)));
 
                 CandidateMock candidate = getCandidate(node);
 
-                if (leader.equals(node.getLocalNode())) {
+                if (leader.equals(node.localNode())) {
                     assertTrue(candidate.isLeader());
                 } else {
                     assertTrue(candidate.isFollower());
@@ -243,22 +243,22 @@ public class ElectionServiceTest extends HekateNodeContextTestBase {
             }
 
             // Stop leader.
-            HekateTestNode oldLeader = nodes.stream().filter(n -> leaders.contains(n.getLocalNode())).findFirst().orElse(null);
+            HekateTestNode oldLeader = nodes.stream().filter(n -> leaders.contains(n.localNode())).findFirst().orElse(null);
 
-            ClusterNode oldLeaderNode = oldLeader.getLocalNode();
+            ClusterNode oldLeaderNode = oldLeader.localNode();
 
             nodes.remove(oldLeader);
 
             CandidateMock oldLeaderCandidate = getCandidate(oldLeader);
 
-            say("Stopping leader " + oldLeader.getLocalNode());
+            say("Stopping leader " + oldLeader.localNode());
 
             oldLeader.leave();
 
             oldLeaderCandidate.awaitTermination();
 
             for (HekateTestNode node : nodes) {
-                say("Checking " + node.getLocalNode());
+                say("Checking " + node.localNode());
 
                 getCandidate(node).awaitForLeaderChange(oldLeaderNode);
             }

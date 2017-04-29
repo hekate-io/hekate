@@ -17,7 +17,7 @@
 package io.hekate.coordinate.internal;
 
 import io.hekate.cluster.ClusterHash;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.codec.Codec;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecUtils;
@@ -45,7 +45,7 @@ class CoordinationProtocolCodec implements Codec<CoordinationProtocol> {
 
     @Override
     public void encode(CoordinationProtocol msg, DataWriter out) throws IOException {
-        CoordinationProtocol.Type type = msg.getType();
+        CoordinationProtocol.Type type = msg.type();
 
         out.writeByte(type.ordinal());
 
@@ -53,25 +53,25 @@ class CoordinationProtocolCodec implements Codec<CoordinationProtocol> {
             case REQUEST: {
                 CoordinationProtocol.Request request = (CoordinationProtocol.Request)msg;
 
-                String process = request.getProcessName();
+                String process = request.processName();
 
                 out.writeUTF(process);
 
-                CodecUtils.writeNodeId(request.getFrom(), out);
-                CodecUtils.writeTopologyHash(request.getTopology(), out);
+                CodecUtils.writeNodeId(request.from(), out);
+                CodecUtils.writeTopologyHash(request.topology(), out);
 
-                getCodec(process).encode(request.getRequest(), out);
+                codecFor(process).encode(request.request(), out);
 
                 break;
             }
             case RESPONSE: {
                 CoordinationProtocol.Response response = (CoordinationProtocol.Response)msg;
 
-                String process = response.getProcessName();
+                String process = response.processName();
 
                 out.writeUTF(process);
 
-                getCodec(process).encode(response.getResponse(), out);
+                codecFor(process).encode(response.response(), out);
 
                 break;
             }
@@ -94,17 +94,17 @@ class CoordinationProtocolCodec implements Codec<CoordinationProtocol> {
             case REQUEST: {
                 String process = in.readUTF();
 
-                ClusterUuid from = CodecUtils.readNodeId(in);
+                ClusterNodeId from = CodecUtils.readNodeId(in);
                 ClusterHash hash = CodecUtils.readTopologyHash(in);
 
-                Object request = getCodec(process).decode(in);
+                Object request = codecFor(process).decode(in);
 
                 return new CoordinationProtocol.Request(process, from, hash, request);
             }
             case RESPONSE: {
                 String process = in.readUTF();
 
-                Object response = getCodec(process).decode(in);
+                Object response = codecFor(process).decode(in);
 
                 return new CoordinationProtocol.Response(process, response);
             }
@@ -117,7 +117,7 @@ class CoordinationProtocolCodec implements Codec<CoordinationProtocol> {
         }
     }
 
-    private Codec<Object> getCodec(String process) {
+    private Codec<Object> codecFor(String process) {
         return codecs.computeIfAbsent(process, k ->
             codecFactories.get(process).createCodec()
         );

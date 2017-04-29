@@ -32,21 +32,21 @@ public interface NetworkEndpoint<T> {
      *
      * @see NetworkConnectorConfig#setProtocol(String)
      */
-    String getProtocol();
+    String protocol();
 
     /**
      * Returns the remote address of this endpoint. Returns {@code null} if this endpoint is not connected.
      *
      * @return Remote address or {@code null} if endpoint is not connected.
      */
-    InetSocketAddress getRemoteAddress();
+    InetSocketAddress remoteAddress();
 
     /**
      * Returns the local address of this endpoint. Returns {@code null} if this endpoint is not connected.
      *
      * @return Local address or {@code null} if this endpoint is not connected.
      */
-    InetSocketAddress getLocalAddress();
+    InetSocketAddress localAddress();
 
     /**
      * Returns the custom user context object that was set via {@link #setContext(Object)}.

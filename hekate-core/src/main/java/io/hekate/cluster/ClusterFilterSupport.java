@@ -69,7 +69,7 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
     /**
      * Applies {@link ClusterFilters#forProperty(String, String)} to this instance.
      *
-     * @param name Property name (see {@link ClusterNode#getProperty(String)}).
+     * @param name Property name (see {@link ClusterNode#property(String)}).
      * @param value Property value.
      *
      * @return Filtered instance.
@@ -110,13 +110,13 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
     }
 
     /**
-     * Applies {@link ClusterFilters#forNode(ClusterUuid)} to this instance.
+     * Applies {@link ClusterFilters#forNode(ClusterNodeId)} to this instance.
      *
      * @param id Node.
      *
      * @return Filtered instance.
      */
-    default T forNode(ClusterUuid id) {
+    default T forNode(ClusterNodeId id) {
         return filterAll(ClusterFilters.forNode(id));
     }
 

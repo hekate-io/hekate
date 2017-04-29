@@ -48,7 +48,7 @@ public interface Candidate {
 
     /**
      * Gets called when this candidate couldn't win elections and switched to the follower state. Information about the current leader can
-     * be obtained via {@link FollowerContext#getLeader()}.
+     * be obtained via {@link FollowerContext#leader()}.
      *
      * <p>
      * <b>IMPORTANT:</b> Implementations of this method should not block the calling thread for a long time and should execute all long

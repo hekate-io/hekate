@@ -54,8 +54,8 @@ public class ClusterMetricsCallback {
     }
 
     public void onTopologyChange(ClusterTopology topology) {
-        long sizeDiff = topology.size() - topologySize.getValue();
-        long verDiff = topology.getVersion() - topologyVersion.getValue();
+        long sizeDiff = topology.size() - topologySize.value();
+        long verDiff = topology.version() - topologyVersion.value();
 
         topologySize.add(sizeDiff);
         topologyVersion.add(verDiff);

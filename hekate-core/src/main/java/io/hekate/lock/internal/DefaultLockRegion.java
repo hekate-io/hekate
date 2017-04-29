@@ -19,8 +19,8 @@ package io.hekate.lock.internal;
 import io.hekate.cluster.ClusterFilters;
 import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterUuid;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.lock.DistributedLock;
@@ -94,7 +94,7 @@ class DefaultLockRegion implements LockRegion {
     private final ScheduledExecutorService scheduler;
 
     @ToStringIgnore
-    private final ClusterUuid localNode;
+    private final ClusterNodeId localNode;
 
     @ToStringIgnore
     private final MessagingChannel<LockProtocol> lockChannel;
@@ -148,7 +148,7 @@ class DefaultLockRegion implements LockRegion {
     @ToStringIgnore
     private LockMigrationCallback migrationCallback;
 
-    public DefaultLockRegion(String regionName, ClusterUuid localNode, ScheduledExecutorService scheduler, PartitionMapper partitions,
+    public DefaultLockRegion(String regionName, ClusterNodeId localNode, ScheduledExecutorService scheduler, PartitionMapper partitions,
         MessagingChannel<LockProtocol> channel, long retryInterval) {
         assert regionName != null : "Region name is null.";
         assert localNode != null : "Local node is null.";
@@ -178,13 +178,13 @@ class DefaultLockRegion implements LockRegion {
             .withLoadBalancer((msg, ctx) -> {
                 LockRequestBase request = (LockRequestBase)msg;
 
-                Partition partition = partitions.map(request.getLockName());
+                Partition partition = partitions.map(request.lockName());
 
                 // Store routed topology within the lock request so that it would be possible
                 // to detect routing collisions (in case of cluster topology changes) on the receiving side.
-                request.setTopology(partition.getTopology().getHash());
+                request.updateTopology(partition.topology().hash());
 
-                return partition.getPrimaryNodeId();
+                return partition.primaryNodeId();
             });
 
         // Configure messaging channel for locks migration.
@@ -199,19 +199,19 @@ class DefaultLockRegion implements LockRegion {
     }
 
     @Override
-    public String getName() {
+    public String name() {
         return regionName;
     }
 
     @Override
-    public DistributedLock getLock(String name) {
+    public DistributedLock get(String name) {
         ArgAssert.notNull(name, "Lock name");
 
         return new DefaultDistributedLock(name, this);
     }
 
     @Override
-    public Optional<LockOwnerInfo> getLockOwner(String lockName) throws InterruptedException {
+    public Optional<LockOwnerInfo> ownerOf(String lockName) throws InterruptedException {
         ArgAssert.notNull(lockName, "Lock name");
 
         if (!awaitForInitialMigration()) {
@@ -227,20 +227,20 @@ class DefaultLockRegion implements LockRegion {
             public ReplyDecision accept(Throwable err, LockProtocol reply) {
                 LockOwnerResponse lockReply = (LockOwnerResponse)reply;
 
-                if (err == null && lockReply.getStatus() == LockOwnerResponse.Status.OK) {
-                    ClusterUuid ownerId = lockReply.getOwner();
+                if (err == null && lockReply.status() == LockOwnerResponse.Status.OK) {
+                    ClusterNodeId ownerId = lockReply.owner();
 
                     if (ownerId == null) {
                         future.complete(Optional.empty());
                     } else {
-                        ClusterTopology topology = lockChannel.getCluster().getTopology();
+                        ClusterTopology topology = lockChannel.cluster().topology();
 
                         ClusterNode ownerNode = topology.get(ownerId);
 
                         // Check that lock owner is in the local topology.
                         // It could be removed while we were waiting for response.
                         if (ownerNode != null) {
-                            DefaultLockOwnerInfo info = new DefaultLockOwnerInfo(lockReply.getThreadId(), ownerNode);
+                            DefaultLockOwnerInfo info = new DefaultLockOwnerInfo(lockReply.threadId(), ownerNode);
 
                             future.complete(Optional.of(info));
                         }
@@ -299,7 +299,7 @@ class DefaultLockRegion implements LockRegion {
                     log.debug("Rejected locking since region is in {} state [lock={}]", status, lock);
                 }
 
-                LockFuture lockFuture = client.getLockFuture();
+                LockFuture lockFuture = client.lockFuture();
 
                 if (timeout == TIMEOUT_IMMEDIATE) {
                     lockFuture.complete(false);
@@ -307,7 +307,7 @@ class DefaultLockRegion implements LockRegion {
                     lockFuture.completeExceptionally(new IllegalStateException("Lock service is not initialized."));
                 }
 
-                client.getUnlockFuture().complete(true);
+                client.unlockFuture().complete(true);
 
                 return client;
             } else {
@@ -324,7 +324,7 @@ class DefaultLockRegion implements LockRegion {
                         log.debug("Locking [lock={}]", client);
                     }
 
-                    ClusterUuid managedBy = partitions.map(lock.getName()).getPrimaryNodeId();
+                    ClusterNodeId managedBy = partitions.map(lock.name()).primaryNodeId();
 
                     client.update(managedBy, effectiveTopology);
 
@@ -362,7 +362,7 @@ class DefaultLockRegion implements LockRegion {
                         for (Iterator<LockControllerClient> it = deferredLocks.iterator(); it.hasNext(); ) {
                             LockControllerClient client = it.next();
 
-                            if (client.getLockId() == lockId) {
+                            if (client.lockId() == lockId) {
                                 if (DEBUG) {
                                     log.debug("Cancelling deferred lock [lock={}]", client);
                                 }
@@ -382,7 +382,7 @@ class DefaultLockRegion implements LockRegion {
 
                     deferred.becomeTerminated(true);
 
-                    return deferred.getUnlockFuture();
+                    return deferred.unlockFuture();
                 } else {
                     LockControllerClient client = lockClients.get(lockId);
 
@@ -396,7 +396,7 @@ class DefaultLockRegion implements LockRegion {
 
                     client.becomeUnlocking();
 
-                    return client.getUnlockFuture();
+                    return client.unlockFuture();
                 }
             }
         } finally {
@@ -410,10 +410,10 @@ class DefaultLockRegion implements LockRegion {
         try {
             LockProtocol.LockRequest request = msg.get(LockProtocol.LockRequest.class);
 
-            if (status == Status.MIGRATING || status == Status.TERMINATED || !request.getTopology().equals(getEffectiveTopologyHash())) {
+            if (status == Status.MIGRATING || status == Status.TERMINATED || !request.topology().equals(effectiveTopologyHash())) {
                 reply(msg, new LockResponse(LockResponse.Status.RETRY, null, 0));
             } else {
-                String name = request.getLockName();
+                String name = request.lockName();
 
                 LockControllerServer server = checkoutServer(name);
 
@@ -440,10 +440,10 @@ class DefaultLockRegion implements LockRegion {
         try {
             UnlockRequest request = msg.get(UnlockRequest.class);
 
-            if (status == Status.MIGRATING || status == Status.TERMINATED || !request.getTopology().equals(getEffectiveTopologyHash())) {
+            if (status == Status.MIGRATING || status == Status.TERMINATED || !request.topology().equals(effectiveTopologyHash())) {
                 reply(msg, new UnlockResponse(UnlockResponse.Status.RETRY));
             } else {
-                String name = request.getLockName();
+                String name = request.lockName();
 
                 LockControllerServer server = lockServers.get(name);
 
@@ -472,10 +472,10 @@ class DefaultLockRegion implements LockRegion {
         try {
             LockOwnerRequest request = msg.get(LockOwnerRequest.class);
 
-            if (status == Status.MIGRATING || status == Status.TERMINATED || !request.getTopology().equals(getEffectiveTopologyHash())) {
+            if (status == Status.MIGRATING || status == Status.TERMINATED || !request.topology().equals(effectiveTopologyHash())) {
                 reply(msg, new LockOwnerResponse(0, null, LockOwnerResponse.Status.RETRY));
             } else {
-                String name = request.getLockName();
+                String name = request.lockName();
 
                 LockControllerServer server = lockServers.get(name);
 
@@ -493,7 +493,7 @@ class DefaultLockRegion implements LockRegion {
     public void processMigrationPrepare(Message<LockProtocol> msg) {
         MigrationPrepareRequest request = msg.get(MigrationPrepareRequest.class);
 
-        LockMigrationKey key = request.getKey();
+        LockMigrationKey key = request.key();
 
         writeLock.lock();
 
@@ -516,7 +516,7 @@ class DefaultLockRegion implements LockRegion {
                         migrationCallback.onPrepareReceived(request);
                     }
 
-                    Map<ClusterUuid, ClusterHash> topologies = request.getTopologies();
+                    Map<ClusterNodeId, ClusterHash> topologies = request.topologies();
 
                     // Check if all migrating locks were gathered consistently.
                     if (!request.isFirstPass() || isConsistent(topologies)) {
@@ -525,9 +525,9 @@ class DefaultLockRegion implements LockRegion {
                         }
 
                         // Switch to second phase (apply locks).
-                        List<LockMigrationInfo> remainingLocks = applyMigration(request.getLocks());
+                        List<LockMigrationInfo> remainingLocks = applyMigration(request.locks());
 
-                        if (partitions.getTopology().size() > 1) {
+                        if (partitions.topology().size() > 1) {
                             MigrationApplyRequest apply = new MigrationApplyRequest(regionName, key, remainingLocks);
 
                             sendToNextNode(apply);
@@ -542,11 +542,11 @@ class DefaultLockRegion implements LockRegion {
                                 + "Starting the second round of preparation [key={}]", key);
                         }
 
-                        ClusterTopology topology = partitions.getTopology();
+                        ClusterTopology topology = partitions.topology();
 
                         // Need to generate new migration key.
                         // Otherwise nodes can ignore second-pass message since they've already seen the previous key.
-                        migrationKey = new LockMigrationKey(localNode, topology.getHash(), keyIdGen.incrementAndGet());
+                        migrationKey = new LockMigrationKey(localNode, topology.hash(), keyIdGen.incrementAndGet());
 
                         List<LockMigrationInfo> migration = prepareMigration(topology, topologies, emptyList());
 
@@ -575,7 +575,7 @@ class DefaultLockRegion implements LockRegion {
 
                 if (migrationKey == null || !migrationKey.equals(key)
                     // Process only if new key is from the different coordinator or if new key is later than the local one.
-                    && (!migrationKey.isSameNode(key.getNode()) || migrationKey.getId() < key.getId())) {
+                    && (!migrationKey.isSameNode(key.node()) || migrationKey.id() < key.id())) {
                     if (DEBUG) {
                         log.debug("Processing migration prepare request [status={}, request={}]", status, request);
                     }
@@ -590,20 +590,20 @@ class DefaultLockRegion implements LockRegion {
 
                     MigrationPrepareRequest nextPrepare;
 
-                    Map<ClusterUuid, ClusterHash> receivedTop = request.getTopologies();
+                    Map<ClusterNodeId, ClusterHash> receivedTop = request.topologies();
 
-                    ClusterTopology topology = partitions.getTopology();
+                    ClusterTopology topology = partitions.topology();
 
                     if (request.isFirstPass()) {
                         // First round of preparation.
-                        Map<ClusterUuid, ClusterHash> newTopMap = addToTopologies(receivedTop);
+                        Map<ClusterNodeId, ClusterHash> newTopMap = addToTopologies(receivedTop);
 
                         List<LockMigrationInfo> migratingLocks;
 
                         if (isConsistent(newTopMap)) {
                             // Topologies are consistent among all of the visited nodes.
                             // Add migrating locks to the request.
-                            migratingLocks = prepareMigration(topology, newTopMap, request.getLocks());
+                            migratingLocks = prepareMigration(topology, newTopMap, request.locks());
                         } else {
                             // Inconsistency detected.
                             // No need to add migrating nodes since it will be done during the second round of preparation.
@@ -614,7 +614,7 @@ class DefaultLockRegion implements LockRegion {
                     } else {
                         // Second round of preparation (inconsistent topologies were detected during the first round).
                         // Re-gather migrating locks assuming the inconsistent topologies.
-                        List<LockMigrationInfo> migration = prepareMigration(topology, receivedTop, request.getLocks());
+                        List<LockMigrationInfo> migration = prepareMigration(topology, receivedTop, request.locks());
 
                         nextPrepare = new MigrationPrepareRequest(regionName, key, false, receivedTop, migration);
                     }
@@ -638,7 +638,7 @@ class DefaultLockRegion implements LockRegion {
     public void processMigrationApply(Message<LockProtocol> msg) {
         MigrationApplyRequest request = msg.get(MigrationApplyRequest.class);
 
-        LockMigrationKey key = request.getKey();
+        LockMigrationKey key = request.key();
 
         writeLock.lock();
 
@@ -656,7 +656,7 @@ class DefaultLockRegion implements LockRegion {
                             migrationCallback.onApplyReceived(request);
                         }
 
-                        List<LockMigrationInfo> locks = applyMigration(request.getLocks());
+                        List<LockMigrationInfo> locks = applyMigration(request.locks());
 
                         MigrationApplyRequest apply = new MigrationApplyRequest(regionName, key, locks);
 
@@ -676,22 +676,22 @@ class DefaultLockRegion implements LockRegion {
     }
 
     public void processTopologyChange() {
-        PartitionMapper newPartitions = livePartitions.getSnapshot();
+        PartitionMapper newPartitions = livePartitions.snapshot();
 
         writeLock.lock();
 
         try {
             if (status != Status.TERMINATED) {
-                ClusterHash newClusterHash = newPartitions.getTopology().getHash();
+                ClusterHash newClusterHash = newPartitions.topology().hash();
 
-                if (partitions == null || !partitions.getTopology().getHash().equals(newClusterHash)) {
+                if (partitions == null || !partitions.topology().hash().equals(newClusterHash)) {
                     this.partitions = newPartitions;
 
                     if (migrationCallback != null) {
                         migrationCallback.onTopologyChange(newPartitions);
                     }
 
-                    if (isMigrationCoordinator(newPartitions.getTopology())) {
+                    if (isMigrationCoordinator(newPartitions.topology())) {
                         startMigration();
                     }
                 }
@@ -757,20 +757,20 @@ class DefaultLockRegion implements LockRegion {
     }
 
     // Package level for testing purposes.
-    List<ClusterUuid> getQueuedLocks(String lockName) {
+    List<ClusterNodeId> queueOf(String lockName) {
         readLock.lock();
 
         try {
             LockControllerServer server = lockServers.get(lockName);
 
-            return server != null ? server.getQueuedLocks() : emptyList();
+            return server != null ? server.enqueuedLocks() : emptyList();
         } finally {
             readLock.unlock();
         }
     }
 
     // Package level for testing purposes.
-    ClusterUuid getLockManagerNode(String lockName) {
+    ClusterNodeId managerOf(String lockName) {
         readLock.lock();
 
         try {
@@ -778,18 +778,18 @@ class DefaultLockRegion implements LockRegion {
                 throw new IllegalStateException("Lock region is not initialized.");
             }
 
-            return partitions.map(lockName).getPrimaryNodeId();
+            return partitions.map(lockName).primaryNodeId();
         } finally {
             readLock.unlock();
         }
     }
 
     // Package level for testing purposes.
-    ClusterHash getEffectiveTopology() {
+    ClusterHash effectiveTopology() {
         readLock.lock();
 
         try {
-            return getEffectiveTopologyHash();
+            return effectiveTopologyHash();
         } finally {
             readLock.unlock();
         }
@@ -803,9 +803,9 @@ class DefaultLockRegion implements LockRegion {
     private void startMigration() {
         assert writeLock.isHeldByCurrentThread() : "Write lock must be held by the thread.";
 
-        ClusterTopology topology = partitions.getTopology();
+        ClusterTopology topology = partitions.topology();
 
-        migrationKey = new LockMigrationKey(localNode, topology.getHash(), keyIdGen.incrementAndGet());
+        migrationKey = new LockMigrationKey(localNode, topology.hash(), keyIdGen.incrementAndGet());
 
         if (DEBUG) {
             log.debug("Starting locks migration [status={}, migration-key={}]", status, migrationKey);
@@ -813,7 +813,7 @@ class DefaultLockRegion implements LockRegion {
 
         status = Status.MIGRATING;
 
-        Map<ClusterUuid, ClusterHash> topologies = addToTopologies(emptyMap());
+        Map<ClusterNodeId, ClusterHash> topologies = addToTopologies(emptyMap());
 
         List<LockMigrationInfo> migratingLocks = prepareMigration(topology, topologies, emptyList());
 
@@ -827,7 +827,7 @@ class DefaultLockRegion implements LockRegion {
         }
     }
 
-    private List<LockMigrationInfo> prepareMigration(ClusterTopology topology, Map<ClusterUuid, ClusterHash> topologies,
+    private List<LockMigrationInfo> prepareMigration(ClusterTopology topology, Map<ClusterNodeId, ClusterHash> topologies,
         List<LockMigrationInfo> gatheredLocks) {
         assert writeLock.isHeldByCurrentThread() : "Write lock must be held by the thread.";
 
@@ -840,14 +840,14 @@ class DefaultLockRegion implements LockRegion {
         // Collect only those nodes that require migration.
         lockClients.values().stream()
             .filter(lock -> {
-                if (lock.getManagedBy() == null) {
+                if (lock.manager() == null) {
                     return true;
                 }
 
-                ClusterUuid mappedTo = partitions.map(lock.getName()).getPrimaryNodeId();
+                ClusterNodeId mappedTo = partitions.map(lock.name()).primaryNodeId();
 
                 // Check if mapping changed.
-                if (!mappedTo.equals(lock.getManagedBy())) {
+                if (!mappedTo.equals(lock.manager())) {
                     return true;
                 }
 
@@ -857,7 +857,7 @@ class DefaultLockRegion implements LockRegion {
                 if (topologies.containsKey(mappedTo)) {
                     ClusterHash hash = topologies.get(mappedTo);
 
-                    return !Objects.equals(hash, getEffectiveTopologyHash());
+                    return !Objects.equals(hash, effectiveTopologyHash());
                 }
 
                 return false;
@@ -865,7 +865,7 @@ class DefaultLockRegion implements LockRegion {
             .forEach(lock -> {
                 // Update topology and gather only those locks that are in LOCKED state.
                 if (lock.updateAndCheckLocked(topology)) {
-                    migration.add(new LockMigrationInfo(lock.getName(), lock.getLockId(), lock.getNode(), lock.getThreadId()));
+                    migration.add(new LockMigrationInfo(lock.name(), lock.lockId(), lock.node(), lock.threadId()));
                 }
             });
 
@@ -889,7 +889,7 @@ class DefaultLockRegion implements LockRegion {
 
         status = Status.ACTIVE;
 
-        effectiveTopology = partitions.getTopology();
+        effectiveTopology = partitions.topology();
 
         migrationKey = null;
 
@@ -916,7 +916,7 @@ class DefaultLockRegion implements LockRegion {
 
         // Migrate new locks to the local node.
         locks.forEach(lock -> {
-            String name = lock.getName();
+            String name = lock.name();
 
             if (partitions.map(name).isPrimary(localNode)) {
                 LockControllerServer server = lockServers.get(name);
@@ -937,14 +937,14 @@ class DefaultLockRegion implements LockRegion {
             }
         });
 
-        Set<ClusterUuid> liveNodes = effectiveTopology.stream().map(ClusterNode::getId).collect(toSet());
+        Set<ClusterNodeId> liveNodes = effectiveTopology.stream().map(ClusterNode::id).collect(toSet());
 
         // Update managed locks with the latest topology so that they could release locks of failed nodes.
         lockServers.values().forEach(lock -> lock.update(liveNodes));
 
         // Update topology of locally held locks.
         lockClients.values().forEach(lock -> {
-            ClusterUuid managedBy = partitions.map(lock.getName()).getPrimaryNodeId();
+            ClusterNodeId managedBy = partitions.map(lock.name()).primaryNodeId();
 
             lock.update(managedBy, effectiveTopology);
         });
@@ -955,11 +955,11 @@ class DefaultLockRegion implements LockRegion {
                 log.debug("Registering deferred lock [lock={}]", lock);
             }
 
-            ClusterUuid managedBy = partitions.map(lock.getName()).getPrimaryNodeId();
+            ClusterNodeId managedBy = partitions.map(lock.name()).primaryNodeId();
 
             lock.update(managedBy, effectiveTopology);
 
-            lockClients.put(lock.getLockId(), lock);
+            lockClients.put(lock.lockId(), lock);
 
             lock.becomeLocking();
         });
@@ -980,10 +980,10 @@ class DefaultLockRegion implements LockRegion {
                     MigrationResponse response = (MigrationResponse)reply;
 
                     if (DEBUG) {
-                        log.debug("Got {} response [request={}]", response.getStatus(), request);
+                        log.debug("Got {} response [request={}]", response.status(), request);
                     }
 
-                    switch (response.getStatus()) {
+                    switch (response.status()) {
                         case OK: {
                             return COMPLETE;
                         }
@@ -991,7 +991,7 @@ class DefaultLockRegion implements LockRegion {
                             return isValid(request) ? REJECT : COMPLETE;
                         }
                         default: {
-                            throw new IllegalArgumentException("Unexpected status type: " + response.getStatus());
+                            throw new IllegalArgumentException("Unexpected status type: " + response.status());
                         }
                     }
                 } else {
@@ -1016,10 +1016,10 @@ class DefaultLockRegion implements LockRegion {
         // No need to lock since partitions field is volatile.
         PartitionMapper localMapper = partitions;
 
-        if (request.getKey().isSameTopology(localMapper)) {
-            ClusterUuid coordinator = request.getKey().getNode();
+        if (request.key().isSameTopology(localMapper)) {
+            ClusterNodeId coordinator = request.key().node();
 
-            if (localMapper.getTopology().contains(coordinator)) {
+            if (localMapper.topology().contains(coordinator)) {
                 if (DEBUG) {
                     log.debug("Request is valid [request={}]", request);
                 }
@@ -1108,10 +1108,10 @@ class DefaultLockRegion implements LockRegion {
     }
 
     private boolean isMigrationCoordinator(ClusterTopology topology) {
-        return topology.getOldest().getId().equals(localNode);
+        return topology.oldest().id().equals(localNode);
     }
 
-    private boolean isConsistent(Map<ClusterUuid, ClusterHash> top) {
+    private boolean isConsistent(Map<ClusterNodeId, ClusterHash> top) {
         boolean first = true;
 
         ClusterHash prev = null;
@@ -1129,18 +1129,18 @@ class DefaultLockRegion implements LockRegion {
         return true;
     }
 
-    private Map<ClusterUuid, ClusterHash> addToTopologies(Map<ClusterUuid, ClusterHash> oldTopologies) {
-        Map<ClusterUuid, ClusterHash> newTopologies = new HashMap<>(oldTopologies);
+    private Map<ClusterNodeId, ClusterHash> addToTopologies(Map<ClusterNodeId, ClusterHash> oldTopologies) {
+        Map<ClusterNodeId, ClusterHash> newTopologies = new HashMap<>(oldTopologies);
 
-        newTopologies.put(localNode, getEffectiveTopologyHash());
+        newTopologies.put(localNode, effectiveTopologyHash());
 
         return newTopologies;
     }
 
-    private ClusterHash getEffectiveTopologyHash() {
+    private ClusterHash effectiveTopologyHash() {
         ClusterTopology topology = this.effectiveTopology;
 
-        return topology != null ? topology.getHash() : null;
+        return topology != null ? topology.hash() : null;
     }
 
     private boolean isTerminated() {

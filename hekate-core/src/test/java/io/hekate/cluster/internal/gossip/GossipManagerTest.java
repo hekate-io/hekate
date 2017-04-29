@@ -19,7 +19,7 @@ package io.hekate.cluster.internal.gossip;
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.health.FailureDetector;
 import io.hekate.cluster.health.FailureDetectorMock;
 import io.hekate.cluster.internal.DefaultClusterNodeBuilder;
@@ -63,7 +63,7 @@ public class GossipManagerTest extends HekateTestBase {
     public void testRejectJoinRequestIfNotJoined() throws Exception {
         GossipManager m = createManager(1);
 
-        InetSocketAddress address = m.getNodeAddress().getSocket();
+        InetSocketAddress address = m.address().socket();
 
         assertFalse(m.processJoinRequest(new JoinRequest(newNode(), CLUSTER_ID, address)).isAccept());
     }
@@ -72,13 +72,13 @@ public class GossipManagerTest extends HekateTestBase {
     public void testRejectJoinRequestFromAnotherCluster() throws Exception {
         GossipManager m = createManager(1);
 
-        InetSocketAddress address = m.getNodeAddress().getSocket();
+        InetSocketAddress address = m.address().socket();
 
         JoinReply reply = m.processJoinRequest(new JoinRequest(newNode(), CLUSTER_ID + "_another", address));
 
         assertNotNull(reply);
         assertFalse(reply.isAccept());
-        assertSame(JoinReject.RejectType.PERMANENT, reply.asReject().getRejectType());
+        assertSame(JoinReject.RejectType.PERMANENT, reply.asReject().rejectType());
     }
 
     @Test
@@ -87,7 +87,7 @@ public class GossipManagerTest extends HekateTestBase {
 
         m.join(Collections.emptyList());
 
-        assertSame(GossipNodeStatus.UP, m.getStatus());
+        assertSame(GossipNodeStatus.UP, m.status());
 
         assertNull(m.join(Collections.emptyList()));
         assertNull(m.join(Collections.singletonList(newSocketAddress())));
@@ -104,18 +104,18 @@ public class GossipManagerTest extends HekateTestBase {
         seedNodes.add(newSocketAddress(4));
 
         for (InetSocketAddress addr : seedNodes) {
-            assertEquals(addr, m.join(seedNodes).getToAddress());
+            assertEquals(addr, m.join(seedNodes).toAddress());
         }
 
-        assertSame(GossipNodeStatus.DOWN, m.getStatus());
+        assertSame(GossipNodeStatus.DOWN, m.status());
 
         for (InetSocketAddress addr : seedNodes) {
-            m.processJoinReject(JoinReject.retryLater(newAddress(addr), m.getNodeAddress(), addr));
+            m.processJoinReject(JoinReject.retryLater(newAddress(addr), m.address(), addr));
         }
 
         m.join(seedNodes);
 
-        assertSame(GossipNodeStatus.UP, m.getStatus());
+        assertSame(GossipNodeStatus.UP, m.status());
     }
 
     @Test
@@ -129,20 +129,20 @@ public class GossipManagerTest extends HekateTestBase {
         seedNodes.add(newSocketAddress(4));
 
         for (InetSocketAddress addr : seedNodes) {
-            assertEquals(addr, m.join(seedNodes).getToAddress());
+            assertEquals(addr, m.join(seedNodes).toAddress());
         }
 
-        assertSame(GossipNodeStatus.DOWN, m.getStatus());
+        assertSame(GossipNodeStatus.DOWN, m.status());
 
         for (InetSocketAddress addr : seedNodes) {
-            m.processJoinReject(JoinReject.retryLater(newAddress(addr), m.getNodeAddress(), addr));
+            m.processJoinReject(JoinReject.retryLater(newAddress(addr), m.address(), addr));
         }
 
         for (InetSocketAddress addr : seedNodes) {
-            assertEquals(addr, m.join(seedNodes).getToAddress());
+            assertEquals(addr, m.join(seedNodes).toAddress());
         }
 
-        assertSame(GossipNodeStatus.DOWN, m.getStatus());
+        assertSame(GossipNodeStatus.DOWN, m.status());
     }
 
     @Test
@@ -156,28 +156,28 @@ public class GossipManagerTest extends HekateTestBase {
         seedNodes.add(newSocketAddress(4));
 
         for (InetSocketAddress addr : seedNodes) {
-            assertEquals(addr, m.join(seedNodes).getToAddress());
+            assertEquals(addr, m.join(seedNodes).toAddress());
         }
 
-        assertSame(GossipNodeStatus.DOWN, m.getStatus());
+        assertSame(GossipNodeStatus.DOWN, m.status());
 
         InetSocketAddress failed = seedNodes.remove(0);
 
-        JoinRequest request = m.processJoinFailure(new JoinRequest(m.getNode(), CLUSTER_ID, failed));
+        JoinRequest request = m.processJoinFailure(new JoinRequest(m.node(), CLUSTER_ID, failed));
 
-        assertEquals(seedNodes.toString(), failed, request.getToAddress());
+        assertEquals(seedNodes.toString(), failed, request.toAddress());
 
         for (InetSocketAddress addr : seedNodes) {
-            assertEquals(addr, m.join(seedNodes).getToAddress());
+            assertEquals(addr, m.join(seedNodes).toAddress());
         }
 
         seedNodes.add(0, failed);
 
         for (InetSocketAddress addr : seedNodes) {
-            assertEquals(addr, m.join(seedNodes).getToAddress());
+            assertEquals(addr, m.join(seedNodes).toAddress());
         }
 
-        assertSame(GossipNodeStatus.DOWN, m.getStatus());
+        assertSame(GossipNodeStatus.DOWN, m.status());
     }
 
     @Test
@@ -186,15 +186,15 @@ public class GossipManagerTest extends HekateTestBase {
 
         InetSocketAddress failed = newSocketAddress(2);
 
-        assertEquals(failed, m.join(Collections.singletonList(failed)).getToAddress());
+        assertEquals(failed, m.join(Collections.singletonList(failed)).toAddress());
 
-        assertEquals(failed, m.processJoinFailure(new JoinRequest(m.getNode(), CLUSTER_ID, failed)).getToAddress());
+        assertEquals(failed, m.processJoinFailure(new JoinRequest(m.node(), CLUSTER_ID, failed)).toAddress());
 
         assertNull(m.join(Collections.singletonList(failed)));
 
-        assertSame(GossipNodeStatus.UP, m.getStatus());
+        assertSame(GossipNodeStatus.UP, m.status());
 
-        assertNull(m.processJoinFailure(new JoinRequest(m.getNode(), CLUSTER_ID, failed)));
+        assertNull(m.processJoinFailure(new JoinRequest(m.node(), CLUSTER_ID, failed)));
     }
 
     @Test
@@ -207,14 +207,14 @@ public class GossipManagerTest extends HekateTestBase {
 
         m.join(Collections.emptyList());
 
-        assertSame(GossipNodeStatus.UP, m.getStatus());
+        assertSame(GossipNodeStatus.UP, m.status());
 
-        assertNull(m.processJoinAccept(new JoinAccept(fake.getNodeAddress(), m.getNodeAddress(), fake.getLocalGossip())));
+        assertNull(m.processJoinAccept(new JoinAccept(fake.address(), m.address(), fake.localGossip())));
 
-        assertSame(GossipNodeStatus.UP, m.getStatus());
+        assertSame(GossipNodeStatus.UP, m.status());
 
-        assertEquals(1, m.getLocalGossip().getMembers().size());
-        assertTrue(m.getLocalGossip().getMembers().containsKey(m.getId()));
+        assertEquals(1, m.localGossip().members().size());
+        assertTrue(m.localGossip().members().containsKey(m.id()));
     }
 
     @Test
@@ -223,14 +223,14 @@ public class GossipManagerTest extends HekateTestBase {
 
         m.join(Collections.emptyList());
 
-        assertSame(GossipNodeStatus.UP, m.getStatus());
+        assertSame(GossipNodeStatus.UP, m.status());
 
-        assertNull(m.processJoinReject(JoinReject.retryLater(newAddress(1), m.getNodeAddress(), newSocketAddress())));
+        assertNull(m.processJoinReject(JoinReject.retryLater(newAddress(1), m.address(), newSocketAddress())));
 
-        assertSame(GossipNodeStatus.UP, m.getStatus());
+        assertSame(GossipNodeStatus.UP, m.status());
 
-        assertEquals(1, m.getLocalGossip().getMembers().size());
-        assertTrue(m.getLocalGossip().getMembers().containsKey(m.getId()));
+        assertEquals(1, m.localGossip().members().size());
+        assertTrue(m.localGossip().members().containsKey(m.id()));
     }
 
     @Test
@@ -239,13 +239,13 @@ public class GossipManagerTest extends HekateTestBase {
 
         m.join(Collections.singletonList(newSocketAddress(2)));
 
-        assertSame(GossipNodeStatus.DOWN, m.getStatus());
+        assertSame(GossipNodeStatus.DOWN, m.status());
 
-        assertFalse(m.processJoinRequest(new JoinRequest(newNode(), CLUSTER_ID, m.getNodeAddress().getSocket())).isAccept());
+        assertFalse(m.processJoinRequest(new JoinRequest(newNode(), CLUSTER_ID, m.address().socket())).isAccept());
 
-        assertSame(GossipNodeStatus.DOWN, m.getStatus());
+        assertSame(GossipNodeStatus.DOWN, m.status());
 
-        assertTrue(m.getLocalGossip().getMembers().isEmpty());
+        assertTrue(m.localGossip().members().isEmpty());
     }
 
     @Test
@@ -254,13 +254,13 @@ public class GossipManagerTest extends HekateTestBase {
 
         m.join(Collections.singletonList(newSocketAddress(2)));
 
-        assertSame(GossipNodeStatus.DOWN, m.getStatus());
+        assertSame(GossipNodeStatus.DOWN, m.status());
 
-        assertFalse(m.processJoinRequest(new JoinRequest(m.getNode(), CLUSTER_ID, m.getNodeAddress().getSocket())).isAccept());
+        assertFalse(m.processJoinRequest(new JoinRequest(m.node(), CLUSTER_ID, m.address().socket())).isAccept());
 
-        assertSame(GossipNodeStatus.DOWN, m.getStatus());
+        assertSame(GossipNodeStatus.DOWN, m.status());
 
-        assertTrue(m.getLocalGossip().getMembers().isEmpty());
+        assertTrue(m.localGossip().members().isEmpty());
     }
 
     @Test
@@ -269,16 +269,16 @@ public class GossipManagerTest extends HekateTestBase {
 
         m.join(Collections.emptyList());
 
-        assertSame(GossipNodeStatus.UP, m.getStatus());
+        assertSame(GossipNodeStatus.UP, m.status());
 
         m.leave();
 
-        assertSame(GossipNodeStatus.DOWN, m.getStatus());
+        assertSame(GossipNodeStatus.DOWN, m.status());
 
-        JoinReply reply = m.processJoinRequest(new JoinRequest(newNode(), CLUSTER_ID, m.getNodeAddress().getSocket()));
+        JoinReply reply = m.processJoinRequest(new JoinRequest(newNode(), CLUSTER_ID, m.address().socket()));
 
         assertFalse(reply.isAccept());
-        assertSame(JoinReject.RejectType.TEMPORARY, reply.asReject().getRejectType());
+        assertSame(JoinReject.RejectType.TEMPORARY, reply.asReject().rejectType());
     }
 
     @Test
@@ -287,10 +287,10 @@ public class GossipManagerTest extends HekateTestBase {
 
         m.join(Collections.emptyList());
 
-        JoinReply reply = m.processJoinRequest(new JoinRequest(newNode(), CLUSTER_ID, m.getNodeAddress().getSocket()));
+        JoinReply reply = m.processJoinRequest(new JoinRequest(newNode(), CLUSTER_ID, m.address().socket()));
 
         assertFalse(reply.isAccept());
-        assertSame(JoinReject.RejectType.PERMANENT, reply.asReject().getRejectType());
+        assertSame(JoinReject.RejectType.PERMANENT, reply.asReject().rejectType());
     }
 
     @Test
@@ -301,13 +301,13 @@ public class GossipManagerTest extends HekateTestBase {
 
         GossipManager m = createManager(1);
 
-        m.join(Collections.singletonList(fake.getNodeAddress().getSocket()));
+        m.join(Collections.singletonList(fake.address().socket()));
 
-        assertNull(m.processJoinAccept(new JoinAccept(fake.getNodeAddress(), m.getNodeAddress(), fake.getLocalGossip())));
+        assertNull(m.processJoinAccept(new JoinAccept(fake.address(), m.address(), fake.localGossip())));
 
-        assertSame(GossipNodeStatus.DOWN, m.getStatus());
+        assertSame(GossipNodeStatus.DOWN, m.status());
 
-        assertTrue(m.getLocalGossip().getMembers().isEmpty());
+        assertTrue(m.localGossip().members().isEmpty());
     }
 
     @Test
@@ -318,12 +318,12 @@ public class GossipManagerTest extends HekateTestBase {
 
         GossipManager m = createManager(2);
 
-        assertSame(GossipNodeStatus.DOWN, m.getStatus());
+        assertSame(GossipNodeStatus.DOWN, m.status());
 
-        assertNull(m.processUpdate(new Update(fake.getNodeAddress(), m.getNodeAddress(), fake.getLocalGossip())));
+        assertNull(m.processUpdate(new Update(fake.address(), m.address(), fake.localGossip())));
 
-        assertSame(GossipNodeStatus.DOWN, m.getStatus());
-        assertTrue(m.getLocalGossip().getMembers().isEmpty());
+        assertSame(GossipNodeStatus.DOWN, m.status());
+        assertTrue(m.localGossip().members().isEmpty());
     }
 
     @Test
@@ -336,13 +336,13 @@ public class GossipManagerTest extends HekateTestBase {
 
         m.join(Collections.emptyList());
 
-        assertSame(GossipNodeStatus.UP, m.getStatus());
+        assertSame(GossipNodeStatus.UP, m.status());
 
-        assertNull(m.processUpdate(new Update(fake.getNodeAddress(), m.getNodeAddress(), fake.getLocalGossip())));
+        assertNull(m.processUpdate(new Update(fake.address(), m.address(), fake.localGossip())));
 
-        assertSame(GossipNodeStatus.UP, m.getStatus());
-        assertEquals(1, m.getLocalGossip().getMembers().size());
-        assertTrue(m.getLocalGossip().getMembers().containsKey(m.getId()));
+        assertSame(GossipNodeStatus.UP, m.status());
+        assertEquals(1, m.localGossip().members().size());
+        assertTrue(m.localGossip().members().containsKey(m.id()));
     }
 
     @Test
@@ -350,81 +350,81 @@ public class GossipManagerTest extends HekateTestBase {
         GossipManager m1 = createManager(1);
         GossipManager m2 = createManager(2);
 
-        assertSame(GossipNodeStatus.DOWN, m1.getStatus());
-        assertSame(GossipNodeStatus.DOWN, m1.getStatus());
+        assertSame(GossipNodeStatus.DOWN, m1.status());
+        assertSame(GossipNodeStatus.DOWN, m1.status());
 
         assertNull(m1.join(Collections.emptyList()));
 
-        assertSame(GossipNodeStatus.UP, m1.getStatus());
+        assertSame(GossipNodeStatus.UP, m1.status());
 
-        JoinRequest join = m2.join(Collections.singletonList(m1.getNodeAddress().getSocket()));
+        JoinRequest join = m2.join(Collections.singletonList(m1.address().socket()));
 
         assertNotNull(join);
-        assertEquals(m2.getNodeAddress(), join.getFrom());
-        assertEquals(m1.getNodeAddress().getSocket(), join.getToAddress());
+        assertEquals(m2.address(), join.from());
+        assertEquals(m1.address().socket(), join.toAddress());
 
         say("Hey bro! Welcome!");
 
         JoinAccept rep = m1.processJoinRequest(join).asAccept();
 
         assertNotNull(rep);
-        assertEquals(m1.getNodeAddress(), rep.getFrom());
-        assertEquals(m2.getNodeAddress(), rep.getTo());
-        assertEquals(2, rep.getGossip().getMembers().size());
-        assertTrue(rep.getGossip().getMembers().containsKey(m1.getId()));
-        assertTrue(rep.getGossip().getMembers().containsKey(m2.getId()));
-        assertEquals(1, rep.getGossip().getSeen().size());
-        assertTrue(rep.getGossip().getSeen().contains(m1.getId()));
+        assertEquals(m1.address(), rep.from());
+        assertEquals(m2.address(), rep.to());
+        assertEquals(2, rep.gossip().members().size());
+        assertTrue(rep.gossip().members().containsKey(m1.id()));
+        assertTrue(rep.gossip().members().containsKey(m2.id()));
+        assertEquals(1, rep.gossip().seen().size());
+        assertTrue(rep.gossip().seen().contains(m1.id()));
 
         say("Tnx bro! I'll confirm that I've seen it.");
 
         Update gos = m2.processJoinAccept(rep);
 
         assertNotNull(gos);
-        assertEquals(m2.getNodeAddress(), gos.getFrom());
-        assertEquals(m1.getNodeAddress(), gos.getTo());
-        assertEquals(2, gos.getGossip().getMembers().size());
-        assertTrue(gos.getGossip().getMembers().containsKey(m1.getId()));
-        assertTrue(gos.getGossip().getMembers().containsKey(m2.getId()));
-        assertEquals(2, gos.getGossip().getSeen().size());
-        assertTrue(gos.getGossip().getSeen().contains(m1.getId()));
-        assertTrue(gos.getGossip().getSeen().contains(m2.getId()));
-        assertSame(GossipNodeStatus.JOINING, m2.getStatus());
+        assertEquals(m2.address(), gos.from());
+        assertEquals(m1.address(), gos.to());
+        assertEquals(2, gos.gossip().members().size());
+        assertTrue(gos.gossip().members().containsKey(m1.id()));
+        assertTrue(gos.gossip().members().containsKey(m2.id()));
+        assertEquals(2, gos.gossip().seen().size());
+        assertTrue(gos.gossip().seen().contains(m1.id()));
+        assertTrue(gos.gossip().seen().contains(m2.id()));
+        assertSame(GossipNodeStatus.JOINING, m2.status());
 
         say("...o-o-kay, looks like we have the same view. I'll put you to UP state.");
 
         gos = m1.processUpdate(gos).asUpdate();
 
         assertNotNull(gos);
-        assertEquals(m1.getNodeAddress(), gos.getFrom());
-        assertEquals(m2.getNodeAddress(), gos.getTo());
-        assertEquals(2, gos.getGossip().getMembers().size());
-        assertTrue(gos.getGossip().getMembers().containsKey(m1.getId()));
-        assertTrue(gos.getGossip().getMembers().containsKey(m2.getId()));
-        assertEquals(1, gos.getGossip().getSeen().size());
-        assertTrue(gos.getGossip().getSeen().contains(m1.getId()));
+        assertEquals(m1.address(), gos.from());
+        assertEquals(m2.address(), gos.to());
+        assertEquals(2, gos.gossip().members().size());
+        assertTrue(gos.gossip().members().containsKey(m1.id()));
+        assertTrue(gos.gossip().members().containsKey(m2.id()));
+        assertEquals(1, gos.gossip().seen().size());
+        assertTrue(gos.gossip().seen().contains(m1.id()));
 
         say("Ok, I'm UP, cool! Now I'll confirm that I've seen it.");
 
         gos = m2.processUpdate(gos).asUpdate();
 
         assertNotNull(gos);
-        assertEquals(m2.getNodeAddress(), gos.getFrom());
-        assertEquals(m1.getNodeAddress(), gos.getTo());
-        assertEquals(2, gos.getGossip().getMembers().size());
-        assertTrue(gos.getGossip().getMembers().containsKey(m1.getId()));
-        assertTrue(gos.getGossip().getMembers().containsKey(m2.getId()));
-        assertEquals(2, gos.getGossip().getSeen().size());
-        assertTrue(gos.getGossip().getSeen().contains(m1.getId()));
-        assertTrue(gos.getGossip().getSeen().contains(m2.getId()));
-        assertSame(GossipNodeStatus.UP, m2.getStatus());
+        assertEquals(m2.address(), gos.from());
+        assertEquals(m1.address(), gos.to());
+        assertEquals(2, gos.gossip().members().size());
+        assertTrue(gos.gossip().members().containsKey(m1.id()));
+        assertTrue(gos.gossip().members().containsKey(m2.id()));
+        assertEquals(2, gos.gossip().seen().size());
+        assertTrue(gos.gossip().seen().contains(m1.id()));
+        assertTrue(gos.gossip().seen().contains(m2.id()));
+        assertSame(GossipNodeStatus.UP, m2.status());
 
         say("We are done.");
 
         assertNull(m1.processUpdate(gos));
 
-        assertSame(GossipNodeStatus.UP, m1.getStatus());
-        assertSame(GossipNodeStatus.UP, m2.getStatus());
+        assertSame(GossipNodeStatus.UP, m1.status());
+        assertSame(GossipNodeStatus.UP, m2.status());
     }
 
     @Test
@@ -435,61 +435,61 @@ public class GossipManagerTest extends HekateTestBase {
         GossipManager m2 = nodes.get(1);
         GossipManager m3 = nodes.get(2);
 
-        assertSame(GossipNodeStatus.UP, m1.getStatus());
-        assertSame(GossipNodeStatus.UP, m2.getStatus());
-        assertSame(GossipNodeStatus.UP, m3.getStatus());
+        assertSame(GossipNodeStatus.UP, m1.status());
+        assertSame(GossipNodeStatus.UP, m2.status());
+        assertSame(GossipNodeStatus.UP, m3.status());
 
-        assertTrue(m1.getLocalGossip().isConvergent());
-        assertTrue(m2.getLocalGossip().isConvergent());
-        assertTrue(m3.getLocalGossip().isConvergent());
+        assertTrue(m1.localGossip().isConvergent());
+        assertTrue(m2.localGossip().isConvergent());
+        assertTrue(m3.localGossip().isConvergent());
 
-        Gossip g1 = m1.getLocalGossip();
+        Gossip g1 = m1.localGossip();
 
-        say("Gossip " + m1.getNode() + ": " + g1);
+        say("Gossip " + m1.node() + ": " + g1);
 
-        assertEquals(3, g1.getMembers().size());
-        assertSame(GossipNodeStatus.UP, g1.getMember(m1.getId()).getStatus());
-        assertSame(GossipNodeStatus.UP, g1.getMember(m2.getId()).getStatus());
-        assertSame(GossipNodeStatus.UP, g1.getMember(m3.getId()).getStatus());
-        assertEquals(0, g1.getSuspectedView().getSuspected().size());
-        assertSame(ComparisonResult.SAME, g1.compare(m2.getLocalGossip()));
-        assertSame(ComparisonResult.SAME, g1.compare(m3.getLocalGossip()));
-        assertEquals(3, g1.getSeen().size());
-        assertTrue(g1.getSeen().contains(m1.getId()));
-        assertTrue(g1.getSeen().contains(m2.getId()));
-        assertTrue(g1.getSeen().contains(m3.getId()));
+        assertEquals(3, g1.members().size());
+        assertSame(GossipNodeStatus.UP, g1.member(m1.id()).status());
+        assertSame(GossipNodeStatus.UP, g1.member(m2.id()).status());
+        assertSame(GossipNodeStatus.UP, g1.member(m3.id()).status());
+        assertEquals(0, g1.suspectedView().suspected().size());
+        assertSame(ComparisonResult.SAME, g1.compare(m2.localGossip()));
+        assertSame(ComparisonResult.SAME, g1.compare(m3.localGossip()));
+        assertEquals(3, g1.seen().size());
+        assertTrue(g1.seen().contains(m1.id()));
+        assertTrue(g1.seen().contains(m2.id()));
+        assertTrue(g1.seen().contains(m3.id()));
 
-        Gossip g2 = m2.getLocalGossip();
+        Gossip g2 = m2.localGossip();
 
-        say("Gossip " + m2.getNode() + ": " + g2);
+        say("Gossip " + m2.node() + ": " + g2);
 
-        assertEquals(3, g2.getMembers().size());
-        assertSame(GossipNodeStatus.UP, g2.getMember(m1.getId()).getStatus());
-        assertSame(GossipNodeStatus.UP, g2.getMember(m2.getId()).getStatus());
-        assertSame(GossipNodeStatus.UP, g2.getMember(m3.getId()).getStatus());
-        assertEquals(0, g2.getSuspectedView().getSuspected().size());
-        assertSame(ComparisonResult.SAME, g2.compare(m1.getLocalGossip()));
-        assertSame(ComparisonResult.SAME, g2.compare(m3.getLocalGossip()));
-        assertEquals(3, g2.getSeen().size());
-        assertTrue(g2.getSeen().contains(m1.getId()));
-        assertTrue(g2.getSeen().contains(m2.getId()));
-        assertTrue(g2.getSeen().contains(m3.getId()));
+        assertEquals(3, g2.members().size());
+        assertSame(GossipNodeStatus.UP, g2.member(m1.id()).status());
+        assertSame(GossipNodeStatus.UP, g2.member(m2.id()).status());
+        assertSame(GossipNodeStatus.UP, g2.member(m3.id()).status());
+        assertEquals(0, g2.suspectedView().suspected().size());
+        assertSame(ComparisonResult.SAME, g2.compare(m1.localGossip()));
+        assertSame(ComparisonResult.SAME, g2.compare(m3.localGossip()));
+        assertEquals(3, g2.seen().size());
+        assertTrue(g2.seen().contains(m1.id()));
+        assertTrue(g2.seen().contains(m2.id()));
+        assertTrue(g2.seen().contains(m3.id()));
 
-        Gossip g3 = m3.getLocalGossip();
+        Gossip g3 = m3.localGossip();
 
-        say("Gossip " + m3.getNode() + ": " + g3);
+        say("Gossip " + m3.node() + ": " + g3);
 
-        assertEquals(3, g3.getMembers().size());
-        assertSame(GossipNodeStatus.UP, g3.getMember(m1.getId()).getStatus());
-        assertSame(GossipNodeStatus.UP, g3.getMember(m2.getId()).getStatus());
-        assertSame(GossipNodeStatus.UP, g3.getMember(m3.getId()).getStatus());
-        assertEquals(0, g3.getSuspectedView().getSuspected().size());
-        assertSame(ComparisonResult.SAME, g3.compare(m1.getLocalGossip()));
-        assertSame(ComparisonResult.SAME, g3.compare(m2.getLocalGossip()));
-        assertEquals(3, g3.getSeen().size());
-        assertTrue(g3.getSeen().contains(m1.getId()));
-        assertTrue(g3.getSeen().contains(m2.getId()));
-        assertTrue(g3.getSeen().contains(m3.getId()));
+        assertEquals(3, g3.members().size());
+        assertSame(GossipNodeStatus.UP, g3.member(m1.id()).status());
+        assertSame(GossipNodeStatus.UP, g3.member(m2.id()).status());
+        assertSame(GossipNodeStatus.UP, g3.member(m3.id()).status());
+        assertEquals(0, g3.suspectedView().suspected().size());
+        assertSame(ComparisonResult.SAME, g3.compare(m1.localGossip()));
+        assertSame(ComparisonResult.SAME, g3.compare(m2.localGossip()));
+        assertEquals(3, g3.seen().size());
+        assertTrue(g3.seen().contains(m1.id()));
+        assertTrue(g3.seen().contains(m2.id()));
+        assertTrue(g3.seen().contains(m3.id()));
     }
 
     @Test
@@ -499,8 +499,8 @@ public class GossipManagerTest extends HekateTestBase {
         GossipManager m1 = nodes.get(0);
         GossipManager m2 = nodes.get(1);
 
-        assertSame(GossipNodeStatus.UP, m1.getStatus());
-        assertSame(GossipNodeStatus.UP, m2.getStatus());
+        assertSame(GossipNodeStatus.UP, m1.status());
+        assertSame(GossipNodeStatus.UP, m2.status());
 
         m2.leave();
 
@@ -509,77 +509,77 @@ public class GossipManagerTest extends HekateTestBase {
         Update gos = m2.gossip().asUpdate();
 
         assertNotNull(gos);
-        assertEquals(m2.getNodeAddress(), gos.getFrom());
-        assertEquals(m1.getNodeAddress(), gos.getTo());
-        assertEquals(2, gos.getGossip().getMembers().size());
-        assertTrue(gos.getGossip().getMembers().containsKey(m1.getId()));
-        assertTrue(gos.getGossip().getMembers().containsKey(m2.getId()));
-        assertSame(GossipNodeStatus.UP, gos.getGossip().getMembers().get(m1.getId()).getStatus());
-        assertSame(GossipNodeStatus.LEAVING, gos.getGossip().getMembers().get(m2.getId()).getStatus());
-        assertEquals(1, gos.getGossip().getSeen().size());
-        assertTrue(gos.getGossip().getSeen().contains(m2.getId()));
+        assertEquals(m2.address(), gos.from());
+        assertEquals(m1.address(), gos.to());
+        assertEquals(2, gos.gossip().members().size());
+        assertTrue(gos.gossip().members().containsKey(m1.id()));
+        assertTrue(gos.gossip().members().containsKey(m2.id()));
+        assertSame(GossipNodeStatus.UP, gos.gossip().members().get(m1.id()).status());
+        assertSame(GossipNodeStatus.LEAVING, gos.gossip().members().get(m2.id()).status());
+        assertEquals(1, gos.gossip().seen().size());
+        assertTrue(gos.gossip().seen().contains(m2.id()));
 
         say("Well, ok, let me set you to DOWN state.");
 
         gos = m1.processUpdate(gos).asUpdate();
 
         assertNotNull(gos);
-        assertEquals(m1.getNodeAddress(), gos.getFrom());
-        assertEquals(m2.getNodeAddress(), gos.getTo());
-        assertEquals(2, gos.getGossip().getMembers().size());
-        assertTrue(gos.getGossip().getMembers().containsKey(m1.getId()));
-        assertTrue(gos.getGossip().getMembers().containsKey(m2.getId()));
-        assertSame(GossipNodeStatus.UP, gos.getGossip().getMembers().get(m1.getId()).getStatus());
-        assertSame(GossipNodeStatus.DOWN, gos.getGossip().getMembers().get(m2.getId()).getStatus());
-        assertEquals(1, gos.getGossip().getSeen().size());
-        assertTrue(gos.getGossip().getSeen().contains(m1.getId()));
+        assertEquals(m1.address(), gos.from());
+        assertEquals(m2.address(), gos.to());
+        assertEquals(2, gos.gossip().members().size());
+        assertTrue(gos.gossip().members().containsKey(m1.id()));
+        assertTrue(gos.gossip().members().containsKey(m2.id()));
+        assertSame(GossipNodeStatus.UP, gos.gossip().members().get(m1.id()).status());
+        assertSame(GossipNodeStatus.DOWN, gos.gossip().members().get(m2.id()).status());
+        assertEquals(1, gos.gossip().seen().size());
+        assertTrue(gos.gossip().seen().contains(m1.id()));
 
         say("Ok, I'm in DOWN state.");
 
         gos = m2.processUpdate(gos).asUpdate();
 
         assertNotNull(gos);
-        assertEquals(m2.getNodeAddress(), gos.getFrom());
-        assertEquals(m1.getNodeAddress(), gos.getTo());
-        assertEquals(2, gos.getGossip().getMembers().size());
-        assertTrue(gos.getGossip().getMembers().containsKey(m1.getId()));
-        assertTrue(gos.getGossip().getMembers().containsKey(m2.getId()));
-        assertSame(GossipNodeStatus.UP, gos.getGossip().getMembers().get(m1.getId()).getStatus());
-        assertSame(GossipNodeStatus.DOWN, gos.getGossip().getMembers().get(m2.getId()).getStatus());
-        assertEquals(2, gos.getGossip().getSeen().size());
-        assertTrue(gos.getGossip().getSeen().contains(m1.getId()));
-        assertTrue(gos.getGossip().getSeen().contains(m2.getId()));
+        assertEquals(m2.address(), gos.from());
+        assertEquals(m1.address(), gos.to());
+        assertEquals(2, gos.gossip().members().size());
+        assertTrue(gos.gossip().members().containsKey(m1.id()));
+        assertTrue(gos.gossip().members().containsKey(m2.id()));
+        assertSame(GossipNodeStatus.UP, gos.gossip().members().get(m1.id()).status());
+        assertSame(GossipNodeStatus.DOWN, gos.gossip().members().get(m2.id()).status());
+        assertEquals(2, gos.gossip().seen().size());
+        assertTrue(gos.gossip().seen().contains(m1.id()));
+        assertTrue(gos.gossip().seen().contains(m2.id()));
 
         say("Before going, I'll confirm that I've seen it.");
 
         gos = m1.processUpdate(gos).asUpdate();
 
         assertNotNull(gos);
-        assertEquals(m1.getNodeAddress(), gos.getFrom());
-        assertEquals(m2.getNodeAddress(), gos.getTo());
-        assertEquals(1, gos.getGossip().getMembers().size());
-        assertTrue(gos.getGossip().getMembers().containsKey(m1.getId()));
-        assertSame(GossipNodeStatus.UP, gos.getGossip().getMembers().get(m1.getId()).getStatus());
-        assertEquals(1, gos.getGossip().getSeen().size());
-        assertTrue(gos.getGossip().getSeen().contains(m1.getId()));
+        assertEquals(m1.address(), gos.from());
+        assertEquals(m2.address(), gos.to());
+        assertEquals(1, gos.gossip().members().size());
+        assertTrue(gos.gossip().members().containsKey(m1.id()));
+        assertSame(GossipNodeStatus.UP, gos.gossip().members().get(m1.id()).status());
+        assertEquals(1, gos.gossip().seen().size());
+        assertTrue(gos.gossip().seen().contains(m1.id()));
 
-        assertSame(GossipNodeStatus.UP, m1.getStatus());
-        assertSame(GossipNodeStatus.DOWN, m2.getStatus());
+        assertSame(GossipNodeStatus.UP, m1.status());
+        assertSame(GossipNodeStatus.DOWN, m2.status());
 
         m2.leave();
 
-        assertSame(GossipNodeStatus.DOWN, m2.getStatus());
+        assertSame(GossipNodeStatus.DOWN, m2.status());
 
         UpdateBase dig = m2.gossip();
 
         assertNotNull(dig);
-        assertEquals(m2.getNodeAddress(), dig.getFrom());
-        assertEquals(m1.getNodeAddress(), dig.getTo());
-        assertEquals(2, dig.getGossipBase().getMembersInfo().size());
-        assertTrue(dig.getGossipBase().getMembersInfo().containsKey(m1.getId()));
-        assertTrue(dig.getGossipBase().getMembersInfo().containsKey(m2.getId()));
-        assertSame(GossipNodeStatus.UP, dig.getGossipBase().getMembersInfo().get(m1.getId()).getStatus());
-        assertSame(GossipNodeStatus.DOWN, dig.getGossipBase().getMembersInfo().get(m2.getId()).getStatus());
+        assertEquals(m2.address(), dig.from());
+        assertEquals(m1.address(), dig.to());
+        assertEquals(2, dig.gossipBase().membersInfo().size());
+        assertTrue(dig.gossipBase().membersInfo().containsKey(m1.id()));
+        assertTrue(dig.gossipBase().membersInfo().containsKey(m2.id()));
+        assertSame(GossipNodeStatus.UP, dig.gossipBase().membersInfo().get(m1.id()).status());
+        assertSame(GossipNodeStatus.DOWN, dig.gossipBase().membersInfo().get(m2.id()).status());
     }
 
     @Test
@@ -589,8 +589,8 @@ public class GossipManagerTest extends HekateTestBase {
         GossipManager m1 = nodes.get(0);
         GossipManager m2 = nodes.get(1);
 
-        assertSame(GossipNodeStatus.UP, m1.getStatus());
-        assertSame(GossipNodeStatus.UP, m2.getStatus());
+        assertSame(GossipNodeStatus.UP, m1.status());
+        assertSame(GossipNodeStatus.UP, m2.status());
 
         m1.leave();
         m2.leave();
@@ -600,83 +600,83 @@ public class GossipManagerTest extends HekateTestBase {
         Update gos = m2.gossip().asUpdate();
 
         assertNotNull(gos);
-        assertEquals(m2.getNodeAddress(), gos.getFrom());
-        assertEquals(m1.getNodeAddress(), gos.getTo());
-        assertEquals(2, gos.getGossip().getMembers().size());
-        assertTrue(gos.getGossip().getMembers().containsKey(m1.getId()));
-        assertTrue(gos.getGossip().getMembers().containsKey(m2.getId()));
-        assertSame(GossipNodeStatus.UP, gos.getGossip().getMembers().get(m1.getId()).getStatus());
-        assertSame(GossipNodeStatus.LEAVING, gos.getGossip().getMembers().get(m2.getId()).getStatus());
-        assertEquals(1, gos.getGossip().getSeen().size());
-        assertTrue(gos.getGossip().getSeen().contains(m2.getId()));
+        assertEquals(m2.address(), gos.from());
+        assertEquals(m1.address(), gos.to());
+        assertEquals(2, gos.gossip().members().size());
+        assertTrue(gos.gossip().members().containsKey(m1.id()));
+        assertTrue(gos.gossip().members().containsKey(m2.id()));
+        assertSame(GossipNodeStatus.UP, gos.gossip().members().get(m1.id()).status());
+        assertSame(GossipNodeStatus.LEAVING, gos.gossip().members().get(m2.id()).status());
+        assertEquals(1, gos.gossip().seen().size());
+        assertTrue(gos.gossip().seen().contains(m2.id()));
 
-        assertSame(GossipNodeStatus.LEAVING, m2.getStatus());
+        assertSame(GossipNodeStatus.LEAVING, m2.status());
 
         say("Oh! Me too!");
 
         gos = m1.processUpdate(gos).asUpdate();
 
         assertNotNull(gos);
-        assertEquals(m1.getNodeAddress(), gos.getFrom());
-        assertEquals(m2.getNodeAddress(), gos.getTo());
-        assertEquals(2, gos.getGossip().getMembers().size());
-        assertTrue(gos.getGossip().getMembers().containsKey(m1.getId()));
-        assertTrue(gos.getGossip().getMembers().containsKey(m2.getId()));
-        assertSame(GossipNodeStatus.LEAVING, gos.getGossip().getMembers().get(m1.getId()).getStatus());
-        assertSame(GossipNodeStatus.LEAVING, gos.getGossip().getMembers().get(m2.getId()).getStatus());
-        assertEquals(1, gos.getGossip().getSeen().size());
-        assertTrue(gos.getGossip().getSeen().contains(m1.getId()));
+        assertEquals(m1.address(), gos.from());
+        assertEquals(m2.address(), gos.to());
+        assertEquals(2, gos.gossip().members().size());
+        assertTrue(gos.gossip().members().containsKey(m1.id()));
+        assertTrue(gos.gossip().members().containsKey(m2.id()));
+        assertSame(GossipNodeStatus.LEAVING, gos.gossip().members().get(m1.id()).status());
+        assertSame(GossipNodeStatus.LEAVING, gos.gossip().members().get(m2.id()).status());
+        assertEquals(1, gos.gossip().seen().size());
+        assertTrue(gos.gossip().seen().contains(m1.id()));
 
-        assertSame(GossipNodeStatus.LEAVING, m1.getStatus());
+        assertSame(GossipNodeStatus.LEAVING, m1.status());
 
         say("Well, ok, now I know that you are leaving too.");
 
         gos = m2.processUpdate(gos).asUpdate();
 
         assertNotNull(gos);
-        assertEquals(m2.getNodeAddress(), gos.getFrom());
-        assertEquals(m1.getNodeAddress(), gos.getTo());
-        assertEquals(2, gos.getGossip().getMembers().size());
-        assertTrue(gos.getGossip().getMembers().containsKey(m1.getId()));
-        assertTrue(gos.getGossip().getMembers().containsKey(m2.getId()));
-        assertSame(GossipNodeStatus.LEAVING, gos.getGossip().getMembers().get(m1.getId()).getStatus());
-        assertSame(GossipNodeStatus.LEAVING, gos.getGossip().getMembers().get(m2.getId()).getStatus());
-        assertEquals(2, gos.getGossip().getSeen().size());
-        assertTrue(gos.getGossip().getSeen().contains(m1.getId()));
-        assertTrue(gos.getGossip().getSeen().contains(m2.getId()));
+        assertEquals(m2.address(), gos.from());
+        assertEquals(m1.address(), gos.to());
+        assertEquals(2, gos.gossip().members().size());
+        assertTrue(gos.gossip().members().containsKey(m1.id()));
+        assertTrue(gos.gossip().members().containsKey(m2.id()));
+        assertSame(GossipNodeStatus.LEAVING, gos.gossip().members().get(m1.id()).status());
+        assertSame(GossipNodeStatus.LEAVING, gos.gossip().members().get(m2.id()).status());
+        assertEquals(2, gos.gossip().seen().size());
+        assertTrue(gos.gossip().seen().contains(m1.id()));
+        assertTrue(gos.gossip().seen().contains(m2.id()));
 
         say("Bye then.");
 
         gos = m1.processUpdate(gos).asUpdate();
 
         assertNotNull(gos);
-        assertEquals(m1.getNodeAddress(), gos.getFrom());
-        assertEquals(m2.getNodeAddress(), gos.getTo());
-        assertEquals(2, gos.getGossip().getMembers().size());
-        assertTrue(gos.getGossip().getMembers().containsKey(m1.getId()));
-        assertTrue(gos.getGossip().getMembers().containsKey(m2.getId()));
-        assertSame(GossipNodeStatus.DOWN, gos.getGossip().getMembers().get(m1.getId()).getStatus());
-        assertSame(GossipNodeStatus.DOWN, gos.getGossip().getMembers().get(m2.getId()).getStatus());
-        assertEquals(1, gos.getGossip().getSeen().size());
-        assertTrue(gos.getGossip().getSeen().contains(m1.getId()));
+        assertEquals(m1.address(), gos.from());
+        assertEquals(m2.address(), gos.to());
+        assertEquals(2, gos.gossip().members().size());
+        assertTrue(gos.gossip().members().containsKey(m1.id()));
+        assertTrue(gos.gossip().members().containsKey(m2.id()));
+        assertSame(GossipNodeStatus.DOWN, gos.gossip().members().get(m1.id()).status());
+        assertSame(GossipNodeStatus.DOWN, gos.gossip().members().get(m2.id()).status());
+        assertEquals(1, gos.gossip().seen().size());
+        assertTrue(gos.gossip().seen().contains(m1.id()));
 
-        assertSame(GossipNodeStatus.DOWN, m1.getStatus());
+        assertSame(GossipNodeStatus.DOWN, m1.status());
 
         gos = m2.processUpdate(gos).asUpdate();
 
         assertNotNull(gos);
-        assertEquals(m2.getNodeAddress(), gos.getFrom());
-        assertEquals(m1.getNodeAddress(), gos.getTo());
-        assertEquals(2, gos.getGossip().getMembers().size());
-        assertTrue(gos.getGossip().getMembers().containsKey(m1.getId()));
-        assertTrue(gos.getGossip().getMembers().containsKey(m2.getId()));
-        assertSame(GossipNodeStatus.DOWN, gos.getGossip().getMembers().get(m1.getId()).getStatus());
-        assertSame(GossipNodeStatus.DOWN, gos.getGossip().getMembers().get(m2.getId()).getStatus());
-        assertEquals(2, gos.getGossip().getSeen().size());
-        assertTrue(gos.getGossip().getSeen().contains(m1.getId()));
-        assertTrue(gos.getGossip().getSeen().contains(m2.getId()));
+        assertEquals(m2.address(), gos.from());
+        assertEquals(m1.address(), gos.to());
+        assertEquals(2, gos.gossip().members().size());
+        assertTrue(gos.gossip().members().containsKey(m1.id()));
+        assertTrue(gos.gossip().members().containsKey(m2.id()));
+        assertSame(GossipNodeStatus.DOWN, gos.gossip().members().get(m1.id()).status());
+        assertSame(GossipNodeStatus.DOWN, gos.gossip().members().get(m2.id()).status());
+        assertEquals(2, gos.gossip().seen().size());
+        assertTrue(gos.gossip().seen().contains(m1.id()));
+        assertTrue(gos.gossip().seen().contains(m2.id()));
 
-        assertSame(GossipNodeStatus.DOWN, m2.getStatus());
+        assertSame(GossipNodeStatus.DOWN, m2.status());
     }
 
     @Test
@@ -686,10 +686,10 @@ public class GossipManagerTest extends HekateTestBase {
         GossipManager m1 = nodes.get(0);
         GossipManager m2 = nodes.get(1);
 
-        assertSame(GossipNodeStatus.UP, m1.getStatus());
-        assertSame(GossipNodeStatus.UP, m2.getStatus());
+        assertSame(GossipNodeStatus.UP, m1.status());
+        assertSame(GossipNodeStatus.UP, m2.status());
 
-        nodeFailures.markFailed(m1.getId(), m2.getId());
+        nodeFailures.markFailed(m1.id(), m2.id());
 
         assertTrue(m1.checkAliveness());
 
@@ -709,14 +709,14 @@ public class GossipManagerTest extends HekateTestBase {
         GossipManager m2 = nodes.get(1);
         GossipManager m3 = nodes.get(2);
 
-        assertSame(GossipNodeStatus.UP, m1.getStatus());
-        assertSame(GossipNodeStatus.UP, m2.getStatus());
-        assertSame(GossipNodeStatus.UP, m3.getStatus());
+        assertSame(GossipNodeStatus.UP, m1.status());
+        assertSame(GossipNodeStatus.UP, m2.status());
+        assertSame(GossipNodeStatus.UP, m3.status());
 
         say("...I'm dying ...alone ...in the darkness!!!");
 
-        nodeFailures.markFailed(m1.getId(), m2.getId());
-        nodeFailures.markFailed(m3.getId(), m2.getId());
+        nodeFailures.markFailed(m1.id(), m2.id());
+        nodeFailures.markFailed(m3.id(), m2.id());
 
         say("Lets see how is he doing...");
 
@@ -727,45 +727,45 @@ public class GossipManagerTest extends HekateTestBase {
         assertFalse(m1.checkAliveness());
         assertFalse(m3.checkAliveness());
 
-        Gossip g1 = m1.getLocalGossip();
+        Gossip g1 = m1.localGossip();
 
-        assertEquals(3, g1.getMembers().size());
-        assertSame(GossipNodeStatus.UP, g1.getMember(m1.getId()).getStatus());
-        assertSame(GossipNodeStatus.DOWN, g1.getMember(m2.getId()).getStatus());
-        assertSame(GossipNodeStatus.UP, g1.getMember(m3.getId()).getStatus());
-        assertEquals(1, g1.getSuspectedView().getSuspected().size());
-        assertTrue(g1.getSuspectedView().getSuspecting(m2.getId()).contains(m1.getId()));
+        assertEquals(3, g1.members().size());
+        assertSame(GossipNodeStatus.UP, g1.member(m1.id()).status());
+        assertSame(GossipNodeStatus.DOWN, g1.member(m2.id()).status());
+        assertSame(GossipNodeStatus.UP, g1.member(m3.id()).status());
+        assertEquals(1, g1.suspectedView().suspected().size());
+        assertTrue(g1.suspectedView().suspecting(m2.id()).contains(m1.id()));
 
-        Gossip g3 = m3.getLocalGossip();
+        Gossip g3 = m3.localGossip();
 
-        assertEquals(3, g3.getMembers().size());
-        assertSame(GossipNodeStatus.UP, g3.getMember(m1.getId()).getStatus());
-        assertSame(GossipNodeStatus.UP, g3.getMember(m2.getId()).getStatus());
-        assertSame(GossipNodeStatus.UP, g3.getMember(m3.getId()).getStatus());
-        assertEquals(1, g3.getSuspectedView().getSuspected().size());
-        assertTrue(g3.getSuspectedView().getSuspecting(m2.getId()).contains(m3.getId()));
+        assertEquals(3, g3.members().size());
+        assertSame(GossipNodeStatus.UP, g3.member(m1.id()).status());
+        assertSame(GossipNodeStatus.UP, g3.member(m2.id()).status());
+        assertSame(GossipNodeStatus.UP, g3.member(m3.id()).status());
+        assertEquals(1, g3.suspectedView().suspected().size());
+        assertTrue(g3.suspectedView().suspecting(m2.id()).contains(m3.id()));
 
         say("OMG! He is dead! ...lets get rid of his body.");
 
         gossipTillSameVersion(m1, m3);
 
-        g1 = m1.getLocalGossip();
+        g1 = m1.localGossip();
 
-        assertEquals(2, g1.getMembers().size());
-        assertSame(GossipNodeStatus.UP, g1.getMember(m1.getId()).getStatus());
-        assertSame(GossipNodeStatus.UP, g1.getMember(m3.getId()).getStatus());
-        assertEquals(1, g1.getSuspectedView().getSuspected().size());
-        assertFalse(g1.getSuspectedView().getSuspecting(m2.getId()).contains(m1.getId()));
-        assertTrue(g1.getSuspectedView().getSuspecting(m2.getId()).contains(m3.getId()));
+        assertEquals(2, g1.members().size());
+        assertSame(GossipNodeStatus.UP, g1.member(m1.id()).status());
+        assertSame(GossipNodeStatus.UP, g1.member(m3.id()).status());
+        assertEquals(1, g1.suspectedView().suspected().size());
+        assertFalse(g1.suspectedView().suspecting(m2.id()).contains(m1.id()));
+        assertTrue(g1.suspectedView().suspecting(m2.id()).contains(m3.id()));
 
-        g3 = m3.getLocalGossip();
+        g3 = m3.localGossip();
 
-        assertEquals(2, g3.getMembers().size());
-        assertSame(GossipNodeStatus.UP, g3.getMember(m1.getId()).getStatus());
-        assertSame(GossipNodeStatus.UP, g3.getMember(m3.getId()).getStatus());
-        assertEquals(1, g3.getSuspectedView().getSuspected().size());
-        assertFalse(g3.getSuspectedView().getSuspecting(m2.getId()).contains(m1.getId()));
-        assertTrue(g3.getSuspectedView().getSuspecting(m2.getId()).contains(m3.getId()));
+        assertEquals(2, g3.members().size());
+        assertSame(GossipNodeStatus.UP, g3.member(m1.id()).status());
+        assertSame(GossipNodeStatus.UP, g3.member(m3.id()).status());
+        assertEquals(1, g3.suspectedView().suspected().size());
+        assertFalse(g3.suspectedView().suspecting(m2.id()).contains(m1.id()));
+        assertTrue(g3.suspectedView().suspecting(m2.id()).contains(m3.id()));
 
         say("Hm, one more thing. We need to remove evidences of his existence.");
 
@@ -778,19 +778,19 @@ public class GossipManagerTest extends HekateTestBase {
 
         gossipTillSameVersion(m1, m3);
 
-        g1 = m1.getLocalGossip();
+        g1 = m1.localGossip();
 
-        assertEquals(2, g1.getMembers().size());
-        assertSame(GossipNodeStatus.UP, g1.getMember(m1.getId()).getStatus());
-        assertSame(GossipNodeStatus.UP, g1.getMember(m3.getId()).getStatus());
-        assertEquals(0, g1.getSuspectedView().getSuspected().size());
+        assertEquals(2, g1.members().size());
+        assertSame(GossipNodeStatus.UP, g1.member(m1.id()).status());
+        assertSame(GossipNodeStatus.UP, g1.member(m3.id()).status());
+        assertEquals(0, g1.suspectedView().suspected().size());
 
-        g3 = m3.getLocalGossip();
+        g3 = m3.localGossip();
 
-        assertEquals(2, g3.getMembers().size());
-        assertSame(GossipNodeStatus.UP, g3.getMember(m1.getId()).getStatus());
-        assertSame(GossipNodeStatus.UP, g3.getMember(m3.getId()).getStatus());
-        assertEquals(0, g3.getSuspectedView().getSuspected().size());
+        assertEquals(2, g3.members().size());
+        assertSame(GossipNodeStatus.UP, g3.member(m1.id()).status());
+        assertSame(GossipNodeStatus.UP, g3.member(m3.id()).status());
+        assertEquals(0, g3.suspectedView().suspected().size());
     }
 
     @Test
@@ -798,51 +798,51 @@ public class GossipManagerTest extends HekateTestBase {
         GossipManager m1 = createManager(1);
         GossipManager m2 = createManager(2);
 
-        assertSame(GossipNodeStatus.DOWN, m1.getStatus());
-        assertSame(GossipNodeStatus.DOWN, m1.getStatus());
+        assertSame(GossipNodeStatus.DOWN, m1.status());
+        assertSame(GossipNodeStatus.DOWN, m1.status());
 
         assertNull(m1.join(Collections.emptyList()));
 
-        assertSame(GossipNodeStatus.UP, m1.getStatus());
+        assertSame(GossipNodeStatus.UP, m1.status());
 
         say("Hey bro! Let me join!");
 
-        JoinRequest join = m2.join(Collections.singletonList(m1.getNodeAddress().getSocket()));
+        JoinRequest join = m2.join(Collections.singletonList(m1.address().socket()));
 
         assertNotNull(join);
-        assertEquals(m2.getNodeAddress(), join.getFrom());
-        assertEquals(m1.getNodeAddress().getSocket(), join.getToAddress());
+        assertEquals(m2.address(), join.from());
+        assertEquals(m1.address().socket(), join.toAddress());
 
         m1.processJoinRequest(join);
 
         say("Whoops! I failed.");
 
-        nodeFailures.markFailed(m1.getId(), m2.getId());
+        nodeFailures.markFailed(m1.id(), m2.id());
 
         Update gos = m1.gossip().asUpdate();
 
         assertNotNull(gos);
-        assertEquals(m1.getNodeAddress(), gos.getFrom());
-        assertEquals(m2.getNodeAddress(), gos.getTo());
-        assertEquals(2, gos.getGossip().getMembers().size());
-        assertTrue(gos.getGossip().getMembers().containsKey(m1.getId()));
-        assertTrue(gos.getGossip().getMembers().containsKey(m2.getId()));
-        assertSame(GossipNodeStatus.UP, gos.getGossip().getMembers().get(m1.getId()).getStatus());
-        assertSame(GossipNodeStatus.JOINING, gos.getGossip().getMembers().get(m2.getId()).getStatus());
-        assertEquals(1, gos.getGossip().getSeen().size());
-        assertTrue(gos.getGossip().getSeen().contains(m1.getId()));
+        assertEquals(m1.address(), gos.from());
+        assertEquals(m2.address(), gos.to());
+        assertEquals(2, gos.gossip().members().size());
+        assertTrue(gos.gossip().members().containsKey(m1.id()));
+        assertTrue(gos.gossip().members().containsKey(m2.id()));
+        assertSame(GossipNodeStatus.UP, gos.gossip().members().get(m1.id()).status());
+        assertSame(GossipNodeStatus.JOINING, gos.gossip().members().get(m2.id()).status());
+        assertEquals(1, gos.gossip().seen().size());
+        assertTrue(gos.gossip().seen().contains(m1.id()));
 
         m1.checkAliveness();
 
         assertNull(m1.gossip());
 
-        Gossip m1Gos = m1.getLocalGossip();
+        Gossip m1Gos = m1.localGossip();
 
-        assertEquals(1, m1Gos.getMembers().size());
-        assertTrue(m1Gos.getMembers().containsKey(m1.getId()));
-        assertSame(GossipNodeStatus.UP, m1Gos.getMembers().get(m1.getId()).getStatus());
-        assertEquals(1, m1Gos.getSeen().size());
-        assertTrue(m1Gos.getSeen().contains(m1.getId()));
+        assertEquals(1, m1Gos.members().size());
+        assertTrue(m1Gos.members().containsKey(m1.id()));
+        assertSame(GossipNodeStatus.UP, m1Gos.members().get(m1.id()).status());
+        assertEquals(1, m1Gos.seen().size());
+        assertTrue(m1Gos.seen().contains(m1.id()));
     }
 
     @Test
@@ -851,9 +851,9 @@ public class GossipManagerTest extends HekateTestBase {
 
         Map<ClusterAddress, GossipManager> nodesById = new HashMap<>();
 
-        nodes.forEach(n -> nodesById.put(n.getNodeAddress(), n));
+        nodes.forEach(n -> nodesById.put(n.address(), n));
 
-        nodes.forEach(n -> assertSame(GossipNodeStatus.UP, n.getStatus()));
+        nodes.forEach(n -> assertSame(GossipNodeStatus.UP, n.status()));
 
         nodes.forEach(n -> {
             UpdateBase msg = n.gossip();
@@ -861,7 +861,7 @@ public class GossipManagerTest extends HekateTestBase {
             // Check that it is a gossip digest.
             assertNull(msg.asUpdate());
 
-            UpdateBase rsp = nodesById.get(msg.getTo()).processUpdate(msg);
+            UpdateBase rsp = nodesById.get(msg.to()).processUpdate(msg);
 
             // Should not reply if has the same gossip version.
             assertNull(rsp);
@@ -875,20 +875,20 @@ public class GossipManagerTest extends HekateTestBase {
         while (true) {
             UpdateBase g1 = m2.gossip();
 
-            if (g1.getTo().equals(m1.getNodeAddress())) {
+            if (g1.to().equals(m1.address())) {
                 // Must be digest.
                 assertNull(g1.asUpdate());
 
                 UpdateBase g2 = m1.processUpdate(g1);
 
                 // m1 has later version -> must reply with gossip update.
-                assertEquals(m2.getNodeAddress(), g2.getTo());
+                assertEquals(m2.address(), g2.to());
                 assertNotNull(g2.asUpdate());
 
                 UpdateBase g3 = m2.processUpdate(g2);
 
                 // Must send a gossip update to update seen list.
-                assertSame(m1.getNodeAddress(), g3.getTo());
+                assertSame(m1.address(), g3.to());
                 assertNotNull(g3.asUpdate());
 
                 UpdateBase g4 = m1.processUpdate(g3);
@@ -916,7 +916,7 @@ public class GossipManagerTest extends HekateTestBase {
 
                 mgr.join(Collections.emptyList());
             } else {
-                JoinRequest join = mgr.join(Collections.singletonList(first.getNodeAddress().getSocket()));
+                JoinRequest join = mgr.join(Collections.singletonList(first.address().socket()));
 
                 JoinAccept reply = first.processJoinRequest(join).asAccept();
 
@@ -928,9 +928,9 @@ public class GossipManagerTest extends HekateTestBase {
 
         gossipTillConvergence(nodes);
 
-        nodes.sort(Comparator.comparing(GossipManager::getNode));
+        nodes.sort(Comparator.comparing(GossipManager::node));
 
-        say("Started: " + nodes.stream().map(GossipManager::getNode).collect(Collectors.toList()));
+        say("Started: " + nodes.stream().map(GossipManager::node).collect(Collectors.toList()));
 
         return nodes;
     }
@@ -944,7 +944,7 @@ public class GossipManagerTest extends HekateTestBase {
     private void gossipTillSameVersion(List<GossipManager> nodes) {
         assertTrue(nodes.size() > 1);
 
-        Map<ClusterUuid, GossipManager> nodesById = nodes.stream().collect(Collectors.toMap(GossipManager::getId, m -> m));
+        Map<ClusterNodeId, GossipManager> nodesById = nodes.stream().collect(Collectors.toMap(GossipManager::id, m -> m));
 
         int i = 0;
 
@@ -960,7 +960,7 @@ public class GossipManagerTest extends HekateTestBase {
 
                 UpdateBase gossip = mgr.gossip();
 
-                GossipManager to = nodesById.get(gossip.getTo().getId());
+                GossipManager to = nodesById.get(gossip.to().id());
 
                 assertNotNull("Unexpected gossip target.", to);
 
@@ -985,7 +985,7 @@ public class GossipManagerTest extends HekateTestBase {
         }
 
         for (GossipManager m : nodes) {
-            if (!m.getLocalGossip().isConvergent()) {
+            if (!m.localGossip().isConvergent()) {
                 return false;
             }
         }
@@ -995,7 +995,7 @@ public class GossipManagerTest extends HekateTestBase {
 
     private void processGossipConversation(GossipManager m1, GossipManager m2, UpdateBase gossip) {
         while (gossip != null) {
-            if (gossip.getTo().equals(m1.getNodeAddress())) {
+            if (gossip.to().equals(m1.address())) {
                 gossip = m1.processUpdate(gossip);
             } else {
                 gossip = m2.processUpdate(gossip);
@@ -1004,10 +1004,10 @@ public class GossipManagerTest extends HekateTestBase {
     }
 
     private boolean isSameGossipVersion(List<GossipManager> managers) {
-        Gossip gossip = managers.get(0).getLocalGossip();
+        Gossip gossip = managers.get(0).localGossip();
 
         for (GossipManager mgr : managers) {
-            if (gossip.compare(mgr.getLocalGossip()) != ComparisonResult.SAME) {
+            if (gossip.compare(mgr.localGossip()) != ComparisonResult.SAME) {
                 return false;
             }
         }
@@ -1022,7 +1022,7 @@ public class GossipManagerTest extends HekateTestBase {
     private GossipManager createManager(int port, String cluster) throws Exception {
         InetSocketAddress socketAddress = newSocketAddress(port);
 
-        ClusterAddress address = new ClusterAddress(socketAddress, new ClusterUuid(0, port));
+        ClusterAddress address = new ClusterAddress(socketAddress, new ClusterNodeId(0, port));
 
         ClusterNode node = new DefaultClusterNodeBuilder()
             .withAddress(address)

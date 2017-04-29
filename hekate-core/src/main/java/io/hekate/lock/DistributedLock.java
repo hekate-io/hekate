@@ -51,9 +51,9 @@ public interface DistributedLock extends Lock {
      *
      * @return Name of this lock.
      *
-     * @see LockRegion#getLock(String)
+     * @see LockRegion#get(String)
      */
-    String getName();
+    String name();
 
     /**
      * Returns the name of the region this lock belongs to.
@@ -62,14 +62,14 @@ public interface DistributedLock extends Lock {
      *
      * @see LockService#region(String)
      */
-    String getRegion();
+    String regionName();
 
     /**
      * Returns the number of holds on this lock by the current thread.
      *
      * @return Number of holds on this lock by the current thread.
      */
-    int getHoldCount();
+    int holdCount();
 
     /**
      * Returns {@code true} if this lock is held by the current thread.
@@ -150,7 +150,7 @@ public interface DistributedLock extends Lock {
      *
      * @throws InterruptedException Signal that current thread was interrupted while awaiting for lock owner information.
      */
-    Optional<LockOwnerInfo> getLockOwner() throws InterruptedException;
+    Optional<LockOwnerInfo> owner() throws InterruptedException;
 
     /**
      * Unsupported operation.

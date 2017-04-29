@@ -33,7 +33,7 @@ class ServiceInitOrder {
         }
     }
 
-    public List<ServiceHandler> getOrder() {
+    public List<ServiceHandler> order() {
         return order;
     }
 }

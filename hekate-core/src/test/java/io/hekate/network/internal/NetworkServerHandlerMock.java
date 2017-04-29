@@ -107,7 +107,7 @@ public class NetworkServerHandlerMock<T> implements NetworkServerHandler<T> {
     public void onMessage(NetworkMessage<T> netMsg, NetworkEndpoint<T> client) throws IOException {
         T msg = netMsg.decode();
 
-        getCtx(client.getRemoteAddress(), true).messages.add(msg);
+        getCtx(client.remoteAddress(), true).messages.add(msg);
 
         if (disconnectOnMessages.contains(msg)) {
             client.disconnect();
@@ -122,7 +122,7 @@ public class NetworkServerHandlerMock<T> implements NetworkServerHandler<T> {
 
     @Override
     public void onConnect(T msg, NetworkEndpoint<T> client) {
-        getCtx(client.getRemoteAddress(), true).connects.add(msg);
+        getCtx(client.remoteAddress(), true).connects.add(msg);
 
         sendOnConnect.forEach(r -> r.apply(client));
     }
@@ -134,11 +134,11 @@ public class NetworkServerHandlerMock<T> implements NetworkServerHandler<T> {
 
     @Override
     public void onDisconnect(NetworkEndpoint<T> client) {
-        getCtx(client.getRemoteAddress(), true).disconnects.incrementAndGet();
+        getCtx(client.remoteAddress(), true).disconnects.incrementAndGet();
     }
 
     public List<T> getConnectPayload(NetworkClient<T> client) {
-        return getConnectPayload(client.getLocalAddress());
+        return getConnectPayload(client.localAddress());
     }
 
     public List<T> getConnectPayload(InetSocketAddress address) {
@@ -146,7 +146,7 @@ public class NetworkServerHandlerMock<T> implements NetworkServerHandler<T> {
     }
 
     public List<T> getMessages(NetworkClient<T> client) {
-        return getMessages(client.getLocalAddress());
+        return getMessages(client.localAddress());
     }
 
     public List<T> getMessages(InetSocketAddress address) {
@@ -154,7 +154,7 @@ public class NetworkServerHandlerMock<T> implements NetworkServerHandler<T> {
     }
 
     public void assertConnects(NetworkClient<T> client, int n) {
-        assertConnects(client.getLocalAddress(), n);
+        assertConnects(client.localAddress(), n);
     }
 
     public void assertConnects(InetSocketAddress address, int n) {
@@ -163,7 +163,7 @@ public class NetworkServerHandlerMock<T> implements NetworkServerHandler<T> {
 
     @SafeVarargs
     public final void assertNotReceived(NetworkClient<T> client, T... messages) {
-        assertNotReceived(client.getLocalAddress(), messages);
+        assertNotReceived(client.localAddress(), messages);
     }
 
     @SafeVarargs
@@ -182,7 +182,7 @@ public class NetworkServerHandlerMock<T> implements NetworkServerHandler<T> {
 
     @SafeVarargs
     public final void awaitForMessages(NetworkClient<T> client, T... messages) throws Exception {
-        awaitForMessages(client.getLocalAddress(), messages);
+        awaitForMessages(client.localAddress(), messages);
     }
 
     @SafeVarargs
@@ -205,7 +205,7 @@ public class NetworkServerHandlerMock<T> implements NetworkServerHandler<T> {
     }
 
     public final void awaitForConnect(NetworkClient<T> client) throws Exception {
-        awaitForConnect(client.getLocalAddress());
+        awaitForConnect(client.localAddress());
     }
 
     public final void awaitForConnect(InetSocketAddress address) throws Exception {

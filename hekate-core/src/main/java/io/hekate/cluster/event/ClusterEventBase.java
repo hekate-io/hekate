@@ -41,7 +41,7 @@ public abstract class ClusterEventBase implements ClusterEvent, Serializable {
     }
 
     @Override
-    public ClusterTopology getTopology() {
+    public ClusterTopology topology() {
         return topology;
     }
 
@@ -62,6 +62,6 @@ public abstract class ClusterEventBase implements ClusterEvent, Serializable {
 
     @Override
     public boolean is(ClusterEventType type) {
-        return getType() == type;
+        return type() == type;
     }
 }

@@ -33,12 +33,12 @@ public interface Metric {
      *
      * @return Name of this metric.
      */
-    String getName();
+    String name();
 
     /**
      * Returns the value of this metric.
      *
      * @return Value of this metric.
      */
-    long getValue();
+    long value();
 }

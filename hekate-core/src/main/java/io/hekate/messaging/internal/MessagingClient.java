@@ -22,7 +22,7 @@ import io.hekate.network.NetworkFuture;
 import java.util.List;
 
 interface MessagingClient<T> {
-    ClusterNode getNode();
+    ClusterNode node();
 
     void send(MessageContext<T> ctx, SendCallback callback);
 

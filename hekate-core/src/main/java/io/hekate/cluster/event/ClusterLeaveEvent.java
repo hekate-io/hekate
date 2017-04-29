@@ -42,8 +42,8 @@ public class ClusterLeaveEvent extends ClusterEventBase {
      * Constructs a new instance.
      *
      * @param topology Topology.
-     * @param added List of newly joined nodes (see {@link #getAdded()}).
-     * @param removed List of nodes that left the cluster (see {@link #getRemoved()}).
+     * @param added List of newly joined nodes (see {@link #added()}).
+     * @param removed List of nodes that left the cluster (see {@link #removed()}).
      */
     public ClusterLeaveEvent(ClusterTopology topology, List<ClusterNode> added, List<ClusterNode> removed) {
         super(topology);
@@ -57,7 +57,7 @@ public class ClusterLeaveEvent extends ClusterEventBase {
      *
      * @return List of new nodes that joined the cluster.
      */
-    public List<ClusterNode> getAdded() {
+    public List<ClusterNode> added() {
         return added;
     }
 
@@ -66,7 +66,7 @@ public class ClusterLeaveEvent extends ClusterEventBase {
      *
      * @return List of nodes that left the cluster.
      */
-    public List<ClusterNode> getRemoved() {
+    public List<ClusterNode> removed() {
         return removed;
     }
 
@@ -76,7 +76,7 @@ public class ClusterLeaveEvent extends ClusterEventBase {
      * @return {@link ClusterEventType#LEAVE}.
      */
     @Override
-    public ClusterEventType getType() {
+    public ClusterEventType type() {
         return ClusterEventType.LEAVE;
     }
 
@@ -93,9 +93,9 @@ public class ClusterLeaveEvent extends ClusterEventBase {
     @Override
     public String toString() {
         return getClass().getSimpleName()
-            + "[added=" + getAdded()
-            + ", removed=" + getRemoved()
-            + ", topology=" + getTopology()
+            + "[added=" + added()
+            + ", removed=" + removed()
+            + ", topology=" + topology()
             + ']';
     }
 }

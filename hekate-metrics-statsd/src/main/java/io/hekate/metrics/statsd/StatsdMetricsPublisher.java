@@ -53,11 +53,11 @@ class StatsdMetricsPublisher {
             this.metrics = metrics;
         }
 
-        public long getTimestamp() {
+        public long timestamp() {
             return timestamp;
         }
 
-        public Metric[] getMetrics() {
+        public Metric[] metrics() {
             return metrics;
         }
     }
@@ -139,8 +139,8 @@ class StatsdMetricsPublisher {
                             break;
                         }
 
-                        long timestamp = entry.getTimestamp();
-                        int size = entry.getMetrics().length;
+                        long timestamp = entry.timestamp();
+                        int size = entry.metrics().length;
 
                         if (DEBUG) {
                             log.debug("Publishing metrics [timestamp={}, metrics-size={}]", timestamp, size);
@@ -155,7 +155,7 @@ class StatsdMetricsPublisher {
                                 udp.connect(statsdAddr);
                             }
 
-                            List<ByteBuffer> packets = encode(prefix, entry.getMetrics());
+                            List<ByteBuffer> packets = encode(prefix, entry.metrics());
 
                             if (packets != null && !packets.isEmpty()) {
                                 doWrite(udp, packets);
@@ -253,7 +253,7 @@ class StatsdMetricsPublisher {
     }
 
     // Package level for testing purposes.
-    int getQueueSize() {
+    int queueSize() {
         return queue.size();
     }
 
@@ -308,15 +308,15 @@ class StatsdMetricsPublisher {
 
             buf.append(prefix);
             buf.append('.');
-            buf.append(toSafeName(metric.getName()));
+            buf.append(toSafeName(metric.name()));
             buf.append(':');
-            buf.append(Long.toString(metric.getValue()));
+            buf.append(Long.toString(metric.value()));
             buf.append("|g");
 
             packetIdx++;
 
             if (packetIdx == batchSize) {
-                packets.add(getBytes(buf));
+                packets.add(toBytes(buf));
 
                 buf.setLength(0);
                 packetIdx = 0;
@@ -324,13 +324,13 @@ class StatsdMetricsPublisher {
         }
 
         if (buf != null && buf.length() > 0) {
-            packets.add(getBytes(buf));
+            packets.add(toBytes(buf));
         }
 
         return packets;
     }
 
-    private ByteBuffer getBytes(StringBuilder buf) {
+    private ByteBuffer toBytes(StringBuilder buf) {
         byte[] bytes = buf.toString().getBytes(Utils.UTF_8);
 
         return ByteBuffer.wrap(bytes);

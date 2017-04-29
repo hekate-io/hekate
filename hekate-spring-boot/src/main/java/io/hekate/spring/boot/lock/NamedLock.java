@@ -33,7 +33,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
  *
  * <p>
  * This bean can be placed on any {@link Autowired autowire}-capable elements (fields, properties, parameters, etc) of application beans in
- * order to inject {@link DistributedLock} by its {@link LockRegionConfig#setName(String) region} and {@link LockRegion#getLock(String)
+ * order to inject {@link DistributedLock} by its {@link LockRegionConfig#setName(String) region} and {@link LockRegion#get(String)
  * lock} names.
  * </p>
  *
@@ -49,7 +49,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
  * </p>
  *
  * @see HekateLockServiceConfigurer
- * @see LockRegion#getLock(String)
+ * @see LockRegion#get(String)
  */
 @Autowired
 @Qualifier
@@ -58,7 +58,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 @Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
 public @interface NamedLock {
     /**
-     * Specifies the name of a {@link DistributedLock} that should be used to get the lock (see {@link LockRegion#getLock(String)}).
+     * Specifies the name of a {@link DistributedLock} that should be used to get the lock (see {@link LockRegion#get(String)}).
      *
      * @return Name of a {@link DistributedLock}.
      */

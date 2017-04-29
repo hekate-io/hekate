@@ -103,7 +103,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
             this.connector = connector;
         }
 
-        public String getProtocol() {
+        public String protocol() {
             return protocol;
         }
 
@@ -111,15 +111,15 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
             return eventLoopGroup != null;
         }
 
-        public EventLoopGroup getEventLoopGroup() {
+        public EventLoopGroup eventLoopGroup() {
             return eventLoopGroup;
         }
 
-        public NettyServerHandlerConfig<T> getServerHandler() {
+        public NettyServerHandlerConfig<T> serverHandler() {
             return serverHandler;
         }
 
-        public NetworkConnector<T> getConnector() {
+        public NetworkConnector<T> connector() {
             return connector;
         }
     }
@@ -283,7 +283,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
             log.debug("Obtaining preferred host address...");
         }
 
-        InetAddress preferredIp = getPreferredIp();
+        InetAddress preferredIp = preferredIp();
 
         if (DEBUG) {
             log.debug("Obtained preferred host address [address={}]", preferredIp);
@@ -329,17 +329,17 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
             connectorConfigs.forEach(protocolCfg -> {
                 ConnectorRegistration<?> reg = createRegistration(protocolCfg);
 
-                connectors.put(reg.getProtocol(), reg);
+                connectors.put(reg.protocol(), reg);
 
-                if (reg.getServerHandler() != null) {
-                    server.addHandler(reg.getServerHandler());
+                if (reg.serverHandler() != null) {
+                    server.addHandler(reg.serverHandler());
                 }
             });
 
             return server.start(bindAddress, new NetworkServerCallback() {
                 @Override
                 public void onStart(NetworkServer server) {
-                    InetSocketAddress realAddress = server.getAddress();
+                    InetSocketAddress realAddress = server.address();
 
                     if (log.isInfoEnabled()) {
                         log.info("Done binding network acceptor [bind-address={}]", realAddress);
@@ -353,18 +353,18 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
 
                 @Override
                 public NetworkServerFailure.Resolution onFailure(NetworkServer server, NetworkServerFailure err) {
-                    Throwable cause = err.getCause();
+                    Throwable cause = err.cause();
 
                     if (cause instanceof IOException) {
                         int initPort = bindAddress.getPort();
 
-                        if (initPort > 0 && portRange > 0 && server.getState() == NetworkServer.State.STARTING) {
-                            int prevPort = err.getLastTriedAddress().getPort();
+                        if (initPort > 0 && portRange > 0 && server.state() == NetworkServer.State.STARTING) {
+                            int prevPort = err.lastTriedAddress().getPort();
 
                             int newPort = prevPort + 1;
 
                             if (newPort < initPort + portRange) {
-                                InetSocketAddress newAddress = new InetSocketAddress(err.getLastTriedAddress().getAddress(), newPort);
+                                InetSocketAddress newAddress = new InetSocketAddress(err.lastTriedAddress().getAddress(), newPort);
 
                                 if (log.isInfoEnabled()) {
                                     log.info("Couldn't bind on port {} ...will try next port [new-address={}]", prevPort, newAddress);
@@ -372,10 +372,10 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
 
                                 return err.retry().withRetryAddress(newAddress);
                             }
-                        } else if (server.getState() == NetworkServer.State.STARTED && acceptorFailoverInterval > 0) {
+                        } else if (server.state() == NetworkServer.State.STARTED && acceptorFailoverInterval > 0) {
                             if (log.isErrorEnabled()) {
                                 log.error("Network server encountered an error ...will try to restart after {} ms [attempt={}, address={}]",
-                                    acceptorFailoverInterval, err.getAttempt(), err.getLastTriedAddress(), cause);
+                                    acceptorFailoverInterval, err.attempt(), err.lastTriedAddress(), cause);
                             }
 
                             return err.retry().withRetryDelay(acceptorFailoverInterval);
@@ -446,7 +446,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
 
                 localGroups = connectors.values().stream()
                     .filter(ConnectorRegistration::hasEventLoopGroup)
-                    .map(ConnectorRegistration::getEventLoopGroup)
+                    .map(ConnectorRegistration::eventLoopGroup)
                     .collect(Collectors.toList());
 
                 connectors.clear();
@@ -496,7 +496,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
             ArgAssert.check(module != null, "Unknown protocol [name=" + protocol + ']');
 
             @SuppressWarnings("unchecked")
-            NetworkConnector<T> connector = (NetworkConnector<T>)module.getConnector();
+            NetworkConnector<T> connector = (NetworkConnector<T>)module.connector();
 
             return connector;
         } finally {
@@ -558,7 +558,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
         postTerminate();
     }
 
-    private InetAddress getPreferredIp() throws HekateException {
+    private InetAddress preferredIp() throws HekateException {
         if (initHost == null || initHost.isEmpty()) {
             return new InetSocketAddress(0).getAddress();
         }
@@ -607,7 +607,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
         CodecFactory<T> codecFactory;
 
         if (cfg.getMessageCodec() == null) {
-            codecFactory = getDefaultCodecFactory();
+            codecFactory = defaultCodecFactory();
         } else {
             codecFactory = cfg.getMessageCodec();
         }
@@ -755,8 +755,8 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
         };
     }
 
-    private <T> CodecFactory<T> getDefaultCodecFactory() {
-        return codecService.getCodecFactory();
+    private <T> CodecFactory<T> defaultCodecFactory() {
+        return codecService.codecFactory();
     }
 
     private EventLoopGroup newEventLoopGroup(int size, String threadNamePrefix) {

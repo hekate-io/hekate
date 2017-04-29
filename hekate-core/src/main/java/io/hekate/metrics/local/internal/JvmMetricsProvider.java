@@ -38,14 +38,14 @@ class JvmMetricsProvider implements MetricsConfigProvider {
         ThreadMXBean threads = ManagementFactory.getThreadMXBean();
 
         return Arrays.asList(
-            probe("jvm.mem.used", () -> getUsedMem() / MB),
-            probe("jvm.mem.free", () -> getFreeMem() / MB),
-            probe("jvm.mem.committed", () -> getCommittedMem() / MB),
-            probe("jvm.mem.max", () -> getMaxMem() / MB),
-            probe("jvm.mem.nonheap.committed", () -> getNonHeapCommittedMem() / MB),
-            probe("jvm.mem.nonheap.used", () -> getNonHeapUsedMem() / MB),
-            probe("jvm.mem.heap.committed", () -> getHeapCommittedMem() / MB),
-            probe("jvm.mem.heap.used", () -> getHeapUsedMem() / MB),
+            probe("jvm.mem.used", () -> usedMem() / MB),
+            probe("jvm.mem.free", () -> freeMem() / MB),
+            probe("jvm.mem.committed", () -> committedMem() / MB),
+            probe("jvm.mem.max", () -> maxMem() / MB),
+            probe("jvm.mem.nonheap.committed", () -> nonHeapCommittedMem() / MB),
+            probe("jvm.mem.nonheap.used", () -> nonHeapUsedMem() / MB),
+            probe("jvm.mem.heap.committed", () -> heapCommittedMem() / MB),
+            probe("jvm.mem.heap.used", () -> heapUsedMem() / MB),
             probe("jvm.threads.live", threads::getThreadCount),
             probe("jvm.threads.daemon", threads::getDaemonThreadCount),
             probe("jvm.cpu.count", () -> Runtime.getRuntime().availableProcessors()),
@@ -61,35 +61,35 @@ class JvmMetricsProvider implements MetricsConfigProvider {
         );
     }
 
-    private long getUsedMem() {
-        return getHeapUsedMem() + getNonHeapUsedMem();
+    private long usedMem() {
+        return heapUsedMem() + nonHeapUsedMem();
     }
 
-    private long getCommittedMem() {
-        return getHeapCommittedMem() + getNonHeapCommittedMem();
+    private long committedMem() {
+        return heapCommittedMem() + nonHeapCommittedMem();
     }
 
-    private long getFreeMem() {
+    private long freeMem() {
         return Runtime.getRuntime().freeMemory();
     }
 
-    private long getMaxMem() {
+    private long maxMem() {
         return Runtime.getRuntime().maxMemory();
     }
 
-    private long getHeapUsedMem() {
+    private long heapUsedMem() {
         return mem.getHeapMemoryUsage().getUsed();
     }
 
-    private long getHeapCommittedMem() {
+    private long heapCommittedMem() {
         return mem.getHeapMemoryUsage().getCommitted();
     }
 
-    private long getNonHeapUsedMem() {
+    private long nonHeapUsedMem() {
         return mem.getNonHeapMemoryUsage().getUsed();
     }
 
-    private long getNonHeapCommittedMem() {
+    private long nonHeapCommittedMem() {
         return mem.getNonHeapMemoryUsage().getCommitted();
     }
 

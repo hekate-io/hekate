@@ -95,12 +95,12 @@ public class HekateNetworkServiceConfigurer {
         }
 
         @Override
-        protected String getInjectedBeanName(NamedNetworkConnector annotation) {
+        protected String injectedBeanName(NamedNetworkConnector annotation) {
             return NetworkConnectorBean.class.getName() + "-" + annotation.value();
         }
 
         @Override
-        protected Object getQualifierValue(NamedNetworkConnector annotation) {
+        protected Object qualifierValue(NamedNetworkConnector annotation) {
             return annotation.value();
         }
 

@@ -35,7 +35,7 @@ public class HekateSpringBootstrapTest extends HekateTestBase {
         for (int i = 0; i < 1; i++) {
             hekate = ctx.getBean("hekate", Hekate.class);
 
-            assertSame(Hekate.State.UP, hekate.getState());
+            assertSame(Hekate.State.UP, hekate.state());
 
             InjectionService injection = hekate.get(InjectionService.class);
 
@@ -43,11 +43,11 @@ public class HekateSpringBootstrapTest extends HekateTestBase {
 
             ctx.refresh();
 
-            assertSame(Hekate.State.DOWN, hekate.getState());
+            assertSame(Hekate.State.DOWN, hekate.state());
         }
 
         ctx.close();
 
-        assertSame(Hekate.State.DOWN, hekate.getState());
+        assertSame(Hekate.State.DOWN, hekate.state());
     }
 }

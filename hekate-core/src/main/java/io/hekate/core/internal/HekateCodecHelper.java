@@ -30,7 +30,7 @@ final class HekateCodecHelper {
         // No-op.
     }
 
-    public static Hekate getThreadLocal() {
+    public static Hekate threadLocal() {
         Hekate hekate = INSTANCE.get();
 
         if (hekate == null) {

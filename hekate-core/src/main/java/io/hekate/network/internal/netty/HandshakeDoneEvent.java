@@ -25,7 +25,7 @@ class HandshakeDoneEvent {
         this.epoch = epoch;
     }
 
-    public int getEpoch() {
+    public int epoch() {
         return epoch;
     }
 

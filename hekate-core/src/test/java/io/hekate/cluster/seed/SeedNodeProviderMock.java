@@ -29,9 +29,9 @@ public class SeedNodeProviderMock implements SeedNodeProvider {
     private volatile SeedNodeProvider delegate;
 
     @Override
-    public List<InetSocketAddress> getSeedNodes(String cluster) throws HekateException {
+    public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
         if (delegate != null) {
-            return delegate.getSeedNodes(cluster);
+            return delegate.findSeedNodes(cluster);
         }
 
         List<InetSocketAddress> clusterNodes = nodes.get(cluster);
@@ -81,21 +81,21 @@ public class SeedNodeProviderMock implements SeedNodeProvider {
     }
 
     @Override
-    public long getCleanupInterval() {
-        return delegate != null ? delegate.getCleanupInterval() : 0;
+    public long cleanupInterval() {
+        return delegate != null ? delegate.cleanupInterval() : 0;
     }
 
     @Override
-    public void registerRemoteAddress(String cluster, InetSocketAddress node) throws HekateException {
+    public void registerRemote(String cluster, InetSocketAddress node) throws HekateException {
         if (delegate != null) {
-            delegate.registerRemoteAddress(cluster, node);
+            delegate.registerRemote(cluster, node);
         }
     }
 
     @Override
-    public void unregisterRemoteAddress(String cluster, InetSocketAddress node) throws HekateException {
+    public void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException {
         if (delegate != null) {
-            delegate.unregisterRemoteAddress(cluster, node);
+            delegate.unregisterRemote(cluster, node);
         }
     }
 

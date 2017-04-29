@@ -61,8 +61,8 @@ class InMemoryMessagingClient<T> implements MessagingClient<T> {
         }
 
         @Override
-        public int getThreadPoolSize() {
-            return delegate.getThreadPoolSize();
+        public int poolSize() {
+            return delegate.poolSize();
         }
     }
 
@@ -77,13 +77,13 @@ class InMemoryMessagingClient<T> implements MessagingClient<T> {
 
         this.node = node;
 
-        AsyncEnforcedExecutor asyncEnforced = new AsyncEnforcedExecutor(gateway.getAsync());
+        AsyncEnforcedExecutor asyncEnforced = new AsyncEnforcedExecutor(gateway.async());
 
         conn = new InMemoryConnection<>(gateway, asyncEnforced);
     }
 
     @Override
-    public ClusterNode getNode() {
+    public ClusterNode node() {
         return node;
     }
 

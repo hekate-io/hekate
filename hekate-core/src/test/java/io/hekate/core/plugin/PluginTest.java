@@ -173,7 +173,7 @@ public class PluginTest extends HekateNodeTestBase {
                 assertEquals(TEST_ERROR_MESSAGE, e.getCause().getMessage());
             }
 
-            assertSame(Hekate.State.DOWN, node.getState());
+            assertSame(Hekate.State.DOWN, node.state());
 
             assertEquals(1, act1.getInstalled());
             assertEquals(i + 1, act1.getStarted());
@@ -208,7 +208,7 @@ public class PluginTest extends HekateNodeTestBase {
             node.join();
             node.leave();
 
-            assertSame(Hekate.State.DOWN, node.getState());
+            assertSame(Hekate.State.DOWN, node.state());
 
             assertEquals(1, act1.getInstalled());
             assertEquals(i + 1, act1.getStarted());
@@ -238,8 +238,8 @@ public class PluginTest extends HekateNodeTestBase {
             }
         }).join();
 
-        assertTrue(node.getLocalNode().hasRole(role));
-        assertEquals(propVal, node.getLocalNode().getProperty(propKey));
+        assertTrue(node.localNode().hasRole(role));
+        assertEquals(propVal, node.localNode().property(propKey));
     }
 
     @Test
@@ -319,7 +319,7 @@ public class PluginTest extends HekateNodeTestBase {
 
         assertTrue(success.get());
 
-        assertSame(Hekate.State.DOWN, node.getState());
+        assertSame(Hekate.State.DOWN, node.state());
     }
 
     @Test
@@ -339,7 +339,7 @@ public class PluginTest extends HekateNodeTestBase {
 
         assertTrue(success.get());
 
-        assertSame(Hekate.State.DOWN, node.getState());
+        assertSame(Hekate.State.DOWN, node.state());
     }
 
     private HekateTestNode createNodeWithPlugin(TestPlugin... plugin) throws Exception {

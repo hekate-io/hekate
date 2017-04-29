@@ -21,10 +21,10 @@ import io.hekate.cluster.ClusterFilter;
 import io.hekate.cluster.ClusterJoinRejectedException;
 import io.hekate.cluster.ClusterJoinValidator;
 import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.ClusterView;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventListener;
@@ -147,9 +147,9 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     private static final boolean DEBUG = log.isDebugEnabled();
 
     private static final ClusterJoinValidator DEFAULT_JOIN_VALIDATOR = (newNode, local) -> {
-        boolean localLoopback = local.getLocalNode().getSocket().getAddress().isLoopbackAddress();
+        boolean localLoopback = local.localNode().socket().getAddress().isLoopbackAddress();
 
-        boolean remoteLoopback = newNode.getSocket().getAddress().isLoopbackAddress();
+        boolean remoteLoopback = newNode.socket().getAddress().isLoopbackAddress();
 
         String rejectReason = null;
 
@@ -183,7 +183,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     private final List<ClusterJoinValidator> joinValidators;
 
     @ToStringIgnore
-    private final Set<ClusterUuid> asyncJoinValidations = Collections.synchronizedSet(new HashSet<>());
+    private final Set<ClusterNodeId> asyncJoinValidations = Collections.synchronizedSet(new HashSet<>());
 
     @ToStringIgnore
     private final GossipListener gossipSpy;
@@ -192,7 +192,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     private final StateGuard guard;
 
     @ToStringIgnore
-    private final AtomicReference<ClusterUuid> localNodeIdRef = new AtomicReference<>();
+    private final AtomicReference<ClusterNodeId> localNodeIdRef = new AtomicReference<>();
 
     @ToStringIgnore
     private final List<ClusterEventListener> initListeners;
@@ -357,24 +357,24 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
             this.ctx = initCtx;
 
-            node = initCtx.getNode();
+            node = initCtx.localNode();
 
-            seedNodeMgr = new SeedNodeManager(initCtx.getClusterName(), seedNodeProvider);
+            seedNodeMgr = new SeedNodeManager(initCtx.clusterName(), seedNodeProvider);
 
-            localNodeIdRef.set(node.getId());
+            localNodeIdRef.set(node.id());
 
             // Prepare workers.
             gossipThread = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("ClusterGossip"));
             serviceThread = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("Cluster"));
 
             // Register listeners from service configuration.
-            initListeners.forEach(listener -> ctx.getCluster().addListener(listener));
+            initListeners.forEach(listener -> ctx.cluster().addListener(listener));
 
             // Register deferred listeners.
-            deferredListeners.forEach(deferred -> ctx.getCluster().addListener(deferred.getListener(), deferred.getEventTypes()));
+            deferredListeners.forEach(deferred -> ctx.cluster().addListener(deferred.getListener(), deferred.getEventTypes()));
 
             // Prepare gossip manager.
-            gossipMgr = new GossipManager(initCtx.getClusterName(), node, failureDetector, speedUpGossipSize, createGossipListener());
+            gossipMgr = new GossipManager(initCtx.clusterName(), node, failureDetector, speedUpGossipSize, createGossipListener());
 
             // Prepare gossip communication manager.
             NetworkConnector<GossipProtocol> connector = net.connector(GossipProtocolCodec.PROTOCOL_ID);
@@ -416,7 +416,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
         try {
             if (guard.isInitialized()) {
-                if (ctx.getState() == Hekate.State.LEAVING) {
+                if (ctx.state() == Hekate.State.LEAVING) {
                     runOnGossipThread(this::doLeave);
                 }
             }
@@ -437,7 +437,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                     waiting.add(seedNodeMgr.stopCleaning());
 
                     if (node != null) {
-                        InetSocketAddress address = node.getSocket();
+                        InetSocketAddress address = node.socket();
 
                         SeedNodeManager localSeedNodeManager = this.seedNodeMgr;
 
@@ -483,10 +483,10 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     }
 
     @Override
-    public ClusterTopology getTopology() {
+    public ClusterTopology topology() {
         InitializationContext localCtx = getRequiredContext();
 
-        return localCtx.getCluster().getTopology();
+        return localCtx.cluster().topology();
     }
 
     @Override
@@ -509,7 +509,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
         try {
             if (guard.isInitialized()) {
-                getRequiredContext().getCluster().addListener(listener);
+                getRequiredContext().cluster().addListener(listener);
             } else {
                 deferredListeners.add(new DeferredListener(listener, eventTypes));
             }
@@ -526,7 +526,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
         try {
             if (guard.isInitialized()) {
-                getRequiredContext().getCluster().removeListener(listener);
+                getRequiredContext().cluster().removeListener(listener);
             } else {
                 deferredListeners.remove(new DeferredListener(listener, null));
             }
@@ -547,13 +547,13 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                 InitializationContext localCtx = getRequiredContext();
 
                 if (future.isDone()) {
-                    localCtx.getCluster().removeListener(this);
-                } else if (predicate.test(event.getTopology())) {
-                    localCtx.getCluster().removeListener(this);
+                    localCtx.cluster().removeListener(this);
+                } else if (predicate.test(event.topology())) {
+                    localCtx.cluster().removeListener(this);
 
-                    future.complete(event.getTopology());
-                } else if (event.getType() == ClusterEventType.LEAVE) {
-                    localCtx.getCluster().removeListener(this);
+                    future.complete(event.topology());
+                } else if (event.type() == ClusterEventType.LEAVE) {
+                    localCtx.cluster().removeListener(this);
 
                     future.cancel(false);
                 }
@@ -564,7 +564,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
         try {
             if (guard.isInitialized()) {
-                getRequiredContext().getCluster().addListenerAsync(listener);
+                getRequiredContext().cluster().addListenerAsync(listener);
             } else {
                 deferredListeners.add(new DeferredListener(listener, null));
             }
@@ -576,7 +576,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     }
 
     @Override
-    public ClusterNode getLocalNode() {
+    public ClusterNode localNode() {
         ClusterNode node = this.node;
 
         if (node == null) {
@@ -619,7 +619,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                 try {
                     // Check that there were no concurrent leave/terminate events.
                     if (guard.isInitialized()) {
-                        address = node.getAddress();
+                        address = node.address();
                         localSeedNodeMgr = seedNodeMgr;
                     } else {
                         return;
@@ -658,7 +658,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
                     // Start seed nodes discovery.
                     try {
-                        localSeedNodeMgr.startDiscovery(address.getSocket());
+                        localSeedNodeMgr.startDiscovery(address.socket());
                     } catch (HekateException e) {
                         boolean initialized = false;
 
@@ -681,7 +681,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
                         if (!initialized) {
                             // Make sure that seed nodes discovery is stopped in case of concurrent service termination.
-                            localSeedNodeMgr.stopDiscovery(address.getSocket());
+                            localSeedNodeMgr.stopDiscovery(address.socket());
                         }
 
                         return;
@@ -708,7 +708,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     }
 
     private void startJoining(ClusterAddress address, SeedNodeManager localSeedNodeMgr, InitializationContext ctx) {
-        ctx.getCluster().onStartJoining().thenAcceptAsync(proceed -> {
+        ctx.cluster().onStartJoining().thenAcceptAsync(proceed -> {
             boolean discard = false;
 
             guard.lockWrite();
@@ -723,7 +723,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                     gossipTask = scheduleOn(gossipThread, this::gossip, gossipInterval);
 
                     // Schedule heartbeat task.
-                    long hbInterval = failureDetector.getHeartbeatInterval();
+                    long hbInterval = failureDetector.heartbeatInterval();
 
                     if (hbInterval > 0) {
                         if (DEBUG) {
@@ -760,7 +760,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                 }
 
                 // Make sure that seed nodes discovery is stopped.
-                localSeedNodeMgr.stopDiscovery(address.getSocket());
+                localSeedNodeMgr.stopDiscovery(address.socket());
 
                 // Make sure that failure detector is terminated.
                 try {
@@ -789,10 +789,10 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                                 JoinRequest msg = gossipMgr.join(nodes);
 
                                 if (msg != null && log.isInfoEnabled()) {
-                                    log.info("Sending cluster join request [seed-node={}].", msg.getToAddress());
+                                    log.info("Sending cluster join request [seed-node={}].", msg.toAddress());
                                 }
 
-                                sendAndClose(msg);
+                                sendAndDisconnect(msg);
                             }
                         } catch (RuntimeException | Error t) {
                             log.error("Got runtime error while joining cluster.", t);
@@ -857,7 +857,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                 Collection<ClusterAddress> targets = failureDetector.heartbeatTick();
 
                 if (targets != null) {
-                    targets.stream().map(to -> new HeartbeatRequest(node.getAddress(), to)).forEach(this::send);
+                    targets.stream().map(to -> new HeartbeatRequest(node.address(), to)).forEach(this::send);
                 }
 
                 // Send gossip messages if new failures were detected.
@@ -880,13 +880,13 @@ public class DefaultClusterService implements ClusterService, DependentService, 
         try {
             if (guard.isInitialized()) {
                 if (metricsCallback != null) {
-                    metricsCallback.onGossipMessage(msg.getType());
+                    metricsCallback.onGossipMessage(msg.type());
                 }
 
                 if (msg instanceof GossipMessage) {
                     GossipMessage gossipMsg = (GossipMessage)msg;
 
-                    if (!node.getAddress().equals(gossipMsg.getTo())) {
+                    if (!node.address().equals(gossipMsg.to())) {
                         if (DEBUG) {
                             log.debug("Ignored message since it is not addressed to the local node [message={}, node={}]", msg, node);
                         }
@@ -895,16 +895,16 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                     }
                 }
 
-                GossipProtocol.Type type = msg.getType();
+                GossipProtocol.Type type = msg.type();
 
                 if (type == GossipProtocol.Type.HEARTBEAT_REQUEST) {
-                    boolean reply = failureDetector.onHeartbeatRequest(msg.getFrom());
+                    boolean reply = failureDetector.onHeartbeatRequest(msg.from());
 
                     if (reply) {
-                        send(new HeartbeatReply(node.getAddress(), msg.getFrom()));
+                        send(new HeartbeatReply(node.address(), msg.from()));
                     }
                 } else if (type == GossipProtocol.Type.HEARTBEAT_REPLY) {
-                    failureDetector.onHeartbeatReply(msg.getFrom());
+                    failureDetector.onHeartbeatReply(msg.from());
                 } else {
                     runOnGossipThread(() -> doProcess(msg));
                 }
@@ -923,7 +923,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
         try {
             if (guard.isInitialized()) {
-                switch (msg.getType()) {
+                switch (msg.type()) {
                     case GOSSIP_UPDATE:
                     case GOSSIP_UPDATE_DIGEST: {
                         UpdateBase update = (UpdateBase)msg;
@@ -965,7 +965,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                         // Try to select another node to join.
                         JoinRequest newRequest = gossipMgr.processJoinReject(reject);
 
-                        sendAndClose(newRequest);
+                        sendAndDisconnect(newRequest);
 
                         break;
                     }
@@ -996,7 +996,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
         try {
             if (guard.isInitialized()) {
-                if (msg.getType() == GossipProtocol.Type.JOIN_REQUEST) {
+                if (msg.type() == GossipProtocol.Type.JOIN_REQUEST) {
                     JoinRequest request = (JoinRequest)msg;
 
                     runOnGossipThread(() -> processJoinSendFailure(request));
@@ -1020,14 +1020,14 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
         try {
             if (guard.isInitialized()) {
-                if (msg.getType() == GossipProtocol.Type.JOIN_REQUEST) {
+                if (msg.type() == GossipProtocol.Type.JOIN_REQUEST) {
                     if (DEBUG) {
                         log.debug("Processing join message send failure notification [message={}]", msg);
                     }
 
                     JoinRequest newReq = gossipMgr.processJoinFailure(msg);
 
-                    sendAndClose(newReq);
+                    sendAndDisconnect(newReq);
                 }
             } else {
                 if (DEBUG) {
@@ -1048,7 +1048,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
             @Override
             public void onJoinReject(ClusterAddress rejectedBy, String reason) {
-                if (ctx.getState() == Hekate.State.JOINING) {
+                if (ctx.state() == Hekate.State.JOINING) {
                     ctx.terminate(new ClusterJoinRejectedException(reason, rejectedBy));
                 }
             }
@@ -1094,12 +1094,12 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                     case UP: {
                         assert order > 0 : "Join order must be above zero [order=" + order + ']';
 
-                        ctx.getCluster().onJoin(order, newTopology).thenAcceptAsync(event -> {
+                        ctx.cluster().onJoin(order, newTopology).thenAcceptAsync(event -> {
                             if (event != null) {
                                 guard.lockRead();
 
                                 try {
-                                    ClusterTopology topology = event.getTopology();
+                                    ClusterTopology topology = event.topology();
 
                                     if (guard.isInitialized()) {
                                         if (metricsCallback != null) {
@@ -1125,7 +1125,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                         break;
                     }
                     case DOWN: {
-                        if (ctx.getState() == Hekate.State.LEAVING) {
+                        if (ctx.state() == Hekate.State.LEAVING) {
                             if (DEBUG) {
                                 log.debug("Stopping periodic gossiping.");
                             }
@@ -1143,7 +1143,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                             Collection<UpdateBase> gossips = gossipMgr.batchGossip(GossipPolicy.ON_DOWN);
 
                             if (gossips.isEmpty()) {
-                                ctx.getCluster().onLeave();
+                                ctx.cluster().onLeave();
                             } else {
                                 // Send final gossip updates and notify context on leave once sending is done.
                                 // ---------------------------------------------------------------------------------------------------------
@@ -1152,9 +1152,9 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                                 //       a write operation (in such case connection gets closed and all unread buffered data is lost too).
                                 AtomicInteger enqueued = new AtomicInteger(gossips.size());
 
-                                gossips.forEach(msg -> sendAndClose(msg, () -> {
+                                gossips.forEach(msg -> sendAndDisconnect(msg, () -> {
                                     if (enqueued.decrementAndGet() == 0) {
-                                        runOnServiceThread(() -> ctx.getCluster().onLeave());
+                                        runOnServiceThread(() -> ctx.cluster().onLeave());
                                     }
                                 }));
                             }
@@ -1174,13 +1174,13 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                     gossipSpy.onTopologyChange(oldTopology, newTopology);
                 }
 
-                ctx.getCluster().onTopologyChange(newTopology).thenAcceptAsync(event -> {
+                ctx.cluster().onTopologyChange(newTopology).thenAcceptAsync(event -> {
                     if (event != null) {
                         guard.lockRead();
 
                         try {
                             if (guard.isInitialized()) {
-                                ClusterTopology topology = event.getTopology();
+                                ClusterTopology topology = event.topology();
 
                                 if (metricsCallback != null) {
                                     metricsCallback.onTopologyChange(topology);
@@ -1192,7 +1192,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                                     seedNodeMgr.stopCleaning();
                                 }
 
-                                if (!event.getRemoved().isEmpty()) {
+                                if (!event.removed().isEmpty()) {
                                     checkSplitBrain(node);
                                 }
                             }
@@ -1207,7 +1207,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
             @Override
             public void onKnownAddressesChange(Set<ClusterAddress> oldAddresses, Set<ClusterAddress> newAddresses) {
-                Set<InetSocketAddress> addresses = newAddresses.stream().map(ClusterAddress::getSocket).collect(toSet());
+                Set<InetSocketAddress> addresses = newAddresses.stream().map(ClusterAddress::socket).collect(toSet());
 
                 knownAddresses = Collections.unmodifiableSet(addresses);
             }
@@ -1251,7 +1251,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                     gossipSpy.onNodeInconsistency(gossipStatus);
                 }
 
-                Hekate.State state = ctx.getState();
+                Hekate.State state = ctx.state();
 
                 switch (state) {
                     case JOINING:
@@ -1287,7 +1287,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     private void validateAndProcessAsync(JoinRequest request) {
         assert request != null : "Request is null";
 
-        ClusterUuid joiningNodeId = request.getFrom().getId();
+        ClusterNodeId joiningNodeId = request.from().id();
 
         // Check that request validation is not running yet for the joining node.
         if (!asyncJoinValidations.contains(joiningNodeId)) {
@@ -1300,7 +1300,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
                 try {
                     if (guard.isInitialized()) {
-                        String rejectReason = validateJoiningNode(request.getFromNode());
+                        String rejectReason = validateJoiningNode(request.fromNode());
 
                         // Run acceptance testing results processing on a gossip thread.
                         runOnGossipThread(() -> {
@@ -1350,7 +1350,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
         String rejectReason = null;
 
         for (ClusterJoinValidator acceptor : joinValidators) {
-            rejectReason = acceptor.acceptJoin(newNode, ctx.getHekate());
+            rejectReason = acceptor.acceptJoin(newNode, ctx.hekate());
 
             if (rejectReason != null) {
                 if (DEBUG) {
@@ -1446,18 +1446,18 @@ public class DefaultClusterService implements ClusterService, DependentService, 
         }
     }
 
-    private void sendAndClose(GossipProtocol msg) {
-        sendAndClose(msg, null);
+    private void sendAndDisconnect(GossipProtocol msg) {
+        sendAndDisconnect(msg, null);
     }
 
-    private void sendAndClose(GossipProtocol msg, Runnable callback) {
+    private void sendAndDisconnect(GossipProtocol msg, Runnable callback) {
         if (msg != null) {
-            commMgr.sendAndClose(msg, callback);
+            commMgr.sendAndDisconnect(msg, callback);
         }
     }
 
     private boolean isCoordinator(ClusterTopology topology) {
-        return topology.getFirst().equals(node);
+        return topology.first().equals(node);
     }
 
     private void runOnGossipThread(Runnable task) {

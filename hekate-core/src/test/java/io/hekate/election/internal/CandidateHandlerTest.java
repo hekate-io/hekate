@@ -153,7 +153,7 @@ public class CandidateHandlerTest extends HekateTestBase {
 
         verify(candidate).becomeLeader(leaderCtx.capture());
 
-        assertEquals(localNode, leaderCtx.getValue().getLocalNode());
+        assertEquals(localNode, leaderCtx.getValue().localNode());
     }
 
     @Test
@@ -164,8 +164,8 @@ public class CandidateHandlerTest extends HekateTestBase {
 
         verify(candidate).becomeFollower(followerCtx.capture());
 
-        assertEquals(localNode, followerCtx.getValue().getLocalNode());
-        assertEquals(lockOwner.getNode(), followerCtx.getValue().getLeader());
+        assertEquals(localNode, followerCtx.getValue().localNode());
+        assertEquals(lockOwner.node(), followerCtx.getValue().leader());
     }
 
     @Test
@@ -178,7 +178,7 @@ public class CandidateHandlerTest extends HekateTestBase {
 
         LeaderChangeListener listener = mock(LeaderChangeListener.class);
 
-        followerCtx.getValue().addLeaderChangeListener(listener);
+        followerCtx.getValue().addListener(listener);
 
         for (int i = 0; i < 3; i++) {
             LockOwnerInfo lockOwner2 = new DefaultLockOwnerInfo(1, newNode());
@@ -192,7 +192,7 @@ public class CandidateHandlerTest extends HekateTestBase {
             reset(listener);
         }
 
-        assertTrue(followerCtx.getValue().removeLeaderChangeListener(listener));
+        assertTrue(followerCtx.getValue().removeListener(listener));
 
         handler.onLockOwnerChange(new DefaultLockOwnerInfo(1, newNode()));
 
@@ -201,7 +201,7 @@ public class CandidateHandlerTest extends HekateTestBase {
 
     @Test
     public void testGetLeaderFutureOfLeader() throws Exception {
-        LeaderFuture future = handler.getLeaderFuture();
+        LeaderFuture future = handler.leaderFuture();
 
         assertFalse(future.isDone());
 
@@ -215,7 +215,7 @@ public class CandidateHandlerTest extends HekateTestBase {
 
     @Test
     public void testGetLeaderFutureOfFollower() throws Exception {
-        LeaderFuture future = handler.getLeaderFuture();
+        LeaderFuture future = handler.leaderFuture();
 
         assertFalse(future.isDone());
 
@@ -224,29 +224,29 @@ public class CandidateHandlerTest extends HekateTestBase {
         handler.onLockBusy(lockOwner);
 
         assertTrue(future.isDone());
-        assertEquals(lockOwner.getNode(), future.get());
+        assertEquals(lockOwner.node(), future.get());
 
-        assertTrue(handler.getLeaderFuture().isDone());
-        assertEquals(lockOwner.getNode(), handler.getLeaderFuture().get());
+        assertTrue(handler.leaderFuture().isDone());
+        assertEquals(lockOwner.node(), handler.leaderFuture().get());
 
         lockOwner = new DefaultLockOwnerInfo(1, newNode());
 
         handler.onLockOwnerChange(lockOwner);
 
-        future = handler.getLeaderFuture();
+        future = handler.leaderFuture();
 
         assertTrue(future.isDone());
-        assertEquals(lockOwner.getNode(), future.get());
+        assertEquals(lockOwner.node(), future.get());
     }
 
     @Test
     public void testGetLeaderFutureOfTerminated() throws Exception {
-        LeaderFuture before = handler.getLeaderFuture();
+        LeaderFuture before = handler.leaderFuture();
 
         handler.terminate();
         handler.shutdown();
 
-        LeaderFuture after = handler.getLeaderFuture();
+        LeaderFuture after = handler.leaderFuture();
 
         assertNotSame(before, after);
 
@@ -268,7 +268,7 @@ public class CandidateHandlerTest extends HekateTestBase {
         verify(candidate).becomeLeader(leaderCtx.capture());
         reset(candidate);
 
-        LeaderFuture futureBefore = handler.getLeaderFuture();
+        LeaderFuture futureBefore = handler.leaderFuture();
 
         assertTrue(futureBefore.isDone());
 
@@ -281,7 +281,7 @@ public class CandidateHandlerTest extends HekateTestBase {
         order.verify(lock).unlock();
         order.verify(lock).lockAsync(worker, handler);
 
-        LeaderFuture futureAfter = handler.getLeaderFuture();
+        LeaderFuture futureAfter = handler.leaderFuture();
 
         assertNotSame(futureBefore, futureAfter);
 

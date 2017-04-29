@@ -102,15 +102,15 @@ public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderCommonTe
             assertTrue("Cause:" + e.getCause(), e.isCausedBy(SQLException.class));
         }
 
-        assertTrue(provider.getSeedNodes(CLUSTER_1).isEmpty());
+        assertTrue(provider.findSeedNodes(CLUSTER_1).isEmpty());
 
         provider.startDiscovery(CLUSTER_1, address);
 
-        assertEquals(address, provider.getSeedNodes(CLUSTER_1).get(0));
+        assertEquals(address, provider.findSeedNodes(CLUSTER_1).get(0));
 
         provider.stopDiscovery(CLUSTER_1, address);
 
-        assertTrue(provider.getSeedNodes(CLUSTER_1).isEmpty());
+        assertTrue(provider.findSeedNodes(CLUSTER_1).isEmpty());
     }
 
     @Test
@@ -123,8 +123,8 @@ public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderCommonTe
 
         provider.startDiscovery(CLUSTER_1, address);
 
-        assertFalse(provider.getSeedNodes(CLUSTER_1).isEmpty());
-        assertEquals(address, provider.getSeedNodes(CLUSTER_1).get(0));
+        assertFalse(provider.findSeedNodes(CLUSTER_1).isEmpty());
+        assertEquals(address, provider.findSeedNodes(CLUSTER_1).get(0));
 
         errDs.scheduleErrors(1);
 
@@ -136,12 +136,12 @@ public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderCommonTe
             assertTrue("Cause:" + e.getCause(), e.isCausedBy(SQLException.class));
         }
 
-        assertFalse(provider.getSeedNodes(CLUSTER_1).isEmpty());
-        assertEquals(address, provider.getSeedNodes(CLUSTER_1).get(0));
+        assertFalse(provider.findSeedNodes(CLUSTER_1).isEmpty());
+        assertEquals(address, provider.findSeedNodes(CLUSTER_1).get(0));
 
         provider.stopDiscovery(CLUSTER_1, address);
 
-        assertTrue(provider.getSeedNodes(CLUSTER_1).isEmpty());
+        assertTrue(provider.findSeedNodes(CLUSTER_1).isEmpty());
     }
 
     @Test
@@ -154,25 +154,25 @@ public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderCommonTe
 
         provider.startDiscovery(CLUSTER_1, address);
 
-        assertFalse(provider.getSeedNodes(CLUSTER_1).isEmpty());
-        assertEquals(address, provider.getSeedNodes(CLUSTER_1).get(0));
+        assertFalse(provider.findSeedNodes(CLUSTER_1).isEmpty());
+        assertEquals(address, provider.findSeedNodes(CLUSTER_1).get(0));
 
         errDs.scheduleErrors(1);
 
         try {
-            provider.getSeedNodes(CLUSTER_1);
+            provider.findSeedNodes(CLUSTER_1);
 
             fail();
         } catch (HekateException e) {
             assertTrue("Cause:" + e.getCause(), e.isCausedBy(SQLException.class));
         }
 
-        assertFalse(provider.getSeedNodes(CLUSTER_1).isEmpty());
-        assertEquals(address, provider.getSeedNodes(CLUSTER_1).get(0));
+        assertFalse(provider.findSeedNodes(CLUSTER_1).isEmpty());
+        assertEquals(address, provider.findSeedNodes(CLUSTER_1).get(0));
 
         provider.stopDiscovery(CLUSTER_1, address);
 
-        assertTrue(provider.getSeedNodes(CLUSTER_1).isEmpty());
+        assertTrue(provider.findSeedNodes(CLUSTER_1).isEmpty());
     }
 
     protected JdbcSeedNodeProviderConfig createConfig() {

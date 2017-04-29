@@ -18,7 +18,7 @@ package io.hekate.cluster.internal.gossip;
 
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
 
@@ -50,31 +50,31 @@ public abstract class GossipProtocol {
             this.to = to;
         }
 
-        public ClusterAddress getTo() {
+        public ClusterAddress to() {
             return to;
         }
 
         @Override
-        public InetSocketAddress getToAddress() {
-            return to.getSocket();
+        public InetSocketAddress toAddress() {
+            return to.socket();
         }
     }
 
     public static class Connect extends GossipMessage {
-        private final ClusterUuid nodeId;
+        private final ClusterNodeId nodeId;
 
-        public Connect(ClusterUuid nodeId) {
+        public Connect(ClusterNodeId nodeId) {
             super(null, null);
 
             this.nodeId = nodeId;
         }
 
-        public ClusterUuid getNodeId() {
+        public ClusterNodeId nodeId() {
             return nodeId;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.CONNECT;
         }
     }
@@ -85,7 +85,7 @@ public abstract class GossipProtocol {
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.HEARTBEAT_REPLY;
         }
     }
@@ -96,7 +96,7 @@ public abstract class GossipProtocol {
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.HEARTBEAT_REQUEST;
         }
     }
@@ -122,7 +122,7 @@ public abstract class GossipProtocol {
             this.gossip = gossip;
         }
 
-        public Gossip getGossip() {
+        public Gossip gossip() {
             return gossip;
         }
 
@@ -143,7 +143,7 @@ public abstract class GossipProtocol {
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.JOIN_ACCEPT;
         }
     }
@@ -184,15 +184,15 @@ public abstract class GossipProtocol {
             return new JoinReject(from, to, rejectedAddress, RejectType.FATAL, reason);
         }
 
-        public RejectType getRejectType() {
+        public RejectType rejectType() {
             return rejectType;
         }
 
-        public String getReason() {
+        public String reason() {
             return reason;
         }
 
-        public InetSocketAddress getRejectedAddress() {
+        public InetSocketAddress rejectedAddress() {
             return rejectedAddress;
         }
 
@@ -213,7 +213,7 @@ public abstract class GossipProtocol {
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.JOIN_REJECT;
         }
     }
@@ -226,28 +226,28 @@ public abstract class GossipProtocol {
         private final String cluster;
 
         public JoinRequest(ClusterNode from, String cluster, InetSocketAddress to) {
-            super(from.getAddress());
+            super(from.address());
 
             this.cluster = cluster;
             this.fromNode = from;
             this.to = to;
         }
 
-        public ClusterNode getFromNode() {
+        public ClusterNode fromNode() {
             return fromNode;
         }
 
-        public String getCluster() {
+        public String cluster() {
             return cluster;
         }
 
         @Override
-        public InetSocketAddress getToAddress() {
+        public InetSocketAddress toAddress() {
             return to;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.JOIN_REQUEST;
         }
     }
@@ -257,7 +257,7 @@ public abstract class GossipProtocol {
             super(from, to);
         }
 
-        public abstract GossipBase getGossipBase();
+        public abstract GossipBase gossipBase();
 
         public abstract Update asUpdate();
     }
@@ -271,12 +271,12 @@ public abstract class GossipProtocol {
             this.gossip = gossip;
         }
 
-        public Gossip getGossip() {
+        public Gossip gossip() {
             return gossip;
         }
 
         @Override
-        public GossipBase getGossipBase() {
+        public GossipBase gossipBase() {
             return gossip;
         }
 
@@ -286,7 +286,7 @@ public abstract class GossipProtocol {
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.GOSSIP_UPDATE;
         }
     }
@@ -300,12 +300,12 @@ public abstract class GossipProtocol {
             this.digest = digest;
         }
 
-        public GossipDigest getDigest() {
+        public GossipDigest digest() {
             return digest;
         }
 
         @Override
-        public GossipBase getGossipBase() {
+        public GossipBase gossipBase() {
             return digest;
         }
 
@@ -315,7 +315,7 @@ public abstract class GossipProtocol {
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.GOSSIP_UPDATE_DIGEST;
         }
     }
@@ -326,11 +326,11 @@ public abstract class GossipProtocol {
         this.from = from;
     }
 
-    public abstract Type getType();
+    public abstract Type type();
 
-    public abstract InetSocketAddress getToAddress();
+    public abstract InetSocketAddress toAddress();
 
-    public ClusterAddress getFrom() {
+    public ClusterAddress from() {
         return from;
     }
 

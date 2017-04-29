@@ -59,15 +59,15 @@ class InfluxDbMetricsPublisher {
             this.future = future;
         }
 
-        public long getTimestamp() {
+        public long timestamp() {
             return timestamp;
         }
 
-        public Collection<Metric> getMetrics() {
+        public Collection<Metric> metrics() {
             return metrics;
         }
 
-        public CompletableFuture<Void> getFuture() {
+        public CompletableFuture<Void> future() {
             return future;
         }
     }
@@ -192,11 +192,11 @@ class InfluxDbMetricsPublisher {
                 } finally {
                     // Try to notify last entry.
                     try {
-                        if (entry != null && entry.getFuture() != null) {
+                        if (entry != null && entry.future() != null) {
                             if (error == null) {
-                                entry.getFuture().cancel(false);
+                                entry.future().cancel(false);
                             } else {
-                                entry.getFuture().completeExceptionally(error);
+                                entry.future().completeExceptionally(error);
                             }
                         }
                     } catch (Throwable t) {
@@ -289,7 +289,7 @@ class InfluxDbMetricsPublisher {
         } finally {
             if (staleEntries != null) {
                 staleEntries.stream()
-                    .map(QueueEntry::getFuture)
+                    .map(QueueEntry::future)
                     .filter(Objects::nonNull)
                     .forEach(future ->
                         future.cancel(false)
@@ -301,7 +301,7 @@ class InfluxDbMetricsPublisher {
     }
 
     // Package level for testing purposes.
-    int getQueueSize() {
+    int queueSize() {
         return queue.size();
     }
 
@@ -317,10 +317,10 @@ class InfluxDbMetricsPublisher {
         assert entry != null : "Metrics queue entry is null.";
 
         if (DEBUG) {
-            log.debug("Publishing metrics [timestamp={}, metrics-size={}]", entry.getTimestamp(), entry.getMetrics().size());
+            log.debug("Publishing metrics [timestamp={}, metrics-size={}]", entry.timestamp(), entry.metrics().size());
         }
 
-        CompletableFuture<Void> future = entry.getFuture();
+        CompletableFuture<Void> future = entry.future();
 
         try {
             BatchPoints points = BatchPoints.database(database)
@@ -328,14 +328,14 @@ class InfluxDbMetricsPublisher {
                 .tag(InfluxDbMetricsPlugin.NODE_ADDRESS_TAG, address)
                 .build();
 
-            entry.getMetrics().stream()
+            entry.metrics().stream()
                 .filter(metric -> filter == null || filter.accept(metric))
                 .forEach(metric -> {
-                    String name = toSafeName(metric.getName());
+                    String name = toSafeName(metric.name());
 
                     Point point = Point.measurement(name)
-                        .time(entry.getTimestamp(), TimeUnit.MILLISECONDS)
-                        .addField(InfluxDbMetricsPlugin.METRIC_VALUE_FIELD, metric.getValue())
+                        .time(entry.timestamp(), TimeUnit.MILLISECONDS)
+                        .addField(InfluxDbMetricsPlugin.METRIC_VALUE_FIELD, metric.value())
                         .build();
 
                     points.point(point);
@@ -350,7 +350,7 @@ class InfluxDbMetricsPublisher {
             }
 
             if (DEBUG) {
-                log.debug("Published metrics [timestamp={}, metrics-size={}]", entry.getTimestamp(), entry.getMetrics().size());
+                log.debug("Published metrics [timestamp={}, metrics-size={}]", entry.timestamp(), entry.metrics().size());
             }
 
             return true;

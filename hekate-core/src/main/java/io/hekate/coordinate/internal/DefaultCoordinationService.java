@@ -167,7 +167,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
             String name = cfg.getName().trim();
 
             if (cfg.getMessageCodec() == null) {
-                processCodecs.put(name, defaultCodec.getCodecFactory());
+                processCodecs.put(name, defaultCodec.codecFactory());
             } else {
                 processCodecs.put(name, cfg.getMessageCodec());
             }
@@ -282,7 +282,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
     @Override
     public CoordinationFuture futureOf(String process) {
-        return process(process).getFuture();
+        return process(process).future();
     }
 
     private void register(CoordinationProcessConfig cfg, MessagingChannel<CoordinationProtocol> channel) {
@@ -316,7 +316,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
         try {
             if (guard.isInitialized()) {
-                process = processes.get(request.getProcessName());
+                process = processes.get(request.processName());
 
                 if (process == null) {
                     throw new IllegalStateException("Received coordination request for unknown process: " + request);
@@ -343,10 +343,10 @@ public class DefaultCoordinationService implements CoordinationService, Configur
         try {
             if (guard.isInitialized()) {
                 processes.values().forEach(process -> {
-                    ClusterTopology topology = event.getTopology().filter(node -> {
-                        ServiceInfo service = node.getService(CoordinationService.class);
+                    ClusterTopology topology = event.topology().filter(node -> {
+                        ServiceInfo service = node.service(CoordinationService.class);
 
-                        return service.getProperty(PROCESSES_PROPERTY).contains(process.getName());
+                        return service.property(PROCESSES_PROPERTY).contains(process.name());
                     });
 
                     process.processTopologyChange(topology);

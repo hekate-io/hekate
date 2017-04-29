@@ -17,9 +17,9 @@
 package io.hekate.cluster.internal;
 
 import io.hekate.cluster.ClusterAddress;
-import io.hekate.cluster.ClusterJvmInfo;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterNodeRuntime;
 import io.hekate.core.ServiceInfo;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.core.service.Service;
@@ -44,14 +44,14 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     private static class HostInfoFormatter implements ToStringFormat.Formatter {
         @Override
         public String format(Object val) {
-            ClusterJvmInfo info = (ClusterJvmInfo)val;
+            ClusterNodeRuntime info = (ClusterNodeRuntime)val;
 
-            return ClusterJvmInfo.class.getSimpleName()
-                + "[cpus=" + info.getCpus()
-                + ", mem=" + Utils.byteSizeFormat(info.getMaxMemory())
-                + ", os=" + info.getOsName()
-                + ", jvm=" + info.getJvmVersion()
-                + ", pid=" + info.getPid()
+            return ClusterNodeRuntime.class.getSimpleName()
+                + "[cpus=" + info.cpus()
+                + ", mem=" + Utils.byteSizeFormat(info.maxMemory())
+                + ", os=" + info.osName()
+                + ", jvm=" + info.jvmVersion()
+                + ", pid=" + info.pid()
                 + "]";
         }
     }
@@ -72,7 +72,7 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     private final Map<String, ServiceInfo> services;
 
     @ToStringFormat(HostInfoFormatter.class)
-    private final ClusterJvmInfo jvmInfo;
+    private final ClusterNodeRuntime jvm;
 
     @ToStringIgnore
     private final boolean local;
@@ -81,12 +81,12 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     private volatile int joinOrder;
 
     public DefaultClusterNode(ClusterAddress address, String name, boolean localNode, int joinOrder, Set<String> roles,
-        Map<String, String> properties, Map<String, ServiceInfo> services, ClusterJvmInfo jvmInfo) {
+        Map<String, String> properties, Map<String, ServiceInfo> services, ClusterNodeRuntime jvm) {
         assert address != null : "Address is null.";
         assert roles != null : "Node roles are null.";
         assert properties != null : "Node properties are null.";
         assert services != null : "Node services are null.";
-        assert jvmInfo != null : "JVM info is null.";
+        assert jvm != null : "JVM info is null.";
 
         this.address = address;
         this.name = name != null ? name : "";
@@ -95,26 +95,26 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
         this.roles = roles;
         this.properties = properties;
         this.services = services;
-        this.jvmInfo = jvmInfo;
+        this.jvm = jvm;
     }
 
     public DefaultClusterNode(ClusterNode src) {
-        this.address = src.getAddress();
-        this.name = src.getName();
+        this.address = src.address();
+        this.name = src.name();
         this.local = src.isLocal();
-        this.properties = src.getProperties();
-        this.roles = src.getRoles();
-        this.services = src.getServices();
-        this.jvmInfo = src.getJvmInfo();
+        this.properties = src.properties();
+        this.roles = src.roles();
+        this.services = src.services();
+        this.jvm = src.runtime();
     }
 
     @Override
-    public ClusterUuid getId() {
-        return address.getId();
+    public ClusterNodeId id() {
+        return address.id();
     }
 
     @Override
-    public String getName() {
+    public String name() {
         return name;
     }
 
@@ -124,7 +124,7 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     }
 
     @Override
-    public int getJoinOrder() {
+    public int joinOrder() {
         return joinOrder;
     }
 
@@ -133,7 +133,7 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     }
 
     @Override
-    public Set<String> getRoles() {
+    public Set<String> roles() {
         return roles;
     }
 
@@ -143,12 +143,12 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     }
 
     @Override
-    public Map<String, String> getProperties() {
+    public Map<String, String> properties() {
         return properties;
     }
 
     @Override
-    public String getProperty(String name) {
+    public String property(String name) {
         return properties.get(name);
     }
 
@@ -168,38 +168,38 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     }
 
     @Override
-    public ServiceInfo getService(String type) {
+    public ServiceInfo service(String type) {
         return services.get(type);
     }
 
     @Override
-    public ServiceInfo getService(Class<? extends Service> type) {
-        return getService(type.getCanonicalName());
+    public ServiceInfo service(Class<? extends Service> type) {
+        return service(type.getCanonicalName());
     }
 
     @Override
-    public Map<String, ServiceInfo> getServices() {
+    public Map<String, ServiceInfo> services() {
         return services;
     }
 
     @Override
-    public ClusterAddress getAddress() {
+    public ClusterAddress address() {
         return address;
     }
 
     @Override
-    public InetSocketAddress getSocket() {
-        return address.getSocket();
+    public InetSocketAddress socket() {
+        return address.socket();
     }
 
     @Override
-    public ClusterJvmInfo getJvmInfo() {
-        return jvmInfo;
+    public ClusterNodeRuntime runtime() {
+        return jvm;
     }
 
     @Override
     public int compareTo(ClusterNode o) {
-        return address.compareTo(o.getAddress());
+        return address.compareTo(o.address());
     }
 
     public String toDetailedString() {
@@ -207,8 +207,8 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     }
 
     @Override
-    public ClusterUuid asClusterUuid() {
-        return getId();
+    public ClusterNodeId asNodeId() {
+        return id();
     }
 
     @Override
@@ -223,7 +223,7 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
 
         ClusterNode that = (ClusterNode)o;
 
-        return address.equals(that.getAddress());
+        return address.equals(that.address());
     }
 
     @Override
@@ -233,7 +233,7 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
 
     @Override
     public String toString() {
-        String name = getName();
+        String name = name();
 
         if (name.isEmpty()) {
             return address.toString();

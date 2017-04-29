@@ -76,7 +76,7 @@ public final class ClusterFilters {
         }
     }
 
-    private static final Comparator<ClusterNode> JOIN_ORDER = Comparator.comparingInt(ClusterNode::getJoinOrder);
+    private static final Comparator<ClusterNode> JOIN_ORDER = Comparator.comparingInt(ClusterNode::joinOrder);
 
     private static final Comparator<ClusterNode> NATURAL_ORDER = ClusterNode::compareTo;
 
@@ -94,7 +94,7 @@ public final class ClusterFilters {
         ClusterNode oldest = null;
 
         for (ClusterNode node : nodes) {
-            if (oldest == null || oldest.getJoinOrder() > node.getJoinOrder()) {
+            if (oldest == null || oldest.joinOrder() > node.joinOrder()) {
                 oldest = node;
             }
         }
@@ -110,7 +110,7 @@ public final class ClusterFilters {
         ClusterNode youngest = null;
 
         for (ClusterNode node : nodes) {
-            if (youngest == null || youngest.getJoinOrder() < node.getJoinOrder()) {
+            if (youngest == null || youngest.joinOrder() < node.joinOrder()) {
                 youngest = node;
             }
         }
@@ -141,7 +141,7 @@ public final class ClusterFilters {
      * Filters nodes using a ring structure based on nodes join order.
      *
      * <p>
-     * This filter organizes all cluster nodes as a ring in their {@link ClusterNode#getJoinOrder()} and selects a node which is next to the
+     * This filter organizes all cluster nodes as a ring in their {@link ClusterNode#joinOrder()} and selects a node which is next to the
      * {@link ClusterNode#isLocal() local node}. If local node is not within the cluster topology then empty set is returned.
      * </p>
      *
@@ -158,7 +158,7 @@ public final class ClusterFilters {
      *
      * @return Filter.
      */
-    public static ClusterFilter forNode(ClusterUuid nodeId) {
+    public static ClusterFilter forNode(ClusterNodeId nodeId) {
         ArgAssert.notNull(nodeId, "Node");
 
         return nodes -> {
@@ -166,7 +166,7 @@ public final class ClusterFilters {
                 return emptyList();
             } else {
                 for (ClusterNode node : nodes) {
-                    if (node.getId().equals(nodeId)) {
+                    if (node.id().equals(nodeId)) {
                         return singletonList(node);
                     }
                 }
@@ -196,7 +196,7 @@ public final class ClusterFilters {
     }
 
     /**
-     * Filters out all nodes but the oldest one (with the smallest {@link ClusterNode#getJoinOrder()}).
+     * Filters out all nodes but the oldest one (with the smallest {@link ClusterNode#joinOrder()}).
      *
      * @return Filter.
      */
@@ -205,7 +205,7 @@ public final class ClusterFilters {
     }
 
     /**
-     * Filters out all nodes but the youngest one (with the largest {@link ClusterNode#getJoinOrder()}).
+     * Filters out all nodes but the youngest one (with the largest {@link ClusterNode#joinOrder()}).
      *
      * @return Filter.
      */
@@ -247,7 +247,7 @@ public final class ClusterFilters {
     }
 
     /**
-     * Filters out all but nodes with the specified {@link ClusterNode#getRoles() role}.
+     * Filters out all but nodes with the specified {@link ClusterNode#roles() role}.
      *
      * @param role Role (see {@link ClusterNode#hasRole(String)}).
      *
@@ -260,7 +260,7 @@ public final class ClusterFilters {
     }
 
     /**
-     * Filters out all but nodes with the specified {@link ClusterNode#getProperties() property}.
+     * Filters out all but nodes with the specified {@link ClusterNode#properties() property}.
      *
      * @param name Property name (see {@link ClusterNode#hasProperty(String)}).
      *
@@ -273,7 +273,7 @@ public final class ClusterFilters {
     }
 
     /**
-     * Filters out all but nodes with the specified {@link ClusterNode#getProperty(String) property} value.
+     * Filters out all but nodes with the specified {@link ClusterNode#property(String) property} value.
      *
      * @param name Property name.
      * @param value Property value.
@@ -284,11 +284,11 @@ public final class ClusterFilters {
         ArgAssert.notNull(name, "Property name");
         ArgAssert.notNull(value, "Property value");
 
-        return forFilter(n -> value.equals(n.getProperty(name)));
+        return forFilter(n -> value.equals(n.property(name)));
     }
 
     /**
-     * Filters out all but nodes with the specified {@link ClusterNode#getServices()} service}.
+     * Filters out all but nodes with the specified {@link ClusterNode#services()} service}.
      *
      * @param type Service type (see {@link ClusterNode#hasService(Class)}).
      *

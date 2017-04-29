@@ -84,7 +84,7 @@ public class AwsCloudSeedNodeProviderTest extends HekateTestBase {
     public void test() throws Exception {
         CloudSeedNodeProvider provider = provider();
 
-        List<InetSocketAddress> nodes = provider.getSeedNodes("");
+        List<InetSocketAddress> nodes = provider.findSeedNodes("");
 
         assertTrue(nodes.size() >= 4);
     }
@@ -99,8 +99,8 @@ public class AwsCloudSeedNodeProviderTest extends HekateTestBase {
             cfg.withTag("HekateTestTag2", "Tag2Test")
         );
 
-        List<InetSocketAddress> nodes1 = tag1.getSeedNodes("");
-        List<InetSocketAddress> node2 = tag2.getSeedNodes("");
+        List<InetSocketAddress> nodes1 = tag1.findSeedNodes("");
+        List<InetSocketAddress> node2 = tag2.findSeedNodes("");
 
         assertEquals(2, nodes1.size());
         assertEquals(2, node2.size());
@@ -114,7 +114,7 @@ public class AwsCloudSeedNodeProviderTest extends HekateTestBase {
             cfg.withTag("HekateTestTag2", "Tag2Test");
         });
 
-        assertTrue(provider.getSeedNodes("").isEmpty());
+        assertTrue(provider.findSeedNodes("").isEmpty());
     }
 
     @Test
@@ -123,7 +123,7 @@ public class AwsCloudSeedNodeProviderTest extends HekateTestBase {
             cfg.setRegions(Collections.singleton(selectUnusedRegion()))
         );
 
-        assertTrue(provider.getSeedNodes("").isEmpty());
+        assertTrue(provider.findSeedNodes("").isEmpty());
     }
 
     @Test
@@ -133,18 +133,18 @@ public class AwsCloudSeedNodeProviderTest extends HekateTestBase {
             cfg.withRegion(REGION);
         });
 
-        assertEquals(4, provider.getSeedNodes("").size());
+        assertEquals(4, provider.findSeedNodes("").size());
     }
 
     @Test
     public void testEmptyMethods() throws Exception {
         CloudSeedNodeProvider provider = provider();
 
-        assertEquals(0, provider.getCleanupInterval());
+        assertEquals(0, provider.cleanupInterval());
 
         provider.suspendDiscovery();
-        provider.registerRemoteAddress(null, null);
-        provider.unregisterRemoteAddress(null, null);
+        provider.registerRemote(null, null);
+        provider.unregisterRemote(null, null);
         provider.stopDiscovery(null, null);
     }
 

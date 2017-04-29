@@ -68,28 +68,28 @@ public class ClusterServiceJavadocTest extends HekateNodeTestBase {
             // End:get_service
 
             // Start:cluster_event_listener
-            cluster.addListener(event -> {
-                switch (event.getType()) {
+            hekate.cluster().addListener(event -> {
+                switch (event.type()) {
                     case JOIN: {
                         ClusterJoinEvent join = event.asJoin();
 
-                        System.out.println("Joined : " + join.getTopology());
+                        System.out.println("Joined : " + join.topology());
 
                         break;
                     }
                     case CHANGE: {
                         ClusterChangeEvent change = event.asChange();
 
-                        System.out.println("Topology change :" + change.getTopology());
-                        System.out.println("      added nodes=" + change.getAdded());
-                        System.out.println("    removed nodes=" + change.getRemoved());
+                        System.out.println("Topology change :" + change.topology());
+                        System.out.println("      added nodes=" + change.added());
+                        System.out.println("    removed nodes=" + change.removed());
 
                         break;
                     }
                     case LEAVE: {
                         ClusterLeaveEvent leave = event.asLeave();
 
-                        System.out.println("Left : " + leave.getTopology());
+                        System.out.println("Left : " + leave.topology());
 
                         break;
                     }
@@ -102,14 +102,14 @@ public class ClusterServiceJavadocTest extends HekateNodeTestBase {
 
             // Start:list_topology
             // Immutable snapshot of the current cluster topology.
-            ClusterTopology topology = cluster.getTopology();
+            ClusterTopology topology = hekate.cluster().topology();
 
-            System.out.println("   Local node: " + topology.getLocalNode());
-            System.out.println("    All nodes: " + topology.getNodes());
-            System.out.println(" Remote nodes: " + topology.getRemoteNodes());
-            System.out.println("   Join order: " + topology.getJoinOrder());
-            System.out.println("  Oldest node: " + topology.getOldest());
-            System.out.println("Youngest node: " + topology.getYoungest());
+            System.out.println("   Local node: " + topology.localNode());
+            System.out.println("    All nodes: " + topology.nodes());
+            System.out.println(" Remote nodes: " + topology.remoteNodes());
+            System.out.println("   Join order: " + topology.joinOrder());
+            System.out.println("  Oldest node: " + topology.oldest());
+            System.out.println("Youngest node: " + topology.youngest());
             // End:list_topology
 
             // Start:filter_topology

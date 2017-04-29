@@ -28,10 +28,10 @@ public interface FailureInfo {
      *
      * @return Failover attempts count.
      */
-    int getAttempt();
+    int attempt();
 
     /**
-     * Returns {@code true} if this is the first attempt ({@link #getAttempt()} == 0).
+     * Returns {@code true} if this is the first attempt ({@link #attempt()} == 0).
      *
      * @return {@code true} if this is the first attempt.
      */
@@ -42,21 +42,21 @@ public interface FailureInfo {
      *
      * @return Cause of this failure.
      */
-    Throwable getError();
+    Throwable error();
 
     /**
      * Returns the last tried node of a failed operation.
      *
      * @return Cluster node.
      */
-    ClusterNode getFailedNode();
+    ClusterNode failedNode();
 
     /**
      * Returns the immutable set of all failed nodes.
      *
      * @return Immutable set of all failed nodes.
      */
-    Set<ClusterNode> getFailedNodes();
+    Set<ClusterNode> allFailedNodes();
 
     /**
      * Returns the routing policy as it was set by {@link FailoverPolicy}.
@@ -65,7 +65,7 @@ public interface FailureInfo {
      *
      * @see FailureResolution#withRoutingPolicy(FailoverRoutingPolicy)
      */
-    FailoverRoutingPolicy getRouting();
+    FailoverRoutingPolicy routing();
 
     /**
      * Returns {@code true} if this failure is caused by an error of the specified type.

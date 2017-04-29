@@ -35,10 +35,10 @@ class LockRegionNodeFilter implements ClusterNodeFilter {
     @Override
     public boolean accept(ClusterNode node) {
         if (DefaultLockService.NODE_FILTER.accept(node)) {
-            ServiceInfo service = node.getService(LockService.class);
+            ServiceInfo service = node.service(LockService.class);
 
             if (service != null) {
-                Set<String> regions = service.getProperty(DefaultLockService.REGIONS_PROPERTY);
+                Set<String> regions = service.property(DefaultLockService.REGIONS_PROPERTY);
 
                 if (regions != null) {
                     return regions.contains(regionName);

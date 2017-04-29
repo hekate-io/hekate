@@ -14,23 +14,22 @@
  * under the License.
  */
 
-package io.hekate.cluster;
+package io.hekate.javadoc;
 
-import io.hekate.util.UuidTestBase;
+import io.hekate.core.Hekate;
+import javax.annotation.PostConstruct;
 
-public class ClusterUuidTest extends UuidTestBase<ClusterUuid> {
-    @Override
-    protected ClusterUuid newUuid() {
-        return new ClusterUuid();
+//Start:example
+public class MyComponent {
+    private final Hekate hekate;
+
+    public MyComponent(Hekate hekate) {
+        this.hekate = hekate;
     }
 
-    @Override
-    protected ClusterUuid newUuid(long hi, long lo) {
-        return new ClusterUuid(hi, lo);
-    }
-
-    @Override
-    protected ClusterUuid newUuid(String s) {
-        return new ClusterUuid(s);
+    @PostConstruct
+    public void doSomething() {
+        System.out.println("Hekate node: " + hekate.localNode());
     }
 }
+//End:example

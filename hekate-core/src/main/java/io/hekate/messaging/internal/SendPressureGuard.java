@@ -127,7 +127,7 @@ class SendPressureGuard {
         }
     }
 
-    public int getQueueSize() {
+    public int queueSize() {
         return queueSize.get();
     }
 

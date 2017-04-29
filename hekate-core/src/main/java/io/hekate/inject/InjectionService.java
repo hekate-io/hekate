@@ -31,12 +31,6 @@ import io.hekate.core.service.Service;
  * dependencies into objects that were received from some external sources (f.e. deserialized from a socket).
  * </p>
  *
- * <h2>Enabling injection</h2>
- * <p>
- * In order to enable injection the {@link HekateInject} annotation must be added to a class who's dependencies should be injected.
- * Classes that do not have this annotation will be ignored by the {@link InjectionService}.
- * </p>
- *
  * <h2>Accessing service</h2>
  * <p>
  * {@link InjectionService} is available only if {@link Hekate} instance was constructed via framework-specific bootstrap class
@@ -46,13 +40,19 @@ import io.hekate.core.service.Service;
  * ${source: inject/InjectionServiceJavadocTest.java#access}
  * </p>
  *
+ * <h2>Enabling injection</h2>
+ * <p>
+ * In order to enable injection the {@link HekateInject} annotation must be added to a class who's dependencies should be injected.
+ * Classes that do not have this annotation will be ignored by the {@link InjectionService}.
+ * </p>
+ *
  * <h2>Injectable components</h2>
  * <p>
  * The following components can can be injected:
  * </p>
  * <ul>
  * <li>{@link Hekate} instance that manages this service.</li>
- * <li>All {@link Hekate#getServiceTypes() services} that are registered within a {@link Hekate} instance</li>
+ * <li>All {@link Hekate#serviceTypes() services} that are registered within a {@link Hekate} instance</li>
  * <li>Any other components that are managed by the underlying IoC framework (f.e. beans from
  * <a href="http://projects.spring.io/spring-framework" target="_blank">Spring Framework</a> application context)</li>
  * </ul>

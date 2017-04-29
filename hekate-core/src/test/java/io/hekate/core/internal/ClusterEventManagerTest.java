@@ -433,13 +433,13 @@ public class ClusterEventManagerTest extends HekateTestBase {
     private ClusterChangeEvent newChangeEvent() throws Exception {
         ClusterTopology topology = newTopology();
 
-        return new ClusterChangeEvent(topology, topology.getNodes(), emptyList());
+        return new ClusterChangeEvent(topology, topology.nodes(), emptyList());
     }
 
     private ClusterLeaveEvent newLeaveEvent() throws Exception {
         ClusterTopology topology = newTopology();
 
-        return new ClusterLeaveEvent(topology, emptyList(), singletonList(topology.getLocalNode()));
+        return new ClusterLeaveEvent(topology, emptyList(), singletonList(topology.localNode()));
     }
 
     private ClusterTopology newTopology() throws Exception {

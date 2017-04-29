@@ -48,7 +48,7 @@ public class RejectedReplyException extends HekateException {
      *
      * @return Rejected reply.
      */
-    public Optional<Object> getReply() {
+    public Optional<Object> reply() {
         return reply;
     }
 

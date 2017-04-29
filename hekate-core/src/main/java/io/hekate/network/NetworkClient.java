@@ -43,7 +43,7 @@ import java.util.Optional;
  *
  * <p>
  * {@link #connect(InetSocketAddress, NetworkClientCallback) connect(...)} method accepts an instance of {@link NetworkClientCallback}
- * interface that can be used to get notified upon {@link #getState()}  connection state} changes and listen for incoming messages from
+ * interface that can be used to get notified upon {@link #state()}  connection state} changes and listen for incoming messages from
  * server.
  * </p>
  *
@@ -198,19 +198,7 @@ public interface NetworkClient<T> extends NetworkEndpoint<T>, Closeable {
      *
      * @return Connection state.
      */
-    State getState();
-
-    // Overridden for better javadoc presentation.
-    @Override
-    NetworkFuture<T> disconnect();
-
-    // Overridden for better javadoc presentation.
-    @Override
-    void send(T msg);
-
-    // Overridden for better javadoc presentation.
-    @Override
-    void send(T msg, NetworkSendCallback<T> callback);
+    State state();
 
     /**
      * Support method for {@link Closeable} interface (equivalent of calling {@link #disconnect()} and {@link NetworkFuture#join()}).

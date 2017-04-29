@@ -16,12 +16,12 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.codec.Codec;
 import io.hekate.codec.CodecUtils;
 import io.hekate.codec.DataReader;
 import io.hekate.codec.DataWriter;
-import io.hekate.messaging.MessagingChanneUuid;
+import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
 import io.hekate.messaging.internal.MessagingProtocol.AffinitySubscribe;
@@ -82,9 +82,9 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
         switch (msgType) {
             case CONNECT: {
-                ClusterUuid to = CodecUtils.readNodeId(in);
+                ClusterNodeId to = CodecUtils.readNodeId(in);
 
-                MessagingChanneUuid sourceId = decodeSourceId(in);
+                MessagingChannelId sourceId = decodeSourceId(in);
 
                 return new Connect(to, sourceId);
             }
@@ -152,7 +152,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
     @Override
     public void encode(MessagingProtocol message, DataWriter out) throws IOException {
-        MessagingProtocol.Type msgType = message.getType();
+        MessagingProtocol.Type msgType = message.type();
 
         out.writeByte(msgType.ordinal());
 
@@ -160,16 +160,16 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case CONNECT: {
                 Connect connect = (Connect)message;
 
-                CodecUtils.writeNodeId(connect.getTo(), out);
+                CodecUtils.writeNodeId(connect.to(), out);
 
-                encodeSourceId(connect.getChannelId(), out);
+                encodeSourceId(connect.channelId(), out);
 
                 break;
             }
             case AFFINITY_NOTIFICATION: {
                 AffinityNotification<T> notification = message.cast();
 
-                out.writeInt(notification.getAffinity());
+                out.writeInt(notification.affinity());
 
                 delegate.encode(notification.get(), out);
 
@@ -185,8 +185,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case AFFINITY_REQUEST: {
                 AffinityRequest<T> request = message.cast();
 
-                out.writeInt(request.getAffinity());
-                out.writeInt(request.getRequestId());
+                out.writeInt(request.affinity());
+                out.writeInt(request.requestId());
 
                 delegate.encode(request.get(), out);
 
@@ -195,7 +195,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case REQUEST: {
                 Request<T> request = message.cast();
 
-                out.writeInt(request.getRequestId());
+                out.writeInt(request.requestId());
 
                 delegate.encode(request.get(), out);
 
@@ -204,8 +204,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case AFFINITY_SUBSCRIBE: {
                 AffinitySubscribe<T> request = message.cast();
 
-                out.writeInt(request.getAffinity());
-                out.writeInt(request.getRequestId());
+                out.writeInt(request.affinity());
+                out.writeInt(request.requestId());
 
                 delegate.encode(request.get(), out);
 
@@ -214,7 +214,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case SUBSCRIBE: {
                 Subscribe<T> request = message.cast();
 
-                out.writeInt(request.getRequestId());
+                out.writeInt(request.requestId());
 
                 delegate.encode(request.get(), out);
 
@@ -223,7 +223,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case RESPONSE_CHUNK: {
                 ResponseChunk<T> response = message.cast();
 
-                out.writeInt(response.getRequestId());
+                out.writeInt(response.requestId());
 
                 delegate.encode(response.get(), out);
 
@@ -232,7 +232,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case FINAL_RESPONSE: {
                 FinalResponse<T> response = message.cast();
 
-                out.writeInt(response.getRequestId());
+                out.writeInt(response.requestId());
 
                 delegate.encode(response.get(), out);
 
@@ -244,15 +244,15 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
         }
     }
 
-    private void encodeSourceId(MessagingChanneUuid sourceId, DataWriter out) throws IOException {
-        out.writeLong(sourceId.getHiBits());
-        out.writeLong(sourceId.getLoBits());
+    private void encodeSourceId(MessagingChannelId sourceId, DataWriter out) throws IOException {
+        out.writeLong(sourceId.hiBits());
+        out.writeLong(sourceId.loBits());
     }
 
-    private MessagingChanneUuid decodeSourceId(DataReader in) throws IOException {
+    private MessagingChannelId decodeSourceId(DataReader in) throws IOException {
         long sourceHiBits = in.readLong();
         long sourceLoBits = in.readLong();
 
-        return new MessagingChanneUuid(sourceHiBits, sourceLoBits);
+        return new MessagingChannelId(sourceHiBits, sourceLoBits);
     }
 }

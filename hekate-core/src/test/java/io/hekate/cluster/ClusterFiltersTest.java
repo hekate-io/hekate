@@ -37,10 +37,10 @@ public class ClusterFiltersTest extends HekateTestBase {
         List<ClusterNode> nodes = asList(newNode(), newNode(), newNode(), newNode());
 
         for (ClusterNode n : nodes) {
-            assertEquals(singletonList(n), ClusterFilters.forNode(n.getId()).apply(nodes));
+            assertEquals(singletonList(n), ClusterFilters.forNode(n.id()).apply(nodes));
         }
 
-        ClusterUuid nonExisting = newNodeId();
+        ClusterNodeId nonExisting = newNodeId();
 
         assertEquals(emptyList(), ClusterFilters.forNode(nonExisting).apply(nodes));
     }

@@ -34,7 +34,7 @@ class DefaultMetricsUpdateEvent implements MetricsUpdateEvent {
     }
 
     @Override
-    public int getTick() {
+    public int tick() {
         return tick;
     }
 

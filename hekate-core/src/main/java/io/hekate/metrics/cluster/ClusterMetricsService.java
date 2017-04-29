@@ -17,7 +17,7 @@
 package io.hekate.metrics.cluster;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.DefaultServiceFactory;
@@ -44,6 +44,12 @@ import java.util.Optional;
  *
  * <p>
  * For more details about metrics and their usage please see the documentation of {@link LocalMetricsService}.
+ * </p>
+ *
+ * <h2>Accessing service</h2>
+ * <p>
+ * Cluster metrics service can be accessed via {@link Hekate#clusterMetrics()} method as in the example below:
+ * ${source: metrics/cluster/ClusterMetricsServiceJavadocTest.java#access}
  * </p>
  *
  * <h2>Service configuration</h2>
@@ -75,12 +81,6 @@ import java.util.Optional;
  *
  * <p>
  * For all available configuration options please see the documentation of {@link ClusterMetricsServiceFactory} class.
- * </p>
- *
- * <h2>Accessing service</h2>
- * <p>
- * Cluster metrics service can be accessed via {@link Hekate#clusterMetrics()} method as in the example below:
- * ${source: metrics/cluster/ClusterMetricsServiceJavadocTest.java#access}
  * </p>
  *
  * <h2>Usage example</h2>
@@ -118,7 +118,7 @@ public interface ClusterMetricsService extends Service {
      *
      * @return Metrics.
      */
-    Optional<ClusterNodeMetrics> of(ClusterUuid nodeId);
+    Optional<ClusterNodeMetrics> of(ClusterNodeId nodeId);
 
     /**
      * Returns the metrics of the specified cluster node.

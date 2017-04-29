@@ -36,7 +36,7 @@ public class StaticSeedNodeProviderTest extends HekateTestBase {
     public void testValidIAddressV4() throws Exception {
         StaticSeedNodeProvider provider = get(ADDRESS_V4 + ":10001");
 
-        List<InetSocketAddress> nodes = provider.getSeedNodes("test");
+        List<InetSocketAddress> nodes = provider.findSeedNodes("test");
 
         assertFalse(nodes.isEmpty());
         assertEquals(new InetSocketAddress(ADDRESS_V4, 10001), nodes.get(0));
@@ -46,7 +46,7 @@ public class StaticSeedNodeProviderTest extends HekateTestBase {
     public void testValidAddressV6() throws Exception {
         StaticSeedNodeProvider provider = get("[" + ADDRESS_V6 + "]:10001");
 
-        List<InetSocketAddress> nodes = provider.getSeedNodes("test");
+        List<InetSocketAddress> nodes = provider.findSeedNodes("test");
 
         assertFalse(nodes.isEmpty());
         assertEquals(new InetSocketAddress(ADDRESS_V6, 10001), nodes.get(0));

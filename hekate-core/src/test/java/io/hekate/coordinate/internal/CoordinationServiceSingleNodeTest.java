@@ -77,7 +77,7 @@ public class CoordinationServiceSingleNodeTest extends HekateNodeTestBase {
         assertTrue(node.coordination().allProcesses().contains(process1));
         assertTrue(node.coordination().allProcesses().contains(process1));
 
-        get(process1.getFuture());
-        get(process2.getFuture());
+        get(process1.future());
+        get(process2.future());
     }
 }

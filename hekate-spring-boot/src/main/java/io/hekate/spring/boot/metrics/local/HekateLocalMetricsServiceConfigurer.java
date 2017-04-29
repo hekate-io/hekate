@@ -88,12 +88,12 @@ public class HekateLocalMetricsServiceConfigurer {
         }
 
         @Override
-        protected String getInjectedBeanName(NamedCounter annotation) {
+        protected String injectedBeanName(NamedCounter annotation) {
             return CounterMetricBean.class.getName() + "-" + annotation.value();
         }
 
         @Override
-        protected Object getQualifierValue(NamedCounter annotation) {
+        protected Object qualifierValue(NamedCounter annotation) {
             return annotation.value();
         }
 
@@ -110,12 +110,12 @@ public class HekateLocalMetricsServiceConfigurer {
         }
 
         @Override
-        protected String getInjectedBeanName(NamedMetric annotation) {
+        protected String injectedBeanName(NamedMetric annotation) {
             return MetricBean.class.getName() + "-" + annotation.value();
         }
 
         @Override
-        protected Object getQualifierValue(NamedMetric annotation) {
+        protected Object qualifierValue(NamedMetric annotation) {
             return annotation.value();
         }
 

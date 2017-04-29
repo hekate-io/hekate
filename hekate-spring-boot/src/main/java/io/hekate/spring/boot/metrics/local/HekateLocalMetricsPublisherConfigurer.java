@@ -58,7 +58,7 @@ public class HekateLocalMetricsPublisherConfigurer {
                 List<org.springframework.boot.actuate.metrics.Metric<?>> publicMetrics = new ArrayList<>(localMetrics.size());
 
                 localMetrics.forEach((name, metric) ->
-                    publicMetrics.add(new org.springframework.boot.actuate.metrics.Metric<Number>(name, metric.getValue()))
+                    publicMetrics.add(new org.springframework.boot.actuate.metrics.Metric<Number>(name, metric.value()))
                 );
 
                 return publicMetrics;

@@ -215,11 +215,11 @@ class NetworkProtocolCodec {
         this.allCodecs = allCodecs;
     }
 
-    public ChannelInboundHandler getDecoder() {
+    public ChannelInboundHandler decoder() {
         return decoder;
     }
 
-    public ChannelOutboundHandler getEncoder() {
+    public ChannelOutboundHandler encoder() {
         return encoder;
     }
 
@@ -261,7 +261,7 @@ class NetworkProtocolCodec {
 
                 NetworkProtocol netMsg = (NetworkProtocol)msg;
 
-                NetworkProtocol.Type type = netMsg.getType();
+                NetworkProtocol.Type type = netMsg.type();
 
                 writer.writeByte(type.ordinal());
 
@@ -269,9 +269,9 @@ class NetworkProtocolCodec {
                     case HANDSHAKE_REQUEST: {
                         HandshakeRequest request = (HandshakeRequest)netMsg;
 
-                        writer.writeUTF(request.getProtocol());
+                        writer.writeUTF(request.protocol());
 
-                        Object payload = request.getPayload();
+                        Object payload = request.payload();
 
                         if (payload == null) {
                             writer.writeBoolean(false);
@@ -286,16 +286,16 @@ class NetworkProtocolCodec {
                     case HANDSHAKE_ACCEPT: {
                         HandshakeAccept accept = (HandshakeAccept)netMsg;
 
-                        writer.writeInt(accept.getHbInterval());
-                        writer.writeInt(accept.getHbLossThreshold());
-                        writer.writeBoolean(accept.isHbDisabled());
+                        writer.writeInt(accept.hbInterval());
+                        writer.writeInt(accept.hbLossThreshold());
+                        writer.writeBoolean(accept.hbDisabled());
 
                         break;
                     }
                     case HANDSHAKE_REJECT: {
                         HandshakeReject reject = (HandshakeReject)netMsg;
 
-                        writer.writeUTF(reject.getReason());
+                        writer.writeUTF(reject.reason());
 
                         break;
                     }

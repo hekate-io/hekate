@@ -20,9 +20,9 @@ import io.hekate.cluster.ClusterFilter;
 import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterUuid;
-import io.hekate.cluster.HasClusterUuid;
+import io.hekate.cluster.HasClusterNodeId;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -52,9 +52,9 @@ import static java.util.Collections.unmodifiableNavigableSet;
 import static java.util.Collections.unmodifiableSet;
 
 public final class DefaultClusterTopology implements ClusterTopology, Serializable {
-    private static final Comparator<ClusterNode> JOIN_ORDER_COMPARATOR = Comparator.comparingInt(ClusterNode::getJoinOrder);
+    private static final Comparator<ClusterNode> JOIN_ORDER_COMPARATOR = Comparator.comparingInt(ClusterNode::joinOrder);
 
-    private static final Comparator<HasClusterUuid> HAS_NODE_ID_COMPARATOR = Comparator.comparing(HasClusterUuid::asClusterUuid);
+    private static final Comparator<HasClusterNodeId> HAS_NODE_ID_COMPARATOR = Comparator.comparing(HasClusterNodeId::asNodeId);
 
     private static final long serialVersionUID = 1;
 
@@ -125,7 +125,7 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
     }
 
     public DefaultClusterTopology updateIfModified(Set<ClusterNode> newNodes) {
-        if (!getNodeSet().equals(newNodes)) {
+        if (!nodeSet().equals(newNodes)) {
             return update(newNodes);
         }
 
@@ -137,12 +137,12 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
     }
 
     @Override
-    public long getVersion() {
+    public long version() {
         return version;
     }
 
     @Override
-    public ClusterHash getHash() {
+    public ClusterHash hash() {
         ClusterHash hash = this.hashCache;
 
         if (hash == null) {
@@ -159,7 +159,7 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
     }
 
     @Override
-    public ClusterNode getLocalNode() {
+    public ClusterNode localNode() {
         ClusterNode localNode = this.localNodeCache;
 
         if (localNode == null) {
@@ -182,22 +182,22 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
     }
 
     @Override
-    public List<ClusterNode> getNodes() {
+    public List<ClusterNode> nodes() {
         return nodes;
     }
 
     @Override
-    public ClusterNode getFirst() {
+    public ClusterNode first() {
         return nodes.isEmpty() ? null : nodes.get(0);
     }
 
     @Override
-    public ClusterNode getLast() {
+    public ClusterNode last() {
         return nodes.isEmpty() ? null : nodes.get(nodes.size() - 1);
     }
 
     @Override
-    public Set<ClusterNode> getNodeSet() {
+    public Set<ClusterNode> nodeSet() {
         Set<ClusterNode> nodeSet = this.nodeSetCache;
 
         if (nodeSet == null) {
@@ -216,7 +216,7 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
     }
 
     @Override
-    public NavigableSet<ClusterNode> getJoinOrder() {
+    public NavigableSet<ClusterNode> joinOrder() {
         NavigableSet<ClusterNode> joinOrder = this.joinOrderCache;
 
         if (joinOrder == null) {
@@ -257,7 +257,7 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
     }
 
     @Override
-    public List<ClusterNode> getRemoteNodes() {
+    public List<ClusterNode> remoteNodes() {
         List<ClusterNode> remoteNodes = this.remoteNodesCache;
 
         if (remoteNodes == null) {
@@ -303,12 +303,12 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
     }
 
     @Override
-    public boolean contains(ClusterUuid id) {
+    public boolean contains(ClusterNodeId id) {
         return Collections.binarySearch(nodes, id, HAS_NODE_ID_COMPARATOR) >= 0;
     }
 
     @Override
-    public ClusterNode get(ClusterUuid id) {
+    public ClusterNode get(ClusterNodeId id) {
         int idx = Collections.binarySearch(nodes, id, HAS_NODE_ID_COMPARATOR);
 
         if (idx < 0) {
@@ -329,7 +329,7 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
     }
 
     @Override
-    public ClusterNode getOldest() {
+    public ClusterNode oldest() {
         ClusterNode oldest = this.oldestNodeCache;
 
         if (oldest == null) {
@@ -341,7 +341,7 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
                 oldest = nodes.get(0);
             } else if (size > 1) {
                 for (ClusterNode node : nodes) {
-                    if (oldest == null || oldest.getJoinOrder() > node.getJoinOrder()) {
+                    if (oldest == null || oldest.joinOrder() > node.joinOrder()) {
                         oldest = node;
                     }
                 }
@@ -354,7 +354,7 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
     }
 
     @Override
-    public ClusterNode getYoungest() {
+    public ClusterNode youngest() {
         ClusterNode youngest = this.youngestNodeCache;
 
         if (youngest == null) {
@@ -366,7 +366,7 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
                 youngest = nodes.get(0);
             } else if (size > 1) {
                 for (ClusterNode node : nodes) {
-                    if (youngest == null || youngest.getJoinOrder() < node.getJoinOrder()) {
+                    if (youngest == null || youngest.joinOrder() < node.joinOrder()) {
                         youngest = node;
                     }
                 }
@@ -379,7 +379,7 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
     }
 
     @Override
-    public ClusterNode getRandom() {
+    public ClusterNode random() {
         if (nodes.isEmpty()) {
             return null;
         } else {
@@ -458,7 +458,7 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
 
         ClusterTopology that = (ClusterTopology)o;
 
-        return nodes.equals(that.getNodes());
+        return nodes.equals(that.nodes());
 
     }
 

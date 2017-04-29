@@ -76,15 +76,15 @@ class NettyClient<T> implements NetworkClient<T> {
             this.codec = codec;
         }
 
-        public Channel getChannel() {
+        public Channel channel() {
             return channel;
         }
 
-        public Codec<Object> getCodec() {
+        public Codec<Object> codec() {
             return codec;
         }
 
-        public GenericFutureListener<ChannelFuture> getWriteListener() {
+        public GenericFutureListener<ChannelFuture> writeListener() {
             return writeListener;
         }
     }
@@ -169,7 +169,7 @@ class NettyClient<T> implements NetworkClient<T> {
 
                 // Try to update state and decide on whether the user callback should be notified.
                 boolean notify = withLock(() -> {
-                    if (handshake.getEpoch() == client.epoch && state == CONNECTING) {
+                    if (handshake.epoch() == client.epoch && state == CONNECTING) {
                         if (debug) {
                             log.debug("Updated connection state [from={}, to={}, channel={}]", state, CONNECTED, id);
                         }
@@ -383,17 +383,17 @@ class NettyClient<T> implements NetworkClient<T> {
     }
 
     @Override
-    public String getProtocol() {
+    public String protocol() {
         return protocol;
     }
 
     @Override
-    public InetSocketAddress getRemoteAddress() {
+    public InetSocketAddress remoteAddress() {
         return address;
     }
 
     @Override
-    public InetSocketAddress getLocalAddress() {
+    public InetSocketAddress localAddress() {
         return localAddress;
     }
 
@@ -429,7 +429,7 @@ class NettyClient<T> implements NetworkClient<T> {
     }
 
     @Override
-    public State getState() {
+    public State state() {
         lock.lock();
 
         try {
@@ -468,7 +468,7 @@ class NettyClient<T> implements NetworkClient<T> {
     public boolean isReceiving() {
         ChannelContext localCtx = this.channelCtx;
 
-        return localCtx != null && localCtx.getChannel().config().isAutoRead();
+        return localCtx != null && localCtx.channel().config().isAutoRead();
     }
 
     @Override
@@ -489,7 +489,7 @@ class NettyClient<T> implements NetworkClient<T> {
                     log.trace("Invoking close [channel={}", id());
                 }
 
-                channelCtx.getChannel().close();
+                channelCtx.channel().close();
 
                 channelCtx = null;
 
@@ -521,7 +521,7 @@ class NettyClient<T> implements NetworkClient<T> {
                 }
             }
 
-            Channel channel = localCtx.getChannel();
+            Channel channel = localCtx.channel();
             EventLoop eventLoop = channel.eventLoop();
 
             if (eventLoop.inEventLoop()) {
@@ -670,8 +670,8 @@ class NettyClient<T> implements NetworkClient<T> {
                     }
 
                     pipeline.addLast(NetworkVersionEncoder.INSTANCE);
-                    pipeline.addLast(DECODER_HANDLER_ID, netCodec.getDecoder());
-                    pipeline.addLast(ENCODER_HANDLER_ID, netCodec.getEncoder());
+                    pipeline.addLast(DECODER_HANDLER_ID, netCodec.decoder());
+                    pipeline.addLast(ENCODER_HANDLER_ID, netCodec.encoder());
 
                     pipeline.addLast(msgHandler);
                     pipeline.addLast(NettyClientDeferHandler.class.getName(), deferHandler);
@@ -751,8 +751,8 @@ class NettyClient<T> implements NetworkClient<T> {
             log.debug("Sending message [channel={}, message={}]", id(), msg);
         }
 
-        Channel channel = ctx.getChannel();
-        Codec<Object> codec = ctx.getCodec();
+        Channel channel = ctx.channel();
+        Codec<Object> codec = ctx.codec();
 
         // Update metrics.
         if (metrics != null) {
@@ -794,7 +794,7 @@ class NettyClient<T> implements NetworkClient<T> {
             }
 
             // Notify common listener.
-            ctx.getWriteListener().operationComplete(result);
+            ctx.writeListener().operationComplete(result);
 
             // Notify user callback.
             if (onSend != null) {

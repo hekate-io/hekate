@@ -40,10 +40,10 @@ public class DefaultFailureDetectorTest extends HekateTestBase {
 
     @Before
     public void setUp() throws Exception {
-        n1 = newNode(1).getAddress();
-        n2 = newNode(2).getAddress();
-        n3 = newNode(3).getAddress();
-        n4 = newNode(4).getAddress();
+        n1 = newNode(1).address();
+        n2 = newNode(2).address();
+        n3 = newNode(3).address();
+        n4 = newNode(4).address();
 
         DefaultFailureDetectorConfig cfg = new DefaultFailureDetectorConfig();
 
@@ -65,7 +65,7 @@ public class DefaultFailureDetectorTest extends HekateTestBase {
         assertTrue(mgr.isAlive(n2));
         assertTrue(mgr.isAlive(n3));
         assertTrue(mgr.isAlive(n4));
-        assertTrue(mgr.isAlive(newNode(100).getAddress()));
+        assertTrue(mgr.isAlive(newNode(100).address()));
 
         heartbeats.forEach(mgr::onHeartbeatReply);
 
@@ -75,7 +75,7 @@ public class DefaultFailureDetectorTest extends HekateTestBase {
         assertTrue(mgr.isAlive(n2));
         assertTrue(mgr.isAlive(n3));
         assertTrue(mgr.isAlive(n4));
-        assertTrue(mgr.isAlive(newNode(100).getAddress()));
+        assertTrue(mgr.isAlive(newNode(100).address()));
     }
 
     @Test
@@ -92,7 +92,7 @@ public class DefaultFailureDetectorTest extends HekateTestBase {
         assertTrue(mgr.isAlive(n2));
         assertTrue(mgr.isAlive(n3));
         assertTrue(mgr.isAlive(n4));
-        assertTrue(mgr.isAlive(newNode(100).getAddress()));
+        assertTrue(mgr.isAlive(newNode(100).address()));
 
         mgr.heartbeatTick();
 
@@ -100,7 +100,7 @@ public class DefaultFailureDetectorTest extends HekateTestBase {
         assertFalse(mgr.isAlive(n2));
         assertTrue(mgr.isAlive(n3));
         assertTrue(mgr.isAlive(n4));
-        assertTrue(mgr.isAlive(newNode(100).getAddress()));
+        assertTrue(mgr.isAlive(newNode(100).address()));
 
         mgr.heartbeatTick();
 
@@ -108,7 +108,7 @@ public class DefaultFailureDetectorTest extends HekateTestBase {
         assertFalse(mgr.isAlive(n2));
         assertFalse(mgr.isAlive(n3));
         assertTrue(mgr.isAlive(n4));
-        assertTrue(mgr.isAlive(newNode(100).getAddress()));
+        assertTrue(mgr.isAlive(newNode(100).address()));
     }
 
     @Test
@@ -125,7 +125,7 @@ public class DefaultFailureDetectorTest extends HekateTestBase {
         assertTrue(mgr.isAlive(n2));
         assertTrue(mgr.isAlive(n3));
         assertTrue(mgr.isAlive(n4));
-        assertTrue(mgr.isAlive(newNode(100).getAddress()));
+        assertTrue(mgr.isAlive(newNode(100).address()));
 
         mgr.heartbeatTick();
 
@@ -133,7 +133,7 @@ public class DefaultFailureDetectorTest extends HekateTestBase {
         assertFalse(mgr.isAlive(n2));
         assertTrue(mgr.isAlive(n3));
         assertTrue(mgr.isAlive(n4));
-        assertTrue(mgr.isAlive(newNode(100).getAddress()));
+        assertTrue(mgr.isAlive(newNode(100).address()));
 
         mgr.onHeartbeatReply(n2);
 
@@ -141,7 +141,7 @@ public class DefaultFailureDetectorTest extends HekateTestBase {
         assertTrue(mgr.isAlive(n2));
         assertTrue(mgr.isAlive(n3));
         assertTrue(mgr.isAlive(n4));
-        assertTrue(mgr.isAlive(newNode(100).getAddress()));
+        assertTrue(mgr.isAlive(newNode(100).address()));
     }
 
     @Test
@@ -152,7 +152,7 @@ public class DefaultFailureDetectorTest extends HekateTestBase {
         assertTrue(mgr.isMonitored(n3));
 
         assertFalse(mgr.isMonitored(n4));
-        assertFalse(mgr.isMonitored(newNode(100).getAddress()));
+        assertFalse(mgr.isMonitored(newNode(100).address()));
     }
 
     @Test
@@ -163,7 +163,7 @@ public class DefaultFailureDetectorTest extends HekateTestBase {
         assertFalse(mgr.isMonitored(n2));
         assertTrue(mgr.isMonitored(n3));
         assertTrue(mgr.isMonitored(n4));
-        assertFalse(mgr.isMonitored(newNode(100).getAddress()));
+        assertFalse(mgr.isMonitored(newNode(100).address()));
 
         assertTrue(mgr.isAlive(n1));
         assertTrue(mgr.isAlive(n2));
@@ -176,7 +176,7 @@ public class DefaultFailureDetectorTest extends HekateTestBase {
         assertTrue(mgr.isMonitored(n2));
         assertTrue(mgr.isMonitored(n3));
         assertFalse(mgr.isMonitored(n4));
-        assertFalse(mgr.isMonitored(newNode(100).getAddress()));
+        assertFalse(mgr.isMonitored(newNode(100).address()));
 
         assertTrue(mgr.isAlive(n1));
         assertTrue(mgr.isAlive(n2));
@@ -201,7 +201,7 @@ public class DefaultFailureDetectorTest extends HekateTestBase {
         assertFalse(mgr.isMonitored(n2));
         assertTrue(mgr.isMonitored(n3));
         assertTrue(mgr.isMonitored(n4));
-        assertFalse(mgr.isMonitored(newNode(100).getAddress()));
+        assertFalse(mgr.isMonitored(newNode(100).address()));
     }
 
     @Test
@@ -246,8 +246,8 @@ public class DefaultFailureDetectorTest extends HekateTestBase {
         assertTrue(mgr.isMonitored(n2));
         assertTrue(mgr.isMonitored(n3));
 
-        ClusterAddress before1 = newNode(-2).getAddress();
-        ClusterAddress before2 = newNode(-1).getAddress();
+        ClusterAddress before1 = newNode(-2).address();
+        ClusterAddress before2 = newNode(-1).address();
 
         mgr.update(toSet(n1, before1, before2));
 

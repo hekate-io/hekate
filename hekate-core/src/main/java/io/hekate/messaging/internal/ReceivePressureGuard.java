@@ -77,11 +77,11 @@ class ReceivePressureGuard {
         }
     }
 
-    public int getQueueSize() {
+    public int queueSize() {
         return queueSize.get();
     }
 
-    public int getPausedSize() {
+    public int pausedSize() {
         synchronized (mux) {
             return paused.size();
         }

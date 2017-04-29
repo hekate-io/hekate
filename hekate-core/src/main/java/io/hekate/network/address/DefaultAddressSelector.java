@@ -135,12 +135,12 @@ public class DefaultAddressSelector implements AddressSelector {
                 log.debug("Trying to resolve address [{}]", ToString.formatProperties(this));
             }
 
-            Pattern niIncludes = getRegex(interfaceMatch);
-            Pattern niExcludes = getRegex(interfaceNotMatch);
-            Pattern addrIncludes = getRegex(ipMatch);
-            Pattern addrExcludes = getRegex(ipNotMatch);
+            Pattern niIncludes = regex(interfaceMatch);
+            Pattern niExcludes = regex(interfaceNotMatch);
+            Pattern addrIncludes = regex(ipMatch);
+            Pattern addrExcludes = regex(ipNotMatch);
 
-            List<NetworkInterface> nis = getNetworkInterfaces();
+            List<NetworkInterface> nis = networkInterfaces();
 
             for (NetworkInterface ni : nis) {
                 if (!ni.isUp()) {
@@ -185,7 +185,7 @@ public class DefaultAddressSelector implements AddressSelector {
      *
      * @return IP protocol version.
      */
-    public IpVersion getIpVersion() {
+    public IpVersion ipVersion() {
         return ipVersion;
     }
 
@@ -194,7 +194,7 @@ public class DefaultAddressSelector implements AddressSelector {
      *
      * @return {@code true} if the loopback address must be excluded.
      */
-    public boolean isExcludeLoopback() {
+    public boolean excludeLoopback() {
         return excludeLoopback;
     }
 
@@ -203,7 +203,7 @@ public class DefaultAddressSelector implements AddressSelector {
      *
      * @return Regular expression.
      */
-    public String getInterfaceNotMatch() {
+    public String interfaceNotMatch() {
         return interfaceNotMatch;
     }
 
@@ -212,7 +212,7 @@ public class DefaultAddressSelector implements AddressSelector {
      *
      * @return Regular expression.
      */
-    public String getInterfaceMatch() {
+    public String interfaceMatch() {
         return interfaceMatch;
     }
 
@@ -221,7 +221,7 @@ public class DefaultAddressSelector implements AddressSelector {
      *
      * @return Regular expression.
      */
-    public String getIpNotMatch() {
+    public String ipNotMatch() {
         return ipNotMatch;
     }
 
@@ -230,12 +230,12 @@ public class DefaultAddressSelector implements AddressSelector {
      *
      * @return Regular expression.
      */
-    public String getIpMatch() {
+    public String ipMatch() {
         return ipMatch;
     }
 
     // Package level for testing purposes.
-    List<NetworkInterface> getNetworkInterfaces() throws SocketException {
+    List<NetworkInterface> networkInterfaces() throws SocketException {
         return Collections.list(NetworkInterface.getNetworkInterfaces());
     }
 
@@ -288,7 +288,7 @@ public class DefaultAddressSelector implements AddressSelector {
         return pattern == null || pattern.matcher(str).matches() == shouldMatch;
     }
 
-    private Pattern getRegex(String pattern) {
+    private Pattern regex(String pattern) {
         if (pattern != null && !pattern.trim().isEmpty()) {
             return Pattern.compile(pattern.trim());
         }

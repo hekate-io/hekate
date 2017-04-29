@@ -42,6 +42,12 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
  * {@link ClusterMetricsService}. Please see its documentation for more details.
  * </p>
  *
+ * <h2>Accessing service</h2>
+ * <p>
+ * Metrics service can be accessed via {@link Hekate#localMetrics()} method as in the example below:
+ * ${source: metrics/local/LocalMetricsServiceJavadocTest.java#access}
+ * </p>
+ *
  * <h2>Service configuration</h2>
  * <p>
  * Metrics service can be configured and registered in {@link HekateBootstrap} with the help of {@link LocalMetricsServiceFactory} as shown
@@ -73,12 +79,6 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
  * For all available configuration options please see the documentation of {@link LocalMetricsServiceFactory} class.
  * </p>
  *
- * <h2>Accessing service</h2>
- * <p>
- * Metrics service can be accessed via {@link Hekate#localMetrics()} method as in the example below:
- * ${source: metrics/local/LocalMetricsServiceJavadocTest.java#access}
- * </p>
- *
  * <h2>Counters</h2>
  * <p>
  * Counters are typically used to track custom application statistics like the amount of processed transactions, active connections or
@@ -103,8 +103,12 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
  * </p>
  *
  * <p>
- * The code example below illustrates the basic usage of counters for tracking tasks execution metrics in some imaginary service:
+ * The code example below illustrates the basic usage of counter for tracking tasks execution metrics in some imaginary service:
  * ${source: metrics/local/LocalMetricsServiceJavadocTest.java#counter_example}
+ * </p>
+ * <p>
+ * ... and access those values in some other components of the program:
+ * ${source: metrics/local/LocalMetricsServiceJavadocTest.java#counter_example_usage}
  * </p>
  *
  * <h2>Probes</h2>

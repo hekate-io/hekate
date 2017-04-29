@@ -37,19 +37,19 @@ public class DefaultFailoverContextTest extends HekateTestBase {
         DefaultFailoverContext ctx = new DefaultFailoverContext(3, new IOException(), failedNode, singleton(failedNode),
             FailoverRoutingPolicy.RETRY_SAME_NODE);
 
-        assertEquals(3, ctx.getAttempt());
+        assertEquals(3, ctx.attempt());
         assertFalse(ctx.isFirstAttempt());
         assertTrue(ctx.isCausedBy(IOException.class));
-        assertTrue(ctx.getError() instanceof IOException);
-        assertEquals(failedNode, ctx.getFailedNode());
-        assertEquals(1, ctx.getFailedNodes().size());
-        assertTrue(ctx.getFailedNodes().contains(failedNode));
-        assertSame(FailoverRoutingPolicy.RETRY_SAME_NODE, ctx.getRouting());
+        assertTrue(ctx.error() instanceof IOException);
+        assertEquals(failedNode, ctx.failedNode());
+        assertEquals(1, ctx.allFailedNodes().size());
+        assertTrue(ctx.allFailedNodes().contains(failedNode));
+        assertSame(FailoverRoutingPolicy.RETRY_SAME_NODE, ctx.routing());
         assertTrue(ctx.toString(), ctx.toString().startsWith(FailoverContext.class.getSimpleName()));
 
         assertTrue(ctx.retry().isRetry());
         assertFalse(ctx.fail().isRetry());
 
-        assertSame(FailoverRoutingPolicy.RE_ROUTE, ctx.withRouting(FailoverRoutingPolicy.RE_ROUTE).getRouting());
+        assertSame(FailoverRoutingPolicy.RE_ROUTE, ctx.withRouting(FailoverRoutingPolicy.RE_ROUTE).routing());
     }
 }

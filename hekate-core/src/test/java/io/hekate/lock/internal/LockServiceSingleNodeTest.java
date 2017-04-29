@@ -62,9 +62,9 @@ public class LockServiceSingleNodeTest extends HekateNodeTestBase {
         assertTrue(node.locks().allRegions().contains(node.locks().region("test1")));
         assertTrue(node.locks().allRegions().contains(region2));
 
-        region1.getLock("lock").lock();
-        region2.getLock("lock").lock();
-        region1.getLock("lock").unlock();
-        region2.getLock("lock").unlock();
+        region1.get("lock").lock();
+        region2.get("lock").lock();
+        region1.get("lock").unlock();
+        region2.get("lock").unlock();
     }
 }

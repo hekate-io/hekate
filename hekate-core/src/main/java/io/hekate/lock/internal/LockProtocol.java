@@ -17,7 +17,7 @@
 package io.hekate.lock.internal;
 
 import io.hekate.cluster.ClusterHash;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.List;
@@ -52,11 +52,11 @@ abstract class LockProtocol {
         public LockOwnerRequest(String region, String lockName, ClusterHash topology) {
             super(region, lockName);
 
-            setTopology(topology);
+            updateTopology(topology);
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.OWNER_REQUEST;
         }
     }
@@ -70,31 +70,31 @@ abstract class LockProtocol {
 
         private final long threadId;
 
-        private final ClusterUuid owner;
+        private final ClusterNodeId owner;
 
         private final LockOwnerResponse.Status status;
 
-        public LockOwnerResponse(long threadId, ClusterUuid owner,
+        public LockOwnerResponse(long threadId, ClusterNodeId owner,
             LockOwnerResponse.Status status) {
             this.threadId = threadId;
             this.owner = owner;
             this.status = status;
         }
 
-        public long getThreadId() {
+        public long threadId() {
             return threadId;
         }
 
-        public ClusterUuid getOwner() {
+        public ClusterNodeId owner() {
             return owner;
         }
 
-        public LockOwnerResponse.Status getStatus() {
+        public LockOwnerResponse.Status status() {
             return status;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.OWNER_RESPONSE;
         }
     }
@@ -111,19 +111,19 @@ abstract class LockProtocol {
             this.lockName = lockName;
         }
 
-        public String getRegion() {
+        public String region() {
             return region;
         }
 
-        public String getLockName() {
+        public String lockName() {
             return lockName;
         }
 
-        public ClusterHash getTopology() {
+        public ClusterHash topology() {
             return topology;
         }
 
-        public void setTopology(ClusterHash topology) {
+        public void updateTopology(ClusterHash topology) {
             this.topology = topology;
         }
     }
@@ -131,57 +131,57 @@ abstract class LockProtocol {
     static class LockRequest extends LockRequestBase implements LockIdentity {
         private final long lockId;
 
-        private final ClusterUuid node;
+        private final ClusterNodeId node;
 
         private final long timeout;
 
-        private final boolean withFeedback;
+        private final boolean feedback;
 
         private final long threadId;
 
-        public LockRequest(long lockId, String region, String lockName, ClusterUuid node, long timeout, boolean withFeedback,
+        public LockRequest(long lockId, String region, String lockName, ClusterNodeId node, long timeout, boolean feedback,
             long threadId) {
-            this(lockId, region, lockName, node, timeout, null, withFeedback, threadId);
+            this(lockId, region, lockName, node, timeout, null, feedback, threadId);
         }
 
-        public LockRequest(long lockId, String region, String lockName, ClusterUuid node, long timeout, ClusterHash topology,
-            boolean withFeedback, long threadId) {
+        public LockRequest(long lockId, String region, String lockName, ClusterNodeId node, long timeout, ClusterHash topology,
+            boolean feedback, long threadId) {
             super(region, lockName);
 
             this.lockId = lockId;
             this.node = node;
             this.timeout = timeout;
-            this.withFeedback = withFeedback;
+            this.feedback = feedback;
             this.threadId = threadId;
 
-            setTopology(topology);
+            updateTopology(topology);
         }
 
         @Override
-        public long getLockId() {
+        public long lockId() {
             return lockId;
         }
 
         @Override
-        public ClusterUuid getNode() {
+        public ClusterNodeId node() {
             return node;
         }
 
-        public long getTimeout() {
+        public long timeout() {
             return timeout;
         }
 
-        public boolean isWithFeedback() {
-            return withFeedback;
+        public boolean feedback() {
+            return feedback;
         }
 
         @Override
-        public long getThreadId() {
+        public long threadId() {
             return threadId;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.LOCK_REQUEST;
         }
     }
@@ -203,30 +203,30 @@ abstract class LockProtocol {
 
         private final LockResponse.Status status;
 
-        private final ClusterUuid owner;
+        private final ClusterNodeId owner;
 
         private final long ownerThreadId;
 
-        public LockResponse(LockResponse.Status status, ClusterUuid owner, long ownerThreadId) {
+        public LockResponse(LockResponse.Status status, ClusterNodeId owner, long ownerThreadId) {
             this.status = status;
             this.owner = owner;
             this.ownerThreadId = ownerThreadId;
         }
 
-        public LockResponse.Status getStatus() {
+        public LockResponse.Status status() {
             return status;
         }
 
-        public ClusterUuid getOwner() {
+        public ClusterNodeId owner() {
             return owner;
         }
 
-        public long getOwnerThreadId() {
+        public long ownerThreadId() {
             return ownerThreadId;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.LOCK_RESPONSE;
         }
     }
@@ -234,39 +234,39 @@ abstract class LockProtocol {
     static class UnlockRequest extends LockRequestBase implements LockIdentity {
         private final long lockId;
 
-        private final ClusterUuid node;
+        private final ClusterNodeId node;
 
-        public UnlockRequest(long lockId, String region, String lockName, ClusterUuid node) {
+        public UnlockRequest(long lockId, String region, String lockName, ClusterNodeId node) {
             this(lockId, region, lockName, node, null);
         }
 
-        public UnlockRequest(long lockId, String region, String lockName, ClusterUuid node, ClusterHash topology) {
+        public UnlockRequest(long lockId, String region, String lockName, ClusterNodeId node, ClusterHash topology) {
             super(region, lockName);
 
             this.lockId = lockId;
             this.node = node;
 
-            setTopology(topology);
+            updateTopology(topology);
         }
 
         @Override
-        public long getLockId() {
+        public long lockId() {
             return lockId;
         }
 
         @Override
-        public long getThreadId() {
+        public long threadId() {
             // Not used.
             return 0;
         }
 
         @Override
-        public ClusterUuid getNode() {
+        public ClusterNodeId node() {
             return node;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.UNLOCK_REQUEST;
         }
     }
@@ -284,12 +284,12 @@ abstract class LockProtocol {
             this.status = status;
         }
 
-        public UnlockResponse.Status getStatus() {
+        public UnlockResponse.Status status() {
             return status;
         }
 
         @Override
-        public LockProtocol.Type getType() {
+        public LockProtocol.Type type() {
             return Type.UNLOCK_RESPONSE;
         }
     }
@@ -304,11 +304,11 @@ abstract class LockProtocol {
             this.key = key;
         }
 
-        public String getRegion() {
+        public String region() {
             return region;
         }
 
-        public LockMigrationKey getKey() {
+        public LockMigrationKey key() {
             return key;
         }
     }
@@ -316,13 +316,13 @@ abstract class LockProtocol {
     static class MigrationPrepareRequest extends MigrationRequest {
         private final boolean firstPass;
 
-        private final Map<ClusterUuid, ClusterHash> topologies;
+        private final Map<ClusterNodeId, ClusterHash> topologies;
 
         @ToStringIgnore
         private final List<LockMigrationInfo> locks;
 
         public MigrationPrepareRequest(String region, LockMigrationKey key, boolean firstPass,
-            Map<ClusterUuid, ClusterHash> topologies, List<LockMigrationInfo> locks) {
+            Map<ClusterNodeId, ClusterHash> topologies, List<LockMigrationInfo> locks) {
             super(region, key);
 
             this.firstPass = firstPass;
@@ -334,16 +334,16 @@ abstract class LockProtocol {
             return firstPass;
         }
 
-        public List<LockMigrationInfo> getLocks() {
+        public List<LockMigrationInfo> locks() {
             return locks;
         }
 
-        public Map<ClusterUuid, ClusterHash> getTopologies() {
+        public Map<ClusterNodeId, ClusterHash> topologies() {
             return topologies;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.MIGRATION_PREPARE;
         }
     }
@@ -358,12 +358,12 @@ abstract class LockProtocol {
             this.locks = locks;
         }
 
-        public List<LockMigrationInfo> getLocks() {
+        public List<LockMigrationInfo> locks() {
             return locks;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.MIGRATION_APPLY;
         }
     }
@@ -381,17 +381,17 @@ abstract class LockProtocol {
             this.status = status;
         }
 
-        public MigrationResponse.Status getStatus() {
+        public MigrationResponse.Status status() {
             return status;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.MIGRATION_RESPONSE;
         }
     }
 
-    public abstract Type getType();
+    public abstract Type type();
 
     @Override
     public String toString() {

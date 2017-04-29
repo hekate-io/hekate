@@ -27,7 +27,7 @@ import java.net.InetAddress;
  *
  * <p>
  * Implementation of this interface is used by {@link Hekate} to resolve which of its local IP addresses should be advertised to remote
- * nodes so that they could connect to the local node. The resolved address becomes part of {@link ClusterNode#getAddress()}.
+ * nodes so that they could connect to the local node. The resolved address becomes part of {@link ClusterNode#address()}.
  * </p>
  *
  * <p>
@@ -42,7 +42,7 @@ import java.net.InetAddress;
  *
  * @see NetworkServiceFactory#setHost(String)
  * @see NetworkServiceFactory#setAddressSelector(AddressSelector)
- * @see ClusterNode#getAddress()
+ * @see ClusterNode#address()
  */
 public interface AddressSelector {
     /**

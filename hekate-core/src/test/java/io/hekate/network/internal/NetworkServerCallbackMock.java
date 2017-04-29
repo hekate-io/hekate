@@ -62,7 +62,7 @@ public class NetworkServerCallbackMock implements NetworkServerCallback {
 
     @Override
     public NetworkServerFailure.Resolution onFailure(NetworkServer server, NetworkServerFailure failure) {
-        errors.add(failure.getCause());
+        errors.add(failure.cause());
 
         return failure.fail();
     }

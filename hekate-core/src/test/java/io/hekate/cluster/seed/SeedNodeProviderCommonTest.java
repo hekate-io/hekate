@@ -83,7 +83,7 @@ public abstract class SeedNodeProviderCommonTest<T extends SeedNodeProvider> ext
                 for (Map.Entry<InetSocketAddress, SeedNodeProvider> e : providers.entrySet()) {
                     SeedNodeProvider provider = e.getValue();
 
-                    List<InetSocketAddress> seedNodes = new ArrayList<>(provider.getSeedNodes(CLUSTER_1));
+                    List<InetSocketAddress> seedNodes = new ArrayList<>(provider.findSeedNodes(CLUSTER_1));
 
                     seedNodes.remove(e.getKey());
 

@@ -53,7 +53,7 @@ public class ResponseCallbackMock implements ResponseCallback<String> {
     public void onComplete(Throwable err, Response<String> rsp) {
         if (err == null) {
             try {
-                assertEquals(expectedRequest, rsp.getRequest());
+                assertEquals(expectedRequest, rsp.request());
 
                 latch.complete(rsp);
             } catch (AssertionError e) {

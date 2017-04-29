@@ -26,8 +26,6 @@ import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingService;
 import io.hekate.messaging.MessagingServiceFactory;
-import io.hekate.messaging.broadcast.AggregateResult;
-import io.hekate.messaging.broadcast.BroadcastResult;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
@@ -71,23 +69,20 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
     @Test
     public void exampleChannel() throws Exception {
         // Start:configure_channel
-        // Prepare channel configuration that will support messages of String type (for simplicity).
+        // Configure channel that will support messages of String type (for simplicity).
         MessagingChannelConfig<String> channelCfg = new MessagingChannelConfig<String>()
             .withName("example.channel") // Channel name.
             // Message receiver (optional - if not specified then channel will act as a sender only)
             .withReceiver(msg -> {
-                // Get payload.
-                String request = msg.get();
-
-                System.out.println("Received request: " + request);
+                System.out.println("Received request: " + msg.get());
 
                 // Send reply (if required).
                 if (msg.mustReply()) {
-                    msg.reply(request + " response");
+                    msg.reply("some response");
                 }
             });
 
-        // Prepare messaging service factory and register channel configuration.
+        // Prepare messaging service factory and register channel.
         MessagingServiceFactory factory = new MessagingServiceFactory()
             .withChannel(channelCfg);
 
@@ -101,8 +96,10 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         MessagingService messaging = hekate.messaging();
         // End:access
 
+        assertNotNull(messaging);
+
         // Start:access_channel
-        MessagingChannel<String> channel = messaging.channel("example.channel");
+        MessagingChannel<String> channel = hekate.messaging().channel("example.channel");
         // End:access_channel
 
         assertNotNull(channel);
@@ -110,32 +107,6 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         exampleUnicast(hekate);
 
         broadcastExample(hekate);
-
-        hekate.leave();
-    }
-
-    @Test
-    public void exampleChannelOptions() throws Exception {
-        // Start:channel_options
-        // Prepare channel configuration.
-        MessagingChannelConfig<String> channelCfg = new MessagingChannelConfig<String>()
-            // Channel name.
-            .withName("example.channel")
-            // Thread pooling options.
-            .withNioThreads(2)
-            .withWorkerThreads(6);
-
-        // Prepare messaging service factory and register channel configuration.
-        MessagingServiceFactory factory = new MessagingServiceFactory()
-            .withChannel(channelCfg);
-
-        // ...register service and start node...
-
-        // Start node.
-        Hekate hekate = new HekateBootstrap()
-            .withService(factory)
-            .join();
-        // End:channel_options
 
         hekate.leave();
     }
@@ -192,83 +163,47 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         throws MessagingFutureException, InterruptedException {
         // Start:unicast_request_sync
         // Execute request to the oldest node in the cluster and synchronously await for reply.
-        String reply = channel.forOldest().request("example request").response();
+        String response = channel.forOldest().request("example request").response();
         // End:unicast_request_sync
 
-        assertNotNull(reply);
+        assertNotNull(response);
     }
 
-    private void broadcastExample(Hekate hekate) throws InterruptedException {
+    private void broadcastExample(Hekate hekate) throws Exception {
         MessagingChannel<String> channel = hekate.messaging().channel("example.channel");
 
         // Start:aggregate_sync
-        try {
-            // Submit aggregation request to all remote nodes.
-            AggregateResult<String> result = channel.forRemotes().aggregate("example message").get();
-
-            // Iterate over aggregation participants and check their responses.
-            result.nodes().forEach(node -> {
-                if (result.isSuccess(node)) {
-                    System.out.println("Got response from " + node + ": " + result.resultOf(node));
-                } else {
-                    System.out.println("Partial failure on node  " + node + ": " + result.errorOf(node));
-                }
-            });
-        } catch (MessagingFutureException e) {
-            System.out.println("Aggregation failed: " + e.getCause());
-        }
+        // Submit aggregation request to all remote nodes.
+        channel.forRemotes().aggregate("example message").forEach(rslt ->
+            System.out.println("Got result: " + rslt)
+        );
         // End:aggregate_sync
 
         // Start:aggregate_async
         // Asynchronously submit aggregation request to all remote nodes.
-        channel.forRemotes().aggregate("example message", (err, result) -> {
+        channel.forRemotes().aggregate("example message", (err, results) -> {
             if (err == null) {
-                // Iterate over aggregation participants and check their responses.
-                result.nodes().forEach(node -> {
-                    if (result.isSuccess(node)) {
-                        System.out.println("Got response from " + node + ": " + result.resultOf(node));
-                    } else {
-                        System.out.println("Partial failure on node  " + node + ": " + result.errorOf(node));
-                    }
-                });
+                results.forEach(rslt ->
+                    System.out.println("Got result: " + rslt)
+                );
             } else {
-                System.out.println("Aggregation failed: " + err);
+                System.out.println("Aggregation failure: " + err);
             }
         });
         // End:aggregate_async
 
         // Start:broadcast_sync
-        try {
-            // Broadcast message to all remote nodes.
-            BroadcastResult<String> result = channel.forRemotes().broadcast("example message").get();
-
-            // Iterate over participants and check operation results.
-            result.nodes().forEach(node -> {
-                if (result.isSuccess(node)) {
-                    System.out.println("Successfully sent to " + node);
-                } else {
-                    System.out.println("Partial failure on node " + node + ": " + result.errorOf(node));
-                }
-            });
-        } catch (MessagingFutureException e) {
-            System.out.println("Broadcast failed: " + e.getCause());
-        }
+        // Broadcast message to all remote nodes.
+        channel.forRemotes().broadcast("example message").get();
         // End:broadcast_sync
 
         // Start:broadcast_async
         // Asynchronously broadcast message to all remote nodes.
         channel.forRemotes().broadcast("example message", (err, result) -> {
             if (err == null) {
-                // Iterate over participants and check operation results.
-                result.nodes().forEach(node -> {
-                    if (result.isSuccess(node)) {
-                        System.out.println("Successfully sent to " + node);
-                    } else {
-                        System.out.println("Partial failure on node " + node + ": " + result.errorOf(node));
-                    }
-                });
+                System.out.println("Broadcast success.");
             } else {
-                System.out.println("Broadcast failed: " + err);
+                System.out.println("Broadcast failure: " + err);
             }
         });
         // End:broadcast_async

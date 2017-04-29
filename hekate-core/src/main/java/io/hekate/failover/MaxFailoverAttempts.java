@@ -23,7 +23,7 @@ import io.hekate.util.format.ToString;
  *
  * <p>
  * Maximum number of attempts can be specified via {@link #MaxFailoverAttempts(int)} constructor. For every failover attempt it will be
- * compared with the current attempt (see {@link FailureInfo#getAttempt()}) and will succeed only if the current value is less than the
+ * compared with the current attempt (see {@link FailureInfo#attempt()}) and will succeed only if the current value is less than the
  * maximum number of attempts.
  * </p>
  *
@@ -43,7 +43,7 @@ public class MaxFailoverAttempts implements FailoverCondition {
 
     @Override
     public boolean test(FailureInfo failover) {
-        return failover.getAttempt() < maxAttempts;
+        return failover.attempt() < maxAttempts;
     }
 
     @Override

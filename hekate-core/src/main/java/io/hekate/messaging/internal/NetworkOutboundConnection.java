@@ -17,7 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterAddress;
-import io.hekate.messaging.MessagingChanneUuid;
+import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.internal.MessagingProtocol.Connect;
 import io.hekate.network.NetworkClient;
@@ -34,7 +34,7 @@ class NetworkOutboundConnection<T> extends NetworkConnectionBase<T> {
 
     private final NetworkClient<MessagingProtocol> net;
 
-    private final MessagingChanneUuid channelId;
+    private final MessagingChannelId channelId;
 
     private final Object mux = new Object();
 
@@ -46,7 +46,7 @@ class NetworkOutboundConnection<T> extends NetworkConnectionBase<T> {
 
         assert address != null : "Address is null.";
 
-        this.channelId = gateway.getId();
+        this.channelId = gateway.id();
         this.address = address;
         this.net = net;
     }
@@ -58,9 +58,9 @@ class NetworkOutboundConnection<T> extends NetworkConnectionBase<T> {
 
             setEpoch(localEpoch);
 
-            final InetSocketAddress netAddress = address.getSocket();
+            final InetSocketAddress netAddress = address.socket();
 
-            Connect connectMsg = new Connect(address.getId(), channelId);
+            Connect connectMsg = new Connect(address.id(), channelId);
 
             return net.connect(netAddress, connectMsg, new NetworkClientCallback<MessagingProtocol>() {
                 @Override
@@ -73,7 +73,7 @@ class NetworkOutboundConnection<T> extends NetworkConnectionBase<T> {
                     synchronized (mux) {
                         // Check if there were no disconnects for this epoch.
                         if (localEpoch == epoch) {
-                            Connect msg = new Connect(address.getId(), channelId);
+                            Connect msg = new Connect(address.id(), channelId);
 
                             client.ensureConnected(netAddress, msg, this);
                         }

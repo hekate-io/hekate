@@ -17,8 +17,8 @@
 package io.hekate.partition.internal;
 
 import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterUuid;
 import io.hekate.partition.Partition;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -65,18 +65,18 @@ class DefaultPartition implements Partition {
     }
 
     @Override
-    public int getId() {
+    public int id() {
         return id;
     }
 
     @Override
-    public ClusterNode getPrimaryNode() {
+    public ClusterNode primaryNode() {
         return primary;
     }
 
     @Override
-    public ClusterUuid getPrimaryNodeId() {
-        return primary.getId();
+    public ClusterNodeId primaryNodeId() {
+        return primary.id();
     }
 
     @Override
@@ -85,28 +85,28 @@ class DefaultPartition implements Partition {
     }
 
     @Override
-    public boolean isPrimary(ClusterUuid node) {
-        return primary.getId().equals(node);
+    public boolean isPrimary(ClusterNodeId node) {
+        return primary.id().equals(node);
     }
 
     @Override
-    public List<ClusterNode> getBackupNodes() {
+    public List<ClusterNode> backupNodes() {
         return backup;
     }
 
     @Override
-    public List<ClusterNode> getNodes() {
+    public List<ClusterNode> nodes() {
         return nodes;
     }
 
     @Override
-    public ClusterTopology getTopology() {
+    public ClusterTopology topology() {
         return topology;
     }
 
     @Override
     public int compareTo(Partition o) {
-        return Integer.compare(id, o.getId());
+        return Integer.compare(id, o.id());
     }
 
     @Override
@@ -121,7 +121,7 @@ class DefaultPartition implements Partition {
 
         Partition that = (Partition)o;
 
-        return id == that.getId();
+        return id == that.id();
     }
 
     @Override

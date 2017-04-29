@@ -33,7 +33,7 @@ public interface Response<T> {
      *
      * @return Request.
      */
-    T getRequest();
+    T request();
 
     /**
      * Returns {@code true} if this message represents a partial response that was produced by the {@link Message#partialReply(Object,
@@ -78,12 +78,12 @@ public interface Response<T> {
      *
      * @return Messaging endpoint.
      */
-    MessagingEndpoint<T> getEndpoint();
+    MessagingEndpoint<T> endpoint();
 
     /**
      * Returns the messaging channel of this message.
      *
      * @return Messaging channel.
      */
-    MessagingChannel<T> getChannel();
+    MessagingChannel<T> channel();
 }

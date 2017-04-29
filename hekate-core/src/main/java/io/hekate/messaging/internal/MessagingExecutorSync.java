@@ -58,7 +58,7 @@ class MessagingExecutorSync implements MessagingExecutor {
     }
 
     @Override
-    public int getThreadPoolSize() {
+    public int poolSize() {
         return 0;
     }
 }

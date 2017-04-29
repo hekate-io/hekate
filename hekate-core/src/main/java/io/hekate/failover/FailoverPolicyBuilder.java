@@ -70,7 +70,7 @@ public class FailoverPolicyBuilder {
      * Sets the list of error types that can be supported by a failover policy.
      *
      * <p>
-     * If none of the specified types matches with a {@link FailureInfo#getError() failure} then failover policy is to {@link
+     * If none of the specified types matches with a {@link FailureInfo#error() failure} then failover policy is to {@link
      * FailoverContext#fail() fail}.
      * </p>
      *
@@ -122,16 +122,16 @@ public class FailoverPolicyBuilder {
     }
 
     /**
-     * Returns the {@link FailureResolution#getDelay() retry delay} supplier (see {@link #setRetryDelay(FailoverDelaySupplier)}).
+     * Returns the {@link FailureResolution#delay() retry delay} supplier (see {@link #setRetryDelay(FailoverDelaySupplier)}).
      *
-     * @return Supplier of {@link FailureResolution#getDelay() retry delay} value.
+     * @return Supplier of {@link FailureResolution#delay() retry delay} value.
      */
     public FailoverDelaySupplier getRetryDelay() {
         return retryDelay;
     }
 
     /**
-     * Sets the {@link FailureResolution#getDelay() retry delay} supplier. This supplier will be used by a failover policy to get a retry
+     * Sets the {@link FailureResolution#delay() retry delay} supplier. This supplier will be used by a failover policy to get a retry
      * delay value for the {@link FailureResolution#withDelay(long)} method.
      *
      * @param retryDelay Delay supplier.
@@ -308,7 +308,7 @@ public class FailoverPolicyBuilder {
                 FailureResolution retry = ctx.retry();
 
                 if (retryDelay != null) {
-                    retry.withDelay(retryDelay.getDelay(ctx));
+                    retry.withDelay(retryDelay.delayOf(ctx));
                 }
 
                 if (routingPolicy != null) {

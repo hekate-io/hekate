@@ -33,7 +33,7 @@ public interface LeaderContext {
      *
      * @return Local node.
      */
-    ClusterNode getLocalNode();
+    ClusterNode localNode();
 
     /**
      * Asynchronously yields leadership and gives other {@link Candidate candidates} a chance to become a leader.

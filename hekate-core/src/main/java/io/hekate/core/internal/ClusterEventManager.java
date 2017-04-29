@@ -60,7 +60,7 @@ class ClusterEventManager {
 
         @Override
         public void onEvent(ClusterEvent event) throws HekateException {
-            if (eventTypes == null || eventTypes.contains(event.getType())) {
+            if (eventTypes == null || eventTypes.contains(event.type())) {
                 if (DEBUG) {
                     log.debug("Notifying listener on event [listener={}, event={}]", delegate, event);
                 }
@@ -115,9 +115,9 @@ class ClusterEventManager {
             log.debug("Scheduled cluster event for asynchronous processing [event={}]", event);
         }
 
-        if (event.getType() == ClusterEventType.JOIN) {
+        if (event.type() == ClusterEventType.JOIN) {
             joinEventFired.set(true);
-        } else if (event.getType() == ClusterEventType.LEAVE) {
+        } else if (event.type() == ClusterEventType.LEAVE) {
             joinEventFired.set(false);
         }
 
@@ -131,7 +131,7 @@ class ClusterEventManager {
                     log.debug("Notifying listeners on cluster event [listeners={}, event={}]", listeners.size(), event);
                 }
 
-                lastTopology = event.getTopology();
+                lastTopology = event.topology();
 
                 for (ClusterEventListener listener : listeners) {
                     try {

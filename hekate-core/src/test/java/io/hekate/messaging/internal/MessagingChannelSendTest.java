@@ -16,7 +16,7 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.MessagingFutureException;
@@ -132,7 +132,7 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
 
             awaitForChannelsTopology(sender, receiver);
 
-            MessagingClient<String> client = sender.getImpl().getClient(receiver.getNodeId());
+            MessagingClient<String> client = sender.getImpl().clientOf(receiver.getNodeId());
 
             repeat(3, i -> {
                 assertFalse(client.isConnected());
@@ -178,7 +178,7 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        MessagingClient<String> client = sender.getImpl().getClient(receiver.getNodeId());
+        MessagingClient<String> client = sender.getImpl().clientOf(receiver.getNodeId());
 
         List<NetworkFuture<MessagingProtocol>> closeFuture = client.close();
 
@@ -264,7 +264,7 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
 
                     await(joinLatch);
 
-                    return topology.getYoungest().getId();
+                    return topology.youngest().id();
                 }).send("join-request-" + i, joinCallback);
 
                 return null;
@@ -299,7 +299,7 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
 
                     await(leaveLatch);
 
-                    return topology.getYoungest().getId();
+                    return topology.youngest().id();
                 }).send("leave-request-" + i, leaveCallback);
 
                 return null;
@@ -370,7 +370,7 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        ClusterUuid invalidNodeId = newNodeId();
+        ClusterNodeId invalidNodeId = newNodeId();
 
         repeat(3, i -> {
             SendFuture future = sender.withLoadBalancer((msg, topology) -> invalidNodeId).send("failed" + i);

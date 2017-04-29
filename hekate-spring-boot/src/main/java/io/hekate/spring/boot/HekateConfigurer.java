@@ -104,8 +104,8 @@ import org.springframework.context.annotation.Configuration;
  * </p>
  *
  * <p>
- * First lets define a bean that depends on {@link Hekate} instance.
- * ${source: MyBean.java#example}
+ * First lets define some component that depends on {@link Hekate} instance.
+ * ${source: MyComponent.java#example}
  * ...and a Spring Boot application (note the {@link EnableHekate @EnableHekate} annotation)...
  * ${source: MyApplication.java#example}
  * Note that {@link Hekate} instance doesn't require any manual construction.

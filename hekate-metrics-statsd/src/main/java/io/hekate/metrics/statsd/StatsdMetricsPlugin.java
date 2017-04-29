@@ -105,7 +105,7 @@ import java.util.List;
  *
  * <h2>Metrics names and tags</h2>
  * <p>
- * Metric {@link Metric#getName() names} are escaped so that all characters that are not letters, digits or dots (.) are replaced with
+ * Metric {@link Metric#name() names} are escaped so that all characters that are not letters, digits or dots (.) are replaced with
  * underscores (_).
  * </p>
  *
@@ -142,9 +142,9 @@ public class StatsdMetricsPlugin implements Plugin {
 
     @Override
     public void start(Hekate hekate) throws HekateException {
-        ClusterNode node = hekate.getLocalNode();
+        ClusterNode node = hekate.localNode();
 
-        InetSocketAddress netAddress = node.getSocket();
+        InetSocketAddress netAddress = node.socket();
 
         try {
             publisher.start(netAddress.getAddress().getHostAddress(), netAddress.getPort());

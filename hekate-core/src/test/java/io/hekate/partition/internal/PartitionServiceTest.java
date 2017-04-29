@@ -93,9 +93,9 @@ public class PartitionServiceTest extends HekateNodeTestBase {
         Partition partition = mapper.map(1);
 
         assertNotNull(partition);
-        assertEquals(node.getLocalNode(), partition.getPrimaryNode());
-        assertTrue(partition.getBackupNodes().isEmpty());
-        assertEquals(Collections.singletonList(node.getLocalNode()), partition.getNodes());
+        assertEquals(node.localNode(), partition.primaryNode());
+        assertTrue(partition.backupNodes().isEmpty());
+        assertEquals(Collections.singletonList(node.localNode()), partition.nodes());
     }
 
     @Test
@@ -139,24 +139,24 @@ public class PartitionServiceTest extends HekateNodeTestBase {
                 for (Hekate node : nodes) {
                     PartitionMapper mapper = node.partitions().mapper("test" + i);
 
-                    assertEquals("test" + i, mapper.getName());
-                    assertEquals(partitions, mapper.getPartitions());
-                    assertEquals(i, mapper.getBackupNodes());
+                    assertEquals("test" + i, mapper.name());
+                    assertEquals(partitions, mapper.partitions());
+                    assertEquals(i, mapper.backupNodes());
 
                     Partition partition = mapper.map(j);
 
                     if (first == null) {
                         first = partition;
 
-                        distributions[first.getId()]++;
+                        distributions[first.id()]++;
                     } else {
-                        assertEquals(first.getId(), partition.getId());
-                        assertEquals(first.getPrimaryNode(), partition.getPrimaryNode());
-                        assertEquals(first.getBackupNodes(), partition.getBackupNodes());
-                        assertEquals(first.getNodes(), partition.getNodes());
+                        assertEquals(first.id(), partition.id());
+                        assertEquals(first.primaryNode(), partition.primaryNode());
+                        assertEquals(first.backupNodes(), partition.backupNodes());
+                        assertEquals(first.nodes(), partition.nodes());
 
-                        assertEquals(i, partition.getBackupNodes().size());
-                        assertEquals(i + 1, partition.getNodes().size());
+                        assertEquals(i, partition.backupNodes().size());
+                        assertEquals(i + 1, partition.nodes().size());
                     }
                 }
             }

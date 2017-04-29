@@ -185,7 +185,6 @@ public final class CodeSamplesProcessorMain {
 
         Pattern start = Pattern.compile("\\s*((//)|(<!--)).*Start:\\s*" + section + ".*");
         Pattern end = Pattern.compile("\\s*((//)|(<!--)).*End:\\s*" + section + ".*");
-        Pattern publicStaticClass = Pattern.compile("public static class");
 
         for (String line : Files.readAllLines(Paths.get(src.getAbsolutePath()))) {
             if (sectionFound) {
@@ -194,9 +193,6 @@ public final class CodeSamplesProcessorMain {
                 }
 
                 String realLine = line.trim();
-
-                // Replace 'public static class' with 'public class' since many code examples are implemented as inner classes.
-                realLine = publicStaticClass.matcher(realLine).replaceAll("public class");
 
                 if (realLine.isEmpty()) {
                     sectionLines.add(realLine);
@@ -223,6 +219,7 @@ public final class CodeSamplesProcessorMain {
 
         Pattern lt = Pattern.compile("<");
         Pattern gt = Pattern.compile(">");
+        Pattern publicStaticClass = Pattern.compile("public static class");
 
         for (String line : sectionLines) {
             String trimmed;
@@ -232,6 +229,9 @@ public final class CodeSamplesProcessorMain {
             } else {
                 trimmed = line;
             }
+
+            // Replace 'public static class' with 'public class' since many code examples are implemented as inner classes.
+            trimmed = publicStaticClass.matcher(trimmed).replaceAll("public class");
 
             out.append(lt.matcher(gt.matcher(trimmed).replaceAll("&gt;")).replaceAll("&lt;")).append(NL);
         }

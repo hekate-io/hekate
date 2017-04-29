@@ -18,7 +18,7 @@ package io.hekate.codec;
 
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterHash;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.internal.DefaultClusterHash;
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -59,9 +59,9 @@ public final class CodecUtils {
      * @see #readClusterAddress(DataInput)
      */
     public static void writeClusterAddress(ClusterAddress address, DataOutput out) throws IOException {
-        writeNodeId(address.getId(), out);
+        writeNodeId(address.id(), out);
 
-        writeAddress(address.getSocket(), out);
+        writeAddress(address.socket(), out);
     }
 
     /**
@@ -75,7 +75,7 @@ public final class CodecUtils {
      * @see #writeClusterAddress(ClusterAddress, DataOutput)
      */
     public static ClusterAddress readClusterAddress(DataInput in) throws IOException {
-        ClusterUuid id = readNodeId(in);
+        ClusterNodeId id = readNodeId(in);
 
         InetSocketAddress address = readAddress(in);
 
@@ -127,7 +127,7 @@ public final class CodecUtils {
     }
 
     /**
-     * Writes {@link ClusterUuid} to the specified data output.
+     * Writes {@link ClusterNodeId} to the specified data output.
      *
      * @param id Node ID.
      * @param out Data output.
@@ -135,23 +135,23 @@ public final class CodecUtils {
      * @throws IOException If write operation failed.
      * @see #readNodeId(DataInput)
      */
-    public static void writeNodeId(ClusterUuid id, DataOutput out) throws IOException {
-        out.writeLong(id.getHiBits());
-        out.writeLong(id.getLoBits());
+    public static void writeNodeId(ClusterNodeId id, DataOutput out) throws IOException {
+        out.writeLong(id.hiBits());
+        out.writeLong(id.loBits());
     }
 
     /**
-     * Reads {@link ClusterUuid} from the specified data input.
+     * Reads {@link ClusterNodeId} from the specified data input.
      *
      * @param in Data input.
      *
      * @return Node ID.
      *
      * @throws IOException If read operation failed.
-     * @see #writeNodeId(ClusterUuid, DataOutput)
+     * @see #writeNodeId(ClusterNodeId, DataOutput)
      */
-    public static ClusterUuid readNodeId(DataInput in) throws IOException {
-        return new ClusterUuid(in.readLong(), in.readLong());
+    public static ClusterNodeId readNodeId(DataInput in) throws IOException {
+        return new ClusterNodeId(in.readLong(), in.readLong());
     }
 
     /**
@@ -164,7 +164,7 @@ public final class CodecUtils {
      * @see #readTopologyHash(DataInput)
      */
     public static void writeTopologyHash(ClusterHash hash, DataOutput out) throws IOException {
-        byte[] bytes = hash.getBytes();
+        byte[] bytes = hash.bytes();
 
         out.writeByte(bytes.length);
         out.write(bytes);

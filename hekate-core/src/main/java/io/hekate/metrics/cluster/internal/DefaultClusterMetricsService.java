@@ -18,8 +18,8 @@ package io.hekate.metrics.cluster.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterService;
-import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.ClusterView;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
@@ -84,15 +84,15 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
             this.node = node;
         }
 
-        public ClusterNode getNode() {
+        public ClusterNode node() {
             return node;
         }
 
-        public long getVersion() {
+        public long version() {
             return version;
         }
 
-        public Map<String, StaticMetric> getMetrics() {
+        public Map<String, StaticMetric> metrics() {
             return metrics;
         }
 
@@ -100,30 +100,30 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
             this.version = version;
             this.metrics = metrics;
 
-            publicMetrics = Optional.of(new DefaultClusterNodeMetrics(getNode(), unmodifiableMap(new HashMap<>(metrics))));
+            publicMetrics = Optional.of(new DefaultClusterNodeMetrics(node(), unmodifiableMap(new HashMap<>(metrics))));
         }
 
-        public Optional<ClusterNodeMetrics> getPublicMetrics() {
+        public Optional<ClusterNodeMetrics> publicMetrics() {
             return publicMetrics;
         }
     }
 
     private static class ReplicationTarget {
-        private final ClusterUuid to;
+        private final ClusterNodeId to;
 
         private final MessagingChannel<MetricsProtocol> channel;
 
-        private final ClusterUuid localNode;
+        private final ClusterNodeId localNode;
 
-        private final Map<ClusterUuid, Long> sentVersions = new HashMap<>();
+        private final Map<ClusterNodeId, Long> sentVersions = new HashMap<>();
 
-        public ReplicationTarget(ClusterUuid to, MessagingChannel<MetricsProtocol> channel, ClusterUuid localNode) {
+        public ReplicationTarget(ClusterNodeId to, MessagingChannel<MetricsProtocol> channel, ClusterNodeId localNode) {
             this.to = to;
             this.channel = channel;
             this.localNode = localNode;
         }
 
-        public ClusterUuid getTo() {
+        public ClusterNodeId to() {
             return to;
         }
 
@@ -134,20 +134,20 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
             synchronized (sentVersions) {
                 for (Replica replica : replicas) {
-                    if (replica.getNode().getId().equals(to)) {
-                        targetVer = replica.getVersion();
+                    if (replica.node().id().equals(to)) {
+                        targetVer = replica.version();
 
                         // Do not send metrics of the target node.
                         continue;
                     }
 
                     synchronized (replica) {
-                        if (replica.getMetrics() != null && !replica.getMetrics().isEmpty()) {
-                            ClusterUuid nodeId = replica.getNode().getId();
+                        if (replica.metrics() != null && !replica.metrics().isEmpty()) {
+                            ClusterNodeId nodeId = replica.node().id();
 
                             Long prevVer = sentVersions.get(nodeId);
 
-                            long newVer = replica.getVersion();
+                            long newVer = replica.version();
 
                             if (prevVer == null || prevVer < newVer) {
                                 sentVersions.put(nodeId, newVer);
@@ -175,12 +175,12 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
         public void update(Replica replica) {
             synchronized (sentVersions) {
                 synchronized (replica) {
-                    ClusterUuid nodeId = replica.getNode().getId();
+                    ClusterNodeId nodeId = replica.node().id();
 
                     Long oldVer = sentVersions.get(nodeId);
 
-                    if (oldVer == null || oldVer < replica.getVersion()) {
-                        sentVersions.put(nodeId, replica.getVersion());
+                    if (oldVer == null || oldVer < replica.version()) {
+                        sentVersions.put(nodeId, replica.version());
                     }
                 }
             }
@@ -205,7 +205,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     private final StateGuard guard = new StateGuard(ClusterService.class);
 
     @ToStringIgnore
-    private final Map<ClusterUuid, Replica> replicas = new HashMap<>();
+    private final Map<ClusterNodeId, Replica> replicas = new HashMap<>();
 
     @ToStringIgnore
     private final AtomicLong localVerSeq = new AtomicLong();
@@ -229,7 +229,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     private ScheduledExecutorService worker;
 
     @ToStringIgnore
-    private ClusterUuid localNode;
+    private ClusterNodeId localNode;
 
     public DefaultClusterMetricsService(ClusterMetricsServiceFactory factory) {
         assert factory != null : "Factory is null.";
@@ -283,10 +283,10 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
                 channel = messaging.channel(MetricsProtocolCodec.PROTOCOL_ID);
 
-                localNode = ctx.getNode().getId();
+                localNode = ctx.localNode().id();
 
                 cluster.addListener(event ->
-                    updateTopology(event.getTopology().getNodes())
+                    updateTopology(event.topology().nodes())
                 );
 
                 localMetrics.addListener(event -> {
@@ -357,7 +357,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     }
 
     @Override
-    public Optional<ClusterNodeMetrics> of(ClusterUuid node) {
+    public Optional<ClusterNodeMetrics> of(ClusterNodeId node) {
         ArgAssert.notNull(node, "Node");
 
         if (enabled) {
@@ -367,7 +367,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
                 Replica replica = replicas.get(node);
 
                 if (replica != null) {
-                    return replica.getPublicMetrics();
+                    return replica.publicMetrics();
                 }
 
                 return Optional.empty();
@@ -383,7 +383,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     public Optional<ClusterNodeMetrics> of(ClusterNode node) {
         ArgAssert.notNull(node, "Node");
 
-        return of(node.getId());
+        return of(node.id());
     }
 
     @Override
@@ -395,7 +395,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
                 List<ClusterNodeMetrics> metrics = new ArrayList<>(replicas.size());
 
                 replicas.values().forEach(r ->
-                    r.getPublicMetrics().ifPresent(metrics::add)
+                    r.publicMetrics().ifPresent(metrics::add)
                 );
 
                 return metrics;
@@ -418,7 +418,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
                 List<ClusterNodeMetrics> metrics = new ArrayList<>(replicas.size());
 
                 replicas.values().forEach(r ->
-                    r.getPublicMetrics().ifPresent(node -> {
+                    r.publicMetrics().ifPresent(node -> {
                         for (Metric metric : node.allMetrics().values()) {
                             if (filter.accept(metric)) {
                                 metrics.add(node);
@@ -471,9 +471,9 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
         metrics.forEach(metric -> {
             if (filter == null || filter.accept(metric)) {
-                String name = metric.getName();
+                String name = metric.name();
 
-                fixedMetrics.put(name, new StaticMetric(name, metric.getValue()));
+                fixedMetrics.put(name, new StaticMetric(name, metric.value()));
             }
         });
 
@@ -494,23 +494,23 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
         try {
             if (guard.isInitialized()) {
-                Set<ClusterUuid> ids = nodes.stream().map(ClusterNode::getId).collect(toSet());
+                Set<ClusterNodeId> ids = nodes.stream().map(ClusterNode::id).collect(toSet());
 
                 replicas.keySet().retainAll(ids);
 
                 boolean initial = replicas.isEmpty();
 
                 nodes.stream()
-                    .filter(node -> !replicas.containsKey(node.getId()))
-                    .forEach(node -> replicas.put(node.getId(), new Replica(node)));
+                    .filter(node -> !replicas.containsKey(node.id()))
+                    .forEach(node -> replicas.put(node.id(), new Replica(node)));
 
                 if (initial) {
                     doUpdateLocalMetrics(localMetrics.allMetrics());
                 }
 
-                NavigableSet<ClusterUuid> ring = new TreeSet<>(ids);
+                NavigableSet<ClusterNodeId> ring = new TreeSet<>(ids);
 
-                ClusterUuid newNext = ring.tailSet(localNode, false).stream()
+                ClusterNodeId newNext = ring.tailSet(localNode, false).stream()
                     .findFirst()
                     .orElse(ring.headSet(localNode, false).stream()
                         .findFirst()
@@ -518,11 +518,11 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
                 if (newNext == null) {
                     if (DEBUG && next != null) {
-                        log.debug("Stopped metrics replication [to={}]", next.getTo());
+                        log.debug("Stopped metrics replication [to={}]", next.to());
                     }
 
                     next = null;
-                } else if (next == null || !next.getTo().equals(newNext)) {
+                } else if (next == null || !next.to().equals(newNext)) {
                     if (DEBUG) {
                         log.debug("Selected new replication target [node={}, ring={}]", newNext, ring);
                     }
@@ -544,22 +544,22 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
             if (guard.isInitialized() && !replicas.isEmpty()) {
                 MetricsProtocol in = msg.get();
 
-                switch (in.getType()) {
+                switch (in.type()) {
                     case UPDATE_REQUEST: {
                         UpdateRequest request = (UpdateRequest)in;
 
-                        List<MetricsUpdate> updates = request.getUpdates();
+                        List<MetricsUpdate> updates = request.updates();
 
-                        List<MetricsUpdate> pushBack = processUpdates(in.getFrom(), updates, true, request.getTargetVer());
+                        List<MetricsUpdate> pushBack = processUpdates(in.from(), updates, true, request.targetVer());
 
                         if (!pushBack.isEmpty()) {
                             if (DEBUG) {
-                                log.debug("Sending push back updates [from={}, metrics={}]", in.getFrom(), pushBack);
+                                log.debug("Sending push back updates [from={}, metrics={}]", in.from(), pushBack);
                             }
 
                             UpdateResponse response = new UpdateResponse(localNode, pushBack);
 
-                            msg.getEndpoint().getChannel().forNode(in.getFrom()).send(response);
+                            msg.endpoint().channel().forNode(in.from()).send(response);
                         }
 
                         break;
@@ -567,12 +567,12 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
                     case UPDATE_RESPONSE: {
                         UpdateResponse response = (UpdateResponse)in;
 
-                        processUpdates(in.getFrom(), response.getMetrics(), false, -1);
+                        processUpdates(in.from(), response.metrics(), false, -1);
 
                         break;
                     }
                     default: {
-                        throw new IllegalArgumentException("Unexpected message type: " + in.getType());
+                        throw new IllegalArgumentException("Unexpected message type: " + in.type());
                     }
                 }
             }
@@ -581,7 +581,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
         }
     }
 
-    private List<MetricsUpdate> processUpdates(ClusterUuid from, List<MetricsUpdate> updates, boolean withPushBack, long localVer) {
+    private List<MetricsUpdate> processUpdates(ClusterNodeId from, List<MetricsUpdate> updates, boolean withPushBack, long localVer) {
         List<MetricsUpdate> pushBack;
 
         if (withPushBack) {
@@ -590,7 +590,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
             Replica local = replicas.get(localNode);
 
             synchronized (local) {
-                if (localVer != local.getVersion()) {
+                if (localVer != local.version()) {
                     pushBack.add(newUpdate(local));
                 }
             }
@@ -599,21 +599,21 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
         }
 
         updates.stream()
-            .filter(update -> !update.getNode().equals(localNode))
+            .filter(update -> !update.node().equals(localNode))
             .forEach(update -> {
-                ClusterUuid node = update.getNode();
+                ClusterNodeId node = update.node();
 
                 Replica replica = replicas.get(node);
 
                 if (replica != null) {
                     synchronized (replica) {
-                        long newVer = update.getVersion();
+                        long newVer = update.version();
 
-                        if (newVer > replica.getVersion()) {
+                        if (newVer > replica.version()) {
                             ////////////////////////////////////////////////////////
                             // Remote is later -> Update local metrics.
                             ////////////////////////////////////////////////////////
-                            Map<String, StaticMetric> remoteMetrics = update.getMetrics();
+                            Map<String, StaticMetric> remoteMetrics = update.metrics();
 
                             if (DEBUG) {
                                 log.debug("Updating metrics [node={}, metrics={}]", node, remoteMetrics);
@@ -621,10 +621,10 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
                             replica.updateMetrics(newVer, remoteMetrics);
 
-                            if (next != null && from.equals(next.getTo())) {
+                            if (next != null && from.equals(next.to())) {
                                 next.update(replica);
                             }
-                        } else if (newVer < replica.getVersion()) {
+                        } else if (newVer < replica.version()) {
                             ////////////////////////////////////////////////////////
                             // Local is later -> Send latest version back to remote (if required).
                             ////////////////////////////////////////////////////////
@@ -642,7 +642,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     }
 
     private static MetricsUpdate newUpdate(Replica replica) {
-        return new MetricsUpdate(replica.getNode().getId(), replica.getVersion(), replica.getMetrics());
+        return new MetricsUpdate(replica.node().id(), replica.version(), replica.metrics());
     }
 
     @Override

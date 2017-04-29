@@ -147,12 +147,12 @@ public class PartitionMapperConfig {
      *
      * <p>
      * If value of this parameter is negative or equals to zero then mapper will not manage backup nodes and {@link
-     * Partition#getBackupNodes()} will return an empty set.
+     * Partition#backupNodes()} will return an empty set.
      * </p>
      *
      * @param backupNodes Amount of backup nodes that should be assigned to each partition by the mapper.
      *
-     * @see Partition#getBackupNodes()
+     * @see Partition#backupNodes()
      */
     public void setBackupNodes(int backupNodes) {
         this.backupNodes = backupNodes;

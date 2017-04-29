@@ -33,7 +33,7 @@ class NettyWriteQueue {
             this.message = message;
         }
 
-        public Object getMessage() {
+        public Object message() {
             return message;
         }
     }
@@ -52,7 +52,7 @@ class NettyWriteQueue {
         int cnt = 0;
 
         for (WritePromise promise = queue.poll(); promise != null; promise = queue.poll()) {
-            promise.channel().write(promise.getMessage(), promise);
+            promise.channel().write(promise.message(), promise);
 
             lastNonFlushed = promise;
 

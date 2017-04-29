@@ -19,7 +19,7 @@ package io.hekate.lock.internal;
 import io.hekate.HekateNodeContextTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterHash;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.lock.LockRegionConfig;
 import io.hekate.lock.LockServiceFactory;
@@ -87,9 +87,9 @@ public abstract class LockServiceTestBase extends HekateNodeContextTestBase {
 
         busyWait("queued lock [lock=" + lock + ']', () -> {
             for (HekateTestNode node : nodes) {
-                List<ClusterUuid> locks = node.get(DefaultLockService.class).region(REGION_1).getQueuedLocks(lock);
+                List<ClusterNodeId> locks = node.get(DefaultLockService.class).region(REGION_1).queueOf(lock);
 
-                if (locks.contains(owner.getLocalNode().getId())) {
+                if (locks.contains(owner.localNode().id())) {
                     result.set(node);
 
                     return true;
@@ -114,7 +114,7 @@ public abstract class LockServiceTestBase extends HekateNodeContextTestBase {
         for (int i = 0; i < BUSY_WAIT_LOOPS; i++) {
             String lockName = lockPrefix + i;
 
-            if (!region.getLockManagerNode(lockName).equals(node.getLocalNode().getId())) {
+            if (!region.managerOf(lockName).equals(node.localNode().id())) {
                 return lockName;
             }
 
@@ -127,10 +127,10 @@ public abstract class LockServiceTestBase extends HekateNodeContextTestBase {
     protected HekateTestNode getLockManagerNode(String lock, List<HekateTestNode> nodes) {
         assertTrue(nodes.size() > 1);
 
-        ClusterUuid nodeId = nodes.get(0).get(DefaultLockService.class).region(REGION_1).getLockManagerNode(lock);
+        ClusterNodeId nodeId = nodes.get(0).get(DefaultLockService.class).region(REGION_1).managerOf(lock);
 
         return nodes.stream()
-            .filter(n -> n.getLocalNode().getId().equals(nodeId))
+            .filter(n -> n.localNode().id().equals(nodeId))
             .findFirst()
             .orElseThrow(() -> new RuntimeException("Failed to find lock manager node [lock=" + lock + ']'));
     }
@@ -140,7 +140,7 @@ public abstract class LockServiceTestBase extends HekateNodeContextTestBase {
             Set<ClusterHash> topologies = new HashSet<>();
 
             nodes.forEach(n -> {
-                ClusterHash topology = n.get(DefaultLockService.class).region(REGION_1).getEffectiveTopology();
+                ClusterHash topology = n.get(DefaultLockService.class).region(REGION_1).effectiveTopology();
 
                 topologies.add(topology);
             });

@@ -40,13 +40,13 @@ public class DefaultLoadBalancerContextTest extends ClusterTopologyTestBase {
 
         LoadBalancerContext ctx = newContext(100, "test", 1, toSet(n1, newNode()), details);
 
-        assertNotNull(ctx.getFailure());
-        assertEquals(100, ctx.getAffinity());
-        assertEquals("test", ctx.getAffinityKey());
+        assertNotNull(ctx.failure());
+        assertEquals(100, ctx.affinity());
+        assertEquals("test", ctx.affinityKey());
         assertTrue(ctx.hasAffinity());
-        assertSame(details, ctx.getFailure().get());
-        assertSame(details, ctx.filter(n -> false).getFailure().get());
-        assertSame(details, ctx.filter(n -> n.equals(n1)).getFailure().get());
+        assertSame(details, ctx.failure().get());
+        assertSame(details, ctx.filter(n -> false).failure().get());
+        assertSame(details, ctx.filter(n -> n.equals(n1)).failure().get());
     }
 
     @Override

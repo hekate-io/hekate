@@ -36,7 +36,7 @@ public class StatsdMetricsPluginTest extends StatsdMetricsTestBase {
             boot.withPlugin(new StatsdMetricsPlugin(new StatsdMetricsConfig()
                 .withHost(localhost)
                 .withPort(testPort)
-                .withFilter(metric -> metric.getName().equals("test_metric")))
+                .withFilter(metric -> metric.name().equals("test_metric")))
             );
 
             boot.findOrRegister(LocalMetricsServiceFactory.class)
@@ -49,8 +49,8 @@ public class StatsdMetricsPluginTest extends StatsdMetricsTestBase {
 
         await(published);
 
-        String nodeHost = StatsdMetricsPublisher.toSafeHost(node.getLocalNode().getSocket().getAddress().getHostAddress());
-        int nodePort = node.getLocalNode().getSocket().getPort();
+        String nodeHost = StatsdMetricsPublisher.toSafeHost(node.localNode().socket().getAddress().getHostAddress());
+        int nodePort = node.localNode().socket().getPort();
 
         busyWait("metrics", () -> {
             String received = receiveNext();

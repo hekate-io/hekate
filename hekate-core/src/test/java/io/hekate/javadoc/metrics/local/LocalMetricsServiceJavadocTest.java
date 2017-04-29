@@ -32,30 +32,30 @@ import static org.junit.Assert.assertNotNull;
 public class LocalMetricsServiceJavadocTest extends HekateNodeTestBase {
     // Start:counter_example
     public static class ExampleService {
-        private final CounterMetric activeTasks;
+        private final CounterMetric active;
 
-        private final CounterMetric totalTasks;
+        private final CounterMetric total;
 
-        public ExampleService(LocalMetricsService metrics) {
+        public ExampleService(Hekate hekate) {
             // Register counters.
-            activeTasks = metrics.register(new CounterConfig("tasks.active"));
-            totalTasks = metrics.register(new CounterConfig("tasks.total"));
+            active = hekate.localMetrics().register(new CounterConfig("tasks.active"));
+            total = hekate.localMetrics().register(new CounterConfig("tasks.total"));
         }
 
         public void processTask(Runnable task) {
             // Increment before starting the task.
-            activeTasks.increment();
+            active.increment();
 
             try {
                 // Run some long and heavy task.
                 task.run();
             } finally {
-                // Decrement once tasks is finished.
-                activeTasks.decrement();
+                // Decrement once tasks is completed.
+                active.decrement();
             }
 
             // Update the total amount of processed tasks.
-            totalTasks.increment();
+            total.increment();
         }
     }
     // End:counter_example
@@ -85,15 +85,20 @@ public class LocalMetricsServiceJavadocTest extends HekateNodeTestBase {
         LocalMetricsService metrics = hekate.localMetrics();
         // End:access
 
-        ExampleService exampleService = new ExampleService(metrics);
+        ExampleService exampleService = new ExampleService(hekate);
 
         exampleService.processTask(() -> {
             // No-op.
         });
 
+        // Start:counter_example_usage
+        System.out.println("Active tasks: " + hekate.localMetrics().get("tasks.active"));
+        System.out.println(" Total tasks: " + hekate.localMetrics().get("tasks.total"));
+        // End:counter_example_usage
+
         // Start:probe_example
         // Register probe that will provide the amount of free memory in the JVM.
-        metrics.register(new ProbeConfig("memory.free")
+        hekate.localMetrics().register(new ProbeConfig("memory.free")
             .withProbe(() -> Runtime.getRuntime().freeMemory())
         );
         // End:probe_example
@@ -107,7 +112,7 @@ public class LocalMetricsServiceJavadocTest extends HekateNodeTestBase {
         assertNotNull(tasksTotal);
 
         // Start:listener
-        metrics.addListener(event -> {
+        hekate.localMetrics().addListener(event -> {
             System.out.println("Free memory: " + event.get("memory.free"));
             System.out.println("Active tasks: " + event.get("tasks.active"));
             System.out.println("Total tasks: " + event.get("tasks.total"));

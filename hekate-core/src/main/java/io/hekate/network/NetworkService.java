@@ -39,6 +39,12 @@ import java.util.List;
  * documentation of {@link MessagingService}.
  * </p>
  *
+ * <h2>Accessing service</h2>
+ * <p>
+ * Instances of {@link NetworkService} can be obtained via {@link Hekate#network()} method as in the example below:
+ * ${source: network/NetworkServiceJavadocTest.java#get_service}
+ * </p>
+ *
  * <h2>Service configuration</h2>
  * <p>
  * {@link NetworkService} can be configured and registered within the {@link HekateBootstrap} via the {@link NetworkServiceFactory} class
@@ -68,12 +74,6 @@ import java.util.List;
  *
  * <p>
  * Please see the documentation of {@link NetworkServiceFactory} properties for more details about the available configuration options.
- * </p>
- *
- * <h2>Accessing service</h2>
- * <p>
- * Instances of {@link NetworkService} can be obtained via {@link Hekate#network()} method as in the example below:
- * ${source: network/NetworkServiceJavadocTest.java#get_service}
  * </p>
  *
  * <h2>Connectors</h2>

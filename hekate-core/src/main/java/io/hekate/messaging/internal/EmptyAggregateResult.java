@@ -21,6 +21,7 @@ import io.hekate.messaging.broadcast.AggregateResult;
 import io.hekate.util.format.ToString;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -82,6 +83,11 @@ class EmptyAggregateResult<T> implements AggregateResult<T> {
     @Override
     public T resultOf(ClusterNode node) {
         return null;
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return Collections.emptyIterator();
     }
 
     @Override

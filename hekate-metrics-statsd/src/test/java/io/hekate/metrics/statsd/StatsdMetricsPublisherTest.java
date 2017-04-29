@@ -217,7 +217,7 @@ public class StatsdMetricsPublisherTest extends StatsdMetricsTestBase {
         resume.countDown();
 
         busyWait("empty queue", () ->
-            publisher.getQueueSize() == 0
+            publisher.queueSize() == 0
         );
 
         publisher.stop();
@@ -245,7 +245,7 @@ public class StatsdMetricsPublisherTest extends StatsdMetricsTestBase {
             publisher.publish(singleton(new TestMetric("test.metric", i)));
         }
 
-        assertEquals(maxQueueSize, publisher.getQueueSize());
+        assertEquals(maxQueueSize, publisher.queueSize());
 
         Waiting stopped = publisher.stopAsync();
 

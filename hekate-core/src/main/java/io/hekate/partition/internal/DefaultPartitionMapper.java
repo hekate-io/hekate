@@ -81,27 +81,27 @@ class DefaultPartitionMapper implements PartitionMapper {
         }
 
         @Override
-        public String getName() {
+        public String name() {
             return name;
         }
 
         @Override
-        public int getPartitions() {
+        public int partitions() {
             return partitionsSize;
         }
 
         @Override
-        public int getBackupNodes() {
+        public int backupNodes() {
             return backupSize;
         }
 
         @Override
-        public ClusterTopology getTopology() {
+        public ClusterTopology topology() {
             return topology;
         }
 
         @Override
-        public PartitionMapper getSnapshot() {
+        public PartitionMapper snapshot() {
             return this;
         }
 
@@ -159,37 +159,37 @@ class DefaultPartitionMapper implements PartitionMapper {
 
     @Override
     public Partition map(Object key) {
-        return getSnapshot().map(key);
+        return snapshot().map(key);
     }
 
     @Override
-    public String getName() {
+    public String name() {
         return name;
     }
 
     @Override
-    public int getPartitions() {
+    public int partitions() {
         return partitionsSize;
     }
 
     @Override
-    public int getBackupNodes() {
+    public int backupNodes() {
         return backupSize;
     }
 
     @Override
-    public ClusterTopology getTopology() {
-        return getSnapshot().getTopology();
+    public ClusterTopology topology() {
+        return snapshot().topology();
     }
 
     @Override
-    public PartitionMapper getSnapshot() {
+    public PartitionMapper snapshot() {
         while (true) {
             PartitionMapperSnapshot localSnapshot = this.snapshot;
 
-            ClusterTopology topology = cluster.getTopology();
+            ClusterTopology topology = cluster.topology();
 
-            if (localSnapshot == null || localSnapshot.getTopology().getVersion() < topology.getVersion()) {
+            if (localSnapshot == null || localSnapshot.topology().version() < topology.version()) {
                 update();
             } else {
                 return localSnapshot;
@@ -206,9 +206,9 @@ class DefaultPartitionMapper implements PartitionMapper {
         lock.lock();
 
         try {
-            ClusterTopology topology = cluster.getTopology();
+            ClusterTopology topology = cluster.topology();
 
-            if (snapshot == null || snapshot.getTopology().getVersion() < topology.getVersion()) {
+            if (snapshot == null || snapshot.topology().version() < topology.version()) {
                 if (DEBUG) {
                     log.debug("Updating cluster topology [mapper={}, topology={}]", this, topology);
                 }
@@ -228,7 +228,7 @@ class DefaultPartitionMapper implements PartitionMapper {
                         partitions[pid] = new DefaultPartition(pid, null, Collections.emptyList(), topology);
                     }
                 } else {
-                    List<ClusterNode> nodes = new ArrayList<>(topology.getNodes());
+                    List<ClusterNode> nodes = new ArrayList<>(topology.nodes());
 
                     ByteArrayOutputStream buf = new ByteArrayOutputStream();
                     DataOutputStream out = new DataOutputStream(buf);
@@ -239,8 +239,8 @@ class DefaultPartitionMapper implements PartitionMapper {
                         for (ClusterNode node : nodes) {
                             try {
                                 out.writeInt(pid);
-                                out.writeLong(node.getId().getLoBits());
-                                out.writeLong(node.getId().getHiBits());
+                                out.writeLong(node.id().loBits());
+                                out.writeLong(node.id().hiBits());
                             } catch (IOException e) {
                                 // Never happens.
                             }

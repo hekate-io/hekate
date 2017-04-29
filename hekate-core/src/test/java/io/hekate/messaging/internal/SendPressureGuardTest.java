@@ -43,10 +43,10 @@ public class SendPressureGuardTest extends HekateTestBase {
             for (int j = 0; j < 10; j++) {
                 backPressure.onEnqueue();
 
-                assertEquals(j + 1, backPressure.getQueueSize());
+                assertEquals(j + 1, backPressure.queueSize());
             }
 
-            assertEquals(10, backPressure.getQueueSize());
+            assertEquals(10, backPressure.queueSize());
 
             Future<?> future = runAsync(() -> {
                 backPressure.onEnqueue();
@@ -56,7 +56,7 @@ public class SendPressureGuardTest extends HekateTestBase {
 
             expect(TimeoutException.class, () -> future.get(300, TimeUnit.MILLISECONDS));
 
-            assertEquals(11, backPressure.getQueueSize());
+            assertEquals(11, backPressure.queueSize());
 
             for (int j = 0; j < 6; j++) {
                 backPressure.onDequeue();
@@ -64,9 +64,9 @@ public class SendPressureGuardTest extends HekateTestBase {
 
             assertNull(get(future));
 
-            assertEquals(5, backPressure.getQueueSize());
+            assertEquals(5, backPressure.queueSize());
 
-            while (backPressure.getQueueSize() > 0) {
+            while (backPressure.queueSize() > 0) {
                 backPressure.onDequeue();
             }
         });
@@ -95,10 +95,10 @@ public class SendPressureGuardTest extends HekateTestBase {
             for (int j = 0; j < 10; j++) {
                 backPressure.onEnqueue();
 
-                assertEquals(j + 1, backPressure.getQueueSize());
+                assertEquals(j + 1, backPressure.queueSize());
             }
 
-            assertEquals(10, backPressure.getQueueSize());
+            assertEquals(10, backPressure.queueSize());
 
             for (int j = 0; j < 10; j++) {
                 try {
@@ -117,10 +117,10 @@ public class SendPressureGuardTest extends HekateTestBase {
 
                 backPressure.onDequeue();
 
-                assertEquals(10, backPressure.getQueueSize());
+                assertEquals(10, backPressure.queueSize());
             }
 
-            while (backPressure.getQueueSize() > 0) {
+            while (backPressure.queueSize() > 0) {
                 backPressure.onDequeue();
             }
         });
@@ -134,10 +134,10 @@ public class SendPressureGuardTest extends HekateTestBase {
             for (int j = 0; j < 10; j++) {
                 backPressure.onEnqueue();
 
-                assertEquals(j + 1, backPressure.getQueueSize());
+                assertEquals(j + 1, backPressure.queueSize());
             }
 
-            assertEquals(10, backPressure.getQueueSize());
+            assertEquals(10, backPressure.queueSize());
 
             Future<?> future = runAsync(() -> {
                 Thread.currentThread().interrupt();
@@ -149,7 +149,7 @@ public class SendPressureGuardTest extends HekateTestBase {
 
             expect(TimeoutException.class, () -> future.get(300, TimeUnit.MILLISECONDS));
 
-            assertEquals(11, backPressure.getQueueSize());
+            assertEquals(11, backPressure.queueSize());
 
             for (int j = 0; j < 6; j++) {
                 backPressure.onDequeue();
@@ -157,9 +157,9 @@ public class SendPressureGuardTest extends HekateTestBase {
 
             assertNull(get(future));
 
-            assertEquals(5, backPressure.getQueueSize());
+            assertEquals(5, backPressure.queueSize());
 
-            while (backPressure.getQueueSize() > 0) {
+            while (backPressure.queueSize() > 0) {
                 backPressure.onDequeue();
             }
         });
@@ -178,10 +178,10 @@ public class SendPressureGuardTest extends HekateTestBase {
             for (int j = 0; j < 10; j++) {
                 backPressure.onEnqueue();
 
-                assertEquals(j + 1, backPressure.getQueueSize());
+                assertEquals(j + 1, backPressure.queueSize());
             }
 
-            assertEquals(10, backPressure.getQueueSize());
+            assertEquals(10, backPressure.queueSize());
 
             for (int j = 0; j < 6; j++) {
                 try {
@@ -194,10 +194,10 @@ public class SendPressureGuardTest extends HekateTestBase {
 
                 backPressure.onDequeue();
 
-                assertEquals(10, backPressure.getQueueSize());
+                assertEquals(10, backPressure.queueSize());
             }
 
-            while (backPressure.getQueueSize() > 0) {
+            while (backPressure.queueSize() > 0) {
                 backPressure.onDequeue();
             }
         });
@@ -217,10 +217,10 @@ public class SendPressureGuardTest extends HekateTestBase {
             for (int j = 0; j < 10; j++) {
                 backPressure.onEnqueue();
 
-                assertEquals(j + 1, backPressure.getQueueSize());
+                assertEquals(j + 1, backPressure.queueSize());
             }
 
-            assertEquals(10, backPressure.getQueueSize());
+            assertEquals(10, backPressure.queueSize());
 
             try {
                 get(runAsync(() ->
@@ -232,7 +232,7 @@ public class SendPressureGuardTest extends HekateTestBase {
                 assertTrue(getStacktrace(e), Utils.isCausedBy(e, MessageQueueTimeoutException.class));
             }
 
-            assertEquals(11, backPressure.getQueueSize());
+            assertEquals(11, backPressure.queueSize());
 
             backPressure.onDequeue();
 
@@ -248,7 +248,7 @@ public class SendPressureGuardTest extends HekateTestBase {
 
             sleep(50);
 
-            while (backPressure.getQueueSize() > 1) {
+            while (backPressure.queueSize() > 1) {
                 backPressure.onDequeue();
             }
 
@@ -256,7 +256,7 @@ public class SendPressureGuardTest extends HekateTestBase {
 
             assertTrue("remaining:" + remaining, remaining > 0);
             assertTrue("remaining:" + remaining, remaining <= 250);
-            assertEquals(1, backPressure.getQueueSize());
+            assertEquals(1, backPressure.queueSize());
 
             backPressure.onDequeue();
         });
@@ -273,7 +273,7 @@ public class SendPressureGuardTest extends HekateTestBase {
             return null;
         });
 
-        busyWait("blocked", () -> backPressure.getQueueSize() == 2);
+        busyWait("blocked", () -> backPressure.queueSize() == 2);
 
         expect(TimeoutException.class, () -> async.get(100, TimeUnit.MILLISECONDS));
 

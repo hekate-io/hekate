@@ -33,14 +33,14 @@ public interface FollowerContext {
      *
      * @return Leader node.
      */
-    ClusterNode getLeader();
+    ClusterNode leader();
 
     /**
      * Returns the local node where the {@link Candidate} is running.
      *
      * @return Local node.
      */
-    ClusterNode getLocalNode();
+    ClusterNode localNode();
 
     /**
      * Registers the leader change event listener.
@@ -56,14 +56,14 @@ public interface FollowerContext {
      *
      * @param listener Listener.
      */
-    void addLeaderChangeListener(LeaderChangeListener listener);
+    void addListener(LeaderChangeListener listener);
 
     /**
-     * Unregisters the specified listener if it was previously registered via {@link #addLeaderChangeListener(LeaderChangeListener)}.
+     * Unregisters the specified listener if it was previously registered via {@link #addListener(LeaderChangeListener)}.
      *
      * @param listener Listener.
      *
      * @return {@code true} if listener was removed.
      */
-    boolean removeLeaderChangeListener(LeaderChangeListener listener);
+    boolean removeListener(LeaderChangeListener listener);
 }

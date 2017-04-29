@@ -17,7 +17,7 @@
 package io.hekate.cluster.internal;
 
 import io.hekate.cluster.ClusterAddress;
-import io.hekate.cluster.ClusterJvmInfo;
+import io.hekate.cluster.ClusterNodeRuntime;
 import io.hekate.core.ServiceInfo;
 import io.hekate.util.format.ToString;
 import java.util.Collections;
@@ -39,7 +39,7 @@ public class DefaultClusterNodeBuilder {
 
     private Map<String, ServiceInfo> services = Collections.emptyMap();
 
-    private ClusterJvmInfo sysInfo = DefaultClusterJvmInfo.getLocalInfo();
+    private ClusterNodeRuntime sysInfo = DefaultClusterNodeRuntime.getLocalInfo();
 
     public DefaultClusterNodeBuilder withAddress(ClusterAddress address) {
         this.address = address;
@@ -83,7 +83,7 @@ public class DefaultClusterNodeBuilder {
         return this;
     }
 
-    public DefaultClusterNodeBuilder withSysInfo(ClusterJvmInfo sysInfo) {
+    public DefaultClusterNodeBuilder withSysInfo(ClusterNodeRuntime sysInfo) {
         this.sysInfo = sysInfo;
 
         return this;

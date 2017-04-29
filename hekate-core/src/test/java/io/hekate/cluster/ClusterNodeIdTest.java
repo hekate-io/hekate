@@ -14,23 +14,23 @@
  * under the License.
  */
 
-package io.hekate.messaging;
+package io.hekate.cluster;
 
 import io.hekate.util.UuidTestBase;
 
-public class MessagingChanneUuidTest extends UuidTestBase<MessagingChanneUuid> {
+public class ClusterNodeIdTest extends UuidTestBase<ClusterNodeId> {
     @Override
-    protected MessagingChanneUuid newUuid() {
-        return new MessagingChanneUuid();
+    protected ClusterNodeId newUuid() {
+        return new ClusterNodeId();
     }
 
     @Override
-    protected MessagingChanneUuid newUuid(long hi, long lo) {
-        return new MessagingChanneUuid(hi, lo);
+    protected ClusterNodeId newUuid(long hi, long lo) {
+        return new ClusterNodeId(hi, lo);
     }
 
     @Override
-    protected MessagingChanneUuid newUuid(String s) {
-        return new MessagingChanneUuid(s);
+    protected ClusterNodeId newUuid(String s) {
+        return new ClusterNodeId(s);
     }
 }

@@ -25,15 +25,15 @@ package io.hekate.messaging;
  *
  * @param <T> Base type of messages that can be supported by this endpoint.
  *
- * @see Message#getEndpoint()
+ * @see Message#endpoint()
  */
 public interface MessagingEndpoint<T> {
     /**
-     * Returns the universally unique identifier of a remote channel (see {@link MessagingChannel#getId()}).
+     * Returns the universally unique identifier of a remote channel (see {@link MessagingChannel#id()}).
      *
      * @return Universally unique identifier of a remote channel.
      */
-    MessagingChanneUuid getRemoteId();
+    MessagingChannelId remoteId();
 
     /**
      * Returns the custom context object that was set via {@link #setContext(Object)}.
@@ -56,5 +56,5 @@ public interface MessagingEndpoint<T> {
      *
      * @return Messaging channel.
      */
-    MessagingChannel<T> getChannel();
+    MessagingChannel<T> channel();
 }

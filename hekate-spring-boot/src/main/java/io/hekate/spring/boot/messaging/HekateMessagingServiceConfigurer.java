@@ -74,12 +74,12 @@ public class HekateMessagingServiceConfigurer {
         }
 
         @Override
-        protected String getInjectedBeanName(NamedMessagingChannel annotation) {
+        protected String injectedBeanName(NamedMessagingChannel annotation) {
             return MessagingChannelBean.class.getName() + "-" + annotation.value();
         }
 
         @Override
-        protected Object getQualifierValue(NamedMessagingChannel annotation) {
+        protected Object qualifierValue(NamedMessagingChannel annotation) {
             return annotation.value();
         }
 

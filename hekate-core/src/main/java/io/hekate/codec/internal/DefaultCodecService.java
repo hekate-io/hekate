@@ -31,7 +31,7 @@ public class DefaultCodecService implements CodecService {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> CodecFactory<T> getCodecFactory() {
+    public <T> CodecFactory<T> codecFactory() {
         return (CodecFactory<T>)codecFactory;
     }
 

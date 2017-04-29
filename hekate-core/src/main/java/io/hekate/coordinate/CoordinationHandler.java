@@ -62,7 +62,7 @@ public interface CoordinationHandler {
      *
      * <p>
      * Implementations of this method should start executing coordination logic by communicating with other {@link
-     * CoordinationContext#getMembers() coordination memebers}.
+     * CoordinationContext#members() coordination memebers}.
      * </p>
      *
      * @param ctx Coordination context.
@@ -70,7 +70,7 @@ public interface CoordinationHandler {
     void coordinate(CoordinationContext ctx);
 
     /**
-     * Gets called when a new request is received from a {@link CoordinationRequest#getFrom() coordination member}.
+     * Gets called when a new request is received from a {@link CoordinationRequest#from() coordination member}.
      *
      * <p>
      * <b>Important!!!</b> Each request must be explicitly replied via {@link CoordinationRequest#reply(Object)} method. Not replying to

@@ -234,10 +234,10 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
 
             ChannelPipeline pipeline = ctx.pipeline();
 
-            if (handshakeMsg.getType() == NetworkProtocol.Type.HANDSHAKE_REJECT) {
+            if (handshakeMsg.type() == NetworkProtocol.Type.HANDSHAKE_REJECT) {
                 HandshakeReject reject = (HandshakeReject)handshakeMsg;
 
-                String reason = reject.getReason();
+                String reason = reject.reason();
 
                 if (debug) {
                     log.debug("Server rejected connection [channel={}, reason={}]", id, reason);
@@ -254,9 +254,9 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
                     ctx.pipeline().remove(CONNECT_TIMEOUT_HANDLER_ID);
                 }
 
-                int interval = accept.getHbInterval();
-                int threshold = accept.getHbLossThreshold();
-                boolean disableHeartbeats = accept.isHbDisabled();
+                int interval = accept.hbInterval();
+                int threshold = accept.hbLossThreshold();
+                boolean disableHeartbeats = accept.hbDisabled();
 
                 // Register heartbeat handler.
                 if (interval > 0 && threshold > 0) {

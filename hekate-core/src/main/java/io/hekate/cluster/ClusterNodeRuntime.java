@@ -19,9 +19,9 @@ package io.hekate.cluster;
 /**
  * Information about the JVM process of the {@link ClusterNode}.
  *
- * @see ClusterNode#getJvmInfo()
+ * @see ClusterNode#runtime()
  */
-public interface ClusterJvmInfo {
+public interface ClusterNodeRuntime {
     /**
      * Returns the number of CPUs that are available to the Java virtual machine.
      *
@@ -29,7 +29,7 @@ public interface ClusterJvmInfo {
      *
      * @see Runtime#availableProcessors()
      */
-    int getCpus();
+    int cpus();
 
     /**
      * Returns the maximum amount of memory as provided by {@link Runtime#maxMemory()}.
@@ -38,54 +38,54 @@ public interface ClusterJvmInfo {
      *
      * @see Runtime#maxMemory()
      */
-    long getMaxMemory();
+    long maxMemory();
 
     /**
      * Returns the name of an operating system ('os.name' {@link System#getProperty(String) system property}).
      *
      * @return Operating system name or an empty string if such information is not available.
      */
-    String getOsName();
+    String osName();
 
     /**
      * Returns the operating system architecture ('os.arch' {@link System#getProperty(String) system property}).
      *
      * @return Operating system architecture or an empty string if such information is not available.
      */
-    String getOsArch();
+    String osArch();
 
     /**
      * Returns the operating system version ('os.version' {@link System#getProperty(String) system property}).
      *
      * @return Operating system version or an empty string if such information is not available.
      */
-    String getOsVersion();
+    String osVersion();
 
     /**
      * Returns the Java runtime environment version ('java.version' {@link System#getProperty(String) system property}).
      *
      * @return Java runtime environment version or an empty string if such information is not available.
      */
-    String getJvmVersion();
+    String jvmVersion();
 
     /**
      * Returns the Java virtual machine implementation name ('java.vm.name' {@link System#getProperty(String) system property}).
      *
      * @return Java virtual machine implementation name or an empty string if such information is not available.
      */
-    String getJvmName();
+    String jvmName();
 
     /**
      * Returns the Java virtual machine implementation vendor ('java.vm.vendor' {@link System#getProperty(String) system property}).
      *
      * @return Java virtual machine implementation name or an empty string if such information is not available.
      */
-    String getJvmVendor();
+    String jvmVendor();
 
     /**
      * Returns <a href="https://en.wikipedia.org/wiki/Process_identifier" target="_blank">PID</a> of a Java virtual machine system process.
      *
      * @return <a href="https://en.wikipedia.org/wiki/Process_identifier" target="_blank">PID</a> of a Java virtual machine system process.
      */
-    String getPid();
+    String pid();
 }

@@ -31,95 +31,95 @@ public class DefaultAddressSelectorConfigTest extends HekateTestBase {
     @Test
     public void testIpVersion() {
         assertSame(IpVersion.V4, cfg.getIpVersion());
-        assertSame(IpVersion.V4, createSelector().getIpVersion());
+        assertSame(IpVersion.V4, createSelector().ipVersion());
 
         cfg.setIpVersion(IpVersion.ANY);
 
         assertSame(IpVersion.ANY, cfg.getIpVersion());
-        assertSame(IpVersion.ANY, createSelector().getIpVersion());
+        assertSame(IpVersion.ANY, createSelector().ipVersion());
 
         assertSame(cfg, cfg.withIpVersion(IpVersion.V6));
 
         assertSame(IpVersion.V6, cfg.getIpVersion());
-        assertSame(IpVersion.V6, createSelector().getIpVersion());
+        assertSame(IpVersion.V6, createSelector().ipVersion());
     }
 
     @Test
     public void testExcludeLoopback() {
         assertTrue(cfg.isExcludeLoopback());
-        assertTrue(createSelector().isExcludeLoopback());
+        assertTrue(createSelector().excludeLoopback());
 
         cfg.setExcludeLoopback(false);
 
         assertFalse(cfg.isExcludeLoopback());
-        assertFalse(createSelector().isExcludeLoopback());
+        assertFalse(createSelector().excludeLoopback());
 
         assertSame(cfg, cfg.withExcludeLoopback(true));
-        assertTrue(createSelector().isExcludeLoopback());
+        assertTrue(createSelector().excludeLoopback());
     }
 
     @Test
     public void testInterfaceNotMatch() {
         assertNull(cfg.getInterfaceNotMatch());
-        assertNull(createSelector().getInterfaceNotMatch());
+        assertNull(createSelector().interfaceNotMatch());
 
         cfg.setInterfaceNotMatch("test");
 
         assertEquals("test", cfg.getInterfaceNotMatch());
-        assertEquals("test", createSelector().getInterfaceNotMatch());
+        assertEquals("test", createSelector().interfaceNotMatch());
 
         assertSame(cfg, cfg.withInterfaceNotMatch("test2"));
 
         assertEquals("test2", cfg.getInterfaceNotMatch());
-        assertEquals("test2", createSelector().getInterfaceNotMatch());
+        assertEquals("test2", createSelector().interfaceNotMatch());
     }
 
     @Test
     public void testInterfaceMatch() {
         assertNull(cfg.getInterfaceMatch());
-        assertNull(createSelector().getInterfaceMatch());
+        assertNull(createSelector().interfaceMatch());
 
         cfg.setInterfaceMatch("test");
 
         assertEquals("test", cfg.getInterfaceMatch());
-        assertEquals("test", createSelector().getInterfaceMatch());
+        assertEquals("test", createSelector().interfaceMatch());
 
         assertSame(cfg, cfg.withInterfaceMatch("test2"));
 
         assertEquals("test2", cfg.getInterfaceMatch());
-        assertEquals("test2", createSelector().getInterfaceMatch());
+        assertEquals("test2", createSelector().interfaceMatch());
     }
 
     @Test
     public void testIpNotMatch() {
         assertNull(cfg.getIpNotMatch());
-        assertNull(createSelector().getIpNotMatch());
+        assertNull(createSelector().ipNotMatch());
 
         cfg.setIpNotMatch("test");
 
         assertEquals("test", cfg.getIpNotMatch());
-        assertEquals("test", createSelector().getIpNotMatch());
+        assertEquals("test", createSelector().ipNotMatch());
 
         assertSame(cfg, cfg.withIpNotMatch("test2"));
 
         assertEquals("test2", cfg.getIpNotMatch());
-        assertEquals("test2", createSelector().getIpNotMatch());
+        assertEquals("test2", createSelector().ipNotMatch());
     }
 
     @Test
     public void testIpMatch() {
         assertNull(cfg.getIpMatch());
-        assertNull(createSelector().getIpMatch());
+        assertNull(createSelector().ipMatch());
 
         cfg.setIpMatch("test");
 
         assertEquals("test", cfg.getIpMatch());
-        assertEquals("test", createSelector().getIpMatch());
+        assertEquals("test", createSelector().ipMatch());
 
         assertSame(cfg, cfg.withIpMatch("test2"));
 
         assertEquals("test2", cfg.getIpMatch());
-        assertEquals("test2", createSelector().getIpMatch());
+        assertEquals("test2", createSelector().ipMatch());
     }
 
     private DefaultAddressSelector createSelector() {

@@ -310,7 +310,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
         }
     }
 
-    public List<MetricsListener> getListeners() {
+    public List<MetricsListener> listeners() {
         return new ArrayList<>(listeners);
     }
 
@@ -356,18 +356,18 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
                     if (c.isAutoReset()) {
                         val = c.reset();
                     } else {
-                        val = c.getValue();
+                        val = c.value();
                     }
 
                     if (snapshot != null) {
-                        String name = c.getName();
+                        String name = c.name();
 
                         snapshot.put(name, new StaticMetric(name, val));
 
                         if (c.hasTotal()) {
-                            String totalName = c.getTotalName();
+                            String totalName = c.totalName();
 
-                            snapshot.put(totalName, new StaticMetric(totalName, c.getTotalValue()));
+                            snapshot.put(totalName, new StaticMetric(totalName, c.totalValue()));
                         }
                     }
                 });

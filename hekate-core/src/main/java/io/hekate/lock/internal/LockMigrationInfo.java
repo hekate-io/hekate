@@ -16,7 +16,7 @@
 
 package io.hekate.lock.internal;
 
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.util.format.ToString;
 
 class LockMigrationInfo implements LockIdentity {
@@ -24,33 +24,33 @@ class LockMigrationInfo implements LockIdentity {
 
     private final long lockId;
 
-    private final ClusterUuid node;
+    private final ClusterNodeId node;
 
     private final long threadId;
 
-    public LockMigrationInfo(String name, long lockId, ClusterUuid node, long threadId) {
+    public LockMigrationInfo(String name, long lockId, ClusterNodeId node, long threadId) {
         this.name = name;
         this.lockId = lockId;
         this.node = node;
         this.threadId = threadId;
     }
 
-    public String getName() {
+    public String name() {
         return name;
     }
 
     @Override
-    public long getLockId() {
+    public long lockId() {
         return lockId;
     }
 
     @Override
-    public ClusterUuid getNode() {
+    public ClusterNodeId node() {
         return node;
     }
 
     @Override
-    public long getThreadId() {
+    public long threadId() {
         return threadId;
     }
 

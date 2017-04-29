@@ -44,8 +44,8 @@ public abstract class UuidBase<T extends UuidBase<T>> implements Serializable, C
     /**
      * Constructs new instance from the specified higher/lower bits.
      *
-     * @param hiBits Higher bits (see {@link #getHiBits()}).
-     * @param loBits Lower bits (see {@link #getLoBits()}).
+     * @param hiBits Higher bits (see {@link #hiBits()}).
+     * @param loBits Lower bits (see {@link #loBits()}).
      */
     public UuidBase(long hiBits, long loBits) {
         this.hiBits = hiBits;
@@ -95,7 +95,7 @@ public abstract class UuidBase<T extends UuidBase<T>> implements Serializable, C
      *
      * @return Higher bits of this identifier.
      */
-    public long getHiBits() {
+    public long hiBits() {
         return hiBits;
     }
 
@@ -109,14 +109,14 @@ public abstract class UuidBase<T extends UuidBase<T>> implements Serializable, C
      *
      * @return Lower bits of this identifier.
      */
-    public long getLoBits() {
+    public long loBits() {
         return loBits;
     }
 
     @Override
     public int compareTo(T other) {
-        long hiBits2 = other.getHiBits();
-        long loBits2 = other.getLoBits();
+        long hiBits2 = other.hiBits();
+        long loBits2 = other.loBits();
 
         if (hiBits < hiBits2) {
             return -1;

@@ -17,13 +17,13 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.HekateTestBase;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.core.HekateFutureException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.MessageReceiver;
-import io.hekate.messaging.MessagingChanneUuid;
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.unicast.LoadBalancer;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
@@ -47,7 +47,7 @@ public class TestChannel {
 
     private volatile DefaultMessagingChannel<String> channel;
 
-    private volatile ClusterUuid nodeId;
+    private volatile ClusterNodeId nodeId;
 
     private volatile Throwable receiverError;
 
@@ -71,8 +71,8 @@ public class TestChannel {
         this.node = node;
 
         node.cluster().addListener(event -> {
-            if (event.getType() == ClusterEventType.JOIN) {
-                nodeId = node.getLocalNode().getId();
+            if (event.type() == ClusterEventType.JOIN) {
+                nodeId = node.localNode().id();
 
                 channel = node.get(DefaultMessagingService.class).channel(MessagingServiceTestBase.TEST_CHANNEL_NAME);
             }
@@ -87,7 +87,7 @@ public class TestChannel {
         return channel.withLoadBalancer(balancer);
     }
 
-    public ClusterUuid getNodeId() {
+    public ClusterNodeId getNodeId() {
         return nodeId;
     }
 
@@ -100,7 +100,7 @@ public class TestChannel {
     }
 
     public MessagingGateway<String> getImpl() {
-        return channel.getGateway();
+        return channel.gateway();
     }
 
     public TestChannel join() throws HekateFutureException, InterruptedException {
@@ -115,35 +115,35 @@ public class TestChannel {
         return this;
     }
 
-    public MessagingChanneUuid getId() {
-        return channel.getId();
+    public MessagingChannelId getId() {
+        return channel.id();
     }
 
     public int getNioThreadPoolSize() {
-        return channel.getNioThreads();
+        return channel.nioThreads();
     }
 
     public int getWorkerThreads() {
-        return channel.getWorkerThreads();
+        return channel.workerThreads();
     }
 
-    public SendFuture send(ClusterUuid nodeId, String msg) {
+    public SendFuture send(ClusterNodeId nodeId, String msg) {
         return channel.forNode(nodeId).send(msg);
     }
 
-    public void send(ClusterUuid nodeId, String msg, SendCallback callback) {
+    public void send(ClusterNodeId nodeId, String msg, SendCallback callback) {
         channel.forNode(nodeId).send(msg, callback);
     }
 
-    public ResponseFuture<String> request(ClusterUuid nodeId, String msg) {
+    public ResponseFuture<String> request(ClusterNodeId nodeId, String msg) {
         return channel.forNode(nodeId).request(msg);
     }
 
-    public void request(ClusterUuid nodeId, String msg, ResponseCallback<String> callback) {
+    public void request(ClusterNodeId nodeId, String msg, ResponseCallback<String> callback) {
         channel.forNode(nodeId).request(msg, callback);
     }
 
-    public Response<String> requestWithSyncCallback(ClusterUuid nodeId, String msg) throws Exception {
+    public Response<String> requestWithSyncCallback(ClusterNodeId nodeId, String msg) throws Exception {
         ResponseCallbackMock callback = new ResponseCallbackMock(msg);
 
         channel.forNode(nodeId).request(msg, callback);
@@ -157,7 +157,7 @@ public class TestChannel {
         }
     }
 
-    public void sendWithSyncCallback(ClusterUuid nodeId, String msg) throws Exception {
+    public void sendWithSyncCallback(ClusterNodeId nodeId, String msg) throws Exception {
         SendCallbackMock callback = new SendCallbackMock();
 
         send(nodeId, msg, callback);
@@ -194,7 +194,7 @@ public class TestChannel {
     }
 
     public void awaitForTopology(List<TestChannel> channels) {
-        node.awaitForTopology(channel.getCluster(), channels.stream().map(c -> c.getNode().getLocalNode()).collect(toList()));
+        node.awaitForTopology(channel.cluster(), channels.stream().map(c -> c.getNode().localNode()).collect(toList()));
     }
 
     public void checkReceiverError() {

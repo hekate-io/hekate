@@ -33,6 +33,12 @@ import java.util.List;
  * or until the owner node goes down and leaves the cluster.
  * </p>
  *
+ * <h2>Accessing service</h2>
+ * <p>
+ * {@link LockService} can be accessed via the {@link Hekate#locks()} method as in the example below:
+ * ${source: lock/LockServiceJavadocTest.java#access}
+ * </p>
+ *
  * <h2>Service configuration</h2>
  * <p>
  * {@link LockService} can be registered and configured in {@link HekateBootstrap} with the help of {@link
@@ -61,15 +67,9 @@ import java.util.List;
  * </div>
  *
  *
- * <h2>Accessing service</h2>
- * <p>
- * {@link LockService} can be accessed via the {@link Hekate#locks()} method as in the example below:
- * ${source: lock/LockServiceJavadocTest.java#access}
- * </p>
- *
  * <h2>Locks and Regions</h2>
  * <p>
- * Each lock within the lock service is identified by its {@link DistributedLock#getName() name} and a {@link LockRegion}. Lock name is
+ * Each lock within the lock service is identified by its {@link DistributedLock#name() name} and a {@link LockRegion}. Lock name is
  * an arbitrary string which can be dynamically constructed and doesn't require any pre-registration within the lock service. Each {@link
  * LockRegion} acts as an independent namespace for locks and must be pre-registered within the {@link LockServiceFactory}. Each region
  * can manage an unlimited amount of locks.
@@ -100,7 +100,7 @@ import java.util.List;
  * <h2>Locking protocol details</h2>
  * <p>
  * {@link LockService} uses {@link PartitionService} to evenly distribute locks processing workload among the nodes. For each lock/unlock
- * operation it selects a node that is responsible for managing a lock with a given name and forwards those operations to such node.
+ * operation it selects a node that is responsible for managing the lock with the given name and forwards those operations to such node.
  * Manager node controls the lifecycle and order of locks and makes sure that locks are released if lock owner node prematurely leaves the
  * cluster before properly releasing the lock.
  * </p>
@@ -119,8 +119,9 @@ import java.util.List;
  * a 'prepare' message over the nodes ring. This message circulates over the ring so that each node could inspect its local state and
  * decide which of its owned locks require migration (i.e. which lock was re-mapped to another manager node). When message returns back to
  * the coordinator it contains information about all locks in the region that require migration. During the second phase, coordinator sends
- * an 'apply' message over the ring. This message contains information about migrating locks and is used by cluster nodes to change their
- * lock management state (i.e. take control over newly assigned locks and unload locks that were re-mapped to some other manager node).
+ * an 'apply' message over the ring. This message contains information about migrating locks and is used by the cluster nodes to change
+ * their lock management state (i.e. take control over newly assigned locks and unload locks that were re-mapped to some other manager
+ * node).
  * </p>
  */
 @DefaultServiceFactory(LockServiceFactory.class)

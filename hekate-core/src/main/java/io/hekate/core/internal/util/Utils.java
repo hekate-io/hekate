@@ -90,7 +90,7 @@ public final class Utils {
         // No-op.
     }
 
-    public static String getPid() {
+    public static String pid() {
         // No synchronization here:
         // 1) Pid never changes
         // 1) Extraction is cheap and it is ok if several threads will do it in parallel
@@ -141,7 +141,7 @@ public final class Utils {
         return collection.stream().filter(Objects::nonNull);
     }
 
-    public static String getStackTrace(Throwable error) {
+    public static String stackTrace(Throwable error) {
         StringWriter out = new StringWriter();
 
         error.printStackTrace(new PrintWriter(out));

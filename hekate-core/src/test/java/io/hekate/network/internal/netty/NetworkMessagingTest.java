@@ -132,7 +132,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
     @Test
     public void testSend() throws Exception {
         repeat(3, i -> {
-            client.connect(server.getAddress(), clientCallback).get();
+            client.connect(server.address(), clientCallback).get();
 
             client.send("one");
             client.send("two");
@@ -152,7 +152,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
     @Test
     public void testSendWithCallback() throws Exception {
         repeat(3, i -> {
-            client.connect(server.getAddress(), clientCallback).get();
+            client.connect(server.address(), clientCallback).get();
 
             client.send("one", messageCallback);
             client.send("two", messageCallback);
@@ -177,7 +177,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
             client.send("two", messageCallback);
             client.send("three", messageCallback);
 
-            client.connect(server.getAddress(), clientCallback).get();
+            client.connect(server.address(), clientCallback).get();
 
             client.send("four", messageCallback);
 
@@ -202,7 +202,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
     @Test
     public void testSendOnConnect() throws Exception {
         repeat(3, i -> {
-            client.connect(server.getAddress(), new NetworkClientCallback<String>() {
+            client.connect(server.address(), new NetworkClientCallback<String>() {
                 @Override
                 public void onConnect(NetworkClient<String> client) {
                     client.send("one");
@@ -233,7 +233,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
             CountDownLatch onConnect = new CountDownLatch(1);
             CountDownLatch onDeferredSent = new CountDownLatch(1);
 
-            NetworkFuture<String> connect = client.connect(server.getAddress(), new NetworkClientCallback<String>() {
+            NetworkFuture<String> connect = client.connect(server.address(), new NetworkClientCallback<String>() {
                 @Override
                 public void onConnect(NetworkClient<String> client) {
                     onConnect.countDown();
@@ -282,7 +282,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
     @Test
     public void testSendDeferred() throws Exception {
         repeat(3, i -> {
-            NetworkFuture<String> future = client.connect(server.getAddress(), clientCallback);
+            NetworkFuture<String> future = client.connect(server.address(), clientCallback);
 
             client.send("one");
             client.send("two");
@@ -346,7 +346,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
             serverHandler.addReplyWith("two", responses2);
             serverHandler.addReplyWith("three", responses3);
 
-            client.connect(server.getAddress(), clientCallback).get();
+            client.connect(server.address(), clientCallback).get();
 
             client.send("one");
             client.send("two");
@@ -370,7 +370,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
         repeat(3, i -> {
             serverHandler.addSendOnConnect("one", "two", "tree");
 
-            client.connect(server.getAddress(), clientCallback).get();
+            client.connect(server.address(), clientCallback).get();
 
             clientCallback.awaitForMessages("one", "two", "tree");
 
@@ -392,7 +392,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
             serverHandler.addReplyWith("two", serverCallback, "serverTwo");
             serverHandler.addReplyWith("three", serverCallback, "serverThree");
 
-            client.connect(server.getAddress(), clientCallback).get();
+            client.connect(server.address(), clientCallback).get();
 
             client.send("one");
             client.send("two");
@@ -422,9 +422,9 @@ public class NetworkMessagingTest extends NetworkTestBase {
             serverHandler.addDisconnectOnMessage("one");
             serverHandler.addReplyWith("one", serverCallback, "serverOne", "serverTwo", "serverThree");
 
-            client.connect(server.getAddress(), clientCallback).get();
+            client.connect(server.address(), clientCallback).get();
 
-            InetSocketAddress address = client.getLocalAddress();
+            InetSocketAddress address = client.localAddress();
 
             client.send("one");
 
@@ -446,9 +446,9 @@ public class NetworkMessagingTest extends NetworkTestBase {
         repeat(3, i -> {
             serverHandler.addDisconnectOnMessage("one");
 
-            client.connect(server.getAddress(), clientCallback).get();
+            client.connect(server.address(), clientCallback).get();
 
-            InetSocketAddress address = client.getLocalAddress();
+            InetSocketAddress address = client.localAddress();
 
             client.send("one");
             client.send("two");
@@ -460,7 +460,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
 
             clientCallback.awaitForDisconnects(1);
 
-            assertSame(NetworkClient.State.DISCONNECTED, client.getState());
+            assertSame(NetworkClient.State.DISCONNECTED, client.state());
 
             serverHandler.reset();
             clientCallback.reset();
@@ -472,7 +472,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
         repeat(3, i -> {
             serverHandler.addDisconnectOnMessage("one");
 
-            NetworkFuture<String> connect = client.connect(server.getAddress(), clientCallback);
+            NetworkFuture<String> connect = client.connect(server.address(), clientCallback);
 
             client.send("one");
             client.send("two");
@@ -486,7 +486,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
 
             clientCallback.awaitForDisconnects(1);
 
-            assertSame(NetworkClient.State.DISCONNECTED, client.getState());
+            assertSame(NetworkClient.State.DISCONNECTED, client.state());
 
             serverHandler.reset();
             clientCallback.reset();
@@ -498,7 +498,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
         repeat(3, i -> {
             serverHandler.addDisconnectOnMessage("three");
 
-            NetworkFuture<String> connect = client.connect(server.getAddress(), clientCallback);
+            NetworkFuture<String> connect = client.connect(server.address(), clientCallback);
 
             client.send("one");
             client.send("two");
@@ -512,7 +512,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
 
             clientCallback.awaitForDisconnects(1);
 
-            assertSame(NetworkClient.State.DISCONNECTED, client.getState());
+            assertSame(NetworkClient.State.DISCONNECTED, client.state());
 
             serverHandler.reset();
             clientCallback.reset();
@@ -524,9 +524,9 @@ public class NetworkMessagingTest extends NetworkTestBase {
         repeat(3, i -> {
             serverHandler.addDisconnectOnMessage("three");
 
-            client.connect(server.getAddress(), clientCallback).get();
+            client.connect(server.address(), clientCallback).get();
 
-            InetSocketAddress address = client.getLocalAddress();
+            InetSocketAddress address = client.localAddress();
 
             client.send("one");
             client.send("two");
@@ -538,7 +538,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
 
             clientCallback.awaitForDisconnects(1);
 
-            assertSame(NetworkClient.State.DISCONNECTED, client.getState());
+            assertSame(NetworkClient.State.DISCONNECTED, client.state());
 
             serverHandler.reset();
             clientCallback.reset();
@@ -550,7 +550,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
         repeat(3, i -> {
             CountDownLatch latch = new CountDownLatch(1);
 
-            client.connect(server.getAddress(), new NetworkClientCallback<String>() {
+            client.connect(server.address(), new NetworkClientCallback<String>() {
                 @Override
                 public void onConnect(NetworkClient<String> client) {
                     client.disconnect();
@@ -566,7 +566,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
 
             await(latch);
 
-            NetworkFuture<String> connect = client.connect(server.getAddress(), clientCallback);
+            NetworkFuture<String> connect = client.connect(server.address(), clientCallback);
 
             NetworkSendCallbackMock<String> messageCallback = new NetworkSendCallbackMock<>();
 
@@ -578,7 +578,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
 
             serverHandler.awaitForMessages(client, "one", "two", "three");
 
-            assertSame(NetworkClient.State.CONNECTED, client.getState());
+            assertSame(NetworkClient.State.CONNECTED, client.state());
 
             client.disconnect().get();
 
@@ -590,7 +590,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
     @Test
     public void testSendAfterReconnectNoWaitWithDeferred() throws Exception {
         repeat(3, i -> {
-            client.connect(server.getAddress(), new NetworkClientCallback<String>() {
+            client.connect(server.address(), new NetworkClientCallback<String>() {
                 @Override
                 public void onConnect(NetworkClient<String> client) {
                     client.disconnect();
@@ -614,7 +614,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
             assertTrue("" + msgCallback.getFailure("B"), msgCallback.getFailure("B") instanceof ClosedChannelException);
             assertTrue("" + msgCallback.getFailure("C"), msgCallback.getFailure("C") instanceof ClosedChannelException);
 
-            NetworkFuture<String> connect = client.connect(server.getAddress(), clientCallback);
+            NetworkFuture<String> connect = client.connect(server.address(), clientCallback);
 
             client.send("one", msgCallback);
             client.send("two", msgCallback);
@@ -624,7 +624,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
 
             serverHandler.awaitForMessages(client, "one", "two", "three");
 
-            assertSame(NetworkClient.State.CONNECTED, client.getState());
+            assertSame(NetworkClient.State.CONNECTED, client.state());
 
             client.disconnect().get();
 

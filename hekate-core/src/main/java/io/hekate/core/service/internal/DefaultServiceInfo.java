@@ -39,17 +39,17 @@ public class DefaultServiceInfo implements ServiceInfo, Serializable {
     }
 
     @Override
-    public String getType() {
+    public String type() {
         return type;
     }
 
     @Override
-    public Map<String, Set<String>> getProperties() {
+    public Map<String, Set<String>> properties() {
         return props;
     }
 
     @Override
-    public Set<String> getProperty(String name) {
+    public Set<String> property(String name) {
         return props.get(name);
     }
 

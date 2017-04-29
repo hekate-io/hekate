@@ -46,7 +46,7 @@ public class TaskCallTest extends TaskServiceTestBase {
 
             for (HekateTestNode node : nodes) {
                 int got = get(node.tasks().call(() -> {
-                    NODES.add(node.getLocalNode());
+                    NODES.add(node.localNode());
 
                     return COUNTER.incrementAndGet();
                 }));
@@ -69,7 +69,7 @@ public class TaskCallTest extends TaskServiceTestBase {
 
             for (HekateTestNode node : nodes) {
                 int got = get(node.tasks().withAffinity(100500).call(() -> {
-                    NODES.add(node.getLocalNode());
+                    NODES.add(node.localNode());
 
                     return COUNTER.incrementAndGet();
                 }));
@@ -190,7 +190,7 @@ public class TaskCallTest extends TaskServiceTestBase {
 
         source.awaitForStatus(Hekate.State.DOWN);
 
-        get(target.tasks().forNode(target.getLocalNode()).call(() -> {
+        get(target.tasks().forNode(target.localNode()).call(() -> {
             REF.set(target);
 
             return null;
@@ -210,7 +210,7 @@ public class TaskCallTest extends TaskServiceTestBase {
         TaskService tasks = source.tasks().forRemotes().withFailover(ctx -> {
             attempts.incrementAndGet();
 
-            return ctx.getAttempt() < 5 ? ctx.retry() : ctx.fail();
+            return ctx.attempt() < 5 ? ctx.retry() : ctx.fail();
         });
 
         // Successful retry.
@@ -255,7 +255,7 @@ public class TaskCallTest extends TaskServiceTestBase {
         TaskService tasks = source.tasks().forRemotes().withFailover(ctx -> {
             attempts.incrementAndGet();
 
-            return ctx.getAttempt() < 5 ? ctx.retry() : ctx.fail();
+            return ctx.attempt() < 5 ? ctx.retry() : ctx.fail();
         });
 
         // Successful retry.
@@ -304,7 +304,7 @@ public class TaskCallTest extends TaskServiceTestBase {
             get(tasks.call(() -> {
                 COUNTER.incrementAndGet();
 
-                NODES.add(node.getLocalNode());
+                NODES.add(node.localNode());
 
                 if (NODES.size() < 2) {
                     throw TEST_ERROR;
@@ -314,8 +314,8 @@ public class TaskCallTest extends TaskServiceTestBase {
             }))
         );
 
-        assertTrue(NODES.contains(nodes.get(1).getLocalNode()));
-        assertTrue(NODES.contains(nodes.get(2).getLocalNode()));
+        assertTrue(NODES.contains(nodes.get(1).localNode()));
+        assertTrue(NODES.contains(nodes.get(2).localNode()));
 
         assertEquals(2, COUNTER.get());
     }

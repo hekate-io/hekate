@@ -31,7 +31,7 @@ public abstract class PersistentSeedNodeProviderCommonTest<T extends SeedNodePro
     public void testGetCleanupInterval() throws Exception {
         SeedNodeProvider provider = createProvider();
 
-        assertTrue(provider.getCleanupInterval() > 0);
+        assertTrue(provider.cleanupInterval() > 0);
     }
 
     @Test
@@ -45,30 +45,30 @@ public abstract class PersistentSeedNodeProviderCommonTest<T extends SeedNodePro
 
         repeat(3, i -> {
             // Register.
-            provider.registerRemoteAddress(CLUSTER_1, address1);
-            provider.registerRemoteAddress(CLUSTER_1, address2);
-            provider.registerRemoteAddress(CLUSTER_2, address3);
-            provider.registerRemoteAddress(CLUSTER_2, address4);
+            provider.registerRemote(CLUSTER_1, address1);
+            provider.registerRemote(CLUSTER_1, address2);
+            provider.registerRemote(CLUSTER_2, address3);
+            provider.registerRemote(CLUSTER_2, address4);
 
-            List<InetSocketAddress> nodes = provider.getSeedNodes(CLUSTER_1);
+            List<InetSocketAddress> nodes = provider.findSeedNodes(CLUSTER_1);
 
             assertEquals(2, nodes.size());
             assertTrue(nodes.contains(address1));
             assertTrue(nodes.contains(address2));
 
-            nodes = provider.getSeedNodes(CLUSTER_2);
+            nodes = provider.findSeedNodes(CLUSTER_2);
 
             assertEquals(2, nodes.size());
             assertTrue(nodes.contains(address3));
             assertTrue(nodes.contains(address4));
 
             // Unregister.
-            provider.unregisterRemoteAddress(CLUSTER_1, address1);
-            provider.unregisterRemoteAddress(CLUSTER_1, address2);
-            provider.unregisterRemoteAddress(CLUSTER_2, address3);
-            provider.unregisterRemoteAddress(CLUSTER_2, address4);
+            provider.unregisterRemote(CLUSTER_1, address1);
+            provider.unregisterRemote(CLUSTER_1, address2);
+            provider.unregisterRemote(CLUSTER_2, address3);
+            provider.unregisterRemote(CLUSTER_2, address4);
 
-            assertTrue(provider.getSeedNodes(CLUSTER_1).isEmpty());
+            assertTrue(provider.findSeedNodes(CLUSTER_1).isEmpty());
         });
     }
 
@@ -82,48 +82,48 @@ public abstract class PersistentSeedNodeProviderCommonTest<T extends SeedNodePro
         InetSocketAddress address4 = newSocketAddress(10004);
 
         // Register.
-        provider.registerRemoteAddress(CLUSTER_1, address1);
-        provider.registerRemoteAddress(CLUSTER_1, address2);
-        provider.registerRemoteAddress(CLUSTER_2, address3);
-        provider.registerRemoteAddress(CLUSTER_2, address4);
+        provider.registerRemote(CLUSTER_1, address1);
+        provider.registerRemote(CLUSTER_1, address2);
+        provider.registerRemote(CLUSTER_2, address3);
+        provider.registerRemote(CLUSTER_2, address4);
 
-        List<InetSocketAddress> nodes = provider.getSeedNodes(CLUSTER_1);
+        List<InetSocketAddress> nodes = provider.findSeedNodes(CLUSTER_1);
 
         assertEquals(2, nodes.size());
         assertTrue(nodes.contains(address1));
         assertTrue(nodes.contains(address2));
 
-        nodes = provider.getSeedNodes(CLUSTER_2);
+        nodes = provider.findSeedNodes(CLUSTER_2);
 
         assertEquals(2, nodes.size());
         assertTrue(nodes.contains(address3));
         assertTrue(nodes.contains(address4));
 
         // Unregister with wrong cluster names.
-        provider.unregisterRemoteAddress(CLUSTER_2, address1);
-        provider.unregisterRemoteAddress(CLUSTER_2, address2);
-        provider.unregisterRemoteAddress(CLUSTER_1, address3);
-        provider.unregisterRemoteAddress(CLUSTER_1, address4);
+        provider.unregisterRemote(CLUSTER_2, address1);
+        provider.unregisterRemote(CLUSTER_2, address2);
+        provider.unregisterRemote(CLUSTER_1, address3);
+        provider.unregisterRemote(CLUSTER_1, address4);
 
-        nodes = provider.getSeedNodes(CLUSTER_1);
+        nodes = provider.findSeedNodes(CLUSTER_1);
 
         assertEquals(2, nodes.size());
         assertTrue(nodes.contains(address1));
         assertTrue(nodes.contains(address2));
 
-        nodes = provider.getSeedNodes(CLUSTER_2);
+        nodes = provider.findSeedNodes(CLUSTER_2);
 
         assertEquals(2, nodes.size());
         assertTrue(nodes.contains(address3));
         assertTrue(nodes.contains(address4));
 
         // Unregister.
-        provider.unregisterRemoteAddress(CLUSTER_1, address1);
-        provider.unregisterRemoteAddress(CLUSTER_1, address2);
-        provider.unregisterRemoteAddress(CLUSTER_2, address3);
-        provider.unregisterRemoteAddress(CLUSTER_2, address4);
+        provider.unregisterRemote(CLUSTER_1, address1);
+        provider.unregisterRemote(CLUSTER_1, address2);
+        provider.unregisterRemote(CLUSTER_2, address3);
+        provider.unregisterRemote(CLUSTER_2, address4);
 
-        assertTrue(provider.getSeedNodes(CLUSTER_1).isEmpty());
+        assertTrue(provider.findSeedNodes(CLUSTER_1).isEmpty());
     }
 
     @Test
@@ -132,18 +132,18 @@ public abstract class PersistentSeedNodeProviderCommonTest<T extends SeedNodePro
 
         InetSocketAddress address = newSocketAddress(10001);
 
-        provider.registerRemoteAddress(CLUSTER_1, address);
-        provider.registerRemoteAddress(CLUSTER_1, address);
-        provider.registerRemoteAddress(CLUSTER_1, address);
+        provider.registerRemote(CLUSTER_1, address);
+        provider.registerRemote(CLUSTER_1, address);
+        provider.registerRemote(CLUSTER_1, address);
 
-        List<InetSocketAddress> nodes = provider.getSeedNodes(CLUSTER_1);
+        List<InetSocketAddress> nodes = provider.findSeedNodes(CLUSTER_1);
 
         assertEquals(1, nodes.size());
         assertTrue(nodes.contains(address));
 
-        provider.unregisterRemoteAddress(CLUSTER_1, address);
+        provider.unregisterRemote(CLUSTER_1, address);
 
-        assertTrue(provider.getSeedNodes(CLUSTER_1).isEmpty());
+        assertTrue(provider.findSeedNodes(CLUSTER_1).isEmpty());
     }
 
     @Test
@@ -152,24 +152,24 @@ public abstract class PersistentSeedNodeProviderCommonTest<T extends SeedNodePro
 
         InetSocketAddress address = newSocketAddress(10001);
 
-        provider.unregisterRemoteAddress(CLUSTER_1, address);
+        provider.unregisterRemote(CLUSTER_1, address);
 
-        assertTrue(provider.getSeedNodes(CLUSTER_1).isEmpty());
+        assertTrue(provider.findSeedNodes(CLUSTER_1).isEmpty());
 
-        provider.registerRemoteAddress(CLUSTER_1, address);
+        provider.registerRemote(CLUSTER_1, address);
 
-        List<InetSocketAddress> nodes = provider.getSeedNodes(CLUSTER_1);
+        List<InetSocketAddress> nodes = provider.findSeedNodes(CLUSTER_1);
 
         assertEquals(1, nodes.size());
         assertTrue(nodes.contains(address));
 
-        provider.unregisterRemoteAddress(CLUSTER_1, address);
+        provider.unregisterRemote(CLUSTER_1, address);
 
-        assertTrue(provider.getSeedNodes(CLUSTER_1).isEmpty());
+        assertTrue(provider.findSeedNodes(CLUSTER_1).isEmpty());
 
-        provider.unregisterRemoteAddress(CLUSTER_1, address);
+        provider.unregisterRemote(CLUSTER_1, address);
 
-        assertTrue(provider.getSeedNodes(CLUSTER_1).isEmpty());
+        assertTrue(provider.findSeedNodes(CLUSTER_1).isEmpty());
     }
 
     @Test
@@ -194,15 +194,15 @@ public abstract class PersistentSeedNodeProviderCommonTest<T extends SeedNodePro
 
             node.join();
 
-            assertTrue(controlProvider.getSeedNodes(CLUSTER_1).contains(node.getSocketAddress()));
+            assertTrue(controlProvider.findSeedNodes(CLUSTER_1).contains(node.getSocketAddress()));
 
             InetSocketAddress fake1 = newSocketAddress(15001);
             InetSocketAddress fake2 = newSocketAddress(15002);
             InetSocketAddress fake3 = newSocketAddress(15003);
 
-            controlProvider.registerRemoteAddress(CLUSTER_1, fake1);
-            controlProvider.registerRemoteAddress(CLUSTER_1, fake2);
-            controlProvider.registerRemoteAddress(CLUSTER_1, fake3);
+            controlProvider.registerRemote(CLUSTER_1, fake1);
+            controlProvider.registerRemote(CLUSTER_1, fake2);
+            controlProvider.registerRemote(CLUSTER_1, fake3);
 
             sayTime("Awaiting for seed node status change", () -> {
                 awaitForSeedNodeStatus(false, fake1, CLUSTER_1, controlProvider);
@@ -210,7 +210,7 @@ public abstract class PersistentSeedNodeProviderCommonTest<T extends SeedNodePro
                 awaitForSeedNodeStatus(false, fake3, CLUSTER_1, controlProvider);
             });
 
-            controlProvider.unregisterRemoteAddress(CLUSTER_1, node.getSocketAddress());
+            controlProvider.unregisterRemote(CLUSTER_1, node.getSocketAddress());
 
             awaitForSeedNodeStatus(true, node.getSocketAddress(), CLUSTER_1, controlProvider);
         });
@@ -219,7 +219,7 @@ public abstract class PersistentSeedNodeProviderCommonTest<T extends SeedNodePro
     private void awaitForSeedNodeStatus(boolean available, InetSocketAddress node, String cluster, SeedNodeProvider provider)
         throws Exception {
         busyWait("address being " + (available ? "registered" : "unregistered") + " [address=" + node + ']', () -> {
-            List<InetSocketAddress> nodes = provider.getSeedNodes(cluster);
+            List<InetSocketAddress> nodes = provider.findSeedNodes(cluster);
 
             return available && nodes.contains(node) || !available && !nodes.contains(node);
         });

@@ -45,8 +45,6 @@ public class ExampleTask implements RunnableTask {
         System.out.println("Executing on node " + remoteNode);
         System.out.println("Service: " + messaging);
         System.out.println("Bean: " + someBean);
-
-        // ... do some work with injected components...
     }
 }
 // End:task

@@ -37,7 +37,7 @@ import java.util.stream.Stream;
  * @see TaskService#broadcast(RunnableTask)
  * @see TaskService#aggregate(CallableTask)
  */
-public interface MultiNodeResult<T> {
+public interface MultiNodeResult<T> extends Iterable<T> {
     /**
      * Returns the list of nodes that participated in the task execution. The nodes are selected based on the filtering rules that were
      * applied to the {@link TaskService} (see {@link TaskService#filter(ClusterNodeFilter)}).

@@ -16,7 +16,7 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.messaging.Message;
@@ -59,7 +59,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
     @Test
     public void testDefaultRouting() throws Exception {
         List<TestChannel> channels = createAndJoinChannels(3, c -> {
-            MessageReceiver<String> receiver = msg -> msg.reply(msg.getChannel().getId().toString());
+            MessageReceiver<String> receiver = msg -> msg.reply(msg.channel().id().toString());
 
             c.setReceiver(receiver);
         });
@@ -216,7 +216,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
             awaitForChannelsTopology(sender, receiver);
 
-            MessagingClient<String> client = sender.getImpl().getClient(receiver.getNodeId());
+            MessagingClient<String> client = sender.getImpl().clientOf(receiver.getNodeId());
 
             repeat(5, i -> {
                 assertFalse(client.isConnected());
@@ -281,7 +281,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
             awaitForChannelsTopology(receiver, sender);
 
-            MessagingClient<String> client = sender.getImpl().getClient(receiver.getNodeId());
+            MessagingClient<String> client = sender.getImpl().clientOf(receiver.getNodeId());
 
             repeat(5, i -> {
                 assertFalse(client.isConnected());
@@ -352,7 +352,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        MessagingClient<String> client = sender.getImpl().getClient(receiver.getNodeId());
+        MessagingClient<String> client = sender.getImpl().clientOf(receiver.getNodeId());
 
         List<NetworkFuture<MessagingProtocol>> closeFuture = client.close();
 
@@ -385,7 +385,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        MessagingClient<String> client = sender.getImpl().getClient(receiver.getNodeId());
+        MessagingClient<String> client = sender.getImpl().clientOf(receiver.getNodeId());
 
         clientRef.set(client);
 
@@ -582,7 +582,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
                     await(joinLatch);
 
-                    return topology.getYoungest().getId();
+                    return topology.youngest().id();
                 }).request(joinMsg, joinCallback);
 
                 return null;
@@ -623,7 +623,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
                     await(leaveLatch);
 
-                    return topology.getYoungest().getId();
+                    return topology.youngest().id();
                 }).request(leaveMsg, leaveCallback);
 
                 return null;
@@ -655,10 +655,10 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             try {
                 MessagingChannel<String> send = channel.getNode().messaging().channel(TEST_CHANNEL_NAME);
 
-                if (event.getType() == ClusterEventType.JOIN) {
+                if (event.type() == ClusterEventType.JOIN) {
                     get(send.request("to-self"));
                     send.request("to-self", toSelf);
-                } else if (event.getType() == ClusterEventType.CHANGE) {
+                } else if (event.type() == ClusterEventType.CHANGE) {
                     get(send.forRemotes().request("to-remote"));
                     send.forRemotes().request("to-remote", toRemote);
                 }
@@ -750,7 +750,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        ClusterUuid invalidNodeId = newNodeId();
+        ClusterNodeId invalidNodeId = newNodeId();
 
         repeat(3, i -> {
             ResponseFuture<String> future = sender.withLoadBalancer((msg, topology) -> invalidNodeId).request("failed" + i);
@@ -787,7 +787,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             } catch (MessagingFutureException e) {
                 assertTrue(e.isCausedBy(TooManyRoutesException.class));
                 assertEquals("Too many receivers "
-                        + "[channel=" + channel1.get().getName() + ", topology=" + channel1.get().getCluster().getTopology() + ']',
+                        + "[channel=" + channel1.get().name() + ", topology=" + channel1.get().cluster().topology() + ']',
                     e.getCause().getMessage());
             }
         });

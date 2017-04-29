@@ -76,11 +76,11 @@ class NettyServer implements NetworkServer {
             this.metrics = metrics;
         }
 
-        public NettyServerHandlerConfig<Object> getConfig() {
+        public NettyServerHandlerConfig<Object> config() {
             return config;
         }
 
-        public NettyMetricsCallback getMetrics() {
+        public NettyMetricsCallback metrics() {
             return metrics;
         }
 
@@ -88,7 +88,7 @@ class NettyServer implements NetworkServer {
             this.metrics = metrics;
         }
 
-        public List<NetworkEndpoint<?>> getConnected() {
+        public List<NetworkEndpoint<?>> clients() {
             synchronized (clients) {
                 if (clients.isEmpty()) {
                     return Collections.emptyList();
@@ -192,12 +192,12 @@ class NettyServer implements NetworkServer {
     }
 
     @Override
-    public InetSocketAddress getAddress() {
+    public InetSocketAddress address() {
         return address;
     }
 
     @Override
-    public State getState() {
+    public State state() {
         return state;
     }
 
@@ -316,7 +316,7 @@ class NettyServer implements NetworkServer {
             List<NetworkEndpoint<?>> liveClients = new ArrayList<>();
 
             for (NettyServerClient client : clients.values()) {
-                String clientProtocol = client.getProtocol();
+                String clientProtocol = client.protocol();
 
                 if (clientProtocol != null && clientProtocol.equals(protocol)) {
                     liveClients.add(client);
@@ -330,11 +330,11 @@ class NettyServer implements NetworkServer {
     }
 
     @Override
-    public List<NetworkEndpoint<?>> getConnected(String protocol) {
+    public List<NetworkEndpoint<?>> clients(String protocol) {
         HandlerRegistration handler = handlers.get(protocol);
 
         if (handler != null) {
-            return handler.getConnected();
+            return handler.clients();
         }
 
         return Collections.emptyList();
@@ -350,7 +350,7 @@ class NettyServer implements NetworkServer {
                 if (metrics == null) {
                     handler.setMetrics(null);
                 } else {
-                    NetworkServerHandlerConfig<Object> handlerCfg = handler.getConfig();
+                    NetworkServerHandlerConfig<Object> handlerCfg = handler.config();
 
                     handler.setMetrics(metrics.createCallback(true, handlerCfg.getProtocol()));
                 }
@@ -417,8 +417,8 @@ class NettyServer implements NetworkServer {
                     NetworkProtocolCodec codec = new NetworkProtocolCodec(codecs);
 
                     pipeline.addLast(new NetworkVersionDecoder());
-                    pipeline.addLast(codec.getEncoder());
-                    pipeline.addLast(codec.getDecoder());
+                    pipeline.addLast(codec.encoder());
+                    pipeline.addLast(codec.decoder());
 
                     NettyServerClient client = new NettyServerClient(remoteAddress, localAddress, hbInterval, hbLossThreshold, hbDisabled,
                         handlers);
@@ -501,14 +501,14 @@ class NettyServer implements NetworkServer {
                             Resolution resolution = callback.onFailure(this, failure);
 
                             if (resolution != null && !resolution.isFailure()) {
-                                newAddress = resolution.getRetryAddress();
+                                newAddress = resolution.retryAddress();
 
                                 if (newAddress == null) {
                                     // Reuse old address.
                                     newAddress = address;
                                 }
 
-                                delay = resolution.getRetryDelay();
+                                delay = resolution.retryDelay();
                             }
                         } catch (RuntimeException | Error e) {
                             if (log.isErrorEnabled()) {
@@ -571,7 +571,7 @@ class NettyServer implements NetworkServer {
     }
 
     // This method is for testing purposes only.
-    Channel getServerChannel() {
+    Channel serverChannel() {
         lock.lock();
 
         try {

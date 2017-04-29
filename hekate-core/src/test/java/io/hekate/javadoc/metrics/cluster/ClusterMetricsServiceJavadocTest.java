@@ -46,8 +46,8 @@ public class ClusterMetricsServiceJavadocTest extends HekateNodeTestBase {
         // Iterate over all remote nodes in the cluster.
         hekate.cluster().forRemotes().forEach(node -> {
             // Use cluster metrics service to get metrics of each node.
-            metrics.of(node).ifPresent(m ->
-                System.out.println("Metric on node " + m.getNode() + " = " + m.get("example.metric"))
+            hekate.clusterMetrics().of(node).ifPresent(m ->
+                System.out.println("Metric on node " + m.node() + " = " + m.get("example.metric"))
             );
         });
         // End:usage

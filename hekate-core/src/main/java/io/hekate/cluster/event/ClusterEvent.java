@@ -33,7 +33,7 @@ public interface ClusterEvent {
      *
      * @see #is(ClusterEventType)
      */
-    ClusterEventType getType();
+    ClusterEventType type();
 
     /**
      * Casts this instance to the {@link ClusterJoinEvent} type or returns {@code null} if this instance can't be cast to that type.
@@ -61,16 +61,16 @@ public interface ClusterEvent {
      *
      * @return Cluster topology.
      */
-    ClusterTopology getTopology();
+    ClusterTopology topology();
 
     /**
-     * Returns {@code true} if this event is of the specified {@link #getType() type}.
+     * Returns {@code true} if this event is of the specified {@link #type() type}.
      *
      * @param type Event type.
      *
      * @return {@code true} if this event is of the specified type.
      *
-     * @see #getType()
+     * @see #type()
      */
     boolean is(ClusterEventType type);
 }

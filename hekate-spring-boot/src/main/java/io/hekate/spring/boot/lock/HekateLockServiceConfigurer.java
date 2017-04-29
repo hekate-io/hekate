@@ -96,12 +96,12 @@ public class HekateLockServiceConfigurer {
         }
 
         @Override
-        protected String getInjectedBeanName(NamedLockRegion annotation) {
+        protected String injectedBeanName(NamedLockRegion annotation) {
             return LockRegionBean.class.getName() + "-" + annotation.value();
         }
 
         @Override
-        protected Object getQualifierValue(NamedLockRegion annotation) {
+        protected Object qualifierValue(NamedLockRegion annotation) {
             return annotation.value();
         }
 
@@ -118,12 +118,12 @@ public class HekateLockServiceConfigurer {
         }
 
         @Override
-        protected String getInjectedBeanName(NamedLock annotation) {
+        protected String injectedBeanName(NamedLock annotation) {
             return LockBean.class.getName() + "-" + annotation.name() + "--" + annotation.name();
         }
 
         @Override
-        protected Object getQualifierValue(NamedLock annotation) {
+        protected Object qualifierValue(NamedLock annotation) {
             return null;
         }
 

@@ -17,7 +17,7 @@
 package io.hekate.lock.internal;
 
 import io.hekate.cluster.ClusterHash;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.util.format.ToString;
 import java.io.Serializable;
@@ -26,36 +26,36 @@ import java.util.Objects;
 class LockMigrationKey implements Serializable {
     private static final long serialVersionUID = 1;
 
-    private final ClusterUuid node;
+    private final ClusterNodeId node;
 
     private final ClusterHash topology;
 
     private final long id;
 
-    public LockMigrationKey(ClusterUuid node, ClusterHash topology, long id) {
+    public LockMigrationKey(ClusterNodeId node, ClusterHash topology, long id) {
         this.node = node;
         this.topology = topology;
         this.id = id;
     }
 
-    public ClusterUuid getNode() {
+    public ClusterNodeId node() {
         return node;
     }
 
-    public ClusterHash getTopology() {
+    public ClusterHash topology() {
         return topology;
     }
 
-    public long getId() {
+    public long id() {
         return id;
     }
 
-    public boolean isSameNode(ClusterUuid other) {
+    public boolean isSameNode(ClusterNodeId other) {
         return node.equals(other);
     }
 
     public boolean isSameTopology(PartitionMapper mapper) {
-        return mapper != null && mapper.getTopology().getHash().equals(topology);
+        return mapper != null && mapper.topology().hash().equals(topology);
     }
 
     @Override

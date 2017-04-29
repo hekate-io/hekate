@@ -104,14 +104,14 @@ public interface NetworkServer {
      *
      * @return Server address or {@code null} if server is not started.
      */
-    InetSocketAddress getAddress();
+    InetSocketAddress address();
 
     /**
      * Returns the lifecycle state of this server.
      *
      * @return Lifecycle state.
      */
-    State getState();
+    State state();
 
     /**
      * Asynchronously starts this server and binds it to the specified address.
@@ -197,5 +197,5 @@ public interface NetworkServer {
      *
      * @return List of network endpoints or an empty list if there are now connected endpoints.
      */
-    List<NetworkEndpoint<?>> getConnected(String protocol);
+    List<NetworkEndpoint<?>> clients(String protocol);
 }

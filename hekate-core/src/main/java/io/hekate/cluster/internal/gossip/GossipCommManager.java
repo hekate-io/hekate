@@ -17,7 +17,7 @@
 package io.hekate.cluster.internal.gossip;
 
 import io.hekate.cluster.ClusterAddress;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.internal.gossip.GossipProtocol.Connect;
 import io.hekate.cluster.internal.gossip.GossipProtocol.GossipMessage;
 import io.hekate.core.internal.util.Utils;
@@ -58,7 +58,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
             this.outbound = outbound;
         }
 
-        public NetworkEndpoint<GossipProtocol> getEndpoint() {
+        public NetworkEndpoint<GossipProtocol> endpoint() {
             return endpoint;
         }
 
@@ -80,7 +80,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
     private final Object mux = new Object();
 
-    private final Map<ClusterUuid, EndpointHolder> clients = new HashMap<>();
+    private final Map<ClusterNodeId, EndpointHolder> clients = new HashMap<>();
 
     private final Callback callback;
 
@@ -109,7 +109,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
             @Override
             public void onDisconnect(NetworkClient<GossipProtocol> client, Optional<Throwable> cause) {
-                ClusterUuid id = client.getContext();
+                ClusterNodeId id = client.getContext();
 
                 if (id != null) {
                     if (DEBUG) {
@@ -120,7 +120,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
                         EndpointHolder latestSender = clients.get(id);
 
                         // Remove from map only if it contains exactly the same client instance.
-                        if (latestSender != null && latestSender.getEndpoint() == client) {
+                        if (latestSender != null && latestSender.endpoint() == client) {
                             if (DEBUG) {
                                 log.debug("Removing outbound connection from registry [to={}]", id);
                             }
@@ -134,9 +134,9 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
     }
 
     public void send(GossipMessage msg, Runnable onComplete) {
-        ClusterAddress addr = msg.getTo();
+        ClusterAddress addr = msg.to();
 
-        ClusterUuid id = addr.getId();
+        ClusterNodeId id = addr.id();
 
         Callback localCallback;
 
@@ -160,9 +160,9 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
                 clients.put(id, holder);
 
-                Connect connectMsg = new Connect(msg.getFrom().getId());
+                Connect connectMsg = new Connect(msg.from().id());
 
-                client.connect(addr.getSocket(), connectMsg, netClientCallback);
+                client.connect(addr.socket(), connectMsg, netClientCallback);
             }
         }
 
@@ -174,7 +174,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
             log.trace("Sending message [outboundConnection={}, message={}]", holder.isOutbound(), msg);
         }
 
-        holder.getEndpoint().send(msg, (sent, error, endpoint) -> {
+        holder.endpoint().send(msg, (sent, error, endpoint) -> {
             if (error.isPresent()) {
                 if (TRACE) {
                     log.trace("Failed to send a message [reason={}, message={}]", error.get(), sent);
@@ -195,10 +195,10 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
         });
     }
 
-    public void sendAndClose(GossipProtocol msg, Runnable onComplete) {
+    public void sendAndDisconnect(GossipProtocol msg, Runnable onComplete) {
         NetworkClient<GossipProtocol> sendOnceClient = net.newClient();
 
-        sendOnceClient.connect(msg.getToAddress(), msg, new NetworkClientCallback<GossipProtocol>() {
+        sendOnceClient.connect(msg.toAddress(), msg, new NetworkClientCallback<GossipProtocol>() {
             @Override
             public void onMessage(NetworkMessage<GossipProtocol> message, NetworkClient<GossipProtocol> from) {
                 // No-op.
@@ -230,10 +230,10 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
     @Override
     public void onConnect(GossipProtocol msg, NetworkEndpoint<GossipProtocol> client) {
-        if (msg.getType() == GossipProtocol.Type.CONNECT) {
+        if (msg.type() == GossipProtocol.Type.CONNECT) {
             Connect connect = (Connect)msg;
 
-            ClusterUuid id = connect.getNodeId();
+            ClusterNodeId id = connect.nodeId();
 
             if (id == null) {
                 if (DEBUG) {
@@ -282,7 +282,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
     @Override
     public void onDisconnect(NetworkEndpoint<GossipProtocol> client) {
-        ClusterUuid id = client.getContext();
+        ClusterNodeId id = client.getContext();
 
         if (id != null) {
             if (DEBUG) {
@@ -293,7 +293,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
                 EndpointHolder holder = clients.get(id);
 
                 // Remove from map only if it contains exactly the same client instance.
-                if (holder != null && holder.getEndpoint() == client) {
+                if (holder != null && holder.endpoint() == client) {
                     if (DEBUG) {
                         log.debug("Removing inbound connection from registry [from={}]", id);
                     }
@@ -325,7 +325,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
                 localClients.stream()
                     .filter(EndpointHolder::isOutbound)
                     .forEach(c ->
-                        clientsFuture.add(c.getEndpoint().disconnect())
+                        clientsFuture.add(c.endpoint().disconnect())
                     );
             }
         }

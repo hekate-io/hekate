@@ -53,6 +53,12 @@ import java.util.function.Predicate;
  * cluster service configuration options.
  * </p>
  *
+ * <h2>Accessing service</h2>
+ * <p>
+ * Instances of {@link ClusterService} can be obtained via {@link Hekate#cluster()} method as in the example below:
+ * ${source: cluster/ClusterServiceJavadocTest.java#get_service}
+ * </p>
+ *
  * <h2>Service configuration</h2>
  * <p>
  * {@link ClusterService} can be configured and registered within the {@link HekateBootstrap} via the {@link ClusterServiceFactory} class as
@@ -92,24 +98,17 @@ import java.util.function.Predicate;
  * <li><a href="#join_validators">Join validators</a></li>
  * </ul>
  *
- * <h2>Accessing service</h2>
- * <p>
- * Instances of {@link ClusterService} can be obtained via {@link Hekate#cluster()} method as in the example below:
- * ${source: cluster/ClusterServiceJavadocTest.java#get_service}
- * </p>
- *
- *
  * <h2>Cluster topology</h2>
  * <p>
  * Cluster membership information (aka cluster topology) is represented by the {@link ClusterTopology} interface. Instances of this
- * interface can be obtained via {@link #getTopology()} method. This interface provides various methods for getting information about the
+ * interface can be obtained via {@link #topology()} method. This interface provides various methods for getting information about the
  * cluster nodes based on different criteria (f.e. remote nodes, oldest/youngest node, join order, etc).
  * </p>
  *
  * <p>
  * Each node in the cluster topology is represented by the {@link ClusterNode} interface. This interface provides information about the
- * node's {@link ClusterNode#getAddress() network address}, {@link ClusterNode#getServices() provided services}, {@link
- * ClusterNode#getRoles() roles} and {@link ClusterNode#getProperties() user-defined properties}.
+ * node's {@link ClusterNode#address() network address}, {@link ClusterNode#services() provided services}, {@link
+ * ClusterNode#roles() roles} and {@link ClusterNode#properties() user-defined properties}.
  * </p>
  *
  * <p>
@@ -125,7 +124,7 @@ import java.util.function.Predicate;
  *
  * <p>
  * Cluster service supports topology versioning by managing a counter that gets incremented every time whenever nodes join or leave the
- * cluster. Value of this counter can be obtained via {@link ClusterTopology#getVersion()} method and can be used to distinguish which
+ * cluster. Value of this counter can be obtained via {@link ClusterTopology#version()} method and can be used to distinguish which
  * topology instance is older and which one is newer.
  * </p>
  *
@@ -293,10 +292,10 @@ public interface ClusterService extends Service, ClusterView {
      *
      * @return Local cluster node.
      */
-    ClusterNode getLocalNode();
+    ClusterNode localNode();
 
     @Override
-    ClusterTopology getTopology();
+    ClusterTopology topology();
 
     @Override
     void addListener(ClusterEventListener listener);

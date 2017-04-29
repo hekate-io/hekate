@@ -16,7 +16,7 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.failover.FailoverContext;
 import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.failover.FailureInfo;
@@ -72,9 +72,9 @@ public class FailoverRequestTest extends FailoverTestBase {
             FailoverContext ctx = contexts.get(i);
 
             if (i % 2 == 0) {
-                assertEquals(receiver.getNodeId(), ctx.getFailedNode().getId());
+                assertEquals(receiver.getNodeId(), ctx.failedNode().id());
             } else {
-                assertEquals(sender.getNodeId(), ctx.getFailedNode().getId());
+                assertEquals(sender.getNodeId(), ctx.failedNode().id());
             }
         }
     }
@@ -95,9 +95,9 @@ public class FailoverRequestTest extends FailoverTestBase {
             FailoverContext ctx = contexts.get(i);
 
             if (i == 0) {
-                assertEquals(receiver.getNodeId(), ctx.getFailedNode().getId());
+                assertEquals(receiver.getNodeId(), ctx.failedNode().id());
             } else {
-                assertEquals(sender.getNodeId(), ctx.getFailedNode().getId());
+                assertEquals(sender.getNodeId(), ctx.failedNode().id());
             }
         }
     }
@@ -108,7 +108,7 @@ public class FailoverRequestTest extends FailoverTestBase {
 
         List<FailoverContext> contexts = testWithRoutingPolicy(policy, details -> { /* No-op.*/ });
 
-        contexts.forEach(ctx -> assertEquals(receiver.getNodeId(), ctx.getFailedNode().getId()));
+        contexts.forEach(ctx -> assertEquals(receiver.getNodeId(), ctx.failedNode().id()));
     }
 
     @Test
@@ -145,7 +145,7 @@ public class FailoverRequestTest extends FailoverTestBase {
     public void testNoFailoverOfRoutingErrors() throws Exception {
         AtomicInteger failoverCalls = new AtomicInteger();
 
-        ClusterUuid unknown = newNodeId();
+        ClusterNodeId unknown = newNodeId();
 
         try {
             sender.get().forNode(unknown)
@@ -257,7 +257,7 @@ public class FailoverRequestTest extends FailoverTestBase {
                 channel.withFailover(context -> {
                     failoverCalls.incrementAndGet();
 
-                    return context.getAttempt() < attempts ? context.retry() : context.fail();
+                    return context.attempt() < attempts ? context.retry() : context.fail();
                 }).request("test").response(3, TimeUnit.SECONDS);
 
                 fail("Error was expected.");

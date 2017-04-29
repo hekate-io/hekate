@@ -42,22 +42,22 @@ public abstract class ClusterTopologyTestBase extends HekateTestBase {
     public void testEmpty() throws Exception {
         ClusterTopology t = newTopology(1, Collections.emptySet());
 
-        assertEquals(1, t.getVersion());
-        assertEquals(HASH_SIZE, t.getHash().getBytes().length);
+        assertEquals(1, t.version());
+        assertEquals(HASH_SIZE, t.hash().bytes().length);
 
         assertEquals(0, t.size());
-        assertTrue(t.getNodes().isEmpty());
-        assertTrue(t.getNodeSet().isEmpty());
-        assertTrue(t.getRemoteNodes().isEmpty());
-        assertTrue(t.getJoinOrder().isEmpty());
+        assertTrue(t.nodes().isEmpty());
+        assertTrue(t.nodeSet().isEmpty());
+        assertTrue(t.remoteNodes().isEmpty());
+        assertTrue(t.joinOrder().isEmpty());
         assertFalse(t.contains(newNode()));
         assertFalse(t.contains(newNodeId()));
         assertFalse(t.iterator().hasNext());
 
-        assertNull(t.getLocalNode());
-        assertNull(t.getYoungest());
-        assertNull(t.getOldest());
-        assertNull(t.getRandom());
+        assertNull(t.localNode());
+        assertNull(t.youngest());
+        assertNull(t.oldest());
+        assertNull(t.random());
     }
 
     @Test
@@ -66,24 +66,24 @@ public abstract class ClusterTopologyTestBase extends HekateTestBase {
 
         ClusterTopology t = newTopology(1, Collections.singleton(n));
 
-        assertEquals(1, t.getVersion());
-        assertEquals(HASH_SIZE, t.getHash().getBytes().length);
+        assertEquals(1, t.version());
+        assertEquals(HASH_SIZE, t.hash().bytes().length);
 
         assertEquals(1, t.size());
-        assertEquals(1, t.getNodes().size());
-        assertTrue(t.getNodes().contains(n));
+        assertEquals(1, t.nodes().size());
+        assertTrue(t.nodes().contains(n));
 
-        assertEquals(1, t.getNodeSet().size());
+        assertEquals(1, t.nodeSet().size());
 
-        assertEquals(0, t.getRemoteNodes().size());
+        assertEquals(0, t.remoteNodes().size());
 
-        assertEquals(1, t.getJoinOrder().size());
-        assertTrue(t.getJoinOrder().contains(n));
+        assertEquals(1, t.joinOrder().size());
+        assertTrue(t.joinOrder().contains(n));
 
-        assertEquals(n, t.getLocalNode());
-        assertEquals(n, t.getYoungest());
-        assertEquals(n, t.getOldest());
-        assertEquals(n, t.getRandom());
+        assertEquals(n, t.localNode());
+        assertEquals(n, t.youngest());
+        assertEquals(n, t.oldest());
+        assertEquals(n, t.random());
 
         assertNull(t.get(newNodeId()));
     }
@@ -94,27 +94,27 @@ public abstract class ClusterTopologyTestBase extends HekateTestBase {
 
         ClusterTopology t = newTopology(1, Collections.singleton(n));
 
-        assertEquals(1, t.getVersion());
-        assertEquals(HASH_SIZE, t.getHash().getBytes().length);
+        assertEquals(1, t.version());
+        assertEquals(HASH_SIZE, t.hash().bytes().length);
 
         assertEquals(1, t.size());
-        assertEquals(1, t.getNodes().size());
-        assertEquals(1, t.getNodeSet().size());
-        assertTrue(t.getNodes().contains(n));
+        assertEquals(1, t.nodes().size());
+        assertEquals(1, t.nodeSet().size());
+        assertTrue(t.nodes().contains(n));
 
-        assertEquals(1, t.getRemoteNodes().size());
-        assertTrue(t.getRemoteNodes().contains(n));
+        assertEquals(1, t.remoteNodes().size());
+        assertTrue(t.remoteNodes().contains(n));
 
-        assertEquals(1, t.getJoinOrder().size());
-        assertTrue(t.getJoinOrder().contains(n));
+        assertEquals(1, t.joinOrder().size());
+        assertTrue(t.joinOrder().contains(n));
 
-        assertNull(t.getLocalNode());
+        assertNull(t.localNode());
 
-        assertEquals(n, t.getYoungest());
-        assertEquals(n, t.getOldest());
-        assertEquals(n, t.getRandom());
+        assertEquals(n, t.youngest());
+        assertEquals(n, t.oldest());
+        assertEquals(n, t.random());
 
-        assertSame(n, t.get(n.getId()));
+        assertSame(n, t.get(n.id()));
     }
 
     @Test
@@ -138,32 +138,32 @@ public abstract class ClusterTopologyTestBase extends HekateTestBase {
 
         ClusterTopology t = newTopology(1, allNodes);
 
-        assertEquals(1, t.getVersion());
-        assertEquals(HASH_SIZE, t.getHash().getBytes().length);
+        assertEquals(1, t.version());
+        assertEquals(HASH_SIZE, t.hash().bytes().length);
 
         assertEquals(allNodes.size(), t.size());
-        assertEquals(allNodes.size(), t.getNodes().size());
-        assertEquals(allNodes.size(), t.getNodeSet().size());
+        assertEquals(allNodes.size(), t.nodes().size());
+        assertEquals(allNodes.size(), t.nodeSet().size());
 
-        assertEquals(remoteNodes, t.getRemoteNodes());
+        assertEquals(remoteNodes, t.remoteNodes());
 
-        assertEquals(allNodes, t.getJoinOrder());
-        assertEquals(oldest, t.getJoinOrder().first());
-        assertEquals(localNode, t.getJoinOrder().last());
-        assertEquals(localNode, t.getJoinOrder().last());
+        assertEquals(allNodes, t.joinOrder());
+        assertEquals(oldest, t.joinOrder().first());
+        assertEquals(localNode, t.joinOrder().last());
+        assertEquals(localNode, t.joinOrder().last());
 
-        assertEquals(new ArrayList<>(allNodes), t.getNodes());
-        assertEquals(allNodes.first(), t.getNodes().get(0));
-        assertEquals(allNodes.last(), t.getNodes().get(t.getNodes().size() - 1));
+        assertEquals(new ArrayList<>(allNodes), t.nodes());
+        assertEquals(allNodes.first(), t.nodes().get(0));
+        assertEquals(allNodes.last(), t.nodes().get(t.nodes().size() - 1));
 
-        assertEquals(localNode, t.getLocalNode());
+        assertEquals(localNode, t.localNode());
 
-        assertEquals(localNode, t.getYoungest());
-        assertEquals(oldest, t.getOldest());
+        assertEquals(localNode, t.youngest());
+        assertEquals(oldest, t.oldest());
 
-        assertNotNull(t.getRandom());
+        assertNotNull(t.random());
 
-        allNodes.forEach(n -> assertSame(n, t.get(n.getId())));
+        allNodes.forEach(n -> assertSame(n, t.get(n.id())));
     }
 
     @Test
@@ -174,13 +174,13 @@ public abstract class ClusterTopologyTestBase extends HekateTestBase {
 
         ClusterTopology t1 = newTopology(1, toSet(n1, n2, n3));
 
-        assertEquals(0, t1.filter(n -> n.getJoinOrder() > 10).size());
+        assertEquals(0, t1.filter(n -> n.joinOrder() > 10).size());
 
-        ClusterTopology t2 = t1.filter(n -> n.getJoinOrder() >= 2);
+        ClusterTopology t2 = t1.filter(n -> n.joinOrder() >= 2);
 
-        assertNotEquals(t1.getHash(), t2.getHash());
+        assertNotEquals(t1.hash(), t2.hash());
 
-        assertEquals(t1.getVersion(), t2.getVersion());
+        assertEquals(t1.version(), t2.version());
 
         assertEquals(2, t2.size());
         assertFalse(t2.contains(n1));
@@ -195,7 +195,7 @@ public abstract class ClusterTopologyTestBase extends HekateTestBase {
         ClusterTopology t1 = newTopology(1, toSet(newNode(), newNode(), newNode()));
         ClusterTopology t2 = newTopology(2, toSet(newNode(), newNode(), newNode()));
 
-        assertEquals(1, t1.getVersion());
-        assertEquals(2, t2.getVersion());
+        assertEquals(1, t1.version());
+        assertEquals(2, t2.version());
     }
 }

@@ -35,7 +35,7 @@ public class MetricRegexFilterTest extends HekateTestBase {
 
         assertEquals(pattern, filter.getPattern());
 
-        OngoingStubbing<String> stub = when(mock(Metric.class).getName());
+        OngoingStubbing<String> stub = when(mock(Metric.class).name());
 
         assertTrue(filter.accept(stub.thenReturn("test.test.1").getMock()));
         assertTrue(filter.accept(stub.thenReturn("test.test.2").getMock()));

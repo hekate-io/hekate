@@ -83,24 +83,6 @@ public class SpringJavadocTest extends HekateTestBase {
     }
 
     @Test
-    public void testMessagingChannelOptionsXsd() {
-        doTest("javadoc/messaging/channel-opts-xsd.xml", (node, ctx) -> {
-            assertNotNull(node.messaging().channel("example.channel"));
-
-            MessagingChannel<?> channel = ctx.getBean("example.channel", MessagingChannel.class);
-
-            assertNotNull(channel);
-        });
-    }
-
-    @Test
-    public void testMessagingChannelOptionsBean() {
-        doTest("javadoc/messaging/channel-opts-bean.xml", (node, ctx) ->
-            assertNotNull(node.messaging().channel("example.channel"))
-        );
-    }
-
-    @Test
     public void testTaskXsd() {
         doTest("javadoc/task/service-xsd.xml");
     }
@@ -132,28 +114,28 @@ public class SpringJavadocTest extends HekateTestBase {
     @Test
     public void testElectionXsd() {
         doTest("javadoc/election/service-xsd.xml", (node, ctx) ->
-            assertEquals(node.getLocalNode(), node.election().leader("example.election.group").join())
+            assertEquals(node.localNode(), node.election().leader("example.election.group").join())
         );
     }
 
     @Test
     public void testElectionBean() {
         doTest("javadoc/election/service-bean.xml", (node, ctx) ->
-            assertEquals(node.getLocalNode(), node.election().leader("example.election.group").join())
+            assertEquals(node.localNode(), node.election().leader("example.election.group").join())
         );
     }
 
     @Test
     public void testCoordinationXsd() {
         doTest("javadoc/coordinate/service-xsd.xml", (node, ctx) ->
-            assertNotNull(node.coordination().process("example.process").getFuture().join())
+            assertNotNull(node.coordination().process("example.process").future().join())
         );
     }
 
     @Test
     public void testCoordinationBean() {
         doTest("javadoc/coordinate/service-bean.xml", (node, ctx) ->
-            assertNotNull(node.coordination().process("example.process").getFuture().join())
+            assertNotNull(node.coordination().process("example.process").future().join())
         );
     }
 
@@ -176,14 +158,14 @@ public class SpringJavadocTest extends HekateTestBase {
     @Test
     public void testClusterMetricsXsd() {
         doTest("javadoc/metrics/cluster/service-xsd.xml", (node, ctx) ->
-            assertTrue(node.clusterMetrics().of(node.getLocalNode()).isPresent())
+            assertTrue(node.clusterMetrics().of(node.localNode()).isPresent())
         );
     }
 
     @Test
     public void testClusterMetricsBean() {
         doTest("javadoc/metrics/cluster/service-bean.xml", (node, ctx) ->
-            assertTrue(node.clusterMetrics().of(node.getLocalNode()).isPresent())
+            assertTrue(node.clusterMetrics().of(node.localNode()).isPresent())
         );
     }
 
@@ -206,7 +188,7 @@ public class SpringJavadocTest extends HekateTestBase {
 
         Hekate hekate = ctx.getBean("hekate", Hekate.class);
 
-        assertSame(Hekate.State.UP, hekate.getState());
+        assertSame(Hekate.State.UP, hekate.state());
 
         if (task != null) {
             task.accept(hekate, ctx);
@@ -214,6 +196,6 @@ public class SpringJavadocTest extends HekateTestBase {
 
         ctx.close();
 
-        assertSame(Hekate.State.DOWN, hekate.getState());
+        assertSame(Hekate.State.DOWN, hekate.state());
     }
 }

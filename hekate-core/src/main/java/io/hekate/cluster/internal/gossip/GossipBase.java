@@ -16,7 +16,7 @@
 
 package io.hekate.cluster.internal.gossip;
 
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -27,28 +27,28 @@ import static io.hekate.cluster.internal.gossip.ComparisonResult.CONCURRENT;
 import static io.hekate.cluster.internal.gossip.ComparisonResult.SAME;
 
 public abstract class GossipBase {
-    public abstract Map<ClusterUuid, ? extends GossipNodeInfoBase> getMembersInfo();
+    public abstract Map<ClusterNodeId, ? extends GossipNodeInfoBase> membersInfo();
 
-    public abstract Set<ClusterUuid> getSeen();
+    public abstract Set<ClusterNodeId> seen();
 
-    public abstract long getVersion();
+    public abstract long version();
 
-    public abstract Set<ClusterUuid> getRemoved();
+    public abstract Set<ClusterNodeId> removed();
 
-    public boolean hasSeen(ClusterUuid id) {
+    public boolean hasSeen(ClusterNodeId id) {
         assert id != null : "Node id is null.";
 
-        return getSeen().contains(id);
+        return seen().contains(id);
     }
 
-    public boolean hasSeen(Set<ClusterUuid> ids) {
+    public boolean hasSeen(Set<ClusterNodeId> ids) {
         assert ids != null : "Nodes set is null.";
 
-        return getSeen().containsAll(ids);
+        return seen().containsAll(ids);
     }
 
-    public boolean hasMember(ClusterUuid id) {
-        return getMembersInfo().containsKey(id);
+    public boolean hasMember(ClusterNodeId id) {
+        return membersInfo().containsKey(id);
     }
 
     public ComparisonResult compare(GossipBase other) {
@@ -58,36 +58,36 @@ public abstract class GossipBase {
     }
 
     private static ComparisonResult compareVersions(GossipBase g1, GossipBase g2) {
-        Map<ClusterUuid, ? extends GossipNodeInfoBase> members1 = g1.getMembersInfo();
-        Map<ClusterUuid, ? extends GossipNodeInfoBase> members2 = g2.getMembersInfo();
+        Map<ClusterNodeId, ? extends GossipNodeInfoBase> members1 = g1.membersInfo();
+        Map<ClusterNodeId, ? extends GossipNodeInfoBase> members2 = g2.membersInfo();
 
-        Set<ClusterUuid> allIds = new HashSet<>();
+        Set<ClusterNodeId> allIds = new HashSet<>();
 
         allIds.addAll(members1.keySet());
         allIds.addAll(members2.keySet());
 
-        long ver1 = g1.getVersion();
-        long ver2 = g2.getVersion();
+        long ver1 = g1.version();
+        long ver2 = g2.version();
 
-        Set<ClusterUuid> removed;
+        Set<ClusterNodeId> removed;
 
         ComparisonResult result;
 
         if (ver1 == ver2) {
             result = SAME;
 
-            removed = g1.getRemoved();
+            removed = g1.removed();
         } else if (ver1 > ver2) {
             result = AFTER;
 
-            removed = g1.getRemoved();
+            removed = g1.removed();
         } else {
             result = BEFORE;
 
-            removed = g2.getRemoved();
+            removed = g2.removed();
         }
 
-        for (ClusterUuid id : allIds) {
+        for (ClusterNodeId id : allIds) {
             GossipNodeInfoBase n1 = members1.get(id);
             GossipNodeInfoBase n2 = members2.get(id);
 

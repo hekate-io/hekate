@@ -16,33 +16,33 @@
 
 package io.hekate.metrics.cluster.internal;
 
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.metrics.local.internal.StaticMetric;
 import io.hekate.util.format.ToString;
 import java.util.Map;
 
 class MetricsUpdate {
-    private final ClusterUuid node;
+    private final ClusterNodeId node;
 
     private final long ver;
 
     private final Map<String, StaticMetric> metrics;
 
-    public MetricsUpdate(ClusterUuid node, long ver, Map<String, StaticMetric> metrics) {
+    public MetricsUpdate(ClusterNodeId node, long ver, Map<String, StaticMetric> metrics) {
         this.node = node;
         this.ver = ver;
         this.metrics = metrics;
     }
 
-    public ClusterUuid getNode() {
+    public ClusterNodeId node() {
         return node;
     }
 
-    public long getVersion() {
+    public long version() {
         return ver;
     }
 
-    public Map<String, StaticMetric> getMetrics() {
+    public Map<String, StaticMetric> metrics() {
         return metrics;
     }
 

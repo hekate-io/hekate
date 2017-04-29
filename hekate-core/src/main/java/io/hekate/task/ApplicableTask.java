@@ -29,7 +29,7 @@ import java.util.Collection;
  * @param <T> Argument type.
  * @param <V> Result type.
  *
- * @see TaskService#applyAll(Collection, ApplicableTask)
+ * @see TaskService#applyToAll(Collection, ApplicableTask)
  */
 @FunctionalInterface
 public interface ApplicableTask<T, V> extends Serializable {

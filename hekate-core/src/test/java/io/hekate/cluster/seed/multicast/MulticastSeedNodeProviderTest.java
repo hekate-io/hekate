@@ -54,11 +54,11 @@ public class MulticastSeedNodeProviderTest extends SeedNodeProviderCommonTest<Mu
         }
 
         @Override
-        NetworkInterface getMulticastInterface(InetSocketAddress address) throws HekateException {
+        NetworkInterface selectMulticastInterface(InetSocketAddress address) throws HekateException {
             NetworkInterface nif = INTERFACES_CACHE.get(address.getAddress());
 
             if (nif == null) {
-                nif = super.getMulticastInterface(address);
+                nif = super.selectMulticastInterface(address);
 
                 INTERFACES_CACHE.put(address.getAddress(), nif);
             }
@@ -125,7 +125,7 @@ public class MulticastSeedNodeProviderTest extends SeedNodeProviderCommonTest<Mu
             for (Map.Entry<InetSocketAddress, TestProvider> e : providers.entrySet()) {
                 e.getValue().stopDiscovery(CLUSTER_1, e.getKey());
 
-                assertTrue(e.getValue().getSeedNodes(CLUSTER_1).isEmpty());
+                assertTrue(e.getValue().findSeedNodes(CLUSTER_1).isEmpty());
             }
         }
     }
@@ -159,12 +159,12 @@ public class MulticastSeedNodeProviderTest extends SeedNodeProviderCommonTest<Mu
             .withInterval(123)
         );
 
-        assertEquals(987, provider.getWaitTime());
-        assertEquals("224.1.2.14", provider.getGroup().getAddress().getHostAddress());
-        assertEquals(MulticastSeedNodeProviderConfig.DEFAULT_PORT + 1, provider.getGroup().getPort());
-        assertEquals(789, provider.getTtl());
-        assertEquals(123, provider.getInterval());
-        assertEquals(0, provider.getCleanupInterval());
+        assertEquals(987, provider.waitTime());
+        assertEquals("224.1.2.14", provider.group().getAddress().getHostAddress());
+        assertEquals(MulticastSeedNodeProviderConfig.DEFAULT_PORT + 1, provider.group().getPort());
+        assertEquals(789, provider.ttl());
+        assertEquals(123, provider.interval());
+        assertEquals(0, provider.cleanupInterval());
     }
 
     @Override

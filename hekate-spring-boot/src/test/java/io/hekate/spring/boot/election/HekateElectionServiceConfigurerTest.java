@@ -49,6 +49,6 @@ public class HekateElectionServiceConfigurerTest extends HekateAutoConfigurerTes
         assertNotNull(get(LeaderTestConfig.class).electionService);
         assertNotNull(get("electionService", ElectionService.class));
 
-        assertEquals(getNode().getLocalNode(), getNode().election().leader("test").get());
+        assertEquals(getNode().localNode(), getNode().election().leader("test").get());
     }
 }

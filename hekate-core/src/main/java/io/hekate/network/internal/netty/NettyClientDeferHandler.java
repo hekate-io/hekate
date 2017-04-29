@@ -36,11 +36,11 @@ class NettyClientDeferHandler<T> extends ChannelDuplexHandler {
             this.promise = promise;
         }
 
-        public Object getMessage() {
+        public Object message() {
             return message;
         }
 
-        public ChannelPromise getPromise() {
+        public ChannelPromise promise() {
             return promise;
         }
 
@@ -177,9 +177,9 @@ class NettyClientDeferHandler<T> extends ChannelDuplexHandler {
                 DeferredMessage deferredMsg = deferred.poll();
 
                 try {
-                    deferredMsg.getPromise().tryFailure(error);
+                    deferredMsg.promise().tryFailure(error);
                 } finally {
-                    ReferenceCountUtil.release(deferredMsg.getMessage());
+                    ReferenceCountUtil.release(deferredMsg.message());
                 }
             }
 
@@ -208,10 +208,10 @@ class NettyClientDeferHandler<T> extends ChannelDuplexHandler {
                     DeferredMessage deferredMsg = localDeferred.poll();
 
                     if (debug) {
-                        log.debug("Writing deferred message [address={}, message={}]", id, deferredMsg.getMessage());
+                        log.debug("Writing deferred message [address={}, message={}]", id, deferredMsg.message());
                     }
 
-                    ctx.writeAndFlush(deferredMsg.getMessage(), deferredMsg.getPromise());
+                    ctx.writeAndFlush(deferredMsg.message(), deferredMsg.promise());
                 }
             }
         }

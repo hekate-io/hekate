@@ -21,7 +21,7 @@ import io.hekate.cluster.ClusterNode;
 /**
  * Member of a coordination process.
  *
- * @see CoordinationContext#getMembers()
+ * @see CoordinationContext#members()
  */
 public interface CoordinationMember {
     /**
@@ -36,7 +36,7 @@ public interface CoordinationMember {
      *
      * @return Cluster node.
      */
-    ClusterNode getNode();
+    ClusterNode node();
 
     /**
      * Asynchronously send the specified request to this member.

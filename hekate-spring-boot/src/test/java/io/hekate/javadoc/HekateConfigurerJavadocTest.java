@@ -17,7 +17,6 @@
 package io.hekate.javadoc;
 
 import io.hekate.HekateTestBase;
-import io.hekate.core.Hekate;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,20 +25,17 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
 
 @RunWith(SpringRunner.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(classes = MyApplication.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 public class HekateConfigurerJavadocTest extends HekateTestBase {
     @Autowired
-    private MyBean myBean;
+    private MyComponent myComponent;
 
     @Test
     public void test() {
-        assertNotNull(myBean);
-        assertNotNull(myBean.getHekate());
-        assertSame(Hekate.State.UP, myBean.getHekate().getState());
+        assertNotNull(myComponent);
     }
 
     @Override

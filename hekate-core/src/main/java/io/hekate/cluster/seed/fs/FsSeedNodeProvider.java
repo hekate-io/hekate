@@ -96,10 +96,10 @@ public class FsSeedNodeProvider implements SeedNodeProvider {
     }
 
     @Override
-    public List<InetSocketAddress> getSeedNodes(String cluster) throws HekateException {
+    public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
         List<InetSocketAddress> seedNodes = new ArrayList<>();
 
-        File dir = getClusterDir(cluster);
+        File dir = clusterDir(cluster);
 
         if (DEBUG) {
             log.debug("Searching for seed node files [dir={}]", dir);
@@ -150,12 +150,12 @@ public class FsSeedNodeProvider implements SeedNodeProvider {
     }
 
     @Override
-    public long getCleanupInterval() {
+    public long cleanupInterval() {
         return cleanupInterval;
     }
 
     @Override
-    public void registerRemoteAddress(String cluster, InetSocketAddress node) throws HekateException {
+    public void registerRemote(String cluster, InetSocketAddress node) throws HekateException {
         if (DEBUG) {
             log.debug("Registering remote address [cluster={}], node={}]", cluster, node);
         }
@@ -164,7 +164,7 @@ public class FsSeedNodeProvider implements SeedNodeProvider {
     }
 
     @Override
-    public void unregisterRemoteAddress(String cluster, InetSocketAddress node) throws HekateException {
+    public void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException {
         if (DEBUG) {
             log.debug("Unregistering remote address [cluster={}], node={}]", cluster, node);
         }
@@ -182,7 +182,7 @@ public class FsSeedNodeProvider implements SeedNodeProvider {
     }
 
     private void doRegister(String cluster, InetSocketAddress node) throws HekateException {
-        File dir = getClusterDir(cluster);
+        File dir = clusterDir(cluster);
 
         if (dir.mkdirs()) {
             log.info("Initialized directories structure for seed nodes store [path={}]", dir.getAbsolutePath());
@@ -204,7 +204,7 @@ public class FsSeedNodeProvider implements SeedNodeProvider {
     }
 
     private void doUnregister(String cluster, InetSocketAddress node) {
-        File dir = getClusterDir(cluster);
+        File dir = clusterDir(cluster);
 
         File seedFile = new File(dir, Utils.addressToFileName(node));
 
@@ -222,7 +222,7 @@ public class FsSeedNodeProvider implements SeedNodeProvider {
     }
 
     // Package level for testing purposes.
-    File getClusterDir(String cluster) {
+    File clusterDir(String cluster) {
         return new File(workDir.getAbsolutePath(), cluster).getAbsoluteFile();
     }
 

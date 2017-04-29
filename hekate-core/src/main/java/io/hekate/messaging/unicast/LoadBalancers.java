@@ -17,7 +17,7 @@
 package io.hekate.messaging.unicast;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.core.HekateException;
 
 /**
@@ -26,10 +26,10 @@ import io.hekate.core.HekateException;
 public final class LoadBalancers {
     private static class RandomLoadBalancer<T> implements LoadBalancer<T> {
         @Override
-        public ClusterUuid route(T message, LoadBalancerContext ctx) throws HekateException {
-            ClusterNode target = ctx.getRandom();
+        public ClusterNodeId route(T message, LoadBalancerContext ctx) throws HekateException {
+            ClusterNode target = ctx.random();
 
-            return target != null ? target.getId() : null;
+            return target != null ? target.id() : null;
         }
     }
 

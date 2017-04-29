@@ -18,7 +18,7 @@ package io.hekate.cluster.internal.gossip;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,7 +26,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 
 public class GossipNodesDeathWatchTest extends HekateTestBase {
-    private ClusterUuid id;
+    private ClusterNodeId id;
 
     private GossipNodeState n1;
 
@@ -42,7 +42,7 @@ public class GossipNodesDeathWatchTest extends HekateTestBase {
     public void setUp() throws Exception {
         ClusterNode node = newNode();
 
-        id = node.getId();
+        id = node.id();
 
         n1 = new GossipNodeState(newNode(), GossipNodeStatus.UP);
         n2 = new GossipNodeState(newNode(), GossipNodeStatus.UP);
@@ -53,7 +53,7 @@ public class GossipNodesDeathWatchTest extends HekateTestBase {
             .update(id, n2)
             .update(id, n3);
 
-        watch = new GossipNodesDeathWatch(node.getId(), 1, 0);
+        watch = new GossipNodesDeathWatch(node.id(), 1, 0);
     }
 
     @Test
@@ -65,11 +65,11 @@ public class GossipNodesDeathWatchTest extends HekateTestBase {
 
     @Test
     public void testSuspectUnSuspect() throws Exception {
-        gossip = gossip.update(id, n1.suspected(n2.getId()));
+        gossip = gossip.update(id, n1.suspect(n2.id()));
 
         watch.update(gossip);
 
-        gossip = gossip.update(id, n1.unsuspected(n2.getId()));
+        gossip = gossip.update(id, n1.unsuspected(n2.id()));
 
         watch.update(gossip);
 
@@ -78,28 +78,28 @@ public class GossipNodesDeathWatchTest extends HekateTestBase {
 
     @Test
     public void testTerminateSingle() throws Exception {
-        gossip = gossip.update(id, n1.suspected(n2.getId()));
+        gossip = gossip.update(id, n1.suspect(n2.id()));
 
         watch.update(gossip);
 
-        assertTrue(watch.terminateNodes().contains(n2.getId()));
+        assertTrue(watch.terminateNodes().contains(n2.id()));
     }
 
     @Test
     public void testTerminateMultiple() throws Exception {
-        gossip = gossip.update(id, n1.suspected(toSet(n2.getId(), n3.getId())));
+        gossip = gossip.update(id, n1.suspect(toSet(n2.id(), n3.id())));
 
         watch.update(gossip);
 
-        List<ClusterUuid> terminated = watch.terminateNodes();
+        List<ClusterNodeId> terminated = watch.terminateNodes();
 
-        assertTrue(terminated.contains(n2.getId()));
-        assertTrue(terminated.contains(n3.getId()));
+        assertTrue(terminated.contains(n2.id()));
+        assertTrue(terminated.contains(n3.id()));
     }
 
     @Test
     public void testNotTerminateLocalNode() throws Exception {
-        gossip = gossip.update(id, n1.suspected(id));
+        gossip = gossip.update(id, n1.suspect(id));
 
         watch.update(gossip);
 

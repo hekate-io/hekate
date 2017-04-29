@@ -81,11 +81,11 @@ public class NetworkServerTest extends NetworkTestBase {
 
             say("Starting...");
 
-            assertSame(NetworkServer.State.STOPPED, server.getState());
+            assertSame(NetworkServer.State.STOPPED, server.state());
 
             server.start(newServerAddress(), listener).get();
 
-            assertSame(NetworkServer.State.STARTED, server.getState());
+            assertSame(NetworkServer.State.STARTED, server.state());
 
             listener.assertStarts(1);
             listener.assertStops(0);
@@ -95,7 +95,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
             server.stop().get();
 
-            assertSame(NetworkServer.State.STOPPED, server.getState());
+            assertSame(NetworkServer.State.STOPPED, server.state());
 
             listener.assertStarts(1);
             listener.assertStops(1);
@@ -113,14 +113,14 @@ public class NetworkServerTest extends NetworkTestBase {
 
         say("Starting...");
 
-        assertSame(NetworkServer.State.STOPPED, server.getState());
+        assertSame(NetworkServer.State.STOPPED, server.state());
 
         server.start(new InetSocketAddress(0), listener).get();
 
-        assertSame(NetworkServer.State.STARTED, server.getState());
-        assertTrue(server.getAddress().getPort() > 0);
+        assertSame(NetworkServer.State.STARTED, server.state());
+        assertTrue(server.address().getPort() > 0);
 
-        say("Started on port " + server.getAddress().getPort());
+        say("Started on port " + server.address().getPort());
 
         listener.assertStarts(1);
         listener.assertStops(0);
@@ -130,10 +130,10 @@ public class NetworkServerTest extends NetworkTestBase {
 
         server.stop().get();
 
-        assertSame(NetworkServer.State.STOPPED, server.getState());
+        assertSame(NetworkServer.State.STOPPED, server.state());
 
         // Port must be preserved after stop.
-        assertTrue(server.getAddress().getPort() > 0);
+        assertTrue(server.address().getPort() > 0);
 
         listener.assertStarts(1);
         listener.assertStops(1);
@@ -166,12 +166,12 @@ public class NetworkServerTest extends NetworkTestBase {
         repeat(3, i -> {
             errorLatch.set(new CountDownLatch(1));
 
-            assertSame(NetworkServer.State.STARTED, nettyServer.getState());
+            assertSame(NetworkServer.State.STARTED, nettyServer.state());
 
             listener.assertStarts(1);
             listener.assertStops(0);
 
-            nettyServer.getServerChannel().pipeline().fireExceptionCaught(new TestIoException(TEST_ERROR_MESSAGE));
+            nettyServer.serverChannel().pipeline().fireExceptionCaught(new TestIoException(TEST_ERROR_MESSAGE));
 
             await(errorLatch.get());
 
@@ -179,7 +179,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
             sleep(failoverInterval * 2);
 
-            assertSame(NetworkServer.State.STARTED, nettyServer.getState());
+            assertSame(NetworkServer.State.STARTED, nettyServer.state());
             listener.assertStarts(1);
             listener.assertStops(0);
             listener.assertErrors(i + 1);
@@ -210,7 +210,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
                 errorLatch.get().countDown();
 
-                InetSocketAddress newAddress = new InetSocketAddress(initAddress.getAddress(), failure.getLastTriedAddress().getPort() + 1);
+                InetSocketAddress newAddress = new InetSocketAddress(initAddress.getAddress(), failure.lastTriedAddress().getPort() + 1);
 
                 return failure.retry().withRetryDelay(failoverInterval).withRetryAddress(newAddress);
             }
@@ -221,12 +221,12 @@ public class NetworkServerTest extends NetworkTestBase {
         repeat(3, i -> {
             errorLatch.set(new CountDownLatch(1));
 
-            assertSame(NetworkServer.State.STARTED, nettyServer.getState());
+            assertSame(NetworkServer.State.STARTED, nettyServer.state());
 
             listener.assertStarts(1);
             listener.assertStops(0);
 
-            nettyServer.getServerChannel().pipeline().fireExceptionCaught(new TestIoException(TEST_ERROR_MESSAGE));
+            nettyServer.serverChannel().pipeline().fireExceptionCaught(new TestIoException(TEST_ERROR_MESSAGE));
 
             await(errorLatch.get());
 
@@ -234,12 +234,12 @@ public class NetworkServerTest extends NetworkTestBase {
 
             sleep(failoverInterval * 2);
 
-            assertSame(NetworkServer.State.STARTED, nettyServer.getState());
+            assertSame(NetworkServer.State.STARTED, nettyServer.state());
             listener.assertStarts(1);
             listener.assertStops(0);
             listener.assertErrors(i + 1);
 
-            assertEquals(initAddress.getPort() + i + 1, nettyServer.getAddress().getPort());
+            assertEquals(initAddress.getPort() + i + 1, nettyServer.address().getPort());
 
             listener.getErrors().forEach(e -> {
                 assertTrue(e.toString(), e instanceof IOException);
@@ -296,7 +296,7 @@ public class NetworkServerTest extends NetworkTestBase {
         NetworkClient<String> client = createClient();
 
         try {
-            client.connect(server.getAddress(), new NetworkClientCallbackMock<>()).get();
+            client.connect(server.address(), new NetworkClientCallbackMock<>()).get();
 
             fail();
         } catch (ExecutionException e) {
@@ -305,7 +305,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
         server.startAccepting();
 
-        client.connect(server.getAddress(), new NetworkClientCallbackMock<>()).get();
+        client.connect(server.address(), new NetworkClientCallbackMock<>()).get();
     }
 
     @Test
@@ -325,9 +325,9 @@ public class NetworkServerTest extends NetworkTestBase {
 
             callbacks.add(callback);
 
-            client.connect(server.getAddress(), callback).get();
+            client.connect(server.address(), callback).get();
 
-            assertSame(NetworkClient.State.CONNECTED, client.getState());
+            assertSame(NetworkClient.State.CONNECTED, client.state());
         }
 
         List<NetworkEndpoint<?>> clients = server.removeHandler(TEST_PROTOCOL);
@@ -430,7 +430,7 @@ public class NetworkServerTest extends NetworkTestBase {
         for (int i = 0; i < clients; i++) {
             NetworkClient<String> client = createClient(c -> c.setProtocol("test_context"));
 
-            client.connect(server.getAddress(), "client_" + i, new NetworkClientCallbackMock<>()).get();
+            client.connect(server.address(), "client_" + i, new NetworkClientCallbackMock<>()).get();
 
             for (int j = 1; j <= messagesPerClient; j++) {
                 client.send("msg_" + i + "_" + j);
@@ -486,7 +486,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
         NetworkClientCallbackMock<String> clientCallback = new NetworkClientCallbackMock<>();
 
-        client.connect(server.getAddress(), clientCallback);
+        client.connect(server.address(), clientCallback);
 
         NetworkEndpoint<String> serverClient = get(latch);
 
@@ -519,9 +519,9 @@ public class NetworkServerTest extends NetworkTestBase {
             // No-op.
         }));
 
-        assertTrue(server.getConnected("protocol_1").isEmpty());
-        assertTrue(server.getConnected("protocol_2").isEmpty());
-        assertTrue(server.getConnected("some_unknown_protocol").isEmpty());
+        assertTrue(server.clients("protocol_1").isEmpty());
+        assertTrue(server.clients("protocol_2").isEmpty());
+        assertTrue(server.clients("some_unknown_protocol").isEmpty());
 
         server.start(newServerAddress(), new NetworkServerCallbackMock()).get();
 
@@ -532,52 +532,52 @@ public class NetworkServerTest extends NetworkTestBase {
             NetworkClient<String> p2c1 = createClient(c -> c.setProtocol("protocol_2"));
             NetworkClient<String> p2c2 = createClient(c -> c.setProtocol("protocol_2"));
 
-            get(p1c1.connect(server.getAddress(), new NetworkClientCallbackMock<>()));
-            get(p1c2.connect(server.getAddress(), new NetworkClientCallbackMock<>()));
-            get(p2c1.connect(server.getAddress(), new NetworkClientCallbackMock<>()));
-            get(p2c2.connect(server.getAddress(), new NetworkClientCallbackMock<>()));
+            get(p1c1.connect(server.address(), new NetworkClientCallbackMock<>()));
+            get(p1c2.connect(server.address(), new NetworkClientCallbackMock<>()));
+            get(p2c1.connect(server.address(), new NetworkClientCallbackMock<>()));
+            get(p2c2.connect(server.address(), new NetworkClientCallbackMock<>()));
 
             // Verify that for each client there is a server endpoint.
-            List<NetworkEndpoint<?>> connectedP1 = server.getConnected("protocol_1");
-            List<NetworkEndpoint<?>> connectedP2 = server.getConnected("protocol_2");
+            List<NetworkEndpoint<?>> connectedP1 = server.clients("protocol_1");
+            List<NetworkEndpoint<?>> connectedP2 = server.clients("protocol_2");
 
             assertEquals(2, connectedP1.size());
-            assertTrue(connectedP1.stream().anyMatch(e -> e.getRemoteAddress().equals(p1c1.getLocalAddress())));
-            assertTrue(connectedP1.stream().anyMatch(e -> e.getRemoteAddress().equals(p1c2.getLocalAddress())));
+            assertTrue(connectedP1.stream().anyMatch(e -> e.remoteAddress().equals(p1c1.localAddress())));
+            assertTrue(connectedP1.stream().anyMatch(e -> e.remoteAddress().equals(p1c2.localAddress())));
 
             assertEquals(2, connectedP2.size());
-            assertTrue(connectedP2.stream().anyMatch(e -> e.getRemoteAddress().equals(p2c1.getLocalAddress())));
-            assertTrue(connectedP2.stream().anyMatch(e -> e.getRemoteAddress().equals(p2c2.getLocalAddress())));
+            assertTrue(connectedP2.stream().anyMatch(e -> e.remoteAddress().equals(p2c1.localAddress())));
+            assertTrue(connectedP2.stream().anyMatch(e -> e.remoteAddress().equals(p2c2.localAddress())));
 
             // Disconnect 1 client from each protocol.
             get(p1c1.disconnect());
             get(p2c1.disconnect());
 
-            busyWait("'protocol_1' server disconnect", () -> server.getConnected("protocol_1").size() == 1);
-            busyWait("'protocol_1' server disconnect", () -> server.getConnected("protocol_2").size() == 1);
+            busyWait("'protocol_1' server disconnect", () -> server.clients("protocol_1").size() == 1);
+            busyWait("'protocol_1' server disconnect", () -> server.clients("protocol_2").size() == 1);
 
             // Verify that clients were removed from server endpoints list.
-            connectedP1 = server.getConnected("protocol_1");
-            connectedP2 = server.getConnected("protocol_2");
+            connectedP1 = server.clients("protocol_1");
+            connectedP2 = server.clients("protocol_2");
 
             assertEquals(1, connectedP1.size());
-            assertTrue(connectedP1.stream().anyMatch(e -> e.getRemoteAddress().equals(p1c2.getLocalAddress())));
+            assertTrue(connectedP1.stream().anyMatch(e -> e.remoteAddress().equals(p1c2.localAddress())));
 
             assertEquals(1, connectedP2.size());
-            assertTrue(connectedP2.stream().anyMatch(e -> e.getRemoteAddress().equals(p2c2.getLocalAddress())));
+            assertTrue(connectedP2.stream().anyMatch(e -> e.remoteAddress().equals(p2c2.localAddress())));
 
             // Disconnect server endpoints.
             get(connectedP1.get(0).disconnect());
             get(connectedP2.get(0).disconnect());
 
-            busyWait("'protocol_1' client disconnect", () -> p1c2.getState() == NetworkClient.State.DISCONNECTED);
-            busyWait("'protocol_2' client disconnect", () -> p2c2.getState() == NetworkClient.State.DISCONNECTED);
+            busyWait("'protocol_1' client disconnect", () -> p1c2.state() == NetworkClient.State.DISCONNECTED);
+            busyWait("'protocol_2' client disconnect", () -> p2c2.state() == NetworkClient.State.DISCONNECTED);
 
             // Verify that clients were disconnected too.
-            assertSame(NetworkClient.State.DISCONNECTED, p1c1.getState());
-            assertSame(NetworkClient.State.DISCONNECTED, p1c2.getState());
-            assertSame(NetworkClient.State.DISCONNECTED, p2c1.getState());
-            assertSame(NetworkClient.State.DISCONNECTED, p2c2.getState());
+            assertSame(NetworkClient.State.DISCONNECTED, p1c1.state());
+            assertSame(NetworkClient.State.DISCONNECTED, p1c2.state());
+            assertSame(NetworkClient.State.DISCONNECTED, p2c1.state());
+            assertSame(NetworkClient.State.DISCONNECTED, p2c2.state());
         });
     }
 
@@ -661,11 +661,11 @@ public class NetworkServerTest extends NetworkTestBase {
         }
 
         for (NetworkServer server : servers) {
-            assertSame(NetworkServer.State.STARTED, server.getState());
+            assertSame(NetworkServer.State.STARTED, server.state());
 
             server.stop().get();
 
-            assertSame(NetworkServer.State.STOPPED, server.getState());
+            assertSame(NetworkServer.State.STOPPED, server.state());
         }
 
         listener.assertStarts(servers.size());

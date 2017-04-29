@@ -49,15 +49,15 @@ public interface NetworkServerFailure {
          *
          * @return Time in milliseconds.
          */
-        long getRetryDelay();
+        long retryDelay();
 
         /**
          * Returns a new address that the server should try during its failover actions. Returning {@code null} instructs the server
-         * to reuse the old address (see {@link NetworkServerFailure#getLastTriedAddress()}).
+         * to reuse the old address (see {@link NetworkServerFailure#lastTriedAddress()}).
          *
          * @return New address that the server should try during its failover actions.
          */
-        InetSocketAddress getRetryAddress();
+        InetSocketAddress retryAddress();
 
         /**
          * Sets the amount of time in milliseconds for server to wait before performing another failover attempt.
@@ -83,21 +83,21 @@ public interface NetworkServerFailure {
      *
      * @return Cause of this failure.
      */
-    Throwable getCause();
+    Throwable cause();
 
     /**
      * Returns the current failover attempt (starting with 0).
      *
      * @return Current failover attempt.
      */
-    int getAttempt();
+    int attempt();
 
     /**
      * Returns the last address that was tried by the server.
      *
      * @return Last address that was tried by the server.
      */
-    InetSocketAddress getLastTriedAddress();
+    InetSocketAddress lastTriedAddress();
 
     /**
      * Resolves this failure to be unrecoverable.

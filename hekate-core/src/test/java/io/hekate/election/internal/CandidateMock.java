@@ -41,7 +41,7 @@ class CandidateMock implements Candidate {
         followerContext = null;
         leaderContext = ctx;
 
-        leadersHistory.add(ctx.getLocalNode());
+        leadersHistory.add(ctx.localNode());
     }
 
     @Override
@@ -49,9 +49,9 @@ class CandidateMock implements Candidate {
         leaderContext = null;
         followerContext = ctx;
 
-        leadersHistory.add(ctx.getLeader());
+        leadersHistory.add(ctx.leader());
 
-        ctx.addLeaderChangeListener(sameCtx -> leadersHistory.add(ctx.getLeader()));
+        ctx.addListener(sameCtx -> leadersHistory.add(ctx.leader()));
     }
 
     @Override

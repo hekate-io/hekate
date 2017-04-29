@@ -115,7 +115,7 @@ public class NettyNetworkServiceTest extends NetworkTestBase {
 
         InetSocketAddress bindAddr = serverService.bind(new NetworkBindCallback() {
             // No-op.
-        }).get().getAddress();
+        }).get().address();
 
         clientService.bind(new NetworkBindCallback() {
             // No-op.
@@ -132,11 +132,11 @@ public class NettyNetworkServiceTest extends NetworkTestBase {
 
         client.connect(connectAddr, callback).get();
 
-        assertSame(NetworkClient.State.CONNECTED, client.getState());
+        assertSame(NetworkClient.State.CONNECTED, client.state());
 
         clientService.stop();
 
-        assertSame(NetworkClient.State.DISCONNECTED, client.getState());
+        assertSame(NetworkClient.State.DISCONNECTED, client.state());
 
         try {
             client.connect(connectAddr, callback).get(1, TimeUnit.SECONDS);
@@ -146,7 +146,7 @@ public class NettyNetworkServiceTest extends NetworkTestBase {
             assertEquals("I/O thread pool terminated.", e.getMessage());
         }
 
-        assertSame(NetworkClient.State.DISCONNECTED, client.getState());
+        assertSame(NetworkClient.State.DISCONNECTED, client.state());
 
         callback.assertConnects(1);
         callback.assertDisconnects(1);
@@ -166,7 +166,7 @@ public class NettyNetworkServiceTest extends NetworkTestBase {
 
         InetSocketAddress bindAddr = service.bind(new NetworkBindCallback() {
             // No-op.
-        }).get().getAddress();
+        }).get().address();
 
         service.start();
 
@@ -199,7 +199,7 @@ public class NettyNetworkServiceTest extends NetworkTestBase {
 
             InetSocketAddress addr = service.bind(new NetworkBindCallback() {
                 // No-op.
-            }).get().getAddress();
+            }).get().address();
 
             assertEquals(20100 + i, addr.getPort());
         });

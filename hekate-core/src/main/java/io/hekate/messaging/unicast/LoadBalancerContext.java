@@ -35,10 +35,10 @@ public interface LoadBalancerContext extends ClusterTopology {
      *
      * @return Cluster topology.
      */
-    ClusterTopology getTopology();
+    ClusterTopology topology();
 
     /**
-     * Returns <tt>true</tt> if the messaging operation has an affinity key (see {@link #getAffinityKey()}).
+     * Returns <tt>true</tt> if the messaging operation has an affinity key (see {@link #affinityKey()}).
      *
      * @return <tt>true</tt> if the messaging operation has an affinity key.
      */
@@ -50,7 +50,7 @@ public interface LoadBalancerContext extends ClusterTopology {
      *
      * @return Hash code of affinity key.
      */
-    int getAffinity();
+    int affinity();
 
     /**
      * Returns the affinity key of the messaging operation or {@code null} if the affinity key wasn't specified.
@@ -59,7 +59,7 @@ public interface LoadBalancerContext extends ClusterTopology {
      *
      * @see MessagingChannel#withAffinity(Object)
      */
-    Object getAffinityKey();
+    Object affinityKey();
 
     /**
      * Returns information about a failover attempt if this context represents a {@link FailoverPolicy} re-routing attempts.
@@ -68,7 +68,7 @@ public interface LoadBalancerContext extends ClusterTopology {
      *
      * @see FailoverPolicy
      */
-    Optional<FailureInfo> getFailure();
+    Optional<FailureInfo> failure();
 
     @Override
     LoadBalancerContext filter(ClusterNodeFilter filter);

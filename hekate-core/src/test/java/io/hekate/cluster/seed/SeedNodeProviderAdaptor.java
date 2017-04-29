@@ -23,7 +23,7 @@ import java.util.List;
 
 public class SeedNodeProviderAdaptor implements SeedNodeProvider {
     @Override
-    public List<InetSocketAddress> getSeedNodes(String cluster) throws HekateException {
+    public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
         return Collections.emptyList();
     }
 
@@ -43,17 +43,17 @@ public class SeedNodeProviderAdaptor implements SeedNodeProvider {
     }
 
     @Override
-    public long getCleanupInterval() {
+    public long cleanupInterval() {
         return 0;
     }
 
     @Override
-    public void registerRemoteAddress(String cluster, InetSocketAddress node) throws HekateException {
+    public void registerRemote(String cluster, InetSocketAddress node) throws HekateException {
         // No-op.
     }
 
     @Override
-    public void unregisterRemoteAddress(String cluster, InetSocketAddress node) throws HekateException {
+    public void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException {
         // No-op.
     }
 }

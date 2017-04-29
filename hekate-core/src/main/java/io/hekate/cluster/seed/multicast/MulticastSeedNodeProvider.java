@@ -91,11 +91,11 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
             this.cluster = cluster;
         }
 
-        public InetSocketAddress getAddress() {
+        public InetSocketAddress address() {
             return address;
         }
 
-        public String getCluster() {
+        public String cluster() {
             return cluster;
         }
 
@@ -212,10 +212,10 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
     }
 
     @Override
-    public List<InetSocketAddress> getSeedNodes(String cluster) throws HekateException {
+    public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
         synchronized (mux) {
             if (isRegistered()) {
-                return seedNodes.stream().filter(s -> s.getCluster().equals(cluster)).map(SeedNode::getAddress).collect(toList());
+                return seedNodes.stream().filter(s -> s.cluster().equals(cluster)).map(SeedNode::address).collect(toList());
             }
         }
 
@@ -228,7 +228,7 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
 
         SeedNode thisNode = new SeedNode(address, cluster);
 
-        NetworkInterface nif = getMulticastInterface(address);
+        NetworkInterface nif = selectMulticastInterface(address);
 
         try {
             synchronized (mux) {
@@ -362,17 +362,17 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
     }
 
     @Override
-    public long getCleanupInterval() {
+    public long cleanupInterval() {
         return 0;
     }
 
     @Override
-    public void registerRemoteAddress(String cluster, InetSocketAddress node) throws HekateException {
+    public void registerRemote(String cluster, InetSocketAddress node) throws HekateException {
         // No-op.
     }
 
     @Override
-    public void unregisterRemoteAddress(String cluster, InetSocketAddress node) throws HekateException {
+    public void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException {
         // No-op.
     }
 
@@ -381,7 +381,7 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
      *
      * @return Multicast group.
      */
-    public InetSocketAddress getGroup() {
+    public InetSocketAddress group() {
         return group;
     }
 
@@ -390,7 +390,7 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
      *
      * @return Multicast group.
      */
-    public int getTtl() {
+    public int ttl() {
         return ttl;
     }
 
@@ -399,7 +399,7 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
      *
      * @return Multicast interval.
      */
-    public long getInterval() {
+    public long interval() {
         return interval;
     }
 
@@ -408,7 +408,7 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
      *
      * @return Time to await for responses from remote nodes.
      */
-    public long getWaitTime() {
+    public long waitTime() {
         return waitTime;
     }
 
@@ -489,7 +489,7 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
                             }
 
                             if (discovered) {
-                                log.info("Seed node discovered [address={}]", otherNode.getAddress());
+                                log.info("Seed node discovered [address={}]", otherNode.address());
                             }
                         }
                     }
@@ -511,7 +511,7 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
                         String cluster = decodeUtf(buf);
                         InetSocketAddress address = decodeAddress(buf);
 
-                        if (thisNode.getCluster().equals(cluster) && !address.equals(thisNode.getAddress())) {
+                        if (thisNode.cluster().equals(cluster) && !address.equals(thisNode.address())) {
                             onDiscoveryMessage(address);
 
                             DatagramPacket response = new DatagramPacket(seedNodeInfo.copy(), msg.sender());
@@ -543,8 +543,8 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
         out.writeInt(Utils.MAGIC_BYTES);
         out.writeByte(MessageTYpe.SEED_NODE_INFO.ordinal());
 
-        encodeUtf(node.getCluster(), out);
-        encodeAddress(node.getAddress(), out);
+        encodeUtf(node.cluster(), out);
+        encodeAddress(node.address(), out);
 
         return out;
     }
@@ -555,8 +555,8 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
         out.writeInt(Utils.MAGIC_BYTES);
         out.writeByte(MessageTYpe.DISCOVERY.ordinal());
 
-        encodeUtf(node.getCluster(), out);
-        encodeAddress(node.getAddress(), out);
+        encodeUtf(node.cluster(), out);
+        encodeAddress(node.address(), out);
 
         return out;
     }
@@ -597,7 +597,7 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
     }
 
     // Package level for testing purposes.
-    NetworkInterface getMulticastInterface(InetSocketAddress node) throws HekateException {
+    NetworkInterface selectMulticastInterface(InetSocketAddress node) throws HekateException {
         InetAddress address = node.getAddress();
 
         try {

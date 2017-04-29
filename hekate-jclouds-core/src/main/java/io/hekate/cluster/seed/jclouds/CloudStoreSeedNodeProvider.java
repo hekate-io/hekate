@@ -119,7 +119,7 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider {
     }
 
     @Override
-    public List<InetSocketAddress> getSeedNodes(String cluster) throws HekateException {
+    public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
         try {
             if (log.isDebugEnabled()) {
                 log.debug("Loading seed node addresses [container={}, cluster={}]", container, cluster);
@@ -197,12 +197,12 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider {
     }
 
     @Override
-    public void registerRemoteAddress(String cluster, InetSocketAddress node) throws HekateException {
+    public void registerRemote(String cluster, InetSocketAddress node) throws HekateException {
         registerAddress(cluster, node);
     }
 
     @Override
-    public void unregisterRemoteAddress(String cluster, InetSocketAddress node) throws HekateException {
+    public void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException {
         unregisterAddress(cluster, node);
     }
 
@@ -212,7 +212,7 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider {
     }
 
     @Override
-    public long getCleanupInterval() {
+    public long cleanupInterval() {
         return cleanupInterval;
     }
 

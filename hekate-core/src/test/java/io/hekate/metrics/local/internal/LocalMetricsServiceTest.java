@@ -74,8 +74,8 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         metrics.register(new ProbeConfig("p").withInitValue(1000).withProbe(() -> 0));
 
         assertTrue(metrics.allMetrics().containsKey("p"));
-        assertEquals("p", metrics.metric("p").getName());
-        assertEquals(1000, metrics.metric("p").getValue());
+        assertEquals("p", metrics.metric("p").name());
+        assertEquals(1000, metrics.metric("p").value());
         assertEquals(1000, metrics.get("p"));
         assertEquals(1000, metrics.get("p", 10));
     }
@@ -94,8 +94,8 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         metrics.register(new ProbeConfig("p").withProbe(() -> 1000));
 
         assertTrue(metrics.allMetrics().containsKey("p"));
-        assertEquals("p", metrics.metric("p").getName());
-        assertEquals(0, metrics.metric("p").getValue());
+        assertEquals("p", metrics.metric("p").name());
+        assertEquals(0, metrics.metric("p").value());
     }
 
     @Test
@@ -139,7 +139,7 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
 
         sleep(TEST_METRICS_REFRESH_INTERVAL * 3);
 
-        assertEquals(2, metrics.metric("p1").getValue());
+        assertEquals(2, metrics.metric("p1").value());
     }
 
     @Test
@@ -147,8 +147,8 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         metrics.register(new CounterConfig("c"));
 
         assertTrue(metrics.allMetrics().containsKey("c"));
-        assertEquals("c", metrics.metric("c").getName());
-        assertEquals(0, metrics.metric("c").getValue());
+        assertEquals("c", metrics.metric("c").name());
+        assertEquals(0, metrics.metric("c").value());
     }
 
     @Test
@@ -156,8 +156,8 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         metrics.register(new CounterConfig("c"));
 
         assertTrue(metrics.allMetrics().containsKey("c"));
-        assertEquals("c", metrics.metric("c").getName());
-        assertEquals(0, metrics.metric("c").getValue());
+        assertEquals("c", metrics.metric("c").name());
+        assertEquals(0, metrics.metric("c").value());
     }
 
     @Test
@@ -165,8 +165,8 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         CounterMetric counter = metrics.register(new CounterConfig("c").withTotalName("ct").withAutoReset(true));
         Metric total = metrics.metric("ct");
 
-        assertEquals("ct", total.getName());
-        assertEquals(0, total.getValue());
+        assertEquals("ct", total.name());
+        assertEquals(0, total.value());
 
         assertNotNull(counter);
         assertNotNull(total);
@@ -176,7 +176,7 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
 
             awaitForMetric(0, counter);
 
-            assertEquals(i + 1, total.getValue());
+            assertEquals(i + 1, total.value());
         }
     }
 
@@ -187,13 +187,13 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         Metric metric = metrics.metric("c");
 
         for (int i = 0; i < 10; i++) {
-            assertEquals(i, metric.getValue());
-            assertEquals(i, c.getValue());
+            assertEquals(i, metric.value());
+            assertEquals(i, c.value());
 
             c.increment();
 
-            assertEquals(i + 1, metric.getValue());
-            assertEquals(i + 1, c.getValue());
+            assertEquals(i + 1, metric.value());
+            assertEquals(i + 1, c.value());
         }
     }
 
@@ -206,13 +206,13 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         Metric metric = metrics.metric("c");
 
         for (int i = 9; i >= 0; i--) {
-            assertEquals(i, metric.getValue());
-            assertEquals(i, c.getValue());
+            assertEquals(i, metric.value());
+            assertEquals(i, c.value());
 
             c.decrement();
 
-            assertEquals(i - 1, metric.getValue());
-            assertEquals(i - 1, c.getValue());
+            assertEquals(i - 1, metric.value());
+            assertEquals(i - 1, c.value());
         }
     }
 
@@ -224,18 +224,18 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
 
         c.add(1);
 
-        assertEquals(1, metric.getValue());
-        assertEquals(1, c.getValue());
+        assertEquals(1, metric.value());
+        assertEquals(1, c.value());
 
         c.add(2);
 
-        assertEquals(3, metric.getValue());
-        assertEquals(3, c.getValue());
+        assertEquals(3, metric.value());
+        assertEquals(3, c.value());
 
         c.add(5);
 
-        assertEquals(8, metric.getValue());
-        assertEquals(8, c.getValue());
+        assertEquals(8, metric.value());
+        assertEquals(8, c.value());
     }
 
     @Test
@@ -244,18 +244,18 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
 
         Metric metric = metrics.metric("c");
 
-        assertEquals(0, metric.getValue());
-        assertEquals(0, c.getValue());
+        assertEquals(0, metric.value());
+        assertEquals(0, c.value());
 
         c.subtract(2);
 
-        assertEquals(-2, metric.getValue());
-        assertEquals(-2, c.getValue());
+        assertEquals(-2, metric.value());
+        assertEquals(-2, c.value());
 
         c.subtract(5);
 
-        assertEquals(-7, metric.getValue());
-        assertEquals(-7, c.getValue());
+        assertEquals(-7, metric.value());
+        assertEquals(-7, c.value());
     }
 
     @Test
@@ -298,8 +298,8 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
 
         assertTrue(metrics.allMetrics().containsKey("c"));
         assertTrue(metrics.allMetrics().containsKey("p"));
-        assertEquals(1000, metrics.metric("c").getValue());
-        assertEquals(4000, metrics.metric("p").getValue());
+        assertEquals(1000, metrics.metric("c").value());
+        assertEquals(4000, metrics.metric("p").value());
     }
 
     @Test
@@ -313,15 +313,15 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         });
 
         assertTrue(metrics.allMetrics().containsKey("p"));
-        assertEquals("p", metrics.metric("p").getName());
-        assertEquals(1000, metrics.metric("p").getValue());
+        assertEquals("p", metrics.metric("p").name());
+        assertEquals(1000, metrics.metric("p").value());
 
         probe.set(2000);
 
         for (int j = 0; j < 3; j++) {
             assertTrue(metrics.allMetrics().containsKey("c" + j));
-            assertEquals("c" + j, metrics.metric("c" + j).getName());
-            assertEquals(0, metrics.metric("c" + j).getValue());
+            assertEquals("c" + j, metrics.metric("c" + j).name());
+            assertEquals(0, metrics.metric("c" + j).value());
 
             metrics.counter("c" + j).add(1000);
         }
@@ -349,12 +349,12 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         repeat(5, i -> {
             for (int j = 0; j < 3; j++) {
                 assertTrue(metrics.allMetrics().containsKey("c" + j));
-                assertEquals("c" + j, metrics.metric("c" + j).getName());
-                assertEquals(0, metrics.metric("c" + j).getValue());
+                assertEquals("c" + j, metrics.metric("c" + j).name());
+                assertEquals(0, metrics.metric("c" + j).value());
 
                 metrics.counter("c" + j).add(10);
 
-                assertEquals(10, metrics.metric("c" + j).getValue());
+                assertEquals(10, metrics.metric("c" + j).value());
             }
 
             node.leave();
@@ -371,8 +371,8 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
             metrics.register(new CounterConfig("c"));
 
             assertTrue(metrics.allMetrics().containsKey("c"));
-            assertEquals("c", metrics.metric("c").getName());
-            assertEquals(0, metrics.metric("c").getValue());
+            assertEquals("c", metrics.metric("c").name());
+            assertEquals(0, metrics.metric("c").value());
 
             node.leave();
 
@@ -398,8 +398,8 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
 
         assertNotNull(snapshot);
 
-        assertEquals(1000, snapshot.get("c").getValue());
-        assertEquals(100, snapshot.get("p").getValue());
+        assertEquals(1000, snapshot.get("c").value());
+        assertEquals(100, snapshot.get("p").value());
 
         assertSame(snapshot.get("c"), event.metric("c"));
         assertSame(snapshot.get("p"), event.metric("p"));
@@ -409,8 +409,8 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
 
         snapshot = getAsyncEvent().allMetrics();
 
-        assertEquals(2000, snapshot.get("c").getValue());
-        assertEquals(200, snapshot.get("p").getValue());
+        assertEquals(2000, snapshot.get("c").value());
+        assertEquals(200, snapshot.get("p").value());
 
         node.leave();
 
@@ -420,8 +420,8 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
 
         snapshot = getAsyncEvent().allMetrics();
 
-        assertEquals(0, snapshot.get("c").getValue());
-        assertEquals(100, snapshot.get("p").getValue());
+        assertEquals(0, snapshot.get("c").value());
+        assertEquals(100, snapshot.get("p").value());
     }
 
     @Test
@@ -443,20 +443,20 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
 
         assertNotNull(snapshot);
 
-        assertEquals(1000, snapshot.get("c").getValue());
-        assertEquals(100, snapshot.get("p").getValue());
+        assertEquals(1000, snapshot.get("c").value());
+        assertEquals(100, snapshot.get("p").value());
 
         metrics.counter("c").add(1000);
         probe.set(200);
 
         MetricsUpdateEvent event2 = getAsyncEvent();
 
-        assertTrue(event1.getTick() < event2.getTick());
+        assertTrue(event1.tick() < event2.tick());
 
         snapshot = event2.allMetrics();
 
-        assertEquals(2000, snapshot.get("c").getValue());
-        assertEquals(200, snapshot.get("p").getValue());
+        assertEquals(2000, snapshot.get("c").value());
+        assertEquals(200, snapshot.get("p").value());
 
         metrics.removeListener(listener);
 
@@ -470,7 +470,7 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
 
     protected void awaitForMetric(long val, Metric metric) throws Exception {
         busyWait("metric value [value=" + val + ", metric=" + metric + ']', () ->
-            val == metric.getValue()
+            val == metric.value()
         );
     }
 

@@ -50,7 +50,7 @@ public class PluginJavadocTest extends HekateTestBase {
         @Override
         public void start(Hekate hekate) throws HekateException {
             // Prepare file
-            file = Paths.get(hekate.getLocalNode().getName() + "-cluster.txt");
+            file = Paths.get(hekate.localNode().name() + "-cluster.txt");
 
             // Register cluster event listener that will update file on join/change cluster events.
             hekate.cluster().addListener(this::updateFile, ClusterEventType.JOIN, ClusterEventType.CHANGE);
@@ -66,7 +66,7 @@ public class PluginJavadocTest extends HekateTestBase {
         }
 
         private void updateFile(ClusterEvent event) throws HekateException {
-            List<String> nodesInfo = event.getTopology().stream().map(ClusterNode::toString).collect(Collectors.toList());
+            List<String> nodesInfo = event.topology().stream().map(ClusterNode::toString).collect(Collectors.toList());
 
             try {
                 Files.write(file, nodesInfo);
@@ -109,11 +109,11 @@ public class PluginJavadocTest extends HekateTestBase {
     }
 
     private void verifyFileContents(Hekate node) throws IOException {
-        List<String> fileNodes = Files.readAllLines(Paths.get(node.getLocalNode().getName() + "-cluster.txt"));
+        List<String> fileNodes = Files.readAllLines(Paths.get(node.localNode().name() + "-cluster.txt"));
 
         say("File contents: " + fileNodes);
 
-        List<String> nodes = node.cluster().getTopology().stream().map(ClusterNode::toString).collect(Collectors.toList());
+        List<String> nodes = node.cluster().topology().stream().map(ClusterNode::toString).collect(Collectors.toList());
 
         assertEquals(nodes.size(), fileNodes.size());
 

@@ -19,7 +19,7 @@ package io.hekate.cluster;
 /**
  * Cryptographic hash of the {@link ClusterTopology}.
  *
- * @see ClusterTopology#getHash()
+ * @see ClusterTopology#hash()
  */
 public interface ClusterHash {
     /**
@@ -27,5 +27,5 @@ public interface ClusterHash {
      *
      * @return Bytes copy.
      */
-    byte[] getBytes();
+    byte[] bytes();
 }

@@ -106,7 +106,7 @@ public class DistributedLockTest extends LockServiceTestBase {
 
     @Test
     public void testUnlockAfterOwnerLeaves() throws Exception {
-        DistributedLock lock = region.getLock("test");
+        DistributedLock lock = region.get("test");
 
         lock.lock();
 
@@ -118,12 +118,12 @@ public class DistributedLockTest extends LockServiceTestBase {
     @Test
     public void testLockUnlockSameInstance() throws Exception {
         repeat(LOCKS_PER_TEST, i -> {
-            DistributedLock lock = region.getLock("test" + i);
+            DistributedLock lock = region.get("test" + i);
 
-            assertEquals(REGION_1, lock.getRegion());
-            assertEquals("test" + i, lock.getName());
+            assertEquals(REGION_1, lock.regionName());
+            assertEquals("test" + i, lock.name());
             assertFalse(lock.isHeldByCurrentThread());
-            assertEquals(0, lock.getHoldCount());
+            assertEquals(0, lock.holdCount());
 
             repeat(3, j -> {
                 int locks = j + 1;
@@ -132,12 +132,12 @@ public class DistributedLockTest extends LockServiceTestBase {
                     lock.lock();
 
                     assertTrue(lock.isHeldByCurrentThread());
-                    assertEquals(k + 1, lock.getHoldCount());
+                    assertEquals(k + 1, lock.holdCount());
                 }
 
                 for (int k = 0; k < locks; k++) { // <- reentrant.
                     assertTrue(lock.isHeldByCurrentThread());
-                    assertEquals(locks - k, lock.getHoldCount());
+                    assertEquals(locks - k, lock.holdCount());
 
                     lock.unlock();
                 }
@@ -148,12 +148,12 @@ public class DistributedLockTest extends LockServiceTestBase {
     @Test
     public void testLockUnlockAsyncSameInstance() throws Exception {
         repeat(LOCKS_PER_TEST, i -> {
-            DistributedLock lock = region.getLock("test" + i);
+            DistributedLock lock = region.get("test" + i);
 
-            assertEquals(REGION_1, lock.getRegion());
-            assertEquals("test" + i, lock.getName());
+            assertEquals(REGION_1, lock.regionName());
+            assertEquals("test" + i, lock.name());
             assertFalse(lock.isHeldByCurrentThread());
-            assertEquals(0, lock.getHoldCount());
+            assertEquals(0, lock.holdCount());
 
             repeat(3, j -> {
                 int locks = j + 1;
@@ -162,12 +162,12 @@ public class DistributedLockTest extends LockServiceTestBase {
                     lock.lock();
 
                     assertTrue(lock.isHeldByCurrentThread());
-                    assertEquals(k + 1, lock.getHoldCount());
+                    assertEquals(k + 1, lock.holdCount());
                 }
 
                 for (int k = 0; k < locks; k++) { // <- reentrant.
                     assertTrue(lock.isHeldByCurrentThread());
-                    assertEquals(locks - k, lock.getHoldCount());
+                    assertEquals(locks - k, lock.holdCount());
 
                     lock.unlockAsync();
                 }
@@ -183,19 +183,19 @@ public class DistributedLockTest extends LockServiceTestBase {
             for (int k = 0; k < locks; k++) { // <- reentrant.
                 String lock = "test" + i;
 
-                region.getLock(lock).lock();
+                region.get(lock).lock();
 
-                assertTrue(region.getLock(lock).isHeldByCurrentThread());
-                assertEquals(k + 1, region.getLock(lock).getHoldCount());
+                assertTrue(region.get(lock).isHeldByCurrentThread());
+                assertEquals(k + 1, region.get(lock).holdCount());
             }
 
             for (int k = 0; k < locks; k++) { // <- reentrant.
                 String lock = "test" + i;
 
-                assertTrue(region.getLock(lock).isHeldByCurrentThread());
-                assertEquals(locks - k, region.getLock(lock).getHoldCount());
+                assertTrue(region.get(lock).isHeldByCurrentThread());
+                assertEquals(locks - k, region.get(lock).holdCount());
 
-                region.getLock(lock).unlock();
+                region.get(lock).unlock();
             }
         }));
     }
@@ -208,19 +208,19 @@ public class DistributedLockTest extends LockServiceTestBase {
             for (int k = 0; k < locks; k++) { // <- reentrant.
                 String lock = "test" + i;
 
-                region.getLock(lock).lock();
+                region.get(lock).lock();
 
-                assertTrue(region.getLock(lock).isHeldByCurrentThread());
-                assertEquals(k + 1, region.getLock(lock).getHoldCount());
+                assertTrue(region.get(lock).isHeldByCurrentThread());
+                assertEquals(k + 1, region.get(lock).holdCount());
             }
 
             for (int k = 0; k < locks; k++) { // <- reentrant.
                 String lock = "test" + i;
 
-                assertTrue(region.getLock(lock).isHeldByCurrentThread());
-                assertEquals(locks - k, region.getLock(lock).getHoldCount());
+                assertTrue(region.get(lock).isHeldByCurrentThread());
+                assertEquals(locks - k, region.get(lock).holdCount());
 
-                region.getLock(lock).unlockAsync();
+                region.get(lock).unlockAsync();
             }
         }));
     }
@@ -228,7 +228,7 @@ public class DistributedLockTest extends LockServiceTestBase {
     @Test
     public void testLockInterruptibly() throws Exception {
         repeat(LOCKS_PER_TEST, i -> {
-            DistributedLock lock = region.getLock("test" + i);
+            DistributedLock lock = region.get("test" + i);
 
             repeat(3, j -> {
                 try {
@@ -284,7 +284,7 @@ public class DistributedLockTest extends LockServiceTestBase {
     @Test
     public void testTryLockWithTimeoutInterruptibly() throws Exception {
         repeat(LOCKS_PER_TEST, i -> {
-            DistributedLock lock = region.getLock("test" + i);
+            DistributedLock lock = region.get("test" + i);
 
             repeat(3, j -> {
                 try {
@@ -340,7 +340,7 @@ public class DistributedLockTest extends LockServiceTestBase {
     @Test
     public void testTryFreeLockWithTimeout() throws Exception {
         repeat(LOCKS_PER_TEST, i -> {
-            DistributedLock lock = region.getLock("test" + i);
+            DistributedLock lock = region.get("test" + i);
 
             repeat(3, j -> {
                 for (int k = 0; k < j + 1; k++) { // <- reentrant.
@@ -358,7 +358,7 @@ public class DistributedLockTest extends LockServiceTestBase {
     @Test
     public void testTryFreeLock() throws Exception {
         repeat(LOCKS_PER_TEST, i -> {
-            DistributedLock lock = region.getLock("test" + i);
+            DistributedLock lock = region.get("test" + i);
 
             repeat(3, j -> {
                 for (int k = 0; k < j + 1; k++) { // <- reentrant.
@@ -374,7 +374,7 @@ public class DistributedLockTest extends LockServiceTestBase {
 
     @Test
     public void testTryLockWithTerminatedService() throws Exception {
-        DistributedLock lock = region.getLock("test");
+        DistributedLock lock = region.get("test");
 
         lockNode.leave();
 
@@ -385,7 +385,7 @@ public class DistributedLockTest extends LockServiceTestBase {
     @Test
     public void testTryBusyLock() throws Exception {
         repeat(LOCKS_PER_TEST, i -> runWithBusyLock("test" + i, latch -> {
-            DistributedLock lock = region.getLock("test" + i);
+            DistributedLock lock = region.get("test" + i);
 
             repeat(3, k -> assertFalse(lock.tryLock()));
         }));
@@ -394,7 +394,7 @@ public class DistributedLockTest extends LockServiceTestBase {
     @Test
     public void testTryBusyLockWithTimeout() throws Exception {
         repeat(LOCKS_PER_TEST, i -> runWithBusyLock("test" + i, latch -> {
-            DistributedLock lock = region.getLock("test" + i);
+            DistributedLock lock = region.get("test" + i);
 
             // Small timeout since locking doesn't take communication overhead into account.
             repeat(3, k -> assertFalse(lock.tryLock(1, TimeUnit.NANOSECONDS)));
@@ -404,12 +404,12 @@ public class DistributedLockTest extends LockServiceTestBase {
     @Test
     public void testNonReentrantWithDifferentNodes() throws Exception {
         repeat(LOCKS_PER_TEST, i -> repeat(3, j -> nodes.stream()
-            .filter(node -> !node.getLocalNode().equals(lockNode.getLocalNode()))
+            .filter(node -> !node.localNode().equals(lockNode.localNode()))
             .forEach(node -> {
-                region.getLock("test" + i).lock();
+                region.get("test" + i).lock();
 
                 try {
-                    DistributedLock otherLock = node.locks().region(REGION_1).getLock("test" + i);
+                    DistributedLock otherLock = node.locks().region(REGION_1).get("test" + i);
 
                     if (otherLock.tryLock()) {
                         otherLock.unlock();
@@ -417,7 +417,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                         fail("Got unexpected lock.");
                     }
                 } finally {
-                    region.getLock("test" + i).unlock();
+                    region.get("test" + i).unlock();
                 }
             })));
     }
@@ -427,7 +427,7 @@ public class DistributedLockTest extends LockServiceTestBase {
         repeat(LOCKS_PER_TEST, i -> runWithBusyLock("test" + i, asyncUnlock -> {
             String lockName = "test" + i;
 
-            DistributedLock lock = region.getLock(lockName);
+            DistributedLock lock = region.get(lockName);
 
             Future<Object> async = runAsync(() -> {
                 awaitForQueuedLock(lockName);
@@ -449,7 +449,7 @@ public class DistributedLockTest extends LockServiceTestBase {
         repeat(LOCKS_PER_TEST, i -> runWithBusyLock("test" + i, asyncUnlock -> {
             String lockName = "test" + i;
 
-            DistributedLock lock = region.getLock(lockName);
+            DistributedLock lock = region.get(lockName);
 
             Future<Object> async = runAsync(() -> {
                 awaitForQueuedLock(lockName);
@@ -476,7 +476,7 @@ public class DistributedLockTest extends LockServiceTestBase {
             HekateTestNode managerNode = getLockManagerNode(lockName);
 
             runWithBusyLock(lockName, managerNode, asyncUnlock -> {
-                DistributedLock lock = region.getLock(lockName);
+                DistributedLock lock = region.get(lockName);
 
                 // Asynchronously await for lock to be placed on the queue and leave node.
                 Future<Object> async = runAsync(() -> {
@@ -507,7 +507,7 @@ public class DistributedLockTest extends LockServiceTestBase {
 
             // Asynchronously await for lock to be placed on the queue and terminate node.
             runWithBusyLock(lockName, managerNode, asyncUnlock -> {
-                DistributedLock lock = region.getLock(lockName);
+                DistributedLock lock = region.get(lockName);
 
                 Future<Object> async = runAsync(() -> {
                     awaitForQueuedLock(lockName);
@@ -534,7 +534,7 @@ public class DistributedLockTest extends LockServiceTestBase {
             HekateTestNode managerNode = getLockManagerNode(lockName);
 
             runWithBusyLock(lockName, managerNode, asyncUnlock -> {
-                DistributedLock lock = region.getLock(lockName);
+                DistributedLock lock = region.get(lockName);
 
                 // Asynchronously await for lock to be placed on the queue and leave node.
                 Future<Object> async = runAsync(() -> {
@@ -566,7 +566,7 @@ public class DistributedLockTest extends LockServiceTestBase {
             HekateTestNode managerNode = getLockManagerNode(lockName);
 
             runWithBusyLock(lockName, managerNode, asyncUnlock -> {
-                DistributedLock lock = region.getLock(lockName);
+                DistributedLock lock = region.get(lockName);
 
                 // Asynchronously await for lock to be placed on the queue and terminate node.
                 Future<Object> async = runAsync(() -> {
@@ -606,7 +606,7 @@ public class DistributedLockTest extends LockServiceTestBase {
             HekateTestNode managerNode = getLockManagerNode(lockName);
 
             runWithBusyLock(lockName, managerNode, asyncUnlock -> {
-                DistributedLock lock = region.getLock(lockName);
+                DistributedLock lock = region.get(lockName);
 
                 Future<Object> async = runAsync(() -> {
                     awaitForQueuedLock(lockName);
@@ -630,7 +630,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                 asyncUnlock.countDown();
             });
 
-            DistributedLock lock = managerNode.locks().region(REGION_1).getLock(lockName);
+            DistributedLock lock = managerNode.locks().region(REGION_1).get(lockName);
 
             lockUnlock(lock);
         }
@@ -646,7 +646,7 @@ public class DistributedLockTest extends LockServiceTestBase {
             HekateTestNode managerNode = getLockManagerNode(lockName);
 
             runWithBusyLock(lockName, managerNode, asyncUnlock -> {
-                DistributedLock lock = region.getLock(lockName);
+                DistributedLock lock = region.get(lockName);
 
                 Future<Object> async = runAsync(() -> {
                     awaitForQueuedLock(lockName);
@@ -670,7 +670,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                 asyncUnlock.countDown();
             });
 
-            DistributedLock lock = managerNode.locks().region(REGION_1).getLock(lockName);
+            DistributedLock lock = managerNode.locks().region(REGION_1).get(lockName);
 
             lockUnlock(lock);
         }
@@ -680,14 +680,14 @@ public class DistributedLockTest extends LockServiceTestBase {
     public void testLockLivenessIfAtLeastOneNodeExists() throws Exception {
         if (nodes.size() > 1) { // <-- skip test if running only with a single node.
             for (int i = 0; i < 100; i++) {
-                region.getLock("test" + i).lock();
+                region.get("test" + i).lock();
             }
 
             try {
                 List<HekateTestNode> nodesCopy = new ArrayList<>(nodes);
 
                 for (HekateTestNode node : nodes) {
-                    if (node.getLocalNode().equals(lockNode.getLocalNode())) {
+                    if (node.localNode().equals(lockNode.localNode())) {
                         // Skip lock owner.
                         continue;
                     }
@@ -703,8 +703,8 @@ public class DistributedLockTest extends LockServiceTestBase {
                     // Try to lock asynchronously (should fail since lock is held by the main thread).
                     boolean asyncLocked = runAsyncAndGet(() -> {
                         for (int i = 0; i < 100; i++) {
-                            if (region.getLock("test" + i).tryLock()) {
-                                region.getLock("test" + i).unlock();
+                            if (region.get("test" + i).tryLock()) {
+                                region.get("test" + i).unlock();
 
                                 return true;
                             }
@@ -717,17 +717,17 @@ public class DistributedLockTest extends LockServiceTestBase {
                 }
             } finally {
                 for (int i = 0; i < 100; i++) {
-                    region.getLock("test" + i).unlock();
+                    region.get("test" + i).unlock();
                 }
             }
 
             // Double check that we can still lock/unlock after all cluster changes.
             for (int i = 0; i < 100; i++) {
-                region.getLock("test" + i).lock();
+                region.get("test" + i).lock();
             }
 
             for (int i = 0; i < 100; i++) {
-                region.getLock("test" + i).unlock();
+                region.get("test" + i).unlock();
             }
         }
     }
@@ -737,13 +737,13 @@ public class DistributedLockTest extends LockServiceTestBase {
         String lockName = "test";
 
         runWithBusyLock(lockName, latch -> {
-            DistributedLock lock = region.getLock(lockName);
+            DistributedLock lock = region.get(lockName);
 
             // Schedule asynchronous lock so that it would be queued after the lock with timeout.
             Future<Boolean> async = runAsync(() -> {
                 awaitForQueuedLock(lockName);
 
-                DistributedLock otherLock = region.getLock(lockName);
+                DistributedLock otherLock = region.get(lockName);
 
                 lockUnlock(otherLock);
 
@@ -769,7 +769,7 @@ public class DistributedLockTest extends LockServiceTestBase {
     public void testConcurrentLockFromSameNode() throws Exception {
         AtomicBoolean locked = new AtomicBoolean();
 
-        DistributedLock lock = region.getLock("test");
+        DistributedLock lock = region.get("test");
 
         runParallel(5, 50, i -> {
             lock.lock();
@@ -790,7 +790,7 @@ public class DistributedLockTest extends LockServiceTestBase {
             AtomicBoolean locked = new AtomicBoolean();
 
             runParallel(nodes.size(), 50, i -> {
-                DistributedLock lock = nodes.get(i.getThread()).locks().region(REGION_1).getLock("test");
+                DistributedLock lock = nodes.get(i.getThread()).locks().region(REGION_1).get("test");
 
                 lock.lock();
 
@@ -807,49 +807,49 @@ public class DistributedLockTest extends LockServiceTestBase {
 
     @Test
     public void testGetOwnerOfNonExistingLock() throws Exception {
-        assertFalse(region.getLockOwner("no_such_lock").isPresent());
-        assertFalse(region.getLock("no_such_lock").getLockOwner().isPresent());
+        assertFalse(region.ownerOf("no_such_lock").isPresent());
+        assertFalse(region.get("no_such_lock").owner().isPresent());
     }
 
     @Test
     public void testGetOwner() throws Exception {
-        region.getLock("test").lock();
+        region.get("test").lock();
 
         long threadId = Thread.currentThread().getId();
 
         try {
             nodes.stream()
-                .map(node -> node.locks().region(region.getName()))
+                .map(node -> node.locks().region(region.name()))
                 .forEach(region -> {
                     try {
-                        LockOwnerInfo fromRegion = region.getLockOwner("test").get();
+                        LockOwnerInfo fromRegion = region.ownerOf("test").get();
 
-                        assertEquals(lockNode.getLocalNode(), fromRegion.getNode());
-                        assertEquals(threadId, fromRegion.getThreadId());
+                        assertEquals(lockNode.localNode(), fromRegion.node());
+                        assertEquals(threadId, fromRegion.threadId());
 
-                        LockOwnerInfo fromLock = region.getLock("test").getLockOwner().get();
+                        LockOwnerInfo fromLock = region.get("test").owner().get();
 
-                        assertEquals(lockNode.getLocalNode(), fromLock.getNode());
-                        assertEquals(threadId, fromLock.getThreadId());
+                        assertEquals(lockNode.localNode(), fromLock.node());
+                        assertEquals(threadId, fromLock.threadId());
                     } catch (InterruptedException e) {
                         fail("Thread was unexpectedly interrupted.");
                     }
                 });
 
         } finally {
-            region.getLock("test").unlock();
+            region.get("test").unlock();
         }
     }
 
     @Test
     public void testGetOwnerTerminatedService() throws Exception {
-        DistributedLock lock = region.getLock("test");
+        DistributedLock lock = region.get("test");
 
         lock.lock();
 
         lockNode.leave();
 
-        assertFalse(lock.getLockOwner().isPresent());
+        assertFalse(lock.owner().isPresent());
     }
 
     private void lockUnlock(DistributedLock lock) {
@@ -883,7 +883,7 @@ public class DistributedLockTest extends LockServiceTestBase {
         CountDownLatch unlockAsync = new CountDownLatch(1);
 
         Future<Object> async = runAsync(() -> {
-            DistributedLock otherLock = node.locks().region(REGION_1).getLock(lockName);
+            DistributedLock otherLock = node.locks().region(REGION_1).get(lockName);
 
             otherLock.lock();
 
@@ -906,9 +906,9 @@ public class DistributedLockTest extends LockServiceTestBase {
 
         get(async);
 
-        if (node.getState() == Hekate.State.UP) {
+        if (node.state() == Hekate.State.UP) {
             // Double check that lock can be still be acquired after task is finished.
-            DistributedLock lock = node.locks().region(REGION_1).getLock(lockName);
+            DistributedLock lock = node.locks().region(REGION_1).get(lockName);
 
             lockUnlock(lock);
         }

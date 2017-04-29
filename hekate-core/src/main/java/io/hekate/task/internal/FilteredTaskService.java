@@ -18,8 +18,8 @@ package io.hekate.task.internal;
 
 import io.hekate.cluster.ClusterFilter;
 import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterUuid;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverPolicyBuilder;
@@ -61,7 +61,7 @@ class FilteredTaskService implements TaskService {
             if (err == null) {
                 TaskProtocol taskReply = rsp.get();
 
-                TaskProtocol.Type type = taskReply.getType();
+                TaskProtocol.Type type = taskReply.type();
 
                 if (type == TaskProtocol.Type.NULL_RESULT) {
                     complete(null);
@@ -69,7 +69,7 @@ class FilteredTaskService implements TaskService {
                     ObjectResult resultMsg = (ObjectResult)taskReply;
 
                     @SuppressWarnings("unchecked")
-                    T result = (T)resultMsg.getResult();
+                    T result = (T)resultMsg.result();
 
                     complete(result);
                 }
@@ -94,7 +94,7 @@ class FilteredTaskService implements TaskService {
                 Map<ClusterNode, T> values = new HashMap<>(results.size(), 1.0f);
 
                 results.forEach((node, result) -> {
-                    TaskProtocol.Type type = result.getType();
+                    TaskProtocol.Type type = result.type();
 
                     if (type == TaskProtocol.Type.NULL_RESULT) {
                         values.put(node, null);
@@ -102,7 +102,7 @@ class FilteredTaskService implements TaskService {
                         ObjectResult resultMsg = (ObjectResult)result;
 
                         @SuppressWarnings("unchecked")
-                        T value = (T)resultMsg.getResult();
+                        T value = (T)resultMsg.result();
 
                         values.put(node, value);
                     }
@@ -135,7 +135,7 @@ class FilteredTaskService implements TaskService {
             if (err == null) {
                 if (!isDone()) {
                     @SuppressWarnings("unchecked")
-                    Collection<V> part = (Collection<V>)rsp.get(ObjectResult.class).getResult();
+                    Collection<V> part = (Collection<V>)rsp.get(ObjectResult.class).result();
 
                     boolean allReceived;
 
@@ -182,8 +182,8 @@ class FilteredTaskService implements TaskService {
     }
 
     @Override
-    public Object getAffinity() {
-        return channel.getAffinity();
+    public Object affinity() {
+        return channel.affinity();
     }
 
     @Override
@@ -197,8 +197,8 @@ class FilteredTaskService implements TaskService {
     }
 
     @Override
-    public FailoverPolicy getFailover() {
-        return channel.getFailover();
+    public FailoverPolicy failover() {
+        return channel.failover();
     }
 
     @Override
@@ -207,8 +207,8 @@ class FilteredTaskService implements TaskService {
     }
 
     @Override
-    public long getTimeout() {
-        return channel.getTimeout();
+    public long timeout() {
+        return channel.timeout();
     }
 
     @Override
@@ -264,19 +264,19 @@ class FilteredTaskService implements TaskService {
     }
 
     @Override
-    public <T, V> TaskFuture<Collection<V>> applyAll(T[] args, ApplicableTask<T, V> task) {
+    public <T, V> TaskFuture<Collection<V>> applyToAll(T[] args, ApplicableTask<T, V> task) {
         ArgAssert.notNull(args, "Task arguments list");
 
-        return applyAll(Arrays.asList(args), task);
+        return applyToAll(Arrays.asList(args), task);
     }
 
     @Override
-    public <T, V> TaskFuture<Collection<V>> applyAll(Collection<T> args, ApplicableTask<T, V> task) {
+    public <T, V> TaskFuture<Collection<V>> applyToAll(Collection<T> args, ApplicableTask<T, V> task) {
         ArgAssert.notNull(args, "Task arguments list");
         ArgAssert.isFalse(args.isEmpty(), "Task arguments");
         ArgAssert.notNull(task, "Task");
 
-        ClusterTopology nodes = channel.getCluster().getTopology();
+        ClusterTopology nodes = channel.cluster().topology();
 
         if (nodes.isEmpty()) {
             TaskFuture<Collection<V>> future = new TaskFuture<>();
@@ -294,11 +294,11 @@ class FilteredTaskService implements TaskService {
 
         int taskCapacity = argsSize / nodesSize + 1;
 
-        Map<ClusterUuid, ApplyTask> msgByNode = new HashMap<>(Math.min(nodesSize, argsSize), 1.0f);
+        Map<ClusterNodeId, ApplyTask> msgByNode = new HashMap<>(Math.min(nodesSize, argsSize), 1.0f);
 
         for (Iterator<T> argIt = args.iterator(); argIt.hasNext(); ) {
             for (Iterator<ClusterNode> topologyIt = nodes.iterator(); topologyIt.hasNext() && argIt.hasNext(); ) {
-                ClusterUuid nodeId = topologyIt.next().getId();
+                ClusterNodeId nodeId = topologyIt.next().id();
                 T arg = argIt.next();
 
                 ArgAssert.check(arg != null, "Arguments collection contains null value.");
@@ -313,7 +313,7 @@ class FilteredTaskService implements TaskService {
                     msgByNode.put(nodeId, msg);
                 }
 
-                msg.getArgs().add(arg);
+                msg.args().add(arg);
             }
         }
 

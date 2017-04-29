@@ -168,7 +168,7 @@ public class HekateLocalMetricsServiceConfigurerTest extends HekateAutoConfigure
     public void testListener() {
         registerAndRefresh(MetricListenerTestConfig.class);
 
-        List<MetricsListener> listeners = getNode().get(DefaultLocalMetricsService.class).getListeners();
+        List<MetricsListener> listeners = getNode().get(DefaultLocalMetricsService.class).listeners();
 
         assertTrue(listeners.stream().anyMatch(l -> l instanceof MetricListenerTestConfig.Listener));
     }

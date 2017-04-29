@@ -18,7 +18,7 @@ package io.hekate.cluster.internal.gossip;
 
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.internal.DefaultClusterNode;
 import io.hekate.util.format.ToString;
 import java.util.Collections;
@@ -36,13 +36,13 @@ public class GossipNodeState extends GossipNodeInfoBase implements Comparable<Go
 
     private final long version;
 
-    private final Set<ClusterUuid> suspected;
+    private final Set<ClusterNodeId> suspected;
 
     public GossipNodeState(ClusterNode node, GossipNodeStatus status) {
         this(node, status, 1, Collections.emptySet());
     }
 
-    public GossipNodeState(ClusterNode node, GossipNodeStatus status, long version, Set<ClusterUuid> suspected) {
+    public GossipNodeState(ClusterNode node, GossipNodeStatus status, long version, Set<ClusterNodeId> suspected) {
         assert node != null : "Node is null.";
         assert status != null : "Status is null.";
         assert suspected != null : "Suspected set is null.";
@@ -57,7 +57,7 @@ public class GossipNodeState extends GossipNodeInfoBase implements Comparable<Go
         if (status != other.status || version != other.version) {
             GossipNodeStatus newStatus;
             long newVersion;
-            Set<ClusterUuid> newSuspected;
+            Set<ClusterNodeId> newSuspected;
             ClusterNode newNode;
 
             if (status.compareTo(other.status) >= 0) {
@@ -82,6 +82,11 @@ public class GossipNodeState extends GossipNodeInfoBase implements Comparable<Go
         }
     }
 
+    @Override
+    public GossipNodeStatus status() {
+        return status;
+    }
+
     public GossipNodeState status(GossipNodeStatus newStatus) {
         if (status == newStatus) {
             return this;
@@ -90,8 +95,12 @@ public class GossipNodeState extends GossipNodeInfoBase implements Comparable<Go
         return new GossipNodeState(node, newStatus, version, suspected);
     }
 
+    public int order() {
+        return node.joinOrder();
+    }
+
     public GossipNodeState order(int order) {
-        if (node.getJoinOrder() == order) {
+        if (node.joinOrder() == order) {
             return this;
         }
 
@@ -102,22 +111,26 @@ public class GossipNodeState extends GossipNodeInfoBase implements Comparable<Go
         return new GossipNodeState(nodeCopy, status, version, suspected);
     }
 
-    public GossipNodeState suspected(ClusterUuid suspected) {
-        return suspected(Collections.singleton(suspected));
+    public Set<ClusterNodeId> suspected() {
+        return suspected;
     }
 
-    public GossipNodeState suspected(Set<ClusterUuid> suspected) {
+    public GossipNodeState suspect(ClusterNodeId suspected) {
+        return suspect(Collections.singleton(suspected));
+    }
+
+    public GossipNodeState suspect(Set<ClusterNodeId> suspected) {
         return new GossipNodeState(node, status, version + 1, unmodifiableSet(suspected));
     }
 
-    public GossipNodeState unsuspected(ClusterUuid removed) {
+    public GossipNodeState unsuspected(ClusterNodeId removed) {
         return unsuspected(Collections.singleton(removed));
     }
 
-    public GossipNodeState unsuspected(Set<ClusterUuid> unsuspected) {
-        Set<ClusterUuid> newSuspected = null;
+    public GossipNodeState unsuspected(Set<ClusterNodeId> unsuspected) {
+        Set<ClusterNodeId> newSuspected = null;
 
-        for (ClusterUuid removedId : unsuspected) {
+        for (ClusterNodeId removedId : unsuspected) {
             if (suspected.contains(removedId)) {
                 newSuspected = suspected.stream().filter(id -> !unsuspected.contains(id)).collect(toSet());
 
@@ -132,11 +145,7 @@ public class GossipNodeState extends GossipNodeInfoBase implements Comparable<Go
         return new GossipNodeState(node, status, version + 1, unmodifiableSet(newSuspected));
     }
 
-    public Set<ClusterUuid> getSuspected() {
-        return suspected;
-    }
-
-    public boolean isSuspected(ClusterUuid id) {
+    public boolean isSuspected(ClusterNodeId id) {
         return suspected.contains(id);
     }
 
@@ -145,35 +154,26 @@ public class GossipNodeState extends GossipNodeInfoBase implements Comparable<Go
     }
 
     @Override
-    public ClusterUuid getId() {
-        return node.getId();
+    public ClusterNodeId id() {
+        return node.id();
     }
 
-    public int getOrder() {
-        return node.getJoinOrder();
-    }
-
-    public ClusterNode getNode() {
+    public ClusterNode node() {
         return node;
     }
 
-    public ClusterAddress getNodeAddress() {
-        return node.getAddress();
+    public ClusterAddress address() {
+        return node.address();
     }
 
     @Override
-    public GossipNodeStatus getStatus() {
-        return status;
-    }
-
-    @Override
-    public long getVersion() {
+    public long version() {
         return version;
     }
 
     @Override
     public int compareTo(GossipNodeState o) {
-        return getId().compareTo(o.getId());
+        return id().compareTo(o.id());
     }
 
     @Override
@@ -188,12 +188,12 @@ public class GossipNodeState extends GossipNodeInfoBase implements Comparable<Go
 
         GossipNodeState that = (GossipNodeState)o;
 
-        return getId().equals(that.getId());
+        return id().equals(that.id());
     }
 
     @Override
     public int hashCode() {
-        return getId().hashCode();
+        return id().hashCode();
     }
 
     @Override

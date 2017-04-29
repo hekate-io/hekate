@@ -80,12 +80,12 @@ public class DefaultFailoverContext implements FailoverContext {
         }
 
         @Override
-        public long getDelay() {
+        public long delay() {
             return delay;
         }
 
         @Override
-        public FailoverRoutingPolicy getRoutingPolicy() {
+        public FailoverRoutingPolicy routing() {
             return routingPolicy;
         }
 
@@ -127,7 +127,7 @@ public class DefaultFailoverContext implements FailoverContext {
     }
 
     @Override
-    public int getAttempt() {
+    public int attempt() {
         return attempt;
     }
 
@@ -137,22 +137,22 @@ public class DefaultFailoverContext implements FailoverContext {
     }
 
     @Override
-    public Throwable getError() {
+    public Throwable error() {
         return error;
     }
 
     @Override
-    public ClusterNode getFailedNode() {
+    public ClusterNode failedNode() {
         return failedNode;
     }
 
     @Override
-    public Set<ClusterNode> getFailedNodes() {
+    public Set<ClusterNode> allFailedNodes() {
         return failedNodes;
     }
 
     @Override
-    public FailoverRoutingPolicy getRouting() {
+    public FailoverRoutingPolicy routing() {
         return routing;
     }
 

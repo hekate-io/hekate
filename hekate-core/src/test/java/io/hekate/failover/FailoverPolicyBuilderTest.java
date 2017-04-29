@@ -154,7 +154,7 @@ public class FailoverPolicyBuilderTest extends FailoverPolicyTestBase {
 
         assertFalse(alwaysRetry.withErrorTypes(IOException.class).build().apply(ctx).isRetry());
 
-        assertEquals(987, alwaysRetry.withErrorTypes(Exception.class).withRetryDelay(f -> 987).build().apply(ctx).getDelay());
+        assertEquals(987, alwaysRetry.withErrorTypes(Exception.class).withRetryDelay(f -> 987).build().apply(ctx).delay());
 
         assertTrue(alwaysRetry.build().toString().startsWith(FailoverPolicy.class.getSimpleName()));
     }

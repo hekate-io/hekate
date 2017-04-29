@@ -16,7 +16,7 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.core.HekateFutureException;
 import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.messaging.broadcast.AggregateResult;
@@ -89,12 +89,12 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
 
         failures.set(channels.size() * 3);
 
-        Map<ClusterUuid, List<Long>> times = new HashMap<>();
+        Map<ClusterNodeId, List<Long>> times = new HashMap<>();
 
         channels.forEach(c -> times.put(c.getNodeId(), Collections.synchronizedList(new ArrayList<>())));
 
         AggregateResult<String> result = get(sender.get().withFailover(ctx -> {
-            times.get(ctx.getFailedNode().getId()).add(currentTimeMillis());
+            times.get(ctx.failedNode().id()).add(currentTimeMillis());
 
             return ctx.retry().withDelay(failoverDelay);
         }).aggregate("test"));
@@ -153,7 +153,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
             AggregateResult<String> result = get(sender.get().withFailover(context -> {
                 failoverCalls.incrementAndGet();
 
-                return context.getAttempt() < attempts ? context.retry() : context.fail();
+                return context.attempt() < attempts ? context.retry() : context.fail();
             }).aggregate("test"));
 
             assertFalse(result.isSuccess());
@@ -216,7 +216,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
                 AggregateResult<String> result = get(sender.get().forRemotes().withFailover(context -> {
                     try {
                         TestChannel leave = channels.stream()
-                            .filter(c -> c.getNodeId().equals(context.getFailedNode().getId()))
+                            .filter(c -> c.getNodeId().equals(context.failedNode().id()))
                             .findFirst()
                             .orElseThrow(AssertionError::new)
                             .leave();
@@ -238,7 +238,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
                 assertEquals(result.toString(), 1, result.errors().size());
                 assertEquals(result.toString(), channels.size() - 2, result.results().size());
 
-                Throwable expected = result.errors().get(leaveRef.get().getNode().getLocalNode());
+                Throwable expected = result.errors().get(leaveRef.get().getNode().localNode());
 
                 assertNotNull(result.toString(), expected);
 

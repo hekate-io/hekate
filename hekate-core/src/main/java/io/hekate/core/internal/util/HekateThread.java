@@ -26,7 +26,7 @@ class HekateThread extends Thread implements HekateNodeNameAwareThread {
     }
 
     @Override
-    public String getNodeName() {
+    public String nodeName() {
         return nodeName;
     }
 

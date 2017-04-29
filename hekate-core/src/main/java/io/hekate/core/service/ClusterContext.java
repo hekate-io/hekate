@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
  * other services can also use it in order to obtain current cluster topology or register cluster event listeners.
  * </p>
  *
- * @see InitializationContext#getCluster()
+ * @see InitializationContext#cluster()
  */
 public interface ClusterContext {
     /**
@@ -48,7 +48,7 @@ public interface ClusterContext {
     /**
      * Asynchronously notifies this context that {@link ClusterService} has successfully joined the cluster.
      *
-     * @param joinOrder Join order of the local node (see {@link ClusterNode#getJoinOrder()}).
+     * @param joinOrder Join order of the local node (see {@link ClusterNode#joinOrder()}).
      * @param newTopology Initial topology.
      *
      * @return Future object that gets completed once notification is processed.
@@ -74,7 +74,7 @@ public interface ClusterContext {
      *
      * @return Current cluster topology.
      */
-    ClusterTopology getTopology();
+    ClusterTopology topology();
 
     /**
      * Synchronously registers the specified cluster event listener.

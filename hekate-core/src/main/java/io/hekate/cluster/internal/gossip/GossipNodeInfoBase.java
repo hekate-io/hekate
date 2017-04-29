@@ -16,25 +16,25 @@
 
 package io.hekate.cluster.internal.gossip;
 
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import java.io.Serializable;
 
 public abstract class GossipNodeInfoBase implements Serializable {
     private static final long serialVersionUID = 1;
 
-    public abstract ClusterUuid getId();
+    public abstract ClusterNodeId id();
 
-    public abstract GossipNodeStatus getStatus();
+    public abstract GossipNodeStatus status();
 
-    public abstract long getVersion();
+    public abstract long version();
 
     public ComparisonResult compare(GossipNodeInfoBase other) {
         assert other != null : "Other node is null.";
 
-        int cmp = getStatus().compareTo(other.getStatus());
+        int cmp = status().compareTo(other.status());
 
-        long thisVer = getVersion();
-        long otherVer = other.getVersion();
+        long thisVer = version();
+        long otherVer = other.version();
 
         if (cmp == 0) {
             return thisVer == otherVer ? ComparisonResult.SAME : thisVer > otherVer ? ComparisonResult.AFTER : ComparisonResult.BEFORE;

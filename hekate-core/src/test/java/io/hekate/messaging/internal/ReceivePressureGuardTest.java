@@ -39,8 +39,8 @@ public class ReceivePressureGuardTest extends HekateTestBase {
             for (int j = 0; j < 9; j++) {
                 backPressure.onEnqueue(endpoint1);
 
-                assertEquals(j + 1, backPressure.getQueueSize());
-                assertEquals(0, backPressure.getPausedSize());
+                assertEquals(j + 1, backPressure.queueSize());
+                assertEquals(0, backPressure.pausedSize());
 
                 verifyNoMoreInteractions(endpoint1);
             }
@@ -50,38 +50,38 @@ public class ReceivePressureGuardTest extends HekateTestBase {
 
             verify(endpoint1).pauseReceiving(null);
 
-            assertEquals(10, backPressure.getQueueSize());
-            assertEquals(1, backPressure.getPausedSize());
+            assertEquals(10, backPressure.queueSize());
+            assertEquals(1, backPressure.pausedSize());
 
             // Enqueue one more to make sure that pausing get immediately applied if queue size is >= high watermark.
             backPressure.onEnqueue(endpoint2);
 
             verify(endpoint2).pauseReceiving(null);
 
-            assertEquals(11, backPressure.getQueueSize());
-            assertEquals(2, backPressure.getPausedSize());
+            assertEquals(11, backPressure.queueSize());
+            assertEquals(2, backPressure.pausedSize());
 
             // Dequeue down to low watermark minus one.
             for (int j = 0; j < 5; j++) {
                 backPressure.onDequeue();
 
-                assertEquals(11 - j - 1, backPressure.getQueueSize());
+                assertEquals(11 - j - 1, backPressure.queueSize());
 
                 verifyNoMoreInteractions(endpoint1);
                 verifyNoMoreInteractions(endpoint2);
             }
 
-            assertEquals(2, backPressure.getPausedSize());
+            assertEquals(2, backPressure.pausedSize());
 
             backPressure.onDequeue();
 
             verify(endpoint1).resumeReceiving(null);
             verify(endpoint2).resumeReceiving(null);
 
-            assertEquals(5, backPressure.getQueueSize());
-            assertEquals(0, backPressure.getPausedSize());
+            assertEquals(5, backPressure.queueSize());
+            assertEquals(0, backPressure.pausedSize());
 
-            while (backPressure.getQueueSize() > 0) {
+            while (backPressure.queueSize() > 0) {
                 backPressure.onDequeue();
             }
 
@@ -101,13 +101,13 @@ public class ReceivePressureGuardTest extends HekateTestBase {
 
             verify(endpoint).pauseReceiving(null);
             verifyNoMoreInteractions(endpoint);
-            assertEquals(1, backPressure.getQueueSize());
+            assertEquals(1, backPressure.queueSize());
 
             backPressure.onDequeue();
 
             verify(endpoint).resumeReceiving(null);
             verifyNoMoreInteractions(endpoint);
-            assertEquals(0, backPressure.getQueueSize());
+            assertEquals(0, backPressure.queueSize());
         });
     }
 

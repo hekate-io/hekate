@@ -32,27 +32,27 @@ public class ClusterEventListenerJavadocTest extends HekateNodeTestBase {
         class ExampleListener implements ClusterEventListener {
             @Override
             public void onEvent(ClusterEvent event) {
-                switch (event.getType()) {
+                switch (event.type()) {
                     case JOIN: {
                         ClusterJoinEvent join = event.asJoin();
 
-                        System.out.println("Joined : " + join.getTopology());
+                        System.out.println("Joined : " + join.topology());
 
                         break;
                     }
                     case CHANGE: {
                         ClusterChangeEvent change = event.asChange();
 
-                        System.out.println("Topology change :" + change.getTopology());
-                        System.out.println("      added nodes=" + change.getAdded());
-                        System.out.println("    removed nodes=" + change.getRemoved());
+                        System.out.println("Topology change :" + change.topology());
+                        System.out.println("    Added nodes :" + change.added());
+                        System.out.println("  Removed nodes :" + change.removed());
 
                         break;
                     }
                     case LEAVE: {
                         ClusterLeaveEvent leave = event.asLeave();
 
-                        System.out.println("Left : " + leave.getTopology());
+                        System.out.println("Left : " + leave.topology());
 
                         break;
                     }

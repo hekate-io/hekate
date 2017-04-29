@@ -35,5 +35,5 @@ public interface ClusterNodeMetrics extends MetricsSource {
      *
      * @return Cluster node.
      */
-    ClusterNode getNode();
+    ClusterNode node();
 }

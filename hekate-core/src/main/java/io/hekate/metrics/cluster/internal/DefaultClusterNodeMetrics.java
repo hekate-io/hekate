@@ -33,7 +33,7 @@ class DefaultClusterNodeMetrics implements ClusterNodeMetrics {
     }
 
     @Override
-    public ClusterNode getNode() {
+    public ClusterNode node() {
         return node;
     }
 

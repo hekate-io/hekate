@@ -59,7 +59,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return Universally unique identifier of this channel.
      */
-    MessagingChanneUuid getId();
+    MessagingChannelId id();
 
     /**
      * Returns the channel name.
@@ -68,14 +68,14 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @see MessagingChannelConfig#setName(String)
      */
-    String getName();
+    String name();
 
     /**
      * Returns the cluster view of this channel.
      *
      * @return Cluster view.
      */
-    ClusterView getCluster();
+    ClusterView cluster();
 
     /**
      * Returns the size of a thread pool for handling NIO-based socket connections
@@ -83,14 +83,14 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return Size of a thread pool for handling NIO-based socket connections.
      */
-    int getNioThreads();
+    int nioThreads();
 
     /**
      * Returns the worker thread pool size (see {@link MessagingChannelConfig#setWorkerThreads(int)}).
      *
      * @return Worker thread pool size.
      */
-    int getWorkerThreads();
+    int workerThreads();
 
     /**
      * Asynchronously sends a one way message and returns a future object that can be used to inspect the operation result.
@@ -232,7 +232,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return Affinity key or {@code null}, if no affinity is specified.
      */
-    Object getAffinity();
+    Object affinity();
 
     /**
      * Returns a new lightweight wrapper of this channel that will use the specified failover policy and will inherit all other options from
@@ -265,7 +265,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return Failover policy or {@code null}, if no policy is specified.
      */
-    FailoverPolicy getFailover();
+    FailoverPolicy failover();
 
     /**
      * Returns a new lightweight wrapper of this channel that will use the specified timeout value and will inherit all other options from
@@ -296,7 +296,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @see #withTimeout(long, TimeUnit)
      */
-    long getTimeout();
+    long timeout();
 
     /**
      * Returns a new lightweight wrapper of this channel that will use the specified load balancer and will inherit all other options from
@@ -321,5 +321,5 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return Asynchronous task executor of this channel.
      */
-    Executor getExecutor();
+    Executor executor();
 }

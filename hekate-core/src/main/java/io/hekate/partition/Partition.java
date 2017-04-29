@@ -17,8 +17,8 @@
 package io.hekate.partition;
 
 import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterUuid;
 import java.util.List;
 
 /**
@@ -26,7 +26,7 @@ import java.util.List;
  *
  * <p>
  * This interface represents a data partition mapping information as it was provided by the {@link PartitionMapper#map(Object)} and
- * provides information about the {@link #getPrimaryNode() primary} and {@link #getBackupNodes() backup} nodes that were selected by the
+ * provides information about the {@link #primaryNode() primary} and {@link #backupNodes() backup} nodes that were selected by the
  * mapper based on its cluster topology view.
  * </p>
  *
@@ -47,44 +47,44 @@ public interface Partition extends Comparable<Partition> {
      *
      * @return Partition identifier.
      */
-    int getId();
+    int id();
 
     /**
      * Returns the primary node that is assigned to this partition.
      *
      * @return Primary node.
      */
-    ClusterNode getPrimaryNode();
+    ClusterNode primaryNode();
 
     /**
-     * Returns the primary node {@link ClusterNode#getId() identifier}.
+     * Returns the primary node {@link ClusterNode#id() identifier}.
      *
      * <p>
      * This method is just a shortcut for the following code:
      * ${source: partition/PartitionServiceJavadocTest.java#get_primary_id}
      * </p>
      *
-     * @return primary node identifier (see {@link ClusterNode#getId()})
+     * @return primary node identifier (see {@link ClusterNode#id()})
      */
-    ClusterUuid getPrimaryNodeId();
+    ClusterNodeId primaryNodeId();
 
     /**
-     * Returns {@code true} if the specified node is primary for this partition (see {@link #getPrimaryNode()}).
+     * Returns {@code true} if the specified node is primary for this partition (see {@link #primaryNode()}).
      *
      * @param node Node.
      *
-     * @return {@code true} if the specified node is primary for this partition (see {@link #getPrimaryNode()}).
+     * @return {@code true} if the specified node is primary for this partition (see {@link #primaryNode()}).
      */
     boolean isPrimary(ClusterNode node);
 
     /**
-     * Returns {@code true} if the specified node is primary for this partition (see {@link #getPrimaryNode()}).
+     * Returns {@code true} if the specified node is primary for this partition (see {@link #primaryNode()}).
      *
      * @param node Node identifier.
      *
-     * @return {@code true} if the specified node is primary for this partition (see {@link #getPrimaryNode()}).
+     * @return {@code true} if the specified node is primary for this partition (see {@link #primaryNode()}).
      */
-    boolean isPrimary(ClusterUuid node);
+    boolean isPrimary(ClusterNodeId node);
 
     /**
      * Returns the set of backup nodes for this partition.
@@ -98,29 +98,29 @@ public interface Partition extends Comparable<Partition> {
      *
      * @see PartitionMapperConfig#setBackupNodes(int)
      */
-    List<ClusterNode> getBackupNodes();
+    List<ClusterNode> backupNodes();
 
     /**
-     * Returns the set of all nodes that are mapped to this partition (including {@link #getPrimaryNode() primary} and {@link
-     * #getBackupNodes() backup}).
+     * Returns the set of all nodes that are mapped to this partition (including {@link #primaryNode() primary} and {@link
+     * #backupNodes() backup}).
      *
      * @return The set of all nodes that are mapped to this partition.
      */
-    List<ClusterNode> getNodes();
+    List<ClusterNode> nodes();
 
     /**
      * Returns the cluster topology that this partition was mapped to.
      *
      * @return Cluster topology that this partition was mapped to.
      */
-    ClusterTopology getTopology();
+    ClusterTopology topology();
 
     /**
-     * Compares this partition with the specified one based on {@link #getId()}  value.
+     * Compares this partition with the specified one based on {@link #id()}  value.
      *
      * @param o Other partition.
      *
-     * @return Result of {@link #getId()} values comparison.
+     * @return Result of {@link #id()} values comparison.
      */
     @Override
     int compareTo(Partition o);

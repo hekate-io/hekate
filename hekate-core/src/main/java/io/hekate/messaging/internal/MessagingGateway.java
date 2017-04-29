@@ -17,8 +17,8 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.ClusterView;
 import io.hekate.codec.CodecException;
 import io.hekate.core.HekateException;
@@ -32,9 +32,9 @@ import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessageQueueTimeoutException;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessageTimeoutException;
-import io.hekate.messaging.MessagingChanneUuid;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelClosedException;
+import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.UnknownRouteException;
 import io.hekate.messaging.broadcast.AggregateCallback;
@@ -176,7 +176,7 @@ class MessagingGateway<T> {
     private final String name;
 
     @ToStringIgnore
-    private final MessagingChanneUuid id;
+    private final MessagingChannelId id;
 
     @ToStringIgnore
     private final ClusterNode localNode;
@@ -194,7 +194,7 @@ class MessagingGateway<T> {
     private final CloseCallback onBeforeClose;
 
     @ToStringIgnore
-    private final Map<ClusterUuid, MessagingClient<T>> clients = new HashMap<>();
+    private final Map<ClusterNodeId, MessagingClient<T>> clients = new HashMap<>();
 
     @ToStringIgnore
     private final boolean checkIdle;
@@ -239,7 +239,7 @@ class MessagingGateway<T> {
         assert cluster != null : "Cluster view is null.";
         assert async != null : "Executor is null.";
 
-        this.id = new MessagingChanneUuid();
+        this.id = new MessagingChannelId();
         this.name = name;
         this.net = net;
         this.localNode = localNode;
@@ -256,20 +256,20 @@ class MessagingGateway<T> {
         this.channel = new DefaultMessagingChannel<>(this, this.cluster, loadBalancer, failoverPolicy, defaultTimeout, null);
     }
 
-    public MessagingChanneUuid getId() {
+    public MessagingChannelId id() {
         return id;
     }
 
-    public String getName() {
+    public String name() {
         return name;
     }
 
-    public int getNioThreads() {
+    public int nioThreads() {
         return nioThreads;
     }
 
-    public int getWorkerThreads() {
-        return async.getThreadPoolSize();
+    public int workerThreads() {
+        return async.poolSize();
     }
 
     public SendFuture send(Object affinityKey, T message, MessagingOpts<T> opts) {
@@ -350,7 +350,7 @@ class MessagingGateway<T> {
         assert opts != null : "Messaging options must be not null.";
         assert callback != null : "Callback must be not null.";
 
-        Set<ClusterNode> nodes = opts.cluster().getTopology().getNodeSet();
+        Set<ClusterNode> nodes = opts.cluster().topology().nodeSet();
 
         if (nodes.isEmpty()) {
             callback.onComplete(null, new EmptyBroadcastResult<>(message));
@@ -395,7 +395,7 @@ class MessagingGateway<T> {
         assert opts != null : "Messaging options must be not null.";
         assert callback != null : "Callback must be not null.";
 
-        List<ClusterNode> nodes = opts.cluster().getTopology().getNodes();
+        List<ClusterNode> nodes = opts.cluster().topology().nodes();
 
         if (nodes.isEmpty()) {
             callback.onComplete(null, new EmptyAggregateResult<>(message));
@@ -498,31 +498,31 @@ class MessagingGateway<T> {
         return Waiting.awaitAll(waiting);
     }
 
-    public MessageReceiver<T> getReceiver() {
+    public MessageReceiver<T> receiver() {
         return receiver;
     }
 
-    public Executor getExecutor() {
+    public Executor executor() {
         return async.pooledWorker();
     }
 
-    DefaultMessagingChannel<T> getChannel() {
+    DefaultMessagingChannel<T> channel() {
         return channel;
     }
 
-    MessagingExecutor getAsync() {
+    MessagingExecutor async() {
         return async;
     }
 
-    MetricsCallback getMetrics() {
+    MetricsCallback metrics() {
         return metrics;
     }
 
-    ReceivePressureGuard getReceivePressureGuard() {
+    ReceivePressureGuard receiveGuard() {
         return receivePressure;
     }
 
-    SendPressureGuard getSendPressureGuard() {
+    SendPressureGuard sendGuard() {
         return sendPressure;
     }
 
@@ -569,7 +569,7 @@ class MessagingGateway<T> {
                                 break;
                             }
                             case PREFER_SAME_NODE: {
-                                if (isKnownNode(client.getNode())) {
+                                if (isKnownNode(client.node())) {
                                     doSend(ctx, client, callback, failure);
                                 } else {
                                     routeAndSend(ctx, callback, failure);
@@ -594,7 +594,7 @@ class MessagingGateway<T> {
                     }
                 };
 
-                failoverAsync(ctx, err, client.getNode(), onFailover, prevErr);
+                failoverAsync(ctx, err, client.node(), onFailover, prevErr);
             }
         };
 
@@ -694,7 +694,7 @@ class MessagingGateway<T> {
                                 break;
                             }
                             case PREFER_SAME_NODE: {
-                                if (isKnownNode(client.getNode())) {
+                                if (isKnownNode(client.node())) {
                                     doRequest(ctx, client, callback, failure);
                                 } else {
                                     routeAndRequest(ctx, callback, failure);
@@ -719,7 +719,7 @@ class MessagingGateway<T> {
                     }
                 };
 
-                failoverAsync(ctx, err, client.getNode(), onFailover, prevErr);
+                failoverAsync(ctx, err, client.node(), onFailover, prevErr);
             }
         };
 
@@ -779,14 +779,14 @@ class MessagingGateway<T> {
 
         try {
             if (!closed) {
-                ClusterTopology newTopology = cluster.getTopology();
+                ClusterTopology newTopology = cluster.topology();
 
-                if (channelTopology == null || channelTopology.getVersion() < newTopology.getVersion()) {
+                if (channelTopology == null || channelTopology.version() < newTopology.version()) {
                     if (DEBUG) {
                         log.debug("Updating topology [channel={}, topology={}]", name, newTopology);
                     }
 
-                    Set<ClusterNode> newNodes = newTopology.getNodeSet();
+                    Set<ClusterNode> newNodes = newTopology.nodeSet();
 
                     Set<ClusterNode> added = null;
                     Set<ClusterNode> removed = null;
@@ -825,7 +825,7 @@ class MessagingGateway<T> {
 
                     if (!removed.isEmpty()) {
                         clientsToClose = removed.stream()
-                            .map(node -> clients.remove(node.getId()))
+                            .map(node -> clients.remove(node.id()))
                             .filter(Objects::nonNull)
                             .collect(toList());
                     }
@@ -834,7 +834,7 @@ class MessagingGateway<T> {
                         added.forEach(node -> {
                             MessagingClient<T> client = createClient(node);
 
-                            clients.put(node.getId(), client);
+                            clients.put(node.id(), client);
                         });
                     }
 
@@ -855,7 +855,7 @@ class MessagingGateway<T> {
     }
 
     // This method is for testing purposes only.
-    MessagingClient<T> getClient(ClusterUuid nodeId) throws MessagingException {
+    MessagingClient<T> clientOf(ClusterNodeId nodeId) throws MessagingException {
         long readLock = lock.readLock();
 
         try {
@@ -888,7 +888,7 @@ class MessagingGateway<T> {
         long readLock = lock.readLock();
 
         try {
-            return clients.containsKey(node.getId());
+            return clients.containsKey(node.id());
         } finally {
             lock.unlockRead(readLock);
         }
@@ -898,10 +898,10 @@ class MessagingGateway<T> {
         ClientSelectionRejectedException {
         assert ctx != null : "Message context is null.";
 
-        ClusterTopology topology = ctx.opts().cluster().getTopology();
+        ClusterTopology topology = ctx.opts().cluster().topology();
 
         if (topology.isEmpty()) {
-            Throwable cause = prevErr != null ? prevErr.getError() : null;
+            Throwable cause = prevErr != null ? prevErr.error() : null;
 
             if (cause == null) {
                 throw new UnknownRouteException("No suitable receivers [channel=" + name + ']');
@@ -914,12 +914,12 @@ class MessagingGateway<T> {
 
         while (true) {
             // Perform routing in unlocked context in order to prevent cluster events blocking.
-            ClusterUuid targetId;
+            ClusterNodeId targetId;
 
             if (balancer == null) {
                 // If balancer not specified then try to use cluster topology directly (must contain only one node).
                 if (topology.size() > 1) {
-                    Throwable cause = prevErr != null ? prevErr.getError() : null;
+                    Throwable cause = prevErr != null ? prevErr.error() : null;
 
                     if (cause == null) {
                         throw new TooManyRoutesException("Too many receivers [channel=" + name + ", topology=" + topology + ']');
@@ -929,14 +929,14 @@ class MessagingGateway<T> {
                 }
 
                 // Select the only one node from the cluster topology.
-                targetId = topology.getFirst().getId();
+                targetId = topology.first().id();
             } else {
                 LoadBalancerContext balancerCtx = new DefaultLoadBalancerContext(ctx, topology, Optional.ofNullable(prevErr));
 
                 targetId = balancer.route(ctx.message(), balancerCtx);
 
                 if (targetId == null) {
-                    Throwable cause = prevErr != null ? prevErr.getError() : null;
+                    Throwable cause = prevErr != null ? prevErr.error() : null;
 
                     if (cause == null) {
                         throw new UnknownRouteException("Load balancer failed to select a target node.");
@@ -959,10 +959,10 @@ class MessagingGateway<T> {
 
                 if (client == null) {
                     // Post-check that topology was not changed during routing.
-                    ClusterTopology currentTopology = cluster.getTopology();
+                    ClusterTopology currentTopology = cluster.topology();
 
-                    if (channelTopology != null && channelTopology.getVersion() == currentTopology.getVersion()) {
-                        Throwable cause = prevErr != null ? prevErr.getError() : null;
+                    if (channelTopology != null && channelTopology.version() == currentTopology.version()) {
+                        Throwable cause = prevErr != null ? prevErr.error() : null;
 
                         if (cause == null) {
                             throw new UnknownRouteException("Node is not within the channel topology [id=" + targetId + ']');
@@ -1027,10 +1027,10 @@ class MessagingGateway<T> {
                     if (closed) {
                         finalCause = channelClosedError(cause);
                     } else if (resolution != null && resolution.isRetry()) {
-                        FailoverRoutingPolicy route = resolution.getRoutingPolicy();
+                        FailoverRoutingPolicy routing = resolution.routing();
 
                         // Apply failover only if re-routing was requested or if the target node is still within the channel's topology.
-                        if (route != RETRY_SAME_NODE || clients.containsKey(failed.getId())) {
+                        if (routing != RETRY_SAME_NODE || clients.containsKey(failed.id())) {
                             onRetry();
 
                             MessagingWorker worker = ctx.worker();
@@ -1038,11 +1038,11 @@ class MessagingGateway<T> {
                             // Schedule timeout task to apply failover actions after the failover delay.
                             onAsyncEnqueue();
 
-                            worker.executeDeferred(resolution.getDelay(), () -> {
+                            worker.executeDeferred(resolution.delay(), () -> {
                                 onAsyncDequeue();
 
                                 try {
-                                    callback.retry(route, failoverCtx.withRouting(route));
+                                    callback.retry(routing, failoverCtx.withRouting(routing));
                                 } catch (RuntimeException | Error e) {
                                     log.error("Got an unexpected error during failover task processing.", e);
                                 }
@@ -1074,10 +1074,10 @@ class MessagingGateway<T> {
             prevRouting = RETRY_SAME_NODE;
             failedNodes = Collections.singleton(failed);
         } else {
-            attempt = prevErr.getAttempt() + 1;
-            prevRouting = prevErr.getRouting();
+            attempt = prevErr.attempt() + 1;
+            prevRouting = prevErr.routing();
 
-            failedNodes = new HashSet<>(prevErr.getFailedNodes());
+            failedNodes = new HashSet<>(prevErr.allFailedNodes());
 
             failedNodes.add(failed);
 

@@ -17,7 +17,6 @@
 package io.hekate.javadoc.election;
 
 import io.hekate.HekateNodeTestBase;
-import io.hekate.cluster.ClusterNode;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.election.Candidate;
@@ -49,11 +48,11 @@ public class ElectionServiceJavadocTest extends HekateNodeTestBase {
 
             @Override
             public void becomeFollower(FollowerContext ctx) {
-                System.out.println("Leader: " + ctx.getLeader());
+                System.out.println("Leader: " + ctx.leader());
 
                 // Listen for leader change events while we are staying in the follower state.
-                ctx.addLeaderChangeListener(changed ->
-                    System.out.println("Leader changed: " + changed.getLeader())
+                ctx.addListener(changed ->
+                    System.out.println("Leader changed: " + changed.leader())
                 );
             }
 
@@ -84,12 +83,9 @@ public class ElectionServiceJavadocTest extends HekateNodeTestBase {
         // Start:access
         // Get service.
         ElectionService election = hekate.election();
-
-        // Get current leader (or wait up to 3 seconds for leader to be elected).
-        ClusterNode leader = election.leader("example.election.group").get();
         // End:access
 
-        assertNotNull(leader);
+        assertNotNull(election);
 
         hekate.leave();
     }

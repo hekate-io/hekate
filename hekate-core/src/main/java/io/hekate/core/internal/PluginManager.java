@@ -88,10 +88,6 @@ class PluginManager {
         this.plugins = Utils.nullSafe(boot.getPlugins()).map(PluginState::new).collect(toList());
     }
 
-    public HekateBootstrap getBoot() {
-        return boot;
-    }
-
     public void install() {
         if (DEBUG) {
             log.debug("Installing plugins...");
@@ -130,5 +126,10 @@ class PluginManager {
         if (DEBUG) {
             log.debug("Done stopping plugins.");
         }
+    }
+
+    // Package level for testing purposes.
+    HekateBootstrap bootstrap() {
+        return boot;
     }
 }

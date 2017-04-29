@@ -16,15 +16,15 @@
 
 package io.hekate.cluster.internal;
 
-import io.hekate.cluster.ClusterJvmInfo;
+import io.hekate.cluster.ClusterNodeRuntime;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.util.format.ToString;
 import java.io.Serializable;
 
-public class DefaultClusterJvmInfo implements Serializable, ClusterJvmInfo {
+public class DefaultClusterNodeRuntime implements Serializable, ClusterNodeRuntime {
     private static final long serialVersionUID = 1L;
 
-    private static final DefaultClusterJvmInfo LOCAL_INFO;
+    private static final DefaultClusterNodeRuntime LOCAL_INFO;
 
     static {
         int cpus = Runtime.getRuntime().availableProcessors();
@@ -35,9 +35,9 @@ public class DefaultClusterJvmInfo implements Serializable, ClusterJvmInfo {
         String osName = getProperty("os.name");
         String osVersion = getProperty("os.version");
         String osArch = getProperty("os.arch");
-        String pid = Utils.getPid();
+        String pid = Utils.pid();
 
-        LOCAL_INFO = new DefaultClusterJvmInfo(
+        LOCAL_INFO = new DefaultClusterNodeRuntime(
             cpus,
             maxMemory,
             osName,
@@ -69,7 +69,7 @@ public class DefaultClusterJvmInfo implements Serializable, ClusterJvmInfo {
 
     private final String jvmVendor;
 
-    public DefaultClusterJvmInfo(int cpus, long maxMemory, String osName, String osArch, String osVersion, String jvmVersion,
+    public DefaultClusterNodeRuntime(int cpus, long maxMemory, String osName, String osArch, String osVersion, String jvmVersion,
         String jvmName, String jvmVendor, String pid) {
         this.cpus = cpus;
         this.maxMemory = maxMemory;
@@ -82,52 +82,52 @@ public class DefaultClusterJvmInfo implements Serializable, ClusterJvmInfo {
         this.pid = pid;
     }
 
-    public static DefaultClusterJvmInfo getLocalInfo() {
+    public static DefaultClusterNodeRuntime getLocalInfo() {
         return LOCAL_INFO;
     }
 
     @Override
-    public int getCpus() {
+    public int cpus() {
         return cpus;
     }
 
     @Override
-    public long getMaxMemory() {
+    public long maxMemory() {
         return maxMemory;
     }
 
     @Override
-    public String getOsName() {
+    public String osName() {
         return osName;
     }
 
     @Override
-    public String getOsArch() {
+    public String osArch() {
         return osArch;
     }
 
     @Override
-    public String getOsVersion() {
+    public String osVersion() {
         return osVersion;
     }
 
     @Override
-    public String getJvmVersion() {
+    public String jvmVersion() {
         return jvmVersion;
     }
 
     @Override
-    public String getJvmName() {
+    public String jvmName() {
         return jvmName;
     }
 
     @Override
-    public String getJvmVendor() {
+    public String jvmVendor() {
         return jvmVendor;
     }
 
     @Override
-    public String getPid() {
+    public String pid() {
         return pid;
     }
 
@@ -143,6 +143,6 @@ public class DefaultClusterJvmInfo implements Serializable, ClusterJvmInfo {
 
     @Override
     public String toString() {
-        return ToString.format(ClusterJvmInfo.class, this);
+        return ToString.format(ClusterNodeRuntime.class, this);
     }
 }

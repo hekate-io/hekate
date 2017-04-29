@@ -68,16 +68,16 @@ class DefaultCounterMetric implements CounterMetric {
     }
 
     @Override
-    public String getName() {
+    public String name() {
         return name;
     }
 
     @Override
-    public long getValue() {
+    public long value() {
         return counter.sum();
     }
 
-    public long getTotalValue() {
+    public long totalValue() {
         if (total == null) {
             return counter.sum();
         } else {
@@ -106,7 +106,7 @@ class DefaultCounterMetric implements CounterMetric {
         return total != null;
     }
 
-    public String getTotalName() {
+    public String totalName() {
         return totalName;
     }
 

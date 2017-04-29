@@ -337,7 +337,7 @@ public class MessagingChannelConfig<T> {
      *
      * <p>
      * Filtering can be used to limit communications between nodes based on some custom criteria (f.e. enable communications only between
-     * those nodes that have some specific {@link ClusterNode#getProperty(String) property} or {@link ClusterNode#getRoles() role}). Only
+     * those nodes that have some specific {@link ClusterNode#property(String) property} or {@link ClusterNode#roles() role}). Only
      * those nodes that match the specified filter will be included into the messaging channel's cluster topology.
      * </p>
      *

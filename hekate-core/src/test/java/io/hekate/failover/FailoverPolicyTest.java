@@ -49,9 +49,9 @@ public class FailoverPolicyTest extends FailoverPolicyTestBase {
     public void testConstantFailoverDelay() throws Exception {
         ConstantFailoverDelay delay = new ConstantFailoverDelay(99);
 
-        assertEquals(99, delay.getDelay(newContext(0)));
-        assertEquals(99, delay.getDelay(newContext(1)));
-        assertEquals(99, delay.getDelay(newContext(2)));
+        assertEquals(99, delay.delayOf(newContext(0)));
+        assertEquals(99, delay.delayOf(newContext(1)));
+        assertEquals(99, delay.delayOf(newContext(2)));
 
         assertTrue(delay.toString(), delay.toString().startsWith(ConstantFailoverDelay.class.getSimpleName()));
     }

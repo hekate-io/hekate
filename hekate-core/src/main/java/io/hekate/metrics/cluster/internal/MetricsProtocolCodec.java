@@ -16,7 +16,7 @@
 
 package io.hekate.metrics.cluster.internal;
 
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.codec.Codec;
 import io.hekate.codec.CodecUtils;
 import io.hekate.codec.DataReader;
@@ -44,19 +44,19 @@ class MetricsProtocolCodec implements Codec<MetricsProtocol> {
 
     @Override
     public void encode(MetricsProtocol msg, DataWriter out) throws IOException {
-        MetricsProtocol.Type type = msg.getType();
+        MetricsProtocol.Type type = msg.type();
 
         out.writeByte(type.ordinal());
 
-        CodecUtils.writeNodeId(msg.getFrom(), out);
+        CodecUtils.writeNodeId(msg.from(), out);
 
         switch (type) {
             case UPDATE_REQUEST: {
                 MetricsProtocol.UpdateRequest updateMsg = (MetricsProtocol.UpdateRequest)msg;
 
-                out.writeLong(updateMsg.getTargetVer());
+                out.writeLong(updateMsg.targetVer());
 
-                List<MetricsUpdate> updates = updateMsg.getUpdates();
+                List<MetricsUpdate> updates = updateMsg.updates();
 
                 encodeMetricUpdates(out, updates);
 
@@ -65,7 +65,7 @@ class MetricsProtocolCodec implements Codec<MetricsProtocol> {
             case UPDATE_RESPONSE: {
                 MetricsProtocol.UpdateResponse requestMsg = (MetricsProtocol.UpdateResponse)msg;
 
-                List<MetricsUpdate> updates = requestMsg.getMetrics();
+                List<MetricsUpdate> updates = requestMsg.metrics();
 
                 encodeMetricUpdates(out, updates);
 
@@ -81,7 +81,7 @@ class MetricsProtocolCodec implements Codec<MetricsProtocol> {
     public MetricsProtocol decode(DataReader in) throws IOException {
         MetricsProtocol.Type type = TYPES_CACHE[in.readByte()];
 
-        ClusterUuid from = CodecUtils.readNodeId(in);
+        ClusterNodeId from = CodecUtils.readNodeId(in);
 
         switch (type) {
             case UPDATE_REQUEST: {
@@ -112,7 +112,7 @@ class MetricsProtocolCodec implements Codec<MetricsProtocol> {
 
             for (int i = 0; i < updatesSize; i++) {
                 // Node.
-                ClusterUuid node = CodecUtils.readNodeId(in);
+                ClusterNodeId node = CodecUtils.readNodeId(in);
 
                 // Metrics version.
                 long ver = in.readLong();
@@ -159,18 +159,18 @@ class MetricsProtocolCodec implements Codec<MetricsProtocol> {
 
             for (MetricsUpdate update : updates) {
                 // Note.
-                CodecUtils.writeNodeId(update.getNode(), out);
+                CodecUtils.writeNodeId(update.node(), out);
 
                 // Metrics version.
-                out.writeLong(update.getVersion());
+                out.writeLong(update.version());
 
                 // Metrics.
-                Map<String, StaticMetric> metrics = update.getMetrics();
+                Map<String, StaticMetric> metrics = update.metrics();
 
                 out.writeInt(metrics.size());
 
                 for (StaticMetric metric : metrics.values()) {
-                    String name = metric.getName();
+                    String name = metric.name();
 
                     Integer key = writeDict.get(name);
 
@@ -185,7 +185,7 @@ class MetricsProtocolCodec implements Codec<MetricsProtocol> {
                         out.writeInt(key);
                     }
 
-                    out.writeLong(metric.getValue());
+                    out.writeLong(metric.value());
                 }
             }
         }

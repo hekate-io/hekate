@@ -129,7 +129,7 @@ public class DefaultFailureDetectorConfig {
      * @param failureDetectionQuorum Amount of nodes that should agree on some particular node failure before removing such suspected node
      * from the cluster.
      *
-     * @see FailureDetector#getFailureDetectionQuorum()
+     * @see FailureDetector#failureQuorum()
      */
     public void setFailureDetectionQuorum(int failureDetectionQuorum) {
         this.failureDetectionQuorum = failureDetectionQuorum;

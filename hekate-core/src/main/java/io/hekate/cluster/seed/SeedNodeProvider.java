@@ -46,7 +46,7 @@ import java.util.List;
  * register the local node address and instruct the seed node provider to start discovering other nodes. Implementations of this method can
  * start sending multicast advertisement messages or register the local node address within some shared central repository.</li>
  *
- * <li>Cluster service periodically calls {@link #getSeedNodes(String)} method and tries to contact each of the returned addresses one by
+ * <li>Cluster service periodically calls {@link #findSeedNodes(String)} method and tries to contact each of the returned addresses one by
  * one by sending a join request message.</li>
  *
  * <li>If any of the discovered nodes replies with the join accept message then cluster service calls {@link #suspendDiscovery()} so that
@@ -67,11 +67,11 @@ import java.util.List;
  * </p>
  *
  * <p>
- * Time interval of stale data checking is controlled by the value of {@link #getCleanupInterval()} method. If this method returns a
- * positive value then once per such interval the {@link #getSeedNodes(String)} method will be called and each of the returned address will
+ * Time interval of stale data checking is controlled by the value of {@link #cleanupInterval()} method. If this method returns a
+ * positive value then once per such interval the {@link #findSeedNodes(String)} method will be called and each of the returned address will
  * be checked for aliveness (by sending a ping message). If particular address is considered to be failed then it will be unregistered via
- * {@link #unregisterRemoteAddress(String, InetSocketAddress)} method. Cluster service will also compare its know topology with the list of
- * addresses and will re-registered missing addresses via {@link #registerRemoteAddress(String, InetSocketAddress)}.
+ * {@link #unregisterRemote(String, InetSocketAddress)} method. Cluster service will also compare its know topology with the list of
+ * addresses and will re-registered missing addresses via {@link #registerRemote(String, InetSocketAddress)}.
  * </p>
  *
  * <h2>Registration</h2>
@@ -93,7 +93,7 @@ public interface SeedNodeProvider {
      *
      * @throws HekateException if failed to provide seed node addresses information due to the system failure.
      */
-    List<InetSocketAddress> getSeedNodes(String cluster) throws HekateException;
+    List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException;
 
     /**
      * Registers the local node address and starts this provider.
@@ -128,14 +128,14 @@ public interface SeedNodeProvider {
      *
      * @return Time interval in milliseconds.
      */
-    long getCleanupInterval();
+    long cleanupInterval();
 
     /**
      * Registered the specified addresses within this provider.
      *
      * <p>
      * This method is the part of a stale data cleanup activity and is performed by the cluster service if it detects that particular node
-     * is within its cluster topology but is not registered within this provider (i.e. not returned from {@link #getSeedNodes(String)}
+     * is within its cluster topology but is not registered within this provider (i.e. not returned from {@link #findSeedNodes(String)}
      * method).
      * </p>
      *
@@ -144,7 +144,7 @@ public interface SeedNodeProvider {
      *
      * @throws HekateException If node couldn't be registered due to the system failure.
      */
-    void registerRemoteAddress(String cluster, InetSocketAddress node) throws HekateException;
+    void registerRemote(String cluster, InetSocketAddress node) throws HekateException;
 
     /**
      * Unregisters the specified address from this provider.
@@ -152,7 +152,7 @@ public interface SeedNodeProvider {
      * <p>
      * This method is the part of a stale data cleanup activity and is called by the cluster service if it detects that there is no cluster
      * node running at the specified address while this address is still registered within this provider (i.e. is returned from {@link
-     * #getSeedNodes(String)} method).
+     * #findSeedNodes(String)} method).
      * </p>
      *
      * @param cluster Cluster name (see {@link HekateBootstrap#setClusterName(String)}).
@@ -160,5 +160,5 @@ public interface SeedNodeProvider {
      *
      * @throws HekateException If node couldn't be unregistered due to the system failure.
      */
-    void unregisterRemoteAddress(String cluster, InetSocketAddress node) throws HekateException;
+    void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException;
 }

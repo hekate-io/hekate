@@ -25,9 +25,9 @@ public interface FailoverDelaySupplier {
     /**
      * Returns the delay in milliseconds.
      *
-     * @param failover Failover attempt info.
+     * @param failure Failure info.
      *
      * @return Delay in milliseconds.
      */
-    long getDelay(FailureInfo failover);
+    long delayOf(FailureInfo failure);
 }

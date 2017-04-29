@@ -52,7 +52,7 @@ public class NetworkClientCallbackMock<T> implements NetworkClientCallback<T> {
     public void onConnect(NetworkClient<T> client) {
         connects.incrementAndGet();
 
-        lastLocalAddress = client.getLocalAddress();
+        lastLocalAddress = client.localAddress();
     }
 
     @Override

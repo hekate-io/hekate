@@ -197,7 +197,7 @@ import java.util.Set;
  * </ul>
  *
  * <p>
- * The Current state of the {@link Hekate} instance can be inspected via {@link Hekate#getState()} method. State changes can be monitored
+ * The Current state of the {@link Hekate} instance can be inspected via {@link Hekate#state()} method. State changes can be monitored
  * via {@link #addListener(LifecycleListener)} methods.
  * </p>
  *
@@ -211,7 +211,7 @@ public interface Hekate {
      * #TERMINATING}
      * </p>
      *
-     * @see Hekate#getState()
+     * @see Hekate#state()
      * @see Hekate#addListener(LifecycleListener)
      */
     enum State {
@@ -238,11 +238,11 @@ public interface Hekate {
      * Listener of {@link Hekate.State} changes.
      *
      * @see Hekate#addListener(LifecycleListener)
-     * @see Hekate#getState()
+     * @see Hekate#state()
      */
     interface LifecycleListener {
         /**
-         * Gets called after each change of {@link Hekate#getState()}.
+         * Gets called after each change of {@link Hekate#state()}.
          *
          * @param changed {@link Hekate} instance.
          */
@@ -361,7 +361,7 @@ public interface Hekate {
      * @see #get(Class)
      * @see HekateBootstrap#setServices(List)
      */
-    Set<Class<? extends Service>> getServiceTypes();
+    Set<Class<? extends Service>> serviceTypes();
 
     /**
      * Returns the local cluster node.
@@ -371,7 +371,7 @@ public interface Hekate {
      * @throws IllegalStateException If this instance is not in {@link State#JOINING JOINING}, {@link State#UP UP} or {@link State#LEAVING
      * LEAVING} state.
      */
-    ClusterNode getLocalNode() throws IllegalStateException;
+    ClusterNode localNode() throws IllegalStateException;
 
     /**
      * Returns the current state of this instance (see <a href="#lifecycle">instance lifecycle</a>).
@@ -380,14 +380,14 @@ public interface Hekate {
      *
      * @see #addListener(LifecycleListener)
      */
-    State getState();
+    State state();
 
     /**
      * Sets the attribute that should be associated with this {@link Hekate} instance.
      *
      * <p>
      * Note that such attributes are NOT cluster-wide and are not visible to other nodes of the cluster.
-     * Please see the {@link ClusterNode#getProperties()} method for cluster-wide properties support.
+     * Please see the {@link ClusterNode#properties()} method for cluster-wide properties support.
      * </p>
      *
      * @param name Attribute name.
@@ -508,7 +508,7 @@ public interface Hekate {
      *
      * @param listener Lifecycle listener.
      *
-     * @see #getState()
+     * @see #state()
      */
     void addListener(LifecycleListener listener);
 

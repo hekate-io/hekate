@@ -30,11 +30,11 @@ public class AddressReachabilityDetectorTest extends HekateNodeTestBase {
 
         AddressReachabilityDetector detector = new AddressReachabilityDetector(node.getSocketAddress(), 2000);
 
-        assertTrue(detector.isValid(node.getLocalNode()));
+        assertTrue(detector.isValid(node.localNode()));
 
         detector = new AddressReachabilityDetector(node.getSocketAddress().getHostString() + ':' + node.getSocketAddress().getPort());
 
-        assertTrue(detector.isValid(node.getLocalNode()));
+        assertTrue(detector.isValid(node.localNode()));
     }
 
     @Test

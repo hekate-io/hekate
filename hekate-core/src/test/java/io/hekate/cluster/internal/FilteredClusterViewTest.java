@@ -53,19 +53,19 @@ public class FilteredClusterViewTest extends HekateNodeTestBase {
         get(allRemote.futureOf(topology -> topology.size() == 2));
 
         assertTrue(allRemote.toString().startsWith(FilteredClusterView.class.getSimpleName()));
-        assertTrue(allRemote.toString().contains(node2.getLocalNode().toString()));
-        assertTrue(allRemote.toString().contains(node3.getLocalNode().toString()));
+        assertTrue(allRemote.toString().contains(node2.localNode().toString()));
+        assertTrue(allRemote.toString().contains(node3.localNode().toString()));
 
-        assertThat(allRemote.getTopology().getNodes(),
-            both(hasItems(node2.getLocalNode(), node3.getLocalNode()))
-                .and(not(hasItem(node1.getLocalNode())))
+        assertThat(allRemote.topology().nodes(),
+            both(hasItems(node2.localNode(), node3.localNode()))
+                .and(not(hasItem(node1.localNode())))
         );
-        assertThat(allRemote.forRole("role2").getTopology().getNodes(),
-            both(hasItem(node2.getLocalNode()))
-                .and(not(hasItem(node3.getLocalNode())))
+        assertThat(allRemote.forRole("role2").topology().nodes(),
+            both(hasItem(node2.localNode()))
+                .and(not(hasItem(node3.localNode())))
         );
         
-        assertTrue(node1.cluster().forRemotes().forNode(node1.getLocalNode()).getTopology().isEmpty());
+        assertTrue(node1.cluster().forRemotes().forNode(node1.localNode()).topology().isEmpty());
 
         ClusterEventListener l1 = mock(ClusterEventListener.class);
         ClusterEventListener l2 = mock(ClusterEventListener.class);
@@ -101,22 +101,22 @@ public class FilteredClusterViewTest extends HekateNodeTestBase {
         verify(l3).onEvent(evt3.capture());
         verify(l4).onEvent(evt4.capture());
 
-        assertThat(evt1.getValue().getTopology().getNodes(),
-            both(hasItems(node2.getLocalNode(), node3.getLocalNode(), node4.getLocalNode()))
-                .and(not(hasItem(node1.getLocalNode())))
+        assertThat(evt1.getValue().topology().nodes(),
+            both(hasItems(node2.localNode(), node3.localNode(), node4.localNode()))
+                .and(not(hasItem(node1.localNode())))
         );
-        assertEquals(evt1.getValue().getAdded(), singletonList(node4.getLocalNode()));
-        assertTrue(evt1.getValue().getRemoved().isEmpty());
+        assertEquals(evt1.getValue().added(), singletonList(node4.localNode()));
+        assertTrue(evt1.getValue().removed().isEmpty());
 
-        assertEquals(evt2.getValue().getTopology().getNodes(), singletonList(node4.getLocalNode()));
-        assertEquals(evt2.getValue().getAdded(), singletonList(node4.getLocalNode()));
-        assertTrue(evt2.getValue().getRemoved().isEmpty());
+        assertEquals(evt2.getValue().topology().nodes(), singletonList(node4.localNode()));
+        assertEquals(evt2.getValue().added(), singletonList(node4.localNode()));
+        assertTrue(evt2.getValue().removed().isEmpty());
 
-        assertTrue(evt3.getValue().getTopology().isEmpty());
-        assertTrue(evt3.getValue().getRemoved().isEmpty());
-        assertTrue(evt3.getValue().getRemoved().isEmpty());
+        assertTrue(evt3.getValue().topology().isEmpty());
+        assertTrue(evt3.getValue().removed().isEmpty());
+        assertTrue(evt3.getValue().removed().isEmpty());
 
-        assertEquals(evt1.getValue().getTopology(), evt4.getValue().getTopology());
+        assertEquals(evt1.getValue().topology(), evt4.getValue().topology());
 
         reset(l1);
         reset(l2);
@@ -130,21 +130,21 @@ public class FilteredClusterViewTest extends HekateNodeTestBase {
         verify(l2).onEvent(evt2.capture());
         verify(l3).onEvent(evt3.capture());
 
-        assertThat(evt1.getValue().getTopology().getNodes(),
-            both(hasItems(node2.getLocalNode(), node3.getLocalNode()))
-                .and(not(hasItem(node1.getLocalNode())))
-                .and(not(hasItem(node4.getLocalNode())))
+        assertThat(evt1.getValue().topology().nodes(),
+            both(hasItems(node2.localNode(), node3.localNode()))
+                .and(not(hasItem(node1.localNode())))
+                .and(not(hasItem(node4.localNode())))
         );
-        assertTrue(evt1.getValue().getAdded().isEmpty());
-        assertEquals(evt1.getValue().getRemoved(), singletonList(node4.getLocalNode()));
+        assertTrue(evt1.getValue().added().isEmpty());
+        assertEquals(evt1.getValue().removed(), singletonList(node4.localNode()));
 
-        assertTrue(evt2.getValue().getTopology().isEmpty());
-        assertEquals(evt2.getValue().getRemoved(), singletonList(node4.getLocalNode()));
-        assertTrue(evt2.getValue().getAdded().isEmpty());
+        assertTrue(evt2.getValue().topology().isEmpty());
+        assertEquals(evt2.getValue().removed(), singletonList(node4.localNode()));
+        assertTrue(evt2.getValue().added().isEmpty());
 
-        assertTrue(evt3.getValue().getTopology().isEmpty());
-        assertTrue(evt3.getValue().getRemoved().isEmpty());
-        assertTrue(evt3.getValue().getRemoved().isEmpty());
+        assertTrue(evt3.getValue().topology().isEmpty());
+        assertTrue(evt3.getValue().removed().isEmpty());
+        assertTrue(evt3.getValue().removed().isEmpty());
 
         allRemote.removeListener(l1);
         allRemote.removeListener(l2);

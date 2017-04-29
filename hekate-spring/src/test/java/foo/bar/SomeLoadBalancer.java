@@ -16,14 +16,14 @@
 
 package foo.bar;
 
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.core.HekateException;
 import io.hekate.messaging.unicast.LoadBalancer;
 import io.hekate.messaging.unicast.LoadBalancerContext;
 
 public class SomeLoadBalancer implements LoadBalancer<Object> {
     @Override
-    public ClusterUuid route(Object message, LoadBalancerContext ctx) throws HekateException {
-        return ctx.getTopology().getRandom().getId();
+    public ClusterNodeId route(Object message, LoadBalancerContext ctx) throws HekateException {
+        return ctx.topology().random().id();
     }
 }

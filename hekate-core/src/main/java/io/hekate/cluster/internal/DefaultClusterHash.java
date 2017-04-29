@@ -18,7 +18,7 @@ package io.hekate.cluster.internal;
 
 import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import java.io.Serializable;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -53,10 +53,10 @@ public class DefaultClusterHash implements ClusterHash, Serializable {
         byte[] buf = new byte[len * Long.BYTES * 2];
 
         for (int i = 0, idx = 0; i < len; i++) {
-            ClusterUuid id = sorted[i].getId();
+            ClusterNodeId id = sorted[i].id();
 
-            idx = setBytes(id.getHiBits(), idx, buf);
-            idx = setBytes(id.getLoBits(), idx, buf);
+            idx = setBytes(id.hiBits(), idx, buf);
+            idx = setBytes(id.loBits(), idx, buf);
         }
 
         this.bytes = digest.digest(buf);
@@ -67,7 +67,7 @@ public class DefaultClusterHash implements ClusterHash, Serializable {
     }
 
     @Override
-    public byte[] getBytes() {
+    public byte[] bytes() {
         int len = bytes.length;
 
         byte[] copy = new byte[len];

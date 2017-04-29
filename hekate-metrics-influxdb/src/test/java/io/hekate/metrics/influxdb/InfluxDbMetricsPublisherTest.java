@@ -54,12 +54,12 @@ public class InfluxDbMetricsPublisherTest extends InfluxDbMetricsTestBase {
         }
 
         @Override
-        public String getName() {
+        public String name() {
             return name;
         }
 
         @Override
-        public long getValue() {
+        public long value() {
             return value;
         }
     }
@@ -185,7 +185,7 @@ public class InfluxDbMetricsPublisherTest extends InfluxDbMetricsTestBase {
 
             if (i == 0) {
                 busyWait("empty queue", () ->
-                    publisher.getQueueSize() == 0
+                    publisher.queueSize() == 0
                 );
             }
 
@@ -196,12 +196,12 @@ public class InfluxDbMetricsPublisherTest extends InfluxDbMetricsTestBase {
             }
         }
 
-        assertEquals(maxQueueSize, publisher.getQueueSize());
+        assertEquals(maxQueueSize, publisher.queueSize());
 
         resume.countDown();
 
         busyWait("empty queue", () ->
-            publisher.getQueueSize() == 0
+            publisher.queueSize() == 0
         );
 
         publisher.stop();
@@ -242,7 +242,7 @@ public class InfluxDbMetricsPublisherTest extends InfluxDbMetricsTestBase {
             }
         }
 
-        assertEquals(maxQueueSize, publisher.getQueueSize());
+        assertEquals(maxQueueSize, publisher.queueSize());
 
         Waiting stopped = publisher.stopAsync();
 

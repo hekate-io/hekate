@@ -36,6 +36,36 @@ import org.junit.Test;
 import static org.junit.Assert.assertNotNull;
 
 public class NetworkServiceJavadocTest extends HekateNodeTestBase {
+    // Start:server_handler_example
+    // Prepare server handler (String - base type of exchanged messages)
+    public static class ExampleHandler implements NetworkServerHandler<String> {
+        @Override
+        public void onConnect(String loginMsg, NetworkEndpoint<String> client) {
+            System.out.println("Got new connection: " + loginMsg);
+
+            // Initialize connection context object.
+            client.setContext(new AtomicInteger());
+        }
+
+        @Override
+        public void onMessage(NetworkMessage<String> netMsg, NetworkEndpoint<String> from) throws IOException {
+            String msg = netMsg.decode();
+
+            System.out.println("Message from client: " + msg);
+
+            AtomicInteger counter = from.getContext();
+
+            // Send reply.
+            from.send(msg + " processed (total=" + counter.incrementAndGet() + ')');
+        }
+
+        @Override
+        public void onDisconnect(NetworkEndpoint<String> client) {
+            System.out.println("Closed connection.");
+        }
+    }
+    // End:server_handler_example
+
     @Test
     public void exampleTcpService() throws Exception {
         // Start:config
@@ -88,53 +118,23 @@ public class NetworkServiceJavadocTest extends HekateNodeTestBase {
 
     @Test
     public void exampleClientServer() throws Exception {
-        // Start:server_handler_example
-        // Prepare server handler (String - base type of exchanged messages)
-        class ExampleHandler implements NetworkServerHandler<String> {
-            @Override
-            public void onConnect(String loginMsg, NetworkEndpoint<String> client) {
-                System.out.println("Got new connection: " + loginMsg);
-
-                // Initialize connection context object.
-                client.setContext(new AtomicInteger());
-            }
-
-            @Override
-            public void onMessage(NetworkMessage<String> netMsg, NetworkEndpoint<String> from) throws IOException {
-                String msg = netMsg.decode();
-
-                System.out.println("Message from client: " + msg);
-
-                AtomicInteger counter = from.getContext();
-
-                // Send reply.
-                from.send(msg + " processed (total=" + counter.incrementAndGet() + ')');
-            }
-
-            @Override
-            public void onDisconnect(NetworkEndpoint<String> client) {
-                System.out.println("Closed connection.");
-            }
-        }
-        // End:server_handler_example
-
         // Start:server_handler_config_example
-        NetworkConnectorConfig<String> connectorCfg = new NetworkConnectorConfig<>();
+        NetworkConnectorConfig<String> connCfg = new NetworkConnectorConfig<>();
 
-        connectorCfg.setProtocol("example.protocol"); // Protocol identifier.
-        connectorCfg.setMessageCodec(new JavaCodecFactory<>()); // Use default Java serialization.
-        connectorCfg.setServerHandler(new ExampleHandler()); // Server handler.
+        connCfg.setProtocol("example.protocol"); // Protocol identifier.
+        connCfg.setMessageCodec(new JavaCodecFactory<>()); // Use default Java serialization.
+        connCfg.setServerHandler(new ExampleHandler()); // Server handler.
         // End:server_handler_config_example
 
         // Start:server_example
         // Prepare network service factory and register the connector configuration.
-        NetworkServiceFactory networkFactory = new NetworkServiceFactory()
+        NetworkServiceFactory factory = new NetworkServiceFactory()
             .withPort(10023) // Fixed port for demo purposes.
-            .withConnector(connectorCfg);
+            .withConnector(connCfg);
 
         // Register the network service factory and start new node.
         Hekate hekate = new HekateBootstrap()
-            .withService(networkFactory)
+            .withService(factory)
             .join();
         // End:server_example
 

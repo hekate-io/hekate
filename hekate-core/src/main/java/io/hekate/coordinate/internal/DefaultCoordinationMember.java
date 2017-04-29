@@ -18,8 +18,8 @@ package io.hekate.coordinate.internal;
 
 import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterUuid;
 import io.hekate.coordinate.CoordinationMember;
 import io.hekate.coordinate.CoordinationRequestCallback;
 import io.hekate.core.internal.util.ArgAssert;
@@ -96,7 +96,7 @@ class DefaultCoordinationMember implements CoordinationMember {
     }
 
     @Override
-    public ClusterNode getNode() {
+    public ClusterNode node() {
         return node;
     }
 
@@ -126,8 +126,8 @@ class DefaultCoordinationMember implements CoordinationMember {
         }
 
         if (enqueued) {
-            ClusterUuid from = node.getId();
-            ClusterHash clusterHash = topology.getHash();
+            ClusterNodeId from = node.id();
+            ClusterHash clusterHash = topology.hash();
 
             CoordinationProtocol.Request req = new CoordinationProtocol.Request(processName, from, clusterHash, request);
 
@@ -139,7 +139,7 @@ class DefaultCoordinationMember implements CoordinationMember {
                     } else {
                         CoordinationProtocol.Response response = (CoordinationProtocol.Response)reply;
 
-                        future.complete(response.getResponse());
+                        future.complete(response.response());
 
                         return COMPLETE;
                     }

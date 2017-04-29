@@ -42,6 +42,12 @@ import java.util.concurrent.TimeUnit;
  * rules that can be dynamically {@link #filter(ClusterNodeFilter) specified} for each task individually.
  * </p>
  *
+ * <h2>Accessing service</h2>
+ * <p>
+ * {@link TaskService} can be accessed via {@link Hekate#tasks()} method as in the example below:
+ * ${source: task/TaskServiceJavadocTest.java#access}
+ * </p>
+ *
  * <h2>Service configuration</h2>
  * <p>
  * {@link TaskService} can be configured and registered in {@link HekateBootstrap} via {@link TaskServiceFactory} class as in the example
@@ -68,12 +74,6 @@ import java.util.concurrent.TimeUnit;
  * ${source: task/service-bean.xml#example}
  * </div>
  * </div>
- *
- * <h2>Accessing service</h2>
- * <p>
- * {@link TaskService} can be accessed via {@link Hekate#tasks()} method as in the example below:
- * ${source: task/TaskServiceJavadocTest.java#access}
- * </p>
  *
  * <h2>Runnable tasks</h2>
  * <p>
@@ -123,7 +123,7 @@ import java.util.concurrent.TimeUnit;
  * <h2>Applicable tasks</h2>
  * <p>
  * If the same business logic should be applied to a set of homogeneous data then {@link ApplicableTask} should be used together with the
- * {@link #applyAll(Collection, ApplicableTask)} method. This method splits the specified data collection into chunks, distributes those
+ * {@link #applyToAll(Collection, ApplicableTask)} method. This method splits the specified data collection into chunks, distributes those
  * chunks
  * among the cluster nodes and {@link ApplicableTask#apply(Object) applies} the task to each data entry in parallel.
  * ${source: task/TaskServiceJavadocTest.java#apply}
@@ -168,10 +168,9 @@ import java.util.concurrent.TimeUnit;
  * <h2>Notes on tasks serialization</h2>
  * <p>
  * Tasks are serializable {@link FunctionalInterface functional interfaces} that can be specified as lambda expressions, anonymous/inner
- * classes or as regular Java classes. If task is defined as lambda or as anonymous inner class then it is important to make sure that such
- * lambda/class doesn't have references to non-static fields/methods of its enclosing class. Otherwise the enclosing class must also be
- * made
- * {@link Serializable} as it will be serialized and submitted to a remote node together with the task object.
+ * classes or as regular Java classes. If the task is defined as a lambda or as an anonymous inner class then it is important to make sure
+ * that such lambda/class doesn't have any references to non-static fields/methods of its enclosing class. Otherwise the enclosing class
+ * must also be made {@link Serializable} as it will be serialized and submitted to a remote node together with the task object.
  * </p>
  *
  * <p>
@@ -241,7 +240,7 @@ public interface TaskService extends Service, ClusterFilterSupport<TaskService> 
      *
      * @return Future object that can be used to obtain result of this operation.
      *
-     * @see #applyAll(Collection, ApplicableTask)
+     * @see #applyToAll(Collection, ApplicableTask)
      */
     <T, V> TaskFuture<V> apply(T arg, ApplicableTask<T, V> task);
 
@@ -257,7 +256,7 @@ public interface TaskService extends Service, ClusterFilterSupport<TaskService> 
      *
      * @see #apply(Object, ApplicableTask)
      */
-    <T, V> TaskFuture<Collection<V>> applyAll(Collection<T> args, ApplicableTask<T, V> task);
+    <T, V> TaskFuture<Collection<V>> applyToAll(Collection<T> args, ApplicableTask<T, V> task);
 
     /**
      * Asynchronously applies the specified task to each of the specified arguments by distributing the workload among the cluster nodes.
@@ -271,7 +270,7 @@ public interface TaskService extends Service, ClusterFilterSupport<TaskService> 
      *
      * @see #apply(Object, ApplicableTask)
      */
-    <T, V> TaskFuture<Collection<V>> applyAll(T[] args, ApplicableTask<T, V> task);
+    <T, V> TaskFuture<Collection<V>> applyToAll(T[] args, ApplicableTask<T, V> task);
 
     /**
      * Asynchronously executes the specified runnable task on all nodes from the underlying cluster topology.
@@ -322,7 +321,7 @@ public interface TaskService extends Service, ClusterFilterSupport<TaskService> 
      *
      * @return Affinity key or {@code null}, if no affinity is specified.
      */
-    Object getAffinity();
+    Object affinity();
 
     /**
      * Returns a new lightweight wrapper that will use the specified failover policy and will inherit all cluster filtering options from
@@ -349,7 +348,7 @@ public interface TaskService extends Service, ClusterFilterSupport<TaskService> 
      *
      * @return Failover policy or {@code null}, if no policy is specified..
      */
-    FailoverPolicy getFailover();
+    FailoverPolicy failover();
 
     /**
      * Returns a new lightweight wrapper that will use the specified timeout value and will inherit all cluster filtering options from
@@ -377,5 +376,5 @@ public interface TaskService extends Service, ClusterFilterSupport<TaskService> 
      *
      * @see #withTimeout(long, TimeUnit)
      */
-    long getTimeout();
+    long timeout();
 }

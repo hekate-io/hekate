@@ -156,19 +156,19 @@ public class ServiceLifecycleTest extends HekateNodeTestBase {
         });
 
         nodes.stream()
-            .map(Hekate::getLocalNode)
-            .sorted(Comparator.comparingInt(ClusterNode::getJoinOrder))
+            .map(Hekate::localNode)
+            .sorted(Comparator.comparingInt(ClusterNode::joinOrder))
             .forEach(node -> {
-                ServiceInfo serviceA = node.getService(ServiceA.class);
-                ServiceInfo serviceB = node.getService(ServiceB.class);
+                ServiceInfo serviceA = node.service(ServiceA.class);
+                ServiceInfo serviceB = node.service(ServiceB.class);
 
                 assertNotNull(serviceA);
                 assertNotNull(serviceB);
 
-                String joinOrderStr = String.valueOf(node.getJoinOrder());
+                String joinOrderStr = String.valueOf(node.joinOrder());
 
-                Set<String> propA = serviceA.getProperty("A");
-                Set<String> propB = serviceB.getProperty("B");
+                Set<String> propA = serviceA.property("A");
+                Set<String> propB = serviceB.property("B");
 
                 say("Checking [join-order=" + joinOrderStr + ", prop-A=" + propA + ", prop-B=" + propB + ']');
 

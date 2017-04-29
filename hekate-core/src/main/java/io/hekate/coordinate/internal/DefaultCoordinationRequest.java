@@ -48,14 +48,14 @@ class DefaultCoordinationRequest implements CoordinationRequest {
     }
 
     @Override
-    public CoordinationMember getFrom() {
+    public CoordinationMember from() {
         return from;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T> T get() {
-        return (T)request.getRequest();
+        return (T)request.request();
     }
 
     @Override

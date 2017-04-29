@@ -31,7 +31,7 @@ class HekateForkJoinThread extends ForkJoinWorkerThread implements HekateNodeNam
     }
 
     @Override
-    public String getNodeName() {
+    public String nodeName() {
         return nodeName;
     }
 }

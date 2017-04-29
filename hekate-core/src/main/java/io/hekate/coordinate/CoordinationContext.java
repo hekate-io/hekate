@@ -17,8 +17,8 @@
 package io.hekate.coordinate;
 
 import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterUuid;
 import java.util.List;
 
 /**
@@ -37,14 +37,14 @@ public interface CoordinationContext {
      *
      * @return Coordinator.
      */
-    CoordinationMember getCoordinator();
+    CoordinationMember coordinator();
 
     /**
      * Returns the cluster topology of this coordination process.
      *
      * @return Cluster topology.
      */
-    ClusterTopology getTopology();
+    ClusterTopology topology();
 
     /**
      * Returns {@code true} if this coordination process is finished (either {@link #complete() successfully} or by {@link
@@ -66,14 +66,14 @@ public interface CoordinationContext {
      *
      * @return Local node.
      */
-    CoordinationMember getLocalMember();
+    CoordinationMember localMember();
 
     /**
      * Returns all members of this coordination process.
      *
      * @return Coordination members.
      */
-    List<CoordinationMember> getMembers();
+    List<CoordinationMember> members();
 
     /**
      * Returns member by its cluster node.
@@ -82,7 +82,7 @@ public interface CoordinationContext {
      *
      * @return Member or {@code null} if there is no such member.
      */
-    CoordinationMember getMember(ClusterNode node);
+    CoordinationMember memberOf(ClusterNode node);
 
     /**
      * Returns member by its cluster node identifier.
@@ -91,17 +91,17 @@ public interface CoordinationContext {
      *
      * @return Member or {@code null} if there is no such member.
      */
-    CoordinationMember getMember(ClusterUuid nodeId);
+    CoordinationMember memberOf(ClusterNodeId nodeId);
 
     /**
-     * Returns the size of {@link #getMembers()}.
+     * Returns the size of {@link #members()}.
      *
-     * @return Size of {@link #getMembers()}.
+     * @return Size of {@link #members()}.
      */
-    int getSize();
+    int size();
 
     /**
-     * Asynchronously sends the specified request to all {@link #getMembers() members} of this coordination process.
+     * Asynchronously sends the specified request to all {@link #members() members} of this coordination process.
      *
      * <p>
      * <b>Note:</b> Request will be send to all members including the local node.

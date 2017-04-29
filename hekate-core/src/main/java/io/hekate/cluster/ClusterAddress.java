@@ -20,21 +20,21 @@ import java.io.Serializable;
 import java.net.InetSocketAddress;
 
 /**
- * Address of a {@link ClusterNode}.
+ * Address of the {@link ClusterNode}.
  *
  * <p>
- * This address includes both the {@link #getId() node ID} and the {@link #getSocket() socket address} that can be used to establish network
+ * This address includes both the {@link #id() node ID} and the {@link #socket() socket address} that can be used to establish network
  * connections with this node.
  * </p>
  *
- * @see ClusterNode#getAddress()
+ * @see ClusterNode#address()
  */
 public class ClusterAddress implements Comparable<ClusterAddress>, Serializable {
     private static final long serialVersionUID = 1;
 
     private final InetSocketAddress socket;
 
-    private final ClusterUuid id;
+    private final ClusterNodeId id;
 
     /**
      * Constructs new instance with the specified network address and node identifier.
@@ -42,7 +42,7 @@ public class ClusterAddress implements Comparable<ClusterAddress>, Serializable 
      * @param socket Network address of {@link ClusterNode}.
      * @param id Unique identifier of {@link ClusterNode}.
      */
-    public ClusterAddress(InetSocketAddress socket, ClusterUuid id) {
+    public ClusterAddress(InetSocketAddress socket, ClusterNodeId id) {
         assert socket != null : "Address is null.";
         assert id != null : "ID is null.";
 
@@ -51,25 +51,25 @@ public class ClusterAddress implements Comparable<ClusterAddress>, Serializable 
     }
 
     /**
-     * Returns unique identifier of {@link ClusterNode}.
+     * Returns the unique identifier of the {@link ClusterNode}.
      *
-     * @return Unique identifier of {@link ClusterNode}.
+     * @return Unique identifier of the {@link ClusterNode}.
      */
-    public ClusterUuid getId() {
+    public ClusterNodeId id() {
         return id;
     }
 
     /**
-     * Returns network address of {@link ClusterNode}.
+     * Returns the network address of the {@link ClusterNode}.
      *
-     * @return Network address of {@link ClusterNode}.
+     * @return Network address of the {@link ClusterNode}.
      */
-    public InetSocketAddress getSocket() {
+    public InetSocketAddress socket() {
         return socket;
     }
 
     /**
-     * Compares this address with the specified one by comparing {@link #getId() node idnetifiers} of both addresses.
+     * Compares this address with the specified one by comparing {@link #id()}s of both addresses.
      */
     @Override
     public int compareTo(ClusterAddress o) {
@@ -77,13 +77,11 @@ public class ClusterAddress implements Comparable<ClusterAddress>, Serializable 
     }
 
     /**
-     * Returns {@code true} if the specified object is of {@link ClusterAddress} type and has the same {@link #getId() identifier} as this
-     * object.
+     * Returns {@code true} if the specified object is of {@link ClusterAddress} type and has the same {@link #id()} as this object.
      *
      * @param o Object.
      *
-     * @return {@code true} if the specified object is of {@link ClusterAddress} type and has the same {@link #getId() identifier} as this
-     * object.
+     * @return {@code true} if the specified object is of {@link ClusterAddress} type and has the same {@link #id()} as this object.
      */
     @Override
     public boolean equals(Object o) {
@@ -101,7 +99,7 @@ public class ClusterAddress implements Comparable<ClusterAddress>, Serializable 
     }
 
     /**
-     * Returns the hash code of the {@link #getId() node identifier}.
+     * Returns the hash code of {@link #id()}.
      */
     @Override
     public int hashCode() {

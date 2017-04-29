@@ -18,16 +18,16 @@ package io.hekate.core.internal;
 
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.event.ClusterChangeEvent;
 import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.event.ClusterJoinEvent;
-import io.hekate.cluster.internal.DefaultClusterJvmInfo;
 import io.hekate.cluster.internal.DefaultClusterNode;
 import io.hekate.cluster.internal.DefaultClusterNodeBuilder;
+import io.hekate.cluster.internal.DefaultClusterNodeRuntime;
 import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
@@ -102,7 +102,7 @@ class HekateNode implements Hekate, Serializable {
         private static final long serialVersionUID = 1;
 
         protected Object readResolve() {
-            return HekateCodecHelper.getThreadLocal();
+            return HekateCodecHelper.threadLocal();
         }
     }
 
@@ -166,7 +166,7 @@ class HekateNode implements Hekate, Serializable {
 
     private LeaveFuture leaveFuture = new LeaveFuture();
 
-    private ClusterUuid nodeId;
+    private ClusterNodeId nodeId;
 
     private volatile DefaultClusterTopology topology;
 
@@ -266,7 +266,7 @@ class HekateNode implements Hekate, Serializable {
     }
 
     @Override
-    public ClusterNode getLocalNode() {
+    public ClusterNode localNode() {
         ClusterNode node = this.node;
 
         if (node == null) {
@@ -414,12 +414,12 @@ class HekateNode implements Hekate, Serializable {
     }
 
     @Override
-    public Set<Class<? extends Service>> getServiceTypes() {
+    public Set<Class<? extends Service>> serviceTypes() {
         return services.getServiceTypes();
     }
 
     @Override
-    public State getState() {
+    public State state() {
         return state.get();
     }
 
@@ -522,7 +522,7 @@ class HekateNode implements Hekate, Serializable {
             }
 
             // Generate new ID for this node.
-            ClusterUuid localNodeId = new ClusterUuid();
+            ClusterNodeId localNodeId = new ClusterNodeId();
 
             nodeId = localNodeId;
 
@@ -548,7 +548,7 @@ class HekateNode implements Hekate, Serializable {
         }
     }
 
-    private void selectAddressAndBind(ClusterUuid localNodeId) {
+    private void selectAddressAndBind(ClusterNodeId localNodeId) {
         try {
             guard.lockWrite();
 
@@ -557,7 +557,7 @@ class HekateNode implements Hekate, Serializable {
                 // Need to perform this check in order to stop early in case of concurrent leave/termination events.
                 if (isInitializingForNodeId(localNodeId)) {
                     if (log.isInfoEnabled()) {
-                        log.info("Initializing {}.", HekateVersion.getInfo());
+                        log.info("Initializing {}.", HekateVersion.info());
                     }
 
                     if (log.isInfoEnabled()) {
@@ -587,11 +587,11 @@ class HekateNode implements Hekate, Serializable {
 
                         @Override
                         public NetworkServerFailure.Resolution onFailure(NetworkServerFailure failure) {
-                            InetSocketAddress address = failure.getLastTriedAddress();
+                            InetSocketAddress address = failure.lastTriedAddress();
 
-                            String msg = "Failed to start network service [address=" + address + ", reason=" + failure.getCause() + ']';
+                            String msg = "Failed to start network service [address=" + address + ", reason=" + failure.cause() + ']';
 
-                            doTerminateAsync(new HekateException(msg, failure.getCause()));
+                            doTerminateAsync(new HekateException(msg, failure.cause()));
 
                             return failure.fail();
                         }
@@ -609,7 +609,7 @@ class HekateNode implements Hekate, Serializable {
         }
     }
 
-    private void initialize(InetSocketAddress nodeAddress, ClusterUuid localNodeId) {
+    private void initialize(InetSocketAddress nodeAddress, ClusterNodeId localNodeId) {
 
         try {
             InitializationContext ctx = null;
@@ -631,7 +631,7 @@ class HekateNode implements Hekate, Serializable {
                         .withRoles(nodeRoles)
                         .withProperties(nodeProps)
                         .withServices(services.getServicesInfo())
-                        .withSysInfo(DefaultClusterJvmInfo.getLocalInfo())
+                        .withSysInfo(DefaultClusterNodeRuntime.getLocalInfo())
                         .createNode();
 
                     node = localNode;
@@ -727,7 +727,7 @@ class HekateNode implements Hekate, Serializable {
 
                             if (log.isInfoEnabled()) {
                                 int size = newTopology.size();
-                                long ver = newTopology.getVersion();
+                                long ver = newTopology.version();
                                 String nodesStr = toAddressesString(newTopology);
 
                                 log.info("Joined cluster "
@@ -770,7 +770,7 @@ class HekateNode implements Hekate, Serializable {
 
                             DefaultClusterTopology newTopology = lastTopology.updateIfModified(nodes);
 
-                            if (newTopology.getVersion() == lastTopology.getVersion()) {
+                            if (newTopology.version() == lastTopology.version()) {
                                 future.complete(null);
                             } else {
                                 topology = newTopology;
@@ -779,15 +779,15 @@ class HekateNode implements Hekate, Serializable {
                                     log.debug("Updated local topology [topology={}]", newTopology);
                                 }
 
-                                Set<ClusterNode> oldNodes = lastTopology.getNodeSet();
-                                Set<ClusterNode> newNodes = newTopology.getNodeSet();
+                                Set<ClusterNode> oldNodes = lastTopology.nodeSet();
+                                Set<ClusterNode> newNodes = newTopology.nodeSet();
 
                                 List<ClusterNode> removed = getDiff(oldNodes, newNodes);
                                 List<ClusterNode> added = getDiff(newNodes, oldNodes);
 
                                 if (log.isInfoEnabled()) {
                                     int size = topology.size();
-                                    long version = topology.getVersion();
+                                    long version = topology.version();
                                     String addresses = toAddressesString(topology);
 
                                     log.info("Updated cluster topology [size={}, added={}, removed={}, topology-version={}, topology={}]",
@@ -821,7 +821,7 @@ class HekateNode implements Hekate, Serializable {
             }
 
             @Override
-            public ClusterTopology getTopology() {
+            public ClusterTopology topology() {
                 return topology;
             }
 
@@ -857,27 +857,27 @@ class HekateNode implements Hekate, Serializable {
 
         return new InitializationContext() {
             @Override
-            public String getClusterName() {
+            public String clusterName() {
                 return clusterName;
             }
 
             @Override
-            public State getState() {
+            public State state() {
                 return state.get();
             }
 
             @Override
-            public ClusterContext getCluster() {
+            public ClusterContext cluster() {
                 return clusterCtx;
             }
 
             @Override
-            public ClusterNode getNode() {
+            public ClusterNode localNode() {
                 return localNode;
             }
 
             @Override
-            public Hekate getHekate() {
+            public Hekate hekate() {
                 return HekateNode.this;
             }
 
@@ -1091,7 +1091,7 @@ class HekateNode implements Hekate, Serializable {
         localTerminateFuture.complete(this);
     }
 
-    private boolean isInitializingForNodeId(ClusterUuid localNodeId) {
+    private boolean isInitializingForNodeId(ClusterNodeId localNodeId) {
         return state.get() == INITIALIZING && localNodeId.equals(nodeId);
     }
 
@@ -1100,7 +1100,7 @@ class HekateNode implements Hekate, Serializable {
             try {
                 listener.onStateChanged(this);
             } catch (RuntimeException | Error e) {
-                log.error("Failed to notify listener on state change [state={}, listener={}]", getState(), listener, e);
+                log.error("Failed to notify listener on state change [state={}, listener={}]", state(), listener, e);
             }
         }
     }
@@ -1166,16 +1166,16 @@ class HekateNode implements Hekate, Serializable {
     private String toAddressesString(ClusterTopology topology) {
         StringBuilder buf = new StringBuilder();
 
-        topology.getNodes().forEach(n -> {
+        topology.nodes().forEach(n -> {
             if (buf.length() > 0) {
                 buf.append(", ");
             }
 
-            if (!n.getName().isEmpty()) {
-                buf.append(n.getName()).append('#');
+            if (!n.name().isEmpty()) {
+                buf.append(n.name()).append('#');
             }
 
-            buf.append(n.getAddress());
+            buf.append(n.address());
         });
 
         return buf.toString();

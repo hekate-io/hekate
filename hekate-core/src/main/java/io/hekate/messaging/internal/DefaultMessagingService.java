@@ -18,8 +18,8 @@ package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterService;
-import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.ClusterView;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventType;
@@ -41,9 +41,9 @@ import io.hekate.core.service.TerminatingService;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingBackPressureConfig;
-import io.hekate.messaging.MessagingChanneUuid;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
+import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingConfigProvider;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.MessagingOverflowPolicy;
@@ -97,7 +97,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     private ScheduledThreadPoolExecutor timer;
 
-    private ClusterUuid nodeId;
+    private ClusterNodeId nodeId;
 
     private CodecService codecService;
 
@@ -192,7 +192,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         List<NetworkConnectorConfig<?>> connectors = new ArrayList<>(channelsConfig.size());
 
         channelsConfig.forEach(channelCfg ->
-            connectors.add(getConnectorConfig(channelCfg))
+            connectors.add(toNetworkConfig(channelCfg))
         );
 
         return connectors;
@@ -210,7 +210,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             }
 
             if (!channelsConfig.isEmpty()) {
-                nodeId = ctx.getNode().getId();
+                nodeId = ctx.localNode().id();
 
                 HekateThreadFactory timerFactory = new HekateThreadFactory(MESSAGING_THREAD_PREFIX + "Timer");
 
@@ -296,7 +296,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         try {
             List<MessagingChannel<?>> channels = new ArrayList<>(gateways.size());
 
-            gateways.values().forEach(g -> channels.add(g.getChannel()));
+            gateways.values().forEach(g -> channels.add(g.channel()));
 
             return channels;
         } finally {
@@ -316,7 +316,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
             ArgAssert.check(gateway != null, "No such channel [name=" + channelName + ']');
 
-            return gateway.getChannel();
+            return gateway.channel();
         } finally {
             guard.unlockRead();
         }
@@ -352,7 +352,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         LoadBalancer<T> loadBalancer = cfg.getLoadBalancer();
         MessagingBackPressureConfig pressureCfg = cfg.getBackPressure();
 
-        ClusterNode localNode = cluster.getLocalNode();
+        ClusterNode localNode = cluster.localNode();
         ClusterView clusterView = cluster.filter(new ChannelNodeFilter(name, filter));
 
         NetworkConnector<MessagingProtocol> connector = net.connector(name);
@@ -467,7 +467,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         }
     }
 
-    private <T> NetworkConnectorConfig<MessagingProtocol> getConnectorConfig(MessagingChannelConfig<T> cfg) {
+    private <T> NetworkConnectorConfig<MessagingProtocol> toNetworkConfig(MessagingChannelConfig<T> cfg) {
         assert cfg != null : "Channel configuration is null.";
 
         String name = cfg.getName().trim();
@@ -496,7 +496,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                     // Reject connections if their target node doesn't match with the local node.
                     // This can happen in rare cases if node is restarted on the same address and remote nodes
                     // haven't detected cluster topology change yet.
-                    if (!connect.getTo().equals(nodeId)) {
+                    if (!connect.to().equals(nodeId)) {
                         // Channel rejected connection.
                         client.disconnect();
 
@@ -504,7 +504,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                     }
 
                     @SuppressWarnings("unchecked")
-                    MessagingGateway<T> gateway = (MessagingGateway<T>)gateways.get(client.getProtocol());
+                    MessagingGateway<T> gateway = (MessagingGateway<T>)gateways.get(client.protocol());
 
                     // Reject connection to unknown channel.
                     if (gateway == null) {
@@ -513,9 +513,9 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                         return;
                     }
 
-                    MessagingChanneUuid channelId = connect.getChannelId();
+                    MessagingChannelId channelId = connect.channelId();
 
-                    MessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(channelId, gateway.getChannel());
+                    MessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(channelId, gateway.channel());
 
                     NetworkInboundConnection<T> conn = new NetworkInboundConnection<>(client, endpoint, gateway);
 
@@ -568,7 +568,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
     }
 
     private <T> CodecFactory<T> resolveCodecFactory(MessagingChannelConfig<T> cfg) {
-        CodecFactory<T> codecFactory = getDefaultIfNull(cfg.getMessageCodec());
+        CodecFactory<T> codecFactory = useDefaultIfNull(cfg.getMessageCodec());
 
         if (codecFactory.createCodec().isStateful()) {
             return codecFactory;
@@ -578,9 +578,9 @@ public class DefaultMessagingService implements MessagingService, DependentServi
     }
 
     @SuppressWarnings("unchecked")
-    private <T> CodecFactory<T> getDefaultIfNull(CodecFactory<T> factory) {
+    private <T> CodecFactory<T> useDefaultIfNull(CodecFactory<T> factory) {
         if (factory == null) {
-            return (CodecFactory<T>)codecService.getCodecFactory();
+            return (CodecFactory<T>)codecService.codecFactory();
         }
 
         return factory;

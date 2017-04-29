@@ -47,7 +47,7 @@ public class ClusterJoinEvent extends ClusterEventBase {
      * @return {@link ClusterEventType#JOIN}.
      */
     @Override
-    public ClusterEventType getType() {
+    public ClusterEventType type() {
         return ClusterEventType.JOIN;
     }
 
@@ -64,7 +64,7 @@ public class ClusterJoinEvent extends ClusterEventBase {
     @Override
     public String toString() {
         return getClass().getSimpleName() + "["
-            + "topology=" + getTopology()
+            + "topology=" + topology()
             + ']';
     }
 }

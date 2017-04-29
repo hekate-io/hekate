@@ -17,7 +17,7 @@
 package io.hekate.coordinate.internal;
 
 import io.hekate.cluster.ClusterHash;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.util.format.ToString;
 
 abstract class CoordinationProtocol {
@@ -32,37 +32,37 @@ abstract class CoordinationProtocol {
     static class Request extends CoordinationProtocol {
         private final String processName;
 
-        private final ClusterUuid from;
+        private final ClusterNodeId from;
 
         private final ClusterHash topology;
 
         private final Object request;
 
-        public Request(String processName, ClusterUuid from, ClusterHash topology, Object request) {
+        public Request(String processName, ClusterNodeId from, ClusterHash topology, Object request) {
             this.processName = processName;
             this.from = from;
             this.topology = topology;
             this.request = request;
         }
 
-        public String getProcessName() {
+        public String processName() {
             return processName;
         }
 
-        public ClusterUuid getFrom() {
+        public ClusterNodeId from() {
             return from;
         }
 
-        public ClusterHash getTopology() {
+        public ClusterHash topology() {
             return topology;
         }
 
-        public Object getRequest() {
+        public Object request() {
             return request;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.REQUEST;
         }
     }
@@ -77,16 +77,16 @@ abstract class CoordinationProtocol {
             this.response = response;
         }
 
-        public String getProcessName() {
+        public String processName() {
             return processName;
         }
 
-        public Object getResponse() {
+        public Object response() {
             return response;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.RESPONSE;
         }
     }
@@ -99,12 +99,12 @@ abstract class CoordinationProtocol {
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.REJECT;
         }
     }
 
-    public abstract Type getType();
+    public abstract Type type();
 
     @Override
     public String toString() {

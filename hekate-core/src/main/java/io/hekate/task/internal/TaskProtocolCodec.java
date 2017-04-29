@@ -37,7 +37,7 @@ class TaskProtocolCodec implements Codec<TaskProtocol> {
 
     @Override
     public void encode(TaskProtocol msg, DataWriter out) throws IOException {
-        TaskProtocol.Type type = msg.getType();
+        TaskProtocol.Type type = msg.type();
 
         out.writeByte(type.ordinal());
 
@@ -45,14 +45,14 @@ class TaskProtocolCodec implements Codec<TaskProtocol> {
             case RUN_TASK: {
                 RunTask run = (RunTask)msg;
 
-                delegate.encode(run.getTask(), out);
+                delegate.encode(run.task(), out);
 
                 break;
             }
             case CALL_TASK: {
                 CallTask call = (CallTask)msg;
 
-                delegate.encode(call.getTask(), out);
+                delegate.encode(call.task(), out);
 
                 break;
             }
@@ -67,14 +67,14 @@ class TaskProtocolCodec implements Codec<TaskProtocol> {
             case ERROR_RESULT: {
                 ErrorResult error = (ErrorResult)msg;
 
-                out.writeUTF(error.getErrorStackTrace());
+                out.writeUTF(error.errorStackTrace());
 
                 break;
             }
             case OBJECT_RESULT: {
                 ObjectResult result = (ObjectResult)msg;
 
-                delegate.encode(result.getResult(), out);
+                delegate.encode(result.result(), out);
 
                 break;
             }

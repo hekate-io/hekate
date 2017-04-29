@@ -31,7 +31,7 @@ import java.util.stream.Stream;
  * @see MessagingChannel#aggregate(Object)
  * @see MessagingChannel#aggregate(Object, AggregateCallback)
  */
-public interface AggregateResult<T> {
+public interface AggregateResult<T> extends Iterable<T> {
     /**
      * Returns the original request object that was submitted to the cluster.
      *

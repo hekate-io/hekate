@@ -65,7 +65,7 @@ class RequestRegistry<T> {
         List<RequestHandle<T>> removed = new ArrayList<>(requests.size());
 
         for (RequestHandle<T> handle : requests.values()) {
-            if (handle.getEpoch() == epoch) {
+            if (handle.epoch() == epoch) {
                 if (handle.unregister()) {
                     removed.add(handle);
                 }

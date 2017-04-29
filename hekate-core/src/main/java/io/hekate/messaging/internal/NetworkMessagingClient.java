@@ -68,13 +68,13 @@ class NetworkMessagingClient<T> implements MessagingClient<T> {
 
         NetworkClient<MessagingProtocol> netClient = net.newClient();
 
-        DefaultMessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(gateway.getId(), gateway.getChannel());
+        DefaultMessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(gateway.id(), gateway.channel());
 
-        this.conn = new NetworkOutboundConnection<>(node.getAddress(), netClient, gateway, endpoint);
+        this.conn = new NetworkOutboundConnection<>(node.address(), netClient, gateway, endpoint);
     }
 
     @Override
-    public ClusterNode getNode() {
+    public ClusterNode node() {
         return node;
     }
 
@@ -164,7 +164,7 @@ class NetworkMessagingClient<T> implements MessagingClient<T> {
     }
 
     // Package level for testing purposes.
-    NetworkOutboundConnection<T> getConnection() {
+    NetworkOutboundConnection<T> connection() {
         return conn;
     }
 

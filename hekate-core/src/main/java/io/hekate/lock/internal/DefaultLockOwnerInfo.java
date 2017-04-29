@@ -33,12 +33,12 @@ public class DefaultLockOwnerInfo implements LockOwnerInfo {
     }
 
     @Override
-    public long getThreadId() {
+    public long threadId() {
         return threadId;
     }
 
     @Override
-    public ClusterNode getNode() {
+    public ClusterNode node() {
         return node;
     }
 

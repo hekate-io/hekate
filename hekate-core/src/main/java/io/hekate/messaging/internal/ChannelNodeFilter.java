@@ -38,10 +38,10 @@ class ChannelNodeFilter implements ClusterNodeFilter {
 
     @Override
     public boolean accept(ClusterNode node) {
-        ServiceInfo service = node.getService(MessagingService.class);
+        ServiceInfo service = node.service(MessagingService.class);
 
         if (service != null) {
-            Set<String> channels = service.getProperty(CHANNELS_PROPERTY);
+            Set<String> channels = service.property(CHANNELS_PROPERTY);
 
             if (channels != null && channels.contains(channelName)) {
                 return delegate == null || delegate.accept(node);

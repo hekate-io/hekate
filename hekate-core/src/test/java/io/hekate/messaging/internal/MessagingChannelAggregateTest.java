@@ -81,7 +81,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
     @Test
     public void testDefaultRouting() throws Exception {
         List<TestChannel> channels = createAndJoinChannels(5, c ->
-            c.setReceiver(msg -> msg.reply(msg.getChannel().getId().toString()))
+            c.setReceiver(msg -> msg.reply(msg.channel().id().toString()))
         );
 
         Set<String> channelIds = channels.stream().map(c -> c.getId().toString()).collect(Collectors.toSet());
@@ -180,9 +180,9 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
             assertTrue(result.results().isEmpty());
             assertEquals("test" + i, result.request());
             assertEquals(new HashSet<>(result.results()), result.stream().collect(Collectors.toSet()));
-            assertNull(result.errorOf(channel.getNode().getLocalNode()));
-            assertNull(result.resultOf(channel.getNode().getLocalNode()));
-            assertFalse(result.isSuccess(channel.getNode().getLocalNode()));
+            assertNull(result.errorOf(channel.getNode().localNode()));
+            assertNull(result.resultOf(channel.getNode().localNode()));
+            assertFalse(result.isSuccess(channel.getNode().localNode()));
             assertTrue(result.toString().startsWith(AggregateResult.class.getSimpleName()));
         });
     }
@@ -234,7 +234,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
             assertEquals(result.errors().toString(), i + 1, result.errors().size());
 
             for (int j = 0; j <= i; j++) {
-                ClusterNode node = channels.get(j).getNode().getLocalNode();
+                ClusterNode node = channels.get(j).getNode().localNode();
 
                 assertNotNull(result.errors().get(node));
                 assertSame(result.errors().get(node), result.errorOf(node));
@@ -242,7 +242,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
             }
 
             for (int j = i + 1; j < channels.size(); j++) {
-                ClusterNode node = channels.get(j).getNode().getLocalNode();
+                ClusterNode node = channels.get(j).getNode().localNode();
 
                 assertNull(result.errors().get(node));
                 assertEquals("test" + i + "-reply", result.resultsByNode().get(node));
@@ -269,13 +269,13 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
             assertEquals(result.errors().toString(), i + 1, result.errors().size());
 
             for (int j = 0; j <= i; j++) {
-                ClusterNode node = channels.get(j).getNode().getLocalNode();
+                ClusterNode node = channels.get(j).getNode().localNode();
 
                 assertNotNull(result.errors().get(node));
             }
 
             for (int j = i + 1; j < channels.size(); j++) {
-                ClusterNode node = channels.get(j).getNode().getLocalNode();
+                ClusterNode node = channels.get(j).getNode().localNode();
 
                 assertNull(result.errors().get(node));
                 assertEquals("test" + i + "-reply", result.resultsByNode().get(node));
@@ -327,9 +327,9 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
 
             for (TestChannel c : channels) {
                 if (c == joined) {
-                    assertFalse(joinResult.nodes().contains(joined.getNode().getLocalNode()));
+                    assertFalse(joinResult.nodes().contains(joined.getNode().localNode()));
                 } else {
-                    assertTrue(joinResult.nodes().contains(c.getNode().getLocalNode()));
+                    assertTrue(joinResult.nodes().contains(c.getNode().localNode()));
 
                     c.awaitForMessage("test-join" + i);
                 }
@@ -358,7 +358,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
 
             TestChannel left = channels.remove(channels.size() - 1);
 
-            ClusterNode leftNode = left.getNode().getLocalNode();
+            ClusterNode leftNode = left.getNode().localNode();
 
             left.leave();
 
@@ -403,7 +403,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
             assertEquals(channels.size(), result.results().size());
 
             channels.forEach(c ->
-                assertEquals("test-reply", result.resultsByNode().get(c.getNode().getLocalNode()))
+                assertEquals("test-reply", result.resultsByNode().get(c.getNode().localNode()))
             );
         }
     }

@@ -53,7 +53,7 @@ public class ClusterServiceSplitBrainTest extends HekateNodeContextTestBase {
 
         detector.awaitForChecks(5);
 
-        assertSame(Hekate.State.INITIALIZING, node.getState());
+        assertSame(Hekate.State.INITIALIZING, node.state());
 
         detector.setValid(true);
 

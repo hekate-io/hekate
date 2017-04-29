@@ -16,10 +16,10 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.failover.FailoverPolicy;
-import io.hekate.messaging.MessagingChanneUuid;
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.internal.MessagingProtocol.Connect;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
@@ -55,14 +55,14 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         MessagingChannel<String> channel = testChannel.get();
 
-        assertNotNull(channel.getId());
-        assertEquals(TEST_CHANNEL_NAME, channel.getName());
-        assertNotNull(channel.getCluster());
-        assertThat(channel.getCluster().getTopology().getNodes(), hasItem(testChannel.getNode().getLocalNode()));
-        assertEquals(nioThreads, channel.getNioThreads());
-        assertEquals(workerThreads, channel.getWorkerThreads());
-        assertNotNull(channel.getExecutor());
-        assertEquals(100500, channel.getTimeout());
+        assertNotNull(channel.id());
+        assertEquals(TEST_CHANNEL_NAME, channel.name());
+        assertNotNull(channel.cluster());
+        assertThat(channel.cluster().topology().nodes(), hasItem(testChannel.getNode().localNode()));
+        assertEquals(nioThreads, channel.nioThreads());
+        assertEquals(workerThreads, channel.workerThreads());
+        assertNotNull(channel.executor());
+        assertEquals(100500, channel.timeout());
     }
 
     @Test
@@ -78,13 +78,13 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
             NetworkClient<MessagingProtocol> fakeClient = fakeConnector.newClient();
 
             // Try connect to a node by using an invalid node ID.
-            ClusterUuid invalidNodeId = newNodeId();
+            ClusterNodeId invalidNodeId = newNodeId();
 
             InetSocketAddress socketAddress = channel.getNode().getSocketAddress();
 
             NetworkClientCallbackMock<MessagingProtocol> callback = new NetworkClientCallbackMock<>();
 
-            MessagingChanneUuid sourceId = new MessagingChanneUuid();
+            MessagingChannelId sourceId = new MessagingChannelId();
 
             fakeClient.connect(socketAddress, new Connect(invalidNodeId, sourceId), callback);
 
@@ -108,9 +108,9 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         TestChannel receiver = createChannel(c -> c.setReceiver(msg -> {
             try {
-                MessagingEndpoint<String> endpoint = msg.getEndpoint();
+                MessagingEndpoint<String> endpoint = msg.endpoint();
 
-                assertEquals(sender.getId(), endpoint.getRemoteId());
+                assertEquals(sender.getId(), endpoint.remoteId());
 
                 endpoint.setContext("test");
                 assertEquals("test", endpoint.getContext());
@@ -229,59 +229,59 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
     public void testGetAffinity() throws Exception {
         MessagingChannel<String> channel = createChannel().join().get();
 
-        assertNull(channel.getAffinity());
-        assertNull(channel.forRemotes().getAffinity());
+        assertNull(channel.affinity());
+        assertNull(channel.forRemotes().affinity());
 
-        assertEquals("affinity1", channel.withAffinity("affinity1").getAffinity());
-        assertNull(channel.getAffinity());
-        assertNull(channel.forRemotes().getAffinity());
+        assertEquals("affinity1", channel.withAffinity("affinity1").affinity());
+        assertNull(channel.affinity());
+        assertNull(channel.forRemotes().affinity());
 
-        assertEquals("affinity2", channel.forRemotes().withAffinity("affinity2").getAffinity());
-        assertNull(channel.getAffinity());
-        assertNull(channel.forRemotes().getAffinity());
+        assertEquals("affinity2", channel.forRemotes().withAffinity("affinity2").affinity());
+        assertNull(channel.affinity());
+        assertNull(channel.forRemotes().affinity());
 
-        assertEquals("affinity3", channel.forRemotes().withAffinity("affinity3").forRemotes().getAffinity());
-        assertNull(channel.getAffinity());
-        assertNull(channel.forRemotes().getAffinity());
+        assertEquals("affinity3", channel.forRemotes().withAffinity("affinity3").forRemotes().affinity());
+        assertNull(channel.affinity());
+        assertNull(channel.forRemotes().affinity());
     }
 
     @Test
     public void testGetFailover() throws Exception {
         MessagingChannel<String> channel = createChannel().join().get();
 
-        assertNull(channel.getFailover());
-        assertNull(channel.forRemotes().getFailover());
+        assertNull(channel.failover());
+        assertNull(channel.forRemotes().failover());
 
         FailoverPolicy p1 = context -> null;
         FailoverPolicy p2 = context -> null;
         FailoverPolicy p3 = context -> null;
 
-        assertSame(p1, channel.withFailover(p1).getFailover());
-        assertNull(channel.getFailover());
-        assertNull(channel.forRemotes().getFailover());
+        assertSame(p1, channel.withFailover(p1).failover());
+        assertNull(channel.failover());
+        assertNull(channel.forRemotes().failover());
 
-        assertSame(p2, channel.forRemotes().withFailover(p2).getFailover());
-        assertNull(channel.getFailover());
-        assertNull(channel.forRemotes().getFailover());
+        assertSame(p2, channel.forRemotes().withFailover(p2).failover());
+        assertNull(channel.failover());
+        assertNull(channel.forRemotes().failover());
 
-        assertSame(p3, channel.forRemotes().withFailover(p3).forRemotes().getFailover());
-        assertNull(channel.getFailover());
-        assertNull(channel.forRemotes().getFailover());
+        assertSame(p3, channel.forRemotes().withFailover(p3).forRemotes().failover());
+        assertNull(channel.failover());
+        assertNull(channel.forRemotes().failover());
     }
 
     @Test
     public void testGetTimeout() throws Exception {
         MessagingChannel<String> channel = createChannel().join().get();
 
-        assertEquals(0, channel.getTimeout());
+        assertEquals(0, channel.timeout());
 
-        assertEquals(1000, channel.withTimeout(1, TimeUnit.SECONDS).getTimeout());
-        assertEquals(0, channel.getTimeout());
+        assertEquals(1000, channel.withTimeout(1, TimeUnit.SECONDS).timeout());
+        assertEquals(0, channel.timeout());
 
-        assertEquals(2000, channel.forRemotes().withTimeout(2, TimeUnit.SECONDS).getTimeout());
-        assertEquals(0, channel.getTimeout());
+        assertEquals(2000, channel.forRemotes().withTimeout(2, TimeUnit.SECONDS).timeout());
+        assertEquals(0, channel.timeout());
 
-        assertEquals(3000, channel.forRemotes().withTimeout(3, TimeUnit.SECONDS).forRemotes().getTimeout());
-        assertEquals(0, channel.getTimeout());
+        assertEquals(3000, channel.forRemotes().withTimeout(3, TimeUnit.SECONDS).forRemotes().timeout());
+        assertEquals(0, channel.timeout());
     }
 }

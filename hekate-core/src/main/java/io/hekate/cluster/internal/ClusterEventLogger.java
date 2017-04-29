@@ -32,8 +32,8 @@ import org.slf4j.LoggerFactory;
 
 class ClusterEventLogger implements ClusterEventListener {
     private static final Comparator<ClusterNode> NODES_BY_ADDRESS = (o1, o2) -> {
-        InetSocketAddress a1 = o1.getSocket();
-        InetSocketAddress a2 = o2.getSocket();
+        InetSocketAddress a1 = o1.socket();
+        InetSocketAddress a2 = o2.socket();
 
         int cmp = a1.getAddress().getHostAddress().compareTo(a2.getAddress().getHostAddress());
 
@@ -42,7 +42,7 @@ class ClusterEventLogger implements ClusterEventListener {
         }
 
         if (cmp == 0) {
-            cmp = o1.getId().compareTo(o2.getId());
+            cmp = o1.id().compareTo(o2.id());
         }
 
         return cmp;
@@ -53,34 +53,34 @@ class ClusterEventLogger implements ClusterEventListener {
     @Override
     public void onEvent(ClusterEvent event) {
         if (log.isInfoEnabled()) {
-            switch (event.getType()) {
+            switch (event.type()) {
                 case JOIN: {
-                    log.info("{}", toDetailedString("Join topology", event.getTopology(), null, null));
+                    log.info("{}", toDetailedString("Join topology", event.topology(), null, null));
 
                     break;
                 }
                 case LEAVE: {
                     ClusterLeaveEvent leave = event.asLeave();
 
-                    List<ClusterNode> added = leave.getAdded();
-                    List<ClusterNode> removed = leave.getRemoved();
+                    List<ClusterNode> added = leave.added();
+                    List<ClusterNode> removed = leave.removed();
 
-                    log.info("{}", toDetailedString("Leave topology", event.getTopology(), added, removed));
+                    log.info("{}", toDetailedString("Leave topology", event.topology(), added, removed));
 
                     break;
                 }
                 case CHANGE: {
                     ClusterChangeEvent change = event.asChange();
 
-                    List<ClusterNode> added = change.getAdded();
-                    List<ClusterNode> removed = change.getRemoved();
+                    List<ClusterNode> added = change.added();
+                    List<ClusterNode> removed = change.removed();
 
-                    log.info("{}", toDetailedString("Topology change", event.getTopology(), added, removed));
+                    log.info("{}", toDetailedString("Topology change", event.topology(), added, removed));
 
                     break;
                 }
                 default: {
-                    throw new IllegalArgumentException("Unexpected event type: " + event.getType());
+                    throw new IllegalArgumentException("Unexpected event type: " + event.type());
                 }
             }
         }
@@ -93,14 +93,14 @@ class ClusterEventLogger implements ClusterEventListener {
 
         buf.append(nl);
 
-        List<ClusterNode> allNodes = new ArrayList<>(topology.getNodes());
+        List<ClusterNode> allNodes = new ArrayList<>(topology.nodes());
 
         if (removed != null) {
             allNodes.addAll(removed);
         }
 
         buf.append("*** ").append(eventType);
-        buf.append(" [size=").append(topology.size()).append(", version=").append(topology.getVersion()).append("] {").append(nl);
+        buf.append(" [size=").append(topology.size()).append(", version=").append(topology.version()).append("] {").append(nl);
 
         allNodes.stream().sorted(NODES_BY_ADDRESS).forEach(n -> {
             buf.append("      ");

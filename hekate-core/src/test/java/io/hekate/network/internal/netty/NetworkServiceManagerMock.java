@@ -65,7 +65,7 @@ public class NetworkServiceManagerMock implements NetworkServiceManager, Depende
 
         assertNotNull(server);
 
-        server.getServerChannel().pipeline().fireExceptionCaught(error);
+        server.serverChannel().pipeline().fireExceptionCaught(error);
     }
 
     @Override

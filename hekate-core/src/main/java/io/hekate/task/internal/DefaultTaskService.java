@@ -164,7 +164,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
         messaging = ctx.require(MessagingService.class);
 
         if (codec == null) {
-            codec = ctx.require(CodecService.class).getCodecFactory();
+            codec = ctx.require(CodecService.class).codecFactory();
         }
 
         injector = ctx.optional(InjectionService.class);
@@ -181,23 +181,23 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
             .withWorkerThreads(workerThreadPoolSize)
             .withMessageCodec(() -> new TaskProtocolCodec(codec.createCodec()))
             .withLoadBalancer((msg, ctx) -> {
-                List<ClusterNode> nodes = ctx.getNodes();
+                List<ClusterNode> nodes = ctx.nodes();
 
                 int size = nodes.size();
 
                 if (size == 1) {
-                    return nodes.get(0).getId();
+                    return nodes.get(0).id();
                 } else {
                     // Check if this is a new failover attempt and we should re-route task to another node.
                     // In such case we remove all failed nodes from the routing topology.
-                    if (ctx.getFailure().isPresent()) {
-                        FailureInfo failure = ctx.getFailure().get();
+                    if (ctx.failure().isPresent()) {
+                        FailureInfo failure = ctx.failure().get();
 
-                        if (!failure.getFailedNodes().isEmpty() && failure.getRouting() == RE_ROUTE) {
+                        if (!failure.allFailedNodes().isEmpty() && failure.routing() == RE_ROUTE) {
                             List<ClusterNode> nonFailed = new ArrayList<>(nodes);
 
                             // Filter out all failed nodes.
-                            nonFailed.removeAll(failure.getFailedNodes());
+                            nonFailed.removeAll(failure.allFailedNodes());
 
                             if (!nonFailed.isEmpty()) {
                                 size = nonFailed.size();
@@ -206,9 +206,9 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
                         }
                     }
 
-                    int idx = Utils.mod(ctx.getAffinity(), size);
+                    int idx = Utils.mod(ctx.affinity(), size);
 
-                    return nodes.get(idx).getId();
+                    return nodes.get(idx).id();
                 }
             });
 
@@ -261,80 +261,80 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
 
     @Override
     public TaskService filterAll(ClusterFilter filter) {
-        return getRootExecutor().filterAll(filter);
+        return rootExecutor().filterAll(filter);
     }
 
     @Override
     public TaskService withFailover(FailoverPolicy policy) {
-        return getRootExecutor().withFailover(policy);
+        return rootExecutor().withFailover(policy);
     }
 
     @Override
     public TaskService withFailover(FailoverPolicyBuilder builder) {
-        return getRootExecutor().withFailover(builder);
+        return rootExecutor().withFailover(builder);
     }
 
     @Override
-    public FailoverPolicy getFailover() {
-        return getRootExecutor().getFailover();
+    public FailoverPolicy failover() {
+        return rootExecutor().failover();
     }
 
     @Override
     public TaskService withTimeout(long timeout, TimeUnit unit) {
-        return getRootExecutor().withTimeout(timeout, unit);
+        return rootExecutor().withTimeout(timeout, unit);
     }
 
     @Override
-    public long getTimeout() {
-        return getRootExecutor().getTimeout();
+    public long timeout() {
+        return rootExecutor().timeout();
     }
 
     @Override
     public TaskFuture<MultiNodeResult<Void>> broadcast(RunnableTask task) {
-        return getRootExecutor().broadcast(task);
+        return rootExecutor().broadcast(task);
     }
 
     @Override
     public <T> TaskFuture<MultiNodeResult<T>> aggregate(CallableTask<T> task) {
-        return getRootExecutor().aggregate(task);
+        return rootExecutor().aggregate(task);
     }
 
     @Override
     public TaskService withAffinity(Object affinityKey) {
-        return getRootExecutor().withAffinity(affinityKey);
+        return rootExecutor().withAffinity(affinityKey);
     }
 
     @Override
-    public Object getAffinity() {
-        return getRootExecutor().getAffinity();
+    public Object affinity() {
+        return rootExecutor().affinity();
     }
 
     @Override
     public TaskFuture<?> run(RunnableTask task) {
-        return getRootExecutor().run(task);
+        return rootExecutor().run(task);
     }
 
     @Override
     public <T> TaskFuture<T> call(CallableTask<T> task) {
-        return getRootExecutor().call(task);
+        return rootExecutor().call(task);
     }
 
     @Override
     public <T, V> TaskFuture<V> apply(T arg, ApplicableTask<T, V> task) {
-        return getRootExecutor().apply(arg, task);
+        return rootExecutor().apply(arg, task);
     }
 
     @Override
-    public <T, V> TaskFuture<Collection<V>> applyAll(Collection<T> args, ApplicableTask<T, V> task) {
-        return getRootExecutor().applyAll(args, task);
+    public <T, V> TaskFuture<Collection<V>> applyToAll(Collection<T> args, ApplicableTask<T, V> task) {
+        return rootExecutor().applyToAll(args, task);
     }
 
     @Override
-    public <T, V> TaskFuture<Collection<V>> applyAll(T[] args, ApplicableTask<T, V> task) {
-        return getRootExecutor().applyAll(args, task);
+    public <T, V> TaskFuture<Collection<V>> applyToAll(T[] args, ApplicableTask<T, V> task) {
+        return rootExecutor().applyToAll(args, task);
     }
 
-    private FilteredTaskService getRootExecutor() {
+    private FilteredTaskService rootExecutor() {
         guard.lockReadWithStateCheck();
 
         try {
@@ -347,12 +347,12 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
     private void handleMessage(Message<TaskProtocol> msg) {
         TaskProtocol taskMsg = msg.get();
 
-        switch (taskMsg.getType()) {
+        switch (taskMsg.type()) {
             case RUN_TASK: {
                 RunTask runTask = (RunTask)taskMsg;
 
                 try {
-                    Runnable task = runTask.getTask();
+                    Runnable task = runTask.task();
 
                     inject(task);
 
@@ -369,7 +369,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
                 CallTask callTask = (CallTask)taskMsg;
 
                 try {
-                    Callable<?> task = callTask.getTask();
+                    Callable<?> task = callTask.task();
 
                     inject(task);
 
@@ -389,8 +389,8 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
             case APPLY_TASK: {
                 ApplyTask applyTask = (ApplyTask)taskMsg;
 
-                List<Object> args = applyTask.getArgs();
-                ApplicableTask<Object, Object> task = applyTask.getTask();
+                ApplicableTask<Object, Object> task = applyTask.task();
+                List<Object> args = applyTask.args();
 
                 if (args.size() == 1) {
                     // Execute on the same thread if this is a single argument task.
@@ -408,12 +408,12 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
                     ApplyTaskCallback callback = new ApplyTaskCallback(args.size(), msg);
 
                     try {
-                        MessagingChannel<TaskProtocol> channel = msg.getEndpoint().getChannel();
+                        MessagingChannel<TaskProtocol> channel = msg.endpoint().channel();
 
                         inject(task);
 
                         for (Object arg : args) {
-                            channel.getExecutor().execute(() -> {
+                            channel.executor().execute(() -> {
                                 try {
                                     if (!callback.isCompleted()) {
                                         Object result = task.apply(arg);

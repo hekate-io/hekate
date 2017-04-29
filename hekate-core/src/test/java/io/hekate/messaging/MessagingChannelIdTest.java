@@ -14,26 +14,23 @@
  * under the License.
  */
 
-package io.hekate.javadoc;
+package io.hekate.messaging;
 
-import io.hekate.core.Hekate;
-import javax.annotation.PostConstruct;
+import io.hekate.util.UuidTestBase;
 
-//Start:example
-public class MyBean {
-    private final Hekate hekate;
-
-    public MyBean(Hekate hekate) {
-        this.hekate = hekate;
+public class MessagingChannelIdTest extends UuidTestBase<MessagingChannelId> {
+    @Override
+    protected MessagingChannelId newUuid() {
+        return new MessagingChannelId();
     }
 
-    public Hekate getHekate() {
-        return hekate;
+    @Override
+    protected MessagingChannelId newUuid(long hi, long lo) {
+        return new MessagingChannelId(hi, lo);
     }
 
-    @PostConstruct
-    public void doSomething() {
-        System.out.println("Hekate node: " + hekate.getLocalNode());
+    @Override
+    protected MessagingChannelId newUuid(String s) {
+        return new MessagingChannelId(s);
     }
 }
-//End:example

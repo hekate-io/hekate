@@ -50,7 +50,7 @@ public class MetricBean extends HekateBaseBean<Metric> {
      *
      * @param name Metric name.
      *
-     * @see Metric#getName()
+     * @see Metric#name()
      */
     @Required
     public void setName(String name) {

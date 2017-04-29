@@ -223,7 +223,7 @@ public class CoordinationServiceTest extends HekateNodeContextTestBase {
 
         assertTrue(future.isDone());
         assertNotNull(future.getNow(null));
-        assertSame(handler, future.getNow(null).getHandler());
+        assertSame(handler, future.getNow(null).handler());
     }
 
     @Test
@@ -304,8 +304,8 @@ public class CoordinationServiceTest extends HekateNodeContextTestBase {
         class BlockingHandler extends CoordinatedValueHandler {
             @Override
             public void coordinate(CoordinationContext ctx) {
-                if (ctx.getSize() == 3 && blockLatch.getCount() > 0) {
-                    coordinatorRef.set(ctx.getCoordinator().getNode());
+                if (ctx.size() == 3 && blockLatch.getCount() > 0) {
+                    coordinatorRef.set(ctx.coordinator().node());
 
                     blockLatch.countDown();
 
@@ -331,15 +331,15 @@ public class CoordinationServiceTest extends HekateNodeContextTestBase {
         HekateTestNode n2 = createCoordinationNode(h2);
         HekateTestNode n3 = createCoordinationNode(h3);
 
-        assertEquals("1", n1.join().coordination().futureOf("test").get().<BlockingHandler>getHandler().getLastValue());
-        assertEquals("2", n2.join().coordination().futureOf("test").get().<BlockingHandler>getHandler().getLastValue());
+        assertEquals("1", n1.join().coordination().futureOf("test").get().<BlockingHandler>handler().getLastValue());
+        assertEquals("2", n2.join().coordination().futureOf("test").get().<BlockingHandler>handler().getLastValue());
 
         n3.join(); // <-- Coordination should block.
 
         await(blockLatch);
 
         HekateTestNode coordinator = Stream.of(n1, n2, n3)
-            .filter(n -> n.getLocalNode().equals(coordinatorRef.get()))
+            .filter(n -> n.localNode().equals(coordinatorRef.get()))
             .findFirst().orElseThrow(AssertionError::new);
 
         LeaveFuture leaveFuture = coordinator.leaveAsync();
@@ -365,7 +365,7 @@ public class CoordinationServiceTest extends HekateNodeContextTestBase {
         class BlockingHandler extends CoordinatedValueHandler {
             @Override
             public void coordinate(CoordinationContext ctx) {
-                if (ctx.getSize() == 2 && blockLatch.getCount() > 0) {
+                if (ctx.size() == 2 && blockLatch.getCount() > 0) {
                     blockLatch.countDown();
 
                     await(proceedLatch);
@@ -412,7 +412,7 @@ public class CoordinationServiceTest extends HekateNodeContextTestBase {
     private void awaitForCoordinatedValue(String expected, List<HekateTestNode> nodes) throws Exception {
         busyWait("value coordination", () ->
             nodes.stream().allMatch(n -> {
-                CoordinatedValueHandler handler = n.coordination().process("test").getHandler();
+                CoordinatedValueHandler handler = n.coordination().process("test").handler();
 
                 return handler.getLastValue().equals(expected);
             })

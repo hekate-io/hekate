@@ -41,8 +41,8 @@ public class DefaultClusterTopologyTest extends ClusterTopologyTestBase {
 
         DefaultClusterTopology t2 = t1.updateIfModified(toSet(n1, n2, n3));
 
-        assertEquals(2, t2.getVersion());
-        assertNotEquals(t1.getHash(), t2.getHash());
+        assertEquals(2, t2.version());
+        assertNotEquals(t1.hash(), t2.hash());
 
         assertTrue(t2.contains(n1));
         assertTrue(t2.contains(n2));
@@ -52,8 +52,8 @@ public class DefaultClusterTopologyTest extends ClusterTopologyTestBase {
 
         DefaultClusterTopology t3 = t2.updateIfModified(toSet(n1, n2));
 
-        assertEquals(3, t3.getVersion());
-        assertNotEquals(t2.getHash(), t3.getHash());
+        assertEquals(3, t3.version());
+        assertNotEquals(t2.hash(), t3.hash());
 
         assertTrue(t3.contains(n1));
         assertTrue(t3.contains(n2));
@@ -61,8 +61,8 @@ public class DefaultClusterTopologyTest extends ClusterTopologyTestBase {
 
         DefaultClusterTopology t4 = t3.update(toSet(n1, n2));
 
-        assertEquals(4, t4.getVersion());
-        assertEquals(t3.getHash(), t4.getHash());
+        assertEquals(4, t4.version());
+        assertEquals(t3.hash(), t4.hash());
 
         assertTrue(t4.contains(n1));
         assertTrue(t4.contains(n2));
@@ -70,7 +70,7 @@ public class DefaultClusterTopologyTest extends ClusterTopologyTestBase {
 
         DefaultClusterTopology t5 = t4.update(toSet(n1, n2, n3));
 
-        assertEquals(5, t5.getVersion());
+        assertEquals(5, t5.version());
 
         assertTrue(t5.contains(n1));
         assertTrue(t5.contains(n2));

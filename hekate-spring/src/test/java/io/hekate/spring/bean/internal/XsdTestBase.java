@@ -50,17 +50,17 @@ public abstract class XsdTestBase extends HekateTestBase {
         get(node1.cluster().futureOf(top -> top.size() == 2));
         get(node2.cluster().futureOf(top -> top.size() == 2));
 
-        ClusterTopology top1 = node1.cluster().getTopology();
-        ClusterTopology top2 = node2.cluster().getTopology();
+        ClusterTopology top1 = node1.cluster().topology();
+        ClusterTopology top2 = node2.cluster().topology();
 
         assertEquals(2, top1.size());
         assertEquals(2, top2.size());
 
-        assertTrue(top1.contains(node1.getLocalNode()));
-        assertTrue(top1.contains(node2.getLocalNode()));
+        assertTrue(top1.contains(node1.localNode()));
+        assertTrue(top1.contains(node2.localNode()));
 
-        assertTrue(top2.contains(node1.getLocalNode()));
-        assertTrue(top2.contains(node2.getLocalNode()));
+        assertTrue(top2.contains(node1.localNode()));
+        assertTrue(top2.contains(node2.localNode()));
     }
 
     @Override

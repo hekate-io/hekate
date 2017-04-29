@@ -29,5 +29,5 @@ public interface FailureDetectorContext {
      *
      * @return Local node address.
      */
-    ClusterAddress getLocalAddress();
+    ClusterAddress localAddress();
 }

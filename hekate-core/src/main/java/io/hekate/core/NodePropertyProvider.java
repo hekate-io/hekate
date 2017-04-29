@@ -32,14 +32,14 @@ import java.util.Map;
  */
 public interface NodePropertyProvider {
     /**
-     * Returns a map of node properties that should become a part of {@link ClusterNode#getProperties() node properties}.
+     * Returns a map of node properties that should become a part of {@link ClusterNode#properties() node properties}.
      *
      * <p>
-     * Note that this method gets called only once during {@link Hekate} instance construction. All subsequent modifications of the returned
-     * map will have no effect on {@link Hekate} instance.
+     * Note that this method gets called only once during the {@link Hekate} instance construction and all subsequent modifications of the
+     * provided map will have no effect.
      * </p>
      *
-     * @return Map of node properties.
+     * @return Map of properties.
      */
     Map<String, String> getProperties();
 }

@@ -28,17 +28,17 @@ class CounterTotalMetric implements Metric {
     }
 
     @Override
-    public String getName() {
-        return counter.getTotalName();
+    public String name() {
+        return counter.totalName();
     }
 
     @Override
-    public long getValue() {
-        return counter.getTotalValue();
+    public long value() {
+        return counter.totalValue();
     }
 
     @Override
     public String toString() {
-        return Metric.class.getSimpleName() + "[name=" + getName() + ", value=" + getValue() + ']';
+        return Metric.class.getSimpleName() + "[name=" + name() + ", value=" + value() + ']';
     }
 }

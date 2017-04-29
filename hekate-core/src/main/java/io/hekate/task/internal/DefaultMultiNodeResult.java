@@ -20,6 +20,7 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.task.MultiNodeResult;
 import io.hekate.util.format.ToString;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -84,6 +85,11 @@ class DefaultMultiNodeResult<T> implements MultiNodeResult<T> {
     @Override
     public Map<ClusterNode, Throwable> errors() {
         return errors;
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return results().iterator();
     }
 
     @Override

@@ -18,8 +18,8 @@ package io.hekate.lock.internal;
 
 import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterUuid;
 import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockOwnerInfo;
 import io.hekate.lock.internal.LockProtocol.LockRequest;
@@ -68,7 +68,7 @@ class LockControllerClient {
 
     private final long threadId;
 
-    private final ClusterUuid node;
+    private final ClusterNodeId node;
 
     private final long lockTimeout;
 
@@ -96,19 +96,19 @@ class LockControllerClient {
     private LockOwnerInfo lockOwner;
 
     @ToStringIgnore
-    private ClusterUuid managedBy;
+    private ClusterNodeId manager;
 
     private Status status = Status.UNLOCKED;
 
-    public LockControllerClient(long lockId, ClusterUuid node, long threadId, DistributedLock lock,
+    public LockControllerClient(long lockId, ClusterNodeId node, long threadId, DistributedLock lock,
         MessagingChannel<LockProtocol> channel, long lockTimeout, AsyncLockCallbackAdaptor callback, UnlockCallback unlockCallback) {
         assert node != null : "Cluster node is null.";
         assert lock != null : "Lock is null.";
         assert channel != null : "Channel is null.";
         assert unlockCallback != null : "Unlock callback is null.";
 
-        this.region = lock.getRegion();
-        this.name = lock.getName();
+        this.region = lock.regionName();
+        this.name = lock.name();
         this.lockId = lockId;
         this.node = node;
         this.threadId = threadId;
@@ -117,52 +117,52 @@ class LockControllerClient {
         this.callback = callback;
 
         // Make sure that all messages will be routed with the affinity key of this lock.
-        this.channel = channel.withAffinity(new LockAffinityKey(lock.getRegion(), lock.getName()));
+        this.channel = channel.withAffinity(new LockAffinityKey(lock.regionName(), lock.name()));
 
         lockFuture = new LockFuture(this);
         unlockFuture = new LockFuture(this);
     }
 
-    public String getName() {
+    public String name() {
         return name;
     }
 
-    public long getLockId() {
+    public long lockId() {
         return lockId;
     }
 
-    public long getThreadId() {
+    public long threadId() {
         return threadId;
     }
 
-    public ClusterUuid getManagedBy() {
+    public ClusterNodeId manager() {
         lock.lock();
 
         try {
-            return managedBy;
+            return manager;
         } finally {
             lock.unlock();
         }
     }
 
-    public LockFuture getLockFuture() {
+    public LockFuture lockFuture() {
         return lockFuture;
     }
 
-    public LockFuture getUnlockFuture() {
+    public LockFuture unlockFuture() {
         return unlockFuture;
     }
 
-    public ClusterUuid getNode() {
+    public ClusterNodeId node() {
         return node;
     }
 
-    public void update(ClusterUuid managedBy, ClusterTopology topology) {
+    public void update(ClusterNodeId manager, ClusterTopology topology) {
         lock.lock();
 
         try {
             this.topology = topology;
-            this.managedBy = managedBy;
+            this.manager = manager;
         } finally {
             lock.unlock();
         }
@@ -284,7 +284,7 @@ class LockControllerClient {
         lock.lock();
 
         try {
-            if (!requestTopology.equals(topology.getHash())) {
+            if (!requestTopology.equals(topology.hash())) {
                 return false;
             }
 
@@ -292,7 +292,7 @@ class LockControllerClient {
                 case LOCKING: {
                     status = Status.LOCKED;
 
-                    lockOwner = new DefaultLockOwnerInfo(threadId, topology.getLocalNode());
+                    lockOwner = new DefaultLockOwnerInfo(threadId, topology.localNode());
 
                     complete = true;
 
@@ -335,12 +335,12 @@ class LockControllerClient {
         return true;
     }
 
-    private boolean notifyOnLockBusy(ClusterUuid ownerId, long ownerThreadId, ClusterHash requestTopology) {
+    private boolean notifyOnLockBusy(ClusterNodeId ownerId, long ownerThreadId, ClusterHash requestTopology) {
         if (callback != null) {
             lock.lock();
 
             try {
-                if (!requestTopology.equals(topology.getHash())) {
+                if (!requestTopology.equals(topology.hash())) {
                     return false;
                 }
 
@@ -377,7 +377,7 @@ class LockControllerClient {
         lock.lock();
 
         try {
-            if (requestTopology != null && !requestTopology.equals(topology.getHash())) {
+            if (requestTopology != null && !requestTopology.equals(topology.hash())) {
                 return false;
             }
 
@@ -448,9 +448,9 @@ class LockControllerClient {
                 if (err == null) {
                     LockResponse lockRsp = (LockResponse)reply;
 
-                    switch (lockRsp.getStatus()) {
+                    switch (lockRsp.status()) {
                         case OK: {
-                            if (becomeLocked(lockReq.getTopology())) {
+                            if (becomeLocked(lockReq.topology())) {
                                 return COMPLETE;
                             } else {
                                 // Retry if still LOCKING.
@@ -475,7 +475,7 @@ class LockControllerClient {
                             return COMPLETE;
                         }
                         case LOCK_INFO: {
-                            if (notifyOnLockBusy(lockRsp.getOwner(), lockRsp.getOwnerThreadId(), lockReq.getTopology())) {
+                            if (notifyOnLockBusy(lockRsp.owner(), lockRsp.ownerThreadId(), lockReq.topology())) {
                                 return COMPLETE;
                             } else {
                                 // Retry if still LOCKING.
@@ -483,7 +483,7 @@ class LockControllerClient {
                             }
                         }
                         default: {
-                            throw new IllegalArgumentException("Unexpected status: " + lockRsp.getStatus());
+                            throw new IllegalArgumentException("Unexpected status: " + lockRsp.status());
                         }
                     }
                 } else {
@@ -514,9 +514,9 @@ class LockControllerClient {
                 if (err == null) {
                     UnlockResponse lockRsp = (UnlockResponse)reply;
 
-                    switch (lockRsp.getStatus()) {
+                    switch (lockRsp.status()) {
                         case OK: {
-                            if (becomeUnlocked(unlockReq.getTopology())) {
+                            if (becomeUnlocked(unlockReq.topology())) {
                                 return COMPLETE;
                             } else {
                                 return REJECT;
@@ -527,7 +527,7 @@ class LockControllerClient {
                             return !is(Status.TERMINATED) ? REJECT : COMPLETE;
                         }
                         default: {
-                            throw new IllegalArgumentException("Unexpected status: " + lockRsp.getStatus());
+                            throw new IllegalArgumentException("Unexpected status: " + lockRsp.status());
                         }
                     }
                 } else {

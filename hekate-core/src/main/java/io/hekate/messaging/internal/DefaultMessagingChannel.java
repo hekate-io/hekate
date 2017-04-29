@@ -22,8 +22,8 @@ import io.hekate.cluster.ClusterView;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverPolicyBuilder;
-import io.hekate.messaging.MessagingChanneUuid;
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.AggregateFuture;
 import io.hekate.messaging.broadcast.BroadcastCallback;
@@ -136,13 +136,13 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
-    public MessagingChanneUuid getId() {
-        return gateway.getId();
+    public MessagingChannelId id() {
+        return gateway.id();
     }
 
     @Override
-    public String getName() {
-        return gateway.getName();
+    public String name() {
+        return gateway.name();
     }
 
     @Override
@@ -152,7 +152,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
-    public Object getAffinity() {
+    public Object affinity() {
         return affinityKey;
     }
 
@@ -163,8 +163,8 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
-    public Executor getExecutor() {
-        return gateway.getExecutor();
+    public Executor executor() {
+        return gateway.executor();
     }
 
     @Override
@@ -179,20 +179,10 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
-    public FailoverPolicy getFailover() {
-        return failover;
-    }
-
-    @Override
     public DefaultMessagingChannel<T> withTimeout(long timeout, TimeUnit unit) {
         ArgAssert.notNull(unit, "Time unit");
 
         return new DefaultMessagingChannel<>(gateway, cluster, balancer, failover, unit.toMillis(timeout), affinityKey);
-    }
-
-    @Override
-    public long getTimeout() {
-        return timeout;
     }
 
     @Override
@@ -203,28 +193,23 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
-    public ClusterView getCluster() {
+    public ClusterView cluster() {
         return cluster;
     }
 
     @Override
-    public int getNioThreads() {
-        return gateway.getNioThreads();
+    public int nioThreads() {
+        return gateway.nioThreads();
     }
 
     @Override
-    public int getWorkerThreads() {
-        return gateway.getWorkerThreads();
+    public int workerThreads() {
+        return gateway.workerThreads();
     }
 
     @Override
     public LoadBalancer<T> balancer() {
         return balancer;
-    }
-
-    @Override
-    public ClusterView cluster() {
-        return cluster;
     }
 
     @Override
@@ -245,7 +230,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     // Package level for testing purposes.
-    MessagingGateway<T> getGateway() {
+    MessagingGateway<T> gateway() {
         return gateway;
     }
 

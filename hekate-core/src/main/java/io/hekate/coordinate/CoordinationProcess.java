@@ -27,7 +27,7 @@ public interface CoordinationProcess {
      *
      * @return Process name.
      */
-    String getName();
+    String name();
 
     /**
      * Returns the initial coordination future of this process. The returned future object will be completed once this coordination
@@ -35,7 +35,7 @@ public interface CoordinationProcess {
      *
      * @return Initial coordination future.
      */
-    CoordinationFuture getFuture();
+    CoordinationFuture future();
 
     /**
      * Returns the handler of this process (see {@link CoordinationProcessConfig#setHandler(CoordinationHandler)}).
@@ -44,5 +44,5 @@ public interface CoordinationProcess {
      *
      * @return Handler.
      */
-    <T extends CoordinationHandler> T getHandler();
+    <T extends CoordinationHandler> T handler();
 }

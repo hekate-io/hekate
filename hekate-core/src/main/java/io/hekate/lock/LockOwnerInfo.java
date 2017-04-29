@@ -21,7 +21,7 @@ import io.hekate.cluster.ClusterNode;
 /**
  * Provides information about {@link DistributedLock} owner.
  *
- * @see DistributedLock#getLockOwner()
+ * @see DistributedLock#owner()
  */
 public interface LockOwnerInfo {
     /**
@@ -31,12 +31,12 @@ public interface LockOwnerInfo {
      *
      * @see Thread#getId()
      */
-    long getThreadId();
+    long threadId();
 
     /**
      * Returns a cluster node that currently holds the lock.
      *
      * @return Cluster node that holds the lock.
      */
-    ClusterNode getNode();
+    ClusterNode node();
 }

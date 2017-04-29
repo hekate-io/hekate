@@ -29,14 +29,14 @@ public class ConstantFailoverDelay implements FailoverDelaySupplier {
     /**
      * Constructs new instance.
      *
-     * @param delay Value that should be returned by {@link #getDelay(FailureInfo)} method.
+     * @param delay Value that should be returned by {@link #delayOf(FailureInfo)} method.
      */
     public ConstantFailoverDelay(long delay) {
         this.delay = delay;
     }
 
     @Override
-    public long getDelay(FailureInfo failover) {
+    public long delayOf(FailureInfo failure) {
         return delay;
     }
 

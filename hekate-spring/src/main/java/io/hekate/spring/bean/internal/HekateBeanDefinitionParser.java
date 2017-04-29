@@ -159,7 +159,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         parseLocalMetricsService(rootEl, ctx).ifPresent(services::add);
         parseClusterMetricsService(rootEl, ctx).ifPresent(services::add);
 
-        getSubElements(rootEl, "custom-services", "service").forEach(serviceEl ->
+        subElements(rootEl, "custom-services", "service").forEach(serviceEl ->
             parseRefOrBean(serviceEl, ctx).ifPresent(services::add)
         );
 
@@ -169,7 +169,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
 
         ManagedList<RuntimeBeanReference> plugins = new ManagedList<>();
 
-        getSubElements(rootEl, "plugins", "plugin").forEach(pluginEl ->
+        subElements(rootEl, "plugins", "plugin").forEach(pluginEl ->
             parseRefOrBean(pluginEl, ctx).ifPresent(plugins::add)
         );
 
@@ -181,7 +181,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
     private void parseNodeRoles(BeanDefinitionBuilder def, Element el) {
         ManagedSet<String> roles = new ManagedSet<>();
 
-        roles.addAll(getSubElements(el, "roles", "role").stream()
+        roles.addAll(subElements(el, "roles", "role").stream()
             .map(roleEl -> getTextValue(roleEl).trim())
             .filter(role -> !role.isEmpty())
             .collect(toSet())
@@ -193,7 +193,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
     private void parseNodePropertyProviders(BeanDefinitionBuilder boot, Element rootEl, ParserContext ctx) {
         ManagedList<RuntimeBeanReference> propertyProviders = new ManagedList<>();
 
-        getSubElements(rootEl, "property-providers", "provider").forEach(provider ->
+        subElements(rootEl, "property-providers", "provider").forEach(provider ->
             parseRefOrBean(provider, ctx).ifPresent(propertyProviders::add)
         );
 
@@ -330,7 +330,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 // Regions.
                 ManagedSet<String> regions = new ManagedSet<>();
 
-                regions.addAll(getSubElements(cloudEl, "regions", "region").stream()
+                regions.addAll(subElements(cloudEl, "regions", "region").stream()
                     .map(regionEl -> getTextValue(regionEl).trim())
                     .filter(region -> !region.isEmpty())
                     .collect(toSet())
@@ -343,7 +343,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 // Zones.
                 ManagedSet<String> zones = new ManagedSet<>();
 
-                zones.addAll(getSubElements(cloudEl, "zones", "zone").stream()
+                zones.addAll(subElements(cloudEl, "zones", "zone").stream()
                     .map(zoneEl -> getTextValue(zoneEl).trim())
                     .filter(zone -> !zone.isEmpty())
                     .collect(toSet())
@@ -356,7 +356,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 // Tags.
                 ManagedMap<String, String> tags = new ManagedMap<>();
 
-                getSubElements(cloudEl, "tags", "tag").forEach(tagEl -> {
+                subElements(cloudEl, "tags", "tag").forEach(tagEl -> {
                     String name = tagEl.getAttribute("name").trim();
                     String value = tagEl.getAttribute("value").trim();
 
@@ -534,7 +534,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
     private void parseClusterJoinValidators(BeanDefinitionBuilder cluster, Element clusterEl, ParserContext ctx) {
         ManagedList<RuntimeBeanReference> validators = new ManagedList<>();
 
-        getSubElements(clusterEl, "join-validators", "validator").forEach(valEl ->
+        subElements(clusterEl, "join-validators", "validator").forEach(valEl ->
             parseRefOrBean(valEl, ctx).ifPresent(validators::add)
         );
 
@@ -546,7 +546,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
     private void parseClusterListeners(BeanDefinitionBuilder cluster, Element clusterEl, ParserContext ctx) {
         ManagedList<RuntimeBeanReference> listeners = new ManagedList<>();
 
-        getSubElements(clusterEl, "listeners", "listener").forEach(valEl ->
+        subElements(clusterEl, "listeners", "listener").forEach(valEl ->
             parseRefOrBean(valEl, ctx).ifPresent(listeners::add)
         );
 
@@ -577,7 +577,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
 
             ManagedList<RuntimeBeanReference> connectors = new ManagedList<>();
 
-            for (Element connEl : getSubElements(netEl, "connectors", "connector")) {
+            for (Element connEl : subElements(netEl, "connectors", "connector")) {
                 BeanDefinitionBuilder conn = newBean(NetworkConnectorConfig.class, connEl);
 
                 setProperty(conn, connEl, "protocol", "protocol");
@@ -916,7 +916,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             ManagedList<RuntimeBeanReference> allMetrics = new ManagedList<>();
             ManagedList<RuntimeBeanReference> listeners = new ManagedList<>();
 
-            getSubElements(metricsEl, "counters", "counter").forEach(counterEl -> {
+            subElements(metricsEl, "counters", "counter").forEach(counterEl -> {
                 BeanDefinitionBuilder counter = newBean(CounterConfig.class, counterEl);
 
                 setProperty(counter, counterEl, "name", "name");
@@ -936,7 +936,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 }
             });
 
-            getSubElements(metricsEl, "probes", "probe").forEach(probeEl -> {
+            subElements(metricsEl, "probes", "probe").forEach(probeEl -> {
                 BeanDefinitionBuilder probe = newBean(ProbeConfig.class, probeEl);
 
                 setProperty(probe, probeEl, "name", "name");
@@ -959,7 +959,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 }
             });
 
-            getSubElements(metricsEl, "listeners", "listener").forEach(listenerEl ->
+            subElements(metricsEl, "listeners", "listener").forEach(listenerEl ->
                 parseRefOrBean(listenerEl, ctx).ifPresent(listeners::add)
             );
 
@@ -1021,7 +1021,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         }
     }
 
-    private List<Element> getSubElements(Element root, String name, String subName) {
+    private List<Element> subElements(Element root, String name, String subName) {
         Element elem = getChildElementByTagName(root, name);
 
         if (elem != null) {
@@ -1042,7 +1042,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
     }
 
     private Optional<Map<String, String>> parseProperties(Element el) {
-        List<Element> propEls = getSubElements(el, "properties", "prop");
+        List<Element> propEls = subElements(el, "properties", "prop");
 
         if (!propEls.isEmpty()) {
             Map<String, String> props = new ManagedMap<>();

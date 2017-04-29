@@ -45,14 +45,14 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
                 MultiNodeResult<Void> result = get(node.tasks().broadcast(() -> {
                     COUNTER.incrementAndGet();
 
-                    NODES.add(node.getLocalNode());
+                    NODES.add(node.localNode());
                 }));
 
                 assertEquals(nodes.size(), COUNTER.get());
-                assertTrue(NODES.toString(), NODES.containsAll(nodes.stream().map(Hekate::getLocalNode).collect(toList())));
+                assertTrue(NODES.toString(), NODES.containsAll(nodes.stream().map(Hekate::localNode).collect(toList())));
                 assertTrue(result.isSuccess());
-                nodes.forEach(n -> assertTrue(result.isSuccess(n.getLocalNode())));
-                assertTrue(result.nodes().containsAll(nodes.stream().map(Hekate::getLocalNode).collect(toList())));
+                nodes.forEach(n -> assertTrue(result.isSuccess(n.localNode())));
+                assertTrue(result.nodes().containsAll(nodes.stream().map(Hekate::localNode).collect(toList())));
 
                 NODES.forEach(n -> assertTrue(result.toString().contains(n.toString())));
 
@@ -73,14 +73,14 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
                 MultiNodeResult<Void> affResult = get(node.tasks().withAffinity(100500).broadcast(() -> {
                     COUNTER.incrementAndGet();
 
-                    NODES.add(node.getLocalNode());
+                    NODES.add(node.localNode());
                 }));
 
                 assertEquals(nodes.size(), COUNTER.get());
-                assertTrue(NODES.toString(), NODES.containsAll(nodes.stream().map(Hekate::getLocalNode).collect(toList())));
+                assertTrue(NODES.toString(), NODES.containsAll(nodes.stream().map(Hekate::localNode).collect(toList())));
                 assertTrue(affResult.isSuccess());
-                nodes.forEach(n -> assertTrue(affResult.isSuccess(n.getLocalNode())));
-                assertTrue(affResult.nodes().containsAll(nodes.stream().map(Hekate::getLocalNode).collect(toList())));
+                nodes.forEach(n -> assertTrue(affResult.isSuccess(n.localNode())));
+                assertTrue(affResult.nodes().containsAll(nodes.stream().map(Hekate::localNode).collect(toList())));
 
                 NODES.clear();
                 COUNTER.set(0);
@@ -103,11 +103,11 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
                 assertFalse(errResult.isSuccess());
                 assertTrue(errResult.results().isEmpty());
                 nodes.forEach(n -> {
-                    assertFalse(errResult.isSuccess(n.getLocalNode()));
-                    assertNotNull(errResult.errorOf(n.getLocalNode()));
+                    assertFalse(errResult.isSuccess(n.localNode()));
+                    assertNotNull(errResult.errorOf(n.localNode()));
 
-                    assertTrue(errResult.errorOf(n.getLocalNode()).getMessage().contains(TestAssertionError.class.getName()));
-                    assertTrue(errResult.errorOf(n.getLocalNode()).getMessage().contains(TEST_ERROR_MESSAGE));
+                    assertTrue(errResult.errorOf(n.localNode()).getMessage().contains(TestAssertionError.class.getName()));
+                    assertTrue(errResult.errorOf(n.localNode()).getMessage().contains(TEST_ERROR_MESSAGE));
                 });
 
                 NODES.clear();
@@ -125,7 +125,7 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
 
             for (HekateTestNode node : nodes) {
                 MultiNodeResult<Void> partErrResult = get(node.tasks().broadcast(() -> {
-                    if (node.cluster().getTopology().getYoungest().equals(node.getLocalNode())) {
+                    if (node.cluster().topology().youngest().equals(node.localNode())) {
                         throw TEST_ERROR;
                     }
                 }));
@@ -133,15 +133,15 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
                 assertFalse(partErrResult.isSuccess());
 
                 nodes.forEach(n -> {
-                    if (n.cluster().getTopology().getYoungest().equals(n.getLocalNode())) {
-                        assertFalse(partErrResult.isSuccess(n.getLocalNode()));
-                        assertNotNull(partErrResult.errorOf(n.getLocalNode()));
-                        assertNotNull(partErrResult.errors().get(n.getLocalNode()));
+                    if (n.cluster().topology().youngest().equals(n.localNode())) {
+                        assertFalse(partErrResult.isSuccess(n.localNode()));
+                        assertNotNull(partErrResult.errorOf(n.localNode()));
+                        assertNotNull(partErrResult.errors().get(n.localNode()));
 
-                        assertTrue(partErrResult.errorOf(n.getLocalNode()).getMessage().contains(TestAssertionError.class.getName()));
-                        assertTrue(partErrResult.errorOf(n.getLocalNode()).getMessage().contains(TEST_ERROR_MESSAGE));
+                        assertTrue(partErrResult.errorOf(n.localNode()).getMessage().contains(TestAssertionError.class.getName()));
+                        assertTrue(partErrResult.errorOf(n.localNode()).getMessage().contains(TEST_ERROR_MESSAGE));
                     } else {
-                        assertTrue(partErrResult.isSuccess(n.getLocalNode()));
+                        assertTrue(partErrResult.isSuccess(n.localNode()));
                     }
                 });
 
@@ -171,11 +171,11 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
         }));
 
         assertFalse(result.isSuccess());
-        assertEquals(ClosedChannelException.class, result.errorOf(target.getLocalNode()).getClass());
+        assertEquals(ClosedChannelException.class, result.errorOf(target.localNode()).getClass());
 
         source.awaitForStatus(Hekate.State.DOWN);
 
-        get(target.tasks().forNode(target.getLocalNode()).broadcast(() -> REF.set(target)));
+        get(target.tasks().forNode(target.localNode()).broadcast(() -> REF.set(target)));
 
         assertSame(target, REF.get());
     }

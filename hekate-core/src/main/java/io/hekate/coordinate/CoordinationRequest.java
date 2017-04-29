@@ -33,7 +33,7 @@ public interface CoordinationRequest {
      *
      * @return Member who sent this request.
      */
-    CoordinationMember getFrom();
+    CoordinationMember from();
 
     /**
      * Returns the request message.

@@ -53,7 +53,7 @@ public class FsSeedNodeProviderConfig {
      *
      * @param cleanupInterval Time interval in milliseconds.
      *
-     * @see SeedNodeProvider#getCleanupInterval()
+     * @see SeedNodeProvider#cleanupInterval()
      */
     public void setCleanupInterval(long cleanupInterval) {
         this.cleanupInterval = cleanupInterval;

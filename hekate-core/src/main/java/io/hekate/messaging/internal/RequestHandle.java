@@ -49,27 +49,27 @@ class RequestHandle<T> {
         this.callback = callback;
     }
 
-    public Integer getId() {
+    public Integer id() {
         return id;
     }
 
-    public MessagingWorker getWorker() {
+    public MessagingWorker worker() {
         return ctx.worker();
     }
 
-    public T getMessage() {
+    public T message() {
         return ctx.message();
     }
 
-    public int getEpoch() {
+    public int epoch() {
         return epoch;
     }
 
-    public InternalRequestCallback<T> getCallback() {
+    public InternalRequestCallback<T> callback() {
         return callback;
     }
 
-    public MessageContext<T> getContext() {
+    public MessageContext<T> context() {
         return ctx;
     }
 

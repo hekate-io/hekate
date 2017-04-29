@@ -17,8 +17,8 @@
 package io.hekate.coordinate.internal;
 
 import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterUuid;
 import io.hekate.coordinate.CoordinationBroadcastCallback;
 import io.hekate.coordinate.CoordinationContext;
 import io.hekate.coordinate.CoordinationHandler;
@@ -61,7 +61,7 @@ class DefaultCoordinationContext implements CoordinationContext {
     private final CoordinationMember localMember;
 
     @ToStringIgnore
-    private final Map<ClusterUuid, DefaultCoordinationMember> membersById;
+    private final Map<ClusterNodeId, DefaultCoordinationMember> membersById;
 
     @ToStringIgnore
     private final CompletableFuture<Void> future = new CompletableFuture<>();
@@ -85,19 +85,19 @@ class DefaultCoordinationContext implements CoordinationContext {
 
         membersById = new HashMap<>(topology.size(), 1.0f);
 
-        topology.getNodes().forEach(node -> {
+        topology.nodes().forEach(node -> {
             // First node is the coordinator.
             boolean coordinator = membersById.isEmpty();
 
             DefaultCoordinationMember member = new DefaultCoordinationMember(name, node, topology, coordinator, channel, async,
                 failoverDelay);
 
-            membersById.put(node.getId(), member);
+            membersById.put(node.id(), member);
         });
 
         this.members = Collections.unmodifiableList(new ArrayList<>(membersById.values()));
 
-        Optional<CoordinationMember> localMemberOpt = members.stream().filter(m -> m.getNode().isLocal()).findFirst();
+        Optional<CoordinationMember> localMemberOpt = members.stream().filter(m -> m.node().isLocal()).findFirst();
         Optional<CoordinationMember> coordinatorOpt = members.stream().filter(CoordinationMember::isCoordinator).findFirst();
 
         assert localMemberOpt.isPresent() : "Failed to find local node in the coordination topology [topology=" + topology + ']';
@@ -131,7 +131,7 @@ class DefaultCoordinationContext implements CoordinationContext {
     }
 
     @Override
-    public CoordinationMember getLocalMember() {
+    public CoordinationMember localMember() {
         return localMember;
     }
 
@@ -141,34 +141,34 @@ class DefaultCoordinationContext implements CoordinationContext {
     }
 
     @Override
-    public CoordinationMember getCoordinator() {
+    public CoordinationMember coordinator() {
         return coordinator;
     }
 
     @Override
-    public ClusterTopology getTopology() {
+    public ClusterTopology topology() {
         return topology;
     }
 
     @Override
-    public List<CoordinationMember> getMembers() {
+    public List<CoordinationMember> members() {
         return members;
     }
 
     @Override
-    public CoordinationMember getMember(ClusterNode node) {
+    public CoordinationMember memberOf(ClusterNode node) {
         ArgAssert.notNull(node, "Cluster node ");
 
-        return getMember(node.getId());
+        return memberOf(node.id());
     }
 
     @Override
-    public CoordinationMember getMember(ClusterUuid nodeId) {
+    public CoordinationMember memberOf(ClusterNodeId nodeId) {
         return membersById.get(nodeId);
     }
 
     @Override
-    public int getSize() {
+    public int size() {
         return members.size();
     }
 
@@ -233,7 +233,7 @@ class DefaultCoordinationContext implements CoordinationContext {
             if (DEBUG) {
                 log.debug("Rejected coordination request (context cancelled) [message={}, context={}]", request, this);
             }
-        } else if (!topology.getHash().equals(request.getTopology())) {
+        } else if (!topology.hash().equals(request.topology())) {
             reject = true;
 
             if (DEBUG) {
@@ -248,7 +248,7 @@ class DefaultCoordinationContext implements CoordinationContext {
                 log.debug("Processing coordination request [message={}, context={}]", request, this);
             }
 
-            DefaultCoordinationMember member = membersById.get(request.getFrom());
+            DefaultCoordinationMember member = membersById.get(request.from());
 
             handler.process(new DefaultCoordinationRequest(name, member, msg), this);
         }

@@ -47,7 +47,7 @@ public class SeedNodeManagerTest extends HekateTestBase {
     public void testNeverReturnsNull() throws Exception {
         SeedNodeManager manager = createManager(new SeedNodeProviderAdaptor() {
             @Override
-            public List<InetSocketAddress> getSeedNodes(String cluster) throws HekateException {
+            public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
                 return null;
             }
         });
@@ -62,7 +62,7 @@ public class SeedNodeManagerTest extends HekateTestBase {
     public void testErrorOnGetSeedNodes() throws Exception {
         SeedNodeManager manager = createManager(new SeedNodeProviderAdaptor() {
             @Override
-            public List<InetSocketAddress> getSeedNodes(String cluster) throws HekateException {
+            public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
                 throw TEST_ERROR;
             }
         });
@@ -148,17 +148,17 @@ public class SeedNodeManagerTest extends HekateTestBase {
 
         SeedNodeManager manager = createManager(new SeedNodeProviderAdaptor() {
             @Override
-            public List<InetSocketAddress> getSeedNodes(String cluster) throws HekateException {
+            public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
                 return new ArrayList<>(addresses.keySet());
             }
 
             @Override
-            public long getCleanupInterval() {
+            public long cleanupInterval() {
                 return 1;
             }
 
             @Override
-            public void registerRemoteAddress(String cluster, InetSocketAddress address) throws HekateException {
+            public void registerRemote(String cluster, InetSocketAddress address) throws HekateException {
                 addresses.put(address, true);
 
                 try {
@@ -169,7 +169,7 @@ public class SeedNodeManagerTest extends HekateTestBase {
             }
 
             @Override
-            public void unregisterRemoteAddress(String cluster, InetSocketAddress address) throws HekateException {
+            public void unregisterRemote(String cluster, InetSocketAddress address) throws HekateException {
                 addresses.remove(address);
 
                 try {

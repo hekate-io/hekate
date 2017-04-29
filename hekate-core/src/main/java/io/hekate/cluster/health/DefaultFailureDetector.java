@@ -97,7 +97,7 @@ public class DefaultFailureDetector implements FailureDetector {
             return lostHeartbeats <= hbLossThreshold;
         }
 
-        public ClusterAddress getAddress() {
+        public ClusterAddress address() {
             return address;
         }
 
@@ -173,19 +173,19 @@ public class DefaultFailureDetector implements FailureDetector {
         writeLock.lock();
 
         try {
-            localNode = context.getLocalAddress();
+            localNode = context.localAddress();
         } finally {
             writeLock.unlock();
         }
     }
 
     @Override
-    public long getHeartbeatInterval() {
+    public long heartbeatInterval() {
         return hbInterval;
     }
 
     @Override
-    public int getFailureDetectionQuorum() {
+    public int failureQuorum() {
         return failureQuorum;
     }
 
@@ -233,7 +233,7 @@ public class DefaultFailureDetector implements FailureDetector {
 
                     monitor.onHeartbeatSent();
 
-                    return monitor.getAddress();
+                    return monitor.address();
                 })
                 .collect(toList());
         } finally {

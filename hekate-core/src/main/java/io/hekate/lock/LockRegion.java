@@ -37,7 +37,7 @@ public interface LockRegion {
      * @see LockService#region(String)
      * @see LockRegionConfig#setName(String)
      */
-    String getName();
+    String name();
 
     /**
      * Returns the distributed lock for the specified name.
@@ -52,10 +52,10 @@ public interface LockRegion {
      *
      * @return Lock instance.
      */
-    DistributedLock getLock(String name);
+    DistributedLock get(String name);
 
     /**
-     * Returns information about a node that is currently holding the specified lock.
+     * Returns information about the node that is currently holding the specified lock.
      *
      * <p>
      * Note that this operation requires a network round trip to the lock manager node and there are no guarantees that lock owner will not
@@ -68,5 +68,5 @@ public interface LockRegion {
      *
      * @throws InterruptedException Signal that current thread was interrupted while awaiting for lock owner information.
      */
-    Optional<LockOwnerInfo> getLockOwner(String name) throws InterruptedException;
+    Optional<LockOwnerInfo> ownerOf(String name) throws InterruptedException;
 }

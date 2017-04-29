@@ -113,9 +113,9 @@ public class ServiceManager {
             handler.configure(cfgCtx)
         );
 
-        servicesInfo = unmodifiableMap(cfgCtx.getServicesInfo());
+        servicesInfo = unmodifiableMap(cfgCtx.servicesInfo());
 
-        serviceTypes = unmodifiableSet(depCtx.getServiceTypes());
+        serviceTypes = unmodifiableSet(depCtx.serviceTypes());
 
         if (DEBUG) {
             log.debug("Instantiated services.");
@@ -130,7 +130,7 @@ public class ServiceManager {
         }
 
         // Initialize services.
-        for (ServiceHandler handler : initOrder.getOrder()) {
+        for (ServiceHandler handler : initOrder.order()) {
             handler.preInitialize(ctx);
         }
 
@@ -147,7 +147,7 @@ public class ServiceManager {
         }
 
         // Initialize services.
-        for (ServiceHandler handler : initOrder.getOrder()) {
+        for (ServiceHandler handler : initOrder.order()) {
             handler.initialize(ctx);
         }
 
@@ -164,7 +164,7 @@ public class ServiceManager {
         }
 
         // Initialize services.
-        for (ServiceHandler handler : initOrder.getOrder()) {
+        for (ServiceHandler handler : initOrder.order()) {
             handler.postInitialize(ctx);
         }
 
@@ -178,7 +178,7 @@ public class ServiceManager {
             log.debug("Pre-terminating services...");
         }
 
-        List<ServiceHandler> order = initOrder.getOrder();
+        List<ServiceHandler> order = initOrder.order();
 
         // Terminate in reversed order.
         for (int i = order.size() - 1; i >= 0; i--) {
@@ -195,7 +195,7 @@ public class ServiceManager {
             log.debug("Terminating services...");
         }
 
-        List<ServiceHandler> order = initOrder.getOrder();
+        List<ServiceHandler> order = initOrder.order();
 
         // Terminate in reversed order.
         for (int i = order.size() - 1; i >= 0; i--) {
@@ -212,7 +212,7 @@ public class ServiceManager {
             log.debug("Post-terminating services...");
         }
 
-        List<ServiceHandler> order = initOrder.getOrder();
+        List<ServiceHandler> order = initOrder.order();
 
         // Terminate in reversed order.
         for (int i = order.size() - 1; i >= 0; i--) {
@@ -252,7 +252,7 @@ public class ServiceManager {
                     if (handler == null) {
                         service = NULL_SERVICE;
                     } else {
-                        service = handler.getService();
+                        service = handler.service();
                     }
 
                     lookupCache.put(type, service);
@@ -280,7 +280,7 @@ public class ServiceManager {
 
     ServiceHandler findServiceDirect(Class<? extends Service> type) {
         for (ServiceHandler handler : handlers) {
-            Object service = handler.getService();
+            Object service = handler.service();
 
             if (type.isAssignableFrom(service.getClass())) {
                 return handler;

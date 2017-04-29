@@ -43,20 +43,20 @@ abstract class NetworkProtocol {
             this.hbDisabled = hbDisabled;
         }
 
-        public int getHbInterval() {
+        public int hbInterval() {
             return hbInterval;
         }
 
-        public int getHbLossThreshold() {
+        public int hbLossThreshold() {
             return hbLossThreshold;
         }
 
-        public boolean isHbDisabled() {
+        public boolean hbDisabled() {
             return hbDisabled;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.HANDSHAKE_ACCEPT;
         }
     }
@@ -68,12 +68,12 @@ abstract class NetworkProtocol {
             this.reason = reason;
         }
 
-        public String getReason() {
+        public String reason() {
             return reason;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.HANDSHAKE_REJECT;
         }
     }
@@ -95,20 +95,20 @@ abstract class NetworkProtocol {
             this.codec = codec;
         }
 
-        public String getProtocol() {
+        public String protocol() {
             return protocol;
         }
 
-        public Object getPayload() {
+        public Object payload() {
             return payload;
         }
 
-        public Codec<Object> getCodec() {
+        public Codec<Object> codec() {
             return codec;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.HANDSHAKE_REQUEST;
         }
     }
@@ -121,14 +121,14 @@ abstract class NetworkProtocol {
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.HEARTBEAT;
         }
     }
 
     public static final int VERSION = 1;
 
-    public abstract Type getType();
+    public abstract Type type();
 
     @Override
     public String toString() {

@@ -14,32 +14,32 @@
  * under the License.
  */
 
-package io.hekate.cluster;
+package io.hekate.messaging;
 
 import io.hekate.util.UuidBase;
 
 /**
- * Universally unique identifier of {@link ClusterNode}.
+ * Universally unique identifier of a messaging channel.
  *
- * @see ClusterNode#getId()
+ * @see MessagingChannel#id()
  */
-public class ClusterUuid extends UuidBase<ClusterUuid> implements HasClusterUuid {
+public class MessagingChannelId extends UuidBase<MessagingChannelId> {
     private static final long serialVersionUID = 1;
 
     /**
      * Constructs new random identifier.
      */
-    public ClusterUuid() {
+    public MessagingChannelId() {
         // No-op.
     }
 
     /**
      * Constructs new instance from the specified higher/lower bits.
      *
-     * @param hiBits Higher bits (see {@link #getHiBits()}).
-     * @param loBits Lower bits (see {@link #getLoBits()}).
+     * @param hiBits Higher bits (see {@link #hiBits()}).
+     * @param loBits Lower bits (see {@link #loBits()}).
      */
-    public ClusterUuid(long hiBits, long loBits) {
+    public MessagingChannelId(long hiBits, long loBits) {
         super(hiBits, loBits);
     }
 
@@ -52,12 +52,7 @@ public class ClusterUuid extends UuidBase<ClusterUuid> implements HasClusterUuid
      *
      * @param s String (see {@link #toString()}).
      */
-    public ClusterUuid(String s) {
+    public MessagingChannelId(String s) {
         super(s);
-    }
-
-    @Override
-    public ClusterUuid asClusterUuid() {
-        return this;
     }
 }

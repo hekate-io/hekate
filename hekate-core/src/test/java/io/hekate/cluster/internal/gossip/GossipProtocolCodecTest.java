@@ -18,8 +18,8 @@ package io.hekate.cluster.internal.gossip;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterAddress;
-import io.hekate.cluster.ClusterJvmInfo;
 import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterNodeRuntime;
 import io.hekate.cluster.internal.DefaultClusterNodeBuilder;
 import io.hekate.cluster.internal.gossip.GossipProtocol.HeartbeatReply;
 import io.hekate.cluster.internal.gossip.GossipProtocol.HeartbeatRequest;
@@ -54,83 +54,83 @@ public class GossipProtocolCodecTest extends HekateTestBase {
     public void testJoinRequest() throws Exception {
         repeat(3, i -> {
             ClusterNode fromNode = newNode();
-            ClusterAddress to = newNode().getAddress();
+            ClusterAddress to = newNode().address();
 
-            JoinRequest before = new JoinRequest(fromNode, "test", to.getSocket());
+            JoinRequest before = new JoinRequest(fromNode, "test", to.socket());
 
             JoinRequest after = encodeDecode(before);
 
-            assertEquals(fromNode, after.getFromNode());
-            assertEquals(fromNode.getAddress(), after.getFrom());
-            assertEquals(to.getSocket(), after.getToAddress());
-            assertEquals(before.getCluster(), after.getCluster());
+            assertEquals(fromNode, after.fromNode());
+            assertEquals(fromNode.address(), after.from());
+            assertEquals(to.socket(), after.toAddress());
+            assertEquals(before.cluster(), after.cluster());
         });
     }
 
     @Test
     public void testJoinReject() throws Exception {
         repeat(3, i -> {
-            ClusterAddress from = newNode().getAddress();
-            ClusterAddress to = newNode().getAddress();
+            ClusterAddress from = newNode().address();
+            ClusterAddress to = newNode().address();
 
-            JoinReject before = JoinReject.retryLater(from, to, to.getSocket());
+            JoinReject before = JoinReject.retryLater(from, to, to.socket());
 
-            assertSame(JoinReject.RejectType.TEMPORARY, before.getRejectType());
+            assertSame(JoinReject.RejectType.TEMPORARY, before.rejectType());
 
             JoinReject after = encodeDecode(before);
 
-            assertEquals(from, after.getFrom());
-            assertEquals(to, after.getTo());
-            assertEquals(to.getSocket(), after.getRejectedAddress());
-            assertSame(before.getRejectType(), after.getRejectType());
+            assertEquals(from, after.from());
+            assertEquals(to, after.to());
+            assertEquals(to.socket(), after.rejectedAddress());
+            assertSame(before.rejectType(), after.rejectType());
         });
     }
 
     @Test
     public void testJoinRejectPermanent() throws Exception {
         repeat(3, i -> {
-            ClusterAddress from = newNode().getAddress();
-            ClusterAddress to = newNode().getAddress();
+            ClusterAddress from = newNode().address();
+            ClusterAddress to = newNode().address();
 
-            JoinReject before = JoinReject.permanent(from, to, to.getSocket());
+            JoinReject before = JoinReject.permanent(from, to, to.socket());
 
-            assertSame(JoinReject.RejectType.PERMANENT, before.getRejectType());
+            assertSame(JoinReject.RejectType.PERMANENT, before.rejectType());
 
             JoinReject after = encodeDecode(before);
 
-            assertEquals(from, after.getFrom());
-            assertEquals(to, after.getTo());
-            assertEquals(to.getSocket(), after.getRejectedAddress());
-            assertSame(before.getRejectType(), after.getRejectType());
+            assertEquals(from, after.from());
+            assertEquals(to, after.to());
+            assertEquals(to.socket(), after.rejectedAddress());
+            assertSame(before.rejectType(), after.rejectType());
         });
     }
 
     @Test
     public void testJoinRejectFatal() throws Exception {
         repeat(3, i -> {
-            ClusterAddress from = newNode().getAddress();
-            ClusterAddress to = newNode().getAddress();
+            ClusterAddress from = newNode().address();
+            ClusterAddress to = newNode().address();
 
-            JoinReject before = JoinReject.fatal(from, to, to.getSocket(), "test reason.");
+            JoinReject before = JoinReject.fatal(from, to, to.socket(), "test reason.");
 
-            assertSame(JoinReject.RejectType.FATAL, before.getRejectType());
-            assertNotNull(before.getReason());
+            assertSame(JoinReject.RejectType.FATAL, before.rejectType());
+            assertNotNull(before.reason());
 
             JoinReject after = encodeDecode(before);
 
-            assertEquals(from, after.getFrom());
-            assertEquals(to, after.getTo());
-            assertEquals(to.getSocket(), after.getRejectedAddress());
-            assertSame(before.getRejectType(), after.getRejectType());
-            assertEquals(before.getReason(), after.getReason());
+            assertEquals(from, after.from());
+            assertEquals(to, after.to());
+            assertEquals(to.socket(), after.rejectedAddress());
+            assertSame(before.rejectType(), after.rejectType());
+            assertEquals(before.reason(), after.reason());
         });
     }
 
     @Test
     public void testJoinAccept() throws Exception {
         repeat(3, i -> {
-            ClusterAddress from = newNode().getAddress();
-            ClusterAddress to = newNode().getAddress();
+            ClusterAddress from = newNode().address();
+            ClusterAddress to = newNode().address();
 
             Gossip g1 = newGossip(from, to);
 
@@ -138,23 +138,23 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
             JoinAccept after = encodeDecode(before);
 
-            assertEquals(from, after.getFrom());
-            assertEquals(to, after.getTo());
-            assertNotNull(after.getGossip());
+            assertEquals(from, after.from());
+            assertEquals(to, after.to());
+            assertNotNull(after.gossip());
 
-            Gossip g2 = after.getGossip();
+            Gossip g2 = after.gossip();
 
             assertSame(ComparisonResult.SAME, g1.compare(g2));
-            assertEquals(g1.getSeen(), g2.getSeen());
-            assertEquals(g1.getAllSuspected(), g2.getAllSuspected());
+            assertEquals(g1.seen(), g2.seen());
+            assertEquals(g1.allSuspected(), g2.allSuspected());
         });
     }
 
     @Test
     public void testEmptyUpdate() throws Exception {
         repeat(3, i -> {
-            ClusterAddress from = newNode().getAddress();
-            ClusterAddress to = newNode().getAddress();
+            ClusterAddress from = newNode().address();
+            ClusterAddress to = newNode().address();
 
             Gossip g1 = new Gossip();
 
@@ -162,24 +162,24 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
             Update after = encodeDecode(before);
 
-            assertEquals(from, after.getFrom());
-            assertEquals(to, after.getTo());
-            assertNotNull(after.getGossip());
+            assertEquals(from, after.from());
+            assertEquals(to, after.to());
+            assertNotNull(after.gossip());
 
-            Gossip g2 = after.getGossip();
+            Gossip g2 = after.gossip();
 
             assertSame(ComparisonResult.SAME, g1.compare(g2));
-            assertTrue(g2.getSeen().isEmpty());
-            assertTrue(g2.getMembers().isEmpty());
-            assertTrue(g2.getAllSuspected().isEmpty());
+            assertTrue(g2.seen().isEmpty());
+            assertTrue(g2.members().isEmpty());
+            assertTrue(g2.allSuspected().isEmpty());
         });
     }
 
     @Test
     public void testUpdate() throws Exception {
         repeat(3, i -> {
-            ClusterAddress from = newNode().getAddress();
-            ClusterAddress to = newNode().getAddress();
+            ClusterAddress from = newNode().address();
+            ClusterAddress to = newNode().address();
 
             Gossip g1 = newGossip(from, to, n -> {
                 // No-op (prevent default roles/services values).
@@ -189,23 +189,23 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
             Update after = encodeDecode(before);
 
-            assertEquals(from, after.getFrom());
-            assertEquals(to, after.getTo());
-            assertNotNull(after.getGossip());
+            assertEquals(from, after.from());
+            assertEquals(to, after.to());
+            assertNotNull(after.gossip());
 
-            Gossip g2 = after.getGossip();
+            Gossip g2 = after.gossip();
 
             assertSame(ComparisonResult.SAME, g1.compare(g2));
-            assertEquals(g1.getSeen(), g2.getSeen());
-            assertEquals(g1.getAllSuspected(), g2.getAllSuspected());
+            assertEquals(g1.seen(), g2.seen());
+            assertEquals(g1.allSuspected(), g2.allSuspected());
 
-            g1.getMembers().values().forEach(n1 -> {
-                ClusterNode n2 = g2.getMember(n1.getId()).getNode();
+            g1.members().values().forEach(n1 -> {
+                ClusterNode n2 = g2.member(n1.id()).node();
 
-                assertSystemInfoEquals(n1.getNode().getJvmInfo(), n2.getJvmInfo());
+                assertSystemInfoEquals(n1.node().runtime(), n2.runtime());
 
-                assertTrue(n2.getProperties().isEmpty());
-                assertTrue(n2.getRoles().isEmpty());
+                assertTrue(n2.properties().isEmpty());
+                assertTrue(n2.roles().isEmpty());
             });
         });
     }
@@ -213,8 +213,8 @@ public class GossipProtocolCodecTest extends HekateTestBase {
     @Test
     public void testUpdateWithProps() throws Exception {
         repeat(3, i -> {
-            ClusterAddress from = newNode().getAddress();
-            ClusterAddress to = newNode().getAddress();
+            ClusterAddress from = newNode().address();
+            ClusterAddress to = newNode().address();
 
             Gossip g1 = newGossip(from, to, n -> {
                 Map<String, String> newProps = new HashMap<>();
@@ -230,26 +230,26 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
             Update after = encodeDecode(before);
 
-            assertEquals(from, after.getFrom());
-            assertEquals(to, after.getTo());
-            assertNotNull(after.getGossip());
+            assertEquals(from, after.from());
+            assertEquals(to, after.to());
+            assertNotNull(after.gossip());
 
-            Gossip g2 = after.getGossip();
+            Gossip g2 = after.gossip();
 
             assertSame(ComparisonResult.SAME, g1.compare(g2));
-            assertEquals(g1.getSeen(), g2.getSeen());
-            assertEquals(g1.getAllSuspected(), g2.getAllSuspected());
+            assertEquals(g1.seen(), g2.seen());
+            assertEquals(g1.allSuspected(), g2.allSuspected());
 
-            g1.getMembers().values().forEach(n1 -> {
-                ClusterNode n2 = g2.getMember(n1.getId()).getNode();
+            g1.members().values().forEach(n1 -> {
+                ClusterNode n2 = g2.member(n1.id()).node();
 
-                assertSystemInfoEquals(n1.getNode().getJvmInfo(), n2.getJvmInfo());
+                assertSystemInfoEquals(n1.node().runtime(), n2.runtime());
 
-                assertTrue(n2.getRoles().isEmpty());
+                assertTrue(n2.roles().isEmpty());
 
-                assertEquals(n1.getNode().getProperty("p1"), n2.getProperty("p1"));
-                assertEquals(n1.getNode().getProperty("p2"), n2.getProperty("p2"));
-                assertEquals(n1.getNode().getProperty("p3"), n2.getProperty("p3"));
+                assertEquals(n1.node().property("p1"), n2.property("p1"));
+                assertEquals(n1.node().property("p2"), n2.property("p2"));
+                assertEquals(n1.node().property("p3"), n2.property("p3"));
             });
         });
     }
@@ -257,8 +257,8 @@ public class GossipProtocolCodecTest extends HekateTestBase {
     @Test
     public void testUpdateWithNullProps() throws Exception {
         repeat(3, i -> {
-            ClusterAddress from = newNode().getAddress();
-            ClusterAddress to = newNode().getAddress();
+            ClusterAddress from = newNode().address();
+            ClusterAddress to = newNode().address();
 
             Gossip g1 = newGossip(from, to, n -> {
                 Map<String, String> newProps = new HashMap<>();
@@ -276,31 +276,31 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
             Update after = encodeDecode(before);
 
-            assertEquals(from, after.getFrom());
-            assertEquals(to, after.getTo());
-            assertNotNull(after.getGossip());
+            assertEquals(from, after.from());
+            assertEquals(to, after.to());
+            assertNotNull(after.gossip());
 
-            Gossip g2 = after.getGossip();
+            Gossip g2 = after.gossip();
 
             assertSame(ComparisonResult.SAME, g1.compare(g2));
-            assertEquals(g1.getSeen(), g2.getSeen());
-            assertEquals(g1.getAllSuspected(), g2.getAllSuspected());
+            assertEquals(g1.seen(), g2.seen());
+            assertEquals(g1.allSuspected(), g2.allSuspected());
 
-            g1.getMembers().values().forEach(n1 -> {
-                ClusterNode n2 = g2.getMember(n1.getId()).getNode();
+            g1.members().values().forEach(n1 -> {
+                ClusterNode n2 = g2.member(n1.id()).node();
 
-                assertSystemInfoEquals(n1.getNode().getJvmInfo(), n2.getJvmInfo());
+                assertSystemInfoEquals(n1.node().runtime(), n2.runtime());
 
-                assertTrue(n2.getRoles().isEmpty());
+                assertTrue(n2.roles().isEmpty());
 
-                assertEquals(n1.getNode().getProperty("p1"), n2.getProperty("p1"));
-                assertEquals(n1.getNode().getProperty("p2"), n2.getProperty("p2"));
-                assertEquals(n1.getNode().getProperty("p3"), n2.getProperty("p3"));
+                assertEquals(n1.node().property("p1"), n2.property("p1"));
+                assertEquals(n1.node().property("p2"), n2.property("p2"));
+                assertEquals(n1.node().property("p3"), n2.property("p3"));
 
-                assertNull(n2.getProperty("nullVal"));
-                assertTrue(n2.getProperties().containsKey("nullVal"));
+                assertNull(n2.property("nullVal"));
+                assertTrue(n2.properties().containsKey("nullVal"));
 
-                assertEquals("nullKey", n2.getProperty(null));
+                assertEquals("nullKey", n2.property(null));
             });
         });
     }
@@ -308,8 +308,8 @@ public class GossipProtocolCodecTest extends HekateTestBase {
     @Test
     public void testUpdateWithRoles() throws Exception {
         repeat(3, i -> {
-            ClusterAddress from = newNode().getAddress();
-            ClusterAddress to = newNode().getAddress();
+            ClusterAddress from = newNode().address();
+            ClusterAddress to = newNode().address();
 
             String uuid = UUID.randomUUID().toString();
 
@@ -321,26 +321,26 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
             Update after = encodeDecode(before);
 
-            assertEquals(from, after.getFrom());
-            assertEquals(to, after.getTo());
-            assertNotNull(after.getGossip());
+            assertEquals(from, after.from());
+            assertEquals(to, after.to());
+            assertNotNull(after.gossip());
 
-            Gossip g2 = after.getGossip();
+            Gossip g2 = after.gossip();
 
             assertSame(ComparisonResult.SAME, g1.compare(g2));
-            assertEquals(g1.getSeen(), g2.getSeen());
-            assertEquals(g1.getAllSuspected(), g2.getAllSuspected());
+            assertEquals(g1.seen(), g2.seen());
+            assertEquals(g1.allSuspected(), g2.allSuspected());
 
-            g1.getMembers().values().forEach(n1 -> {
-                ClusterNode n2 = g2.getMember(n1.getId()).getNode();
+            g1.members().values().forEach(n1 -> {
+                ClusterNode n2 = g2.member(n1.id()).node();
 
-                assertSystemInfoEquals(n1.getNode().getJvmInfo(), n2.getJvmInfo());
+                assertSystemInfoEquals(n1.node().runtime(), n2.runtime());
 
-                assertTrue(n2.getProperties().isEmpty());
+                assertTrue(n2.properties().isEmpty());
 
-                assertTrue(n2.getRoles().contains("role1"));
-                assertTrue(n2.getRoles().contains("role2"));
-                assertTrue(n2.getRoles().contains(uuid));
+                assertTrue(n2.roles().contains("role1"));
+                assertTrue(n2.roles().contains("role2"));
+                assertTrue(n2.roles().contains(uuid));
             });
         });
     }
@@ -348,8 +348,8 @@ public class GossipProtocolCodecTest extends HekateTestBase {
     @Test
     public void testEmptyUpdateDigest() throws Exception {
         repeat(3, i -> {
-            ClusterAddress from = newNode().getAddress();
-            ClusterAddress to = newNode().getAddress();
+            ClusterAddress from = newNode().address();
+            ClusterAddress to = newNode().address();
 
             Gossip g1 = new Gossip();
 
@@ -357,22 +357,22 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
             UpdateDigest after = encodeDecode(before);
 
-            assertEquals(from, after.getFrom());
-            assertEquals(to, after.getTo());
-            assertNotNull(after.getGossipBase());
+            assertEquals(from, after.from());
+            assertEquals(to, after.to());
+            assertNotNull(after.gossipBase());
 
-            GossipBase g2 = after.getGossipBase();
+            GossipBase g2 = after.gossipBase();
 
             assertSame(ComparisonResult.SAME, g1.compare(g2));
-            assertTrue(g2.getMembersInfo().isEmpty());
+            assertTrue(g2.membersInfo().isEmpty());
         });
     }
 
     @Test
     public void testUpdateDigest() throws Exception {
         repeat(3, i -> {
-            ClusterAddress from = newNode().getAddress();
-            ClusterAddress to = newNode().getAddress();
+            ClusterAddress from = newNode().address();
+            ClusterAddress to = newNode().address();
 
             Gossip g1 = newGossip(from, to);
 
@@ -380,20 +380,20 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
             UpdateDigest after = encodeDecode(before);
 
-            assertEquals(from, after.getFrom());
-            assertEquals(to, after.getTo());
-            assertNotNull(after.getGossipBase());
+            assertEquals(from, after.from());
+            assertEquals(to, after.to());
+            assertNotNull(after.gossipBase());
 
-            GossipBase g2 = after.getGossipBase();
+            GossipBase g2 = after.gossipBase();
 
             assertSame(ComparisonResult.SAME, g1.compare(g2));
 
-            g1.getMembersInfo().values().forEach(n1 -> {
-                GossipNodeInfoBase n2 = g2.getMembersInfo().get(n1.getId());
+            g1.membersInfo().values().forEach(n1 -> {
+                GossipNodeInfoBase n2 = g2.membersInfo().get(n1.id());
 
-                assertEquals(n1.getId(), n2.getId());
-                assertSame(n1.getStatus(), n2.getStatus());
-                assertEquals(n1.getVersion(), n2.getVersion());
+                assertEquals(n1.id(), n2.id());
+                assertSame(n1.status(), n2.status());
+                assertEquals(n1.version(), n2.version());
             });
         });
     }
@@ -401,30 +401,30 @@ public class GossipProtocolCodecTest extends HekateTestBase {
     @Test
     public void testHeartbeatRequest() throws Exception {
         repeat(3, i -> {
-            ClusterAddress from = newNode().getAddress();
-            ClusterAddress to = newNode().getAddress();
+            ClusterAddress from = newNode().address();
+            ClusterAddress to = newNode().address();
 
             HeartbeatRequest before = new HeartbeatRequest(from, to);
 
             HeartbeatRequest after = encodeDecode(before);
 
-            assertEquals(from, after.getFrom());
-            assertEquals(to, after.getTo());
+            assertEquals(from, after.from());
+            assertEquals(to, after.to());
         });
     }
 
     @Test
     public void testHeartbeatReply() throws Exception {
         repeat(3, i -> {
-            ClusterAddress from = newNode().getAddress();
-            ClusterAddress to = newNode().getAddress();
+            ClusterAddress from = newNode().address();
+            ClusterAddress to = newNode().address();
 
             HeartbeatReply before = new HeartbeatReply(from, to);
 
             HeartbeatReply after = encodeDecode(before);
 
-            assertEquals(from, after.getFrom());
-            assertEquals(to, after.getTo());
+            assertEquals(from, after.from());
+            assertEquals(to, after.to());
         });
     }
 
@@ -452,25 +452,25 @@ public class GossipProtocolCodecTest extends HekateTestBase {
     private Gossip newGossip(ClusterAddress from, ClusterAddress to, Consumer<DefaultClusterNodeBuilder> transform) throws Exception {
         Gossip g1 = new Gossip();
 
-        g1 = g1.update(from.getId(), new GossipNodeState(newNode(transform, from), GossipNodeStatus.JOINING).suspected(from.getId()));
-        g1 = g1.update(from.getId(), new GossipNodeState(newNode(transform), GossipNodeStatus.JOINING).suspected(from.getId()));
-        g1 = g1.update(from.getId(), new GossipNodeState(newNode(transform), GossipNodeStatus.UP).suspected(to.getId()));
-        g1 = g1.update(from.getId(), new GossipNodeState(newNode(transform), GossipNodeStatus.LEAVING));
-        g1 = g1.update(from.getId(), new GossipNodeState(newNode(transform), GossipNodeStatus.DOWN));
+        g1 = g1.update(from.id(), new GossipNodeState(newNode(transform, from), GossipNodeStatus.JOINING).suspect(from.id()));
+        g1 = g1.update(from.id(), new GossipNodeState(newNode(transform), GossipNodeStatus.JOINING).suspect(from.id()));
+        g1 = g1.update(from.id(), new GossipNodeState(newNode(transform), GossipNodeStatus.UP).suspect(to.id()));
+        g1 = g1.update(from.id(), new GossipNodeState(newNode(transform), GossipNodeStatus.LEAVING));
+        g1 = g1.update(from.id(), new GossipNodeState(newNode(transform), GossipNodeStatus.DOWN));
 
         return g1;
     }
 
-    private void assertSystemInfoEquals(ClusterJvmInfo s1, ClusterJvmInfo s2) {
-        assertEquals(s1.getCpus(), s2.getCpus());
-        assertEquals(s1.getMaxMemory(), s2.getMaxMemory());
-        assertEquals(s1.getOsName(), s2.getOsName());
-        assertEquals(s1.getOsArch(), s2.getOsArch());
-        assertEquals(s1.getOsVersion(), s2.getOsVersion());
-        assertEquals(s1.getJvmVersion(), s2.getJvmVersion());
-        assertEquals(s1.getJvmName(), s2.getJvmName());
-        assertEquals(s1.getJvmVendor(), s2.getJvmVendor());
-        assertEquals(s1.getPid(), s2.getPid());
+    private void assertSystemInfoEquals(ClusterNodeRuntime s1, ClusterNodeRuntime s2) {
+        assertEquals(s1.cpus(), s2.cpus());
+        assertEquals(s1.maxMemory(), s2.maxMemory());
+        assertEquals(s1.osName(), s2.osName());
+        assertEquals(s1.osArch(), s2.osArch());
+        assertEquals(s1.osVersion(), s2.osVersion());
+        assertEquals(s1.jvmVersion(), s2.jvmVersion());
+        assertEquals(s1.jvmName(), s2.jvmName());
+        assertEquals(s1.jvmVendor(), s2.jvmVendor());
+        assertEquals(s1.pid(), s2.pid());
         assertEquals(s1.toString(), s2.toString());
     }
 }

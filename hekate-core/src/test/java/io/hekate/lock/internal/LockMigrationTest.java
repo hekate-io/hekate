@@ -75,7 +75,7 @@ public class LockMigrationTest extends LockServiceTestBase {
             nodes.add(createLockNode().join());
         }
 
-        nodes.sort(Comparator.comparingInt(o -> o.getLocalNode().getJoinOrder()));
+        nodes.sort(Comparator.comparingInt(o -> o.localNode().joinOrder()));
 
         awaitForTopology(nodes);
 
@@ -87,12 +87,12 @@ public class LockMigrationTest extends LockServiceTestBase {
         nodes.forEach(n -> {
             List<DistributedLock> nodeLocks = new ArrayList<>();
 
-            liveLocks.put(n.getLocalNode(), nodeLocks);
+            liveLocks.put(n.localNode(), nodeLocks);
 
             for (int i = 0; i < 50; i++) {
-                String lockName = "'" + n.getLocalNode().getJoinOrder() + "-" + i + '\'';
+                String lockName = "'" + n.localNode().joinOrder() + "-" + i + '\'';
 
-                DistributedLock lockReg1 = n.locks().region(REGION_1).getLock(lockName);
+                DistributedLock lockReg1 = n.locks().region(REGION_1).get(lockName);
 
                 lockReg1.lock();
 
@@ -100,9 +100,9 @@ public class LockMigrationTest extends LockServiceTestBase {
             }
 
             for (int i = 0; i < 25; i++) {
-                String lockName = "'" + n.getLocalNode().getJoinOrder() + "-" + i + '\'';
+                String lockName = "'" + n.localNode().joinOrder() + "-" + i + '\'';
 
-                DistributedLock lockReg2 = n.locks().region(REGION_2).getLock(lockName);
+                DistributedLock lockReg2 = n.locks().region(REGION_2).get(lockName);
 
                 lockReg2.lock();
 
@@ -321,7 +321,7 @@ public class LockMigrationTest extends LockServiceTestBase {
 
         assertFalse(migrated.get());
 
-        DistributedLock lock = newNode.locks().region("otherRegion").getLock("otherLock");
+        DistributedLock lock = newNode.locks().region("otherRegion").get("otherLock");
 
         assertTrue(lock.tryLock());
 
@@ -332,15 +332,15 @@ public class LockMigrationTest extends LockServiceTestBase {
     public void testMigrationWithQueuedLock() throws Exception {
         CountDownLatch leaveLatch = new CountDownLatch(1);
 
-        DistributedLock existingLock = liveLocks.get(coordinator.getLocalNode()).stream()
-            .filter(l -> l.getRegion().equals(REGION_1))
+        DistributedLock existingLock = liveLocks.get(coordinator.localNode()).stream()
+            .filter(l -> l.regionName().equals(REGION_1))
             .findFirst().get();
 
         // Make sure that existing lock is released.
         existingLock.unlock();
 
         // Prepare lock.
-        DistributedLock lock = nextAfterCoordinator.locks().region(REGION_1).getLock(existingLock.getName());
+        DistributedLock lock = nextAfterCoordinator.locks().region(REGION_1).get(existingLock.name());
 
         AtomicBoolean queuedLocked = new AtomicBoolean();
         CountDownLatch lockLatch = new CountDownLatch(1);
@@ -353,7 +353,7 @@ public class LockMigrationTest extends LockServiceTestBase {
                 lockLatch.countDown();
 
                 //  Await for concurrent lock request from another thread.
-                awaitForQueuedLock(lock.getName(), nextAfterCoordinator, nodes);
+                awaitForQueuedLock(lock.name(), nextAfterCoordinator, nodes);
 
                 //  Trigger migration.
                 leaveAsync(lastNode, leaveLatch);
@@ -442,8 +442,8 @@ public class LockMigrationTest extends LockServiceTestBase {
 
     private void checkLiveLocksAreBusy() throws Exception {
         boolean busy = runAsyncAndGet(() -> nodes.stream()
-            .filter(n -> liveLocks.containsKey(n.getLocalNode()))
-            .allMatch(n -> liveLocks.get(n.getLocalNode()).stream()
+            .filter(n -> liveLocks.containsKey(n.localNode()))
+            .allMatch(n -> liveLocks.get(n.localNode()).stream()
                 .allMatch(this::checkBusy)
             ));
 

@@ -52,44 +52,44 @@ public class FsSeedNodeProviderTest extends PersistentSeedNodeProviderCommonTest
         provider.startDiscovery(CLUSTER_1, address);
 
         // Prefix only.
-        File invalid = new File(provider.getClusterDir(CLUSTER_1), Utils.ADDRESS_FILE_PREFIX);
+        File invalid = new File(provider.clusterDir(CLUSTER_1), Utils.ADDRESS_FILE_PREFIX);
 
         invalid.createNewFile();
 
-        assertEquals(1, provider.getSeedNodes(CLUSTER_1).size());
-        assertTrue(provider.getSeedNodes(CLUSTER_1).contains(address));
+        assertEquals(1, provider.findSeedNodes(CLUSTER_1).size());
+        assertTrue(provider.findSeedNodes(CLUSTER_1).contains(address));
 
         invalid.delete();
 
         // No port.
-        invalid = new File(provider.getClusterDir(CLUSTER_1), Utils.ADDRESS_FILE_PREFIX + address.getAddress().getHostAddress());
+        invalid = new File(provider.clusterDir(CLUSTER_1), Utils.ADDRESS_FILE_PREFIX + address.getAddress().getHostAddress());
 
         invalid.createNewFile();
 
-        assertEquals(1, provider.getSeedNodes(CLUSTER_1).size());
-        assertTrue(provider.getSeedNodes(CLUSTER_1).contains(address));
+        assertEquals(1, provider.findSeedNodes(CLUSTER_1).size());
+        assertTrue(provider.findSeedNodes(CLUSTER_1).contains(address));
 
         invalid.delete();
 
         // Invalid host.
-        invalid = new File(provider.getClusterDir(CLUSTER_1),
+        invalid = new File(provider.clusterDir(CLUSTER_1),
             Utils.ADDRESS_FILE_PREFIX + "invalid#host" + Utils.ADDRESS_FILE_SEPARATOR + "12134");
 
         invalid.createNewFile();
 
-        assertEquals(1, provider.getSeedNodes(CLUSTER_1).size());
-        assertTrue(provider.getSeedNodes(CLUSTER_1).contains(address));
+        assertEquals(1, provider.findSeedNodes(CLUSTER_1).size());
+        assertTrue(provider.findSeedNodes(CLUSTER_1).contains(address));
 
         invalid.delete();
 
         // Invalid port.
-        invalid = new File(provider.getClusterDir(CLUSTER_1),
+        invalid = new File(provider.clusterDir(CLUSTER_1),
             Utils.ADDRESS_FILE_PREFIX + address.getAddress().getHostAddress() + Utils.ADDRESS_FILE_SEPARATOR + "invalid_port");
 
         invalid.createNewFile();
 
-        assertEquals(1, provider.getSeedNodes(CLUSTER_1).size());
-        assertTrue(provider.getSeedNodes(CLUSTER_1).contains(address));
+        assertEquals(1, provider.findSeedNodes(CLUSTER_1).size());
+        assertTrue(provider.findSeedNodes(CLUSTER_1).contains(address));
 
         invalid.delete();
     }

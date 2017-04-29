@@ -51,7 +51,7 @@ public abstract class UuidTestBase<T extends UuidBase<T>> extends HekateTestBase
         for (int i = 0; i < 100; i++) {
             T id = newUuid();
 
-            assertEquals(id, newUuid(id.getHiBits(), id.getLoBits()));
+            assertEquals(id, newUuid(id.hiBits(), id.loBits()));
         }
     }
 

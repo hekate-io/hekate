@@ -49,7 +49,7 @@ public class ClusterJoinRejectedException extends HekateException {
      *
      * @return Reject reason.
      */
-    public String getRejectReason() {
+    public String rejectReason() {
         return rejectReason;
     }
 
@@ -58,7 +58,7 @@ public class ClusterJoinRejectedException extends HekateException {
      *
      * @return Address of the node that rejected this node joining.
      */
-    public ClusterAddress getRejectedBy() {
+    public ClusterAddress rejectedBy() {
         return rejectedBy;
     }
 }

@@ -29,20 +29,20 @@ import org.slf4j.LoggerFactory;
 
 class ServiceDependencyContext implements DependencyContext {
     private static class ServiceElement {
-        private final Object instance;
+        private final Object service;
 
         private final ServiceElement parent;
 
-        public ServiceElement(Object instance, ServiceElement parent) {
-            this.instance = instance;
+        public ServiceElement(Object service, ServiceElement parent) {
+            this.service = service;
             this.parent = parent;
         }
 
-        public Object getInstance() {
-            return instance;
+        public Object get() {
+            return service;
         }
 
-        public ServiceElement getParent() {
+        public ServiceElement parent() {
             return parent;
         }
     }
@@ -73,7 +73,7 @@ class ServiceDependencyContext implements DependencyContext {
         if (handler != null) {
             handler.resolve(this);
 
-            return type.cast(handler.getService());
+            return type.cast(handler.service());
         }
 
         return null;
@@ -84,24 +84,24 @@ class ServiceDependencyContext implements DependencyContext {
         checkState();
 
         if (DEBUG) {
-            log.debug("Resolving required service dependency [type={}, required-by={}]", type.getName(), currentService.getInstance());
+            log.debug("Resolving required service dependency [type={}, required-by={}]", type.getName(), currentService.get());
         }
 
         ServiceHandler handler = manager.findOrCreateService(type);
 
         if (handler == null) {
-            throw new ServiceDependencyException("Failed to resolve dependency for service " + currentService.getInstance()
+            throw new ServiceDependencyException("Failed to resolve dependency for service " + currentService.get()
                 + " [failed-dependency=" + type.getName() + ']');
 
         }
 
         handler.resolve(this);
 
-        return type.cast(handler.getService());
+        return type.cast(handler.service());
     }
 
     public void prepare(Object service) {
-        Set<Class<? extends Service>> interfaces = getServiceInterfaces(service);
+        Set<Class<? extends Service>> interfaces = serviceInterfaces(service);
 
         allServiceTypes.addAll(interfaces);
 
@@ -109,10 +109,10 @@ class ServiceDependencyContext implements DependencyContext {
     }
 
     public void close() {
-        currentService = currentService.getParent();
+        currentService = currentService.parent();
     }
 
-    public Set<Class<? extends Service>> getServiceTypes() {
+    public Set<Class<? extends Service>> serviceTypes() {
         return allServiceTypes;
     }
 
@@ -122,7 +122,7 @@ class ServiceDependencyContext implements DependencyContext {
         }
     }
 
-    private static Set<Class<? extends Service>> getServiceInterfaces(Object service) {
+    private static Set<Class<? extends Service>> serviceInterfaces(Object service) {
         Class<?> serviceType = service.getClass();
 
         Set<Class<? extends Service>> interfaces = new HashSet<>();

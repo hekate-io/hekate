@@ -28,35 +28,35 @@ public interface InitializationContext {
      *
      * @return Cluster name.
      */
-    String getClusterName();
+    String clusterName();
 
     /**
      * Returns the current state of {@link Hekate} instance that this service belongs to.
      *
      * @return State.
      */
-    Hekate.State getState();
+    Hekate.State state();
 
     /**
      * Returns cluster context.
      *
      * @return Cluster context.
      */
-    ClusterContext getCluster();
+    ClusterContext cluster();
 
     /**
      * Returns the cluster node.
      *
      * @return Cluster node.
      */
-    ClusterNode getNode();
+    ClusterNode localNode();
 
     /**
      * Returns the {@link Hekate} instance that this service belongs to.
      *
      * @return {@link Hekate} instance that this service belongs to.
      */
-    Hekate getHekate();
+    Hekate hekate();
 
     /**
      * Instructs local node to asynchronously leave and rejoin to the cluster.

@@ -71,11 +71,11 @@ public final class HekateVersion {
     }
 
     /**
-     * Returns the detailed version information.
+     * Returns detailed information about this version.
      *
      * @return Detailed version information.
      */
-    public static String getInfo() {
+    public static String info() {
         return INFO;
     }
 
@@ -84,25 +84,25 @@ public final class HekateVersion {
      *
      * @return Product name.
      */
-    public static String getProductName() {
+    public static String productName() {
         return PROD_NAME;
     }
 
     /**
-     * Returns the short version without the {@link #getProductName() product name} (x.y.z).
+     * Returns the short version without the {@link #productName() product name} (x.y.z).
      *
      * @return Short version.
      */
-    public static String getShortVersion() {
+    public static String shortVersion() {
         return VER_SHORT;
     }
 
     /**
-     * Returns the full version number including the {@link #getProductName() product name}.
+     * Returns the full version number including the {@link #productName() product name}.
      *
      * @return Full version.
      */
-    public static String getFullVersion() {
+    public static String fullVersion() {
         return VER_FULL;
     }
 
@@ -111,7 +111,7 @@ public final class HekateVersion {
      *
      * @return Build date.
      */
-    public static String getDate() {
+    public static String date() {
         return DATE;
     }
 
@@ -120,7 +120,7 @@ public final class HekateVersion {
      *
      * @return Commit id.
      */
-    public static String getRevision() {
+    public static String revision() {
         return REV;
     }
 }

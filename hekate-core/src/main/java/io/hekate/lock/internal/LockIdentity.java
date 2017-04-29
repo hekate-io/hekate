@@ -16,16 +16,16 @@
 
 package io.hekate.lock.internal;
 
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 
 interface LockIdentity {
-    ClusterUuid getNode();
+    ClusterNodeId node();
 
-    long getLockId();
+    long lockId();
 
-    long getThreadId();
+    long threadId();
 
     default boolean isSameLock(LockIdentity other) {
-        return other.getLockId() == getLockId() && other.getNode().equals(getNode());
+        return other.lockId() == lockId() && other.node().equals(node());
     }
 }

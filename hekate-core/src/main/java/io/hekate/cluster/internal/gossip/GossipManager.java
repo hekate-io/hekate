@@ -18,7 +18,7 @@ package io.hekate.cluster.internal.gossip;
 
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.health.FailureDetector;
 import io.hekate.cluster.internal.DefaultClusterNode;
 import io.hekate.cluster.internal.gossip.GossipProtocol.JoinAccept;
@@ -61,7 +61,7 @@ public class GossipManager {
 
     private final ClusterAddress address;
 
-    private final ClusterUuid id;
+    private final ClusterNodeId id;
 
     private final FailureDetector healthManager;
 
@@ -91,23 +91,23 @@ public class GossipManager {
 
         this.cluster = cluster;
         this.node = node;
-        this.address = node.getAddress();
+        this.address = node.address();
         this.healthManager = healthManager;
         this.listener = listener;
         this.speedUpGossipSize = speedUpGossipSize;
 
-        id = node.getId();
+        id = node.id();
 
         status = DOWN;
 
         updateLocalGossip(new Gossip());
 
-        int failureQuorum = Math.max(1, healthManager.getFailureDetectionQuorum());
+        int failureQuorum = Math.max(1, healthManager.failureQuorum());
 
         deathWatch = new GossipNodesDeathWatch(id, failureQuorum, 0);
     }
 
-    public Gossip getLocalGossip() {
+    public Gossip localGossip() {
         return localGossip;
     }
 
@@ -124,7 +124,7 @@ public class GossipManager {
         }
 
         if (seedNodesSate == null) {
-            seedNodesSate = new GossipSeedNodesSate(address.getSocket(), seedNodes);
+            seedNodesSate = new GossipSeedNodesSate(address.socket(), seedNodes);
         } else {
             seedNodesSate.update(seedNodes);
         }
@@ -134,7 +134,7 @@ public class GossipManager {
 
     public JoinRequest processJoinReject(JoinReject msg) {
         assert msg != null : "Message is null.";
-        assert msg.getTo().equals(address) : "Message is addressed to another node [message=" + msg + ']';
+        assert msg.to().equals(address) : "Message is addressed to another node [message=" + msg + ']';
 
         if (localGossip.hasMembers()) {
             if (DEBUG) {
@@ -148,24 +148,24 @@ public class GossipManager {
             log.debug("Processing a join reject message [message={}]", msg);
         }
 
-        switch (msg.getRejectType()) {
+        switch (msg.rejectType()) {
             case TEMPORARY: {
-                seedNodesSate.onReject(msg.getRejectedAddress());
+                seedNodesSate.onReject(msg.rejectedAddress());
 
                 return tryJoin(false);
             }
             case PERMANENT: {
-                seedNodesSate.onBan(msg.getRejectedAddress());
+                seedNodesSate.onBan(msg.rejectedAddress());
 
                 return tryJoin(false);
             }
             case FATAL: {
-                listener.onJoinReject(msg.getFrom(), msg.getReason());
+                listener.onJoinReject(msg.from(), msg.reason());
 
                 return null;
             }
             default: {
-                throw new IllegalArgumentException("Unexpected reject type: " + msg.getRejectType());
+                throw new IllegalArgumentException("Unexpected reject type: " + msg.rejectType());
             }
         }
     }
@@ -185,16 +185,16 @@ public class GossipManager {
             log.debug("Processing join request failure [message={}]", msg);
         }
 
-        seedNodesSate.onFailure(msg.getToAddress());
+        seedNodesSate.onFailure(msg.toAddress());
 
         return tryJoin(false);
     }
 
     public Update processJoinAccept(JoinAccept msg) {
         assert msg != null : "Message is null.";
-        assert msg.getTo().equals(address) : "Message is addressed to another node [message=" + msg + ']';
+        assert msg.to().equals(address) : "Message is addressed to another node [message=" + msg + ']';
 
-        Gossip remote = msg.getGossip();
+        Gossip remote = msg.gossip();
 
         if (!remote.hasMember(id)) {
             if (DEBUG) {
@@ -213,7 +213,7 @@ public class GossipManager {
 
             updateLocalSate();
 
-            Update response = new Update(node.getAddress(), msg.getFrom(), localGossip);
+            Update response = new Update(node.address(), msg.from(), localGossip);
 
             if (DEBUG) {
                 log.debug("Created gossip update [update={}]", response);
@@ -228,31 +228,31 @@ public class GossipManager {
     public JoinReject acceptJoinRequest(JoinRequest msg) {
         assert msg != null : "Message is null.";
 
-        if (!cluster.equals(msg.getCluster())) {
+        if (!cluster.equals(msg.cluster())) {
             if (DEBUG) {
                 log.debug("Permanently rejected join request since this node belongs to another cluster [request={}]", msg);
             }
 
-            return JoinReject.permanent(address, msg.getFrom(), msg.getToAddress());
-        } else if (msg.getFromNode().getId().equals(id)) {
+            return JoinReject.permanent(address, msg.from(), msg.toAddress());
+        } else if (msg.fromNode().id().equals(id)) {
             if (DEBUG) {
                 log.debug("Permanently rejected join request from self [request={}]", msg);
             }
 
-            return JoinReject.permanent(address, msg.getFrom(), msg.getToAddress());
+            return JoinReject.permanent(address, msg.from(), msg.toAddress());
         } else if (!localGossip.hasMembers()) {
             if (DEBUG) {
                 log.debug("Rejected join request since local node is not joined yet [request={}]", msg);
             }
 
-            return JoinReject.retryLater(address, msg.getFrom(), msg.getToAddress());
+            return JoinReject.retryLater(address, msg.from(), msg.toAddress());
         } else if (status == LEAVING || status == DOWN) {
             if (DEBUG) {
                 log.debug("Rejected join request since local node is in {} state [request={}]", status, msg);
             }
 
             // Do not reject permanently since another node can be started on the same address once this node is stopped.
-            return JoinReject.retryLater(address, msg.getFrom(), msg.getToAddress());
+            return JoinReject.retryLater(address, msg.from(), msg.toAddress());
         }
 
         return null;
@@ -269,9 +269,9 @@ public class GossipManager {
             return reject;
         }
 
-        ClusterNode joining = msg.getFromNode();
+        ClusterNode joining = msg.fromNode();
 
-        if (!localGossip.hasMember(joining.getId())) {
+        if (!localGossip.hasMember(joining.id())) {
             GossipNodeState newMember = new GossipNodeState(joining, JOINING);
 
             updateLocalGossip(localGossip.update(id, newMember));
@@ -279,7 +279,7 @@ public class GossipManager {
             updateWatchNodes();
         }
 
-        JoinAccept accept = new JoinAccept(address, joining.getAddress(), localGossip);
+        JoinAccept accept = new JoinAccept(address, joining.address(), localGossip);
 
         if (DEBUG) {
             log.debug("Created join accept reply [reply={}]", accept);
@@ -289,13 +289,13 @@ public class GossipManager {
     }
 
     public JoinReject reject(JoinRequest msg, String reason) {
-        return JoinReject.fatal(address, msg.getFrom(), msg.getToAddress(), reason);
+        return JoinReject.fatal(address, msg.from(), msg.toAddress(), reason);
     }
 
     public Collection<UpdateBase> batchGossip(GossipPolicy policy) {
         int batchSize;
 
-        if (localGossip.getSeen().size() < localGossip.getMembers().size()) {
+        if (localGossip.seen().size() < localGossip.members().size()) {
             batchSize = GOSSIP_FANOUT_SIZE;
         } else {
             batchSize = 1;
@@ -332,10 +332,10 @@ public class GossipManager {
 
     public UpdateBase processUpdate(UpdateBase msg) {
         assert msg != null : "Message is null.";
-        assert msg.getTo().equals(address) : "Message is addressed to another node [message=" + msg + ']';
+        assert msg.to().equals(address) : "Message is addressed to another node [message=" + msg + ']';
 
-        long thisVer = localGossip.getVersion();
-        long otherVer = msg.getGossipBase().getVersion();
+        long thisVer = localGossip.version();
+        long otherVer = msg.gossipBase().version();
 
         if (status == DOWN) {
             if (DEBUG) {
@@ -368,17 +368,17 @@ public class GossipManager {
 
                 // Notify remote node by simply sending a gossip state digest.
                 // Remote node will judge itself as being inconsistent by performing the same checks as we did above.
-                return new UpdateDigest(address, msg.getFrom(), new GossipDigest(localGossip));
+                return new UpdateDigest(address, msg.from(), new GossipDigest(localGossip));
             }
         }
 
-        GossipBase remote = msg.getGossipBase();
+        GossipBase remote = msg.gossipBase();
 
         if (!remote.hasMember(id)) {
             // Check if local node wasn't remove from the cluster.
             // Can happen in case of a long GC pause on this node.
             // Such pause can make other members to think that this node is dead and remove it from cluster.
-            if (remote.getRemoved().contains(id)) {
+            if (remote.removed().contains(id)) {
                 if (DEBUG) {
                     log.debug("Notifying listener on inconsistency since local node is in removed set "
                         + "[local={}, remote={}]", localGossip, msg);
@@ -418,7 +418,7 @@ public class GossipManager {
                 Update update = msg.asUpdate();
 
                 if (update != null) {
-                    Gossip remoteGossip = update.getGossip();
+                    Gossip remoteGossip = update.gossip();
 
                     updateLocalGossip(remoteGossip.inheritSeen(id, localGossip));
 
@@ -458,7 +458,7 @@ public class GossipManager {
                     replyWithDigest = true;
                 }
 
-                Set<ClusterUuid> remoteSeen = remote.getSeen();
+                Set<ClusterNodeId> remoteSeen = remote.seen();
 
                 if (!localGossip.hasSeen(remoteSeen)) {
                     updateLocalGossip(localGossip.seen(remoteSeen));
@@ -481,7 +481,7 @@ public class GossipManager {
                 // Merge if update is available.
                 // Otherwise full gossip will be send back and merge will happen on the sender side.
                 if (update != null) {
-                    Gossip remoteGossip = update.getGossip();
+                    Gossip remoteGossip = update.gossip();
 
                     Gossip merged = localGossip.merge(id, remoteGossip);
 
@@ -504,10 +504,10 @@ public class GossipManager {
         // Check if local node wasn't remove from the cluster.
         // Can happen in case of a long GC pause on this node.
         // Such pause can make other members to think that this node is dead and remove it from cluster.
-        if (!leaveScheduled && localGossip.getMember(id).getStatus() == DOWN) {
+        if (!leaveScheduled && localGossip.member(id).status() == DOWN) {
             if (DEBUG) {
                 log.debug("Notifying listener on inconsistency since local node is seen as {} by remote node "
-                    + "[remote-node={}]", DOWN, msg.getFrom());
+                    + "[remote-node={}]", DOWN, msg.from());
             }
 
             listener.onNodeInconsistency(status);
@@ -533,9 +533,9 @@ public class GossipManager {
             UpdateBase reply;
 
             if (replyWithDigest) {
-                reply = new UpdateDigest(address, msg.getFrom(), new GossipDigest(localGossip));
+                reply = new UpdateDigest(address, msg.from(), new GossipDigest(localGossip));
             } else {
-                reply = new Update(address, msg.getFrom(), localGossip);
+                reply = new Update(address, msg.from(), localGossip);
             }
 
             if (DEBUG) {
@@ -546,11 +546,11 @@ public class GossipManager {
         }
 
         // Check if speed up should be applied.
-        if (status != DOWN && localGossip.getMembers().size() <= speedUpGossipSize) {
+        if (status != DOWN && localGossip.members().size() <= speedUpGossipSize) {
             UpdateBase speedUp = null;
 
             // Select speed up coordinator node.
-            ClusterNode coordinator = localGossip.getCoordinator(id);
+            ClusterNode coordinator = localGossip.coordinator(id);
 
             if (coordinator != null) {
                 if (coordinator.equals(node)) {
@@ -564,15 +564,15 @@ public class GossipManager {
                     }
                 } else {
                     // Remote node is the coordinator.
-                    if (!localGossip.hasSeen(coordinator.getId())) {
+                    if (!localGossip.hasSeen(coordinator.id())) {
                         // Send update directly to coordinator if he hasn't seen this gossip version.
-                        speedUp = new Update(address, coordinator.getAddress(), localGossip);
+                        speedUp = new Update(address, coordinator.address(), localGossip);
                     }
 
                     if (speedUp == null) {
                         // Send gossip digest directly to coordinator if seen list was updated during the message processing.
                         if (seenChanged) {
-                            speedUp = new UpdateDigest(address, coordinator.getAddress(), new GossipDigest(localGossip));
+                            speedUp = new UpdateDigest(address, coordinator.address(), new GossipDigest(localGossip));
                         }
                     }
                 }
@@ -598,28 +598,28 @@ public class GossipManager {
                 log.trace("Checking nodes aliveness using {}", healthManager);
             }
 
-            GossipNodeState localNodeState = localGossip.getMember(id);
+            GossipNodeState localNodeState = localGossip.member(id);
 
-            Set<ClusterUuid> oldSuspects = localNodeState.getSuspected();
+            Set<ClusterNodeId> oldSuspects = localNodeState.suspected();
 
-            Set<ClusterUuid> newSuspects = new HashSet<>();
+            Set<ClusterNodeId> newSuspects = new HashSet<>();
 
             localGossip.stream().forEach(m -> {
-                ClusterUuid nodeId = m.getId();
+                ClusterNodeId nodeId = m.id();
 
                 if (!id.equals(nodeId)) {
-                    boolean isAlive = healthManager.isAlive(m.getNodeAddress());
+                    boolean isAlive = healthManager.isAlive(m.address());
 
                     if (!isAlive) {
                         if (!oldSuspects.contains(nodeId)
                             // It is possible that failed node became DOWN and stopped before this node received this information.
-                            && m.getStatus() != DOWN && m.getStatus() != LEAVING) {
-                            listener.onNodeFailureSuspected(m.getNode(), m.getStatus());
+                            && m.status() != DOWN && m.status() != LEAVING) {
+                            listener.onNodeFailureSuspected(m.node(), m.status());
                         }
 
                         newSuspects.add(nodeId);
-                    } else if (oldSuspects.contains(nodeId) && m.getStatus() != DOWN) {
-                        listener.onNodeFailureUnsuspected(m.getNode(), m.getStatus());
+                    } else if (oldSuspects.contains(nodeId) && m.status() != DOWN) {
+                        listener.onNodeFailureUnsuspected(m.node(), m.status());
                     }
                 }
             });
@@ -631,7 +631,7 @@ public class GossipManager {
 
                 suspectsChanged = true;
 
-                updateLocalGossip(localGossip.update(id, localNodeState.suspected(newSuspects)));
+                updateLocalGossip(localGossip.update(id, localNodeState.suspect(newSuspects)));
             }
 
             deathWatch.update(localGossip);
@@ -641,26 +641,26 @@ public class GossipManager {
                     log.trace("Checking for terminated nodes.");
                 }
 
-                List<ClusterUuid> terminated = deathWatch.terminateNodes();
+                List<ClusterNodeId> terminated = deathWatch.terminateNodes();
 
                 // Set state of terminated nodes to DOWN.
                 if (!terminated.isEmpty()) {
                     List<GossipNodeState> updated = terminated.stream()
                         .filter(terminatedId -> {
-                            GossipNodeState member = localGossip.getMember(terminatedId);
+                            GossipNodeState member = localGossip.member(terminatedId);
 
-                            return member != null && member.getStatus() != DOWN;
+                            return member != null && member.status() != DOWN;
                         })
                         .map(terminatedId -> {
-                            GossipNodeState from = localGossip.getMember(terminatedId);
+                            GossipNodeState from = localGossip.member(terminatedId);
 
                             GossipNodeState to = from.status(DOWN);
 
                             if (DEBUG) {
-                                log.debug("Terminating node [node={}, state={}]", from.getNode(), from.getStatus());
+                                log.debug("Terminating node [node={}, state={}]", from.node(), from.status());
                             }
 
-                            listener.onNodeFailure(from.getNode(), from.getStatus());
+                            listener.onNodeFailure(from.node(), from.status());
 
                             return to;
                         })
@@ -692,7 +692,7 @@ public class GossipManager {
         } else {
             leaveScheduled = true;
 
-            GossipNodeState newState = localGossip.getMember(id).status(LEAVING);
+            GossipNodeState newState = localGossip.member(id).status(LEAVING);
 
             updateLocalGossip(localGossip.update(id, newState));
 
@@ -712,19 +712,19 @@ public class GossipManager {
         return null;
     }
 
-    public ClusterNode getNode() {
+    public ClusterNode node() {
         return node;
     }
 
-    public ClusterAddress getNodeAddress() {
-        return node.getAddress();
+    public ClusterAddress address() {
+        return node.address();
     }
 
-    public ClusterUuid getId() {
+    public ClusterNodeId id() {
         return id;
     }
 
-    public GossipNodeStatus getStatus() {
+    public GossipNodeStatus status() {
         return status;
     }
 
@@ -741,7 +741,7 @@ public class GossipManager {
 
             GossipNodeState upState = new GossipNodeState(node, UP).order(1);
 
-            updateLocalGossip(localGossip.update(id, upState).maxJoinOrder(upState.getOrder()));
+            updateLocalGossip(localGossip.update(id, upState).maxJoinOrder(upState.order()));
 
             if (DEBUG) {
                 log.debug("Joined as single node [gossip={}]", localGossip);
@@ -752,7 +752,7 @@ public class GossipManager {
             return null;
         } else {
             // Try to contact a seed node.
-            InetSocketAddress target = seedNodesSate.getNextSeed();
+            InetSocketAddress target = seedNodesSate.nextSeed();
 
             JoinRequest request = null;
 
@@ -786,9 +786,9 @@ public class GossipManager {
             .collect(toList());
 
         if (!nodes.isEmpty()) {
-            GossipNodeState fromNode = localGossip.getMember(node.getId());
+            GossipNodeState fromNode = localGossip.member(node.id());
 
-            Set<ClusterUuid> seen = localGossip.getSeen();
+            Set<ClusterNodeId> seen = localGossip.seen();
 
             Collection<GossipNodeState> selected = policy.selectNodes(size, fromNode, nodes, seen);
 
@@ -799,14 +799,14 @@ public class GossipManager {
 
                 for (GossipNodeState n : selected) {
                     // Send full gossip state only to those nodes that haven't seen it yet; otherwise send digest only.
-                    if (seen.contains(n.getId())) {
+                    if (seen.contains(n.id())) {
                         if (digest == null) {
                             digest = new GossipDigest(localGossip);
                         }
 
-                        messages.add(new UpdateDigest(address, n.getNodeAddress(), digest));
+                        messages.add(new UpdateDigest(address, n.address(), digest));
                     } else {
-                        messages.add(new Update(address, n.getNodeAddress(), localGossip));
+                        messages.add(new Update(address, n.address(), localGossip));
                     }
                 }
 
@@ -825,34 +825,34 @@ public class GossipManager {
                 }
 
                 List<GossipNodeState> modified = new ArrayList<>();
-                Set<ClusterUuid> removed = new HashSet<>();
+                Set<ClusterNodeId> removed = new HashSet<>();
 
-                AtomicInteger maxOrder = new AtomicInteger(localGossip.getMaxJoinOrder());
+                AtomicInteger maxOrder = new AtomicInteger(localGossip.maxJoinOrder());
 
                 // Advance nodes state.
                 localGossip.stream().forEach(m -> {
                     GossipNodeStatus newStatus = null;
                     Integer order = null;
 
-                    if (m.getStatus() == JOINING) {
+                    if (m.status() == JOINING) {
                         newStatus = UP;
 
                         order = maxOrder.incrementAndGet();
-                    } else if (m.getStatus() == LEAVING) {
+                    } else if (m.status() == LEAVING) {
                         newStatus = DOWN;
-                    } else if (m.getStatus() == DOWN) {
+                    } else if (m.status() == DOWN) {
                         // Remove DOWN node from the gossip state and put its ID to the list of removed nodes.
                         // This allows us to reduce the size of gossip messages but still allows us to track causal history.
                         if (DEBUG) {
-                            log.debug("Removing {} node [node={}]", m.getStatus(), m.getNode());
+                            log.debug("Removing {} node [node={}]", m.status(), m.node());
                         }
 
-                        removed.add(m.getId());
+                        removed.add(m.id());
                     }
 
                     if (newStatus != null) {
                         if (DEBUG) {
-                            log.debug("Changed node state [node={}, old={}, new={}]", m.getNode(), m.getStatus(), newStatus);
+                            log.debug("Changed node state [node={}, old={}, new={}]", m.node(), m.status(), newStatus);
                         }
 
                         GossipNodeState newState = m.status(newStatus);
@@ -876,7 +876,7 @@ public class GossipManager {
                 }
 
                 // Update local state if some DOWN nodes were removed.
-                if (!removed.isEmpty() && !removed.equals(localGossip.getRemoved())) {
+                if (!removed.isEmpty() && !removed.equals(localGossip.removed())) {
                     changed = true;
 
                     updateLocalGossip(localGossip.purge(id, removed));
@@ -898,7 +898,7 @@ public class GossipManager {
 
             } else {
                 if (DEBUG) {
-                    log.debug("Local node is not a coordinator [coordinator={}]", localGossip.getCoordinator(id));
+                    log.debug("Local node is not a coordinator [coordinator={}]", localGossip.coordinator(id));
                 }
             }
         }
@@ -907,9 +907,9 @@ public class GossipManager {
     }
 
     private boolean updateLocalSate() {
-        GossipNodeState thisNode = localGossip.getMember(id);
+        GossipNodeState thisNode = localGossip.member(id);
 
-        GossipNodeStatus newStatus = thisNode.getStatus();
+        GossipNodeStatus newStatus = thisNode.status();
 
         if (newStatus == status) {
             // Local node's status didn't change -> notify on topology change only.
@@ -927,7 +927,7 @@ public class GossipManager {
             updateTopology(false /* <- do not fire topology change event */);
 
             // Do notify on status change.
-            listener.onStatusChange(oldStatus, newStatus, thisNode.getOrder(), lastTopology);
+            listener.onStatusChange(oldStatus, newStatus, thisNode.order(), lastTopology);
         }
 
         updateWatchNodes();
@@ -950,9 +950,9 @@ public class GossipManager {
     private void updateTopology(boolean notifyOnChange) {
         Set<ClusterNode> oldTopology = lastTopology;
 
-        Set<ClusterNode> newTopology = localGossip.getMembers().values().stream()
-            .filter(s -> s.getNode().equals(node) || s.getStatus() == UP || s.getStatus() == LEAVING)
-            .map(GossipNodeState::getNode)
+        Set<ClusterNode> newTopology = localGossip.members().values().stream()
+            .filter(s -> s.node().equals(node) || s.status() == UP || s.status() == LEAVING)
+            .map(GossipNodeState::node)
             .collect(Collectors.toSet());
 
         newTopology = Collections.unmodifiableSet(newTopology);
@@ -969,8 +969,8 @@ public class GossipManager {
     private void updateKnownAddresses() {
         Set<ClusterAddress> oldKnown = knownAddresses;
 
-        Set<ClusterAddress> newKnown = localGossip.getMembers().values().stream()
-            .map(GossipNodeState::getNodeAddress)
+        Set<ClusterAddress> newKnown = localGossip.members().values().stream()
+            .map(GossipNodeState::address)
             .collect(Collectors.toSet());
 
         newKnown = Collections.unmodifiableSet(newKnown);
@@ -984,7 +984,7 @@ public class GossipManager {
 
     private void updateWatchNodes() {
         Set<ClusterAddress> nodesToWatch = localGossip.stream()
-            .map(GossipNodeState::getNodeAddress)
+            .map(GossipNodeState::address)
             .collect(Collectors.toSet());
 
         healthManager.update(nodesToWatch);
@@ -992,7 +992,7 @@ public class GossipManager {
 
     private boolean canGossip(GossipNodeState n) {
         // Node is remote and is not suspected to be failed.
-        return n != null && !n.getId().equals(id) && !localGossip.isSuspected(n.getId());
+        return n != null && !n.id().equals(id) && !localGossip.isSuspected(n.id());
     }
 
     private void updateLocalGossip(Gossip update) {

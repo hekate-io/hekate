@@ -35,7 +35,7 @@ class DefaultNetworkConnector<T> implements NetworkConnector<T> {
     }
 
     @Override
-    public String getProtocol() {
+    public String protocol() {
         return protocol;
     }
 
@@ -45,7 +45,7 @@ class DefaultNetworkConnector<T> implements NetworkConnector<T> {
     }
 
     @Override
-    public Optional<NetworkServerHandler<T>> getServerHandler() {
+    public Optional<NetworkServerHandler<T>> serverHandler() {
         return optHandler;
     }
 

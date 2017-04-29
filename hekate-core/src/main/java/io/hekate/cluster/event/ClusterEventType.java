@@ -19,7 +19,7 @@ package io.hekate.cluster.event;
 /**
  * Contains types of {@link ClusterEvent}.
  *
- * @see ClusterEvent#getType()
+ * @see ClusterEvent#type()
  */
 public enum ClusterEventType {
     /**

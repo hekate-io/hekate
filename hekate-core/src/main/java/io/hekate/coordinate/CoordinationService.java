@@ -40,6 +40,39 @@ import java.util.List;
  * cluster event.
  * </p>
  *
+ * <h2>Accessing service</h2>
+ * <p>
+ * {@link CoordinationService} can be accessed via {@link Hekate#coordination()} method as in the example below:
+ * ${source: coordinate/CoordinationServiceJavadocTest.java#access}
+ * </p>
+ *
+ * <h2>Service configuration</h2>
+ * <p>
+ * {@link CoordinationService} can be registered and configured in {@link HekateBootstrap} with the help of {@link
+ * CoordinationServiceFactory} as shown in the example below:
+ * </p>
+ *
+ * <div class="tabs">
+ * <ul>
+ * <li><a href="#configure-java">Java</a></li>
+ * <li><a href="#configure-xsd">Spring XSD</a></li>
+ * <li><a href="#configure-bean">Spring bean</a></li>
+ * </ul>
+ * <div id="configure-java">
+ * ${source: coordinate/CoordinationServiceJavadocTest.java#configure}
+ * </div>
+ * <div id="configure-xsd">
+ * <b>Note:</b> This example requires Spring Framework integration
+ * (see <a href="{@docRoot}/io/hekate/spring/bean/HekateSpringBootstrap.html">HekateSpringBootstrap</a>).
+ * ${source: coordinate/service-xsd.xml#example}
+ * </div>
+ * <div id="configure-bean">
+ * <b>Note:</b> This example requires Spring Framework integration
+ * (see <a href="{@docRoot}/io/hekate/spring/bean/HekateSpringBootstrap.html">HekateSpringBootstrap</a>).
+ * ${source: coordinate/service-bean.xml#example}
+ * </div>
+ * </div>
+ *
  * <h2>Coordination handler</h2>
  * <p>
  * Application-specific logic of a distributed coordination process must be encapsulated into an implementation of {@link
@@ -114,39 +147,6 @@ import java.util.List;
  *
  * <p>
  * ${source: coordinate/CoordinationServiceJavadocTest.java#handler}
- * </p>
- *
- * <h2>Service configuration</h2>
- * <p>
- * {@link CoordinationService} can be registered and configured in {@link HekateBootstrap} with the help of {@link
- * CoordinationServiceFactory} as shown in the example below:
- * </p>
- *
- * <div class="tabs">
- * <ul>
- * <li><a href="#configure-java">Java</a></li>
- * <li><a href="#configure-xsd">Spring XSD</a></li>
- * <li><a href="#configure-bean">Spring bean</a></li>
- * </ul>
- * <div id="configure-java">
- * ${source: coordinate/CoordinationServiceJavadocTest.java#configure}
- * </div>
- * <div id="configure-xsd">
- * <b>Note:</b> This example requires Spring Framework integration
- * (see <a href="{@docRoot}/io/hekate/spring/bean/HekateSpringBootstrap.html">HekateSpringBootstrap</a>).
- * ${source: coordinate/service-xsd.xml#example}
- * </div>
- * <div id="configure-bean">
- * <b>Note:</b> This example requires Spring Framework integration
- * (see <a href="{@docRoot}/io/hekate/spring/bean/HekateSpringBootstrap.html">HekateSpringBootstrap</a>).
- * ${source: coordinate/service-bean.xml#example}
- * </div>
- * </div>
- *
- * <h2>Accessing service</h2>
- * <p>
- * {@link CoordinationService} can be accessed via {@link Hekate#coordination()} method as in the example below:
- * ${source: coordinate/CoordinationServiceJavadocTest.java#access}
  * </p>
  *
  * <h2>Awaiting for initial coordination</h2>

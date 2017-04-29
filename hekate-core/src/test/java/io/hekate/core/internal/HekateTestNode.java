@@ -116,7 +116,7 @@ public class HekateTestNode extends HekateNode {
     }
 
     public List<ClusterEvent> getEvents(ClusterEventType type) {
-        return events.stream().filter(e -> e.getType() == type).collect(toList());
+        return events.stream().filter(e -> e.type() == type).collect(toList());
     }
 
     public ClusterEvent getLastEvent() {
@@ -130,15 +130,15 @@ public class HekateTestNode extends HekateNode {
     }
 
     public void awaitForStatus(State state) throws Exception {
-        HekateTestBase.busyWait("node status " + state, () -> getState() == state);
+        HekateTestBase.busyWait("node status " + state, () -> state() == state);
     }
 
     public void awaitForTopology(Hekate... nodes) {
-        doAwaitForTopology(Arrays.stream(nodes).map(Hekate::getLocalNode).collect(toList()));
+        doAwaitForTopology(Arrays.stream(nodes).map(Hekate::localNode).collect(toList()));
     }
 
     public void awaitForTopology(List<? extends Hekate> nodes) {
-        doAwaitForTopology(nodes.stream().map(Hekate::getLocalNode).collect(toList()));
+        doAwaitForTopology(nodes.stream().map(Hekate::localNode).collect(toList()));
     }
 
     public void awaitForTopology(ClusterView clusterView, List<ClusterNode> nodes) {
@@ -147,7 +147,7 @@ public class HekateTestNode extends HekateNode {
         }
 
         CompletableFuture<ClusterTopology> future = clusterView.futureOf(topology ->
-            topology.size() == nodes.size() && topology.getNodes().containsAll(nodes) && nodes.containsAll(topology.getNodes())
+            topology.size() == nodes.size() && topology.nodes().containsAll(nodes) && nodes.containsAll(topology.nodes())
         );
 
         try {
@@ -169,7 +169,7 @@ public class HekateTestNode extends HekateNode {
     }
 
     public ClusterTopology getTopology() {
-        return cluster().getTopology();
+        return cluster().topology();
     }
 
     private void doAwaitForTopology(List<ClusterNode> nodes) {

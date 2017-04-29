@@ -40,7 +40,7 @@ public class HekateHealthIndicator implements HealthIndicator {
     }
 
     /**
-     * Returns current {@link Hekate#getState()} as {@link Health#getStatus()}.
+     * Returns current {@link Hekate#state()} as {@link Health#getStatus()}.
      *
      * @return Health status.
      */
@@ -48,7 +48,7 @@ public class HekateHealthIndicator implements HealthIndicator {
     public Health health() {
         Health.Builder health = new Health.Builder();
 
-        switch (node.getState()) {
+        switch (node.state()) {
             case DOWN: {
                 health.status(Hekate.State.DOWN.name());
 

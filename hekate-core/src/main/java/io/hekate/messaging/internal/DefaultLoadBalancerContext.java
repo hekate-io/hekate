@@ -20,8 +20,8 @@ import io.hekate.cluster.ClusterFilter;
 import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterUuid;
 import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.unicast.LoadBalancerContext;
 import io.hekate.util.format.ToString;
@@ -53,7 +53,7 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
     }
 
     @Override
-    public ClusterTopology getTopology() {
+    public ClusterTopology topology() {
         return topology;
     }
 
@@ -63,63 +63,63 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
     }
 
     @Override
-    public int getAffinity() {
+    public int affinity() {
         return affinity;
     }
 
     @Override
-    public Object getAffinityKey() {
+    public Object affinityKey() {
         return affinityKey;
     }
 
     @Override
-    public Optional<FailureInfo> getFailure() {
+    public Optional<FailureInfo> failure() {
         return failure;
     }
 
     @Override
-    public long getVersion() {
-        return topology.getVersion();
+    public long version() {
+        return topology.version();
     }
 
     @Override
-    public ClusterHash getHash() {
-        return topology.getHash();
+    public ClusterHash hash() {
+        return topology.hash();
     }
 
     @Override
-    public ClusterNode getLocalNode() {
-        return topology.getLocalNode();
+    public ClusterNode localNode() {
+        return topology.localNode();
     }
 
     @Override
-    public List<ClusterNode> getNodes() {
-        return topology.getNodes();
+    public List<ClusterNode> nodes() {
+        return topology.nodes();
     }
 
     @Override
-    public ClusterNode getFirst() {
-        return topology.getFirst();
+    public ClusterNode first() {
+        return topology.first();
     }
 
     @Override
-    public ClusterNode getLast() {
-        return topology.getLast();
+    public ClusterNode last() {
+        return topology.last();
     }
 
     @Override
-    public Set<ClusterNode> getNodeSet() {
-        return topology.getNodeSet();
+    public Set<ClusterNode> nodeSet() {
+        return topology.nodeSet();
     }
 
     @Override
-    public List<ClusterNode> getRemoteNodes() {
-        return topology.getRemoteNodes();
+    public List<ClusterNode> remoteNodes() {
+        return topology.remoteNodes();
     }
 
     @Override
-    public NavigableSet<ClusterNode> getJoinOrder() {
-        return topology.getJoinOrder();
+    public NavigableSet<ClusterNode> joinOrder() {
+        return topology.joinOrder();
     }
 
     @Override
@@ -133,12 +133,12 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
     }
 
     @Override
-    public boolean contains(ClusterUuid node) {
+    public boolean contains(ClusterNodeId node) {
         return topology.contains(node);
     }
 
     @Override
-    public ClusterNode get(ClusterUuid id) {
+    public ClusterNode get(ClusterNodeId id) {
         return topology.get(id);
     }
 
@@ -153,18 +153,18 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
     }
 
     @Override
-    public ClusterNode getOldest() {
-        return topology.getOldest();
+    public ClusterNode oldest() {
+        return topology.oldest();
     }
 
     @Override
-    public ClusterNode getYoungest() {
-        return topology.getYoungest();
+    public ClusterNode youngest() {
+        return topology.youngest();
     }
 
     @Override
-    public ClusterNode getRandom() {
-        return topology.getRandom();
+    public ClusterNode random() {
+        return topology.random();
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package io.hekate.core.service.internal;
 
+import io.hekate.core.ServiceInfo;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.Service;
@@ -34,21 +35,21 @@ import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toSet;
 
 class ServiceConfigurationContext implements ConfigurationContext {
-    private static class ServiceInfo {
+    private static class ServiceRef {
         private final Set<String> serviceTypes;
 
-        private final ServiceInfo parent;
+        private final ServiceRef parent;
 
-        public ServiceInfo(Set<String> serviceTypes, ServiceInfo parent) {
+        public ServiceRef(Set<String> serviceTypes, ServiceRef parent) {
             this.serviceTypes = serviceTypes;
             this.parent = parent;
         }
 
-        public Set<String> getServiceTypes() {
+        public Set<String> serviceTypes() {
             return serviceTypes;
         }
 
-        public ServiceInfo getParent() {
+        public ServiceRef parent() {
             return parent;
         }
     }
@@ -59,7 +60,7 @@ class ServiceConfigurationContext implements ConfigurationContext {
     private final ServiceManager manager;
 
     @ToStringIgnore
-    private ServiceInfo current;
+    private ServiceRef current;
 
     public ServiceConfigurationContext(ServiceManager manager) {
         this.manager = manager;
@@ -72,7 +73,7 @@ class ServiceConfigurationContext implements ConfigurationContext {
         if (value != null && !value.isEmpty()) {
             checkState();
 
-            current.getServiceTypes().forEach(type -> {
+            current.serviceTypes().forEach(type -> {
                 Set<String> values = props.get(type).computeIfAbsent(name, k -> new HashSet<>());
 
                 values.add(value);
@@ -90,7 +91,7 @@ class ServiceConfigurationContext implements ConfigurationContext {
         for (int i = 0; i < handlers.size(); i++) {
             ServiceHandler handler = handlers.get(i);
 
-            Service service = handler.getService();
+            Service service = handler.service();
 
             if (type.isAssignableFrom(service.getClass())) {
                 handler.configure(this);
@@ -111,15 +112,15 @@ class ServiceConfigurationContext implements ConfigurationContext {
             props.put(type, new HashMap<>())
         );
 
-        current = new ServiceInfo(typeNames, current);
+        current = new ServiceRef(typeNames, current);
     }
 
     public void close() {
-        current = current.getParent();
+        current = current.parent();
     }
 
-    public Map<String, io.hekate.core.ServiceInfo> getServicesInfo() {
-        Map<String, io.hekate.core.ServiceInfo> info = new HashMap<>();
+    public Map<String, ServiceInfo> servicesInfo() {
+        Map<String, ServiceInfo> info = new HashMap<>();
 
         props.forEach((type, props) -> {
             Map<String, Set<String>> propsCopy = new HashMap<>();

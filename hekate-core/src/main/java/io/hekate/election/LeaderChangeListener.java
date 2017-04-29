@@ -25,7 +25,7 @@ package io.hekate.election;
  * state.
  * </p>
  *
- * @see FollowerContext#addLeaderChangeListener(LeaderChangeListener)
+ * @see FollowerContext#addListener(LeaderChangeListener)
  */
 public interface LeaderChangeListener {
     /**

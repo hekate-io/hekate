@@ -16,11 +16,11 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.cluster.ClusterUuid;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageQueueOverflowException;
-import io.hekate.messaging.MessagingChanneUuid;
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.SendCallback;
@@ -117,12 +117,12 @@ abstract class MessagingProtocol {
         }
 
         public void prepareSend(RequestHandle<T> handle, MessagingConnectionBase<T> conn) {
-            this.worker = handle.getWorker();
+            this.worker = handle.worker();
             this.conn = conn;
             this.handle = handle;
         }
 
-        public int getRequestId() {
+        public int requestId() {
             return requestId;
         }
 
@@ -176,13 +176,13 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public MessagingEndpoint<T> getEndpoint() {
-            return conn.getEndpoint();
+        public MessagingEndpoint<T> endpoint() {
+            return conn.endpoint();
         }
 
         @Override
-        public MessagingChannel<T> getChannel() {
-            return conn.getEndpoint().getChannel();
+        public MessagingChannel<T> channel() {
+            return conn.endpoint().channel();
         }
 
         @Override
@@ -211,25 +211,25 @@ abstract class MessagingProtocol {
     }
 
     static class Connect extends MessagingProtocol {
-        private final ClusterUuid to;
+        private final ClusterNodeId to;
 
-        private final MessagingChanneUuid channelId;
+        private final MessagingChannelId channelId;
 
-        public Connect(ClusterUuid to, MessagingChanneUuid channelId) {
+        public Connect(ClusterNodeId to, MessagingChannelId channelId) {
             this.to = to;
             this.channelId = channelId;
         }
 
-        public ClusterUuid getTo() {
+        public ClusterNodeId to() {
             return to;
         }
 
-        public MessagingChanneUuid getChannelId() {
+        public MessagingChannelId channelId() {
             return channelId;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.CONNECT;
         }
 
@@ -278,13 +278,13 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public MessagingEndpoint<T> getEndpoint() {
-            return conn.getEndpoint();
+        public MessagingEndpoint<T> endpoint() {
+            return conn.endpoint();
         }
 
         @Override
-        public MessagingChannel<T> getChannel() {
-            return conn.getEndpoint().getChannel();
+        public MessagingChannel<T> channel() {
+            return conn.endpoint().channel();
         }
 
         @Override
@@ -297,7 +297,7 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.NOTIFICATION;
         }
 
@@ -316,12 +316,12 @@ abstract class MessagingProtocol {
             this.affinity = affinity;
         }
 
-        public int getAffinity() {
+        public int affinity() {
             return affinity;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.AFFINITY_NOTIFICATION;
         }
     }
@@ -342,7 +342,7 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.REQUEST;
         }
     }
@@ -356,12 +356,12 @@ abstract class MessagingProtocol {
             this.affinity = affinity;
         }
 
-        public int getAffinity() {
+        public int affinity() {
             return affinity;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.AFFINITY_REQUEST;
         }
     }
@@ -377,7 +377,7 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.SUBSCRIBE;
         }
     }
@@ -391,12 +391,12 @@ abstract class MessagingProtocol {
             this.affinity = affinity;
         }
 
-        public int getAffinity() {
+        public int affinity() {
             return affinity;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.AFFINITY_SUBSCRIBE;
         }
     }
@@ -426,7 +426,7 @@ abstract class MessagingProtocol {
             this.worker = worker;
             this.conn = conn;
             this.callback = callback;
-            this.backPressure = conn.getPressureGuard();
+            this.backPressure = conn.pressureGuard();
 
             // Apply back pressure when sending from server back to client.
             if (backPressure != null) {
@@ -449,7 +449,7 @@ abstract class MessagingProtocol {
             this.request = request;
         }
 
-        public int getRequestId() {
+        public int requestId() {
             return requestId;
         }
 
@@ -474,13 +474,13 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public MessagingEndpoint<T> getEndpoint() {
-            return conn.getEndpoint();
+        public MessagingEndpoint<T> endpoint() {
+            return conn.endpoint();
         }
 
         @Override
-        public MessagingChannel<T> getChannel() {
-            return conn.getEndpoint().getChannel();
+        public MessagingChannel<T> channel() {
+            return conn.endpoint().channel();
         }
 
         @Override
@@ -497,12 +497,12 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.RESPONSE_CHUNK;
         }
 
         @Override
-        public T getRequest() {
+        public T request() {
             return request;
         }
 
@@ -536,7 +536,7 @@ abstract class MessagingProtocol {
             this.worker = worker;
             this.conn = conn;
             this.callback = callback;
-            this.backPressure = conn.getPressureGuard();
+            this.backPressure = conn.pressureGuard();
 
             // Apply back pressure when sending from server back to client.
             if (backPressure != null) {
@@ -551,7 +551,7 @@ abstract class MessagingProtocol {
             this.request = request;
         }
 
-        public int getRequestId() {
+        public int requestId() {
             return requestId;
         }
 
@@ -576,13 +576,13 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public MessagingEndpoint<T> getEndpoint() {
-            return conn.getEndpoint();
+        public MessagingEndpoint<T> endpoint() {
+            return conn.endpoint();
         }
 
         @Override
-        public MessagingChannel<T> getChannel() {
-            return conn.getEndpoint().getChannel();
+        public MessagingChannel<T> channel() {
+            return conn.endpoint().channel();
         }
 
         @Override
@@ -599,12 +599,12 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.FINAL_RESPONSE;
         }
 
         @Override
-        public T getRequest() {
+        public T request() {
             return request;
         }
 
@@ -614,7 +614,7 @@ abstract class MessagingProtocol {
         }
     }
 
-    public abstract Type getType();
+    public abstract Type type();
 
     @SuppressWarnings("unchecked")
     public <T extends MessagingProtocol> T cast() {

@@ -65,7 +65,7 @@ class SeedNodeManager {
 
         this.cluster = cluster;
         this.provider = provider;
-        this.cleanupInterval = provider.getCleanupInterval();
+        this.cleanupInterval = provider.cleanupInterval();
     }
 
     public List<InetSocketAddress> getSeedNodes() throws HekateException {
@@ -73,7 +73,7 @@ class SeedNodeManager {
             log.debug("Getting seed nodes to join....");
         }
 
-        List<InetSocketAddress> nodes = provider.getSeedNodes(cluster);
+        List<InetSocketAddress> nodes = provider.findSeedNodes(cluster);
 
         nodes = nodes != null ? nodes : Collections.emptyList();
 
@@ -197,7 +197,7 @@ class SeedNodeManager {
                 log.debug("Running seed nodes cleanup task [cluster={}]", cluster);
             }
 
-            List<InetSocketAddress> provided = provider.getSeedNodes(cluster);
+            List<InetSocketAddress> provided = provider.findSeedNodes(cluster);
 
             Set<InetSocketAddress> seeds;
 
@@ -216,7 +216,7 @@ class SeedNodeManager {
                         log.debug("Re-registering the missing seed node address [cluster={}, address={}]", cluster, addr);
                     }
 
-                    provider.registerRemoteAddress(cluster, addr);
+                    provider.registerRemote(cluster, addr);
                 }
             }
 
@@ -268,7 +268,7 @@ class SeedNodeManager {
                                                 log.debug("Unregistering failed seed node address [cluster={}, address={}]", cluster, addr);
                                             }
 
-                                            provider.unregisterRemoteAddress(cluster, addr);
+                                            provider.unregisterRemote(cluster, addr);
                                         } catch (HekateException e) {
                                             if (log.isWarnEnabled()) {
                                                 log.warn("Failed to unregister failed seed node address "

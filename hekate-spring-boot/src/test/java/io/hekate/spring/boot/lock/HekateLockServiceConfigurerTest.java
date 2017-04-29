@@ -85,8 +85,8 @@ public class HekateLockServiceConfigurerTest extends HekateAutoConfigurerTestBas
         assertNotNull(get(LockTestConfig.InnerBean.class).innerRegion);
         assertNotNull(get(LockTestConfig.InnerBean.class).innerLock);
 
-        assertEquals("lock1", get(LockTestConfig.class).lock.getName());
-        assertEquals("lock2", get(LockTestConfig.InnerBean.class).innerLock.getName());
+        assertEquals("lock1", get(LockTestConfig.class).lock.name());
+        assertEquals("lock2", get(LockTestConfig.InnerBean.class).innerLock.name());
 
         assertNotNull(getNode().locks().region("test1"));
         assertNotNull(getNode().locks().region("test2"));

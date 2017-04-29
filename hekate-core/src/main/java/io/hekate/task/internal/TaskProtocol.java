@@ -51,12 +51,12 @@ abstract class TaskProtocol {
             this.task = task;
         }
 
-        public Callable<?> getTask() {
+        public Callable<?> task() {
             return task;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.CALL_TASK;
         }
     }
@@ -68,12 +68,12 @@ abstract class TaskProtocol {
             this.task = task;
         }
 
-        public Runnable getTask() {
+        public Runnable task() {
             return task;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.RUN_TASK;
         }
     }
@@ -94,16 +94,16 @@ abstract class TaskProtocol {
             // Constructor for serialization.
         }
 
-        public ApplicableTask<Object, Object> getTask() {
+        public ApplicableTask<Object, Object> task() {
             return task;
         }
 
-        public List<Object> getArgs() {
+        public List<Object> args() {
             return args;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.APPLY_TASK;
         }
 
@@ -141,7 +141,7 @@ abstract class TaskProtocol {
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.NULL_RESULT;
         }
     }
@@ -150,25 +150,25 @@ abstract class TaskProtocol {
         private final String errorStackTrace;
 
         public ErrorResult(Throwable cause) {
-            errorStackTrace = Utils.getStackTrace(cause);
+            errorStackTrace = Utils.stackTrace(cause);
         }
 
         public ErrorResult(String errorStackTrace) {
             this.errorStackTrace = errorStackTrace;
         }
 
-        public String getErrorStackTrace() {
+        public String errorStackTrace() {
             return errorStackTrace;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.ERROR_RESULT;
         }
 
         @Override
         public Throwable asError() {
-            return new RemoteTaskException(getErrorStackTrace());
+            return new RemoteTaskException(errorStackTrace());
         }
     }
 
@@ -179,17 +179,17 @@ abstract class TaskProtocol {
             this.result = result;
         }
 
-        public Object getResult() {
+        public Object result() {
             return result;
         }
 
         @Override
-        public Type getType() {
+        public Type type() {
             return Type.OBJECT_RESULT;
         }
     }
 
-    public abstract Type getType();
+    public abstract Type type();
 
     @Override
     public String toString() {

@@ -72,7 +72,7 @@ public class LocksBenchmark {
     public void measure(BenchmarkContext ctx) {
         int regionIdx = ThreadLocalRandom.current().nextInt(ctx.regions.size());
 
-        DistributedLock lock = ctx.regions.get(regionIdx).getLock(UUID.randomUUID().toString());
+        DistributedLock lock = ctx.regions.get(regionIdx).get(UUID.randomUUID().toString());
 
         lock.lock();
         lock.unlock();

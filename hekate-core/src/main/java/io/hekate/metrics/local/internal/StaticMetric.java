@@ -29,12 +29,12 @@ public class StaticMetric implements Metric {
     }
 
     @Override
-    public String getName() {
+    public String name() {
         return name;
     }
 
     @Override
-    public long getValue() {
+    public long value() {
         return value;
     }
 

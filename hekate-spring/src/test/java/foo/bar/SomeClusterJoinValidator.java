@@ -22,7 +22,7 @@ import io.hekate.core.Hekate;
 
 public class SomeClusterJoinValidator implements ClusterJoinValidator {
     @Override
-    public String acceptJoin(ClusterNode newNode, Hekate local) {
+    public String acceptJoin(ClusterNode joining, Hekate local) {
         return null;
     }
 }

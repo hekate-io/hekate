@@ -17,8 +17,8 @@
 package io.hekate.javadoc.messaging.unicast;
 
 import io.hekate.HekateTestBase;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterUuid;
 import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.core.HekateException;
 import io.hekate.messaging.internal.LoadBalancerContextBridge;
@@ -32,13 +32,13 @@ public class LoadBalancerJavadocTest extends HekateTestBase {
     // Start:load_balancer
     public static class ExampleLoadBalancer implements LoadBalancer<Object> {
         @Override
-        public ClusterUuid route(Object message, LoadBalancerContext ctx) throws HekateException {
+        public ClusterNodeId route(Object message, LoadBalancerContext ctx) throws HekateException {
             // Calculate position of a destination node within the cluster topology.
             int idx = Math.abs(message.hashCode() % ctx.size());
 
             // Select the destination node
             // Note that nodes are always sorted by their IDs within the topology.
-            return ctx.getTopology().getNodes().get(idx).getId();
+            return ctx.topology().nodes().get(idx).id();
         }
     }
     // End:load_balancer

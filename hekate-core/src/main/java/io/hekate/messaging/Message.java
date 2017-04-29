@@ -208,12 +208,12 @@ public interface Message<T> {
      *
      * @return Messaging endpoint.
      */
-    MessagingEndpoint<T> getEndpoint();
+    MessagingEndpoint<T> endpoint();
 
     /**
      * Returns the messaging channel.
      *
      * @return Messaging channel.
      */
-    MessagingChannel<T> getChannel();
+    MessagingChannel<T> channel();
 }

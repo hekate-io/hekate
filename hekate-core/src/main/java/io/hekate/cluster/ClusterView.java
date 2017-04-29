@@ -38,7 +38,7 @@ import java.util.function.Predicate;
  * <p>
  * Note that if particular {@link ClusterEvent} doesn't contain any nodes matching the specified filter then such event will still be
  * propagated to {@link ClusterEventListener}s as an empty event (i.e. will not contain any nodes). This is done in order to keep track of
- * {@link ClusterTopology#getVersion() topology version} changes.
+ * {@link ClusterTopology#version() topology version} changes.
  * </p>
  *
  * <p>
@@ -52,7 +52,7 @@ public interface ClusterView extends ClusterFilterSupport<ClusterView> {
      *
      * @return Cluster topology.
      */
-    ClusterTopology getTopology();
+    ClusterTopology topology();
 
     /**
      * Registers the cluster event listener.
@@ -108,6 +108,6 @@ public interface ClusterView extends ClusterFilterSupport<ClusterView> {
      * @param consumer The action to be performed for each node.
      */
     default void forEach(Consumer<ClusterNode> consumer) {
-        getTopology().forEach(consumer);
+        topology().forEach(consumer);
     }
 }
