@@ -89,4 +89,8 @@ public final class ConfigCheck {
 
         that(!value.trim().isEmpty(), component + " must be a non-empty string.");
     }
+
+    public void isPowerOfTwo(int n, String component) throws HekateConfigurationException {
+        that(Utils.isPowerOfTwo(n), component + " must be a power of two [value=" + n + ']');
+    }
 }

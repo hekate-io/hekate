@@ -81,7 +81,7 @@ public class PartitionServiceTest extends HekateNodeTestBase {
 
             cfg.setName("test");
             cfg.setBackupNodes(2);
-            cfg.setPartitions(10);
+            cfg.setPartitions(128);
 
             c.withMapper(cfg);
         }).join();
@@ -90,7 +90,7 @@ public class PartitionServiceTest extends HekateNodeTestBase {
 
         assertNotNull(mapper);
 
-        Partition partition = mapper.map(1);
+        Partition partition = mapper.map(Integer.MIN_VALUE);
 
         assertNotNull(partition);
         assertEquals(node.localNode(), partition.primaryNode());
@@ -112,8 +112,8 @@ public class PartitionServiceTest extends HekateNodeTestBase {
     @Test
     public void testRouting() throws Exception {
         repeat(5, i -> {
-            int partitions = 10;
-            int values = 1000;
+            int partitions = 256;
+            int values = 100000;
 
             List<HekateTestNode> nodes = new ArrayList<>();
 
@@ -143,6 +143,7 @@ public class PartitionServiceTest extends HekateNodeTestBase {
                     assertEquals(partitions, mapper.partitions());
                     assertEquals(i, mapper.backupNodes());
 
+                    // Positive key.
                     Partition partition = mapper.map(j);
 
                     if (first == null) {
@@ -161,8 +162,37 @@ public class PartitionServiceTest extends HekateNodeTestBase {
                 }
             }
 
-            int lowBound = (int)((values / partitions) * 0.8);
-            int highBound = (int)(values / partitions * 1.2);
+            for (int j = 0; j < values; j++) {
+                Partition first = null;
+
+                for (Hekate node : nodes) {
+                    PartitionMapper mapper = node.partitions().mapper("test" + i);
+
+                    assertEquals("test" + i, mapper.name());
+                    assertEquals(partitions, mapper.partitions());
+                    assertEquals(i, mapper.backupNodes());
+
+                    // Negative key.
+                    Partition partition = mapper.map(-j);
+
+                    if (first == null) {
+                        first = partition;
+
+                        distributions[first.id()]++;
+                    } else {
+                        assertEquals(first.id(), partition.id());
+                        assertEquals(first.primaryNode(), partition.primaryNode());
+                        assertEquals(first.backupNodes(), partition.backupNodes());
+                        assertEquals(first.nodes(), partition.nodes());
+
+                        assertEquals(i, partition.backupNodes().size());
+                        assertEquals(i + 1, partition.nodes().size());
+                    }
+                }
+            }
+
+            int lowBound = (int)((values * 2 / partitions) * 0.8);
+            int highBound = (int)(values * 2 / partitions * 1.2);
 
             for (int j = 0; j < partitions; j++) {
                 int distribution = distributions[j];

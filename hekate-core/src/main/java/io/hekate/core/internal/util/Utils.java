@@ -196,6 +196,17 @@ public final class Utils {
     }
 
     /**
+     * Returns {@code true} if the specified value is a power of two.
+     *
+     * @param n Number to check.
+     *
+     * @return {@code true} if the specified value is a power of two.
+     */
+    public static boolean isPowerOfTwo(int n) {
+        return (n & n - 1) == 0 && n > 0;
+    }
+
+    /**
      * Parses the specified string into a {@link InetSocketAddress}.
      *
      * <p>

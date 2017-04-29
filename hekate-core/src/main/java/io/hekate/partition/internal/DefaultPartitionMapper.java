@@ -52,9 +52,13 @@ class DefaultPartitionMapper implements PartitionMapper {
         @ToStringIgnore
         private final Partition[] partitions;
 
+        @ToStringIgnore
+        private final int maxIdx;
+
         public PartitionMapperSnapshot(String name, int partitionsSize, int backupSize, ClusterTopology topology, Partition[] partitions) {
             assert name != null : "Name is null.";
             assert partitionsSize > 0 : "Partitions size is less than or equals to zero [size=" + partitionsSize + ']';
+            assert Utils.isPowerOfTwo(partitionsSize) : "Partitions size must be a power of two [size=" + partitionsSize + ']';
             assert partitions != null : "Partitions mapping is null.";
             assert topology != null : "Topology is null.";
 
@@ -63,15 +67,16 @@ class DefaultPartitionMapper implements PartitionMapper {
             this.backupSize = backupSize;
             this.partitions = partitions;
             this.topology = topology;
+            this.maxIdx = partitionsSize - 1;
         }
 
         @Override
         public Partition map(Object key) {
             ArgAssert.notNull(key, "Key");
 
-            int partitionIdx = Utils.mod(key.hashCode(), partitionsSize);
+            int hash = (hash = key.hashCode()) ^ hash >>> 16;
 
-            Partition partition = partitions[partitionIdx];
+            Partition partition = partitions[maxIdx & hash];
 
             if (TRACE) {
                 log.trace("Mapped key to a partition [mapper={}, key={}, partition={}]", name, key, partition);
@@ -140,6 +145,7 @@ class DefaultPartitionMapper implements PartitionMapper {
     public DefaultPartitionMapper(String name, int partitionsSize, int backupSize, ClusterView cluster) {
         assert name != null : "Name is null.";
         assert partitionsSize > 0 : "Partitions size is less than or equals to zero [size=" + partitionsSize + ']';
+        assert Utils.isPowerOfTwo(partitionsSize) : "Partitions size must be a power of two [size=" + partitionsSize + ']';
         assert cluster != null : "Cluster is null.";
 
         this.name = name;

@@ -96,6 +96,7 @@ public class DefaultPartitionService implements PartitionService, DependentServi
         mappersConfig.forEach(cfg -> {
             check.notEmpty(cfg.getName(), "name");
             check.positive(cfg.getPartitions(), "partitions");
+            check.isPowerOfTwo(cfg.getPartitions(), "partitions");
 
             String name = cfg.getName().trim();
 

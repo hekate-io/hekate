@@ -108,13 +108,13 @@ public class PartitionMapperConfig {
     }
 
     /**
-     * Sets the total amount of partitions that should be managed by the mapper.
+     * Sets the total amount of partitions that should be managed by the mapper (value must be a power of two).
      *
      * <p>
-     * Value of this parameter must be above zero. Default value is {@value #DEFAULT_PARTITIONS}.
+     * Value of this parameter must be above zero and must be a power of two. Default value is {@value #DEFAULT_PARTITIONS}.
      * </p>
      *
-     * @param partitions Total amount of partitions that should be managed by the mapper.
+     * @param partitions Total amount of partitions that should be managed by the mapper (value must be a power of two).
      */
     public void setPartitions(int partitions) {
         this.partitions = partitions;
