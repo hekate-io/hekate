@@ -57,7 +57,7 @@ public class HekateJavadocTest extends HekateTestBase {
         // Start:configure_services
         // Configure and start new node.
         Hekate hekate = new HekateBootstrap()
-            // Configure services that should be available on this node.
+            // Configure services.
             .withService(NetworkServiceFactory.class, net -> {
                 net.setPort(10012); // Network port of this node.
                 net.setPortRange(100); // Auto-increment range if port is busy.
