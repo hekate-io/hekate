@@ -47,9 +47,26 @@ import java.util.Set;
  * <h2>Overview</h2>
  * <p>
  * Hekate is a Java library for cluster communications and computing. It provides a number of services for building a cluster of
- * interrelated processes, messaging and execution of distributed tasks. This interface is the main entry point for accessing these
- * <a href="#services">services</a>.
+ * interconnected processes, messaging and execution of distributed tasks. This interface is the main entry point for accessing the
+ * following services:
  * </p>
+ * 
+ * <ul>
+ * <li><b>{@link ClusterService}</b> - manages dynamic information about the cluster members and provides support for application to get
+ * notified upon cluster membership changes</li>
+ * <li><b>{@link TaskService}</b> - provides support for distributed execution of tasks and closures</li>
+ * <li><b>{@link MessagingService}</b> - provides high-level API for asynchronous messaging among the cluster nodes with built-in failover
+ * and load balancing</li>
+ * <li><b>{@link LockService}</b> - provides support for distributed locks</li>
+ * <li><b>{@link ElectionService}</b> - provides support for cluster-wide leader election (aka cluster singleton)</li>
+ * <li><b>{@link CoordinationService}</b> - provides support for implementing distributed coordination protocols</li>
+ * <li><b>{@link LocalMetricsService}</b> -  provides support for managing user-defined metrics</li>
+ * <li><b>{@link ClusterMetricsService}</b> - provides access to metrics of remote cluster nodes</li>
+ * <li><b>{@link NetworkService}</b> - provides configuration options and low level API for network communications</li>
+ * <li><b>{@link PartitionService}</b> - provides support for consistent mapping and routing of messages among the cluster nodes</li>
+ * <li><b>{@link CodecService}</b> - provides abstraction layer of data serialization API</li>
+ * <li><b>{@link InjectionService}</b> - provides support for dependency injection</li>
+ * </ul>
  *
  * <h2>Instantiation</h2>
  * <p>
@@ -126,36 +143,12 @@ import java.util.Set;
  * </li>
  * </ul>
  *
- * <a name="services"></a>
- * <h2>Services</h2>
+ * <h2>Services configuration</h2>
  * <p>
- * Services in {@link Hekate} are represented by sub-classes of the {@link Service} interface. Each service has a configurable {@link
- * ServiceFactory} that can be registered within a {@link HekateBootstrap} instance via {@link HekateBootstrap#setServices(List)} method.
- * </p>
- *
- * <p>
- * The following services are available:
- * </p>
- * <ul>
- * <li><b>{@link ClusterService}</b> - manages dynamic information about the cluster members and provides support for application to get
- * notified upon cluster membership changes</li>
- * <li><b>{@link TaskService}</b> - provides support for distributed execution of tasks and closures</li>
- * <li><b>{@link MessagingService}</b> - provides high-level API for asynchronous messaging among the cluster nodes with built-in failover
- * and load balancing</li>
- * <li><b>{@link LockService}</b> - provides support for distributed locks</li>
- * <li><b>{@link ElectionService}</b> - provides support for cluster-wide leader election (aka cluster singleton)</li>
- * <li><b>{@link CoordinationService}</b> - provides support for implementing distributed coordination protocols</li>
- * <li><b>{@link LocalMetricsService}</b> -  provides support for managing user-defined metrics</li>
- * <li><b>{@link ClusterMetricsService}</b> - provides access to metrics of remote cluster nodes</li>
- * <li><b>{@link NetworkService}</b> - provides configuration options and low level API for network communications</li>
- * <li><b>{@link PartitionService}</b> - provides support for consistent mapping and routing of messages among the cluster nodes</li>
- * <li><b>{@link CodecService}</b> - provides abstraction layer of data serialization API</li>
- * <li><b>{@link InjectionService}</b> - provides support for dependency injection</li>
- * </ul>
- *
- * <p>
- * Services can be obtained via {@link #get(Class)} method by specifying a service interface as in the examples below:
- * ${source: HekateJavadocTest.java#get_service}
+ * Each service has a configurable {@link ServiceFactory} that can be registered within a {@link HekateBootstrap} instance via {@link
+ * HekateBootstrap#setServices(List)} or {@link HekateBootstrap#withService(ServiceFactory)} methods. The code example below shows how
+ * different services can be configured:
+ * ${source: HekateJavadocTest.java#configure_services}
  * </p>
  *
  * <a name="lifecycle"></a>

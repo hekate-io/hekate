@@ -21,8 +21,6 @@ import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
-import io.hekate.messaging.MessagingService;
-import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.task.TaskService;
 import io.hekate.task.TaskServiceFactory;
@@ -56,7 +54,7 @@ public class HekateJavadocTest extends HekateTestBase {
 
     @Test
     public void exampleAccessService() throws Exception {
-        // Start:get_service
+        // Start:configure_services
         // Configure and start new node.
         Hekate hekate = new HekateBootstrap()
             // Configure services that should be available on this node.
@@ -68,25 +66,21 @@ public class HekateJavadocTest extends HekateTestBase {
                 cluster.setGossipInterval(1000); // Gossip once per second.
                 cluster.setSpeedUpGossipSize(100); // Speed up convergence if cluster is <= 100 nodes.
             })
-            .withService(new MessagingServiceFactory())
-            .withService(new TaskServiceFactory())
+            .withService(new TaskServiceFactory()
+                .withNioThreads(2) // NIO threads for network communications
+                .withWorkerThreads(8) // Worker threads for tasks execution.
+            )
             // ...some other services...
             .join();
 
         // Get cluster service.
         ClusterService cluster = hekate.cluster();
 
-        // Get messaging service.
-        MessagingService messaging = hekate.messaging();
-
         // Get task service.
         TaskService tasks = hekate.tasks();
-
-        // ...etc...
-        // End:get_service
+        // End:configure_services
 
         assertNotNull(cluster);
-        assertNotNull(messaging);
         assertNotNull(tasks);
 
         hekate.leave();
