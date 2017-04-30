@@ -57,18 +57,6 @@ public interface Partition extends Comparable<Partition> {
     ClusterNode primaryNode();
 
     /**
-     * Returns the primary node {@link ClusterNode#id() identifier}.
-     *
-     * <p>
-     * This method is just a shortcut for the following code:
-     * ${source: partition/PartitionServiceJavadocTest.java#get_primary_id}
-     * </p>
-     *
-     * @return primary node identifier (see {@link ClusterNode#id()})
-     */
-    ClusterNodeId primaryNodeId();
-
-    /**
      * Returns {@code true} if the specified node is primary for this partition (see {@link #primaryNode()}).
      *
      * @param node Node.

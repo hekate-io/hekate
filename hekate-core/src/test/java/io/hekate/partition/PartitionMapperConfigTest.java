@@ -18,6 +18,7 @@ package io.hekate.partition;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNodeFilter;
+import io.hekate.util.format.ToString;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -83,5 +84,10 @@ public class PartitionMapperConfigTest extends HekateTestBase {
         assertSame(cfg, cfg.withFilter(f2));
 
         assertSame(f2, cfg.getFilter());
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals(ToString.format(cfg), cfg.toString());
     }
 }

@@ -24,6 +24,7 @@ import io.hekate.partition.PartitionMapper;
 import io.hekate.partition.PartitionMapperConfig;
 import io.hekate.partition.PartitionService;
 import io.hekate.partition.PartitionServiceFactory;
+import io.hekate.util.format.ToString;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,7 +32,10 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -42,13 +46,34 @@ public class PartitionServiceTest extends HekateNodeTestBase {
 
     @Test
     public void testEmptyPartitions() throws Exception {
-        PartitionService partitions = createNode(boot -> boot.withService(new PartitionServiceFactory())).join().partitions();
+        PartitionService partitions = createNode().join().partitions();
 
         assertTrue(partitions.allMappers().isEmpty());
 
         assertFalse(partitions.hasMapper("no-such-mapper"));
 
         expect(IllegalArgumentException.class, () -> partitions.mapper("no-such-mapper"));
+
+        assertTrue(partitions.toString().startsWith(PartitionService.class.getSimpleName()));
+    }
+
+    @Test
+    public void testEmptyTopology() throws Exception {
+        PartitionMapper mapper = createPartitionNode(c ->
+            c.withMapper(new PartitionMapperConfig("test")
+                .withFilter(node -> false)
+                .withPartitions(128)
+                .withBackupNodes(2)
+            )
+        ).join().partitions().mapper("test");
+
+        assertNull(mapper.map("key").primaryNode());
+        assertTrue(mapper.map("key").backupNodes().isEmpty());
+
+        PartitionMapper snapshot = mapper.snapshot();
+
+        assertNull(snapshot.map("key").primaryNode());
+        assertTrue(snapshot.map("key").backupNodes().isEmpty());
     }
 
     @Test
@@ -75,7 +100,7 @@ public class PartitionServiceTest extends HekateNodeTestBase {
     }
 
     @Test
-    public void testPreConfiguredMapper() throws Exception {
+    public void testMapper() throws Exception {
         HekateTestNode node = createPartitionNode(c -> {
             PartitionMapperConfig cfg = new PartitionMapperConfig();
 
@@ -88,14 +113,46 @@ public class PartitionServiceTest extends HekateNodeTestBase {
 
         PartitionMapper mapper = node.partitions().mapper("test");
 
-        assertNotNull(mapper);
+        assertEquals(128, mapper.partitions().size());
+        assertEquals(2, mapper.backupNodes());
+        assertEquals("test", mapper.name());
+        assertFalse(mapper.isSnapshot());
+        assertEquals(node.localNode(), mapper.map("key").primaryNode());
+        assertTrue(mapper.map("key").backupNodes().isEmpty());
+        assertEquals(node.cluster().topology(), mapper.topology());
+        assertEquals(ToString.format(PartitionMapper.class, mapper), mapper.toString());
+
+        PartitionMapper snapshot = mapper.snapshot();
+
+        assertEquals(128, snapshot.partitions().size());
+        assertEquals(2, snapshot.backupNodes());
+        assertEquals("test", snapshot.name());
+        assertTrue(snapshot.isSnapshot());
+        assertEquals(node.localNode(), mapper.map("key").primaryNode());
+        assertTrue(snapshot.map("key").backupNodes().isEmpty());
+        assertSame(snapshot, snapshot.snapshot());
+        assertEquals(node.cluster().topology(), snapshot.topology());
+        assertEquals(ToString.format(PartitionMapper.class, snapshot), snapshot.toString());
 
         Partition partition = mapper.map(Integer.MIN_VALUE);
 
         assertNotNull(partition);
+        assertEquals(0, partition.id());
         assertEquals(node.localNode(), partition.primaryNode());
+        assertTrue(partition.isPrimary(node.localNode()));
+        assertTrue(partition.isPrimary(node.localNode().id()));
         assertTrue(partition.backupNodes().isEmpty());
         assertEquals(Collections.singletonList(node.localNode()), partition.nodes());
+        assertEquals(node.cluster().topology(), partition.topology());
+        assertEquals(partition.id(), partition.hashCode());
+        assertEquals(partition, partition);
+        assertFalse(partition.equals(new Object()));
+
+        Partition otherPartition = mapper.map(1);
+
+        assertEquals(1, otherPartition.id());
+        assertNotEquals(partition, otherPartition);
+        assertEquals(-1, partition.compareTo(otherPartition));
     }
 
     @Test
@@ -110,10 +167,10 @@ public class PartitionServiceTest extends HekateNodeTestBase {
     }
 
     @Test
-    public void testRouting() throws Exception {
+    public void testMapping() throws Exception {
         repeat(5, i -> {
             int partitions = 256;
-            int values = 100000;
+            int values = 10000;
 
             List<HekateTestNode> nodes = new ArrayList<>();
 
@@ -140,10 +197,9 @@ public class PartitionServiceTest extends HekateNodeTestBase {
                     PartitionMapper mapper = node.partitions().mapper("test" + i);
 
                     assertEquals("test" + i, mapper.name());
-                    assertEquals(partitions, mapper.partitions());
+                    assertEquals(partitions, mapper.partitions().size());
                     assertEquals(i, mapper.backupNodes());
 
-                    // Positive key.
                     Partition partition = mapper.map(j);
 
                     if (first == null) {
@@ -162,37 +218,8 @@ public class PartitionServiceTest extends HekateNodeTestBase {
                 }
             }
 
-            for (int j = 0; j < values; j++) {
-                Partition first = null;
-
-                for (Hekate node : nodes) {
-                    PartitionMapper mapper = node.partitions().mapper("test" + i);
-
-                    assertEquals("test" + i, mapper.name());
-                    assertEquals(partitions, mapper.partitions());
-                    assertEquals(i, mapper.backupNodes());
-
-                    // Negative key.
-                    Partition partition = mapper.map(-j);
-
-                    if (first == null) {
-                        first = partition;
-
-                        distributions[first.id()]++;
-                    } else {
-                        assertEquals(first.id(), partition.id());
-                        assertEquals(first.primaryNode(), partition.primaryNode());
-                        assertEquals(first.backupNodes(), partition.backupNodes());
-                        assertEquals(first.nodes(), partition.nodes());
-
-                        assertEquals(i, partition.backupNodes().size());
-                        assertEquals(i + 1, partition.nodes().size());
-                    }
-                }
-            }
-
-            int lowBound = (int)((values * 2 / partitions) * 0.8);
-            int highBound = (int)(values * 2 / partitions * 1.2);
+            int lowBound = (int)((values / partitions) * 0.9);
+            int highBound = (int)(values / partitions * 1.1);
 
             for (int j = 0; j < partitions; j++) {
                 int distribution = distributions[j];

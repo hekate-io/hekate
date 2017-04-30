@@ -17,6 +17,7 @@
 package io.hekate.partition;
 
 import io.hekate.cluster.ClusterTopology;
+import java.util.List;
 
 /**
  * Partition mapper.
@@ -65,15 +66,15 @@ public interface PartitionMapper {
     String name();
 
     /**
-     * Returns the total amount of partitions that are managed by this mapper.
+     * Returns all partitions.
      *
      * <p>
      * Total amount of partitions is specified by the {@link PartitionMapperConfig#setPartitions(int)} configuration property.
      * </p>
      *
-     * @return Total amount of partitions that are managed by this mapper.
+     * @return All partitions.
      */
-    int partitions();
+    List<Partition> partitions();
 
     /**
      * Returns the amount of backup nodes that should be assigned to each partition.

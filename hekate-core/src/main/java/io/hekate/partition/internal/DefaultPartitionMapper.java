@@ -20,30 +20,26 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
 import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.core.internal.util.Murmur3;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.partition.Partition;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.IdentityHashMap;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
+
 class DefaultPartitionMapper implements PartitionMapper {
     private static class PartitionMapperSnapshot implements PartitionMapper {
         private final String name;
-
-        private final int partitionsSize;
 
         private final int backupSize;
 
@@ -51,6 +47,8 @@ class DefaultPartitionMapper implements PartitionMapper {
 
         @ToStringIgnore
         private final Partition[] partitions;
+
+        private final List<Partition> partitionList;
 
         @ToStringIgnore
         private final int maxIdx;
@@ -63,11 +61,12 @@ class DefaultPartitionMapper implements PartitionMapper {
             assert topology != null : "Topology is null.";
 
             this.name = name;
-            this.partitionsSize = partitionsSize;
             this.backupSize = backupSize;
             this.partitions = partitions;
             this.topology = topology;
             this.maxIdx = partitionsSize - 1;
+
+            this.partitionList = unmodifiableList(Arrays.asList(partitions));
         }
 
         @Override
@@ -91,8 +90,8 @@ class DefaultPartitionMapper implements PartitionMapper {
         }
 
         @Override
-        public int partitions() {
-            return partitionsSize;
+        public List<Partition> partitions() {
+            return partitionList;
         }
 
         @Override
@@ -118,6 +117,33 @@ class DefaultPartitionMapper implements PartitionMapper {
         @Override
         public String toString() {
             return ToString.format(PartitionMapper.class, this);
+        }
+    }
+
+    private static class NodeHash {
+        public static final Comparator<NodeHash> COMPARATOR = Comparator.comparing(NodeHash::hash);
+
+        private final ClusterNode clusterNode;
+
+        private final int idHash;
+
+        private int hash;
+
+        public NodeHash(ClusterNode clusterNode) {
+            this.clusterNode = clusterNode;
+            this.idHash = clusterNode.id().hashCode();
+        }
+
+        public int hash() {
+            return hash;
+        }
+
+        public void update(int pid) {
+            this.hash = Murmur3.hash(idHash, pid);
+        }
+
+        public ClusterNode clusterNode() {
+            return clusterNode;
         }
     }
 
@@ -154,13 +180,6 @@ class DefaultPartitionMapper implements PartitionMapper {
         this.cluster = cluster;
 
         this.lock = new ReentrantLock();
-
-        // Check that MD5 is available.
-        try {
-            MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("Failed to initialize MD5 message digest.", e);
-        }
     }
 
     @Override
@@ -174,8 +193,8 @@ class DefaultPartitionMapper implements PartitionMapper {
     }
 
     @Override
-    public int partitions() {
-        return partitionsSize;
+    public List<Partition> partitions() {
+        return snapshot().partitions();
     }
 
     @Override
@@ -219,70 +238,38 @@ class DefaultPartitionMapper implements PartitionMapper {
                     log.debug("Updating cluster topology [mapper={}, topology={}]", this, topology);
                 }
 
-                MessageDigest md5;
-
-                try {
-                    md5 = MessageDigest.getInstance("MD5");
-                } catch (NoSuchAlgorithmException e) {
-                    throw new IllegalStateException("Failed to initialize MD5 message digest.", e);
-                }
-
                 Partition[] partitions = new Partition[partitionsSize];
 
                 if (topology.isEmpty()) {
                     for (int pid = 0; pid < partitionsSize; pid++) {
-                        partitions[pid] = new DefaultPartition(pid, null, Collections.emptyList(), topology);
+                        partitions[pid] = new DefaultPartition(pid, null, emptyList(), topology);
                     }
                 } else {
-                    List<ClusterNode> nodes = new ArrayList<>(topology.nodes());
-
-                    ByteArrayOutputStream buf = new ByteArrayOutputStream();
-                    DataOutputStream out = new DataOutputStream(buf);
+                    NodeHash[] hashes = topology.stream().map(NodeHash::new).toArray(NodeHash[]::new);
 
                     for (int pid = 0; pid < partitionsSize; pid++) {
-                        Map<ClusterNode, Long> hashes = new IdentityHashMap<>();
-
-                        for (ClusterNode node : nodes) {
-                            try {
-                                out.writeInt(pid);
-                                out.writeLong(node.id().loBits());
-                                out.writeLong(node.id().hiBits());
-                            } catch (IOException e) {
-                                // Never happens.
-                            }
-
-                            md5.update(buf.toByteArray());
-
-                            long hash = hashToLong(md5.digest());
-
-                            hashes.put(node, hash);
-
-                            buf.reset();
+                        for (NodeHash hash : hashes) {
+                            hash.update(pid);
                         }
 
-                        nodes.sort((o1, o2) -> {
-                            Long h1 = hashes.get(o1);
-                            Long h2 = hashes.get(o2);
+                        Arrays.sort(hashes, NodeHash.COMPARATOR);
 
-                            return h1.compareTo(h2);
-                        });
-
-                        ClusterNode primary = nodes.get(0);
+                        ClusterNode primary = hashes[0].clusterNode();
 
                         List<ClusterNode> backup;
 
                         if (backupSize > 0) {
-                            int maxNodes = Math.min(backupSize, nodes.size() - 1);
+                            int maxNodes = Math.min(backupSize, hashes.length - 1);
 
                             backup = new ArrayList<>(maxNodes);
 
                             for (int j = 1; j < maxNodes + 1; j++) {
-                                backup.add(nodes.get(j));
+                                backup.add(hashes[j].clusterNode());
                             }
 
-                            backup = Collections.unmodifiableList(backup);
+                            backup = unmodifiableList(backup);
                         } else {
-                            backup = Collections.emptyList();
+                            backup = emptyList();
                         }
 
                         partitions[pid] = new DefaultPartition(pid, primary, backup, topology);
@@ -298,16 +285,6 @@ class DefaultPartitionMapper implements PartitionMapper {
         } finally {
             lock.unlock();
         }
-    }
-
-    private long hashToLong(byte[] hashBytes) {
-        long hash = hashBytes[0] & 0xFF;
-
-        for (int i = 1; i < 8; i++) {
-            hash |= (hashBytes[i] & 0xFFL) << i * 8;
-        }
-
-        return hash;
     }
 
     @Override

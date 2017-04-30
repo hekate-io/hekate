@@ -75,11 +75,6 @@ class DefaultPartition implements Partition {
     }
 
     @Override
-    public ClusterNodeId primaryNodeId() {
-        return primary.id();
-    }
-
-    @Override
     public boolean isPrimary(ClusterNode node) {
         return primary.equals(node);
     }

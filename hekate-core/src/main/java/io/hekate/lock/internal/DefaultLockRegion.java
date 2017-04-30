@@ -184,7 +184,7 @@ class DefaultLockRegion implements LockRegion {
                 // to detect routing collisions (in case of cluster topology changes) on the receiving side.
                 request.updateTopology(partition.topology().hash());
 
-                return partition.primaryNodeId();
+                return partition.primaryNode().id();
             });
 
         // Configure messaging channel for locks migration.
@@ -324,7 +324,7 @@ class DefaultLockRegion implements LockRegion {
                         log.debug("Locking [lock={}]", client);
                     }
 
-                    ClusterNodeId managedBy = partitions.map(lock.name()).primaryNodeId();
+                    ClusterNodeId managedBy = partitions.map(lock.name()).primaryNode().id();
 
                     client.update(managedBy, effectiveTopology);
 
@@ -778,7 +778,7 @@ class DefaultLockRegion implements LockRegion {
                 throw new IllegalStateException("Lock region is not initialized.");
             }
 
-            return partitions.map(lockName).primaryNodeId();
+            return partitions.map(lockName).primaryNode().id();
         } finally {
             readLock.unlock();
         }
@@ -844,7 +844,7 @@ class DefaultLockRegion implements LockRegion {
                     return true;
                 }
 
-                ClusterNodeId mappedTo = partitions.map(lock.name()).primaryNodeId();
+                ClusterNodeId mappedTo = partitions.map(lock.name()).primaryNode().id();
 
                 // Check if mapping changed.
                 if (!mappedTo.equals(lock.manager())) {
@@ -944,7 +944,7 @@ class DefaultLockRegion implements LockRegion {
 
         // Update topology of locally held locks.
         lockClients.values().forEach(lock -> {
-            ClusterNodeId managedBy = partitions.map(lock.name()).primaryNodeId();
+            ClusterNodeId managedBy = partitions.map(lock.name()).primaryNode().id();
 
             lock.update(managedBy, effectiveTopology);
         });
@@ -955,7 +955,7 @@ class DefaultLockRegion implements LockRegion {
                 log.debug("Registering deferred lock [lock={}]", lock);
             }
 
-            ClusterNodeId managedBy = partitions.map(lock.name()).primaryNodeId();
+            ClusterNodeId managedBy = partitions.map(lock.name()).primaryNode().id();
 
             lock.update(managedBy, effectiveTopology);
 
