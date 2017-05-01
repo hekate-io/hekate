@@ -129,6 +129,7 @@ import java.util.concurrent.TimeUnit;
  * ${source: task/TaskServiceJavadocTest.java#apply}
  * </p>
  *
+ * <a name="cluster_filtering"></a>
  * <h2>Routing and cluster nodes filtering</h2>
  * <p>
  * Each task can be submitted to a single node (via {@link #run(RunnableTask) run(...)}/{@link #call(CallableTask) call(...)}) or to
@@ -305,9 +306,14 @@ public interface TaskService extends Service, ClusterFilterSupport<TaskService> 
      * Returns a new lightweight wrapper of this service that will apply the specified affinity key to all tasks.
      *
      * <p>
-     * Specifying an affinity key ensures that all tasks submitted with the same key will always be processed by the same node (selected
-     * from the channel cluster topology) until the topology changes. Moreover it guarantees that the target node will always use the same
-     * thread to execute such tasks.
+     * Specifying an affinity key ensures that all tasks submitted with the same key will always be processed by the same node and the same
+     * thread unless the cluster topology doesn't change. If cluster topology changes then some keys can be re-mapped to different nodes.
+     * </p>
+     *
+     * <p>
+     * <b>Notice:</b> Selection of a target node for each affinity key is based on the <a href="#cluster_filtering">cluster filtering</a>
+     * rules of this instance. If different instances of the {@link TaskService} have different filtering rules (f.e. one uses {@link
+     * #forRemotes()} and another uses {@link #forRole(String)}) then each of them will map the same affinity key to a different node.
      * </p>
      *
      * @param affinityKey Affinity key (if {@code null} then affinity key will be cleared).

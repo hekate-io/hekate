@@ -215,9 +215,14 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * Returns a new lightweight wrapper of this channel that will apply the specified affinity key to all messaging operations.
      *
      * <p>
-     * Specifying an affinity key ensures that all messages sent with the same key will always be processed by the same node (selected from
-     * the channel cluster topology) until the topology changes. Moreover it guarantees that the target node will always use the same thread
-     * to process such messages.
+     * Specifying an affinity key ensures that all messages sent with the same key will always be processed by the same node and the same
+     * thread unless the cluster topology doesn't change. If cluster topology changes then some keys can be re-mapped to different nodes.
+     * </p>
+     *
+     * <p>
+     * <b>Notice:</b> Selection of a target node for each affinity key is based on the {@link ClusterFilterSupport cluster filtering}
+     * rules of this channel. If different instances of this channel have different filtering rules (f.e. one uses {@link
+     * #forRemotes()} and another uses {@link #forRole(String)}) then each of them will map the same affinity key to a different node.
      * </p>
      *
      * @param affinityKey Affinity key (if {@code null} then affinity key will be cleared).
