@@ -16,9 +16,9 @@
 
 package io.hekate.task;
 
-import io.hekate.cluster.ClusterFilterSupport;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
+import io.hekate.cluster.HasClusterFilter;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.DefaultServiceFactory;
@@ -135,8 +135,8 @@ import java.util.concurrent.TimeUnit;
  * Each task can be submitted to a single node (via {@link #run(RunnableTask) run(...)}/{@link #call(CallableTask) call(...)}) or to
  * multiple nodes at once (via {@link #broadcast(RunnableTask) broadcast(...)}/{@link #aggregate(CallableTask) aggregate(...)}) for
  * parallel execution. Target nodes are selected based on cluster filtering rules. {@link TaskService} extends the {@link
- * ClusterFilterSupport} interface which provides a general purpose {@link TaskService#filter(ClusterNodeFilter)} method for dynamic
- * filtering as well as several shortcut methods for frequently used cases:
+ * HasClusterFilter} interface which provides a general purpose {@link TaskService#filter(ClusterNodeFilter)} method for dynamic
+ * filtering as well as a number shortcut methods for common use cases:
  * </p>
  * <ul>
  * <li>{@link TaskService#forRemotes()}</li>
@@ -145,7 +145,7 @@ import java.util.concurrent.TimeUnit;
  * <li>{@link TaskService#forNode(ClusterNode)}</li>
  * <li>{@link TaskService#forOldest()}</li>
  * <li>{@link TaskService#forYoungest()}</li>
- * <li>...{@link ClusterFilterSupport etc}</li>
+ * <li>...{@link HasClusterFilter etc}</li>
  * </ul>
  *
  * <p>
@@ -211,7 +211,7 @@ import java.util.concurrent.TimeUnit;
  * ${source: task/TaskInjectionJavadocTest.java#execute}
  */
 @DefaultServiceFactory(TaskServiceFactory.class)
-public interface TaskService extends Service, ClusterFilterSupport<TaskService> {
+public interface TaskService extends Service, HasClusterFilter<TaskService> {
     /**
      * Asynchronously executes the specified runnable task on a randomly selected node from the underlying cluster topology.
      *

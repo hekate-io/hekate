@@ -23,7 +23,7 @@ import io.hekate.core.service.Service;
  *
  * @param <T> Real type that implements/extends this interface.
  */
-public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
+public interface HasClusterFilter<T extends HasClusterFilter<T>> {
     /**
      * Returns a copy of this instance that will use the specified filter along with all the filter criteria that were inherited from this
      * instance.
@@ -31,7 +31,7 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
      * <p>
      * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
      * over and over again.
-     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * ${source: cluster/HasClusterFilterJavadocTest.java#bad_and_good_usage}
      * </p>
      *
      * @param filter Filter.
@@ -47,7 +47,7 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
      * <p>
      * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
      * over and over again.
-     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * ${source: cluster/HasClusterFilterJavadocTest.java#bad_and_good_usage}
      * </p>
      *
      * @param filter Filter.
@@ -65,7 +65,7 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
      * <p>
      * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
      * over and over again.
-     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * ${source: cluster/HasClusterFilterJavadocTest.java#bad_and_good_usage}
      * </p>
      *
      * @param role Role (see {@link ClusterNode#hasRole(String)}).
@@ -83,7 +83,7 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
      * <p>
      * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
      * over and over again.
-     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * ${source: cluster/HasClusterFilterJavadocTest.java#bad_and_good_usage}
      * </p>
      *
      * @param name Property name (see {@link ClusterNode#hasProperty(String)}).
@@ -101,7 +101,7 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
      * <p>
      * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
      * over and over again.
-     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * ${source: cluster/HasClusterFilterJavadocTest.java#bad_and_good_usage}
      * </p>
      *
      * @param name Property name (see {@link ClusterNode#property(String)}).
@@ -120,7 +120,7 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
      * <p>
      * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
      * over and over again.
-     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * ${source: cluster/HasClusterFilterJavadocTest.java#bad_and_good_usage}
      * </p>
      *
      * @param type Service type (see {@link ClusterNode#hasService(String)})
@@ -138,7 +138,7 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
      * <p>
      * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
      * over and over again.
-     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * ${source: cluster/HasClusterFilterJavadocTest.java#bad_and_good_usage}
      * </p>
      *
      * @return Filtered instance.
@@ -154,7 +154,7 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
      * <p>
      * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
      * over and over again.
-     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * ${source: cluster/HasClusterFilterJavadocTest.java#bad_and_good_usage}
      * </p>
      *
      * @param node Node.
@@ -172,7 +172,7 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
      * <p>
      * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
      * over and over again.
-     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * ${source: cluster/HasClusterFilterJavadocTest.java#bad_and_good_usage}
      * </p>
      *
      * @param id Node.
@@ -190,7 +190,7 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
      * <p>
      * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
      * over and over again.
-     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * ${source: cluster/HasClusterFilterJavadocTest.java#bad_and_good_usage}
      * </p>
      *
      * @return Filter.
@@ -206,7 +206,7 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
      * <p>
      * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
      * over and over again.
-     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * ${source: cluster/HasClusterFilterJavadocTest.java#bad_and_good_usage}
      * </p>
      *
      * @return Filtered instance.

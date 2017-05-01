@@ -16,10 +16,10 @@
 
 package io.hekate.messaging;
 
-import io.hekate.cluster.ClusterFilterSupport;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterService;
+import io.hekate.cluster.HasClusterFilter;
 import io.hekate.codec.CodecFactory;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
@@ -252,8 +252,8 @@ import java.util.List;
  * </p>
  *
  * <p>
- * {@link MessagingChannel} extends the {@link ClusterFilterSupport} interface which provides a general purpose {@link
- * MessagingChannel#filter(ClusterNodeFilter)} method for dynamic filtering as well as several shortcut methods for frequently used cases:
+ * {@link MessagingChannel} extends the {@link HasClusterFilter} interface which provides a general purpose {@link
+ * MessagingChannel#filter(ClusterNodeFilter)} method for dynamic filtering as well as a number of shortcut methods for common use cases:
  * </p>
  * <ul>
  * <li>{@link MessagingChannel#forRemotes()}</li>
@@ -262,7 +262,7 @@ import java.util.List;
  * <li>{@link MessagingChannel#forNode(ClusterNode)}</li>
  * <li>{@link MessagingChannel#forOldest()}</li>
  * <li>{@link MessagingChannel#forYoungest()}</li>
- * <li>...{@link ClusterFilterSupport etc}</li>
+ * <li>...{@link HasClusterFilter etc}</li>
  * </ul>
  *
  * <p>

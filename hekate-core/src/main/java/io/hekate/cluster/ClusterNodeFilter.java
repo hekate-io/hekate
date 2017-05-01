@@ -19,7 +19,7 @@ package io.hekate.cluster;
 /**
  * Interface for cluster nodes filtering.
  *
- * @see ClusterFilterSupport#filter(ClusterNodeFilter)
+ * @see HasClusterFilter#filter(ClusterNodeFilter)
  */
 @FunctionalInterface
 public interface ClusterNodeFilter {

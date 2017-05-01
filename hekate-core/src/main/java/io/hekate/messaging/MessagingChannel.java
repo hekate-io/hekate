@@ -16,8 +16,8 @@
 
 package io.hekate.messaging;
 
-import io.hekate.cluster.ClusterFilterSupport;
 import io.hekate.cluster.ClusterView;
+import io.hekate.cluster.HasClusterFilter;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.broadcast.AggregateCallback;
@@ -53,7 +53,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @see MessagingService#channel(String)
  */
-public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChannel<T>> {
+public interface MessagingChannel<T> extends HasClusterFilter<MessagingChannel<T>> {
     /**
      * Returns the universally unique identifier of this channel.
      *

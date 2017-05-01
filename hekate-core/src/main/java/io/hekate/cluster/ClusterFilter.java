@@ -21,7 +21,7 @@ import java.util.List;
 /**
  * Interface for filtering groups of cluster nodes.
  *
- * @see ClusterFilterSupport#filterAll(ClusterFilter)
+ * @see HasClusterFilter#filterAll(ClusterFilter)
  */
 @FunctionalInterface
 public interface ClusterFilter {

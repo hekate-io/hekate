@@ -2,11 +2,11 @@ package io.hekate.javadoc.cluster;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterFilter;
-import io.hekate.cluster.ClusterFilterSupport;
+import io.hekate.cluster.HasClusterFilter;
 import org.junit.Test;
 
-public class ClusterFilterSupportJavadocTest extends HekateTestBase {
-    private static class FakeFilter implements ClusterFilterSupport<FakeFilter> {
+public class HasClusterFilterJavadocTest extends HekateTestBase {
+    private static class FakeFilter implements HasClusterFilter<FakeFilter> {
         public void doSomething() {
             // No-op.
         }
