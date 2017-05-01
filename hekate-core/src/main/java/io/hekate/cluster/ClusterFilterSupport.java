@@ -25,7 +25,14 @@ import io.hekate.core.service.Service;
  */
 public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
     /**
-     * Applies the specified filter to this instance.
+     * Returns a copy of this instance that will use the specified filter along with all the filter criteria that were inherited from this
+     * instance.
+     *
+     * <p>
+     * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
+     * over and over again.
+     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * </p>
      *
      * @param filter Filter.
      *
@@ -34,7 +41,14 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
     T filterAll(ClusterFilter filter);
 
     /**
-     * Applies the specified filter to this instance.
+     * Returns a copy of this instance that will use the specified filter along with all the filter criteria that were inherited from this
+     * instance.
+     *
+     * <p>
+     * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
+     * over and over again.
+     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * </p>
      *
      * @param filter Filter.
      *
@@ -45,7 +59,14 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
     }
 
     /**
-     * Applies {@link ClusterFilters#forRole(String)} to this instance.
+     * Returns a copy of this instance that will use {@link ClusterFilters#forRole(String)} filter along with all the filter criteria that
+     * were inherited from this instance.
+     *
+     * <p>
+     * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
+     * over and over again.
+     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * </p>
      *
      * @param role Role (see {@link ClusterNode#hasRole(String)}).
      *
@@ -56,7 +77,14 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
     }
 
     /**
-     * Applies {@link ClusterFilters#forProperty(String)} to this instance.
+     * Returns a copy of this instance that will use {@link ClusterFilters#forProperty(String)} filter along with all the filter criteria
+     * that were inherited from this instance.
+     *
+     * <p>
+     * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
+     * over and over again.
+     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * </p>
      *
      * @param name Property name (see {@link ClusterNode#hasProperty(String)}).
      *
@@ -67,7 +95,14 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
     }
 
     /**
-     * Applies {@link ClusterFilters#forProperty(String, String)} to this instance.
+     * Returns a copy of this instance that will use {@link ClusterFilters#forProperty(String, String)} filter along with all the filter
+     * criteria that were inherited from this instance.
+     *
+     * <p>
+     * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
+     * over and over again.
+     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * </p>
      *
      * @param name Property name (see {@link ClusterNode#property(String)}).
      * @param value Property value.
@@ -79,7 +114,14 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
     }
 
     /**
-     * Applies {@link ClusterFilters#forService(Class)} to this instance.
+     * Returns a copy of this instance that will use {@link ClusterFilters#forService(Class)} filter along with all the filter criteria that
+     * were inherited from this instance.
+     *
+     * <p>
+     * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
+     * over and over again.
+     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * </p>
      *
      * @param type Service type (see {@link ClusterNode#hasService(String)})
      *
@@ -90,7 +132,14 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
     }
 
     /**
-     * Applies {@link ClusterFilters#forRemotes()} to this instance.
+     * Returns a copy of this instance that will use {@link ClusterFilters#forRemotes()} filter along with all the filter criteria that
+     * were inherited from this instance.
+     *
+     * <p>
+     * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
+     * over and over again.
+     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * </p>
      *
      * @return Filtered instance.
      */
@@ -99,7 +148,14 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
     }
 
     /**
-     * Applies {@link ClusterFilters#forNode(ClusterNode)} to this instance.
+     * Returns a copy of this instance that will use {@link ClusterFilters#forNode(ClusterNode)} filter along with all the filter criteria
+     * that were inherited from this instance.
+     *
+     * <p>
+     * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
+     * over and over again.
+     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * </p>
      *
      * @param node Node.
      *
@@ -110,7 +166,14 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
     }
 
     /**
-     * Applies {@link ClusterFilters#forNode(ClusterNodeId)} to this instance.
+     * Returns a copy of this instance that will use {@link ClusterFilters#forNode(ClusterNodeId)} filter along with all the filter criteria
+     * that were inherited from this instance.
+     *
+     * <p>
+     * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
+     * over and over again.
+     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * </p>
      *
      * @param id Node.
      *
@@ -121,7 +184,14 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
     }
 
     /**
-     * Applies {@link ClusterFilters#forOldest()} to this instance.
+     * Returns a copy of this instance that will use {@link ClusterFilters#forOldest()} filter along with all the filter criteria that were
+     * inherited from this instance.
+     *
+     * <p>
+     * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
+     * over and over again.
+     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * </p>
      *
      * @return Filter.
      */
@@ -130,7 +200,14 @@ public interface ClusterFilterSupport<T extends ClusterFilterSupport<T>> {
     }
 
     /**
-     * Applies {@link ClusterFilters#forYoungest()} to this instance.
+     * Returns a copy of this instance that will use {@link ClusterFilters#forYoungest()} filter along with all the filter criteria that
+     * were inherited from this instance.
+     *
+     * <p>
+     * <b>Notice:</b> for performance reasons it is highly recommended to cache and reuse the filtered instance instead of re-building it
+     * over and over again.
+     * ${source: cluster/ClusterFilterSupportJavadocTest.java#bad_and_good_usage}
+     * </p>
      *
      * @return Filtered instance.
      */

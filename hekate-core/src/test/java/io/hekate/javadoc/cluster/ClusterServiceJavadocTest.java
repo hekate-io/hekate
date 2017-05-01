@@ -118,6 +118,7 @@ public class ClusterServiceJavadocTest extends HekateNodeTestBase {
             // End:filter_topology
 
             assertNotNull(filtered);
+
         } finally {
             hekate.leave();
         }

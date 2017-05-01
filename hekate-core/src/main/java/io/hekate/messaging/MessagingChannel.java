@@ -212,17 +212,11 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     void aggregate(T message, AggregateCallback<T> callback);
 
     /**
-     * Returns a new lightweight wrapper of this channel that will apply the specified affinity key to all messaging operations.
+     * Returns a copy of this channel that will apply the specified affinity key to all messaging operations.
      *
      * <p>
-     * Specifying an affinity key ensures that all messages sent with the same key will always be processed by the same node and the same
-     * thread unless the cluster topology doesn't change. If cluster topology changes then some keys can be re-mapped to different nodes.
-     * </p>
-     *
-     * <p>
-     * <b>Notice:</b> Selection of a target node for each affinity key is based on the {@link ClusterFilterSupport cluster filtering}
-     * rules of this channel. If different instances of this channel have different filtering rules (f.e. one uses {@link
-     * #forRemotes()} and another uses {@link #forRole(String)}) then each of them will map the same affinity key to a different node.
+     * Specifying an affinity key ensures that all messages sent with the same key will always be transmitted over the same network
+     * connection and will always be processed by the same thread.
      * </p>
      *
      * @param affinityKey Affinity key (if {@code null} then affinity key will be cleared).
@@ -239,8 +233,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     Object affinity();
 
     /**
-     * Returns a new lightweight wrapper of this channel that will use the specified failover policy and will inherit all other options from
-     * this instance.
+     * Returns a copy of this channel that will use the specified failover policy and will inherit all other options from this instance.
      *
      * @param policy Failover policy.
      *
@@ -251,8 +244,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     MessagingChannel<T> withFailover(FailoverPolicy policy);
 
     /**
-     * Returns a new lightweight wrapper of this channel that will use the specified failover policy and will inherit all other options from
-     * this instance.
+     * Returns a copy of this channel that will use the specified failover policy and will inherit all other options from this instance.
      *
      * @param policy Failover policy.
      *
@@ -270,8 +262,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     FailoverPolicy failover();
 
     /**
-     * Returns a new lightweight wrapper of this channel that will use the specified timeout value and will inherit all other options from
-     * this instance.
+     * Returns a copy of this channel that will use the specified timeout value and will inherit all other options from this instance.
      *
      * <p>
      * If the message exchange operation can not be completed at the specified timeout then such operation will end up the error {@link
@@ -301,8 +292,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     long timeout();
 
     /**
-     * Returns a new lightweight wrapper of this channel that will use the specified load balancer and will inherit all other options from
-     * this instance.
+     * Returns a copy of this channel that will use the specified load balancer and will inherit all other options from this instance.
      *
      * @param balancer Load balancer.
      *
@@ -316,7 +306,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * Returns the asynchronous task executor of this channel.
      *
      * <p>
-     * The returned executor can be a single-thread or a wrapper over the multi-threaded executor depending on {@link
+     * The returned executor can be a single-thread or a wrapper over the multi-threaded executor depending on the {@link
      * MessagingChannelConfig#setWorkerThreads(int)} value.
      * </p>
      *
