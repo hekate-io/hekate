@@ -171,6 +171,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
 
             // Await for client to be disconnected.
             busyWait("client disconnect", () -> client.state() == NetworkClient.State.DISCONNECTED);
+            busyWait("server endpoint disconnect", () -> server.clients(client.protocol()).isEmpty());
         });
     }
 
@@ -196,6 +197,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
 
             // Await for client to be disconnected.
             busyWait("client disconnect", () -> client.state() == NetworkClient.State.DISCONNECTED);
+            busyWait("server endpoint disconnect", () -> server.clients(client.protocol()).isEmpty());
         });
     }
 
@@ -222,6 +224,7 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
 
             // Await for client to be disconnected.
             busyWait("client disconnect", () -> client.state() == NetworkClient.State.DISCONNECTED);
+            busyWait("server endpoint disconnect", () -> server.clients(client.protocol()).isEmpty());
         });
     }
 
@@ -322,55 +325,57 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
 
         CountDownLatch blockLatch = new CountDownLatch(1);
 
-        NetworkClientCallbackMock<String> clientCallback = new NetworkClientCallbackMock<String>() {
-            @Override
-            public void onMessage(NetworkMessage<String> msg, NetworkClient<String> from) throws IOException {
-                super.onMessage(msg, client);
+        try {
+            NetworkClientCallbackMock<String> clientCallback = new NetworkClientCallbackMock<String>() {
+                @Override
+                public void onMessage(NetworkMessage<String> msg, NetworkClient<String> from) throws IOException {
+                    super.onMessage(msg, client);
 
-                if (msg.decode().equals("block")) {
-                    try {
-                        blockLatch.await();
-                    } catch (InterruptedException t) {
-                        // No-op.
+                    if (msg.decode().equals("block")) {
+                        try {
+                            blockLatch.await();
+                        } catch (InterruptedException t) {
+                            // No-op.
+                        }
                     }
                 }
-            }
-        };
+            };
 
-        client.connect(server.address(), clientCallback).get();
+            client.connect(server.address(), clientCallback).get();
 
-        busyWait("server endpoint", () -> !server.clients(client.protocol()).isEmpty());
+            busyWait("server endpoint", () -> !server.clients(client.protocol()).isEmpty());
 
-        @SuppressWarnings("unchecked")
-        NetworkEndpoint<String> remote = (NetworkEndpoint<String>)server.clients(client.protocol()).get(0);
+            @SuppressWarnings("unchecked")
+            NetworkEndpoint<String> remote = (NetworkEndpoint<String>)server.clients(client.protocol()).get(0);
 
-        repeat(3, i -> {
-            clientCallback.assertDisconnects(0);
-            clientCallback.assertNoErrors();
+            repeat(3, i -> {
+                clientCallback.assertDisconnects(0);
+                clientCallback.assertNoErrors();
 
-            pause(remote);
+                pause(remote);
 
-            sleep(hbInterval * hbLossThreshold * 2);
+                sleep(hbInterval * hbLossThreshold * 2);
 
-            assertSame(NetworkClient.State.CONNECTED, client.state());
-            assertEquals(0, clientCallback.getMessages().size());
-            clientCallback.assertDisconnects(0);
-            clientCallback.assertNoErrors();
+                assertSame(NetworkClient.State.CONNECTED, client.state());
+                assertEquals(0, clientCallback.getMessages().size());
+                clientCallback.assertDisconnects(0);
+                clientCallback.assertNoErrors();
 
-            resume(remote);
+                resume(remote);
 
-            clientCallback.assertDisconnects(0);
-            clientCallback.assertNoErrors();
+                clientCallback.assertDisconnects(0);
+                clientCallback.assertNoErrors();
 
-            clientCallback.reset();
-        });
+                clientCallback.reset();
+            });
 
-        remote.send("block");
+            remote.send("block");
 
-        // Server endpoint must be disconnected by timeout.
-        busyWait("server endpoint disconnect", () -> server.clients(client.protocol()).isEmpty());
-
-        blockLatch.countDown();
+            // Server endpoint must be disconnected by timeout.
+            busyWait("server endpoint disconnect", () -> server.clients(client.protocol()).isEmpty());
+        } finally {
+            blockLatch.countDown();
+        }
     }
 
     @Test
@@ -401,51 +406,55 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
 
         NetworkClient<String> client = createClient();
 
-        NetworkClientCallbackMock<String> clientCallback = new NetworkClientCallbackMock<>();
+        try {
+            NetworkClientCallbackMock<String> clientCallback = new NetworkClientCallbackMock<>();
 
-        client.connect(server.address(), clientCallback).get();
+            client.connect(server.address(), clientCallback).get();
 
-        repeat(3, i -> {
-            clientCallback.assertDisconnects(0);
-            clientCallback.assertNoErrors();
+            repeat(3, i -> {
+                clientCallback.assertDisconnects(0);
+                clientCallback.assertNoErrors();
 
-            busyWait("server endpoint", () -> !server.clients(client.protocol()).isEmpty());
+                busyWait("server endpoint", () -> !server.clients(client.protocol()).isEmpty());
 
-            @SuppressWarnings("unchecked")
-            NetworkEndpoint<String> remote = (NetworkEndpoint<String>)server.clients(client.protocol()).get(0);
+                @SuppressWarnings("unchecked")
+                NetworkEndpoint<String> remote = (NetworkEndpoint<String>)server.clients(client.protocol()).get(0);
 
-            pause(client);
+                pause(client);
 
-            sleep(hbInterval * hbLossThreshold * 2);
+                sleep(hbInterval * hbLossThreshold * 2);
 
-            assertSame(NetworkClient.State.CONNECTED, client.state());
-            assertEquals(0, clientCallback.getMessages().size());
-            clientCallback.assertDisconnects(0);
-            clientCallback.assertNoErrors();
+                assertSame(NetworkClient.State.CONNECTED, client.state());
+                assertEquals(0, clientCallback.getMessages().size());
+                clientCallback.assertDisconnects(0);
+                clientCallback.assertNoErrors();
 
-            resume(client);
+                resume(client);
 
-            assertSame(NetworkClient.State.CONNECTED, client.state());
-            assertEquals(0, clientCallback.getMessages().size());
-            clientCallback.assertDisconnects(0);
-            clientCallback.assertNoErrors();
+                assertSame(NetworkClient.State.CONNECTED, client.state());
+                assertEquals(0, clientCallback.getMessages().size());
+                clientCallback.assertDisconnects(0);
+                clientCallback.assertNoErrors();
 
-            remote.send("ping_" + i);
+                remote.send("ping_" + i);
 
-            clientCallback.awaitForMessages("ping_" + i);
-            clientCallback.assertDisconnects(0);
-            clientCallback.assertNoErrors();
+                clientCallback.awaitForMessages("ping_" + i);
+                clientCallback.assertDisconnects(0);
+                clientCallback.assertNoErrors();
 
-            clientCallback.reset();
-        });
+                clientCallback.reset();
+            });
 
-        // Check that timeout is still possible.
-        client.send("block");
+            // Check that timeout is still possible.
+            client.send("block");
 
-        // Client must be disconnected by timeout.
-        busyWait("disconnect", () -> client.state() == NetworkClient.State.DISCONNECTED);
+            // Client must be disconnected by timeout.
+            busyWait("disconnect", () -> client.state() == NetworkClient.State.DISCONNECTED);
+        } finally {
+            blockLatch.countDown();
+        }
 
-        blockLatch.countDown();
+        busyWait("server endpoint disconnect", () -> server.clients(client.protocol()).isEmpty());
     }
 
     private void pause(NetworkEndpoint<?> client) {
