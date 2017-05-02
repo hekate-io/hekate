@@ -26,6 +26,7 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -81,6 +82,11 @@ public class DefaultAddressSelectorTest extends HekateTestBase {
         ipV6Supported = interfaces.stream()
             .flatMap(i -> i.getAddresses().stream())
             .anyMatch(a -> a instanceof Inet6Address);
+    }
+
+    @Before
+    public void setUp() {
+        selectorCfg.setExcludePointToPoint(false);
     }
 
     @Test

@@ -59,6 +59,20 @@ public class DefaultAddressSelectorConfigTest extends HekateTestBase {
     }
 
     @Test
+    public void testExcludePointToPoint() {
+        assertTrue(cfg.isExcludePointToPoint());
+        assertTrue(createSelector().excludePointToPoint());
+
+        cfg.setExcludePointToPoint(false);
+
+        assertFalse(cfg.isExcludePointToPoint());
+        assertFalse(createSelector().excludePointToPoint());
+
+        assertSame(cfg, cfg.withExcludePointToPoint(true));
+        assertTrue(createSelector().excludePointToPoint());
+    }
+
+    @Test
     public void testInterfaceNotMatch() {
         assertNull(cfg.getInterfaceNotMatch());
         assertNull(createSelector().interfaceNotMatch());

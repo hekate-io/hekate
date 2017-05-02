@@ -29,6 +29,8 @@ public class DefaultAddressSelectorConfig {
 
     private boolean excludeLoopback = true;
 
+    private boolean excludePointToPoint = true;
+
     private String interfaceNotMatch;
 
     private String interfaceMatch;
@@ -201,22 +203,24 @@ public class DefaultAddressSelectorConfig {
     }
 
     /**
-     * Returns {@code true} if the loopback address must be excluded from selection (see {@link #setExcludeLoopback(boolean)}).
+     * Returns {@code true} if all {@link NetworkInterface#isLoopback() loopback} interfaces must be excluded from the selection (see
+     * {@link #setExcludeLoopback(boolean)}).
      *
-     * @return {@code true} if the loopback address must be excluded.
+     * @return {@code true} if all {@link NetworkInterface#isLoopback() loopback} interfaces must be excluded.
      */
     public boolean isExcludeLoopback() {
         return excludeLoopback;
     }
 
     /**
-     * Sets the flag indicating whether the loopback address must be excluded from selection.
+     * Sets the flag indicating whether all {@link NetworkInterface#isLoopback() loopback} interfaces must be excluded from the selection.
      *
      * <p>
      * Default value of this property is {@code true}.
      * </p>
      *
-     * @param excludeLoopback {@code true} if the loopback address must be excluded.
+     * @param excludeLoopback {@code true} if all {@link NetworkInterface#isLoopback() loopback} interfaces must be excluded from the
+     * selection.
      */
     public void setExcludeLoopback(boolean excludeLoopback) {
         this.excludeLoopback = excludeLoopback;
@@ -225,12 +229,50 @@ public class DefaultAddressSelectorConfig {
     /**
      * Fluent-style version of {@link #setExcludeLoopback(boolean)}.
      *
-     * @param excludeLoopback {@code true} if the loopback address must be excluded.
+     * @param excludeLoopback {@code true} if all {@link NetworkInterface#isLoopback() loopback} interfaces must be excluded from the
+     * selection.
      *
      * @return This instance.
      */
     public DefaultAddressSelectorConfig withExcludeLoopback(boolean excludeLoopback) {
         setExcludeLoopback(excludeLoopback);
+
+        return this;
+    }
+
+    /**
+     * Returns {@code true} if all {@link NetworkInterface#isPointToPoint() Point-to-Point} network interfaces must be excluded from the
+     * selection (see {@link #setExcludePointToPoint(boolean)}).
+     *
+     * @return {@code true} if all {@link NetworkInterface#isPointToPoint() Point-to-Point} interfaces must be excluded.
+     */
+    public boolean isExcludePointToPoint() {
+        return excludePointToPoint;
+    }
+
+    /**
+     * Sets the flag indicating whether all {@link NetworkInterface#isPointToPoint() Point-to-Point} network interfaces must be excluded
+     * from the selection.
+     *
+     * <p>
+     * Default value of this property is {@code true}.
+     * </p>
+     *
+     * @param excludePointToPoint {@code true} if all {@link NetworkInterface#isPointToPoint() Point-to-Point} interfaces must be excluded.
+     */
+    public void setExcludePointToPoint(boolean excludePointToPoint) {
+        this.excludePointToPoint = excludePointToPoint;
+    }
+
+    /**
+     * Fluent-style version of {@link #setExcludePointToPoint(boolean)}.
+     *
+     * @param excludePointToPoint {@code true} if all {@link NetworkInterface#isPointToPoint() Point-to-Point} interfaces must be excluded.
+     *
+     * @return This instance.
+     */
+    public DefaultAddressSelectorConfig withExcludePointToPoint(boolean excludePointToPoint) {
+        setExcludePointToPoint(excludePointToPoint);
 
         return this;
     }

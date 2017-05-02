@@ -89,6 +89,8 @@ public class DefaultAddressSelector implements AddressSelector {
 
     private final boolean excludeLoopback;
 
+    private final boolean excludePointToPoint;
+
     private final String interfaceNotMatch;
 
     private final String interfaceMatch;
@@ -114,6 +116,7 @@ public class DefaultAddressSelector implements AddressSelector {
 
         ipVersion = cfg.getIpVersion();
         excludeLoopback = cfg.isExcludeLoopback();
+        excludePointToPoint = cfg.isExcludePointToPoint();
         interfaceNotMatch = cfg.getInterfaceNotMatch();
         interfaceMatch = cfg.getInterfaceMatch();
         ipNotMatch = cfg.getIpNotMatch();
@@ -143,7 +146,7 @@ public class DefaultAddressSelector implements AddressSelector {
             List<NetworkInterface> nis = networkInterfaces();
 
             for (NetworkInterface ni : nis) {
-                if (!ni.isUp()) {
+                if (!ni.isUp() || ni.isLoopback() && excludeLoopback || ni.isPointToPoint() && excludePointToPoint) {
                     continue;
                 }
 
@@ -192,10 +195,19 @@ public class DefaultAddressSelector implements AddressSelector {
     /**
      * See {@link DefaultAddressSelectorConfig#setExcludeLoopback(boolean)}.
      *
-     * @return {@code true} if the loopback address must be excluded.
+     * @return {@code true} if all {@link NetworkInterface#isLoopback() loopback} interfaces must be excluded.
      */
     public boolean excludeLoopback() {
         return excludeLoopback;
+    }
+
+    /**
+     * See {@link DefaultAddressSelectorConfig#setExcludePointToPoint(boolean)}.
+     *
+     * @return {@code true} if all {@link NetworkInterface#isPointToPoint() Point-to-Point} interfaces must be excluded.
+     */
+    public boolean excludePointToPoint() {
+        return excludePointToPoint;
     }
 
     /**
@@ -247,10 +259,6 @@ public class DefaultAddressSelector implements AddressSelector {
         } else if (!ipVersionMatch(address)) {
             if (DEBUG) {
                 log.debug("Skipped address that doesn't match IP protocol version [interface={}, address={}]", niName, address);
-            }
-        } else if (excludeLoopback && address.isLoopbackAddress()) {
-            if (DEBUG) {
-                log.debug("Skipped loopback address [interface={}, address={}]", niName, address);
             }
         } else {
             String host = address.getHostAddress();

@@ -295,8 +295,8 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
             throw new HekateException("Failed to select public host address [selector=" + addressSelector + ']');
         }
 
-        if (DEBUG) {
-            log.debug("Selected public host address [address={}]", publicIp);
+        if (log.isInfoEnabled()) {
+            log.info("Selected public address [address={}]", publicIp);
         }
 
         InetSocketAddress bindAddress = new InetSocketAddress(preferredIp, initPort);

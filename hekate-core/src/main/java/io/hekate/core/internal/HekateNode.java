@@ -561,7 +561,7 @@ class HekateNode implements Hekate, Serializable {
                     }
 
                     if (log.isInfoEnabled()) {
-                        log.info("Joining cluster [cluster-name={}, node-name={}]", clusterName, nodeName);
+                        log.info("Joining cluster [cluster-name={}, node-name={}, node-id={}]", clusterName, nodeName, nodeId);
                     }
 
                     // Bind network service.

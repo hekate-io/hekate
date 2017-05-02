@@ -72,7 +72,7 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     private final Map<String, ServiceInfo> services;
 
     @ToStringFormat(HostInfoFormatter.class)
-    private final ClusterNodeRuntime jvm;
+    private final ClusterNodeRuntime runtime;
 
     @ToStringIgnore
     private final boolean local;
@@ -81,12 +81,12 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     private volatile int joinOrder;
 
     public DefaultClusterNode(ClusterAddress address, String name, boolean localNode, int joinOrder, Set<String> roles,
-        Map<String, String> properties, Map<String, ServiceInfo> services, ClusterNodeRuntime jvm) {
+        Map<String, String> properties, Map<String, ServiceInfo> services, ClusterNodeRuntime runtime) {
         assert address != null : "Address is null.";
         assert roles != null : "Node roles are null.";
         assert properties != null : "Node properties are null.";
         assert services != null : "Node services are null.";
-        assert jvm != null : "JVM info is null.";
+        assert runtime != null : "Runtime info is null.";
 
         this.address = address;
         this.name = name != null ? name : "";
@@ -95,7 +95,7 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
         this.roles = roles;
         this.properties = properties;
         this.services = services;
-        this.jvm = jvm;
+        this.runtime = runtime;
     }
 
     public DefaultClusterNode(ClusterNode src) {
@@ -105,7 +105,7 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
         this.properties = src.properties();
         this.roles = src.roles();
         this.services = src.services();
-        this.jvm = src.runtime();
+        this.runtime = src.runtime();
     }
 
     @Override
@@ -194,7 +194,7 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
 
     @Override
     public ClusterNodeRuntime runtime() {
-        return jvm;
+        return runtime;
     }
 
     @Override

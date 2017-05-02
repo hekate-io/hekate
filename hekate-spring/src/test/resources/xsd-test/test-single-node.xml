@@ -101,7 +101,7 @@
             tcp-reuse-address=""
             tcp-backlog="">
             <address port="10001" port-range="100">
-                <any-host exclude-loopback="true" ip-version="V4">
+                <any-host exclude-loopback="true" exclude-point-to-point="true" ip-version="V4">
                     <interface-name match="" not-match=""/>
                     <ip-address match="" not-match=""/>
                 </any-host>

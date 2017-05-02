@@ -639,6 +639,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 BeanDefinitionBuilder selectorCfg = newBean(DefaultAddressSelectorConfig.class, anyHostEl);
 
                 setProperty(selectorCfg, anyHostEl, "excludeLoopback", "exclude-loopback");
+                setProperty(selectorCfg, anyHostEl, "excludePointToPoint", "exclude-point-to-point");
                 setProperty(selectorCfg, anyHostEl, "ipVersion", "ip-version");
 
                 Element interfaceEl = getChildElementByTagName(anyHostEl, "interface-name");

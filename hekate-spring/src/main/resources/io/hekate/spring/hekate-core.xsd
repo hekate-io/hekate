@@ -421,6 +421,13 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
+        <xsd:attribute name="exclude-point-to-point" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.network.address.DefaultAddressSelector#setExcludePointToPoint(boolean)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
         <xsd:attribute name="ip-version" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
