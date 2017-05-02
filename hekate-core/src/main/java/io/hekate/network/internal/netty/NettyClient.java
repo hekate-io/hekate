@@ -51,6 +51,7 @@ import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -330,6 +331,8 @@ class NettyClient<T> implements NetworkClient<T> {
     private final boolean useEpoll;
 
     private final EventLoop eventLoop;
+
+    private final int threadAffinity = ThreadLocalRandom.current().nextInt();
 
     private final NettyWriteQueue writeQueue = new NettyWriteQueue();
 
@@ -652,8 +655,8 @@ class NettyClient<T> implements NetworkClient<T> {
 
                     NettyClient<T> client = NettyClient.this;
 
-                    NettyClientHandler<T> msgHandler = new NettyClientHandler<>(id(), localEpoch, protocol, login, connectTimeout,
-                        idleTimeout, log, metrics, client, callback);
+                    NettyClientHandler<T> msgHandler = new NettyClientHandler<>(id(), localEpoch, protocol, threadAffinity, login,
+                        connectTimeout, idleTimeout, log, metrics, client, callback);
 
                     NettyClientDeferHandler<T> deferHandler = new NettyClientDeferHandler<>(id(), log);
 

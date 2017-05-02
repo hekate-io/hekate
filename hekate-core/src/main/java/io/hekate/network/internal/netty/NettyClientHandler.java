@@ -54,6 +54,8 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
 
     private final String protocol;
 
+    private final int threadAffinity;
+
     private final T login;
 
     private final long idleTimeout;
@@ -76,12 +78,13 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
 
     private State state = CONNECTING;
 
-    public NettyClientHandler(String id, int epoch, String protocol, T login, Integer connectTimeout, long idleTimeout, Logger log,
-        NettyMetricsCallback metrics, NettyClient<T> client, NetworkClientCallback<T> callback) {
+    public NettyClientHandler(String id, int epoch, String protocol, int threadAffinity, T login, Integer connectTimeout, long idleTimeout,
+        Logger log, NettyMetricsCallback metrics, NettyClient<T> client, NetworkClientCallback<T> callback) {
         this.log = log;
         this.id = id;
         this.epoch = epoch;
         this.protocol = protocol;
+        this.threadAffinity = threadAffinity;
         this.login = login;
         this.idleTimeout = idleTimeout;
         this.connectTimeout = connectTimeout;
@@ -120,7 +123,7 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         super.channelActive(ctx);
 
-        HandshakeRequest request = new HandshakeRequest(protocol, login);
+        HandshakeRequest request = new HandshakeRequest(protocol, login, threadAffinity);
 
         if (debug) {
             log.debug("Connected ...sending handshake request [channel={}, request={}]", id, request);

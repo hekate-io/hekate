@@ -421,7 +421,7 @@ class NettyServer implements NetworkServer {
                     pipeline.addLast(codec.decoder());
 
                     NettyServerClient client = new NettyServerClient(remoteAddress, localAddress, hbInterval, hbLossThreshold, hbDisabled,
-                        handlers);
+                        handlers, workers);
 
                     pipeline.addLast(client);
 

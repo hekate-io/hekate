@@ -22,6 +22,7 @@ import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkMessage;
+import io.hekate.network.NetworkServerHandler;
 import io.hekate.network.internal.NetworkClientCallbackMock;
 import io.hekate.network.internal.NetworkSendCallbackMock;
 import io.hekate.network.internal.NetworkServer;
@@ -39,7 +40,9 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.IdentityHashMap;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutionException;
@@ -47,6 +50,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
+import static java.util.Collections.newSetFromMap;
+import static java.util.Collections.synchronizedSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -190,6 +195,47 @@ public class NetworkClientTest extends NetworkTestBase {
             callback.assertDisconnects(1);
             callback.assertNoErrors();
             listener.assertNoErrors();
+        });
+    }
+
+    @Test
+    public void testThreadAffinity() throws Exception {
+        Set<Thread> uniqueThreads = synchronizedSet(newSetFromMap(new IdentityHashMap<>()));
+
+        NetworkServer server = createAndConfigureServerHandler(h -> h.withHandler(new NetworkServerHandler<String>() {
+            @Override
+            public void onConnect(String login, NetworkEndpoint<String> client) {
+                uniqueThreads.add(Thread.currentThread());
+            }
+
+            @Override
+            public void onMessage(NetworkMessage<String> msg, NetworkEndpoint<String> from) throws IOException {
+                uniqueThreads.add(Thread.currentThread());
+
+                from.send("response");
+            }
+        }));
+
+        server.start(newServerAddress(), new NetworkServerCallbackMock()).get();
+
+        NetworkClient<String> client = createClient();
+
+        repeat(15, i -> {
+            NetworkClientCallbackMock<String> callback = new NetworkClientCallbackMock<>();
+
+            client.connect(server.address(), callback).get();
+
+            client.send("test", new NetworkSendCallbackMock<>());
+
+            callback.awaitForMessages("response");
+
+            client.disconnect().get();
+
+            callback.assertConnects(1);
+            callback.assertDisconnects(1);
+            callback.assertNoErrors();
+
+            assertEquals(1, uniqueThreads.size());
         });
     }
 

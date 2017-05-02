@@ -367,11 +367,10 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
 
         remote.send("block");
 
-        sleep(hbInterval * hbLossThreshold * 3);
+        // Server endpoint must be disconnected by timeout.
+        busyWait("server endpoint disconnect", () -> server.clients(client.protocol()).isEmpty());
 
         blockLatch.countDown();
-
-        assertTrue(server.clients(client.protocol()).isEmpty());
     }
 
     @Test
@@ -443,12 +442,10 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
         // Check that timeout is still possible.
         client.send("block");
 
-        // Await for heartbeat timeout.
-        sleep(hbInterval * hbLossThreshold * 3);
+        // Client must be disconnected by timeout.
+        busyWait("disconnect", () -> client.state() == NetworkClient.State.DISCONNECTED);
 
         blockLatch.countDown();
-
-        assertSame(NetworkClient.State.DISCONNECTED, client.state());
     }
 
     private void pause(NetworkEndpoint<?> client) {

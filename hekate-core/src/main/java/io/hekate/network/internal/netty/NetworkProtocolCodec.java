@@ -120,6 +120,7 @@ class NetworkProtocolCodec {
                 switch (type) {
                     case HANDSHAKE_REQUEST: {
                         String protocol = NettyMessage.readUtf(in);
+                        int threadAffinity = in.readInt();
 
                         CodecFactory<Object> codecFactory = allCodecs.get(protocol);
 
@@ -135,10 +136,10 @@ class NetworkProtocolCodec {
                                 payload = message(in, offset, length).decode();
                             }
 
-                            return new HandshakeRequest(protocol, payload, codec);
+                            return new HandshakeRequest(protocol, payload, threadAffinity, codec);
                         }
 
-                        return new HandshakeRequest(protocol, null);
+                        return new HandshakeRequest(protocol, null, threadAffinity);
                     }
                     case HANDSHAKE_ACCEPT: {
                         int hbInterval = in.readInt();
@@ -270,6 +271,7 @@ class NetworkProtocolCodec {
                         HandshakeRequest request = (HandshakeRequest)netMsg;
 
                         writer.writeUTF(request.protocol());
+                        writer.writeInt(request.threadAffinity());
 
                         Object payload = request.payload();
 

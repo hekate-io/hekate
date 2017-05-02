@@ -81,22 +81,29 @@ abstract class NetworkProtocol {
     static class HandshakeRequest extends NetworkProtocol {
         private final String protocol;
 
+        private final int threadAffinity;
+
         private final Object payload;
 
         private final Codec<Object> codec;
 
-        public HandshakeRequest(String protocol, Object payload) {
-            this(protocol, payload, null);
+        public HandshakeRequest(String protocol, Object payload, int threadAffinity) {
+            this(protocol, payload, threadAffinity, null);
         }
 
-        public HandshakeRequest(String protocol, Object payload, Codec<Object> codec) {
+        public HandshakeRequest(String protocol, Object payload, int threadAffinity, Codec<Object> codec) {
             this.protocol = protocol;
             this.payload = payload;
             this.codec = codec;
+            this.threadAffinity = threadAffinity;
         }
 
         public String protocol() {
             return protocol;
+        }
+
+        public int threadAffinity() {
+            return threadAffinity;
         }
 
         public Object payload() {

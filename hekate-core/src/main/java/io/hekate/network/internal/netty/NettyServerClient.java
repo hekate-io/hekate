@@ -43,6 +43,7 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.ChannelTrafficShapingHandler;
 import io.netty.handler.traffic.TrafficCounter;
+import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import java.io.IOException;
@@ -50,6 +51,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.nio.channels.ClosedChannelException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
@@ -64,6 +68,8 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
     private final InetSocketAddress remoteAddress;
 
     private final InetSocketAddress localAddress;
+
+    private final EventLoopGroup coreEventLoopGroup;
 
     private final ChannelFutureListener writeListener;
 
@@ -104,13 +110,14 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
     private volatile ChannelHandlerContext handlerCtx;
 
     public NettyServerClient(InetSocketAddress remoteAddress, InetSocketAddress localAddress, int hbInterval,
-        int hbLossThreshold, boolean hbDisabled, Map<String, HandlerRegistration> handlers) {
+        int hbLossThreshold, boolean hbDisabled, Map<String, HandlerRegistration> handlers, EventLoopGroup coreEventLoopGroup) {
         this.remoteAddress = remoteAddress;
         this.localAddress = localAddress;
         this.hbInterval = hbInterval;
         this.hbLossThreshold = hbLossThreshold;
         this.hbDisabled = hbDisabled;
         this.handlers = handlers;
+        this.coreEventLoopGroup = coreEventLoopGroup;
 
         writeListener = future -> {
             if (future.isSuccess()) {
@@ -237,16 +244,16 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                 log.debug("Received network handshake request [from={}, message={}]", address(), msg);
             }
 
-            HandshakeRequest request = (HandshakeRequest)msg;
+            HandshakeRequest handshake = (HandshakeRequest)msg;
 
             String protocol;
             HandlerRegistration handlerReg;
 
-            if (request == null) {
+            if (handshake == null) {
                 protocol = null;
                 handlerReg = null;
             } else {
-                this.protocol = protocol = request.protocol();
+                this.protocol = protocol = handshake.protocol();
 
                 handlerReg = handlers.get(protocol);
             }
@@ -260,11 +267,13 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
 
                 ctx.writeAndFlush(reject).addListener(ChannelFutureListener.CLOSE);
             } else {
-                // Check if we need to re-bind this channel to another thread.
-                EventLoopGroup eventLoop = handlerReg.config().getEventLoopGroup();
+                // Map connection to a thread.
+                EventLoop eventLoop = mapToThread(handshake.threadAffinity(), handlerReg);
 
-                if (eventLoop == null) {
-                    init(ctx.channel(), request, handlerReg);
+                // Check if we need to re-bind this channel to another thread.
+                if (eventLoop.inEventLoop()) {
+                    // No need to rebind.
+                    init(ctx.channel(), handshake, handlerReg);
                 } else {
                     if (debug) {
                         log.debug("Registering channel to a custom NIO thread [address={}, protocol={}]", address(), protocol);
@@ -290,7 +299,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                                             ctx.pipeline().addFirst(IdleStateHandler.class.getName(), handler)
                                         );
 
-                                        init(channel, request, handlerReg);
+                                        init(channel, handshake, handlerReg);
                                     }
                                 });
                             }
@@ -409,10 +418,6 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         }
 
         return future;
-    }
-
-    private boolean isHandshakeDone() {
-        return serverHandler != null;
     }
 
     private void pauseReceiver(boolean pause, Consumer<NetworkEndpoint<Object>> callback) {
@@ -629,6 +634,28 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         }
     }
 
+    private EventLoop mapToThread(int affinity, HandlerRegistration handler) {
+        EventLoopGroup group;
+
+        // Check if a dedicated thread pool is defined for this protocol.
+        if (handler.config().getEventLoopGroup() == null) {
+            // Use core thread pool.
+            group = coreEventLoopGroup;
+        } else {
+            // Use dedicated thread pool.
+            group = handler.config().getEventLoopGroup();
+        }
+
+        List<EventLoop> eventLoops = new ArrayList<>();
+
+        // Assumes that the same group always returns its event loops in the same order.
+        for (Iterator<EventExecutor> it = group.iterator(); it.hasNext(); ) {
+            eventLoops.add((EventLoop)it.next());
+        }
+
+        return eventLoops.get(Utils.mod(affinity, eventLoops.size()));
+    }
+
     private WritePromise fail(Object msg, Channel channel, Throwable error) {
         WritePromise promise = new WritePromise(msg, channel);
 
@@ -644,6 +671,10 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             log.error("Failed to notify callback on network operation failure "
                 + "[protocol={}, address={}, message={}]", protocol, address(), msg, e);
         }
+    }
+
+    private boolean isHandshakeDone() {
+        return serverHandler != null;
     }
 
     private InetAddress address() {

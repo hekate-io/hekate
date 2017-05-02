@@ -71,7 +71,9 @@ public abstract class NetworkTestBase extends HekateTestBase {
 
     private EventLoopGroup acceptorThreads;
 
-    private EventLoopGroup nioThreads;
+    private EventLoopGroup nioServerThreads;
+
+    private EventLoopGroup nioClientThreads;
 
     public NetworkTestBase(HekateTestContext ctx) {
         this.ctx = ctx;
@@ -85,7 +87,8 @@ public abstract class NetworkTestBase extends HekateTestBase {
     @Before
     public void setUp() throws Exception {
         acceptorThreads = newEventLoop(1);
-        nioThreads = newEventLoop(NIO_THREADS);
+        nioServerThreads = newEventLoop(NIO_THREADS);
+        nioClientThreads = newEventLoop(NIO_THREADS);
     }
 
     @After
@@ -104,7 +107,8 @@ public abstract class NetworkTestBase extends HekateTestBase {
             servers.clear();
         } finally {
             get(acceptorThreads.shutdownGracefully(0, MAX_VALUE, MILLISECONDS));
-            get(nioThreads.shutdownGracefully(0, MAX_VALUE, MILLISECONDS));
+            get(nioServerThreads.shutdownGracefully(0, MAX_VALUE, MILLISECONDS));
+            get(nioClientThreads.shutdownGracefully(0, MAX_VALUE, MILLISECONDS));
         }
     }
 
@@ -123,6 +127,10 @@ public abstract class NetworkTestBase extends HekateTestBase {
 
     protected InetSocketAddress newServerAddress() throws UnknownHostException {
         return new InetSocketAddress(InetAddress.getLocalHost(), 10001 + portsSeq.incrementAndGet());
+    }
+
+    protected NetworkServer createAndConfigureServerHandler(HandlerConfigurer<String> handler) {
+        return createAndConfigureServer(createHandler((msg, from) -> { /* No-op. */ }), handler, null);
     }
 
     protected NetworkServer createAndConfigureServerHandler(HandlerConfigurer<String> handler, ServerConfigurer server) {
@@ -156,7 +164,7 @@ public abstract class NetworkTestBase extends HekateTestBase {
         factory.setHeartbeatInterval(200);
         factory.setHeartbeatLossThreshold(3);
         factory.setAcceptorEventLoopGroup(acceptorThreads);
-        factory.setWorkerEventLoopGroup(nioThreads);
+        factory.setWorkerEventLoopGroup(nioServerThreads);
         factory.addHandler(handler);
 
         if (serverConfigurer != null) {
@@ -194,7 +202,7 @@ public abstract class NetworkTestBase extends HekateTestBase {
         factory.setProtocol(TEST_PROTOCOL);
         factory.setConnectTimeout(500);
         factory.setCodecFactory(createStringCodecFactory());
-        factory.setEventLoopGroup(nioThreads);
+        factory.setEventLoopGroup(nioClientThreads);
 
         if (configurer != null) {
             configurer.configure(factory);
