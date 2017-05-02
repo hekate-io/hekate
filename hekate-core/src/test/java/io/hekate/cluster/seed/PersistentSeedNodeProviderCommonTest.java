@@ -38,10 +38,10 @@ public abstract class PersistentSeedNodeProviderCommonTest<T extends SeedNodePro
     public void testRegisterUnregister() throws Exception {
         SeedNodeProvider provider = createProvider();
 
-        InetSocketAddress address1 = newSocketAddress(10001);
-        InetSocketAddress address2 = newSocketAddress(10002);
-        InetSocketAddress address3 = newSocketAddress(10001);
-        InetSocketAddress address4 = newSocketAddress(10002);
+        InetSocketAddress address1 = newSocketAddress();
+        InetSocketAddress address2 = newSocketAddress();
+        InetSocketAddress address3 = newSocketAddress();
+        InetSocketAddress address4 = newSocketAddress();
 
         repeat(3, i -> {
             // Register.
@@ -76,10 +76,10 @@ public abstract class PersistentSeedNodeProviderCommonTest<T extends SeedNodePro
     public void testRegisterUnregisterWrongCluster() throws Exception {
         SeedNodeProvider provider = createProvider();
 
-        InetSocketAddress address1 = newSocketAddress(10001);
-        InetSocketAddress address2 = newSocketAddress(10002);
-        InetSocketAddress address3 = newSocketAddress(10003);
-        InetSocketAddress address4 = newSocketAddress(10004);
+        InetSocketAddress address1 = newSocketAddress();
+        InetSocketAddress address2 = newSocketAddress();
+        InetSocketAddress address3 = newSocketAddress();
+        InetSocketAddress address4 = newSocketAddress();
 
         // Register.
         provider.registerRemote(CLUSTER_1, address1);
@@ -130,7 +130,7 @@ public abstract class PersistentSeedNodeProviderCommonTest<T extends SeedNodePro
     public void testRegisterDuplicate() throws Exception {
         SeedNodeProvider provider = createProvider();
 
-        InetSocketAddress address = newSocketAddress(10001);
+        InetSocketAddress address = newSocketAddress();
 
         provider.registerRemote(CLUSTER_1, address);
         provider.registerRemote(CLUSTER_1, address);
@@ -150,7 +150,7 @@ public abstract class PersistentSeedNodeProviderCommonTest<T extends SeedNodePro
     public void testUnregisterUnknown() throws Exception {
         SeedNodeProvider provider = createProvider();
 
-        InetSocketAddress address = newSocketAddress(10001);
+        InetSocketAddress address = newSocketAddress();
 
         provider.unregisterRemote(CLUSTER_1, address);
 
@@ -196,9 +196,9 @@ public abstract class PersistentSeedNodeProviderCommonTest<T extends SeedNodePro
 
             assertTrue(controlProvider.findSeedNodes(CLUSTER_1).contains(node.getSocketAddress()));
 
-            InetSocketAddress fake1 = newSocketAddress(15001);
-            InetSocketAddress fake2 = newSocketAddress(15002);
-            InetSocketAddress fake3 = newSocketAddress(15003);
+            InetSocketAddress fake1 = newSocketAddress();
+            InetSocketAddress fake2 = newSocketAddress();
+            InetSocketAddress fake3 = newSocketAddress();
 
             controlProvider.registerRemote(CLUSTER_1, fake1);
             controlProvider.registerRemote(CLUSTER_1, fake2);

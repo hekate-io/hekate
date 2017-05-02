@@ -252,10 +252,10 @@ public class SendPressureGuardTest extends HekateTestBase {
                 backPressure.onDequeue();
             }
 
-            long remaining = get(future);
+            long remainingTime = get(future);
 
-            assertTrue("remaining:" + remaining, remaining > 0);
-            assertTrue("remaining:" + remaining, remaining <= 250);
+            assertTrue("remaining time:" + remainingTime, remainingTime > 0);
+            assertTrue("remaining time:" + remainingTime, remainingTime <= 260);
             assertEquals(1, backPressure.queueSize());
 
             backPressure.onDequeue();

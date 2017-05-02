@@ -241,7 +241,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeContextTestBase {
 
             // Ping server to wake it up.
             try (Socket socket = new Socket()) {
-                socket.connect(new InetSocketAddress(addr, port));
+                socket.connect(new InetSocketAddress(addr, port), 3000);
             } catch (IOException e) {
                 // Ignore.
             }
