@@ -18,22 +18,25 @@ package io.hekate.spring.boot;
 
 import io.hekate.HekateTestBase;
 import io.hekate.core.Hekate;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.After;
 import org.springframework.boot.test.util.EnvironmentTestUtils;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.support.AbstractApplicationContext;
 
 import static org.junit.Assert.assertNotNull;
 
 public abstract class HekateAutoConfigurerTestBase extends HekateTestBase {
     private AnnotationConfigApplicationContext ctx;
 
+    private List<AnnotationConfigApplicationContext> allCtx = new ArrayList<>();
+
     @After
     public void tearDown() throws Exception {
-        if (ctx != null) {
-            ctx.close();
+        allCtx.forEach(AbstractApplicationContext::close);
 
-            ctx = null;
-        }
+        ctx = null;
     }
 
     protected void registerAndRefresh(Class<?>... annotatedClasses) {
@@ -50,6 +53,8 @@ public abstract class HekateAutoConfigurerTestBase extends HekateTestBase {
         }
 
         ctx.refresh();
+
+        allCtx.add(ctx);
     }
 
     protected <T> T autowire(T obj) {

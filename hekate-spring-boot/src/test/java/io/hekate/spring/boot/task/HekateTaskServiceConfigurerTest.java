@@ -16,10 +16,25 @@
 
 package io.hekate.spring.boot.task;
 
+import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterService;
+import io.hekate.cluster.seed.SeedNodeProvider;
+import io.hekate.cluster.seed.SeedNodeProviderMock;
+import io.hekate.coordinate.CoordinationService;
+import io.hekate.core.Hekate;
+import io.hekate.election.ElectionService;
+import io.hekate.inject.HekateInject;
+import io.hekate.inject.InjectionService;
+import io.hekate.lock.LockService;
+import io.hekate.messaging.MessagingService;
+import io.hekate.metrics.cluster.ClusterMetricsService;
+import io.hekate.metrics.local.LocalMetricsService;
+import io.hekate.partition.PartitionService;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
 import io.hekate.spring.boot.HekateTestConfigBase;
 import io.hekate.task.CallableTask;
 import io.hekate.task.TaskService;
+import java.net.UnknownHostException;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -28,14 +43,78 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class HekateTaskServiceConfigurerTest extends HekateAutoConfigurerTestBase {
+    @HekateInject
+    public static class InjectionCall implements CallableTask<Void> {
+        private static final long serialVersionUID = 1;
+
+        @Autowired
+        private Hekate hekate;
+
+        @Autowired
+        private TaskService tasks;
+
+        @Autowired
+        private ClusterService cluster;
+
+        @Autowired
+        private MessagingService messaging;
+
+        @Autowired
+        private LocalMetricsService localMetrics;
+
+        @Autowired
+        private ClusterMetricsService clusterMetrics;
+
+        @Autowired
+        private LockService locks;
+
+        @Autowired
+        private ElectionService election;
+
+        @Autowired
+        private CoordinationService coordination;
+
+        @Autowired
+        private PartitionService partitions;
+
+        @Autowired
+        private InjectionService injection;
+
+        @Override
+        public Void call() throws Exception {
+            assertNotNull(hekate);
+            assertNotNull(tasks);
+            assertNotNull(cluster);
+            assertNotNull(messaging);
+            assertNotNull(localMetrics);
+            assertNotNull(clusterMetrics);
+            assertNotNull(locks);
+            assertNotNull(election);
+            assertNotNull(coordination);
+            assertNotNull(partitions);
+            assertNotNull(injection);
+
+            say("Injection was successful.");
+
+            return null;
+        }
+    }
+
     @EnableAutoConfiguration
     static class TaskConfig extends HekateTestConfigBase {
+        private static final SeedNodeProviderMock SEED_NODE_PROVIDER_MOCK = new SeedNodeProviderMock();
+
         @Autowired(required = false)
         private TaskService taskService;
+
+        @Override
+        public SeedNodeProvider seedNodeProvider() throws UnknownHostException {
+            return SEED_NODE_PROVIDER_MOCK;
+        }
     }
 
     @Test
-    public void test() throws Exception {
+    public void testService() throws Exception {
         registerAndRefresh(new String[]{"hekate.task.enable:true"}, TaskConfig.class);
 
         assertNotNull(get("taskService", TaskService.class));
@@ -43,4 +122,18 @@ public class HekateTaskServiceConfigurerTest extends HekateAutoConfigurerTestBas
 
         assertEquals(100500, getNode().tasks().call((CallableTask<Integer>)() -> 100500).get().intValue());
     }
+
+    @Test
+    public void testInjection() throws Exception {
+        registerAndRefresh(new String[]{"hekate.task.enable:true", "endpoints.jmx.enabled:false"}, TaskConfig.class);
+        registerAndRefresh(new String[]{"hekate.task.enable:true", "endpoints.jmx.enabled:false"}, TaskConfig.class);
+
+        Hekate node = getNode();
+
+        get(node.cluster().futureOf(topology -> topology.size() == 2));
+
+        get(node.tasks().forRemotes().call(new InjectionCall()));
+        get(node.tasks().filter(ClusterNode::isLocal).call(new InjectionCall()));
+    }
+
 }
