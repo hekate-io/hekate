@@ -53,7 +53,7 @@ public class FailoverRequestTest extends FailoverTestBase {
                 sender.getNode().leaveAsync();
 
                 return ctx.retry().withDelay(50);
-            }).request("test--1").response(3, TimeUnit.SECONDS);
+            }).request("test").response(3, TimeUnit.SECONDS);
 
             fail("Error eas expected.");
         } catch (MessagingFutureException e) {
@@ -172,7 +172,7 @@ public class FailoverRequestTest extends FailoverTestBase {
 
         AtomicReference<TestChannel> lastTried = new AtomicReference<>();
 
-        sender.withLoadBalancer((message, ctx) -> {
+        String response = sender.withLoadBalancer((message, ctx) -> {
             if (lastTried.get() == null || lastTried.get() == sender) {
                 lastTried.set(receiver);
             } else {
@@ -189,6 +189,7 @@ public class FailoverRequestTest extends FailoverTestBase {
         }).request("test").response(3, TimeUnit.SECONDS);
 
         assertEquals(5, contexts.size());
+        assertEquals("test-" + RETRANSMIT_SUFFIX, response);
 
         return contexts;
     }
@@ -201,13 +202,14 @@ public class FailoverRequestTest extends FailoverTestBase {
 
             AtomicInteger failoverCalls = new AtomicInteger();
 
-            String reply = channel.withFailover(context -> {
+            String response = channel.withFailover(context -> {
                 failoverCalls.incrementAndGet();
 
                 return context.retry();
             }).request("test").response(3, TimeUnit.SECONDS);
 
-            assertNotNull(reply);
+            assertNotNull(response);
+            assertEquals("test-" + RETRANSMIT_SUFFIX, response);
 
             assertEquals(attempts, failoverCalls.get());
         });
@@ -220,7 +222,7 @@ public class FailoverRequestTest extends FailoverTestBase {
 
         List<Long> times = Collections.synchronizedList(new ArrayList<>());
 
-        String reply = channel.withFailover(context -> {
+        String response = channel.withFailover(context -> {
             long time = System.nanoTime();
 
             times.add(time);
@@ -228,9 +230,10 @@ public class FailoverRequestTest extends FailoverTestBase {
             return context.retry().withDelay(failoverDelay);
         }).request("test").response(3, TimeUnit.SECONDS);
 
-        assertNotNull(reply);
+        assertNotNull(response);
 
         assertEquals(3, times.size());
+        assertEquals("test-" + RETRANSMIT_SUFFIX, response);
 
         long prevTime = 0;
 

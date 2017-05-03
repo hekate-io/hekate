@@ -88,18 +88,18 @@ class InMemoryMessagingClient<T> implements MessagingClient<T> {
     }
 
     @Override
-    public void send(MessageContext<T> ctx, SendCallback callback) {
-        conn.sendNotification(ctx, callback);
+    public void send(MessageContext<T> ctx, SendCallback callback, boolean retransmit) {
+        conn.sendNotification(ctx, callback, retransmit);
     }
 
     @Override
-    public void subscribe(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
-        conn.subscribe(ctx, callback);
+    public void subscribe(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit) {
+        conn.subscribe(ctx, callback, retransmit);
     }
 
     @Override
-    public void request(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
-        conn.request(ctx, callback);
+    public void request(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit) {
+        conn.request(ctx, callback, retransmit);
     }
 
     @Override

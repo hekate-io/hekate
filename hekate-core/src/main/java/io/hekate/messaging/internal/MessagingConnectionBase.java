@@ -68,11 +68,11 @@ abstract class MessagingConnectionBase<T> {
 
     public abstract NetworkFuture<MessagingProtocol> disconnect();
 
-    public abstract void sendNotification(MessageContext<T> ctx, SendCallback callback);
+    public abstract void sendNotification(MessageContext<T> ctx, SendCallback callback, boolean retransmit);
 
-    public abstract void request(MessageContext<T> ctx, InternalRequestCallback<T> callback);
+    public abstract void request(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit);
 
-    public abstract void subscribe(MessageContext<T> ctx, InternalRequestCallback<T> callback);
+    public abstract void subscribe(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit);
 
     public abstract void replyChunk(MessagingWorker worker, int requestId, T chunk, SendCallback callback);
 

@@ -35,20 +35,24 @@ import io.hekate.network.NetworkMessage;
 import java.io.IOException;
 
 class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
+    private static final int FLAG_BYTES = 1;
+
+    private static final int MASK_TYPE = 15; // 00001111
+
+    private static final int MASK_RETRANSMIT = 128; // 10000000
+
     private static final MessagingProtocol.Type[] TYPES_CACHE = MessagingProtocol.Type.values();
 
-    private static final NetworkMessage.Preview<MessagingProtocol.Type> TYPE_PREVIEW = rd -> TYPES_CACHE[rd.readByte()];
+    private static final NetworkMessage.Preview<MessagingProtocol.Type> TYPE_PREVIEW = rd -> getType(rd.readByte());
 
     private static final NetworkMessage.PreviewInt REQUEST_ID_PREVIEW = rd -> {
-        // Skip type.
-        rd.skipBytes(1);
+        rd.skipBytes(FLAG_BYTES);
 
         return rd.readInt();
     };
 
     private static final NetworkMessage.PreviewInt AFFINITY_PREVIEW = rd -> {
-        // Skip type.
-        rd.skipBytes(1);
+        rd.skipBytes(FLAG_BYTES);
 
         return rd.readInt();
     };
@@ -78,9 +82,11 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
     @Override
     public MessagingProtocol decode(DataReader in) throws IOException {
-        MessagingProtocol.Type msgType = TYPES_CACHE[in.readByte()];
+        byte flags = in.readByte();
 
-        switch (msgType) {
+        MessagingProtocol.Type type = getType(flags);
+
+        switch (type) {
             case CONNECT: {
                 ClusterNodeId to = CodecUtils.readNodeId(in);
 
@@ -89,46 +95,58 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 return new Connect(to, sourceId);
             }
             case AFFINITY_NOTIFICATION: {
+                boolean retransmit = isRetransmit(flags);
+
                 int affinity = in.readInt();
 
                 T payload = delegate.decode(in);
 
-                return new AffinityNotification<>(affinity, payload);
+                return new AffinityNotification<>(affinity, retransmit, payload);
             }
             case NOTIFICATION: {
+                boolean retransmit = isRetransmit(flags);
+
                 T payload = delegate.decode(in);
 
-                return new Notification<>(payload);
+                return new Notification<>(retransmit, payload);
             }
             case AFFINITY_REQUEST: {
+                boolean retransmit = isRetransmit(flags);
+
                 int affinity = in.readInt();
                 int requestId = in.readInt();
 
                 T payload = delegate.decode(in);
 
-                return new AffinityRequest<>(affinity, requestId, payload);
+                return new AffinityRequest<>(affinity, requestId, retransmit, payload);
             }
             case REQUEST: {
+                boolean retransmit = isRetransmit(flags);
+
                 int requestId = in.readInt();
 
                 T payload = delegate.decode(in);
 
-                return new Request<>(requestId, payload);
+                return new Request<>(requestId, retransmit, payload);
             }
             case AFFINITY_SUBSCRIBE: {
+                boolean retransmit = isRetransmit(flags);
+
                 int affinity = in.readInt();
                 int requestId = in.readInt();
 
                 T payload = delegate.decode(in);
 
-                return new AffinitySubscribe<>(affinity, requestId, payload);
+                return new AffinitySubscribe<>(affinity, requestId, retransmit, payload);
             }
             case SUBSCRIBE: {
+                boolean retransmit = isRetransmit(flags);
+
                 int requestId = in.readInt();
 
                 T payload = delegate.decode(in);
 
-                return new Subscribe<>(requestId, payload);
+                return new Subscribe<>(requestId, retransmit, payload);
             }
             case RESPONSE_CHUNK: {
                 int requestId = in.readInt();
@@ -145,20 +163,25 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 return new FinalResponse<>(requestId, payload);
             }
             default: {
-                throw new IllegalArgumentException("Unexpected message type: " + msgType);
+                throw new IllegalArgumentException("Unexpected message type: " + type);
             }
         }
     }
 
     @Override
-    public void encode(MessagingProtocol message, DataWriter out) throws IOException {
-        MessagingProtocol.Type msgType = message.type();
+    public void encode(MessagingProtocol msg, DataWriter out) throws IOException {
+        MessagingProtocol.Type type = msg.type();
 
-        out.writeByte(msgType.ordinal());
+        int flags = 0;
 
-        switch (msgType) {
+        flags = setType(flags, type);
+        flags = setRetransmit(flags, msg.isRetransmit());
+
+        out.writeByte(flags);
+
+        switch (type) {
             case CONNECT: {
-                Connect connect = (Connect)message;
+                Connect connect = (Connect)msg;
 
                 CodecUtils.writeNodeId(connect.to(), out);
 
@@ -167,7 +190,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 break;
             }
             case AFFINITY_NOTIFICATION: {
-                AffinityNotification<T> notification = message.cast();
+                AffinityNotification<T> notification = msg.cast();
 
                 out.writeInt(notification.affinity());
 
@@ -176,14 +199,14 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 break;
             }
             case NOTIFICATION: {
-                Notification<T> notification = message.cast();
+                Notification<T> notification = msg.cast();
 
                 delegate.encode(notification.get(), out);
 
                 break;
             }
             case AFFINITY_REQUEST: {
-                AffinityRequest<T> request = message.cast();
+                AffinityRequest<T> request = msg.cast();
 
                 out.writeInt(request.affinity());
                 out.writeInt(request.requestId());
@@ -193,7 +216,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 break;
             }
             case REQUEST: {
-                Request<T> request = message.cast();
+                Request<T> request = msg.cast();
 
                 out.writeInt(request.requestId());
 
@@ -202,7 +225,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 break;
             }
             case AFFINITY_SUBSCRIBE: {
-                AffinitySubscribe<T> request = message.cast();
+                AffinitySubscribe<T> request = msg.cast();
 
                 out.writeInt(request.affinity());
                 out.writeInt(request.requestId());
@@ -212,7 +235,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 break;
             }
             case SUBSCRIBE: {
-                Subscribe<T> request = message.cast();
+                Subscribe<T> request = msg.cast();
 
                 out.writeInt(request.requestId());
 
@@ -221,7 +244,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 break;
             }
             case RESPONSE_CHUNK: {
-                ResponseChunk<T> response = message.cast();
+                ResponseChunk<T> response = msg.cast();
 
                 out.writeInt(response.requestId());
 
@@ -230,7 +253,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 break;
             }
             case FINAL_RESPONSE: {
-                FinalResponse<T> response = message.cast();
+                FinalResponse<T> response = msg.cast();
 
                 out.writeInt(response.requestId());
 
@@ -239,20 +262,40 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 break;
             }
             default: {
-                throw new IllegalArgumentException("Unexpected message type: " + msgType);
+                throw new IllegalArgumentException("Unexpected message type: " + type);
             }
         }
     }
 
-    private void encodeSourceId(MessagingChannelId sourceId, DataWriter out) throws IOException {
-        out.writeLong(sourceId.hiBits());
-        out.writeLong(sourceId.loBits());
+    private void encodeSourceId(MessagingChannelId id, DataWriter out) throws IOException {
+        out.writeLong(id.hiBits());
+        out.writeLong(id.loBits());
     }
 
     private MessagingChannelId decodeSourceId(DataReader in) throws IOException {
-        long sourceHiBits = in.readLong();
-        long sourceLoBits = in.readLong();
+        long hiBits = in.readLong();
+        long loBits = in.readLong();
 
-        return new MessagingChannelId(sourceHiBits, sourceLoBits);
+        return new MessagingChannelId(hiBits, loBits);
+    }
+
+    private static int setType(int flags, MessagingProtocol.Type type) {
+        return (byte)(flags | type.ordinal() & MASK_TYPE);
+    }
+
+    private static MessagingProtocol.Type getType(byte flags) {
+        return TYPES_CACHE[flags & MASK_TYPE];
+    }
+
+    private static int setRetransmit(int flags, boolean retransmit) {
+        if (retransmit) {
+            return flags | MASK_RETRANSMIT;
+        } else {
+            return flags;
+        }
+    }
+
+    private static boolean isRetransmit(byte flags) {
+        return (flags & MASK_RETRANSMIT) != 0;
     }
 }

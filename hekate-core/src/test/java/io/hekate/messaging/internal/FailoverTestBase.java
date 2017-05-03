@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class FailoverTestBase extends MessagingServiceTestBase {
+    public static final String RETRANSMIT_SUFFIX = "retransmit";
+
     protected final AtomicInteger failures = new AtomicInteger();
 
     protected TestChannel sender;
@@ -45,7 +47,7 @@ public abstract class FailoverTestBase extends MessagingServiceTestBase {
             }
 
             if (msg.mustReply()) {
-                msg.reply(msg.get() + "reply");
+                msg.reply(msg.get() + "-" + (msg.isRetransmit() ? RETRANSMIT_SUFFIX : "invalid"));
             }
         }));
 

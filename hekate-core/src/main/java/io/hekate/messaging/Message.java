@@ -16,6 +16,7 @@
 
 package io.hekate.messaging;
 
+import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.messaging.unicast.SendCallback;
@@ -187,6 +188,14 @@ public interface Message<T> {
      * @throws UnsupportedOperationException If message doesn't support partial responses (see {@link #isSubscribe()}).
      */
     void partialReply(T response, SendCallback callback) throws UnsupportedOperationException;
+
+    /**
+     * Returns {@code true} if this message is a possible duplicate of another message that was received earlier and then was
+     * retransmitted by the {@link MessagingChannel#withFailover(FailoverPolicy) failover} logic.
+     *
+     * @return {@code true} if this message is a possible duplicate of a previously received message.
+     */
+    boolean isRetransmit();
 
     /**
      * Returns {@code true} if this message represents a {@link MessagingChannel#subscribe(Object, ResponseCallback) subscribe request} and

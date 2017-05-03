@@ -54,6 +54,10 @@ abstract class MessagingProtocol {
     }
 
     abstract static class NoReplyMessage<T> extends MessagingProtocol implements Message<T> {
+        public NoReplyMessage(boolean retransmit) {
+            super(retransmit);
+        }
+
         @Override
         public final boolean mustReply() {
             return false;
@@ -106,7 +110,9 @@ abstract class MessagingProtocol {
         @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
         private volatile int mustReply;
 
-        public RequestBase(int requestId, T payload) {
+        public RequestBase(int requestId, boolean retransmit, T payload) {
+            super(retransmit);
+
             this.requestId = requestId;
             this.payload = payload;
         }
@@ -216,6 +222,8 @@ abstract class MessagingProtocol {
         private final MessagingChannelId channelId;
 
         public Connect(ClusterNodeId to, MessagingChannelId channelId) {
+            super(false);
+
             this.to = to;
             this.channelId = channelId;
         }
@@ -248,7 +256,9 @@ abstract class MessagingProtocol {
 
         private SendCallback callback;
 
-        public Notification(T payload) {
+        public Notification(boolean retransmit, T payload) {
+            super(retransmit);
+
             this.payload = payload;
         }
 
@@ -310,8 +320,8 @@ abstract class MessagingProtocol {
     static class AffinityNotification<T> extends Notification<T> {
         private final int affinity;
 
-        public AffinityNotification(int affinity, T payload) {
-            super(payload);
+        public AffinityNotification(int affinity, boolean retransmit, T payload) {
+            super(retransmit, payload);
 
             this.affinity = affinity;
         }
@@ -327,8 +337,8 @@ abstract class MessagingProtocol {
     }
 
     static class Request<T> extends RequestBase<T> {
-        public Request(int requestId, T payload) {
-            super(requestId, payload);
+        public Request(int requestId, boolean retransmit, T payload) {
+            super(requestId, retransmit, payload);
         }
 
         @Override
@@ -350,8 +360,8 @@ abstract class MessagingProtocol {
     static class AffinityRequest<T> extends Request<T> {
         private final int affinity;
 
-        public AffinityRequest(int affinity, int requestId, T payload) {
-            super(requestId, payload);
+        public AffinityRequest(int affinity, int requestId, boolean retransmit, T payload) {
+            super(requestId, retransmit, payload);
 
             this.affinity = affinity;
         }
@@ -367,8 +377,8 @@ abstract class MessagingProtocol {
     }
 
     static class Subscribe<T> extends RequestBase<T> {
-        public Subscribe(int requestId, T payload) {
-            super(requestId, payload);
+        public Subscribe(int requestId, boolean retransmit, T payload) {
+            super(requestId, retransmit, payload);
         }
 
         @Override
@@ -385,8 +395,8 @@ abstract class MessagingProtocol {
     static class AffinitySubscribe<T> extends Subscribe<T> {
         private final int affinity;
 
-        public AffinitySubscribe(int affinity, int requestId, T payload) {
-            super(requestId, payload);
+        public AffinitySubscribe(int affinity, int requestId, boolean retransmit, T payload) {
+            super(requestId, retransmit, payload);
 
             this.affinity = affinity;
         }
@@ -418,6 +428,8 @@ abstract class MessagingProtocol {
         private SendCallback callback;
 
         public ResponseChunk(int requestId, T payload) {
+            super(false);
+
             this.requestId = requestId;
             this.payload = payload;
         }
@@ -528,6 +540,8 @@ abstract class MessagingProtocol {
         private SendCallback callback;
 
         public FinalResponse(int requestId, T payload) {
+            super(false);
+
             this.requestId = requestId;
             this.payload = payload;
         }
@@ -614,7 +628,17 @@ abstract class MessagingProtocol {
         }
     }
 
+    private final boolean retransmit;
+
+    public MessagingProtocol(boolean retransmit) {
+        this.retransmit = retransmit;
+    }
+
     public abstract Type type();
+
+    public boolean isRetransmit() {
+        return retransmit;
+    }
 
     @SuppressWarnings("unchecked")
     public <T extends MessagingProtocol> T cast() {

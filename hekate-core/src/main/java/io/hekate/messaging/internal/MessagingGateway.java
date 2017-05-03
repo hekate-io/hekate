@@ -598,7 +598,7 @@ class MessagingGateway<T> {
             }
         };
 
-        client.send(ctx, retryCallback);
+        client.send(ctx, retryCallback, prevErr != null);
     }
 
     private void requestAsync(T request, MessageContext<T> ctx, ResponseCallback<T> callback) {
@@ -724,9 +724,9 @@ class MessagingGateway<T> {
         };
 
         if (ctx.isSubscribe()) {
-            client.subscribe(ctx, internalCallback);
+            client.subscribe(ctx, internalCallback, prevErr != null);
         } else {
-            client.request(ctx, internalCallback);
+            client.request(ctx, internalCallback, prevErr != null);
         }
     }
 

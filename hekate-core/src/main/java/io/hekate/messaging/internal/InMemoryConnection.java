@@ -38,13 +38,13 @@ class InMemoryConnection<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void sendNotification(MessageContext<T> ctx, SendCallback callback) {
+    public void sendNotification(MessageContext<T> ctx, SendCallback callback, boolean retransmit) {
         Notification<T> msg;
 
         if (ctx.hasAffinity()) {
-            msg = new AffinityNotification<>(ctx.affinity(), ctx.message());
+            msg = new AffinityNotification<>(ctx.affinity(), retransmit, ctx.message());
         } else {
-            msg = new Notification<>(ctx.message());
+            msg = new Notification<>(retransmit, ctx.message());
         }
 
         if (callback != null) {
@@ -61,15 +61,15 @@ class InMemoryConnection<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void request(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
+    public void request(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit) {
         RequestHandle<T> handle = registerRequest(ctx, callback);
 
         Request<T> msg;
 
         if (ctx.hasAffinity()) {
-            msg = new AffinityRequest<>(ctx.affinity(), handle.id(), ctx.message());
+            msg = new AffinityRequest<>(ctx.affinity(), handle.id(), retransmit, ctx.message());
         } else {
-            msg = new Request<>(handle.id(), ctx.message());
+            msg = new Request<>(handle.id(), retransmit, ctx.message());
         }
 
         onAsyncEnqueue();
@@ -82,15 +82,15 @@ class InMemoryConnection<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void subscribe(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
+    public void subscribe(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit) {
         RequestHandle<T> handle = registerRequest(ctx, callback);
 
         Subscribe<T> msg;
 
         if (ctx.hasAffinity()) {
-            msg = new AffinitySubscribe<>(ctx.affinity(), handle.id(), ctx.message());
+            msg = new AffinitySubscribe<>(ctx.affinity(), handle.id(), retransmit, ctx.message());
         } else {
-            msg = new Subscribe<>(handle.id(), ctx.message());
+            msg = new Subscribe<>(handle.id(), retransmit, ctx.message());
         }
 
         onAsyncEnqueue();
