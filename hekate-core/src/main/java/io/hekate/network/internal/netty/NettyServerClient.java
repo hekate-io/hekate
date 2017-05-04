@@ -105,6 +105,8 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
 
     private EventLoop eventLoop;
 
+    private boolean connectNotified;
+
     private volatile Object userContext;
 
     private volatile ChannelHandlerContext handlerCtx;
@@ -194,7 +196,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             handlerReg.remove(this);
         }
 
-        if (serverHandler != null) {
+        if (serverHandler != null && connectNotified) {
             try {
                 serverHandler.onDisconnect(this);
             } finally {
@@ -526,9 +528,17 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         }
 
         // Accept handshake.
-        channel.writeAndFlush(new HandshakeAccept(hbInterval, hbLossThreshold, hbDisabled));
+        HandshakeAccept accepted = new HandshakeAccept(hbInterval, hbLossThreshold, hbDisabled);
 
-        serverHandler.onConnect(request.payload(), this);
+        channel.writeAndFlush(accepted).addListener(future -> {
+                if (channel.isOpen()) {
+                    connectNotified = true;
+
+                    // Notify on connect.
+                    serverHandler.onConnect(request.payload(), this);
+                }
+            }
+        );
     }
 
     private void doSend(Object msg, NetworkSendCallback<Object> onSend) {
