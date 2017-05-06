@@ -16,11 +16,12 @@
 
 package io.hekate.spring.bean;
 
+import io.hekate.core.inject.HekateInject;
+import io.hekate.core.inject.InjectionService;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.Service;
-import io.hekate.inject.HekateInject;
-import io.hekate.inject.InjectionService;
+import io.hekate.core.service.ServiceFactory;
 import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -39,6 +40,22 @@ class SpringInjectionService implements InjectionService, ConfigurableService {
         assert parentCtx != null : "Application context is null.";
 
         this.parentCtx = parentCtx;
+    }
+
+    public static ServiceFactory<InjectionService> factory(ApplicationContext ctx) {
+        assert ctx != null : "Application context is null.";
+
+        return new ServiceFactory<InjectionService>() {
+            @Override
+            public InjectionService createService() {
+                return new SpringInjectionService(ctx);
+            }
+
+            @Override
+            public String toString() {
+                return SpringInjectionService.class.getSimpleName() + "Factory";
+            }
+        };
     }
 
     @Override
@@ -94,5 +111,4 @@ class SpringInjectionService implements InjectionService, ConfigurableService {
     public String toString() {
         return getClass().getSimpleName();
     }
-
 }

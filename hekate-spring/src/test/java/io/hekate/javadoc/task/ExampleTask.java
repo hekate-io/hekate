@@ -18,7 +18,7 @@ package io.hekate.javadoc.task;
 
 import foo.bar.SomeBean;
 import io.hekate.core.Hekate;
-import io.hekate.inject.HekateInject;
+import io.hekate.core.inject.HekateInject;
 import io.hekate.messaging.MessagingService;
 import io.hekate.task.RunnableTask;
 import org.springframework.beans.factory.annotation.Autowired;

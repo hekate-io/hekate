@@ -18,8 +18,9 @@ package io.hekate.spring.bean;
 
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
+import io.hekate.core.inject.InjectionService;
+import io.hekate.core.resource.ResourceService;
 import io.hekate.core.service.ServiceFactory;
-import io.hekate.inject.InjectionService;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.FactoryBean;
@@ -118,50 +119,51 @@ import org.springframework.context.ApplicationContextAware;
  */
 public class HekateSpringBootstrap extends HekateBootstrap implements InitializingBean, DisposableBean, FactoryBean<Hekate>,
     ApplicationContextAware {
-    private Hekate instance;
+    private Hekate node;
 
     private ApplicationContext ctx;
 
-    private ServiceFactory<InjectionService> injectorFactory;
+    private ServiceFactory<InjectionService> injection;
+
+    private ServiceFactory<ResourceService> resource;
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        injectorFactory = new ServiceFactory<InjectionService>() {
-            @Override
-            public InjectionService createService() {
-                return new SpringInjectionService(ctx);
-            }
+        injection = SpringInjectionService.factory(ctx);
+        resource = SpringResourceService.factory(ctx);
 
-            @Override
-            public String toString() {
-                return SpringInjectionService.class.getSimpleName() + "Factory";
-            }
-        };
+        withService(injection);
+        withService(resource);
 
-        withService(injectorFactory);
-
-        instance = join();
+        node = join();
     }
 
     @Override
     public void destroy() throws Exception {
-        if (instance != null) {
+        if (node != null) {
             try {
-                instance.leave();
+                node.leave();
             } finally {
-                if (injectorFactory != null && getServices() != null) {
-                    getServices().remove(injectorFactory);
+                if (getServices() != null) {
+                    if (injection != null) {
+                        getServices().remove(injection);
+                    }
+
+                    if (resource != null) {
+                        getServices().remove(resource);
+                    }
                 }
 
-                injectorFactory = null;
-                instance = null;
+                injection = null;
+                resource = null;
+                node = null;
             }
         }
     }
 
     @Override
     public Hekate getObject() throws Exception {
-        return instance;
+        return node;
     }
 
     @Override

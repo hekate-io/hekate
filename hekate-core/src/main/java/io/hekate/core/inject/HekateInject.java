@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package io.hekate.inject;
+package io.hekate.core.inject;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;

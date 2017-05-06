@@ -677,12 +677,8 @@
                             <packages>io.hekate.net*</packages>
                         </group>
                         <group>
-                            <title>Dependency Injection API</title>
-                            <packages>io.hekate.inject*</packages>
-                        </group>
-                        <group>
                             <title>Services and Plugins API</title>
-                            <packages>io.hekate.core.service*:io.hekate.core.plugin*</packages>
+                            <packages>io.hekate.core.*:</packages>
                         </group>
                         <group>
                             <title>Spring Framework Integration API</title>

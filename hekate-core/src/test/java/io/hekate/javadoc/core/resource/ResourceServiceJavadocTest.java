@@ -14,30 +14,24 @@
  * under the License.
  */
 
-package io.hekate.javadoc.inject;
+package io.hekate.javadoc.core.resource;
 
 import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
-import io.hekate.inject.InjectionService;
+import io.hekate.core.resource.ResourceService;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
 
-public class InjectionServiceJavadocTest extends HekateNodeTestBase {
+public class ResourceServiceJavadocTest extends HekateNodeTestBase {
     @Test
-    public void exampleService() throws Exception {
+    public void example() throws Exception {
         Hekate hekate = createNode().join();
 
-        try {
-            // Start:access
-            InjectionService injection = hekate.get(InjectionService.class);
-            // End:access
+        // Start:access
+        ResourceService resources = hekate.get(ResourceService.class);
+        // End:access
 
-            assertNotNull(injection);
-        } catch (IllegalArgumentException e) {
-            // Expected error since node was started via regular bootstrap.
-            // In real world it should be started via Spring bootstrap.
-        }
+        assertNotNull(resources);
     }
-
 }

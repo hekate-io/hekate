@@ -15,6 +15,6 @@
  */
 
 /**
- * {@link io.hekate.inject.InjectionService} API.
+ * {@link io.hekate.core.inject.InjectionService} API.
  */
-package io.hekate.inject;
+package io.hekate.core.inject;

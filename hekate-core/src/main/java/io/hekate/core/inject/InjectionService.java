@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package io.hekate.inject;
+package io.hekate.core.inject;
 
 import io.hekate.core.Hekate;
 import io.hekate.core.service.Service;
@@ -37,7 +37,7 @@ import io.hekate.core.service.Service;
  * (like <a href="{@docRoot}/io/hekate/spring/bean/HekateSpringBootstrap.html">HekateSpringBootstrap</a>). Availability of this service can
  * be checked via {@link Hekate#has(Class)} method. If service is available then it can be accessed via {@link Hekate#get(Class)} as in the
  * example below:
- * ${source: inject/InjectionServiceJavadocTest.java#access}
+ * ${source: core/inject/InjectionServiceJavadocTest.java#access}
  * </p>
  *
  * <h2>Enabling injection</h2>
