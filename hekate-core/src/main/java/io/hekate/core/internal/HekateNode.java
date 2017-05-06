@@ -45,6 +45,7 @@ import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Utils;
+import io.hekate.core.resource.ResourceService;
 import io.hekate.core.service.ClusterContext;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.Service;
@@ -1125,6 +1126,7 @@ class HekateNode implements Hekate, Serializable {
         // Prepare core services.
         List<Class<? extends Service>> core = new ArrayList<>();
 
+        core.add(ResourceService.class);
         core.add(NetworkService.class);
         core.add(ClusterService.class);
         core.add(MessagingService.class);
