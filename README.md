@@ -81,7 +81,7 @@ For now, the most detailed documentation is provided as part of javadocs. Comple
 
 ### Software requirements:
 
- - Latest stable [Oracle JDK 8](http://www.oracle.com/technetwork/java/)
+ - Latest stable [Oracle JDK 8](http://www.oracle.com/technetwork/java/) or [Open JDK 8](http://openjdk.java.net/)
  - Latest stable [Apache Maven](http://maven.apache.org/) (3.3+)
  - Latest stable [Docker](https://www.docker.com) (required for tests only)
 
@@ -89,7 +89,7 @@ For now, the most detailed documentation is provided as part of javadocs. Comple
 ### Building project (no tests):
 
  - cd to the project's root folder
- - run `mvnw clean package -DskipTests=true`
+ - run `./mvnw clean package -DskipTests=true`
  
 ### Building project (with tests):
  
@@ -97,7 +97,7 @@ For now, the most detailed documentation is provided as part of javadocs. Comple
   - make a copy of `test.properties` file with name `my_test.properties`
   - edit `my_test.properties` according to your environment
   - run `docker-compose up -d` to prepare Docker-based testing infrastructure
-  - run `mvnw clean package`
+  - run `./mvnw clean package`
 
 ## Source code structure
 
