@@ -43,6 +43,7 @@ import io.netty.channel.EventLoop;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.ssl.SslContext;
 import io.netty.handler.traffic.ChannelTrafficShapingHandler;
 import io.netty.handler.traffic.TrafficCounter;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -136,7 +137,7 @@ class NettyClient<T> implements NetworkClient<T> {
                     log.trace("Notifying on connect future failure [channel={}]", id, future.cause());
                 }
 
-                firstError = future.cause();
+                firstError = NettySslUtil.unwrap(future.cause());
 
                 ChannelPipeline pipeline = future.channel().pipeline();
 
@@ -219,7 +220,7 @@ class NettyClient<T> implements NetworkClient<T> {
                 log.trace("Exception caught in state handler [channel={}]", id, error);
             }
 
-            firstError = error;
+            firstError = NettySslUtil.unwrap(error);
 
             ctx.close();
         }
@@ -336,6 +337,8 @@ class NettyClient<T> implements NetworkClient<T> {
 
     private final NettyWriteQueue writeQueue = new NettyWriteQueue();
 
+    private final SslContext ssl;
+
     private NetworkFuture<T> connectFuture;
 
     private NetworkFuture<T> disconnectFuture;
@@ -381,8 +384,8 @@ class NettyClient<T> implements NetworkClient<T> {
         protocol = factory.getProtocol();
         useEpoll = factory.getEventLoopGroup() instanceof EpollEventLoopGroup;
         eventLoop = factory.getEventLoopGroup().next();
-
         metrics = factory.getMetrics();
+        ssl = factory.getSsl();
     }
 
     @Override
@@ -398,6 +401,11 @@ class NettyClient<T> implements NetworkClient<T> {
     @Override
     public InetSocketAddress localAddress() {
         return localAddress;
+    }
+
+    @Override
+    public boolean isSecure() {
+        return ssl != null;
     }
 
     @Override
@@ -661,6 +669,10 @@ class NettyClient<T> implements NetworkClient<T> {
                     NettyClientDeferHandler<T> deferHandler = new NettyClientDeferHandler<>(id(), log);
 
                     NetworkProtocolCodec netCodec = new NetworkProtocolCodec(codec);
+
+                    if (ssl != null) {
+                        pipeline.addLast(ssl.newHandler(ch.alloc(), address.getAddress().getHostAddress(), address.getPort()));
+                    }
 
                     if (metrics != null) {
                         pipeline.addLast(new ChannelTrafficShapingHandler(0, 0, TRAFFIC_SHAPING_INTERVAL) {

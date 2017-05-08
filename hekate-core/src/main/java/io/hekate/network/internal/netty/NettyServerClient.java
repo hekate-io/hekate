@@ -75,6 +75,8 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
 
     private final NettyWriteQueue writeQueue = new NettyWriteQueue();
 
+    private final boolean ssl;
+
     private final int hbInterval;
 
     private final int hbLossThreshold;
@@ -111,10 +113,11 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
 
     private volatile ChannelHandlerContext handlerCtx;
 
-    public NettyServerClient(InetSocketAddress remoteAddress, InetSocketAddress localAddress, int hbInterval,
+    public NettyServerClient(InetSocketAddress remoteAddress, InetSocketAddress localAddress, boolean ssl, int hbInterval,
         int hbLossThreshold, boolean hbDisabled, Map<String, HandlerRegistration> handlers, EventLoopGroup coreEventLoopGroup) {
         this.remoteAddress = remoteAddress;
         this.localAddress = localAddress;
+        this.ssl = ssl;
         this.hbInterval = hbInterval;
         this.hbLossThreshold = hbLossThreshold;
         this.hbDisabled = hbDisabled;
@@ -162,6 +165,11 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
     @Override
     public InetSocketAddress localAddress() {
         return localAddress;
+    }
+
+    @Override
+    public boolean isSecure() {
+        return ssl;
     }
 
     @Override
@@ -314,22 +322,24 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable error) throws Exception {
+        Throwable realError = NettySslUtil.unwrap(error);
+
         boolean disconnect = true;
 
-        if (error instanceof CodecException) {
+        if (realError instanceof CodecException) {
             disconnect = false;
-        } else if (error instanceof IOException) {
+        } else if (realError instanceof IOException) {
             if (debug) {
                 log.debug("Closing inbound network connection due to I/O error "
-                    + "[protocol={}, address={}, reason={}]", protocol, address(), error.toString());
+                    + "[protocol={}, address={}, reason={}]", protocol, address(), realError.toString());
             }
         } else {
-            log.error("Inbound network connection failure [protocol={}, address={}]", protocol, address(), error);
+            log.error("Inbound network connection failure [protocol={}, address={}]", protocol, address(), realError);
         }
 
         if (disconnect) {
             if (serverHandler != null) {
-                serverHandler.onFailure(this, error);
+                serverHandler.onFailure(this, realError);
             }
 
             ctx.close();

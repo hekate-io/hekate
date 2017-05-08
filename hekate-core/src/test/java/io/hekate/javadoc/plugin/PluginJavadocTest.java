@@ -79,7 +79,7 @@ public class PluginJavadocTest extends HekateTestBase {
 
     @BeforeClass
     public static void mayBeDisableTest() {
-        Assume.assumeTrue(Boolean.valueOf(HekateTestProps.get("MULTICAST_ENABLED")));
+        Assume.assumeTrue(HekateTestProps.is("MULTICAST_ENABLED"));
     }
 
     @Test

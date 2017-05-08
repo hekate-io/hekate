@@ -30,6 +30,7 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
 - **Messaging**
     - Asynchronous ([Netty](http://netty.io)-based)
     - Cluster-aware load balancing and routing
+    - SSL/TLS encryption of socket communications (optional)
     - Custom failover policies
     - Pluggable serialization
         - [Kryo](https://github.com/EsotericSoftware/kryo)

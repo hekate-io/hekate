@@ -48,7 +48,7 @@ public class HekateCloudStoreSeedNodeProviderConfigurerTest extends HekateAutoCo
 
     @BeforeClass
     public static void mayBeDisableTest() {
-        Assume.assumeTrue(Boolean.valueOf(HekateTestProps.get("AWS_TEST_ENABLED")));
+        Assume.assumeTrue(HekateTestProps.is("AWS_TEST_ENABLED"));
     }
 
     @Test

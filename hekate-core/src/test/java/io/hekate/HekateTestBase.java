@@ -69,7 +69,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import org.junit.After;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
@@ -272,12 +271,6 @@ public abstract class HekateTestBase {
 
     /** Executor for {@link #runAsync(Callable)}. */
     private volatile ExecutorService async;
-
-    @BeforeClass
-    public static void ensureTestProperties() {
-        // Make sure that test properties can be loaded.
-        HekateTestProps.get("test");
-    }
 
     public static void busyWait(String comment, Callable<Boolean> condition) throws Exception {
         for (int i = 0; i < BUSY_WAIT_LOOPS; i++) {

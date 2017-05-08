@@ -36,6 +36,10 @@ public final class ConfigCheck {
         }
     }
 
+    public HekateConfigurationException fail(Throwable cause) {
+        throw new HekateConfigurationException(component + ": " + cause.toString(), cause);
+    }
+
     public void range(int value, int from, int to, String component) {
         that(value >= from && value <= to, component + " must be within the " + from + ".." + to + " range.");
     }

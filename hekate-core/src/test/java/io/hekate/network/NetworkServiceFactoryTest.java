@@ -282,4 +282,23 @@ public class NetworkServiceFactoryTest extends HekateTestBase {
         assertTrue(cfg.getConfigProviders().contains(c1));
         assertTrue(cfg.getConfigProviders().contains(c2));
     }
+
+    @Test
+    public void testSsl() {
+        assertNull(cfg.getSsl());
+
+        NetworkSslConfig ssl = new NetworkSslConfig();
+
+        cfg.setSsl(ssl);
+
+        assertSame(ssl, cfg.getSsl());
+
+        cfg.setSsl(null);
+
+        assertNull(cfg.getSsl());
+
+        assertSame(cfg, cfg.withSsl(ssl));
+        assertSame(ssl, cfg.getSsl());
+    }
+
 }

@@ -121,6 +121,19 @@ import java.util.List;
  * handled by its {@link NetworkServerHandler}. If such instance can't be found then connection will be rejected.
  * </p>
  *
+ * <h2>SSL encryption</h2>
+ * <p>
+ * It is possible to configure {@link NetworkService} to use secure communications by setting {@link
+ * NetworkServiceFactory#setSsl(NetworkSslConfig) SSL configuration}. Please see the documentation of the {@link NetworkSslConfig}
+ * class for available configuration options.
+ * </p>
+ *
+ * <p>
+ * Note that SSL encryption will be applied to all network communications at the cluster node level, thus it is important to make sure that
+ * all nodes in the cluster are configured to use SSL encryption. Mixed mode, when some nodes do use SSL and some do not use it, is not
+ * supported. In such case non-SSL nodes will not be able to connect to SSL-enabled nodes and vice versa.
+ * </p>
+ *
  * <p>
  * Protocol identifier must be specified within the {@link NetworkConnector} configuration via {@link
  * NetworkConnectorConfig#setProtocol(String)} method.

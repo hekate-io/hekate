@@ -16,8 +16,10 @@
 
 package io.hekate.network.internal.netty;
 
+import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.network.internal.NetworkServerConfig;
 import io.netty.channel.EventLoopGroup;
+import io.netty.handler.ssl.SslContext;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -29,6 +31,8 @@ public class NettyServerFactory extends NetworkServerConfig {
     private EventLoopGroup workerEventLoopGroup;
 
     private List<NettyServerHandlerConfig<?>> handlers;
+
+    private SslContext ssl;
 
     public boolean isDisableHeartbeats() {
         return disableHeartbeats;
@@ -64,6 +68,16 @@ public class NettyServerFactory extends NetworkServerConfig {
 
     public void setWorkerEventLoopGroup(EventLoopGroup workerEventLoopGroup) {
         this.workerEventLoopGroup = workerEventLoopGroup;
+    }
+
+    public SslContext getSsl() {
+        return ssl;
+    }
+
+    public void setSsl(SslContext ssl) {
+        ArgAssert.check(ssl == null || !ssl.isClient(), "SSL context must be configured in server mode.");
+
+        this.ssl = ssl;
     }
 
     public NettyServer createServer() {

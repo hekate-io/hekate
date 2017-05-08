@@ -50,9 +50,12 @@ public abstract class HekateNodeContextTestBase extends HekateNodeTestBase {
                 configurer.configure(boot);
             }
 
-            boot.withService(NetworkServiceFactory.class, net ->
-                net.setTransport(ctx.getTransport())
-            );
+            boot.withService(ctx::resources);
+
+            boot.withService(NetworkServiceFactory.class, net -> {
+                net.setTransport(ctx.transport());
+                ctx.ssl().ifPresent(net::setSsl);
+            });
         });
     }
 }

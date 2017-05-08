@@ -21,12 +21,12 @@ import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkClientCallback;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkMessage;
+import io.hekate.network.NetworkSslConfig;
 import io.hekate.network.NetworkTransportType;
 import io.hekate.network.internal.NetworkClientCallbackMock;
 import io.hekate.network.internal.NetworkSendCallbackMock;
 import io.hekate.network.internal.NetworkServer;
 import io.hekate.network.internal.NetworkServerHandlerMock;
-import io.hekate.network.internal.NetworkTestBase;
 import io.netty.channel.EventLoopGroup;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -34,6 +34,7 @@ import java.net.ServerSocket;
 import java.nio.channels.ClosedChannelException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -54,8 +55,8 @@ public class NetworkMessagingTest extends NetworkTestBase {
     public static class NetworkMessagingTestContext extends HekateTestContext {
         private final int handlerThreads;
 
-        public NetworkMessagingTestContext(NetworkTransportType transport, int handlerThreads) {
-            super(transport);
+        public NetworkMessagingTestContext(NetworkTransportType transport, Optional<NetworkSslConfig> ssl, int handlerThreads) {
+            super(transport, ssl);
 
             this.handlerThreads = handlerThreads;
         }
@@ -85,9 +86,9 @@ public class NetworkMessagingTest extends NetworkTestBase {
     public static Collection<NetworkMessagingTestContext> getNetworkMessagingTestContexts() {
         return getNetworkTestContexts().stream().flatMap(ctx ->
             Stream.of(
-                new NetworkMessagingTestContext(ctx.getTransport(), 0),
-                new NetworkMessagingTestContext(ctx.getTransport(), 1),
-                new NetworkMessagingTestContext(ctx.getTransport(), 2)
+                new NetworkMessagingTestContext(ctx.transport(), ctx.ssl(), 0),
+                new NetworkMessagingTestContext(ctx.transport(), ctx.ssl(), 1),
+                new NetworkMessagingTestContext(ctx.transport(), ctx.ssl(), 2)
             )
         ).collect(toList());
     }

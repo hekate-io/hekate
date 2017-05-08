@@ -25,7 +25,6 @@ import io.hekate.network.internal.NetworkSendCallbackMock;
 import io.hekate.network.internal.NetworkServer;
 import io.hekate.network.internal.NetworkServerCallbackMock;
 import io.hekate.network.internal.NetworkServerHandlerMock;
-import io.hekate.network.internal.NetworkTestBase;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import org.junit.Test;

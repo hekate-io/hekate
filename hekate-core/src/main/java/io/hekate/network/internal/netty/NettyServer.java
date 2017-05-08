@@ -41,6 +41,7 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.ssl.SslContext;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -145,6 +146,8 @@ class NettyServer implements NetworkServer {
 
     private final EventLoopGroup workers;
 
+    private final SslContext ssl;
+
     // Volatile since address is updated (to reflect a real port) after server is started and can be accessed in non-synchronized context.
     private volatile InetSocketAddress address;
 
@@ -180,6 +183,7 @@ class NettyServer implements NetworkServer {
         soSendBuffer = factory.getSoSendBufferSize();
         soReuseAddress = factory.getSoReuseAddress();
         soBacklog = factory.getSoBacklog();
+        ssl = factory.getSsl();
 
         acceptors = factory.getAcceptorEventLoopGroup();
         workers = factory.getWorkerEventLoopGroup();
@@ -412,20 +416,23 @@ class NettyServer implements NetworkServer {
                         return;
                     }
 
-                    ChannelPipeline pipeline = channel.pipeline();
+                    NettyServerClient clientHandler = new NettyServerClient(remoteAddress, localAddress, ssl != null, hbInterval,
+                        hbLossThreshold, hbDisabled, handlers, workers);
+
+                    clients.put(channel, clientHandler);
 
                     NetworkProtocolCodec codec = new NetworkProtocolCodec(codecs);
+
+                    ChannelPipeline pipeline = channel.pipeline();
+
+                    if (ssl != null) {
+                        pipeline.addLast(ssl.newHandler(channel.alloc()));
+                    }
 
                     pipeline.addLast(new NetworkVersionDecoder());
                     pipeline.addLast(codec.encoder());
                     pipeline.addLast(codec.decoder());
-
-                    NettyServerClient client = new NettyServerClient(remoteAddress, localAddress, hbInterval, hbLossThreshold, hbDisabled,
-                        handlers, workers);
-
-                    pipeline.addLast(client);
-
-                    clients.put(channel, client);
+                    pipeline.addLast(clientHandler);
 
                     channel.closeFuture().addListener(close -> {
                         if (DEBUG) {

@@ -27,6 +27,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ConnectTimeoutException;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -123,22 +124,28 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         super.channelActive(ctx);
 
-        HandshakeRequest request = new HandshakeRequest(protocol, login, threadAffinity);
-
-        if (debug) {
-            log.debug("Connected ...sending handshake request [channel={}, request={}]", id, request);
+        if (client.isSecure()) {
+            if (debug) {
+                log.debug("Deferred handshake until SSL connection is established [channel={}]", id);
+            }
+        } else {
+            handshake(ctx);
         }
-
-        if (metrics != null) {
-            metrics.onConnect();
-        }
-
-        ctx.writeAndFlush(request);
     }
 
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        if (evt instanceof AutoReadChangeEvent) {
+        if (evt instanceof SslHandshakeCompletionEvent) {
+            if (((SslHandshakeCompletionEvent)evt).isSuccess()) {
+                if (debug) {
+                    log.debug("SSL connection established [channel={}]", id);
+                }
+
+                handshake(ctx);
+            }
+
+            super.userEventTriggered(ctx, evt);
+        } else if (evt instanceof AutoReadChangeEvent) {
             if (evt == AutoReadChangeEvent.PAUSE) {
                 // Completely ignore read timeouts.
                 ignoreReadTimeouts = -1;
@@ -298,5 +305,19 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
                 ctx.fireUserEventTriggered(new HandshakeDoneEvent(epoch));
             }
         }
+    }
+
+    private void handshake(ChannelHandlerContext ctx) {
+        HandshakeRequest request = new HandshakeRequest(protocol, login, threadAffinity);
+
+        if (debug) {
+            log.debug("Connected ...sending handshake request [channel={}, request={}]", id, request);
+        }
+
+        if (metrics != null) {
+            metrics.onConnect();
+        }
+
+        ctx.writeAndFlush(request);
     }
 }

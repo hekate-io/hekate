@@ -27,6 +27,7 @@ import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Utils;
+import io.hekate.core.resource.ResourceService;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.DependencyContext;
@@ -46,6 +47,7 @@ import io.hekate.network.NetworkMessage;
 import io.hekate.network.NetworkServerHandler;
 import io.hekate.network.NetworkService;
 import io.hekate.network.NetworkServiceFactory;
+import io.hekate.network.NetworkSslConfig;
 import io.hekate.network.NetworkTransportType;
 import io.hekate.network.PingCallback;
 import io.hekate.network.PingResult;
@@ -64,6 +66,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.handler.ssl.SslContext;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -162,6 +165,8 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
 
     private final Integer soBacklog;
 
+    private final NetworkSslConfig sslConfig;
+
     @ToStringIgnore
     private final StateGuard guard = new StateGuard(NetworkService.class);
 
@@ -172,7 +177,16 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
     private final Map<String, ConnectorRegistration<?>> connectors = new HashMap<>();
 
     @ToStringIgnore
-    private CodecService codecService;
+    private SslContext sslClient;
+
+    @ToStringIgnore
+    private SslContext sslServer;
+
+    @ToStringIgnore
+    private CodecService codec;
+
+    @ToStringIgnore
+    private ResourceService resources;
 
     @ToStringIgnore
     private NettyMetricsAdaptor metrics;
@@ -213,6 +227,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
         soSendBufferSize = factory.getTcpSendBufferSize();
         soReuseAddress = factory.getTcpReuseAddress();
         soBacklog = factory.getTcpBacklog();
+        sslConfig = factory.getSsl();
 
         if (factory.getTransport() == NetworkTransportType.AUTO) {
             transport = Epoll.isAvailable() ? NetworkTransportType.EPOLL : NetworkTransportType.NIO;
@@ -227,37 +242,13 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
         );
 
         // Register ping protocol.
-        NetworkConnectorConfig<Object> ping = new NetworkConnectorConfig<>();
-
-        SingletonCodecFactory<Object> codecFactory = new SingletonCodecFactory<>(new Codec<Object>() {
-            @Override
-            public Object decode(DataReader in) throws IOException {
-                throw new UnsupportedOperationException(PING_PROTOCOL + " doesn't support any messages.");
-            }
-
-            @Override
-            public void encode(Object message, DataWriter out) throws IOException {
-                throw new UnsupportedOperationException(PING_PROTOCOL + " doesn't support any messages.");
-            }
-
-            @Override
-            public boolean isStateful() {
-                return false;
-            }
-        });
-
-        ping.setProtocol(PING_PROTOCOL);
-        ping.setMessageCodec(codecFactory);
-        ping.setServerHandler((message, from) -> {
-            throw new UnsupportedOperationException(PING_PROTOCOL + " doesn't support any messages.");
-        });
-
-        connectorConfigs.add(ping);
+        connectorConfigs.add(pingConnector());
     }
 
     @Override
     public void resolve(DependencyContext ctx) {
-        codecService = ctx.require(CodecService.class);
+        codec = ctx.require(CodecService.class);
+        resources = ctx.require(ResourceService.class);
 
         LocalMetricsService metricsService = ctx.optional(LocalMetricsService.class);
 
@@ -273,6 +264,11 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
         providers.forEach(provider ->
             Utils.nullSafe(provider.configureNetwork()).forEach(connectorConfigs::add)
         );
+
+        if (sslConfig != null) {
+            sslClient = NettySslUtil.clientContext(sslConfig, resources);
+            sslServer = NettySslUtil.serverContext(sslConfig, resources);
+        }
     }
 
     @Override
@@ -323,6 +319,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
             serverFactory.setTcpNoDelay(tcpNoDelay);
             serverFactory.setAcceptorEventLoopGroup(acceptorGroup);
             serverFactory.setWorkerEventLoopGroup(coreWorkerGroup);
+            serverFactory.setSsl(sslServer);
 
             server = serverFactory.createServer();
 
@@ -624,6 +621,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
         factory.setSoSendBufferSize(soSendBufferSize);
         factory.setSoReuseAddress(soReuseAddress);
         factory.setTcpNoDelay(tcpNoDelay);
+        factory.setSsl(sslClient);
 
         factory.setEventLoopGroup(eventLoopGroup);
 
@@ -658,6 +656,35 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
         NetworkConnector<T> connector = new DefaultNetworkConnector<>(protocol, factory, optHandler);
 
         return new ConnectorRegistration<>(protocol, !useCoreGroup ? eventLoopGroup : null, connector, handlerCfg);
+    }
+
+    private NetworkConnectorConfig<Object> pingConnector() {
+        NetworkConnectorConfig<Object> ping = new NetworkConnectorConfig<>();
+
+        SingletonCodecFactory<Object> codecFactory = new SingletonCodecFactory<>(new Codec<Object>() {
+            @Override
+            public Object decode(DataReader in) throws IOException {
+                throw new UnsupportedOperationException(PING_PROTOCOL + " doesn't support any messages.");
+            }
+
+            @Override
+            public void encode(Object message, DataWriter out) throws IOException {
+                throw new UnsupportedOperationException(PING_PROTOCOL + " doesn't support any messages.");
+            }
+
+            @Override
+            public boolean isStateful() {
+                return false;
+            }
+        });
+
+        ping.setProtocol(PING_PROTOCOL);
+        ping.setMessageCodec(codecFactory);
+        ping.setServerHandler((message, from) -> {
+            throw new UnsupportedOperationException(PING_PROTOCOL + " doesn't support any messages.");
+        });
+
+        return ping;
     }
 
     private NettyMetricsAdaptor createMetricsAdaptor(LocalMetricsService metrics) {
@@ -756,7 +783,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
     }
 
     private <T> CodecFactory<T> defaultCodecFactory() {
-        return codecService.codecFactory();
+        return codec.codecFactory();
     }
 
     private EventLoopGroup newEventLoopGroup(int size, String threadNamePrefix) {

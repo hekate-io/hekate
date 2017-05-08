@@ -24,7 +24,6 @@ import io.hekate.network.NetworkConnectorConfig;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.network.internal.NetworkBindCallback;
 import io.hekate.network.internal.NetworkClientCallbackMock;
-import io.hekate.network.internal.NetworkTestBase;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -229,15 +228,17 @@ public class NettyNetworkServiceTest extends NetworkTestBase {
     private NettyNetworkService createService(Configurer configurer) {
         NetworkServiceFactory cfg = new NetworkServiceFactory();
 
-        cfg.setTransport(getTestContext().getTransport());
+        cfg.setTransport(getTestContext().transport());
+        getTestContext().ssl().ifPresent(cfg::setSsl);
         cfg.setConnectTimeout(500);
 
         if (configurer != null) {
             configurer.configure(cfg);
         }
 
-        // Important to set test-dependent options after applying the configurer.
-        cfg.setTransport(getTestContext().getTransport());
+        // Important to reset test-dependent options after applying the configurer.
+        cfg.setTransport(getTestContext().transport());
+        getTestContext().ssl().ifPresent(cfg::setSsl);
 
         NettyNetworkService service = new NettyNetworkService(cfg);
 

@@ -17,9 +17,11 @@
 package io.hekate.network.internal.netty;
 
 import io.hekate.codec.CodecFactory;
+import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.network.NetworkClient;
 import io.hekate.util.format.ToString;
 import io.netty.channel.EventLoopGroup;
+import io.netty.handler.ssl.SslContext;
 
 public class NettyClientFactory<T> {
     private String protocol;
@@ -43,6 +45,8 @@ public class NettyClientFactory<T> {
     private NettyMetricsCallback metrics;
 
     private String loggerCategory;
+
+    private SslContext ssl;
 
     public EventLoopGroup getEventLoopGroup() {
         return eventLoopGroup;
@@ -130,6 +134,16 @@ public class NettyClientFactory<T> {
 
     public void setLoggerCategory(String loggerCategory) {
         this.loggerCategory = loggerCategory;
+    }
+
+    public SslContext getSsl() {
+        return ssl;
+    }
+
+    public void setSsl(SslContext ssl) {
+        ArgAssert.check(ssl == null || ssl.isClient(), "SSL context must be configured in client mode.");
+
+        this.ssl = ssl;
     }
 
     public NetworkClient<T> createClient() {

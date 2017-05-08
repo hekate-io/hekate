@@ -67,7 +67,11 @@ public final class HekateTestProps {
         // No-op.
     }
 
-    public static String get(String key) {
+    public static boolean is(String key) {
+        return Boolean.parseBoolean(get(key));
+    }
+
+    private static String doGet(String key) {
         String val = System.getenv(key);
 
         if (val != null) {
@@ -83,8 +87,8 @@ public final class HekateTestProps {
         return PROPERTIES.getProperty(key);
     }
 
-    public static String getRequired(String key) {
-        String val = get(key);
+    public static String get(String key) {
+        String val = doGet(key);
 
         assertNotNull("Test property not configured [key=" + key + ']', val);
         assertFalse("Test property has empty value  [key=" + key + ']', val.trim().isEmpty());

@@ -49,6 +49,13 @@ public interface NetworkEndpoint<T> {
     InetSocketAddress localAddress();
 
     /**
+     * Returns {@code true} if SSL is enabled (see {@link NetworkServiceFactory#setSsl(NetworkSslConfig)}).
+     *
+     * @return {@code true} if SSL.
+     */
+    boolean isSecure();
+
+    /**
      * Returns the custom user context object that was set via {@link #setContext(Object)}.
      *
      * @param <C> Type of context object.

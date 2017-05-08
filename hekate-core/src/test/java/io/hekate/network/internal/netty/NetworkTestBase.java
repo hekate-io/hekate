@@ -14,19 +14,18 @@
  * under the License.
  */
 
-package io.hekate.network.internal;
+package io.hekate.network.internal.netty;
 
 import io.hekate.HekateTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkServerHandler;
 import io.hekate.network.NetworkTransportType;
-import io.hekate.network.internal.netty.NettyClientFactory;
-import io.hekate.network.internal.netty.NettyServerFactory;
-import io.hekate.network.internal.netty.NettyServerHandlerConfig;
+import io.hekate.network.internal.NetworkServer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.handler.ssl.SslContext;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -75,6 +74,10 @@ public abstract class NetworkTestBase extends HekateTestBase {
 
     private EventLoopGroup nioClientThreads;
 
+    private SslContext clientSsl;
+
+    private SslContext serverSsl;
+
     public NetworkTestBase(HekateTestContext ctx) {
         this.ctx = ctx;
     }
@@ -89,6 +92,9 @@ public abstract class NetworkTestBase extends HekateTestBase {
         acceptorThreads = newEventLoop(1);
         nioServerThreads = newEventLoop(NIO_THREADS);
         nioClientThreads = newEventLoop(NIO_THREADS);
+
+        clientSsl = ctx.ssl().map(cfg -> NettySslUtil.clientContext(cfg, ctx.resources())).orElse(null);
+        serverSsl = ctx.ssl().map(cfg -> NettySslUtil.serverContext(cfg, ctx.resources())).orElse(null);
     }
 
     @After
@@ -118,7 +124,7 @@ public abstract class NetworkTestBase extends HekateTestBase {
     }
 
     protected EventLoopGroup newEventLoop(int thread) {
-        if (getTestContext().getTransport() == NetworkTransportType.EPOLL) {
+        if (getTestContext().transport() == NetworkTransportType.EPOLL) {
             return new EpollEventLoopGroup(thread);
         } else {
             return new NioEventLoopGroup(thread);
@@ -166,6 +172,7 @@ public abstract class NetworkTestBase extends HekateTestBase {
         factory.setAcceptorEventLoopGroup(acceptorThreads);
         factory.setWorkerEventLoopGroup(nioServerThreads);
         factory.addHandler(handler);
+        factory.setSsl(serverSsl);
 
         if (serverConfigurer != null) {
             serverConfigurer.configure(factory);
@@ -203,6 +210,7 @@ public abstract class NetworkTestBase extends HekateTestBase {
         factory.setConnectTimeout(500);
         factory.setCodecFactory(createStringCodecFactory());
         factory.setEventLoopGroup(nioClientThreads);
+        factory.setSsl(clientSsl);
 
         if (configurer != null) {
             configurer.configure(factory);

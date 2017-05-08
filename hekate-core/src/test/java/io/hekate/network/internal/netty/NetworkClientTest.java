@@ -28,7 +28,6 @@ import io.hekate.network.internal.NetworkSendCallbackMock;
 import io.hekate.network.internal.NetworkServer;
 import io.hekate.network.internal.NetworkServerCallbackMock;
 import io.hekate.network.internal.NetworkServerHandlerMock;
-import io.hekate.network.internal.NetworkTestBase;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -179,6 +178,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
             assertNotNull(client.remoteAddress());
             assertNotNull(client.localAddress());
+            assertEquals(getTestContext().ssl().isPresent(), client.isSecure());
             callback.assertConnects(1);
             callback.assertDisconnects(0);
             callback.assertNoErrors();

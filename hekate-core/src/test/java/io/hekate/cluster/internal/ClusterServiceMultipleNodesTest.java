@@ -111,7 +111,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
     @Test
     public void testJoinLeaveNoWait() throws Exception {
-        repeat(10, i -> {
+        repeat(5, i -> {
             List<HekateTestNode> nodes = new ArrayList<>();
             List<JoinFuture> joins = new ArrayList<>();
 

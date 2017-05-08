@@ -82,7 +82,7 @@ public class MulticastSeedNodeProviderTest extends SeedNodeProviderCommonTest<Mu
 
     @BeforeClass
     public static void mayBeDisableTest() {
-        Assume.assumeTrue(Boolean.valueOf(HekateTestProps.get("MULTICAST_ENABLED")));
+        Assume.assumeTrue(HekateTestProps.is("MULTICAST_ENABLED"));
     }
 
     @AfterClass

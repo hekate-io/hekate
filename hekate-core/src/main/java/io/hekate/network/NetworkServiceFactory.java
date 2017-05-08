@@ -96,6 +96,8 @@ public class NetworkServiceFactory implements ServiceFactory<NetworkService> {
 
     private Integer tcpBacklog;
 
+    private NetworkSslConfig ssl;
+
     private List<NetworkConnectorConfig<?>> connectors;
 
     private List<NetworkConfigProvider> configProviders;
@@ -787,6 +789,43 @@ public class NetworkServiceFactory implements ServiceFactory<NetworkService> {
         }
 
         configProviders.add(configProvider);
+
+        return this;
+    }
+
+    /**
+     * Returns the SSL configuration (see {@link #setSsl(NetworkSslConfig)}).
+     *
+     * @return SSL configuration.
+     */
+    public NetworkSslConfig getSsl() {
+        return ssl;
+    }
+
+    /**
+     * Sets the SSL configuration.
+     *
+     * <p>
+     * If the specified configuration is not {@code null} then SSL encryption will be applied to all network communications.
+     * Note that SSL must be enabled/disabled on all nodes in the cluster. <b>Mixed mode</b> where some nodes have SSL enabled and some
+     * nodes have SSL disabled <b>is not supported</b>.
+     * </p>
+     *
+     * @param ssl SSL configuration.
+     */
+    public void setSsl(NetworkSslConfig ssl) {
+        this.ssl = ssl;
+    }
+
+    /**
+     * Fluent-style version of {@link #setSsl(NetworkSslConfig)}.
+     *
+     * @param ssl SSL configuration.
+     *
+     * @return This instance.
+     */
+    public NetworkServiceFactory withSsl(NetworkSslConfig ssl) {
+        setSsl(ssl);
 
         return this;
     }

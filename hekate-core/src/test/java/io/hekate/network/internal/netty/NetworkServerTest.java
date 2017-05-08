@@ -29,7 +29,6 @@ import io.hekate.network.internal.NetworkServer;
 import io.hekate.network.internal.NetworkServerCallbackMock;
 import io.hekate.network.internal.NetworkServerFailure;
 import io.hekate.network.internal.NetworkServerHandlerConfig;
-import io.hekate.network.internal.NetworkTestBase;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -489,6 +488,8 @@ public class NetworkServerTest extends NetworkTestBase {
         client.connect(server.address(), clientCallback);
 
         NetworkEndpoint<String> serverClient = get(latch);
+
+        assertEquals(getTestContext().ssl().isPresent(), serverClient.isSecure());
 
         repeat(5, i -> {
             serverClient.send("test" + i);

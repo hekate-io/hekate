@@ -32,7 +32,7 @@ import static org.junit.Assert.assertFalse;
 public class XsdSeedMulticastTest extends XsdTestBase {
     @BeforeClass
     public static void mayBeDisableTest() {
-        Assume.assumeTrue(Boolean.valueOf(HekateTestProps.get("MULTICAST_ENABLED")));
+        Assume.assumeTrue(HekateTestProps.is("MULTICAST_ENABLED"));
     }
 
     @Test

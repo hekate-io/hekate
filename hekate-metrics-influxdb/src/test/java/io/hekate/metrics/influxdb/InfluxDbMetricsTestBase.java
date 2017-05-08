@@ -50,11 +50,11 @@ public class InfluxDbMetricsTestBase extends HekateNodeTestBase {
     @BeforeClass
     public static void prepareTestClass() {
         // May be disable the whole test class.
-        Assume.assumeTrue(Boolean.valueOf(HekateTestProps.get("INFLUXDB_ENABLED")));
+        Assume.assumeTrue(HekateTestProps.is("INFLUXDB_ENABLED"));
 
-        url = HekateTestProps.getRequired("INFLUXDB_URL");
-        user = HekateTestProps.getRequired("INFLUXDB_USER");
-        password = HekateTestProps.getRequired("INFLUXDB_PASSWORD");
+        url = HekateTestProps.get("INFLUXDB_URL");
+        user = HekateTestProps.get("INFLUXDB_USER");
+        password = HekateTestProps.get("INFLUXDB_PASSWORD");
 
         String now = new SimpleDateFormat("yyyy.MM.dd--HH:mm:SSS").format(new Date());
 
