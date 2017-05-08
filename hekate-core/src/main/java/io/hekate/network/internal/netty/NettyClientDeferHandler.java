@@ -126,9 +126,9 @@ class NettyClientDeferHandler<T> extends ChannelDuplexHandler {
             log.trace("Deferred handler got channel inactive event [address={}]", id);
         }
 
-        super.channelInactive(ctx);
-
         discardDeferred(ctx);
+
+        super.channelInactive(ctx);
     }
 
     @Override
