@@ -16,6 +16,7 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.core.internal.util.Waiting;
@@ -28,23 +29,26 @@ import io.hekate.messaging.UnknownRouteException;
 import io.hekate.messaging.unicast.LoadBalancingException;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseFuture;
-import io.hekate.messaging.unicast.TooManyRoutesException;
 import io.hekate.network.NetworkFuture;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
+import static java.util.Collections.synchronizedList;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -54,31 +58,6 @@ import static org.junit.Assert.fail;
 public class MessagingChannelRequestTest extends MessagingServiceTestBase {
     public MessagingChannelRequestTest(MessagingTestContext ctx) {
         super(ctx);
-    }
-
-    @Test
-    public void testDefaultRouting() throws Exception {
-        List<TestChannel> channels = createAndJoinChannels(3, c -> {
-            MessageReceiver<String> receiver = msg -> msg.reply(msg.channel().id().toString());
-
-            c.setReceiver(receiver);
-        });
-
-        for (int i = 0; i < 50; i++) {
-            Set<String> responses = new HashSet<>();
-
-            for (TestChannel channel : channels) {
-                try {
-                    channel.get().request("" + i).response(3, TimeUnit.SECONDS);
-                } catch (MessagingFutureException e) {
-                    assertTrue(getStacktrace(e), e.getCause() instanceof TooManyRoutesException);
-                }
-
-                responses.add(channel.get().forOldest().request("" + i).response(3, TimeUnit.SECONDS));
-
-                assertEquals(1, responses.size());
-            }
-        }
     }
 
     @Test
@@ -648,8 +627,8 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         TestChannel channel = createChannel(c -> c.withReceiver(msg -> msg.reply("ok")));
 
         AtomicReference<Throwable> errRef = new AtomicReference<>();
-        ResponseCallbackMock toSelf = new ResponseCallbackMock("to-self");
-        ResponseCallbackMock toRemote = new ResponseCallbackMock("to-remote");
+        ResponseCallbackMock toSelfCallback = new ResponseCallbackMock("to-self");
+        ResponseCallbackMock toRemoteCallback = new ResponseCallbackMock("to-remote");
 
         channel.getNode().cluster().addListener(event -> {
             try {
@@ -657,10 +636,12 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
                 if (event.type() == ClusterEventType.JOIN) {
                     get(send.request("to-self"));
-                    send.request("to-self", toSelf);
+
+                    send.request("to-self", toSelfCallback);
                 } else if (event.type() == ClusterEventType.CHANGE) {
                     get(send.forRemotes().request("to-remote"));
-                    send.forRemotes().request("to-remote", toRemote);
+
+                    send.forRemotes().request("to-remote", toRemoteCallback);
                 }
             } catch (Throwable err) {
                 errRef.compareAndSet(null, err);
@@ -669,7 +650,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         channel.join();
 
-        assertEquals("ok", toSelf.get().get());
+        assertEquals("ok", toSelfCallback.get().get());
 
         if (errRef.get() != null) {
             throw errRef.get();
@@ -677,7 +658,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         createChannel(c -> c.withReceiver(msg -> msg.reply("ok"))).join();
 
-        assertEquals("ok", toRemote.get().get());
+        assertEquals("ok", toRemoteCallback.get().get());
 
         if (errRef.get() != null) {
             throw errRef.get();
@@ -767,32 +748,79 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testTooManyRoutes() throws Throwable {
-        MessageReceiver<String> receiver = msg -> {
-            String response = msg.get() + "-reply";
+    public void testNonAffinityRouting() throws Throwable {
+        Map<ClusterNode, List<String>> received = new ConcurrentHashMap<>();
 
-            msg.reply(response);
+        MessageReceiver<String> receiver = msg -> {
+            ClusterNode localNode = msg.channel().cluster().topology().localNode();
+
+            received.computeIfAbsent(localNode, n -> synchronizedList(new ArrayList<>())).add(msg.get());
+
+            msg.reply(msg.get() + "-reply");
         };
 
         TestChannel channel1 = createChannel(c -> c.setReceiver(receiver)).join();
         TestChannel channel2 = createChannel(c -> c.setReceiver(receiver)).join();
+        TestChannel channel3 = createChannel(c -> c.setReceiver(receiver)).join();
 
-        awaitForChannelsTopology(channel1, channel2);
+        awaitForChannelsTopology(channel1, channel2, channel3);
 
-        repeat(3, i -> {
-            ResponseFuture<String> future = channel1.get().request("failed" + i);
+        for (int i = 0; i < 100; i++) {
+            get(channel1.get().request("test" + i));
+        }
 
-            try {
-                future.response();
-            } catch (MessagingFutureException e) {
-                assertTrue(e.isCausedBy(TooManyRoutesException.class));
-                assertEquals("Too many receivers "
-                        + "[channel=" + channel1.get().name() + ", topology=" + channel1.get().cluster().topology() + ']',
-                    e.getCause().getMessage());
+        List<String> received1 = received.get(channel1.getNode().localNode());
+        List<String> received2 = received.get(channel2.getNode().localNode());
+        List<String> received3 = received.get(channel3.getNode().localNode());
+
+        assertNotNull(received1);
+        assertNotNull(received2);
+        assertNotNull(received3);
+
+        assertFalse(received1.isEmpty());
+        assertFalse(received2.isEmpty());
+        assertFalse(received3.isEmpty());
+
+        assertEquals(100, received1.size() + received2.size() + received3.size());
+    }
+
+    @Test
+    public void testAffinityRouting() throws Throwable {
+        Map<ClusterNode, List<String>> received = new ConcurrentHashMap<>();
+
+        MessageReceiver<String> receiver = msg -> {
+            ClusterNode localNode = msg.channel().cluster().topology().localNode();
+
+            received.computeIfAbsent(localNode, n -> synchronizedList(new ArrayList<>())).add(msg.get());
+
+            msg.reply(msg.get() + "-reply");
+        };
+
+        TestChannel channel1 = createChannel(c -> c.setReceiver(receiver)).join();
+        TestChannel channel2 = createChannel(c -> c.setReceiver(receiver)).join();
+        TestChannel channel3 = createChannel(c -> c.setReceiver(receiver)).join();
+
+        awaitForChannelsTopology(channel1, channel2, channel3);
+
+        Set<ClusterNode> uniqueNodes = new HashSet<>();
+
+        repeat(20, j -> {
+            received.clear();
+
+            for (int i = 0; i < 5; i++) {
+                get(channel1.get().withAffinity(j).request("test" + i));
             }
+
+            List<ClusterNode> singleNode = received.entrySet().stream()
+                .filter(e -> e.getValue().size() == 5)
+                .map(Map.Entry::getKey)
+                .collect(toList());
+
+            assertEquals(1, singleNode.size());
+            uniqueNodes.addAll(singleNode);
         });
 
-        assertEquals("success-reply", channel1.request(channel2.getNodeId(), "success").response());
+        assertEquals(3, uniqueNodes.size());
     }
 
     @Test

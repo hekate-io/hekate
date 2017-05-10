@@ -27,6 +27,7 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.UnknownRouteException;
 import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.AggregateResult;
+import io.hekate.messaging.unicast.LoadBalancers;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.task.ApplicableTask;
@@ -319,12 +320,10 @@ class FilteredTaskService implements TaskService {
 
         ApplyTaskFuture<V> future = new ApplyTaskFuture<>(task, msgByNode.size(), argsSize);
 
-        int affinity = 0;
+        MessagingChannel<TaskProtocol> lb = channel.withLoadBalancer(LoadBalancers.roundRobin());
 
         for (ApplyTask msg : msgByNode.values()) {
-            channel.withAffinity(affinity).request(msg, future);
-
-            affinity++;
+            lb.request(msg, future);
         }
 
         return future;

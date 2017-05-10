@@ -2,9 +2,9 @@ package io.hekate.javadoc.partition;
 
 import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
-import io.hekate.partition.HrwPartitionMapper;
 import io.hekate.partition.Partition;
 import io.hekate.partition.PartitionMapper;
+import io.hekate.partition.RendezvousHashMapper;
 import org.junit.Test;
 
 public class PartitionMapperJavadocTest extends HekateNodeTestBase {
@@ -14,7 +14,7 @@ public class PartitionMapperJavadocTest extends HekateNodeTestBase {
 
         // Start:usage
         // Prepare mapper.
-        PartitionMapper mapper = HrwPartitionMapper.of(hekate.cluster())
+        PartitionMapper mapper = RendezvousHashMapper.of(hekate.cluster())
             .withPartitions(128)
             .withBackupNodes(2)
             .build();

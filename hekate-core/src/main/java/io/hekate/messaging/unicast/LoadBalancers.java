@@ -19,35 +19,103 @@ package io.hekate.messaging.unicast;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.core.HekateException;
+import io.hekate.failover.FailureInfo;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+
+import static io.hekate.failover.FailoverRoutingPolicy.RE_ROUTE;
+import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Predefined load balancers.
  */
 public final class LoadBalancers {
-    private static class RandomLoadBalancer<T> implements LoadBalancer<T> {
+    private static class Random<T> implements LoadBalancer<T> {
         @Override
-        public ClusterNodeId route(T message, LoadBalancerContext ctx) throws HekateException {
+        public ClusterNodeId route(T msg, LoadBalancerContext ctx) throws HekateException {
             ClusterNode target = ctx.random();
 
             return target != null ? target.id() : null;
         }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName();
+        }
     }
 
-    private static final LoadBalancer<?> RANDOM = new RandomLoadBalancer<>();
+    private static class RoundRobin<T> implements LoadBalancer<T> {
+        private static final AtomicIntegerFieldUpdater<RoundRobin> COUNTER = newUpdater(RoundRobin.class, "counter");
+
+        @SuppressWarnings("unused") // <-- Accessed via AtomicIntegerFieldUpdater.
+        private volatile int counter;
+
+        @Override
+        public ClusterNodeId route(T msg, LoadBalancerContext ctx) throws HekateException {
+            assert !ctx.topology().isEmpty() : "Topology is empty.";
+
+            int idx = COUNTER.getAndUpdate(this, val -> {
+                int newVal = val + 1;
+
+                return newVal >= ctx.size() ? 0 : newVal;
+            });
+
+            ClusterNode node = ctx.nodes().get(idx);
+
+            if (ctx.failure().isPresent()) {
+                FailureInfo prevErr = ctx.failure().get();
+
+                if (prevErr.routing() == RE_ROUTE && prevErr.isFailed(node)) {
+                    List<ClusterNode> nonFailed = ctx.stream()
+                        .filter(n -> !prevErr.isFailed(n))
+                        .collect(toList());
+
+                    if (!nonFailed.isEmpty()) {
+                        Collections.shuffle(nonFailed);
+
+                        node = nonFailed.get(0);
+                    }
+                }
+            }
+
+            return node.id();
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName();
+        }
+    }
+
+    private static final LoadBalancer<?> RANDOM = new Random<>();
 
     private LoadBalancers() {
         // No-op.
     }
 
     /**
-     * Routes all messages to randomly selected nodes.
+     * Routes each message to a to randomly selected node.
      *
      * @param <T> Base type of messages.
      *
      * @return Load balancer.
      */
     @SuppressWarnings("unchecked")
-    public static <T> LoadBalancer<T> toRandom() {
+    public static <T> LoadBalancer<T> random() {
         return (LoadBalancer<T>)RANDOM;
+    }
+
+    /**
+     * Returns a new load balancer that routes all messages using a round-robin approach.
+     *
+     * @param <T> Base type of messages.
+     *
+     * @return Load balancer.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> LoadBalancer<T> roundRobin() {
+        return (LoadBalancer<T>)new RoundRobin<>();
     }
 }

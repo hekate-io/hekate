@@ -17,13 +17,11 @@
 package io.hekate.task.internal;
 
 import io.hekate.cluster.ClusterFilter;
-import io.hekate.cluster.ClusterNode;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.core.HekateException;
 import io.hekate.core.inject.InjectionService;
 import io.hekate.core.internal.util.ConfigCheck;
-import io.hekate.core.internal.util.Utils;
 import io.hekate.core.service.DependencyContext;
 import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
@@ -31,7 +29,6 @@ import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.TerminatingService;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverPolicyBuilder;
-import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
@@ -61,8 +58,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.hekate.failover.FailoverRoutingPolicy.RE_ROUTE;
 
 public class DefaultTaskService implements TaskService, InitializingService, TerminatingService, DependentService, MessagingConfigProvider {
     private static class ApplyTaskCallback {
@@ -179,38 +174,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
             .withIdleTimeout(idleSocketTimeout)
             .withNioThreads(nioThreadPoolSize)
             .withWorkerThreads(workerThreadPoolSize)
-            .withMessageCodec(() -> new TaskProtocolCodec(codec.createCodec()))
-            .withLoadBalancer((msg, ctx) -> {
-                List<ClusterNode> nodes = ctx.nodes();
-
-                int size = nodes.size();
-
-                if (size == 1) {
-                    return nodes.get(0).id();
-                } else {
-                    // Check if this is a new failover attempt and we should re-route task to another node.
-                    // In such case we remove all failed nodes from the routing topology.
-                    if (ctx.failure().isPresent()) {
-                        FailureInfo failure = ctx.failure().get();
-
-                        if (!failure.allFailedNodes().isEmpty() && failure.routing() == RE_ROUTE) {
-                            List<ClusterNode> nonFailed = new ArrayList<>(nodes);
-
-                            // Filter out all failed nodes.
-                            nonFailed.removeAll(failure.allFailedNodes());
-
-                            if (!nonFailed.isEmpty()) {
-                                size = nonFailed.size();
-                                nodes = nonFailed;
-                            }
-                        }
-                    }
-
-                    int idx = Utils.mod(ctx.affinity(), size);
-
-                    return nodes.get(idx).id();
-                }
-            });
+            .withMessageCodec(() -> new TaskProtocolCodec(codec.createCodec()));
 
         if (localExecutionEnabled) {
             cfg.withReceiver(this::handleMessage);

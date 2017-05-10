@@ -52,11 +52,20 @@ public interface FailureInfo {
     ClusterNode failedNode();
 
     /**
-     * Returns the immutable set of all failed nodes.
+     * Returns an immutable set of all failed nodes.
      *
      * @return Immutable set of all failed nodes.
      */
     Set<ClusterNode> allFailedNodes();
+
+    /**
+     * Returns {@code true} if the specified node is in the {@link #allFailedNodes()} set.
+     *
+     * @param node Node to check.
+     *
+     * @return {@code true} if the specified node is in the {@link #allFailedNodes()} set.
+     */
+    boolean isFailed(ClusterNode node);
 
     /**
      * Returns the routing policy as it was set by {@link FailoverPolicy}.

@@ -54,9 +54,10 @@ import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.messaging.unicast.SendFuture;
 import io.hekate.messaging.unicast.SubscribeFuture;
-import io.hekate.messaging.unicast.TooManyRoutesException;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkFuture;
+import io.hekate.partition.Partition;
+import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
@@ -78,6 +79,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.hekate.failover.FailoverRoutingPolicy.RETRY_SAME_NODE;
+import static io.hekate.failover.FailoverRoutingPolicy.RE_ROUTE;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toList;
@@ -194,9 +196,6 @@ class MessagingGateway<T> {
     private final CloseCallback onBeforeClose;
 
     @ToStringIgnore
-    private final Map<ClusterNodeId, MessagingClient<T>> clients = new HashMap<>();
-
-    @ToStringIgnore
     private final boolean checkIdle;
 
     @ToStringIgnore
@@ -224,7 +223,10 @@ class MessagingGateway<T> {
     private final DefaultMessagingChannel<T> channel;
 
     @ToStringIgnore
-    private ClusterTopology channelTopology;
+    private final Map<ClusterNodeId, MessagingClient<T>> clients = new HashMap<>();
+
+    @ToStringIgnore
+    private ClusterTopology clientsTopology;
 
     @ToStringIgnore
     private boolean closed;
@@ -253,7 +255,11 @@ class MessagingGateway<T> {
         this.checkIdle = checkIdle;
         this.onBeforeClose = onBeforeClose;
 
-        this.channel = new DefaultMessagingChannel<>(this, this.cluster, loadBalancer, failoverPolicy, defaultTimeout, null);
+        RendezvousHashMapper partitions = RendezvousHashMapper.of(cluster)
+            .withBackupNodes(0)
+            .build();
+
+        this.channel = new DefaultMessagingChannel<>(this, cluster, partitions, loadBalancer, failoverPolicy, defaultTimeout, null);
     }
 
     public MessagingChannelId id() {
@@ -446,7 +452,7 @@ class MessagingGateway<T> {
 
                 // Mark as closed.
                 closed = true;
-                channelTopology = null;
+                clientsTopology = null;
 
                 // Terminate back pressure guard.
                 if (sendPressure != null) {
@@ -781,7 +787,7 @@ class MessagingGateway<T> {
             if (!closed) {
                 ClusterTopology newTopology = cluster.topology();
 
-                if (channelTopology == null || channelTopology.version() < newTopology.version()) {
+                if (clientsTopology == null || clientsTopology.version() < newTopology.version()) {
                     if (DEBUG) {
                         log.debug("Updating topology [channel={}, topology={}]", name, newTopology);
                     }
@@ -791,11 +797,11 @@ class MessagingGateway<T> {
                     Set<ClusterNode> added = null;
                     Set<ClusterNode> removed = null;
 
-                    if (channelTopology == null) {
+                    if (clientsTopology == null) {
                         added = new HashSet<>(newNodes);
                     } else {
                         for (ClusterNode node : newNodes) {
-                            if (!channelTopology.contains(node)) {
+                            if (!clientsTopology.contains(node)) {
                                 if (added == null) {
                                     added = new HashSet<>(newNodes.size(), 1.0f);
                                 }
@@ -804,7 +810,7 @@ class MessagingGateway<T> {
                             }
                         }
 
-                        for (ClusterNode node : channelTopology) {
+                        for (ClusterNode node : clientsTopology) {
                             if (!newNodes.contains(node)) {
                                 if (removed == null) {
                                     removed = new HashSet<>(newNodes.size(), 1.0f);
@@ -838,7 +844,7 @@ class MessagingGateway<T> {
                         });
                     }
 
-                    this.channelTopology = newTopology;
+                    this.clientsTopology = newTopology;
                 }
             }
         } finally {
@@ -898,51 +904,87 @@ class MessagingGateway<T> {
         ClientSelectionRejectedException {
         assert ctx != null : "Message context is null.";
 
-        ClusterTopology topology = ctx.opts().cluster().topology();
-
-        if (topology.isEmpty()) {
-            Throwable cause = prevErr != null ? prevErr.error() : null;
-
-            if (cause == null) {
-                throw new UnknownRouteException("No suitable receivers [channel=" + name + ']');
-            } else {
-                throw new ClientSelectionRejectedException(cause);
-            }
-        }
-
-        LoadBalancer<T> balancer = ctx.opts().balancer();
-
         while (true) {
-            // Perform routing in unlocked context in order to prevent cluster events blocking.
-            ClusterNodeId targetId;
+            Partition partition = null;
 
-            if (balancer == null) {
-                // If balancer not specified then try to use cluster topology directly (must contain only one node).
-                if (topology.size() > 1) {
-                    Throwable cause = prevErr != null ? prevErr.error() : null;
+            // Topology of this routing attempt.
+            ClusterTopology topology;
 
-                    if (cause == null) {
-                        throw new TooManyRoutesException("Too many receivers [channel=" + name + ", topology=" + topology + ']');
-                    } else {
-                        throw new ClientSelectionRejectedException(cause);
+            // Decide on whether we should use partition-based routing.
+            if (ctx.opts().balancer() == null && ctx.hasAffinity()) {
+                // Memorize partition so that we could re-use it later after all sanity checks.
+                partition = ctx.opts().partitions().mapInt(ctx.affinity());
+
+                topology = partition.topology();
+            } else {
+                topology = ctx.opts().cluster().topology();
+            }
+
+            // Fail if topology is empty.
+            if (topology.isEmpty()) {
+                Throwable cause = prevErr != null ? prevErr.error() : null;
+
+                if (cause == null) {
+                    throw new UnknownRouteException("No suitable receivers [channel=" + name + ']');
+                } else {
+                    throw new ClientSelectionRejectedException(cause);
+                }
+            }
+
+            ClusterNodeId selected;
+
+            // Check if load balancer is specified for this message.
+            if (ctx.opts().balancer() == null) {
+                // Load balancer not specified -> use default routing.
+                ClusterNode node;
+
+                if (partition == null) {
+                    // Select any random node if affinity is not specified.
+                    node = topology.random();
+
+                    // Check if this is a failover attempt and try to re-route in case if the selected node is known to be failed.
+                    if (prevErr != null && prevErr.routing() == RE_ROUTE && prevErr.isFailed(node)) {
+                        // Exclude all failed nodes.
+                        List<ClusterNode> nonFailed = topology.stream()
+                            .filter(n -> !prevErr.isFailed(n))
+                            .collect(toList());
+
+                        if (!nonFailed.isEmpty()) {
+                            // Randomize.
+                            Collections.shuffle(nonFailed);
+
+                            node = nonFailed.get(0);
+                        }
+                    }
+                } else {
+                    // Select node from the partition.
+                    node = partition.primaryNode();
+
+                    // Check if this is a failover attempt and try to re-route in case if the selected node is known to be failed.
+                    if (prevErr != null && prevErr.routing() == RE_ROUTE && partition.hasBackupNodes() && prevErr.isFailed(node)) {
+                        node = partition.backupNodes().stream()
+                            .filter(n -> !prevErr.isFailed(n))
+                            .findFirst()
+                            .orElse(node); // <-- Fall back to the originally selected node.
                     }
                 }
 
-                // Select the only one node from the cluster topology.
-                targetId = topology.first().id();
+                selected = node != null ? node.id() : null;
             } else {
+                // Use load balancer.
                 LoadBalancerContext balancerCtx = new DefaultLoadBalancerContext(ctx, topology, Optional.ofNullable(prevErr));
 
-                targetId = balancer.route(ctx.message(), balancerCtx);
+                selected = ctx.opts().balancer().route(ctx.message(), balancerCtx);
+            }
 
-                if (targetId == null) {
-                    Throwable cause = prevErr != null ? prevErr.error() : null;
+            // Check if routing was successful.
+            if (selected == null) {
+                Throwable cause = prevErr != null ? prevErr.error() : null;
 
-                    if (cause == null) {
-                        throw new UnknownRouteException("Load balancer failed to select a target node.");
-                    } else {
-                        throw new ClientSelectionRejectedException(cause);
-                    }
+                if (cause == null) {
+                    throw new UnknownRouteException("Load balancer failed to select a target node.");
+                } else {
+                    throw new ClientSelectionRejectedException(cause);
                 }
             }
 
@@ -955,17 +997,17 @@ class MessagingGateway<T> {
                     throw channelClosedError(null);
                 }
 
-                MessagingClient<T> client = clients.get(targetId);
+                MessagingClient<T> client = clients.get(selected);
 
                 if (client == null) {
                     // Post-check that topology was not changed during routing.
-                    ClusterTopology currentTopology = cluster.topology();
+                    ClusterTopology latestTopology = cluster.topology();
 
-                    if (channelTopology != null && channelTopology.version() == currentTopology.version()) {
+                    if (clientsTopology != null && clientsTopology.version() == latestTopology.version()) {
                         Throwable cause = prevErr != null ? prevErr.error() : null;
 
                         if (cause == null) {
-                            throw new UnknownRouteException("Node is not within the channel topology [id=" + targetId + ']');
+                            throw new UnknownRouteException("Node is not within the channel topology [id=" + selected + ']');
                         } else {
                             throw new ClientSelectionRejectedException(cause);
                         }
@@ -979,7 +1021,7 @@ class MessagingGateway<T> {
 
             // Since we are here it means that topology was changed during routing.
             if (DEBUG) {
-                log.debug("Retrying routing since topology was changed [balancer={}]", balancer);
+                log.debug("Retrying routing since topology was changed [balancer={}]", ctx.opts().balancer());
             }
 
             updateTopology();
@@ -1029,7 +1071,7 @@ class MessagingGateway<T> {
                     } else if (resolution != null && resolution.isRetry()) {
                         FailoverRoutingPolicy routing = resolution.routing();
 
-                        // Apply failover only if re-routing was requested or if the target node is still within the channel's topology.
+                        // Apply failover only if re-routing was requested or if the target node is still within the cluster topology.
                         if (routing != RETRY_SAME_NODE || clients.containsKey(failed.id())) {
                             onRetry();
 

@@ -41,9 +41,9 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.unicast.ReplyDecision;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
-import io.hekate.partition.HrwPartitionMapper;
 import io.hekate.partition.Partition;
 import io.hekate.partition.PartitionMapper;
+import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
@@ -166,7 +166,7 @@ class DefaultLockRegion implements LockRegion {
         writeLock = lock.writeLock();
 
         // Prepare partition mapper.
-        PartitionMapper partitions = HrwPartitionMapper.of(channel.cluster())
+        PartitionMapper partitions = RendezvousHashMapper.of(channel.cluster())
             .withBackupNodes(0)
             .build();
 

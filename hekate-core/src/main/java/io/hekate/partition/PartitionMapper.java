@@ -26,15 +26,15 @@ import io.hekate.cluster.ClusterTopology;
  * ${source: partition/PartitionMapperJavadocTest.java#usage}
  * </p>
  *
- * @see HrwPartitionMapper
+ * @see RendezvousHashMapper
  */
 public interface PartitionMapper {
     /**
-     * Maps the specified key to the {@link Partition}.
+     * Maps the specified key to a {@link Partition}.
      *
      * <p>
-     * Note that returned {@link Partition} instances are immutable and will not reflect changes in the cluster topology. Consider calling
-     * this method with the same key in order to obtain the {@link Partition} instance with the latest cluster topology mapping.
+     * Note that the returned {@link Partition} instances are immutable and will not reflect changes in the cluster topology. Consider
+     * calling this method with the same key in order to obtain the {@link Partition} instance with the latest cluster topology mapping.
      * </p>
      *
      * @param key Data key.
@@ -45,6 +45,23 @@ public interface PartitionMapper {
      * @see Partition#backupNodes()
      */
     Partition map(Object key);
+
+    /**
+     * Maps the specified key of {@link Integer} type to a {@link Partition}.
+     *
+     * <p>
+     * Note that the returned {@link Partition} instances are immutable and will not reflect changes in the cluster topology. Consider
+     * calling this method with the same key in order to obtain the {@link Partition} instance with the latest cluster topology mapping.
+     * </p>
+     *
+     * @param key Data key.
+     *
+     * @return Partition.
+     *
+     * @see Partition#primaryNode()
+     * @see Partition#backupNodes()
+     */
+    Partition mapInt(int key);
 
     /**
      * Returns the total amount of partitions.

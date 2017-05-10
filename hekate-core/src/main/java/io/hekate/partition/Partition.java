@@ -76,6 +76,13 @@ public interface Partition extends Comparable<Partition> {
     List<ClusterNode> backupNodes();
 
     /**
+     * Returns {@code true} if this partition has {@link #backupNodes()}.
+     *
+     * @return {@code true} if this partition has {@link #backupNodes()}.
+     */
+    boolean hasBackupNodes();
+
+    /**
      * Returns the set of all nodes that are mapped to this partition (including {@link #primaryNode() primary} and {@link
      * #backupNodes() backup}).
      *

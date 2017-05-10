@@ -22,7 +22,6 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingServiceFactory;
-import io.hekate.messaging.unicast.LoadBalancers;
 import io.hekate.metrics.local.LocalMetricsServiceFactory;
 import java.io.IOException;
 import java.util.List;
@@ -77,8 +76,7 @@ public class MessagingBenchmark {
             MessagingChannelConfig<byte[]> channel = new MessagingChannelConfig<byte[]>()
                 .withName("test_channel")
                 .withNioThreads(nioThreadPoolSize)
-                .withWorkerThreads(workerThreadPoolSize)
-                .withLoadBalancer(LoadBalancers.toRandom());
+                .withWorkerThreads(workerThreadPoolSize);
 
             if (index > 0) {
                 channel.withReceiver(msg -> {

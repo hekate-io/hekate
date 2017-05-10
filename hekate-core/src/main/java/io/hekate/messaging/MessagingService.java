@@ -32,7 +32,7 @@ import io.hekate.messaging.broadcast.BroadcastCallback;
 import io.hekate.messaging.unicast.LoadBalancer;
 import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.messaging.unicast.SendCallback;
-import io.hekate.messaging.unicast.TooManyRoutesException;
+import io.hekate.partition.RendezvousHashMapper;
 import java.util.List;
 
 /**
@@ -252,8 +252,7 @@ import java.util.List;
  * </p>
  *
  * <p>
- * {@link MessagingChannel} extends the {@link HasClusterFilter} interface which provides a general purpose {@link
- * MessagingChannel#filter(ClusterNodeFilter)} method for dynamic filtering as well as a number of shortcut methods for common use cases:
+ * {@link MessagingChannel} extends the {@link HasClusterFilter} interface which a number of shortcut methods for common use cases:
  * </p>
  * <ul>
  * <li>{@link MessagingChannel#forRemotes()}</li>
@@ -265,13 +264,19 @@ import java.util.List;
  * <li>...{@link HasClusterFilter etc}</li>
  * </ul>
  *
+ * <h2>Message affinity</h2>
  * <p>
- * <b>NOTICE:</b> For unicast operations (like {@link MessagingChannel#send(Object, SendCallback) send(...)} and
- * {@link MessagingChannel#request(Object, ResponseCallback) request(...)}) it is important to make sure that there is no uncertainty in
- * which node should receive a message. If there are multiple receivers visible to a {@link MessagingChannel} instance then unicast
- * operation will fail with {@link TooManyRoutesException}. Besides channel topology filtering it is possible to
- * {@link MessagingChannel#withLoadBalancer(LoadBalancer) specify} an instance of {@link LoadBalancer} interface that can apply additional
- * rules on which node should be used as a destination for each particular messaging operation.
+ * By default, all unicast operations (like {@link MessagingChannel#send(Object, SendCallback) send(...)} and
+ * {@link MessagingChannel#request(Object, ResponseCallback) request(...)}) are processed on randomly selected nodes and randomly selected
+ * threads of these nodes. If you want to consistently route some messages based on certain criteria, then an affinity key should be
+ * specified via {@link MessagingChannel#withAffinity(Object)}. All such messages will be routed via {@link RendezvousHashMapper} so that in
+ * a stable cluster topology all messages with the same key will always be routed to the same node and will always be processed by the same
+ * thread of that node.
+ * </p>
+ *
+ * <p>
+ * Default routing behavior can be overridden by {@link MessagingChannel#withLoadBalancer(LoadBalancer) specifying} a custom implementation
+ * of the {@link LoadBalancer} interface. If load balancer is specified then it takes full control over message routing within the cluster.
  * </p>
  *
  * <h2>Thread pooling</h2>

@@ -36,20 +36,22 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-public class HrwPartitionMapperTest extends HekateNodeTestBase {
+public class RendezvousHashMapperTest extends HekateNodeTestBase {
     @Test
     public void testEmptyTopology() throws Exception {
-        PartitionMapper mapper = HrwPartitionMapper.of(DefaultClusterTopology.empty())
+        PartitionMapper mapper = RendezvousHashMapper.of(DefaultClusterTopology.empty())
             .withPartitions(128)
             .withBackupNodes(2)
             .build();
 
         assertNull(mapper.map("key").primaryNode());
+        assertFalse(mapper.map("key").hasBackupNodes());
         assertTrue(mapper.map("key").backupNodes().isEmpty());
 
         PartitionMapper snapshot = mapper.snapshot();
 
         assertNull(snapshot.map("key").primaryNode());
+        assertFalse(snapshot.map("key").hasBackupNodes());
         assertTrue(snapshot.map("key").backupNodes().isEmpty());
     }
 
@@ -59,7 +61,7 @@ public class HrwPartitionMapperTest extends HekateNodeTestBase {
 
         DefaultClusterTopology topology = DefaultClusterTopology.of(1, singleton(node));
 
-        PartitionMapper mapper = HrwPartitionMapper.of(topology)
+        PartitionMapper mapper = RendezvousHashMapper.of(topology)
             .withPartitions(128)
             .withBackupNodes(2)
             .build();
@@ -113,7 +115,7 @@ public class HrwPartitionMapperTest extends HekateNodeTestBase {
 
             AtomicReference<ClusterTopology> topologyRef = new AtomicReference<>();
 
-            PartitionMapper mapper = HrwPartitionMapper.of(topologyRef::get)
+            PartitionMapper mapper = RendezvousHashMapper.of(topologyRef::get)
                 .withPartitions(partitions)
                 .withBackupNodes(i)
                 .build();

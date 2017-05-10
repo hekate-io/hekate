@@ -72,7 +72,7 @@ public class TaskApplyToAllTest extends TaskServiceTestBase {
 
                     say("Results: " + results);
 
-                    // Map to results to arguments.
+                    // Map results to arguments.
                     Map<String, Integer> map = results.stream().collect(toMap(identity(), v ->
                         Integer.parseInt(v.split("=")[1]))
                     );

@@ -20,14 +20,14 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
 
 /**
  * Implementation of {@link PartitionMapper} that uses
- * <a href="https://en.wikipedia.org/wiki/Rendezvous_hashing" target="_blank">Highest Random Weight (HRW) hashing</a>
- * algorithm for partitions mapping.
+ * <a href="https://en.wikipedia.org/wiki/Rendezvous_hashing" target="_blank">Rendezvous</a> (aka Highest Random Weight) hashing algorithm
+ * for partition mapping.
  */
-public final class HrwPartitionMapper implements PartitionMapper {
+public final class RendezvousHashMapper implements PartitionMapper {
     /**
-     * Builder for {@link HrwPartitionMapper}.
+     * Builder for {@link RendezvousHashMapper}.
      *
-     * @see HrwPartitionMapper#of(HasTopology)
+     * @see RendezvousHashMapper#of(HasTopology)
      */
     public static final class Builder {
         /** Default value (={@value}) for {@link #withPartitions(int)}. */
@@ -48,8 +48,8 @@ public final class HrwPartitionMapper implements PartitionMapper {
          *
          * @return New mapper.
          */
-        public PartitionMapper build() {
-            return new HrwPartitionMapper(partitions, backupNodes, cluster);
+        public RendezvousHashMapper build() {
+            return new RendezvousHashMapper(partitions, backupNodes, cluster);
         }
 
         /**
@@ -144,7 +144,12 @@ public final class HrwPartitionMapper implements PartitionMapper {
         public Partition map(Object key) {
             ArgAssert.notNull(key, "Key");
 
-            int hash = (hash = key.hashCode()) ^ hash >>> 16;
+            return mapInt(key.hashCode());
+        }
+
+        @Override
+        public Partition mapInt(int key) {
+            int hash = (hash = key) ^ hash >>> 16;
 
             int pid = maxPid & hash;
 
@@ -217,8 +222,8 @@ public final class HrwPartitionMapper implements PartitionMapper {
         }
     }
 
-    private static final AtomicReferenceFieldUpdater<HrwPartitionMapper, PartitionMapperSnapshot> SNAPSHOT = newUpdater(
-        HrwPartitionMapper.class,
+    private static final AtomicReferenceFieldUpdater<RendezvousHashMapper, PartitionMapperSnapshot> SNAPSHOT = newUpdater(
+        RendezvousHashMapper.class,
         PartitionMapperSnapshot.class,
         "snapshot"
     );
@@ -234,7 +239,7 @@ public final class HrwPartitionMapper implements PartitionMapper {
     @SuppressWarnings("unused") // <-- Updated via AtomicReferenceFieldUpdater.
     private volatile PartitionMapperSnapshot snapshot;
 
-    private HrwPartitionMapper(int size, int backupSize, HasTopology cluster) {
+    private RendezvousHashMapper(int size, int backupSize, HasTopology cluster) {
         ArgAssert.isTrue(size > 0, "Partitions size is less than or equals to zero [size=" + size + ']');
         ArgAssert.isTrue(Utils.isPowerOfTwo(size), "Partitions size must be a power of two [size=" + size + ']');
         ArgAssert.notNull(cluster, "cluster");
@@ -245,7 +250,7 @@ public final class HrwPartitionMapper implements PartitionMapper {
     }
 
     /**
-     * Constructs a new builder that can be used to configure {@link HrwPartitionMapper}.
+     * Constructs a new builder that can be used to configure {@link RendezvousHashMapper}.
      *
      * @param cluster Cluster topology that should be used for partitions mapping.
      *
@@ -259,8 +264,25 @@ public final class HrwPartitionMapper implements PartitionMapper {
         return new Builder(cluster);
     }
 
+    /**
+     * Returns a copy of this mapper that will use the specified cluster topology and will inherit all other configuration options from this
+     * instance.
+     *
+     * @param cluster Cluster topology.
+     *
+     * @return New mapper.
+     */
+    public RendezvousHashMapper copy(HasTopology cluster) {
+        return new RendezvousHashMapper(size, backupSize, cluster);
+    }
+
     @Override
     public Partition map(Object key) {
+        return snapshot().map(key);
+    }
+
+    @Override
+    public Partition mapInt(int key) {
         return snapshot().map(key);
     }
 

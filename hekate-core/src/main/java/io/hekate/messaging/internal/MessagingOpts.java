@@ -20,6 +20,7 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterView;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.unicast.LoadBalancer;
+import io.hekate.partition.PartitionMapper;
 
 interface MessagingOpts<T> {
     LoadBalancer<T> balancer();
@@ -27,6 +28,8 @@ interface MessagingOpts<T> {
     ClusterView cluster();
 
     FailoverPolicy failover();
+
+    PartitionMapper partitions();
 
     long timeout();
 

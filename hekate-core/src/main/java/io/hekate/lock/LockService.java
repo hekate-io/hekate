@@ -20,7 +20,7 @@ import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.DefaultServiceFactory;
 import io.hekate.core.service.Service;
-import io.hekate.partition.HrwPartitionMapper;
+import io.hekate.partition.RendezvousHashMapper;
 import java.util.List;
 
 /**
@@ -99,7 +99,7 @@ import java.util.List;
  *
  * <h2>Locking protocol details</h2>
  * <p>
- * {@link LockService} uses {@link HrwPartitionMapper} to evenly distribute locks processing workload among the nodes. For each
+ * {@link LockService} uses {@link RendezvousHashMapper} to evenly distribute locks processing workload among the nodes. For each
  * lock/unlock operation it selects a node that is responsible for managing the lock with the given name and forwards those operations to
  * such node. Manager node controls the lifecycle and order of locks and makes sure that locks are released if lock owner node prematurely
  * leaves the cluster before properly releasing the lock.

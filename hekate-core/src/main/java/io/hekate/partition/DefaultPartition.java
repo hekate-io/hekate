@@ -89,6 +89,11 @@ class DefaultPartition implements Partition {
     }
 
     @Override
+    public boolean hasBackupNodes() {
+        return !backup.isEmpty();
+    }
+
+    @Override
     public List<ClusterNode> nodes() {
         return nodes;
     }

@@ -31,6 +31,7 @@ import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.messaging.unicast.SendFuture;
 import io.hekate.messaging.unicast.SubscribeFuture;
+import io.hekate.partition.PartitionMapper;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
@@ -231,6 +232,13 @@ public interface MessagingChannel<T> extends HasClusterFilter<MessagingChannel<T
      * @return Affinity key or {@code null}, if no affinity is specified.
      */
     Object affinity();
+
+    /**
+     * Returns the partition mapper that this channel uses to map {@link #withAffinity(Object) affinity keys} to cluster nodes.
+     *
+     * @return Mapper.
+     */
+    PartitionMapper partitions();
 
     /**
      * Returns a copy of this channel that will use the specified failover policy and will inherit all other options from this instance.

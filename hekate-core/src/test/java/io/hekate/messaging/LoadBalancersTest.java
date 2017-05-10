@@ -21,27 +21,73 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.messaging.internal.LoadBalancerContextBridge;
+import io.hekate.messaging.unicast.LoadBalancer;
 import io.hekate.messaging.unicast.LoadBalancerContext;
 import io.hekate.messaging.unicast.LoadBalancers;
 import java.util.Set;
+import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 public class LoadBalancersTest extends HekateTestBase {
-    @Test
-    public void testToRandom() throws Exception {
+    private LoadBalancerContext ctx;
+
+    @Before
+    public void setUp() throws Exception {
         ClusterNode node1 = newLocalNode(n -> n.withJoinOrder(1));
         ClusterNode node2 = newLocalNode(n -> n.withJoinOrder(2));
         ClusterNode node3 = newLocalNode(n -> n.withJoinOrder(3));
 
-        LoadBalancerContext ctx = newContext(toSet(node1, node2, node3));
+        ctx = newContext(toSet(node1, node2, node3));
+    }
 
-        ClusterNodeId nodeId = LoadBalancers.toRandom().route("msg", ctx);
+    @Test
+    public void testRandom() throws Exception {
+        LoadBalancer<Object> lb = LoadBalancers.random();
+
+        ClusterNodeId nodeId = lb.route("msg", ctx);
 
         assertNotNull(nodeId);
         assertTrue(ctx.contains(nodeId));
+
+        assertEquals("Random", lb.toString());
+    }
+
+    @Test
+    public void testRoundRobin() throws Exception {
+        LoadBalancer<Object> lb = LoadBalancers.roundRobin();
+
+        int idx = 0;
+
+        for (int i = 0; i < 100; i++) {
+            ClusterNodeId nodeId = lb.route("msg", ctx);
+
+            assertNotNull(nodeId);
+            assertTrue(ctx.contains(nodeId));
+
+            assertEquals(ctx.nodes().get(idx).id(), nodeId);
+
+            if (idx == ctx.size() - 1) {
+                idx = 0;
+            } else {
+                idx++;
+            }
+        }
+
+        assertEquals("RoundRobin", lb.toString());
+
+        // Check that always returns a new instance.
+        assertNotSame(lb, LoadBalancers.roundRobin());
+        assertNotSame(lb, LoadBalancers.roundRobin());
+        assertNotSame(lb, LoadBalancers.roundRobin());
+
+        runParallel(4, 1000, i ->
+            assertNotNull(lb.route(i, ctx))
+        );
     }
 
     @Test

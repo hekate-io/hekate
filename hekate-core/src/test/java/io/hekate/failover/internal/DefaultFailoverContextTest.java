@@ -44,6 +44,7 @@ public class DefaultFailoverContextTest extends HekateTestBase {
         assertEquals(failedNode, ctx.failedNode());
         assertEquals(1, ctx.allFailedNodes().size());
         assertTrue(ctx.allFailedNodes().contains(failedNode));
+        assertTrue(ctx.isFailed(failedNode));
         assertSame(FailoverRoutingPolicy.RETRY_SAME_NODE, ctx.routing());
         assertTrue(ctx.toString(), ctx.toString().startsWith(FailoverContext.class.getSimpleName()));
 

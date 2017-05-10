@@ -34,6 +34,8 @@ import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.messaging.unicast.SendFuture;
 import io.hekate.messaging.unicast.SubscribeFuture;
+import io.hekate.partition.PartitionMapper;
+import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.Executor;
@@ -45,6 +47,8 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     @ToStringIgnore
     private final ClusterView cluster;
 
+    private final RendezvousHashMapper partitions;
+
     private final FailoverPolicy failover;
 
     private final LoadBalancer<T> balancer;
@@ -53,13 +57,16 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
 
     private final long timeout;
 
-    public DefaultMessagingChannel(MessagingGateway<T> gateway, ClusterView cluster, LoadBalancer<T> balancer, FailoverPolicy failover,
+    public DefaultMessagingChannel(MessagingGateway<T> gateway, ClusterView cluster, RendezvousHashMapper partitions,
+        LoadBalancer<T> balancer, FailoverPolicy failover,
         long timeout, Object affinityKey) {
         assert gateway != null : "Gateway is null.";
         assert cluster != null : "Cluster view is null.";
+        assert partitions != null : "Partition mapper is null.";
 
         this.gateway = gateway;
         this.cluster = cluster;
+        this.partitions = partitions;
         this.balancer = balancer;
         this.failover = failover;
         this.timeout = timeout;
@@ -147,7 +154,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
 
     @Override
     public DefaultMessagingChannel<T> withAffinity(Object affinityKey) {
-        return new DefaultMessagingChannel<>(gateway, cluster, balancer, failover, timeout, affinityKey);
+        return new DefaultMessagingChannel<>(gateway, cluster, partitions, balancer, failover, timeout, affinityKey);
     }
 
     @Override
@@ -156,8 +163,13 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
+    public PartitionMapper partitions() {
+        return partitions;
+    }
+
+    @Override
     public DefaultMessagingChannel<T> withLoadBalancer(LoadBalancer<T> balancer) {
-        return new DefaultMessagingChannel<>(gateway, cluster, balancer, failover, timeout, affinityKey);
+        return new DefaultMessagingChannel<>(gateway, cluster, partitions, balancer, failover, timeout, affinityKey);
     }
 
     @Override
@@ -167,7 +179,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
 
     @Override
     public DefaultMessagingChannel<T> withFailover(FailoverPolicy policy) {
-        return new DefaultMessagingChannel<>(gateway, cluster, balancer, policy, timeout, affinityKey);
+        return new DefaultMessagingChannel<>(gateway, cluster, partitions, balancer, policy, timeout, affinityKey);
     }
 
     @Override
@@ -179,14 +191,17 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     public DefaultMessagingChannel<T> withTimeout(long timeout, TimeUnit unit) {
         ArgAssert.notNull(unit, "Time unit");
 
-        return new DefaultMessagingChannel<>(gateway, cluster, balancer, failover, unit.toMillis(timeout), affinityKey);
+        return new DefaultMessagingChannel<>(gateway, cluster, partitions, balancer, failover, unit.toMillis(timeout), affinityKey);
     }
 
     @Override
     public DefaultMessagingChannel<T> filterAll(ClusterFilter filter) {
         ArgAssert.notNull(filter, "Filter");
 
-        return new DefaultMessagingChannel<>(gateway, cluster.filterAll(filter), balancer, failover, timeout, affinityKey);
+        ClusterView newCluster = cluster.filterAll(filter);
+        RendezvousHashMapper newPartitions = partitions.copy(newCluster);
+
+        return new DefaultMessagingChannel<>(gateway, newCluster, newPartitions, balancer, failover, timeout, affinityKey);
     }
 
     @Override
@@ -223,7 +238,10 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     public MessagingOpts<T> forSingleNode(ClusterNode node) {
         ArgAssert.notNull(node, "Node");
 
-        return new DefaultMessagingChannel<>(gateway, cluster.forNode(node), null, failover, timeout, affinityKey);
+        ClusterView newCluster = cluster.forNode(node);
+        RendezvousHashMapper newPartitions = partitions.copy(newCluster);
+
+        return new DefaultMessagingChannel<>(gateway, newCluster, newPartitions, null, failover, timeout, affinityKey);
     }
 
     // Package level for testing purposes.

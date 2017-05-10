@@ -152,6 +152,11 @@ public class DefaultFailoverContext implements FailoverContext {
     }
 
     @Override
+    public boolean isFailed(ClusterNode node) {
+        return failedNodes.contains(node);
+    }
+
+    @Override
     public FailoverRoutingPolicy routing() {
         return routing;
     }
