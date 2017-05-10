@@ -25,7 +25,7 @@ import java.util.ArrayDeque;
 import java.util.Queue;
 import org.slf4j.Logger;
 
-class NettyClientDeferHandler<T> extends ChannelDuplexHandler {
+class NettyClientDeferHandler extends ChannelDuplexHandler {
     private static class DeferredMessage {
         private final Object message;
 

@@ -666,7 +666,7 @@ class NettyClient<T> implements NetworkClient<T> {
                     NettyClientHandler<T> msgHandler = new NettyClientHandler<>(id(), localEpoch, protocol, threadAffinity, login,
                         connectTimeout, idleTimeout, log, metrics, client, callback);
 
-                    NettyClientDeferHandler<T> deferHandler = new NettyClientDeferHandler<>(id(), log);
+                    NettyClientDeferHandler deferHandler = new NettyClientDeferHandler(id(), log);
 
                     NetworkProtocolCodec netCodec = new NetworkProtocolCodec(codec);
 
