@@ -46,14 +46,7 @@ import java.util.function.Predicate;
  * resulting view will contain only those nodes that match both filters (i.e. existing filter of this view and the new filter).
  * </p>
  */
-public interface ClusterView extends HasClusterFilter<ClusterView> {
-    /**
-     * Returns the current cluster topology.
-     *
-     * @return Cluster topology.
-     */
-    ClusterTopology topology();
-
+public interface ClusterView extends HasClusterFilter<ClusterView>, HasTopology {
     /**
      * Registers the cluster event listener.
      *

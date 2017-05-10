@@ -35,7 +35,6 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
 import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.NetworkService;
 import io.hekate.network.NetworkServiceFactory;
-import io.hekate.partition.PartitionService;
 import io.hekate.task.TaskService;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +62,6 @@ import java.util.Set;
  * <li><b>{@link LocalMetricsService}</b> -  provides support for managing user-defined metrics</li>
  * <li><b>{@link ClusterMetricsService}</b> - provides access to metrics of remote cluster nodes</li>
  * <li><b>{@link NetworkService}</b> - provides configuration options and low level API for network communications</li>
- * <li><b>{@link PartitionService}</b> - provides support for consistent mapping and routing of messages among the cluster nodes</li>
  * <li><b>{@link CodecService}</b> - provides abstraction layer of data serialization API</li>
  * <li><b>{@link InjectionService}</b> - provides support for dependency injection</li>
  * </ul>
@@ -297,13 +295,6 @@ public interface Hekate {
      * @return Service.
      */
     ClusterMetricsService clusterMetrics();
-
-    /**
-     * Returns the {@link PartitionService}.
-     *
-     * @return Service.
-     */
-    PartitionService partitions();
 
     /**
      * Returns the {@link NetworkService}.

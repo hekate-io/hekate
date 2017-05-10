@@ -42,7 +42,7 @@ import java.util.stream.Stream;
  *
  * @see ClusterService#topology()
  */
-public interface ClusterTopology extends Iterable<ClusterNode> {
+public interface ClusterTopology extends Iterable<ClusterNode>, HasTopology {
     /**
      * Returns the version of this topology.
      *

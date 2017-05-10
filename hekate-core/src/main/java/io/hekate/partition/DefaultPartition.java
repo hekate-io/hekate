@@ -14,12 +14,11 @@
  * under the License.
  */
 
-package io.hekate.partition.internal;
+package io.hekate.partition;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.partition.Partition;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;

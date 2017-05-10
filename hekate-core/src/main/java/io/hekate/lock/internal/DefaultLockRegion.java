@@ -41,6 +41,7 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.unicast.ReplyDecision;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
+import io.hekate.partition.HrwPartitionMapper;
 import io.hekate.partition.Partition;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.util.format.ToString;
@@ -148,7 +149,7 @@ class DefaultLockRegion implements LockRegion {
     @ToStringIgnore
     private LockMigrationCallback migrationCallback;
 
-    public DefaultLockRegion(String regionName, ClusterNodeId localNode, ScheduledExecutorService scheduler, PartitionMapper partitions,
+    public DefaultLockRegion(String regionName, ClusterNodeId localNode, ScheduledExecutorService scheduler,
         MessagingChannel<LockProtocol> channel, long retryInterval) {
         assert regionName != null : "Region name is null.";
         assert localNode != null : "Local node is null.";
@@ -159,37 +160,37 @@ class DefaultLockRegion implements LockRegion {
         this.scheduler = scheduler;
         this.localNode = localNode;
 
-        this.livePartitions = partitions;
-
         ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
         readLock = lock.readLock();
         writeLock = lock.writeLock();
 
-        LockRegionNodeFilter regionFilter = new LockRegionNodeFilter(regionName);
+        // Prepare partition mapper.
+        PartitionMapper partitions = HrwPartitionMapper.of(channel.cluster())
+            .withBackupNodes(0)
+            .build();
+
+        this.livePartitions = partitions;
 
         // Configure messaging channel for locking operations.
-        lockChannel = channel.filter(regionFilter)
-            .withFailover(new FailoverPolicyBuilder()
-                .withConstantRetryDelay(retryInterval)
-                .withAlwaysReRoute()
-                .withRetryUntil(failover -> !isTerminated())
-            )
-            .withLoadBalancer((msg, ctx) -> {
-                LockRequestBase request = (LockRequestBase)msg;
+        lockChannel = channel.withFailover(new FailoverPolicyBuilder()
+            .withConstantRetryDelay(retryInterval)
+            .withAlwaysReRoute()
+            .withRetryUntil(failover -> !isTerminated())
+        ).withLoadBalancer((msg, ctx) -> {
+            LockRequestBase request = (LockRequestBase)msg;
 
-                Partition partition = partitions.map(request.lockName());
+            Partition partition = partitions.map(request.lockName());
 
-                // Store routed topology within the lock request so that it would be possible
-                // to detect routing collisions (in case of cluster topology changes) on the receiving side.
-                request.updateTopology(partition.topology().hash());
+            // Store routed topology within the lock request so that it would be possible
+            // to detect routing collisions (in case of cluster topology changes) on the receiving side.
+            request.updateTopology(partition.topology().hash());
 
-                return partition.primaryNode().id();
-            });
+            return partition.primaryNode().id();
+        });
 
         // Configure messaging channel for locks migration.
-        migrationChannel = channel.filter(regionFilter)
-            .withAffinity(regionName)
+        migrationChannel = channel.withAffinity(regionName)
             .filterAll(ClusterFilters.forNextInJoinOrder()) // <-- use ring-based communications.
             .withFailover(new FailoverPolicyBuilder()
                 .withAlwaysReRoute()

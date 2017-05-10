@@ -17,23 +17,16 @@
 package io.hekate.partition;
 
 import io.hekate.cluster.ClusterTopology;
-import java.util.List;
 
 /**
  * Partition mapper.
  *
  * <p>
- * This interface represents a data partition mapper within the {@link PartitionService} and is responsible for mapping user-provided data
- * keys to cluster partitions. Instances of this interface can be obtained via the {@link PartitionService#mapper(String)} method.
+ * This interface represents a data partition mapper that is responsible for mapping user-provided data to cluster partitions.
+ * ${source: partition/PartitionMapperJavadocTest.java#usage}
  * </p>
  *
- * <p>
- * For more details about the {@link PartitionService} and its capabilities please see the documentation of {@link PartitionService}
- * interface.
- * </p>
- *
- * @see PartitionService#mapper(String)
- * @see PartitionServiceFactory#withMapper(PartitionMapperConfig)
+ * @see HrwPartitionMapper
  */
 public interface PartitionMapper {
     /**
@@ -54,34 +47,14 @@ public interface PartitionMapper {
     Partition map(Object key);
 
     /**
-     * Returns the name of this mapper.
+     * Returns the total amount of partitions.
      *
-     * <p>
-     * Mapper name can be configured via the {@link PartitionMapperConfig#setName(String)} method and can be used to obtain mappers via the
-     * {@link PartitionService#mapper(String)} method.
-     * </p>
-     *
-     * @return Name of this mapper.
+     * @return Total amount of partitions
      */
-    String name();
-
-    /**
-     * Returns all partitions.
-     *
-     * <p>
-     * Total amount of partitions is specified by the {@link PartitionMapperConfig#setPartitions(int)} configuration property.
-     * </p>
-     *
-     * @return All partitions.
-     */
-    List<Partition> partitions();
+    int partitions();
 
     /**
      * Returns the amount of backup nodes that should be assigned to each partition.
-     *
-     * <p>
-     * Backup nodes are specified by the {@link PartitionMapperConfig#setBackupNodes(int)} configuration property.
-     * </p>
      *
      * @return Amount of backup nodes that should be assigned to each partition.
      */
@@ -100,8 +73,8 @@ public interface PartitionMapper {
     ClusterTopology topology();
 
     /**
-     * Creates a point in time copy of this mapper. The returned snapshot is immutable and will not change its partitions mapping even if
-     * cluster topology changes.
+     * Creates a point in time snapshot of this mapper. The returned snapshot is immutable and will not change its partitions mapping even
+     * if cluster topology changes.
      *
      * @return New snapshot or the same instance if this instance is already a snapshot.
      *

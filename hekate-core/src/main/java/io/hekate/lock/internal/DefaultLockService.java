@@ -54,10 +54,6 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingConfigProvider;
 import io.hekate.messaging.MessagingService;
-import io.hekate.partition.PartitionConfigProvider;
-import io.hekate.partition.PartitionMapper;
-import io.hekate.partition.PartitionMapperConfig;
-import io.hekate.partition.PartitionService;
 import io.hekate.util.StateGuard;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -72,10 +68,8 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.util.stream.Collectors.toList;
-
 public class DefaultLockService implements LockService, InitializingService, DependentService, ConfigurableService, TerminatingService,
-    MessagingConfigProvider, PartitionConfigProvider {
+    MessagingConfigProvider {
     static final ClusterNodeFilter NODE_FILTER = node -> node.hasService(LockService.class);
 
     static final String REGIONS_PROPERTY = "regions";
@@ -104,8 +98,6 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
     private MessagingService messaging;
 
-    private PartitionService partitions;
-
     public DefaultLockService(LockServiceFactory factory) {
         assert factory != null : "Factory is null.";
 
@@ -128,7 +120,6 @@ public class DefaultLockService implements LockService, InitializingService, Dep
     @Override
     public void resolve(DependencyContext ctx) {
         messaging = ctx.require(MessagingService.class);
-        partitions = ctx.require(PartitionService.class);
         cluster = ctx.require(ClusterService.class).filter(NODE_FILTER);
     }
 
@@ -182,22 +173,6 @@ public class DefaultLockService implements LockService, InitializingService, Dep
     }
 
     @Override
-    public Collection<PartitionMapperConfig> configurePartitions() {
-        if (regionsConfig.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        return regionsConfig.stream().map(cfg -> {
-            String name = cfg.getName().trim();
-
-            return new PartitionMapperConfig()
-                .withName(LOCK_PREFIX + '.' + name)
-                .withBackupNodes(0)
-                .withFilter(new LockRegionNodeFilter(name));
-        }).collect(toList());
-    }
-
-    @Override
     public void initialize(InitializationContext ctx) throws HekateException {
         guard.lockWrite();
 
@@ -226,9 +201,9 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
                     String name = cfg.getName().trim();
 
-                    PartitionMapper mapper = partitions.mapper(LOCK_PREFIX + '.' + name);
+                    LockRegionNodeFilter regionFilter = new LockRegionNodeFilter(name);
 
-                    regions.put(name, new DefaultLockRegion(name, node.id(), scheduler, mapper, channel, retryInterval));
+                    regions.put(name, new DefaultLockRegion(name, node.id(), scheduler, channel.filter(regionFilter), retryInterval));
                 });
             }
 

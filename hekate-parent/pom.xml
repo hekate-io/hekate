@@ -668,10 +668,6 @@
                             <packages>io.hekate.coordinate*</packages>
                         </group>
                         <group>
-                            <title>Data Partitioning API</title>
-                            <packages>io.hekate.partition*</packages>
-                        </group>
-                        <group>
                             <title>Metrics API</title>
                             <packages>io.hekate.metrics*</packages>
                         </group>
@@ -697,7 +693,7 @@
                         </group>
                         <group>
                             <title>Common Helpers and Utilities</title>
-                            <packages>io.hekate.failover*:io.hekate.util*</packages>
+                            <packages>io.hekate.failover*:io.hekate.partition*:io.hekate.util*</packages>
                         </group>
                         <group>
                             <title>Command line runner</title>

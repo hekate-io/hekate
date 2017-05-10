@@ -60,7 +60,6 @@ import io.hekate.network.NetworkService;
 import io.hekate.network.internal.NetworkBindCallback;
 import io.hekate.network.internal.NetworkServerFailure;
 import io.hekate.network.internal.NetworkServiceManager;
-import io.hekate.partition.PartitionService;
 import io.hekate.task.TaskService;
 import io.hekate.util.StateGuard;
 import io.hekate.util.format.ToString;
@@ -156,8 +155,6 @@ class HekateNode implements Hekate, Serializable {
     private final LocalMetricsService localMetrics;
 
     private final ClusterMetricsService clusterMetrics;
-
-    private final PartitionService partitions;
 
     private final CodecService codec;
 
@@ -255,7 +252,6 @@ class HekateNode implements Hekate, Serializable {
         locks = services.findService(LockService.class);
         election = services.findService(ElectionService.class);
         coordination = services.findService(CoordinationService.class);
-        partitions = services.findService(PartitionService.class);
         tasks = services.findService(TaskService.class);
         localMetrics = services.findService(LocalMetricsService.class);
         clusterMetrics = services.findService(ClusterMetricsService.class);
@@ -310,11 +306,6 @@ class HekateNode implements Hekate, Serializable {
     @Override
     public LocalMetricsService localMetrics() {
         return localMetrics;
-    }
-
-    @Override
-    public PartitionService partitions() {
-        return partitions;
     }
 
     @Override
@@ -1136,7 +1127,6 @@ class HekateNode implements Hekate, Serializable {
         core.add(LockService.class);
         core.add(ElectionService.class);
         core.add(CoordinationService.class);
-        core.add(PartitionService.class);
 
         // Prepare custom services.
         List<ServiceFactory<? extends Service>> factories = new ArrayList<>();

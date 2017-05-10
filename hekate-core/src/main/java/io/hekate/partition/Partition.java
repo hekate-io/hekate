@@ -25,25 +25,19 @@ import java.util.List;
  * Data partition.
  *
  * <p>
- * This interface represents a data partition mapping information as it was provided by the {@link PartitionMapper#map(Object)} and
- * provides information about the {@link #primaryNode() primary} and {@link #backupNodes() backup} nodes that were selected by the
- * mapper based on its cluster topology view.
+ * This interface provides information about the {@link #primaryNode() primary} and {@link #backupNodes() backup} nodes that were selected
+ * by the {@link PartitionMapper partition mapper} based on its cluster topology view.
  * </p>
  *
  * <p>
- * Note that instances of this interface are immutable and will not change once they are obtained from the {@link PartitionMapper}.
- * </p>
- *
- * <p>
- * For more details about partitions mapping please see the documentation of the {@link PartitionService} interface.
+ * Note that instances of this interface are immutable and will not change once obtained from the {@link PartitionMapper}.
  * </p>
  *
  * @see PartitionMapper#map(Object)
  */
 public interface Partition extends Comparable<Partition> {
     /**
-     * Returns the partition identifier. The returned identifier value is always within the range [0..{@link
-     * PartitionMapperConfig#getPartitions()}) range.
+     * Returns the partition identifier.
      *
      * @return Partition identifier.
      */
@@ -75,16 +69,9 @@ public interface Partition extends Comparable<Partition> {
     boolean isPrimary(ClusterNodeId node);
 
     /**
-     * Returns the set of backup nodes for this partition.
+     * Returns the backup node set of this partition.
      *
-     * <p>
-     * The size of the returned set is controlled by the {@link PartitionMapperConfig#setBackupNodes(int)} configuration property. Returns
-     * an empty set if this configuration property is less than or equals to zero.
-     * </p>
-     *
-     * @return Set of backup nodes for this partition.
-     *
-     * @see PartitionMapperConfig#setBackupNodes(int)
+     * @return Set of backup nodes or an empty set if there are no backup nodes.
      */
     List<ClusterNode> backupNodes();
 

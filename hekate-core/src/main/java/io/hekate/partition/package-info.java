@@ -15,6 +15,6 @@
  */
 
 /**
- * {@link io.hekate.partition.PartitionService} API.
+ * Partitions mapping API.
  */
 package io.hekate.partition;

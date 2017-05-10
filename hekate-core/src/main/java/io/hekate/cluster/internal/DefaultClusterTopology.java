@@ -23,6 +23,7 @@ import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.HasClusterNodeId;
+import io.hekate.cluster.HasTopology;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -438,6 +439,16 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
         }
 
         return new DefaultClusterTopology(version, filtered, true);
+    }
+
+    /**
+     * Returns this (inherited from {@link HasTopology}).
+     *
+     * @return This instance.
+     */
+    @Override
+    public ClusterTopology topology() {
+        return this;
     }
 
     private List<ClusterNode> sortedUnmodifiableList(List<ClusterNode> copy) {

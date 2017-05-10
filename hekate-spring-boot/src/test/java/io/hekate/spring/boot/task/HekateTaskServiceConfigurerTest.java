@@ -29,7 +29,6 @@ import io.hekate.lock.LockService;
 import io.hekate.messaging.MessagingService;
 import io.hekate.metrics.cluster.ClusterMetricsService;
 import io.hekate.metrics.local.LocalMetricsService;
-import io.hekate.partition.PartitionService;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
 import io.hekate.spring.boot.HekateTestConfigBase;
 import io.hekate.task.CallableTask;
@@ -75,9 +74,6 @@ public class HekateTaskServiceConfigurerTest extends HekateAutoConfigurerTestBas
         private CoordinationService coordination;
 
         @Autowired
-        private PartitionService partitions;
-
-        @Autowired
         private InjectionService injection;
 
         @Override
@@ -91,7 +87,6 @@ public class HekateTaskServiceConfigurerTest extends HekateAutoConfigurerTestBas
             assertNotNull(locks);
             assertNotNull(election);
             assertNotNull(coordination);
-            assertNotNull(partitions);
             assertNotNull(injection);
 
             say("Injection was successful.");
