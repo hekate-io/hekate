@@ -9,8 +9,8 @@ import org.junit.Test;
 
 public class PartitionMapperJavadocTest extends HekateNodeTestBase {
     @Test
-    public void exampleAccessService() throws Exception {
-        Hekate hekate = createNode();
+    public void exampleUsage() throws Exception {
+        Hekate hekate = createNode().join();
 
         // Start:usage
         // Prepare mapper.

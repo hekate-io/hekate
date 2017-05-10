@@ -18,11 +18,13 @@ package io.hekate.partition;
 
 import io.hekate.HekateNodeTestBase;
 import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.util.format.ToString;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
 import static java.util.Collections.singleton;
@@ -94,6 +96,7 @@ public class HrwPartitionMapperTest extends HekateNodeTestBase {
         assertEquals(partition.id(), partition.hashCode());
         assertEquals(partition, partition);
         assertFalse(partition.equals(new Object()));
+        assertEquals(ToString.format(Partition.class, partition), partition.toString());
 
         Partition otherPartition = mapper.map(1);
 
@@ -108,42 +111,48 @@ public class HrwPartitionMapperTest extends HekateNodeTestBase {
             int partitions = 256;
             int values = 10000;
 
-            Set<ClusterNode> nodes = new HashSet<>();
+            AtomicReference<ClusterTopology> topologyRef = new AtomicReference<>();
 
-            for (int j = 0; j < 5; j++) {
-                nodes.add(newNode());
-            }
-
-            PartitionMapper mapper = HrwPartitionMapper.of(DefaultClusterTopology.of(1, nodes))
+            PartitionMapper mapper = HrwPartitionMapper.of(topologyRef::get)
                 .withPartitions(partitions)
                 .withBackupNodes(i)
                 .build();
 
-            assertEquals(partitions, mapper.partitions());
-            assertEquals(i, mapper.backupNodes());
+            repeat(5, j -> {
+                Set<ClusterNode> nodes = new HashSet<>();
 
-            int[] distributions = new int[partitions];
+                for (int k = 0; k < j + 1; k++) {
+                    nodes.add(newNode());
+                }
 
-            for (int j = 0; j < values; j++) {
-                Partition partition = mapper.map(j);
+                topologyRef.set(DefaultClusterTopology.of(j + 1, nodes));
 
-                assertEquals(i, partition.backupNodes().size());
-                assertEquals(i + 1, partition.nodes().size());
+                assertEquals(partitions, mapper.partitions());
+                assertEquals(i, mapper.backupNodes());
 
-                distributions[partition.id()]++;
-            }
+                int[] distributions = new int[partitions];
 
-            int lowBound = (int)((values / partitions) * 0.9);
-            int highBound = (int)(values / partitions * 1.1);
+                for (int k = 0; k < values; k++) {
+                    Partition partition = mapper.map(k);
 
-            for (int j = 0; j < partitions; j++) {
-                int distribution = distributions[j];
+                    assertEquals(Math.min(i, nodes.size() - 1), partition.backupNodes().size());
+                    assertEquals(Math.min(i + 1, nodes.size()), partition.nodes().size());
 
-                assertTrue(
-                    "real=" + distribution + ", min=" + lowBound + ", max=" + highBound,
-                    distribution > lowBound && distribution < highBound
-                );
-            }
+                    distributions[partition.id()]++;
+                }
+
+                int lowBound = (int)((values / partitions) * 0.9);
+                int highBound = (int)(values / partitions * 1.1);
+
+                for (int k = 0; k < partitions; k++) {
+                    int distribution = distributions[k];
+
+                    assertTrue(
+                        "real=" + distribution + ", min=" + lowBound + ", max=" + highBound,
+                        distribution > lowBound && distribution < highBound
+                    );
+                }
+            });
         });
     }
 }
