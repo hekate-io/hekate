@@ -197,7 +197,10 @@ class NettyClient<T> implements NetworkClient<T> {
                 }
             }
 
-            super.userEventTriggered(ctx, evt);
+            // Check that channel wasn't closed by the callback.
+            if (ctx.channel().isOpen()) {
+                ctx.fireUserEventTriggered(evt);
+            }
         }
 
         @Override
@@ -819,7 +822,9 @@ class NettyClient<T> implements NetworkClient<T> {
 
             // Notify user callback.
             if (onSend != null) {
-                onSend.onComplete(msg, Optional.ofNullable(result.cause()), this);
+                Throwable mayBeError = NettySslUtil.unwrap(result.cause());
+
+                onSend.onComplete(msg, Optional.ofNullable(mayBeError), this);
             }
         });
 
