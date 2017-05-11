@@ -23,33 +23,33 @@ import java.util.concurrent.atomic.LongAdder;
 class DefaultCounterMetric implements CounterMetric {
     private final String name;
 
-    private final String totalName;
-
     private final LongAdder counter;
 
-    private final LongAdder total;
+    private final CounterMetric total;
 
     private final boolean autoReset;
 
-    public DefaultCounterMetric(String name, boolean autoReset, String totalName) {
+    public DefaultCounterMetric(String name, boolean autoReset) {
+        this(name, autoReset, null);
+    }
+
+    public DefaultCounterMetric(String name, boolean autoReset, CounterMetric total) {
         assert name != null : "Name is null.";
-        assert !name.trim().isEmpty() : "Name is empty.";
+        assert !name.isEmpty() : "Name is empty.";
 
         this.counter = new LongAdder();
         this.name = name;
-        this.totalName = totalName;
+        this.total = total;
         this.autoReset = autoReset;
-
-        if (totalName == null) {
-            this.total = null;
-        } else {
-            this.total = new LongAdder();
-        }
     }
 
     @Override
     public void increment() {
         counter.add(1);
+
+        if (total != null) {
+            total.increment();
+        }
     }
 
     @Override
@@ -60,6 +60,10 @@ class DefaultCounterMetric implements CounterMetric {
     @Override
     public void add(long value) {
         counter.add(value);
+
+        if (total != null) {
+            total.add(value);
+        }
     }
 
     @Override
@@ -77,37 +81,12 @@ class DefaultCounterMetric implements CounterMetric {
         return counter.sum();
     }
 
-    public long totalValue() {
-        if (total == null) {
-            return counter.sum();
-        } else {
-            long totalVal = total.sum();
-            long curVal = counter.sum();
-
-            return totalVal + curVal;
-        }
-    }
-
     public long reset() {
-        long val = counter.sumThenReset();
-
-        if (total != null) {
-            total.add(val);
-        }
-
-        return val;
+        return counter.sumThenReset();
     }
 
     public boolean isAutoReset() {
         return autoReset;
-    }
-
-    public boolean hasTotal() {
-        return total != null;
-    }
-
-    public String totalName() {
-        return totalName;
     }
 
     @Override

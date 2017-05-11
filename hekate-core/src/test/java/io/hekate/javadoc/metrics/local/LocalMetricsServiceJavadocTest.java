@@ -34,12 +34,12 @@ public class LocalMetricsServiceJavadocTest extends HekateNodeTestBase {
     public static class ExampleService {
         private final CounterMetric active;
 
-        private final CounterMetric total;
-
         public ExampleService(Hekate hekate) {
-            // Register counters.
-            active = hekate.localMetrics().register(new CounterConfig("tasks.active"));
-            total = hekate.localMetrics().register(new CounterConfig("tasks.total"));
+            // Register counter.
+            active = hekate.localMetrics().register(new CounterConfig()
+                .withName("tasks.active")
+                .withTotalName("tasks.total")
+            );
         }
 
         public void processTask(Runnable task) {
@@ -53,9 +53,6 @@ public class LocalMetricsServiceJavadocTest extends HekateNodeTestBase {
                 // Decrement once tasks is completed.
                 active.decrement();
             }
-
-            // Update the total amount of processed tasks.
-            total.increment();
         }
     }
     // End:counter_example
@@ -87,14 +84,14 @@ public class LocalMetricsServiceJavadocTest extends HekateNodeTestBase {
 
         ExampleService exampleService = new ExampleService(hekate);
 
-        exampleService.processTask(() -> {
-            // No-op.
-        });
-
-        // Start:counter_example_usage
-        System.out.println("Active tasks: " + hekate.localMetrics().get("tasks.active"));
-        System.out.println(" Total tasks: " + hekate.localMetrics().get("tasks.total"));
-        // End:counter_example_usage
+        for (int i = 0; i < 5; i++) {
+            exampleService.processTask(() -> {
+                // Start:counter_example_usage
+                System.out.println("Active tasks: " + hekate.localMetrics().get("tasks.active"));
+                System.out.println(" Total tasks: " + hekate.localMetrics().get("tasks.total"));
+                // End:counter_example_usage
+            });
+        }
 
         // Start:probe_example
         // Register probe that will provide the amount of free memory in the JVM.

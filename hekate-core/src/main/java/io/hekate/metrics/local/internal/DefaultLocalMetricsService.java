@@ -78,7 +78,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
     private final List<MetricsListener> listeners = new CopyOnWriteArrayList<>();
 
     @ToStringIgnore
-    private final AtomicInteger eventSeq = new AtomicInteger();
+    private final AtomicInteger tockSeq = new AtomicInteger();
 
     @ToStringIgnore
     private ScheduledExecutorService worker;
@@ -114,7 +114,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
                 log.debug("Initializing...");
             }
 
-            eventSeq.set(0);
+            tockSeq.set(0);
 
             metricsConfig.forEach(this::registerMetric);
 
@@ -161,7 +161,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
                 probes.clear();
                 listeners.clear();
 
-                eventSeq.set(0);
+                tockSeq.set(0);
             }
         } finally {
             guard.unlockWrite();
@@ -177,45 +177,43 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
     }
 
     @Override
-    public CounterMetric register(CounterConfig config) {
+    public CounterMetric register(CounterConfig cfg) {
         ConfigCheck check = ConfigCheck.get(CounterConfig.class);
 
-        check.notNull(config, "configuration");
-        check.notEmpty(config.getName(), "name");
+        check.notNull(cfg, "configuration");
+        check.notEmpty(cfg.getName(), "name");
 
         guard.lockWrite();
 
         try {
             if (DEBUG) {
-                log.debug("Registering counter [config={}]", config);
+                log.debug("Registering counter [config={}]", cfg);
             }
 
-            String name = config.getName().trim();
+            String name = cfg.getName().trim();
 
             DefaultCounterMetric existing = counters.get(name);
 
             if (existing == null) {
                 check.unique(name, allMetrics.keySet(), "metric name");
 
-                String totalName = config.getTotalName();
+                CounterMetric total = null;
 
-                if (totalName != null) {
-                    totalName = totalName.trim();
-                }
+                String totalName = cfg.getTotalName() != null ? cfg.getTotalName().trim() : null;
 
                 if (totalName != null) {
                     check.unique(totalName, allMetrics.keySet(), "metric name");
+
+                    total = new DefaultCounterMetric(totalName, false);
+
+                    allMetrics.put(totalName, total);
                 }
 
-                DefaultCounterMetric counter = new DefaultCounterMetric(name, config.isAutoReset(), totalName);
+                DefaultCounterMetric counter = new DefaultCounterMetric(name, cfg.isAutoReset(), total);
 
                 counters.put(name, counter);
 
                 allMetrics.put(name, counter);
-
-                if (totalName != null) {
-                    allMetrics.put(totalName, new CounterTotalMetric(counter));
-                }
 
                 return counter;
             } else {
@@ -227,25 +225,25 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
     }
 
     @Override
-    public Metric register(ProbeConfig config) {
+    public Metric register(ProbeConfig cfg) {
         ConfigCheck check = ConfigCheck.get(CounterConfig.class);
 
-        check.notNull(config, "configuration");
-        check.notEmpty(config.getName(), "name");
-        check.notNull(config.getProbe(), "probe");
+        check.notNull(cfg, "configuration");
+        check.notEmpty(cfg.getName(), "name");
+        check.notNull(cfg.getProbe(), "probe");
 
         guard.lockWrite();
 
         try {
             if (DEBUG) {
-                log.debug("Registering probe [config={}]", config);
+                log.debug("Registering probe [config={}]", cfg);
             }
 
-            String name = config.getName().trim();
+            String name = cfg.getName().trim();
 
             check.unique(name, allMetrics.keySet(), "name");
 
-            DefaultProbeMetric metricProbe = new DefaultProbeMetric(name, config.getProbe(), config.getInitValue());
+            DefaultProbeMetric metricProbe = new DefaultProbeMetric(name, cfg.getProbe(), cfg.getInitValue());
 
             probes.put(name, metricProbe);
 
@@ -350,25 +348,17 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
                     }
                 });
 
-                counters.values().forEach(c -> {
+                counters.values().forEach(cnt -> {
                     long val;
 
-                    if (c.isAutoReset()) {
-                        val = c.reset();
+                    if (cnt.isAutoReset()) {
+                        val = cnt.reset();
                     } else {
-                        val = c.value();
+                        val = cnt.value();
                     }
 
                     if (snapshot != null) {
-                        String name = c.name();
-
-                        snapshot.put(name, new StaticMetric(name, val));
-
-                        if (c.hasTotal()) {
-                            String totalName = c.totalName();
-
-                            snapshot.put(totalName, new StaticMetric(totalName, c.totalValue()));
-                        }
+                        snapshot.put(cnt.name(), new StaticMetric(cnt.name(), val));
                     }
                 });
             } else {
@@ -379,7 +369,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
         }
 
         if (snapshot != null) {
-            int tick = eventSeq.getAndIncrement();
+            int tick = tockSeq.getAndIncrement();
 
             DefaultMetricsUpdateEvent event = new DefaultMetricsUpdateEvent(tick, Collections.unmodifiableMap(snapshot));
 
