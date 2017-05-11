@@ -333,7 +333,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                 log.debug("Closing inbound network connection due to I/O error "
                     + "[protocol={}, address={}, reason={}]", protocol, address(), realError.toString());
             }
-        } else {
+        } else if (log.isErrorEnabled()) {
             log.error("Inbound network connection failure [protocol={}, address={}]", protocol, address(), realError);
         }
 

@@ -50,6 +50,7 @@ import io.netty.util.concurrent.GenericFutureListener;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
+import java.security.GeneralSecurityException;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
@@ -249,12 +250,12 @@ class NettyClient<T> implements NetworkClient<T> {
                 disconnected = true;
 
                 if (firstError != null) {
-                    if (firstError instanceof IOException) {
+                    if (isNonFatalIoError(firstError)) {
                         if (debug) {
-                            log.debug("Closing outbound connection due to I/O error [channel={}, state={}, cause={}]", id, state,
-                                firstError.toString());
+                            log.debug("Closing outbound connection due to I/O error "
+                                + "[channel={}, state={}, cause={}]", id, state, firstError.toString());
                         }
-                    } else {
+                    } else if (log.isErrorEnabled()) {
                         log.error("Outbound connection failure [channel={}, state={}]", id, state, firstError);
                     }
                 }
@@ -294,6 +295,11 @@ class NettyClient<T> implements NetworkClient<T> {
 
                 localDisconnectFuture.complete(client);
             }
+        }
+
+        private boolean isNonFatalIoError(Throwable err) {
+            return err instanceof IOException
+                && !Utils.isCausedBy(err, GeneralSecurityException.class);
         }
     }
 
