@@ -579,6 +579,9 @@ public class NetworkServerTest extends NetworkTestBase {
             assertSame(NetworkClient.State.DISCONNECTED, p1c2.state());
             assertSame(NetworkClient.State.DISCONNECTED, p2c1.state());
             assertSame(NetworkClient.State.DISCONNECTED, p2c2.state());
+
+            busyWait("'protocol_1' all clients disconnect", () -> server.clients("protocol_1").isEmpty());
+            busyWait("'protocol_2' all clients disconnect", () -> server.clients("protocol_2").isEmpty());
         });
     }
 
