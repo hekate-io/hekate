@@ -30,7 +30,7 @@ public class InvalidSslConfigurationTest extends NetworkTestBase {
     public void testInvalidCertificate() throws Exception {
         NetworkServer server = createServer();
 
-        server.start(newServerAddress());
+        get(server.start(newServerAddress()));
 
         NetworkSslConfig ssl = new NetworkSslConfig()
             .withProvider(getTestContext().ssl().get().getProvider())
@@ -56,7 +56,7 @@ public class InvalidSslConfigurationTest extends NetworkTestBase {
     public void testSslNotConfiguredOnClient() throws Exception {
         NetworkServer server = createServer();
 
-        server.start(newServerAddress());
+        get(server.start(newServerAddress()));
 
         NetworkClient<String> client = createClient(cfg ->
             cfg.setSsl(null)
@@ -77,7 +77,7 @@ public class InvalidSslConfigurationTest extends NetworkTestBase {
             cfg.setSsl(null)
         );
 
-        server.start(newServerAddress());
+        get(server.start(newServerAddress()));
 
         try {
             createClient().connect(server.address(), new NetworkClientCallbackMock<>()).get();
