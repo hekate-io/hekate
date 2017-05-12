@@ -24,7 +24,9 @@ import java.util.HashSet;
 import org.junit.Test;
 
 public class ConfigCheckTest extends HekateTestBase {
-    public static final String PREFIX = "ConfigCheckTest: ";
+    private static final String PREFIX = "ConfigCheckTest: ";
+
+    private static final Class<HekateConfigurationException> HCE = HekateConfigurationException.class;
 
     private final ConfigCheck check = ConfigCheck.get(ConfigCheckTest.class);
 
@@ -35,13 +37,35 @@ public class ConfigCheckTest extends HekateTestBase {
 
     @Test
     public void testThatFailure() {
-        expectErrorMessage(HekateConfigurationException.class, PREFIX + "Test message", () ->
+        expectErrorMessage(HCE, PREFIX + "Test message", () ->
             check.that(Boolean.valueOf("false"), "Test message")
+        );
+
+        check.that(true, "Success");
+    }
+
+    @Test
+    public void testFail() {
+        expectErrorMessage(HCE, PREFIX + "java.lang.Exception: test error message", () ->
+            check.fail(new Exception("test error message"))
         );
     }
 
     @Test
-    public void testRangeSuccess() {
+    public void testIsPowerOfTwo() {
+        expectErrorMessage(HCE, PREFIX + "Ten must be a power of two [value=10]", () ->
+            check.isPowerOfTwo(10, "Ten")
+        );
+
+        check.isPowerOfTwo(8, "Success");
+    }
+
+    @Test
+    public void testRange() {
+        expectErrorMessage(HCE, PREFIX + "Ten must be within the 1..5 range.", () ->
+            check.range(10, 1, 5, "Ten")
+        );
+
         check.range(0, 0, 0, "0-0-0");
         check.range(1, 0, 1, "1-0-1");
         check.range(1, 1, 1, "1-1-1");
@@ -49,117 +73,97 @@ public class ConfigCheckTest extends HekateTestBase {
     }
 
     @Test
-    public void testRangeFailure() {
-        expectErrorMessage(HekateConfigurationException.class, PREFIX + "Ten must be within the 1..5 range.", () ->
-            check.range(10, 1, 5, "Ten")
+    public void testPositiveInt() {
+        expectErrorMessage(HCE, PREFIX + "Zero must be greater than 0 [value=0]", () ->
+            check.positive(0, "Zero")
         );
-    }
 
-    @Test
-    public void testPositiveIntSuccess() {
+        expectErrorMessage(HCE, PREFIX + "Negative must be greater than 0 [value=-1]", () ->
+            check.positive(-1, "Negative")
+        );
+
         check.positive(1, "Success");
     }
 
     @Test
-    public void testPositiveLongSuccess() {
+    public void testPositiveLong() {
+        expectErrorMessage(HCE, PREFIX + "Zero must be greater than 0 [value=0]", () ->
+            check.positive(0L, "Zero")
+        );
+
+        expectErrorMessage(HCE, PREFIX + "Negative must be greater than 0 [value=-1]", () ->
+            check.positive(-1L, "Negative")
+        );
+
         check.positive(1L, "Success");
     }
 
     @Test
-    public void testPositiveIntFailure() {
-        expectErrorMessage(HekateConfigurationException.class, PREFIX + "Zero must be greater than 0 [value=0]", () ->
-            check.positive(0, "Zero")
+    public void testNonNegativeInt() {
+        expectErrorMessage(HCE, PREFIX + "Negative must be greater than or equals to 0 [value=-1]", () ->
+            check.nonNegative(-1, "Negative")
         );
 
-        expectErrorMessage(HekateConfigurationException.class, PREFIX + "Negative must be greater than 0 [value=-1]", () ->
-            check.positive(-1, "Negative")
-        );
-    }
-
-    @Test
-    public void testNonNegativeIntSuccess() {
         check.nonNegative(0, "Success");
         check.nonNegative(1, "Success");
     }
 
     @Test
-    public void testNonNegativeIntFailure() {
-        expectErrorMessage(HekateConfigurationException.class, PREFIX + "Negative must be greater than or equals to 0 [value=-1]",
-            () -> check.nonNegative(-1, "Negative")
+    public void testUnique() {
+        expectErrorMessage(HCE, PREFIX + "duplicated One [value=one]", () ->
+            check.unique("one", Collections.singleton("one"), "One")
         );
-    }
 
-    @Test
-    public void testUniqueSuccess() {
         check.unique("one", Collections.emptySet(), "Success");
         check.unique("one", Collections.singleton("two"), "Success");
         check.unique("one", new HashSet<>(Arrays.asList("two", "three")), "Success");
     }
 
     @Test
-    public void testUniqueFailure() {
-        expectErrorMessage(HekateConfigurationException.class, PREFIX + "duplicated One [value=one]",
-            () -> check.unique("one", Collections.singleton("one"), "One")
+    public void testIsTrue() {
+        expectErrorMessage(HCE, PREFIX + "True Epic fail", () ->
+            check.isTrue(Boolean.valueOf("false"), "True Epic fail")
         );
-    }
 
-    @Test
-    public void testIsTrueSuccess() {
         check.isTrue(true, "Success");
     }
 
     @Test
-    public void testIsTrueFailure() {
-        expectErrorMessage(HekateConfigurationException.class, PREFIX + "True Epic fail",
-            () -> check.isTrue(Boolean.valueOf("false"), "True Epic fail")
-        );
-    }
-
-    @Test
-    public void testIsFalseSuccess() {
+    public void testIsFalse() {
         check.isFalse(false, "Success");
-    }
 
-    @Test
-    public void testIsFalseFailure() {
-        expectErrorMessage(HekateConfigurationException.class, PREFIX + "Epic fail",
-            () -> check.isFalse(true, "Epic fail")
+        expectErrorMessage(HCE, PREFIX + "Epic fail", () ->
+            check.isFalse(true, "Epic fail")
         );
     }
 
     @Test
-    public void testNotNullSuccess() {
+    public void testNotNull() {
+        expectErrorMessage(HCE, PREFIX + "Epic fail must be not null.", () ->
+            check.notNull(null, "Epic fail")
+        );
+
         check.notNull("777", "Success");
     }
 
     @Test
-    public void testNotNullFailure() {
-        expectErrorMessage(HekateConfigurationException.class, PREFIX + "Epic fail must be not null.",
-            () -> check.notNull(null, "Epic fail")
+    public void testNotEmpty() {
+        expectErrorMessage(HCE, PREFIX + "Epic fail must be not null.", () ->
+            check.notEmpty(null, "Epic fail")
         );
-    }
 
-    @Test
-    public void testNotEmptySuccess() {
+        expectErrorMessage(HCE, PREFIX + "Epic fail must be a non-empty string.", () ->
+            check.notEmpty("", "Epic fail")
+        );
+
+        expectErrorMessage(HCE, PREFIX + "Epic fail must be a non-empty string.", () ->
+            check.notEmpty("  ", "Epic fail")
+        );
+
+        expectErrorMessage(HCE, PREFIX + "Epic fail must be a non-empty string.", () ->
+            check.notEmpty("\n", "Epic fail")
+        );
+
         check.notEmpty("777", "Success");
-    }
-
-    @Test
-    public void testNotEmptyFailure() {
-        expectErrorMessage(HekateConfigurationException.class, PREFIX + "Epic fail must be not null.",
-            () -> check.notEmpty(null, "Epic fail")
-        );
-
-        expectErrorMessage(HekateConfigurationException.class, PREFIX + "Epic fail must be a non-empty string.",
-            () -> check.notEmpty("", "Epic fail")
-        );
-
-        expectErrorMessage(HekateConfigurationException.class, PREFIX + "Epic fail must be a non-empty string.",
-            () -> check.notEmpty("  ", "Epic fail")
-        );
-
-        expectErrorMessage(HekateConfigurationException.class, PREFIX + "Epic fail must be a non-empty string.",
-            () -> check.notEmpty("\n", "Epic fail")
-        );
     }
 }

@@ -17,7 +17,7 @@ public class ArgAssertTest extends HekateTestBase {
             ArgAssert.check(false, "test message")
         );
 
-        ArgAssert.check(true, "no error");
+        ArgAssert.check(true, "Success");
     }
 
     @Test
@@ -26,7 +26,7 @@ public class ArgAssertTest extends HekateTestBase {
             ArgAssert.notNull(null, "something")
         );
 
-        ArgAssert.notNull(new Object(), "no error");
+        ArgAssert.notNull(new Object(), "Success");
     }
 
     @Test
@@ -51,8 +51,8 @@ public class ArgAssertTest extends HekateTestBase {
             ArgAssert.notEmpty(System.lineSeparator(), "something")
         );
 
-        ArgAssert.notEmpty("not empty", "no error");
-        ArgAssert.notEmpty("   not empty\n", "no error");
+        ArgAssert.notEmpty("not empty", "Success");
+        ArgAssert.notEmpty("   not empty\n", "Success");
     }
 
     @Test
@@ -61,7 +61,7 @@ public class ArgAssertTest extends HekateTestBase {
             ArgAssert.isFalse(true, "test message")
         );
 
-        ArgAssert.isFalse(false, "no error");
+        ArgAssert.isFalse(false, "Success");
     }
 
     @Test
@@ -70,6 +70,6 @@ public class ArgAssertTest extends HekateTestBase {
             ArgAssert.isTrue(false, "test message")
         );
 
-        ArgAssert.isTrue(true, "no error");
+        ArgAssert.isTrue(true, "Success");
     }
 }
