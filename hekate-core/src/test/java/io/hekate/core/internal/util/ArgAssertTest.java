@@ -3,6 +3,8 @@ package io.hekate.core.internal.util;
 import io.hekate.HekateTestBase;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+
 public class ArgAssertTest extends HekateTestBase {
     public static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
 
@@ -51,8 +53,8 @@ public class ArgAssertTest extends HekateTestBase {
             ArgAssert.notEmpty(System.lineSeparator(), "something")
         );
 
-        ArgAssert.notEmpty("not empty", "Success");
-        ArgAssert.notEmpty("   not empty\n", "Success");
+        assertEquals("not empty", ArgAssert.notEmpty("not empty", "Success"));
+        assertEquals("not empty", ArgAssert.notEmpty("   not empty\n", "Success"));
     }
 
     @Test
