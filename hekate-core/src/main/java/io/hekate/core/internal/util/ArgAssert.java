@@ -27,8 +27,18 @@ public final class ArgAssert {
         }
     }
 
-    public static void notNull(Object obj, String component) {
+    public static <T> T notNull(T obj, String component) {
         check(obj != null, component + " must be not null.");
+
+        return obj;
+    }
+
+    public static String hasText(String str, String component) {
+        String trimmed = notNull(str, component).trim();
+
+        check(!trimmed.isEmpty(), component + " must be have non-whitespace characters.");
+
+        return trimmed;
     }
 
     public static void isFalse(boolean condition, String msg) {

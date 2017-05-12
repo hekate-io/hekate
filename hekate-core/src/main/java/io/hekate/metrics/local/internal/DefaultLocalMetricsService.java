@@ -198,20 +198,8 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
             guard.unlockRead();
         }
 
-        guard.lockWrite();
-
-        try {
-            // Double check that counter wasn't registered while we were waiting for the write lock.
-            CounterMetric existing = counters.get(name);
-
-            if (existing == null) {
-                return doRegister(name, cfg);
-            } else {
-                return existing;
-            }
-        } finally {
-            guard.unlockWrite();
-        }
+        // Register if counter doesn't exist.
+        return doRegister(name, cfg);
     }
 
     @Override
@@ -249,13 +237,21 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
 
     @Override
     public CounterMetric counter(String name) {
+        String safeName = ArgAssert.hasText(name, "counter name");
+
         guard.lockReadWithStateCheck();
 
         try {
-            return counters.get(name);
+            CounterMetric counter = counters.get(safeName);
+
+            if (counter != null) {
+                return counter;
+            }
         } finally {
             guard.unlockRead();
         }
+
+        return register(new CounterConfig(safeName));
     }
 
     @Override
@@ -289,6 +285,15 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
         return new ArrayList<>(listeners);
     }
 
+    /**
+     * Returns the configuration value of {@link LocalMetricsServiceFactory#getRefreshInterval()}.
+     *
+     * @return Value of {@link LocalMetricsServiceFactory#getRefreshInterval()}.
+     */
+    public long refreshInterval() {
+        return refreshInterval;
+    }
+
     private void registerMetrics() {
         Map<String, CounterConfig> countersCfg = new HashMap<>();
         Map<String, ProbeConfig> probesCfg = new HashMap<>();
@@ -314,7 +319,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
                             oldCfg.setTotalName(newTotal);
                         } else {
                             COUNTER_CHECK.isTrue(Objects.equals(oldTotal, newTotal),
-                                "couldn't merge configuration of a counter metric with different 'total' names "
+                                "can't merge configurations of a counter metric with different 'total' names "
                                     + "[counter=" + name
                                     + ", total-name-1=" + oldTotal
                                     + ", total-name-2=" + newTotal
@@ -333,13 +338,6 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
                     probesCfg.put(name, newCfg);
                 } else {
                     oldCfg.setInitValue(Math.max(oldCfg.getInitValue(), newCfg.getInitValue()));
-
-                    PROBE_CHECK.isTrue(Objects.equals(oldCfg.getProbe(), newCfg.getProbe()),
-                        "can't register different probes with the same name "
-                            + "[name=" + name
-                            + ", probe-1=" + oldCfg.getProbe()
-                            + ", probe-2=" + newCfg.getProbe()
-                            + "]");
                 }
             } else {
                 throw new IllegalArgumentException("Unsupported metric type: " + cfg);
@@ -369,36 +367,48 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
     }
 
     private CounterMetric doRegister(String name, CounterConfig cfg) {
-        assert guard.isWriteLocked() : "Thread must hold the write lock.";
+        guard.lockWrite();
 
-        if (DEBUG) {
-            log.debug("Registering counter [config={}]", cfg);
+        try {
+            // Double check that counter wasn't registered while we were waiting for the write lock.
+            CounterMetric existing = counters.get(name);
+
+            if (existing == null) {
+                if (DEBUG) {
+                    log.debug("Registering counter [config={}]", cfg);
+                }
+
+                COUNTER_CHECK.unique(name, allMetrics.keySet(), "metric name");
+
+                CounterMetric total = null;
+
+                String totalName = cfg.getTotalName() != null ? cfg.getTotalName().trim() : null;
+
+                if (totalName != null) {
+                    COUNTER_CHECK.unique(totalName, allMetrics.keySet(), "metric name");
+
+                    total = new DefaultCounterMetric(totalName, false);
+
+                    allMetrics.put(totalName, total);
+                }
+
+                DefaultCounterMetric counter = new DefaultCounterMetric(name, cfg.isAutoReset(), total);
+
+                counters.put(name, counter);
+
+                allMetrics.put(name, counter);
+
+                return counter;
+            } else {
+                return existing;
+            }
+        } finally {
+            guard.unlockWrite();
         }
-
-        COUNTER_CHECK.unique(name, allMetrics.keySet(), "metric name");
-
-        CounterMetric total = null;
-
-        String totalName = cfg.getTotalName() != null ? cfg.getTotalName().trim() : null;
-
-        if (totalName != null) {
-            COUNTER_CHECK.unique(totalName, allMetrics.keySet(), "metric name");
-
-            total = new DefaultCounterMetric(totalName, false);
-
-            allMetrics.put(totalName, total);
-        }
-
-        DefaultCounterMetric counter = new DefaultCounterMetric(name, cfg.isAutoReset(), total);
-
-        counters.put(name, counter);
-
-        allMetrics.put(name, counter);
-
-        return counter;
     }
 
-    private void updateMetrics() {
+    // Package level for testing purposes.
+    void updateMetrics() {
         Map<String, Metric> snapshot;
 
         guard.lockWrite();

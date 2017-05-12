@@ -19,6 +19,7 @@ package io.hekate.metrics.local.internal;
 import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateConfigurationException;
+import io.hekate.core.HekateFutureException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.metrics.Metric;
 import io.hekate.metrics.local.CounterConfig;
@@ -28,6 +29,7 @@ import io.hekate.metrics.local.LocalMetricsServiceFactory;
 import io.hekate.metrics.local.MetricsListener;
 import io.hekate.metrics.local.MetricsUpdateEvent;
 import io.hekate.metrics.local.ProbeConfig;
+import io.hekate.util.format.ToString;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -56,7 +58,7 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
 
     private final AtomicReference<Exchanger<MetricsUpdateEvent>> asyncEventRef = new AtomicReference<>();
 
-    private LocalMetricsService metrics;
+    private DefaultLocalMetricsService metrics;
 
     private Hekate node;
 
@@ -66,7 +68,40 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
 
         node = createMetricsNode().join();
 
-        metrics = node.localMetrics();
+        metrics = node.get(DefaultLocalMetricsService.class);
+
+        assertSame(node.localMetrics(), metrics);
+    }
+
+    @Test
+    public void testEmptyService() throws Exception {
+        assertEquals(ToString.format(LocalMetricsService.class, metrics), metrics.toString());
+
+        assertTrue(metrics.listeners().isEmpty());
+        assertEquals(TEST_METRICS_REFRESH_INTERVAL, metrics.refreshInterval());
+
+        assertNotNull(metrics.allMetrics());
+        assertTrue(metrics.allMetrics().toString().replaceAll("],", System.lineSeparator()),
+            metrics.allMetrics().keySet().stream()
+                .noneMatch(m -> !m.startsWith("hekate.") && !m.startsWith("jvm.") && !m.startsWith("network."))
+        );
+    }
+
+    @Test
+    public void testUpdateMetricsAfterNodeTermination() throws Exception {
+        node.leave();
+
+        // Should not throw any errors.
+        metrics.updateMetrics();
+    }
+
+    @Test
+    public void testUnknownMetrics() throws Exception {
+        assertNull(metrics.metric("c"));
+        assertNotNull(metrics.allMetrics());
+        assertFalse(metrics.allMetrics().containsKey("c"));
+        assertEquals(0, metrics.get("c"));
+        assertEquals(10, metrics.get("c", 10));
     }
 
     @Test
@@ -78,15 +113,6 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         assertEquals(1000, metrics.metric("p").value());
         assertEquals(1000, metrics.get("p"));
         assertEquals(1000, metrics.get("p", 10));
-    }
-
-    @Test
-    public void testUnknownMetric() throws Exception {
-        assertNull(metrics.metric("c"));
-        assertNotNull(metrics.allMetrics());
-        assertFalse(metrics.allMetrics().containsKey("c"));
-        assertEquals(0, metrics.get("c"));
-        assertEquals(10, metrics.get("c", 10));
     }
 
     @Test
@@ -149,6 +175,19 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         assertTrue(metrics.allMetrics().containsKey("c"));
         assertEquals("c", metrics.metric("c").name());
         assertEquals(0, metrics.metric("c").value());
+    }
+
+    @Test
+    public void testCounterAutoRegister() throws Exception {
+        CounterMetric counter = metrics.counter("c");
+
+        assertNotNull(counter);
+
+        counter.increment();
+
+        assertTrue(metrics.allMetrics().containsKey("c"));
+        assertEquals("c", metrics.metric("c").name());
+        assertEquals(1, metrics.metric("c").value());
     }
 
     @Test
@@ -327,18 +366,67 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
     }
 
     @Test
-    public void testPreConfiguredMetricsAfterRejoin() throws Exception {
-        node.leave();
-
+    public void testMergeConfigurations() throws Exception {
         AtomicInteger probe = new AtomicInteger(1000);
 
-        node = createMetricsNode(c -> {
+        restart(c -> {
+            c.withRefreshInterval(Long.MAX_VALUE);
+            c.withMetric(new ProbeConfig("p").withInitValue(500).withProbe(probe::get));
+            c.withMetric(new ProbeConfig("p").withInitValue(100500).withProbe(probe::get));
+            c.withMetric(new CounterConfig("c0"));
+            c.withMetric(new CounterConfig("c0").withTotalName("c0.total"));
+            c.withConfigProvider(() -> Arrays.asList(
+                new CounterConfig("c0").withAutoReset(true),
+                new CounterConfig("c1"),
+                new CounterConfig("c2"))
+            );
+        });
+
+        assertTrue(metrics.allMetrics().containsKey("p"));
+        assertEquals("p", metrics.metric("p").name());
+        assertEquals(100500, metrics.metric("p").value());
+
+        assertTrue(metrics.allMetrics().containsKey("c0"));
+        assertTrue(metrics.allMetrics().containsKey("c1"));
+        assertTrue(metrics.allMetrics().containsKey("c2"));
+
+        CounterMetric c0 = metrics.counter("c0");
+
+        assertSame(c0, metrics.allMetrics().get("c0"));
+
+        c0.increment();
+
+        assertEquals("c0", c0.name());
+        assertEquals(1, c0.value());
+        assertTrue(c0.isAutoReset());
+        assertTrue(c0.hasTotal());
+        assertEquals("c0.total", c0.total().name());
+        assertEquals(1, c0.total().value());
+    }
+
+    @Test
+    public void testCounterCanNotMergeTotalNames() throws Exception {
+        try {
+            restart(c -> {
+                c.withMetric(new CounterConfig("c").withTotalName("c.total1"));
+                c.withMetric(new CounterConfig("c").withTotalName("c.total2"));
+            });
+        } catch (HekateFutureException e) {
+            assertTrue(getStacktrace(e), e.getCause() instanceof HekateConfigurationException);
+            assertEquals("CounterConfig: can't merge configurations of a counter metric with different 'total' names "
+                + "[counter=c, total-name-1=c.total1, total-name-2=c.total2]", e.getCause().getMessage());
+        }
+    }
+
+    @Test
+    public void testPreConfiguredMetricsAfterRejoin() throws Exception {
+        AtomicInteger probe = new AtomicInteger(1000);
+
+        restart(c -> {
             c.withMetric(new ProbeConfig("p").withInitValue(1000).withProbe(probe::get));
             c.withMetric(new CounterConfig("c0"));
             c.withConfigProvider(() -> Arrays.asList(new CounterConfig("c1"), new CounterConfig("c2")));
-        }).join();
-
-        metrics = node.localMetrics();
+        });
 
         repeat(5, i -> {
             for (int j = 0; j < 3; j++) {
@@ -378,11 +466,15 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
     public void testPreConfiguredListeners() throws Exception {
         AtomicLong probe = new AtomicLong(100);
 
+        MetricsListener listener = this::putAsyncEvent;
+
         restart(c -> {
             c.withMetric(new CounterConfig("c"));
             c.withMetric(new ProbeConfig("p").withInitValue(100).withProbe(probe::get));
-            c.withListener(this::putAsyncEvent);
+            c.withListener(listener);
         });
+
+        assertTrue(metrics.listeners().contains(listener));
 
         metrics.counter("c").add(1000);
 
@@ -412,6 +504,8 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
 
         node.join();
 
+        assertTrue(metrics.listeners().contains(listener));
+
         snapshot = getAsyncEvent().allMetrics();
 
         assertEquals(0, snapshot.get("c").value());
@@ -419,7 +513,7 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
     }
 
     @Test
-    public void testDynamicallyConfiguredListeners() throws Exception {
+    public void testDynamicListeners() throws Exception {
         AtomicLong probe = new AtomicLong(100);
 
         metrics.register(new CounterConfig("c"));
@@ -430,6 +524,8 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         MetricsListener listener = this::putAsyncEvent;
 
         metrics.addListener(listener);
+
+        assertTrue(metrics.listeners().contains(listener));
 
         MetricsUpdateEvent event1 = getAsyncEvent();
 
@@ -454,12 +550,47 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
 
         metrics.removeListener(listener);
 
+        assertFalse(metrics.listeners().contains(listener));
+
         probe.set(100);
         metrics.counter("c").add(1000);
 
         expect(TimeoutException.class, () ->
             getAsyncEvent(TEST_METRICS_REFRESH_INTERVAL * 2, TimeUnit.MILLISECONDS)
         );
+    }
+
+    @Test
+    public void testDynamicListenerRemovedOnLeave() throws Exception {
+        MetricsListener listener = event -> {
+            // No-op.
+        };
+
+        metrics.addListener(listener);
+
+        assertTrue(metrics.listeners().contains(listener));
+
+        node.leave();
+
+        node.join();
+
+        assertFalse(metrics.listeners().contains(listener));
+    }
+
+    @Test
+    public void testErrorInListener() throws Exception {
+        CountDownLatch latch = new CountDownLatch(2);
+
+        metrics.addListener(event -> {
+            latch.countDown();
+
+            if (latch.getCount() > 0) {
+                throw TEST_ERROR;
+            }
+        });
+
+        // If we couldn't await for this latch then it means that error killed the periodic metrics updater.
+        await(latch);
     }
 
     protected void awaitForMetric(long val, Metric metric) throws Exception {
@@ -493,7 +624,9 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
 
         node = createMetricsNode(configurer).join();
 
-        metrics = node.localMetrics();
+        metrics = node.get(DefaultLocalMetricsService.class);
+
+        assertSame(node.localMetrics(), metrics);
     }
 
     private HekateTestNode createMetricsNode() throws Exception {
