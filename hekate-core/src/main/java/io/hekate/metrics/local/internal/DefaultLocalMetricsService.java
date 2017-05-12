@@ -237,7 +237,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
 
     @Override
     public CounterMetric counter(String name) {
-        String safeName = ArgAssert.hasText(name, "counter name");
+        String safeName = ArgAssert.notEmpty(name, "counter name");
 
         guard.lockReadWithStateCheck();
 

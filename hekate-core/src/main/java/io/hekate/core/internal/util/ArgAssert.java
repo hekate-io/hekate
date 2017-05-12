@@ -33,7 +33,7 @@ public final class ArgAssert {
         return obj;
     }
 
-    public static String hasText(String str, String component) {
+    public static String notEmpty(String str, String component) {
         String trimmed = notNull(str, component).trim();
 
         check(!trimmed.isEmpty(), component + " must be have non-whitespace characters.");
