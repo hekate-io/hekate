@@ -43,10 +43,13 @@ public class HekateLocalMetricsServiceConfigurerTest extends HekateAutoConfigure
     static class LocalMetricsTestConfig extends HekateTestConfigBase {
         private static class InnerBean {
             @InjectCounter("test.counter2")
-            private CounterMetric innerCounter;
+            private CounterMetric counter;
+
+            @InjectCounter("test.non-configured.counter2")
+            private CounterMetric nonConfiguredCounter;
 
             @InjectMetric("test.counter1")
-            private Metric innerMetric;
+            private Metric metric;
         }
 
         @InjectCounter("test.counter1")
@@ -54,6 +57,9 @@ public class HekateLocalMetricsServiceConfigurerTest extends HekateAutoConfigure
 
         @InjectMetric("test.counter2")
         private Metric metric;
+
+        @InjectCounter("test.non-configured.counter1")
+        private CounterMetric nonConfiguredCounter;
 
         @Bean
         public InnerBean innerBean() {
@@ -123,15 +129,22 @@ public class HekateLocalMetricsServiceConfigurerTest extends HekateAutoConfigure
         assertNotNull(get("metricsService", LocalMetricsService.class));
 
         assertNotNull(get(LocalMetricsTestConfig.class).counter);
+        assertNotNull(get(LocalMetricsTestConfig.class).nonConfiguredCounter);
         assertNotNull(get(LocalMetricsTestConfig.class).metric);
-        assertNotNull(get(LocalMetricsTestConfig.InnerBean.class).innerCounter);
-        assertNotNull(get(LocalMetricsTestConfig.InnerBean.class).innerMetric);
+
+        assertNotNull(get(LocalMetricsTestConfig.InnerBean.class).counter);
+        assertNotNull(get(LocalMetricsTestConfig.InnerBean.class).nonConfiguredCounter);
+        assertNotNull(get(LocalMetricsTestConfig.InnerBean.class).metric);
 
         assertNotNull(getNode().localMetrics().metric("test.counter1"));
         assertNotNull(getNode().localMetrics().metric("test.counter2"));
+        assertNotNull(getNode().localMetrics().metric("test.non-configured.counter1"));
+        assertNotNull(getNode().localMetrics().metric("test.non-configured.counter2"));
 
         assertNotNull(getNode().localMetrics().counter("test.counter1"));
         assertNotNull(getNode().localMetrics().counter("test.counter2"));
+        assertNotNull(getNode().localMetrics().counter("test.non-configured.counter1"));
+        assertNotNull(getNode().localMetrics().counter("test.non-configured.counter2"));
 
         assertNotNull(getNode().localMetrics().metric("test.probe1"));
         assertNotNull(getNode().localMetrics().metric("test.probe2"));
