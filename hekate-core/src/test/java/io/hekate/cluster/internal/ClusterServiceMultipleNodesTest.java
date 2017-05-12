@@ -54,6 +54,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -721,7 +722,12 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
                 awaitForTopology(nodes);
 
-                assertEquals(expectedOrder.get(), node.localNode().joinOrder());
+                String joinOrderDetails = nodes.stream()
+                    .map(n -> n.localNode().joinOrder())
+                    .map(String::valueOf)
+                    .collect(joining(","));
+
+                assertEquals(joinOrderDetails, expectedOrder.get(), node.localNode().joinOrder());
 
                 nodes.forEach(n -> {
                     assertEquals(nodes.getFirst().localNode(), n.getTopology().oldest());
