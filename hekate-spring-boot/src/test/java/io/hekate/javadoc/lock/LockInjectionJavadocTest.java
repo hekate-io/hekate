@@ -25,8 +25,8 @@ import io.hekate.lock.LockRegionConfig;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.spring.boot.EnableHekate;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
-import io.hekate.spring.boot.lock.NamedLock;
-import io.hekate.spring.boot.lock.NamedLockRegion;
+import io.hekate.spring.boot.lock.InjectLock;
+import io.hekate.spring.boot.lock.InjectLockRegion;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import org.junit.Test;
@@ -40,7 +40,7 @@ public class LockInjectionJavadocTest extends HekateAutoConfigurerTestBase {
     // Start:region_bean
     @Component
     public static class MyBean {
-        @NamedLockRegion("my-region")
+        @InjectLockRegion("my-region")
         private LockRegion region;
 
         // ... other fields and methods...
@@ -63,7 +63,7 @@ public class LockInjectionJavadocTest extends HekateAutoConfigurerTestBase {
     // Start:lock_bean
     @Component
     public static class ExampleBean {
-        @NamedLock(name = "my-lock", region = "my-region")
+        @InjectLock(name = "my-lock", region = "my-region")
         private DistributedLock lock;
 
         // ... other fields and methods...

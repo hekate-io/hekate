@@ -14,12 +14,11 @@
  * under the License.
  */
 
-package io.hekate.spring.boot.lock;
+package io.hekate.spring.boot.metrics.local;
 
-import io.hekate.lock.DistributedLock;
-import io.hekate.lock.LockRegion;
-import io.hekate.lock.LockRegionConfig;
-import io.hekate.lock.LockService;
+import io.hekate.metrics.Metric;
+import io.hekate.metrics.local.LocalMetricsService;
+import io.hekate.metrics.local.MetricConfigBase;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -29,12 +28,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
- * Provides support for {@link DistributedLock}s autowiring.
+ * Provides support for {@link Metric}s autowiring.
  *
  * <p>
  * This bean can be placed on any {@link Autowired autowire}-capable elements (fields, properties, parameters, etc) of application beans in
- * order to inject {@link DistributedLock} by its {@link LockRegionConfig#setName(String) region} and {@link LockRegion#get(String)
- * lock} names.
+ * order to inject {@link Metric} by its {@link MetricConfigBase#setName(String) name}.
  * </p>
  *
  * <p>
@@ -42,33 +40,25 @@ import org.springframework.beans.factory.annotation.Qualifier;
  * </p>
  *
  * <p>
- * 1) Define a bean that will use {@link NamedLock} annotation to inject {@link DistributedLock} into its field.
- * ${source:lock/LockInjectionJavadocTest.java#lock_bean}
- * 2) Define a Spring Boot application that will provide region configuration for that lock.
- * ${source:lock/LockInjectionJavadocTest.java#lock_app}
+ * 1) Define a bean that will use {@link InjectMetric} annotation to inject {@link Metric} into its field.
+ * ${source:metrics/MetricsInjectionJavadocTest.java#metric_bean}
+ * 2) Define a Spring Boot application that will provide metric configuration.
+ * ${source:metrics/MetricsInjectionJavadocTest.java#app}
  * </p>
  *
- * @see HekateLockServiceConfigurer
- * @see LockRegion#get(String)
+ * @see HekateLocalMetricsServiceConfigurer
  */
 @Autowired
 @Qualifier
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
-public @interface NamedLock {
+public @interface InjectMetric {
     /**
-     * Specifies the name of a {@link DistributedLock} that should be used to get the lock (see {@link LockRegion#get(String)}).
+     * Specifies the {@link MetricConfigBase#setName(String) name} of a {@link Metric} that should be injected (see {@link
+     * LocalMetricsService#metric(String)}).
      *
-     * @return Name of a {@link DistributedLock}.
+     * @return Name of a {@link Metric}.
      */
-    String name();
-
-    /**
-     * Specifies the {@link LockRegionConfig#setName(String) name} of a {@link LockRegion} that should be used to get the lock (see {@link
-     * LockService#region(String)}).
-     *
-     * @return Name of a {@link LockRegion}.
-     */
-    String region();
+    String value();
 }

@@ -24,7 +24,7 @@ import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.spring.boot.EnableHekate;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
-import io.hekate.spring.boot.messaging.NamedMessagingChannel;
+import io.hekate.spring.boot.messaging.InjectChannel;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import org.junit.Test;
@@ -38,7 +38,7 @@ public class MessagingInjectionJavadocTest extends HekateAutoConfigurerTestBase 
     // Start:channel_bean
     @Component
     public static class MyBean {
-        @NamedMessagingChannel("my-channel")
+        @InjectChannel("my-channel")
         private MessagingChannel<Object> channel;
 
         // ... other fields and methods...

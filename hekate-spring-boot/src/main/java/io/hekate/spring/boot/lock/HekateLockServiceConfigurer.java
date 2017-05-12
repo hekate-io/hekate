@@ -69,15 +69,15 @@ import org.springframework.stereotype.Component;
  * <h2>Locks injections</h2>
  * <p>
  * This auto-configuration provides support for injecting beans of {@link LockRegion} and {@link DistributedLock} type into other beans with
- * the help of {@link NamedLockRegion} and {@link NamedLock} annotations.
+ * the help of {@link InjectLockRegion} and {@link InjectLock} annotations.
  * </p>
  *
  * <p>
  * Please see the documentation of the following annotations for more details:
  * </p>
  * <ul>
- * <li>{@link NamedLockRegion} - for injection of {@link LockRegion}s</li>
- * <li>{@link NamedLock} - for injection of {@link DistributedLock}s</li>
+ * <li>{@link InjectLockRegion} - for injection of {@link LockRegion}s</li>
+ * <li>{@link InjectLock} - for injection of {@link DistributedLock}s</li>
  * </ul>
  *
  * @see LockService
@@ -90,51 +90,51 @@ import org.springframework.stereotype.Component;
 @ConditionalOnMissingBean(LockServiceFactory.class)
 public class HekateLockServiceConfigurer {
     @Component
-    static class NamedLockRegionInjector extends AnnotationInjectorBase<NamedLockRegion> {
+    static class NamedLockRegionInjector extends AnnotationInjectorBase<InjectLockRegion> {
         public NamedLockRegionInjector() {
-            super(NamedLockRegion.class, LockRegionBean.class);
+            super(InjectLockRegion.class, LockRegionBean.class);
         }
 
         @Override
-        protected String injectedBeanName(NamedLockRegion annotation) {
+        protected String injectedBeanName(InjectLockRegion annotation) {
             return LockRegionBean.class.getName() + "-" + annotation.value();
         }
 
         @Override
-        protected Object qualifierValue(NamedLockRegion annotation) {
+        protected Object qualifierValue(InjectLockRegion annotation) {
             return annotation.value();
         }
 
         @Override
-        protected void configure(BeanDefinitionBuilder builder, NamedLockRegion annotation) {
+        protected void configure(BeanDefinitionBuilder builder, InjectLockRegion annotation) {
             builder.addPropertyValue("region", annotation.value());
         }
     }
 
     @Component
-    static class NamedLockInjector extends AnnotationInjectorBase<NamedLock> {
+    static class NamedLockInjector extends AnnotationInjectorBase<InjectLock> {
         public NamedLockInjector() {
-            super(NamedLock.class, LockBean.class);
+            super(InjectLock.class, LockBean.class);
         }
 
         @Override
-        protected String injectedBeanName(NamedLock annotation) {
+        protected String injectedBeanName(InjectLock annotation) {
             return LockBean.class.getName() + "-" + annotation.name() + "--" + annotation.name();
         }
 
         @Override
-        protected Object qualifierValue(NamedLock annotation) {
+        protected Object qualifierValue(InjectLock annotation) {
             return null;
         }
 
         @Override
-        protected void customize(AutowireCandidateQualifier qualifier, NamedLock annotation) {
+        protected void customize(AutowireCandidateQualifier qualifier, InjectLock annotation) {
             qualifier.addMetadataAttribute(new BeanMetadataAttribute("region", annotation.region()));
             qualifier.addMetadataAttribute(new BeanMetadataAttribute("name", annotation.name()));
         }
 
         @Override
-        protected void configure(BeanDefinitionBuilder builder, NamedLock annotation) {
+        protected void configure(BeanDefinitionBuilder builder, InjectLock annotation) {
             builder.addPropertyValue("region", annotation.region());
             builder.addPropertyValue("name", annotation.name());
         }

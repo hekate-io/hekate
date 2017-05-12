@@ -14,11 +14,11 @@
  * under the License.
  */
 
-package io.hekate.spring.boot.metrics.local;
+package io.hekate.spring.boot.lock;
 
-import io.hekate.metrics.local.CounterConfig;
-import io.hekate.metrics.local.CounterMetric;
-import io.hekate.metrics.local.LocalMetricsService;
+import io.hekate.lock.LockRegion;
+import io.hekate.lock.LockRegionConfig;
+import io.hekate.lock.LockService;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -28,11 +28,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
- * Provides support for {@link CounterMetric}s autowiring.
+ * Provides support for {@link LockRegion}s autowiring.
  *
  * <p>
  * This bean can be placed on any {@link Autowired autowire}-capable elements (fields, properties, parameters, etc) of application beans in
- * order to inject {@link CounterMetric} by its {@link CounterConfig#setName(String) name}.
+ * order to inject {@link LockRegion} by its {@link LockRegionConfig#setName(String) name}.
  * </p>
  *
  * <p>
@@ -40,25 +40,25 @@ import org.springframework.beans.factory.annotation.Qualifier;
  * </p>
  *
  * <p>
- * 1) Define a bean that will use {@link NamedCounter} annotation to inject {@link CounterMetric} into its field.
- * ${source:metrics/MetricsInjectionJavadocTest.java#counter_bean}
- * 2) Define a Spring Boot application that will provide counter configuration.
- * ${source:metrics/MetricsInjectionJavadocTest.java#app}
+ * 1) Define a bean that will use {@link InjectLockRegion} annotation to inject {@link LockRegion} into its field.
+ * ${source:lock/LockInjectionJavadocTest.java#region_bean}
+ * 2) Define a Spring Boot application that will provide lock region configuration.
+ * ${source:lock/LockInjectionJavadocTest.java#region_app}
  * </p>
  *
- * @see HekateLocalMetricsServiceConfigurer
+ * @see HekateLockServiceConfigurer
  */
 @Autowired
 @Qualifier
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
-public @interface NamedCounter {
+public @interface InjectLockRegion {
     /**
-     * Specifies the {@link CounterConfig#setName(String) name} of a {@link CounterMetric} that should be injected (see {@link
-     * LocalMetricsService#counter(String)}).
+     * Specifies the {@link LockRegionConfig#setName(String) name} of a {@link LockRegion} that should be injected (see {@link
+     * LockService#region(String)}).
      *
-     * @return Name of a {@link CounterMetric}.
+     * @return Name of a {@link LockRegion}.
      */
     String value();
 }

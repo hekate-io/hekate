@@ -26,8 +26,8 @@ import io.hekate.metrics.local.ProbeConfig;
 import io.hekate.metrics.local.internal.DefaultLocalMetricsService;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
 import io.hekate.spring.boot.HekateTestConfigBase;
-import io.hekate.spring.boot.metrics.local.NamedCounter;
-import io.hekate.spring.boot.metrics.local.NamedMetric;
+import io.hekate.spring.boot.metrics.local.InjectCounter;
+import io.hekate.spring.boot.metrics.local.InjectMetric;
 import java.util.List;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,17 +42,17 @@ public class HekateLocalMetricsServiceConfigurerTest extends HekateAutoConfigure
     @EnableAutoConfiguration
     static class LocalMetricsTestConfig extends HekateTestConfigBase {
         private static class InnerBean {
-            @NamedCounter("test.counter2")
+            @InjectCounter("test.counter2")
             private CounterMetric innerCounter;
 
-            @NamedMetric("test.counter1")
+            @InjectMetric("test.counter1")
             private Metric innerMetric;
         }
 
-        @NamedCounter("test.counter1")
+        @InjectCounter("test.counter1")
         private CounterMetric counter;
 
-        @NamedMetric("test.counter2")
+        @InjectMetric("test.counter2")
         private Metric metric;
 
         @Bean

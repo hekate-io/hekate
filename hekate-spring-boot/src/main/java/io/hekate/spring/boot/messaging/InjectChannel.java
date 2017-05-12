@@ -14,11 +14,11 @@
  * under the License.
  */
 
-package io.hekate.spring.boot.metrics.local;
+package io.hekate.spring.boot.messaging;
 
-import io.hekate.metrics.Metric;
-import io.hekate.metrics.local.LocalMetricsService;
-import io.hekate.metrics.local.MetricConfigBase;
+import io.hekate.messaging.MessagingChannel;
+import io.hekate.messaging.MessagingChannelConfig;
+import io.hekate.messaging.MessagingService;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -28,11 +28,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
- * Provides support for {@link Metric}s autowiring.
+ * Provides support for {@link MessagingChannel}s autowiring.
  *
  * <p>
  * This bean can be placed on any {@link Autowired autowire}-capable elements (fields, properties, parameters, etc) of application beans in
- * order to inject {@link Metric} by its {@link MetricConfigBase#setName(String) name}.
+ * order to inject {@link MessagingChannel} by its {@link MessagingChannelConfig#setName(String) name}.
  * </p>
  *
  * <p>
@@ -40,25 +40,25 @@ import org.springframework.beans.factory.annotation.Qualifier;
  * </p>
  *
  * <p>
- * 1) Define a bean that will use {@link NamedMetric} annotation to inject {@link Metric} into its field.
- * ${source:metrics/MetricsInjectionJavadocTest.java#metric_bean}
- * 2) Define a Spring Boot application that will provide metric configuration.
- * ${source:metrics/MetricsInjectionJavadocTest.java#app}
+ * 1) Define a bean that will use {@link InjectChannel} annotation to inject {@link MessagingChannel} into its field.
+ * ${source:messaging/MessagingInjectionJavadocTest.java#channel_bean}
+ * 2) Define a Spring Boot application that will provide channel configuration.
+ * ${source:messaging/MessagingInjectionJavadocTest.java#app}
  * </p>
  *
- * @see HekateLocalMetricsServiceConfigurer
+ * @see HekateMessagingServiceConfigurer
  */
 @Autowired
 @Qualifier
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
-public @interface NamedMetric {
+public @interface InjectChannel {
     /**
-     * Specifies the {@link MetricConfigBase#setName(String) name} of a {@link Metric} that should be injected (see {@link
-     * LocalMetricsService#metric(String)}).
+     * Specifies the {@link MessagingChannelConfig#setName(String) name} of a {@link MessagingChannel} that should be injected (see {@link
+     * MessagingService#channel(String)}).
      *
-     * @return Name of a {@link Metric}.
+     * @return Name of a {@link MessagingChannel}.
      */
     String value();
 }

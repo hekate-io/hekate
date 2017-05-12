@@ -62,15 +62,15 @@ import org.springframework.stereotype.Component;
  * <h2>Metrics injections</h2>
  * <p>
  * This auto-configuration provides support for injecting beans of {@link CounterMetric} and {@link Metric} type into other beans with
- * the help of {@link NamedCounter} and {@link NamedMetric} annotations.
+ * the help of {@link InjectCounter} and {@link InjectMetric} annotations.
  * </p>
  *
  * <p>
  * Please see the documentation of the following annotations for more details:
  * </p>
  * <ul>
- * <li>{@link NamedCounter} - for injection of {@link CounterMetric}s</li>
- * <li>{@link NamedMetric} - for injection of {@link Metric}s</li>
+ * <li>{@link InjectCounter} - for injection of {@link CounterMetric}s</li>
+ * <li>{@link InjectMetric} - for injection of {@link Metric}s</li>
  * </ul>
  *
  * @see LocalMetricsService
@@ -82,45 +82,45 @@ import org.springframework.stereotype.Component;
 @ConditionalOnMissingBean(LocalMetricsServiceFactory.class)
 public class HekateLocalMetricsServiceConfigurer {
     @Component
-    static class NamedCounterInjector extends AnnotationInjectorBase<NamedCounter> {
+    static class NamedCounterInjector extends AnnotationInjectorBase<InjectCounter> {
         public NamedCounterInjector() {
-            super(NamedCounter.class, CounterMetricBean.class);
+            super(InjectCounter.class, CounterMetricBean.class);
         }
 
         @Override
-        protected String injectedBeanName(NamedCounter annotation) {
+        protected String injectedBeanName(InjectCounter annotation) {
             return CounterMetricBean.class.getName() + "-" + annotation.value();
         }
 
         @Override
-        protected Object qualifierValue(NamedCounter annotation) {
+        protected Object qualifierValue(InjectCounter annotation) {
             return annotation.value();
         }
 
         @Override
-        protected void configure(BeanDefinitionBuilder builder, NamedCounter annotation) {
+        protected void configure(BeanDefinitionBuilder builder, InjectCounter annotation) {
             builder.addPropertyValue("name", annotation.value());
         }
     }
 
     @Component
-    static class NamedMetricInjector extends AnnotationInjectorBase<NamedMetric> {
+    static class NamedMetricInjector extends AnnotationInjectorBase<InjectMetric> {
         public NamedMetricInjector() {
-            super(NamedMetric.class, MetricBean.class);
+            super(InjectMetric.class, MetricBean.class);
         }
 
         @Override
-        protected String injectedBeanName(NamedMetric annotation) {
+        protected String injectedBeanName(InjectMetric annotation) {
             return MetricBean.class.getName() + "-" + annotation.value();
         }
 
         @Override
-        protected Object qualifierValue(NamedMetric annotation) {
+        protected Object qualifierValue(InjectMetric annotation) {
             return annotation.value();
         }
 
         @Override
-        protected void configure(BeanDefinitionBuilder builder, NamedMetric annotation) {
+        protected void configure(BeanDefinitionBuilder builder, InjectMetric annotation) {
             builder.addPropertyValue("name", annotation.value());
         }
     }

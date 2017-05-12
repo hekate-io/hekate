@@ -25,7 +25,7 @@ import io.hekate.metrics.local.CounterMetric;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.spring.boot.EnableHekate;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
-import io.hekate.spring.boot.metrics.local.NamedCounter;
+import io.hekate.spring.boot.metrics.local.InjectCounter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import org.junit.Test;
@@ -39,7 +39,7 @@ public class MetricsInjectionJavadocTest extends HekateAutoConfigurerTestBase {
     // Start:counter_bean
     @Component
     public static class MyBean {
-        @NamedCounter("my-counter")
+        @InjectCounter("my-counter")
         private CounterMetric counter;
 
         // ... other fields and methods...
@@ -49,7 +49,7 @@ public class MetricsInjectionJavadocTest extends HekateAutoConfigurerTestBase {
     // Start:metric_bean
     @Component
     public static class SomeBean {
-        @NamedCounter("my-counter")
+        @InjectCounter("my-counter")
         private Metric metric;
 
         // ... other fields and methods...

@@ -14,11 +14,12 @@
  * under the License.
  */
 
-package io.hekate.spring.boot.messaging;
+package io.hekate.spring.boot.lock;
 
-import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.MessagingChannelConfig;
-import io.hekate.messaging.MessagingService;
+import io.hekate.lock.DistributedLock;
+import io.hekate.lock.LockRegion;
+import io.hekate.lock.LockRegionConfig;
+import io.hekate.lock.LockService;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -28,11 +29,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
- * Provides support for {@link MessagingChannel}s autowiring.
+ * Provides support for {@link DistributedLock}s autowiring.
  *
  * <p>
  * This bean can be placed on any {@link Autowired autowire}-capable elements (fields, properties, parameters, etc) of application beans in
- * order to inject {@link MessagingChannel} by its {@link MessagingChannelConfig#setName(String) name}.
+ * order to inject {@link DistributedLock} by its {@link LockRegionConfig#setName(String) region} and {@link LockRegion#get(String)
+ * lock} names.
  * </p>
  *
  * <p>
@@ -40,25 +42,33 @@ import org.springframework.beans.factory.annotation.Qualifier;
  * </p>
  *
  * <p>
- * 1) Define a bean that will use {@link NamedMessagingChannel} annotation to inject {@link MessagingChannel} into its field.
- * ${source:messaging/MessagingInjectionJavadocTest.java#channel_bean}
- * 2) Define a Spring Boot application that will provide channel configuration.
- * ${source:messaging/MessagingInjectionJavadocTest.java#app}
+ * 1) Define a bean that will use {@link InjectLock} annotation to inject {@link DistributedLock} into its field.
+ * ${source:lock/LockInjectionJavadocTest.java#lock_bean}
+ * 2) Define a Spring Boot application that will provide region configuration for that lock.
+ * ${source:lock/LockInjectionJavadocTest.java#lock_app}
  * </p>
  *
- * @see HekateMessagingServiceConfigurer
+ * @see HekateLockServiceConfigurer
+ * @see LockRegion#get(String)
  */
 @Autowired
 @Qualifier
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
-public @interface NamedMessagingChannel {
+public @interface InjectLock {
     /**
-     * Specifies the {@link MessagingChannelConfig#setName(String) name} of a {@link MessagingChannel} that should be injected (see {@link
-     * MessagingService#channel(String)}).
+     * Specifies the name of a {@link DistributedLock} that should be used to get the lock (see {@link LockRegion#get(String)}).
      *
-     * @return Name of a {@link MessagingChannel}.
+     * @return Name of a {@link DistributedLock}.
      */
-    String value();
+    String name();
+
+    /**
+     * Specifies the {@link LockRegionConfig#setName(String) name} of a {@link LockRegion} that should be used to get the lock (see {@link
+     * LockService#region(String)}).
+     *
+     * @return Name of a {@link LockRegion}.
+     */
+    String region();
 }

@@ -55,7 +55,7 @@ import org.springframework.stereotype.Component;
  * <h2>Channels injections</h2>
  * <p>
  * This auto-configuration provides support for injecting beans of {@link MessagingChannel} type into other beans with the help of {@link
- * NamedMessagingChannel} annotation. Please see its documentation for more details.
+ * InjectChannel} annotation. Please see its documentation for more details.
  * </p>
  *
  * @see MessagingService
@@ -68,23 +68,23 @@ import org.springframework.stereotype.Component;
 @ConditionalOnMissingBean(MessagingServiceFactory.class)
 public class HekateMessagingServiceConfigurer {
     @Component
-    static class NamedMessagingChannelInjector extends AnnotationInjectorBase<NamedMessagingChannel> {
+    static class NamedMessagingChannelInjector extends AnnotationInjectorBase<InjectChannel> {
         public NamedMessagingChannelInjector() {
-            super(NamedMessagingChannel.class, MessagingChannelBean.class);
+            super(InjectChannel.class, MessagingChannelBean.class);
         }
 
         @Override
-        protected String injectedBeanName(NamedMessagingChannel annotation) {
+        protected String injectedBeanName(InjectChannel annotation) {
             return MessagingChannelBean.class.getName() + "-" + annotation.value();
         }
 
         @Override
-        protected Object qualifierValue(NamedMessagingChannel annotation) {
+        protected Object qualifierValue(InjectChannel annotation) {
             return annotation.value();
         }
 
         @Override
-        protected void configure(BeanDefinitionBuilder builder, NamedMessagingChannel annotation) {
+        protected void configure(BeanDefinitionBuilder builder, InjectChannel annotation) {
             builder.addPropertyValue("channel", annotation.value());
         }
     }

@@ -35,17 +35,17 @@ public class HekateLockServiceConfigurerTest extends HekateAutoConfigurerTestBas
     @EnableAutoConfiguration
     static class LockTestConfig extends HekateTestConfigBase {
         private static class InnerBean {
-            @NamedLockRegion("test1")
+            @InjectLockRegion("test1")
             private LockRegion innerRegion;
 
-            @NamedLock(region = "test1", name = "lock2")
+            @InjectLock(region = "test1", name = "lock2")
             private DistributedLock innerLock;
         }
 
-        @NamedLockRegion("test1")
+        @InjectLockRegion("test1")
         private LockRegion region;
 
-        @NamedLock(region = "test1", name = "lock1")
+        @InjectLock(region = "test1", name = "lock1")
         private DistributedLock lock;
 
         @Bean

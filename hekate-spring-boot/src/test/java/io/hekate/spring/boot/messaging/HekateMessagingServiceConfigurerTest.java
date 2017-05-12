@@ -38,17 +38,17 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
         private static class InnerComponent {
             private final MessagingChannel<Object> channel;
 
-            public InnerComponent(@NamedMessagingChannel("test3") MessagingChannel<Object> channel) {
+            public InnerComponent(@InjectChannel("test3") MessagingChannel<Object> channel) {
                 this.channel = channel;
             }
         }
 
         private static class InnerBean {
-            @NamedMessagingChannel("test2")
+            @InjectChannel("test2")
             private MessagingChannel<Object> innerChannel;
         }
 
-        @NamedMessagingChannel("test1")
+        @InjectChannel("test1")
         private MessagingChannel<Object> channel;
 
         @Bean
