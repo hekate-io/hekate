@@ -179,8 +179,8 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
 @DefaultServiceFactory(LocalMetricsServiceFactory.class)
 public interface LocalMetricsService extends Service, MetricsSource {
     /**
-     * Registers a new counter with the specified configuration or returns an existing one of if counter with the same name already exists.
-     * If there is another metric other than of {@link CounterMetric counter} type then an error will be thrown.
+     * Registers a new counter with the specified configuration or returns an existing one if counter with the same name already exists.
+     * If there is another metric of other than {@link CounterMetric counter} type then an error will be thrown.
      *
      * @param config Counter configuration.
      *

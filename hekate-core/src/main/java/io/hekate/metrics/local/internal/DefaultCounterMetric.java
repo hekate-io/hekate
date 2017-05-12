@@ -85,8 +85,19 @@ class DefaultCounterMetric implements CounterMetric {
         return counter.sumThenReset();
     }
 
+    @Override
     public boolean isAutoReset() {
         return autoReset;
+    }
+
+    @Override
+    public boolean hasTotal() {
+        return total != null;
+    }
+
+    @Override
+    public Metric total() {
+        return total;
     }
 
     @Override

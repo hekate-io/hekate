@@ -143,15 +143,6 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
     }
 
     @Test
-    public void testCounterInitValue() throws Exception {
-        metrics.register(new CounterConfig("c"));
-
-        assertTrue(metrics.allMetrics().containsKey("c"));
-        assertEquals("c", metrics.metric("c").name());
-        assertEquals(0, metrics.metric("c").value());
-    }
-
-    @Test
     public void testCounterDefaultValue() throws Exception {
         metrics.register(new CounterConfig("c"));
 
@@ -165,11 +156,14 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         CounterMetric counter = metrics.register(new CounterConfig("c").withTotalName("ct").withAutoReset(true));
         Metric total = metrics.metric("ct");
 
-        assertEquals("ct", total.name());
-        assertEquals(0, total.value());
-
         assertNotNull(counter);
         assertNotNull(total);
+
+        assertTrue(counter.isAutoReset());
+        assertTrue(counter.hasTotal());
+        assertSame(total, counter.total());
+        assertEquals("ct", total.name());
+        assertEquals(0, total.value());
 
         for (int i = 0; i < 3; i++) {
             counter.increment();
@@ -293,7 +287,7 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
 
             fail("Error was expected.");
         } catch (HekateConfigurationException e) {
-            assertEquals(e.toString(), e.getMessage(), CounterConfig.class.getSimpleName() + ": duplicated name [value=c]");
+            assertEquals(e.toString(), e.getMessage(), ProbeConfig.class.getSimpleName() + ": duplicated name [value=c]");
         }
 
         assertTrue(metrics.allMetrics().containsKey("c"));

@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -53,6 +54,10 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
     private static final Logger log = LoggerFactory.getLogger(DefaultLocalMetricsService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
+
+    private static final ConfigCheck COUNTER_CHECK = ConfigCheck.get(CounterConfig.class);
+
+    private static final ConfigCheck PROBE_CHECK = ConfigCheck.get(ProbeConfig.class);
 
     private final long refreshInterval;
 
@@ -78,7 +83,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
     private final List<MetricsListener> listeners = new CopyOnWriteArrayList<>();
 
     @ToStringIgnore
-    private final AtomicInteger tockSeq = new AtomicInteger();
+    private final AtomicInteger tickSeq = new AtomicInteger();
 
     @ToStringIgnore
     private ScheduledExecutorService worker;
@@ -114,9 +119,9 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
                 log.debug("Initializing...");
             }
 
-            tockSeq.set(0);
+            tickSeq.set(0);
 
-            metricsConfig.forEach(this::registerMetric);
+            registerMetrics();
 
             listeners.addAll(initListeners);
 
@@ -161,7 +166,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
                 probes.clear();
                 listeners.clear();
 
-                tockSeq.set(0);
+                tickSeq.set(0);
             }
         } finally {
             guard.unlockWrite();
@@ -178,44 +183,29 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
 
     @Override
     public CounterMetric register(CounterConfig cfg) {
-        ConfigCheck check = ConfigCheck.get(CounterConfig.class);
+        String name = checkCounterConfig(cfg);
 
-        check.notNull(cfg, "configuration");
-        check.notEmpty(cfg.getName(), "name");
+        // Check for an existing counter.
+        guard.lockRead();
+
+        try {
+            CounterMetric existing = counters.get(name);
+
+            if (existing != null) {
+                return existing;
+            }
+        } finally {
+            guard.unlockRead();
+        }
 
         guard.lockWrite();
 
         try {
-            if (DEBUG) {
-                log.debug("Registering counter [config={}]", cfg);
-            }
-
-            String name = cfg.getName().trim();
-
-            DefaultCounterMetric existing = counters.get(name);
+            // Double check that counter wasn't registered while we were waiting for the write lock.
+            CounterMetric existing = counters.get(name);
 
             if (existing == null) {
-                check.unique(name, allMetrics.keySet(), "metric name");
-
-                CounterMetric total = null;
-
-                String totalName = cfg.getTotalName() != null ? cfg.getTotalName().trim() : null;
-
-                if (totalName != null) {
-                    check.unique(totalName, allMetrics.keySet(), "metric name");
-
-                    total = new DefaultCounterMetric(totalName, false);
-
-                    allMetrics.put(totalName, total);
-                }
-
-                DefaultCounterMetric counter = new DefaultCounterMetric(name, cfg.isAutoReset(), total);
-
-                counters.put(name, counter);
-
-                allMetrics.put(name, counter);
-
-                return counter;
+                return doRegister(name, cfg);
             } else {
                 return existing;
             }
@@ -226,30 +216,12 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
 
     @Override
     public Metric register(ProbeConfig cfg) {
-        ConfigCheck check = ConfigCheck.get(CounterConfig.class);
-
-        check.notNull(cfg, "configuration");
-        check.notEmpty(cfg.getName(), "name");
-        check.notNull(cfg.getProbe(), "probe");
+        String name = checkProbeConfig(cfg);
 
         guard.lockWrite();
 
         try {
-            if (DEBUG) {
-                log.debug("Registering probe [config={}]", cfg);
-            }
-
-            String name = cfg.getName().trim();
-
-            check.unique(name, allMetrics.keySet(), "name");
-
-            DefaultProbeMetric metricProbe = new DefaultProbeMetric(name, cfg.getProbe(), cfg.getInitValue());
-
-            probes.put(name, metricProbe);
-
-            allMetrics.put(name, metricProbe);
-
-            return metricProbe;
+            return doRegister(name, cfg);
         } finally {
             guard.unlockWrite();
         }
@@ -308,18 +280,122 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
         }
     }
 
+    /**
+     * Returns all registered {@link #addListener(MetricsListener) listeners}.
+     *
+     * @return Listeners.
+     */
     public List<MetricsListener> listeners() {
         return new ArrayList<>(listeners);
     }
 
-    private void registerMetric(MetricConfigBase<?> metric) {
-        if (metric instanceof CounterConfig) {
-            register((CounterConfig)metric);
-        } else if (metric instanceof ProbeConfig) {
-            register((ProbeConfig)metric);
-        } else {
-            throw new IllegalArgumentException("Unsupported metric type: " + metric);
+    private void registerMetrics() {
+        Map<String, CounterConfig> countersCfg = new HashMap<>();
+        Map<String, ProbeConfig> probesCfg = new HashMap<>();
+
+        metricsConfig.forEach(cfg -> {
+            if (cfg instanceof CounterConfig) {
+                CounterConfig newCfg = (CounterConfig)cfg;
+
+                String name = checkCounterConfig(newCfg);
+
+                CounterConfig oldCfg = countersCfg.get(name);
+
+                if (oldCfg == null) {
+                    countersCfg.put(name, newCfg);
+                } else {
+                    oldCfg.setAutoReset(oldCfg.isAutoReset() | newCfg.isAutoReset());
+
+                    String oldTotal = Utils.nullOrTrim(oldCfg.getTotalName());
+                    String newTotal = Utils.nullOrTrim(newCfg.getTotalName());
+
+                    if (newTotal != null) {
+                        if (oldTotal == null) {
+                            oldCfg.setTotalName(newTotal);
+                        } else {
+                            COUNTER_CHECK.isTrue(Objects.equals(oldTotal, newTotal),
+                                "couldn't merge configuration of a counter metric with different 'total' names "
+                                    + "[counter=" + name
+                                    + ", total-name-1=" + oldTotal
+                                    + ", total-name-2=" + newTotal
+                                    + ']');
+                        }
+                    }
+                }
+            } else if (cfg instanceof ProbeConfig) {
+                ProbeConfig newCfg = (ProbeConfig)cfg;
+
+                String name = checkProbeConfig(newCfg);
+
+                ProbeConfig oldCfg = probesCfg.get(name);
+
+                if (oldCfg == null) {
+                    probesCfg.put(name, newCfg);
+                } else {
+                    oldCfg.setInitValue(Math.max(oldCfg.getInitValue(), newCfg.getInitValue()));
+
+                    PROBE_CHECK.isTrue(Objects.equals(oldCfg.getProbe(), newCfg.getProbe()),
+                        "can't register different probes with the same name "
+                            + "[name=" + name
+                            + ", probe-1=" + oldCfg.getProbe()
+                            + ", probe-2=" + newCfg.getProbe()
+                            + "]");
+                }
+            } else {
+                throw new IllegalArgumentException("Unsupported metric type: " + cfg);
+            }
+        });
+
+        countersCfg.forEach(this::doRegister);
+        probesCfg.forEach(this::doRegister);
+    }
+
+    private Metric doRegister(String name, ProbeConfig cfg) {
+        assert guard.isWriteLocked() : "Thread must hold the write lock.";
+
+        if (DEBUG) {
+            log.debug("Registering probe [config={}]", cfg);
         }
+
+        PROBE_CHECK.unique(name, allMetrics.keySet(), "name");
+
+        DefaultProbeMetric metricProbe = new DefaultProbeMetric(name, cfg.getProbe(), cfg.getInitValue());
+
+        probes.put(name, metricProbe);
+
+        allMetrics.put(name, metricProbe);
+
+        return metricProbe;
+    }
+
+    private CounterMetric doRegister(String name, CounterConfig cfg) {
+        assert guard.isWriteLocked() : "Thread must hold the write lock.";
+
+        if (DEBUG) {
+            log.debug("Registering counter [config={}]", cfg);
+        }
+
+        COUNTER_CHECK.unique(name, allMetrics.keySet(), "metric name");
+
+        CounterMetric total = null;
+
+        String totalName = cfg.getTotalName() != null ? cfg.getTotalName().trim() : null;
+
+        if (totalName != null) {
+            COUNTER_CHECK.unique(totalName, allMetrics.keySet(), "metric name");
+
+            total = new DefaultCounterMetric(totalName, false);
+
+            allMetrics.put(totalName, total);
+        }
+
+        DefaultCounterMetric counter = new DefaultCounterMetric(name, cfg.isAutoReset(), total);
+
+        counters.put(name, counter);
+
+        allMetrics.put(name, counter);
+
+        return counter;
     }
 
     private void updateMetrics() {
@@ -369,7 +445,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
         }
 
         if (snapshot != null) {
-            int tick = tockSeq.getAndIncrement();
+            int tick = tickSeq.getAndIncrement();
 
             DefaultMetricsUpdateEvent event = new DefaultMetricsUpdateEvent(tick, Collections.unmodifiableMap(snapshot));
 
@@ -381,6 +457,21 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
                 }
             });
         }
+    }
+
+    private String checkCounterConfig(CounterConfig cfg) {
+        COUNTER_CHECK.notNull(cfg, "configuration");
+        COUNTER_CHECK.notEmpty(cfg.getName(), "name");
+
+        return cfg.getName().trim();
+    }
+
+    private String checkProbeConfig(ProbeConfig cfg) {
+        PROBE_CHECK.notNull(cfg, "configuration");
+        PROBE_CHECK.notEmpty(cfg.getName(), "name");
+        PROBE_CHECK.notNull(cfg.getProbe(), "probe");
+
+        return cfg.getName().trim();
     }
 
     @Override

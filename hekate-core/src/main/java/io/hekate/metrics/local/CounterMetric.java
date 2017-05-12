@@ -69,4 +69,30 @@ public interface CounterMetric extends Metric {
      * @param value Value to subtract.
      */
     void subtract(long value);
+
+    /**
+     * Returns {@code true} if this counter is configured with {@link CounterConfig#setAutoReset(boolean) auto-reset} flag.
+     *
+     * @return {@code true} if this counter is configured with {@link CounterConfig#setAutoReset(boolean) auto-reset} flag.
+     */
+    boolean isAutoReset();
+
+    /**
+     * Returns {@code true} if this counter has a {@link CounterConfig#setTotalName(String) total metric}.
+     *
+     * @return {@code true} if this counter has a {@link CounterConfig#setTotalName(String) total metric}.
+     *
+     * @see #total()
+     */
+    boolean hasTotal();
+
+    /**
+     * Returns the {@link CounterConfig#setTotalName(String) total metric} of this counter or {@code null} if this counter doesn't have a
+     * total metric.
+     *
+     * @return Metric or {@code null}.
+     *
+     * @see #hasTotal()
+     */
+    Metric total();
 }

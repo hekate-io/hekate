@@ -305,6 +305,24 @@ public final class Utils {
         return collection.stream().map(mapper).sorted().collect(Collectors.joining(", ", "{", "}"));
     }
 
+    /**
+     * Returns {@code null} if the specified string is {@code null} or is an empty string after {@link String#trim() trimming}; returns a
+     * {@link String#trim() trimmed} string otherwise.
+     *
+     * @param str String.
+     *
+     * @return {@code null} or {@link String#trim() trimmed} string.
+     */
+    public static String nullOrTrim(String str) {
+        if (str == null) {
+            return null;
+        }
+
+        str = str.trim();
+
+        return str.isEmpty() ? null : str;
+    }
+
     private static InetSocketAddress doParseSocketAddress(String address, ConfigCheck check, boolean resolve) throws UnknownHostException {
         if (address == null) {
             return null;
