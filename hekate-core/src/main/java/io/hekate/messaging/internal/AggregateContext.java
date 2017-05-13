@@ -122,17 +122,17 @@ class AggregateContext<T> implements AggregateResult<T> {
         }
     }
 
-    public boolean forgetNode(ClusterNode node) {
+    @Override
+    public Iterator<T> iterator() {
+        return results().iterator();
+    }
+
+    boolean forgetNode(ClusterNode node) {
         synchronized (this) {
             nodes = Collections.unmodifiableList(nodes.stream().filter(n -> !n.equals(node)).collect(toList()));
 
             return isReady();
         }
-    }
-
-    @Override
-    public Iterator<T> iterator() {
-        return results().iterator();
     }
 
     boolean onReplySuccess(ClusterNode node, Response<T> rsp) {
@@ -187,7 +187,7 @@ class AggregateContext<T> implements AggregateResult<T> {
         }
     }
 
-    private boolean isReady() {
+    boolean isReady() {
         assert Thread.holdsLock(this) : "Thread must hold lock on mutex.";
 
         return nodes.size() == results.size() + (errors == null ? 0 : errors.size());
