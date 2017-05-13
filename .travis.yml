@@ -5,6 +5,8 @@ jdk:
 env:
   # NIO + No SSL
   - NIO_ENABLED=true   EPOLL_ENABLED=false  NO_SSL_ENABLED=true   SSL_JDK_ENABLED=false  SSL_OPENSSL_ENABLED=false
+  # NIO + No SSL + Logging disabled
+  - NIO_ENABLED=true   EPOLL_ENABLED=false  NO_SSL_ENABLED=true   SSL_JDK_ENABLED=false  SSL_OPENSSL_ENABLED=false  LOG_LEVEL=OFF
   # NIO + JDK SSL
   - NIO_ENABLED=true   EPOLL_ENABLED=false  NO_SSL_ENABLED=false  SSL_JDK_ENABLED=true   SSL_OPENSSL_ENABLED=false
   # NIO + OpenSSL

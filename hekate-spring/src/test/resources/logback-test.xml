@@ -26,5 +26,5 @@
         <appender-ref ref="stdout"/>
     </root>
 
-    <logger name="io.hekate" level="warn"/>
+    <logger name="io.hekate" level="${LOG_LEVEL:-warn}"/>
 </configuration>

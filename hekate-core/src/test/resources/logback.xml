@@ -30,23 +30,23 @@
         <appender-ref ref="stdout"/>
     </root>
 
-    <logger name="io.hekate" level="trace"/>
+    <logger name="io.hekate" level="${LOG_LEVEL:-trace}"/>
 
-    <logger name="io.hekate.core" level="trace"/>
+    <logger name="io.hekate.core" level="${LOG_LEVEL:-trace}"/>
 
-    <logger name="io.hekate.cluster" level="trace"/>
+    <logger name="io.hekate.cluster" level="${LOG_LEVEL:-trace}"/>
 
-    <logger name="io.hekate.network" level="trace"/>
+    <logger name="io.hekate.network" level="${LOG_LEVEL:-trace}"/>
 
-    <logger name="io.hekate.cluster" level="trace"/>
+    <logger name="io.hekate.cluster" level="${LOG_LEVEL:-trace}"/>
 
-    <logger name="io.hekate.messaging" level="trace"/>
+    <logger name="io.hekate.messaging" level="${LOG_LEVEL:-trace}"/>
 
-    <logger name="io.hekate.metrics" level="trace"/>
+    <logger name="io.hekate.metrics" level="${LOG_LEVEL:-trace}"/>
 
-    <logger name="io.hekate.lock" level="trace"/>
+    <logger name="io.hekate.lock" level="${LOG_LEVEL:-trace}"/>
 
-    <logger name="io.hekate.election" level="trace"/>
+    <logger name="io.hekate.election" level="${LOG_LEVEL:-trace}"/>
 
-    <logger name="io.hekate.coordinate" level="trace"/>
+    <logger name="io.hekate.coordinate" level="${LOG_LEVEL:-trace}"/>
 </configuration>
