@@ -668,8 +668,6 @@ class NettyClient<T> implements NetworkClient<T> {
             bootstrap.handler(new ChannelInitializer() {
                 @Override
                 protected void initChannel(Channel ch) throws Exception {
-                    ChannelPipeline pipeline = ch.pipeline();
-
                     NettyClient<T> client = NettyClient.this;
 
                     NettyClientHandler<T> msgHandler = new NettyClientHandler<>(id(), localEpoch, protocol, threadAffinity, login,
@@ -678,6 +676,8 @@ class NettyClient<T> implements NetworkClient<T> {
                     NettyClientDeferHandler deferHandler = new NettyClientDeferHandler(id(), log);
 
                     NetworkProtocolCodec netCodec = new NetworkProtocolCodec(codec);
+
+                    ChannelPipeline pipeline = ch.pipeline();
 
                     if (ssl != null) {
                         pipeline.addLast(ssl.newHandler(ch.alloc(), address.getAddress().getHostAddress(), address.getPort()));
