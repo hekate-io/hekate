@@ -346,7 +346,9 @@ public class DefaultCoordinationService implements CoordinationService, Configur
                     ClusterTopology topology = event.topology().filter(node -> {
                         ServiceInfo service = node.service(CoordinationService.class);
 
-                        return service.property(PROCESSES_PROPERTY).contains(process.name());
+                        Set<String> values = service.property(PROCESSES_PROPERTY);
+
+                        return values != null && values.contains(process.name());
                     });
 
                     process.processTopologyChange(topology);
