@@ -163,6 +163,8 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
                 log.debug("Discarding deferred messages [address={}, size={}]", id, deferred.size());
             }
 
+            ctx.pipeline().remove(this);
+
             Throwable error;
 
             if (deferredError == null) {
@@ -180,8 +182,6 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
                     ReferenceCountUtil.release(deferredMsg.message());
                 }
             }
-
-            ctx.pipeline().remove(this);
 
             deferred = null;
         }
