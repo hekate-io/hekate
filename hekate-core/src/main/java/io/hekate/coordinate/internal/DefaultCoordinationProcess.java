@@ -148,6 +148,8 @@ class DefaultCoordinationProcess implements CoordinationProcess {
                         localCtx.processMessage(msg);
                     } catch (RuntimeException | Error e) {
                         log.error("Failed to process coordination request [message={}]", msg, e);
+
+                        msg.reply(CoordinationProtocol.Reject.INSTANCE);
                     }
                 });
             } else {

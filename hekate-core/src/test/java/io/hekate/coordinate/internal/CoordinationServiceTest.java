@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -267,6 +268,52 @@ public class CoordinationServiceTest extends HekateNodeContextTestBase {
 
             for (int j = 0; j < nodesCount; j++) {
                 HekateTestNode node = createCoordinationNode(new CoordinatedValueHandler()).join();
+
+                nodes.add(node);
+
+                get(node.coordination().futureOf("test"));
+
+                String expected = String.valueOf(++val);
+
+                awaitForCoordinatedValue(expected, nodes);
+            }
+
+            for (Iterator<HekateTestNode> it = nodes.iterator(); it.hasNext(); ) {
+                HekateTestNode node = it.next();
+
+                it.remove();
+
+                node.leave();
+
+                String expected = String.valueOf(++val);
+
+                if (it.hasNext()) {
+                    awaitForCoordinatedValue(expected, nodes);
+                }
+            }
+        });
+    }
+
+    @Test
+    public void testCoordinatedValueWithError() throws Exception {
+        repeat(5, i -> {
+            int nodesCount = i + 1;
+
+            List<HekateTestNode> nodes = new ArrayList<>(nodesCount);
+
+            int val = 0;
+
+            for (int j = 0; j < nodesCount; j++) {
+                HekateTestNode node = createCoordinationNode(new CoordinatedValueHandler() {
+                    @Override
+                    public void process(CoordinationRequest request, CoordinationContext ctx) {
+                        if (ThreadLocalRandom.current().nextInt(3) == 0) {
+                            throw TEST_ERROR;
+                        } else {
+                            super.process(request, ctx);
+                        }
+                    }
+                }).join();
 
                 nodes.add(node);
 
