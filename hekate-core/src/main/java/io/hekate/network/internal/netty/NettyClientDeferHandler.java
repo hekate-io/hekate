@@ -163,8 +163,6 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
                 log.debug("Discarding deferred messages [address={}, size={}]", id, deferred.size());
             }
 
-            ctx.pipeline().remove(this);
-
             Throwable error;
 
             if (deferredError == null) {
@@ -183,6 +181,8 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
                 }
             }
 
+            ctx.pipeline().remove(this);
+
             deferred = null;
         }
     }
@@ -195,10 +195,6 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
                 log.trace("Skipped write deferred notification [address={}]", id);
             }
         } else {
-            this.deferred = null;
-
-            ctx.pipeline().remove(this);
-
             if (!localDeferred.isEmpty()) {
                 if (debug) {
                     log.debug("Writing deferred messages [address={}]", id);
@@ -214,6 +210,10 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
                     ctx.writeAndFlush(deferredMsg.message(), deferredMsg.promise());
                 }
             }
+
+            this.deferred = null;
+
+            ctx.pipeline().remove(this);
         }
     }
 }
