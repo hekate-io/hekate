@@ -674,7 +674,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     }
 
     @Test
-    public void testJoinOrderRemoveOldest() throws Exception {
+    public void testJoinOrderRemoveYoungest() throws Exception {
         LinkedList<HekateTestNode> nodes = new LinkedList<>();
 
         AtomicInteger expectedOrder = new AtomicInteger();
@@ -705,7 +705,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     }
 
     @Test
-    public void testJoinOrderRemoveYoungest() throws Exception {
+    public void testJoinOrderRemoveOldest() throws Exception {
         LinkedList<HekateTestNode> nodes = new LinkedList<>();
 
         AtomicInteger expectedOrder = new AtomicInteger();
