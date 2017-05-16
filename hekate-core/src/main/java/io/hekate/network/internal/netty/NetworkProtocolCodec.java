@@ -47,8 +47,16 @@ class NetworkProtocolCodec {
 
         @Override
         public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-            if (msg instanceof ByteBuf) {
-                // Write pre-encoded message.
+            if (msg instanceof DeferredMessage) {
+                DeferredMessage defMsg = (DeferredMessage)msg;
+
+                if (defMsg.isPreEncoded()) {
+                    // Write pre-encoded message.
+                    ctx.write(defMsg.payload(), promise);
+                } else {
+                    super.write(ctx, defMsg.payload(), promise);
+                }
+            } else if (msg instanceof ByteBuf) {
                 ctx.write(msg, promise);
             } else {
                 super.write(ctx, msg, promise);

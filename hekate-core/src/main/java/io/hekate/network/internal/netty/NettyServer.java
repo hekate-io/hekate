@@ -388,8 +388,6 @@ class NettyServer implements NetworkServer {
         setOpts(boot);
         setChildOpts(boot);
 
-        boot.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-
         boot.handler(new ChannelHandlerAdapter() {
             @Override
             public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
@@ -577,7 +575,7 @@ class NettyServer implements NetworkServer {
         }
     }
 
-    // This method is for testing purposes only.
+    // Package level for testing purposes.
     Channel serverChannel() {
         lock.lock();
 
@@ -697,11 +695,7 @@ class NettyServer implements NetworkServer {
             lock.unlock();
         }
 
-        NetworkServerFuture future = new NetworkServerFuture();
-
-        future.complete(this);
-
-        return future;
+        return NetworkServerFuture.completed(this);
     }
 
     private NettyServerHandlerConfig<Object> copy(NetworkServerHandlerConfig<Object> source) {
@@ -729,22 +723,24 @@ class NettyServer implements NetworkServer {
     }
 
     private void setChildOpts(ServerBootstrap boot) {
-        setChildOpt(boot, ChannelOption.TCP_NODELAY, tcpNoDelay);
-        setChildOpt(boot, ChannelOption.SO_RCVBUF, soReceiveBufferSize);
-        setChildOpt(boot, ChannelOption.SO_SNDBUF, soSendBuffer);
+        boot.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+
+        setChildUserOpt(boot, ChannelOption.TCP_NODELAY, tcpNoDelay);
+        setChildUserOpt(boot, ChannelOption.SO_RCVBUF, soReceiveBufferSize);
+        setChildUserOpt(boot, ChannelOption.SO_SNDBUF, soSendBuffer);
     }
 
     private void setOpts(ServerBootstrap boot) {
-        setOpt(boot, ChannelOption.SO_BACKLOG, soBacklog);
-        setOpt(boot, ChannelOption.SO_RCVBUF, soReceiveBufferSize);
-        setOpt(boot, ChannelOption.SO_REUSEADDR, soReuseAddress);
+        setUserOpt(boot, ChannelOption.SO_BACKLOG, soBacklog);
+        setUserOpt(boot, ChannelOption.SO_RCVBUF, soReceiveBufferSize);
+        setUserOpt(boot, ChannelOption.SO_REUSEADDR, soReuseAddress);
 
         if (!autoAccept) {
-            setOpt(boot, ChannelOption.AUTO_READ, false);
+            setUserOpt(boot, ChannelOption.AUTO_READ, false);
         }
     }
 
-    private <O> void setChildOpt(ServerBootstrap boot, ChannelOption<O> opt, O value) {
+    private <O> void setChildUserOpt(ServerBootstrap boot, ChannelOption<O> opt, O value) {
         if (value != null) {
             if (DEBUG) {
                 log.debug("Setting option {} = {} [address={}]", opt, value, address);
@@ -754,7 +750,7 @@ class NettyServer implements NetworkServer {
         }
     }
 
-    private <O> void setOpt(ServerBootstrap boot, ChannelOption<O> opt, O value) {
+    private <O> void setUserOpt(ServerBootstrap boot, ChannelOption<O> opt, O value) {
         if (value != null) {
             if (DEBUG) {
                 log.debug("Setting option {} = {} [address={}]", opt, value, address);

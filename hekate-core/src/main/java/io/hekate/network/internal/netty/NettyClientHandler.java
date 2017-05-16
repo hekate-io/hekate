@@ -55,13 +55,13 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
 
     private final String protocol;
 
-    private final int threadAffinity;
+    private final int affinity;
 
     private final T login;
 
     private final long idleTimeout;
 
-    private final Integer connectTimeout;
+    private final Integer connTimeout;
 
     private final NettyMetricsCallback metrics;
 
@@ -69,26 +69,26 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
 
     private final NetworkClientCallback<T> callback;
 
-    private final ChannelFutureListener heartbeatFlushListener;
+    private final ChannelFutureListener hbOnFlush;
 
-    private boolean heartbeatFlushed = true;
+    private boolean hbFlushed = true;
 
-    private int ignoreReadTimeouts;
+    private int ignoreTimeouts;
 
     private boolean handshakeDone;
 
     private State state = CONNECTING;
 
-    public NettyClientHandler(String id, int epoch, String protocol, int threadAffinity, T login, Integer connectTimeout, long idleTimeout,
+    public NettyClientHandler(String id, int epoch, String protocol, int affinity, T login, Integer connTimeout, long idleTimeout,
         Logger log, NettyMetricsCallback metrics, NettyClient<T> client, NetworkClientCallback<T> callback) {
         this.log = log;
         this.id = id;
         this.epoch = epoch;
         this.protocol = protocol;
-        this.threadAffinity = threadAffinity;
+        this.affinity = affinity;
         this.login = login;
         this.idleTimeout = idleTimeout;
-        this.connectTimeout = connectTimeout;
+        this.connTimeout = connTimeout;
         this.metrics = metrics;
         this.client = client;
         this.callback = callback;
@@ -96,8 +96,8 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
         this.debug = log.isDebugEnabled();
         this.trace = log.isTraceEnabled();
 
-        heartbeatFlushListener = future -> {
-            heartbeatFlushed = true;
+        hbOnFlush = future -> {
+            hbFlushed = true;
 
             if (!future.isSuccess() && future.channel().isOpen()) {
                 future.channel().pipeline().fireExceptionCaught(future.cause());
@@ -109,12 +109,12 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
         super.channelRegistered(ctx);
 
-        if (connectTimeout != null && connectTimeout > 0) {
+        if (connTimeout != null && connTimeout > 0) {
             if (debug) {
-                log.debug("Registering connect timeout handler [channel={}, timeout={}]", id, connectTimeout);
+                log.debug("Registering connect timeout handler [channel={}, timeout={}]", id, connTimeout);
             }
 
-            IdleStateHandler idleStateHandler = new IdleStateHandler(connectTimeout, 0, 0, TimeUnit.MILLISECONDS);
+            IdleStateHandler idleStateHandler = new IdleStateHandler(connTimeout, 0, 0, TimeUnit.MILLISECONDS);
 
             ctx.pipeline().addFirst(CONNECT_TIMEOUT_HANDLER_ID, idleStateHandler);
         }
@@ -148,37 +148,37 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
         } else if (evt instanceof AutoReadChangeEvent) {
             if (evt == AutoReadChangeEvent.PAUSE) {
                 // Completely ignore read timeouts.
-                ignoreReadTimeouts = -1;
+                ignoreTimeouts = -1;
             } else {
                 // Ignore next timeout.
-                ignoreReadTimeouts = 1;
+                ignoreTimeouts = 1;
             }
         } else if (evt instanceof IdleStateEvent) {
             if (state == CONNECTING || state == CONNECTED) {
                 IdleStateEvent idle = (IdleStateEvent)evt;
 
                 if (idle.state() == IdleState.WRITER_IDLE) {
-                    if (heartbeatFlushed) {
+                    if (hbFlushed) {
                         // Make sure that we don't push multiple heartbeats to the network buffer simultaneously.
                         // Need to perform this check since remote peer can hang and stop reading
                         // while this channel will still be trying to put more and more heartbeats on its send buffer.
-                        heartbeatFlushed = false;
+                        hbFlushed = false;
 
-                        ctx.writeAndFlush(Heartbeat.INSTANCE).addListener(heartbeatFlushListener);
+                        ctx.writeAndFlush(Heartbeat.INSTANCE).addListener(hbOnFlush);
                     }
                 } else {
                     // Reader idle.
                     // Ignore if auto-reading was disabled since in such case we will not read any heartbeats.
-                    if (ignoreReadTimeouts != -1 && ctx.channel().config().isAutoRead()) {
+                    if (ignoreTimeouts != -1 && ctx.channel().config().isAutoRead()) {
                         // Check if timeout should be ignored.
-                        if (ignoreReadTimeouts > 0) {
+                        if (ignoreTimeouts > 0) {
                             // Decrement the counter of ignored timeouts.
-                            ignoreReadTimeouts--;
+                            ignoreTimeouts--;
                         } else {
                             if (state == CONNECTING) {
-                                throw new ConnectTimeoutException("Timeout while connecting to " + id);
+                                ctx.fireExceptionCaught(new ConnectTimeoutException("Timeout while connecting to " + id));
                             } else if (state == CONNECTED) {
-                                throw new SocketTimeoutException("Timeout while reading data from " + id);
+                                ctx.fireExceptionCaught(new SocketTimeoutException("Timeout while reading data from " + id));
                             }
                         }
                     }
@@ -242,8 +242,6 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
 
             NetworkProtocol handshakeMsg = (NetworkProtocol)msg;
 
-            ChannelPipeline pipeline = ctx.pipeline();
-
             if (handshakeMsg.type() == NetworkProtocol.Type.HANDSHAKE_REJECT) {
                 HandshakeReject reject = (HandshakeReject)handshakeMsg;
 
@@ -253,7 +251,7 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
                     log.debug("Server rejected connection [channel={}, reason={}]", id, reason);
                 }
 
-                throw new ConnectException(reason + " [channel=" + id + ']');
+                ctx.fireExceptionCaught(new ConnectException(reason + " [channel=" + id + ']'));
             } else {
                 HandshakeAccept accept = (HandshakeAccept)handshakeMsg;
 
@@ -267,6 +265,8 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
                 int interval = accept.hbInterval();
                 int threshold = accept.hbLossThreshold();
                 boolean disableHeartbeats = accept.hbDisabled();
+
+                ChannelPipeline pipe = ctx.pipeline();
 
                 // Register heartbeat handler.
                 if (interval > 0 && threshold > 0) {
@@ -285,7 +285,7 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
                         }
                     }
 
-                    pipeline.addFirst(new IdleStateHandler(readTimeout, interval, 0, TimeUnit.MILLISECONDS));
+                    pipe.addFirst(new IdleStateHandler(readTimeout, interval, 0, TimeUnit.MILLISECONDS));
                 }
 
                 // Register idle connection handler.
@@ -296,7 +296,7 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
 
                     NettyClientIdleStateHandler idleStateHandler = new NettyClientIdleStateHandler(idleTimeout);
 
-                    pipeline.addAfter(NettyClient.ENCODER_HANDLER_ID, NettyClientIdleStateHandler.ID, idleStateHandler);
+                    pipe.addAfter(NettyClient.ENCODER_HANDLER_ID, NettyClientIdleStateHandler.class.getName(), idleStateHandler);
                 }
 
                 // Update state and notify on handshake completion.
@@ -308,7 +308,7 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
     }
 
     private void handshake(ChannelHandlerContext ctx) {
-        HandshakeRequest request = new HandshakeRequest(protocol, login, threadAffinity);
+        HandshakeRequest request = new HandshakeRequest(protocol, login, affinity);
 
         if (debug) {
             log.debug("Connected ...sending handshake request [channel={}, request={}]", id, request);

@@ -27,7 +27,6 @@ import io.hekate.network.NetworkClientCallback;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkSendCallback;
-import io.hekate.network.internal.netty.NettyWriteQueue.WritePromise;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -44,6 +43,7 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.traffic.ChannelTrafficShapingHandler;
 import io.netty.handler.traffic.TrafficCounter;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -99,11 +99,11 @@ class NettyClient<T> implements NetworkClient<T> {
 
         private final int localEpoch;
 
+        private final NetworkFuture<V> epochConnFuture;
+
+        private final NetworkFuture<V> epochDiscFuture;
+
         private final NetworkClientCallback<V> callback;
-
-        private final NetworkFuture<V> localConnectFuture;
-
-        private final NetworkFuture<V> localDisconnectFuture;
 
         private Throwable firstError;
 
@@ -115,9 +115,9 @@ class NettyClient<T> implements NetworkClient<T> {
             this.client = client;
             this.id = client.id();
             this.localEpoch = client.epoch;
+            this.epochConnFuture = client.connFuture;
+            this.epochDiscFuture = client.discFuture;
             this.callback = callback;
-            this.localConnectFuture = client.connectFuture;
-            this.localDisconnectFuture = client.disconnectFuture;
         }
 
         @Override
@@ -189,7 +189,7 @@ class NettyClient<T> implements NetworkClient<T> {
                 if (notify) {
                     callback.onConnect(client);
 
-                    localConnectFuture.complete(client);
+                    epochConnFuture.complete(client);
                 } else {
                     if (trace) {
                         log.trace("Skipped processing of handshake event [channel={}, event={}]", id, evt);
@@ -291,12 +291,12 @@ class NettyClient<T> implements NetworkClient<T> {
                 callback.onDisconnect(client, finalError);
 
                 if (finalError.isPresent()) {
-                    localConnectFuture.completeExceptionally(finalError.get());
+                    epochConnFuture.completeExceptionally(finalError.get());
                 } else {
-                    localConnectFuture.complete(client);
+                    epochConnFuture.complete(client);
                 }
 
-                localDisconnectFuture.complete(client);
+                epochDiscFuture.complete(client);
             }
         }
 
@@ -338,19 +338,19 @@ class NettyClient<T> implements NetworkClient<T> {
 
     private final boolean trace;
 
-    private final boolean useEpoll;
+    private final boolean epoll;
 
     private final EventLoop eventLoop;
 
-    private final int threadAffinity = ThreadLocalRandom.current().nextInt();
+    private final int affinity = ThreadLocalRandom.current().nextInt();
 
     private final NettyWriteQueue writeQueue = new NettyWriteQueue();
 
     private final SslContext ssl;
 
-    private NetworkFuture<T> connectFuture;
+    private NetworkFuture<T> connFuture;
 
-    private NetworkFuture<T> disconnectFuture;
+    private NetworkFuture<T> discFuture;
 
     private int epoch;
 
@@ -358,7 +358,7 @@ class NettyClient<T> implements NetworkClient<T> {
 
     private volatile ChannelContext channelCtx;
 
-    private volatile Object userContext;
+    private volatile Object userCtx;
 
     private volatile InetSocketAddress address;
 
@@ -391,7 +391,7 @@ class NettyClient<T> implements NetworkClient<T> {
         soReuseAddress = factory.getSoReuseAddress();
         codecFactory = (CodecFactory<Object>)factory.getCodecFactory();
         protocol = factory.getProtocol();
-        useEpoll = factory.getEventLoopGroup() instanceof EpollEventLoopGroup;
+        epoll = factory.getEventLoopGroup() instanceof EpollEventLoopGroup;
         eventLoop = factory.getEventLoopGroup().next();
         metrics = factory.getMetrics();
         ssl = factory.getSsl();
@@ -420,12 +420,12 @@ class NettyClient<T> implements NetworkClient<T> {
     @Override
     @SuppressWarnings("unchecked")
     public <C> C getContext() {
-        return (C)userContext;
+        return (C)userCtx;
     }
 
     @Override
     public void setContext(Object ctx) {
-        this.userContext = ctx;
+        this.userCtx = ctx;
     }
 
     @Override
@@ -496,7 +496,7 @@ class NettyClient<T> implements NetworkClient<T> {
         return withLock(() -> {
             if (state == DISCONNECTING) {
                 // Already disconnecting.
-                return disconnectFuture;
+                return discFuture;
             } else if (state == CONNECTING || state == CONNECTED) {
                 // Update state.
                 if (debug) {
@@ -513,17 +513,17 @@ class NettyClient<T> implements NetworkClient<T> {
 
                 channelCtx = null;
 
-                return disconnectFuture;
+                return discFuture;
             } else {
                 // Not connected.
                 if (trace) {
                     log.trace("Skipped disconnect request since client is already in {} state.", state);
                 }
 
-                if (disconnectFuture == null) {
-                    return newCompletedFuture();
+                if (discFuture == null) {
+                    return NetworkFuture.completed(this);
                 } else {
-                    return disconnectFuture;
+                    return discFuture;
                 }
             }
         });
@@ -579,7 +579,7 @@ class NettyClient<T> implements NetworkClient<T> {
         ArgAssert.notNull(address, "Address");
         ArgAssert.notNull(callback, "Callback");
 
-        NetworkFuture<T> localConnectFuture;
+        NetworkFuture<T> localConnFuture;
         Runnable afterLock;
 
         lock.lock();
@@ -589,7 +589,7 @@ class NettyClient<T> implements NetworkClient<T> {
                 if (required) {
                     throw new IllegalStateException("Client is in " + state + " state [address=" + address + ']');
                 } else {
-                    return connectFuture;
+                    return connFuture;
                 }
             }
 
@@ -602,7 +602,7 @@ class NettyClient<T> implements NetworkClient<T> {
             // Prepare Netty bootstrap.
             Bootstrap bootstrap = new Bootstrap();
 
-            if (useEpoll) {
+            if (epoll) {
                 if (debug) {
                     log.debug("Connecting [channel={}, transport=EPOLL]", id());
                 }
@@ -618,7 +618,6 @@ class NettyClient<T> implements NetworkClient<T> {
 
             bootstrap.group(eventLoop);
             bootstrap.remoteAddress(address);
-            bootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
 
             // Apply configuration options.
             setOpts(bootstrap);
@@ -627,13 +626,13 @@ class NettyClient<T> implements NetworkClient<T> {
             int localEpoch = this.epoch = epoch < Integer.MAX_VALUE ? epoch + 1 : 1;
 
             // Prepare connect/disconnect future.
-            connectFuture = localConnectFuture = new NetworkFuture<>();
-            disconnectFuture = new NetworkFuture<>();
+            connFuture = localConnFuture = new NetworkFuture<>();
+            discFuture = new NetworkFuture<>();
 
             // Update state.
             state = CONNECTING;
 
-            // Prepare listener that should be attached to all message write futures.
+            // Prepare common listener that should be attached to all write operations.
             GenericFutureListener<ChannelFuture> allWritesListener = (ChannelFuture future) -> {
                 if (future.isSuccess()) {
                     // Notify metrics on successful operation.
@@ -670,21 +669,27 @@ class NettyClient<T> implements NetworkClient<T> {
                 protected void initChannel(Channel ch) throws Exception {
                     NettyClient<T> client = NettyClient.this;
 
-                    NettyClientHandler<T> msgHandler = new NettyClientHandler<>(id(), localEpoch, protocol, threadAffinity, login,
+                    NettyClientHandler<T> msgHandler = new NettyClientHandler<>(id(), localEpoch, protocol, affinity, login,
                         connectTimeout, idleTimeout, log, metrics, client, callback);
 
                     NettyClientDeferHandler deferHandler = new NettyClientDeferHandler(id(), log);
 
                     NetworkProtocolCodec netCodec = new NetworkProtocolCodec(codec);
 
-                    ChannelPipeline pipeline = ch.pipeline();
+                    ChannelPipeline pipe = ch.pipeline();
 
                     if (ssl != null) {
-                        pipeline.addLast(ssl.newHandler(ch.alloc(), address.getAddress().getHostAddress(), address.getPort()));
+                        SslHandler sslHandler = ssl.newHandler(ch.alloc(), address.getAddress().getHostAddress(), address.getPort());
+
+                        if (connectTimeout != null && connectTimeout > 0) {
+                            sslHandler.setHandshakeTimeoutMillis(connectTimeout);
+                        }
+
+                        pipe.addLast(sslHandler);
                     }
 
                     if (metrics != null) {
-                        pipeline.addLast(new ChannelTrafficShapingHandler(0, 0, TRAFFIC_SHAPING_INTERVAL) {
+                        pipe.addLast(new ChannelTrafficShapingHandler(0, 0, TRAFFIC_SHAPING_INTERVAL) {
                             @Override
                             protected void doAccounting(TrafficCounter counter) {
                                 metrics.onBytesReceived(counter.lastReadBytes());
@@ -693,20 +698,20 @@ class NettyClient<T> implements NetworkClient<T> {
                         });
                     }
 
-                    pipeline.addLast(NetworkVersionEncoder.INSTANCE);
-                    pipeline.addLast(DECODER_HANDLER_ID, netCodec.decoder());
-                    pipeline.addLast(ENCODER_HANDLER_ID, netCodec.encoder());
+                    pipe.addLast(NetworkVersionEncoder.INSTANCE);
+                    pipe.addLast(DECODER_HANDLER_ID, netCodec.decoder());
+                    pipe.addLast(ENCODER_HANDLER_ID, netCodec.encoder());
 
-                    pipeline.addLast(msgHandler);
-                    pipeline.addLast(NettyClientDeferHandler.class.getName(), deferHandler);
-                    pipeline.addLast(NettyClientStateHandler.class.getName(), stateHandler);
+                    pipe.addLast(msgHandler);
+                    pipe.addLast(NettyClientStateHandler.class.getName(), stateHandler);
+                    pipe.addLast(NettyClientDeferHandler.class.getName(), deferHandler);
                 }
             });
 
             // Connect channel.
             ChannelFuture future = bootstrap.connect();
 
-            // Register state handler as a listener after lock is released.
+            // Register state handler as a listener after the lock is released.
             afterLock = () -> future.addListener(stateHandler);
 
             Channel channel = future.channel();
@@ -718,7 +723,7 @@ class NettyClient<T> implements NetworkClient<T> {
 
         afterLock.run();
 
-        return localConnectFuture;
+        return localConnFuture;
     }
 
     private void cleanup() {
@@ -727,7 +732,7 @@ class NettyClient<T> implements NetworkClient<T> {
         channelCtx = null;
         address = null;
         localAddress = null;
-        connectFuture = null;
+        connFuture = null;
     }
 
     private void doSend(T msg, NetworkSendCallback<T> onSend) {
@@ -785,12 +790,12 @@ class NettyClient<T> implements NetworkClient<T> {
 
         boolean failed = false;
 
-        // Prepare write promise.
-        WritePromise promise;
+        // Prepare deferred message.
+        DeferredMessage deferred;
 
         // Maybe pre-encode message.
         if (codec.isStateful()) {
-            promise = new WritePromise(msg, channel);
+            deferred = new DeferredMessage(msg, msg, channel);
         } else {
             if (debug) {
                 log.debug("Pre-encoding message [channel={}, message={}]", id(), msg);
@@ -799,16 +804,16 @@ class NettyClient<T> implements NetworkClient<T> {
             try {
                 ByteBuf buf = NetworkProtocolCodec.preEncode(msg, codec, channel.alloc());
 
-                promise = new WritePromise(buf, channel);
+                deferred = new DeferredMessage(buf, msg, channel);
             } catch (CodecException e) {
-                promise = fail(msg, channel, e);
+                deferred = fail(msg, channel, e);
 
                 failed = true;
             }
         }
 
         // Register listener.
-        promise.addListener((ChannelFuture result) -> {
+        deferred.addListener((ChannelFuture result) -> {
             if (debug) {
                 if (result.isSuccess()) {
                     log.debug("Done sending [channel={}, message={}]", id(), msg);
@@ -830,12 +835,12 @@ class NettyClient<T> implements NetworkClient<T> {
 
         // Enqueue write operation.
         if (!failed) {
-            writeQueue.enqueue(promise, eventLoop);
+            writeQueue.enqueue(deferred, eventLoop);
         }
     }
 
-    private WritePromise fail(T msg, Channel channel, Throwable error) {
-        WritePromise promise = new WritePromise(msg, channel);
+    private DeferredMessage fail(T msg, Channel channel, Throwable error) {
+        DeferredMessage promise = new DeferredMessage(msg, msg, channel);
 
         promise.setFailure(error);
 
@@ -851,14 +856,16 @@ class NettyClient<T> implements NetworkClient<T> {
     }
 
     private void setOpts(Bootstrap bootstrap) {
-        setOpt(bootstrap, ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout);
-        setOpt(bootstrap, ChannelOption.TCP_NODELAY, tcpNoDelay);
-        setOpt(bootstrap, ChannelOption.SO_RCVBUF, soReceiveBufferSize);
-        setOpt(bootstrap, ChannelOption.SO_SNDBUF, soSendBufferSize);
-        setOpt(bootstrap, ChannelOption.SO_REUSEADDR, soReuseAddress);
+        bootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+
+        setUserOpt(bootstrap, ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout);
+        setUserOpt(bootstrap, ChannelOption.TCP_NODELAY, tcpNoDelay);
+        setUserOpt(bootstrap, ChannelOption.SO_RCVBUF, soReceiveBufferSize);
+        setUserOpt(bootstrap, ChannelOption.SO_SNDBUF, soSendBufferSize);
+        setUserOpt(bootstrap, ChannelOption.SO_REUSEADDR, soReuseAddress);
     }
 
-    private <O> void setOpt(Bootstrap bootstrap, ChannelOption<O> opt, O value) {
+    private <O> void setUserOpt(Bootstrap bootstrap, ChannelOption<O> opt, O value) {
         if (value != null) {
             if (trace) {
                 log.trace("Setting option {} = {} [channel={}]", opt, value, id());
@@ -866,14 +873,6 @@ class NettyClient<T> implements NetworkClient<T> {
 
             bootstrap.option(opt, value);
         }
-    }
-
-    private NetworkFuture<T> newCompletedFuture() {
-        NetworkFuture<T> future = new NetworkFuture<>();
-
-        future.complete(this);
-
-        return future;
     }
 
     private <V> V withLock(Supplier<V> task) {

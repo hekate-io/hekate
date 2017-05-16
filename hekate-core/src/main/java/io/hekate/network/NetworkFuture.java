@@ -24,5 +24,19 @@ import java.util.concurrent.CompletableFuture;
  * @param <T> Base type of {@link NetworkEndpoint}'s messages.
  */
 public class NetworkFuture<T> extends CompletableFuture<NetworkEndpoint<T>> {
-    // No-op.
+    /**
+     * Returns completed future.
+     *
+     * @param endpoint Endpoint.
+     * @param <T> Endpoint type.
+     *
+     * @return Completed future.
+     */
+    public static <T> NetworkFuture<T> completed(NetworkEndpoint<T> endpoint) {
+        NetworkFuture<T> future = new NetworkFuture<>();
+
+        future.complete(endpoint);
+
+        return future;
+    }
 }

@@ -16,7 +16,8 @@
 
 package io.hekate.network.internal;
 
-import io.hekate.HekateNodeTestBase;
+import io.hekate.HekateNodeContextTestBase;
+import io.hekate.HekateTestContext;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkConnectorConfig;
@@ -27,7 +28,11 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class NetworkServiceNodeTest extends HekateNodeTestBase {
+public class NetworkServiceNodeTest extends HekateNodeContextTestBase {
+    public NetworkServiceNodeTest(HekateTestContext ctx) {
+        super(ctx);
+    }
+
     @Test
     public void testDefaultCodec() throws Exception {
         AtomicReference<CompletableFuture<String>> requestRef = new AtomicReference<>();

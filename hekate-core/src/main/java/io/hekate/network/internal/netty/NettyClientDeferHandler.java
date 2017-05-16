@@ -26,30 +26,6 @@ import java.util.Queue;
 import org.slf4j.Logger;
 
 class NettyClientDeferHandler extends ChannelDuplexHandler {
-    private static class DeferredMessage {
-        private final Object message;
-
-        private final ChannelPromise promise;
-
-        public DeferredMessage(Object message, ChannelPromise promise) {
-            this.message = message;
-            this.promise = promise;
-        }
-
-        public Object message() {
-            return message;
-        }
-
-        public ChannelPromise promise() {
-            return promise;
-        }
-
-        @Override
-        public String toString() {
-            return getClass().getSimpleName() + "[message=" + message + ']';
-        }
-    }
-
     private final String id;
 
     private final Logger log;
@@ -60,9 +36,9 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
 
     private Queue<DeferredMessage> deferred = new ArrayDeque<>();
 
-    private boolean needToFlush;
-
     private Throwable deferredError;
+
+    private boolean needToFlush;
 
     public NettyClientDeferHandler(String id, Logger log) {
         this.id = id;
@@ -74,20 +50,30 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-        if (msg instanceof NetworkProtocol) {
-            if (debug) {
-                log.debug("Writing message directly to the channel [address={}, message={}]", id, msg);
+        if (msg instanceof DeferredMessage) {
+            DeferredMessage def = (DeferredMessage)msg;
+
+            if (deferredError == null) {
+                if (debug) {
+                    log.debug("Deferring message sending since handshake is not completed yet [address={}, message={}]", id, def.info());
+                }
+
+                deferred.add(def);
+            } else if (promise.tryFailure(deferredError)) {
+                ReferenceCountUtil.release(def.payload());
             }
-
-            needToFlush = true;
-
-            super.write(ctx, msg, promise);
         } else {
-            if (debug) {
-                log.debug("Deferring message sending since handshake has not been completed yet [address={}, message={}]", id, msg);
-            }
+            if (deferredError == null) {
+                if (debug) {
+                    log.debug("Writing message directly to the channel [address={}, message={}]", id, msg);
+                }
 
-            deferred.add(new DeferredMessage(msg, promise));
+                needToFlush = true;
+
+                super.write(ctx, msg, promise);
+            } else if (promise.tryFailure(deferredError)) {
+                ReferenceCountUtil.release(msg);
+            }
         }
     }
 
@@ -115,7 +101,7 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
             log.trace("Deferred handler got channel close event [address={}]", id);
         }
 
-        discardDeferred(ctx);
+        discardDeferred();
 
         super.close(ctx, future);
     }
@@ -126,7 +112,7 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
             log.trace("Deferred handler got channel inactive event [address={}]", id);
         }
 
-        discardDeferred(ctx);
+        discardDeferred();
 
         super.channelInactive(ctx);
     }
@@ -139,9 +125,9 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
 
         if (deferredError == null) {
             deferredError = cause;
-        }
 
-        super.exceptionCaught(ctx, cause);
+            discardDeferred();
+        }
     }
 
     @Override
@@ -153,7 +139,7 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
         super.handlerRemoved(ctx);
     }
 
-    private void discardDeferred(ChannelHandlerContext ctx) {
+    private void discardDeferred() {
         if (deferred == null) {
             if (trace) {
                 log.trace("Skipped discard deferred notification [address={}]", id);
@@ -163,23 +149,17 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
                 log.debug("Discarding deferred messages [address={}, size={}]", id, deferred.size());
             }
 
-            ctx.pipeline().remove(this);
-
-            Throwable error;
-
             if (deferredError == null) {
-                error = new ClosedChannelException();
-            } else {
-                error = deferredError;
+                deferredError = new ClosedChannelException();
             }
 
             while (!deferred.isEmpty()) {
-                DeferredMessage deferredMsg = deferred.poll();
+                DeferredMessage msg = deferred.poll();
 
                 try {
-                    deferredMsg.promise().tryFailure(error);
+                    msg.promise().tryFailure(deferredError);
                 } finally {
-                    ReferenceCountUtil.release(deferredMsg.message());
+                    ReferenceCountUtil.release(msg.payload());
                 }
             }
 
@@ -201,13 +181,13 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
                 }
 
                 while (!localDeferred.isEmpty()) {
-                    DeferredMessage deferredMsg = localDeferred.poll();
+                    DeferredMessage msg = localDeferred.poll();
 
                     if (debug) {
-                        log.debug("Writing deferred message [address={}, message={}]", id, deferredMsg.message());
+                        log.debug("Writing deferred message [address={}, message={}]", id, msg.info());
                     }
 
-                    ctx.writeAndFlush(deferredMsg.message(), deferredMsg.promise());
+                    ctx.writeAndFlush(msg.payload(), msg.promise());
                 }
             }
 

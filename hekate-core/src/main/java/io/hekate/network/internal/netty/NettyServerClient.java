@@ -24,7 +24,6 @@ import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkSendCallback;
 import io.hekate.network.NetworkServerHandler;
 import io.hekate.network.internal.netty.NettyServer.HandlerRegistration;
-import io.hekate.network.internal.netty.NettyWriteQueue.WritePromise;
 import io.hekate.network.internal.netty.NetworkProtocol.HandshakeAccept;
 import io.hekate.network.internal.netty.NetworkProtocol.HandshakeReject;
 import io.hekate.network.internal.netty.NetworkProtocol.HandshakeRequest;
@@ -602,14 +601,14 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             metrics.onMessageEnqueue();
         }
 
-        // Prepare write promise.
-        WritePromise promise;
+        // Prepare deferred message.
+        DeferredMessage deferred;
 
         boolean failed = false;
 
         // Maybe pre-encode message.
         if (codec.isStateful()) {
-            promise = new WritePromise(msg, channel);
+            deferred = new DeferredMessage(msg, msg, channel);
         } else {
             if (trace) {
                 log.trace("Pre-encoding message [address={}, message={}]", address(), msg);
@@ -618,15 +617,15 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             try {
                 ByteBuf buf = NetworkProtocolCodec.preEncode(msg, codec, localCtx.alloc());
 
-                promise = new WritePromise(buf, channel);
+                deferred = new DeferredMessage(buf, msg, channel);
             } catch (CodecException e) {
-                promise = fail(msg, channel, e);
+                deferred = fail(msg, channel, e);
 
                 failed = true;
             }
         }
 
-        promise.addListener((ChannelFuture result) -> {
+        deferred.addListener((ChannelFuture result) -> {
             if (debug) {
                 if (result.isSuccess()) {
                     log.debug("Done sending message to a client [address={}, message={}]", address(), msg);
@@ -650,7 +649,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         });
 
         if (!failed) {
-            writeQueue.enqueue(promise, localCtx.executor());
+            writeQueue.enqueue(deferred, localCtx.executor());
         }
     }
 
@@ -676,8 +675,8 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         return eventLoops.get(Utils.mod(affinity, eventLoops.size()));
     }
 
-    private WritePromise fail(Object msg, Channel channel, Throwable error) {
-        WritePromise promise = new WritePromise(msg, channel);
+    private DeferredMessage fail(Object msg, Channel channel, Throwable error) {
+        DeferredMessage promise = new DeferredMessage(msg, msg, channel);
 
         promise.setFailure(error);
 

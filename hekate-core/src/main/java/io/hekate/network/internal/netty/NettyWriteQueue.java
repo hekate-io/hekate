@@ -16,45 +16,29 @@
 
 package io.hekate.network.internal.netty;
 
-import io.netty.channel.Channel;
-import io.netty.channel.DefaultChannelPromise;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 class NettyWriteQueue {
-    static class WritePromise extends DefaultChannelPromise {
-        private final Object message;
-
-        public WritePromise(Object message, Channel channel) {
-            super(channel);
-
-            this.message = message;
-        }
-
-        public Object message() {
-            return message;
-        }
-    }
-
     private static final int MAX_FLUSH_BATCH_SIZE = 64;
 
-    private final Queue<WritePromise> queue = new ConcurrentLinkedQueue<>();
+    private final Queue<DeferredMessage> queue = new ConcurrentLinkedQueue<>();
 
     private final AtomicBoolean flushScheduled = new AtomicBoolean();
 
     private final Runnable flushTask = () -> {
         flushScheduled.set(false);
 
-        WritePromise lastNonFlushed = null;
+        DeferredMessage lastNonFlushed = null;
 
         int cnt = 0;
 
-        for (WritePromise promise = queue.poll(); promise != null; promise = queue.poll()) {
-            promise.channel().write(promise.message(), promise);
+        for (DeferredMessage msg = queue.poll(); msg != null; msg = queue.poll()) {
+            msg.channel().write(msg, msg.promise());
 
-            lastNonFlushed = promise;
+            lastNonFlushed = msg;
 
             cnt++;
 
@@ -71,8 +55,8 @@ class NettyWriteQueue {
         }
     };
 
-    public void enqueue(WritePromise promise, Executor executor) {
-        queue.add(promise);
+    public void enqueue(DeferredMessage msg, Executor executor) {
+        queue.add(msg);
 
         // Check if flush operation should be enqueued too.
         if (flushScheduled.compareAndSet(false, true)) {

@@ -23,8 +23,6 @@ import io.netty.handler.timeout.IdleStateHandler;
 import java.util.concurrent.TimeUnit;
 
 class NettyClientIdleStateHandler extends IdleStateHandler {
-    public static final String ID = "idle_handler";
-
     private boolean notifyRead;
 
     public NettyClientIdleStateHandler(long timeout) {

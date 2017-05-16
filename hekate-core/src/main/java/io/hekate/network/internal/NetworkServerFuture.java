@@ -22,5 +22,18 @@ import java.util.concurrent.CompletableFuture;
  * Result of an asynchronous operation in {@link NetworkServer}.
  */
 public class NetworkServerFuture extends CompletableFuture<NetworkServer> {
-    // No-op.
+    /**
+     * Returns the completed future.
+     *
+     * @param server Server.
+     *
+     * @return Completed future.
+     */
+    public static NetworkServerFuture completed(NetworkServer server) {
+        NetworkServerFuture future = new NetworkServerFuture();
+
+        future.complete(server);
+
+        return future;
+    }
 }
