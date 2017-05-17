@@ -8,15 +8,13 @@ env:
   # NIO + No SSL + Logging disabled
   - NIO_ENABLED=true   EPOLL_ENABLED=false  NO_SSL_ENABLED=true   SSL_JDK_ENABLED=false  SSL_OPENSSL_ENABLED=false  LOG_LEVEL=OFF
   # NIO + JDK SSL
-  # TODO: Temporary disabled due to performance problems
-  # - NIO_ENABLED=true   EPOLL_ENABLED=false  NO_SSL_ENABLED=false  SSL_JDK_ENABLED=true   SSL_OPENSSL_ENABLED=false
+  - NIO_ENABLED=true   EPOLL_ENABLED=false  NO_SSL_ENABLED=false  SSL_JDK_ENABLED=true   SSL_OPENSSL_ENABLED=false
   # NIO + OpenSSL
   - NIO_ENABLED=true   EPOLL_ENABLED=false  NO_SSL_ENABLED=false  SSL_JDK_ENABLED=false  SSL_OPENSSL_ENABLED=true
   # Epoll + No SSL
   - NIO_ENABLED=false  EPOLL_ENABLED=true   NO_SSL_ENABLED=true   SSL_JDK_ENABLED=false  SSL_OPENSSL_ENABLED=false
   # Epoll + JDK SSL
-  # TODO: Temporary disabled due to performance problems
-  # - NIO_ENABLED=false  EPOLL_ENABLED=true   NO_SSL_ENABLED=false  SSL_JDK_ENABLED=true   SSL_OPENSSL_ENABLED=false
+  - NIO_ENABLED=false  EPOLL_ENABLED=true   NO_SSL_ENABLED=false  SSL_JDK_ENABLED=true   SSL_OPENSSL_ENABLED=false
   # Epoll + OpenSSL
   - NIO_ENABLED=false  EPOLL_ENABLED=true   NO_SSL_ENABLED=false  SSL_JDK_ENABLED=false  SSL_OPENSSL_ENABLED=true
 
