@@ -699,8 +699,8 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
                 });
             });
 
-            nodes.removeLast().leaveAsync();
-            nodes.removeLast().leaveAsync();
+            nodes.removeLast().leave();
+            nodes.removeLast().leave();
         });
     }
 

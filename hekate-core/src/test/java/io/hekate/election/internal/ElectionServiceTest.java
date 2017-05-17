@@ -16,7 +16,7 @@
 
 package io.hekate.election.internal;
 
-import io.hekate.HekateNodeContextTestBase;
+import io.hekate.HekateNodeParamTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.internal.HekateTestNode;
@@ -37,7 +37,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class ElectionServiceTest extends HekateNodeContextTestBase {
+public class ElectionServiceTest extends HekateNodeParamTestBase {
     private static final String GROUP = "GROUP";
 
     public ElectionServiceTest(HekateTestContext params) {

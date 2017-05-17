@@ -16,7 +16,7 @@
 
 package io.hekate.metrics.cluster.internal;
 
-import io.hekate.HekateNodeContextTestBase;
+import io.hekate.HekateNodeParamTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.metrics.cluster.ClusterMetricsService;
@@ -39,7 +39,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-public class ClusterMetricsServiceTest extends HekateNodeContextTestBase {
+public class ClusterMetricsServiceTest extends HekateNodeParamTestBase {
     public interface ClusterMetricsConfigurer {
         void configure(ClusterMetricsServiceFactory factory);
     }

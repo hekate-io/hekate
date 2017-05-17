@@ -16,7 +16,7 @@
 
 package io.hekate.network.internal;
 
-import io.hekate.HekateNodeContextTestBase;
+import io.hekate.HekateNodeParamTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.network.NetworkClient;
@@ -28,7 +28,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class NetworkServiceNodeTest extends HekateNodeContextTestBase {
+public class NetworkServiceNodeTest extends HekateNodeParamTestBase {
     public NetworkServiceNodeTest(HekateTestContext ctx) {
         super(ctx);
     }

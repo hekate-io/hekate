@@ -178,7 +178,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
             assertNotNull(client.remoteAddress());
             assertNotNull(client.localAddress());
-            assertEquals(getTestContext().ssl().isPresent(), client.isSecure());
+            assertEquals(context().ssl().isPresent(), client.isSecure());
             callback.assertConnects(1);
             callback.assertDisconnects(0);
             callback.assertNoErrors();
@@ -365,8 +365,8 @@ public class NetworkClientTest extends NetworkTestBase {
 
     @Test
     public void testHeartbeats() throws Exception {
-        int hbInterval = 100;
-        int hbLossThreshold = 3;
+        int hbInterval = context().hbInterval();
+        int hbLossThreshold = context().hbLossThreshold();
 
         NetworkServer server = createAndConfigureServer(f -> {
             f.setHeartbeatInterval(hbInterval);
@@ -403,8 +403,8 @@ public class NetworkClientTest extends NetworkTestBase {
 
     @Test
     public void testHeartbeatsWithData() throws Exception {
-        int hbInterval = 100;
-        int hbLossThreshold = 3;
+        int hbInterval = context().hbInterval();
+        int hbLossThreshold = context().hbLossThreshold();
 
         NetworkServer server = createAndConfigureServer(f -> {
             f.setHeartbeatInterval(hbInterval);
@@ -450,8 +450,8 @@ public class NetworkClientTest extends NetworkTestBase {
 
     @Test
     public void testSenderHeartbeatTimeout() throws Exception {
-        int hbInterval = 100;
-        int hbLossThreshold = 3;
+        int hbInterval = context().hbInterval();
+        int hbLossThreshold = context().hbLossThreshold();
 
         NetworkServer server = createAndConfigureServer(f -> {
             f.setHeartbeatInterval(hbInterval);
@@ -485,8 +485,8 @@ public class NetworkClientTest extends NetworkTestBase {
 
     @Test
     public void testReceiverHeartbeatTimeout() throws Exception {
-        int hbInterval = 100;
-        int hbLossThreshold = 3;
+        int hbInterval = context().hbInterval();
+        int hbLossThreshold = context().hbLossThreshold();
 
         CountDownLatch resume = new CountDownLatch(1);
         CountDownLatch disconnect = new CountDownLatch(1);
@@ -559,8 +559,8 @@ public class NetworkClientTest extends NetworkTestBase {
 
     @Test
     public void testIdleTimeout() throws Exception {
-        int hbInterval = 100;
-        int hbLossThreshold = 3;
+        int hbInterval = context().hbInterval();
+        int hbLossThreshold = context().hbLossThreshold();
 
         NetworkServer server = createAndConfigureServer(f -> {
             f.setHeartbeatInterval(hbInterval);

@@ -16,7 +16,7 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.HekateNodeContextTestBase;
+import io.hekate.HekateNodeParamTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.Message;
@@ -35,7 +35,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public abstract class MessagingServiceTestBase extends HekateNodeContextTestBase {
+public abstract class MessagingServiceTestBase extends HekateNodeParamTestBase {
     public interface ChannelConfigurer {
         void configure(MessagingChannelConfig<String> cfg);
     }

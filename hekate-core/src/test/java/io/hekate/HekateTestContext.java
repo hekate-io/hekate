@@ -20,6 +20,9 @@ import io.hekate.core.resource.ResourceLoadingException;
 import io.hekate.core.resource.ResourceService;
 import io.hekate.network.NetworkSslConfig;
 import io.hekate.network.NetworkTransportType;
+import io.hekate.util.format.ToString;
+import io.hekate.util.format.ToStringFormat;
+import io.hekate.util.format.ToStringIgnore;
 import io.netty.channel.epoll.Epoll;
 import io.netty.handler.ssl.OpenSsl;
 import java.io.InputStream;
@@ -34,14 +37,35 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertFalse;
 
 public class HekateTestContext {
+    private static class OptionalSslFormatter implements ToStringFormat.Formatter {
+        @Override
+        public String format(Object val) {
+            @SuppressWarnings("unchecked")
+            Optional<NetworkSslConfig> cfg = (Optional<NetworkSslConfig>)val;
+
+            return cfg.map(c -> c.getProvider().toString()).orElse(null);
+        }
+    }
+
+    private static final int TEST_HB_INTERVAL = 100;
+
+    private static final int TEST_HB_LOSS_THRESHOLD = 3;
+
     private static final String KEY_STORE_PASSWORD = "hekate-test1";
 
     private static final String KEY_STORE_PATH = "ssl/hekate-test1.jks";
 
+    private static final HekateTestContext DEFAULT_CONTEXT = new HekateTestContext(NetworkTransportType.NIO, Optional.empty());
+
     private final NetworkTransportType transport;
 
+    @ToStringFormat(OptionalSslFormatter.class)
     private final Optional<NetworkSslConfig> ssl;
 
+    @ToStringIgnore
+    private final int hbInterval;
+
+    @ToStringIgnore
     private final ResourceService resources = path -> {
         InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
 
@@ -55,18 +79,30 @@ public class HekateTestContext {
     public HekateTestContext(NetworkTransportType transport, Optional<NetworkSslConfig> ssl) {
         this.transport = transport;
         this.ssl = ssl;
+
+        if (ssl.isPresent() && ssl.get().getProvider() == NetworkSslConfig.Provider.JDK) {
+            // Increased heartbeat interval since JDK SSL is slow.
+            hbInterval = TEST_HB_INTERVAL * 2;
+        } else {
+            hbInterval = TEST_HB_INTERVAL;
+        }
     }
 
     public HekateTestContext(HekateTestContext src) {
         this.transport = src.transport();
         this.ssl = src.ssl();
+        this.hbInterval = src.hbInterval();
     }
 
     public static Stream<HekateTestContext> stream() {
-        return get().stream();
+        return all().stream();
     }
 
-    public static Collection<HekateTestContext> get() {
+    public static HekateTestContext defaultContext() {
+        return DEFAULT_CONTEXT;
+    }
+
+    public static Collection<HekateTestContext> all() {
         List<NetworkSslConfig> sslProvider = new ArrayList<>();
 
         // SSL disabled.
@@ -135,8 +171,20 @@ public class HekateTestContext {
         return resources;
     }
 
+    public int hbInterval() {
+        return hbInterval;
+    }
+
+    public int hbLossThreshold() {
+        return TEST_HB_LOSS_THRESHOLD;
+    }
+
+    public int connectTimeout() {
+        return hbInterval() * hbLossThreshold();
+    }
+
     @Override
     public String toString() {
-        return "transport=" + transport + ", ssl=" + ssl.map(NetworkSslConfig::getProvider).orElse(null);
+        return ToString.formatProperties(this);
     }
 }

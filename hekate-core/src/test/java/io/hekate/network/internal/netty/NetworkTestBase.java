@@ -84,7 +84,7 @@ public abstract class NetworkTestBase extends HekateTestBase {
 
     @Parameters(name = "{index}: {0}")
     public static Collection<HekateTestContext> getNetworkTestContexts() {
-        return HekateTestContext.get();
+        return HekateTestContext.all();
     }
 
     @Before
@@ -118,13 +118,12 @@ public abstract class NetworkTestBase extends HekateTestBase {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    protected <T extends HekateTestContext> T getTestContext() {
-        return (T)ctx;
+    protected HekateTestContext context() {
+        return ctx;
     }
 
     protected EventLoopGroup newEventLoop(int thread) {
-        if (getTestContext().transport() == NetworkTransportType.EPOLL) {
+        if (context().transport() == NetworkTransportType.EPOLL) {
             return new EpollEventLoopGroup(thread);
         } else {
             return new NioEventLoopGroup(thread);
@@ -167,12 +166,14 @@ public abstract class NetworkTestBase extends HekateTestBase {
 
         NettyServerFactory factory = new NettyServerFactory();
 
-        factory.setHeartbeatInterval(200);
-        factory.setHeartbeatLossThreshold(3);
+        factory.setHeartbeatInterval(context().hbInterval());
+        factory.setHeartbeatLossThreshold(context().hbLossThreshold());
+
         factory.setAcceptorEventLoopGroup(acceptorThreads);
         factory.setWorkerEventLoopGroup(nioServerThreads);
-        factory.addHandler(handler);
         factory.setSsl(serverSsl);
+
+        factory.addHandler(handler);
 
         if (serverConfigurer != null) {
             serverConfigurer.configure(factory);
@@ -207,8 +208,8 @@ public abstract class NetworkTestBase extends HekateTestBase {
         NettyClientFactory<String> factory = new NettyClientFactory<>();
 
         factory.setProtocol(TEST_PROTOCOL);
-        factory.setConnectTimeout(500);
         factory.setCodecFactory(createStringCodecFactory());
+        factory.setConnectTimeout(context().connectTimeout());
         factory.setEventLoopGroup(nioClientThreads);
         factory.setSsl(clientSsl);
 

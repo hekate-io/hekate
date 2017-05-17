@@ -16,7 +16,7 @@
 
 package io.hekate.coordinate.internal;
 
-import io.hekate.HekateNodeContextTestBase;
+import io.hekate.HekateNodeParamTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.coordinate.CoordinationContext;
@@ -55,7 +55,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-public class CoordinationServiceTest extends HekateNodeContextTestBase {
+public class CoordinationServiceTest extends HekateNodeParamTestBase {
     private static class CoordinatedValueHandler implements CoordinationHandler {
         private volatile String lastValue;
 

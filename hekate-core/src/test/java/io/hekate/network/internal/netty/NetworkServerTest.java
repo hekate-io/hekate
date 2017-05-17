@@ -489,7 +489,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
         NetworkEndpoint<String> serverClient = get(latch);
 
-        assertEquals(getTestContext().ssl().isPresent(), serverClient.isSecure());
+        assertEquals(context().ssl().isPresent(), serverClient.isSecure());
 
         repeat(5, i -> {
             serverClient.send("test" + i);

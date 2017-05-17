@@ -228,8 +228,8 @@ public class NettyNetworkServiceTest extends NetworkTestBase {
     private NettyNetworkService createService(Configurer configurer) {
         NetworkServiceFactory cfg = new NetworkServiceFactory();
 
-        cfg.setTransport(getTestContext().transport());
-        getTestContext().ssl().ifPresent(cfg::setSsl);
+        cfg.setTransport(context().transport());
+        context().ssl().ifPresent(cfg::setSsl);
         cfg.setConnectTimeout(500);
 
         if (configurer != null) {
@@ -237,8 +237,8 @@ public class NettyNetworkServiceTest extends NetworkTestBase {
         }
 
         // Important to reset test-dependent options after applying the configurer.
-        cfg.setTransport(getTestContext().transport());
-        getTestContext().ssl().ifPresent(cfg::setSsl);
+        cfg.setTransport(context().transport());
+        context().ssl().ifPresent(cfg::setSsl);
 
         NettyNetworkService service = new NettyNetworkService(cfg);
 

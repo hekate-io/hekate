@@ -16,7 +16,7 @@
 
 package io.hekate.lock.internal;
 
-import io.hekate.HekateNodeContextTestBase;
+import io.hekate.HekateNodeParamTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNodeId;
@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public abstract class LockServiceTestBase extends HekateNodeContextTestBase {
+public abstract class LockServiceTestBase extends HekateNodeParamTestBase {
     public interface Configurer {
         void configure(LockServiceFactory factory);
     }

@@ -23,7 +23,7 @@ public class InvalidSslConfigurationTest extends NetworkTestBase {
 
     @Before
     public void checkSslEnabled() {
-        assumeTrue(getTestContext().ssl().isPresent());
+        assumeTrue(context().ssl().isPresent());
     }
 
     @Test
@@ -33,14 +33,14 @@ public class InvalidSslConfigurationTest extends NetworkTestBase {
         get(server.start(newServerAddress()));
 
         NetworkSslConfig ssl = new NetworkSslConfig()
-            .withProvider(getTestContext().ssl().get().getProvider())
+            .withProvider(context().ssl().get().getProvider())
             .withKeyStorePath("ssl/hekate-test2.jks")
             .withKeyStorePassword("hekate-test2")
             .withTrustStorePath("ssl/hekate-test2.jks")
             .withTrustStorePassword("hekate-test2");
 
         NetworkClient<String> client = createClient(cfg ->
-            cfg.setSsl(NettySslUtil.clientContext(ssl, getTestContext().resources()))
+            cfg.setSsl(NettySslUtil.clientContext(ssl, context().resources()))
         );
 
         try {

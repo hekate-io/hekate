@@ -310,8 +310,8 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
 
     @Test
     public void testServerNoHeartbeatTimeoutOnPause() throws Exception {
-        int hbInterval = 100;
-        int hbLossThreshold = 3;
+        int hbInterval = context().hbInterval();
+        int hbLossThreshold = context().hbLossThreshold();
 
         NetworkServer server = createAndConfigureServer(f -> {
             f.setHeartbeatInterval(hbInterval);
@@ -379,8 +379,8 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
 
     @Test
     public void testClientNoHeartbeatTimeoutOnPause() throws Exception {
-        int hbInterval = 100;
-        int hbLossThreshold = 3;
+        int hbInterval = context().hbInterval();
+        int hbLossThreshold = context().hbLossThreshold();
 
         CountDownLatch blockLatch = new CountDownLatch(1);
 

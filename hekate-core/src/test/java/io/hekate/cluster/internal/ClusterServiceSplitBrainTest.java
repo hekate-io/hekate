@@ -16,7 +16,7 @@
 
 package io.hekate.cluster.internal;
 
-import io.hekate.HekateNodeContextTestBase;
+import io.hekate.HekateNodeParamTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterServiceFactory;
@@ -33,7 +33,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 
-public class ClusterServiceSplitBrainTest extends HekateNodeContextTestBase {
+public class ClusterServiceSplitBrainTest extends HekateNodeParamTestBase {
     public ClusterServiceSplitBrainTest(HekateTestContext params) {
         super(params);
     }

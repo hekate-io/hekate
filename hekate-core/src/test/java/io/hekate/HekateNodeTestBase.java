@@ -76,24 +76,12 @@ public class HekateNodeTestBase extends HekateTestBase {
         }
     }
 
+    protected HekateTestContext context() {
+        return HekateTestContext.defaultContext();
+    }
+
     protected void disableNodeFailurePostCheck() {
         ignoreNodeFailures = true;
-    }
-
-    protected void awaitForTopology(HekateTestNode... nodes) {
-        awaitForTopology(Arrays.asList(nodes));
-    }
-
-    protected void awaitForTopology(List<HekateTestNode> nodes) {
-        nodes.forEach(n -> n.awaitForTopology(nodes));
-    }
-
-    protected void awaitForTopology(List<HekateTestNode> nodes, HekateTestNode oneMore) {
-        List<HekateTestNode> allNodes = new ArrayList<>(nodes);
-
-        allNodes.add(oneMore);
-
-        allNodes.forEach(n -> n.awaitForTopology(allNodes));
     }
 
     protected HekateTestNode createNode() throws Exception {
@@ -101,6 +89,8 @@ public class HekateNodeTestBase extends HekateTestBase {
     }
 
     protected HekateTestNode createNode(NodeConfigurer configurer) throws Exception {
+        HekateTestContext ctx = context();
+
         InetSocketAddress address = newSocketAddress();
 
         HekateTestNode.Bootstrap bootstrap = new HekateTestNode.Bootstrap(address);
@@ -108,13 +98,17 @@ public class HekateNodeTestBase extends HekateTestBase {
         bootstrap.setClusterName("test");
         bootstrap.setNodeName("node-" + address.getPort() + '-' + allNodes.size());
 
+        if (ctx.resources() != null) {
+            bootstrap.withService(ctx::resources);
+        }
+
         bootstrap.withService(ClusterServiceFactory.class, cluster -> {
             DefaultFailureDetectorConfig fdCfg = new DefaultFailureDetectorConfig();
 
-            fdCfg.setHeartbeatInterval(100);
-            fdCfg.setHeartbeatLossThreshold(3);
+            fdCfg.setHeartbeatInterval(ctx.hbInterval());
+            fdCfg.setHeartbeatLossThreshold(ctx.hbLossThreshold());
 
-            cluster.setGossipInterval(100);
+            cluster.setGossipInterval(ctx.hbInterval());
             cluster.setSpeedUpGossipSize(10);
             cluster.setSeedNodeProvider(seedNodes);
             cluster.setSplitBrainAction(SplitBrainAction.REJOIN);
@@ -124,11 +118,14 @@ public class HekateNodeTestBase extends HekateTestBase {
         bootstrap.withService(NetworkServiceFactory.class, net -> {
             net.setHost(address.getAddress().getHostAddress());
             net.setPort(address.getPort());
-            net.setConnectTimeout(300);
-            net.setHeartbeatInterval(100);
-            net.setHeartbeatLossThreshold(3);
+            net.setConnectTimeout(ctx.connectTimeout());
+            net.setHeartbeatInterval(ctx.hbInterval());
+            net.setHeartbeatLossThreshold(ctx.hbLossThreshold());
             net.setAcceptRetryInterval(0);
-            net.setNioThreads(3);
+            net.setNioThreads(ctx.hbLossThreshold());
+            net.setTransport(ctx.transport());
+
+            ctx.ssl().ifPresent(net::setSsl);
         });
 
         bootstrap.withService(TaskServiceFactory.class, tasks ->
@@ -148,5 +145,21 @@ public class HekateNodeTestBase extends HekateTestBase {
         allNodes.add(node);
 
         return node;
+    }
+
+    protected void awaitForTopology(HekateTestNode... nodes) {
+        awaitForTopology(Arrays.asList(nodes));
+    }
+
+    protected void awaitForTopology(List<HekateTestNode> nodes) {
+        nodes.forEach(n -> n.awaitForTopology(nodes));
+    }
+
+    protected void awaitForTopology(List<HekateTestNode> nodes, HekateTestNode oneMore) {
+        List<HekateTestNode> allNodes = new ArrayList<>(nodes);
+
+        allNodes.add(oneMore);
+
+        allNodes.forEach(n -> n.awaitForTopology(allNodes));
     }
 }

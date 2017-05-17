@@ -16,13 +16,13 @@
 
 package io.hekate.cluster.internal;
 
-import io.hekate.HekateNodeContextTestBase;
+import io.hekate.HekateNodeParamTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.core.internal.HekateTestNode;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class ClusterServiceMultipleNodesTestBase extends HekateNodeContextTestBase {
+public abstract class ClusterServiceMultipleNodesTestBase extends HekateNodeParamTestBase {
     public ClusterServiceMultipleNodesTestBase(HekateTestContext params) {
         super(params);
     }

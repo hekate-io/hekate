@@ -16,7 +16,7 @@
 
 package io.hekate.task.internal;
 
-import io.hekate.HekateNodeContextTestBase;
+import io.hekate.HekateNodeParamTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.internal.HekateTestNode;
@@ -36,7 +36,7 @@ import org.junit.Before;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public abstract class TaskServiceTestBase extends HekateNodeContextTestBase {
+public abstract class TaskServiceTestBase extends HekateNodeParamTestBase {
     protected static class NonSerializable {
         // No-op.
     }
