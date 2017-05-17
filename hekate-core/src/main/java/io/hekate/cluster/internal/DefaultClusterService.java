@@ -445,13 +445,8 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                     }
                 }
 
-                if (gossipThread != null) {
-                    waiting.add(Utils.shutdown(gossipThread));
-                }
-
-                if (serviceThread != null) {
-                    waiting.add(Utils.shutdown(serviceThread));
-                }
+                waiting.add(Utils.shutdown(gossipThread));
+                waiting.add(Utils.shutdown(serviceThread));
 
                 if (commMgr != null) {
                     GossipCommManager localCommMgr = commMgr;

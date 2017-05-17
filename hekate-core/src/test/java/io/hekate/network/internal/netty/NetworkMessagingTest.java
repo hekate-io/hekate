@@ -36,7 +36,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.junit.Before;
 import org.junit.Test;
@@ -124,9 +123,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
         try {
             super.tearDown();
         } finally {
-            if (handlerEventLoopGroup != null) {
-                handlerEventLoopGroup.shutdownGracefully(0, 3, TimeUnit.SECONDS).syncUninterruptibly();
-            }
+            NettyUtils.shutdown(handlerEventLoopGroup).awaitUninterruptedly();
         }
     }
 

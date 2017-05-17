@@ -39,9 +39,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static java.lang.Long.MAX_VALUE;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-
 @RunWith(Parameterized.class)
 public abstract class NetworkTestBase extends HekateTestBase {
     public interface ServerConfigurer {
@@ -112,9 +109,9 @@ public abstract class NetworkTestBase extends HekateTestBase {
 
             servers.clear();
         } finally {
-            get(acceptorThreads.shutdownGracefully(0, MAX_VALUE, MILLISECONDS));
-            get(nioServerThreads.shutdownGracefully(0, MAX_VALUE, MILLISECONDS));
-            get(nioClientThreads.shutdownGracefully(0, MAX_VALUE, MILLISECONDS));
+            NettyUtils.shutdown(acceptorThreads).awaitUninterruptedly();
+            NettyUtils.shutdown(nioServerThreads).awaitUninterruptedly();
+            NettyUtils.shutdown(nioClientThreads).awaitUninterruptedly();
         }
     }
 

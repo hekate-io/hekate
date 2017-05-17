@@ -171,11 +171,7 @@ class SeedNodeManager {
             }
         }
 
-        if (cleaner == null) {
-            return Waiting.NO_WAIT;
-        } else {
-            return Utils.shutdown(cleaner);
-        }
+        return Utils.shutdown(cleaner);
     }
 
     private void doCleanup(Set<InetSocketAddress> pingInProgress) {

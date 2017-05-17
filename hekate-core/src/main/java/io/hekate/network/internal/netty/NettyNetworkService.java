@@ -79,7 +79,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -802,9 +801,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
     }
 
     private void shutdown(EventLoopGroup group) {
-        if (group != null) {
-            group.shutdownGracefully(0, Long.MAX_VALUE, TimeUnit.NANOSECONDS).awaitUninterruptibly();
-        }
+        NettyUtils.shutdown(group).awaitUninterruptedly();
     }
 
     private static CounterMetric counter(String name, boolean autoReset, LocalMetricsService metrics) {

@@ -154,9 +154,13 @@ public final class Utils {
     }
 
     public static Waiting shutdown(ExecutorService executor) {
-        executor.shutdown();
+        if (executor == null) {
+            return Waiting.NO_WAIT;
+        } else {
+            executor.shutdown();
 
-        return () -> executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+            return () -> executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        }
     }
 
     public static <T> T getUninterruptedly(Future<T> future) throws ExecutionException {

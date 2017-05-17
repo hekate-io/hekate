@@ -22,6 +22,8 @@ import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.Waiting;
+import io.hekate.network.internal.netty.NettyUtils;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import io.netty.bootstrap.Bootstrap;
@@ -36,7 +38,6 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.ScheduledFuture;
 import java.io.IOException;
 import java.net.Inet6Address;
@@ -414,7 +415,7 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
 
     private void cleanup() {
         try {
-            Future<?> eventLoopFuture = null;
+            Waiting eventLoopStop = null;
 
             synchronized (mux) {
                 suspendDiscovery();
@@ -432,7 +433,7 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
                         log.debug("Terminating multicast thread pool...");
                     }
 
-                    eventLoopFuture = eventLoop.shutdownGracefully(0, Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+                    eventLoopStop = NettyUtils.shutdown(eventLoop);
 
                     if (DEBUG) {
                         log.debug("Terminated multicast thread pool.");
@@ -441,8 +442,8 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
             }
 
             // Await for thread pool termination out of synchronized context in order to prevent deadlocks.
-            if (eventLoopFuture != null) {
-                eventLoopFuture.awaitUninterruptibly();
+            if (eventLoopStop != null) {
+                eventLoopStop.awaitUninterruptedly();
             }
         } finally {
             synchronized (mux) {

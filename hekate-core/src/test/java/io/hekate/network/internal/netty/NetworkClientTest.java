@@ -1015,7 +1015,7 @@ public class NetworkClientTest extends NetworkTestBase {
                 channel.close().await();
             }
 
-            serverGroup.shutdownGracefully(0, 3, TimeUnit.SECONDS).await().awaitUninterruptibly();
+            NettyUtils.shutdown(serverGroup).awaitUninterruptedly();
 
             assertNull(error.get());
         }
