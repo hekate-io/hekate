@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
  * Netty-related utilities.
  */
 public final class NettyUtils {
-    /** Time period (={@value}) in milliseconds for {@link #shutdown(EventExecutorGroup)} */
+    /** Time period (={@value}) in milliseconds for {@link #shutdown(EventExecutorGroup)}. */
     // Package level for testing purposes.
     static final long GRACEFUL_SHUTDOWN_PERIOD = 0;
 
