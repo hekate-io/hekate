@@ -55,7 +55,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
@@ -560,29 +559,9 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             }
 
             if (onSend != null) {
-                boolean notified = false;
-
-                // Try to notify via channel's event loop.
-                if (!eventLoop.isShutdown()) {
-                    try {
-                        eventLoop.execute(() ->
-                            notifyOnChannelClose(msg, onSend)
-                        );
-
-                        notified = true;
-                    } catch (RejectedExecutionException e) {
-                        if (debug) {
-                            log.debug("Failed to notify send callback on channel close error. Will retry via fallback pool.");
-                        }
-                    }
-                }
-
-                // If couldn't notify via channel's event loop then use common fork-join pool.
-                if (!notified) {
-                    Utils.fallbackExecutor().execute(() ->
-                        notifyOnChannelClose(msg, onSend)
-                    );
-                }
+                NettyUtils.runAtAllCost(eventLoop, () ->
+                    notifyOnChannelClose(msg, onSend)
+                );
             }
         } else {
             // Write message to the channel.

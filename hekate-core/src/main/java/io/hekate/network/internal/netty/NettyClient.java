@@ -52,7 +52,6 @@ import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.security.GeneralSecurityException;
 import java.util.Optional;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -745,29 +744,9 @@ class NettyClient<T> implements NetworkClient<T> {
             }
 
             if (onSend != null) {
-                boolean notified = false;
-
-                // Try to notify via channel's event loop.
-                if (!eventLoop.isShutdown()) {
-                    try {
-                        eventLoop.execute(() ->
-                            notifyOnChannelClose(msg, onSend)
-                        );
-
-                        notified = true;
-                    } catch (RejectedExecutionException e) {
-                        if (debug) {
-                            log.debug("Failed to notify send callback on channel close error. Will retry via fallback pool.");
-                        }
-                    }
-                }
-
-                // If couldn't notify via channel's event loop then use common fork-join pool.
-                if (!notified) {
-                    Utils.fallbackExecutor().execute(() ->
-                        notifyOnChannelClose(msg, onSend)
-                    );
-                }
+                NettyUtils.runAtAllCost(eventLoop, () ->
+                    notifyOnChannelClose(msg, onSend)
+                );
             }
         } else {
             // Write message to the channel.
