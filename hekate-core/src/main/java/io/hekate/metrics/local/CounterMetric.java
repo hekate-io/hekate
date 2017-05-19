@@ -22,7 +22,7 @@ import io.hekate.metrics.Metric;
  * Metric with incrementing/decrementing value.
  *
  * <p>
- * This interface represents a metric with the explicitly managed value. Counters can be registered within the {@link LocalMetricsService}
+ * This interface represents a metric with an explicitly managed value. Counters can be registered within the {@link LocalMetricsService}
  * either {@link LocalMetricsServiceFactory#withMetric(MetricConfigBase)}  statically} or {@link
  * LocalMetricsService#register(CounterConfig) dynamically}. Once registered they can be accessed via {@link
  * LocalMetricsService#counter(String)}.

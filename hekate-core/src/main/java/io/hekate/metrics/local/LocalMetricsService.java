@@ -199,11 +199,12 @@ public interface LocalMetricsService extends Service, MetricsSource {
     Metric register(ProbeConfig config);
 
     /**
-     * Returns a counter for the specified name or {@code null} if there is no such counter.
+     * Returns a counter for the specified name or register a new counter with the default {@link CounterConfig configuration} if there is
+     * no such counter.
      *
      * @param name Name of the counter (see {@link CounterConfig#setName(String)}).
      *
-     * @return Counter or {@code null} if there is no such counter.
+     * @return Counter.
      */
     CounterMetric counter(String name);
 
