@@ -132,6 +132,8 @@
                 worker-threads="0"
                 idle-timeout-ms="60000"
                 messaging-timeout-ms="5000"
+                backup-nodes="2"
+                partitions="512"
                 log-category="foo.bar.Channel">
                 <back-pressure>
                     <outbound low-watermark="50" high-watermark="100" overflow="BLOCK"/>

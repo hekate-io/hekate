@@ -59,7 +59,7 @@ class NetworkMessagingClient<T> implements MessagingClient<T> {
         assert gateway != null : "Gateway is null.";
 
         if (DEBUG) {
-            log.debug("Creating new connection pool [channel={}, node={}]", name, node);
+            log.debug("Creating new connection [channel={}, node={}]", name, node);
         }
 
         this.name = name;
@@ -175,7 +175,7 @@ class NetworkMessagingClient<T> implements MessagingClient<T> {
                     // Double check with lock.
                     if (!connected && !closed) {
                         if (DEBUG) {
-                            log.debug("Initializing connections pool [chanel={}, node={}]", name, node);
+                            log.debug("Initializing connection [chanel={}, node={}]", name, node);
                         }
 
                         conn.connect();

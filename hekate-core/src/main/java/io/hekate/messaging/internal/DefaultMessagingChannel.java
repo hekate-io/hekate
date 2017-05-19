@@ -169,6 +169,8 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
 
     @Override
     public DefaultMessagingChannel<T> withLoadBalancer(LoadBalancer<T> balancer) {
+        ArgAssert.notNull(balancer, "balancer");
+
         return new DefaultMessagingChannel<>(gateway, cluster, partitions, balancer, failover, timeout, affinityKey);
     }
 

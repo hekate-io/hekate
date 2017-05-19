@@ -21,6 +21,7 @@ import io.hekate.cluster.ClusterTopologyTestBase;
 import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.unicast.LoadBalancerContext;
+import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.Test;
@@ -55,6 +56,10 @@ public class DefaultLoadBalancerContextTest extends ClusterTopologyTestBase {
     }
 
     private DefaultLoadBalancerContext newContext(int affinity, Object affinityKey, int ver, Set<ClusterNode> nodes, FailureInfo failure) {
-        return new DefaultLoadBalancerContext(affinity, affinityKey, DefaultClusterTopology.of(ver, nodes), Optional.ofNullable(failure));
+        DefaultClusterTopology topology = DefaultClusterTopology.of(ver, nodes);
+        Optional<FailureInfo> optFailure = Optional.ofNullable(failure);
+        PartitionMapper partitions = mock(PartitionMapper.class);
+
+        return new DefaultLoadBalancerContext(affinity, affinityKey, topology, partitions, optFailure);
     }
 }

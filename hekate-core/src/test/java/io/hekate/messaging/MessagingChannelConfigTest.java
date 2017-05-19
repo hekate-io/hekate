@@ -21,6 +21,7 @@ import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.codec.CodecFactory;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.unicast.LoadBalancer;
+import io.hekate.partition.RendezvousHashMapper;
 import org.junit.Test;
 import org.omg.CORBA.Object;
 
@@ -86,6 +87,32 @@ public class MessagingChannelConfigTest extends HekateTestBase {
         assertSame(cfg, cfg.withIdleTimeout(10002));
 
         assertEquals(10002, cfg.getIdleTimeout());
+    }
+
+    @Test
+    public void testPartitions() {
+        assertEquals(RendezvousHashMapper.DEFAULT_PARTITIONS, cfg.getPartitions());
+
+        cfg.setPartitions(10001);
+
+        assertEquals(10001, cfg.getPartitions());
+
+        assertSame(cfg, cfg.withPartitions(10002));
+
+        assertEquals(10002, cfg.getPartitions());
+    }
+
+    @Test
+    public void testBackupNodes() {
+        assertEquals(0, cfg.getBackupNodes());
+
+        cfg.setBackupNodes(10001);
+
+        assertEquals(10001, cfg.getBackupNodes());
+
+        assertSame(cfg, cfg.withBackupNodes(10002));
+
+        assertEquals(10002, cfg.getBackupNodes());
     }
 
     @Test

@@ -24,6 +24,7 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.unicast.LoadBalancerContext;
+import io.hekate.partition.PartitionMapper;
 import io.hekate.util.format.ToString;
 import java.util.Iterator;
 import java.util.List;
@@ -37,24 +38,34 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
 
     private final Object affinityKey;
 
+    private final PartitionMapper partitions;
+
     private final ClusterTopology topology;
 
     private final Optional<FailureInfo> failure;
 
-    public DefaultLoadBalancerContext(MessageContext<?> ctx, ClusterTopology topology, Optional<FailureInfo> failure) {
-        this(ctx.affinity(), ctx.affinityKey(), topology, failure);
+    public DefaultLoadBalancerContext(MessageContext<?> ctx, ClusterTopology topology, PartitionMapper partitions,
+        Optional<FailureInfo> failure) {
+        this(ctx.affinity(), ctx.affinityKey(), topology, partitions, failure);
     }
 
-    public DefaultLoadBalancerContext(int affinity, Object affinityKey, ClusterTopology topology, Optional<FailureInfo> failure) {
+    public DefaultLoadBalancerContext(int affinity, Object affinityKey, ClusterTopology topology, PartitionMapper partitions,
+        Optional<FailureInfo> failure) {
         this.affinity = affinity;
         this.affinityKey = affinityKey;
         this.topology = topology;
+        this.partitions = partitions;
         this.failure = failure;
     }
 
     @Override
     public ClusterTopology topology() {
         return topology;
+    }
+
+    @Override
+    public PartitionMapper partitions() {
+        return partitions;
     }
 
     @Override
@@ -175,7 +186,7 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
             return this;
         }
 
-        return new DefaultLoadBalancerContext(affinity, affinityKey, filtered, failure);
+        return new DefaultLoadBalancerContext(affinity, affinityKey, filtered, partitions, failure);
     }
 
     @Override
@@ -186,7 +197,7 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
             return this;
         }
 
-        return new DefaultLoadBalancerContext(affinity, affinityKey, filtered, failure);
+        return new DefaultLoadBalancerContext(affinity, affinityKey, filtered, partitions, failure);
     }
 
     @Override

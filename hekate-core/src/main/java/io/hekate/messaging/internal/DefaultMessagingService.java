@@ -148,6 +148,9 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             String name = cfg.getName().trim();
 
             check.unique(name, uniqueNames, "name");
+            check.positive(cfg.getPartitions(), "partitions");
+            check.isTrue(Utils.isPowerOfTwo(cfg.getPartitions()), "Partitions size must be a power of two "
+                + "[size=" + cfg.getPartitions() + ']');
 
             MessagingBackPressureConfig pressureCfg = cfg.getBackPressure();
 
@@ -346,11 +349,23 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         int workerThreads = cfg.getWorkerThreads();
         long idleTimeout = cfg.getIdleTimeout();
         long messagingTimeout = cfg.getMessagingTimeout();
+        int partitions = cfg.getPartitions();
+        int backupNodes = cfg.getBackupNodes();
         MessageReceiver<T> receiver = cfg.getReceiver();
         ClusterNodeFilter filter = cfg.getClusterFilter();
         FailoverPolicy failover = cfg.getFailoverPolicy();
         LoadBalancer<T> loadBalancer = cfg.getLoadBalancer();
         MessagingBackPressureConfig pressureCfg = cfg.getBackPressure();
+
+        Logger channelLog;
+
+        String logCategory = Utils.nullOrTrim(cfg.getLogCategory());
+
+        if (logCategory != null) {
+            channelLog = LoggerFactory.getLogger(logCategory);
+        } else {
+            channelLog = LoggerFactory.getLogger(MessagingGateway.class);
+        }
 
         ClusterNode localNode = cluster.localNode();
         ClusterView clusterView = cluster.filter(new ChannelNodeFilter(name, filter));
@@ -410,7 +425,8 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         MessageReceiver<T> guardedReceiver = applyGuard(receiver);
 
         MessagingGateway<T> gateway = new MessagingGateway<>(name, connector, localNode, clusterView, guardedReceiver, nioThreads, async,
-            channelMetrics, receivePressureGuard, sendPressureGuard, failover, messagingTimeout, loadBalancer, checkIdle,
+            channelMetrics, receivePressureGuard, sendPressureGuard, failover, messagingTimeout, loadBalancer, partitions, backupNodes,
+            channelLog, checkIdle,
             // Before close callback.
             () -> {
                 if (DEBUG) {
@@ -472,7 +488,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
         String name = cfg.getName().trim();
         MessageReceiver<T> receiver = cfg.getReceiver();
-        String logCategory = cfg.getLogCategory();
+        String logCategory = Utils.nullOrTrim(cfg.getLogCategory());
         int socketThreadPoolSize = cfg.getNioThreads();
 
         CodecFactory<T> codecFactory = resolveCodecFactory(cfg);

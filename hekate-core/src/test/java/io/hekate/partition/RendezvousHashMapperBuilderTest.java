@@ -15,17 +15,17 @@ public class RendezvousHashMapperBuilderTest extends HekateTestBase {
     public void testDefault() {
         PartitionMapper mapper = builder.build();
 
-        assertEquals(Builder.DEFAULT_PARTITIONS, mapper.partitions());
+        assertEquals(RendezvousHashMapper.DEFAULT_PARTITIONS, mapper.partitions());
         assertEquals(0, mapper.backupNodes());
     }
 
     @Test
     public void testOptions() {
-        PartitionMapper mapper = builder.withPartitions(Builder.DEFAULT_PARTITIONS * 2)
+        PartitionMapper mapper = builder.withPartitions(RendezvousHashMapper.DEFAULT_PARTITIONS * 2)
             .withBackupNodes(100501)
             .build();
 
-        assertEquals(Builder.DEFAULT_PARTITIONS * 2, mapper.partitions());
+        assertEquals(RendezvousHashMapper.DEFAULT_PARTITIONS * 2, mapper.partitions());
         assertEquals(100501, mapper.backupNodes());
     }
 

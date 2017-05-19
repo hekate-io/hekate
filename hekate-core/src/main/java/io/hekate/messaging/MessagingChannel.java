@@ -234,7 +234,7 @@ public interface MessagingChannel<T> extends HasClusterFilter<MessagingChannel<T
     Object affinity();
 
     /**
-     * Returns the partition mapper that this channel uses to map {@link #withAffinity(Object) affinity keys} to cluster nodes.
+     * Returns the partition mapper that this channel uses to map {@link #withAffinity(Object) affinity keys} to the cluster nodes.
      *
      * @return Mapper.
      */

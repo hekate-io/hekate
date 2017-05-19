@@ -17,13 +17,16 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * Exposes the {@link DefaultLoadBalancerContext} class to other packages for testing purposes.
  */
 public class LoadBalancerContextBridge extends DefaultLoadBalancerContext {
     public LoadBalancerContextBridge(int affinity, Object affinityKey, ClusterTopology topology) {
-        super(affinity, affinityKey, topology, Optional.empty());
+        super(affinity, affinityKey, topology, mock(PartitionMapper.class), Optional.empty());
     }
 }

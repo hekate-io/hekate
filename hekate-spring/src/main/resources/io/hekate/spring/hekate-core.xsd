@@ -1175,6 +1175,20 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
+        <xsd:attribute name="partitions" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.messaging.MessagingChannelConfig#setPartitions(int)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="backup-nodes" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.messaging.MessagingChannelConfig#setBackupNodes(int)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
         <xsd:attribute name="idle-timeout-ms" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>

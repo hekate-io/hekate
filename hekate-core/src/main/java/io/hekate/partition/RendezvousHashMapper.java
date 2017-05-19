@@ -30,9 +30,6 @@ public final class RendezvousHashMapper implements PartitionMapper {
      * @see RendezvousHashMapper#of(HasTopology)
      */
     public static final class Builder {
-        /** Default value (={@value}) for {@link #withPartitions(int)}. */
-        public static final int DEFAULT_PARTITIONS = 256;
-
         private final HasTopology cluster;
 
         private int partitions = DEFAULT_PARTITIONS;
@@ -73,8 +70,8 @@ public final class RendezvousHashMapper implements PartitionMapper {
          * Sets the amount of backup nodes that should be assigned to each partition by the mapper.
          *
          * <p>
-         * If value of this parameter is negative or equals to zero then mapper will not manage backup nodes and {@link
-         * Partition#backupNodes()} will return an empty set.
+         * If value of this parameter is zero then mapper will not manage backup nodes and {@link Partition#backupNodes()} will return an
+         * empty set. If value of this parameter is negative then mapper will use all available cluster nodes as backup nodes.
          * </p>
          *
          * @param backupNodes Amount of backup nodes that should be assigned to each partition by the mapper.
@@ -134,7 +131,7 @@ public final class RendezvousHashMapper implements PartitionMapper {
             assert Utils.isPowerOfTwo(size) : "Partitions size must be a power of two [size=" + size + ']';
             assert topology != null : "Topology is null.";
 
-            this.backupSize = backupSize;
+            this.backupSize = backupSize < 0 ? Integer.MAX_VALUE : backupSize;
             this.topology = topology;
             this.partitions = new AtomicReferenceArray<>(size);
             this.maxPid = size - 1;
@@ -221,6 +218,9 @@ public final class RendezvousHashMapper implements PartitionMapper {
             return ToString.format(PartitionMapper.class, this);
         }
     }
+
+    /** Default value (={@value}) for {@link Builder#withPartitions(int)}. */
+    public static final int DEFAULT_PARTITIONS = 256;
 
     private static final AtomicReferenceFieldUpdater<RendezvousHashMapper, PartitionMapperSnapshot> SNAPSHOT = newUpdater(
         RendezvousHashMapper.class,

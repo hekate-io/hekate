@@ -56,7 +56,7 @@ import io.hekate.messaging.unicast.SendFuture;
 import io.hekate.messaging.unicast.SubscribeFuture;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkFuture;
-import io.hekate.partition.Partition;
+import io.hekate.partition.PartitionMapper;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -76,10 +76,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.StampedLock;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static io.hekate.failover.FailoverRoutingPolicy.RETRY_SAME_NODE;
-import static io.hekate.failover.FailoverRoutingPolicy.RE_ROUTE;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toList;
@@ -171,11 +169,13 @@ class MessagingGateway<T> {
         }
     }
 
-    private static final Logger log = LoggerFactory.getLogger(MessagingGateway.class);
-
-    private static final boolean DEBUG = log.isDebugEnabled();
-
     private final String name;
+
+    @ToStringIgnore
+    private final Logger log;
+
+    @ToStringIgnore
+    private final boolean debug;
 
     @ToStringIgnore
     private final MessagingChannelId id;
@@ -234,7 +234,7 @@ class MessagingGateway<T> {
     public MessagingGateway(String name, NetworkConnector<MessagingProtocol> net, ClusterNode localNode, ClusterView cluster,
         MessageReceiver<T> receiver, int nioThreads, MessagingExecutor async, MetricsCallback metrics,
         ReceivePressureGuard receivePressure, SendPressureGuard sendPressure, FailoverPolicy failoverPolicy, long defaultTimeout,
-        LoadBalancer<T> loadBalancer, boolean checkIdle, CloseCallback onBeforeClose) {
+        LoadBalancer<T> loadBalancer, int partitions, int backupNodes, Logger log, boolean checkIdle, CloseCallback onBeforeClose) {
         assert name != null : "Name is null.";
         assert net != null : "Network connector is null.";
         assert localNode != null : "Local cluster node is null.";
@@ -253,13 +253,20 @@ class MessagingGateway<T> {
         this.receivePressure = receivePressure;
         this.sendPressure = sendPressure;
         this.checkIdle = checkIdle;
+        this.log = log;
+        this.debug = log.isDebugEnabled();
         this.onBeforeClose = onBeforeClose;
 
-        RendezvousHashMapper partitions = RendezvousHashMapper.of(cluster)
-            .withBackupNodes(0)
+        RendezvousHashMapper mapper = RendezvousHashMapper.of(cluster)
+            .withPartitions(partitions)
+            .withBackupNodes(backupNodes)
             .build();
 
-        this.channel = new DefaultMessagingChannel<>(this, cluster, partitions, loadBalancer, failoverPolicy, defaultTimeout, null);
+        if (loadBalancer == null) {
+            loadBalancer = new DefaultLoadBalancer<>();
+        }
+
+        this.channel = new DefaultMessagingChannel<>(this, cluster, mapper, loadBalancer, failoverPolicy, defaultTimeout, null);
     }
 
     public MessagingChannelId id() {
@@ -446,7 +453,7 @@ class MessagingGateway<T> {
             if (closed) {
                 return Waiting.NO_WAIT;
             } else {
-                if (DEBUG) {
+                if (debug) {
                     log.debug("Closing channel [name={}]", name);
                 }
 
@@ -537,7 +544,13 @@ class MessagingGateway<T> {
 
         try {
             client = selectClient(ctx, prevErr);
-        } catch (HekateException | RuntimeException | Error e) {
+        } catch (HekateException e) {
+            notifyOnErrorAsync(ctx, callback, e);
+        } catch (RuntimeException | Error e) {
+            if (log.isErrorEnabled()) {
+                log.error("Got an unexpected runtime error during message routing.", e);
+            }
+
             notifyOnErrorAsync(ctx, callback, e);
         } catch (ClientSelectionRejectedException e) {
             notifyOnErrorAsync(ctx, callback, e.getCause());
@@ -626,7 +639,13 @@ class MessagingGateway<T> {
 
         try {
             client = selectClient(ctx, prevErr);
-        } catch (HekateException | RuntimeException | Error e) {
+        } catch (HekateException e) {
+            notifyOnErrorAsync(ctx, callback, e);
+        } catch (RuntimeException | Error e) {
+            if (log.isErrorEnabled()) {
+                log.error("Got an unexpected runtime error during message routing.", e);
+            }
+
             notifyOnErrorAsync(ctx, callback, e);
         } catch (ClientSelectionRejectedException e) {
             notifyOnErrorAsync(ctx, callback, e.getCause());
@@ -788,7 +807,7 @@ class MessagingGateway<T> {
                 ClusterTopology newTopology = cluster.topology();
 
                 if (clientsTopology == null || clientsTopology.version() < newTopology.version()) {
-                    if (DEBUG) {
+                    if (debug) {
                         log.debug("Updating topology [channel={}, topology={}]", name, newTopology);
                     }
 
@@ -905,20 +924,7 @@ class MessagingGateway<T> {
         assert ctx != null : "Message context is null.";
 
         while (true) {
-            Partition partition = null;
-
-            // Topology of this routing attempt.
-            ClusterTopology topology;
-
-            // Decide on whether we should use partition-based routing.
-            if (ctx.opts().balancer() == null && ctx.hasAffinity()) {
-                // Memorize partition so that we could re-use it later after all sanity checks.
-                partition = ctx.opts().partitions().mapInt(ctx.affinity());
-
-                topology = partition.topology();
-            } else {
-                topology = ctx.opts().cluster().topology();
-            }
+            ClusterTopology topology = ctx.opts().cluster().topology();
 
             // Fail if topology is empty.
             if (topology.isEmpty()) {
@@ -933,47 +939,21 @@ class MessagingGateway<T> {
 
             ClusterNodeId selected;
 
-            // Check if load balancer is specified for this message.
             if (ctx.opts().balancer() == null) {
-                // Load balancer not specified -> use default routing.
-                ClusterNode node;
-
-                if (partition == null) {
-                    // Select any random node if affinity is not specified.
-                    node = topology.random();
-
-                    // Check if this is a failover attempt and try to re-route in case if the selected node is known to be failed.
-                    if (prevErr != null && prevErr.routing() == RE_ROUTE && prevErr.isFailed(node)) {
-                        // Exclude all failed nodes.
-                        List<ClusterNode> nonFailed = topology.stream()
-                            .filter(n -> !prevErr.isFailed(n))
-                            .collect(toList());
-
-                        if (!nonFailed.isEmpty()) {
-                            // Randomize.
-                            Collections.shuffle(nonFailed);
-
-                            node = nonFailed.get(0);
-                        }
-                    }
-                } else {
-                    // Select node from the partition.
-                    node = partition.primaryNode();
-
-                    // Check if this is a failover attempt and try to re-route in case if the selected node is known to be failed.
-                    if (prevErr != null && prevErr.routing() == RE_ROUTE && partition.hasBackupNodes() && prevErr.isFailed(node)) {
-                        node = partition.backupNodes().stream()
-                            .filter(n -> !prevErr.isFailed(n))
-                            .findFirst()
-                            .orElse(node); // <-- Fall back to the originally selected node.
-                    }
-                }
+                // Special case for broadcast/aggregate operations.
+                // ---------------------------------------------------------------------------
+                // Such operations do not specify a load balancer
+                // but make sure that the target topology always contains only a single node.
+                ClusterNode node = topology.first();
 
                 selected = node != null ? node.id() : null;
             } else {
-                // Use load balancer.
-                LoadBalancerContext balancerCtx = new DefaultLoadBalancerContext(ctx, topology, Optional.ofNullable(prevErr));
+                // Route via load balancer.
+                PartitionMapper partitions = ctx.opts().partitions();
+                Optional<FailureInfo> failure = Optional.ofNullable(prevErr);
+                LoadBalancerContext balancerCtx = new DefaultLoadBalancerContext(ctx, topology, partitions, failure);
 
+                // Apply load balancer.
                 selected = ctx.opts().balancer().route(ctx.message(), balancerCtx);
             }
 
@@ -992,7 +972,7 @@ class MessagingGateway<T> {
             long readLock = lock.readLock();
 
             try {
-                // Check that channel is not closed.
+                // Make sure that channel is not closed.
                 if (closed) {
                     throw channelClosedError(null);
                 }
@@ -1020,7 +1000,7 @@ class MessagingGateway<T> {
             }
 
             // Since we are here it means that topology was changed during routing.
-            if (DEBUG) {
+            if (debug) {
                 log.debug("Retrying routing since topology was changed [balancer={}]", ctx.opts().balancer());
             }
 
@@ -1250,13 +1230,9 @@ class MessagingGateway<T> {
 
     private static int affinity(Object key) {
         if (key == null) {
-            // Use random value that is < 0.
-            return -(ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE) + 1);
+            return ThreadLocalRandom.current().nextInt();
         } else {
-            // Use positive value that is >= 0.
-            int hash = key.hashCode();
-
-            return hash == Integer.MIN_VALUE ? Integer.MAX_VALUE : Math.abs(hash);
+            return key.hashCode();
         }
     }
 

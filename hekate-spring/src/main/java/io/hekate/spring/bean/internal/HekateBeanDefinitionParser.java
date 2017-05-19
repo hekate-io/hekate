@@ -684,6 +684,8 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 setProperty(channel, channelEl, "name", "name");
                 setProperty(channel, channelEl, "nioThreads", "nio-threads");
                 setProperty(channel, channelEl, "workerThreads", "worker-threads");
+                setProperty(channel, channelEl, "backupNodes", "backup-nodes");
+                setProperty(channel, channelEl, "partitions", "partitions");
                 setProperty(channel, channelEl, "idleTimeout", "idle-timeout-ms");
                 setProperty(channel, channelEl, "logCategory", "log-category");
                 setProperty(channel, channelEl, "messagingTimeout", "messaging-timeout-ms");

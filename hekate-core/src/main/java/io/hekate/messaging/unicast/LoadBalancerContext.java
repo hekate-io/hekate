@@ -22,6 +22,7 @@ import io.hekate.cluster.ClusterTopology;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
 
 /**
@@ -35,7 +36,16 @@ public interface LoadBalancerContext extends ClusterTopology {
      *
      * @return Cluster topology.
      */
+    @Override
     ClusterTopology topology();
+
+    /**
+     * Returns the default partition mapper that the channel uses to map {@link MessagingChannel#withAffinity(Object) affinity keys} to the
+     * cluster nodes.
+     *
+     * @return Mapper.
+     */
+    PartitionMapper partitions();
 
     /**
      * Returns <tt>true</tt> if the messaging operation has an affinity key (see {@link #affinityKey()}).

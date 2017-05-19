@@ -25,6 +25,8 @@ import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.unicast.LoadBalancer;
 import io.hekate.network.NetworkService;
 import io.hekate.network.NetworkServiceFactory;
+import io.hekate.partition.Partition;
+import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -53,6 +55,10 @@ public class MessagingChannelConfig<T> {
     private int nioThreads;
 
     private long idleTimeout;
+
+    private int partitions = RendezvousHashMapper.DEFAULT_PARTITIONS;
+
+    private int backupNodes;
 
     private CodecFactory<T> messageCodec;
 
@@ -168,6 +174,90 @@ public class MessagingChannelConfig<T> {
      */
     public MessagingChannelConfig<T> withIdleTimeout(long idleTimeout) {
         setIdleTimeout(idleTimeout);
+
+        return this;
+    }
+
+    /**
+     * Returns the total amount of partitions that should be managed by the channel's {@link MessagingChannel#partitions() partition mapper}
+     * (see {@link #setPartitions(int)}).
+     *
+     * @return Total amount of partitions.
+     */
+    public int getPartitions() {
+        return partitions;
+    }
+
+    /**
+     * Sets the total amount of partitions that should be managed by the channel's {@link MessagingChannel#partitions() partition mapper}.
+     *
+     * <p>
+     * Value of this parameter must be above zero and must be a power of two.
+     * Default value is {@value RendezvousHashMapper#DEFAULT_PARTITIONS}.
+     * </p>
+     *
+     * @param partitions Total amount of partitions that should be managed by the channel's partition mapper (value must be a power of
+     * two).
+     */
+    public void setPartitions(int partitions) {
+        this.partitions = partitions;
+    }
+
+    /**
+     * Fluent-style version of {@link #setPartitions(int)}.
+     *
+     * @param partitions Total amount of partitions that should be managed by the channel's partition mapper (value must be a power of
+     * two).
+     *
+     * @return This instance.
+     */
+    public MessagingChannelConfig<T> withPartitions(int partitions) {
+        setPartitions(partitions);
+
+        return this;
+    }
+
+    /**
+     * Returns the amount of backup nodes that should be assigned to each partition by the the channel's
+     * {@link MessagingChannel#partitions() partition mapper} (see {@link #setBackupNodes(int)}).
+     *
+     * @return Amount of backup nodes.
+     */
+    public int getBackupNodes() {
+        return backupNodes;
+    }
+
+    /**
+     * Sets the amount of backup nodes that should be assigned to each partition by the the channel's
+     * {@link MessagingChannel#partitions() partition mapper}.
+     *
+     * <p>
+     * If value of this parameter is zero then the channel's mapper will not manage {@link Partition#backupNodes() backup nodes}. If value
+     * of this parameter is negative then the channel's the mapper will use all available cluster nodes as
+     * {@link Partition#backupNodes() backup nodes}.
+     * </p>
+     *
+     * <p>
+     * Default value of this parameter is 0 (i.e. backup nodes management is disabled).
+     * </p>
+     *
+     * @param backupNodes Amount of backup nodes that should be assigned to each partition of the channel's
+     * {@link MessagingChannel#partitions() partition mapper}.
+     */
+    public void setBackupNodes(int backupNodes) {
+        this.backupNodes = backupNodes;
+    }
+
+    /**
+     * Fluent-style version of {@link #setBackupNodes(int)}.
+     *
+     * @param backupNodes Amount of backup nodes that should be assigned to each partition of the channel's
+     * {@link MessagingChannel#partitions() partition mapper}.
+     *
+     * @return This instance.
+     */
+    public MessagingChannelConfig<T> withBackupNodes(int backupNodes) {
+        setBackupNodes(backupNodes);
 
         return this;
     }
