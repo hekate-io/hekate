@@ -16,8 +16,8 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.core.internal.util.Utils;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -54,7 +54,7 @@ class MessagingThreadPoolWorker implements MessagingWorker {
         }
 
         if (fallback) {
-            Utils.fallbackExecutor().execute(task);
+            AsyncUtils.fallbackExecutor().execute(task);
         }
     }
 

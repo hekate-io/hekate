@@ -18,8 +18,10 @@ package io.hekate.metrics.local.internal;
 
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
+import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.core.service.InitializationContext;
@@ -97,15 +99,15 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
 
         refreshInterval = factory.getRefreshInterval();
 
-        Utils.nullSafe(factory.getMetrics()).forEach(metricsConfig::add);
+        StreamUtils.nullSafe(factory.getMetrics()).forEach(metricsConfig::add);
 
-        Utils.nullSafe(new JvmMetricsProvider().configureMetrics()).forEach(metricsConfig::add);
+        StreamUtils.nullSafe(new JvmMetricsProvider().configureMetrics()).forEach(metricsConfig::add);
 
-        Utils.nullSafe(factory.getConfigProviders()).forEach(provider ->
-            Utils.nullSafe(provider.configureMetrics()).forEach(metricsConfig::add)
+        StreamUtils.nullSafe(factory.getConfigProviders()).forEach(provider ->
+            StreamUtils.nullSafe(provider.configureMetrics()).forEach(metricsConfig::add)
         );
 
-        Utils.nullSafe(factory.getListeners()).forEach(initListeners::add);
+        StreamUtils.nullSafe(factory.getListeners()).forEach(initListeners::add);
     }
 
     @Override
@@ -156,7 +158,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
                 }
 
                 if (worker != null) {
-                    waiting = Utils.shutdown(worker);
+                    waiting = AsyncUtils.shutdown(worker);
 
                     worker = null;
                 }

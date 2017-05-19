@@ -20,9 +20,9 @@ import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateException;
+import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
-import io.hekate.core.internal.util.Utils;
 import io.hekate.util.format.ToString;
 import java.io.File;
 import java.io.FileFilter;
@@ -60,7 +60,7 @@ public class FsSeedNodeProvider implements SeedNodeProvider {
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private static final FileFilter FILE_FILTER = pathname -> pathname.isFile() && pathname.getName().startsWith(Utils.ADDRESS_FILE_PREFIX);
+    private static final FileFilter FILE_FILTER = pathname -> pathname.isFile() && pathname.getName().startsWith(AddressUtils.FILE_PREFIX);
 
     private final File workDir;
 
@@ -110,7 +110,7 @@ public class FsSeedNodeProvider implements SeedNodeProvider {
         if (files != null) {
             for (File file : files) {
                 if (FILE_FILTER.accept(file)) {
-                    InetSocketAddress address = Utils.addressFromFileName(file.getName(), log);
+                    InetSocketAddress address = AddressUtils.fromFileName(file.getName(), log);
 
                     if (address != null) {
                         if (DEBUG) {
@@ -188,7 +188,7 @@ public class FsSeedNodeProvider implements SeedNodeProvider {
             log.info("Initialized directories structure for seed nodes store [path={}]", dir.getAbsolutePath());
         }
 
-        File seedFile = new File(dir, Utils.addressToFileName(node));
+        File seedFile = new File(dir, AddressUtils.toFileName(node));
 
         log.info("Creating seed node file [path={}]", seedFile);
 
@@ -206,7 +206,7 @@ public class FsSeedNodeProvider implements SeedNodeProvider {
     private void doUnregister(String cluster, InetSocketAddress node) {
         File dir = clusterDir(cluster);
 
-        File seedFile = new File(dir, Utils.addressToFileName(node));
+        File seedFile = new File(dir, AddressUtils.toFileName(node));
 
         log.info("Deleting seed node file [path={}]", seedFile);
 

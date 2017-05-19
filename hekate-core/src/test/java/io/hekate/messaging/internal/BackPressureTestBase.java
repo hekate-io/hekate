@@ -16,7 +16,7 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannel;
@@ -83,7 +83,7 @@ public abstract class BackPressureTestBase extends MessagingServiceTestBase {
         } catch (TimeoutException | InterruptedException e) {
             throw new AssertionError(e);
         } catch (ExecutionException e) {
-            return Utils.isCausedBy(e, MessageQueueOverflowException.class);
+            return ErrorUtils.isCausedBy(e, MessageQueueOverflowException.class);
         }
     }
 
@@ -105,7 +105,7 @@ public abstract class BackPressureTestBase extends MessagingServiceTestBase {
         Throwable err = get(errFuture);
 
         assertNotNull(err);
-        assertTrue(err.toString(), Utils.isCausedBy(err, MessageQueueOverflowException.class));
+        assertTrue(err.toString(), ErrorUtils.isCausedBy(err, MessageQueueOverflowException.class));
     }
 
     protected List<ResponseFuture<String>> requestUpToHighWatermark(MessagingChannel<String> channel) {

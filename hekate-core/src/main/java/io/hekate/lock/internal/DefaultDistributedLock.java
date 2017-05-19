@@ -17,7 +17,7 @@
 package io.hekate.lock.internal;
 
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.lock.AsyncLockCallback;
 import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockOwnerInfo;
@@ -136,7 +136,7 @@ class DefaultDistributedLock implements DistributedLock {
             LockControllerClient handle = regionManager.lock(DefaultLockRegion.TIMEOUT_UNBOUND, this);
 
             try {
-                Utils.getUninterruptedly(handle.lockFuture());
+                AsyncUtils.getUninterruptedly(handle.lockFuture());
 
                 registerLock(handle);
 
@@ -195,7 +195,7 @@ class DefaultDistributedLock implements DistributedLock {
             LockControllerClient handle = regionManager.lock(DefaultLockRegion.TIMEOUT_IMMEDIATE, this);
 
             try {
-                boolean locked = Utils.getUninterruptedly(handle.lockFuture());
+                boolean locked = AsyncUtils.getUninterruptedly(handle.lockFuture());
 
                 if (locked) {
                     registerLock(handle);
@@ -303,7 +303,7 @@ class DefaultDistributedLock implements DistributedLock {
 
                 if (sync) {
                     try {
-                        Utils.getUninterruptedly(future);
+                        AsyncUtils.getUninterruptedly(future);
 
                         if (DEBUG) {
                             log.debug("Unlocked [lock={}]", this);

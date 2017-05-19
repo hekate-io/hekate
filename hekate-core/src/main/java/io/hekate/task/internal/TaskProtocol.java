@@ -16,7 +16,7 @@
 
 package io.hekate.task.internal;
 
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.unicast.ReplyFailure;
 import io.hekate.task.ApplicableTask;
 import io.hekate.task.RemoteTaskException;
@@ -150,7 +150,7 @@ abstract class TaskProtocol {
         private final String errorStackTrace;
 
         public ErrorResult(Throwable cause) {
-            errorStackTrace = Utils.stackTrace(cause);
+            errorStackTrace = ErrorUtils.stackTrace(cause);
         }
 
         public ErrorResult(String errorStackTrace) {

@@ -17,9 +17,9 @@
 package io.hekate.metrics.influxdb;
 
 import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.core.internal.util.Utils;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.metrics.Metric;
 import io.hekate.metrics.MetricFilter;
@@ -281,7 +281,7 @@ class InfluxDbMetricsPublisher {
                         queue.drainTo(staleEntries);
                     } while (!queue.offer(STOP_ENTRY));
 
-                    termination = Utils.shutdown(worker);
+                    termination = AsyncUtils.shutdown(worker);
 
                     worker = null;
                 }

@@ -17,7 +17,7 @@
 package io.hekate.failover;
 
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.util.format.ToString;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +46,7 @@ public class FailoverPolicyBuilder {
             return FailoverPolicy.alwaysFail();
         }
 
-        List<FailoverCondition> localRetryUntil = Utils.nullSafe(retryUntil).collect(toList());
+        List<FailoverCondition> localRetryUntil = StreamUtils.nullSafe(retryUntil).collect(toList());
 
         if (localRetryUntil.isEmpty()) {
             return FailoverPolicy.alwaysFail();

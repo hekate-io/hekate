@@ -1,7 +1,7 @@
 package io.hekate.network.internal.netty;
 
 import io.hekate.HekateTestContext;
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkSslConfig;
 import io.hekate.network.internal.NetworkClientCallbackMock;
@@ -48,7 +48,7 @@ public class InvalidSslConfigurationTest extends NetworkTestBase {
 
             fail("Error was expected.");
         } catch (ExecutionException e) {
-            assertTrue(getStacktrace(e), Utils.isCausedBy(e, SSLHandshakeException.class));
+            assertTrue(getStacktrace(e), ErrorUtils.isCausedBy(e, SSLHandshakeException.class));
         }
     }
 
@@ -67,7 +67,7 @@ public class InvalidSslConfigurationTest extends NetworkTestBase {
 
             fail("Error was expected.");
         } catch (ExecutionException e) {
-            assertTrue(getStacktrace(e), Utils.isCausedBy(e, ConnectException.class));
+            assertTrue(getStacktrace(e), ErrorUtils.isCausedBy(e, ConnectException.class));
         }
     }
 
@@ -84,7 +84,7 @@ public class InvalidSslConfigurationTest extends NetworkTestBase {
 
             fail("Error was expected.");
         } catch (ExecutionException e) {
-            assertTrue(getStacktrace(e), Utils.isCausedBy(e, ConnectException.class));
+            assertTrue(getStacktrace(e), ErrorUtils.isCausedBy(e, ConnectException.class));
         }
     }
 }

@@ -24,8 +24,10 @@ import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.codec.SingletonCodecFactory;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
+import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.core.service.ConfigurableService;
@@ -110,10 +112,10 @@ public class DefaultLockService implements LockService, InitializingService, Dep
         this.workerThreads = factory.getWorkerThreads();
         this.nioThreads = factory.getNioThreads();
 
-        Utils.nullSafe(factory.getRegions()).forEach(regionsConfig::add);
+        StreamUtils.nullSafe(factory.getRegions()).forEach(regionsConfig::add);
 
-        Utils.nullSafe(factory.getConfigProviders()).forEach(provider ->
-            Utils.nullSafe(provider.configureLocking()).forEach(regionsConfig::add)
+        StreamUtils.nullSafe(factory.getConfigProviders()).forEach(provider ->
+            StreamUtils.nullSafe(provider.configureLocking()).forEach(regionsConfig::add)
         );
     }
 
@@ -128,10 +130,10 @@ public class DefaultLockService implements LockService, InitializingService, Dep
         // Collect configurations from providers.
         Collection<LockConfigProvider> providers = ctx.findComponents(LockConfigProvider.class);
 
-        Utils.nullSafe(providers).forEach(provider -> {
+        StreamUtils.nullSafe(providers).forEach(provider -> {
             Collection<LockRegionConfig> regions = provider.configureLocking();
 
-            Utils.nullSafe(regions).forEach(regionsConfig::add);
+            StreamUtils.nullSafe(regions).forEach(regionsConfig::add);
         });
 
         // Validate configs.
@@ -242,7 +244,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
                 // Shutdown scheduler.
                 if (scheduler != null) {
-                    waiting = Utils.shutdown(scheduler);
+                    waiting = AsyncUtils.shutdown(scheduler);
 
                     scheduler = null;
                 }

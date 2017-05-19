@@ -22,6 +22,7 @@ import io.hekate.cluster.event.ClusterChangeEvent;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterLeaveEvent;
+import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -35,7 +36,7 @@ class ClusterEventLogger implements ClusterEventListener {
         InetSocketAddress a1 = o1.socket();
         InetSocketAddress a2 = o2.socket();
 
-        int cmp = a1.getAddress().getHostAddress().compareTo(a2.getAddress().getHostAddress());
+        int cmp = AddressUtils.host(a1).compareTo(AddressUtils.host(a2));
 
         if (cmp == 0) {
             cmp = Integer.compare(a1.getPort(), a2.getPort());

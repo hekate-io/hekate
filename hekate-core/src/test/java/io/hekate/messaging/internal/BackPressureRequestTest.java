@@ -16,7 +16,7 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageQueueTimeoutException;
 import io.hekate.messaging.MessagingChannel;
@@ -205,7 +205,7 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
-            assertTrue(Utils.stackTrace(e), e.isCausedBy(MessagingChannelClosedException.class));
+            assertTrue(ErrorUtils.stackTrace(e), e.isCausedBy(MessagingChannelClosedException.class));
         }
     }
 

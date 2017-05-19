@@ -17,6 +17,7 @@
 package io.hekate.metrics.statsd;
 
 import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Utils;
@@ -276,7 +277,7 @@ class StatsdMetricsPublisher {
                     queue.clear();
                 }
 
-                termination = Utils.shutdown(worker);
+                termination = AsyncUtils.shutdown(worker);
 
                 worker = null;
             }

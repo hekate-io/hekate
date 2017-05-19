@@ -17,7 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.broadcast.BroadcastFuture;
@@ -55,7 +55,7 @@ public class BackPressureBroadcastTest extends BackPressureTestBase {
 
     @Test
     // TODO: Disabled back-pressure test for broadcast operations.
-    @Ignore("Temporary disabled due to test instability. Need to refactor logic of this test.")
+    @Ignore("Temporary disabled due to the test instability. Need to refactor logic of this test.")
     public void test() throws Exception {
         CountDownLatch resumeReceive = new CountDownLatch(1);
 
@@ -97,6 +97,8 @@ public class BackPressureBroadcastTest extends BackPressureTestBase {
         Map<ClusterNode, Throwable> errors = future.get().errors();
 
         assertFalse(errors.isEmpty());
-        assertTrue(errors.toString(), errors.values().stream().allMatch(e -> Utils.isCausedBy(e, MessageQueueOverflowException.class)));
+        assertTrue(errors.toString(), errors.values().stream().allMatch(e ->
+            ErrorUtils.isCausedBy(e, MessageQueueOverflowException.class))
+        );
     }
 }

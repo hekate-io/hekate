@@ -19,6 +19,7 @@ package io.hekate.cluster.seed.jdbc;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.core.HekateException;
+import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.util.format.ToString;
@@ -168,7 +169,7 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider {
         // No-op.
     }
 
-    private void doUnregister(String cluster, InetSocketAddress node) throws HekateException {
+    private void doUnregister(String cluster, InetSocketAddress address) throws HekateException {
         try (Connection conn = ds.getConnection()) {
             conn.setAutoCommit(false);
 
@@ -177,8 +178,8 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider {
                     delSt.setQueryTimeout(timeout);
                 }
 
-                String host = node.getAddress().getHostAddress();
-                int port = node.getPort();
+                String host = AddressUtils.host(address);
+                int port = address.getPort();
 
                 if (DEBUG) {
                     log.debug("Executing SQL query [sql={}, host={}, port={}, cluster={}]", delSql, host, port, cluster);
@@ -202,14 +203,14 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider {
             }
         } catch (SQLException e) {
             throw new HekateException("Failed to register seed node within a database "
-                + "[cluster=" + cluster + ", node=" + node + ']', e);
+                + "[cluster=" + cluster + ", node=" + address + ']', e);
         }
     }
 
     private void doRegister(String cluster, InetSocketAddress node) throws HekateException {
-        InetAddress hostAddress = node.getAddress();
+        InetAddress address = node.getAddress();
 
-        ArgAssert.check(hostAddress != null, "Host address can't be resolved [address=" + node + ']');
+        ArgAssert.check(address != null, "Host address can't be resolved [address=" + node + ']');
 
         try (Connection conn = ds.getConnection()) {
             conn.setAutoCommit(false);
@@ -223,7 +224,7 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider {
                     insSt.setQueryTimeout(timeout);
                 }
 
-                String host = hostAddress.getHostAddress();
+                String host = address.getHostAddress();
                 int port = node.getPort();
 
                 if (DEBUG) {

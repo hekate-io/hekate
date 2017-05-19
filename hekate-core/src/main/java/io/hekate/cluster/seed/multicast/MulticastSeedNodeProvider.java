@@ -19,6 +19,7 @@ package io.hekate.cluster.seed.multicast;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.core.HekateException;
+import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Utils;
@@ -289,8 +290,8 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
 
                 listenerBind.get();
 
-                log.info("Joining to a multicast group [address={}, port={}, interface={}, ttl={}]", group.getAddress().getHostAddress(),
-                    group.getPort(), nif.getName(), ttl);
+                log.info("Joining to a multicast group "
+                    + "[address={}, port={}, interface={}, ttl={}]", AddressUtils.host(group), group.getPort(), nif.getName(), ttl);
 
                 listener.joinGroup(group, nif).get();
 

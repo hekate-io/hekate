@@ -16,7 +16,7 @@
 
 package io.hekate.util;
 
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.AsyncUtils;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -62,7 +62,7 @@ public abstract class HekateFuture<T, F extends HekateFuture<T, F>> extends Comp
      * @throws ExecutionException If this future completed exceptionally.
      */
     public T getUninterruptedly() throws ExecutionException {
-        return Utils.getUninterruptedly(this);
+        return AsyncUtils.getUninterruptedly(this);
     }
 
     /**

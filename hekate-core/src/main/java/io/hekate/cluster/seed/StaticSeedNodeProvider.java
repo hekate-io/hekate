@@ -18,8 +18,8 @@ package io.hekate.cluster.seed;
 
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.core.HekateException;
+import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ConfigCheck;
-import io.hekate.core.internal.util.Utils;
 import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -112,7 +112,7 @@ public class StaticSeedNodeProvider implements SeedNodeProvider {
 
             for (String address : addresses) {
                 if (address != null) {
-                    InetSocketAddress socketAddress = Utils.parseAddress(address, ConfigCheck.get(StaticSeedNodeProviderConfig.class));
+                    InetSocketAddress socketAddress = AddressUtils.parse(address, ConfigCheck.get(StaticSeedNodeProviderConfig.class));
 
                     if (socketAddress != null) {
                         result.add(socketAddress);

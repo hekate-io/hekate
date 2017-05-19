@@ -36,6 +36,7 @@ import io.hekate.core.ServiceInfo;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
+import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.core.service.ConfigurableService;
@@ -112,7 +113,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
         this.nioThreads = factory.getNioThreads();
         this.failoverDelay = factory.getRetryInterval();
 
-        Utils.nullSafe(factory.getProcesses()).forEach(processesConfig::add);
+        StreamUtils.nullSafe(factory.getProcesses()).forEach(processesConfig::add);
     }
 
     @Override
@@ -127,10 +128,10 @@ public class DefaultCoordinationService implements CoordinationService, Configur
         // Collect configurations from providers.
         Collection<CoordinationConfigProvider> providers = ctx.findComponents(CoordinationConfigProvider.class);
 
-        Utils.nullSafe(providers).forEach(provider -> {
+        StreamUtils.nullSafe(providers).forEach(provider -> {
             Collection<CoordinationProcessConfig> processesCfg = provider.configureCoordination();
 
-            Utils.nullSafe(processesCfg).forEach(processesConfig::add);
+            StreamUtils.nullSafe(processesCfg).forEach(processesConfig::add);
         });
 
         // Validate configs.

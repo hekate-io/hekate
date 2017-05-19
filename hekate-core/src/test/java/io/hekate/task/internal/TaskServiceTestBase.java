@@ -20,7 +20,7 @@ import io.hekate.HekateNodeParamTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.internal.HekateTestNode;
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.task.TaskServiceFactory;
 import io.hekate.util.HekateFuture;
 import java.util.ArrayList;
@@ -117,10 +117,10 @@ public abstract class TaskServiceTestBase extends HekateNodeParamTestBase {
 
             fail("Error was expected.");
         } catch (ExecutionException e) {
-            assertTrue(getStacktrace(e.getCause()), Utils.isCausedBy(e.getCause(), type));
+            assertTrue(getStacktrace(e.getCause()), ErrorUtils.isCausedBy(e.getCause(), type));
 
             if (check != null) {
-                check.accept(Utils.findCause(e.getCause(), type));
+                check.accept(ErrorUtils.findCause(e.getCause(), type));
             }
         }
     }

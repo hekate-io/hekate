@@ -17,7 +17,7 @@
 package io.hekate.network.internal.netty;
 
 import io.hekate.HekateTestContext;
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkConnectorConfig;
@@ -217,7 +217,7 @@ public class NettyNetworkServiceTest extends NetworkTestBase {
 
             fail("Error was expected.");
         } catch (ExecutionException e) {
-            assertTrue(Utils.isCausedBy(e, IOException.class));
+            assertTrue(ErrorUtils.isCausedBy(e, IOException.class));
         }
     }
 

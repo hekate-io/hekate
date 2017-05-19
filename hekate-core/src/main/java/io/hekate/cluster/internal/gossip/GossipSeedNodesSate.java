@@ -16,6 +16,7 @@
 
 package io.hekate.cluster.internal.gossip;
 
+import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
 import java.util.HashSet;
@@ -181,10 +182,7 @@ public class GossipSeedNodesSate {
     }
 
     private static int compare(InetSocketAddress a1, InetSocketAddress a2) {
-        String h1 = a1.getAddress().getHostAddress();
-        String h2 = a2.getAddress().getHostAddress();
-
-        int cmp = h1.compareTo(h2);
+        int cmp = AddressUtils.host(a1).compareTo(AddressUtils.host(a2));
 
         if (cmp == 0) {
             cmp = Integer.compare(a1.getPort(), a2.getPort());

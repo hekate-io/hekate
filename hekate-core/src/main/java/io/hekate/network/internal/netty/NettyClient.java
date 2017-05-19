@@ -19,9 +19,10 @@ package io.hekate.network.internal.netty;
 import io.hekate.codec.Codec;
 import io.hekate.codec.CodecException;
 import io.hekate.codec.CodecFactory;
+import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkClientCallback;
 import io.hekate.network.NetworkEndpoint;
@@ -301,7 +302,7 @@ class NettyClient<T> implements NetworkClient<T> {
 
         private boolean isNonFatalIoError(Throwable err) {
             return err instanceof IOException
-                && !Utils.isCausedBy(err, GeneralSecurityException.class);
+                && !ErrorUtils.isCausedBy(err, GeneralSecurityException.class);
         }
     }
 
@@ -678,7 +679,7 @@ class NettyClient<T> implements NetworkClient<T> {
                     ChannelPipeline pipe = ch.pipeline();
 
                     if (ssl != null) {
-                        SslHandler sslHandler = ssl.newHandler(ch.alloc(), address.getAddress().getHostAddress(), address.getPort());
+                        SslHandler sslHandler = ssl.newHandler(ch.alloc(), AddressUtils.host(address), address.getPort());
 
                         if (connectTimeout != null && connectTimeout > 0) {
                             sslHandler.setHandshakeTimeoutMillis(connectTimeout);

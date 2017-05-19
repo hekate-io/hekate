@@ -22,9 +22,10 @@ import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateException;
+import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.io.IOException;
@@ -168,7 +169,7 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider {
                                 log.debug("Processing blob [name={}]", name);
                             }
 
-                            InetSocketAddress address = Utils.addressFromFileName(name, log);
+                            InetSocketAddress address = AddressUtils.fromFileName(name, log);
 
                             if (address != null) {
                                 seedNodes.add(address);
@@ -188,7 +189,7 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider {
 
             return Collections.emptyList();
         } catch (HttpResponseException e) {
-            if (Utils.isCausedBy(e, IOException.class)) {
+            if (ErrorUtils.isCausedBy(e, IOException.class)) {
                 throw new HekateException("Cloud provider connection failure [provider=" + provider + ']', e);
             } else {
                 throw e;
@@ -232,7 +233,7 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider {
         try (BlobStoreContext ctx = createContext()) {
             BlobStore store = ctx.getBlobStore();
 
-            String fileName = cluster + '/' + Utils.addressToFileName(address);
+            String fileName = cluster + '/' + AddressUtils.toFileName(address);
 
             try {
                 if (!store.blobExists(container, fileName)) {
@@ -258,7 +259,7 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider {
         try (BlobStoreContext ctx = createContext()) {
             BlobStore store = ctx.getBlobStore();
 
-            String fileName = cluster + '/' + Utils.addressToFileName(address);
+            String fileName = cluster + '/' + AddressUtils.toFileName(address);
 
             try {
                 if (store.blobExists(container, fileName)) {

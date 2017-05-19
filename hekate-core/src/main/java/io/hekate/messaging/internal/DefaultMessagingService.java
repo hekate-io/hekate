@@ -27,8 +27,10 @@ import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
+import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.core.service.ConfigurableService;
@@ -110,10 +112,10 @@ public class DefaultMessagingService implements MessagingService, DependentServi
     public DefaultMessagingService(MessagingServiceFactory factory) {
         assert factory != null : "Factory is null.";
 
-        Utils.nullSafe(factory.getChannels()).forEach(channelsConfig::add);
+        StreamUtils.nullSafe(factory.getChannels()).forEach(channelsConfig::add);
 
-        Utils.nullSafe(factory.getConfigProviders()).forEach(provider ->
-            Utils.nullSafe(provider.configureMessaging()).forEach(channelsConfig::add)
+        StreamUtils.nullSafe(factory.getConfigProviders()).forEach(provider ->
+            StreamUtils.nullSafe(provider.configureMessaging()).forEach(channelsConfig::add)
         );
     }
 
@@ -131,10 +133,10 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         // Collect configurations from providers.
         Collection<MessagingConfigProvider> providers = ctx.findComponents(MessagingConfigProvider.class);
 
-        Utils.nullSafe(providers).forEach(provider -> {
+        StreamUtils.nullSafe(providers).forEach(provider -> {
             Collection<MessagingChannelConfig<?>> regions = provider.configureMessaging();
 
-            Utils.nullSafe(regions).forEach(channelsConfig::add);
+            StreamUtils.nullSafe(regions).forEach(channelsConfig::add);
         });
 
         // Validate configs.
@@ -272,7 +274,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
                 // Shutdown scheduler.
                 if (timer != null) {
-                    waiting.add(Utils.shutdown(timer));
+                    waiting.add(AsyncUtils.shutdown(timer));
 
                     timer = null;
                 }

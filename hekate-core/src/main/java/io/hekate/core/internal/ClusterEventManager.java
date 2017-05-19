@@ -24,7 +24,7 @@ import io.hekate.cluster.event.ClusterJoinEvent;
 import io.hekate.cluster.event.ClusterLeaveEvent;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.util.format.ToString;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -232,7 +232,7 @@ class ClusterEventManager {
             });
 
             try {
-                Utils.getUninterruptedly(future);
+                AsyncUtils.getUninterruptedly(future);
             } catch (ExecutionException e) {
                 if (log.isErrorEnabled()) {
                     log.error("Failed to unregister cluster event listener [listener={}]", listener, e.getCause());
@@ -272,7 +272,7 @@ class ClusterEventManager {
                 log.debug("Awaiting for cluster event manager thread termination...");
             }
 
-            Utils.shutdown(localWorker).awaitUninterruptedly();
+            AsyncUtils.shutdown(localWorker).awaitUninterruptedly();
 
             if (DEBUG) {
                 log.debug("Done awaiting for cluster event manager thread termination...");
@@ -285,7 +285,7 @@ class ClusterEventManager {
 
         future.ifPresent(it -> {
             try {
-                Utils.getUninterruptedly(it);
+                AsyncUtils.getUninterruptedly(it);
             } catch (ExecutionException e) {
                 if (log.isErrorEnabled()) {
                     log.error("Failed to register cluster event listener [listener={}]", listener, e.getCause());

@@ -16,7 +16,7 @@
 
 package io.hekate.core;
 
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.ErrorUtils;
 
 /**
  * Generic base class for checked errors.
@@ -51,6 +51,6 @@ public class HekateException extends Exception {
      * @return {@code true} if this exception is caused by an error of the specified type.
      */
     public boolean isCausedBy(Class<? extends Throwable> causeType) {
-        return Utils.isCausedBy(this, causeType);
+        return ErrorUtils.isCausedBy(this, causeType);
     }
 }

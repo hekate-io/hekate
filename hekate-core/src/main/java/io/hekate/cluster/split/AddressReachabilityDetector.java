@@ -18,8 +18,8 @@ package io.hekate.cluster.split;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterServiceFactory;
+import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ConfigCheck;
-import io.hekate.core.internal.util.Utils;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -73,7 +73,7 @@ public class AddressReachabilityDetector implements SplitBrainDetector {
      * @param timeout Connect timeout in milliseconds (see {@link Socket#connect(SocketAddress, int)}).
      */
     public AddressReachabilityDetector(String address, int timeout) {
-        this(Utils.parseUnresolvedAddress(address, ConfigCheck.get(AddressReachabilityDetector.class)), timeout);
+        this(AddressUtils.parseUnresolved(address, ConfigCheck.get(AddressReachabilityDetector.class)), timeout);
     }
 
     /**

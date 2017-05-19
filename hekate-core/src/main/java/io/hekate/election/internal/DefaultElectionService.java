@@ -21,6 +21,7 @@ import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
+import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.core.service.ConfigurableService;
@@ -81,10 +82,10 @@ public class DefaultElectionService implements ElectionService, DependentService
     public DefaultElectionService(ElectionServiceFactory factory) {
         ArgAssert.notNull(factory, "Factory");
 
-        Utils.nullSafe(factory.getCandidates()).forEach(candidatesConfig::add);
+        StreamUtils.nullSafe(factory.getCandidates()).forEach(candidatesConfig::add);
 
-        Utils.nullSafe(factory.getConfigProviders()).forEach(provider ->
-            Utils.nullSafe(provider.configureElection()).forEach(candidatesConfig::add)
+        StreamUtils.nullSafe(factory.getConfigProviders()).forEach(provider ->
+            StreamUtils.nullSafe(provider.configureElection()).forEach(candidatesConfig::add)
         );
     }
 
@@ -98,8 +99,8 @@ public class DefaultElectionService implements ElectionService, DependentService
         // Collect configurations from providers.
         Collection<CandidateConfigProvider> providers = ctx.findComponents(CandidateConfigProvider.class);
 
-        Utils.nullSafe(providers).forEach(provider ->
-            Utils.nullSafe(provider.configureElection()).forEach(candidatesConfig::add)
+        StreamUtils.nullSafe(providers).forEach(provider ->
+            StreamUtils.nullSafe(provider.configureElection()).forEach(candidatesConfig::add)
         );
 
         // Validate configs.

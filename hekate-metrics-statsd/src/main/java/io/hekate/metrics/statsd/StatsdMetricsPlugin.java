@@ -20,6 +20,7 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateException;
+import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.plugin.Plugin;
 import io.hekate.metrics.Metric;
 import io.hekate.metrics.MetricFilter;
@@ -144,10 +145,10 @@ public class StatsdMetricsPlugin implements Plugin {
     public void start(Hekate hekate) throws HekateException {
         ClusterNode node = hekate.localNode();
 
-        InetSocketAddress netAddress = node.socket();
+        InetSocketAddress address = node.socket();
 
         try {
-            publisher.start(netAddress.getAddress().getHostAddress(), netAddress.getPort());
+            publisher.start(AddressUtils.host(address), address.getPort());
         } catch (UnknownHostException e) {
             throw new HekateException("Failed to start StatsD metrics publisher.", e);
         }

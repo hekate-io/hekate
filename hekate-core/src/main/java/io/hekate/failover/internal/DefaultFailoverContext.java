@@ -18,7 +18,7 @@ package io.hekate.failover.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.failover.FailoverContext;
 import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.failover.FailureResolution;
@@ -163,7 +163,7 @@ public class DefaultFailoverContext implements FailoverContext {
 
     @Override
     public boolean isCausedBy(Class<? extends Throwable> type) {
-        return Utils.isCausedBy(error, type);
+        return ErrorUtils.isCausedBy(error, type);
     }
 
     @Override

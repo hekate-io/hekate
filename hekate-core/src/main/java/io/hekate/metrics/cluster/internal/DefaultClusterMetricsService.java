@@ -23,9 +23,9 @@ import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterView;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.core.internal.util.Utils;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.core.service.DependencyContext;
 import io.hekate.core.service.DependentService;
@@ -330,7 +330,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
                     }
 
                     if (worker != null) {
-                        waiting = Utils.shutdown(worker);
+                        waiting = AsyncUtils.shutdown(worker);
 
                         worker = null;
                     }

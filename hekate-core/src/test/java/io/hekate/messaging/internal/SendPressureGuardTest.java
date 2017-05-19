@@ -17,7 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.HekateTestBase;
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessageQueueTimeoutException;
 import io.hekate.messaging.MessagingOverflowPolicy;
@@ -229,7 +229,7 @@ public class SendPressureGuardTest extends HekateTestBase {
 
                 fail("Error was expected");
             } catch (ExecutionException e) {
-                assertTrue(getStacktrace(e), Utils.isCausedBy(e, MessageQueueTimeoutException.class));
+                assertTrue(getStacktrace(e), ErrorUtils.isCausedBy(e, MessageQueueTimeoutException.class));
             }
 
             assertEquals(11, backPressure.queueSize());

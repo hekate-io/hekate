@@ -28,8 +28,8 @@ import io.hekate.codec.DataWriter;
 import io.hekate.codec.SingletonCodecFactory;
 import io.hekate.core.HekateException;
 import io.hekate.core.ServiceInfo;
+import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.core.internal.util.Utils;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.LockInfo;
@@ -368,7 +368,7 @@ public abstract class HekateTestBase {
     }
 
     protected static String getStacktrace(Throwable error) {
-        return Utils.stackTrace(error);
+        return ErrorUtils.stackTrace(error);
     }
 
     protected static List<NetworkInterface> getNetworkInterfaces() throws SocketException {
@@ -624,7 +624,7 @@ public abstract class HekateTestBase {
         } catch (AssertionError e) {
             throw e;
         } catch (Throwable t) {
-            assertSame(Utils.stackTrace(t), error, t.getClass());
+            assertSame(ErrorUtils.stackTrace(t), error, t.getClass());
 
             if (message != null) {
                 assertNotNull(t.toString(), t.getMessage());
@@ -641,7 +641,7 @@ public abstract class HekateTestBase {
         } catch (AssertionError e) {
             throw e;
         } catch (Throwable t) {
-            assertSame(Utils.stackTrace(t), error, t.getClass());
+            assertSame(ErrorUtils.stackTrace(t), error, t.getClass());
 
             assertNotNull(t.toString(), t.getMessage());
             assertEquals(message, t.getMessage());

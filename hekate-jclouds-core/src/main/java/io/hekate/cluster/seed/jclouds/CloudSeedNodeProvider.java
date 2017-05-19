@@ -25,7 +25,8 @@ import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.ErrorUtils;
+import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -134,8 +135,8 @@ public class CloudSeedNodeProvider implements SeedNodeProvider {
         this.credentials = cfg.getCredentials();
         this.endpoint = cfg.getEndpoint();
 
-        this.regions = Utils.nullSafe(cfg.getRegions()).collect(toSet());
-        this.zones = Utils.nullSafe(cfg.getZones()).collect(toSet());
+        this.regions = StreamUtils.nullSafe(cfg.getRegions()).collect(toSet());
+        this.zones = StreamUtils.nullSafe(cfg.getZones()).collect(toSet());
 
         Properties properties = new Properties();
 
@@ -221,7 +222,7 @@ public class CloudSeedNodeProvider implements SeedNodeProvider {
 
                 return seedNodes;
             } catch (HttpResponseException e) {
-                if (Utils.isCausedBy(e, IOException.class)) {
+                if (ErrorUtils.isCausedBy(e, IOException.class)) {
                     throw new HekateException("Cloud provider connection failure [provider=" + provider + ']', e);
                 } else {
                     throw e;

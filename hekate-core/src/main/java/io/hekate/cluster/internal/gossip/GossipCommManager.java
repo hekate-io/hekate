@@ -20,7 +20,7 @@ import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.internal.gossip.GossipProtocol.Connect;
 import io.hekate.cluster.internal.gossip.GossipProtocol.GossipMessage;
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkClientCallback;
 import io.hekate.network.NetworkConnector;
@@ -333,7 +333,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
         // Await for clients termination.
         for (NetworkFuture<GossipProtocol> future : clientsFuture) {
             try {
-                Utils.getUninterruptedly(future);
+                AsyncUtils.getUninterruptedly(future);
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause();
 

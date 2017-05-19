@@ -16,7 +16,7 @@
 
 package io.hekate.core;
 
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.ErrorUtils;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -43,7 +43,7 @@ public class HekateFutureException extends ExecutionException {
      * @return {@code true} if this exception is caused by an error of the specified type.
      */
     public boolean isCausedBy(Class<? extends Throwable> type) {
-        return Utils.isCausedBy(this, type);
+        return ErrorUtils.isCausedBy(this, type);
     }
 
     /**
@@ -55,6 +55,6 @@ public class HekateFutureException extends ExecutionException {
      * @return Error or {@code null}.
      */
     public <T extends Throwable> T findCause(Class<T> type) {
-        return Utils.findCause(this, type);
+        return ErrorUtils.findCause(this, type);
     }
 }

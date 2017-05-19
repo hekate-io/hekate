@@ -18,8 +18,8 @@ package io.hekate.cluster.internal;
 
 import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.core.HekateException;
+import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.core.internal.util.Utils;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.network.NetworkService;
 import java.net.InetSocketAddress;
@@ -171,7 +171,7 @@ class SeedNodeManager {
             }
         }
 
-        return Utils.shutdown(cleaner);
+        return AsyncUtils.shutdown(cleaner);
     }
 
     private void doCleanup(Set<InetSocketAddress> pingInProgress) {

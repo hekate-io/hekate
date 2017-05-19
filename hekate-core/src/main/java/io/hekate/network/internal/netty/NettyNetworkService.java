@@ -24,9 +24,10 @@ import io.hekate.codec.DataWriter;
 import io.hekate.codec.SingletonCodecFactory;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.resource.ResourceService;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
@@ -234,10 +235,10 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
             transport = factory.getTransport();
         }
 
-        Utils.nullSafe(factory.getConnectors()).forEach(connectorConfigs::add);
+        StreamUtils.nullSafe(factory.getConnectors()).forEach(connectorConfigs::add);
 
-        Utils.nullSafe(factory.getConfigProviders()).forEach(provider ->
-            Utils.nullSafe(provider.configureNetwork()).forEach(connectorConfigs::add)
+        StreamUtils.nullSafe(factory.getConfigProviders()).forEach(provider ->
+            StreamUtils.nullSafe(provider.configureNetwork()).forEach(connectorConfigs::add)
         );
 
         // Register ping protocol.
@@ -261,7 +262,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
         Collection<NetworkConfigProvider> providers = ctx.findComponents(NetworkConfigProvider.class);
 
         providers.forEach(provider ->
-            Utils.nullSafe(provider.configureNetwork()).forEach(connectorConfigs::add)
+            StreamUtils.nullSafe(provider.configureNetwork()).forEach(connectorConfigs::add)
         );
 
         if (sslConfig != null) {
@@ -458,7 +459,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
 
         if (localServer != null) {
             try {
-                Utils.getUninterruptedly(localServer.stop());
+                AsyncUtils.getUninterruptedly(localServer.stop());
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause();
 

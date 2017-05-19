@@ -20,6 +20,7 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateException;
+import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.plugin.Plugin;
 import io.hekate.metrics.Metric;
 import io.hekate.metrics.MetricFilter;
@@ -153,9 +154,9 @@ public class InfluxDbMetricsPlugin implements Plugin {
     public void start(Hekate hekate) throws HekateException {
         ClusterNode node = hekate.localNode();
 
-        InetSocketAddress netAddress = node.socket();
+        InetSocketAddress address = node.socket();
 
-        publisher.start(node.name(), netAddress.getAddress().getHostAddress(), netAddress.getPort());
+        publisher.start(node.name(), AddressUtils.host(address), address.getPort());
     }
 
     @Override

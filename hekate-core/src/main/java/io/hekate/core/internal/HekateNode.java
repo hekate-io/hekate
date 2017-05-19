@@ -42,9 +42,10 @@ import io.hekate.core.JoinFuture;
 import io.hekate.core.LeaveFuture;
 import io.hekate.core.TerminateFuture;
 import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.resource.ResourceService;
 import io.hekate.core.service.ClusterContext;
 import io.hekate.core.service.InitializationContext;
@@ -198,7 +199,7 @@ class HekateNode implements Hekate, Serializable {
             roles = emptySet();
         } else {
             // Filter out nulls and trim non-null values.
-            roles = unmodifiableSet(Utils.nullSafe(cfg.getNodeRoles()).map(String::trim).collect(toSet()));
+            roles = unmodifiableSet(StreamUtils.nullSafe(cfg.getNodeRoles()).map(String::trim).collect(toSet()));
         }
 
         // Node properties.
@@ -216,7 +217,7 @@ class HekateNode implements Hekate, Serializable {
 
         // Node properties from providers.
         if (cfg.getNodePropertyProviders() != null) {
-            Utils.nullSafe(cfg.getNodePropertyProviders()).forEach(provider -> {
+            StreamUtils.nullSafe(cfg.getNodePropertyProviders()).forEach(provider -> {
                 Map<String, String> providerProps = provider.getProperties();
 
                 if (providerProps != null && !providerProps.isEmpty()) {
@@ -986,7 +987,7 @@ class HekateNode implements Hekate, Serializable {
         }
 
         try {
-            Utils.getUninterruptedly(clusterEvents.ensureLeaveEventFired(topology));
+            AsyncUtils.getUninterruptedly(clusterEvents.ensureLeaveEventFired(topology));
         } catch (ExecutionException e) {
             log.error("Got an unexpected error while awaiting for cluster leave event processing.", e);
         }
@@ -1133,7 +1134,7 @@ class HekateNode implements Hekate, Serializable {
 
         if (cfg.getServices() != null) {
             // Filter out null values.
-            Utils.nullSafe(cfg.getServices()).forEach(factories::add);
+            StreamUtils.nullSafe(cfg.getServices()).forEach(factories::add);
         }
 
         return new ServiceManager(builtIn, core, factories);

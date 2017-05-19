@@ -54,9 +54,10 @@ import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateConfigurationException;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
@@ -279,7 +280,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
         initListeners.add(new ClusterEventLogger());
 
-        Utils.nullSafe(factory.getClusterListeners()).forEach(initListeners::add);
+        StreamUtils.nullSafe(factory.getClusterListeners()).forEach(initListeners::add);
 
         this.initListeners = unmodifiableList(initListeners);
 
@@ -288,7 +289,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
         joinValidators.add(DEFAULT_JOIN_VALIDATOR);
 
-        Utils.nullSafe(factory.getJoinValidators()).forEach(joinValidators::add);
+        StreamUtils.nullSafe(factory.getJoinValidators()).forEach(joinValidators::add);
     }
 
     @Override
@@ -445,8 +446,8 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                     }
                 }
 
-                waiting.add(Utils.shutdown(gossipThread));
-                waiting.add(Utils.shutdown(serviceThread));
+                waiting.add(AsyncUtils.shutdown(gossipThread));
+                waiting.add(AsyncUtils.shutdown(serviceThread));
 
                 if (commMgr != null) {
                     GossipCommManager localCommMgr = commMgr;

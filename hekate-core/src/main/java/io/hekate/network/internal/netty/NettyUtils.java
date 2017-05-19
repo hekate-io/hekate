@@ -1,6 +1,6 @@
 package io.hekate.network.internal.netty;
 
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.core.internal.util.Waiting;
 import io.netty.channel.EventLoop;
 import io.netty.util.concurrent.EventExecutorGroup;
@@ -39,7 +39,7 @@ public final class NettyUtils {
     }
 
     /**
-     * Executes the task using the provided event loop or falls back to {@link Utils#fallbackExecutor()} if event loop is {@link
+     * Executes the task using the provided event loop or falls back to {@link AsyncUtils#fallbackExecutor()} if event loop is {@link
      * EventLoop#isShuttingDown() shutting down}.
      *
      * @param eventLoop Event loop.
@@ -64,7 +64,7 @@ public final class NettyUtils {
 
         // If couldn't notify via event loop then use the fallback executor.
         if (!notified) {
-            Utils.fallbackExecutor().execute(task);
+            AsyncUtils.fallbackExecutor().execute(task);
         }
     }
 }
