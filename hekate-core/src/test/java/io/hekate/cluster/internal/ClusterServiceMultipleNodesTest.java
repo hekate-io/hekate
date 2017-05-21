@@ -603,12 +603,12 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
     @Test
     public void testClusterView() throws Exception {
-        HekateTestNode node1 = createNode(c -> c.withNodeRole("VIEW_1"));
+        HekateTestNode node1 = createNode(c -> c.withRole("VIEW_1"));
         HekateTestNode node2 = createNode(c -> {
-            c.withNodeRole("VIEW_1");
-            c.withNodeRole("VIEW_2");
+            c.withRole("VIEW_1");
+            c.withRole("VIEW_2");
         });
-        HekateTestNode node3 = createNode(c -> c.withNodeRole("VIEW_1"));
+        HekateTestNode node3 = createNode(c -> c.withRole("VIEW_1"));
 
         node1.join();
         node2.join();

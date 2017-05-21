@@ -46,17 +46,17 @@
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="node-name" type="xsd:string">
+                    <xsd:attribute name="name" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>
-                                See javadoc of 'io.hekate.core.HekateBootstrap#setNodeName(String name)'.
+                                See javadoc of 'io.hekate.core.HekateBootstrap#setName(String name)'.
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="cluster-name" type="xsd:string">
+                    <xsd:attribute name="cluster" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>
-                                See javadoc of 'io.hekate.core.HekateBootstrap#setClusterName(String)'.
+                                See javadoc of 'io.hekate.core.HekateBootstrap#setCluster(String)'.
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
@@ -70,7 +70,7 @@
             <xsd:element name="roles" minOccurs="0" maxOccurs="1">
                 <xsd:annotation>
                     <xsd:documentation>
-                        See javadoc of 'io.hekate.core.HekateBootstrap#setNodeRoles(java.util.Set)'.
+                        See javadoc of 'io.hekate.core.HekateBootstrap#setRoles(java.util.List)'.
                     </xsd:documentation>
                 </xsd:annotation>
                 <xsd:complexType>
@@ -82,14 +82,14 @@
             <xsd:element name="properties" type="propertiesType" minOccurs="0" maxOccurs="1">
                 <xsd:annotation>
                     <xsd:documentation>
-                        See javadoc of 'io.hekate.core.HekateBootstrap#setNodeProperties(java.util.Map)'.
+                        See javadoc of 'io.hekate.core.HekateBootstrap#setProperties(java.util.Map)'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
             <xsd:element name="property-providers" type="nodePropertyProviders" minOccurs="0" maxOccurs="1">
                 <xsd:annotation>
                     <xsd:documentation>
-                        See javadoc of 'io.hekate.core.HekateBootstrap#setNodePropertyProviders(java.util.List)'.
+                        See javadoc of 'io.hekate.core.HekateBootstrap#setPropertyProviders(java.util.List)'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>

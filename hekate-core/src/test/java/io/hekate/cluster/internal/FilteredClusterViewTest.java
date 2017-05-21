@@ -44,9 +44,9 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 public class FilteredClusterViewTest extends HekateNodeTestBase {
     @Test
     public void test() throws Exception {
-        HekateTestNode node1 = createNode(c -> c.withNodeRole("role1").withNodeRole("all")).join();
-        HekateTestNode node2 = createNode(c -> c.withNodeRole("role2").withNodeRole("all")).join();
-        HekateTestNode node3 = createNode(c -> c.withNodeRole("role3").withNodeRole("all")).join();
+        HekateTestNode node1 = createNode(c -> c.withRole("role1").withRole("all")).join();
+        HekateTestNode node2 = createNode(c -> c.withRole("role2").withRole("all")).join();
+        HekateTestNode node3 = createNode(c -> c.withRole("role3").withRole("all")).join();
 
         ClusterView allRemote = node1.cluster().forRemotes().forRole("all");
 
@@ -87,7 +87,7 @@ public class FilteredClusterViewTest extends HekateNodeTestBase {
         reset(l3);
         reset(l4);
 
-        HekateTestNode node4 = createNode(c -> c.withNodeRole("role4").withNodeRole("all")).join();
+        HekateTestNode node4 = createNode(c -> c.withRole("role4").withRole("all")).join();
 
         get(node1.cluster().forRemotes().forRole("role4").futureOf(topology -> !topology.isEmpty()));
 

@@ -39,7 +39,7 @@
         <constructor-arg value="#{T(io.hekate.HekateTestProps).get('AWS_TEST_SECRET_KEY')}"/>
     </bean>
 
-    <h:node id="node1" cluster-name="#{testClusterName}">
+    <h:node id="node1" cluster="#{testClusterName}">
         <h:cluster>
             <h:seed-node-provider>
                 <h:cloud-store provider="aws-s3" container="#{testContainer}" cleanup-interval-ms="-1">
@@ -54,7 +54,7 @@
         </h:cluster>
     </h:node>
 
-    <h:node id="node2" cluster-name="#{testClusterName}">
+    <h:node id="node2" cluster="#{testClusterName}">
         <h:cluster>
             <h:seed-node-provider>
                 <h:cloud-store provider="aws-s3" container="#{testContainer}" cleanup-interval-ms="-1">

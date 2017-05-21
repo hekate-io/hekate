@@ -56,11 +56,11 @@ public class TaskServiceTest extends TaskServiceTestBase {
     public void setUp() throws Exception {
         super.setUp();
 
-        local = createTaskNode(c -> c.withNodeRole("all"));
+        local = createTaskNode(c -> c.withRole("all"));
 
-        first = createTaskNode(c -> c.withNodeRole("all").withNodeRole("role1")
-            .withNodeProperty("prop", "val1")
-            .withNodeProperty("unique-prop", "val")
+        first = createTaskNode(c -> c.withRole("all").withRole("role1")
+            .withProperty("prop", "val1")
+            .withProperty("unique-prop", "val")
             .withService(() -> {
                 return new DummyService() {
                     // No-op.
@@ -68,8 +68,8 @@ public class TaskServiceTest extends TaskServiceTestBase {
             })
         );
 
-        second = createTaskNode(c -> c.withNodeRole("all").withNodeRole("role2")
-            .withNodeProperty("prop", "val2")
+        second = createTaskNode(c -> c.withRole("all").withRole("role2")
+            .withProperty("prop", "val2")
         );
 
         get(CompletableFuture.allOf(local.joinAsync(), first.joinAsync(), second.joinAsync()));

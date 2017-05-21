@@ -34,8 +34,8 @@ public class HekateJavadocTest extends HekateTestBase {
         // Start:bootstrap
         // Start new node with all configuration parameters set to their default values.
         Hekate hekate = new HekateBootstrap()
-            .withNodeName("my-node")
-            .withClusterName("my-cluster")
+            .withName("my-node")
+            .withCluster("my-cluster")
             .join();
         // End:bootstrap
 

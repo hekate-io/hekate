@@ -21,7 +21,7 @@ import io.hekate.codec.CodecService;
 import io.hekate.codec.JavaCodecFactory;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
-import io.hekate.core.NodePropertyProvider;
+import io.hekate.core.PropertyProvider;
 import io.hekate.core.plugin.Plugin;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.network.address.AddressSelector;
@@ -137,10 +137,10 @@ import org.springframework.context.annotation.Configuration;
  * The following application properties can be used to configure the constructed {@link Hekate} instance:
  * </p>
  * <ul>
- * <li>{@link HekateBootstrap#setNodeName(String) 'hekate.node-name'}</li>
- * <li>{@link HekateBootstrap#setClusterName(String) 'hekate.cluster-name'}</li>
- * <li>{@link HekateBootstrap#setNodeRoles(List) 'hekate.node-roles'}</li>
- * <li>{@link HekateBootstrap#setNodeProperties(Map) 'hekate.node-properties'}</li>
+ * <li>{@link HekateBootstrap#setName(String) 'hekate.name'}</li>
+ * <li>{@link HekateBootstrap#setCluster(String) 'hekate.cluster'}</li>
+ * <li>{@link HekateBootstrap#setRoles(List) 'hekate.roles'}</li>
+ * <li>{@link HekateBootstrap#setProperties(Map) 'hekate.properties'}</li>
  * </ul>
  *
  * <p>
@@ -176,20 +176,20 @@ public class HekateConfigurer {
 
     private final List<Plugin> plugins;
 
-    private final List<NodePropertyProvider> nodePropertyProviders;
+    private final List<PropertyProvider> propertyProviders;
 
     /**
      * Constructs new instance with autowired dependencies.
      *
-     * @param nodePropertyProviders All {@link NodePropertyProvider}s found in the application context.
+     * @param nodePropertyProviders All {@link PropertyProvider}s found in the application context.
      * @param serviceFactories All {@link ServiceFactory}s found in the application context.
      * @param plugins All {@link Plugin}s found in the application context.
      */
-    public HekateConfigurer(Optional<List<NodePropertyProvider>> nodePropertyProviders, Optional<List<ServiceFactory<?>>> serviceFactories,
+    public HekateConfigurer(Optional<List<PropertyProvider>> nodePropertyProviders, Optional<List<ServiceFactory<?>>> serviceFactories,
         Optional<List<Plugin>> plugins) {
         this.serviceFactories = serviceFactories.orElse(null);
         this.plugins = plugins.orElse(null);
-        this.nodePropertyProviders = nodePropertyProviders.orElse(null);
+        this.propertyProviders = nodePropertyProviders.orElse(null);
     }
 
     /**
@@ -230,7 +230,7 @@ public class HekateConfigurer {
         factory.setDefaultCodec(defaultCodecFactory);
         factory.setServices(serviceFactories);
         factory.setPlugins(plugins);
-        factory.setNodePropertyProviders(nodePropertyProviders);
+        factory.setPropertyProviders(propertyProviders);
 
         return factory;
     }

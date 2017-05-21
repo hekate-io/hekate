@@ -27,11 +27,11 @@ public class HekateNodePropertiesTest extends HekateNodeTestBase {
     @Test
     public void testRolesAndProperties() throws Exception {
         HekateTestNode node = createNode(boot -> boot
-            .withNodeRole("role1")
-            .withNodeRole("role2")
-            .withNodeProperty("prop1", "val1")
-            .withNodeProperty("prop2", "val2")
-            .withNodePropertyProvider(() ->
+            .withRole("role1")
+            .withRole("role2")
+            .withProperty("prop1", "val1")
+            .withProperty("prop2", "val2")
+            .withPropertyProvider(() ->
                 Collections.singletonMap("prop3", "val3")
             )
         ).join();

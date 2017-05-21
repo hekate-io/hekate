@@ -25,7 +25,7 @@
         http://www.hekate.io/spring/hekate-core.xsd">
 
     <!-- Node with all configuration options set to their default values. -->
-    <h:node id="hekate" node-name="my-node" cluster-name="my-cluster"/>
+    <h:node id="hekate" name="my-node" cluster="my-cluster"/>
 
 </beans>
     <!--End:example-->

@@ -25,12 +25,12 @@ import java.util.Map;
  *
  * <p>
  * Implementations of this interface are responsible for providing some dynamically obtained node properties (possibly from some third-party
- * sources) to {@link HekateBootstrap}. Such properties become a part of {@link HekateBootstrap#setNodeProperties(Map) node properties}.
+ * sources) to {@link HekateBootstrap}. Such properties become a part of {@link HekateBootstrap#setProperties(Map) node properties}.
  * </p>
  *
- * @see HekateBootstrap#setNodePropertyProviders(List)
+ * @see HekateBootstrap#setPropertyProviders(List)
  */
-public interface NodePropertyProvider {
+public interface PropertyProvider {
     /**
      * Returns a map of node properties that should become a part of {@link ClusterNode#properties() node properties}.
      *

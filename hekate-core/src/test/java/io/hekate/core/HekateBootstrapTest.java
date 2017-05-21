@@ -47,100 +47,100 @@ public class HekateBootstrapTest extends HekateTestBase {
     private final HekateBootstrap bootstrap = new HekateBootstrap();
 
     @Test
-    public void testNodeName() {
-        assertNull(bootstrap.getNodeName());
+    public void testName() {
+        assertNull(bootstrap.getName());
 
-        bootstrap.setNodeName("test");
+        bootstrap.setName("test");
 
-        assertEquals("test", bootstrap.getNodeName());
+        assertEquals("test", bootstrap.getName());
 
-        assertEquals("test2", bootstrap.withNodeName("test2").getNodeName());
+        assertEquals("test2", bootstrap.withName("test2").getName());
     }
 
     @Test
-    public void testClusterName() {
-        assertEquals(HekateBootstrap.DEFAULT_CLUSTER_NAME, bootstrap.getClusterName());
+    public void testCluster() {
+        assertEquals(HekateBootstrap.DEFAULT_CLUSTER_NAME, bootstrap.getCluster());
 
-        bootstrap.setClusterName("test");
+        bootstrap.setCluster("test");
 
-        assertEquals("test", bootstrap.getClusterName());
+        assertEquals("test", bootstrap.getCluster());
 
-        assertEquals("test2", bootstrap.withClusterName("test2").getClusterName());
+        assertEquals("test2", bootstrap.withCluster("test2").getCluster());
     }
 
     @Test
-    public void testNodeRoles() {
-        assertNull(bootstrap.getNodeRoles());
+    public void testRoles() {
+        assertNull(bootstrap.getRoles());
 
-        bootstrap.setNodeRoles(new ArrayList<>(Arrays.asList("role1", "role2")));
+        bootstrap.setRoles(new ArrayList<>(Arrays.asList("role1", "role2")));
 
-        assertNotNull(bootstrap.getNodeRoles());
-        assertTrue(bootstrap.getNodeRoles().contains("role1"));
-        assertTrue(bootstrap.getNodeRoles().contains("role2"));
+        assertNotNull(bootstrap.getRoles());
+        assertTrue(bootstrap.getRoles().contains("role1"));
+        assertTrue(bootstrap.getRoles().contains("role2"));
 
-        bootstrap.withNodeRole("role3");
+        bootstrap.withRole("role3");
 
-        assertTrue(bootstrap.getNodeRoles().contains("role3"));
+        assertTrue(bootstrap.getRoles().contains("role3"));
 
-        bootstrap.setNodeRoles(null);
+        bootstrap.setRoles(null);
 
-        assertNull(bootstrap.getNodeRoles());
+        assertNull(bootstrap.getRoles());
 
-        bootstrap.withNodeRole("role3");
+        bootstrap.withRole("role3");
 
-        assertNotNull(bootstrap.getNodeRoles());
-        assertTrue(bootstrap.getNodeRoles().contains("role3"));
+        assertNotNull(bootstrap.getRoles());
+        assertTrue(bootstrap.getRoles().contains("role3"));
 
-        assertTrue(bootstrap.withNodeRole("role4").getNodeRoles().contains("role4"));
+        assertTrue(bootstrap.withRole("role4").getRoles().contains("role4"));
     }
 
     @Test
-    public void testNodeProperties() {
-        assertNull(bootstrap.getNodeProperties());
+    public void testProperties() {
+        assertNull(bootstrap.getProperties());
 
-        bootstrap.setNodeProperties(Stream.of("prop1", "prop2").collect(toMap(Function.identity(), Function.identity())));
+        bootstrap.setProperties(Stream.of("prop1", "prop2").collect(toMap(Function.identity(), Function.identity())));
 
-        assertNotNull(bootstrap.getNodeProperties());
-        assertTrue(bootstrap.getNodeProperties().containsKey("prop1"));
-        assertTrue(bootstrap.getNodeProperties().containsKey("prop2"));
+        assertNotNull(bootstrap.getProperties());
+        assertTrue(bootstrap.getProperties().containsKey("prop1"));
+        assertTrue(bootstrap.getProperties().containsKey("prop2"));
 
-        bootstrap.withNodeProperty("prop3", "prop3");
+        bootstrap.withProperty("prop3", "prop3");
 
-        assertTrue(bootstrap.getNodeProperties().containsKey("prop3"));
+        assertTrue(bootstrap.getProperties().containsKey("prop3"));
 
-        bootstrap.setNodeProperties(null);
+        bootstrap.setProperties(null);
 
-        assertNull(bootstrap.getNodeProperties());
+        assertNull(bootstrap.getProperties());
 
-        bootstrap.withNodeProperty("prop3", "prop3");
+        bootstrap.withProperty("prop3", "prop3");
 
-        assertNotNull(bootstrap.getNodeProperties());
-        assertTrue(bootstrap.getNodeProperties().containsKey("prop3"));
+        assertNotNull(bootstrap.getProperties());
+        assertTrue(bootstrap.getProperties().containsKey("prop3"));
 
-        assertTrue(bootstrap.withNodeProperty("prop4", "prop4").getNodeProperties().containsKey("prop4"));
+        assertTrue(bootstrap.withProperty("prop4", "prop4").getProperties().containsKey("prop4"));
     }
 
     @Test
-    public void testNodePropertyProviders() {
-        NodePropertyProvider p1 = mock(NodePropertyProvider.class);
-        NodePropertyProvider p2 = mock(NodePropertyProvider.class);
+    public void testPropertyProviders() {
+        PropertyProvider p1 = mock(PropertyProvider.class);
+        PropertyProvider p2 = mock(PropertyProvider.class);
 
-        assertNull(bootstrap.getNodePropertyProviders());
+        assertNull(bootstrap.getPropertyProviders());
 
-        bootstrap.setNodePropertyProviders(Arrays.asList(p1, p2));
+        bootstrap.setPropertyProviders(Arrays.asList(p1, p2));
 
-        assertEquals(2, bootstrap.getNodePropertyProviders().size());
-        assertTrue(bootstrap.getNodePropertyProviders().contains(p1));
-        assertTrue(bootstrap.getNodePropertyProviders().contains(p2));
+        assertEquals(2, bootstrap.getPropertyProviders().size());
+        assertTrue(bootstrap.getPropertyProviders().contains(p1));
+        assertTrue(bootstrap.getPropertyProviders().contains(p2));
 
-        bootstrap.setNodePropertyProviders(null);
+        bootstrap.setPropertyProviders(null);
 
-        assertNull(bootstrap.getNodePropertyProviders());
+        assertNull(bootstrap.getPropertyProviders());
 
-        assertSame(bootstrap, bootstrap.withNodePropertyProvider(p1));
+        assertSame(bootstrap, bootstrap.withPropertyProvider(p1));
 
-        assertEquals(1, bootstrap.getNodePropertyProviders().size());
-        assertTrue(bootstrap.getNodePropertyProviders().contains(p1));
+        assertEquals(1, bootstrap.getPropertyProviders().size());
+        assertTrue(bootstrap.getPropertyProviders().contains(p1));
     }
 
     @Test

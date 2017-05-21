@@ -44,7 +44,7 @@ public interface ClusterNode extends Comparable<ClusterNode>, HasClusterNodeId {
      * Returns the name of this node. Returns an empty string if this node doesn't have a configured name.
      *
      * <p>
-     * Value of this property can be configured via {@link HekateBootstrap#setNodeName(String)} method.
+     * Value of this property can be configured via {@link HekateBootstrap#setName(String)} method.
      * </p>
      *
      * @return Name of this node or an empty string if node name is not configured.
@@ -96,7 +96,7 @@ public interface ClusterNode extends Comparable<ClusterNode>, HasClusterNodeId {
      * node.
      *
      * <p>
-     * Roles can be configured via {@link HekateBootstrap#setNodeRoles(List)} method.
+     * Roles can be configured via {@link HekateBootstrap#setRoles(List)} method.
      * </p>
      *
      * @return Immutable set of node roles aor an empty set if roles are not configured.
@@ -117,7 +117,7 @@ public interface ClusterNode extends Comparable<ClusterNode>, HasClusterNodeId {
      * this node.
      *
      * <p>
-     * Properties can be configured via {@link HekateBootstrap#setNodeProperties(Map)} method.
+     * Properties can be configured via {@link HekateBootstrap#setProperties(Map)} method.
      * </p>
      *
      * @return Immutable map of node properties or an empty map if properties are not configured.

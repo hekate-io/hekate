@@ -23,7 +23,7 @@
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hekate.io/spring/hekate-core
         http://www.hekate.io/spring/hekate-core.xsd">
-    <node id="hekate" node-name="my-node" cluster-name="my-cluster">
+    <node id="hekate" name="my-node" cluster="my-cluster">
         <!-- Node roles. -->
         <roles>
             <role>role 1</role>

@@ -115,10 +115,10 @@ import java.util.Set;
  * The key configuration options are:
  * </p>
  * <ul>
- * <li>{@link HekateBootstrap#setClusterName(String) Cluster name}</li>
- * <li>{@link HekateBootstrap#setNodeName(String) Node name}</li>
- * <li>{@link HekateBootstrap#setNodeProperties(Map) Node properties}</li>
- * <li>{@link HekateBootstrap#setNodeRoles(List) Node roles}</li>
+ * <li>{@link HekateBootstrap#setCluster(String) Cluster name}</li>
+ * <li>{@link HekateBootstrap#setName(String) Node name}</li>
+ * <li>{@link HekateBootstrap#setProperties(Map) Node properties}</li>
+ * <li>{@link HekateBootstrap#setRoles(List) Node roles}</li>
  * <li>{@link HekateBootstrap#setDefaultCodec(CodecFactory) Data serialization codec}</li>
  * <li>{@link HekateBootstrap#setServices(List) Services} to be provided by the node</li>
  * <li>{@link HekateBootstrap#setPlugins(List) Plugins} that should run within the node</li>

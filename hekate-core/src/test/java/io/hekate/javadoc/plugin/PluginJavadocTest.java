@@ -86,7 +86,7 @@ public class PluginJavadocTest extends HekateTestBase {
     public void test() throws Exception {
         // Start:register
         Hekate node = new HekateBootstrap()
-            .withNodeName("example-node")
+            .withName("example-node")
             .withPlugin(new ClusterInfoPlugin())
             .join();
         // End:register

@@ -184,29 +184,29 @@ class HekateNode implements Hekate, Serializable {
         // Check configuration.
         ConfigCheck check = ConfigCheck.get(HekateBootstrap.class);
 
-        check.notEmpty(cfg.getClusterName(), "cluster name");
+        check.notEmpty(cfg.getCluster(), "cluster name");
         check.notNull(cfg.getDefaultCodec(), "default codec");
         check.isFalse(cfg.getDefaultCodec().createCodec().isStateful(), "default codec can't be stateful.");
 
         // Basic properties.
-        this.nodeName = cfg.getNodeName() != null ? cfg.getNodeName().trim() : "";
-        this.clusterName = cfg.getClusterName().trim();
+        this.nodeName = cfg.getName() != null ? cfg.getName().trim() : "";
+        this.clusterName = cfg.getCluster().trim();
 
         // Node roles.
         Set<String> roles;
 
-        if (cfg.getNodeRoles() == null) {
+        if (cfg.getRoles() == null) {
             roles = emptySet();
         } else {
             // Filter out nulls and trim non-null values.
-            roles = unmodifiableSet(StreamUtils.nullSafe(cfg.getNodeRoles()).map(String::trim).collect(toSet()));
+            roles = unmodifiableSet(StreamUtils.nullSafe(cfg.getRoles()).map(String::trim).collect(toSet()));
         }
 
         // Node properties.
         Map<String, String> props = new HashMap<>();
 
-        if (cfg.getNodeProperties() != null) {
-            cfg.getNodeProperties().forEach((k, v) -> {
+        if (cfg.getProperties() != null) {
+            cfg.getProperties().forEach((k, v) -> {
                 // Trim non-null property keys and values.
                 String key = k == null ? null : k.trim();
                 String value = v == null ? null : v.trim();
@@ -216,8 +216,8 @@ class HekateNode implements Hekate, Serializable {
         }
 
         // Node properties from providers.
-        if (cfg.getNodePropertyProviders() != null) {
-            StreamUtils.nullSafe(cfg.getNodePropertyProviders()).forEach(provider -> {
+        if (cfg.getPropertyProviders() != null) {
+            StreamUtils.nullSafe(cfg.getPropertyProviders()).forEach(provider -> {
                 Map<String, String> providerProps = provider.getProperties();
 
                 if (providerProps != null && !providerProps.isEmpty()) {
@@ -554,7 +554,7 @@ class HekateNode implements Hekate, Serializable {
                     }
 
                     if (log.isInfoEnabled()) {
-                        log.info("Joining cluster [cluster-name={}, node-name={}, node-id={}]", clusterName, nodeName, nodeId);
+                        log.info("Joining cluster [cluster={}, node-name={}, node-id={}]", clusterName, nodeName, nodeId);
                     }
 
                     // Bind network service.

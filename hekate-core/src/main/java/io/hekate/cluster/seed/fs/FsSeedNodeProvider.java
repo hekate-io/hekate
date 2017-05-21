@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
  * <p>
  * This provider uses a shared folder to store seed node addresses. When provider starts discovering other nodes it creates a new empty
  * file whose name contains local node's host address and port in the {@link FsSeedNodeProviderConfig#setWorkDir(File)
- * [work_dir]}/{@link HekateBootstrap#setClusterName(String) [cluster_name]}/ folder. In order to find other seed nodes it reads the
+ * [work_dir]}/{@link HekateBootstrap#setCluster(String) [cluster_name]}/ folder. In order to find other seed nodes it reads the
  * list of all files in that folder and parses addresses from their names.
  * </p>
  *

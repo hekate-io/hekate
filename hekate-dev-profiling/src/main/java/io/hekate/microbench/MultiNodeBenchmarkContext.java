@@ -48,7 +48,7 @@ public abstract class MultiNodeBenchmarkContext {
 
         for (int i = 0; i < nodesCount; i++) {
             HekateBootstrap boot = new HekateBootstrap()
-                .withNodeName("node" + i)
+                .withName("node" + i)
                 .withDefaultCodec(new KryoCodecFactory<>())
                 .withService(new LocalMetricsServiceFactory());
 

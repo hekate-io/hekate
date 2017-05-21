@@ -180,7 +180,7 @@ public abstract class PersistentSeedNodeProviderCommonTest<T extends SeedNodePro
             SeedNodeProvider provider = createProvider();
 
             HekateTestNode node = createNode(b -> {
-                b.setClusterName(CLUSTER_1);
+                b.setCluster(CLUSTER_1);
 
                 b.withService(ClusterServiceFactory.class, cluster ->
                     cluster.setSeedNodeProvider(provider)

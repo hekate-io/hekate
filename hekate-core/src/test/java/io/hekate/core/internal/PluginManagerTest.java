@@ -210,8 +210,8 @@ public class PluginManagerTest extends HekateTestBase {
         TestPlugin plugin = new TestPlugin() {
             @Override
             public void install(HekateBootstrap boot) {
-                boot.withNodeRole("test_role");
-                boot.withNodeProperty("test_prop", "test_val");
+                boot.withRole("test_role");
+                boot.withProperty("test_prop", "test_val");
             }
         };
 
@@ -219,8 +219,8 @@ public class PluginManagerTest extends HekateTestBase {
 
         mgr.install();
 
-        assertTrue(mgr.bootstrap().getNodeRoles().contains("test_role"));
-        assertEquals("test_val", mgr.bootstrap().getNodeProperties().get("test_prop"));
+        assertTrue(mgr.bootstrap().getRoles().contains("test_role"));
+        assertEquals("test_val", mgr.bootstrap().getProperties().get("test_prop"));
     }
 
     private PluginManager createManager(Plugin... plugins) {

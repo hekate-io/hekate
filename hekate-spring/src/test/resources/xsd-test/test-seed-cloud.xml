@@ -43,7 +43,7 @@
         <constructor-arg value="https://ec2.#{testRegion}.amazonaws.com"/>
     </bean>
 
-    <h:node id="node1" cluster-name="#{testClusterName}">
+    <h:node id="node1" cluster="#{testClusterName}">
         <h:cluster>
             <h:seed-node-provider>
                 <h:cloud provider="aws-ec2" endpoint="#{testEndpoint}">

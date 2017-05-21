@@ -59,7 +59,7 @@ public class HekateCloudSeedNodeProviderConfigurerTest extends HekateAutoConfigu
         String testEndpoint = "https://ec2." + testRegion + ".amazonaws.com";
 
         registerAndRefresh(new String[]{
-            "hekate.cluster-name:" + UUID.randomUUID().toString(),
+            "hekate.cluster:" + UUID.randomUUID().toString(),
             "hekate.cluster.seed.cloud.enable:true",
             "hekate.cluster.seed.cloud.provider:aws-ec2",
             "hekate.cluster.seed.cloud.endpoint:" + testEndpoint,

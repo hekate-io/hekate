@@ -132,7 +132,7 @@ public abstract class MessagingServiceTestBase extends HekateNodeParamTestBase {
         cfg.setReceiver(channel.getReceiver());
 
         HekateTestNode node = createNode(c -> {
-            c.withNodeRole(TEST_NODE_ROLE);
+            c.withRole(TEST_NODE_ROLE);
             c.withService(new LocalMetricsServiceFactory());
 
             c.findOrRegister(MessagingServiceFactory.class).withChannel(cfg);

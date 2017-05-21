@@ -134,13 +134,13 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
 
     @Override
     protected void doParse(Element rootEl, ParserContext ctx, BeanDefinitionBuilder boot) {
-        setProperty(boot, rootEl, "nodeName", "node-name");
-        setProperty(boot, rootEl, "clusterName", "cluster-name");
+        setProperty(boot, rootEl, "name", "name");
+        setProperty(boot, rootEl, "cluster", "cluster");
 
         parseNodeRoles(boot, rootEl);
 
         parseProperties(rootEl).ifPresent(props ->
-            boot.addPropertyValue("nodeProperties", props)
+            boot.addPropertyValue("properties", props)
         );
 
         parseNodePropertyProviders(boot, rootEl, ctx);
@@ -187,7 +187,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             .collect(toSet())
         );
 
-        def.addPropertyValue("nodeRoles", roles);
+        def.addPropertyValue("roles", roles);
     }
 
     private void parseNodePropertyProviders(BeanDefinitionBuilder boot, Element rootEl, ParserContext ctx) {
@@ -198,7 +198,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         );
 
         if (!propertyProviders.isEmpty()) {
-            boot.addPropertyValue("nodePropertyProviders", propertyProviders);
+            boot.addPropertyValue("propertyProviders", propertyProviders);
         }
     }
 

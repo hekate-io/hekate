@@ -233,8 +233,8 @@ public class PluginTest extends HekateNodeTestBase {
         Hekate node = createNodeWithPlugin(new TestPlugin() {
             @Override
             public void install(HekateBootstrap boot) {
-                boot.withNodeRole(role);
-                boot.withNodeProperty(propKey, propVal);
+                boot.withRole(role);
+                boot.withProperty(propKey, propVal);
             }
         }).join();
 

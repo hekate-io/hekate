@@ -50,10 +50,10 @@ import java.util.function.Consumer;
  * Configuration options are:
  * </p>
  * <ul>
- * <li>{@link #setClusterName(String) Cluster name}</li>
- * <li>{@link #setNodeName(String) Node name}</li>
- * <li>{@link #setNodeProperties(Map) Node properties}</li>
- * <li>{@link #setNodeRoles(List) Node roles}</li>
+ * <li>{@link #setCluster(String) Cluster name}</li>
+ * <li>{@link #setName(String) Node name}</li>
+ * <li>{@link #setProperties(Map) Node properties}</li>
+ * <li>{@link #setRoles(List) Node roles}</li>
  * <li>{@link #setDefaultCodec(CodecFactory) Data serialization codec}</li>
  * <li>{@link #setServices(List) Services} to be provided by the node</li>
  * <li>{@link #setPlugins(List) Plugins} that should run within the node</li>
@@ -68,18 +68,18 @@ import java.util.function.Consumer;
  * </p>
  */
 public class HekateBootstrap {
-    /** Default value (={@value}) for {@link #setClusterName(String)}. */
+    /** Default value (={@value}) for {@link #setCluster(String)}. */
     public static final String DEFAULT_CLUSTER_NAME = "default";
 
-    private String nodeName;
+    private String name;
 
-    private String clusterName = DEFAULT_CLUSTER_NAME;
+    private String cluster = DEFAULT_CLUSTER_NAME;
 
-    private List<String> nodeRoles;
+    private List<String> roles;
 
-    private Map<String, String> nodeProperties;
+    private Map<String, String> properties;
 
-    private List<NodePropertyProvider> nodePropertyProviders;
+    private List<PropertyProvider> propertyProviders;
 
     private List<ServiceFactory<? extends Service>> services;
 
@@ -114,12 +114,12 @@ public class HekateBootstrap {
     }
 
     /**
-     * Returns the node name (see {@link #setNodeName(String)}).
+     * Returns the node name (see {@link #setName(String)}).
      *
      * @return Node name.
      */
-    public String getNodeName() {
-        return nodeName;
+    public String getName() {
+        return name;
     }
 
     /**
@@ -129,34 +129,34 @@ public class HekateBootstrap {
      * Node name is optional and its default value is {@code null}.
      * </p>
      *
-     * @param nodeName Node name.
+     * @param name Node name.
      *
      * @see ClusterNode#name()
      */
-    public void setNodeName(String nodeName) {
-        this.nodeName = nodeName;
+    public void setName(String name) {
+        this.name = name;
     }
 
     /**
-     * Fluent-style version of {@link #setNodeName(String)}.
+     * Fluent-style version of {@link #setName(String)}.
      *
      * @param nodeName Node name.
      *
      * @return This instance.
      */
-    public HekateBootstrap withNodeName(String nodeName) {
-        setNodeName(nodeName);
+    public HekateBootstrap withName(String nodeName) {
+        setName(nodeName);
 
         return this;
     }
 
     /**
-     * Returns the cluster name (see {@link #setClusterName(String)}).
+     * Returns the cluster name (see {@link #setCluster(String)}).
      *
      * @return Cluster name.
      */
-    public String getClusterName() {
-        return clusterName;
+    public String getCluster() {
+        return cluster;
     }
 
     /**
@@ -172,36 +172,36 @@ public class HekateBootstrap {
      * </p>
      *
      * <p>
-     * <b>Hint:</b> For breaking nodes into logical sub-groups within the same cluster consider using {@link #setNodeRoles(List) node roles}
+     * <b>Hint:</b> For breaking nodes into logical sub-groups within the same cluster consider using {@link #setRoles(List) node roles}
      * together with {@link ClusterView#filter(ClusterNodeFilter) nodes filtering} by role.
      * </p>
      *
-     * @param clusterName Cluster name.
+     * @param cluster Cluster name.
      */
-    public void setClusterName(String clusterName) {
-        this.clusterName = clusterName;
+    public void setCluster(String cluster) {
+        this.cluster = cluster;
     }
 
     /**
-     * Fluent-style version of {@link #setClusterName(String)}.
+     * Fluent-style version of {@link #setCluster(String)}.
      *
      * @param clusterName Cluster name.
      *
      * @return This instance.
      */
-    public HekateBootstrap withClusterName(String clusterName) {
-        setClusterName(clusterName);
+    public HekateBootstrap withCluster(String clusterName) {
+        setCluster(clusterName);
 
         return this;
     }
 
     /**
-     * Returns a list of the local node's roles (see {@link #setNodeRoles(List)}).
+     * Returns a list of the local node's roles (see {@link #setRoles(List)}).
      *
      * @return List of local node roles.
      */
-    public List<String> getNodeRoles() {
-        return nodeRoles;
+    public List<String> getRoles() {
+        return roles;
     }
 
     /**
@@ -213,41 +213,41 @@ public class HekateBootstrap {
      * specific role(s) (see {@link ClusterView#forRole(String)}).
      * </p>
      *
-     * @param nodeRoles Set of roles.
+     * @param roles Set of roles.
      *
      * @see ClusterNode#roles()
      * @see ClusterTopology#filter(ClusterNodeFilter)
      */
-    public void setNodeRoles(List<String> nodeRoles) {
-        this.nodeRoles = nodeRoles;
+    public void setRoles(List<String> roles) {
+        this.roles = roles;
     }
 
     /**
-     * Adds the specified {@code role} to the {@link #setNodeRoles(List) roles set}.
+     * Adds the specified {@code role} to the {@link #setRoles(List) roles set}.
      *
      * @param role Role.
      *
      * @return This instance.
      */
-    public HekateBootstrap withNodeRole(String role) {
+    public HekateBootstrap withRole(String role) {
         ConfigCheck.get(getClass()).notNull(role, "role");
 
-        if (nodeRoles == null) {
-            nodeRoles = new ArrayList<>();
+        if (roles == null) {
+            roles = new ArrayList<>();
         }
 
-        nodeRoles.add(role);
+        roles.add(role);
 
         return this;
     }
 
     /**
-     * Returns a map of local node properties (see {@link #setNodeProperties(Map)}).
+     * Returns a map of local node properties (see {@link #setProperties(Map)}).
      *
      * @return Map of local node properties.
      */
-    public Map<String, String> getNodeProperties() {
-        return nodeProperties;
+    public Map<String, String> getProperties() {
+        return properties;
     }
 
     /**
@@ -257,40 +257,40 @@ public class HekateBootstrap {
      * Properties of each node are visible to all other cluster members via {@link ClusterNode#properties()}.
      * </p>
      *
-     * @param nodeProperties Map of local node properties.
+     * @param properties Map of local node properties.
      *
      * @see ClusterNode#properties()
-     * @see #setNodePropertyProviders(List)
+     * @see #setPropertyProviders(List)
      */
-    public void setNodeProperties(Map<String, String> nodeProperties) {
-        this.nodeProperties = nodeProperties;
+    public void setProperties(Map<String, String> properties) {
+        this.properties = properties;
     }
 
     /**
-     * Puts the specified property value into the node's {@link #setNodeProperties(Map) properties map}.
+     * Puts the specified property value into the node's {@link #setProperties(Map) properties map}.
      *
      * @param key Property key.
      * @param value Property value.
      *
      * @return This instance.
      */
-    public HekateBootstrap withNodeProperty(String key, String value) {
-        if (nodeProperties == null) {
-            nodeProperties = new HashMap<>();
+    public HekateBootstrap withProperty(String key, String value) {
+        if (properties == null) {
+            properties = new HashMap<>();
         }
 
-        nodeProperties.put(key, value);
+        properties.put(key, value);
 
         return this;
     }
 
     /**
-     * Returns a list of node property providers (see {@link #setNodePropertyProviders(List)}).
+     * Returns a list of node property providers (see {@link #setPropertyProviders(List)}).
      *
      * @return Node property providers.
      */
-    public List<NodePropertyProvider> getNodePropertyProviders() {
-        return nodePropertyProviders;
+    public List<PropertyProvider> getPropertyProviders() {
+        return propertyProviders;
     }
 
     /**
@@ -298,30 +298,30 @@ public class HekateBootstrap {
      *
      * <p>
      * Such providers can be used to provide properties that were dynamically obtained from some third party sources and should become part
-     * of {@link #setNodeProperties(Map) node properties}.
+     * of {@link #setProperties(Map) node properties}.
      * </p>
      *
-     * @param nodePropertyProviders Node property providers.
+     * @param propertyProviders Node property providers.
      *
-     * @see #setNodeProperties(Map)
+     * @see #setProperties(Map)
      */
-    public void setNodePropertyProviders(List<NodePropertyProvider> nodePropertyProviders) {
-        this.nodePropertyProviders = nodePropertyProviders;
+    public void setPropertyProviders(List<PropertyProvider> propertyProviders) {
+        this.propertyProviders = propertyProviders;
     }
 
     /**
-     * Fluent-style version of {@link #setNodePropertyProviders(List)}.
+     * Fluent-style version of {@link #setPropertyProviders(List)}.
      *
-     * @param nodePropertyProvider Property provider.
+     * @param propertyProvider Property provider.
      *
      * @return This instance.
      */
-    public HekateBootstrap withNodePropertyProvider(NodePropertyProvider nodePropertyProvider) {
-        if (nodePropertyProviders == null) {
-            nodePropertyProviders = new ArrayList<>();
+    public HekateBootstrap withPropertyProvider(PropertyProvider propertyProvider) {
+        if (propertyProviders == null) {
+            propertyProviders = new ArrayList<>();
         }
 
-        nodePropertyProviders.add(nodePropertyProvider);
+        propertyProviders.add(propertyProvider);
 
         return this;
     }

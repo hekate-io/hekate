@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
  * This provider uses a cloud storage (f.e. Amazon S3) to keep track of active seed nodes. When provider starts discovering other nodes it
  * uses {@link BlobStore} to creates a new empty blob whose name contains local node's host address and port. Such blob is stored in a
  * {@link CloudStoreSeedNodeProviderConfig#setContainer(String) configurable} container (aka bucket) under
- * /{@link HekateBootstrap#setClusterName(String) [cluster_name]}/ folder. In order to find other seed nodes it reads the list of all blobs
+ * /{@link HekateBootstrap#setCluster(String) [cluster_name]}/ folder. In order to find other seed nodes it reads the list of all blobs
  * in that folder and parses addresses from their names.
  * </p>
  *

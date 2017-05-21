@@ -448,16 +448,16 @@ public class ClusterPerformanceTest extends HekateTestBase {
     private HekateTestNode createNode(InetSocketAddress addr) {
         HekateTestNode.Bootstrap bootstrap = new HekateTestNode.Bootstrap(addr);
 
-        bootstrap.setClusterName("test");
-        bootstrap.setNodeName("node" + addr.getPort());
+        bootstrap.setCluster("test");
+        bootstrap.setName("node" + addr.getPort());
 
-        bootstrap.withNodeRole("Role1");
-        bootstrap.withNodeRole("Role2");
-        bootstrap.withNodeRole("Role3");
+        bootstrap.withRole("Role1");
+        bootstrap.withRole("Role2");
+        bootstrap.withRole("Role3");
 
-        bootstrap.withNodeProperty("P1", "V1");
-        bootstrap.withNodeProperty("P2", "V2");
-        bootstrap.withNodeProperty("P3", "V3");
+        bootstrap.withProperty("P1", "V1");
+        bootstrap.withProperty("P2", "V2");
+        bootstrap.withProperty("P3", "V3");
 
         NetworkServiceFactory net = new NetworkServiceFactory();
 

@@ -22,17 +22,17 @@
         http://www.springframework.org/schema/beans/spring-beans.xsd">
 
     <bean id="hekate" class="io.hekate.spring.bean.HekateSpringBootstrap">
-        <property name="nodeName" value="my-node"/>
-        <property name="clusterName" value="my-cluster"/>
+        <property name="name" value="my-node"/>
+        <property name="cluster" value="my-cluster"/>
         <!-- Node roles. -->
-        <property name="nodeRoles">
+        <property name="roles">
             <set>
                 <value>role 1</value>
                 <value>role 2</value>
             </set>
         </property>
         <!-- Node properties. -->
-        <property name="nodeProperties">
+        <property name="properties">
             <map>
                 <entry key="prop 1" value="prop val 1"/>
                 <entry key="prop 2" value="prop val 2"/>

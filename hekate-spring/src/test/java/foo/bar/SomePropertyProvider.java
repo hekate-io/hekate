@@ -16,11 +16,11 @@
 
 package foo.bar;
 
-import io.hekate.core.NodePropertyProvider;
+import io.hekate.core.PropertyProvider;
 import java.util.Collections;
 import java.util.Map;
 
-public class SomeNodePropertyProvider implements NodePropertyProvider {
+public class SomePropertyProvider implements PropertyProvider {
     @Override
     public Map<String, String> getProperties() {
         return Collections.singletonMap("some-property", "some-value");
