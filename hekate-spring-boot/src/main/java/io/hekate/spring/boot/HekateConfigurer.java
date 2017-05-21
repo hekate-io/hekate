@@ -42,7 +42,6 @@ import io.hekate.spring.boot.task.HekateTaskServiceConfigurer;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.springframework.boot.actuate.autoconfigure.ConditionalOnEnabledHealthIndicator;
 import org.springframework.boot.actuate.autoconfigure.EndpointAutoConfiguration;
 import org.springframework.boot.actuate.health.HealthIndicator;
@@ -140,7 +139,7 @@ import org.springframework.context.annotation.Configuration;
  * <ul>
  * <li>{@link HekateBootstrap#setNodeName(String) 'hekate.node-name'}</li>
  * <li>{@link HekateBootstrap#setClusterName(String) 'hekate.cluster-name'}</li>
- * <li>{@link HekateBootstrap#setNodeRoles(Set) 'hekate.node-roles'}</li>
+ * <li>{@link HekateBootstrap#setNodeRoles(List) 'hekate.node-roles'}</li>
  * <li>{@link HekateBootstrap#setNodeProperties(Map) 'hekate.node-properties'}</li>
  * </ul>
  *

@@ -22,9 +22,9 @@ import io.hekate.codec.JavaCodecFactory;
 import io.hekate.core.plugin.Plugin;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
@@ -72,7 +72,7 @@ public class HekateBootstrapTest extends HekateTestBase {
     public void testNodeRoles() {
         assertNull(bootstrap.getNodeRoles());
 
-        bootstrap.setNodeRoles(new HashSet<>(Arrays.asList("role1", "role2")));
+        bootstrap.setNodeRoles(new ArrayList<>(Arrays.asList("role1", "role2")));
 
         assertNotNull(bootstrap.getNodeRoles());
         assertTrue(bootstrap.getNodeRoles().contains("role1"));

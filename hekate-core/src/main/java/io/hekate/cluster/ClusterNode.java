@@ -96,7 +96,7 @@ public interface ClusterNode extends Comparable<ClusterNode>, HasClusterNodeId {
      * node.
      *
      * <p>
-     * Roles can be configured via {@link HekateBootstrap#setNodeRoles(Set)} method.
+     * Roles can be configured via {@link HekateBootstrap#setNodeRoles(List)} method.
      * </p>
      *
      * @return Immutable set of node roles aor an empty set if roles are not configured.

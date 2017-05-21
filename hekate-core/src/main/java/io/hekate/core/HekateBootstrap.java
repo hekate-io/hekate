@@ -32,11 +32,9 @@ import io.hekate.core.service.ServiceFactory;
 import io.hekate.util.format.ToString;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -55,7 +53,7 @@ import java.util.function.Consumer;
  * <li>{@link #setClusterName(String) Cluster name}</li>
  * <li>{@link #setNodeName(String) Node name}</li>
  * <li>{@link #setNodeProperties(Map) Node properties}</li>
- * <li>{@link #setNodeRoles(Set) Node roles}</li>
+ * <li>{@link #setNodeRoles(List) Node roles}</li>
  * <li>{@link #setDefaultCodec(CodecFactory) Data serialization codec}</li>
  * <li>{@link #setServices(List) Services} to be provided by the node</li>
  * <li>{@link #setPlugins(List) Plugins} that should run within the node</li>
@@ -77,7 +75,7 @@ public class HekateBootstrap {
 
     private String clusterName = DEFAULT_CLUSTER_NAME;
 
-    private Set<String> nodeRoles;
+    private List<String> nodeRoles;
 
     private Map<String, String> nodeProperties;
 
@@ -174,7 +172,7 @@ public class HekateBootstrap {
      * </p>
      *
      * <p>
-     * <b>Hint:</b> For breaking nodes into logical sub-groups within the same cluster consider using {@link #setNodeRoles(Set) node roles}
+     * <b>Hint:</b> For breaking nodes into logical sub-groups within the same cluster consider using {@link #setNodeRoles(List) node roles}
      * together with {@link ClusterView#filter(ClusterNodeFilter) nodes filtering} by role.
      * </p>
      *
@@ -198,11 +196,11 @@ public class HekateBootstrap {
     }
 
     /**
-     * Returns a set of the local node's roles (see {@link #setNodeRoles(Set)}).
+     * Returns a list of the local node's roles (see {@link #setNodeRoles(List)}).
      *
-     * @return Set of local node roles.
+     * @return List of local node roles.
      */
-    public Set<String> getNodeRoles() {
+    public List<String> getNodeRoles() {
         return nodeRoles;
     }
 
@@ -220,12 +218,12 @@ public class HekateBootstrap {
      * @see ClusterNode#roles()
      * @see ClusterTopology#filter(ClusterNodeFilter)
      */
-    public void setNodeRoles(Set<String> nodeRoles) {
+    public void setNodeRoles(List<String> nodeRoles) {
         this.nodeRoles = nodeRoles;
     }
 
     /**
-     * Adds the specified {@code role} to the {@link #setNodeRoles(Set) roles set}.
+     * Adds the specified {@code role} to the {@link #setNodeRoles(List) roles set}.
      *
      * @param role Role.
      *
@@ -235,7 +233,7 @@ public class HekateBootstrap {
         ConfigCheck.get(getClass()).notNull(role, "role");
 
         if (nodeRoles == null) {
-            nodeRoles = new HashSet<>();
+            nodeRoles = new ArrayList<>();
         }
 
         nodeRoles.add(role);
