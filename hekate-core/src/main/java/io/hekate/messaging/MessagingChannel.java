@@ -74,6 +74,10 @@ public interface MessagingChannel<T> extends HasClusterFilter<MessagingChannel<T
     /**
      * Returns the cluster view of this channel.
      *
+     * <p>
+     * The returned cluster view contains only those nodes that do match the channel's {@link HasClusterFilter filtering} criteria.
+     * </p>
+     *
      * @return Cluster view.
      */
     ClusterView cluster();

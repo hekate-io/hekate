@@ -53,6 +53,13 @@ public interface HasClusterFilter<T extends HasClusterFilter<T>> {
      * @param filter Filter.
      *
      * @return Filtered instance.
+     *
+     * @see #forRemotes()
+     * @see #forRole(String)
+     * @see #forProperty(String)
+     * @see #forNode(ClusterNode)
+     * @see #forOldest()
+     * @see #forYoungest()
      */
     default T filter(ClusterNodeFilter filter) {
         return filterAll(ClusterFilters.forFilter(filter));
