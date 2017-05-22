@@ -25,7 +25,6 @@ import io.hekate.coordinate.CoordinationHandler;
 import io.hekate.coordinate.CoordinationProcessConfig;
 import io.hekate.coordinate.CoordinationRequest;
 import io.hekate.coordinate.CoordinationServiceFactory;
-import io.hekate.core.LeaveFuture;
 import io.hekate.core.internal.HekateTestNode;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,10 +33,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -342,64 +343,22 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
     @Test
     public void testCoordinatorLeave() throws Exception {
-        CountDownLatch blockLatch = new CountDownLatch(1);
-        CountDownLatch proceedLatch = new CountDownLatch(1);
+        repeat(3, i ->
+            doTestCoordinatorLeave(coordinator ->
+                coordinator.leaveAsync()
+            )
+        );
+    }
 
-        AtomicReference<ClusterNode> coordinatorRef = new AtomicReference<>();
-        AtomicInteger aborts = new AtomicInteger();
+    @Test
+    public void testCoordinatorTerminate() throws Exception {
+        this.disableNodeFailurePostCheck();
 
-        class BlockingHandler extends CoordinatedValueHandler {
-            @Override
-            public void coordinate(CoordinationContext ctx) {
-                if (ctx.size() == 3 && blockLatch.getCount() > 0) {
-                    coordinatorRef.set(ctx.coordinator().node());
-
-                    blockLatch.countDown();
-
-                    await(proceedLatch);
-                } else {
-                    super.coordinate(ctx);
-                }
-            }
-
-            @Override
-            public void cancel(CoordinationContext ctx) {
-                super.cancel(ctx);
-
-                aborts.incrementAndGet();
-            }
-        }
-
-        BlockingHandler h1 = new BlockingHandler();
-        BlockingHandler h2 = new BlockingHandler();
-        BlockingHandler h3 = new BlockingHandler();
-
-        HekateTestNode n1 = createCoordinationNode(h1);
-        HekateTestNode n2 = createCoordinationNode(h2);
-        HekateTestNode n3 = createCoordinationNode(h3);
-
-        assertEquals("1", n1.join().coordination().futureOf("test").get().<BlockingHandler>handler().getLastValue());
-        assertEquals("2", n2.join().coordination().futureOf("test").get().<BlockingHandler>handler().getLastValue());
-
-        n3.join(); // <-- Coordination should block.
-
-        await(blockLatch);
-
-        HekateTestNode coordinator = Stream.of(n1, n2, n3)
-            .filter(n -> n.localNode().equals(coordinatorRef.get()))
-            .findFirst().orElseThrow(AssertionError::new);
-
-        LeaveFuture leaveFuture = coordinator.leaveAsync();
-
-        proceedLatch.countDown();
-
-        get(leaveFuture);
-
-        List<HekateTestNode> remaining = Stream.of(n1, n2, n3).filter(n -> !n.equals(coordinator)).collect(toList());
-
-        awaitForCoordinatedValue("3", remaining);
-
-        assertEquals(3, aborts.get());
+        repeat(3, i ->
+            doTestCoordinatorLeave(coordinator ->
+                coordinator.terminateAsync()
+            )
+        );
     }
 
     @Test
@@ -454,6 +413,77 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
         awaitForCoordinatedValue("2", Arrays.asList(n1, n2, n3));
 
         assertEquals(2, aborts.get());
+    }
+
+    private void doTestCoordinatorLeave(Function<HekateTestNode, Future<?>> stopAction) throws Exception {
+        CountDownLatch blockLatch = new CountDownLatch(1);
+        CountDownLatch proceedLatch = new CountDownLatch(1);
+
+        AtomicReference<ClusterNode> coordinatorRef = new AtomicReference<>();
+        AtomicInteger aborts = new AtomicInteger();
+
+        class BlockingHandler extends CoordinatedValueHandler {
+            @Override
+            public void coordinate(CoordinationContext ctx) {
+                if (ctx.size() == 3 && blockLatch.getCount() > 0) {
+                    coordinatorRef.set(ctx.coordinator().node());
+
+                    blockLatch.countDown();
+
+                    await(proceedLatch);
+                } else {
+                    super.coordinate(ctx);
+                }
+            }
+
+            @Override
+            public void cancel(CoordinationContext ctx) {
+                super.cancel(ctx);
+
+                aborts.incrementAndGet();
+            }
+        }
+
+        BlockingHandler h1 = new BlockingHandler();
+        BlockingHandler h2 = new BlockingHandler();
+        BlockingHandler h3 = new BlockingHandler();
+
+        HekateTestNode n1 = createCoordinationNode(h1);
+        HekateTestNode n2 = createCoordinationNode(h2);
+        HekateTestNode n3 = createCoordinationNode(h3);
+
+        assertEquals("1", n1.join().coordination().futureOf("test").get().<BlockingHandler>handler().getLastValue());
+        assertEquals("2", n2.join().coordination().futureOf("test").get().<BlockingHandler>handler().getLastValue());
+
+        n3.join(); // <-- Coordination should block.
+
+        await(blockLatch);
+
+        HekateTestNode coordinator = Stream.of(n1, n2, n3)
+            .filter(n -> n.localNode().equals(coordinatorRef.get()))
+            .findFirst().orElseThrow(AssertionError::new);
+
+        say("Terminating coordinator.");
+
+        Future<?> termFuture = stopAction.apply(coordinator);
+
+        proceedLatch.countDown();
+
+        get(termFuture);
+
+        List<HekateTestNode> remaining = Stream.of(n1, n2, n3).filter(n -> !n.equals(coordinator)).collect(toList());
+
+        say("Awaiting for coordination.");
+
+        awaitForCoordinatedValue("3", remaining);
+
+        say("Done awaiting for coordination.");
+
+        assertEquals(3, aborts.get());
+
+        n1.leave();
+        n2.leave();
+        n3.leave();
     }
 
     private void awaitForCoordinatedValue(String expected, List<HekateTestNode> nodes) throws Exception {

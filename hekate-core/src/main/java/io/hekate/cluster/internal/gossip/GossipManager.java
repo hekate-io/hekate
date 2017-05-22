@@ -683,7 +683,7 @@ public class GossipManager {
             if (DEBUG) {
                 log.debug("Skipped leaving since local node is in {} state [gossip={}]", status, localGossip);
             }
-        } else if (status == DOWN || status == JOINING && !localGossip.isConvergent()) {
+        } else if (status == DOWN || !localGossip.isConvergent()) {
             leaveScheduled = true;
 
             if (DEBUG) {
@@ -933,10 +933,10 @@ public class GossipManager {
         updateWatchNodes();
 
         if (leaveScheduled
-            // Can leave if in UP state.
-            && (newStatus == UP
-            // Or if in JOINING state and cluster is convergent.
-            || newStatus == JOINING && localGossip.isConvergent())) {
+            // Cane leave only if in convergent state (otherwise node can join/leave unnoticed by some nodes).
+            && localGossip.isConvergent()
+            // ...and only if in UP or LEAVING state.
+            && (newStatus == JOINING || newStatus == UP)) {
             if (DEBUG) {
                 log.debug("Processing scheduled leave operation [gossip={}]", gossip());
             }
