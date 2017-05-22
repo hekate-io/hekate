@@ -951,7 +951,7 @@ public class GossipManager {
         Set<ClusterNode> oldTopology = lastTopology;
 
         Set<ClusterNode> newTopology = localGossip.members().values().stream()
-            .filter(s -> s.node().equals(node) || s.status() == UP || s.status() == LEAVING)
+            .filter(s -> s.node().equals(node) || s.status() == UP)
             .map(GossipNodeState::node)
             .collect(Collectors.toSet());
 
