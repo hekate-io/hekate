@@ -220,7 +220,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         TestChannel sender = createChannel(c -> c.setIdleTimeout(1)).join();
 
         TestChannel receiver = createChannel(c -> {
-            c.setIdleTimeout(1);
+            c.setIdleTimeout(5);
             c.setReceiver(msg -> msg.reply("ok"));
         }).join();
 
