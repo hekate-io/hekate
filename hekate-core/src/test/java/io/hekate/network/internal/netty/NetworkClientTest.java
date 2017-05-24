@@ -17,6 +17,7 @@
 package io.hekate.network.internal.netty;
 
 import io.hekate.HekateTestContext;
+import io.hekate.codec.CodecException;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkEndpoint;
@@ -860,6 +861,35 @@ public class NetworkClientTest extends NetworkTestBase {
         callback.assertDisconnects(1);
         callback.assertErrors(1);
         callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof ConnectException));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testWrongMessageType() throws Exception {
+        NetworkServer server = createServer();
+
+        server.start(newServerAddress()).get();
+
+        NetworkClient client = createClient();
+
+        get(client.connect(server.address(), new NetworkClientCallbackMock<>()));
+
+        repeat(3, i -> {
+            Object wrongType = new Object();
+
+            NetworkSendCallbackMock callback = new NetworkSendCallbackMock();
+
+            client.send(wrongType, callback);
+
+            callback.awaitForErrors(wrongType);
+
+            Throwable err = callback.getFailure(wrongType);
+
+            assertTrue(err.toString(), err instanceof CodecException);
+            assertEquals("Unsupported message type [expected=java.lang.String, real=java.lang.Object]", err.getMessage());
+
+            assertSame(NetworkClient.State.CONNECTED, client.state());
+        });
     }
 
     @Test

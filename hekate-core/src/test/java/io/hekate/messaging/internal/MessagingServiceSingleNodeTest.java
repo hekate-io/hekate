@@ -27,6 +27,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class MessagingServiceSingleNodeTest extends HekateNodeTestBase {
@@ -48,11 +49,38 @@ public class MessagingServiceSingleNodeTest extends HekateNodeTestBase {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    public void testMessageType() throws Exception {
+        HekateTestNode node = createNode(boot ->
+            boot.withService(new MessagingServiceFactory()
+                .withChannel(MessagingChannelConfig.of(String.class).withName("test"))
+            )
+        ).join();
+
+        expect(ClassCastException.class,
+            "Messaging channel doesn't support the specified type [channel-type=java.lang.String, requested-type=java.lang.Object]",
+            () -> node.messaging().channel("test")
+        );
+
+        expect(ClassCastException.class,
+            "Messaging channel doesn't support the specified type [channel-type=java.lang.String, requested-type=java.lang.Integer]",
+            () -> node.messaging().channel("test", Integer.class)
+        );
+
+        MessagingChannel unsafe = node.messaging().channel("test", String.class);
+
+        expect(ClassCastException.class,
+            "Messaging channel doesn't support the specified type [channel-type=java.lang.String, message-type=java.lang.Object]",
+            () -> get(unsafe.request(new Object()))
+        );
+    }
+
+    @Test
     public void testMultipleChannels() throws Exception {
         HekateTestNode node = createNode(boot ->
             boot.withService(new MessagingServiceFactory()
-                .withChannel(new MessagingChannelConfig<>("channel1"))
-                .withChannel(new MessagingChannelConfig<>("channel2"))
+                .withChannel(MessagingChannelConfig.unchecked().withName("channel1"))
+                .withChannel(MessagingChannelConfig.unchecked().withName("channel2"))
             )
         ).join();
 
@@ -64,6 +92,9 @@ public class MessagingServiceSingleNodeTest extends HekateNodeTestBase {
 
         assertNotNull(channel1);
         assertNotNull(channel2);
+
+        assertSame(channel1, node.messaging().channel("channel1", String.class));
+        assertSame(channel2, node.messaging().channel("channel2", String.class));
 
         assertEquals(2 + BUILT_IN_CHANNELS, node.messaging().allChannels().size());
         assertTrue(node.messaging().allChannels().contains(channel1));

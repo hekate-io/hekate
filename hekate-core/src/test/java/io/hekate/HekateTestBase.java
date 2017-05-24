@@ -601,6 +601,11 @@ public abstract class HekateTestBase {
             }
 
             @Override
+            public Class<String> baseType() {
+                return String.class;
+            }
+
+            @Override
             public String decode(DataReader in) throws IOException {
                 return in.readUTF();
             }
@@ -628,7 +633,7 @@ public abstract class HekateTestBase {
 
             if (message != null) {
                 assertNotNull(t.toString(), t.getMessage());
-                assertTrue(t.getMessage(), t.getMessage().contains(message));
+                assertTrue(t.toString(), t.getMessage().contains(message));
             }
         }
     }

@@ -74,7 +74,7 @@ public class TestChannel {
             if (event.type() == ClusterEventType.JOIN) {
                 nodeId = node.localNode().id();
 
-                channel = node.get(DefaultMessagingService.class).channel(MessagingServiceTestBase.TEST_CHANNEL_NAME);
+                channel = node.get(DefaultMessagingService.class).channel(MessagingServiceTestBase.TEST_CHANNEL_NAME, String.class);
             }
         });
     }

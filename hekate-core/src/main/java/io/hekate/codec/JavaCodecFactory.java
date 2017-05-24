@@ -33,6 +33,11 @@ public class JavaCodecFactory<T> implements CodecFactory<T> {
         }
 
         @Override
+        public Class<Object> baseType() {
+            return Object.class;
+        }
+
+        @Override
         public Object decode(DataReader in) throws IOException {
             try (ObjectInputStream objIn = new ObjectInputStream(in.asStream())) {
                 return objIn.readObject();

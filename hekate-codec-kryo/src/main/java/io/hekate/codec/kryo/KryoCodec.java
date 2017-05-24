@@ -32,7 +32,7 @@ import io.hekate.util.format.ToStringIgnore;
 import java.io.IOException;
 import java.lang.invoke.SerializedLambda;
 
-class KryoCodec<T> implements Codec<T> {
+class KryoCodec implements Codec<Object> {
     private static class NonResettableClassResolver extends DefaultClassResolver {
         @Override
         public void reset() {
@@ -53,7 +53,7 @@ class KryoCodec<T> implements Codec<T> {
 
     private final boolean stateful;
 
-    public KryoCodec(KryoCodecFactory<T> factory) {
+    public KryoCodec(KryoCodecFactory<?> factory) {
         stateful = factory.isCacheUnknownTypes();
 
         if (stateful) {
@@ -98,15 +98,19 @@ class KryoCodec<T> implements Codec<T> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public T decode(DataReader in) throws IOException {
-        input.setInputStream(in.asStream());
-
-        return (T)kryo.readClassAndObject(input);
+    public Class<Object> baseType() {
+        return Object.class;
     }
 
     @Override
-    public void encode(T obj, DataWriter out) throws IOException {
+    public Object decode(DataReader in) throws IOException {
+        input.setInputStream(in.asStream());
+
+        return kryo.readClassAndObject(input);
+    }
+
+    @Override
+    public void encode(Object obj, DataWriter out) throws IOException {
         output.setOutputStream(out.asStream());
 
         kryo.writeClassAndObject(output, obj);

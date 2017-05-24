@@ -56,12 +56,12 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
     public void exampleMessageReceiver() throws Exception {
         Hekate hekate = new HekateBootstrap()
             .withService(new MessagingServiceFactory()
-                .withChannel(new MessagingChannelConfig<String>()
+                .withChannel(MessagingChannelConfig.of(String.class)
                     .withName("example")
                     .withReceiver(new ExampleReceiver())))
             .join();
 
-        hekate.messaging().channel("example").aggregate("example message").get();
+        hekate.messaging().channel("example", String.class).aggregate("example message").get();
 
         hekate.leave();
     }
@@ -70,7 +70,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
     public void exampleChannel() throws Exception {
         // Start:configure_channel
         // Configure channel that will support messages of String type (for simplicity).
-        MessagingChannelConfig<String> channelCfg = new MessagingChannelConfig<String>()
+        MessagingChannelConfig<String> channelCfg = MessagingChannelConfig.of(String.class)
             .withName("example.channel") // Channel name.
             // Message receiver (optional - if not specified then channel will act as a sender only)
             .withReceiver(msg -> {
@@ -99,7 +99,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         assertNotNull(messaging);
 
         // Start:access_channel
-        MessagingChannel<String> channel = hekate.messaging().channel("example.channel");
+        MessagingChannel<String> channel = hekate.messaging().channel("example.channel", String.class);
         // End:access_channel
 
         assertNotNull(channel);
@@ -112,7 +112,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
     }
 
     private void exampleUnicast(Hekate hekate) throws Exception {
-        MessagingChannel<String> channel = hekate.messaging().channel("example.channel");
+        MessagingChannel<String> channel = hekate.messaging().channel("example.channel", String.class);
 
         unicastRequestSyncExample(channel);
 
@@ -170,7 +170,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
     }
 
     private void broadcastExample(Hekate hekate) throws Exception {
-        MessagingChannel<String> channel = hekate.messaging().channel("example.channel");
+        MessagingChannel<String> channel = hekate.messaging().channel("example.channel", String.class);
 
         // Start:aggregate_sync
         // Submit aggregation request to all remote nodes.

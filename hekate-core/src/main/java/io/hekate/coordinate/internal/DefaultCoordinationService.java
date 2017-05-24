@@ -75,7 +75,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private static final String MESSAGING_CHANNEL = "hekate.coordination";
+    private static final String CHANNEL_NAME = "hekate.coordination";
 
     private static final String PROCESSES_PROPERTY = "processes";
 
@@ -174,13 +174,14 @@ public class DefaultCoordinationService implements CoordinationService, Configur
             }
         });
 
-        return Collections.singleton(new MessagingChannelConfig<CoordinationProtocol>()
-            .withName(MESSAGING_CHANNEL)
-            .withLogCategory(DefaultCoordinationService.class.getName())
-            .withNioThreads(nioThreads)
-            .withMessageCodec(() -> new CoordinationProtocolCodec(processCodecs))
-            .withClusterFilter(NODE_FILTER)
-            .withReceiver(this::handleMessage)
+        return Collections.singleton(
+            MessagingChannelConfig.of(CoordinationProtocol.class)
+                .withName(CHANNEL_NAME)
+                .withClusterFilter(NODE_FILTER)
+                .withNioThreads(nioThreads)
+                .withLogCategory(DefaultCoordinationService.class.getName())
+                .withMessageCodec(() -> new CoordinationProtocolCodec(processCodecs))
+                .withReceiver(this::handleMessage)
         );
     }
 
@@ -198,7 +199,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
             if (!processesConfig.isEmpty()) {
                 cluster.addListener(this::processTopologyChange, ClusterEventType.JOIN, ClusterEventType.CHANGE);
 
-                MessagingChannel<CoordinationProtocol> channel = messaging.channel(MESSAGING_CHANNEL);
+                MessagingChannel<CoordinationProtocol> channel = messaging.channel(CHANNEL_NAME, CoordinationProtocol.class);
 
                 processesConfig.forEach(cfg ->
                     register(cfg, channel)

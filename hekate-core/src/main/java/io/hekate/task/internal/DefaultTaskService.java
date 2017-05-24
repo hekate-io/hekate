@@ -167,7 +167,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
 
     @Override
     public Collection<MessagingChannelConfig<?>> configureMessaging() {
-        MessagingChannelConfig<TaskProtocol> cfg = new MessagingChannelConfig<TaskProtocol>()
+        MessagingChannelConfig<TaskProtocol> cfg = MessagingChannelConfig.of(TaskProtocol.class)
             .withName(CHANNEL_NAME)
             .withLogCategory(getClass().getName())
             .withClusterFilter(n -> n.hasService(TaskService.class))
@@ -194,7 +194,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
                 log.debug("Initializing...");
             }
 
-            MessagingChannel<TaskProtocol> channel = messaging.channel(CHANNEL_NAME);
+            MessagingChannel<TaskProtocol> channel = messaging.channel(CHANNEL_NAME, TaskProtocol.class);
 
             rootExecutor = new FilteredTaskService(this, channel);
 

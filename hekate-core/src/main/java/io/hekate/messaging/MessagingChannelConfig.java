@@ -18,6 +18,7 @@ package io.hekate.messaging;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
+import io.hekate.codec.Codec;
 import io.hekate.codec.CodecFactory;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.internal.util.ArgAssert;
@@ -36,6 +37,12 @@ import java.util.function.Consumer;
  * Configuration options for a {@link MessagingChannel}.
  *
  * <p>
+ * Instances of this class are strongly recommended to be constructed via the {@link #MessagingChannelConfig(Class)} constructor in order
+ * to provide the type safety of messaging operations. {@link #MessagingChannelConfig() Default} (no-arg) constructor of this class is
+ * provide for reflections-based instantiations by IoC frameworks only.
+ * </p>
+ *
+ * <p>
  * For configuration options please see the documentation of setter-methods defined in this class.
  * </p>
  *
@@ -49,6 +56,8 @@ import java.util.function.Consumer;
  */
 public class MessagingChannelConfig<T> {
     private String name;
+
+    private Class<T> baseType = unsafeDefaultBaseType();
 
     private int workerThreads;
 
@@ -77,19 +86,106 @@ public class MessagingChannelConfig<T> {
     private String logCategory;
 
     /**
-     * Default constructor.
+     * Unsafe default constructor that should be used only for reflections-based instantiation by IoC frameworks. For programmatic
+     * construction the {@link #MessagingChannelConfig(Class)} constructor must be used instead of this one.
+     *
+     * <p>
+     * Instances that are constructed via this constructor will have their {@link #setBaseType(Class) base type} set to {@link Object}.
+     * </p>
+     *
+     * @see #MessagingChannelConfig(Class)
+     * @deprecated Not really deprecated, but set so in order to produce warnings when this constructor is used instead of the {@link
+     * #MessagingChannelConfig(Class) recommended} one.
      */
+    @Deprecated
     public MessagingChannelConfig() {
         // No-op.
     }
 
     /**
-     * Constructs new instance.
+     * Type safe constructor.
      *
-     * @param name Channel name (see {@link #setName(String)}).
+     * <p>
+     * This constructor sets the base type for messages that can be transferred over this channel. If an attempt is made to transfer a
+     * message who's type is
+     * not compatible with the specified one then an error will
+     * </p>
+     *
+     * <p>
+     * <b>Important:</b> the specified base type must be compatible with the {@link Codec#baseType() base type} of the
+     * {@link #setMessageCodec(CodecFactory) message codec} of this channel and must be the same across all cluster nodes.
+     * </p>
+     *
+     * @param baseType Base type of messages that can be transferred over this channel.
      */
-    public MessagingChannelConfig(String name) {
-        this.name = name;
+    public MessagingChannelConfig(Class<T> baseType) {
+        setBaseType(baseType);
+    }
+
+    /**
+     * Shortcut method for {@link #MessagingChannelConfig(Class)} constructor.
+     *
+     * @param baseType Base type of messages that can be transferred over this channel (see {@link #setBaseType(Class)}).
+     * @param <T> Base type of messages that can be transferred over this channel.
+     *
+     * @return New instance.
+     */
+    public static <T> MessagingChannelConfig<T> of(Class<T> baseType) {
+        return new MessagingChannelConfig<>(baseType);
+    }
+
+    /**
+     * Shortcut method for {@link #MessagingChannelConfig(Class)} constructor to produce polyglot channels with {@link Object} base type.
+     *
+     * @return New instance.
+     *
+     * @see #MessagingChannelConfig(Class) 
+     */
+    public static MessagingChannelConfig<Object> unchecked() {
+        return new MessagingChannelConfig<>(Object.class);
+    }
+
+    /**
+     * Returns the base type of messages that can be transferred over this channel (see {@link #setBaseType(Class)}).
+     *
+     * @return Base type of messages that can be transferred over this channel.
+     */
+    public Class<T> getBaseType() {
+        return baseType;
+    }
+
+    /**
+     * Sets the base type for messages that can be transferred over this channel. If an attempt is made to transfer a message who's type is
+     * not compatible with the specified one then an error will
+     *
+     * <p>
+     * If not specified then {@link Object} type will be used by default.
+     * </p>
+     *
+     * <p>
+     * <b>Important:</b> the specified base type must be compatible with the {@link Codec#baseType() base type} of the
+     * {@link #setMessageCodec(CodecFactory) message codec} of this channel and must be the same across all cluster nodes.
+     * </p>
+     *
+     * @param baseType Base type of messages that can be transferred over this channel.
+     */
+    public void setBaseType(Class<T> baseType) {
+        ArgAssert.notNull(baseType, "base type");
+
+        this.baseType = baseType;
+    }
+
+    /**
+     * Fluent-style version of {@link #setBaseType(Class)}.
+     *
+     * @param baseType Base type of messages that can be transferred over this channel.
+     *
+     * @return This instance.
+     */
+    public MessagingChannelConfig<T> withBaseType(Class<T> baseType) {
+        setBaseType(baseType);
+
+        return this;
     }
 
     /**
@@ -652,6 +748,11 @@ public class MessagingChannelConfig<T> {
         setLogCategory(logCategory);
 
         return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> Class<T> unsafeDefaultBaseType() {
+        return (Class<T>)Object.class;
     }
 
     @Override

@@ -121,7 +121,7 @@ import java.util.List;
  * <h2>Accessing channels</h2>
  * <p>
  * Once configured and registered, channels can be accessed via {@link MessagingService#channel(String)} method with the {@link
- * MessagingChannelConfig#setName(String) channel name} passed in as a parameter.
+ * MessagingChannelConfig#setName(String) channel name} and {@link MessagingChannelConfig#setBaseType(Class) base type}.
  * ${source: messaging/MessagingServiceJavadocTest.java#access_channel}
  * </p>
  *
@@ -269,7 +269,8 @@ import java.util.List;
  * By default, all unicast operations (like {@link MessagingChannel#send(Object, SendCallback) send(...)} and
  * {@link MessagingChannel#request(Object, ResponseCallback) request(...)}) are processed on randomly selected nodes and randomly selected
  * threads of these nodes. If you want to consistently route some messages based on certain criteria, then an affinity key should be
- * specified via {@link MessagingChannel#withAffinity(Object)}. All such messages will be routed via {@link RendezvousHashMapper} so that in
+ * specified via {@link MessagingChannel#withAffinity(Object)}. All such messages will be routed via {@link RendezvousHashMapper} so that
+ * in
  * a stable cluster topology all messages with the same key will always be routed to the same node and will always be processed by the same
  * thread of that node.
  * </p>
@@ -320,17 +321,31 @@ public interface MessagingService extends Service {
     List<MessagingChannel<?>> allChannels();
 
     /**
-     * Returns a messaging channel for the specified name.
+     * Returns a generic messaging channel for the specified name.
      *
-     * @param channelName Channel name (see {@link MessagingChannelConfig#setName(String)}).
-     * @param <T> Base type of messages that can be supported by the messaging channels.
+     * @param name Channel name (see {@link MessagingChannelConfig#setName(String)}).
      *
-     * @return Unicast channel.
+     * @return Messaging channel.
      *
      * @throws IllegalArgumentException if there is no such channel configuration with the specified name.
      * @see MessagingServiceFactory#setChannels(List)
      */
-    <T> MessagingChannel<T> channel(String channelName) throws IllegalArgumentException;
+    MessagingChannel<Object> channel(String name) throws IllegalArgumentException;
+
+    /**
+     * Returns a type-safe messaging channel for the specified name.
+     *
+     * @param name Channel name (see {@link MessagingChannelConfig#setName(String)}).
+     * @param baseType Base type of messages that can be supported by the messaging channel (see {@link
+     * MessagingChannelConfig#MessagingChannelConfig(Class)}).
+     * @param <T> Base type of messages that can be supported by the messaging channel.
+     *
+     * @return Messaging channel.
+     *
+     * @throws IllegalArgumentException if there is no such channel configuration with the specified name.
+     * @see MessagingServiceFactory#setChannels(List)
+     */
+    <T> MessagingChannel<T> channel(String name, Class<T> baseType) throws IllegalArgumentException;
 
     /**
      * Returns {@code true} if this service has a messaging channel with the specified name.

@@ -106,6 +106,11 @@ public abstract class CodecTestBase<T extends CodecFactory<Object>> extends Heka
     }
 
     @Test
+    public void testBaseType() {
+        assertEquals(Object.class, factory.createCodec().baseType());
+    }
+
+    @Test
     public void testEncodeDecode() throws Exception {
         Codec<Object> encoder = factory.createCodec();
         Codec<Object> decoder = factory.createCodec();

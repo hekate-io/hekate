@@ -51,7 +51,7 @@ public class MessagingInjectionJavadocTest extends HekateAutoConfigurerTestBase 
     public static class MyApp {
         @Bean
         public MessagingChannelConfig<Object> messagingChannelConfig() {
-            return new MessagingChannelConfig<>()
+            return MessagingChannelConfig.unchecked()
                 .withName("my-channel")
                 .withReceiver(msg ->
                     System.out.println("Got message " + msg)

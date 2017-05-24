@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 
 class MetricsProtocolCodec implements Codec<MetricsProtocol> {
-    public static final String PROTOCOL_ID = "hekate.metrics";
 
     private static final MetricsProtocol.Type[] TYPES_CACHE = MetricsProtocol.Type.values();
 
@@ -40,6 +39,11 @@ class MetricsProtocolCodec implements Codec<MetricsProtocol> {
     @Override
     public boolean isStateful() {
         return true;
+    }
+
+    @Override
+    public Class<MetricsProtocol> baseType() {
+        return MetricsProtocol.class;
     }
 
     @Override

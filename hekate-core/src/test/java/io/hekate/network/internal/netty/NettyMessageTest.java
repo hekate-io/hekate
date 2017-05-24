@@ -52,6 +52,11 @@ public class NettyMessageTest extends HekateTestBase {
             }
 
             @Override
+            public Class<Object> baseType() {
+                return Object.class;
+            }
+
+            @Override
             public Object decode(DataReader in) throws IOException {
                 throw new AssertionError("Should not be called.");
             }
@@ -113,6 +118,11 @@ public class NettyMessageTest extends HekateTestBase {
             }
 
             @Override
+            public Class<Object> baseType() {
+                return Object.class;
+            }
+
+            @Override
             public Object decode(DataReader in) throws IOException {
                 return in.readByte();
             }
@@ -164,6 +174,11 @@ public class NettyMessageTest extends HekateTestBase {
             @Override
             public boolean isStateful() {
                 return false;
+            }
+
+            @Override
+            public Class<Object> baseType() {
+                return Object.class;
             }
 
             @Override

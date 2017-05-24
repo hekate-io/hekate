@@ -110,7 +110,7 @@ public class FstCodecFactory<T> implements CodecFactory<T> {
             cfg.setShareReferences(sharedReferences);
         }
 
-        return new FstCodec<>(cfg);
+        return newCodec(cfg);
     }
 
     /**
@@ -236,6 +236,11 @@ public class FstCodecFactory<T> implements CodecFactory<T> {
         knownTypes.putAll(types);
 
         return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Codec<T> newCodec(FSTConfiguration cfg) {
+        return (Codec<T>)new FstCodec(cfg);
     }
 
     @Override

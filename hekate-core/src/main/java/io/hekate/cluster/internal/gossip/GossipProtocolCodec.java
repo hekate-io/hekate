@@ -72,6 +72,11 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
     }
 
     @Override
+    public Class<GossipProtocol> baseType() {
+        return GossipProtocol.class;
+    }
+
+    @Override
     public void encode(GossipProtocol msg, DataWriter out) throws IOException {
         try {
             GossipProtocol.Type msgType = msg.type();

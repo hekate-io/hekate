@@ -68,17 +68,17 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
 
         @Bean
         public MessagingChannelConfig<Object> channel1Config() {
-            return new MessagingChannelConfig<>().withName("test1");
+            return MessagingChannelConfig.unchecked().withName("test1");
         }
 
         @Bean
         public MessagingChannelConfig<Object> channel2Config() {
-            return new MessagingChannelConfig<>().withName("test2");
+            return MessagingChannelConfig.unchecked().withName("test2");
         }
 
         @Bean
         public MessagingChannelConfig<Object> channel3Config() {
-            return new MessagingChannelConfig<>().withName("test3");
+            return MessagingChannelConfig.unchecked().withName("test3");
         }
     }
 

@@ -45,6 +45,7 @@ import io.netty.handler.traffic.TrafficCounter;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.util.internal.ThrowableUtil;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -61,6 +62,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkEndpoint<Object> {
+    private static final ClosedChannelException WRITE_CLOSED_CHANNEL_EXCEPTION = ThrowableUtil.unknownStackTrace(
+        new ClosedChannelException(), NettyServerClient.class, "doSend()"
+    );
+
     private final Map<String, HandlerRegistration> handlers;
 
     private final InetSocketAddress remoteAddress;
@@ -560,7 +565,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
 
             if (onSend != null) {
                 NettyUtils.runAtAllCost(eventLoop, () ->
-                    notifyOnChannelClose(msg, onSend)
+                    notifyOnError(msg, onSend, WRITE_CLOSED_CHANNEL_EXCEPTION)
                 );
             }
         } else {
@@ -570,6 +575,13 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
     }
 
     private void write(Object msg, NetworkSendCallback<Object> onSend, ChannelHandlerContext localCtx) {
+        if (!codec.baseType().isInstance(msg)) {
+            String expected = codec.baseType().getName();
+            String real = msg.getClass().getName();
+
+            notifyOnError(msg, onSend, new CodecException("Unsupported message type [expected=" + expected + ", real=" + real + ']'));
+        }
+
         if (debug) {
             log.debug("Sending to a client [address={}, message={}]", address(), msg);
         }
@@ -609,8 +621,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                 if (result.isSuccess()) {
                     log.debug("Done sending message to a client [address={}, message={}]", address(), msg);
                 } else {
-                    log.debug("Failed to send message to a client [address={}, message={}, reason={}]", address(), msg,
-                        result.cause());
+                    log.debug("Failed to send message to a client [address={}, message={}, reason={}]", address(), msg, result.cause());
                 }
             }
 
@@ -662,9 +673,9 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         return promise;
     }
 
-    private void notifyOnChannelClose(Object msg, NetworkSendCallback<Object> onSend) {
+    private void notifyOnError(Object msg, NetworkSendCallback<Object> onSend, Throwable error) {
         try {
-            onSend.onComplete(msg, Optional.of(new ClosedChannelException()), this);
+            onSend.onComplete(msg, Optional.of(error), this);
         } catch (RuntimeException | Error e) {
             log.error("Failed to notify callback on network operation failure "
                 + "[protocol={}, address={}, message={}]", protocol, address(), msg, e);

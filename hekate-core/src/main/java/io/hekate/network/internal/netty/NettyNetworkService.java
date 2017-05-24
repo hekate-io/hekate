@@ -676,6 +676,11 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
             public boolean isStateful() {
                 return false;
             }
+
+            @Override
+            public Class<Object> baseType() {
+                return Object.class;
+            }
         });
 
         ping.setProtocol(PING_PROTOCOL);

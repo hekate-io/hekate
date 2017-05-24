@@ -66,23 +66,6 @@ public class MessagingServiceFactory implements ServiceFactory<MessagingService>
     }
 
     /**
-     * Fluent-style shortcut to register a new {@link MessagingChannelConfig} with the specified
-     * {@link MessagingChannelConfig#setName(String) name}.
-     *
-     * @param name Channel name (see {@link MessagingChannelConfig#setName(String)}).
-     * @param <T> Base class of messages that can be handled by the channel.
-     *
-     * @return New channel configuration.
-     */
-    public <T> MessagingChannelConfig<T> withChannel(String name) {
-        MessagingChannelConfig<T> channel = new MessagingChannelConfig<>(name);
-
-        withChannel(channel);
-
-        return channel;
-    }
-
-    /**
      * Returns the list of channel configuration providers (see {@link #setConfigProviders(List)}).
      *
      * @return Channel configuration providers.

@@ -153,6 +153,11 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
+    public Class<T> baseType() {
+        return gateway.baseType();
+    }
+
+    @Override
     public DefaultMessagingChannel<T> withAffinity(Object affinityKey) {
         return new DefaultMessagingChannel<>(gateway, cluster, partitions, balancer, failover, timeout, affinityKey);
     }

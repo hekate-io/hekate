@@ -44,6 +44,11 @@ class CoordinationProtocolCodec implements Codec<CoordinationProtocol> {
     }
 
     @Override
+    public Class<CoordinationProtocol> baseType() {
+        return CoordinationProtocol.class;
+    }
+
+    @Override
     public void encode(CoordinationProtocol msg, DataWriter out) throws IOException {
         CoordinationProtocol.Type type = msg.type();
 

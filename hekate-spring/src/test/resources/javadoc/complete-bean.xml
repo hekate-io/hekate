@@ -26,10 +26,10 @@
         <property name="cluster" value="my-cluster"/>
         <!-- Node roles. -->
         <property name="roles">
-            <set>
+            <list>
                 <value>role 1</value>
                 <value>role 2</value>
-            </set>
+            </list>
         </property>
         <!-- Node properties. -->
         <property name="properties">

@@ -96,8 +96,9 @@ public class KryoCodecFactory<T> implements CodecFactory<T> {
     private InstantiatorStrategy instantiatorStrategy = new DefaultInstantiatorStrategy(new StdInstantiatorStrategy());
 
     @Override
+    @SuppressWarnings("unchecked")
     public Codec<T> createCodec() {
-        return new KryoCodec<>(this);
+        return (Codec<T>)new KryoCodec(this);
     }
 
     /**

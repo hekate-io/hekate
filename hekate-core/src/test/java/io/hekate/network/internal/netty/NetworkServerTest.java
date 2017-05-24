@@ -17,6 +17,7 @@
 package io.hekate.network.internal.netty;
 
 import io.hekate.HekateTestContext;
+import io.hekate.codec.CodecException;
 import io.hekate.core.HekateConfigurationException;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.core.internal.util.Utils;
@@ -464,7 +465,7 @@ public class NetworkServerTest extends NetworkTestBase {
     public void testServerClientInExternalThread() throws Exception {
         NetworkServer server = createServer();
 
-        CompletableFuture<NetworkEndpoint<String>> latch = new CompletableFuture<>();
+        CompletableFuture<NetworkEndpoint<String>> serverClientFuture = new CompletableFuture<>();
 
         server.addHandler(createHandler("external_client", new NetworkServerHandler<String>() {
             @Override
@@ -474,7 +475,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
             @Override
             public void onConnect(String msg, NetworkEndpoint<String> client) {
-                latch.complete(client);
+                serverClientFuture.complete(client);
             }
         }));
 
@@ -488,7 +489,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
         client.connect(server.address(), clientCallback);
 
-        NetworkEndpoint<String> serverClient = get(latch);
+        NetworkEndpoint<String> serverClient = get(serverClientFuture);
 
         assertEquals(context().ssl().isPresent(), serverClient.isSecure());
 
@@ -507,6 +508,49 @@ public class NetworkServerTest extends NetworkTestBase {
         failCallback.awaitForErrors("fail");
 
         assertTrue(failCallback.getFailure("fail") instanceof ClosedChannelException);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testWrongMessageType() throws Exception {
+        NetworkServer server = createServer();
+
+        CompletableFuture<NetworkEndpoint<String>> serverClientFuture = new CompletableFuture<>();
+
+        server.addHandler(createHandler("external_client", new NetworkServerHandler<String>() {
+            @Override
+            public void onMessage(NetworkMessage<String> msg, NetworkEndpoint<String> from) {
+                // No-op.
+            }
+
+            @Override
+            public void onConnect(String msg, NetworkEndpoint<String> client) {
+                serverClientFuture.complete(client);
+            }
+        }));
+
+        server.start(newServerAddress(), new NetworkServerCallbackMock()).get();
+
+        NetworkClient<String> client = createClient(c -> c.setProtocol("external_client"));
+
+        client.connect(server.address(), new NetworkClientCallbackMock<>());
+
+        NetworkEndpoint serverClient = get(serverClientFuture);
+
+        repeat(3, i -> {
+            Object wrongType = new Object();
+
+            NetworkSendCallbackMock callback = new NetworkSendCallbackMock();
+
+            serverClient.send(wrongType, callback);
+
+            callback.awaitForErrors(wrongType);
+
+            Throwable err = callback.getFailure(wrongType);
+
+            assertTrue(err.toString(), err instanceof CodecException);
+            assertEquals("Unsupported message type [expected=java.lang.String, real=java.lang.Object]", err.getMessage());
+        });
     }
 
     @Test

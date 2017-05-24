@@ -27,11 +27,15 @@ import java.io.IOException;
 class ThreadLocalCodecFactory<T> implements CodecFactory<T> {
     private final CodecFactory<T> delegate;
 
+    private final Class<T> baseType;
+
     @ToStringIgnore
     private final ThreadLocal<Codec<T>> cache = new ThreadLocal<>();
 
     public ThreadLocalCodecFactory(CodecFactory<T> delegate) {
         this.delegate = delegate;
+
+        baseType = delegate.createCodec().baseType();
     }
 
     @Override
@@ -40,6 +44,11 @@ class ThreadLocalCodecFactory<T> implements CodecFactory<T> {
             @Override
             public boolean isStateful() {
                 return false;
+            }
+
+            @Override
+            public Class<T> baseType() {
+                return baseType;
             }
 
             @Override

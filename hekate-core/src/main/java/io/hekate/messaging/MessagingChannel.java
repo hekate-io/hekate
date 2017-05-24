@@ -72,6 +72,15 @@ public interface MessagingChannel<T> extends HasClusterFilter<MessagingChannel<T
     String name();
 
     /**
+     * Returns the base type of messages that can be transferred through this channel.
+     *
+     * @return Base type of messages that can be transferred through this channel.
+     *
+     * @see MessagingChannelConfig#MessagingChannelConfig(Class)
+     */
+    Class<T> baseType();
+
+    /**
      * Returns the cluster view of this channel.
      *
      * <p>

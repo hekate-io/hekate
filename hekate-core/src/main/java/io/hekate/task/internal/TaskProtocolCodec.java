@@ -90,6 +90,11 @@ class TaskProtocolCodec implements Codec<TaskProtocol> {
     }
 
     @Override
+    public Class<TaskProtocol> baseType() {
+        return TaskProtocol.class;
+    }
+
+    @Override
     public TaskProtocol decode(DataReader in) throws IOException {
         TaskProtocol.Type type = TYPES[in.readByte()];
 

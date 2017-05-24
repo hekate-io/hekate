@@ -146,13 +146,18 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
         channelsConfig.forEach(cfg -> {
             check.notEmpty(cfg.getName(), "name");
+            check.notNull(cfg.getBaseType(), "base type");
+            check.positive(cfg.getPartitions(), "partitions");
+            check.isPowerOfTwo(cfg.getPartitions(), "partitions size");
+
+            Class<?> codecType = codecFactory(cfg).createCodec().baseType();
+
+            check.isTrue(codecType.isAssignableFrom(cfg.getBaseType()), "channel type must be a sub-class of message codec type "
+                + "[channel-type=" + cfg.getBaseType().getName() + ", codec-type=" + codecType.getName() + ']');
 
             String name = cfg.getName().trim();
 
             check.unique(name, uniqueNames, "name");
-            check.positive(cfg.getPartitions(), "partitions");
-            check.isTrue(Utils.isPowerOfTwo(cfg.getPartitions()), "Partitions size must be a power of two "
-                + "[size=" + cfg.getPartitions() + ']');
 
             MessagingBackPressureConfig pressureCfg = cfg.getBackPressure();
 
@@ -310,16 +315,27 @@ public class DefaultMessagingService implements MessagingService, DependentServi
     }
 
     @Override
-    public <T> DefaultMessagingChannel<T> channel(String channelName) {
-        ArgAssert.notNull(channelName, "Channel name");
+    public DefaultMessagingChannel<Object> channel(String name) throws IllegalArgumentException {
+        return channel(name, Object.class);
+    }
+
+    @Override
+    public <T> DefaultMessagingChannel<T> channel(String name, Class<T> baseType) throws IllegalArgumentException {
+        ArgAssert.notNull(name, "Channel name");
+        ArgAssert.notNull(baseType, "Base type");
 
         guard.lockReadWithStateCheck();
 
         try {
             @SuppressWarnings("unchecked")
-            MessagingGateway<T> gateway = (MessagingGateway<T>)gateways.get(channelName);
+            MessagingGateway<T> gateway = (MessagingGateway<T>)gateways.get(name);
 
-            ArgAssert.check(gateway != null, "No such channel [name=" + channelName + ']');
+            ArgAssert.check(gateway != null, "No such channel [name=" + name + ']');
+
+            if (!gateway.baseType().isAssignableFrom(baseType)) {
+                throw new ClassCastException("Messaging channel doesn't support the specified type "
+                    + "[channel-type=" + gateway.baseType().getName() + ", requested-type=" + baseType.getName() + ']');
+            }
 
             return gateway.channel();
         } finally {
@@ -347,6 +363,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         }
 
         String name = cfg.getName().trim();
+        Class<T> baseType = cfg.getBaseType();
         int nioThreads = cfg.getNioThreads();
         int workerThreads = cfg.getWorkerThreads();
         long idleTimeout = cfg.getIdleTimeout();
@@ -358,16 +375,6 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         FailoverPolicy failover = cfg.getFailoverPolicy();
         LoadBalancer<T> loadBalancer = cfg.getLoadBalancer();
         MessagingBackPressureConfig pressureCfg = cfg.getBackPressure();
-
-        Logger channelLog;
-
-        String logCategory = Utils.nullOrTrim(cfg.getLogCategory());
-
-        if (logCategory != null) {
-            channelLog = LoggerFactory.getLogger(logCategory);
-        } else {
-            channelLog = LoggerFactory.getLogger(MessagingGateway.class);
-        }
 
         ClusterNode localNode = cluster.localNode();
         ClusterView clusterView = cluster.filter(new ChannelNodeFilter(name, filter));
@@ -426,9 +433,9 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         // Create gateway.
         MessageReceiver<T> guardedReceiver = applyGuard(receiver);
 
-        MessagingGateway<T> gateway = new MessagingGateway<>(name, connector, localNode, clusterView, guardedReceiver, nioThreads, async,
-            channelMetrics, receivePressureGuard, sendPressureGuard, failover, messagingTimeout, loadBalancer, partitions, backupNodes,
-            channelLog, checkIdle,
+        MessagingGateway<T> gateway = new MessagingGateway<>(name, baseType, connector, localNode, clusterView, guardedReceiver, nioThreads,
+            async, channelMetrics, receivePressureGuard, sendPressureGuard, failover, messagingTimeout, loadBalancer, partitions,
+            backupNodes, logger(cfg), checkIdle,
             // Before close callback.
             () -> {
                 if (DEBUG) {
@@ -488,25 +495,23 @@ public class DefaultMessagingService implements MessagingService, DependentServi
     private <T> NetworkConnectorConfig<MessagingProtocol> toNetworkConfig(MessagingChannelConfig<T> cfg) {
         assert cfg != null : "Channel configuration is null.";
 
-        String name = cfg.getName().trim();
-        MessageReceiver<T> receiver = cfg.getReceiver();
-        String logCategory = Utils.nullOrTrim(cfg.getLogCategory());
-        int socketThreadPoolSize = cfg.getNioThreads();
+        NetworkConnectorConfig<MessagingProtocol> net = new NetworkConnectorConfig<>();
 
-        CodecFactory<T> codecFactory = resolveCodecFactory(cfg);
+        net.setProtocol(cfg.getName().trim());
+        net.setLogCategory(loggerName(cfg));
 
-        NetworkConnectorConfig<MessagingProtocol> netCfg = new NetworkConnectorConfig<>();
+        CodecFactory<T> codecFactory = safeCodecFactory(cfg);
 
-        netCfg.setProtocol(name);
-        netCfg.setLogCategory(logCategory);
-        netCfg.setMessageCodec(() -> new MessagingProtocolCodec<>(codecFactory.createCodec()));
+        net.setMessageCodec(() ->
+            new MessagingProtocolCodec<>(codecFactory.createCodec())
+        );
 
-        if (socketThreadPoolSize > 0) {
-            netCfg.setNioThreads(socketThreadPoolSize);
+        if (cfg.getNioThreads() > 0) {
+            net.setNioThreads(cfg.getNioThreads());
         }
 
-        if (receiver != null) {
-            netCfg.setServerHandler(new NetworkServerHandler<MessagingProtocol>() {
+        if (cfg.getReceiver() != null) {
+            net.setServerHandler(new NetworkServerHandler<MessagingProtocol>() {
                 @Override
                 public void onConnect(MessagingProtocol message, NetworkEndpoint<MessagingProtocol> client) {
                     MessagingProtocol.Connect connect = (MessagingProtocol.Connect)message;
@@ -568,7 +573,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             });
         }
 
-        return netCfg;
+        return net;
     }
 
     private void updateTopology(ClusterEvent event) {
@@ -585,23 +590,33 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         }
     }
 
-    private <T> CodecFactory<T> resolveCodecFactory(MessagingChannelConfig<T> cfg) {
-        CodecFactory<T> codecFactory = useDefaultIfNull(cfg.getMessageCodec());
+    private <T> CodecFactory<T> safeCodecFactory(MessagingChannelConfig<T> cfg) {
+        CodecFactory<T> factory = codecFactory(cfg);
 
-        if (codecFactory.createCodec().isStateful()) {
-            return codecFactory;
+        if (factory.createCodec().isStateful()) {
+            return factory;
         } else {
-            return new ThreadLocalCodecFactory<>(codecFactory);
+            return new ThreadLocalCodecFactory<>(factory);
         }
     }
 
     @SuppressWarnings("unchecked")
-    private <T> CodecFactory<T> useDefaultIfNull(CodecFactory<T> factory) {
-        if (factory == null) {
+    private <T> CodecFactory<T> codecFactory(MessagingChannelConfig<T> cfg) {
+        if (cfg.getMessageCodec() == null) {
             return (CodecFactory<T>)codecService.codecFactory();
         }
 
-        return factory;
+        return cfg.getMessageCodec();
+    }
+
+    private <T> Logger logger(MessagingChannelConfig<T> cfg) {
+        return LoggerFactory.getLogger(loggerName(cfg));
+    }
+
+    private String loggerName(MessagingChannelConfig<?> cfg) {
+        String name = Utils.nullOrTrim(cfg.getLogCategory());
+
+        return name != null ? name : MessagingGateway.class.getName();
     }
 
     @Override

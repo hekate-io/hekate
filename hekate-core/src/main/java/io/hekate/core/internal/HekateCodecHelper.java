@@ -53,6 +53,11 @@ final class HekateCodecHelper {
                     }
 
                     @Override
+                    public Class<T> baseType() {
+                        return codec.baseType();
+                    }
+
+                    @Override
                     public T decode(DataReader in) throws IOException {
                         Hekate existing = INSTANCE.get();
 

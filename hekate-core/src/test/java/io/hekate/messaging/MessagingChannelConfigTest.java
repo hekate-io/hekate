@@ -23,7 +23,6 @@ import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.unicast.LoadBalancer;
 import io.hekate.partition.RendezvousHashMapper;
 import org.junit.Test;
-import org.omg.CORBA.Object;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -33,7 +32,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 public class MessagingChannelConfigTest extends HekateTestBase {
-    private final MessagingChannelConfig<Object> cfg = new MessagingChannelConfig<>();
+    private final MessagingChannelConfig<Object> cfg = MessagingChannelConfig.unchecked();
 
     @Test
     public void testName() {
@@ -46,8 +45,6 @@ public class MessagingChannelConfigTest extends HekateTestBase {
         assertSame(cfg, cfg.withName("test2"));
 
         assertEquals("test2", cfg.getName());
-
-        assertEquals("test3", new MessagingChannelConfig<Object>("test3").getName());
     }
 
     @Test

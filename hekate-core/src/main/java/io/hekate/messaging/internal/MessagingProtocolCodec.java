@@ -81,6 +81,11 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
     }
 
     @Override
+    public Class<MessagingProtocol> baseType() {
+        return MessagingProtocol.class;
+    }
+
+    @Override
     public MessagingProtocol decode(DataReader in) throws IOException {
         byte flags = in.readByte();
 

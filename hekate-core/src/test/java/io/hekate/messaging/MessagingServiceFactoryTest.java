@@ -34,8 +34,8 @@ public class MessagingServiceFactoryTest extends HekateTestBase {
     public void testChannels() {
         assertNull(cfg.getChannels());
 
-        MessagingChannelConfig<Object> c1 = new MessagingChannelConfig<>();
-        MessagingChannelConfig<Object> c2 = new MessagingChannelConfig<>();
+        MessagingChannelConfig<Object> c1 = MessagingChannelConfig.unchecked();
+        MessagingChannelConfig<Object> c2 = MessagingChannelConfig.unchecked();
 
         cfg.setChannels(Collections.singletonList(c1));
 
@@ -52,14 +52,6 @@ public class MessagingServiceFactoryTest extends HekateTestBase {
 
         assertTrue(cfg.getChannels().contains(c1));
         assertTrue(cfg.getChannels().contains(c2));
-
-        cfg.setChannels(null);
-
-        MessagingChannelConfig<Object> channel = cfg.withChannel("test");
-
-        assertNotNull(channel);
-        assertEquals("test", channel.getName());
-        assertTrue(cfg.getChannels().contains(channel));
     }
 
     @Test

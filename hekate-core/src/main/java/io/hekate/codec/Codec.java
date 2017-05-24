@@ -49,6 +49,13 @@ public interface Codec<T> {
     boolean isStateful();
 
     /**
+     * Returns the base data type that is supported by this codec.
+     *
+     * @return Base data type that is supported by this codec.
+     */
+    Class<T> baseType();
+
+    /**
      * Decodes object from the provided reader.
      *
      * @param in Data reader.

@@ -148,15 +148,12 @@ public abstract class MessagingServiceTestBase extends HekateNodeParamTestBase {
     }
 
     protected MessagingChannelConfig<String> createChannelConfig() {
-        MessagingChannelConfig<String> cfg = new MessagingChannelConfig<>();
-
-        cfg.setName(TEST_CHANNEL_NAME);
-        cfg.setWorkerThreads(workerThreads);
-        cfg.setNioThreads(nioThreads);
-        cfg.setClusterFilter(node -> node.hasRole(TEST_NODE_ROLE));
-        cfg.setLogCategory(getClass().getName());
-
-        return cfg;
+        return MessagingChannelConfig.of(String.class)
+            .withName(TEST_CHANNEL_NAME)
+            .withWorkerThreads(workerThreads)
+            .withNioThreads(nioThreads)
+            .withClusterFilter(node -> node.hasRole(TEST_NODE_ROLE))
+            .withLogCategory(getClass().getName());
     }
 
     protected void assertResponded(Message<String> msg) {

@@ -80,7 +80,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private static final String LOCK_PREFIX = "hekate.locks";
+    private static final String CHANNEL_NAME = "hekate.locks";
 
     private final StateGuard guard = new StateGuard(LockService.class);
 
@@ -164,8 +164,8 @@ public class DefaultLockService implements LockService, InitializingService, Dep
         }
 
         return Collections.singleton(
-            new MessagingChannelConfig<LockProtocol>()
-                .withName(LOCK_PREFIX)
+            MessagingChannelConfig.of(LockProtocol.class)
+                .withName(CHANNEL_NAME)
                 .withLogCategory(getClass().getName())
                 .withNioThreads(nioThreads)
                 .withWorkerThreads(workerThreads)
@@ -194,7 +194,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
                 scheduler.setRemoveOnCancelPolicy(true);
 
-                MessagingChannel<LockProtocol> channel = messaging.channel(LOCK_PREFIX);
+                MessagingChannel<LockProtocol> channel = messaging.channel(CHANNEL_NAME, LockProtocol.class);
 
                 regionsConfig.forEach(cfg -> {
                     if (DEBUG) {

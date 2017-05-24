@@ -187,6 +187,8 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
         }
     }
 
+    private static final String CHANNEL_NAME = "hekate.metrics";
+
     private static final Logger log = LoggerFactory.getLogger(DefaultClusterMetricsService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -253,17 +255,16 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     @Override
     public Collection<MessagingChannelConfig<?>> configureMessaging() {
         if (enabled) {
-            MessagingChannelConfig<MetricsProtocol> channelCfg = new MessagingChannelConfig<>();
-
-            channelCfg.setName(MetricsProtocolCodec.PROTOCOL_ID);
-            channelCfg.setLogCategory(getClass().getName());
-            channelCfg.setMessageCodec(MetricsProtocolCodec::new);
-            channelCfg.setIdleTimeout(replicationInterval * IDLE_TIMEOUT_MULTIPLY);
-            channelCfg.setReceiver(this::handleMessage);
-            channelCfg.setClusterFilter(METRICS_SUPPORT_FILTER);
-            channelCfg.setWorkerThreads(1);
-
-            return Collections.singleton(channelCfg);
+            return Collections.singleton(
+                MessagingChannelConfig.of(MetricsProtocol.class)
+                    .withName(CHANNEL_NAME)
+                    .withLogCategory(getClass().getName())
+                    .withMessageCodec(MetricsProtocolCodec::new)
+                    .withIdleTimeout(replicationInterval * IDLE_TIMEOUT_MULTIPLY)
+                    .withClusterFilter(METRICS_SUPPORT_FILTER)
+                    .withWorkerThreads(1)
+                    .withReceiver(this::handleMessage)
+            );
         } else {
             return Collections.emptyList();
         }
@@ -281,7 +282,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
                     log.debug("Initializing...");
                 }
 
-                channel = messaging.channel(MetricsProtocolCodec.PROTOCOL_ID);
+                channel = messaging.channel(CHANNEL_NAME, MetricsProtocol.class);
 
                 localNode = ctx.localNode().id();
 

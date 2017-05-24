@@ -171,6 +171,8 @@ class MessagingGateway<T> {
 
     private final String name;
 
+    private final Class<T> baseType;
+
     @ToStringIgnore
     private final Logger log;
 
@@ -231,11 +233,12 @@ class MessagingGateway<T> {
     @ToStringIgnore
     private boolean closed;
 
-    public MessagingGateway(String name, NetworkConnector<MessagingProtocol> net, ClusterNode localNode, ClusterView cluster,
-        MessageReceiver<T> receiver, int nioThreads, MessagingExecutor async, MetricsCallback metrics,
+    public MessagingGateway(String name, Class<T> baseType, NetworkConnector<MessagingProtocol> net, ClusterNode localNode,
+        ClusterView cluster, MessageReceiver<T> receiver, int nioThreads, MessagingExecutor async, MetricsCallback metrics,
         ReceivePressureGuard receivePressure, SendPressureGuard sendPressure, FailoverPolicy failoverPolicy, long defaultTimeout,
         LoadBalancer<T> loadBalancer, int partitions, int backupNodes, Logger log, boolean checkIdle, CloseCallback onBeforeClose) {
         assert name != null : "Name is null.";
+        assert baseType != null : "Base type is null.";
         assert net != null : "Network connector is null.";
         assert localNode != null : "Local cluster node is null.";
         assert cluster != null : "Cluster view is null.";
@@ -243,6 +246,7 @@ class MessagingGateway<T> {
 
         this.id = new MessagingChannelId();
         this.name = name;
+        this.baseType = baseType;
         this.net = net;
         this.localNode = localNode;
         this.cluster = cluster;
@@ -285,22 +289,24 @@ class MessagingGateway<T> {
         return async.poolSize();
     }
 
-    public SendFuture send(Object affinityKey, T message, MessagingOpts<T> opts) {
+    public SendFuture send(Object affinityKey, T msg, MessagingOpts<T> opts) {
         SendCallbackFuture future = new SendCallbackFuture();
 
-        send(affinityKey, message, opts, future);
+        send(affinityKey, msg, opts, future);
 
         return future;
     }
 
-    public void send(Object affinityKey, T message, MessagingOpts<T> opts, SendCallback callback) {
-        assert message != null : "Message must be not null.";
+    public void send(Object affinityKey, T msg, MessagingOpts<T> opts, SendCallback callback) {
+        assert msg != null : "Message must be not null.";
         assert opts != null : "Messaging options must be not null.";
 
-        MessageContext<T> ctx = newContext(affinityKey, message, opts);
+        checkMessageType(msg);
+
+        MessageContext<T> ctx = newContext(affinityKey, msg, opts);
 
         try {
-            long timeout = backPressureAcquire(ctx.opts().timeout(), message);
+            long timeout = backPressureAcquire(ctx.opts().timeout(), msg);
 
             routeAndSend(ctx, callback, null);
 
@@ -313,65 +319,71 @@ class MessagingGateway<T> {
     }
 
     @SuppressWarnings("unchecked") // <- need to cast to the response type.
-    public <R extends T> ResponseFuture<R> request(Object affinityKey, T message, MessagingOpts<T> opts) {
+    public <R extends T> ResponseFuture<R> request(Object affinityKey, T msg, MessagingOpts<T> opts) {
         ResponseCallbackFuture<T> future = new ResponseCallbackFuture<>();
 
-        request(affinityKey, message, opts, future);
+        request(affinityKey, msg, opts, future);
 
         return (ResponseFuture<R>)future;
     }
 
-    public void request(Object affinityKey, T request, MessagingOpts<T> opts, ResponseCallback<T> callback) {
-        assert request != null : "Request message must be not null.";
+    public void request(Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
+        assert msg != null : "Request message must be not null.";
         assert opts != null : "Messaging options must be not null.";
         assert callback != null : "Callback must be not null.";
 
-        MessageContext<T> ctx = newContext(affinityKey, request, opts);
+        checkMessageType(msg);
 
-        requestAsync(request, ctx, callback);
+        MessageContext<T> ctx = newContext(affinityKey, msg, opts);
+
+        requestAsync(msg, ctx, callback);
     }
 
     @SuppressWarnings("unchecked") // <- need to cast to the response type.
-    public <R extends T> SubscribeFuture<R> subscribe(Object affinityKey, T request, MessagingOpts<T> opts) {
+    public <R extends T> SubscribeFuture<R> subscribe(Object affinityKey, T msg, MessagingOpts<T> opts) {
         SubscribeCallbackFuture<T> future = new SubscribeCallbackFuture<>();
 
-        subscribe(affinityKey, request, opts, future);
+        subscribe(affinityKey, msg, opts, future);
 
         return (SubscribeFuture<R>)future;
     }
 
-    public void subscribe(Object affinityKey, T request, MessagingOpts<T> opts, ResponseCallback<T> callback) {
-        assert request != null : "Request message must be not null.";
+    public void subscribe(Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
+        assert msg != null : "Request message must be not null.";
         assert opts != null : "Messaging options must be not null.";
         assert callback != null : "Callback must be not null.";
 
-        MessageContext<T> ctx = newContext(affinityKey, request, opts, true);
+        checkMessageType(msg);
 
-        requestAsync(request, ctx, callback);
+        MessageContext<T> ctx = newContext(affinityKey, msg, opts, true);
+
+        requestAsync(msg, ctx, callback);
     }
 
-    public BroadcastFuture<T> broadcast(Object affinityKey, T message, MessagingOpts<T> opts) {
+    public BroadcastFuture<T> broadcast(Object affinityKey, T msg, MessagingOpts<T> opts) {
         BroadcastCallbackFuture<T> future = new BroadcastCallbackFuture<>();
 
-        broadcast(affinityKey, message, opts, future);
+        broadcast(affinityKey, msg, opts, future);
 
         return future;
     }
 
-    public void broadcast(Object affinityKey, T message, MessagingOpts<T> opts, BroadcastCallback<T> callback) {
-        assert message != null : "Message must be not null.";
+    public void broadcast(Object affinityKey, T msg, MessagingOpts<T> opts, BroadcastCallback<T> callback) {
+        assert msg != null : "Message must be not null.";
         assert opts != null : "Messaging options must be not null.";
         assert callback != null : "Callback must be not null.";
+
+        checkMessageType(msg);
 
         Set<ClusterNode> nodes = opts.cluster().topology().nodeSet();
 
         if (nodes.isEmpty()) {
-            callback.onComplete(null, new EmptyBroadcastResult<>(message));
+            callback.onComplete(null, new EmptyBroadcastResult<>(msg));
         } else {
-            BroadcastContext<T> broadcast = new BroadcastContext<>(message, nodes, callback);
+            BroadcastContext<T> broadcast = new BroadcastContext<>(msg, nodes, callback);
 
             for (ClusterNode node : nodes) {
-                send(affinityKey, message, opts.forSingleNode(node), err -> {
+                send(affinityKey, msg, opts.forSingleNode(node), err -> {
                     boolean completed;
 
                     if (err == null) {
@@ -395,28 +407,30 @@ class MessagingGateway<T> {
     }
 
     @SuppressWarnings("unchecked") // <- need to cast to the response type.
-    public <R extends T> AggregateFuture<R> aggregate(Object affinityKey, T message, MessagingOpts<T> opts) {
+    public <R extends T> AggregateFuture<R> aggregate(Object affinityKey, T msg, MessagingOpts<T> opts) {
         AggregateCallbackFuture<T> future = new AggregateCallbackFuture<>();
 
-        aggregate(affinityKey, message, opts, future);
+        aggregate(affinityKey, msg, opts, future);
 
         return (AggregateFuture<R>)future;
     }
 
-    public void aggregate(Object affinityKey, T message, MessagingOpts<T> opts, AggregateCallback<T> callback) {
-        assert message != null : "Message must be not null.";
+    public void aggregate(Object affinityKey, T msg, MessagingOpts<T> opts, AggregateCallback<T> callback) {
+        assert msg != null : "Message must be not null.";
         assert opts != null : "Messaging options must be not null.";
         assert callback != null : "Callback must be not null.";
+
+        checkMessageType(msg);
 
         List<ClusterNode> nodes = opts.cluster().topology().nodes();
 
         if (nodes.isEmpty()) {
-            callback.onComplete(null, new EmptyAggregateResult<>(message));
+            callback.onComplete(null, new EmptyAggregateResult<>(msg));
         } else {
-            AggregateContext<T> aggregate = new AggregateContext<>(message, nodes, callback);
+            AggregateContext<T> aggregate = new AggregateContext<>(msg, nodes, callback);
 
             for (ClusterNode node : nodes) {
-                request(affinityKey, message, opts.forSingleNode(node), (err, reply) -> {
+                request(affinityKey, msg, opts.forSingleNode(node), (err, reply) -> {
                     boolean completed;
 
                     if (err == null) {
@@ -517,6 +531,10 @@ class MessagingGateway<T> {
 
     public Executor executor() {
         return async.pooledWorker();
+    }
+
+    public Class<T> baseType() {
+        return baseType;
     }
 
     DefaultMessagingChannel<T> channel() {
@@ -1190,11 +1208,11 @@ class MessagingGateway<T> {
         }
     }
 
-    private MessageContext<T> newContext(Object affinityKey, T message, MessagingOpts<T> opts) {
-        return newContext(affinityKey, message, opts, false);
+    private MessageContext<T> newContext(Object affinityKey, T msg, MessagingOpts<T> opts) {
+        return newContext(affinityKey, msg, opts, false);
     }
 
-    private MessageContext<T> newContext(Object affinityKey, T message, MessagingOpts<T> opts, boolean stream) {
+    private MessageContext<T> newContext(Object affinityKey, T msg, MessagingOpts<T> opts, boolean stream) {
         int affinity = affinity(affinityKey);
 
         MessagingWorker worker;
@@ -1205,7 +1223,7 @@ class MessagingGateway<T> {
             worker = async.pooledWorker();
         }
 
-        return new MessageContext<>(message, affinity, affinityKey, worker, opts, stream);
+        return new MessageContext<>(msg, affinity, affinityKey, worker, opts, stream);
     }
 
     private MessagingChannelClosedException channelClosedError(Throwable cause) {
@@ -1226,6 +1244,15 @@ class MessagingGateway<T> {
         }
 
         return err;
+    }
+
+    private void checkMessageType(T msg) {
+        assert msg != null : "Message must be not null.";
+
+        if (!baseType.isInstance(msg)) {
+            throw new ClassCastException("Messaging channel doesn't support the specified type "
+                + "[channel-type=" + baseType.getName() + ", message-type=" + msg.getClass().getName() + ']');
+        }
     }
 
     private static int affinity(Object key) {

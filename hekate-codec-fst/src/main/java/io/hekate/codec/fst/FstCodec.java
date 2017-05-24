@@ -23,7 +23,7 @@ import java.io.IOException;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.FSTObjectOutput;
 
-class FstCodec<T> implements Codec<T> {
+class FstCodec implements Codec<Object> {
     private final FSTConfiguration fst;
 
     public FstCodec(FSTConfiguration fst) {
@@ -38,7 +38,12 @@ class FstCodec<T> implements Codec<T> {
     }
 
     @Override
-    public void encode(T obj, DataWriter out) throws IOException {
+    public Class<Object> baseType() {
+        return Object.class;
+    }
+
+    @Override
+    public void encode(Object obj, DataWriter out) throws IOException {
         FSTObjectOutput objOut = fst.getObjectOutput(out.asStream());
 
         objOut.writeObject(obj);
@@ -46,10 +51,9 @@ class FstCodec<T> implements Codec<T> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public T decode(DataReader in) throws IOException {
+    public Object decode(DataReader in) throws IOException {
         try {
-            return (T)fst.getObjectInput(in.asStream()).readObject();
+            return fst.getObjectInput(in.asStream()).readObject();
         } catch (ClassNotFoundException e) {
             throw new IOException("Failed to deserialize object from stream.", e);
         }

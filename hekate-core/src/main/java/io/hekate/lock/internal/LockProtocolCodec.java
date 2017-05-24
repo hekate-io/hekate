@@ -57,6 +57,11 @@ class LockProtocolCodec implements Codec<LockProtocol> {
     }
 
     @Override
+    public Class<LockProtocol> baseType() {
+        return LockProtocol.class;
+    }
+
+    @Override
     public void encode(LockProtocol msg, DataWriter out) throws IOException {
         LockProtocol.Type type = msg.type();
 
