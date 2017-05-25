@@ -97,6 +97,8 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
                 request.reply("ok");
 
                 ctx.complete();
+
+                complete();
             }
         }
 
@@ -112,6 +114,10 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
         public String getLastValue() {
             return lastValue;
+        }
+
+        protected void complete() {
+            // No-op.
         }
     }
 
@@ -420,9 +426,17 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
         CountDownLatch proceedLatch = new CountDownLatch(1);
 
         AtomicReference<ClusterNode> coordinatorRef = new AtomicReference<>();
-        AtomicInteger aborts = new AtomicInteger();
 
         class BlockingHandler extends CoordinatedValueHandler {
+            private final AtomicInteger stack = new AtomicInteger();
+
+            @Override
+            public void prepare(CoordinationContext ctx) {
+                super.prepare(ctx);
+
+                stack.incrementAndGet();
+            }
+
             @Override
             public void coordinate(CoordinationContext ctx) {
                 if (ctx.size() == 3 && blockLatch.getCount() > 0) {
@@ -440,7 +454,16 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
             public void cancel(CoordinationContext ctx) {
                 super.cancel(ctx);
 
-                aborts.incrementAndGet();
+                stack.decrementAndGet();
+            }
+
+            public int stack() {
+                return stack.get();
+            }
+
+            @Override
+            protected void complete() {
+                stack.decrementAndGet();
             }
         }
 
@@ -461,7 +484,8 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
         HekateTestNode coordinator = Stream.of(n1, n2, n3)
             .filter(n -> n.localNode().equals(coordinatorRef.get()))
-            .findFirst().orElseThrow(AssertionError::new);
+            .findFirst()
+            .orElseThrow(AssertionError::new);
 
         say("Terminating coordinator.");
 
@@ -479,7 +503,9 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
         say("Done awaiting for coordination.");
 
-        assertEquals(3, aborts.get());
+        assertEquals(n1.toString(), 0, h1.stack());
+        assertEquals(n2.toString(), 0, h2.stack());
+        assertEquals(n3.toString(), 0, h3.stack());
 
         n1.leave();
         n2.leave();
