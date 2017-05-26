@@ -52,7 +52,7 @@ import io.hekate.core.service.Service;
  * </p>
  * <ul>
  * <li>{@link Hekate} instance that manages this service.</li>
- * <li>All {@link Hekate#serviceTypes() services} that are registered within a {@link Hekate} instance</li>
+ * <li>All {@link Hekate#services() services} that are registered within the {@link Hekate} instance</li>
  * <li>Any other components that are managed by the underlying IoC framework (f.e. beans from
  * <a href="http://projects.spring.io/spring-framework" target="_blank">Spring Framework</a> application context)</li>
  * </ul>

@@ -338,14 +338,14 @@ public interface Hekate {
     <T extends Service> T get(Class<T> service) throws IllegalArgumentException;
 
     /**
-     * Returns the types of all registered services.
+     * Returns types of all registered services.
      *
      * @return Immutable set of service types.
      *
      * @see #get(Class)
      * @see HekateBootstrap#setServices(List)
      */
-    Set<Class<? extends Service>> serviceTypes();
+    Set<Class<? extends Service>> services();
 
     /**
      * Returns the local cluster node.

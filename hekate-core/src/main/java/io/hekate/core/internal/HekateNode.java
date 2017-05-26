@@ -407,7 +407,7 @@ class HekateNode implements Hekate, Serializable {
     }
 
     @Override
-    public Set<Class<? extends Service>> serviceTypes() {
+    public Set<Class<? extends Service>> services() {
         return services.getServiceTypes();
     }
 
