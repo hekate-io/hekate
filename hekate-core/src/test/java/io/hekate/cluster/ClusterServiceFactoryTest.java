@@ -159,24 +159,24 @@ public class ClusterServiceFactoryTest extends HekateTestBase {
     }
 
     @Test
-    public void testJoinValidators() {
-        assertNull(factory.getJoinValidators());
+    public void testAcceptors() {
+        assertNull(factory.getAcceptors());
 
-        ClusterJoinValidator validator = (newNode, node) -> null;
+        ClusterAcceptor acceptor = (newNode, node) -> null;
 
-        factory.setJoinValidators(Collections.singletonList(validator));
+        factory.setAcceptors(Collections.singletonList(acceptor));
 
-        assertNotNull(factory.getJoinValidators());
-        assertTrue(factory.getJoinValidators().contains(validator));
+        assertNotNull(factory.getAcceptors());
+        assertTrue(factory.getAcceptors().contains(acceptor));
 
-        factory.setJoinValidators(null);
+        factory.setAcceptors(null);
 
-        assertNull(factory.getJoinValidators());
+        assertNull(factory.getAcceptors());
 
-        assertTrue(factory.withJoinValidator(validator).getJoinValidators().contains(validator));
+        assertTrue(factory.withAcceptor(acceptor).getAcceptors().contains(acceptor));
 
-        factory.setJoinValidators(null);
+        factory.setAcceptors(null);
 
-        assertNull(factory.getJoinValidators());
+        assertNull(factory.getAcceptors());
     }
 }

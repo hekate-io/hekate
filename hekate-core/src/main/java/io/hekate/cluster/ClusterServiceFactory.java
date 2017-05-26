@@ -64,7 +64,7 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
 
     private List<ClusterEventListener> clusterListeners;
 
-    private List<ClusterJoinValidator> joinValidators;
+    private List<ClusterAcceptor> acceptors;
 
     private long gossipInterval = DEFAULT_GOSSIP_INTERVAL;
 
@@ -281,44 +281,44 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
     }
 
     /**
-     * Returns a list of cluster join validators (see {@link #setJoinValidators(List)}).
+     * Returns a list of the cluster join acceptors (see {@link #setAcceptors(List)}).
      *
-     * @return List of cluster join validators.
+     * @return List of cluster join acceptors.
      */
-    public List<ClusterJoinValidator> getJoinValidators() {
-        return joinValidators;
+    public List<ClusterAcceptor> getAcceptors() {
+        return acceptors;
     }
 
     /**
-     * Sets the list of cluster join validators.
+     * Sets the list of the cluster join acceptors.
      *
      * <p>
-     * Cluster join validators are intended for implementing a custom logic of accepting/rejecting new  nodes based on some
+     * Cluster join acceptors are responsible for implementing a custom logic of accepting/rejecting new nodes based on some
      * application-specific criteria (f.e. configuration compatibility, authorization, etc).
-     * For more details please see documentation of the {@link ClusterJoinValidator} interface.
+     * For more details please see the documentation of the {@link ClusterAcceptor} interface.
      * </p>
      *
-     * @param joinValidators List of cluster join validators.
+     * @param acceptors List of cluster join acceptors.
      *
-     * @see ClusterJoinValidator
+     * @see ClusterAcceptor
      */
-    public void setJoinValidators(List<ClusterJoinValidator> joinValidators) {
-        this.joinValidators = joinValidators;
+    public void setAcceptors(List<ClusterAcceptor> acceptors) {
+        this.acceptors = acceptors;
     }
 
     /**
-     * Adds the specified validator to a {@link #setJoinValidators(List) cluster join validators list}.
+     * Fluent-style version of {@link #setAcceptors(List)}.
      *
-     * @param validator Cluster join validator.
+     * @param acceptor Cluster join acceptor.
      *
      * @return This instance.
      */
-    public ClusterServiceFactory withJoinValidator(ClusterJoinValidator validator) {
-        if (joinValidators == null) {
-            joinValidators = new ArrayList<>();
+    public ClusterServiceFactory withAcceptor(ClusterAcceptor acceptor) {
+        if (acceptors == null) {
+            acceptors = new ArrayList<>();
         }
 
-        joinValidators.add(validator);
+        acceptors.add(acceptor);
 
         return this;
     }

@@ -16,7 +16,7 @@
 
 package io.hekate.spring.boot.cluster;
 
-import io.hekate.cluster.ClusterJoinValidator;
+import io.hekate.cluster.ClusterAcceptor;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.event.ClusterEventListener;
@@ -49,7 +49,7 @@ import org.springframework.context.annotation.Configuration;
  * <ul>
  * <li>{@link SeedNodeProvider}</li>
  * <li>{@link ClusterEventListener}</li>
- * <li>{@link ClusterJoinValidator}</li>
+ * <li>{@link ClusterAcceptor}</li>
  * <li>{@link SplitBrainDetector}</li>
  * </ul>
  *
@@ -104,7 +104,7 @@ public class HekateClusterServiceConfigurer {
 
     private final Optional<List<ClusterEventListener>> listeners;
 
-    private final Optional<List<ClusterJoinValidator>> joinValidators;
+    private final Optional<List<ClusterAcceptor>> acceptors;
 
     private final Optional<SplitBrainDetector> splitBrainDetector;
 
@@ -113,14 +113,14 @@ public class HekateClusterServiceConfigurer {
      *
      * @param seedNodeProvider {@link SeedNodeProvider} that was found in the application context.
      * @param listeners All {@link ClusterEventListener}s that were found in the application context.
-     * @param joinValidators All {@link ClusterJoinValidator}s that were found in the application context.
+     * @param acceptors All {@link ClusterAcceptor}s that were found in the application context.
      * @param splitBrainDetector {@link SplitBrainDetector} that was found in the application context.
      */
     public HekateClusterServiceConfigurer(Optional<SeedNodeProvider> seedNodeProvider, Optional<List<ClusterEventListener>> listeners,
-        Optional<List<ClusterJoinValidator>> joinValidators, Optional<SplitBrainDetector> splitBrainDetector) {
+        Optional<List<ClusterAcceptor>> acceptors, Optional<SplitBrainDetector> splitBrainDetector) {
         this.seedNodeProvider = seedNodeProvider;
         this.listeners = listeners;
-        this.joinValidators = joinValidators;
+        this.acceptors = acceptors;
         this.splitBrainDetector = splitBrainDetector;
     }
 
@@ -167,7 +167,7 @@ public class HekateClusterServiceConfigurer {
 
         listeners.ifPresent(factory::setClusterListeners);
         splitBrainDetector.ifPresent(factory::setSplitBrainDetector);
-        joinValidators.ifPresent(factory::setJoinValidators);
+        acceptors.ifPresent(factory::setAcceptors);
         seedNodeProvider.ifPresent(factory::setSeedNodeProvider);
 
         return factory;

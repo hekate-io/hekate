@@ -133,7 +133,7 @@ import java.util.Set;
  * </li>
  * <li>
  * Cluster {@link ClusterServiceFactory#setSeedNodeProvider(SeedNodeProvider) discovery} and {@link
- * ClusterServiceFactory#setJoinValidators(List) validation}
+ * ClusterServiceFactory#setAcceptors(List) validation}
  * </li>
  * <li>
  * Cluster {@link ClusterServiceFactory#setFailureDetector(FailureDetector) failure} and

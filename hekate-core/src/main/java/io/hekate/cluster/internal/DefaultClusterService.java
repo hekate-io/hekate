@@ -16,10 +16,10 @@
 
 package io.hekate.cluster.internal;
 
+import io.hekate.cluster.ClusterAcceptor;
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterFilter;
 import io.hekate.cluster.ClusterJoinRejectedException;
-import io.hekate.cluster.ClusterJoinValidator;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterService;
@@ -147,8 +147,8 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private static final ClusterJoinValidator DEFAULT_JOIN_VALIDATOR = (newNode, local) -> {
-        boolean localLoopback = local.localNode().socket().getAddress().isLoopbackAddress();
+    private static final ClusterAcceptor DEFAULT_JOIN_ACCEPTOR = (newNode, hekate) -> {
+        boolean localLoopback = hekate.localNode().socket().getAddress().isLoopbackAddress();
 
         boolean remoteLoopback = newNode.socket().getAddress().isLoopbackAddress();
 
@@ -181,10 +181,10 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     private final AtomicBoolean splitBrainDetectorActive = new AtomicBoolean();
 
     @ToStringIgnore
-    private final List<ClusterJoinValidator> joinValidators;
+    private final List<ClusterAcceptor> acceptors;
 
     @ToStringIgnore
-    private final Set<ClusterNodeId> asyncJoinValidations = Collections.synchronizedSet(new HashSet<>());
+    private final Set<ClusterNodeId> asyncAcceptors = Collections.synchronizedSet(new HashSet<>());
 
     @ToStringIgnore
     private final GossipListener gossipSpy;
@@ -284,12 +284,12 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
         this.initListeners = unmodifiableList(initListeners);
 
-        // Join validators.
-        joinValidators = new ArrayList<>();
+        // Join acceptors.
+        acceptors = new ArrayList<>();
 
-        joinValidators.add(DEFAULT_JOIN_VALIDATOR);
+        acceptors.add(DEFAULT_JOIN_ACCEPTOR);
 
-        StreamUtils.nullSafe(factory.getJoinValidators()).forEach(joinValidators::add);
+        StreamUtils.nullSafe(factory.getAcceptors()).forEach(acceptors::add);
     }
 
     @Override
@@ -301,9 +301,9 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
     @Override
     public void configure(ConfigurationContext ctx) {
-        Collection<ClusterJoinValidator> customAcceptors = ctx.findComponents(ClusterJoinValidator.class);
+        Collection<ClusterAcceptor> customAcceptors = ctx.findComponents(ClusterAcceptor.class);
 
-        joinValidators.addAll(customAcceptors);
+        acceptors.addAll(customAcceptors);
     }
 
     @Override
@@ -459,7 +459,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                     waiting.add(failureDetector::terminate);
                 }
 
-                asyncJoinValidations.clear();
+                asyncAcceptors.clear();
 
                 localNodeIdRef.set(null);
 
@@ -598,8 +598,8 @@ public class DefaultClusterService implements ClusterService, DependentService, 
         return splitBrainAction;
     }
 
-    public List<ClusterJoinValidator> getJoinValidators() {
-        return unmodifiableList(joinValidators);
+    public List<ClusterAcceptor> getAcceptors() {
+        return unmodifiableList(acceptors);
     }
 
     private void initJoining(InitializationContext ctx) {
@@ -933,14 +933,14 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                     case JOIN_REQUEST: {
                         JoinRequest request = (JoinRequest)msg;
 
-                        // Check that join request can be accepted.
+                        // Check that the join request can be accepted.
                         JoinReject reject = gossipMgr.acceptJoinRequest(request);
 
                         if (reject == null) {
-                            // Asynchronously validate and process join request so that validation would not block gossiping thread.
-                            validateAndProcessAsync(request);
+                            // Asynchronously validate and process the join request so that the validation would not block gossiping thread.
+                            acceptAndProcessAsync(request);
                         } else {
-                            // Send immediate reject.
+                            // Send an immediate reject.
                             send(reject);
                         }
 
@@ -1280,28 +1280,28 @@ public class DefaultClusterService implements ClusterService, DependentService, 
         };
     }
 
-    private void validateAndProcessAsync(JoinRequest request) {
+    private void acceptAndProcessAsync(JoinRequest request) {
         assert request != null : "Request is null";
 
-        ClusterNodeId joiningNodeId = request.from().id();
+        ClusterNodeId joining = request.from().id();
 
         // Check that request validation is not running yet for the joining node.
-        if (!asyncJoinValidations.contains(joiningNodeId)) {
+        if (!asyncAcceptors.contains(joining)) {
             // Add concurrent validations guard.
-            asyncJoinValidations.add(joiningNodeId);
+            asyncAcceptors.add(joining);
 
-            // Run acceptance testing on the system thread.
+            // Run the acceptance check on the system thread.
             runOnServiceThread(() -> {
                 guard.lockRead();
 
                 try {
                     if (guard.isInitialized()) {
-                        String rejectReason = validateJoiningNode(request.fromNode());
+                        String rejectReason = acceptJoiningNode(request.fromNode());
 
-                        // Run acceptance testing results processing on a gossip thread.
+                        // Process the results of the acceptance testing on the gossip thread.
                         runOnGossipThread(() -> {
                             // Enable subsequent validations of the joining node.
-                            asyncJoinValidations.remove(joiningNodeId);
+                            asyncAcceptors.remove(joining);
 
                             guard.lockRead();
 
@@ -1338,19 +1338,19 @@ public class DefaultClusterService implements ClusterService, DependentService, 
         }
     }
 
-    private String validateJoiningNode(ClusterNode newNode) {
+    private String acceptJoiningNode(ClusterNode newNode) {
         if (DEBUG) {
-            log.debug("Checking join validators [node={}]", newNode);
+            log.debug("Checking the join acceptors [node={}]", newNode);
         }
 
         String rejectReason = null;
 
-        for (ClusterJoinValidator acceptor : joinValidators) {
+        for (ClusterAcceptor acceptor : acceptors) {
             rejectReason = acceptor.acceptJoin(newNode, ctx.hekate());
 
             if (rejectReason != null) {
                 if (DEBUG) {
-                    log.debug("Rejected cluster join request [node={}, reason={}, validator={}]", newNode, rejectReason, acceptor);
+                    log.debug("Rejected cluster join request [node={}, reason={}, acceptor={}]", newNode, rejectReason, acceptor);
                 }
 
                 break;
@@ -1359,9 +1359,9 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
         if (DEBUG) {
             if (rejectReason == null) {
-                log.debug("New node was accepted [node={}]", newNode);
+                log.debug("New node accepted [node={}]", newNode);
             } else {
-                log.debug("New node was rejected [node={}, reason={}]", newNode, rejectReason);
+                log.debug("New node rejected [node={}, reason={}]", newNode, rejectReason);
             }
         }
 

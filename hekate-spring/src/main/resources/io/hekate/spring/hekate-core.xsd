@@ -516,10 +516,10 @@
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:element>
-                    <xsd:element name="join-validators" type="clusterJoinValidatorsType" minOccurs="0" maxOccurs="1">
+                    <xsd:element name="acceptors" type="clusterAcceptorsType" minOccurs="0" maxOccurs="1">
                         <xsd:annotation>
                             <xsd:documentation>
-                                See javadoc of 'io.hekate.cluster.ClusterServiceFactory#setJoinValidators(java.util.List)'.
+                                See javadoc of 'io.hekate.cluster.ClusterServiceFactory#setAcceptors(java.util.List)'.
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:element>
@@ -1076,12 +1076,12 @@
         </xsd:sequence>
     </xsd:complexType>
 
-    <xsd:complexType name="clusterJoinValidatorsType">
+    <xsd:complexType name="clusterAcceptorsType">
         <xsd:sequence minOccurs="0" maxOccurs="unbounded">
-            <xsd:element name="validator" type="beanOrRefType">
+            <xsd:element name="acceptor" type="beanOrRefType">
                 <xsd:annotation>
                     <xsd:documentation>
-                        Registers 'io.hekate.cluster.ClusterJoinValidator'.
+                        Registers 'io.hekate.cluster.ClusterAcceptor'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>

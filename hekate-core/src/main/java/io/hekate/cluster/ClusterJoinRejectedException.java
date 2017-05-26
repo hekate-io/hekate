@@ -20,9 +20,9 @@ import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
 
 /**
- * Signals that node joining was rejected by {@link ClusterJoinValidator}.
+ * Signals that node joining was rejected by {@link ClusterAcceptor}.
  *
- * @see ClusterJoinValidator
+ * @see ClusterAcceptor
  */
 public class ClusterJoinRejectedException extends HekateException {
     private static final long serialVersionUID = 1;
@@ -34,7 +34,7 @@ public class ClusterJoinRejectedException extends HekateException {
     /**
      * Constructs new instance with the specified reject reason and address of the node that rejected this node joining.
      *
-     * @param rejectReason Reject reason as it was returned by {@link ClusterJoinValidator#acceptJoin(ClusterNode, Hekate)}.
+     * @param rejectReason Reject reason as it was returned by {@link ClusterAcceptor#acceptJoin(ClusterNode, Hekate)}.
      * @param rejectedBy Address of the node that rejected this node joining.
      */
     public ClusterJoinRejectedException(String rejectReason, ClusterAddress rejectedBy) {
@@ -45,7 +45,7 @@ public class ClusterJoinRejectedException extends HekateException {
     }
 
     /**
-     * Returns reject reason as it was returned by {@link ClusterJoinValidator#acceptJoin(ClusterNode, Hekate)}.
+     * Returns reject reason as it was returned by {@link ClusterAcceptor#acceptJoin(ClusterNode, Hekate)}.
      *
      * @return Reject reason.
      */

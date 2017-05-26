@@ -225,7 +225,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
 
             parseClusterSplitBrainDetection(cluster, clusterEl, ctx);
 
-            parseClusterJoinValidators(cluster, clusterEl, ctx);
+            parseClusterAcceptors(cluster, clusterEl, ctx);
 
             parseClusterListeners(cluster, clusterEl, ctx);
 
@@ -531,15 +531,15 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         return registerInnerBean(group, ctx);
     }
 
-    private void parseClusterJoinValidators(BeanDefinitionBuilder cluster, Element clusterEl, ParserContext ctx) {
-        ManagedList<RuntimeBeanReference> validators = new ManagedList<>();
+    private void parseClusterAcceptors(BeanDefinitionBuilder cluster, Element clusterEl, ParserContext ctx) {
+        ManagedList<RuntimeBeanReference> acceptors = new ManagedList<>();
 
-        subElements(clusterEl, "join-validators", "validator").forEach(valEl ->
-            parseRefOrBean(valEl, ctx).ifPresent(validators::add)
+        subElements(clusterEl, "acceptors", "acceptor").forEach(valEl ->
+            parseRefOrBean(valEl, ctx).ifPresent(acceptors::add)
         );
 
-        if (!validators.isEmpty()) {
-            cluster.addPropertyValue("joinValidators", validators);
+        if (!acceptors.isEmpty()) {
+            cluster.addPropertyValue("acceptors", acceptors);
         }
     }
 

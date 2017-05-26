@@ -95,7 +95,7 @@ import java.util.function.Predicate;
  * <li><a href="#failure_detection">Failure detector</a></li>
  * <li><a href="#gossip_protocol">Gossip protocol options</a></li>
  * <li><a href="#split_brain_detector">Split-brain detector</a></li>
- * <li><a href="#join_validators">Join validators</a></li>
+ * <li><a href="#acceptors">Cluster acceptors</a></li>
  * </ul>
  *
  * <h2>Cluster topology</h2>
@@ -266,23 +266,23 @@ import java.util.function.Predicate;
  * documentation of {@link SplitBrainAction} for details about the available options.
  * </p>
  *
- * <a name="join_validators"></a>
- * <h2>Join validators</h2>
+ * <a name="acceptors"></a>
+ * <h2>Cluster acceptors</h2>
  * <p>
  * Whenever a new node tries joins the cluster it can be verified based on some custom application-specific rules (f.e. authorization and
  * permissions checking) and rejected in case of a verification failure.
  * </p>
  *
  * <p>
- * Such verification can be implemented by {@link ClusterServiceFactory#setJoinValidators(List) configuring} an implementation of
- * {@link ClusterJoinValidator} interface within the cluster service. This interface is used by an existing cluster node when a join
+ * Such verification can be implemented by {@link ClusterServiceFactory#setAcceptors(List) configuring} an implementation of
+ * {@link ClusterAcceptor} interface within the cluster service. This interface is used by an existing cluster node when a join
  * request is received from a new node that tries to join the cluster. Implementation of this interface can use the joining node
  * information in order to decide whether the new node should be accepted or it should be rejected. If node gets rejected then it will fail
  * with {@link ClusterJoinRejectedException}.
  * </p>
  *
  * <p>
- * Please see the documentation of {@link ClusterJoinValidator} interface for mode details.
+ * Please see the documentation of {@link ClusterAcceptor} interface for mode details.
  * </p>
  */
 @DefaultServiceFactory(ClusterServiceFactory.class)

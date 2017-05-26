@@ -75,11 +75,11 @@
                 </group>
             </split-brain-detection>
 
-            <join-validators>
-                <validator>
-                    <s:bean class="foo.bar.SomeClusterJoinValidator"/>
-                </validator>
-            </join-validators>
+            <acceptors>
+                <acceptor>
+                    <s:bean class="foo.bar.SomeClusterAcceptor"/>
+                </acceptor>
+            </acceptors>
 
             <listeners>
                 <listener>

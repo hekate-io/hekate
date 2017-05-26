@@ -16,11 +16,11 @@
 
 package foo.bar;
 
-import io.hekate.cluster.ClusterJoinValidator;
+import io.hekate.cluster.ClusterAcceptor;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.Hekate;
 
-public class SomeClusterJoinValidator implements ClusterJoinValidator {
+public class SomeClusterAcceptor implements ClusterAcceptor {
     @Override
     public String acceptJoin(ClusterNode joining, Hekate local) {
         return null;

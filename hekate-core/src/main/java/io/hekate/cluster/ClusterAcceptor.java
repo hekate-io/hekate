@@ -20,7 +20,7 @@ import io.hekate.core.Hekate;
 import java.util.List;
 
 /**
- * Cluster join validator.
+ * Cluster join acceptor.
  *
  * <p>
  * Implementations of this interface can provide a custom logic of accepting/rejecting new nodes when they are trying to join the
@@ -28,27 +28,22 @@ import java.util.List;
  * </p>
  *
  * <p>
- * When new node tries to join the cluster it sends a join request to an existing cluster node. When an existing node receives
- * such a request it asks all of its registered validators to check validity of the joining node by calling their {@link
- * #acceptJoin(ClusterNode, Hekate)} method. If any validator returns a non-null reject reason then joining node will be rejected and
- * {@link ClusterJoinRejectedException} will be thrown on its side. Information about the reject reason can be obtained via {@link
+ * When a new node tries to join the cluster it sends a join request to an existing cluster node. When the node receives such a request it
+ * asks all of its registered acceptors to check for the validity of the joining node by calling the {@link
+ * #acceptJoin(ClusterNode, Hekate)} method. If any acceptor returns a non-null reject reason then the joining node will be rejected and
+ * the {@link ClusterJoinRejectedException} will be thrown on its side. Information about the reject reason can be obtained via the {@link
  * ClusterJoinRejectedException#rejectReason()} method.
  * </p>
  *
  * <p>
- * Instances of this interface can be registered via {@link ClusterServiceFactory#setJoinValidators(List)} method. Note that the same
- * implementation of this interface must be registered on all nodes within the cluster since any of them can be selected by a joining node
+ * Instances of this interface can be registered via the {@link ClusterServiceFactory#setAcceptors(List)} method. Note that the same
+ * implementation of this interface must be registered on all of the cluster nodes, since any of them can be selected by the joining node
  * as a join target.
  * </p>
  *
- * <p>
- * If multiple instances of this interface are registered within the cluster service then each of them will be called one by one unless one
- * of them decides to reject the joining node.
- * </p>
- *
- * @see ClusterServiceFactory#setJoinValidators(List)
+ * @see ClusterServiceFactory#setAcceptors(List)
  */
-public interface ClusterJoinValidator {
+public interface ClusterAcceptor {
     /**
      * Called when a new node tries to join the cluster. Returns {@code null} if new node should be accepted or an arbitrary string
      * indicating the reject reason.

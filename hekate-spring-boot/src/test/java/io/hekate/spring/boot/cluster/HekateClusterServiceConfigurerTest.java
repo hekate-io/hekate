@@ -16,7 +16,7 @@
 
 package io.hekate.spring.boot.cluster;
 
-import io.hekate.cluster.ClusterJoinValidator;
+import io.hekate.cluster.ClusterAcceptor;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.event.ClusterEventListener;
@@ -78,8 +78,8 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
     }
 
     @EnableAutoConfiguration
-    static class JoinValidatorTestConfig extends HekateTestConfigBase {
-        private static class TestJoinValidator implements ClusterJoinValidator {
+    static class JoinAcceptorsTestConfig extends HekateTestConfigBase {
+        private static class TestAcceptor implements ClusterAcceptor {
             @Override
             public String acceptJoin(ClusterNode joining, Hekate local) {
                 return null;
@@ -87,8 +87,8 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
         }
 
         @Bean
-        public TestJoinValidator validator() {
-            return new TestJoinValidator();
+        public TestAcceptor acceptor() {
+            return new TestAcceptor();
         }
     }
 
@@ -102,7 +102,7 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
         }
 
         @Bean
-        public TestDetector validator() {
+        public TestDetector detector() {
             return new TestDetector();
         }
     }
@@ -135,12 +135,12 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
     }
 
     @Test
-    public void testJoinValidator() {
-        registerAndRefresh(JoinValidatorTestConfig.class);
+    public void testAcceptors() {
+        registerAndRefresh(JoinAcceptorsTestConfig.class);
 
-        List<ClusterJoinValidator> validators = getNode().get(DefaultClusterService.class).getJoinValidators();
+        List<ClusterAcceptor> acceptors = getNode().get(DefaultClusterService.class).getAcceptors();
 
-        assertTrue(validators.stream().anyMatch(v -> v instanceof JoinValidatorTestConfig.TestJoinValidator));
+        assertTrue(acceptors.stream().anyMatch(v -> v instanceof JoinAcceptorsTestConfig.TestAcceptor));
     }
 
     @Test
