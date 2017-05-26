@@ -675,15 +675,15 @@ class MessagingGateway<T> {
             }
 
             // Check if request callback can accept operation result.
-            ReplyDecision acceptance = callback.accept(err, replyMsg);
+            ReplyDecision decision = callback.accept(err, replyMsg);
 
-            if (acceptance == null) {
-                acceptance = ReplyDecision.DEFAULT;
+            if (decision == null) {
+                decision = ReplyDecision.DEFAULT;
             }
 
             FailoverPolicy failover = ctx.opts().failover();
 
-            if (acceptance == ReplyDecision.COMPLETE || acceptance == ReplyDecision.DEFAULT && err == null || failover == null) {
+            if (decision == ReplyDecision.COMPLETE || decision == ReplyDecision.DEFAULT && err == null || failover == null) {
                 // Check if this is the final reply or an error (ignore chunks).
                 if (err != null || !reply.isPartial()) {
                     // Make sure that callback will be notified only once.
@@ -701,11 +701,11 @@ class MessagingGateway<T> {
                 }
             } else {
                 // No more interactions with this request.
-                // If failover is successful then new request will be registered.
+                // If failover action were successful then a new request will be registered.
                 request.unregister();
 
                 // Apply failover actions.
-                if (acceptance == ReplyDecision.REJECT) {
+                if (decision == ReplyDecision.REJECT) {
                     err = new RejectedReplyException("Response was rejected by a request callback", replyMsg, err);
                 }
 
