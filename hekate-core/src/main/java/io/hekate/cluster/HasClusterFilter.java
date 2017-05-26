@@ -130,7 +130,7 @@ public interface HasClusterFilter<T extends HasClusterFilter<T>> {
      * ${source: cluster/HasClusterFilterJavadocTest.java#bad_and_good_usage}
      * </p>
      *
-     * @param type Service type (see {@link ClusterNode#hasService(String)})
+     * @param type Service type (see {@link ClusterNode#hasService(Class)})
      *
      * @return Filtered instance.
      */

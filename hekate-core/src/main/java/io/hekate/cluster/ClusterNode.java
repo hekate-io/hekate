@@ -154,17 +154,6 @@ public interface ClusterNode extends Comparable<ClusterNode>, HasClusterNodeId {
     boolean hasService(Class<? extends Service> type);
 
     /**
-     * Returns {@code true} if this node has a service with the specified interface name.
-     *
-     * @param type Service {@link Class#getCanonicalName() type name} (must be an interface that extends {@link Service}).
-     *
-     * @return {@code true} if this node has a service with the specified interface name.
-     *
-     * @see #services()
-     */
-    boolean hasService(String type);
-
-    /**
      * Returns the service information for the specified interface name.
      *
      * @param type Service {@link Class#getCanonicalName() type name} (must be an interface that extends {@link Service}).
