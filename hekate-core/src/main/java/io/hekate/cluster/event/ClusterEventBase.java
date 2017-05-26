@@ -59,9 +59,4 @@ public abstract class ClusterEventBase implements ClusterEvent, Serializable {
     public ClusterChangeEvent asChange() {
         return null;
     }
-
-    @Override
-    public boolean is(ClusterEventType type) {
-        return type() == type;
-    }
 }

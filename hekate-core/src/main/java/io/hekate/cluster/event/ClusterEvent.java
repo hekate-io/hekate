@@ -30,8 +30,6 @@ public interface ClusterEvent {
      * Returns the event type.
      *
      * @return Event type.
-     *
-     * @see #is(ClusterEventType)
      */
     ClusterEventType type();
 
@@ -62,15 +60,4 @@ public interface ClusterEvent {
      * @return Cluster topology.
      */
     ClusterTopology topology();
-
-    /**
-     * Returns {@code true} if this event is of the specified {@link #type() type}.
-     *
-     * @param type Event type.
-     *
-     * @return {@code true} if this event is of the specified type.
-     *
-     * @see #type()
-     */
-    boolean is(ClusterEventType type);
 }
