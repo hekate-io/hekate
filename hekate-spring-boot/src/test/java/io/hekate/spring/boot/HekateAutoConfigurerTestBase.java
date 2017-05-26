@@ -28,9 +28,9 @@ import org.springframework.context.support.AbstractApplicationContext;
 import static org.junit.Assert.assertNotNull;
 
 public abstract class HekateAutoConfigurerTestBase extends HekateTestBase {
-    private AnnotationConfigApplicationContext ctx;
+    private final List<AnnotationConfigApplicationContext> allCtx = new ArrayList<>();
 
-    private List<AnnotationConfigApplicationContext> allCtx = new ArrayList<>();
+    private AnnotationConfigApplicationContext ctx;
 
     @After
     public void tearDown() throws Exception {
