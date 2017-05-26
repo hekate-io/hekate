@@ -146,7 +146,7 @@ public class DefaultAddressSelector implements AddressSelector {
             List<NetworkInterface> nis = networkInterfaces();
 
             for (NetworkInterface ni : nis) {
-                if (!ni.isUp() || ni.isLoopback() && excludeLoopback || ni.isPointToPoint() && excludePointToPoint) {
+                if (!ni.isUp() || isLoopback(ni) || isPointToPoint(ni)) {
                     continue;
                 }
 
@@ -273,6 +273,14 @@ public class DefaultAddressSelector implements AddressSelector {
         }
 
         return false;
+    }
+
+    private boolean isPointToPoint(NetworkInterface ni) throws SocketException {
+        return ni.isPointToPoint() && excludePointToPoint;
+    }
+
+    private boolean isLoopback(NetworkInterface ni) throws SocketException {
+        return ni.isLoopback() && excludeLoopback;
     }
 
     private boolean ipVersionMatch(InetAddress addr) {
