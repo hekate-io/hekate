@@ -318,13 +318,12 @@ class MessagingGateway<T> {
         }
     }
 
-    @SuppressWarnings("unchecked") // <- need to cast to the response type.
-    public <R extends T> ResponseFuture<R> request(Object affinityKey, T msg, MessagingOpts<T> opts) {
+    public ResponseFuture<T> request(Object affinityKey, T msg, MessagingOpts<T> opts) {
         ResponseCallbackFuture<T> future = new ResponseCallbackFuture<>();
 
         request(affinityKey, msg, opts, future);
 
-        return (ResponseFuture<R>)future;
+        return future;
     }
 
     public void request(Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
@@ -339,13 +338,12 @@ class MessagingGateway<T> {
         requestAsync(msg, ctx, callback);
     }
 
-    @SuppressWarnings("unchecked") // <- need to cast to the response type.
-    public <R extends T> SubscribeFuture<R> subscribe(Object affinityKey, T msg, MessagingOpts<T> opts) {
+    public SubscribeFuture<T> subscribe(Object affinityKey, T msg, MessagingOpts<T> opts) {
         SubscribeCallbackFuture<T> future = new SubscribeCallbackFuture<>();
 
         subscribe(affinityKey, msg, opts, future);
 
-        return (SubscribeFuture<R>)future;
+        return future;
     }
 
     public void subscribe(Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
@@ -406,13 +404,12 @@ class MessagingGateway<T> {
         }
     }
 
-    @SuppressWarnings("unchecked") // <- need to cast to the response type.
-    public <R extends T> AggregateFuture<R> aggregate(Object affinityKey, T msg, MessagingOpts<T> opts) {
+    public AggregateFuture<T> aggregate(Object affinityKey, T msg, MessagingOpts<T> opts) {
         AggregateCallbackFuture<T> future = new AggregateCallbackFuture<>();
 
         aggregate(affinityKey, msg, opts, future);
 
-        return (AggregateFuture<R>)future;
+        return future;
     }
 
     public void aggregate(Object affinityKey, T msg, MessagingOpts<T> opts, AggregateCallback<T> callback) {

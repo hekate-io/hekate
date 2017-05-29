@@ -137,11 +137,10 @@ public interface MessagingChannel<T> extends HasClusterFilter<MessagingChannel<T
      * Asynchronously sends a request message and returns a future object that will be completed after receiving the response.
      *
      * @param request Request message.
-     * @param <R> Response type.
      *
      * @return Future object that can be used to obtain the response.
      */
-    <R extends T> ResponseFuture<R> request(T request);
+    ResponseFuture<T> request(T request);
 
     /**
      * Asynchronously sends a request message and notifies the specified callback after receiving the response..
@@ -206,13 +205,12 @@ public interface MessagingChannel<T> extends HasClusterFilter<MessagingChannel<T
      * future object that can be used to inspect the aggregation results.
      *
      * @param message Query message that should be sent.
-     * @param <R> Response type (each remote node should return a response of this type).
      *
      * @return Future object that can be used to inspect the aggregation results.
      *
      * @see #aggregate(Object, AggregateCallback)
      */
-    <R extends T> AggregateFuture<R> aggregate(T message);
+    AggregateFuture<T> aggregate(T message);
 
     /**
      * Asynchronously sends the query message, aggregates responses from all nodes that received this message and notifies the

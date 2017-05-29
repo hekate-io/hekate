@@ -88,7 +88,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
-    public <R extends T> ResponseFuture<R> request(T request) {
+    public ResponseFuture<T> request(T request) {
         ArgAssert.notNull(request, "Message");
 
         return gateway.request(affinityKey, request, this);
@@ -128,7 +128,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
-    public <R extends T> AggregateFuture<R> aggregate(T message) {
+    public AggregateFuture<T> aggregate(T message) {
         ArgAssert.notNull(message, "Message");
 
         return gateway.aggregate(affinityKey, message, this);
