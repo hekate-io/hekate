@@ -72,7 +72,7 @@ abstract class MessagingConnectionBase<T> {
 
     public abstract void request(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit);
 
-    public abstract void subscribe(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit);
+    public abstract void stream(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit);
 
     public abstract void replyChunk(MessagingWorker worker, int requestId, T chunk, SendCallback callback);
 
@@ -183,7 +183,7 @@ abstract class MessagingConnectionBase<T> {
 
                     break;
                 }
-                case SUBSCRIBE: {
+                case STREAM: {
                     if (receiver == null) {
                         log.error("Received an unexpected message [message={}, from={}]", netMsg, from);
                     } else {
@@ -207,7 +207,7 @@ abstract class MessagingConnectionBase<T> {
 
                     break;
                 }
-                case AFFINITY_SUBSCRIBE: {
+                case AFFINITY_STREAM: {
                     if (receiver == null) {
                         log.error("Received an unexpected message [message={}, from={}]", netMsg, from);
                     } else {

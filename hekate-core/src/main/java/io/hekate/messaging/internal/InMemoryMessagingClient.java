@@ -93,8 +93,8 @@ class InMemoryMessagingClient<T> implements MessagingClient<T> {
     }
 
     @Override
-    public void subscribe(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit) {
-        conn.subscribe(ctx, callback, retransmit);
+    public void stream(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit) {
+        conn.stream(ctx, callback, retransmit);
     }
 
     @Override

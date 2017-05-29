@@ -44,9 +44,9 @@ abstract class MessagingProtocol {
 
         AFFINITY_REQUEST,
 
-        SUBSCRIBE,
+        STREAM,
 
-        AFFINITY_SUBSCRIBE,
+        AFFINITY_STREAM,
 
         RESPONSE_CHUNK,
 
@@ -64,7 +64,7 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public boolean isSubscribe() {
+        public boolean isStream() {
             return false;
         }
 
@@ -347,7 +347,7 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public boolean isSubscribe() {
+        public boolean isStream() {
             return false;
         }
 
@@ -376,26 +376,26 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class Subscribe<T> extends RequestBase<T> {
-        public Subscribe(int requestId, boolean retransmit, T payload) {
+    static class StreamRequest<T> extends RequestBase<T> {
+        public StreamRequest(int requestId, boolean retransmit, T payload) {
             super(requestId, retransmit, payload);
         }
 
         @Override
-        public boolean isSubscribe() {
+        public boolean isStream() {
             return true;
         }
 
         @Override
         public Type type() {
-            return Type.SUBSCRIBE;
+            return Type.STREAM;
         }
     }
 
-    static class AffinitySubscribe<T> extends Subscribe<T> {
+    static class AffinityStreamRequest<T> extends StreamRequest<T> {
         private final int affinity;
 
-        public AffinitySubscribe(int affinity, int requestId, boolean retransmit, T payload) {
+        public AffinityStreamRequest(int affinity, int requestId, boolean retransmit, T payload) {
             super(requestId, retransmit, payload);
 
             this.affinity = affinity;
@@ -407,7 +407,7 @@ abstract class MessagingProtocol {
 
         @Override
         public Type type() {
-            return Type.AFFINITY_SUBSCRIBE;
+            return Type.AFFINITY_STREAM;
         }
     }
 

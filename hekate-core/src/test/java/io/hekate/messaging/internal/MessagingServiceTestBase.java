@@ -175,7 +175,7 @@ public abstract class MessagingServiceTestBase extends HekateNodeParamTestBase {
             assertTrue(e.getMessage().startsWith("Message already responded"));
         }
 
-        if (msg.isSubscribe()) {
+        if (msg.isStream()) {
             try {
                 msg.partialReply("invalid", new SendCallbackMock());
 

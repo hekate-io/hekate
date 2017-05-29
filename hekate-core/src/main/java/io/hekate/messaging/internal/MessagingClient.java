@@ -26,7 +26,7 @@ interface MessagingClient<T> {
 
     void send(MessageContext<T> ctx, SendCallback callback, boolean retransmit);
 
-    void subscribe(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit);
+    void stream(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit);
 
     void request(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit);
 

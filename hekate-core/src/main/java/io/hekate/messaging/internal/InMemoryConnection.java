@@ -18,12 +18,12 @@ package io.hekate.messaging.internal;
 
 import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
-import io.hekate.messaging.internal.MessagingProtocol.AffinitySubscribe;
+import io.hekate.messaging.internal.MessagingProtocol.AffinityStreamRequest;
 import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.internal.MessagingProtocol.Request;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
-import io.hekate.messaging.internal.MessagingProtocol.Subscribe;
+import io.hekate.messaging.internal.MessagingProtocol.StreamRequest;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkFuture;
 
@@ -82,15 +82,15 @@ class InMemoryConnection<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void subscribe(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit) {
+    public void stream(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit) {
         RequestHandle<T> handle = registerRequest(ctx, callback);
 
-        Subscribe<T> msg;
+        StreamRequest<T> msg;
 
         if (ctx.hasAffinity()) {
-            msg = new AffinitySubscribe<>(ctx.affinity(), handle.id(), retransmit, ctx.message());
+            msg = new AffinityStreamRequest<>(ctx.affinity(), handle.id(), retransmit, ctx.message());
         } else {
-            msg = new Subscribe<>(handle.id(), retransmit, ctx.message());
+            msg = new StreamRequest<>(handle.id(), retransmit, ctx.message());
         }
 
         onAsyncEnqueue();

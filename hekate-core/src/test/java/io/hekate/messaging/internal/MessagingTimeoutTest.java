@@ -95,7 +95,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
         assertEquals(150, sender.get().timeout());
 
         repeat(3, i -> {
-            SubscribeFuture<String> future = sender.get().forRemotes().subscribe("must-fail-" + i);
+            SubscribeFuture<String> future = sender.get().forRemotes().stream("must-fail-" + i);
 
             Message<String> request = msgRef.exchange(null);
 

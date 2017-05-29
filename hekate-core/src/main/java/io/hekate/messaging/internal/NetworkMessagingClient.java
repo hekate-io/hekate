@@ -88,12 +88,12 @@ class NetworkMessagingClient<T> implements MessagingClient<T> {
     }
 
     @Override
-    public void subscribe(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit) {
+    public void stream(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit) {
         touch();
 
         ensureConnected();
 
-        conn.subscribe(ctx, callback, retransmit);
+        conn.stream(ctx, callback, retransmit);
     }
 
     @Override

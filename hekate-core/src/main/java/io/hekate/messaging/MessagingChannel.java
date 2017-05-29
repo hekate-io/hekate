@@ -167,7 +167,7 @@ public interface MessagingChannel<T> extends HasClusterFilter<MessagingChannel<T
      *
      * @return Future object that can be used to obtain all of the received responses.
      */
-    SubscribeFuture<T> subscribe(T request);
+    SubscribeFuture<T> stream(T request);
 
     /**
      * Opens a stream for receiving continuous responses.
@@ -181,7 +181,7 @@ public interface MessagingChannel<T> extends HasClusterFilter<MessagingChannel<T
      * @param request Request.
      * @param callback Callback.
      */
-    void subscribe(T request, ResponseCallback<T> callback);
+    void stream(T request, ResponseCallback<T> callback);
 
     /**
      * Asynchronously broadcasts the specified message and returns a future object that can be used to inspect the operation result.

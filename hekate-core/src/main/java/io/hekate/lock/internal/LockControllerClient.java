@@ -442,7 +442,7 @@ class LockControllerClient {
 
         LockRequest lockReq = new LockRequest(lockId, region, name, node, lockTimeout, withFeedback, threadId);
 
-        channel.subscribe(lockReq, new ResponseCallback<LockProtocol>() {
+        channel.stream(lockReq, new ResponseCallback<LockProtocol>() {
             @Override
             public ReplyDecision accept(Throwable err, LockProtocol reply) {
                 if (err == null) {
@@ -508,7 +508,7 @@ class LockControllerClient {
     private void remoteUnlock() {
         UnlockRequest unlockReq = new UnlockRequest(lockId, region, name, node);
 
-        channel.subscribe(unlockReq, new ResponseCallback<LockProtocol>() {
+        channel.stream(unlockReq, new ResponseCallback<LockProtocol>() {
             @Override
             public ReplyDecision accept(Throwable err, LockProtocol reply) {
                 if (err == null) {

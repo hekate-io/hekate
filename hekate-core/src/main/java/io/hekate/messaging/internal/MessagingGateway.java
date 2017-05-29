@@ -338,15 +338,15 @@ class MessagingGateway<T> {
         requestAsync(msg, ctx, callback);
     }
 
-    public SubscribeFuture<T> subscribe(Object affinityKey, T msg, MessagingOpts<T> opts) {
+    public SubscribeFuture<T> stream(Object affinityKey, T msg, MessagingOpts<T> opts) {
         SubscribeCallbackFuture<T> future = new SubscribeCallbackFuture<>();
 
-        subscribe(affinityKey, msg, opts, future);
+        stream(affinityKey, msg, opts, future);
 
         return future;
     }
 
-    public void subscribe(Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
+    public void stream(Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
         assert msg != null : "Request message must be not null.";
         assert opts != null : "Messaging options must be not null.";
         assert callback != null : "Callback must be not null.";
@@ -763,8 +763,8 @@ class MessagingGateway<T> {
             }
         };
 
-        if (ctx.isSubscribe()) {
-            client.subscribe(ctx, internalCallback, prevErr != null);
+        if (ctx.isStream()) {
+            client.stream(ctx, internalCallback, prevErr != null);
         } else {
             client.request(ctx, internalCallback, prevErr != null);
         }

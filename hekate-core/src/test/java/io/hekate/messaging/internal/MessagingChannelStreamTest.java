@@ -32,8 +32,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
-    public MessagingChannelSubscribeTest(MessagingTestContext ctx) {
+public class MessagingChannelStreamTest extends MessagingServiceTestBase {
+    public MessagingChannelStreamTest(MessagingTestContext ctx) {
         super(ctx);
     }
 
@@ -58,7 +58,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
         awaitForChannelsTopology(sender, receiver);
 
         repeat(5, i -> {
-            SubscribeFuture<String> future = sender.get().forNode(receiver.getNodeId()).subscribe("request");
+            SubscribeFuture<String> future = sender.get().forNode(receiver.getNodeId()).stream("request");
 
             List<String> expected = Arrays.asList("response0", "response1", "response2", "final");
 
@@ -93,7 +93,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
 
             List<String> senderMessages = Collections.synchronizedList(new ArrayList<>());
 
-            sender.get().forNode(receiver.getNodeId()).subscribe("request", (err, reply) -> {
+            sender.get().forNode(receiver.getNodeId()).stream("request", (err, reply) -> {
                 if (err == null) {
                     try {
                         senderMessages.add(reply.get());
@@ -132,7 +132,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
 
         TestChannel receiver = createChannel(c -> c.setReceiver(msg -> {
             assertTrue(msg.mustReply());
-            assertTrue(msg.isSubscribe());
+            assertTrue(msg.isStream());
 
             assertNotNull(replyCallbackRef.get());
 
@@ -140,7 +140,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
                 msg.partialReply("response" + i, replyCallbackRef.get());
 
                 assertTrue(msg.mustReply());
-                assertTrue(msg.isSubscribe());
+                assertTrue(msg.isStream());
             }
 
             msg.reply("final", lastReplyCallbackRef.get());
@@ -164,7 +164,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
 
             List<String> senderMessages = Collections.synchronizedList(new ArrayList<>());
 
-            sender.get().forNode(receiver.getNodeId()).subscribe("request", (err, reply) -> {
+            sender.get().forNode(receiver.getNodeId()).stream("request", (err, reply) -> {
                 if (err == null) {
                     try {
                         senderMessages.add(reply.get());

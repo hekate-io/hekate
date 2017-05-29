@@ -41,7 +41,7 @@ public interface Response<T> {
      *
      * @return {@code true} if this message is a partial response.
      *
-     * @see MessagingChannel#subscribe(Object, ResponseCallback)
+     * @see MessagingChannel#stream(Object, ResponseCallback)
      */
     boolean isPartial();
 

@@ -103,13 +103,13 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
-    public void subscribe(T request, ResponseCallback<T> callback) {
-        gateway.subscribe(affinityKey, request, this, callback);
+    public void stream(T request, ResponseCallback<T> callback) {
+        gateway.stream(affinityKey, request, this, callback);
     }
 
     @Override
-    public SubscribeFuture<T> subscribe(T request) {
-        return gateway.subscribe(affinityKey, request, this);
+    public SubscribeFuture<T> stream(T request) {
+        return gateway.stream(affinityKey, request, this);
     }
 
     @Override
