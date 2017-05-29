@@ -53,7 +53,7 @@ import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.messaging.unicast.SendFuture;
-import io.hekate.messaging.unicast.SubscribeFuture;
+import io.hekate.messaging.unicast.StreamFuture;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkFuture;
 import io.hekate.partition.PartitionMapper;
@@ -125,7 +125,7 @@ class MessagingGateway<T> {
         }
     }
 
-    private static class SubscribeCallbackFuture<T> extends SubscribeFuture<T> implements ResponseCallback<T> {
+    private static class StreamCallbackFuture<T> extends StreamFuture<T> implements ResponseCallback<T> {
         private List<T> result;
 
         @Override
@@ -338,8 +338,8 @@ class MessagingGateway<T> {
         requestAsync(msg, ctx, callback);
     }
 
-    public SubscribeFuture<T> stream(Object affinityKey, T msg, MessagingOpts<T> opts) {
-        SubscribeCallbackFuture<T> future = new SubscribeCallbackFuture<>();
+    public StreamFuture<T> stream(Object affinityKey, T msg, MessagingOpts<T> opts) {
+        StreamCallbackFuture<T> future = new StreamCallbackFuture<>();
 
         stream(affinityKey, msg, opts, future);
 

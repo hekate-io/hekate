@@ -17,7 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.unicast.SendCallback;
-import io.hekate.messaging.unicast.SubscribeFuture;
+import io.hekate.messaging.unicast.StreamFuture;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -58,7 +58,7 @@ public class MessagingChannelStreamTest extends MessagingServiceTestBase {
         awaitForChannelsTopology(sender, receiver);
 
         repeat(5, i -> {
-            SubscribeFuture<String> future = sender.get().forNode(receiver.getNodeId()).stream("request");
+            StreamFuture<String> future = sender.get().forNode(receiver.getNodeId()).stream("request");
 
             List<String> expected = Arrays.asList("response0", "response1", "response2", "final");
 
