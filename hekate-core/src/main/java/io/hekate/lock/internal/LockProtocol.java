@@ -135,26 +135,21 @@ abstract class LockProtocol {
 
         private final long timeout;
 
-        private final boolean feedback;
-
         private final long threadId;
 
-        public LockRequest(long lockId, String region, String lockName, ClusterNodeId node, long timeout, boolean feedback,
-            long threadId) {
-            this(lockId, region, lockName, node, timeout, null, feedback, threadId);
+        public LockRequest(long lockId, String region, String lockName, ClusterNodeId node, long timeout, long threadId) {
+            this(lockId, region, lockName, node, timeout, null, threadId);
         }
 
-        public LockRequest(long lockId, String region, String lockName, ClusterNodeId node, long timeout, ClusterHash topology,
-            boolean feedback, long threadId) {
+        public LockRequest(long lockId, String region, String lockName, ClusterNodeId node, long timeout, ClusterHash hash, long threadId) {
             super(region, lockName);
 
             this.lockId = lockId;
             this.node = node;
             this.timeout = timeout;
-            this.feedback = feedback;
             this.threadId = threadId;
 
-            updateTopology(topology);
+            updateTopology(hash);
         }
 
         @Override
@@ -169,10 +164,6 @@ abstract class LockProtocol {
 
         public long timeout() {
             return timeout;
-        }
-
-        public boolean feedback() {
-            return feedback;
         }
 
         @Override

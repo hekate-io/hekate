@@ -75,7 +75,6 @@ class LockProtocolCodec implements Codec<LockProtocol> {
                 out.writeUTF(request.region());
                 out.writeUTF(request.lockName());
                 out.writeLong(request.timeout());
-                out.writeBoolean(request.feedback());
                 out.writeLong(request.threadId());
 
                 CodecUtils.writeTopologyHash(request.topology(), out);
@@ -198,14 +197,13 @@ class LockProtocolCodec implements Codec<LockProtocol> {
                 String region = in.readUTF();
                 String lockName = in.readUTF();
                 long timeout = in.readLong();
-                boolean withFeedback = in.readBoolean();
                 long threadId = in.readLong();
 
                 ClusterHash topology = CodecUtils.readTopologyHash(in);
 
                 ClusterNodeId node = CodecUtils.readNodeId(in);
 
-                return new LockRequest(lockId, region, lockName, node, timeout, topology, withFeedback, threadId);
+                return new LockRequest(lockId, region, lockName, node, timeout, topology, threadId);
             }
             case LOCK_RESPONSE: {
                 LockResponse.Status status = LOCK_RESPONSE_STATUS_CACHE[in.readByte()];

@@ -438,11 +438,9 @@ class LockControllerClient {
     }
 
     private void remoteLock() {
-        boolean withFeedback = callback != null;
+        LockRequest lockReq = new LockRequest(lockId, region, name, node, lockTimeout, threadId);
 
-        LockRequest lockReq = new LockRequest(lockId, region, name, node, lockTimeout, withFeedback, threadId);
-
-        channel.stream(lockReq, new ResponseCallback<LockProtocol>() {
+        ResponseCallback<LockProtocol> rspCallback = new ResponseCallback<LockProtocol>() {
             @Override
             public ReplyDecision accept(Throwable err, LockProtocol reply) {
                 if (err == null) {
@@ -502,13 +500,21 @@ class LockControllerClient {
                     log.error("Failed to submit lock request [request={}]", lockReq, err);
                 }
             }
-        });
+        };
+
+        if (callback == null) {
+            // Send single request if we don't need to subscribe for updates.
+            channel.request(lockReq, rspCallback);
+        } else {
+            // Open a stream if we need to receive lock owner updates.
+            channel.stream(lockReq, rspCallback);
+        }
     }
 
     private void remoteUnlock() {
         UnlockRequest unlockReq = new UnlockRequest(lockId, region, name, node);
 
-        channel.stream(unlockReq, new ResponseCallback<LockProtocol>() {
+        channel.request(unlockReq, new ResponseCallback<LockProtocol>() {
             @Override
             public ReplyDecision accept(Throwable err, LockProtocol reply) {
                 if (err == null) {

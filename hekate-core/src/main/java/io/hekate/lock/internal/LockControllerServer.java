@@ -101,10 +101,6 @@ class LockControllerServer {
             return timeoutFuture;
         }
 
-        public boolean requiresFeedback() {
-            return request.feedback();
-        }
-
         public void cancelTimeout() {
             if (timeoutFuture != null) {
                 timeoutFuture.cancel(false);
@@ -232,7 +228,7 @@ class LockControllerServer {
 
                             replaced = true;
 
-                            if (request.feedback()) {
+                            if (msg.isStream()) {
                                 replyPartial(newEntry.message(), newResponse(LockResponse.Status.LOCK_INFO));
                             }
 
@@ -259,7 +255,7 @@ class LockControllerServer {
                             log.debug("Added lock request to the locking queue [new={}, queue={}]", entry, queue);
                         }
 
-                        if (request.feedback()) {
+                        if (msg.isStream()) {
                             replyPartial(entry.message(), newResponse(LockResponse.Status.LOCK_INFO));
                         }
                     } else {
@@ -298,7 +294,7 @@ class LockControllerServer {
                             log.debug("Added lock request with timeout to the locking queue [new={}, queue={}]", entry, queue);
                         }
 
-                        if (entry.requiresFeedback()) {
+                        if (entry.message().isStream()) {
                             replyPartial(entry.message(), newResponse(LockResponse.Status.LOCK_INFO));
                         }
                     }
@@ -454,7 +450,7 @@ class LockControllerServer {
         reply(entry.message(), newResponse(LockResponse.Status.OK));
 
         queue.stream()
-            .filter(LockQueueEntry::requiresFeedback)
+            .filter(e -> e.message().isStream())
             .forEach(other -> {
                 if (DEBUG) {
                     log.debug("Notifying queue entry on lock owner change [queue-entry={}]", other);
