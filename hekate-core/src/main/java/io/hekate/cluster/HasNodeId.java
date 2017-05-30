@@ -19,7 +19,7 @@ package io.hekate.cluster;
 /**
  * Marker interface for objects that have (or are) {@link ClusterNodeId}.
  */
-public interface HasClusterNodeId {
+public interface HasNodeId {
     /**
      * Converts this object to {@link ClusterNodeId}.
      *
