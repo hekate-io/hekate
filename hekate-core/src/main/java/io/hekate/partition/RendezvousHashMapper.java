@@ -93,11 +93,19 @@ public final class RendezvousHashMapper implements PartitionMapper {
     }
 
     private static class PartitionHash {
-        public static final Comparator<PartitionHash> COMPARATOR = Comparator.comparing(PartitionHash::hash);
+        public static final Comparator<PartitionHash> COMPARATOR = (h1, h2) -> {
+            int cmp = Integer.compare(h1.hash(), h2.hash());
+
+            if (cmp == 0) {
+                return h1.node().id().compareTo(h2.node().id());
+            }
+
+            return cmp;
+        };
 
         private final ClusterNode node;
 
-        private final int hash;
+        private int hash;
 
         public PartitionHash(ClusterNode node, int pid) {
             this.node = node;
