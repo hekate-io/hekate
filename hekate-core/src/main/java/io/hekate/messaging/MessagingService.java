@@ -121,7 +121,7 @@ import java.util.List;
  * <h2>Accessing channels</h2>
  * <p>
  * Once configured and registered, channels can be accessed via {@link MessagingService#channel(String)} method with the {@link
- * MessagingChannelConfig#setName(String) channel name} and {@link MessagingChannelConfig#setBaseType(Class) base type}.
+ * MessagingChannelConfig#setName(String) channel name}.
  * ${source: messaging/MessagingServiceJavadocTest.java#access_channel}
  * </p>
  *
