@@ -1161,6 +1161,13 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
+        <xsd:attribute name="base-type" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.messaging.MessagingChannelConfig#MessagingChannelConfig(java.lang.Class)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
         <xsd:attribute name="nio-threads" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>

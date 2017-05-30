@@ -128,6 +128,7 @@
         <messaging id="messaging">
             <channel
                 name="some.channel"
+                base-type="java.lang.String"
                 nio-threads="1"
                 worker-threads="0"
                 idle-timeout-ms="60000"

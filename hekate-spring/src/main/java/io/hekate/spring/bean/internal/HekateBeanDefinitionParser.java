@@ -680,6 +680,13 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             for (Element channelEl : getChildElementsByTagName(msgEl, "channel")) {
                 BeanDefinitionBuilder channel = newBean(MessagingChannelConfig.class, channelEl);
 
+                // Channel type.
+                String type = channelEl.getAttribute("base-type").trim();
+
+                if (!type.isEmpty()) {
+                    channel.addConstructorArgValue(type);
+                }
+
                 // Attributes.
                 setProperty(channel, channelEl, "name", "name");
                 setProperty(channel, channelEl, "nioThreads", "nio-threads");
@@ -711,6 +718,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                     BeanDefinitionBuilder channelBean = newBean(MessagingChannelBean.class, channelEl);
 
                     setProperty(channelBean, channelEl, "channel", "name");
+                    setProperty(channelBean, channelEl, "channelType", "base-type");
 
                     deferredBaseBeans.put(channelBean, name);
                 }

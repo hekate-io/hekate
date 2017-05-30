@@ -55,9 +55,9 @@ import java.util.function.Consumer;
  * @see MessagingServiceFactory#setChannels(List)
  */
 public class MessagingChannelConfig<T> {
-    private String name;
+    private final Class<T> baseType;
 
-    private Class<T> baseType = unsafeDefaultBaseType();
+    private String name;
 
     private int workerThreads;
 
@@ -90,7 +90,7 @@ public class MessagingChannelConfig<T> {
      * construction the {@link #MessagingChannelConfig(Class)} constructor must be used instead of this one.
      *
      * <p>
-     * Instances that are constructed via this constructor will have their {@link #setBaseType(Class) base type} set to {@link Object}.
+     * Instances that are constructed via this constructor will have their {@link #getBaseType() base type} set to {@link Object}.
      * </p>
      *
      * @see #MessagingChannelConfig(Class)
@@ -99,7 +99,7 @@ public class MessagingChannelConfig<T> {
      */
     @Deprecated
     public MessagingChannelConfig() {
-        // No-op.
+        baseType = uncheckedObjectType();
     }
 
     /**
@@ -107,8 +107,7 @@ public class MessagingChannelConfig<T> {
      *
      * <p>
      * This constructor sets the base type for messages that can be transferred over this channel. If an attempt is made to transfer a
-     * message who's type is
-     * not compatible with the specified one then an error will
+     * message who's type is not compatible with the specified one then an error will
      * </p>
      *
      * <p>
@@ -119,13 +118,15 @@ public class MessagingChannelConfig<T> {
      * @param baseType Base type of messages that can be transferred over this channel.
      */
     public MessagingChannelConfig(Class<T> baseType) {
-        setBaseType(baseType);
+        ArgAssert.notNull(baseType, "base type");
+
+        this.baseType = baseType;
     }
 
     /**
      * Shortcut method for {@link #MessagingChannelConfig(Class)} constructor.
      *
-     * @param baseType Base type of messages that can be transferred over this channel (see {@link #setBaseType(Class)}).
+     * @param baseType Base type of messages that can be transferred over this channel.
      * @param <T> Base type of messages that can be transferred over this channel.
      *
      * @return New instance.
@@ -139,53 +140,19 @@ public class MessagingChannelConfig<T> {
      *
      * @return New instance.
      *
-     * @see #MessagingChannelConfig(Class) 
+     * @see #MessagingChannelConfig(Class)
      */
     public static MessagingChannelConfig<Object> unchecked() {
         return new MessagingChannelConfig<>(Object.class);
     }
 
     /**
-     * Returns the base type of messages that can be transferred over this channel (see {@link #setBaseType(Class)}).
+     * Returns the base type of messages that can be transferred over this channel (see {@link #MessagingChannelConfig(Class)}).
      *
      * @return Base type of messages that can be transferred over this channel.
      */
     public Class<T> getBaseType() {
         return baseType;
-    }
-
-    /**
-     * Sets the base type for messages that can be transferred over this channel. If an attempt is made to transfer a message who's type is
-     * not compatible with the specified one then an error will
-     *
-     * <p>
-     * If not specified then {@link Object} type will be used by default.
-     * </p>
-     *
-     * <p>
-     * <b>Important:</b> the specified base type must be compatible with the {@link Codec#baseType() base type} of the
-     * {@link #setMessageCodec(CodecFactory) message codec} of this channel and must be the same across all cluster nodes.
-     * </p>
-     *
-     * @param baseType Base type of messages that can be transferred over this channel.
-     */
-    public void setBaseType(Class<T> baseType) {
-        ArgAssert.notNull(baseType, "base type");
-
-        this.baseType = baseType;
-    }
-
-    /**
-     * Fluent-style version of {@link #setBaseType(Class)}.
-     *
-     * @param baseType Base type of messages that can be transferred over this channel.
-     *
-     * @return This instance.
-     */
-    public MessagingChannelConfig<T> withBaseType(Class<T> baseType) {
-        setBaseType(baseType);
-
-        return this;
     }
 
     /**
@@ -751,7 +718,7 @@ public class MessagingChannelConfig<T> {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> Class<T> unsafeDefaultBaseType() {
+    private static <T> Class<T> uncheckedObjectType() {
         return (Class<T>)Object.class;
     }
 
