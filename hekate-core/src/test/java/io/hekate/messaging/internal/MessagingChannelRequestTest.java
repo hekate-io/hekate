@@ -804,7 +804,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         Set<ClusterNode> uniqueNodes = new HashSet<>();
 
-        repeat(20, j -> {
+        repeat(25, j -> {
             received.clear();
 
             for (int i = 0; i < 5; i++) {
