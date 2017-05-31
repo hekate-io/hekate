@@ -32,14 +32,38 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTestBase {
+    static class TypeA<T> {
+        @SuppressWarnings("unused")
+        private T t;
+    }
+
+    static class TypeB<T> {
+        @SuppressWarnings("unused")
+        private T t;
+    }
+
     @EnableAutoConfiguration
     static class MessagingTestConfig extends HekateTestConfigBase {
         @Component
         private static class InnerComponent {
-            private final MessagingChannel<Object> channel;
+            private final MessagingChannel<Object> channel3;
 
-            public InnerComponent(@InjectChannel("test3") MessagingChannel<Object> channel) {
-                this.channel = channel;
+            private MessagingChannel<Object> channel4;
+
+            private MessagingChannel<Object> channel5;
+
+            public InnerComponent(@InjectChannel("test3") MessagingChannel<Object> channel3) {
+                this.channel3 = channel3;
+            }
+
+            @InjectChannel("test4")
+            public void setChannel4(MessagingChannel<Object> channel4) {
+                this.channel4 = channel4;
+            }
+
+            @Autowired
+            public void useChannel5(@InjectChannel("test5") MessagingChannel<Object> channel5) {
+                this.channel5 = channel5;
             }
         }
 
@@ -80,6 +104,52 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
         public MessagingChannelConfig<Object> channel3Config() {
             return MessagingChannelConfig.unchecked().withName("test3");
         }
+
+        @Bean
+        public MessagingChannelConfig<Object> channel4Config() {
+            return MessagingChannelConfig.unchecked().withName("test4");
+        }
+
+        @Bean
+        public MessagingChannelConfig<Object> channel5Config() {
+            return MessagingChannelConfig.unchecked().withName("test5");
+        }
+    }
+
+    @EnableAutoConfiguration
+    static class MessagingTypeSafetyTestConfig extends HekateTestConfigBase {
+        @Component
+        private static class InnerComponent {
+            private final MessagingChannel<String> channel1;
+
+            private final MessagingChannel<TypeA<?>> channel2;
+
+            private final MessagingChannel<TypeA<TypeB<?>>> channel3;
+
+            private final MessagingChannel<TypeA<TypeB<String>>> channel4;
+
+            public InnerComponent(
+                @InjectChannel("test1") MessagingChannel<String> channel1,
+                @InjectChannel("test2") MessagingChannel<TypeA<?>> channel2,
+                @InjectChannel("test2") MessagingChannel<TypeA<TypeB<?>>> channel3,
+                @InjectChannel("test2") MessagingChannel<TypeA<TypeB<String>>> channel4
+            ) {
+                this.channel1 = channel1;
+                this.channel2 = channel2;
+                this.channel3 = channel3;
+                this.channel4 = channel4;
+            }
+        }
+
+        @Bean
+        public MessagingChannelConfig<String> channel1Config() {
+            return MessagingChannelConfig.of(String.class).withName("test1");
+        }
+
+        @Bean
+        public MessagingChannelConfig<TypeA> channel2Config() {
+            return MessagingChannelConfig.of(TypeA.class).withName("test2");
+        }
     }
 
     @Test
@@ -91,11 +161,13 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
         assertNotNull(get(MessagingTestConfig.class).channel);
 
         assertNotNull(get(MessagingTestConfig.InnerBean.class).innerChannel);
-        assertNotNull(get(MessagingTestConfig.InnerComponent.class).channel);
+        assertNotNull(get(MessagingTestConfig.InnerComponent.class).channel3);
 
         assertEquals("test1", get(MessagingTestConfig.class).channel.name());
         assertEquals("test2", get(MessagingTestConfig.InnerBean.class).innerChannel.name());
-        assertEquals("test3", get(MessagingTestConfig.InnerComponent.class).channel.name());
+        assertEquals("test3", get(MessagingTestConfig.InnerComponent.class).channel3.name());
+        assertEquals("test4", get(MessagingTestConfig.InnerComponent.class).channel4.name());
+        assertEquals("test5", get(MessagingTestConfig.InnerComponent.class).channel5.name());
 
         assertNotNull(getNode().messaging().channel("test1"));
         assertNotNull(getNode().messaging().channel("test2"));
@@ -116,5 +188,22 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
         assertNotNull(autowire(new TestAutowire()).channel1);
         assertNotNull(autowire(new TestAutowire()).channel2);
         assertNotNull(autowire(new TestAutowire()).messagingService);
+    }
+
+    @Test
+    public void testChannelTypeSafety() {
+        registerAndRefresh(MessagingTypeSafetyTestConfig.class);
+
+        assertEquals("test1", get(MessagingTypeSafetyTestConfig.InnerComponent.class).channel1.name());
+        assertEquals(String.class, get(MessagingTypeSafetyTestConfig.InnerComponent.class).channel1.baseType());
+
+        assertEquals("test2", get(MessagingTypeSafetyTestConfig.InnerComponent.class).channel2.name());
+        assertEquals(TypeA.class, get(MessagingTypeSafetyTestConfig.InnerComponent.class).channel2.baseType());
+
+        assertEquals("test2", get(MessagingTypeSafetyTestConfig.InnerComponent.class).channel3.name());
+        assertEquals(TypeA.class, get(MessagingTypeSafetyTestConfig.InnerComponent.class).channel3.baseType());
+
+        assertEquals("test2", get(MessagingTypeSafetyTestConfig.InnerComponent.class).channel4.name());
+        assertEquals(TypeA.class, get(MessagingTypeSafetyTestConfig.InnerComponent.class).channel4.baseType());
     }
 }

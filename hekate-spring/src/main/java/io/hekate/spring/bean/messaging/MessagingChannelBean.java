@@ -27,15 +27,9 @@ import org.springframework.beans.factory.annotation.Required;
 public class MessagingChannelBean extends HekateBaseBean<MessagingChannel<?>> {
     private String channel;
 
-    private Class<?> channelType;
-
     @Override
     public MessagingChannel<?> getObject() throws Exception {
-        if (getChannelType() == null) {
-            return getSource().messaging().channel(getChannel());
-        } else {
-            return getSource().messaging().channel(getChannel(), getChannelType());
-        }
+        return getSource().messaging().channel(getChannel());
     }
 
     @Override
@@ -62,25 +56,5 @@ public class MessagingChannelBean extends HekateBaseBean<MessagingChannel<?>> {
     @Required
     public void setChannel(String channel) {
         this.channel = channel;
-    }
-
-    /**
-     * Returns the channel type (see {@link #setChannelType(Class)}).
-     *
-     * @return Channel type.
-     */
-    public Class<?> getChannelType() {
-        return channelType;
-    }
-
-    /**
-     * Sets the channel type.
-     *
-     * @param channelType Channel type.
-     *
-     * @see MessagingChannelConfig#MessagingChannelConfig(Class)
-     */
-    public void setChannelType(Class<?> channelType) {
-        this.channelType = channelType;
     }
 }

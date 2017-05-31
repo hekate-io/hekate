@@ -316,13 +316,12 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     @Override
     public DefaultMessagingChannel<Object> channel(String name) throws IllegalArgumentException {
-        return channel(name, Object.class);
+        return channel(name, null);
     }
 
     @Override
     public <T> DefaultMessagingChannel<T> channel(String name, Class<T> baseType) throws IllegalArgumentException {
         ArgAssert.notNull(name, "Channel name");
-        ArgAssert.notNull(baseType, "Base type");
 
         guard.lockReadWithStateCheck();
 
@@ -332,7 +331,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
             ArgAssert.check(gateway != null, "No such channel [name=" + name + ']');
 
-            if (!gateway.baseType().isAssignableFrom(baseType)) {
+            if (baseType != null && !gateway.baseType().isAssignableFrom(baseType)) {
                 throw new ClassCastException("Messaging channel doesn't support the specified type "
                     + "[channel-type=" + gateway.baseType().getName() + ", requested-type=" + baseType.getName() + ']');
             }

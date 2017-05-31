@@ -31,12 +31,16 @@ import io.hekate.spring.boot.HekateConfigurer;
 import io.hekate.spring.boot.internal.AnnotationInjectorBase;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.beans.factory.support.AutowireCandidateQualifier;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.ResolvableType;
 import org.springframework.stereotype.Component;
 
 /**
@@ -77,7 +81,7 @@ import org.springframework.stereotype.Component;
  * <h2>Connectors injections</h2>
  * <p>
  * This auto-configuration provides support for injecting beans of {@link NetworkConnector} type into other beans with the help of {@link
- * NamedNetworkConnector} annotation. Please see its documentation for more details.
+ * InjectConnector} annotation. Please see its documentation for more details.
  * </p>
  *
  * @see NetworkService
@@ -89,24 +93,24 @@ import org.springframework.stereotype.Component;
 @ConditionalOnMissingBean(NetworkServiceFactory.class)
 public class HekateNetworkServiceConfigurer {
     @Component
-    static class NamedNetworkConnectorInjector extends AnnotationInjectorBase<NamedNetworkConnector> {
+    static class NamedNetworkConnectorInjector extends AnnotationInjectorBase<InjectConnector> {
         public NamedNetworkConnectorInjector() {
-            super(NamedNetworkConnector.class, NetworkConnectorBean.class);
+            super(InjectConnector.class, NetworkConnector.class);
         }
 
         @Override
-        protected String injectedBeanName(NamedNetworkConnector annotation) {
-            return NetworkConnectorBean.class.getName() + "-" + annotation.value();
-        }
+        protected void registerBeans(InjectConnector annotation, ResolvableType targetType, BeanDefinitionRegistry registry) {
+            String name = NetworkConnectorBean.class.getName() + "-" + annotation.value();
 
-        @Override
-        protected Object qualifierValue(NamedNetworkConnector annotation) {
-            return annotation.value();
-        }
+            if (!registry.containsBeanDefinition(name)) {
+                AbstractBeanDefinition def = BeanDefinitionBuilder.rootBeanDefinition(NetworkConnectorBean.class)
+                    .addPropertyValue("protocol", annotation.value())
+                    .getBeanDefinition();
 
-        @Override
-        protected void configure(BeanDefinitionBuilder builder, NamedNetworkConnector annotation) {
-            builder.addPropertyValue("protocol", annotation.value());
+                def.addQualifier(new AutowireCandidateQualifier(annotation.annotationType(), annotation.value()));
+
+                registry.registerBeanDefinition(name, def);
+            }
         }
     }
 

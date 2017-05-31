@@ -321,7 +321,7 @@ public interface MessagingService extends Service {
     List<MessagingChannel<?>> allChannels();
 
     /**
-     * Returns a generic messaging channel for the specified name.
+     * Returns an unchecked messaging channel for the specified name.
      *
      * @param name Channel name (see {@link MessagingChannelConfig#setName(String)}).
      *

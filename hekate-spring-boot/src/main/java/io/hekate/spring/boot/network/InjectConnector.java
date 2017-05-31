@@ -40,7 +40,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
  * </p>
  *
  * <p>
- * 1) Define a bean that will use {@link NamedNetworkConnector} annotation to inject {@link NetworkConnector} into its field.
+ * 1) Define a bean that will use {@link InjectConnector} annotation to inject {@link NetworkConnector} into its field.
  * ${source:network/NetworkInjectionJavadocTest.java#bean}
  * 2) Define a Spring Boot application that will provide connector configuration.
  * ${source:network/NetworkInjectionJavadocTest.java#app}
@@ -52,8 +52,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 @Qualifier
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
-public @interface NamedNetworkConnector {
+@Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
+public @interface InjectConnector {
     /**
      * Specifies the {@link NetworkConnectorConfig#setProtocol(String) protocol name} of a {@link NetworkConnector} that should be injected
      * (see {@link NetworkService#connector(String)}).

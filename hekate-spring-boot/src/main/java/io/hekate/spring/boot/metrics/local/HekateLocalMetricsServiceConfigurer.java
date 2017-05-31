@@ -31,12 +31,16 @@ import io.hekate.spring.boot.HekateConfigurer;
 import io.hekate.spring.boot.internal.AnnotationInjectorBase;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.beans.factory.support.AutowireCandidateQualifier;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.ResolvableType;
 import org.springframework.stereotype.Component;
 
 /**
@@ -84,44 +88,44 @@ public class HekateLocalMetricsServiceConfigurer {
     @Component
     static class NamedCounterInjector extends AnnotationInjectorBase<InjectCounter> {
         public NamedCounterInjector() {
-            super(InjectCounter.class, CounterMetricBean.class);
+            super(InjectCounter.class, CounterMetric.class);
         }
 
         @Override
-        protected String injectedBeanName(InjectCounter annotation) {
-            return CounterMetricBean.class.getName() + "-" + annotation.value();
-        }
+        protected void registerBeans(InjectCounter annotation, ResolvableType targetType, BeanDefinitionRegistry registry) {
+            String name = CounterMetricBean.class.getName() + "-" + annotation.value();
 
-        @Override
-        protected Object qualifierValue(InjectCounter annotation) {
-            return annotation.value();
-        }
+            if (!registry.containsBeanDefinition(name)) {
+                AbstractBeanDefinition def = BeanDefinitionBuilder.rootBeanDefinition(CounterMetricBean.class)
+                    .addPropertyValue("name", annotation.value())
+                    .getBeanDefinition();
 
-        @Override
-        protected void configure(BeanDefinitionBuilder builder, InjectCounter annotation) {
-            builder.addPropertyValue("name", annotation.value());
+                def.addQualifier(new AutowireCandidateQualifier(annotation.annotationType(), annotation.value()));
+
+                registry.registerBeanDefinition(name, def);
+            }
         }
     }
 
     @Component
     static class NamedMetricInjector extends AnnotationInjectorBase<InjectMetric> {
         public NamedMetricInjector() {
-            super(InjectMetric.class, MetricBean.class);
+            super(InjectMetric.class, Metric.class);
         }
 
         @Override
-        protected String injectedBeanName(InjectMetric annotation) {
-            return MetricBean.class.getName() + "-" + annotation.value();
-        }
+        protected void registerBeans(InjectMetric annotation, ResolvableType targetType, BeanDefinitionRegistry registry) {
+            String name = MetricBean.class.getName() + "-" + annotation.value();
 
-        @Override
-        protected Object qualifierValue(InjectMetric annotation) {
-            return annotation.value();
-        }
+            if (!registry.containsBeanDefinition(name)) {
+                AbstractBeanDefinition def = BeanDefinitionBuilder.rootBeanDefinition(MetricBean.class)
+                    .addPropertyValue("name", annotation.value())
+                    .getBeanDefinition();
 
-        @Override
-        protected void configure(BeanDefinitionBuilder builder, InjectMetric annotation) {
-            builder.addPropertyValue("name", annotation.value());
+                def.addQualifier(new AutowireCandidateQualifier(annotation.annotationType(), annotation.value()));
+
+                registry.registerBeanDefinition(name, def);
+            }
         }
     }
 

@@ -31,14 +31,17 @@ import io.hekate.spring.boot.internal.AnnotationInjectorBase;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.BeanMetadataAttribute;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.AutowireCandidateQualifier;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.ResolvableType;
 import org.springframework.stereotype.Component;
 
 /**
@@ -92,51 +95,49 @@ public class HekateLockServiceConfigurer {
     @Component
     static class NamedLockRegionInjector extends AnnotationInjectorBase<InjectLockRegion> {
         public NamedLockRegionInjector() {
-            super(InjectLockRegion.class, LockRegionBean.class);
+            super(InjectLockRegion.class, LockRegion.class);
         }
 
         @Override
-        protected String injectedBeanName(InjectLockRegion annotation) {
-            return LockRegionBean.class.getName() + "-" + annotation.value();
-        }
+        protected void registerBeans(InjectLockRegion annotation, ResolvableType targetType, BeanDefinitionRegistry registry) {
+            String name = LockRegionBean.class.getName() + "-" + annotation.value();
 
-        @Override
-        protected Object qualifierValue(InjectLockRegion annotation) {
-            return annotation.value();
-        }
+            if (!registry.containsBeanDefinition(name)) {
+                AbstractBeanDefinition def = BeanDefinitionBuilder.rootBeanDefinition(LockRegionBean.class)
+                    .addPropertyValue("region", annotation.value())
+                    .getBeanDefinition();
 
-        @Override
-        protected void configure(BeanDefinitionBuilder builder, InjectLockRegion annotation) {
-            builder.addPropertyValue("region", annotation.value());
+                def.addQualifier(new AutowireCandidateQualifier(annotation.annotationType(), annotation.value()));
+
+                registry.registerBeanDefinition(name, def);
+            }
         }
     }
 
     @Component
     static class NamedLockInjector extends AnnotationInjectorBase<InjectLock> {
         public NamedLockInjector() {
-            super(InjectLock.class, LockBean.class);
+            super(InjectLock.class, DistributedLock.class);
         }
 
         @Override
-        protected String injectedBeanName(InjectLock annotation) {
-            return LockBean.class.getName() + "-" + annotation.name() + "--" + annotation.name();
-        }
+        protected void registerBeans(InjectLock annotation, ResolvableType targetType, BeanDefinitionRegistry registry) {
+            String name = LockBean.class.getName() + "-" + annotation.name() + "--" + annotation.name();
 
-        @Override
-        protected Object qualifierValue(InjectLock annotation) {
-            return null;
-        }
+            if (!registry.containsBeanDefinition(name)) {
+                AbstractBeanDefinition def = BeanDefinitionBuilder.rootBeanDefinition(LockBean.class)
+                    .addPropertyValue("region", annotation.region())
+                    .addPropertyValue("name", annotation.name())
+                    .getBeanDefinition();
 
-        @Override
-        protected void customize(AutowireCandidateQualifier qualifier, InjectLock annotation) {
-            qualifier.addMetadataAttribute(new BeanMetadataAttribute("region", annotation.region()));
-            qualifier.addMetadataAttribute(new BeanMetadataAttribute("name", annotation.name()));
-        }
+                AutowireCandidateQualifier qualifier = new AutowireCandidateQualifier(annotation.annotationType());
+                qualifier.addMetadataAttribute(new BeanMetadataAttribute("region", annotation.region()));
+                qualifier.addMetadataAttribute(new BeanMetadataAttribute("name", annotation.name()));
 
-        @Override
-        protected void configure(BeanDefinitionBuilder builder, InjectLock annotation) {
-            builder.addPropertyValue("region", annotation.region());
-            builder.addPropertyValue("name", annotation.name());
+                def.addQualifier(qualifier);
+
+                registry.registerBeanDefinition(name, def);
+            }
         }
     }
 

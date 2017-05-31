@@ -16,113 +16,122 @@
 
 package io.hekate.spring.boot.internal;
 
+import io.hekate.core.internal.util.ArgAssert;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.AbstractBeanDefinition;
-import org.springframework.beans.factory.support.AutowireCandidateQualifier;
-import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.ResolvableType;
 import org.springframework.util.ReflectionUtils;
 
 import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
+import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
 
 public abstract class AnnotationInjectorBase<A extends Annotation> implements BeanFactoryPostProcessor {
     private final Class<A> annotationType;
 
-    private final Class<?> beanType;
+    private final Class<?> injectableType;
 
-    public AnnotationInjectorBase(Class<A> annotationType, Class<?> beanType) {
+    public AnnotationInjectorBase(Class<A> annotationType, Class<?> injectableType) {
+        ArgAssert.notNull(annotationType, "annotation type");
+        ArgAssert.notNull(injectableType, "injectable type");
+
         this.annotationType = annotationType;
-        this.beanType = beanType;
+        this.injectableType = injectableType;
     }
 
-    protected abstract String injectedBeanName(A annotation);
-
-    protected abstract Object qualifierValue(A annotation);
-
-    protected abstract void configure(BeanDefinitionBuilder builder, A annotation);
+    protected abstract void registerBeans(A annotation, ResolvableType targetType, BeanDefinitionRegistry registry);
 
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
         BeanDefinitionRegistry beanRegistry = (BeanDefinitionRegistry)beanFactory;
 
-        Set<Class<?>> processedClasses = new HashSet<>();
+        Set<Class<?>> uniqueTypes = new HashSet<>();
 
-        for (String defName : beanFactory.getBeanDefinitionNames()) {
-            Class<?> beanClass = beanFactory.getType(defName);
+        for (String name : beanFactory.getBeanDefinitionNames()) {
+            Class<?> beanClass = beanFactory.getType(name);
 
             if (beanClass != null) {
-                if (processedClasses.add(beanClass)) {
-                    Set<A> annotations = new HashSet<>();
+                if (uniqueTypes.add(beanClass)) {
+                    // Collect annotations from all of the class members.
+                    List<Map.Entry<ResolvableType, A>> annotations = new ArrayList<>();
 
-                    ReflectionUtils.doWithFields(beanClass, field ->
-                        Optional.ofNullable(findAnnotation(field, annotationType)).ifPresent(annotations::add)
-                    );
+                    // 1. Fields.
+                    ReflectionUtils.doWithFields(beanClass, field -> {
+                        if (isInjectableType(field.getType())) {
+                            Optional.ofNullable(findAnnotation(field, annotationType)).ifPresent(a ->
+                                annotations.add(new SimpleEntry<>(ResolvableType.forField(field), a))
+                            );
+                        }
+                    });
 
-                    for (Constructor<?> constructor : beanClass.getDeclaredConstructors()) {
-                        Optional.ofNullable(findAnnotation(constructor, annotationType)).ifPresent(annotations::add);
+                    // 2. Constructors.
+                    for (Constructor<?> ctor : beanClass.getDeclaredConstructors()) {
+                        Annotation[][] params = ctor.getParameterAnnotations();
 
-                        for (Annotation[] paramAnnotations : constructor.getParameterAnnotations()) {
-                            for (Annotation paramAnnotation : paramAnnotations) {
-                                Optional.ofNullable(AnnotationUtils.getAnnotation(paramAnnotation, annotationType))
-                                    .ifPresent(annotations::add);
+                        for (int i = 0; i < params.length; i++) {
+                            int idx = i;
+
+                            for (Annotation param : params[i]) {
+                                if (isInjectableType(ctor.getParameterTypes()[i])) {
+                                    Optional.ofNullable(getAnnotation(param, annotationType)).ifPresent(a ->
+                                        annotations.add(new SimpleEntry<>(ResolvableType.forConstructorParameter(ctor, idx), a))
+                                    );
+                                }
                             }
                         }
                     }
 
-                    ReflectionUtils.doWithMethods(beanClass, method -> {
-                        Optional.ofNullable(findAnnotation(method, annotationType)).ifPresent(annotations::add);
+                    // 3. Methods.
+                    ReflectionUtils.doWithMethods(beanClass, meth -> {
+                        // Annotation that is declared at the method level.
+                        Optional.ofNullable(findAnnotation(meth, annotationType)).ifPresent(a -> {
+                            Class<?>[] params = meth.getParameterTypes();
 
-                        for (Annotation[] paramAnnotations : method.getParameterAnnotations()) {
-                            for (Annotation paramAnnotation : paramAnnotations) {
-                                Optional.ofNullable(AnnotationUtils.getAnnotation(paramAnnotation, annotationType))
-                                    .ifPresent(annotations::add);
+                            for (int i = 0; i < params.length; i++) {
+                                if (isInjectableType(params[i])) {
+                                    annotations.add(new SimpleEntry<>(ResolvableType.forMethodParameter(meth, i), a));
+                                }
+                            }
+                        });
+
+                        // Annotations that are declared at the method's parameter level.
+                        Annotation[][] params = meth.getParameterAnnotations();
+
+                        for (int i = 0; i < params.length; i++) {
+                            int idx = i;
+
+                            for (Annotation param : params[i]) {
+                                if (isInjectableType(meth.getParameterTypes()[i])) {
+                                    Optional.ofNullable(getAnnotation(param, annotationType)).ifPresent(a ->
+                                        annotations.add(new SimpleEntry<>(ResolvableType.forMethodParameter(meth, idx), a))
+                                    );
+                                }
                             }
                         }
                     });
 
+                    // Register beans for collected annotations.
                     if (!annotations.isEmpty()) {
-                        annotations.forEach(annotation -> {
-                            String injectedBeanName = injectedBeanName(annotation);
-
-                            if (!beanRegistry.isBeanNameInUse(injectedBeanName)) {
-                                BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(beanType);
-
-                                configure(builder, annotation);
-
-                                AbstractBeanDefinition injectorDef = builder.getBeanDefinition();
-
-                                Object qualifierVal = qualifierValue(annotation);
-
-                                AutowireCandidateQualifier qualifier;
-
-                                if (qualifierVal == null) {
-                                    qualifier = new AutowireCandidateQualifier(annotationType);
-                                } else {
-                                    qualifier = new AutowireCandidateQualifier(annotationType, qualifierVal);
-                                }
-
-                                customize(qualifier, annotation);
-
-                                injectorDef.addQualifier(qualifier);
-
-                                beanRegistry.registerBeanDefinition(injectedBeanName, injectorDef);
-                            }
-                        });
+                        annotations.forEach(e ->
+                            registerBeans(e.getValue(), e.getKey(), beanRegistry)
+                        );
                     }
                 }
             }
         }
     }
 
-    protected void customize(AutowireCandidateQualifier qualifier, A annotation) {
-        // No-op.
+    private boolean isInjectableType(Class<?> type) {
+        return injectableType.isAssignableFrom(type);
     }
 }

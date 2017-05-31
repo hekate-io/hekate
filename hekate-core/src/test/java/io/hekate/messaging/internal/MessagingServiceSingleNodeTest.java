@@ -57,10 +57,7 @@ public class MessagingServiceSingleNodeTest extends HekateNodeTestBase {
             )
         ).join();
 
-        expect(ClassCastException.class,
-            "Messaging channel doesn't support the specified type [channel-type=java.lang.String, requested-type=java.lang.Object]",
-            () -> node.messaging().channel("test")
-        );
+        assertEquals(String.class, node.messaging().channel("test").baseType());
 
         expect(ClassCastException.class,
             "Messaging channel doesn't support the specified type [channel-type=java.lang.String, requested-type=java.lang.Integer]",

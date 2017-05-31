@@ -34,11 +34,11 @@ public class HekateNetworkServiceConfigurerTest extends HekateAutoConfigurerTest
     @EnableAutoConfiguration
     static class NetworkTestConfig extends HekateTestConfigBase {
         private static class InnerBean {
-            @NamedNetworkConnector("test2")
+            @InjectConnector("test2")
             private NetworkConnector<Object> innerConnector;
         }
 
-        @NamedNetworkConnector("test1")
+        @InjectConnector("test1")
         private NetworkConnector<Object> connector;
 
         @Bean

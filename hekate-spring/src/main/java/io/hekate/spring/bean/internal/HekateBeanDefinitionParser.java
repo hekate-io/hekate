@@ -718,7 +718,6 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                     BeanDefinitionBuilder channelBean = newBean(MessagingChannelBean.class, channelEl);
 
                     setProperty(channelBean, channelEl, "channel", "name");
-                    setProperty(channelBean, channelEl, "channelType", "base-type");
 
                     deferredBaseBeans.put(channelBean, name);
                 }

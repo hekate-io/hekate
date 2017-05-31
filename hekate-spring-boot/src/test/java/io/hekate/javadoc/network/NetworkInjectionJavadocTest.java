@@ -24,7 +24,7 @@ import io.hekate.network.NetworkConnectorConfig;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.spring.boot.EnableHekate;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
-import io.hekate.spring.boot.network.NamedNetworkConnector;
+import io.hekate.spring.boot.network.InjectConnector;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import org.junit.Test;
@@ -38,7 +38,7 @@ public class NetworkInjectionJavadocTest extends HekateAutoConfigurerTestBase {
     // Start:bean
     @Component
     public static class MyBean {
-        @NamedNetworkConnector("my-connector")
+        @InjectConnector("my-connector")
         private NetworkConnector<Object> connector;
 
         // ... other fields and methods...

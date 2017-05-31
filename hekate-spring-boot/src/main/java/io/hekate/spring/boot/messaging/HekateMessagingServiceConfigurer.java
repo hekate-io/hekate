@@ -29,12 +29,16 @@ import io.hekate.spring.boot.internal.AnnotationInjectorBase;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.beans.factory.support.AutowireCandidateQualifier;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.ResolvableType;
 import org.springframework.stereotype.Component;
 
 /**
@@ -70,22 +74,22 @@ public class HekateMessagingServiceConfigurer {
     @Component
     static class NamedMessagingChannelInjector extends AnnotationInjectorBase<InjectChannel> {
         public NamedMessagingChannelInjector() {
-            super(InjectChannel.class, MessagingChannelBean.class);
+            super(InjectChannel.class, MessagingChannel.class);
         }
 
         @Override
-        protected String injectedBeanName(InjectChannel annotation) {
-            return MessagingChannelBean.class.getName() + "-" + annotation.value();
-        }
+        protected void registerBeans(InjectChannel annotation, ResolvableType targetType, BeanDefinitionRegistry registry) {
+            String name = MessagingChannelBean.class.getName() + "-" + annotation.value();
 
-        @Override
-        protected Object qualifierValue(InjectChannel annotation) {
-            return annotation.value();
-        }
+            if (!registry.containsBeanDefinition(name)) {
+                AbstractBeanDefinition def = BeanDefinitionBuilder.rootBeanDefinition(MessagingChannelBean.class)
+                    .addPropertyValue("channel", annotation.value())
+                    .getBeanDefinition();
 
-        @Override
-        protected void configure(BeanDefinitionBuilder builder, InjectChannel annotation) {
-            builder.addPropertyValue("channel", annotation.value());
+                def.addQualifier(new AutowireCandidateQualifier(annotation.annotationType(), annotation.value()));
+
+                registry.registerBeanDefinition(name, def);
+            }
         }
     }
 
