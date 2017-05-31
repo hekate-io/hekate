@@ -25,6 +25,7 @@ import io.hekate.partition.RendezvousHashMapper;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -166,8 +167,9 @@ public class MessagingChannelConfigTest extends HekateTestBase {
 
     @Test
     public void testReceiver() {
-        @SuppressWarnings("unchecked")
-        MessageReceiver<Object> receiver = mock(MessageReceiver.class);
+        MessageReceiver<Object> receiver = msg -> {
+            // No-op.
+        };
 
         assertNull(cfg.getReceiver());
 
@@ -182,6 +184,21 @@ public class MessagingChannelConfigTest extends HekateTestBase {
         assertSame(cfg, cfg.withReceiver(receiver));
 
         assertSame(receiver, cfg.getReceiver());
+    }
+
+    @Test
+    public void testHasReceiver() {
+        assertFalse(cfg.hasReceiver());
+
+        cfg.setReceiver(msg -> {
+            // No-op.
+        });
+
+        assertTrue(cfg.hasReceiver());
+
+        cfg.setReceiver(null);
+
+        assertFalse(cfg.hasReceiver());
     }
 
     @Test

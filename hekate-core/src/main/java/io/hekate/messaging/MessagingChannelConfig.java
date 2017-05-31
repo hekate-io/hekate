@@ -464,6 +464,15 @@ public class MessagingChannelConfig<T> {
     }
 
     /**
+     * Returns {@code true} if {@link #setReceiver(MessageReceiver) receiver} is specified.
+     *
+     * @return {@code true} if {@link #setReceiver(MessageReceiver) receiver} is specified.
+     */
+    public boolean hasReceiver() {
+        return receiver != null;
+    }
+
+    /**
      * Fluent style version of {@link #setReceiver(MessageReceiver)}.
      *
      * @param messageReceiver Message receiver.

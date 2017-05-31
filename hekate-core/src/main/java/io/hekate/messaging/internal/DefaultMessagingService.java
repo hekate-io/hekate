@@ -16,6 +16,7 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.cluster.ClusterAcceptor;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterNodeId;
@@ -25,7 +26,9 @@ import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
+import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
+import io.hekate.core.ServiceInfo;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.core.internal.util.ConfigCheck;
@@ -83,7 +86,7 @@ import org.slf4j.LoggerFactory;
 import static java.util.stream.Collectors.joining;
 
 public class DefaultMessagingService implements MessagingService, DependentService, ConfigurableService, InitializingService,
-    TerminatingService, NetworkConfigProvider {
+    TerminatingService, NetworkConfigProvider, ClusterAcceptor {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultMessagingService.class);
 
@@ -186,11 +189,62 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         });
 
         // Register channel names as a service property.
-        channelsConfig.stream()
-            .filter(cfg -> cfg.getReceiver() != null)
-            .forEach(cfg ->
-                ctx.setServiceProperty(ChannelNodeFilter.serviceProperty(cfg.getName().trim()), "1")
+        channelsConfig.forEach(cfg -> {
+            ChannelMetaData meta = new ChannelMetaData(
+                cfg.hasReceiver(), cfg.getBaseType().getCanonicalName(),
+                cfg.getPartitions(),
+                cfg.getBackupNodes()
             );
+
+            ctx.setServiceProperty(ChannelMetaData.propertyName(cfg.getName()), meta.toString());
+        });
+    }
+
+    @Override
+    public String acceptJoin(ClusterNode joining, Hekate local) {
+        if (joining.hasService(MessagingService.class)) {
+            ServiceInfo locService = local.localNode().service(MessagingService.class);
+            ServiceInfo remService = joining.service(MessagingService.class);
+
+            for (MessagingChannelConfig<?> cfg : channelsConfig) {
+                ChannelMetaData locMeta = ChannelMetaData.parse(locService.property(ChannelMetaData.propertyName(cfg.getName().trim())));
+                ChannelMetaData remMeta = ChannelMetaData.parse(remService.property(ChannelMetaData.propertyName(cfg.getName().trim())));
+
+                if (remMeta != null) {
+                    if (!locMeta.type().equals(remMeta.type())) {
+                        return "Invalid " + MessagingChannelConfig.class.getSimpleName() + " - "
+                            + "'baseType' value mismatch between the joining node and the cluster "
+                            + "[channel=" + cfg.getName()
+                            + ", joining-type=" + remMeta.type()
+                            + ", cluster-type=" + locMeta.type()
+                            + ", rejected-by=" + local.localNode().address()
+                            + ']';
+                    }
+
+                    if (locMeta.partitions() != remMeta.partitions()) {
+                        return "Invalid " + MessagingChannelConfig.class.getSimpleName() + " - "
+                            + "'partitions' value mismatch between the joining node and the cluster "
+                            + "[channel=" + cfg.getName()
+                            + ", joining-value=" + remMeta.partitions()
+                            + ", cluster-value=" + locMeta.partitions()
+                            + ", rejected-by=" + local.localNode().address()
+                            + ']';
+                    }
+
+                    if (locMeta.backupNodes() != remMeta.backupNodes()) {
+                        return "Invalid " + MessagingChannelConfig.class.getSimpleName() + " - "
+                            + "'backupNodes' value mismatch between the joining node and the cluster "
+                            + "[channel=" + cfg.getName()
+                            + ", joining-value=" + remMeta.backupNodes()
+                            + ", cluster-value=" + locMeta.backupNodes()
+                            + ", rejected-by=" + local.localNode().address()
+                            + ']';
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     @Override
@@ -376,7 +430,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         MessagingBackPressureConfig pressureCfg = cfg.getBackPressure();
 
         ClusterNode localNode = cluster.localNode();
-        ClusterView clusterView = cluster.filter(new ChannelNodeFilter(name, filter));
+        ClusterView clusterView = cluster.filter(ChannelMetaData.hasReceiver(name, filter));
 
         NetworkConnector<MessagingProtocol> connector = net.connector(name);
 

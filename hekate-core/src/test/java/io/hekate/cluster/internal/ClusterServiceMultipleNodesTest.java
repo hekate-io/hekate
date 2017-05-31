@@ -828,7 +828,8 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
             fail("Error was expected.");
         } catch (HekateFutureException e) {
-            String reason = "Cluster is configured with non-loopback addresses while node is configured to use a loopback address.";
+            String reason = "Cluster is configured with non-loopback addresses while node is configured to use a loopback address "
+                + "[rejected-by=" + existing.localNode().address() + ']';
 
             ClusterJoinRejectedException cause = e.findCause(ClusterJoinRejectedException.class);
 
@@ -874,8 +875,9 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
             fail("Error was expected.");
         } catch (HekateFutureException e) {
+            String reason = "Cluster is configured with loopback addresses while node is configured to use a non-loopback address "
+                + "[rejected-by=" + existing.localNode().address() + ']';
 
-            String reason = "Cluster is configured with loopback addresses while node is configured to use a non-loopback address.";
             ClusterJoinRejectedException cause = e.findCause(ClusterJoinRejectedException.class);
 
             assertEquals(reason, cause.rejectReason());

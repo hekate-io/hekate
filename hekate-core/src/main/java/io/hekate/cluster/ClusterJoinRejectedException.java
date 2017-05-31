@@ -38,7 +38,7 @@ public class ClusterJoinRejectedException extends HekateException {
      * @param rejectedBy Address of the node that rejected this node joining.
      */
     public ClusterJoinRejectedException(String rejectReason, ClusterAddress rejectedBy) {
-        super(rejectReason + " [rejected-by=" + rejectedBy + ']');
+        super(rejectReason);
 
         this.rejectReason = rejectReason;
         this.rejectedBy = rejectedBy;

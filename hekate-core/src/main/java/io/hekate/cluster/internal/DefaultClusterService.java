@@ -147,22 +147,21 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private static final ClusterAcceptor DEFAULT_JOIN_ACCEPTOR = (newNode, hekate) -> {
-        boolean localLoopback = hekate.localNode().socket().getAddress().isLoopbackAddress();
+    private static final ClusterAcceptor DEFAULT_JOIN_ACCEPTOR = (joining, hekate) -> {
+        boolean locLoopback = hekate.localNode().socket().getAddress().isLoopbackAddress();
+        boolean remLoopback = joining.socket().getAddress().isLoopbackAddress();
 
-        boolean remoteLoopback = newNode.socket().getAddress().isLoopbackAddress();
-
-        String rejectReason = null;
-
-        if (localLoopback != remoteLoopback) {
-            if (localLoopback) {
-                rejectReason = "Cluster is configured with loopback addresses while node is configured to use a non-loopback address.";
+        if (locLoopback != remLoopback) {
+            if (locLoopback) {
+                return "Cluster is configured with loopback addresses while node is configured to use a non-loopback address "
+                    + "[rejected-by=" + hekate.localNode().address() + ']';
             } else {
-                rejectReason = "Cluster is configured with non-loopback addresses while node is configured to use a loopback address.";
+                return "Cluster is configured with non-loopback addresses while node is configured to use a loopback address "
+                    + "[rejected-by=" + hekate.localNode().address() + ']';
             }
         }
 
-        return rejectReason;
+        return null;
     };
 
     private final long gossipInterval;
