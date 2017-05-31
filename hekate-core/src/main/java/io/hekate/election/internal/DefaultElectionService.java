@@ -63,11 +63,9 @@ public class DefaultElectionService implements ElectionService, DependentService
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private static final String GROUPS_PROPERTY = "groups";
+    private static final String THREAD_PREFIX = "Election";
 
-    private static final String ELECTION_THREAD_PREFIX = "Election";
-
-    private static final String ELECTION_LOCK_REGION = "election.service";
+    private static final String LOCK_REGION = "election.service";
 
     private final StateGuard guard = new StateGuard(ElectionService.class);
 
@@ -118,11 +116,6 @@ public class DefaultElectionService implements ElectionService, DependentService
 
             uniqueGroups.add(group);
         });
-
-        // Register group names as service property.
-        candidatesConfig.forEach(cfg ->
-            ctx.addServiceProperty(GROUPS_PROPERTY, cfg.getGroup().trim())
-        );
     }
 
     @Override
@@ -131,7 +124,7 @@ public class DefaultElectionService implements ElectionService, DependentService
             return Collections.emptyList();
         }
 
-        return Collections.singletonList(new LockRegionConfig().withName(ELECTION_LOCK_REGION));
+        return Collections.singletonList(new LockRegionConfig().withName(LOCK_REGION));
     }
 
     @Override
@@ -251,9 +244,9 @@ public class DefaultElectionService implements ElectionService, DependentService
         String group = cfg.getGroup().trim();
         Candidate candidate = cfg.getCandidate();
 
-        DistributedLock lock = locks.region(ELECTION_LOCK_REGION).get(group);
+        DistributedLock lock = locks.region(LOCK_REGION).get(group);
 
-        ExecutorService worker = Executors.newSingleThreadExecutor(new HekateThreadFactory(ELECTION_THREAD_PREFIX + '-' + group));
+        ExecutorService worker = Executors.newSingleThreadExecutor(new HekateThreadFactory(THREAD_PREFIX + '-' + group));
 
         CandidateHandler handler = new CandidateHandler(group, candidate, worker, lock, localNode);
 

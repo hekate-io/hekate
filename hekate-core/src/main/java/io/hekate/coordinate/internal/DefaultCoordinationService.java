@@ -77,9 +77,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
     private static final String CHANNEL_NAME = "hekate.coordination";
 
-    private static final String PROCESSES_PROPERTY = "processes";
-
-    private static final ClusterNodeFilter NODE_FILTER = node -> node.hasService(CoordinationService.class);
+    private static final ClusterNodeFilter HAS_SERVICE_FILTER = node -> node.hasService(CoordinationService.class);
 
     private final long failoverDelay;
 
@@ -119,7 +117,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
     @Override
     public void resolve(DependencyContext ctx) {
         messaging = ctx.require(MessagingService.class);
-        cluster = ctx.require(ClusterService.class).filter(NODE_FILTER);
+        cluster = ctx.require(ClusterService.class).filter(HAS_SERVICE_FILTER);
         defaultCodec = ctx.require(CodecService.class);
     }
 
@@ -152,7 +150,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
         // Register process names as service property.
         processesConfig.forEach(cfg ->
-            ctx.addServiceProperty(PROCESSES_PROPERTY, cfg.getName().trim())
+            ctx.setServiceProperty(propertyName(cfg.getName().trim()), "1")
         );
     }
 
@@ -177,7 +175,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
         return Collections.singleton(
             MessagingChannelConfig.of(CoordinationProtocol.class)
                 .withName(CHANNEL_NAME)
-                .withClusterFilter(NODE_FILTER)
+                .withClusterFilter(HAS_SERVICE_FILTER)
                 .withNioThreads(nioThreads)
                 .withLogCategory(DefaultCoordinationService.class.getName())
                 .withMessageCodec(() -> new CoordinationProtocolCodec(processCodecs))
@@ -348,9 +346,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
                     ClusterTopology topology = event.topology().filter(node -> {
                         ServiceInfo service = node.service(CoordinationService.class);
 
-                        Set<String> values = service.property(PROCESSES_PROPERTY);
-
-                        return values != null && values.contains(process.name());
+                        return service.property(propertyName(process.name())) != null;
                     });
 
                     process.processTopologyChange(topology);
@@ -359,6 +355,10 @@ public class DefaultCoordinationService implements CoordinationService, Configur
         } finally {
             guard.unlockRead();
         }
+    }
+
+    private static String propertyName(String process) {
+        return "process." + process;
     }
 
     @Override

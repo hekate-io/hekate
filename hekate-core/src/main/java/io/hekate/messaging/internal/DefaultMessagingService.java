@@ -189,7 +189,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         channelsConfig.stream()
             .filter(cfg -> cfg.getReceiver() != null)
             .forEach(cfg ->
-                ctx.addServiceProperty(ChannelNodeFilter.CHANNELS_PROPERTY, cfg.getName().trim())
+                ctx.setServiceProperty(ChannelNodeFilter.serviceProperty(cfg.getName().trim()), "1")
             );
     }
 

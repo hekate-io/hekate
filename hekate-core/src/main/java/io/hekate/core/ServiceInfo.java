@@ -18,7 +18,6 @@ package io.hekate.core;
 
 import io.hekate.cluster.ClusterNode;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Provides information about a {@link Hekate#get(Class) service}.
@@ -38,14 +37,14 @@ public interface ServiceInfo {
      *
      * @return Service properties.
      */
-    Map<String, Set<String>> properties();
+    Map<String, String> properties();
 
     /**
-     * Returns an immutable set of property values.
+     * Returns the property value or {@code null} if there is no such property.
      *
      * @param name Property name.
      *
-     * @return Immutable set of property values.
+     * @return Property value or {@code null}.
      */
-    Set<String> property(String name);
+    String property(String name);
 }

@@ -72,9 +72,7 @@ import org.slf4j.LoggerFactory;
 
 public class DefaultLockService implements LockService, InitializingService, DependentService, ConfigurableService, TerminatingService,
     MessagingConfigProvider {
-    static final ClusterNodeFilter NODE_FILTER = node -> node.hasService(LockService.class);
-
-    static final String REGIONS_PROPERTY = "regions";
+    static final ClusterNodeFilter HAS_SERVICE_FILTER = node -> node.hasService(LockService.class);
 
     private static final Logger log = LoggerFactory.getLogger(DefaultLockService.class);
 
@@ -122,7 +120,8 @@ public class DefaultLockService implements LockService, InitializingService, Dep
     @Override
     public void resolve(DependencyContext ctx) {
         messaging = ctx.require(MessagingService.class);
-        cluster = ctx.require(ClusterService.class).filter(NODE_FILTER);
+        
+        cluster = ctx.require(ClusterService.class).filter(HAS_SERVICE_FILTER);
     }
 
     @Override
@@ -153,7 +152,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
         // Register region names as service property.
         regionsConfig.forEach(cfg ->
-            ctx.addServiceProperty(REGIONS_PROPERTY, cfg.getName().trim())
+            ctx.setServiceProperty(LockRegionNodeFilter.serviceProperty(cfg.getName().trim()), "1")
         );
     }
 

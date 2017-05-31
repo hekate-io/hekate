@@ -29,9 +29,9 @@ public interface ConfigurationContext {
      * Adds the specified {@link ServiceInfo#properties() service property}.
      *
      * @param name Property name.
-     * @param value Property value.
+     * @param value Property value (must be not-{@code null} and not empty).
      */
-    void addServiceProperty(String name, String value);
+    void setServiceProperty(String name, String value);
 
     /**
      * Searches for all components of the specified type.

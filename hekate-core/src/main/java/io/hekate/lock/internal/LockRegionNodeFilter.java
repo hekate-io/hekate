@@ -21,7 +21,6 @@ import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.core.ServiceInfo;
 import io.hekate.lock.LockService;
 import io.hekate.util.format.ToString;
-import java.util.Set;
 
 class LockRegionNodeFilter implements ClusterNodeFilter {
     private final String regionName;
@@ -32,17 +31,17 @@ class LockRegionNodeFilter implements ClusterNodeFilter {
         this.regionName = regionName;
     }
 
+    public static String serviceProperty(String region) {
+        return "region." + region;
+    }
+
     @Override
     public boolean accept(ClusterNode node) {
-        if (DefaultLockService.NODE_FILTER.accept(node)) {
+        if (DefaultLockService.HAS_SERVICE_FILTER.accept(node)) {
             ServiceInfo service = node.service(LockService.class);
 
             if (service != null) {
-                Set<String> regions = service.property(DefaultLockService.REGIONS_PROPERTY);
-
-                if (regions != null) {
-                    return regions.contains(regionName);
-                }
+                return service.property(serviceProperty(regionName)) != null;
             }
         }
 

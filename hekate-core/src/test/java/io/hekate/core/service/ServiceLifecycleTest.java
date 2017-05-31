@@ -26,15 +26,12 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 public class ServiceLifecycleTest extends HekateNodeTestBase {
     private interface ServiceBase extends Service {
@@ -60,9 +57,9 @@ public class ServiceLifecycleTest extends HekateNodeTestBase {
 
         private final AtomicInteger terminated = new AtomicInteger();
 
-        private final Map<String, List<String>> initProps;
+        private final Map<String, String> initProps;
 
-        public TestServiceBase(Map<String, List<String>> initProps) {
+        public TestServiceBase(Map<String, String> initProps) {
             this.initProps = initProps;
         }
 
@@ -71,7 +68,7 @@ public class ServiceLifecycleTest extends HekateNodeTestBase {
             configured.incrementAndGet();
 
             if (initProps != null) {
-                initProps.forEach((name, values) -> values.forEach(val -> ctx.addServiceProperty(name, val)));
+                initProps.forEach(ctx::setServiceProperty);
             }
         }
 
@@ -99,13 +96,13 @@ public class ServiceLifecycleTest extends HekateNodeTestBase {
     }
 
     private static class DefaultServiceA extends TestServiceBase implements ServiceA {
-        public DefaultServiceA(Map<String, List<String>> initServiceProps) {
+        public DefaultServiceA(Map<String, String> initServiceProps) {
             super(initServiceProps);
         }
     }
 
     private static class DefaultServiceB extends TestServiceBase implements ServiceB {
-        public DefaultServiceB(Map<String, List<String>> initServiceProps) {
+        public DefaultServiceB(Map<String, String> initServiceProps) {
             super(initServiceProps);
         }
     }
@@ -144,8 +141,8 @@ public class ServiceLifecycleTest extends HekateNodeTestBase {
             HekateTestNode node = createNode(c -> {
                 String strIdx = String.valueOf(i + 1);
 
-                c.withService(() -> new DefaultServiceA(singletonMap("A", asList("a", strIdx))));
-                c.withService(() -> new DefaultServiceB(singletonMap("B", asList("b", strIdx))));
+                c.withService(() -> new DefaultServiceA(singletonMap("A", strIdx)));
+                c.withService(() -> new DefaultServiceB(singletonMap("B", strIdx)));
             });
 
             nodes.add(node);
@@ -165,18 +162,13 @@ public class ServiceLifecycleTest extends HekateNodeTestBase {
                 assertNotNull(serviceA);
                 assertNotNull(serviceB);
 
-                String joinOrderStr = String.valueOf(node.joinOrder());
+                String propA = serviceA.property("A");
+                String propB = serviceB.property("B");
 
-                Set<String> propA = serviceA.property("A");
-                Set<String> propB = serviceB.property("B");
+                say("Checking [join-order=" + node.joinOrder() + ", prop-A=" + propA + ", prop-B=" + propB + ']');
 
-                say("Checking [join-order=" + joinOrderStr + ", prop-A=" + propA + ", prop-B=" + propB + ']');
-
-                assertTrue(propA.contains("a"));
-                assertTrue(propA.contains(joinOrderStr));
-
-                assertTrue(propB.contains("b"));
-                assertTrue(propB.contains(joinOrderStr));
+                assertEquals(String.valueOf(node.joinOrder()), propA);
+                assertEquals(String.valueOf(node.joinOrder()), propB);
             });
     }
 }

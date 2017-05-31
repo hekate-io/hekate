@@ -20,7 +20,6 @@ import io.hekate.core.ServiceInfo;
 import io.hekate.util.format.ToStringIgnore;
 import java.io.Serializable;
 import java.util.Map;
-import java.util.Set;
 
 public class DefaultServiceInfo implements ServiceInfo, Serializable {
     private static final long serialVersionUID = 1;
@@ -28,9 +27,9 @@ public class DefaultServiceInfo implements ServiceInfo, Serializable {
     @ToStringIgnore
     private final String type;
 
-    private final Map<String, Set<String>> props;
+    private final Map<String, String> props;
 
-    public DefaultServiceInfo(String type, Map<String, Set<String>> props) {
+    public DefaultServiceInfo(String type, Map<String, String> props) {
         assert type != null : "Service type is null.";
         assert props != null : "Service properties are null.";
 
@@ -44,12 +43,12 @@ public class DefaultServiceInfo implements ServiceInfo, Serializable {
     }
 
     @Override
-    public Map<String, Set<String>> properties() {
+    public Map<String, String> properties() {
         return props;
     }
 
     @Override
-    public Set<String> property(String name) {
+    public String property(String name) {
         return props.get(name);
     }
 

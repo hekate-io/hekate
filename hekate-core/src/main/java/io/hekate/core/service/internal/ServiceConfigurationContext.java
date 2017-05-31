@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.Collections.unmodifiableMap;
-import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toSet;
 
 class ServiceConfigurationContext implements ConfigurationContext {
@@ -54,7 +53,7 @@ class ServiceConfigurationContext implements ConfigurationContext {
         }
     }
 
-    private final Map<String, Map<String, Set<String>>> props = new HashMap<>();
+    private final Map<String, Map<String, String>> props = new HashMap<>();
 
     @ToStringIgnore
     private final ServiceManager manager;
@@ -67,17 +66,15 @@ class ServiceConfigurationContext implements ConfigurationContext {
     }
 
     @Override
-    public void addServiceProperty(String name, String value) {
+    public void setServiceProperty(String name, String value) {
         ArgAssert.notNull(name, "Property name");
 
         if (value != null && !value.isEmpty()) {
             checkState();
 
-            current.serviceTypes().forEach(type -> {
-                Set<String> values = props.get(type).computeIfAbsent(name, k -> new HashSet<>());
-
-                values.add(value);
-            });
+            current.serviceTypes().forEach(type ->
+                props.get(type).put(name, value)
+            );
         }
     }
 
@@ -123,11 +120,9 @@ class ServiceConfigurationContext implements ConfigurationContext {
         Map<String, ServiceInfo> info = new HashMap<>();
 
         props.forEach((type, props) -> {
-            Map<String, Set<String>> propsCopy = new HashMap<>();
+            Map<String, String> propsCopy = new HashMap<>();
 
-            props.forEach((name, val) ->
-                propsCopy.put(name, unmodifiableSet(new HashSet<>(val)))
-            );
+            props.forEach(propsCopy::put);
 
             info.put(type, new DefaultServiceInfo(type, unmodifiableMap(propsCopy)));
         });

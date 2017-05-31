@@ -553,17 +553,16 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
             for (ServiceInfo service : services.values()) {
                 writeStringWithDictionary(service.type(), out);
 
-                Map<String, Set<String>> serviceProps = service.properties();
+                Map<String, String> serviceProps = service.properties();
 
                 int servicePropsSize = serviceProps.size();
 
                 out.writeInt(servicePropsSize);
 
                 if (servicePropsSize > 0) {
-                    for (Map.Entry<String, Set<String>> e : serviceProps.entrySet()) {
+                    for (Map.Entry<String, String> e : serviceProps.entrySet()) {
                         writeStringWithDictionary(e.getKey(), out);
-
-                        encodeStringSet(e.getValue(), out);
+                        writeStringWithDictionary(e.getValue(), out);
                     }
                 }
             }
@@ -648,17 +647,16 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
 
                 int propSize = in.readInt();
 
-                Map<String, Set<String>> serviceProps;
+                Map<String, String> serviceProps;
 
                 if (propSize > 0) {
                     serviceProps = new HashMap<>(propSize, 1.0f);
 
                     for (int j = 0; j < propSize; j++) {
                         String key = readStringWithDictionary(in);
+                        String value = readStringWithDictionary(in);
 
-                        Set<String> values = decodeStringSet(in);
-
-                        serviceProps.put(key, values);
+                        serviceProps.put(key, value);
                     }
 
                     serviceProps = Collections.unmodifiableMap(serviceProps);

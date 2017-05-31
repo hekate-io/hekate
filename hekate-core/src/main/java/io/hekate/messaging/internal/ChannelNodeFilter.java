@@ -20,11 +20,8 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.core.ServiceInfo;
 import io.hekate.messaging.MessagingService;
-import java.util.Set;
 
 class ChannelNodeFilter implements ClusterNodeFilter {
-    static final String CHANNELS_PROPERTY = "channels";
-
     private final String channelName;
 
     private final ClusterNodeFilter delegate;
@@ -36,14 +33,16 @@ class ChannelNodeFilter implements ClusterNodeFilter {
         this.delegate = delegate;
     }
 
+    public static String serviceProperty(String channel) {
+        return "channel." + channel;
+    }
+
     @Override
     public boolean accept(ClusterNode node) {
         ServiceInfo service = node.service(MessagingService.class);
 
         if (service != null) {
-            Set<String> channels = service.property(CHANNELS_PROPERTY);
-
-            if (channels != null && channels.contains(channelName)) {
+            if (service.property(serviceProperty(channelName)) != null) {
                 return delegate == null || delegate.accept(node);
             }
         }
