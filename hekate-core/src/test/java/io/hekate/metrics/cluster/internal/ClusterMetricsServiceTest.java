@@ -27,13 +27,13 @@ import io.hekate.metrics.local.CounterMetric;
 import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.metrics.local.LocalMetricsServiceFactory;
 import io.hekate.metrics.local.ProbeConfig;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -51,6 +51,19 @@ public class ClusterMetricsServiceTest extends HekateNodeParamTestBase {
     }
 
     @Test
+    public void testSingleNode() throws Exception {
+        HekateTestNode node = createNodeWithMetrics().join();
+
+        CounterMetric c = node.localMetrics().counter("c");
+
+        repeat(3, i -> {
+            awaitForClusterMetric("c", i, node, singletonList(node));
+
+            c.increment();
+        });
+    }
+
+    @Test
     public void testAddMetrics() throws Exception {
         HekateTestNode node1 = createNodeWithMetrics().join();
         HekateTestNode node2 = createNodeWithMetrics().join();
@@ -63,25 +76,25 @@ public class ClusterMetricsServiceTest extends HekateNodeParamTestBase {
             CounterMetric c2 = node2.localMetrics().register(new CounterConfig("c2_" + i));
             CounterMetric c3 = node3.localMetrics().register(new CounterConfig("c3_" + i));
 
-            awaitForClusterMetric("c1_" + i, 0, node1, Arrays.asList(node1, node2, node3));
-            awaitForClusterMetric("c2_" + i, 0, node2, Arrays.asList(node1, node2, node3));
-            awaitForClusterMetric("c3_" + i, 0, node3, Arrays.asList(node1, node2, node3));
+            awaitForClusterMetric("c1_" + i, 0, node1, asList(node1, node2, node3));
+            awaitForClusterMetric("c2_" + i, 0, node2, asList(node1, node2, node3));
+            awaitForClusterMetric("c3_" + i, 0, node3, asList(node1, node2, node3));
 
             c1.add(100);
             c2.add(200);
             c3.add(300);
 
-            awaitForClusterMetric("c1_" + i, 100, node1, Arrays.asList(node1, node2, node3));
-            awaitForClusterMetric("c2_" + i, 200, node2, Arrays.asList(node1, node2, node3));
-            awaitForClusterMetric("c3_" + i, 300, node3, Arrays.asList(node1, node2, node3));
+            awaitForClusterMetric("c1_" + i, 100, node1, asList(node1, node2, node3));
+            awaitForClusterMetric("c2_" + i, 200, node2, asList(node1, node2, node3));
+            awaitForClusterMetric("c3_" + i, 300, node3, asList(node1, node2, node3));
 
             c1.add(1000);
             c2.add(2000);
             c3.add(3000);
 
-            awaitForClusterMetric("c1_" + i, 1100, node1, Arrays.asList(node1, node2, node3));
-            awaitForClusterMetric("c2_" + i, 2200, node2, Arrays.asList(node1, node2, node3));
-            awaitForClusterMetric("c3_" + i, 3300, node3, Arrays.asList(node1, node2, node3));
+            awaitForClusterMetric("c1_" + i, 1100, node1, asList(node1, node2, node3));
+            awaitForClusterMetric("c2_" + i, 2200, node2, asList(node1, node2, node3));
+            awaitForClusterMetric("c3_" + i, 3300, node3, asList(node1, node2, node3));
         });
     }
 
@@ -98,20 +111,20 @@ public class ClusterMetricsServiceTest extends HekateNodeParamTestBase {
             CounterMetric c1 = node1.localMetrics().register(new CounterConfig("c1_" + i));
             CounterMetric c2 = node2.localMetrics().register(new CounterConfig("c2_" + i));
 
-            awaitForClusterMetric("c1_" + i, 0, node1, Arrays.asList(node1, node2));
-            awaitForClusterMetric("c2_" + i, 0, node2, Arrays.asList(node1, node2));
+            awaitForClusterMetric("c1_" + i, 0, node1, asList(node1, node2));
+            awaitForClusterMetric("c2_" + i, 0, node2, asList(node1, node2));
 
             c1.add(100);
             c2.add(200);
 
-            awaitForClusterMetric("c1_" + i, 100, node1, Arrays.asList(node1, node2));
-            awaitForClusterMetric("c2_" + i, 200, node2, Arrays.asList(node1, node2));
+            awaitForClusterMetric("c1_" + i, 100, node1, asList(node1, node2));
+            awaitForClusterMetric("c2_" + i, 200, node2, asList(node1, node2));
 
             c1.add(1000);
             c2.add(2000);
 
-            awaitForClusterMetric("c1_" + i, 1100, node1, Arrays.asList(node1, node2));
-            awaitForClusterMetric("c2_" + i, 2200, node2, Arrays.asList(node1, node2));
+            awaitForClusterMetric("c1_" + i, 1100, node1, asList(node1, node2));
+            awaitForClusterMetric("c2_" + i, 2200, node2, asList(node1, node2));
         });
     }
 
@@ -129,8 +142,8 @@ public class ClusterMetricsServiceTest extends HekateNodeParamTestBase {
             CounterMetric c1 = node1.localMetrics().register(new CounterConfig("c1_" + i));
             CounterMetric c2 = node2.localMetrics().register(new CounterConfig("c2_" + i));
 
-            awaitForClusterMetric("c1_" + i, 0, node1, Arrays.asList(node1, node2));
-            awaitForClusterMetric("c2_" + i, 0, node2, Arrays.asList(node1, node2));
+            awaitForClusterMetric("c1_" + i, 0, node1, asList(node1, node2));
+            awaitForClusterMetric("c2_" + i, 0, node2, asList(node1, node2));
 
             assertNull(node1.clusterMetrics().of(node2.localNode()).get().metric("no_2" + i));
             assertNull(node2.clusterMetrics().of(node1.localNode()).get().metric("no_1" + i));
@@ -141,8 +154,8 @@ public class ClusterMetricsServiceTest extends HekateNodeParamTestBase {
             no1.add(1000);
             no2.add(1000);
 
-            awaitForClusterMetric("c1_" + i, 100, node1, Arrays.asList(node1, node2));
-            awaitForClusterMetric("c2_" + i, 200, node2, Arrays.asList(node1, node2));
+            awaitForClusterMetric("c1_" + i, 100, node1, asList(node1, node2));
+            awaitForClusterMetric("c2_" + i, 200, node2, asList(node1, node2));
 
             assertNull(node1.clusterMetrics().of(node2.localNode()).get().metric("no_2" + i));
             assertNull(node2.clusterMetrics().of(node1.localNode()).get().metric("no_1" + i));
@@ -150,8 +163,8 @@ public class ClusterMetricsServiceTest extends HekateNodeParamTestBase {
             c1.add(1000);
             c2.add(2000);
 
-            awaitForClusterMetric("c1_" + i, 1100, node1, Arrays.asList(node1, node2));
-            awaitForClusterMetric("c2_" + i, 2200, node2, Arrays.asList(node1, node2));
+            awaitForClusterMetric("c1_" + i, 1100, node1, asList(node1, node2));
+            awaitForClusterMetric("c2_" + i, 2200, node2, asList(node1, node2));
 
             assertNull(node1.clusterMetrics().of(node2.localNode()).get().metric("no_2" + i));
             assertNull(node2.clusterMetrics().of(node1.localNode()).get().metric("no_1" + i));
@@ -175,8 +188,8 @@ public class ClusterMetricsServiceTest extends HekateNodeParamTestBase {
             node1.localMetrics().register(new CounterConfig("c1_" + i));
             node2.localMetrics().register(new CounterConfig("c2_" + i));
 
-            awaitForClusterMetric("c1_" + i, 0, node1, Arrays.asList(node1, node2));
-            awaitForClusterMetric("c2_" + i, 0, node2, Arrays.asList(node1, node2));
+            awaitForClusterMetric("c1_" + i, 0, node1, asList(node1, node2));
+            awaitForClusterMetric("c2_" + i, 0, node2, asList(node1, node2));
 
             assertTrue(cs1.all(m -> m.name().startsWith("c")).stream().anyMatch(n -> n.node().equals(node1.localNode())));
             assertTrue(cs2.all(m -> m.name().startsWith("c")).stream().anyMatch(n -> n.node().equals(node1.localNode())));
@@ -342,8 +355,8 @@ public class ClusterMetricsServiceTest extends HekateNodeParamTestBase {
         c1.add(1);
         c2.add(2);
 
-        awaitForClusterMetric("c1", 1, node1, Arrays.asList(node1, node2, node3));
-        awaitForClusterMetric("c2", 2, node2, Arrays.asList(node1, node2, node3));
+        awaitForClusterMetric("c1", 1, node1, asList(node1, node2, node3));
+        awaitForClusterMetric("c2", 2, node2, asList(node1, node2, node3));
 
         say("Terminating node...");
 
@@ -354,8 +367,8 @@ public class ClusterMetricsServiceTest extends HekateNodeParamTestBase {
         c1.add(100);
         c2.add(200);
 
-        awaitForClusterMetric("c1", 101, node1, Arrays.asList(node1, node2));
-        awaitForClusterMetric("c2", 202, node2, Arrays.asList(node1, node2));
+        awaitForClusterMetric("c1", 101, node1, asList(node1, node2));
+        awaitForClusterMetric("c2", 202, node2, asList(node1, node2));
     }
 
     protected HekateTestNode createNodeWithMetrics() throws Exception {
@@ -381,7 +394,7 @@ public class ClusterMetricsServiceTest extends HekateNodeParamTestBase {
 
     private void awaitForClusterMetric(String metric, long value, HekateTestNode fromNode, List<HekateTestNode> nodes)
         throws Exception {
-        awaitForClusterMetric(metric, value, Collections.singletonList(fromNode), nodes);
+        awaitForClusterMetric(metric, value, singletonList(fromNode), nodes);
     }
 
     private void awaitForClusterMetric(String metric, long value, List<HekateTestNode> nodes) throws Exception {

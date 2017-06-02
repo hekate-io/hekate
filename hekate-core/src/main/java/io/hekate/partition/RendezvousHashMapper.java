@@ -2,7 +2,7 @@ package io.hekate.partition;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.HasTopology;
+import io.hekate.cluster.ClusterTopologySupport;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.Murmur3;
 import io.hekate.core.internal.util.Utils;
@@ -27,16 +27,16 @@ public final class RendezvousHashMapper implements PartitionMapper {
     /**
      * Builder for {@link RendezvousHashMapper}.
      *
-     * @see RendezvousHashMapper#of(HasTopology)
+     * @see RendezvousHashMapper#of(ClusterTopologySupport)
      */
     public static final class Builder {
-        private final HasTopology cluster;
+        private final ClusterTopologySupport cluster;
 
         private int partitions = DEFAULT_PARTITIONS;
 
         private int backupNodes;
 
-        private Builder(HasTopology cluster) {
+        private Builder(ClusterTopologySupport cluster) {
             this.cluster = cluster;
         }
 
@@ -241,13 +241,13 @@ public final class RendezvousHashMapper implements PartitionMapper {
     private final int backupSize;
 
     @ToStringIgnore
-    private final HasTopology cluster;
+    private final ClusterTopologySupport cluster;
 
     @ToStringIgnore
     @SuppressWarnings("unused") // <-- Updated via AtomicReferenceFieldUpdater.
     private volatile PartitionMapperSnapshot snapshot;
 
-    private RendezvousHashMapper(int size, int backupSize, HasTopology cluster) {
+    private RendezvousHashMapper(int size, int backupSize, ClusterTopologySupport cluster) {
         ArgAssert.isTrue(size > 0, "Partitions size is less than or equals to zero [size=" + size + ']');
         ArgAssert.isTrue(Utils.isPowerOfTwo(size), "Partitions size must be a power of two [size=" + size + ']');
         ArgAssert.notNull(cluster, "cluster");
@@ -266,7 +266,7 @@ public final class RendezvousHashMapper implements PartitionMapper {
      *
      * @see Builder#build()
      */
-    public static Builder of(HasTopology cluster) {
+    public static Builder of(ClusterTopologySupport cluster) {
         ArgAssert.notNull(cluster, "cluster");
 
         return new Builder(cluster);
@@ -280,7 +280,7 @@ public final class RendezvousHashMapper implements PartitionMapper {
      *
      * @return New mapper.
      */
-    public RendezvousHashMapper copy(HasTopology cluster) {
+    public RendezvousHashMapper copy(ClusterTopologySupport cluster) {
         return new RendezvousHashMapper(size, backupSize, cluster);
     }
 

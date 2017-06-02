@@ -18,7 +18,6 @@ package io.hekate.spring.boot;
 
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
-import io.hekate.codec.JavaCodecFactory;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.PropertyProvider;
@@ -172,7 +171,9 @@ public class HekateConfigurer {
         }
     }
 
-    private final List<ServiceFactory<?>> serviceFactories;
+    private final CodecFactory<Object> codec;
+
+    private final List<ServiceFactory<?>> services;
 
     private final List<Plugin> plugins;
 
@@ -181,28 +182,17 @@ public class HekateConfigurer {
     /**
      * Constructs new instance with autowired dependencies.
      *
-     * @param nodePropertyProviders All {@link PropertyProvider}s found in the application context.
-     * @param serviceFactories All {@link ServiceFactory}s found in the application context.
+     * @param propertyProviders All {@link PropertyProvider}s found in the application context.
+     * @param services All {@link ServiceFactory}s found in the application context.
      * @param plugins All {@link Plugin}s found in the application context.
+     * @param codec Default codec factory.
      */
-    public HekateConfigurer(Optional<List<PropertyProvider>> nodePropertyProviders, Optional<List<ServiceFactory<?>>> serviceFactories,
-        Optional<List<Plugin>> plugins) {
-        this.serviceFactories = serviceFactories.orElse(null);
+    public HekateConfigurer(Optional<List<PropertyProvider>> propertyProviders, Optional<List<ServiceFactory<?>>> services,
+        Optional<List<Plugin>> plugins, CodecFactory<Object> codec) {
+        this.services = services.orElse(null);
         this.plugins = plugins.orElse(null);
-        this.propertyProviders = nodePropertyProviders.orElse(null);
-    }
-
-    /**
-     * Conditionally constructs the default codec if application doesn't provide its own {@link Bean} of {@link CodecFactory} type.
-     *
-     * @return Codec factory.
-     *
-     * @see #hekate(CodecFactory)
-     */
-    @Bean
-    @ConditionalOnMissingBean(CodecFactory.class)
-    public CodecFactory<Object> defaultCodecFactory() {
-        return new JavaCodecFactory<>();
+        this.propertyProviders = propertyProviders.orElse(null);
+        this.codec = codec;
     }
 
     /**
@@ -218,17 +208,15 @@ public class HekateConfigurer {
     /**
      * Constructs the {@link Hekate} factory bean.
      *
-     * @param defaultCodecFactory Default codec factory (see {@link #defaultCodecFactory()}).
-     *
      * @return {@link Hekate} factory bean.
      */
     @Bean
     @ConfigurationProperties(prefix = "hekate")
-    public HekateSpringBootstrap hekate(CodecFactory<Object> defaultCodecFactory) {
+    public HekateSpringBootstrap hekate() {
         HekateSpringBootstrap factory = new HekateSpringBootstrap();
 
-        factory.setDefaultCodec(defaultCodecFactory);
-        factory.setServices(serviceFactories);
+        factory.setDefaultCodec(codec);
+        factory.setServices(services);
         factory.setPlugins(plugins);
         factory.setPropertyProviders(propertyProviders);
 

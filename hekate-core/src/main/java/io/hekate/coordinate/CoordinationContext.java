@@ -19,12 +19,13 @@ package io.hekate.coordinate;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.core.HekateSupport;
 import java.util.List;
 
 /**
  * Context for {@link CoordinationHandler}.
  */
-public interface CoordinationContext {
+public interface CoordinationContext extends HekateSupport {
     /**
      * Returns {@code true} if local node is the coordinator.
      *

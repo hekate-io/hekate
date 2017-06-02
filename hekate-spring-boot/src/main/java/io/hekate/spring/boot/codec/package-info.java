@@ -14,16 +14,7 @@
  * under the License.
  */
 
-package io.hekate.cluster;
-
 /**
- * Marker interface for objects that have (or are) {@link ClusterNodeId}.
+ * Auto-configuration for {@link io.hekate.codec.CodecService}.
  */
-public interface HasNodeId {
-    /**
-     * Converts this object to {@link ClusterNodeId}.
-     *
-     * @return {@link ClusterNodeId}.
-     */
-    ClusterNodeId asNodeId();
-}
+package io.hekate.spring.boot.codec;

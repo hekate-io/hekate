@@ -96,7 +96,7 @@ public class StampedStateGuardTest extends HekateTestBase {
 
     @Test
     public void testLockReadWithStateCheck() {
-        expect(IllegalStateException.class, getClass().getSimpleName() + " is not initialized.", guard::lockReadWithStateCheck);
+        expect(IllegalStateException.class, getClass().getSimpleName() + " is terminated.", guard::lockReadWithStateCheck);
 
         long lock = guard.lockWrite();
         guard.becomeInitialized();
@@ -108,7 +108,7 @@ public class StampedStateGuardTest extends HekateTestBase {
 
     @Test
     public void testLockWriteWithStateCheck() {
-        expect(IllegalStateException.class, getClass().getSimpleName() + " is not initialized.", guard::lockWriteWithStateCheck);
+        expect(IllegalStateException.class, getClass().getSimpleName() + " is terminated.", guard::lockWriteWithStateCheck);
 
         long lock = guard.lockWrite();
         guard.becomeInitialized();

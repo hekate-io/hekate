@@ -191,7 +191,7 @@ public class StateGuard {
         if (state != State.INITIALIZED) {
             readLock.unlock();
 
-            throw new IllegalStateException(type.getSimpleName() + " is not initialized.");
+            throw new IllegalStateException(type.getSimpleName() + " is " + state.name().toLowerCase() + '.');
         }
     }
 
@@ -294,7 +294,7 @@ public class StateGuard {
         if (state != State.INITIALIZED) {
             writeLock.unlock();
 
-            throw new IllegalStateException(type.getSimpleName() + " is not initialized.");
+            throw new IllegalStateException(type.getSimpleName() + " is " + state.name().toLowerCase() + '.');
         }
     }
 

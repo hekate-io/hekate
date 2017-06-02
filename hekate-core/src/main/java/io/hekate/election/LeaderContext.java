@@ -17,6 +17,7 @@
 package io.hekate.election;
 
 import io.hekate.cluster.ClusterNode;
+import io.hekate.core.HekateSupport;
 
 /**
  * Leader state context for {@link Candidate}.
@@ -27,7 +28,7 @@ import io.hekate.cluster.ClusterNode;
  *
  * @see Candidate#becomeLeader(LeaderContext)
  */
-public interface LeaderContext {
+public interface LeaderContext extends HekateSupport {
     /**
      * Returns the local node where the {@link Candidate} is running.
      *

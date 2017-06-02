@@ -31,6 +31,7 @@ import io.hekate.coordinate.CoordinationProcess;
 import io.hekate.coordinate.CoordinationProcessConfig;
 import io.hekate.coordinate.CoordinationService;
 import io.hekate.coordinate.CoordinationServiceFactory;
+import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
 import io.hekate.core.ServiceInfo;
 import io.hekate.core.internal.util.ArgAssert;
@@ -93,6 +94,9 @@ public class DefaultCoordinationService implements CoordinationService, Configur
     private final Map<String, DefaultCoordinationProcess> processes = new HashMap<>();
 
     @ToStringIgnore
+    private Hekate hekate;
+
+    @ToStringIgnore
     private MessagingService messaging;
 
     @ToStringIgnore
@@ -116,6 +120,8 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
     @Override
     public void resolve(DependencyContext ctx) {
+        hekate = ctx.hekate();
+
         messaging = ctx.require(MessagingService.class);
         cluster = ctx.require(ClusterService.class).filter(HAS_SERVICE_FILTER);
         defaultCodec = ctx.require(CodecService.class);
@@ -300,7 +306,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
         ExecutorService async = Executors.newSingleThreadExecutor(threadFactory);
 
-        DefaultCoordinationProcess process = new DefaultCoordinationProcess(name, handler, async, channel, failoverDelay);
+        DefaultCoordinationProcess process = new DefaultCoordinationProcess(name, hekate, handler, async, channel, failoverDelay);
 
         processes.put(name, process);
 

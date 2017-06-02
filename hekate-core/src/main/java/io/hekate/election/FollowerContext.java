@@ -17,6 +17,7 @@
 package io.hekate.election;
 
 import io.hekate.cluster.ClusterNode;
+import io.hekate.core.HekateSupport;
 
 /**
  * Follower state context for {@link Candidate}.
@@ -27,7 +28,7 @@ import io.hekate.cluster.ClusterNode;
  *
  * @see Candidate#becomeFollower(FollowerContext)
  */
-public interface FollowerContext {
+public interface FollowerContext extends HekateSupport {
     /**
      * Returns a node that is currently holding the leadership.
      *

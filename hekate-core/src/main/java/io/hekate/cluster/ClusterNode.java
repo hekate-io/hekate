@@ -32,12 +32,13 @@ import java.util.Set;
  * @see ClusterTopology
  * @see ClusterService
  */
-public interface ClusterNode extends Comparable<ClusterNode>, HasNodeId {
+public interface ClusterNode extends Comparable<ClusterNode>, ClusterNodeIdSupport {
     /**
      * Returns the universally unique identifier of this node.
      *
      * @return Universally unique identifier of this node.
      */
+    @Override
     ClusterNodeId id();
 
     /**

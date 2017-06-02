@@ -27,6 +27,7 @@ import io.hekate.coordinate.CoordinationMember;
 import io.hekate.coordinate.CoordinationRequest;
 import io.hekate.coordinate.internal.CoordinationProtocol.Reject;
 import io.hekate.coordinate.internal.CoordinationProtocol.Request;
+import io.hekate.core.Hekate;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannel;
@@ -66,7 +67,7 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
     public void setUp() throws Exception {
         topology = newTopology();
 
-        ctx = new DefaultCoordinationContext("test", topology, channel, async, handler, 100, onComplete);
+        ctx = new DefaultCoordinationContext("test", mock(Hekate.class), topology, channel, async, handler, 100, onComplete);
     }
 
     @Test

@@ -186,7 +186,7 @@ public class StampedStateGuard {
         if (state != State.INITIALIZED) {
             lock.unlockRead(locked);
 
-            throw new IllegalStateException(type.getSimpleName() + " is not initialized.");
+            throw new IllegalStateException(type.getSimpleName() + " is " + state.name().toLowerCase() + '.');
         }
 
         return locked;
@@ -228,7 +228,7 @@ public class StampedStateGuard {
         if (state != State.INITIALIZED) {
             lock.unlockWrite(locked);
 
-            throw new IllegalStateException(type.getSimpleName() + " is not initialized.");
+            throw new IllegalStateException(type.getSimpleName() + " is " + state.name().toLowerCase() + '.');
         }
 
         return locked;

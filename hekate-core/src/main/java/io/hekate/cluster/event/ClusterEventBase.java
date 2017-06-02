@@ -18,6 +18,8 @@ package io.hekate.cluster.event;
 
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.core.Hekate;
+import io.hekate.core.HekateSupport;
 import java.io.Serializable;
 
 /**
@@ -29,15 +31,27 @@ import java.io.Serializable;
 public abstract class ClusterEventBase implements ClusterEvent, Serializable {
     private static final long serialVersionUID = 1;
 
+    private final HekateSupport hekate;
+
     private final ClusterTopology topology;
 
     /**
      * Constructs a new instance with the specified topology snapshot.
      *
      * @param topology Topology.
+     * @param hekate Delegate for {@link #hekate()}.
      */
-    public ClusterEventBase(ClusterTopology topology) {
+    public ClusterEventBase(ClusterTopology topology, HekateSupport hekate) {
+        assert topology != null : "Cluster topology  is null.";
+        assert hekate != null : "Hekate is null.";
+
         this.topology = topology;
+        this.hekate = hekate;
+    }
+
+    @Override
+    public Hekate hekate() {
+        return hekate.hekate();
     }
 
     @Override

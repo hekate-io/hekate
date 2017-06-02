@@ -20,7 +20,7 @@ import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.internal.DefaultClusterTopology;
-import io.hekate.messaging.internal.LoadBalancerContextBridge;
+import io.hekate.messaging.internal.LoadBalancerContextMock;
 import io.hekate.messaging.unicast.LoadBalancer;
 import io.hekate.messaging.unicast.LoadBalancerContext;
 import io.hekate.messaging.unicast.LoadBalancers;
@@ -96,6 +96,6 @@ public class LoadBalancersTest extends HekateTestBase {
     }
 
     private LoadBalancerContext newContext(Set<ClusterNode> nodesSet) {
-        return new LoadBalancerContextBridge(100, null, DefaultClusterTopology.of(1, nodesSet));
+        return new LoadBalancerContextMock(100, null, DefaultClusterTopology.of(1, nodesSet));
     }
 }

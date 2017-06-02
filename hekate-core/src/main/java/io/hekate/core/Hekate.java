@@ -119,7 +119,7 @@ import java.util.Set;
  * <li>{@link HekateBootstrap#setName(String) Node name}</li>
  * <li>{@link HekateBootstrap#setProperties(Map) Node properties}</li>
  * <li>{@link HekateBootstrap#setRoles(List) Node roles}</li>
- * <li>{@link HekateBootstrap#setDefaultCodec(CodecFactory) Data serialization codec}</li>
+ * <li>{@link HekateBootstrap#setDefaultCodec(CodecFactory) Serialization codec}</li>
  * <li>{@link HekateBootstrap#setServices(List) Services} to be provided by the node</li>
  * <li>{@link HekateBootstrap#setPlugins(List) Plugins} that should run within the node</li>
  * </ul>
@@ -194,7 +194,7 @@ import java.util.Set;
  *
  * @see HekateBootstrap
  */
-public interface Hekate {
+public interface Hekate extends HekateSupport {
     /**
      * State of the {@link Hekate} instance life cycle.
      * <p>

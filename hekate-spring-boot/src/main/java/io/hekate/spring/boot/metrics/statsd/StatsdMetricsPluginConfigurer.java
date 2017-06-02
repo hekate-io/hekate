@@ -31,6 +31,39 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Auto-configuration for {@link StatsdMetricsPlugin}.
  *
+ * <h2>Module dependency</h2>
+ * <p>
+ * StatsD integration is provided by the 'hekate-metrics-statsd' module and can be imported into the project dependency management
+ * system as in the example below:
+ * </p>
+ * <div class="tabs">
+ * <ul>
+ * <li><a href="#maven">Maven</a></li>
+ * <li><a href="#gradle">Gradle</a></li>
+ * <li><a href="#ivy">Ivy</a></li>
+ * </ul>
+ * <div id="maven">
+ * <pre>{@code
+ * <dependency>
+ *   <groupId>io.hekate</groupId>
+ *   <artifactId>hekate-metrics-statsd</artifactId>
+ *   <version>REPLACE_VERSION</version>
+ * </dependency>
+ * }</pre>
+ * </div>
+ * <div id="gradle">
+ * <pre>{@code
+ * compile group: 'io.hekate', name: 'hekate-metrics-statsd', version: 'REPLACE_VERSION'
+ * }</pre>
+ * </div>
+ * <div id="ivy">
+ * <pre>{@code
+ * <dependency org="io.hekate" name="hekate-metrics-statsd" rev="REPLACE_VERSION"/>
+ * }</pre>
+ * </div>
+ * </div>
+ *
+ * <h2>Configuration</h2>
  * <p>
  * This auto-configuration is disabled by default and can be enabled by setting the {@code 'hekate.metrics.statsd.enable'} property to
  * {@code true} in the application's configuration.

@@ -40,12 +40,6 @@ import java.util.List;
  * leader.
  * </p>
  *
- * <h2>Accessing service</h2>
- * <p>
- * {@link ElectionService} can be accessed via {@link Hekate#election()} method as in the example below:
- * ${source: election/ElectionServiceJavadocTest.java#access}
- * </p>
- *
  * <h2>Service configuration</h2>
  * <p>
  * {@link ElectionService} can be registered and configured in {@link HekateBootstrap} with the help of {@link
@@ -72,6 +66,12 @@ import java.util.List;
  * ${source: election/service-bean.xml#example}
  * </div>
  * </div>
+ *
+ * <h2>Accessing service</h2>
+ * <p>
+ * {@link ElectionService} can be accessed via {@link Hekate#election()} method as in the example below:
+ * ${source: election/ElectionServiceJavadocTest.java#access}
+ * </p>
  *
  * <h2>Leader election</h2>
  * <p>
@@ -104,7 +104,7 @@ import java.util.List;
  * <p>
  * Leader elections are based on the {@link LockService} capabilities. During the startup {@link ElectionService} tries to asynchronously
  * acquire a distributed lock for each of its registered groups. If lock acquisition is successful then {@link Candidate} of such group
- * gets notified on becoming a leader. If lock is busy then {@link Candidate} get notified on becoming a follower and continues waiting for
+ * gets notified on becoming a leader. If lock is busy then {@link Candidate} get notified on becoming a follower and continues to await for
  * the lock to be acquired.
  * </p>
  */

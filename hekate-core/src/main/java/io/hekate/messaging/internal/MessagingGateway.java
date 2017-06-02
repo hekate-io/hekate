@@ -21,7 +21,9 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
 import io.hekate.codec.CodecException;
+import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
+import io.hekate.core.HekateSupport;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverRoutingPolicy;
@@ -82,7 +84,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toList;
 
-class MessagingGateway<T> {
+class MessagingGateway<T> implements HekateSupport {
     interface CloseCallback {
         void onBeforeClose();
     }
@@ -186,6 +188,9 @@ class MessagingGateway<T> {
     private final ClusterNode localNode;
 
     @ToStringIgnore
+    private final HekateSupport hekate;
+
+    @ToStringIgnore
     private final NetworkConnector<MessagingProtocol> net;
 
     @ToStringIgnore
@@ -233,10 +238,11 @@ class MessagingGateway<T> {
     @ToStringIgnore
     private boolean closed;
 
-    public MessagingGateway(String name, Class<T> baseType, NetworkConnector<MessagingProtocol> net, ClusterNode localNode,
-        ClusterView cluster, MessageReceiver<T> receiver, int nioThreads, MessagingExecutor async, MetricsCallback metrics,
-        ReceivePressureGuard receivePressure, SendPressureGuard sendPressure, FailoverPolicy failoverPolicy, long defaultTimeout,
-        LoadBalancer<T> loadBalancer, int partitions, int backupNodes, Logger log, boolean checkIdle, CloseCallback onBeforeClose) {
+    public MessagingGateway(String name, HekateSupport hekate, Class<T> baseType, NetworkConnector<MessagingProtocol> net,
+        ClusterNode localNode, ClusterView cluster, MessageReceiver<T> receiver, int nioThreads, MessagingExecutor async,
+        MetricsCallback metrics, ReceivePressureGuard receivePressure, SendPressureGuard sendPressure, FailoverPolicy failoverPolicy,
+        long defaultTimeout, LoadBalancer<T> loadBalancer, int partitions, int backupNodes, Logger log, boolean checkIdle,
+        CloseCallback onBeforeClose) {
         assert name != null : "Name is null.";
         assert baseType != null : "Base type is null.";
         assert net != null : "Network connector is null.";
@@ -247,6 +253,7 @@ class MessagingGateway<T> {
         this.id = new MessagingChannelId();
         this.name = name;
         this.baseType = baseType;
+        this.hekate = hekate;
         this.net = net;
         this.localNode = localNode;
         this.cluster = cluster;
@@ -528,6 +535,11 @@ class MessagingGateway<T> {
 
     public Executor executor() {
         return async.pooledWorker();
+    }
+
+    @Override
+    public Hekate hekate() {
+        return hekate.hekate();
     }
 
     public Class<T> baseType() {
@@ -966,7 +978,7 @@ class MessagingGateway<T> {
                 // Route via load balancer.
                 PartitionMapper partitions = ctx.opts().partitions();
                 Optional<FailureInfo> failure = Optional.ofNullable(prevErr);
-                LoadBalancerContext balancerCtx = new DefaultLoadBalancerContext(ctx, topology, partitions, failure);
+                LoadBalancerContext balancerCtx = new DefaultLoadBalancerContext(ctx, topology, hekate, partitions, failure);
 
                 // Apply load balancer.
                 selected = ctx.opts().balancer().route(ctx.message(), balancerCtx);

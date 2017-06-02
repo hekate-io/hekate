@@ -16,6 +16,7 @@
 
 package io.hekate.core.service.internal;
 
+import io.hekate.core.Hekate;
 import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.DependencyContext;
 import io.hekate.core.service.Service;
@@ -77,6 +78,11 @@ class ServiceDependencyContext implements DependencyContext {
         }
 
         return null;
+    }
+
+    @Override
+    public Hekate hekate() {
+        return manager.container();
     }
 
     @Override

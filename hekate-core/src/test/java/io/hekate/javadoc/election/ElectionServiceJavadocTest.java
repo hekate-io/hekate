@@ -38,11 +38,11 @@ public class ElectionServiceJavadocTest extends HekateNodeTestBase {
             public void becomeLeader(LeaderContext ctx) {
                 System.out.println("I'm leader.");
 
-                // ...do some work as a election...
+                // ...do some work as leader...
 
                 System.out.println("Done with the leader task ...will yield leadership.");
 
-                // Let some other node to become a election.
+                // Let some other node to become a leader.
                 ctx.yieldLeadership();
             }
 

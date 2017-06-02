@@ -65,7 +65,7 @@ class FilteredClusterView implements ClusterView {
 
                 switch (event.type()) {
                     case JOIN: {
-                        delegate.onEvent(new ClusterJoinEvent(topology));
+                        delegate.onEvent(new ClusterJoinEvent(topology, event.hekate()));
 
                         break;
                     }
@@ -75,7 +75,7 @@ class FilteredClusterView implements ClusterView {
                         List<ClusterNode> added = filterToImmutable(leave.added());
                         List<ClusterNode> removed = filterToImmutable(leave.removed());
 
-                        delegate.onEvent(new ClusterLeaveEvent(topology, added, removed));
+                        delegate.onEvent(new ClusterLeaveEvent(topology, added, removed, event.hekate()));
 
                         break;
                     }
@@ -85,7 +85,7 @@ class FilteredClusterView implements ClusterView {
                         List<ClusterNode> added = filterToImmutable(change.added());
                         List<ClusterNode> removed = filterToImmutable(change.removed());
 
-                        delegate.onEvent(new ClusterChangeEvent(topology, added, removed));
+                        delegate.onEvent(new ClusterChangeEvent(topology, added, removed, event.hekate()));
 
                         break;
                     }

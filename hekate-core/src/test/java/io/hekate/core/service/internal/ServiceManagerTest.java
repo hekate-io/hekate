@@ -17,6 +17,7 @@
 package io.hekate.core.service.internal;
 
 import io.hekate.HekateTestBase;
+import io.hekate.core.Hekate;
 import io.hekate.core.HekateConfigurationException;
 import io.hekate.core.HekateException;
 import io.hekate.core.service.ConfigurableService;
@@ -736,7 +737,7 @@ public class ServiceManagerTest extends HekateTestBase {
     private ServiceManager createManager(List<TestFactory> factories) throws HekateException {
         List<CoreTestService> services = Collections.singletonList(new CoreTestService());
 
-        ServiceManager manager = new ServiceManager(services, Collections.emptyList(), factories);
+        ServiceManager manager = new ServiceManager(mock(Hekate.class), services, Collections.emptyList(), factories);
 
         manager.instantiate();
 

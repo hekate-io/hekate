@@ -305,7 +305,7 @@ class DefaultLockRegion implements LockRegion {
                 if (timeout == TIMEOUT_IMMEDIATE) {
                     lockFuture.complete(false);
                 } else {
-                    lockFuture.completeExceptionally(new IllegalStateException("Lock service is not initialized."));
+                    lockFuture.completeExceptionally(new IllegalStateException("Lock service terminated."));
                 }
 
                 client.unlockFuture().complete(true);

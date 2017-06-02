@@ -42,12 +42,6 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
  * {@link ClusterMetricsService}. Please see its documentation for more details.
  * </p>
  *
- * <h2>Accessing service</h2>
- * <p>
- * Metrics service can be accessed via {@link Hekate#localMetrics()} method as in the example below:
- * ${source: metrics/local/LocalMetricsServiceJavadocTest.java#access}
- * </p>
- *
  * <h2>Service configuration</h2>
  * <p>
  * Metrics service can be configured and registered in {@link HekateBootstrap} with the help of {@link LocalMetricsServiceFactory} as shown
@@ -77,6 +71,12 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
  *
  * <p>
  * For all available configuration options please see the documentation of {@link LocalMetricsServiceFactory} class.
+ * </p>
+ *
+ * <h2>Accessing service</h2>
+ * <p>
+ * Metrics service can be accessed via {@link Hekate#localMetrics()} method as in the example below:
+ * ${source: metrics/local/LocalMetricsServiceJavadocTest.java#access}
  * </p>
  *
  * <h2>Counters</h2>

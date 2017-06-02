@@ -38,8 +38,21 @@ import org.jclouds.domain.Credentials;
  *
  * <p>
  * If those options are not specified then this class tries to resolve AWS credentials via {@link DefaultAWSCredentialsProviderChain} (part
- * of AWS SDK for Java).
+ * of AWS SDK for Java). Below is the quote of its documentation for fast reference:
  * </p>
+ *
+ * <p>AWS credentials provider chain that looks for credentials in this order:</p>
+ *
+ * <ul>
+ * <li>Environment Variables - {@code AWS_ACCESS_KEY_ID} and {@code AWS_SECRET_ACCESS_KEY} (RECOMMENDED since they are recognized by all the
+ * AWS SDKs and CLI except for .NET), or {@code AWS_ACCESS_KEY} and {@code AWS_SECRET_KEY} (only recognized by Java SDK)
+ * </li>
+ * <li>Java System Properties - aws.accessKeyId and aws.secretKey</li>
+ * <li>Credential profiles file at the default location (~/.aws/credentials) shared by all AWS SDKs and the AWS CLI</li>
+ * <li>Credentials delivered through the Amazon EC2 container service if AWS_CONTAINER_CREDENTIALS_RELATIVE_URI" environment variable is
+ * set and security manager has permission to access the variable,</li>
+ * <li>Instance profile credentials delivered through the Amazon EC2 metadata service</li>
+ * </ul>
  *
  * @see CloudSeedNodeProviderConfig#setCredentials(CredentialsSupplier)
  * @see CloudStoreSeedNodeProviderConfig#setCredentials(CredentialsSupplier)

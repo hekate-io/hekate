@@ -21,9 +21,9 @@ import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterNodeIdSupport;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.HasNodeId;
-import io.hekate.cluster.HasTopology;
+import io.hekate.cluster.ClusterTopologySupport;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -55,7 +55,7 @@ import static java.util.Collections.unmodifiableSet;
 public final class DefaultClusterTopology implements ClusterTopology, Serializable {
     private static final Comparator<ClusterNode> JOIN_ORDER_COMPARATOR = Comparator.comparingInt(ClusterNode::joinOrder);
 
-    private static final Comparator<HasNodeId> HAS_NODE_ID_COMPARATOR = Comparator.comparing(HasNodeId::asNodeId);
+    private static final Comparator<ClusterNodeIdSupport> HAS_NODE_ID_COMPARATOR = Comparator.comparing(ClusterNodeIdSupport::id);
 
     private static final long serialVersionUID = 1;
 
@@ -442,7 +442,7 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
     }
 
     /**
-     * Returns this (inherited from {@link HasTopology}).
+     * Returns this (inherited from {@link ClusterTopologySupport}).
      *
      * @return This instance.
      */

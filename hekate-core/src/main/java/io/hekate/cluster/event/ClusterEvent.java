@@ -18,6 +18,7 @@ package io.hekate.cluster.event;
 
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.core.HekateSupport;
 
 /**
  * Cluster event. This is the base interface for all events that can be fired by the {@link ClusterService}.
@@ -25,7 +26,7 @@ import io.hekate.cluster.ClusterTopology;
  * @see ClusterEventListener
  * @see ClusterService
  */
-public interface ClusterEvent {
+public interface ClusterEvent extends HekateSupport {
     /**
      * Returns the event type.
      *

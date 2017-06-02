@@ -219,7 +219,7 @@ class LockControllerClient {
             if (cancel) {
                 lockFuture.cancel(false);
             } else {
-                lockFuture.completeExceptionally(new IllegalStateException("Lock service is not initialized."));
+                lockFuture.completeExceptionally(new IllegalStateException("Lock service terminated."));
             }
         }
 

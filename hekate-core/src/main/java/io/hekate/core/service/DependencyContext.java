@@ -16,12 +16,25 @@
 
 package io.hekate.core.service;
 
+import io.hekate.core.Hekate;
+
 /**
  * Context for {@link DependentService}.
  *
  * @see DependentService#resolve(DependencyContext)
  */
 public interface DependencyContext {
+    /**
+     * Returns the {@link Hekate} instance that manages this service.
+     * <p>
+     * <b>Notice:</b> the returned instance may be not fully initialized. The main purpose of this method is to provide a reference
+     * for the service back to its owning {@link Hekate} instance, so that it could be used during the further lifecycle phases.
+     * </p>
+     *
+     * @return {@link Hekate} instance that manages this service.
+     */
+    Hekate hekate();
+
     /**
      * Returns a reference to a required service. If such service can't be found then {@link ServiceDependencyException}  will be thrown.
      *

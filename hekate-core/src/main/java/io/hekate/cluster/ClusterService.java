@@ -53,12 +53,6 @@ import java.util.function.Predicate;
  * cluster service configuration options.
  * </p>
  *
- * <h2>Accessing service</h2>
- * <p>
- * Instances of {@link ClusterService} can be obtained via {@link Hekate#cluster()} method as in the example below:
- * ${source: cluster/ClusterServiceJavadocTest.java#get_service}
- * </p>
- *
  * <h2>Service configuration</h2>
  * <p>
  * {@link ClusterService} can be configured and registered within the {@link HekateBootstrap} via the {@link ClusterServiceFactory} class as
@@ -97,6 +91,12 @@ import java.util.function.Predicate;
  * <li><a href="#split_brain_detector">Split-brain detector</a></li>
  * <li><a href="#acceptors">Cluster acceptors</a></li>
  * </ul>
+ *
+ * <h2>Accessing service</h2>
+ * <p>
+ * Instances of {@link ClusterService} can be obtained via {@link Hekate#cluster()} method as in the example below:
+ * ${source: cluster/ClusterServiceJavadocTest.java#get_service}
+ * </p>
  *
  * <h2>Cluster topology</h2>
  * <p>

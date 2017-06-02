@@ -197,11 +197,6 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     }
 
     @Override
-    public ClusterNodeId asNodeId() {
-        return id();
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;

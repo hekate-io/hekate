@@ -100,6 +100,8 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     private final List<MessagingChannelConfig<?>> channelsConfig = new LinkedList<>();
 
+    private Hekate hekate;
+
     private ScheduledThreadPoolExecutor timer;
 
     private ClusterNodeId nodeId;
@@ -124,6 +126,8 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     @Override
     public void resolve(DependencyContext ctx) {
+        hekate = ctx.hekate();
+
         net = ctx.require(NetworkService.class);
         cluster = ctx.require(ClusterService.class);
         codecService = ctx.require(CodecService.class);
@@ -486,9 +490,9 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         // Create gateway.
         MessageReceiver<T> guardedReceiver = applyGuard(receiver);
 
-        MessagingGateway<T> gateway = new MessagingGateway<>(name, baseType, connector, localNode, clusterView, guardedReceiver, nioThreads,
-            async, channelMetrics, receivePressureGuard, sendPressureGuard, failover, messagingTimeout, loadBalancer, partitions,
-            backupNodes, logger(cfg), checkIdle,
+        MessagingGateway<T> gateway = new MessagingGateway<>(name, hekate, baseType, connector, localNode, clusterView, guardedReceiver,
+            nioThreads, async, channelMetrics, receivePressureGuard, sendPressureGuard, failover, messagingTimeout, loadBalancer,
+            partitions, backupNodes, logger(cfg), checkIdle,
             // Before close callback.
             () -> {
                 if (DEBUG) {

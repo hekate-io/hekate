@@ -40,12 +40,6 @@ import java.util.List;
  * cluster event.
  * </p>
  *
- * <h2>Accessing service</h2>
- * <p>
- * {@link CoordinationService} can be accessed via {@link Hekate#coordination()} method as in the example below:
- * ${source: coordinate/CoordinationServiceJavadocTest.java#access}
- * </p>
- *
  * <h2>Service configuration</h2>
  * <p>
  * {@link CoordinationService} can be registered and configured in {@link HekateBootstrap} with the help of {@link
@@ -72,6 +66,12 @@ import java.util.List;
  * ${source: coordinate/service-bean.xml#example}
  * </div>
  * </div>
+ *
+ * <h2>Accessing service</h2>
+ * <p>
+ * {@link CoordinationService} can be accessed via {@link Hekate#coordination()} method as in the example below:
+ * ${source: coordinate/CoordinationServiceJavadocTest.java#access}
+ * </p>
  *
  * <h2>Coordination handler</h2>
  * <p>

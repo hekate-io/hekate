@@ -23,6 +23,8 @@ import io.hekate.coordinate.CoordinationBroadcastCallback;
 import io.hekate.coordinate.CoordinationContext;
 import io.hekate.coordinate.CoordinationHandler;
 import io.hekate.coordinate.CoordinationMember;
+import io.hekate.core.Hekate;
+import io.hekate.core.HekateSupport;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannel;
@@ -49,6 +51,9 @@ class DefaultCoordinationContext implements CoordinationContext {
     private final List<CoordinationMember> members;
 
     @ToStringIgnore
+    private final HekateSupport hekate;
+
+    @ToStringIgnore
     private final String name;
 
     @ToStringIgnore
@@ -71,13 +76,16 @@ class DefaultCoordinationContext implements CoordinationContext {
 
     private volatile Object attachment;
 
-    public DefaultCoordinationContext(String name, ClusterTopology topology, MessagingChannel<CoordinationProtocol> channel,
-        ExecutorService async, CoordinationHandler handler, long failoverDelay, Runnable onComplete) {
+    public DefaultCoordinationContext(String name, HekateSupport hekate, ClusterTopology topology,
+        MessagingChannel<CoordinationProtocol> channel, ExecutorService async, CoordinationHandler handler, long failoverDelay,
+        Runnable onComplete) {
+        assert hekate != null : "Hekate is null.";
         assert name != null : "Process name is null.";
         assert topology != null : "Topology is null.";
         assert handler != null : "Coordination handler is null.";
 
         this.name = name;
+        this.hekate = hekate;
         this.topology = topology;
         this.handler = handler;
 
@@ -272,6 +280,11 @@ class DefaultCoordinationContext implements CoordinationContext {
 
             membersById.values().forEach(DefaultCoordinationMember::cancel);
         }
+    }
+
+    @Override
+    public Hekate hekate() {
+        return hekate.hekate();
     }
 
     @Override

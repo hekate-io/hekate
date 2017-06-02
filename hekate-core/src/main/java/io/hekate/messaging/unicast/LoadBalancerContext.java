@@ -19,6 +19,7 @@ package io.hekate.messaging.unicast;
 import io.hekate.cluster.ClusterFilter;
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.core.HekateSupport;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.MessagingChannel;
@@ -30,7 +31,7 @@ import java.util.Optional;
  *
  * @see LoadBalancer
  */
-public interface LoadBalancerContext extends ClusterTopology {
+public interface LoadBalancerContext extends ClusterTopology, HekateSupport {
     /**
      * Returns the cluster topology.
      *

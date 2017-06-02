@@ -622,7 +622,7 @@ public class DistributedLockTest extends LockServiceTestBase {
 
                     fail("Failure was expected.");
                 } catch (IllegalStateException e) {
-                    assertEquals("Lock service is not initialized.", e.getMessage());
+                    assertEquals("Lock service terminated.", e.getMessage());
                 }
 
                 get(async);
@@ -662,7 +662,7 @@ public class DistributedLockTest extends LockServiceTestBase {
 
                     fail("Failure was expected.");
                 } catch (IllegalStateException e) {
-                    assertEquals("Lock service is not initialized.", e.getMessage());
+                    assertEquals("Lock service terminated.", e.getMessage());
                 }
 
                 get(async);

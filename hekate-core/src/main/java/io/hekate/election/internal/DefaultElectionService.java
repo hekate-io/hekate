@@ -16,7 +16,7 @@
 
 package io.hekate.election.internal;
 
-import io.hekate.cluster.ClusterNode;
+import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
@@ -73,9 +73,9 @@ public class DefaultElectionService implements ElectionService, DependentService
 
     private final Map<String, CandidateHandler> handlers = new HashMap<>();
 
-    private LockService locks;
+    private Hekate hekate;
 
-    private ClusterNode localNode;
+    private LockService locks;
 
     public DefaultElectionService(ElectionServiceFactory factory) {
         ArgAssert.notNull(factory, "Factory");
@@ -89,6 +89,8 @@ public class DefaultElectionService implements ElectionService, DependentService
 
     @Override
     public void resolve(DependencyContext ctx) {
+        hekate = ctx.hekate();
+
         locks = ctx.require(LockService.class);
     }
 
@@ -139,8 +141,6 @@ public class DefaultElectionService implements ElectionService, DependentService
             guard.becomeInitialized();
 
             if (!candidatesConfig.isEmpty()) {
-                localNode = ctx.localNode();
-
                 candidatesConfig.forEach(this::doRegister);
             }
         } finally {
@@ -193,8 +193,6 @@ public class DefaultElectionService implements ElectionService, DependentService
                 waiting = Waiting.awaitAll(handlers.values().stream().map(CandidateHandler::shutdown).collect(toList()));
 
                 handlers.clear();
-
-                localNode = null;
             }
         } finally {
             guard.unlockWrite();
@@ -248,7 +246,7 @@ public class DefaultElectionService implements ElectionService, DependentService
 
         ExecutorService worker = Executors.newSingleThreadExecutor(new HekateThreadFactory(THREAD_PREFIX + '-' + group));
 
-        CandidateHandler handler = new CandidateHandler(group, candidate, worker, lock, localNode);
+        CandidateHandler handler = new CandidateHandler(group, candidate, worker, lock, hekate.localNode(), hekate);
 
         handlers.put(group, handler);
 

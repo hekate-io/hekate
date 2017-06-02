@@ -16,6 +16,7 @@
 
 package io.hekate.core.service.internal;
 
+import io.hekate.core.Hekate;
 import io.hekate.core.HekateConfigurationException;
 import io.hekate.core.HekateException;
 import io.hekate.core.ServiceInfo;
@@ -44,6 +45,8 @@ public class ServiceManager {
         // No-op.
     };
 
+    private final Hekate container;
+
     private final ServiceInitOrder initOrder = new ServiceInitOrder();
 
     private final List<ServiceHandler> handlers = new ArrayList<>();
@@ -62,15 +65,21 @@ public class ServiceManager {
 
     private Set<Class<? extends Service>> serviceTypes;
 
-    public ServiceManager(List<? extends Service> builtInServices, List<Class<? extends Service>> coreServices,
+    public ServiceManager(Hekate container, List<? extends Service> builtInServices, List<Class<? extends Service>> coreServices,
         List<? extends ServiceFactory<?>> factories) {
+        assert container != null : "Container is null.";
         assert builtInServices != null : "Built-in services list is null.";
         assert coreServices != null : "Core services list is null.";
         assert factories != null : "Service factories list is null.";
 
+        this.container = container;
         this.builtInServices = builtInServices;
         this.coreServices = coreServices;
         this.factories = new ArrayList<>(factories);
+    }
+
+    public Hekate container() {
+        return container;
     }
 
     public void instantiate() {

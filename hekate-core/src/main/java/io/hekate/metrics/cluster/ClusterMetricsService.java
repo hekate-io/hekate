@@ -46,12 +46,6 @@ import java.util.Optional;
  * For more details about metrics and their usage please see the documentation of {@link LocalMetricsService}.
  * </p>
  *
- * <h2>Accessing service</h2>
- * <p>
- * Cluster metrics service can be accessed via {@link Hekate#clusterMetrics()} method as in the example below:
- * ${source: metrics/cluster/ClusterMetricsServiceJavadocTest.java#access}
- * </p>
- *
  * <h2>Service configuration</h2>
  * <p>
  * Cluster metrics service can be configured and registered in {@link HekateBootstrap} with the help of {@link
@@ -81,6 +75,12 @@ import java.util.Optional;
  *
  * <p>
  * For all available configuration options please see the documentation of {@link ClusterMetricsServiceFactory} class.
+ * </p>
+ *
+ * <h2>Accessing service</h2>
+ * <p>
+ * Cluster metrics service can be accessed via {@link Hekate#clusterMetrics()} method as in the example below:
+ * ${source: metrics/cluster/ClusterMetricsServiceJavadocTest.java#access}
  * </p>
  *
  * <h2>Usage example</h2>

@@ -18,6 +18,7 @@ package io.hekate.election.internal;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
+import io.hekate.core.Hekate;
 import io.hekate.election.Candidate;
 import io.hekate.election.FollowerContext;
 import io.hekate.election.LeaderChangeListener;
@@ -67,7 +68,7 @@ public class CandidateHandlerTest extends HekateTestBase {
     public void setUp() throws Exception {
         localNode = newNode();
 
-        handler = new CandidateHandler("test", candidate, worker, lock, localNode);
+        handler = new CandidateHandler("test", candidate, worker, lock, localNode, mock(Hekate.class));
 
         doAnswer(invocation -> {
             ((Runnable)invocation.getArguments()[0]).run();

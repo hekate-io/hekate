@@ -22,7 +22,9 @@ import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.event.ClusterJoinEvent;
 import io.hekate.cluster.event.ClusterLeaveEvent;
+import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
+import io.hekate.core.HekateSupport;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.util.format.ToString;
@@ -43,7 +45,7 @@ import org.slf4j.LoggerFactory;
 
 import static java.util.Collections.emptyList;
 
-class ClusterEventManager {
+class ClusterEventManager implements HekateSupport {
     private static class FilteredListener implements ClusterEventListener {
         private final EnumSet<ClusterEventType> eventTypes;
 
@@ -110,6 +112,12 @@ class ClusterEventManager {
 
     private volatile ClusterTopology lastTopology;
 
+    private Hekate hekate;
+
+    public ClusterEventManager(Hekate hekate) {
+        this.hekate = hekate;
+    }
+
     public CompletableFuture<?> fireAsync(ClusterEvent event) {
         if (DEBUG) {
             log.debug("Scheduled cluster event for asynchronous processing [event={}]", event);
@@ -157,7 +165,7 @@ class ClusterEventManager {
     public CompletableFuture<?> ensureLeaveEventFired(ClusterTopology topology) {
         // If join event had been fired then we need to fire leave event too.
         if (joinEventFired.compareAndSet(true, false)) {
-            ClusterLeaveEvent event = new ClusterLeaveEvent(topology, emptyList(), emptyList());
+            ClusterLeaveEvent event = new ClusterLeaveEvent(topology, emptyList(), emptyList(), this);
 
             return fireAsync(event);
         } else {
@@ -280,6 +288,11 @@ class ClusterEventManager {
         }
     }
 
+    @Override
+    public Hekate hekate() {
+        return hekate;
+    }
+
     private void doAddListener(FilteredListener listener) {
         Optional<Future<?>> future = doAddListenerAsync(listener);
 
@@ -322,7 +335,7 @@ class ClusterEventManager {
 
                     if (lastTopology != null) {
                         try {
-                            listener.onEvent(new ClusterJoinEvent(lastTopology));
+                            listener.onEvent(new ClusterJoinEvent(lastTopology, this));
                         } catch (Throwable t) {
                             log.error("Failed to notify cluster event listener [listener={}]", listener, t);
                         }

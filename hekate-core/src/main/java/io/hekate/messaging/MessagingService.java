@@ -46,13 +46,7 @@ import java.util.List;
  * high level API for implementing various messaging patterns.
  * </p>
  *
- * <h2>Accessing service</h2>
- * <p>
- * Messaging service can be accessed via {@link Hekate#messaging()} method as in the example below:
- * ${source: messaging/MessagingServiceJavadocTest.java#access}
- * </p>
- *
- * <h2>Channels</h2>
+ * <h2>Messaging Channels</h2>
  * <p>
  * Messages exchange is based on the concept of channels. Channel is a communication unit that can act as a sender, as a receiver or
  * perform both of those roles simultaneously. Channels provide support for unicast messaging (node to node communication) and broadcast

@@ -19,6 +19,7 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterFilter;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterView;
+import io.hekate.core.Hekate;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverPolicyBuilder;
@@ -249,6 +250,11 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
         RendezvousHashMapper newPartitions = partitions.copy(newCluster);
 
         return new DefaultMessagingChannel<>(gateway, newCluster, newPartitions, null, failover, timeout, affinityKey);
+    }
+
+    @Override
+    public Hekate hekate() {
+        return gateway.hekate();
     }
 
     // Package level for testing purposes.

@@ -42,12 +42,6 @@ import java.util.concurrent.TimeUnit;
  * rules that can be dynamically {@link #filter(ClusterNodeFilter) specified} for each task individually.
  * </p>
  *
- * <h2>Accessing service</h2>
- * <p>
- * {@link TaskService} can be accessed via {@link Hekate#tasks()} method as in the example below:
- * ${source: task/TaskServiceJavadocTest.java#access}
- * </p>
- *
  * <h2>Service configuration</h2>
  * <p>
  * {@link TaskService} can be configured and registered in {@link HekateBootstrap} via {@link TaskServiceFactory} class as in the example
@@ -74,6 +68,12 @@ import java.util.concurrent.TimeUnit;
  * ${source: task/service-bean.xml#example}
  * </div>
  * </div>
+ *
+ * <h2>Accessing service</h2>
+ * <p>
+ * {@link TaskService} can be accessed via {@link Hekate#tasks()} method as in the example below:
+ * ${source: task/TaskServiceJavadocTest.java#access}
+ * </p>
  *
  * <h2>Runnable tasks</h2>
  * <p>

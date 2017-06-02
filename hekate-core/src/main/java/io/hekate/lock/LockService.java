@@ -33,12 +33,6 @@ import java.util.List;
  * or until the owner node goes down and leaves the cluster.
  * </p>
  *
- * <h2>Accessing service</h2>
- * <p>
- * {@link LockService} can be accessed via the {@link Hekate#locks()} method as in the example below:
- * ${source: lock/LockServiceJavadocTest.java#access}
- * </p>
- *
  * <h2>Service configuration</h2>
  * <p>
  * {@link LockService} can be registered and configured in {@link HekateBootstrap} with the help of {@link
@@ -66,6 +60,11 @@ import java.util.List;
  * </div>
  * </div>
  *
+ * <h2>Accessing service</h2>
+ * <p>
+ * {@link LockService} can be accessed via the {@link Hekate#locks()} method as in the example below:
+ * ${source: lock/LockServiceJavadocTest.java#access}
+ * </p>
  *
  * <h2>Locks and Regions</h2>
  * <p>

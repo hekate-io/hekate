@@ -20,6 +20,7 @@ import io.hekate.cluster.ClusterTopology;
 import io.hekate.coordinate.CoordinationFuture;
 import io.hekate.coordinate.CoordinationHandler;
 import io.hekate.coordinate.CoordinationProcess;
+import io.hekate.core.HekateSupport;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannel;
@@ -48,16 +49,20 @@ class DefaultCoordinationProcess implements CoordinationProcess {
 
     private final CoordinationFuture future = new CoordinationFuture();
 
+    private final HekateSupport hekate;
+
     private DefaultCoordinationContext ctx;
 
-    public DefaultCoordinationProcess(String name, CoordinationHandler handler, ExecutorService async,
+    public DefaultCoordinationProcess(String name, HekateSupport hekate, CoordinationHandler handler, ExecutorService async,
         MessagingChannel<CoordinationProtocol> channel, long failoverDelay) {
         assert name != null : "Name is null.";
+        assert hekate != null : "Hekate is null.";
         assert handler != null : "Protocol is null.";
         assert async != null : "Executor service is null.";
         assert channel != null : "Messaging channel is null.";
 
         this.name = name;
+        this.hekate = hekate;
         this.handler = handler;
         this.async = async;
         this.channel = channel;
@@ -196,7 +201,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
                 }
 
                 if (topologyChanged) {
-                    DefaultCoordinationContext newCtx = new DefaultCoordinationContext(name, newTopology, channel, async, handler,
+                    DefaultCoordinationContext newCtx = new DefaultCoordinationContext(name, hekate, newTopology, channel, async, handler,
                         failoverDelay, () -> future.complete(this)
                     );
 

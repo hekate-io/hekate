@@ -25,6 +25,7 @@ import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.event.ClusterJoinEvent;
 import io.hekate.cluster.event.ClusterLeaveEvent;
 import io.hekate.cluster.internal.DefaultClusterTopology;
+import io.hekate.core.Hekate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -36,6 +37,7 @@ import org.junit.Test;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 public class ClusterEventManagerTest extends HekateTestBase {
     private static class TestListener implements ClusterEventListener {
@@ -70,7 +72,7 @@ public class ClusterEventManagerTest extends HekateTestBase {
 
     private static final ClusterEventType[] EMPTY_EVENT_TYPES = new ClusterEventType[0];
 
-    private final ClusterEventManager mgr = new ClusterEventManager();
+    private final ClusterEventManager mgr = new ClusterEventManager(mock(Hekate.class));
 
     private final TestThreadFactory threads = new TestThreadFactory();
 
@@ -427,19 +429,19 @@ public class ClusterEventManagerTest extends HekateTestBase {
     }
 
     private ClusterJoinEvent newJoinEvent() throws Exception {
-        return new ClusterJoinEvent(newTopology());
+        return new ClusterJoinEvent(newTopology(), mock(Hekate.class));
     }
 
     private ClusterChangeEvent newChangeEvent() throws Exception {
         ClusterTopology topology = newTopology();
 
-        return new ClusterChangeEvent(topology, topology.nodes(), emptyList());
+        return new ClusterChangeEvent(topology, topology.nodes(), emptyList(), mock(Hekate.class));
     }
 
     private ClusterLeaveEvent newLeaveEvent() throws Exception {
         ClusterTopology topology = newTopology();
 
-        return new ClusterLeaveEvent(topology, emptyList(), singletonList(topology.localNode()));
+        return new ClusterLeaveEvent(topology, emptyList(), singletonList(topology.localNode()), mock(Hekate.class));
     }
 
     private ClusterTopology newTopology() throws Exception {

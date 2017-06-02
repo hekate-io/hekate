@@ -38,6 +38,20 @@
         </dependency>
 
         <dependency>
+            <artifactId>hekate-codec-kryo</artifactId>
+            <groupId>${project.groupId}</groupId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <artifactId>hekate-codec-fst</artifactId>
+            <groupId>${project.groupId}</groupId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
             <artifactId>hekate-jclouds-aws</artifactId>
             <groupId>${project.groupId}</groupId>
             <version>${project.version}</version>

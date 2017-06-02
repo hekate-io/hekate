@@ -24,7 +24,6 @@ import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingFutureException;
-import io.hekate.messaging.MessagingService;
 import io.hekate.messaging.MessagingServiceFactory;
 import org.junit.Test;
 
@@ -91,12 +90,6 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
             .withService(factory)
             .join();
         // End:configure_channel
-
-        // Start:access
-        MessagingService messaging = hekate.messaging();
-        // End:access
-
-        assertNotNull(messaging);
 
         // Start:access_channel
         MessagingChannel<String> channel = hekate.messaging().channel("example.channel", String.class);

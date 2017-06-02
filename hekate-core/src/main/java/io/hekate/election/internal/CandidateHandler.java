@@ -17,6 +17,8 @@
 package io.hekate.election.internal;
 
 import io.hekate.cluster.ClusterNode;
+import io.hekate.core.Hekate;
+import io.hekate.core.HekateSupport;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.election.Candidate;
@@ -38,18 +40,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class CandidateHandler implements AsyncLockCallback {
-    private static class DefaultFollowerContext implements FollowerContext {
-        private final ClusterNode localNode;
-
+    private class DefaultFollowerContext implements FollowerContext {
         private final AtomicReference<ClusterNode> leader;
 
         private final List<LeaderChangeListener> listeners = new CopyOnWriteArrayList<>();
 
-        public DefaultFollowerContext(ClusterNode leader, ClusterNode localNode) {
+        public DefaultFollowerContext(ClusterNode leader) {
             assert leader != null : "Leader is null.";
-            assert localNode != null : "Local node is null.";
-
-            this.localNode = localNode;
 
             this.leader = new AtomicReference<>(leader);
         }
@@ -62,6 +59,11 @@ class CandidateHandler implements AsyncLockCallback {
         @Override
         public ClusterNode localNode() {
             return localNode;
+        }
+
+        @Override
+        public Hekate hekate() {
+            return hekate.hekate();
         }
 
         @Override
@@ -109,6 +111,11 @@ class CandidateHandler implements AsyncLockCallback {
             }
         }
 
+        @Override
+        public Hekate hekate() {
+            return hekate.hekate();
+        }
+
         synchronized void dispose() {
             disposed = true;
         }
@@ -131,6 +138,8 @@ class CandidateHandler implements AsyncLockCallback {
 
     private final ClusterNode localNode;
 
+    private final HekateSupport hekate;
+
     private DefaultLeaderContext leaderCtx;
 
     private DefaultFollowerContext followerCtx;
@@ -139,19 +148,21 @@ class CandidateHandler implements AsyncLockCallback {
 
     private volatile boolean terminated;
 
-    public CandidateHandler(String group, Candidate candidate, ExecutorService worker, DistributedLock lock,
-        ClusterNode localNode) {
+    public CandidateHandler(String group, Candidate candidate, ExecutorService worker, DistributedLock lock, ClusterNode localNode,
+        HekateSupport hekate) {
         assert group != null : "Group name is null.";
         assert candidate != null : "Candidate is null.";
         assert worker != null : "Worker is null.";
         assert lock != null : "Lock is null.";
         assert localNode != null : "Local node is null.";
+        assert hekate != null : "Hekate is null.";
 
         this.group = group;
         this.candidate = candidate;
         this.worker = worker;
         this.lock = lock;
         this.localNode = localNode;
+        this.hekate = hekate;
     }
 
     @Override
@@ -184,7 +195,7 @@ class CandidateHandler implements AsyncLockCallback {
 
             disposeLeader();
 
-            followerCtx = new DefaultFollowerContext(leader, localNode);
+            followerCtx = new DefaultFollowerContext(leader);
 
             try {
                 candidate.becomeFollower(followerCtx);

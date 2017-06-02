@@ -19,6 +19,7 @@ package io.hekate.cluster.event;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.core.HekateSupport;
 import java.util.List;
 
 /**
@@ -48,9 +49,10 @@ public class ClusterChangeEvent extends ClusterEventBase {
      * @param topology Topology.
      * @param added List of newly joined nodes (see {@link #added()}).
      * @param removed List of nodes that left the cluster (see {@link #removed()}).
+     * @param hekate Delegate for {@link #hekate()}.
      */
-    public ClusterChangeEvent(ClusterTopology topology, List<ClusterNode> added, List<ClusterNode> removed) {
-        super(topology);
+    public ClusterChangeEvent(ClusterTopology topology, List<ClusterNode> added, List<ClusterNode> removed, HekateSupport hekate) {
+        super(topology, hekate);
 
         this.added = added;
         this.removed = removed;

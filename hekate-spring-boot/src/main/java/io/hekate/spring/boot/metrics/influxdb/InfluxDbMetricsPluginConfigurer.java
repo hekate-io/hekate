@@ -31,6 +31,39 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Auto-configuration for {@link InfluxDbMetricsPlugin}.
  *
+ * <h2>Module dependency</h2>
+ * <p>
+ * InfluxDB integration is provided by the 'hekate-metrics-influxdb' module and can be imported into the project dependency management
+ * system as in the example below:
+ * </p>
+ * <div class="tabs">
+ * <ul>
+ * <li><a href="#maven">Maven</a></li>
+ * <li><a href="#gradle">Gradle</a></li>
+ * <li><a href="#ivy">Ivy</a></li>
+ * </ul>
+ * <div id="maven">
+ * <pre>{@code
+ * <dependency>
+ *   <groupId>io.hekate</groupId>
+ *   <artifactId>hekate-metrics-influxdb</artifactId>
+ *   <version>REPLACE_VERSION</version>
+ * </dependency>
+ * }</pre>
+ * </div>
+ * <div id="gradle">
+ * <pre>{@code
+ * compile group: 'io.hekate', name: 'hekate-metrics-influxdb', version: 'REPLACE_VERSION'
+ * }</pre>
+ * </div>
+ * <div id="ivy">
+ * <pre>{@code
+ * <dependency org="io.hekate" name="hekate-metrics-influxdb" rev="REPLACE_VERSION"/>
+ * }</pre>
+ * </div>
+ * </div>
+ *
+ * <h2>Configuration</h2>
  * <p>
  * This auto-configuration is disabled by default and can be enabled by setting the {@code 'hekate.metrics.influxdb.enable'} property to
  * {@code true} in the application's configuration.
