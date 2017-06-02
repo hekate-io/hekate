@@ -19,7 +19,7 @@ version: '2'
 services:
   influxdb:
     container_name: hekate-test-influxdb
-    image: "influxdb:1.1.1"
+    image: "influxdb:1.2.4-alpine"
     ports:
       - "8083:8083"
       - "8086:8086"
