@@ -16,7 +16,7 @@
 
 package io.hekate.microbench;
 
-import io.hekate.codec.JavaCodecFactory;
+import io.hekate.codec.JdkCodecFactory;
 import io.hekate.codec.fst.FstCodecFactory;
 import io.hekate.codec.kryo.KryoCodecFactory;
 import io.hekate.core.Hekate;
@@ -90,7 +90,7 @@ public class TasksBenchmark {
 
             switch (mode.codecType) {
                 case JDK: {
-                    boot.setDefaultCodec(new JavaCodecFactory<>());
+                    boot.setDefaultCodec(new JdkCodecFactory<>());
 
                     break;
                 }

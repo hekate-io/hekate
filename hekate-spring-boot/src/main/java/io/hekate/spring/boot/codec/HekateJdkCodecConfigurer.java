@@ -1,7 +1,7 @@
 package io.hekate.spring.boot.codec;
 
 import io.hekate.codec.CodecFactory;
-import io.hekate.codec.JavaCodecFactory;
+import io.hekate.codec.JdkCodecFactory;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
 import io.hekate.spring.boot.HekateConfigurer;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -13,11 +13,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Auto-configuration for {@link JavaCodecFactory}.
+ * Auto-configuration for {@link JdkCodecFactory}.
  *
  * <p>
  * This auto-configuration is enabled by default. If multiple implementations of the {@link CodecFactory} interface exist on the classpath,
- * then it is possible to enforce usage of {@link JavaCodecFactory} by setting the {@code 'hekate.codec'} property to {@code jdk} in the
+ * then it is possible to enforce usage of {@link JdkCodecFactory} by setting the {@code 'hekate.codec'} property to {@code jdk} in the
  * application's configuration.
  * </p>
  *
@@ -28,18 +28,18 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnHekateEnabled
 @AutoConfigureBefore({HekateConfigurer.class, HekateKryoCodecConfigurer.class, HekateFstCodecConfigurer.class})
-@ConditionalOnClass(JavaCodecFactory.class)
+@ConditionalOnClass(JdkCodecFactory.class)
 @ConditionalOnMissingBean(CodecFactory.class)
 @ConditionalOnProperty(name = "hekate.codec", havingValue = "jdk", matchIfMissing = true)
 public class HekateJdkCodecConfigurer {
     /**
-     * Constructs a new instance of {@link JavaCodecFactory}.
+     * Constructs a new instance of {@link JdkCodecFactory}.
      *
      * @return Codec factory.
      */
     @Bean
     @ConfigurationProperties(prefix = "hekate.codec.jdk")
-    public JavaCodecFactory<Object> jdkCodecFactory() {
-        return new JavaCodecFactory<>();
+    public JdkCodecFactory<Object> jdkCodecFactory() {
+        return new JdkCodecFactory<>();
     }
 }

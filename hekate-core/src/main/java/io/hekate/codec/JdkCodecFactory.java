@@ -25,7 +25,7 @@ import java.io.ObjectOutputStream;
  *
  * @param <T> Base type of object that should be supported by the codec (can be {@link Object}).
  */
-public class JavaCodecFactory<T> implements CodecFactory<T> {
+public class JdkCodecFactory<T> implements CodecFactory<T> {
     private static final Codec<Object> CODEC = new Codec<Object>() {
         @Override
         public boolean isStateful() {
@@ -62,6 +62,6 @@ public class JavaCodecFactory<T> implements CodecFactory<T> {
 
     @Override
     public String toString() {
-        return JavaCodecFactory.class.getSimpleName();
+        return JdkCodecFactory.class.getSimpleName();
     }
 }

@@ -18,7 +18,7 @@ package io.hekate.core;
 
 import io.hekate.HekateTestBase;
 import io.hekate.codec.CodecFactory;
-import io.hekate.codec.JavaCodecFactory;
+import io.hekate.codec.JdkCodecFactory;
 import io.hekate.core.plugin.Plugin;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
@@ -165,8 +165,8 @@ public class HekateBootstrapTest extends HekateTestBase {
     public void testDefaultCodec() throws Exception {
         assertNotNull(bootstrap.getDefaultCodec());
 
-        CodecFactory<Object> factory1 = new JavaCodecFactory<>();
-        CodecFactory<Object> factory2 = new JavaCodecFactory<>();
+        CodecFactory<Object> factory1 = new JdkCodecFactory<>();
+        CodecFactory<Object> factory2 = new JdkCodecFactory<>();
 
         bootstrap.setDefaultCodec(factory1);
 

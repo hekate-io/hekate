@@ -38,7 +38,7 @@
 
         <!-- Default data serialization options. -->
         <default-codec>
-            <s:bean class="io.hekate.codec.JavaCodecFactory"/>
+            <s:bean class="io.hekate.codec.JdkCodecFactory"/>
         </default-codec>
 
         <!-- Network service. -->

@@ -18,7 +18,7 @@ package io.hekate.task;
 
 import io.hekate.HekateTestBase;
 import io.hekate.codec.CodecFactory;
-import io.hekate.codec.JavaCodecFactory;
+import io.hekate.codec.JdkCodecFactory;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -86,7 +86,7 @@ public class TaskServiceFactoryTest extends HekateTestBase {
     public void testTaskCodec() {
         assertNull(factory.getTaskCodec());
 
-        CodecFactory<Object> codec = new JavaCodecFactory<>();
+        CodecFactory<Object> codec = new JdkCodecFactory<>();
 
         factory.setTaskCodec(codec);
 

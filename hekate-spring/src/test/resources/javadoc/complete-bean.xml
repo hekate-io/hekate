@@ -40,7 +40,7 @@
         </property>
         <!-- Default data serialization options. -->
         <property name="defaultCodec">
-            <bean class="io.hekate.codec.JavaCodecFactory"/>
+            <bean class="io.hekate.codec.JdkCodecFactory"/>
         </property>
         <!-- Services configuration.-->
         <property name="services">

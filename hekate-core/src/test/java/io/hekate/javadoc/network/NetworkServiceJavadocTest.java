@@ -17,7 +17,7 @@
 package io.hekate.javadoc.network;
 
 import io.hekate.HekateNodeTestBase;
-import io.hekate.codec.JavaCodecFactory;
+import io.hekate.codec.JdkCodecFactory;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.network.NetworkClient;
@@ -122,7 +122,7 @@ public class NetworkServiceJavadocTest extends HekateNodeTestBase {
         NetworkConnectorConfig<String> connCfg = new NetworkConnectorConfig<>();
 
         connCfg.setProtocol("example.protocol"); // Protocol identifier.
-        connCfg.setMessageCodec(new JavaCodecFactory<>()); // Use default Java serialization.
+        connCfg.setMessageCodec(new JdkCodecFactory<>()); // Use default Java serialization.
         connCfg.setServerHandler(new ExampleHandler()); // Server handler.
         // End:server_handler_config_example
 

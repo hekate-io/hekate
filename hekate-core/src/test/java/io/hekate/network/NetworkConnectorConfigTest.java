@@ -17,7 +17,7 @@
 package io.hekate.network;
 
 import io.hekate.HekateTestBase;
-import io.hekate.codec.JavaCodecFactory;
+import io.hekate.codec.JdkCodecFactory;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -44,8 +44,8 @@ public class NetworkConnectorConfigTest extends HekateTestBase {
     public void testMessageCodec() throws Exception {
         assertNull(cfg.getMessageCodec());
 
-        JavaCodecFactory<Object> factory1 = new JavaCodecFactory<>();
-        JavaCodecFactory<Object> factory2 = new JavaCodecFactory<>();
+        JdkCodecFactory<Object> factory1 = new JdkCodecFactory<>();
+        JdkCodecFactory<Object> factory2 = new JdkCodecFactory<>();
 
         cfg.setMessageCodec(factory1);
 

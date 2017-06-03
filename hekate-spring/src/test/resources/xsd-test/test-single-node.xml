@@ -42,7 +42,7 @@
         </property-providers>
 
         <default-codec>
-            <s:bean class="io.hekate.codec.JavaCodecFactory"/>
+            <s:bean class="io.hekate.codec.JdkCodecFactory"/>
         </default-codec>
 
         <cluster id="cluster" gossip-interval-ms="1000" gossip-speedup-size="100">
@@ -114,7 +114,7 @@
                     nio-threads="0"
                     log-category="foo.bar.NetworkConnector">
                     <message-codec>
-                        <s:bean class="io.hekate.codec.JavaCodecFactory"/>
+                        <s:bean class="io.hekate.codec.JdkCodecFactory"/>
                     </message-codec>
                     <server-handler>
                         <s:bean class="foo.bar.SomeNetworkServerHandler"/>
@@ -147,7 +147,7 @@
                     <s:bean class="foo.bar.SomeLoadBalancer"/>
                 </load-balancer>
                 <message-codec>
-                    <s:bean class="io.hekate.codec.JavaCodecFactory"/>
+                    <s:bean class="io.hekate.codec.JdkCodecFactory"/>
                 </message-codec>
                 <cluster-filter>
                     <s:bean class="foo.bar.SomeClusterNodeFilter"/>
@@ -183,7 +183,7 @@
                     <s:bean class="foo.bar.SomeCoordinationHandler"/>
                 </handler>
                 <message-codec>
-                    <s:bean class="io.hekate.codec.JavaCodecFactory"/>
+                    <s:bean class="io.hekate.codec.JdkCodecFactory"/>
                 </message-codec>
             </process>
         </coordination>

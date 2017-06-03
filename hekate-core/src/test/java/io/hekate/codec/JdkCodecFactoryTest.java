@@ -25,7 +25,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-public class JavaCodecFactoryTest extends HekateTestBase {
+public class JdkCodecFactoryTest extends HekateTestBase {
     public static class DummyMessage implements Serializable {
         private static final long serialVersionUID = 1;
 
@@ -65,7 +65,7 @@ public class JavaCodecFactoryTest extends HekateTestBase {
 
         StreamDataWriter out = new StreamDataWriter(bout);
 
-        Codec<DummyMessage> encoder = new JavaCodecFactory<DummyMessage>().createCodec();
+        Codec<DummyMessage> encoder = new JdkCodecFactory<DummyMessage>().createCodec();
 
         encoder.encode(msg, out);
 
@@ -73,7 +73,7 @@ public class JavaCodecFactoryTest extends HekateTestBase {
 
         StreamDataReader in = new StreamDataReader(bin);
 
-        Codec<DummyMessage> decoder = new JavaCodecFactory<DummyMessage>().createCodec();
+        Codec<DummyMessage> decoder = new JdkCodecFactory<DummyMessage>().createCodec();
 
         return decoder.decode(in);
     }

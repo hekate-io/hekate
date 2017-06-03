@@ -17,7 +17,7 @@
 package io.hekate.network.internal;
 
 import io.hekate.HekateTestBase;
-import io.hekate.codec.JavaCodecFactory;
+import io.hekate.codec.JdkCodecFactory;
 import io.hekate.network.NetworkServerHandler;
 import org.junit.Test;
 
@@ -45,8 +45,8 @@ public class NetworkServerHandlerConfigTest extends HekateTestBase {
     public void testCodecFactory() throws Exception {
         assertNull(cfg.getCodecFactory());
 
-        JavaCodecFactory<Object> factory1 = new JavaCodecFactory<>();
-        JavaCodecFactory<Object> factory2 = new JavaCodecFactory<>();
+        JdkCodecFactory<Object> factory1 = new JdkCodecFactory<>();
+        JdkCodecFactory<Object> factory2 = new JdkCodecFactory<>();
 
         cfg.setCodecFactory(factory1);
 
