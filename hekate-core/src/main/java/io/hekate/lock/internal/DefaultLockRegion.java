@@ -707,11 +707,6 @@ class DefaultLockRegion implements LockRegion {
         writeLock.lock();
 
         try {
-            status = Status.TERMINATED;
-            partitions = null;
-            migrationKey = null;
-            effectiveTopology = null;
-
             lockServers.values().forEach(LockControllerServer::dispose);
 
             lockServers.clear();
@@ -725,6 +720,15 @@ class DefaultLockRegion implements LockRegion {
             deferredLocks.clear();
 
             initMigration.countDown();
+
+            // Important to update status after lock controllers termination.
+            // Need to do it in order to prevent contention between the failover conditions of the messaging channel
+            // and retry logic within the lock client controller.
+            status = Status.TERMINATED;
+
+            partitions = null;
+            migrationKey = null;
+            effectiveTopology = null;
         } finally {
             writeLock.unlock();
         }
