@@ -24,7 +24,7 @@ import java.util.Set;
  * Lifecycle interface for services that require initialization.
  *
  * <p>
- * Methods of this interface get invoked when {@link Hekate} instance starts {@link Hekate#join() joining} to the cluster.
+ * Methods of this interface get invoked when {@link Hekate} instance starts {@link Hekate#join() joining} the cluster.
  * </p>
  * <p>
  * Invocation order is:

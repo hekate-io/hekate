@@ -173,7 +173,7 @@ public class DefaultElectionService implements ElectionService, DependentService
 
     @Override
     public void terminate() throws HekateException {
-        // Actual termination of handlers happens in posTerminate() in order to o make sure that worker threads are terminated after
+        // Actual termination of handlers happens in postTerminate() in order to make sure that worker threads are terminated after
         // the lock service termination. Otherwise it can lead to RejectedExecutionException if lock service tries to process async lock
         // events while election service is already terminated.
     }

@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
 import static io.hekate.core.Hekate.State.DOWN;
+import static io.hekate.core.Hekate.State.INITIALIZED;
 import static io.hekate.core.Hekate.State.INITIALIZING;
 import static io.hekate.core.Hekate.State.LEAVING;
 import static io.hekate.core.Hekate.State.TERMINATING;
@@ -520,6 +521,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
             try {
                 return node.state() != DOWN
                     && node.state() != INITIALIZING
+                    && node.state() != INITIALIZED
                     && node.state() != TERMINATING
                     && !node.localNode().id().equals(id);
             } finally {

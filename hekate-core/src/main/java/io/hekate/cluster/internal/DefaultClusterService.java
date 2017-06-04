@@ -1263,6 +1263,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
                     }
                     case DOWN:
                     case INITIALIZING:
+                    case INITIALIZED:
                     case TERMINATING: {
                         // No-op.
                         break;

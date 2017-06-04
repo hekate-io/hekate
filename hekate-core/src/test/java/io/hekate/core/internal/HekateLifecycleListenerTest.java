@@ -52,8 +52,9 @@ public class HekateLifecycleListenerTest extends HekateNodeTestBase {
             node.join();
 
             assertSame(Hekate.State.INITIALIZING, state.get(0));
-            assertSame(Hekate.State.JOINING, state.get(1));
-            assertSame(Hekate.State.UP, state.get(2));
+            assertSame(Hekate.State.INITIALIZED, state.get(1));
+            assertSame(Hekate.State.JOINING, state.get(2));
+            assertSame(Hekate.State.UP, state.get(3));
 
             state.clear();
 
@@ -98,8 +99,9 @@ public class HekateLifecycleListenerTest extends HekateNodeTestBase {
             node.join();
 
             assertSame(Hekate.State.INITIALIZING, state.get(0));
-            assertSame(Hekate.State.JOINING, state.get(1));
-            assertSame(Hekate.State.UP, state.get(2));
+            assertSame(Hekate.State.INITIALIZED, state.get(1));
+            assertSame(Hekate.State.JOINING, state.get(2));
+            assertSame(Hekate.State.UP, state.get(3));
 
             state.clear();
 
@@ -117,6 +119,7 @@ public class HekateLifecycleListenerTest extends HekateNodeTestBase {
     public void testLeaveFromListener() throws Exception {
         List<Hekate.State> states = Arrays.asList(
             Hekate.State.INITIALIZING,
+            Hekate.State.INITIALIZED,
             Hekate.State.JOINING,
             Hekate.State.UP,
             Hekate.State.LEAVING,
@@ -159,6 +162,7 @@ public class HekateLifecycleListenerTest extends HekateNodeTestBase {
     public void testTerminateFromListener() throws Throwable {
         List<Hekate.State> states = Arrays.asList(
             Hekate.State.INITIALIZING,
+            Hekate.State.INITIALIZED,
             Hekate.State.JOINING,
             Hekate.State.UP,
             Hekate.State.LEAVING,

@@ -47,8 +47,8 @@ import java.util.List;
  * <ul>
  * <li>{@link DependentService} - for resolving dependencies on other services.</li>
  * <li>{@link ConfigurableService} - for preparing and validating service configuration</li>
- * <li>{@link InitializingService} - for service state initialization when {@link Hekate} node starts joining to the cluster</li>
- * <li>{@link TerminatingService} - for service state cleaning when {@link Hekate} node leaves the cluster</li>
+ * <li>{@link InitializingService} - for service state initialization before the {@link Hekate} node starts joining the cluster</li>
+ * <li>{@link TerminatingService} - for service state cleanup when the {@link Hekate} node leaves the cluster</li>
  * </ul>
  *
  * <p>

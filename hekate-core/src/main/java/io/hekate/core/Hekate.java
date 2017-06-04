@@ -49,7 +49,7 @@ import java.util.Set;
  * interconnected processes, messaging and execution of distributed tasks. This interface is the main entry point for accessing the
  * following services:
  * </p>
- * 
+ *
  * <ul>
  * <li><b>{@link ClusterService}</b> - manages dynamic information about the cluster members and provides support for application to get
  * notified upon cluster membership changes</li>
@@ -171,11 +171,13 @@ import java.util.Set;
  * <p>
  * Each instance of {@link Hekate} goes through the following stages of the life cycle:
  * </p>
+ * 
  * <ul>
  * <li>{@link State#DOWN} - initial state</li>
  *
- * <li>{@link State#INITIALIZING} - node is initializing its services, gets ready to join the cluster and starts contacting {@link
- * SeedNodeProvider seed nodes}.</li>
+ * <li>{@link State#INITIALIZING} - node is initializing its services.</li>
+ *
+ * <li>{@link State#INITIALIZED} - node is initialized and is ready to start joining the cluster.</li>
  *
  * <li>{@link State#JOINING} - node successfully discovered a seed node and started joining the cluster.</li>
  *
@@ -211,6 +213,9 @@ public interface Hekate extends HekateSupport {
 
         /** Initializing services and starting {@link SeedNodeProvider seed nodes} discovery . */
         INITIALIZING,
+
+        /** Initialized and ready to start {@link #JOINING}. */
+        INITIALIZED,
 
         /** Initiated the cluster joining with one of the {@link SeedNodeProvider seed nodes}. */
         JOINING,
@@ -351,11 +356,8 @@ public interface Hekate extends HekateSupport {
      * Returns the local cluster node.
      *
      * @return Local cluster node.
-     *
-     * @throws IllegalStateException If this instance is not in {@link State#JOINING JOINING}, {@link State#UP UP} or {@link State#LEAVING
-     * LEAVING} state.
      */
-    ClusterNode localNode() throws IllegalStateException;
+    ClusterNode localNode();
 
     /**
      * Returns the current state of this instance (see <a href="#lifecycle">instance lifecycle</a>).

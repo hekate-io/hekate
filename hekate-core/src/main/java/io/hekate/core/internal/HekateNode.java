@@ -82,6 +82,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.hekate.core.Hekate.State.DOWN;
+import static io.hekate.core.Hekate.State.INITIALIZED;
 import static io.hekate.core.Hekate.State.INITIALIZING;
 import static io.hekate.core.Hekate.State.JOINING;
 import static io.hekate.core.Hekate.State.LEAVING;
@@ -354,7 +355,7 @@ class HekateNode implements Hekate, Serializable {
                 future.complete(this);
 
                 return future;
-            } else if (state.get() == INITIALIZING) {
+            } else if (state.get() == INITIALIZING || state.get() == INITIALIZED) {
                 // Since we are still initializing it is safe to run termination process (and bypass leave protocol).
                 terminateAsync();
 
@@ -492,6 +493,7 @@ class HekateNode implements Hekate, Serializable {
                     break;
                 }
                 case INITIALIZING:
+                case INITIALIZED:
                 case JOINING:
                 case UP: {
                     if (DEBUG) {
@@ -609,52 +611,38 @@ class HekateNode implements Hekate, Serializable {
     }
 
     private void initialize(InetSocketAddress nodeAddress, ClusterNodeId localNodeId) {
+        guard.lockWrite();
 
         try {
-            InitializationContext ctx = null;
+            // Make sure that we are still initializing with the same node identifier.
+            // Need to perform this check in order to stop early in case of concurrent leave/termination events.
+            if (isInitializingForNodeId(localNodeId)) {
+                // Initialize node info.
+                ClusterAddress address = new ClusterAddress(nodeAddress, nodeId);
 
-            guard.lockWrite();
+                DefaultClusterNode localNode = new DefaultClusterNodeBuilder()
+                    .withAddress(address)
+                    .withName(nodeName)
+                    .withLocalNode(true)
+                    .withJoinOrder(DefaultClusterNode.NON_JOINED_ORDER)
+                    .withRoles(nodeRoles)
+                    .withProperties(nodeProps)
+                    .withServices(services.getServicesInfo())
+                    .withSysInfo(DefaultClusterNodeRuntime.getLocalInfo())
+                    .createNode();
 
-            try {
-                // Make sure that we are still initializing with the same node identifier.
-                // Need to perform this check in order to stop early in case of concurrent leave/termination events.
-                if (isInitializingForNodeId(localNodeId)) {
-                    // Initialize node info.
-                    ClusterAddress address = new ClusterAddress(nodeAddress, nodeId);
+                node = localNode;
 
-                    DefaultClusterNode localNode = new DefaultClusterNodeBuilder()
-                        .withAddress(address)
-                        .withName(nodeName)
-                        .withLocalNode(true)
-                        .withJoinOrder(DefaultClusterNode.NON_JOINED_ORDER)
-                        .withRoles(nodeRoles)
-                        .withProperties(nodeProps)
-                        .withServices(services.getServicesInfo())
-                        .withSysInfo(DefaultClusterNodeRuntime.getLocalInfo())
-                        .createNode();
+                // Prepare initial (empty) topology.
+                topology = DefaultClusterTopology.empty();
 
-                    node = localNode;
-
-                    // Prepare initial (empty) topology.
-                    topology = DefaultClusterTopology.empty();
-
-                    if (log.isInfoEnabled()) {
-                        log.info("Initialized local node info [node={}]", localNode.toDetailedString());
-                    }
-
-                    // Initialize services and plugins.
-                    ctx = newInitializationContext(localNode);
-                } else {
-                    if (DEBUG) {
-                        log.debug("Stopped initialization sequence due to a concurrent leave/terminate event.");
-                    }
+                if (log.isInfoEnabled()) {
+                    log.info("Initialized local node info [node={}]", localNode.toDetailedString());
                 }
-            } finally {
-                guard.unlockWrite();
-            }
 
-            // Initialize services in unlocked context since we don't want to block concurrent leave/terminate requests.
-            if (ctx != null) {
+                // Initialize services and plugins.
+                InitializationContext ctx = newInitializationContext(localNode);
+
                 if (log.isInfoEnabled()) {
                     log.info("Initializing services...");
                 }
@@ -663,16 +651,30 @@ class HekateNode implements Hekate, Serializable {
 
                 services.initialize(ctx);
 
+                services.postInitialize(ctx);
+
                 plugins.start(this);
 
-                services.postInitialize(ctx);
+                // Pre-check state since plugin could initiate leave/termination procedure.
+                if (isInitializingForNodeId(localNodeId)) {
+                    // Update state and notify listeners.
+                    state.set(INITIALIZED);
+
+                    notifyOnLifecycleChange();
+                }
 
                 if (log.isInfoEnabled()) {
                     log.info("Done initializing services.");
                 }
+            } else {
+                if (DEBUG) {
+                    log.debug("Stopped initialization sequence due to a concurrent leave/terminate event.");
+                }
             }
         } catch (HekateException | RuntimeException | Error e) {
             doTerminateAsync(e);
+        } finally {
+            guard.unlockWrite();
         }
     }
 
@@ -690,7 +692,7 @@ class HekateNode implements Hekate, Serializable {
                     guard.lockWrite();
 
                     try {
-                        changed = state.compareAndSet(INITIALIZING, JOINING);
+                        changed = state.compareAndSet(INITIALIZED, JOINING);
 
                         if (changed) {
                             notifyOnLifecycleChange();
@@ -911,6 +913,7 @@ class HekateNode implements Hekate, Serializable {
 
         try {
             if (state.compareAndSet(INITIALIZING, TERMINATING)
+                || state.compareAndSet(INITIALIZED, TERMINATING)
                 || state.compareAndSet(JOINING, TERMINATING)
                 || state.compareAndSet(UP, TERMINATING)
                 || state.compareAndSet(LEAVING, TERMINATING)) {
@@ -1092,6 +1095,10 @@ class HekateNode implements Hekate, Serializable {
 
     private boolean isInitializingForNodeId(ClusterNodeId localNodeId) {
         return state.get() == INITIALIZING && localNodeId.equals(nodeId);
+    }
+
+    private boolean isInitializedForNodeId(ClusterNodeId localNodeId) {
+        return state.get() == INITIALIZED && localNodeId.equals(nodeId);
     }
 
     private void notifyOnLifecycleChange() {

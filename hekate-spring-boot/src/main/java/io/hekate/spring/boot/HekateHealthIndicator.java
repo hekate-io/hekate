@@ -59,6 +59,11 @@ public class HekateHealthIndicator implements HealthIndicator {
 
                 break;
             }
+            case INITIALIZED: {
+                health.status(Hekate.State.INITIALIZED.name());
+
+                break;
+            }
             case JOINING: {
                 health.status(Hekate.State.JOINING.name());
 
