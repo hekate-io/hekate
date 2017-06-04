@@ -32,6 +32,7 @@ import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -219,7 +220,7 @@ class LockControllerClient {
             if (cancel) {
                 lockFuture.cancel(false);
             } else {
-                lockFuture.completeExceptionally(new IllegalStateException("Lock service terminated."));
+                lockFuture.completeExceptionally(new CancellationException("Lock service terminated."));
             }
         }
 

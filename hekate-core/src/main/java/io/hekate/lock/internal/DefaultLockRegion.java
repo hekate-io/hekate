@@ -55,6 +55,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -305,7 +306,7 @@ class DefaultLockRegion implements LockRegion {
                 if (timeout == TIMEOUT_IMMEDIATE) {
                     lockFuture.complete(false);
                 } else {
-                    lockFuture.completeExceptionally(new IllegalStateException("Lock service terminated."));
+                    lockFuture.completeExceptionally(new CancellationException("Lock service terminated."));
                 }
 
                 client.unlockFuture().complete(true);

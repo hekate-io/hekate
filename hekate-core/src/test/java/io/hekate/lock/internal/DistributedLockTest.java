@@ -25,6 +25,7 @@ import io.hekate.lock.LockRegion;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -621,7 +622,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                     lock.lock();
 
                     fail("Failure was expected.");
-                } catch (IllegalStateException e) {
+                } catch (CancellationException e) {
                     assertEquals("Lock service terminated.", e.getMessage());
                 }
 
@@ -661,7 +662,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                     lock.lock();
 
                     fail("Failure was expected.");
-                } catch (IllegalStateException e) {
+                } catch (CancellationException e) {
                     assertEquals("Lock service terminated.", e.getMessage());
                 }
 
