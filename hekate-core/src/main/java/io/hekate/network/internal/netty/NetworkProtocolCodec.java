@@ -127,7 +127,7 @@ class NetworkProtocolCodec {
 
                 switch (type) {
                     case HANDSHAKE_REQUEST: {
-                        String protocol = NettyMessage.readUtf(in);
+                        String protocol = NettyMessage.utf(in);
                         int threadAffinity = in.readInt();
 
                         CodecFactory<Object> codecFactory = allCodecs.get(protocol);
@@ -157,7 +157,7 @@ class NetworkProtocolCodec {
                         return new HandshakeAccept(hbInterval, hbLossThreshold, hbDisabled);
                     }
                     case HANDSHAKE_REJECT: {
-                        String reason = NettyMessage.readUtf(in);
+                        String reason = NettyMessage.utf(in);
 
                         return new HandshakeReject(reason);
                     }

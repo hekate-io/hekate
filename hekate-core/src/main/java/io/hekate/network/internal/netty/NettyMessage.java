@@ -352,7 +352,7 @@ class NettyMessage extends InputStream implements DataReader, NetworkMessage<Obj
         return (NetworkMessage<T>)this;
     }
 
-    static String readUtf(ByteBuf buf) throws IOException {
+    static String utf(ByteBuf buf) throws IOException {
         checkAvailable(4, buf);
 
         int len = buf.readInt();

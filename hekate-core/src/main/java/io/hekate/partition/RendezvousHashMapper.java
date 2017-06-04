@@ -105,7 +105,7 @@ public final class RendezvousHashMapper implements PartitionMapper {
 
         private final ClusterNode node;
 
-        private int hash;
+        private final int hash;
 
         public PartitionHash(ClusterNode node, int pid) {
             this.node = node;

@@ -112,7 +112,7 @@ class ClusterEventManager implements HekateSupport {
 
     private volatile ClusterTopology lastTopology;
 
-    private Hekate hekate;
+    private final Hekate hekate;
 
     public ClusterEventManager(Hekate hekate) {
         this.hekate = hekate;
