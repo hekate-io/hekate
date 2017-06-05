@@ -28,9 +28,9 @@ import java.util.concurrent.locks.Lock;
  * Distributed lock.
  *
  * <p>
- * Distributed locks provide support for controlling access to a shared resource or a critical section at the cluster-wide level. At any
- * point in time only one thread on any cluster node can gain a lock with the same name. All other threads either running on the same node
- * or on remote nodes will await for the lock to be released before getting a chance to obtain the lock.
+ * Distributed lock provides support for controlling access to a shared resource or a critical section at the cluster-wide level. At any
+ * point in time only one thread on any cluster node can gain a lock with the same {@link #name() name}. All other threads, either running
+ * on the same node or on remote nodes, will await for the lock to be released before getting a chance to obtain the lock.
  * </p>
  *
  * <p>
@@ -79,36 +79,32 @@ public interface DistributedLock extends Lock {
     boolean isHeldByCurrentThread();
 
     /**
-     * Performs asynchronous locking operation and notifies the specified callback upon lock status changes.
+     * Performs asynchronous locking and notifies the specified callback upon the lock status changes.
      *
      * <p>
-     * The specified {@link Executor} instance will be used to perform all callback method notifications. Thus it is <b>highly recommended
-     * to use {@link Executors#newSingleThreadExecutor() single-threaded executor}</b> so that all callback notifications would be
-     * performed by the same thread. Otherwise callback methods notification order can be completely unpredictable.
+     * The specified {@link Executor} instance will be used to perform all notifications of the callback object. Thus it is <b>highly
+     * recommended to use a single-threaded executor</b> (f.e. {@link Executors#newSingleThreadExecutor()}) so that all the callback
+     * notifications would be performed on the same thread. Otherwise the callback notification order can be completely unpredictable.
      * </p>
      *
      * <p>
-     * Once lock gets acquired it will be bound to the executor thread that performed
-     * {@link AsyncLockCallback#onLockAcquire(DistributedLock)} notification. For more details about callback methods notification order
-     * please see the documentation of {@link AsyncLockCallback} interface.
+     * For details about the callback notification order please see the documentation of {@link AsyncLockCallback} interface.
      * </p>
      *
      * <p>
-     * The returned {@link Future} object can be used to wait for asynchronous lock acquisition (after lock have been acquired but before
-     * {@link AsyncLockCallback#onLockAcquire(DistributedLock)} is called) or cancel locking operation if lock haven't been acquired yet.
+     * The {@link Future} object, that is returned by this method, can be used to wait for asynchronous lock acquisition (after the lock
+     * have been acquired but before the {@link AsyncLockCallback#onLockAcquire(DistributedLock)} method gets notified).
      * </p>
      *
      * @param executor Executor to perform asynchronous notifications of callback methods.
      * @param callback Callback.
      *
-     * @return Future object that can be used to await for lock to be asynchronously acquired. Future gets completed after lock have been
-     * acquired but before {@link AsyncLockCallback#onLockAcquire(DistributedLock)} is called.
+     * @return Future object that can be used to await for the lock acquisition.
      */
     Future<?> lockAsync(Executor executor, AsyncLockCallback callback);
 
     /**
-     * Schedules unlock operation for asynchronous processing and uninterruptedly awaits for completion. If current thread is not the lock
-     * owner then {@link IllegalMonitorStateException} will be thrown.
+     * Unlocks the lock. If current thread is not the lock owner then {@link IllegalMonitorStateException} will be thrown.
      */
     @Override
     void unlock();
@@ -120,8 +116,7 @@ public interface DistributedLock extends Lock {
     void unlockAsync();
 
     /**
-     * Acquires the lock if it is free within the given waiting time and the current thread has not been {@linkplain Thread#interrupt
-     * interrupted}.
+     * Tries to acquire the lock with the given timeout.
      *
      * <p>
      * <b>Note:</b> timeout doesn't consider communication overhead of locking. For example, if timeout is 100ms and it takes 50ms to
@@ -139,7 +134,7 @@ public interface DistributedLock extends Lock {
     boolean tryLock(long timeout, TimeUnit unit) throws InterruptedException;
 
     /**
-     * Returns information about the node that is currently holding this lock.
+     * Returns an information about the node that is currently holding this lock.
      *
      * <p>
      * Note that this operation requires a network round trip to the lock manager node and there are no guarantees that lock owner will not
