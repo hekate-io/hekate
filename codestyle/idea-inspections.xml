@@ -29,7 +29,11 @@
   <inspection_tool class="BadExceptionCaught" enabled="true" level="WARNING" enabled_by_default="true">
     <option name="exceptionsString" value="java.lang.NullPointerException,java.lang.IllegalMonitorStateException,java.lang.ArrayIndexOutOfBoundsException" />
     <option name="exceptions">
-      <value />
+      <value>
+        <item value="java.lang.NullPointerException" />
+        <item value="java.lang.IllegalMonitorStateException" />
+        <item value="java.util.ConcurrentModificationException" />
+      </value>
     </option>
   </inspection_tool>
   <inspection_tool class="BadExceptionDeclared" enabled="true" level="WARNING" enabled_by_default="true">
@@ -316,6 +320,7 @@
   <inspection_tool class="JpaQlInspection" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="KeySetIterationMayUseEntrySet" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="LabeledStatement" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="LambdaUnfriendlyMethodOverload" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="LengthOneStringInIndexOf" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="ListIndexOfReplaceableByContains" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="LocalVariableNamingConvention" enabled="true" level="WARNING" enabled_by_default="true">
@@ -349,6 +354,7 @@
   <inspection_tool class="MisspelledCompareTo" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="MisspelledEquals" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="MisspelledHashcode" enabled="true" level="WARNING" enabled_by_default="true" />
+  <inspection_tool class="MisspelledMethodName" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="MisspelledSetUp" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="MisspelledTearDown" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="MisspelledToString" enabled="true" level="WARNING" enabled_by_default="true" />
