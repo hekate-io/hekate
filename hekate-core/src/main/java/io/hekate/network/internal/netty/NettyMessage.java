@@ -193,13 +193,11 @@ class NettyMessage extends InputStream implements DataReader, NetworkMessage<Obj
 
     @Override
     public int read() throws IOException {
-        ByteBuf in = this.buf;
-
-        if (!in.isReadable()) {
+        if (!buf.isReadable()) {
             return -1;
         }
 
-        return in.readByte() & 0xff;
+        return buf.readByte() & 0xff;
     }
 
     @Override
@@ -228,20 +226,20 @@ class NettyMessage extends InputStream implements DataReader, NetworkMessage<Obj
 
     @Override
     public boolean readBoolean() throws IOException {
-        checkAvailable(1);
-
-        return buf.readBoolean();
+        try {
+            return buf.readBoolean();
+        } catch (IndexOutOfBoundsException e) {
+            throw endOfStream(e);
+        }
     }
 
     @Override
     public byte readByte() throws IOException {
-        ByteBuf in = this.buf;
-
-        if (!in.isReadable()) {
-            throw new EOFException();
+        try {
+            return buf.readByte();
+        } catch (IndexOutOfBoundsException e) {
+            throw endOfStream(e);
         }
-
-        return in.readByte();
     }
 
     @Override
@@ -266,16 +264,20 @@ class NettyMessage extends InputStream implements DataReader, NetworkMessage<Obj
 
     @Override
     public void readFully(byte[] b, int off, int len) throws IOException {
-        checkAvailable(len);
-
-        buf.readBytes(b, off, len);
+        try {
+            buf.readBytes(b, off, len);
+        } catch (IndexOutOfBoundsException e) {
+            throw endOfStream(e);
+        }
     }
 
     @Override
     public int readInt() throws IOException {
-        checkAvailable(4);
-
-        return buf.readInt();
+        try {
+            return buf.readInt();
+        } catch (IndexOutOfBoundsException e) {
+            throw endOfStream(e);
+        }
     }
 
     @Override
@@ -290,27 +292,25 @@ class NettyMessage extends InputStream implements DataReader, NetworkMessage<Obj
 
     @Override
     public long readLong() throws IOException {
-        checkAvailable(8);
-
-        return buf.readLong();
+        try {
+            return buf.readLong();
+        } catch (IndexOutOfBoundsException e) {
+            throw endOfStream(e);
+        }
     }
 
     @Override
     public short readShort() throws IOException {
-        checkAvailable(2);
-
-        return buf.readShort();
+        try {
+            return buf.readShort();
+        } catch (IndexOutOfBoundsException e) {
+            throw endOfStream(e);
+        }
     }
 
     @Override
     public String readUTF() throws IOException {
-        int len = readInt();
-
-        String string = buf.toString(buf.readerIndex(), len, StandardCharsets.UTF_8);
-
-        buf.skipBytes(len);
-
-        return string;
+        return utf(buf);
     }
 
     @Override
@@ -353,25 +353,21 @@ class NettyMessage extends InputStream implements DataReader, NetworkMessage<Obj
     }
 
     static String utf(ByteBuf buf) throws IOException {
-        checkAvailable(4, buf);
+        try {
+            int len = buf.readInt();
 
-        int len = buf.readInt();
+            String string = buf.toString(buf.readerIndex(), len, StandardCharsets.UTF_8);
 
-        String string = buf.toString(buf.readerIndex(), len, StandardCharsets.UTF_8);
+            buf.skipBytes(len);
 
-        buf.skipBytes(len);
-
-        return string;
-    }
-
-    private void checkAvailable(int size) throws IOException {
-        checkAvailable(size, buf);
-    }
-
-    private static void checkAvailable(int size, ByteBuf buf) throws IOException {
-        if (size > buf.readableBytes()) {
-            throw new EOFException("Not enough data in buffer [requested=" + size + ", available=" + buf.readableBytes() + ']');
+            return string;
+        } catch (IndexOutOfBoundsException e) {
+            throw endOfStream(e);
         }
+    }
+
+    private static EOFException endOfStream(IndexOutOfBoundsException e) {
+        return new EOFException(e.getMessage());
     }
 
     @Override

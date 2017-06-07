@@ -99,7 +99,7 @@ public final class CodecUtils {
         out.write(hostBytes);
 
         // Address port.
-        out.writeInt(address.getPort());
+        writeVarInt(address.getPort(), out);
     }
 
     /**
@@ -121,7 +121,7 @@ public final class CodecUtils {
         InetAddress host = InetAddress.getByAddress(hostBytes);
 
         // Port.
-        int port = in.readInt();
+        int port = readVarInt(in);
 
         return new InetSocketAddress(host, port);
     }
@@ -208,12 +208,14 @@ public final class CodecUtils {
 
             if (bits <= 63) {
                 out.writeByte(DECIMAL_SMALL_UNSCALED);
-                out.writeLong(val.longValue());
+
+                writeVarLong(val.longValue(), out);
             } else {
                 byte[] bytes = val.toByteArray();
 
                 out.writeByte(DECIMAL_BIG);
-                out.writeInt(bytes.length);
+                writeVarIntUnsigned(bytes.length, out);
+
                 out.write(bytes, 0, bytes.length);
             }
 
@@ -243,12 +245,12 @@ public final class CodecUtils {
                 return BigInteger.TEN;
             }
             case DECIMAL_SMALL_UNSCALED: {
-                long val = in.readLong();
+                long val = readVarLong(in);
 
                 return BigInteger.valueOf(val);
             }
             case DECIMAL_BIG: {
-                int bytesLen = in.readInt();
+                int bytesLen = readVarIntUnsigned(in);
 
                 byte[] bytes = new byte[bytesLen];
 
@@ -287,18 +289,18 @@ public final class CodecUtils {
             if (bits <= 63) {
                 if (scale == 0) {
                     out.writeByte(DECIMAL_SMALL_UNSCALED);
-                    out.writeLong(unscaled.longValue());
+                    writeVarLong(unscaled.longValue(), out);
                 } else {
                     out.writeByte(DECIMAL_SMALL_SCALED);
-                    out.writeInt(scale);
-                    out.writeLong(unscaled.longValue());
+                    writeVarIntUnsigned(scale, out);
+                    writeVarLong(unscaled.longValue(), out);
                 }
             } else {
                 byte[] bytes = unscaled.toByteArray();
 
                 out.writeByte(DECIMAL_BIG);
-                out.writeInt(scale);
-                out.writeInt(bytes.length);
+                writeVarIntUnsigned(scale, out);
+                writeVarIntUnsigned(bytes.length, out);
                 out.write(bytes, 0, bytes.length);
             }
         }
@@ -327,19 +329,19 @@ public final class CodecUtils {
                 return BigDecimal.TEN;
             }
             case DECIMAL_SMALL_UNSCALED: {
-                long val = in.readLong();
+                long val = readVarLong(in);
 
                 return BigDecimal.valueOf(val);
             }
             case DECIMAL_SMALL_SCALED: {
-                int scale = in.readInt();
-                long unscaled = in.readLong();
+                int scale = readVarIntUnsigned(in);
+                long unscaled = readVarLong(in);
 
                 return BigDecimal.valueOf(unscaled, scale);
             }
             case DECIMAL_BIG: {
-                int scale = in.readInt();
-                int bytesLen = in.readInt();
+                int scale = readVarIntUnsigned(in);
+                int bytesLen = readVarIntUnsigned(in);
 
                 byte[] bytes = new byte[bytesLen];
 
@@ -351,5 +353,175 @@ public final class CodecUtils {
                 throw new StreamCorruptedException("Unexpected hint for " + BigDecimal.class.getName() + " value [hint=" + hint + ']');
             }
         }
+    }
+
+    /**
+     * Encodes a value using the variable-length encoding from <a href="http://code.google.com/apis/protocolbuffers/docs/encoding.html">
+     * Google Protocol Buffers</a>. It uses zig-zag encoding to efficiently encode signed values. If values are known to be non-negative,
+     * {@link #writeVarLongUnsigned(long, DataOutput)} should be used.
+     *
+     * @param value Value to encode
+     * @param out Data output.
+     *
+     * @throws IOException if failed to write value.
+     */
+    // Code borrowed from 'stream-lib' (Apache 2.0 license) - see https://github.com/addthis/stream-lib
+    public static void writeVarLong(long value, DataOutput out) throws IOException {
+        // Great trick from http://code.google.com/apis/protocolbuffers/docs/encoding.html#types
+        writeVarLongUnsigned(value << 1 ^ value >> 63, out);
+    }
+
+    /**
+     * Encodes a value using the variable-length encoding from <a href="http://code.google.com/apis/protocolbuffers/docs/encoding.html">
+     * Google Protocol Buffers</a>. Zig-zag is not used, so input must not be negative. If values can be negative, use {@link
+     * #writeVarLong(long, DataOutput)} instead. This method treats negative input as like a large unsigned value.
+     *
+     * @param value Value to encode (must be non-negative).
+     * @param out Data output.
+     *
+     * @throws IOException if failed to write value.
+     */
+    // Code borrowed from 'stream-lib' (Apache 2.0 license) - see https://github.com/addthis/stream-lib
+    public static void writeVarLongUnsigned(long value, DataOutput out) throws IOException {
+        while ((value & 0xFFFFFFFFFFFFFF80L) != 0L) {
+            out.writeByte((int)value & 0x7F | 0x80);
+
+            value >>>= 7;
+        }
+
+        out.writeByte((int)value & 0x7F);
+    }
+
+    /**
+     * Encodes a value using the variable-length encoding from <a href="http://code.google.com/apis/protocolbuffers/docs/encoding.html">
+     * Google Protocol Buffers</a>. It uses zig-zag encoding to efficiently encode signed values. If values are known to be non-negative,
+     * {@link #writeVarIntUnsigned(int, DataOutput)}  should be used.
+     *
+     * @param value Value to encode
+     * @param out Data output.
+     *
+     * @throws IOException if failed to write value.
+     */
+    // Code borrowed from 'stream-lib' (Apache 2.0 license) - see https://github.com/addthis/stream-lib
+    public static void writeVarInt(int value, DataOutput out) throws IOException {
+        // Great trick from http://code.google.com/apis/protocolbuffers/docs/encoding.html#types
+        writeVarIntUnsigned(value << 1 ^ value >> 31, out);
+    }
+
+    /**
+     * Encodes a value using the variable-length encoding from <a href="http://code.google.com/apis/protocolbuffers/docs/encoding.html">
+     * Google Protocol Buffers</a>. Zig-zag is not used, so input must not be negative. If values can be negative, use {@link
+     * #writeVarInt(int, DataOutput)} instead. This method treats negative input as like a large unsigned value.
+     *
+     * @param value Value to encode (must be non-negative).
+     * @param out Data output.
+     *
+     * @throws IOException if failed to write value.
+     */
+    // Code borrowed from 'stream-lib' (Apache 2.0 license) - see https://github.com/addthis/stream-lib
+    public static void writeVarIntUnsigned(int value, DataOutput out) throws IOException {
+        while ((value & 0xFFFFFF80) != 0L) {
+            out.writeByte(value & 0x7F | 0x80);
+
+            value >>>= 7;
+        }
+
+        out.writeByte(value & 0x7F);
+    }
+
+    /**
+     * Reads a value that was encoded via {@link #writeVarLong(long, DataOutput)}.
+     *
+     * @param in Data input.
+     *
+     * @return Value.
+     *
+     * @throws IOException if failed to read value.
+     */
+    // Code borrowed from 'stream-lib' (Apache 2.0 license) - see https://github.com/addthis/stream-lib
+    public static long readVarLong(DataInput in) throws IOException {
+        long raw = readVarLongUnsigned(in);
+        // This undoes the trick in writeSignedVarLong()
+        long temp = (raw << 63 >> 63 ^ raw) >> 1;
+        // This extra step lets us deal with the largest signed values by treating
+        // negative results from read unsigned methods as like unsigned values
+        // Must re-flip the top bit if the original read value had it set.
+        return temp ^ raw & 1L << 63;
+    }
+
+    /**
+     * Reads a value that was encoded via {@link #writeVarLongUnsigned(long, DataOutput)}.
+     *
+     * @param in Data input.
+     *
+     * @return Value.
+     *
+     * @throws IOException if failed to read value.
+     */
+    // Code borrowed from 'stream-lib' (Apache 2.0 license) - see https://github.com/addthis/stream-lib
+    public static long readVarLongUnsigned(DataInput in) throws IOException {
+        long value = 0L;
+        int i = 0;
+        long b;
+
+        while (((b = in.readByte()) & 0x80L) != 0) {
+            value |= (b & 0x7F) << i;
+
+            i += 7;
+
+            if (i > 63) {
+                throw new StreamCorruptedException("Variable length size is too long");
+            }
+        }
+
+        return value | b << i;
+    }
+
+    /**
+     * Reads a value that was encoded via {@link #writeVarInt(int, DataOutput)}.
+     *
+     * @param in Data input.
+     *
+     * @return Value.
+     *
+     * @throws IOException if failed to read value.
+     */
+    // Code borrowed from 'stream-lib' (Apache 2.0 license) - see https://github.com/addthis/stream-lib
+    public static int readVarInt(DataInput in) throws IOException {
+        int raw = readVarIntUnsigned(in);
+        // This undoes the trick in writeSignedVarInt()
+        int temp = (raw << 31 >> 31 ^ raw) >> 1;
+        // This extra step lets us deal with the largest signed values by treating
+        // negative results from read unsigned methods as like unsigned values.
+        // Must re-flip the top bit if the original read value had it set.
+        return temp ^ (raw & (1 << 31));
+    }
+
+    /**
+     * Reads a value that was encoded via {@link #writeVarIntUnsigned(int, DataOutput)}.
+     *
+     * @param in Data input.
+     *
+     * @return Value.
+     *
+     * @throws IOException if failed to read value.
+     */
+    // Code borrowed from 'stream-lib' (Apache 2.0 license) - see https://github.com/addthis/stream-lib
+    public static int readVarIntUnsigned(DataInput in) throws IOException {
+        int value = 0;
+        int i = 0;
+        int b;
+
+        while (((b = in.readByte()) & 0x80) != 0) {
+            value |= (b & 0x7F) << i;
+
+            i += 7;
+
+            if (i > 35) {
+                throw new StreamCorruptedException("Variable length size is too long");
+            }
+        }
+
+        return value | b << i;
     }
 }

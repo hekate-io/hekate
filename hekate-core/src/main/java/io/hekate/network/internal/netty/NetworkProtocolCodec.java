@@ -81,37 +81,48 @@ class NetworkProtocolCodec {
         @Override
         protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
             // Check if we have enough bytes in the buffer.
-            if (in.readableBytes() < LENGTH_HEADER_LENGTH) {
+            if (in.readableBytes() < HEADER_LENGTH) {
                 // Retry once we have more data.
                 return;
             }
 
             int startIndex = in.readerIndex();
 
-            // Peek length header (note we are not updating the buffer's read index).
+            // Peek length header (note that we are not updating the buffer's read index).
             int length = in.getInt(startIndex);
 
             // Magic length value:
-            //   negative - for protocol messages
+            //   negative - for internal messages
             //   positive - for user messages
-            boolean protocolMsg = length < 0;
+            boolean internalMsg = length < 0;
 
             // Make sure that length is always positive.
-            if (protocolMsg) {
+            if (internalMsg) {
                 length = -length;
             }
 
-            // Check if we have enough bytes to decode a message.
+            // Check if we have enough bytes to decode.
             if (in.readableBytes() < length) {
                 // Retry once we have more data.
                 return;
             }
 
-            // Skip length header.
-            in.skipBytes(LENGTH_HEADER_LENGTH);
+            // Skip the length header (we already have it).
+            in.skipBytes(HEADER_LENGTH);
 
             // Decode message.
-            Object msg = decode(protocolMsg, in, startIndex + LENGTH_HEADER_LENGTH, length - LENGTH_HEADER_LENGTH);
+            int msgOffset = startIndex + HEADER_LENGTH;
+            int msgLength = length - HEADER_LENGTH;
+
+            Object msg;
+
+            if (internalMsg) {
+                // Decode internal message.
+                msg = decodeInternal(in, msgOffset, msgLength);
+            } else {
+                // Decode user-defined message.
+                msg = decodeUser(in, msgOffset, msgLength);
+            }
 
             // Advance buffer's read position.
             in.readerIndex(startIndex + length);
@@ -121,63 +132,63 @@ class NetworkProtocolCodec {
             }
         }
 
-        private Object decode(boolean protocolMsg, ByteBuf in, int offset, int length) throws IOException {
-            if (protocolMsg) {
-                NetworkProtocol.Type type = TYPES[in.readByte()];
+        private Object decodeUser(ByteBuf in, int offset, int length) throws IOException {
+            // Make sure that buffer will not be recycled until message is processed.
+            in.retain();
 
-                switch (type) {
-                    case HANDSHAKE_REQUEST: {
-                        String protocol = NettyMessage.utf(in);
-                        int threadAffinity = in.readInt();
+            try {
+                return message(in, offset, length);
+            } catch (RuntimeException | Error | IOException e) {
+                in.release();
 
-                        CodecFactory<Object> codecFactory = allCodecs.get(protocol);
+                throw e;
+            }
+        }
 
-                        if (codecFactory != null) {
-                            Codec<Object> codec = codecFactory.createCodec();
+        private Object decodeInternal(ByteBuf in, int offset, int length) throws IOException {
+            NetworkProtocol.Type type = TYPES[in.readByte()];
 
-                            initCodec(codec);
+            switch (type) {
+                case HANDSHAKE_REQUEST: {
+                    String protocol = NettyMessage.utf(in);
+                    int threadAffinity = in.readInt();
 
-                            Object payload = null;
+                    CodecFactory<Object> codecFactory = allCodecs.get(protocol);
 
-                            if (in.readBoolean()) {
-                                // Handshake payload is always decoded on NIO thread.
-                                payload = message(in, offset, length).decode();
-                            }
+                    if (codecFactory != null) {
+                        Codec<Object> codec = codecFactory.createCodec();
 
-                            return new HandshakeRequest(protocol, payload, threadAffinity, codec);
+                        initCodec(codec);
+
+                        Object payload = null;
+
+                        if (in.readBoolean()) {
+                            // Handshake payload is always decoded on NIO thread.
+                            payload = message(in, offset, length).decode();
                         }
 
-                        return new HandshakeRequest(protocol, null, threadAffinity);
+                        return new HandshakeRequest(protocol, payload, threadAffinity, codec);
                     }
-                    case HANDSHAKE_ACCEPT: {
-                        int hbInterval = in.readInt();
-                        int hbLossThreshold = in.readInt();
-                        boolean hbDisabled = in.readBoolean();
 
-                        return new HandshakeAccept(hbInterval, hbLossThreshold, hbDisabled);
-                    }
-                    case HANDSHAKE_REJECT: {
-                        String reason = NettyMessage.utf(in);
-
-                        return new HandshakeReject(reason);
-                    }
-                    case HEARTBEAT: {
-                        return Heartbeat.INSTANCE;
-                    }
-                    default: {
-                        throw new IllegalStateException("Unexpected message type: " + type);
-                    }
+                    return new HandshakeRequest(protocol, null, threadAffinity);
                 }
-            } else {
-                // Make sure that buffer will not be recycled until message is processed.
-                in.retain();
+                case HANDSHAKE_ACCEPT: {
+                    int hbInterval = in.readInt();
+                    int hbLossThreshold = in.readInt();
+                    boolean hbDisabled = in.readBoolean();
 
-                try {
-                    return message(in, offset, length);
-                } catch (RuntimeException | Error | IOException e) {
-                    in.release();
+                    return new HandshakeAccept(hbInterval, hbLossThreshold, hbDisabled);
+                }
+                case HANDSHAKE_REJECT: {
+                    String reason = NettyMessage.utf(in);
 
-                    throw e;
+                    return new HandshakeReject(reason);
+                }
+                case HEARTBEAT: {
+                    return Heartbeat.INSTANCE;
+                }
+                default: {
+                    throw new IllegalStateException("Unexpected message type: " + type);
                 }
             }
         }
@@ -202,9 +213,7 @@ class NetworkProtocolCodec {
 
     private static final NetworkProtocol.Type[] TYPES = NetworkProtocol.Type.values();
 
-    private static final int LENGTH_HEADER_LENGTH = 4;
-
-    private static final byte[] LENGTH_PLACEHOLDER = new byte[LENGTH_HEADER_LENGTH];
+    private static final int HEADER_LENGTH = Integer.BYTES;
 
     private final Encoder encoder = new Encoder();
 
@@ -256,87 +265,101 @@ class NetworkProtocolCodec {
         this.codec = codec;
     }
 
-    private static void doEncode(Object msg, ByteBufDataWriter writer, Codec<Object> codec) throws CodecException {
+    private static void doEncode(Object msg, ByteBufDataWriter out, Codec<Object> codec) throws CodecException {
         try {
-            int startIdx = writer.buffer().writerIndex();
+            ByteBuf outBuf = out.buffer();
 
-            // Placeholder for message length header.
-            writer.buffer().writeBytes(LENGTH_PLACEHOLDER);
+            // Header indexes.
+            int headStartIdx = outBuf.writerIndex();
 
-            boolean protocolMsg = false;
+            // Header end index.
+            int headEndIdx = headStartIdx + HEADER_LENGTH;
+
+            // Placeholder for the header.
+            outBuf.ensureWritable(HEADER_LENGTH).writerIndex(headEndIdx);
+
+            boolean internalMsg;
 
             if (msg instanceof NetworkProtocol) {
-                protocolMsg = true;
+                // Encode internal message.
+                internalMsg = true;
 
                 NetworkProtocol netMsg = (NetworkProtocol)msg;
 
-                NetworkProtocol.Type type = netMsg.type();
-
-                writer.writeByte(type.ordinal());
-
-                switch (type) {
-                    case HANDSHAKE_REQUEST: {
-                        HandshakeRequest request = (HandshakeRequest)netMsg;
-
-                        writer.writeUTF(request.protocol());
-                        writer.writeInt(request.threadAffinity());
-
-                        Object payload = request.payload();
-
-                        if (payload == null) {
-                            writer.writeBoolean(false);
-                        } else {
-                            writer.writeBoolean(true);
-
-                            codec.encode(payload, writer);
-                        }
-
-                        break;
-                    }
-                    case HANDSHAKE_ACCEPT: {
-                        HandshakeAccept accept = (HandshakeAccept)netMsg;
-
-                        writer.writeInt(accept.hbInterval());
-                        writer.writeInt(accept.hbLossThreshold());
-                        writer.writeBoolean(accept.hbDisabled());
-
-                        break;
-                    }
-                    case HANDSHAKE_REJECT: {
-                        HandshakeReject reject = (HandshakeReject)netMsg;
-
-                        writer.writeUTF(reject.reason());
-
-                        break;
-                    }
-                    case HEARTBEAT: {
-                        // No-op.
-                        break;
-                    }
-                    default: {
-                        throw new IllegalStateException("Unexpected message type: " + msg);
-                    }
-                }
+                encodeInternal(out, codec, netMsg);
             } else {
-                codec.encode(msg, writer);
+                // Encode user-defined message.
+                internalMsg = false;
+
+                codec.encode(msg, out);
             }
 
             // Calculate real message length.
-            int len = writer.buffer().writerIndex() - startIdx;
+            int len = outBuf.writerIndex() - headStartIdx;
 
             // Magic length value:
             //   negative - for protocol messages
             //   positive - for user messages
-            if (protocolMsg) {
+            if (internalMsg) {
                 len = -len;
             }
 
             // Update length header.
-            writer.buffer().setInt(startIdx, len);
+            outBuf.setInt(headStartIdx, len);
         } catch (CodecException e) {
             throw e;
         } catch (Throwable t) {
             throw new CodecException("Failed to encode message [message=" + msg + ", codec=" + codec + ']', t);
+        }
+    }
+
+    private static void encodeInternal(ByteBufDataWriter out, Codec<Object> codec, NetworkProtocol netMsg) throws IOException {
+        NetworkProtocol.Type type = netMsg.type();
+
+        out.writeByte(type.ordinal());
+
+        switch (type) {
+            case HANDSHAKE_REQUEST: {
+                HandshakeRequest request = (HandshakeRequest)netMsg;
+
+                out.writeUTF(request.protocol());
+                out.writeInt(request.threadAffinity());
+
+                Object payload = request.payload();
+
+                if (payload == null) {
+                    out.writeBoolean(false);
+                } else {
+                    out.writeBoolean(true);
+
+                    codec.encode(payload, out);
+                }
+
+                break;
+            }
+            case HANDSHAKE_ACCEPT: {
+                HandshakeAccept accept = (HandshakeAccept)netMsg;
+
+                out.writeInt(accept.hbInterval());
+                out.writeInt(accept.hbLossThreshold());
+                out.writeBoolean(accept.hbDisabled());
+
+                break;
+            }
+            case HANDSHAKE_REJECT: {
+                HandshakeReject reject = (HandshakeReject)netMsg;
+
+                out.writeUTF(reject.reason());
+
+                break;
+            }
+            case HEARTBEAT: {
+                // No-op.
+                break;
+            }
+            default: {
+                throw new IllegalStateException("Unexpected message type: " + netMsg);
+            }
         }
     }
 }

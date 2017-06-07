@@ -48,7 +48,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
     private static final NetworkMessage.PreviewInt REQUEST_ID_PREVIEW = rd -> {
         rd.skipBytes(FLAG_BYTES);
 
-        return rd.readInt();
+        return rd.readVarInt();
     };
 
     private static final NetworkMessage.PreviewInt AFFINITY_PREVIEW = rd -> {
@@ -119,7 +119,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 boolean retransmit = isRetransmit(flags);
 
                 int affinity = in.readInt();
-                int requestId = in.readInt();
+                int requestId = in.readVarInt();
 
                 T payload = delegate.decode(in);
 
@@ -128,7 +128,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case REQUEST: {
                 boolean retransmit = isRetransmit(flags);
 
-                int requestId = in.readInt();
+                int requestId = in.readVarInt();
 
                 T payload = delegate.decode(in);
 
@@ -138,7 +138,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 boolean retransmit = isRetransmit(flags);
 
                 int affinity = in.readInt();
-                int requestId = in.readInt();
+                int requestId = in.readVarInt();
 
                 T payload = delegate.decode(in);
 
@@ -147,21 +147,21 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case STREAM: {
                 boolean retransmit = isRetransmit(flags);
 
-                int requestId = in.readInt();
+                int requestId = in.readVarInt();
 
                 T payload = delegate.decode(in);
 
                 return new StreamRequest<>(requestId, retransmit, payload);
             }
             case RESPONSE_CHUNK: {
-                int requestId = in.readInt();
+                int requestId = in.readVarInt();
 
                 T payload = delegate.decode(in);
 
                 return new ResponseChunk<>(requestId, payload);
             }
             case FINAL_RESPONSE: {
-                int requestId = in.readInt();
+                int requestId = in.readVarInt();
 
                 T payload = delegate.decode(in);
 
@@ -214,7 +214,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 AffinityRequest<T> request = msg.cast();
 
                 out.writeInt(request.affinity());
-                out.writeInt(request.requestId());
+                out.writeVarInt(request.requestId());
 
                 delegate.encode(request.get(), out);
 
@@ -223,7 +223,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case REQUEST: {
                 Request<T> request = msg.cast();
 
-                out.writeInt(request.requestId());
+                out.writeVarInt(request.requestId());
 
                 delegate.encode(request.get(), out);
 
@@ -233,7 +233,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 AffinityStreamRequest<T> request = msg.cast();
 
                 out.writeInt(request.affinity());
-                out.writeInt(request.requestId());
+                out.writeVarInt(request.requestId());
 
                 delegate.encode(request.get(), out);
 
@@ -242,7 +242,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case STREAM: {
                 StreamRequest<T> request = msg.cast();
 
-                out.writeInt(request.requestId());
+                out.writeVarInt(request.requestId());
 
                 delegate.encode(request.get(), out);
 
@@ -251,7 +251,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case RESPONSE_CHUNK: {
                 ResponseChunk<T> response = msg.cast();
 
-                out.writeInt(response.requestId());
+                out.writeVarInt(response.requestId());
 
                 delegate.encode(response.get(), out);
 
@@ -260,7 +260,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case FINAL_RESPONSE: {
                 FinalResponse<T> response = msg.cast();
 
-                out.writeInt(response.requestId());
+                out.writeVarInt(response.requestId());
 
                 delegate.encode(response.get(), out);
 

@@ -47,7 +47,7 @@ public interface DataWriter extends DataOutput {
     }
 
     /**
-     * Writer {@link BigInteger} value. The written value can be read via {@link DataReader#readBigInteger()}.
+     * Writes {@link BigInteger} value. The written value can be read via {@link DataReader#readBigInteger()}.
      *
      * @param v Value.
      *
@@ -55,5 +55,49 @@ public interface DataWriter extends DataOutput {
      */
     default void writeBigInteger(BigInteger v) throws IOException {
         CodecUtils.writeBigInteger(v, this);
+    }
+
+    /**
+     * Writes a variable-length {@code long} value. The written value can be read via {@link DataReader#readVarLong()}.
+     *
+     * @param v Value.
+     *
+     * @throws IOException if failed to write value.
+     */
+    default void writeVarLong(long v) throws IOException {
+        CodecUtils.writeVarLong(v, this);
+    }
+
+    /**
+     * Writes a variable-length {@code int} value. The written value can be read via {@link DataReader#readVarInt()}.
+     *
+     * @param v Value.
+     *
+     * @throws IOException if failed to write value.
+     */
+    default void writeVarInt(int v) throws IOException {
+        CodecUtils.writeVarInt(v, this);
+    }
+
+    /**
+     * Writes an unsigned variable-length {@code long} value. The written value can be read via {@link DataReader#readVarLongUnsigned()}.
+     *
+     * @param v Value.
+     *
+     * @throws IOException if failed to write value.
+     */
+    default void writeVarLongUnsigned(long v) throws IOException {
+        CodecUtils.writeVarLongUnsigned(v, this);
+    }
+
+    /**
+     * Writes an unsigned variable-length {@code int} value. The written value can be read via {@link DataReader#readVarIntUnsigned()}.
+     *
+     * @param v Value.
+     *
+     * @throws IOException if failed to write value.
+     */
+    default void writeVarIntUnsigned(int v) throws IOException {
+        CodecUtils.writeVarIntUnsigned(v, this);
     }
 }

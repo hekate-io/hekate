@@ -37,6 +37,22 @@ which can be obtained at:
   * HOMEPAGE:
     * http://www.slf4j.org/
 
+This product borrows VarInt encoding/decoding code fragments from 'stream-lib', Stream summarizer and cardinality estimator,
+which can be obtained at:
+
+  * LICENSE:
+    * license/stream-lib.license.txt (Apache License 2.0)
+  * HOMEPAGE:
+    * https://github.com/addthis/stream-lib
+
+This product borrows MurmurHash3 code from 'Google Guava', Google Core Libraries for Java,
+which can be obtained at:
+
+  * LICENSE:
+    * license/guava.license.txt (Apache License 2.0)
+  * HOMEPAGE:
+    * https://github.com/google/guava
+
 This product optionally depends on 'Spring Framework', IoC-based Application
 Framework, which can be obtained at:
 

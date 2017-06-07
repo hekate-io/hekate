@@ -58,7 +58,7 @@ class MetricsProtocolCodec implements Codec<MetricsProtocol> {
             case UPDATE_REQUEST: {
                 MetricsProtocol.UpdateRequest updateMsg = (MetricsProtocol.UpdateRequest)msg;
 
-                out.writeLong(updateMsg.targetVer());
+                out.writeVarLong(updateMsg.targetVer());
 
                 List<MetricsUpdate> updates = updateMsg.updates();
 
@@ -89,7 +89,7 @@ class MetricsProtocolCodec implements Codec<MetricsProtocol> {
 
         switch (type) {
             case UPDATE_REQUEST: {
-                long targetVer = in.readLong();
+                long targetVer = in.readVarLong();
 
                 List<MetricsUpdate> updates = decodeMetricUpdates(in);
 
@@ -109,7 +109,7 @@ class MetricsProtocolCodec implements Codec<MetricsProtocol> {
     private List<MetricsUpdate> decodeMetricUpdates(DataReader in) throws IOException {
         List<MetricsUpdate> updates = null;
 
-        int updatesSize = in.readInt();
+        int updatesSize = in.readVarIntUnsigned();
 
         if (updatesSize > 0) {
             updates = new ArrayList<>(updatesSize);
@@ -119,15 +119,15 @@ class MetricsProtocolCodec implements Codec<MetricsProtocol> {
                 ClusterNodeId node = CodecUtils.readNodeId(in);
 
                 // Metrics version.
-                long ver = in.readLong();
+                long ver = in.readVarLong();
 
                 // Metrics.
-                int size = in.readInt();
+                int size = in.readVarIntUnsigned();
 
                 Map<String, StaticMetric> metrics = new HashMap<>(size, 1.0f);
 
                 for (int j = 0; j < size; j++) {
-                    int key = in.readInt();
+                    int key = in.readVarInt();
 
                     String name;
 
@@ -141,7 +141,7 @@ class MetricsProtocolCodec implements Codec<MetricsProtocol> {
 
                     assert name != null;
 
-                    long val = in.readLong();
+                    long val = in.readVarLong();
 
                     metrics.put(name, new StaticMetric(name, val));
                 }
@@ -157,21 +157,21 @@ class MetricsProtocolCodec implements Codec<MetricsProtocol> {
 
     private void encodeMetricUpdates(DataWriter out, List<MetricsUpdate> updates) throws IOException {
         if (updates == null || updates.isEmpty()) {
-            out.writeInt(0);
+            out.writeVarIntUnsigned(0);
         } else {
-            out.writeInt(updates.size());
+            out.writeVarIntUnsigned(updates.size());
 
             for (MetricsUpdate update : updates) {
                 // Note.
                 CodecUtils.writeNodeId(update.node(), out);
 
                 // Metrics version.
-                out.writeLong(update.version());
+                out.writeVarLong(update.version());
 
                 // Metrics.
                 Map<String, StaticMetric> metrics = update.metrics();
 
-                out.writeInt(metrics.size());
+                out.writeVarIntUnsigned(metrics.size());
 
                 for (StaticMetric metric : metrics.values()) {
                     String name = metric.name();
@@ -183,13 +183,13 @@ class MetricsProtocolCodec implements Codec<MetricsProtocol> {
 
                         writeDict.put(name, key);
 
-                        out.writeInt(-key);
+                        out.writeVarInt(-key);
                         out.writeUTF(name);
                     } else {
-                        out.writeInt(key);
+                        out.writeVarInt(key);
                     }
 
-                    out.writeLong(metric.value());
+                    out.writeVarLong(metric.value());
                 }
             }
         }

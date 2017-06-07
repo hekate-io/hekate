@@ -230,8 +230,28 @@ public class NettyMessageReadWritTest extends HekateTestBase {
     }
 
     @Test
+    public void testVarInt() throws Exception {
+        check(input(0, Integer.MIN_VALUE, Integer.MAX_VALUE), (v, out) -> out.writeVarInt(v), DataReader::readVarInt);
+    }
+
+    @Test
+    public void testUnsignedVarInt() throws Exception {
+        check(input(0, 99, Integer.MAX_VALUE), (v, out) -> out.writeVarIntUnsigned(v), DataReader::readVarIntUnsigned);
+    }
+
+    @Test
     public void testLong() throws Exception {
-        check(input((long)0, Long.MIN_VALUE, Long.MAX_VALUE), (v, out) -> out.writeLong(v), DataInput::readLong);
+        check(input(0L, Long.MIN_VALUE, Long.MAX_VALUE), (v, out) -> out.writeLong(v), DataInput::readLong);
+    }
+
+    @Test
+    public void testVarLong() throws Exception {
+        check(input(0L, Long.MIN_VALUE, Long.MAX_VALUE), (v, out) -> out.writeVarLong(v), DataReader::readVarLong);
+    }
+
+    @Test
+    public void testUnsignedVarLong() throws Exception {
+        check(input(0L, 99L, Long.MAX_VALUE), (v, out) -> out.writeVarLongUnsigned(v), DataReader::readVarLongUnsigned);
     }
 
     @Test

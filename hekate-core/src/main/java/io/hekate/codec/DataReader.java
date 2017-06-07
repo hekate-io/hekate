@@ -56,4 +56,48 @@ public interface DataReader extends DataInput {
     default BigInteger readBigInteger() throws IOException {
         return CodecUtils.readBigInteger(this);
     }
+
+    /**
+     * Reads a variable-length {@code int} value that was written via {@link DataWriter#writeVarInt(int)}.
+     *
+     * @return Value.
+     *
+     * @throws IOException if failed to read value.
+     */
+    default int readVarInt() throws IOException {
+        return CodecUtils.readVarInt(this);
+    }
+
+    /**
+     * Reads an unsigned variable-length {@code int} value that was written via {@link DataWriter#writeVarIntUnsigned(int)}.
+     *
+     * @return Value.
+     *
+     * @throws IOException if failed to read value.
+     */
+    default int readVarIntUnsigned() throws IOException {
+        return CodecUtils.readVarIntUnsigned(this);
+    }
+
+    /**
+     * Reads a variable-length {@code long} value that was written via {@link DataWriter#writeVarLong(long)}.
+     *
+     * @return Value.
+     *
+     * @throws IOException if failed to read value.
+     */
+    default long readVarLong() throws IOException {
+        return CodecUtils.readVarLong(this);
+    }
+
+    /**
+     * Reads an unsigned variable-length {@code long} value that was written via {@link DataWriter#writeVarLongUnsigned(long)}.
+     *
+     * @return Value.
+     *
+     * @throws IOException if failed to read value.
+     */
+    default long readVarLongUnsigned() throws IOException {
+        return CodecUtils.readVarLongUnsigned(this);
+    }
 }

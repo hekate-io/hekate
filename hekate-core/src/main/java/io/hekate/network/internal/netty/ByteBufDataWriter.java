@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 class ByteBufDataWriter extends OutputStream implements DataWriter {
-    private static final byte[] LENGTH_PLACEHOLDER = new byte[4];
-
     private ByteBuf out;
 
     public ByteBufDataWriter() {
@@ -108,13 +106,18 @@ class ByteBufDataWriter extends OutputStream implements DataWriter {
 
     @Override
     public void writeUTF(String str) throws IOException {
-        int lenPos = out.writerIndex();
+        if (str.isEmpty()) {
+            out.writeInt(0);
+        } else {
+            int startIdx = out.writerIndex();
 
-        out.writeBytes(LENGTH_PLACEHOLDER);
+            // Length placeholder.
+            out.ensureWritable(Integer.BYTES).writerIndex(startIdx + Integer.BYTES);
 
-        int len = ByteBufUtil.writeUtf8(out, str);
+            int len = ByteBufUtil.writeUtf8(out, str);
 
-        out.setInt(lenPos, len);
+            out.setInt(startIdx, len);
+        }
     }
 
     @Override
