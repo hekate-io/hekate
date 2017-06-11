@@ -479,9 +479,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
     @Override
     public ClusterTopology topology() {
-        InitializationContext localCtx = getRequiredContext();
-
-        return localCtx.cluster().topology();
+        return requireContext().cluster().topology();
     }
 
     @Override
@@ -504,7 +502,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
         try {
             if (guard.isInitialized()) {
-                getRequiredContext().cluster().addListener(listener);
+                requireContext().cluster().addListener(listener);
             } else {
                 deferredListeners.add(new DeferredListener(listener, eventTypes));
             }
@@ -521,7 +519,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
         try {
             if (guard.isInitialized()) {
-                getRequiredContext().cluster().removeListener(listener);
+                requireContext().cluster().removeListener(listener);
             } else {
                 deferredListeners.remove(new DeferredListener(listener, null));
             }
@@ -539,7 +537,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
         ClusterEventListener listener = new ClusterEventListener() {
             @Override
             public void onEvent(ClusterEvent event) {
-                InitializationContext localCtx = getRequiredContext();
+                InitializationContext localCtx = requireContext();
 
                 if (future.isDone()) {
                     localCtx.cluster().removeListener(this);
@@ -559,7 +557,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
         try {
             if (guard.isInitialized()) {
-                getRequiredContext().cluster().addListenerAsync(listener);
+                requireContext().cluster().addListenerAsync(listener);
             } else {
                 deferredListeners.add(new DeferredListener(listener, null));
             }
@@ -1464,7 +1462,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
         serviceThread.execute(task);
     }
 
-    private InitializationContext getRequiredContext() {
+    private InitializationContext requireContext() {
         InitializationContext localCtx = this.ctx;
 
         if (localCtx == null) {
