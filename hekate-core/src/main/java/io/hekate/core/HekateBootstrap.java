@@ -366,7 +366,7 @@ public class HekateBootstrap {
 
     /**
      * Applies the specified {@code configurer} to a service factory of the specified type. If factory is not registered yet then it will
-     * be automatically registered via {@link #findOrRegister(Class)}.
+     * be automatically registered via {@link #withService(Class)}.
      *
      * @param factoryType Service factory type.
      * @param configurer Service factory configurer.
@@ -375,26 +375,11 @@ public class HekateBootstrap {
      * @return This instance.
      */
     public <T extends ServiceFactory<?>> HekateBootstrap withService(Class<T> factoryType, Consumer<T> configurer) {
-        T factory = findOrRegister(factoryType);
+        T factory = withService(factoryType);
 
         configurer.accept(factory);
 
         return this;
-    }
-
-    /**
-     * Finds a service factory of the specified type (see {@link #setServices(List)}).
-     *
-     * @param factoryType Service factory type.
-     * @param <T> Service factory type.
-     *
-     * @return Optional service factory if it was registered within this instance.
-     */
-    public <T extends ServiceFactory<?>> Optional<T> find(Class<T> factoryType) {
-        return StreamUtils.nullSafe(services)
-            .filter(factory -> factoryType.isAssignableFrom(factory.getClass()))
-            .map(factoryType::cast)
-            .findFirst();
     }
 
     /**
@@ -409,8 +394,8 @@ public class HekateBootstrap {
      *
      * @return Service factory instance.
      */
-    public <T extends ServiceFactory<?>> T findOrRegister(Class<T> factoryType) {
-        Optional<T> mayBeFactory = find(factoryType);
+    public <T extends ServiceFactory<?>> T withService(Class<T> factoryType) {
+        Optional<T> mayBeFactory = service(factoryType);
 
         if (mayBeFactory.isPresent()) {
             return mayBeFactory.get();
@@ -427,6 +412,21 @@ public class HekateBootstrap {
 
             return factory;
         }
+    }
+
+    /**
+     * Finds a service factory of the specified type (see {@link #setServices(List)}).
+     *
+     * @param factoryType Service factory type.
+     * @param <T> Service factory type.
+     *
+     * @return Optional service factory if it was registered within this instance.
+     */
+    public <T extends ServiceFactory<?>> Optional<T> service(Class<T> factoryType) {
+        return StreamUtils.nullSafe(services)
+            .filter(factory -> factoryType.isAssignableFrom(factory.getClass()))
+            .map(factoryType::cast)
+            .findFirst();
     }
 
     /**

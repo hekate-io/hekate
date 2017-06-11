@@ -248,13 +248,13 @@ public class PluginTest extends HekateNodeTestBase {
             @Override
             public void install(HekateBootstrap boot) {
                 // Check that service factory is not registered yet.
-                assertFalse(boot.find(LocalMetricsServiceFactory.class).isPresent());
+                assertFalse(boot.service(LocalMetricsServiceFactory.class).isPresent());
 
                 // Should register new service factory.
                 boot.withService(LocalMetricsServiceFactory.class, Assert::assertNotNull);
 
                 // Check that service factory is now available.
-                assertTrue(boot.find(LocalMetricsServiceFactory.class).isPresent());
+                assertTrue(boot.service(LocalMetricsServiceFactory.class).isPresent());
 
                 // Check that specifying a non-instantiable service factory would throw an error.
                 expect(HekateConfigurationException.class, () -> boot.withService(NonInstantiableServiceFactory.class, f ->

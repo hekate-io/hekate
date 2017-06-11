@@ -772,7 +772,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         String rejectReason = HekateTestBase.TEST_ERROR_PREFIX + " This is a test reject.";
 
         HekateTestNode existing = createNode(c ->
-            c.find(ClusterServiceFactory.class).get().withAcceptor((newNode, node) -> rejectReason)
+            c.service(ClusterServiceFactory.class).get().withAcceptor((newNode, node) -> rejectReason)
         );
 
         existing.join();

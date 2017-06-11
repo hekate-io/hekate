@@ -43,7 +43,7 @@ public class ClusterServiceSplitBrainTest extends HekateNodeParamTestBase {
         SplitBrainDetectorMock detector = new SplitBrainDetectorMock(false);
 
         HekateTestNode node = createNode(c -> {
-            ClusterServiceFactory cluster = c.find(ClusterServiceFactory.class).get();
+            ClusterServiceFactory cluster = c.service(ClusterServiceFactory.class).get();
 
             cluster.setSplitBrainAction(SplitBrainAction.REJOIN);
             cluster.setSplitBrainDetector(detector);
@@ -67,7 +67,7 @@ public class ClusterServiceSplitBrainTest extends HekateNodeParamTestBase {
         SplitBrainDetectorMock detector = new SplitBrainDetectorMock(true);
 
         HekateTestNode node = createNode(c -> {
-            ClusterServiceFactory cluster = c.find(ClusterServiceFactory.class).get();
+            ClusterServiceFactory cluster = c.service(ClusterServiceFactory.class).get();
 
             cluster.setSplitBrainAction(SplitBrainAction.REJOIN);
             cluster.setSplitBrainDetector(detector);
@@ -95,7 +95,7 @@ public class ClusterServiceSplitBrainTest extends HekateNodeParamTestBase {
         SplitBrainDetectorMock detector = new SplitBrainDetectorMock(true);
 
         HekateTestNode node = createNode(c -> {
-            ClusterServiceFactory cluster = c.find(ClusterServiceFactory.class).get();
+            ClusterServiceFactory cluster = c.service(ClusterServiceFactory.class).get();
 
             cluster.setSplitBrainAction(SplitBrainAction.TERMINATE);
             cluster.setSplitBrainDetector(detector);
@@ -117,7 +117,7 @@ public class ClusterServiceSplitBrainTest extends HekateNodeParamTestBase {
     @Test
     public void testTerminateOnDetectorError() throws Exception {
         HekateTestNode node = createNode(c -> {
-            ClusterServiceFactory cluster = c.find(ClusterServiceFactory.class).get();
+            ClusterServiceFactory cluster = c.service(ClusterServiceFactory.class).get();
 
             cluster.setSplitBrainAction(SplitBrainAction.REJOIN);
             cluster.setSplitBrainDetector(localNode -> {
@@ -152,7 +152,7 @@ public class ClusterServiceSplitBrainTest extends HekateNodeParamTestBase {
         };
 
         HekateTestNode node = createNode(c -> {
-            ClusterServiceFactory cluster = c.find(ClusterServiceFactory.class).get();
+            ClusterServiceFactory cluster = c.service(ClusterServiceFactory.class).get();
 
             cluster.setSplitBrainAction(SplitBrainAction.REJOIN);
             cluster.setSplitBrainDetector(detector);

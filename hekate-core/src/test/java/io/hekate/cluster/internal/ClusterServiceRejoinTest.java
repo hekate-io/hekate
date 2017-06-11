@@ -444,7 +444,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
         disableNodeFailurePostCheck();
 
         List<HekateTestNode> nodes = createNodes(3, c ->
-            c.find(ClusterServiceFactory.class).get().setSplitBrainAction(SplitBrainAction.TERMINATE)
+            c.service(ClusterServiceFactory.class).get().setSplitBrainAction(SplitBrainAction.TERMINATE)
         );
 
         repeat(3, i -> {

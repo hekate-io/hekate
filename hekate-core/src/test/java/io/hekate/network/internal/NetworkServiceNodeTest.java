@@ -38,7 +38,7 @@ public class NetworkServiceNodeTest extends HekateNodeParamTestBase {
         AtomicReference<CompletableFuture<String>> requestRef = new AtomicReference<>();
 
         HekateTestNode receiver = createNode(c ->
-            c.findOrRegister(NetworkServiceFactory.class)
+            c.withService(NetworkServiceFactory.class)
                 .withConnector(new NetworkConnectorConfig<String>()
                     .withProtocol("test")
                     .withServerHandler((msg, from) -> {
@@ -50,7 +50,7 @@ public class NetworkServiceNodeTest extends HekateNodeParamTestBase {
         );
 
         HekateTestNode sender = createNode(c ->
-            c.findOrRegister(NetworkServiceFactory.class)
+            c.withService(NetworkServiceFactory.class)
                 .withConnector(new NetworkConnectorConfig<String>()
                     .withProtocol("test")
                 )

@@ -471,7 +471,7 @@ public class ClusterPerformanceTest extends HekateTestBase {
 
         bootstrap.withService(net);
 
-        ClusterServiceFactory cluster = bootstrap.find(ClusterServiceFactory.class).get();
+        ClusterServiceFactory cluster = bootstrap.service(ClusterServiceFactory.class).get();
 
         cluster.setGossipInterval(GOSSIP_INTERVAL);
         cluster.setSpeedUpGossipSize(SPEED_UP_GOSSIP_SIZE);

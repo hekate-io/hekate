@@ -55,7 +55,7 @@ public class HekateTestNode extends HekateNode {
 
         @Override
         public HekateTestNode create() {
-            ClusterServiceFactoryMock cluster = find(ClusterServiceFactoryMock.class).get();
+            ClusterServiceFactoryMock cluster = service(ClusterServiceFactoryMock.class).get();
 
             return new HekateTestNode(address, this, cluster);
         }

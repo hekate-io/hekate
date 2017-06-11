@@ -135,7 +135,7 @@ public abstract class MessagingServiceTestBase extends HekateNodeParamTestBase {
             c.withRole(TEST_NODE_ROLE);
             c.withService(new LocalMetricsServiceFactory());
 
-            c.findOrRegister(MessagingServiceFactory.class).withChannel(cfg);
+            c.withService(MessagingServiceFactory.class).withChannel(cfg);
 
             if (nodeConfigurer != null) {
                 nodeConfigurer.configure(c);

@@ -255,7 +255,7 @@ public class HekateNodeTest extends HekateNodeTestBase {
 
     @Test
     public void testNetworkServiceStartupFailure() throws Exception {
-        node = createNode(c -> c.findOrRegister(NetworkServiceFactory.class).setPortRange(0));
+        node = createNode(c -> c.withService(NetworkServiceFactory.class).setPortRange(0));
 
         try (ServerSocket sock = new ServerSocket()) {
             sock.bind(node.getSocketAddress());
@@ -281,7 +281,7 @@ public class HekateNodeTest extends HekateNodeTestBase {
     @Test
     public void testNetworkServiceFailure() throws Exception {
         node = createNode(c -> {
-            NetworkServiceFactory net = c.find(NetworkServiceFactory.class).get();
+            NetworkServiceFactory net = c.service(NetworkServiceFactory.class).get();
 
             c.getServices().remove(net);
 

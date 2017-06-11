@@ -122,7 +122,7 @@ public class NetworkPingTest extends HekateNodeTestBase {
 
     @Test
     public void testTimeout() throws Exception {
-        Hekate hekate = createNode(c -> c.find(NetworkServiceFactory.class).get().setConnectTimeout(1)).join();
+        Hekate hekate = createNode(c -> c.service(NetworkServiceFactory.class).get().setConnectTimeout(1)).join();
 
         TestPingCallback callback = new TestPingCallback();
 
