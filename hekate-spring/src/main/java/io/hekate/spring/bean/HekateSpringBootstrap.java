@@ -31,6 +31,8 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
 
 /**
  * <span class="startHere">&laquo; start here</span>Main entry point to Spring Framework integration.
@@ -122,7 +124,7 @@ import org.springframework.context.ApplicationContextAware;
  * </div>
  */
 public class HekateSpringBootstrap extends HekateBootstrap implements InitializingBean, DisposableBean, FactoryBean<Hekate>,
-    ApplicationContextAware {
+    ApplicationContextAware, ApplicationListener<ContextRefreshedEvent> {
     @ToStringIgnore
     private Hekate node;
 
@@ -153,7 +155,10 @@ public class HekateSpringBootstrap extends HekateBootstrap implements Initializi
         withService(resource);
 
         node = join();
+    }
 
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent event) {
         node.cluster().addListener(ctxEventPublisher);
     }
 

@@ -16,6 +16,10 @@
 
 package io.hekate.spring.boot;
 
+import io.hekate.cluster.event.ClusterEvent;
+import io.hekate.cluster.event.ClusterEventType;
+import io.hekate.cluster.event.ClusterJoinEvent;
+import io.hekate.cluster.event.ClusterLeaveEvent;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.core.Hekate;
@@ -28,10 +32,15 @@ import io.hekate.network.address.DefaultAddressSelector;
 import io.hekate.network.address.DefaultAddressSelectorConfig;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Component;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -43,6 +52,21 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableHekate
     @EnableAutoConfiguration
     static class DefaultTestConfig {
+        @Component
+        public static class Listener {
+            private List<ClusterEvent> events = Collections.synchronizedList(new ArrayList<>());
+
+            @EventListener
+            public void onJoin(ClusterJoinEvent evt) {
+                events.add(evt);
+            }
+
+            @EventListener
+            public void onLeave(ClusterLeaveEvent evt) {
+                events.add(evt);
+            }
+        }
+
         @Autowired
         private Hekate node;
 
@@ -100,6 +124,14 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
         assertNotNull(app.node);
         assertNotNull(app.codecService);
         assertNotNull(app.networkService);
+
+        DefaultTestConfig.Listener listener = get(DefaultTestConfig.Listener.class);
+
+        getContext().close();
+
+        assertEquals(2, listener.events.size());
+        assertSame(ClusterEventType.JOIN, listener.events.get(0).type());
+        assertSame(ClusterEventType.LEAVE, listener.events.get(1).type());
     }
 
     @Test
