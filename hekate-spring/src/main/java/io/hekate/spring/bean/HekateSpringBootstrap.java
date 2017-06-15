@@ -16,11 +16,15 @@
 
 package io.hekate.spring.bean;
 
+import io.hekate.cluster.event.ClusterEvent;
+import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
+import io.hekate.core.HekateException;
 import io.hekate.core.inject.InjectionService;
 import io.hekate.core.resource.ResourceService;
 import io.hekate.core.service.ServiceFactory;
+import io.hekate.util.format.ToStringIgnore;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.FactoryBean;
@@ -119,12 +123,25 @@ import org.springframework.context.ApplicationContextAware;
  */
 public class HekateSpringBootstrap extends HekateBootstrap implements InitializingBean, DisposableBean, FactoryBean<Hekate>,
     ApplicationContextAware {
+    @ToStringIgnore
     private Hekate node;
 
-    private ApplicationContext ctx;
+    @ToStringIgnore
+    private volatile ApplicationContext ctx;
 
+    private final ClusterEventListener ctxEventPublisher = new ClusterEventListener() {
+        @Override
+        public void onEvent(ClusterEvent event) throws HekateException {
+            if (ctx != null) {
+                ctx.publishEvent(event);
+            }
+        }
+    };
+
+    @ToStringIgnore
     private ServiceFactory<InjectionService> injection;
 
+    @ToStringIgnore
     private ServiceFactory<ResourceService> resource;
 
     @Override
@@ -136,6 +153,8 @@ public class HekateSpringBootstrap extends HekateBootstrap implements Initializi
         withService(resource);
 
         node = join();
+
+        node.cluster().addListener(ctxEventPublisher);
     }
 
     @Override

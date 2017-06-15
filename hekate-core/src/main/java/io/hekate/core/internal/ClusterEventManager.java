@@ -102,17 +102,19 @@ class ClusterEventManager implements HekateSupport {
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
+    private static final boolean TRACE = log.isTraceEnabled();
+
     private final ThreadLocal<Boolean> inAsync = new ThreadLocal<>();
 
     private final AtomicBoolean joinEventFired = new AtomicBoolean();
 
     private final List<FilteredListener> listeners = new CopyOnWriteArrayList<>();
 
+    private final Hekate hekate;
+
     private volatile ExecutorService worker;
 
     private volatile ClusterTopology lastTopology;
-
-    private final Hekate hekate;
 
     public ClusterEventManager(Hekate hekate) {
         this.hekate = hekate;
@@ -221,19 +223,19 @@ class ClusterEventManager implements HekateSupport {
         ExecutorService localWorker = worker;
 
         if (localWorker == null || inAsync.get() != null) {
-            if (DEBUG) {
-                log.debug("Unregistering cluster event listener [listener={}]", filteredListener);
+            if (TRACE) {
+                log.trace("Unregistering cluster event listener [listener={}]", filteredListener);
             }
 
             listeners.remove(filteredListener);
         } else {
-            if (DEBUG) {
-                log.debug("Scheduling cluster event listener unregistration for asynchronous processing [listener={}]", filteredListener);
+            if (TRACE) {
+                log.trace("Scheduling cluster event listener unregistration for asynchronous processing [listener={}]", filteredListener);
             }
 
             Future<?> future = localWorker.submit(() -> {
-                if (DEBUG) {
-                    log.debug("Processing asynchronous cluster event listener unregistration [listener={}]", listener);
+                if (TRACE) {
+                    log.trace("Processing asynchronous cluster event listener unregistration [listener={}]", listener);
                 }
 
                 listeners.remove(filteredListener);
@@ -311,31 +313,46 @@ class ClusterEventManager implements HekateSupport {
         ExecutorService localWorker = worker;
 
         if (localWorker == null || inAsync.get() != null) {
-            if (DEBUG) {
-                log.debug("Registering cluster event listener [listener={}]", listener);
+            if (TRACE) {
+                log.trace("Registering cluster event listener [listener={}]", listener);
             }
 
             listeners.add(listener);
 
             return Optional.empty();
         } else {
-            if (DEBUG) {
-                log.debug("Scheduling cluster event listener registration for asynchronous processing [listener={}]", listener);
+            if (TRACE) {
+                log.trace("Scheduling cluster event listener registration for asynchronous processing [listener={}]", listener);
             }
 
-            Future<?> future = localWorker.submit(() -> {
+            CompletableFuture<?> future = new CompletableFuture<>();
+
+            localWorker.submit(() -> {
                 inAsync.set(true);
 
                 try {
-                    if (DEBUG) {
-                        log.debug("Processing asynchronous cluster event listener registration [listener={}]", listener);
+                    if (TRACE) {
+                        log.trace("Processing asynchronous cluster event listener registration [listener={}]", listener);
                     }
 
+                    // Register the cluster event listener.
                     listeners.add(listener);
 
+                    // Notify the future before trying to process the latest topology change event.
+                    // Need to do it here in order to prevent a deadlock between the registering thread and the event processing thread.
+                    future.complete(null);
+
+                    // Check if the local node is already in the cluster.
                     if (lastTopology != null) {
+                        // First event should always be the 'join' event.
+                        ClusterJoinEvent event = new ClusterJoinEvent(lastTopology, this);
+
                         try {
-                            listener.onEvent(new ClusterJoinEvent(lastTopology, this));
+                            if (DEBUG) {
+                                log.debug("Notifying listener on cluster event [listener={}, event={}]", listener, event);
+                            }
+
+                            listener.onEvent(event);
                         } catch (Throwable t) {
                             log.error("Failed to notify cluster event listener [listener={}]", listener, t);
                         }
