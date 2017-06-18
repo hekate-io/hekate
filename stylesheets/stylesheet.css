@@ -377,20 +377,20 @@ Small Device Styles
 }
 
 /*############################################################*/
-#soon {
+.soon {
     text-align: center;
 }
 
-#soon small {
+.soon small {
     font-weight: normal;
 }
 
-#soon small a {
+.soon small a {
     color: #0090ff;
     border-bottom: none;
 }
 
-#soon small a:hover {
+.soon small a:hover {
     color: #0090ff;
     border-bottom: 1px solid #0090ff;
 }
