@@ -286,7 +286,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
             log.info("Selected public address [address={}]", publicIp);
         }
 
-        log.info("Binding network service [port={}]", initPort);
+        log.info("Binding network acceptor [port={}]", initPort);
 
         guard.lockWrite();
 
@@ -331,7 +331,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
                     InetSocketAddress realAddress = server.address();
 
                     if (log.isInfoEnabled()) {
-                        log.info("Done binding network acceptor [bind-address={}]", realAddress);
+                        log.info("Done binding [bind-address={}]", realAddress);
                     }
 
                     // Convert to public address (port can be assigned by the auto-increment or by OS if it was configured as 0).
