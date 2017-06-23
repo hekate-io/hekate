@@ -48,17 +48,9 @@
                 <!-- Network service. -->
                 <bean class="io.hekate.network.NetworkServiceFactory">
                     <!-- Node address selection options. -->
+                    <property name="host" value="any-ip4"/>
                     <property name="port" value="10001"/>
                     <property name="portRange" value="100"/>
-                    <property name="addressSelector">
-                        <bean class="io.hekate.network.address.DefaultAddressSelector">
-                            <constructor-arg>
-                                <bean class="io.hekate.network.address.DefaultAddressSelectorConfig">
-                                    <property name="ipVersion" value="V4"/>
-                                </bean>
-                            </constructor-arg>
-                        </bean>
-                    </property>
                     <property name="nioThreads" value="1"/>
                     <property name="connectTimeout" value="3000"/>
                     <property name="acceptRetryInterval" value="1000"/>

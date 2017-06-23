@@ -43,7 +43,6 @@ import java.lang.reflect.Modifier;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -178,9 +177,6 @@ public abstract class HekateTestBase {
 
     /** Cache for {@link #selectLocalAddress()}. */
     private static final AtomicReference<InetAddress> LOCAL_ADDRESS_CACHE = new AtomicReference<>();
-
-    /** Cache for {@link #getNetworkInterfaces()}. */
-    private static final AtomicReference<List<NetworkInterface>> NETWORK_INTERFACES_CACHE = new AtomicReference<>();
 
     /** Prefixes for {@link Thread#getName() thread names} that should NOT be checked by {@link #assertAllThreadsStopped()}. */
     private static final List<String> KNOWN_THREAD_PREFIXES = new ArrayList<>();
@@ -369,18 +365,6 @@ public abstract class HekateTestBase {
 
     protected static String getStacktrace(Throwable error) {
         return ErrorUtils.stackTrace(error);
-    }
-
-    protected static List<NetworkInterface> getNetworkInterfaces() throws SocketException {
-        List<NetworkInterface> cached = NETWORK_INTERFACES_CACHE.get();
-
-        if (cached == null) {
-            cached = Collections.list(NetworkInterface.getNetworkInterfaces());
-
-            NETWORK_INTERFACES_CACHE.set(cached);
-        }
-
-        return cached;
     }
 
     protected static String threadDump() {

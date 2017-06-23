@@ -26,12 +26,11 @@
 
     <h:node id="hekate">
         <!-- Network service. -->
-        <h:network nio-threads="10"
+        <h:network host="any-ip4" port="10012" port-range="100"
+            nio-threads="10"
             heartbeat-interval-ms="500"
             heartbeat-loss-threshold="4"
             connect-timeout-ms="5000">
-            <h:address port="10012" port-range="100"/>
-
             <!-- ...other options... -->
         </h:network>
 

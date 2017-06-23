@@ -635,7 +635,7 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
     private NetworkInterface findLoopbackInterface(InetAddress address) throws SocketException, HekateException {
         NetworkInterface lo = null;
 
-        for (NetworkInterface nif : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+        for (NetworkInterface nif : AddressUtils.activeNetworks()) {
             if (nif.isUp() && nif.isLoopback()) {
                 for (InetAddress nifAddress : Collections.list(nif.getInetAddresses())) {
                     if (!nifAddress.isLinkLocalAddress() && nifAddress.isLoopbackAddress()) {

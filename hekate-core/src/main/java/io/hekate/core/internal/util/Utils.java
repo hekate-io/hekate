@@ -126,4 +126,18 @@ public final class Utils {
         return str.isEmpty() ? null : str;
     }
 
+    /**
+     * Returns {@code defaultVal} if the specified string is {@code null} or is an empty string after {@link String#trim() trimming};
+     * returns a {@link String#trim() trimmed} string otherwise.
+     *
+     * @param str String.
+     * @param defaultVal Default value.
+     *
+     * @return {@code null} or {@link String#trim() trimmed} string.
+     */
+    public static String nullOrTrim(String str, String defaultVal) {
+        String trimmed = nullOrTrim(str);
+
+        return trimmed == null ? defaultVal : trimmed;
+    }
 }

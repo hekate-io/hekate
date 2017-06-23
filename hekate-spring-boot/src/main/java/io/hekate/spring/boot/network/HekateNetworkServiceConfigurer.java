@@ -21,9 +21,6 @@ import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkConnectorConfig;
 import io.hekate.network.NetworkService;
 import io.hekate.network.NetworkServiceFactory;
-import io.hekate.network.address.AddressSelector;
-import io.hekate.network.address.DefaultAddressSelector;
-import io.hekate.network.address.DefaultAddressSelectorConfig;
 import io.hekate.spring.bean.network.NetworkConnectorBean;
 import io.hekate.spring.bean.network.NetworkServiceBean;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
@@ -93,8 +90,8 @@ import org.springframework.stereotype.Component;
 @ConditionalOnMissingBean(NetworkServiceFactory.class)
 public class HekateNetworkServiceConfigurer {
     @Component
-    static class NamedNetworkConnectorInjector extends AnnotationInjectorBase<InjectConnector> {
-        public NamedNetworkConnectorInjector() {
+    static class NetworkConnectorInjector extends AnnotationInjectorBase<InjectConnector> {
+        public NetworkConnectorInjector() {
             super(InjectConnector.class, NetworkConnector.class);
         }
 
@@ -126,52 +123,16 @@ public class HekateNetworkServiceConfigurer {
     }
 
     /**
-     * Conditionally constructs a configuration for the default address selector if application doesn't provide its own {@link Bean} of
-     * {@link AddressSelector} type.
-     *
-     * @return Default configuration for {@link #defaultAddressSelector(DefaultAddressSelectorConfig)}.
-     *
-     * @see #defaultAddressSelector(DefaultAddressSelectorConfig)
-     * @see #networkServiceFactory(AddressSelector)
-     */
-    @Bean
-    @ConfigurationProperties(prefix = "hekate.address")
-    @ConditionalOnMissingBean({DefaultAddressSelectorConfig.class, AddressSelector.class})
-    public DefaultAddressSelectorConfig defaultAddressSelectorConfig() {
-        return new DefaultAddressSelectorConfig();
-    }
-
-    /**
-     * Conditionally constructs the default address selector if application doesn't provide its own {@link Bean} of
-     * {@link AddressSelector} type.
-     *
-     * @param cfg Configuration (see {@link #defaultAddressSelectorConfig()}).
-     *
-     * @return Address selector.
-     *
-     * @see #defaultAddressSelectorConfig()
-     * @see #networkServiceFactory(AddressSelector)
-     */
-    @Bean
-    @ConditionalOnMissingBean(AddressSelector.class)
-    public DefaultAddressSelector defaultAddressSelector(DefaultAddressSelectorConfig cfg) {
-        return new DefaultAddressSelector(cfg);
-    }
-
-    /**
      * Constructs the {@link NetworkServiceFactory}.
-     *
-     * @param addressSelector Address selector (see {@link #defaultAddressSelector(DefaultAddressSelectorConfig)}).
      *
      * @return Service factory.
      */
     @Bean
     @ConfigurationProperties(prefix = "hekate.network")
-    public NetworkServiceFactory networkServiceFactory(AddressSelector addressSelector) {
+    public NetworkServiceFactory networkServiceFactory() {
         NetworkServiceFactory factory = new NetworkServiceFactory();
 
         factory.setConnectors(connectors);
-        factory.setAddressSelector(addressSelector);
 
         return factory;
     }

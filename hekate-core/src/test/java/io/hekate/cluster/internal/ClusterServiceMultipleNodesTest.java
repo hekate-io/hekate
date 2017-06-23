@@ -38,9 +38,6 @@ import io.hekate.core.TerminateFuture;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.service.Service;
 import io.hekate.network.NetworkServiceFactory;
-import io.hekate.network.address.DefaultAddressSelector;
-import io.hekate.network.address.DefaultAddressSelectorConfig;
-import io.hekate.network.address.IpVersion;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -795,33 +792,19 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
     @Test
     public void testJoinRejectLoopback() throws Exception {
-        HekateTestNode existing = createNode(c -> {
-            DefaultAddressSelectorConfig cfg = new DefaultAddressSelectorConfig();
-
-            cfg.setExcludeLoopback(false);
-            cfg.setIpVersion(IpVersion.V4);
-            cfg.setIpNotMatch("127.0.0.1");
-
+        HekateTestNode existing = createNode(c ->
             c.withService(NetworkServiceFactory.class, net -> {
-                net.setHost(null);
-                net.setAddressSelector(new DefaultAddressSelector(cfg));
-            });
-        });
+                net.setHost("any-ip4");
+            })
+        );
 
         existing.join();
 
-        HekateTestNode joining = createNode(c -> {
-            DefaultAddressSelectorConfig cfg = new DefaultAddressSelectorConfig();
-
-            cfg.setExcludeLoopback(false);
-            cfg.setIpVersion(IpVersion.V4);
-            cfg.setIpMatch("127.0.0.1");
-
+        HekateTestNode joining = createNode(c ->
             c.withService(NetworkServiceFactory.class, net -> {
-                net.setHost(null);
-                net.setAddressSelector(new DefaultAddressSelector(cfg));
-            });
-        });
+                net.setHost("127.0.0.1");
+            })
+        );
 
         try {
             joining.join();
@@ -842,33 +825,19 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
     @Test
     public void testJoinRejectNonLoopback() throws Exception {
-        HekateTestNode existing = createNode(c -> {
-            DefaultAddressSelectorConfig cfg = new DefaultAddressSelectorConfig();
-
-            cfg.setExcludeLoopback(false);
-            cfg.setIpVersion(IpVersion.V4);
-            cfg.setIpMatch("127.0.0.1");
-
+        HekateTestNode existing = createNode(c ->
             c.withService(NetworkServiceFactory.class, net -> {
-                net.setHost(null);
-                net.setAddressSelector(new DefaultAddressSelector(cfg));
-            });
-        });
+                net.setHost("127.0.0.1");
+            })
+        );
 
         existing.join();
 
-        HekateTestNode joining = createNode(c -> {
-            DefaultAddressSelectorConfig cfg = new DefaultAddressSelectorConfig();
-
-            cfg.setExcludeLoopback(false);
-            cfg.setIpVersion(IpVersion.V4);
-            cfg.setIpNotMatch("127.0.0.1");
-
+        HekateTestNode joining = createNode(c ->
             c.withService(NetworkServiceFactory.class, net -> {
-                net.setHost(null);
-                net.setAddressSelector(new DefaultAddressSelector(cfg));
-            });
-        });
+                net.setHost("any-ip4");
+            })
+        );
 
         try {
             joining.join();

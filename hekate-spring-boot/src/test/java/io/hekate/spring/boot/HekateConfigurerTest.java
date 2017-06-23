@@ -23,22 +23,15 @@ import io.hekate.cluster.event.ClusterLeaveEvent;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.core.Hekate;
-import io.hekate.core.HekateException;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.network.NetworkService;
-import io.hekate.network.address.AddressSelector;
-import io.hekate.network.address.DefaultAddressSelector;
-import io.hekate.network.address.DefaultAddressSelectorConfig;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -83,33 +76,6 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
         private Hekate node;
     }
 
-    @EnableAutoConfiguration
-    static class AddressSelectorConfigTestConfig extends HekateTestConfigBase {
-        @Bean
-        public DefaultAddressSelectorConfig addressSelectorConfig() {
-            return new DefaultAddressSelectorConfig().withInterfaceNotMatch("test");
-        }
-    }
-
-    @EnableAutoConfiguration
-    static class AddressSelectorTestConfig extends HekateTestConfigBase {
-        public static class TestSelector implements AddressSelector {
-            @Override
-            public InetAddress select(InetAddress bindAddress) throws HekateException {
-                try {
-                    return InetAddress.getLocalHost();
-                } catch (UnknownHostException e) {
-                    throw new HekateException("Failed to select address.", e);
-                }
-            }
-        }
-
-        @Bean
-        public AddressSelector addressSelector() {
-            return new TestSelector();
-        }
-    }
-
     @Test
     public void testDefault() {
         registerAndRefresh(DefaultTestConfig.class);
@@ -141,24 +107,8 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
         assertTrue(getContext().getBeansOfType(Hekate.class).isEmpty());
         assertTrue(getContext().getBeansOfType(ServiceFactory.class).isEmpty());
         assertTrue(getContext().getBeansOfType(Service.class).isEmpty());
-        assertTrue(getContext().getBeansOfType(DefaultAddressSelectorConfig.class).isEmpty());
-        assertTrue(getContext().getBeansOfType(DefaultAddressSelector.class).isEmpty());
         assertTrue(getContext().getBeansOfType(CodecFactory.class).isEmpty());
 
         assertNull(get(DisableTestConfig.class).node);
-    }
-
-    @Test
-    public void testAddressSelectorConfig() {
-        registerAndRefresh(AddressSelectorConfigTestConfig.class);
-
-        assertEquals("test", get(DefaultAddressSelector.class).interfaceNotMatch());
-    }
-
-    @Test
-    public void testAddressSelector() {
-        registerAndRefresh(AddressSelectorTestConfig.class);
-
-        assertTrue(get(AddressSelector.class) instanceof AddressSelectorTestConfig.TestSelector);
     }
 }

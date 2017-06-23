@@ -2,21 +2,82 @@ package io.hekate.core.internal.util;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
+
+import static java.util.Collections.list;
+import static java.util.Collections.unmodifiableList;
 
 /**
  * Network-related utilities.
  */
 public final class AddressUtils {
+    private static class NetCacheEntry {
+        private final long timestamp;
+
+        private final List<NetworkInterface> interfaces;
+
+        public NetCacheEntry(long timestamp, List<NetworkInterface> interfaces) {
+            this.timestamp = timestamp;
+            this.interfaces = interfaces;
+        }
+
+        public long getTimestamp() {
+            return timestamp;
+        }
+
+        public List<NetworkInterface> getInterfaces() {
+            return interfaces;
+        }
+    }
+
     /** Prefix for the file name of {@link #toFileName(InetSocketAddress)}. */
     public static final String FILE_PREFIX = "node_";
 
     /** Separator for the address's components of {@link #toFileName(InetSocketAddress)}. */
     public static final String FILE_SEPARATOR = "_";
 
+    private static final AtomicReference<NetCacheEntry> NET_CACHE = new AtomicReference<>();
+
+    private static final int NET_CACHE_TIMEOUT = 180_000;
+
     private AddressUtils() {
         // No-op.
+    }
+
+    /**
+     * Returns an immutable list of all {@link NetworkInterface#isUp() active} network interfaces.
+     *
+     * @return List of all {@link NetworkInterface#isUp() active} network interfaces.
+     *
+     * @throws SocketException If network interfaces couldn't be loaded.
+     * @see NetworkInterface#getNetworkInterfaces()
+     */
+    public static List<NetworkInterface> activeNetworks() throws SocketException {
+        NetCacheEntry cache = NET_CACHE.get();
+
+        if (cache == null || cache.getTimestamp() < System.currentTimeMillis() - NET_CACHE_TIMEOUT) {
+            ArrayList<NetworkInterface> all = list(NetworkInterface.getNetworkInterfaces());
+
+            List<NetworkInterface> active = new ArrayList<>(all.size());
+
+            for (NetworkInterface net : all) {
+                if (net.isUp()) {
+                    active.add(net);
+                }
+            }
+
+            cache = new NetCacheEntry(System.currentTimeMillis(), unmodifiableList(active));
+
+            NET_CACHE.set(cache);
+        }
+
+        return cache.getInterfaces();
     }
 
     /**

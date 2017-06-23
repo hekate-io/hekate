@@ -42,16 +42,13 @@
         </default-codec>
 
         <!-- Network service. -->
-        <network nio-threads="1"
+        <network host="any-ip4" port="10012" port-range="100"
+            nio-threads="1"
             connect-timeout-ms="3000"
             accept-retry-interval-ms="1000"
             heartbeat-interval-ms="1000"
             heartbeat-loss-threshold="3"
             tcp-no-delay="true">
-            <!-- Node address selection options. -->
-            <address port="10001" port-range="100">
-                <any-host ip-version="V4"/>
-            </address>
         </network>
 
         <!-- Cluster service. -->
@@ -116,4 +113,4 @@
         <cluster-metrics replication-interval-ms="1000"/>
     </node>
 </s:beans>
-<!--End:example-->
+    <!--End:example-->

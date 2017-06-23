@@ -16,14 +16,16 @@
 
 package io.hekate.network;
 
-import io.hekate.cluster.ClusterJoinRejectedException;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
+import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.service.ServiceFactory;
+import io.hekate.network.address.AddressPattern;
 import io.hekate.network.address.AddressSelector;
-import io.hekate.network.address.DefaultAddressSelector;
 import io.hekate.network.internal.netty.NettyNetworkService;
 import io.hekate.util.format.ToString;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 import java.net.StandardSocketOptions;
@@ -66,9 +68,7 @@ public class NetworkServiceFactory implements ServiceFactory<NetworkService> {
     /** Default value (={@value}) for {@link #setTcpNoDelay(boolean)}. */
     public static final boolean DEFAULT_TCP_NO_DELAY = true;
 
-    private String host;
-
-    private AddressSelector addressSelector = new DefaultAddressSelector();
+    private AddressSelector hostSelector = new AddressPattern();
 
     private int port = DEFAULT_PORT;
 
@@ -103,45 +103,100 @@ public class NetworkServiceFactory implements ServiceFactory<NetworkService> {
     private List<NetworkConfigProvider> configProviders;
 
     /**
-     * Returns host address of the local node (see {@link #setHost(String)}).
+     * Returns host address selector of the local node (see {@link #setHostSelector(AddressSelector)}).
      *
      * @return Host address.
      */
-    public String getHost() {
-        return host;
+    public AddressSelector getHostSelector() {
+        return hostSelector;
     }
 
     /**
-     * Sets host address that will be used by remote cluster nodes to communicate with this node.
+     * Sets the host address selector that will be used to select an address of the local cluster node.
      *
-     * <p>
-     * If the specified address is {@code null} (default value), empty string or is a wildcard address then {@link AddressSelector} will
-     * be used to auto-detect real host address.
-     * </p>
+     * @param hostSelector Address selector.
      *
-     * <p>
-     * <b>Note:</b> All nodes in a cluster must be configured to use the same type of address, either loopback or regular.  An attempt to
-     * join a cluster of nodes configured with regular addresses while the joining node uses a loopback address would fail with a
-     * {@link ClusterJoinRejectedException} (and vice-versa.)
-     * </p>
-     *
-     * @param host IP address or host name.
-     *
-     * @see #setAddressSelector(AddressSelector)
+     * @see #setHost(String)
      */
-    public void setHost(String host) {
-        this.host = host;
+    public void setHostSelector(AddressSelector hostSelector) {
+        ArgAssert.notNull(hostSelector, "host");
+
+        this.hostSelector = hostSelector;
     }
 
     /**
-     * Fluent-style version of {@link #setHost(String)}.
+     * Fluent-style version of {@link #setHostSelector(AddressSelector)}.
      *
      * @param host IP address or host name.
      *
      * @return This instance.
      */
-    public NetworkServiceFactory withHost(String host) {
-        setHost(host);
+    public NetworkServiceFactory withHostSelector(AddressSelector host) {
+        setHostSelector(host);
+
+        return this;
+    }
+
+    /**
+     * Sets the host address selection pattern (see {@link AddressPattern}).
+     *
+     * <p>
+     * The following patterns can be specified:
+     * </p>
+     *
+     * <ul>
+     * <li><b>any</b> - any non-loopback address</li>
+     * <li><b>any-ip4</b> - any IPv6 non-loopback address</li>
+     *
+     * <li><b>ip~<i>regex</i></b> - any IP address that matches the specified regular expression</li>
+     * <li><b>ip4~<i>regex</i></b> - any IPv4 address that matches the specified regular expression</li>
+     * <li><b>ip6~<i>regex</i></b> - any IPv6 address that matches the specified regular expression</li>
+     *
+     * <li><b>!ip~<i>regex</i></b> - any IP address that does NOT match the specified regular expression</li>
+     * <li><b>!ip4~<i>regex</i></b> - any IPv4 address that does NOT match the specified regular expression</li>
+     * <li><b>!ip6~<i>regex</i></b> - any IPv6 address that does NOT match the specified regular expression</li>
+     *
+     * <li><b>net~<i>regex</i></b> - any IP address of a network interface who's {@link NetworkInterface#getName() name} matches the
+     * specified regular expression</li>
+     * <li><b>net4~<i>regex</i></b> - IPv4 address of a network interface who's {@link NetworkInterface#getName() name} matches the
+     * specified regular expression</li>
+     * <li><b>net6~<i>regex</i></b> - IPv6 address of a network interface who's {@link NetworkInterface#getName() name} matches the
+     * specified regular expression</li>
+     *
+     * <li><b>!net~<i>regex</i></b> - any IP address of a network interface who's {@link NetworkInterface#getName() name} does NOT match
+     * the specified regular expression</li>
+     * <li><b>!net4~<i>regex</i></b> - IPv4 address of a network interface who's {@link NetworkInterface#getName() name} does NOT match the
+     * specified regular expression</li>
+     * <li><b>!net6~<i>regex</i></b> - IPv6 address of a network interface who's {@link NetworkInterface#getName() name} does NOT match the
+     * specified regular expression</li>
+     *
+     * <li>...all other values will be treated as a directly specified address (see {@link InetAddress#getByName(String)})</li>
+     * </ul>
+     *
+     * <p>
+     * If multiple addresses match the specified pattern then the first one will be selected (order is not guaranteed).
+     * </p>
+     *
+     * @param pattern Address selection pattern (see {@link AddressPattern}).
+     *
+     * @see #setHostSelector(AddressSelector)
+     * @see AddressPattern
+     */
+    public void setHost(String pattern) {
+        setHostSelector(new AddressPattern(pattern));
+    }
+
+    /**
+     * Fluent-style version of {@link #setHost(String)}.
+     *
+     * @param pattern Address selection pattern (see {@link AddressPattern}).
+     *
+     * @return This instance.
+     *
+     * @see AddressPattern
+     */
+    public NetworkServiceFactory withHost(String pattern) {
+        setHost(pattern);
 
         return this;
     }
@@ -228,49 +283,6 @@ public class NetworkServiceFactory implements ServiceFactory<NetworkService> {
      */
     public NetworkServiceFactory withPortRange(int portRange) {
         setPortRange(portRange);
-
-        return this;
-    }
-
-    /**
-     * Returns local node address selector (see {@link #setAddressSelector(AddressSelector)}).
-     *
-     * @return Address selector.
-     */
-    public AddressSelector getAddressSelector() {
-        return addressSelector;
-    }
-
-    /**
-     * Sets local node address selector.
-     *
-     * <p>
-     * The {@link AddressSelector} is used to auto-detect address of the local node in case if concrete address is not specified
-     * via {@link #setHost(String)} or if the specified address is a wildcard address. It can also be used to implement
-     * application-specific logic of cluster node addresses assignment.
-     * </p>
-     *
-     * <p>
-     * By default this property is initialized with an empty {@link DefaultAddressSelector} instance.
-     * </p>
-     *
-     * @param addressSelector Address selector.
-     *
-     * @see AddressSelector
-     */
-    public void setAddressSelector(AddressSelector addressSelector) {
-        this.addressSelector = addressSelector;
-    }
-
-    /**
-     * Fluent-style version of {@link #setAddressSelector(AddressSelector)}.
-     *
-     * @param addressSelector Address selector.
-     *
-     * @return This instance.
-     */
-    public NetworkServiceFactory withAddressSelector(AddressSelector addressSelector) {
-        setAddressSelector(addressSelector);
 
         return this;
     }

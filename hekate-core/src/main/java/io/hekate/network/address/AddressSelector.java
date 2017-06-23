@@ -17,43 +17,39 @@
 package io.hekate.network.address;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
+import io.hekate.network.NetworkService;
 import io.hekate.network.NetworkServiceFactory;
 import java.net.InetAddress;
 
 /**
- * Network address selector.
+ * Network host address selector.
  *
  * <p>
- * Implementation of this interface is used by {@link Hekate} to resolve which of its local IP addresses should be advertised to remote
- * nodes so that they could connect to the local node. The resolved address becomes part of {@link ClusterNode#address()}.
+ * Implementation of this interface is used by {@link NetworkService} to resolve which of its local IP addresses should be advertised to
+ * remote nodes so that they could connect to the local node. The resolved address becomes a part of the {@link ClusterNode#address()}.
  * </p>
  *
  * <p>
- * Implementations of this interface can be registered via {@link NetworkServiceFactory#setAddressSelector(AddressSelector)}.
+ * Implementations of this interface can be registered via {@link NetworkServiceFactory#setHostSelector(AddressSelector)}.
  * </p>
  *
  * <p>
- * Default implementation of this interface is {@link DefaultAddressSelector}. It provides support for configurable filtering of local
- * network interfaces during address resolution. Please see its documentation for more details about its capabilities and configuration
- * options.
+ * Default implementation of this interface is the {@link AddressPattern} class. It provides support for configurable pattern-based
+ * filtering of the network interfaces during address resolution. Please see its documentation for more details about its capabilities and
+ * configuration options.
  * </p>
  *
- * @see NetworkServiceFactory#setHost(String)
- * @see NetworkServiceFactory#setAddressSelector(AddressSelector)
+ * @see NetworkServiceFactory#setHostSelector(AddressSelector)
  * @see ClusterNode#address()
  */
 public interface AddressSelector {
     /**
      * Resolves the IP address for the local node. The returned address will be used by remote nodes to connect to the local node.
      *
-     * @param bindAddress Bind address of the node's TCP acceptor server. This address is based on a value of the {@link
-     * NetworkServiceFactory#setHost(String)} parameter and can be a wildcard address.
-     *
      * @return Local node address.
      *
      * @throws HekateException If address resolution fails.
      */
-    InetAddress select(InetAddress bindAddress) throws HekateException;
+    InetAddress select() throws HekateException;
 }

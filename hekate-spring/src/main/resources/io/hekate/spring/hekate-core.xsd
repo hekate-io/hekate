@@ -218,10 +218,11 @@
         <xsd:complexContent>
             <xsd:extension base="abstractServiceType">
                 <xsd:all>
-                    <xsd:element name="address" type="networkAddressType" minOccurs="0" maxOccurs="1">
+                    <xsd:element name="host-selector" type="beanOrRefType" minOccurs="0" maxOccurs="1">
                         <xsd:annotation>
                             <xsd:documentation>
-                                Configures network address selection options.
+                                See javadoc of 'io.hekate.network.NetworkServiceFactory#setHostSelector(io.hekate.network.address.
+                                AddressSelector)'.
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:element>
@@ -246,6 +247,27 @@
                         </xsd:complexType>
                     </xsd:element>
                 </xsd:all>
+                <xsd:attribute name="host" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.network.NetworkServiceFactory#setHost(java.lang.String)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="port" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.network.NetworkServiceFactory#setPort(int)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="port-range" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.network.NetworkServiceFactory#setPortRange(int)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
                 <xsd:attribute name="connect-timeout-ms" type="xsd:string">
                     <xsd:annotation>
                         <xsd:documentation>
@@ -329,112 +351,6 @@
                 </xsd:attribute>
             </xsd:extension>
         </xsd:complexContent>
-    </xsd:complexType>
-
-    <xsd:complexType name="networkAddressType">
-        <xsd:choice minOccurs="0" maxOccurs="1">
-            <xsd:element name="host" type="xsd:string">
-                <xsd:annotation>
-                    <xsd:documentation>
-                        See javadoc of 'io.hekate.network.NetworkServiceFactory#setHost(java.lang.String)'.
-                    </xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
-            <xsd:element name="any-host" type="networkAddressAutoSelectType">
-                <xsd:annotation>
-                    <xsd:documentation>
-                        Registers 'io.hekate.network.address.DefaultAddressSelector'.
-                    </xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
-            <xsd:element name="host-selector" type="beanOrRefType"/>
-        </xsd:choice>
-        <xsd:attribute name="port" type="xsd:string">
-            <xsd:annotation>
-                <xsd:documentation>
-                    See javadoc of 'io.hekate.network.NetworkServiceFactory#setPort(int)'.
-                </xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
-        <xsd:attribute name="port-range" type="xsd:string">
-            <xsd:annotation>
-                <xsd:documentation>
-                    See javadoc of 'io.hekate.network.NetworkServiceFactory#setPortRange(int)'.
-                </xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
-    </xsd:complexType>
-
-    <xsd:complexType name="networkAddressAutoSelectType">
-        <xsd:all minOccurs="0" maxOccurs="1">
-            <xsd:element name="interface-name" minOccurs="0" maxOccurs="1">
-                <xsd:annotation>
-                    <xsd:documentation>
-                        Network interface name matching options.
-                    </xsd:documentation>
-                </xsd:annotation>
-                <xsd:complexType>
-                    <xsd:attribute name="match" type="xsd:string">
-                        <xsd:annotation>
-                            <xsd:documentation>
-                                See javadoc of 'io.hekate.network.address.DefaultAddressSelector#setInterfaceMatch(java.lang.String)'.
-                            </xsd:documentation>
-                        </xsd:annotation>
-                    </xsd:attribute>
-                    <xsd:attribute name="not-match" type="xsd:string">
-                        <xsd:annotation>
-                            <xsd:documentation>
-                                See javadoc of 'io.hekate.network.address.DefaultAddressSelector#setInterfaceNotMatch(java.lang.String)'.
-                            </xsd:documentation>
-                        </xsd:annotation>
-                    </xsd:attribute>
-                </xsd:complexType>
-            </xsd:element>
-            <xsd:element name="ip-address" minOccurs="0" maxOccurs="1">
-                <xsd:annotation>
-                    <xsd:documentation>
-                        IP address matching options.
-                    </xsd:documentation>
-                </xsd:annotation>
-                <xsd:complexType>
-                    <xsd:attribute name="match" type="xsd:string">
-                        <xsd:annotation>
-                            <xsd:documentation>
-                                See javadoc of 'io.hekate.network.address.DefaultAddressSelector#setIpMatch(java.lang.String)'.
-                            </xsd:documentation>
-                        </xsd:annotation>
-                    </xsd:attribute>
-                    <xsd:attribute name="not-match" type="xsd:string">
-                        <xsd:annotation>
-                            <xsd:documentation>
-                                See javadoc of 'io.hekate.network.address.DefaultAddressSelector#setIpNotMatch(java.lang.String)'.
-                            </xsd:documentation>
-                        </xsd:annotation>
-                    </xsd:attribute>
-                </xsd:complexType>
-            </xsd:element>
-        </xsd:all>
-        <xsd:attribute name="exclude-loopback" type="xsd:string">
-            <xsd:annotation>
-                <xsd:documentation>
-                    See javadoc of 'io.hekate.network.address.DefaultAddressSelector#setExcludeLoopback(boolean)'.
-                </xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
-        <xsd:attribute name="exclude-point-to-point" type="xsd:string">
-            <xsd:annotation>
-                <xsd:documentation>
-                    See javadoc of 'io.hekate.network.address.DefaultAddressSelector#setExcludePointToPoint(boolean)'.
-                </xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
-        <xsd:attribute name="ip-version" type="xsd:string">
-            <xsd:annotation>
-                <xsd:documentation>
-                    See javadoc of 'io.hekate.network.address.DefaultAddressSelector#setIpVersion(io.hekate.network.address.IpVersion)'.
-                </xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
     </xsd:complexType>
 
     <xsd:complexType name="networkConnectorType">

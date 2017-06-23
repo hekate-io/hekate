@@ -51,8 +51,6 @@ import io.hekate.metrics.local.LocalMetricsServiceFactory;
 import io.hekate.metrics.local.ProbeConfig;
 import io.hekate.network.NetworkConnectorConfig;
 import io.hekate.network.NetworkServiceFactory;
-import io.hekate.network.address.DefaultAddressSelector;
-import io.hekate.network.address.DefaultAddressSelectorConfig;
 import io.hekate.spring.bean.HekateSpringBootstrap;
 import io.hekate.spring.bean.cluster.ClusterServiceBean;
 import io.hekate.spring.bean.codec.CodecServiceBean;
@@ -561,6 +559,9 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         if (netEl != null) {
             BeanDefinitionBuilder net = newBean(NetworkServiceFactory.class, netEl);
 
+            setProperty(net, netEl, "host", "host");
+            setProperty(net, netEl, "port", "port");
+            setProperty(net, netEl, "portRange", "port-range");
             setProperty(net, netEl, "connectTimeout", "connect-timeout-ms");
             setProperty(net, netEl, "acceptRetryInterval", "accept-retry-interval-ms");
             setProperty(net, netEl, "heartbeatInterval", "heartbeat-interval-ms");
@@ -573,7 +574,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             setProperty(net, netEl, "tcpReuseAddress", "tcp-reuse-address");
             setProperty(net, netEl, "tcpBacklog", "tcp-backlog");
 
-            parseNetworkAddress(net, netEl, ctx);
+            setBeanOrRef(net, netEl, "hostSelector", "host-selector", ctx);
 
             ManagedList<RuntimeBeanReference> connectors = new ManagedList<>();
 
@@ -614,58 +615,6 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             return Optional.of(registerInnerBean(net, ctx));
         } else {
             return Optional.empty();
-        }
-    }
-
-    private void parseNetworkAddress(BeanDefinitionBuilder net, Element parentEl, ParserContext ctx) {
-        Element addrEl = getChildElementByTagName(parentEl, "address");
-
-        if (addrEl != null) {
-            setProperty(net, addrEl, "host", "host");
-            setProperty(net, addrEl, "port", "port");
-            setProperty(net, addrEl, "portRange", "port-range");
-
-            Element hostEl = getChildElementByTagName(addrEl, "host");
-            Element anyHostEl = getChildElementByTagName(addrEl, "any-host");
-
-            if (hostEl != null) {
-                String val = getTextValue(hostEl).trim();
-
-                if (!val.isEmpty()) {
-                    net.addPropertyValue("host", val);
-                }
-
-            } else if (anyHostEl != null) {
-                BeanDefinitionBuilder selectorCfg = newBean(DefaultAddressSelectorConfig.class, anyHostEl);
-
-                setProperty(selectorCfg, anyHostEl, "excludeLoopback", "exclude-loopback");
-                setProperty(selectorCfg, anyHostEl, "excludePointToPoint", "exclude-point-to-point");
-                setProperty(selectorCfg, anyHostEl, "ipVersion", "ip-version");
-
-                Element interfaceEl = getChildElementByTagName(anyHostEl, "interface-name");
-
-                if (interfaceEl != null) {
-                    setProperty(selectorCfg, interfaceEl, "interfaceMatch", "match");
-                    setProperty(selectorCfg, interfaceEl, "interfaceNotMatch", "not-match");
-                }
-
-                Element ipAddrEl = getChildElementByTagName(anyHostEl, "ip-address");
-
-                if (ipAddrEl != null) {
-                    setProperty(selectorCfg, ipAddrEl, "ipMatch", "match");
-                    setProperty(selectorCfg, ipAddrEl, "ipNotMatch", "not-match");
-                }
-
-                RuntimeBeanReference selectorCfgRef = registerInnerBean(selectorCfg, ctx);
-
-                BeanDefinitionBuilder selector = newBean(DefaultAddressSelector.class, anyHostEl);
-
-                selector.addConstructorArgValue(selectorCfgRef);
-
-                net.addPropertyValue("addressSelector", registerInnerBean(selector, ctx));
-            } else {
-                setBeanOrRef(net, addrEl, "addressSelector", "host-selector", ctx);
-            }
         }
     }
 

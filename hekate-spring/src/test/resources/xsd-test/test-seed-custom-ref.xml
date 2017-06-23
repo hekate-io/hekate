@@ -37,9 +37,7 @@
     </bean>
 
     <h:node id="node1">
-        <h:network>
-            <h:address port="10002"/>
-        </h:network>
+        <h:network port="10002"/>
         <h:cluster>
             <h:seed-node-provider>
                 <h:custom-provider ref="customSeedNodeProvider"/>
@@ -48,9 +46,7 @@
     </h:node>
 
     <h:node id="node2">
-        <h:network>
-            <h:address port="10003"/>
-        </h:network>
+        <h:network port="10003"/>
         <h:cluster>
             <h:seed-node-provider>
                 <h:custom-provider ref="customSeedNodeProvider"/>

@@ -17,28 +17,31 @@
 package io.hekate.network.address;
 
 import io.hekate.HekateTestBase;
+import io.hekate.core.HekateException;
+import io.hekate.core.internal.util.AddressUtils;
+import io.hekate.util.format.ToString;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-public class DefaultAddressSelectorTest extends HekateTestBase {
+public class AddressPatternTest extends HekateTestBase {
     private static class SupportedInterface {
         private final NetworkInterface networkInterface;
 
@@ -69,13 +72,9 @@ public class DefaultAddressSelectorTest extends HekateTestBase {
 
     private static boolean ipV6Supported;
 
-    private final InetAddress anyAddress = new InetSocketAddress(0).getAddress();
-
-    private final DefaultAddressSelectorConfig selectorCfg = new DefaultAddressSelectorConfig();
-
     @BeforeClass
     public static void loadInterfaces() throws Exception {
-        networkInterfaces = Collections.unmodifiableList(getNetworkInterfaces());
+        networkInterfaces = AddressUtils.activeNetworks();
 
         interfaces = Collections.unmodifiableList(getInterfaces(networkInterfaces));
 
@@ -84,53 +83,43 @@ public class DefaultAddressSelectorTest extends HekateTestBase {
             .anyMatch(a -> a instanceof Inet6Address);
     }
 
-    @Before
-    public void setUp() {
-        selectorCfg.setExcludePointToPoint(false);
-    }
-
     @Test
     public void testThrowsError() throws Exception {
-        selectorCfg.setInterfaceMatch("NO_SUCH_INTERFACE");
-
-        assertNull(createSelector().select(anyAddress));
+        assertNull(createSelector("net~NO_SUCH_INTERFACE").select());
     }
 
     @Test
     public void testNonWildcard() throws Exception {
         InetSocketAddress address = new InetSocketAddress("192.192.192.192", 0);
 
-        assertEquals(address.getAddress(), createSelector().select(address.getAddress()));
+        assertEquals(address.getAddress(), createSelector(address.getHostName()).select());
     }
 
     @Test
-    public void testExcludeLoopback() throws Exception {
-        assertTrue(selectorCfg.isExcludeLoopback());
+    public void testUnknownHost() throws Exception {
+        InetSocketAddress address = new InetSocketAddress("some-unknown-host.unknown", 0);
 
-        selectorCfg.setExcludeLoopback(false);
+        AddressPattern selector = createSelector(address.getHostName());
 
-        assertFalse(selectorCfg.isExcludeLoopback());
+        try {
+            selector.select();
 
-        selectorCfg.setExcludeLoopback(true);
-
-        selectorCfg.setIpMatch(InetAddress.getLoopbackAddress().getHostAddress().replaceAll("\\.", "\\\\."));
-
-        assertNull(createSelector().select(anyAddress));
+            fail("Error was expected.");
+        } catch (HekateException e) {
+            assertTrue(e.isCausedBy(UnknownHostException.class));
+        }
     }
 
     @Test
     public void testInterfaceNotMatch() throws Exception {
-        selectorCfg.setExcludeLoopback(false);
-        selectorCfg.setIpVersion(IpVersion.ANY);
-
         for (SupportedInterface si : interfaces) {
             String pattern = getAllButOneInterfacePattern(si, interfaces);
 
-            selectorCfg.setInterfaceNotMatch(pattern);
+            AddressPattern selector = createSelector("!net~" + pattern);
 
-            assertEquals(pattern, selectorCfg.getInterfaceNotMatch());
+            assertEquals(pattern, selector.opts().getInterfaceNotMatch());
 
-            InetAddress resolved = createSelector().select(anyAddress);
+            InetAddress resolved = selector.select();
 
             assertEquals(si.getAddresses().get(0), resolved);
         }
@@ -138,125 +127,72 @@ public class DefaultAddressSelectorTest extends HekateTestBase {
 
     @Test
     public void testInterfaceMatch() throws Exception {
-        selectorCfg.setExcludeLoopback(false);
-        selectorCfg.setIpVersion(IpVersion.ANY);
-
         for (SupportedInterface si : interfaces) {
             String pattern = si.getNetworkInterface().getName();
 
-            selectorCfg.setInterfaceMatch(pattern);
+            AddressPattern selector = createSelector("net~" + pattern);
 
-            assertEquals(pattern, selectorCfg.getInterfaceMatch());
+            assertEquals(pattern, selector.opts().getInterfaceMatch());
 
-            InetAddress resolved = createSelector().select(anyAddress);
-
-            assertEquals(si.getAddresses().get(0), resolved);
-        }
-    }
-
-    @Test
-    public void testInterfaceMatchAndNotMatch() throws Exception {
-        selectorCfg.setExcludeLoopback(false);
-        selectorCfg.setIpVersion(IpVersion.ANY);
-
-        for (SupportedInterface si : interfaces) {
-            String excludes = getAllButOneInterfacePattern(si, interfaces);
-
-            String includes = si.getNetworkInterface().getName();
-
-            selectorCfg.setInterfaceMatch(includes);
-            selectorCfg.setInterfaceNotMatch(excludes);
-
-            assertEquals(includes, selectorCfg.getInterfaceMatch());
-            assertEquals(excludes, selectorCfg.getInterfaceNotMatch());
-
-            InetAddress resolved = createSelector().select(anyAddress);
-
-            assertEquals(si.getAddresses().get(0), resolved);
+            assertEquals(si.getAddresses().get(0), selector.select());
         }
     }
 
     @Test
     public void testIpNotMatch() throws Exception {
-        selectorCfg.setExcludeLoopback(false);
-        selectorCfg.setIpVersion(IpVersion.ANY);
-
         for (SupportedInterface si : interfaces) {
             for (InetAddress address : si.getAddresses()) {
                 String excludes = getAllButOneAddressPattern(address, interfaces);
 
-                say(address.getHostAddress() + " ~ " + excludes);
+                AddressPattern selector = createSelector("!ip~" + excludes);
 
-                selectorCfg.setIpNotMatch(excludes);
+                assertEquals(excludes, selector.opts().getIpNotMatch());
 
-                assertEquals(excludes, selectorCfg.getIpNotMatch());
-
-                assertEquals(address, createSelector().select(anyAddress));
+                assertEquals(address, selector.select());
             }
         }
     }
 
     @Test
     public void testIpMatch() throws Exception {
-        selectorCfg.setExcludeLoopback(false);
-        selectorCfg.setIpVersion(IpVersion.ANY);
-
         for (SupportedInterface si : interfaces) {
             for (InetAddress address : si.getAddresses()) {
                 String includes = address.getHostAddress().replaceAll("\\.", "\\\\.");
 
-                selectorCfg.setIpMatch(includes);
+                AddressPattern selector = createSelector("ip~" + includes);
 
-                assertEquals(includes, selectorCfg.getIpMatch());
+                assertEquals(includes, selector.opts().getIpMatch());
 
-                assertEquals(address, createSelector().select(anyAddress));
-            }
-        }
-    }
-
-    @Test
-    public void testIpMatchAndNotMatch() throws Exception {
-        selectorCfg.setExcludeLoopback(false);
-        selectorCfg.setIpVersion(IpVersion.ANY);
-
-        for (SupportedInterface si : interfaces) {
-            for (InetAddress address : si.getAddresses()) {
-                String excludes = getAllButOneAddressPattern(address, interfaces);
-                String includes = address.getHostAddress().replaceAll("\\.", "\\\\.");
-
-                selectorCfg.setIpNotMatch(excludes);
-                selectorCfg.setIpMatch(includes);
-
-                assertEquals(excludes, selectorCfg.getIpNotMatch());
-                assertEquals(includes, selectorCfg.getIpMatch());
-
-                assertEquals(address, createSelector().select(anyAddress));
+                assertEquals(address, selector.select());
             }
         }
     }
 
     @Test
     public void testIpVersion() throws Exception {
-        selectorCfg.setExcludeLoopback(false);
+        AddressPattern selectorIp4 = createSelector("ip4~.*");
 
-        selectorCfg.setIpVersion(IpVersion.V4);
-
-        assertSame(IpVersion.V4, selectorCfg.getIpVersion());
-
-        assertTrue(createSelector().select(anyAddress) instanceof Inet4Address);
+        assertTrue(selectorIp4.select() instanceof Inet4Address);
 
         if (ipV6Supported) {
-            selectorCfg.setIpVersion(IpVersion.V6);
+            AddressPattern selectorIp6 = createSelector("ip6~.*");
 
-            assertSame(IpVersion.V6, selectorCfg.getIpVersion());
+            assertSame(AddressPatternOpts.IpVersion.V6, selectorIp6.opts().getIpVersion());
 
-            assertTrue(createSelector().select(anyAddress) instanceof Inet6Address);
+            assertTrue(selectorIp6.select() instanceof Inet6Address);
         }
     }
 
-    private DefaultAddressSelector createSelector() {
-        // Override getNetworkInterfaces() to use cached list and speedup tests.
-        return new DefaultAddressSelector(selectorCfg) {
+    @Test
+    public void testToString() {
+        AddressPattern selector = new AddressPattern();
+
+        assertEquals(ToString.format(selector), selector.toString());
+    }
+
+    private AddressPattern createSelector(String pattern) {
+        // Override getNetworkInterfaces() in order to use cached list and speedup tests.
+        return new AddressPattern(pattern) {
             @Override
             List<NetworkInterface> networkInterfaces() throws SocketException {
                 return networkInterfaces;
@@ -283,7 +219,7 @@ public class DefaultAddressSelectorTest extends HekateTestBase {
         List<SupportedInterface> supported = new ArrayList<>();
 
         for (NetworkInterface ni : interfaces) {
-            if (ni.isUp()) {
+            if (ni.isUp() && !ni.isLoopback()) {
                 List<InetAddress> addresses = Collections.list(ni.getInetAddresses()).stream()
                     .filter(a -> !a.isLinkLocalAddress())
                     .collect(toList());

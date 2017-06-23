@@ -17,31 +17,21 @@
 package io.hekate.network;
 
 import io.hekate.HekateTestBase;
+import io.hekate.network.address.AddressPattern;
 import io.hekate.network.address.AddressSelector;
-import io.hekate.network.address.DefaultAddressSelector;
 import java.util.Collections;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class NetworkServiceFactoryTest extends HekateTestBase {
     private final NetworkServiceFactory cfg = new NetworkServiceFactory();
-
-    @Test
-    public void testHost() {
-        assertNull(cfg.getHost());
-
-        cfg.setHost("test");
-
-        assertEquals("test", cfg.getHost());
-
-        assertEquals("test2", cfg.withHost("test2").getHost());
-    }
 
     @Test
     public void testPort() {
@@ -66,17 +56,38 @@ public class NetworkServiceFactoryTest extends HekateTestBase {
     }
 
     @Test
-    public void testAddressSelector() {
-        assertNotNull(cfg.getAddressSelector());
+    public void testHost() {
+        assertNotNull(cfg.getHostSelector());
 
-        AddressSelector s1 = new DefaultAddressSelector();
-        AddressSelector s2 = new DefaultAddressSelector();
+        AddressSelector s1 = new AddressPattern();
+        AddressSelector s2 = new AddressPattern();
 
-        cfg.setAddressSelector(s1);
+        cfg.setHostSelector(s1);
 
-        assertSame(s1, cfg.getAddressSelector());
+        assertSame(s1, cfg.getHostSelector());
 
-        assertSame(s2, cfg.withAddressSelector(s2).getAddressSelector());
+        assertSame(s2, cfg.withHostSelector(s2).getHostSelector());
+    }
+
+    @Test
+    public void testHostPattern() {
+        AddressSelector old = cfg.getHostSelector();
+
+        cfg.setHost("127.0.0.1");
+
+        assertNotSame(old, cfg.getHostSelector());
+
+        old = cfg.getHostSelector();
+
+        assertSame(cfg, cfg.withHost("127.0.0.1"));
+
+        assertNotSame(old, cfg.getHostSelector());
+
+        old = cfg.getHostSelector();
+
+        cfg.setHost(null);
+
+        assertNotSame(old, cfg.getHostSelector());
     }
 
     @Test

@@ -23,10 +23,6 @@ import io.hekate.core.HekateBootstrap;
 import io.hekate.core.PropertyProvider;
 import io.hekate.core.plugin.Plugin;
 import io.hekate.core.service.ServiceFactory;
-import io.hekate.network.address.AddressSelector;
-import io.hekate.network.address.DefaultAddressSelector;
-import io.hekate.network.address.DefaultAddressSelectorConfig;
-import io.hekate.network.address.IpVersion;
 import io.hekate.spring.bean.HekateSpringBootstrap;
 import io.hekate.spring.bean.codec.CodecServiceBean;
 import io.hekate.spring.boot.cluster.HekateClusterServiceConfigurer;
@@ -140,19 +136,6 @@ import org.springframework.context.annotation.Configuration;
  * <li>{@link HekateBootstrap#setCluster(String) 'hekate.cluster'}</li>
  * <li>{@link HekateBootstrap#setRoles(List) 'hekate.roles'}</li>
  * <li>{@link HekateBootstrap#setProperties(Map) 'hekate.properties'}</li>
- * </ul>
- *
- * <p>
- * If application doesn't provide a {@link Bean} of {@link AddressSelector} type then {@link DefaultAddressSelector} will be registered
- * with the following configuration options:
- * </p>
- * <ul>
- * <li>{@link DefaultAddressSelectorConfig#setIpVersion(IpVersion) 'hekate.address.ip-version'}</li>
- * <li>{@link DefaultAddressSelectorConfig#setInterfaceMatch(String) 'hekate.address.interface-match'}</li>
- * <li>{@link DefaultAddressSelectorConfig#setInterfaceNotMatch(String) 'hekate.address.interface-not-match'}</li>
- * <li>{@link DefaultAddressSelectorConfig#setIpMatch(String) 'hekate.address.ip-match'}</li>
- * <li>{@link DefaultAddressSelectorConfig#setIpNotMatch(String) 'hekate.address.ip-not-match'}</li>
- * <li>{@link DefaultAddressSelectorConfig#setExcludeLoopback(boolean) 'hekate.address.exclude-loopback'}</li>
  * </ul>
  *
  * @see HekateHealthIndicator

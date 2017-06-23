@@ -135,8 +135,6 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
 
     private static final String PING_PROTOCOL = "hekate.ping";
 
-    private final String initHost;
-
     private final AddressSelector addressSelector;
 
     private final int initPort;
@@ -207,16 +205,15 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
 
         check.range(factory.getPort(), 0, 65535, "port");
         check.notNull(factory.getTransport(), "transport");
-        check.notNull(factory.getAddressSelector(), "address selector");
+        check.notNull(factory.getHostSelector(), "address selector");
         check.positive(factory.getNioThreads(), "NIO thread pool size");
         check.positive(factory.getHeartbeatInterval(), "heartbeat interval");
         check.positive(factory.getHeartbeatLossThreshold(), "heartbeat loss threshold");
         check.positive(factory.getConnectTimeout(), "connect timeout");
 
-        initHost = factory.getHost();
         initPort = factory.getPort();
         portRange = factory.getPortRange();
-        addressSelector = factory.getAddressSelector();
+        addressSelector = factory.getHostSelector();
         connectTimeout = factory.getConnectTimeout();
         acceptorFailoverInterval = factory.getAcceptRetryInterval();
         heartbeatInterval = factory.getHeartbeatInterval();
@@ -279,13 +276,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
             log.debug("Obtaining preferred host address...");
         }
 
-        InetAddress preferredIp = preferredIp();
-
-        if (DEBUG) {
-            log.debug("Obtained preferred host address [address={}]", preferredIp);
-        }
-
-        InetAddress publicIp = ipOnly(addressSelector.select(preferredIp));
+        InetAddress publicIp = ipOnly(addressSelector.select());
 
         if (publicIp == null) {
             throw new HekateException("Failed to select public host address [selector=" + addressSelector + ']');
@@ -295,9 +286,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
             log.info("Selected public address [address={}]", publicIp);
         }
 
-        InetSocketAddress bindAddress = new InetSocketAddress(preferredIp, initPort);
-
-        log.info("Binding network service [preferred-address={}]", bindAddress);
+        log.info("Binding network service [port={}]", initPort);
 
         guard.lockWrite();
 
@@ -333,7 +322,10 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
                 }
             });
 
-            return server.start(bindAddress, new NetworkServerCallback() {
+            // Using wildcard address.
+            InetSocketAddress wildcard = new InetSocketAddress(initPort);
+
+            return server.start(wildcard, new NetworkServerCallback() {
                 @Override
                 public void onStart(NetworkServer server) {
                     InetSocketAddress realAddress = server.address();
@@ -353,7 +345,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
                     Throwable cause = err.cause();
 
                     if (cause instanceof IOException) {
-                        int initPort = bindAddress.getPort();
+                        int initPort = wildcard.getPort();
 
                         if (initPort > 0 && portRange > 0 && server.state() == NetworkServer.State.STARTING) {
                             int prevPort = err.lastTriedAddress().getPort();
@@ -553,20 +545,6 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
         preTerminate();
         terminate();
         postTerminate();
-    }
-
-    private InetAddress preferredIp() throws HekateException {
-        if (initHost == null || initHost.isEmpty()) {
-            return new InetSocketAddress(0).getAddress();
-        }
-
-        try {
-            InetAddress host = InetAddress.getByName(initHost.trim());
-
-            return ipOnly(host);
-        } catch (UnknownHostException e) {
-            throw new HekateException("Failed to resolve host address [address=" + initHost + ']', e);
-        }
     }
 
     private InetAddress ipOnly(InetAddress address) throws HekateException {
