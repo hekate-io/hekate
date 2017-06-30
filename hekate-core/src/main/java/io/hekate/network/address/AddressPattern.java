@@ -103,6 +103,15 @@ public class AddressPattern implements AddressSelector {
         this.opts = AddressPatternOpts.parse(pattern);
     }
 
+    /**
+     * Returns the host pattern as string.
+     *
+     * @return Host pattern.
+     */
+    public String pattern() {
+        return opts.toString();
+    }
+
     @Override
     public InetAddress select() throws HekateException {
         try {

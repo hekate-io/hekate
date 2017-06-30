@@ -84,6 +84,12 @@ public class AddressPatternTest extends HekateTestBase {
     }
 
     @Test
+    public void testPattern() throws Exception {
+        assertEquals("any-ip4", createSelector(null).pattern());
+        assertEquals("127.0.0.1", createSelector("127.0.0.1").pattern());
+    }
+
+    @Test
     public void testThrowsError() throws Exception {
         assertNull(createSelector("net~NO_SUCH_INTERFACE").select());
     }

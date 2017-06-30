@@ -66,27 +66,35 @@ public class NetworkServiceFactoryTest extends HekateTestBase {
 
         assertSame(s1, cfg.getHostSelector());
 
-        assertSame(s2, cfg.withHostSelector(s2).getHostSelector());
+        assertSame(cfg, cfg.withHostSelector(s2));
+        assertSame(s2, cfg.getHostSelector());
     }
 
     @Test
     public void testHostPattern() {
         AddressSelector old = cfg.getHostSelector();
 
+        assertNotNull(old);
+        assertTrue(old.getClass().getName(), old instanceof AddressPattern);
+        assertEquals("any-ip4", cfg.getHost());
+
         cfg.setHost("127.0.0.1");
 
+        assertEquals("127.0.0.1", cfg.getHost());
         assertNotSame(old, cfg.getHostSelector());
 
         old = cfg.getHostSelector();
 
-        assertSame(cfg, cfg.withHost("127.0.0.1"));
+        assertSame(cfg, cfg.withHost("127.0.0.2"));
 
+        assertEquals("127.0.0.2", cfg.getHost());
         assertNotSame(old, cfg.getHostSelector());
 
         old = cfg.getHostSelector();
 
         cfg.setHost(null);
 
+        assertEquals("any-ip4", cfg.getHost());
         assertNotSame(old, cfg.getHostSelector());
     }
 

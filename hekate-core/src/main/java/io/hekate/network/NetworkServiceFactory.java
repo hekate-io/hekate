@@ -138,6 +138,23 @@ public class NetworkServiceFactory implements ServiceFactory<NetworkService> {
     }
 
     /**
+     * Supplementary getter for {@link #setHost(String)}. Returns the host selection pattern if this factory is configured with {@link
+     * AddressPattern}; returns {@code null} otherwise.
+     *
+     * @return host selection pattern if this factory is configured with {@link
+     * AddressPattern}; returns {@code null} otherwise.
+     */
+    public String getHost() {
+        if (getHostSelector() instanceof AddressPattern) {
+            AddressPattern pattern = (AddressPattern)getHostSelector();
+
+            return pattern.pattern();
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * Sets the host address selection pattern (see {@link AddressPattern}).
      *
      * <p>
