@@ -48,24 +48,24 @@ public class HekateBootstrapTest extends HekateTestBase {
 
     @Test
     public void testName() {
-        assertNull(bootstrap.getName());
+        assertNull(bootstrap.getNodeName());
 
-        bootstrap.setName("test");
+        bootstrap.setNodeName("test");
 
-        assertEquals("test", bootstrap.getName());
+        assertEquals("test", bootstrap.getNodeName());
 
-        assertEquals("test2", bootstrap.withName("test2").getName());
+        assertEquals("test2", bootstrap.withNodeName("test2").getNodeName());
     }
 
     @Test
     public void testCluster() {
-        assertEquals(HekateBootstrap.DEFAULT_CLUSTER_NAME, bootstrap.getCluster());
+        assertEquals(HekateBootstrap.DEFAULT_CLUSTER_NAME, bootstrap.getClusterName());
 
-        bootstrap.setCluster("test");
+        bootstrap.setClusterName("test");
 
-        assertEquals("test", bootstrap.getCluster());
+        assertEquals("test", bootstrap.getClusterName());
 
-        assertEquals("test2", bootstrap.withCluster("test2").getCluster());
+        assertEquals("test2", bootstrap.withClusterName("test2").getClusterName());
     }
 
     @Test

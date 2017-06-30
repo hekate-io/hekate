@@ -49,14 +49,14 @@
                     <xsd:attribute name="name" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>
-                                See javadoc of 'io.hekate.core.HekateBootstrap#setName(String name)'.
+                                See javadoc of 'io.hekate.core.HekateBootstrap#setNodeName(String name)'.
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="cluster" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>
-                                See javadoc of 'io.hekate.core.HekateBootstrap#setCluster(String)'.
+                                See javadoc of 'io.hekate.core.HekateBootstrap#setCluserCluster(String)'.
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>

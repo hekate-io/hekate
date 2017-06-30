@@ -87,7 +87,7 @@ public interface SeedNodeProvider {
     /**
      * Returns the list of known seed node addresses.
      *
-     * @param cluster Cluster name (see {@link HekateBootstrap#setCluster(String)}).
+     * @param cluster Cluster name (see {@link HekateBootstrap#setClusterName(String)}).
      *
      * @return List of known seed node addresses.
      *
@@ -98,7 +98,7 @@ public interface SeedNodeProvider {
     /**
      * Registers the local node address and starts this provider.
      *
-     * @param cluster Cluster name (see {@link HekateBootstrap#setCluster(String)}).
+     * @param cluster Cluster name (see {@link HekateBootstrap#setClusterName(String)}).
      * @param node Local node address.
      *
      * @throws HekateException If failed to start discovery due to the system failure.
@@ -115,7 +115,7 @@ public interface SeedNodeProvider {
     /**
      * Unregisters the local node address and stops this provider.
      *
-     * @param cluster Cluster name (see {@link HekateBootstrap#setCluster(String)}).
+     * @param cluster Cluster name (see {@link HekateBootstrap#setClusterName(String)}).
      * @param node Local node address.
      *
      * @throws HekateException If failed to stop discovery due to the system failure.
@@ -139,7 +139,7 @@ public interface SeedNodeProvider {
      * method).
      * </p>
      *
-     * @param cluster Cluster name (see {@link HekateBootstrap#setCluster(String)}).
+     * @param cluster Cluster name (see {@link HekateBootstrap#setClusterName(String)}).
      * @param node Node address that should be registered.
      *
      * @throws HekateException If node couldn't be registered due to the system failure.
@@ -155,7 +155,7 @@ public interface SeedNodeProvider {
      * #findSeedNodes(String)} method).
      * </p>
      *
-     * @param cluster Cluster name (see {@link HekateBootstrap#setCluster(String)}).
+     * @param cluster Cluster name (see {@link HekateBootstrap#setClusterName(String)}).
      * @param node Node address that should be unregistered.
      *
      * @throws HekateException If node couldn't be unregistered due to the system failure.

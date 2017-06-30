@@ -95,8 +95,8 @@ public class HekateNodeTestBase extends HekateTestBase {
 
         HekateTestNode.Bootstrap bootstrap = new HekateTestNode.Bootstrap(address);
 
-        bootstrap.setCluster("test");
-        bootstrap.setName("node-" + address.getPort() + '-' + allNodes.size());
+        bootstrap.setClusterName("test");
+        bootstrap.setNodeName("node-" + address.getPort() + '-' + allNodes.size());
 
         if (ctx.resources() != null) {
             bootstrap.withService(ctx::resources);

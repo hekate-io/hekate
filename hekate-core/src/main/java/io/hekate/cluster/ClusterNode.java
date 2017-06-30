@@ -45,7 +45,7 @@ public interface ClusterNode extends Comparable<ClusterNode>, ClusterNodeIdSuppo
      * Returns the name of this node. Returns an empty string if this node doesn't have a configured name.
      *
      * <p>
-     * Value of this property can be configured via {@link HekateBootstrap#setName(String)} method.
+     * Value of this property can be configured via {@link HekateBootstrap#setNodeName(String)} method.
      * </p>
      *
      * @return Name of this node or an empty string if node name is not configured.

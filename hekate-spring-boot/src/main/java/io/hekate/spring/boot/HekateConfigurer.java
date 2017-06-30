@@ -132,8 +132,8 @@ import org.springframework.context.annotation.Configuration;
  * The following application properties can be used to configure the constructed {@link Hekate} instance:
  * </p>
  * <ul>
- * <li>{@link HekateBootstrap#setName(String) 'hekate.name'}</li>
- * <li>{@link HekateBootstrap#setCluster(String) 'hekate.cluster'}</li>
+ * <li>{@link HekateBootstrap#setNodeName(String) 'hekate.name'}</li>
+ * <li>{@link HekateBootstrap#setClusterName(String) 'hekate.cluster'}</li>
  * <li>{@link HekateBootstrap#setRoles(List) 'hekate.roles'}</li>
  * <li>{@link HekateBootstrap#setProperties(Map) 'hekate.properties'}</li>
  * </ul>

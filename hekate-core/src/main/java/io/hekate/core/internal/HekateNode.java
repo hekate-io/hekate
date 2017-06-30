@@ -185,13 +185,13 @@ class HekateNode implements Hekate, Serializable {
         // Check configuration.
         ConfigCheck check = ConfigCheck.get(HekateBootstrap.class);
 
-        check.notEmpty(cfg.getCluster(), "cluster name");
+        check.notEmpty(cfg.getClusterName(), "cluster name");
         check.notNull(cfg.getDefaultCodec(), "default codec");
         check.isFalse(cfg.getDefaultCodec().createCodec().isStateful(), "default codec can't be stateful.");
 
         // Basic properties.
-        this.nodeName = cfg.getName() != null ? cfg.getName().trim() : "";
-        this.clusterName = cfg.getCluster().trim();
+        this.nodeName = cfg.getNodeName() != null ? cfg.getNodeName().trim() : "";
+        this.clusterName = cfg.getClusterName().trim();
 
         // Node roles.
         Set<String> roles;

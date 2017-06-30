@@ -22,8 +22,8 @@
         http://www.springframework.org/schema/beans/spring-beans.xsd">
 
     <bean id="hekate" class="io.hekate.spring.bean.HekateSpringBootstrap">
-        <property name="name" value="my-node"/>
-        <property name="cluster" value="my-cluster"/>
+        <property name="nodeName" value="my-node"/>
+        <property name="clusterName" value="my-cluster"/>
         <!-- Node roles. -->
         <property name="roles">
             <list>

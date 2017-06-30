@@ -50,8 +50,8 @@ import java.util.function.Consumer;
  * Configuration options are:
  * </p>
  * <ul>
- * <li>{@link #setCluster(String) Cluster name}</li>
- * <li>{@link #setName(String) Node name}</li>
+ * <li>{@link #setClusterName(String) Cluster name}</li>
+ * <li>{@link #setNodeName(String) Node name}</li>
  * <li>{@link #setProperties(Map) Node properties}</li>
  * <li>{@link #setRoles(List) Node roles}</li>
  * <li>{@link #setDefaultCodec(CodecFactory) Data serialization codec}</li>
@@ -68,12 +68,12 @@ import java.util.function.Consumer;
  * </p>
  */
 public class HekateBootstrap {
-    /** Default value (={@value}) for {@link #setCluster(String)}. */
+    /** Default value (={@value}) for {@link #setClusterName(String)}. */
     public static final String DEFAULT_CLUSTER_NAME = "default";
 
-    private String name;
+    private String nodeName;
 
-    private String cluster = DEFAULT_CLUSTER_NAME;
+    private String clusterName = DEFAULT_CLUSTER_NAME;
 
     private List<String> roles;
 
@@ -114,12 +114,12 @@ public class HekateBootstrap {
     }
 
     /**
-     * Returns the node name (see {@link #setName(String)}).
+     * Returns the node name (see {@link #setNodeName(String)}).
      *
      * @return Node name.
      */
-    public String getName() {
-        return name;
+    public String getNodeName() {
+        return nodeName;
     }
 
     /**
@@ -129,34 +129,34 @@ public class HekateBootstrap {
      * Node name is optional and its default value is {@code null}.
      * </p>
      *
-     * @param name Node name.
+     * @param nodeName Node name.
      *
      * @see ClusterNode#name()
      */
-    public void setName(String name) {
-        this.name = name;
+    public void setNodeName(String nodeName) {
+        this.nodeName = nodeName;
     }
 
     /**
-     * Fluent-style version of {@link #setName(String)}.
+     * Fluent-style version of {@link #setNodeName(String)}.
      *
      * @param nodeName Node name.
      *
      * @return This instance.
      */
-    public HekateBootstrap withName(String nodeName) {
-        setName(nodeName);
+    public HekateBootstrap withNodeName(String nodeName) {
+        setNodeName(nodeName);
 
         return this;
     }
 
     /**
-     * Returns the cluster name (see {@link #setCluster(String)}).
+     * Returns the cluster name (see {@link #setClusterName(String)}).
      *
      * @return Cluster name.
      */
-    public String getCluster() {
-        return cluster;
+    public String getClusterName() {
+        return clusterName;
     }
 
     /**
@@ -176,21 +176,21 @@ public class HekateBootstrap {
      * together with {@link ClusterView#filter(ClusterNodeFilter) nodes filtering} by role.
      * </p>
      *
-     * @param cluster Cluster name.
+     * @param clusterName Cluster name.
      */
-    public void setCluster(String cluster) {
-        this.cluster = cluster;
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
     }
 
     /**
-     * Fluent-style version of {@link #setCluster(String)}.
+     * Fluent-style version of {@link #setClusterName(String)}.
      *
      * @param clusterName Cluster name.
      *
      * @return This instance.
      */
-    public HekateBootstrap withCluster(String clusterName) {
-        setCluster(clusterName);
+    public HekateBootstrap withClusterName(String clusterName) {
+        setClusterName(clusterName);
 
         return this;
     }
