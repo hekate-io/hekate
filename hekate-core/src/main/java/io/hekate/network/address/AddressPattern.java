@@ -115,22 +115,22 @@ public class AddressPattern implements AddressSelector {
     @Override
     public InetAddress select() throws HekateException {
         try {
-            if (opts.getExactAddress() != null) {
+            if (opts.exactAddress() != null) {
                 if (DEBUG) {
                     log.debug("Using the exact address [{}]", opts);
                 }
 
-                return InetAddress.getByName(opts.getExactAddress());
+                return InetAddress.getByName(opts.exactAddress());
             }
 
             if (DEBUG) {
                 log.debug("Trying to resolve address [{}]", opts);
             }
 
-            Pattern niIncludes = regex(opts.getInterfaceMatch());
-            Pattern niExcludes = regex(opts.getInterfaceNotMatch());
-            Pattern addrIncludes = regex(opts.getIpMatch());
-            Pattern addrExcludes = regex(opts.getIpNotMatch());
+            Pattern niIncludes = regex(opts.interfaceMatch());
+            Pattern niExcludes = regex(opts.interfaceNotMatch());
+            Pattern addrIncludes = regex(opts.ipMatch());
+            Pattern addrExcludes = regex(opts.ipNotMatch());
 
             List<NetworkInterface> nis = networkInterfaces();
 
@@ -207,8 +207,8 @@ public class AddressPattern implements AddressSelector {
     }
 
     private boolean ipVersionMatch(InetAddress addr) {
-        if (opts.getIpVersion() != null) {
-            switch (opts.getIpVersion()) {
+        if (opts.ipVersion() != null) {
+            switch (opts.ipVersion()) {
                 case V4: {
                     return addr instanceof Inet4Address;
                 }
@@ -216,7 +216,7 @@ public class AddressPattern implements AddressSelector {
                     return addr instanceof Inet6Address;
                 }
                 default: {
-                    throw new IllegalStateException("Unexpected IP version type: " + opts.getIpVersion());
+                    throw new IllegalStateException("Unexpected IP version type: " + opts.ipVersion());
                 }
             }
         }

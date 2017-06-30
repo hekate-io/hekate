@@ -180,7 +180,7 @@ final class AddressPatternOpts {
      *
      * @return Address.
      */
-    public String getExactAddress() {
+    public String exactAddress() {
         return exactAddress;
     }
 
@@ -190,7 +190,7 @@ final class AddressPatternOpts {
      *
      * @return Regular expression.
      */
-    public String getInterfaceNotMatch() {
+    public String interfaceNotMatch() {
         return interfaceNotMatch;
     }
 
@@ -200,7 +200,7 @@ final class AddressPatternOpts {
      *
      * @return Regular expression.
      */
-    public String getInterfaceMatch() {
+    public String interfaceMatch() {
         return interfaceMatch;
     }
 
@@ -209,7 +209,7 @@ final class AddressPatternOpts {
      *
      * @return Regular expression.
      */
-    public String getIpNotMatch() {
+    public String ipNotMatch() {
         return ipNotMatch;
     }
 
@@ -218,7 +218,7 @@ final class AddressPatternOpts {
      *
      * @return Regular expression.
      */
-    public String getIpMatch() {
+    public String ipMatch() {
         return ipMatch;
     }
 
@@ -227,7 +227,7 @@ final class AddressPatternOpts {
      *
      * @return IP protocol version.
      */
-    public IpVersion getIpVersion() {
+    public IpVersion ipVersion() {
         return ipVersion;
     }
 

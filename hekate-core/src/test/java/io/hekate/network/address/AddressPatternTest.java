@@ -123,7 +123,7 @@ public class AddressPatternTest extends HekateTestBase {
 
             AddressPattern selector = createSelector("!net~" + pattern);
 
-            assertEquals(pattern, selector.opts().getInterfaceNotMatch());
+            assertEquals(pattern, selector.opts().interfaceNotMatch());
 
             InetAddress resolved = selector.select();
 
@@ -138,7 +138,7 @@ public class AddressPatternTest extends HekateTestBase {
 
             AddressPattern selector = createSelector("net~" + pattern);
 
-            assertEquals(pattern, selector.opts().getInterfaceMatch());
+            assertEquals(pattern, selector.opts().interfaceMatch());
 
             assertEquals(si.getAddresses().get(0), selector.select());
         }
@@ -152,7 +152,7 @@ public class AddressPatternTest extends HekateTestBase {
 
                 AddressPattern selector = createSelector("!ip~" + excludes);
 
-                assertEquals(excludes, selector.opts().getIpNotMatch());
+                assertEquals(excludes, selector.opts().ipNotMatch());
 
                 assertEquals(address, selector.select());
             }
@@ -167,7 +167,7 @@ public class AddressPatternTest extends HekateTestBase {
 
                 AddressPattern selector = createSelector("ip~" + includes);
 
-                assertEquals(includes, selector.opts().getIpMatch());
+                assertEquals(includes, selector.opts().ipMatch());
 
                 assertEquals(address, selector.select());
             }
@@ -183,7 +183,7 @@ public class AddressPatternTest extends HekateTestBase {
         if (ipV6Supported) {
             AddressPattern selectorIp6 = createSelector("ip6~.*");
 
-            assertSame(AddressPatternOpts.IpVersion.V6, selectorIp6.opts().getIpVersion());
+            assertSame(AddressPatternOpts.IpVersion.V6, selectorIp6.opts().ipVersion());
 
             assertTrue(selectorIp6.select() instanceof Inet6Address);
         }

@@ -29,8 +29,8 @@ public class AddressPatternOptsTest extends HekateTestBase {
     public void testAny() {
         AddressPatternOpts opts = parse("any");
 
-        assertNull(opts.getIpVersion());
-        assertNull(opts.getExactAddress());
+        assertNull(opts.ipVersion());
+        assertNull(opts.exactAddress());
         assertAllPatternsAreNull(opts);
     }
 
@@ -38,14 +38,14 @@ public class AddressPatternOptsTest extends HekateTestBase {
     public void testAnyIp4() {
         AddressPatternOpts opts = parse("any-ip4");
 
-        assertSame(AddressPatternOpts.IpVersion.V4, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
+        assertSame(AddressPatternOpts.IpVersion.V4, opts.ipVersion());
+        assertNull(opts.exactAddress());
         assertAllPatternsAreNull(opts);
 
         opts = parse(" any-ip4 ");
 
-        assertSame(AddressPatternOpts.IpVersion.V4, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
+        assertSame(AddressPatternOpts.IpVersion.V4, opts.ipVersion());
+        assertNull(opts.exactAddress());
         assertAllPatternsAreNull(opts);
     }
 
@@ -53,14 +53,14 @@ public class AddressPatternOptsTest extends HekateTestBase {
     public void testAnyIp6() {
         AddressPatternOpts opts = parse("any-ip6");
 
-        assertSame(AddressPatternOpts.IpVersion.V6, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
+        assertSame(AddressPatternOpts.IpVersion.V6, opts.ipVersion());
+        assertNull(opts.exactAddress());
         assertAllPatternsAreNull(opts);
 
         opts = parse(" any-ip6 ");
 
-        assertSame(AddressPatternOpts.IpVersion.V6, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
+        assertSame(AddressPatternOpts.IpVersion.V6, opts.ipVersion());
+        assertNull(opts.exactAddress());
         assertAllPatternsAreNull(opts);
     }
 
@@ -68,18 +68,18 @@ public class AddressPatternOptsTest extends HekateTestBase {
     public void testIpMatchPrefix() {
         AddressPatternOpts opts = parse("ip~.*");
 
-        assertEquals(".*", opts.getIpMatch());
-        assertNull(opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getIpNotMatch());
+        assertEquals(".*", opts.ipMatch());
+        assertNull(opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.ipNotMatch());
         assertInterfacePattersAreNull(opts);
 
         opts = parse(" ip~ .*");
 
-        assertEquals(".*", opts.getIpMatch());
-        assertNull(opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getIpNotMatch());
+        assertEquals(".*", opts.ipMatch());
+        assertNull(opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.ipNotMatch());
         assertInterfacePattersAreNull(opts);
     }
 
@@ -87,18 +87,18 @@ public class AddressPatternOptsTest extends HekateTestBase {
     public void testIpNotMatchPrefix() {
         AddressPatternOpts opts = parse("!ip~.*");
 
-        assertEquals(".*", opts.getIpNotMatch());
-        assertNull(opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getIpMatch());
+        assertEquals(".*", opts.ipNotMatch());
+        assertNull(opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.ipMatch());
         assertInterfacePattersAreNull(opts);
 
         opts = parse(" !ip~ .* ");
 
-        assertEquals(".*", opts.getIpNotMatch());
-        assertNull(opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getIpMatch());
+        assertEquals(".*", opts.ipNotMatch());
+        assertNull(opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.ipMatch());
         assertInterfacePattersAreNull(opts);
     }
 
@@ -106,18 +106,18 @@ public class AddressPatternOptsTest extends HekateTestBase {
     public void testIp4MatchPrefix() {
         AddressPatternOpts opts = parse("ip4~.*");
 
-        assertEquals(".*", opts.getIpMatch());
-        assertSame(AddressPatternOpts.IpVersion.V4, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getIpNotMatch());
+        assertEquals(".*", opts.ipMatch());
+        assertSame(AddressPatternOpts.IpVersion.V4, opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.ipNotMatch());
         assertInterfacePattersAreNull(opts);
 
         opts = parse(" ip4~ .* ");
 
-        assertEquals(".*", opts.getIpMatch());
-        assertSame(AddressPatternOpts.IpVersion.V4, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getIpNotMatch());
+        assertEquals(".*", opts.ipMatch());
+        assertSame(AddressPatternOpts.IpVersion.V4, opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.ipNotMatch());
         assertInterfacePattersAreNull(opts);
     }
 
@@ -125,18 +125,18 @@ public class AddressPatternOptsTest extends HekateTestBase {
     public void testIp4NotMatchPrefix() {
         AddressPatternOpts opts = parse("!ip4~.*");
 
-        assertEquals(".*", opts.getIpNotMatch());
-        assertSame(AddressPatternOpts.IpVersion.V4, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getIpMatch());
+        assertEquals(".*", opts.ipNotMatch());
+        assertSame(AddressPatternOpts.IpVersion.V4, opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.ipMatch());
         assertInterfacePattersAreNull(opts);
 
         opts = parse(" !ip4~ .* ");
 
-        assertEquals(".*", opts.getIpNotMatch());
-        assertSame(AddressPatternOpts.IpVersion.V4, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getIpMatch());
+        assertEquals(".*", opts.ipNotMatch());
+        assertSame(AddressPatternOpts.IpVersion.V4, opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.ipMatch());
         assertInterfacePattersAreNull(opts);
     }
 
@@ -144,18 +144,18 @@ public class AddressPatternOptsTest extends HekateTestBase {
     public void testIp6MatchPrefix() {
         AddressPatternOpts opts = parse("ip6~.*");
 
-        assertEquals(".*", opts.getIpMatch());
-        assertSame(AddressPatternOpts.IpVersion.V6, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getIpNotMatch());
+        assertEquals(".*", opts.ipMatch());
+        assertSame(AddressPatternOpts.IpVersion.V6, opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.ipNotMatch());
         assertInterfacePattersAreNull(opts);
 
         opts = parse(" ip6~ .* ");
 
-        assertEquals(".*", opts.getIpMatch());
-        assertSame(AddressPatternOpts.IpVersion.V6, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getIpNotMatch());
+        assertEquals(".*", opts.ipMatch());
+        assertSame(AddressPatternOpts.IpVersion.V6, opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.ipNotMatch());
         assertInterfacePattersAreNull(opts);
     }
 
@@ -163,18 +163,18 @@ public class AddressPatternOptsTest extends HekateTestBase {
     public void testIp6NotMatchPrefix() {
         AddressPatternOpts opts = parse("!ip6~.*");
 
-        assertEquals(".*", opts.getIpNotMatch());
-        assertSame(AddressPatternOpts.IpVersion.V6, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getIpMatch());
+        assertEquals(".*", opts.ipNotMatch());
+        assertSame(AddressPatternOpts.IpVersion.V6, opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.ipMatch());
         assertInterfacePattersAreNull(opts);
 
         opts = parse(" !ip6~ .* ");
 
-        assertEquals(".*", opts.getIpNotMatch());
-        assertSame(AddressPatternOpts.IpVersion.V6, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getIpMatch());
+        assertEquals(".*", opts.ipNotMatch());
+        assertSame(AddressPatternOpts.IpVersion.V6, opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.ipMatch());
         assertInterfacePattersAreNull(opts);
     }
 
@@ -182,18 +182,18 @@ public class AddressPatternOptsTest extends HekateTestBase {
     public void testInterfaceMatchPrefix() {
         AddressPatternOpts opts = parse("net~.*");
 
-        assertEquals(".*", opts.getInterfaceMatch());
-        assertNull(opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getInterfaceNotMatch());
+        assertEquals(".*", opts.interfaceMatch());
+        assertNull(opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.interfaceNotMatch());
         assertIpPatternsAreNull(opts);
 
         opts = parse(" net~ .* ");
 
-        assertEquals(".*", opts.getInterfaceMatch());
-        assertNull(opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getInterfaceNotMatch());
+        assertEquals(".*", opts.interfaceMatch());
+        assertNull(opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.interfaceNotMatch());
         assertIpPatternsAreNull(opts);
     }
 
@@ -201,18 +201,18 @@ public class AddressPatternOptsTest extends HekateTestBase {
     public void testInterface4MatchPrefix() {
         AddressPatternOpts opts = parse("net4~.*");
 
-        assertEquals(".*", opts.getInterfaceMatch());
-        assertSame(AddressPatternOpts.IpVersion.V4, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getInterfaceNotMatch());
+        assertEquals(".*", opts.interfaceMatch());
+        assertSame(AddressPatternOpts.IpVersion.V4, opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.interfaceNotMatch());
         assertIpPatternsAreNull(opts);
 
         opts = parse(" net4~ .* ");
 
-        assertEquals(".*", opts.getInterfaceMatch());
-        assertSame(AddressPatternOpts.IpVersion.V4, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getInterfaceNotMatch());
+        assertEquals(".*", opts.interfaceMatch());
+        assertSame(AddressPatternOpts.IpVersion.V4, opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.interfaceNotMatch());
         assertIpPatternsAreNull(opts);
     }
 
@@ -220,18 +220,18 @@ public class AddressPatternOptsTest extends HekateTestBase {
     public void testInterface6MatchPrefix() {
         AddressPatternOpts opts = parse("net6~.*");
 
-        assertEquals(".*", opts.getInterfaceMatch());
-        assertSame(AddressPatternOpts.IpVersion.V6, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getInterfaceNotMatch());
+        assertEquals(".*", opts.interfaceMatch());
+        assertSame(AddressPatternOpts.IpVersion.V6, opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.interfaceNotMatch());
         assertIpPatternsAreNull(opts);
 
         opts = parse(" net6~ .* ");
 
-        assertEquals(".*", opts.getInterfaceMatch());
-        assertSame(AddressPatternOpts.IpVersion.V6, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getInterfaceNotMatch());
+        assertEquals(".*", opts.interfaceMatch());
+        assertSame(AddressPatternOpts.IpVersion.V6, opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.interfaceNotMatch());
         assertIpPatternsAreNull(opts);
     }
 
@@ -239,18 +239,18 @@ public class AddressPatternOptsTest extends HekateTestBase {
     public void testInterfaceNotMatchPrefix() {
         AddressPatternOpts opts = parse("!net~.*");
 
-        assertEquals(".*", opts.getInterfaceNotMatch());
-        assertNull(opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getInterfaceMatch());
+        assertEquals(".*", opts.interfaceNotMatch());
+        assertNull(opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.interfaceMatch());
         assertIpPatternsAreNull(opts);
 
         opts = parse(" !net~ .* ");
 
-        assertEquals(".*", opts.getInterfaceNotMatch());
-        assertNull(opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getInterfaceMatch());
+        assertEquals(".*", opts.interfaceNotMatch());
+        assertNull(opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.interfaceMatch());
         assertIpPatternsAreNull(opts);
     }
 
@@ -258,18 +258,18 @@ public class AddressPatternOptsTest extends HekateTestBase {
     public void testInterface4NotMatchPrefix() {
         AddressPatternOpts opts = parse("!net4~.*");
 
-        assertEquals(".*", opts.getInterfaceNotMatch());
-        assertSame(AddressPatternOpts.IpVersion.V4, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getInterfaceMatch());
+        assertEquals(".*", opts.interfaceNotMatch());
+        assertSame(AddressPatternOpts.IpVersion.V4, opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.interfaceMatch());
         assertIpPatternsAreNull(opts);
 
         opts = parse(" !net4~ .* ");
 
-        assertEquals(".*", opts.getInterfaceNotMatch());
-        assertSame(AddressPatternOpts.IpVersion.V4, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getInterfaceMatch());
+        assertEquals(".*", opts.interfaceNotMatch());
+        assertSame(AddressPatternOpts.IpVersion.V4, opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.interfaceMatch());
         assertIpPatternsAreNull(opts);
     }
 
@@ -277,18 +277,18 @@ public class AddressPatternOptsTest extends HekateTestBase {
     public void testInterface6NotMatchPrefix() {
         AddressPatternOpts opts = parse("!net6~.*");
 
-        assertEquals(".*", opts.getInterfaceNotMatch());
-        assertSame(AddressPatternOpts.IpVersion.V6, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getInterfaceMatch());
+        assertEquals(".*", opts.interfaceNotMatch());
+        assertSame(AddressPatternOpts.IpVersion.V6, opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.interfaceMatch());
         assertIpPatternsAreNull(opts);
 
         opts = parse(" !net6~ .* ");
 
-        assertEquals(".*", opts.getInterfaceNotMatch());
-        assertSame(AddressPatternOpts.IpVersion.V6, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
-        assertNull(opts.getInterfaceMatch());
+        assertEquals(".*", opts.interfaceNotMatch());
+        assertSame(AddressPatternOpts.IpVersion.V6, opts.ipVersion());
+        assertNull(opts.exactAddress());
+        assertNull(opts.interfaceMatch());
         assertIpPatternsAreNull(opts);
     }
 
@@ -296,15 +296,15 @@ public class AddressPatternOptsTest extends HekateTestBase {
     public void testExactAddress() {
         AddressPatternOpts opts = parse("127.0.0.1");
 
-        assertEquals("127.0.0.1", opts.getExactAddress());
-        assertNull(opts.getIpVersion());
+        assertEquals("127.0.0.1", opts.exactAddress());
+        assertNull(opts.ipVersion());
         assertInterfacePattersAreNull(opts);
         assertIpPatternsAreNull(opts);
 
         opts = parse(" 127.0.0.1 ");
 
-        assertEquals("127.0.0.1", opts.getExactAddress());
-        assertNull(opts.getIpVersion());
+        assertEquals("127.0.0.1", opts.exactAddress());
+        assertNull(opts.ipVersion());
         assertInterfacePattersAreNull(opts);
         assertIpPatternsAreNull(opts);
     }
@@ -313,8 +313,8 @@ public class AddressPatternOptsTest extends HekateTestBase {
     public void testEmpty() {
         AddressPatternOpts opts = parse("");
 
-        assertSame(AddressPatternOpts.IpVersion.V4, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
+        assertSame(AddressPatternOpts.IpVersion.V4, opts.ipVersion());
+        assertNull(opts.exactAddress());
 
         assertAllPatternsAreNull(opts);
     }
@@ -323,8 +323,8 @@ public class AddressPatternOptsTest extends HekateTestBase {
     public void testNull() {
         AddressPatternOpts opts = parse(null);
 
-        assertSame(AddressPatternOpts.IpVersion.V4, opts.getIpVersion());
-        assertNull(opts.getExactAddress());
+        assertSame(AddressPatternOpts.IpVersion.V4, opts.ipVersion());
+        assertNull(opts.exactAddress());
 
         assertAllPatternsAreNull(opts);
     }
@@ -342,12 +342,12 @@ public class AddressPatternOptsTest extends HekateTestBase {
     }
 
     private void assertInterfacePattersAreNull(AddressPatternOpts opts) {
-        assertNull(opts.getInterfaceMatch());
-        assertNull(opts.getInterfaceNotMatch());
+        assertNull(opts.interfaceMatch());
+        assertNull(opts.interfaceNotMatch());
     }
 
     private void assertIpPatternsAreNull(AddressPatternOpts opts) {
-        assertNull(opts.getIpMatch());
-        assertNull(opts.getIpNotMatch());
+        assertNull(opts.ipMatch());
+        assertNull(opts.ipNotMatch());
     }
 }
