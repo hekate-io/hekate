@@ -4,6 +4,7 @@ Java library for cluster communications and computing.
 
 [![Build Status](https://travis-ci.org/hekate-io/hekate.svg?branch=master)](https://travis-ci.org/hekate-io/hekate)
 [![codecov](https://codecov.io/gh/hekate-io/hekate/branch/master/graph/badge.svg)](https://codecov.io/gh/hekate-io/hekate)
+[![Javadocs](http://javadoc.io/badge/io.hekate/hekate-all.svg)](http://javadoc.io/doc/io.hekate/hekate-all)
 
 ## License
 Open source [Apache License v2.0](http://www.apache.org/licenses/)  
@@ -74,7 +75,9 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
 
 ## Documentation
 
-For now, the most detailed documentation is provided as part of javadocs. Complete reference guide is coming soon.
+For now, the most detailed documentation is provided as part of [javadocs](http://javadoc.io/doc/io.hekate/hekate-all/). 
+
+Complete reference guide is coming soon.
 
 
 ## How to build
