@@ -133,3 +133,17 @@ For now, the most detailed documentation is provided as part of javadocs. Comple
   * `hekate-dev-build     ` - Utilities for maven project build.
   
   * `hekate-dev-profiling`  - Performance profiling and benchmarks.
+  
+## Changes notes
+
+### v.1.0.1 (01-Jul-2017)
+
+ - Fixed invalid links in javadocs.
+ - Fixed invalid URL in `<scm>` section of pom.xml files  
+ - Upgraded to Spring Boot 1.5.4.RELEASE
+ - Upgraded to AWS Java SDK 1.11.158
+ - Upgraded to Spring Framework 4.3.9.RELEASE
+
+### v.1.0.0 (30-Jun-2017)
+
+ - Initial version.  
