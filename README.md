@@ -76,7 +76,6 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
 ## Documentation
 
 For now, the most detailed documentation is provided as part of [javadocs](http://javadoc.io/doc/io.hekate/hekate-all/). 
-
 Complete reference guide is coming soon.
 
 ## Maven artifacts
