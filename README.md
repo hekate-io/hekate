@@ -80,7 +80,7 @@ Complete reference guide is coming soon.
 
 ## Maven artifacts
 
- - For projects based on **Spring Boot**:
+ * For projects based on **Spring Boot**:
 ```
 <dependency>
     <groupId>io.hekate</groupId>
@@ -89,7 +89,7 @@ Complete reference guide is coming soon.
 </dependency>
 ```
 
- - For projects based on **Spring Framework**:
+ * For projects based on **Spring Framework**:
 ```
 <dependency>
     <groupId>io.hekate</groupId>
@@ -98,7 +98,7 @@ Complete reference guide is coming soon.
 </dependency>
 ```
 
- - For standalone applications:
+ * For standalone applications:
 ```
 <dependency>
     <groupId>io.hekate</groupId>
@@ -107,7 +107,18 @@ Complete reference guide is coming soon.
 </dependency>
 ```
 
- - ...see all available artifacts at [Maven Central](https://search.maven.org/#search%7Cga%7C1%7Cio.hekate)
+ * Other artifacts:
+    - [hekate-codec-kryo](hekate-codec-kryo/README.md) - Integration with [Kryo](https://github.com/EsotericSoftware/kryo) for data 
+      serialization.
+    - [hekate-codec-fst](hekate-codec-fst/README.md) - Integration with [FST](http://ruedigermoeller.github.io/fast-serialization/) for data 
+      serialization.
+    - [hekate-jclouds-core](hekate-jclouds-core/README.md) - Base integration with [Apache JClouds](http://jclouds.apache.org) for cloud 
+      environments.
+    - [hekate-jclouds-aws](hekate-jclouds-aws/README.md) - Integration with [Amazon EC2](https://aws.amazon.com) cloud environment.
+    - [hekate-metrics-influxdb](hekate-metrics-influxdb/README.md) - Metrics publishing to [InfluxDB](https://www.influxdata.com) 
+      time-series data storage.
+    - [hekate-metrics-statsd](hekate-metrics-statsd/README.md) - Metrics publishing to [StatsD](https://github.com/etsy/statsd) statistics 
+      aggregation daemon. 
 
 ## How to build
 
