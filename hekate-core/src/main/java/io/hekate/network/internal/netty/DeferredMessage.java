@@ -7,21 +7,21 @@ import io.netty.channel.DefaultChannelPromise;
 class DeferredMessage extends DefaultChannelPromise {
     private final Object payload;
 
-    private final Object info;
+    private final Object source;
 
-    public DeferredMessage(Object payload, Object info, Channel channel) {
+    public DeferredMessage(Object payload, Object source, Channel channel) {
         super(channel);
 
         this.payload = payload;
-        this.info = info;
+        this.source = source;
     }
 
-    public Object payload() {
+    public Object encoded() {
         return payload;
     }
 
-    public Object info() {
-        return info;
+    public Object source() {
+        return source;
     }
 
     public boolean isPreEncoded() {
@@ -30,6 +30,6 @@ class DeferredMessage extends DefaultChannelPromise {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[message=" + info + "]";
+        return getClass().getSimpleName() + "[message=" + source + "]";
     }
 }

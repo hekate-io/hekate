@@ -23,7 +23,7 @@ import io.hekate.cluster.seed.SeedNodeProviderMock;
 import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.metrics.cluster.ClusterMetricsServiceFactory;
-import io.hekate.network.NetworkServiceFactory;
+import io.hekate.network.internal.netty.NetworkServiceFactoryForTest;
 import io.hekate.task.TaskServiceFactory;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -93,16 +93,16 @@ public class HekateNodeTestBase extends HekateTestBase {
 
         InetSocketAddress address = newSocketAddress();
 
-        HekateTestNode.Bootstrap bootstrap = new HekateTestNode.Bootstrap(address);
+        HekateTestNode.Bootstrap boot = new HekateTestNode.Bootstrap(address);
 
-        bootstrap.setClusterName("test");
-        bootstrap.setNodeName("node-" + address.getPort() + '-' + allNodes.size());
+        boot.setClusterName("test");
+        boot.setNodeName("node-" + address.getPort() + '-' + allNodes.size());
 
         if (ctx.resources() != null) {
-            bootstrap.withService(ctx::resources);
+            boot.withService(ctx::resources);
         }
 
-        bootstrap.withService(ClusterServiceFactory.class, cluster -> {
+        boot.withService(ClusterServiceFactory.class, cluster -> {
             DefaultFailureDetectorConfig fdCfg = new DefaultFailureDetectorConfig();
 
             fdCfg.setHeartbeatInterval(ctx.hbInterval());
@@ -115,7 +115,7 @@ public class HekateNodeTestBase extends HekateTestBase {
             cluster.setFailureDetector(new DefaultFailureDetector(fdCfg));
         });
 
-        bootstrap.withService(NetworkServiceFactory.class, net -> {
+        boot.withService(NetworkServiceFactoryForTest.class, net -> {
             net.setHost(address.getAddress().getHostAddress());
             net.setPort(address.getPort());
             net.setConnectTimeout(ctx.connectTimeout());
@@ -128,19 +128,19 @@ public class HekateNodeTestBase extends HekateTestBase {
             ctx.ssl().ifPresent(net::setSsl);
         });
 
-        bootstrap.withService(TaskServiceFactory.class, tasks ->
+        boot.withService(TaskServiceFactory.class, tasks ->
             tasks.setLocalExecutionEnabled(false)
         );
 
-        bootstrap.withService(ClusterMetricsServiceFactory.class, metrics ->
+        boot.withService(ClusterMetricsServiceFactory.class, metrics ->
             metrics.setEnabled(false)
         );
 
         if (configurer != null) {
-            configurer.configure(bootstrap);
+            configurer.configure(boot);
         }
 
-        HekateTestNode node = bootstrap.create();
+        HekateTestNode node = boot.create();
 
         allNodes.add(node);
 

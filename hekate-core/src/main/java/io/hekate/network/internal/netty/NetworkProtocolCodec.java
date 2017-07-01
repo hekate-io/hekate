@@ -52,9 +52,9 @@ class NetworkProtocolCodec {
 
                 if (defMsg.isPreEncoded()) {
                     // Write pre-encoded message.
-                    ctx.write(defMsg.payload(), promise);
+                    ctx.write(defMsg.encoded(), promise);
                 } else {
-                    super.write(ctx, defMsg.payload(), promise);
+                    super.write(ctx, defMsg.encoded(), promise);
                 }
             } else if (msg instanceof ByteBuf) {
                 ctx.write(msg, promise);

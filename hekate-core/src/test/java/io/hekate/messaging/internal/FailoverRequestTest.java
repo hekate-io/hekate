@@ -55,7 +55,7 @@ public class FailoverRequestTest extends FailoverTestBase {
                 return ctx.retry().withDelay(50);
             }).request("test").response(3, TimeUnit.SECONDS);
 
-            fail("Error eas expected.");
+            fail("Error was expected.");
         } catch (MessagingFutureException e) {
             assertTrue(e.getCause().toString(), e.getCause() instanceof MessagingException);
             assertEquals("Channel closed [channel=test_channel]", e.getCause().getMessage());

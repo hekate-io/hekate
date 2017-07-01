@@ -48,6 +48,8 @@ public class NettyClientFactory<T> {
 
     private SslContext ssl;
 
+    private NettySpy spy;
+
     public EventLoopGroup getEventLoopGroup() {
         return eventLoopGroup;
     }
@@ -144,6 +146,14 @@ public class NettyClientFactory<T> {
         ArgAssert.check(ssl == null || ssl.isClient(), "SSL context must be configured in client mode.");
 
         this.ssl = ssl;
+    }
+
+    public NettySpy getSpy() {
+        return spy;
+    }
+
+    public void setSpy(NettySpy spy) {
+        this.spy = spy;
     }
 
     public NetworkClient<T> createClient() {

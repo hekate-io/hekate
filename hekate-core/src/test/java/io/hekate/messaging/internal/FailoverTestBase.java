@@ -17,6 +17,8 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.network.internal.netty.NettySpyForTest;
+import io.hekate.network.internal.netty.NetworkServiceFactoryForTest;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -33,6 +35,8 @@ public abstract class FailoverTestBase extends MessagingServiceTestBase {
 
     protected MessagingChannel<String> toRemote;
 
+    protected NettySpyForTest spy;
+
     public FailoverTestBase(MessagingTestContext ctx) {
         super(ctx);
     }
@@ -41,15 +45,20 @@ public abstract class FailoverTestBase extends MessagingServiceTestBase {
     public void setUp() throws Exception {
         super.setUp();
 
-        List<TestChannel> channels = createAndJoinChannels(2, c -> c.withReceiver(msg -> {
-            if (failures.getAndDecrement() > 0) {
-                throw TEST_ERROR;
-            }
+        List<TestChannel> channels = createAndJoinChannels(2,
+            channel -> channel.withReceiver(msg -> {
+                if (spy == null && failures.getAndDecrement() > 0) {
+                    throw TEST_ERROR;
+                }
 
-            if (msg.mustReply()) {
-                msg.reply(msg.get() + "-" + (msg.isRetransmit() ? RETRANSMIT_SUFFIX : "invalid"));
-            }
-        }));
+                if (msg.mustReply()) {
+                    msg.reply(msg.get() + "-" + (msg.isRetransmit() ? RETRANSMIT_SUFFIX : "invalid"));
+                }
+            }),
+            boot -> boot.withService(NetworkServiceFactoryForTest.class, net -> {
+                net.setSpy(spy);
+            })
+        );
 
         awaitForChannelsTopology(channels);
 

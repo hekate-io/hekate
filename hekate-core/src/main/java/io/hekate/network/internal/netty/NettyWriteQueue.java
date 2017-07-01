@@ -28,32 +28,48 @@ class NettyWriteQueue {
 
     private final AtomicBoolean flushScheduled = new AtomicBoolean();
 
-    private final Runnable flushTask = () -> {
-        flushScheduled.set(false);
+    private final Runnable flushTask;
 
-        DeferredMessage lastNonFlushed = null;
+    public NettyWriteQueue() {
+        this(null);
+    }
 
-        int cnt = 0;
+    public NettyWriteQueue(NettySpy spy) {
+        flushTask = () -> {
+            flushScheduled.set(false);
 
-        for (DeferredMessage msg = queue.poll(); msg != null; msg = queue.poll()) {
-            msg.channel().write(msg, msg.promise());
+            DeferredMessage lastNonFlushed = null;
 
-            lastNonFlushed = msg;
+            int cnt = 0;
 
-            cnt++;
+            for (DeferredMessage msg = queue.poll(); msg != null; msg = queue.poll()) {
+                try {
+                    if (spy != null) {
+                        spy.onBeforeFlush(msg.source());
+                    }
 
-            if (cnt == MAX_FLUSH_BATCH_SIZE) {
-                lastNonFlushed.channel().flush();
+                    msg.channel().write(msg, msg.promise());
+                } catch (Throwable e) {
+                    msg.promise().tryFailure(e);
+                }
 
-                lastNonFlushed = null;
-                cnt = 0;
+                lastNonFlushed = msg;
+
+                cnt++;
+
+                if (cnt == MAX_FLUSH_BATCH_SIZE) {
+                    lastNonFlushed.channel().flush();
+
+                    lastNonFlushed = null;
+                    cnt = 0;
+                }
             }
-        }
 
-        if (lastNonFlushed != null) {
-            lastNonFlushed.channel().flush();
-        }
-    };
+            if (lastNonFlushed != null) {
+                lastNonFlushed.channel().flush();
+            }
+        };
+    }
 
     public void enqueue(DeferredMessage msg, Executor executor) {
         queue.add(msg);

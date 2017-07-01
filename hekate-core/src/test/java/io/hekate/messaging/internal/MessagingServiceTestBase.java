@@ -91,10 +91,15 @@ public abstract class MessagingServiceTestBase extends HekateNodeParamTestBase {
     }
 
     protected List<TestChannel> createAndJoinChannels(int size, ChannelConfigurer configurer) throws Exception {
+        return createAndJoinChannels(size, configurer, null);
+    }
+
+    protected List<TestChannel> createAndJoinChannels(int size, ChannelConfigurer configurer, NodeConfigurer nodeConfigurer)
+        throws Exception {
         List<TestChannel> channels = new ArrayList<>();
 
         for (int i = 0; i < size; i++) {
-            channels.add(createChannel(configurer).join());
+            channels.add(createChannel(configurer, nodeConfigurer).join());
         }
 
         awaitForChannelsTopology(channels);

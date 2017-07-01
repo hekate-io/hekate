@@ -353,7 +353,7 @@ class NettyClient<T> implements NetworkClient<T> {
 
     private final int affinity = ThreadLocalRandom.current().nextInt();
 
-    private final NettyWriteQueue writeQueue = new NettyWriteQueue();
+    private final NettyWriteQueue writeQueue;
 
     private final SslContext ssl;
 
@@ -404,6 +404,8 @@ class NettyClient<T> implements NetworkClient<T> {
         eventLoop = factory.getEventLoopGroup().next();
         metrics = factory.getMetrics();
         ssl = factory.getSsl();
+
+        writeQueue = new NettyWriteQueue(factory.getSpy());
     }
 
     @Override

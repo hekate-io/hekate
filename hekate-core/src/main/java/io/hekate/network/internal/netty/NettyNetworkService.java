@@ -532,6 +532,10 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
         });
     }
 
+    protected <T> NettyClientFactory<T> createClientFactory() {
+        return new NettyClientFactory<>();
+    }
+
     // Package level for testing purposes.
     void start() {
         // Safe to use null since we don't use this parameter in any of those method.
@@ -587,7 +591,7 @@ public class NettyNetworkService implements NetworkServiceManager, DependentServ
             codecFactory = cfg.getMessageCodec();
         }
 
-        NettyClientFactory<T> factory = new NettyClientFactory<>();
+        NettyClientFactory<T> factory = createClientFactory();
 
         factory.setProtocol(protocol);
         factory.setCodecFactory(codecFactory);

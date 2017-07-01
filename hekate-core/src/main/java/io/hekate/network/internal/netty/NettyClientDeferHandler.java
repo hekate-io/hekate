@@ -55,12 +55,12 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
 
             if (deferredError == null) {
                 if (debug) {
-                    log.debug("Deferring message sending since handshake is not completed yet [address={}, message={}]", id, def.info());
+                    log.debug("Deferring message sending since handshake is not completed yet [address={}, message={}]", id, def.source());
                 }
 
                 deferred.add(def);
             } else if (promise.tryFailure(deferredError)) {
-                ReferenceCountUtil.release(def.payload());
+                ReferenceCountUtil.release(def.encoded());
             }
         } else {
             if (deferredError == null) {
@@ -159,7 +159,7 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
                 try {
                     msg.promise().tryFailure(deferredError);
                 } finally {
-                    ReferenceCountUtil.release(msg.payload());
+                    ReferenceCountUtil.release(msg.encoded());
                 }
             }
 
@@ -184,10 +184,10 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
                     DeferredMessage msg = localDeferred.poll();
 
                     if (debug) {
-                        log.debug("Writing deferred message [address={}, message={}]", id, msg.info());
+                        log.debug("Writing deferred message [address={}, message={}]", id, msg.source());
                     }
 
-                    ctx.writeAndFlush(msg.payload(), msg.promise());
+                    ctx.writeAndFlush(msg.encoded(), msg.promise());
                 }
             }
 
