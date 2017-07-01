@@ -603,7 +603,6 @@ class MessagingGateway<T> implements HekateSupport {
                     }
                 }
             } else {
-                // TODO: Urgent!!! Failover in MessagingGateway#send(...) is not covered by unit tests.
                 // Apply failover actions.
                 FailoverCallback onFailover = new FailoverCallback() {
                     @Override
