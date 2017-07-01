@@ -1,4 +1,4 @@
-## [Hekate.io](https://github.com/hekate-io/hekate): Integration with [Amazon Web Services](https://aws.amazon.com/)
+## Integration with [Amazon Web Services](https://aws.amazon.com/)
  
  ```
  <dependency>

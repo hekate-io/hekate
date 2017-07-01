@@ -1,4 +1,4 @@
-## [Hekate.io](https://github.com/hekate-io/hekate): All-in-One Aggregate Module
+## All-in-One Aggregate Module
  
  ```
  <dependency>

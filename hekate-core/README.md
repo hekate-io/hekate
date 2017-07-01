@@ -1,4 +1,4 @@
-## [Hekate.io](https://github.com/hekate-io/hekate): Core Module
+## Core of [Hekate.io](https://github.com/hekate-io/hekate) library
  
  ```
  <dependency>

@@ -1,4 +1,4 @@
-## [Hekate.io](https://github.com/hekate-io/hekate): Integration with [Spring Framework](https://projects.spring.io/spring-framework/)
+## Integration with [Spring Framework](https://projects.spring.io/spring-framework/)
  
  ```
  <dependency>

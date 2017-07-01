@@ -1,4 +1,4 @@
-## [Hekate.io](https://github.com/hekate-io/hekate): Integration with [Kryo](https://github.com/EsotericSoftware/kryo)
+## Integration with [Kryo](https://github.com/EsotericSoftware/kryo)
  
  ```
  <dependency>

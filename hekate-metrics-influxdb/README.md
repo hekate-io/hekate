@@ -1,4 +1,4 @@
-## [Hekate.io](https://github.com/hekate-io/hekate): Integration with [InfluxDB](https://github.com/influxdata/influxdb)
+## Integration with [InfluxDB](https://github.com/influxdata/influxdb)
  
  ```
  <dependency>

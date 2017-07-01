@@ -1,4 +1,4 @@
-## [Hekate.io](https://github.com/hekate-io/hekate): Integration with [jCoulds](http://jclouds.apache.org/)
+## Integration with [jCoulds](http://jclouds.apache.org/)
  
  ```
  <dependency>

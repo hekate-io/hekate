@@ -1,4 +1,4 @@
-## [Hekate.io](https://github.com/hekate-io/hekate): Integration with [Fast Serialization](https://github.com/RuedigerMoeller/fast-serialization)
+## Integration with [Fast Serialization](https://github.com/RuedigerMoeller/fast-serialization)
  
  ```
  <dependency>

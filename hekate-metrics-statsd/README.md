@@ -1,4 +1,4 @@
-## [Hekate.io](https://github.com/hekate-io/hekate): Integration with [StatsD](https://github.com/etsy/statsd)
+## Integration with [StatsD](https://github.com/etsy/statsd)
  
  ```
  <dependency>
