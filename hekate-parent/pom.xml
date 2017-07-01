@@ -628,19 +628,6 @@
                         </replace-me-with-script>
                         ]]>
                     </top>
-                    <bottom>
-                        <![CDATA[
-                            <replace-me-with-script>
-                                for(var i in document.links) {
-                                    var link = document.links[i];
-
-                                    if (link.href && link.href.indexOf('http') === 0) {
-                                        link.target = '_blank';
-                                    }
-                                }
-                            </replace-me-with-script>
-                        ]]>
-                    </bottom>
                     <doctitle>Hekate ${project.version}</doctitle>
                     <windowtitle>Hekate ${project.version}</windowtitle>
                     <overview>${basedir}/hekate-dev-build/src/main/javadoc/overview.html</overview>
