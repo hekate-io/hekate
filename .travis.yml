@@ -18,7 +18,6 @@ env:
   # Epoll + OpenSSL
   - NIO_ENABLED=false  EPOLL_ENABLED=true   NO_SSL_ENABLED=false  SSL_JDK_ENABLED=false  SSL_OPENSSL_ENABLED=true
 
-sudo: required
 services:
   - docker
 
