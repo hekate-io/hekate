@@ -30,6 +30,13 @@
         <relativePath>../hekate-parent</relativePath>
     </parent>
 
+    <scm>
+        <url>https://github.com/hekate-io/hekate</url>
+        <connection>scm:git:git://github.com/hekate-io/hekate.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/hekate-io/hekate.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
     <dependencies>
         <!-- Production dependencies.-->
         <dependency>
