@@ -79,6 +79,36 @@ For now, the most detailed documentation is provided as part of [javadocs](http:
 
 Complete reference guide is coming soon.
 
+## Maven artifacts
+
+ - For projects based on **Spring Boot**:
+```
+<dependency>
+    <groupId>io.hekate</groupId>
+    <artifactId>hekate-spring-boot</artifactId>
+    <version>1.0.1</version>
+</dependency>
+```
+
+ - For projects based on **Spring Framework**:
+```
+<dependency>
+    <groupId>io.hekate</groupId>
+    <artifactId>hekate-spring</artifactId>
+    <version>1.0.1</version>
+</dependency>
+```
+
+ - For standalone applications:
+```
+<dependency>
+    <groupId>io.hekate</groupId>
+    <artifactId>hekate-core</artifactId>
+    <version>1.0.1</version>
+</dependency>
+```
+
+ - ...see all available artifacts at [Maven Central](https://search.maven.org/#search%7Cga%7C1%7Cio.hekate)
 
 ## How to build
 
