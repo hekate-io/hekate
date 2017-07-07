@@ -296,8 +296,7 @@ public class MessagingChannelConfig<T> {
      *
      * <p>
      * If value of this parameter is zero then the channel's mapper will not manage {@link Partition#backupNodes() backup nodes}. If value
-     * of this parameter is negative then the channel's the mapper will use all available cluster nodes as
-     * {@link Partition#backupNodes() backup nodes}.
+     * of this parameter is negative then all available cluster nodes will be used as {@link Partition#backupNodes() backup nodes}.
      * </p>
      *
      * <p>

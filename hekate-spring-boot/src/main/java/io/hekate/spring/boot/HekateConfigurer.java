@@ -112,7 +112,7 @@ import org.springframework.context.annotation.Configuration;
  * </p>
  *
  * <p>
- * Additionally each service has its own auto-configuration class that simplifies configuration and registration of service components.
+ * Additionally each service has its own auto-configuration class that simplifies configuration and registration of services and components.
  * Please see the documentation of the following classes:
  * </p>
  * <ul>
