@@ -1,4 +1,4 @@
-## Integration with [jCoulds](http://jclouds.apache.org/)
+## Integration with [jClouds](http://jclouds.apache.org/)
  
  ```
  <dependency>
