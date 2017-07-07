@@ -19,6 +19,7 @@ package io.hekate.spring.bean.internal;
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.core.Hekate;
+import java.util.concurrent.TimeoutException;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -28,6 +29,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public abstract class XsdTestBase extends HekateTestBase {
@@ -47,8 +49,17 @@ public abstract class XsdTestBase extends HekateTestBase {
         assertNotNull(node1);
         assertNotNull(node2);
 
-        get(node1.cluster().futureOf(top -> top.size() == 2));
-        get(node2.cluster().futureOf(top -> top.size() == 2));
+        try {
+            get(node1.cluster().futureOf(top -> top.size() == 2));
+        } catch (TimeoutException e) {
+            fail("Failed to await for topology [current-topology=" + node1.cluster().topology() + ']');
+        }
+
+        try {
+            get(node2.cluster().futureOf(top -> top.size() == 2));
+        } catch (TimeoutException e) {
+            fail("Failed to await for topology [current-topology=" + node2.cluster().topology() + ']');
+        }
 
         ClusterTopology top1 = node1.cluster().topology();
         ClusterTopology top2 = node2.cluster().topology();
