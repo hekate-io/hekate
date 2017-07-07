@@ -47,7 +47,7 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
     static class DefaultTestConfig {
         @Component
         public static class Listener {
-            private List<ClusterEvent> events = Collections.synchronizedList(new ArrayList<>());
+            private final List<ClusterEvent> events = Collections.synchronizedList(new ArrayList<>());
 
             @EventListener
             public void onJoin(ClusterJoinEvent evt) {

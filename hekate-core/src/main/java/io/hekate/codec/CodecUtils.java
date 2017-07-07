@@ -494,7 +494,7 @@ public final class CodecUtils {
         // This extra step lets us deal with the largest signed values by treating
         // negative results from read unsigned methods as like unsigned values.
         // Must re-flip the top bit if the original read value had it set.
-        return temp ^ (raw & (1 << 31));
+        return temp ^ raw & 1 << 31;
     }
 
     /**
