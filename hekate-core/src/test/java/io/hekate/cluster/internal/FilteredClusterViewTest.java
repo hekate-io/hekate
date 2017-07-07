@@ -64,7 +64,7 @@ public class FilteredClusterViewTest extends HekateNodeTestBase {
             both(hasItem(node2.localNode()))
                 .and(not(hasItem(node3.localNode())))
         );
-        
+
         assertTrue(node1.cluster().forRemotes().forNode(node1.localNode()).topology().isEmpty());
 
         ClusterEventListener l1 = mock(ClusterEventListener.class);

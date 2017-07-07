@@ -120,7 +120,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
     @Override
     public void resolve(DependencyContext ctx) {
         messaging = ctx.require(MessagingService.class);
-        
+
         cluster = ctx.require(ClusterService.class).filter(HAS_SERVICE_FILTER);
     }
 

@@ -171,7 +171,7 @@ import java.util.Set;
  * <p>
  * Each instance of {@link Hekate} goes through the following stages of the life cycle:
  * </p>
- * 
+ *
  * <ul>
  * <li>{@link State#DOWN} - initial state</li>
  *

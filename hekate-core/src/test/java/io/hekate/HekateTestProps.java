@@ -71,6 +71,15 @@ public final class HekateTestProps {
         return Boolean.parseBoolean(get(key));
     }
 
+    public static String get(String key) {
+        String val = doGet(key);
+
+        assertNotNull("Test property not configured [key=" + key + ']', val);
+        assertFalse("Test property has empty value  [key=" + key + ']', val.trim().isEmpty());
+
+        return val.trim();
+    }
+
     private static String doGet(String key) {
         String val = System.getenv(key);
 
@@ -85,15 +94,6 @@ public final class HekateTestProps {
         }
 
         return PROPERTIES.getProperty(key);
-    }
-
-    public static String get(String key) {
-        String val = doGet(key);
-
-        assertNotNull("Test property not configured [key=" + key + ']', val);
-        assertFalse("Test property has empty value  [key=" + key + ']', val.trim().isEmpty());
-
-        return val.trim();
     }
 
     private static Properties loadProperties(File baseDir, String fileName) {
