@@ -1,4 +1,6 @@
 ## All-in-One Aggregate Module
+
+All-in-One Maven module that contains all binary/source code and javadocs of [Hekate.io](https://github.com/hekate-io/hekate) library.
  
  ```
  <dependency>

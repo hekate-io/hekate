@@ -1,4 +1,7 @@
 ## Integration with [StatsD](https://github.com/etsy/statsd)
+
+This module provides support for metrics publishing to [StatsD](https://github.com/etsy/statsd) ()statistics aggregation daemon)
+for [Hekate.io](https://github.com/hekate-io/hekate) library. 
  
  ```
  <dependency>

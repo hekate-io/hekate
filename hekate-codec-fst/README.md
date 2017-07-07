@@ -1,4 +1,7 @@
 ## Integration with [Fast Serialization](https://github.com/RuedigerMoeller/fast-serialization)
+
+This module provides integration with [FST](http://ruedigermoeller.github.io/fast-serialization/) for data serialization 
+in [Hekate.io](https://github.com/hekate-io/hekate) library.
  
  ```
  <dependency>

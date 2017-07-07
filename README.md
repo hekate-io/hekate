@@ -141,43 +141,8 @@ Complete reference guide is coming soon.
   - edit `my_test.properties` according to your environment
   - run `docker-compose up -d` to prepare Docker-based testing infrastructure
   - run `./mvnw clean package`
-
-## Source code structure
-
-### Main modules:
-
-  * `[hekate-core]`              - Core functionality.
   
-  * `[hekate-spring]`            - Integration with with [Spring Framework](http://projects.spring.io/spring-framework/) 
-                                   (custom XML schema + bean adaptors).
-  
-  * `[hekate-spring-boot]`       - Auto-configuration for [Spring Boot](https://projects.spring.io/spring-boot/).
-
-  * `[hekate-codec-kryo]`        - Integration with [Kryo](https://github.com/EsotericSoftware/kryo) for data serialization.
-  
-  * `[hekate-codec-fst]`         - Integration with [FST](http://ruedigermoeller.github.io/fast-serialization/) for data 
-                                   serialization.
-
-  * `[hekate-jclouds-core]`      - Base integration with [Apache JClouds](http://jclouds.apache.org) for cloud environments.
-
-  * `[hekate-jclouds-aws]`       - Integration with [Amazon EC2](https://aws.amazon.com) cloud environment.
-  
-  * `[hekate-metrics-influxdb]`  - Metrics publishing to [InfluxDB](https://www.influxdata.com) time-series data storage.
-  
-  * `[hekate-metrics-statsd]`    - Metrics publishing to [StatsD](https://github.com/etsy/statsd) statistics aggregation daemon.
-
-  * `[hekate-parent]`            - Parent module with maven dependencies management.
-
-  * `[hekate-all]`               - All-in-One aggregate module.
-  
-
-### Development modules:
-
-  * `hekate-dev-build     ` - Utilities for maven project build.
-  
-  * `hekate-dev-profiling`  - Performance profiling and benchmarks.
-  
-## Changes notes
+## Release notes
 
 ### v.1.0.1 (01-Jul-2017)
 
