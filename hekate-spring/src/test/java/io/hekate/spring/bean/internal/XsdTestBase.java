@@ -28,6 +28,7 @@ import org.springframework.test.annotation.DirtiesContext;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -49,16 +50,27 @@ public abstract class XsdTestBase extends HekateTestBase {
         assertNotNull(node1);
         assertNotNull(node2);
 
+        assertSame(Hekate.State.UP, node1.state());
+        assertSame(Hekate.State.UP, node2.state());
+
         try {
             get(node1.cluster().futureOf(top -> top.size() == 2));
         } catch (TimeoutException e) {
-            fail("Failed to await for topology [current-topology=" + node1.cluster().topology() + ']');
+            fail("Failed to await for topology ["
+                + "node-1-topology=" + node1.cluster().topology()
+                + ", node-2-topology=" + node2.cluster().topology()
+                + ']'
+            );
         }
 
         try {
             get(node2.cluster().futureOf(top -> top.size() == 2));
         } catch (TimeoutException e) {
-            fail("Failed to await for topology [current-topology=" + node2.cluster().topology() + ']');
+            fail("Failed to await for topology ["
+                + "node-1-topology=" + node1.cluster().topology()
+                + ", node-2-topology=" + node2.cluster().topology()
+                + ']'
+            );
         }
 
         ClusterTopology top1 = node1.cluster().topology();
