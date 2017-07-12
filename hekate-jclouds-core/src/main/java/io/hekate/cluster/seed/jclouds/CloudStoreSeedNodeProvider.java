@@ -233,11 +233,11 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider {
         try (BlobStoreContext ctx = createContext()) {
             BlobStore store = ctx.getBlobStore();
 
-            String fileName = cluster + '/' + AddressUtils.toFileName(address);
+            String file = cluster + '/' + AddressUtils.toFileName(address);
 
             try {
-                if (!store.blobExists(container, fileName)) {
-                    Blob blob = store.blobBuilder(fileName)
+                if (!store.blobExists(container, file)) {
+                    Blob blob = store.blobBuilder(file)
                         .type(StorageType.BLOB)
                         .payload(new byte[]{1})
                         .build();
@@ -245,12 +245,12 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider {
                     store.putBlob(container, blob);
 
                     if (log.isDebugEnabled()) {
-                        log.debug("Registered address in the cloud store [container={}, file={}]", container, fileName);
+                        log.debug("Registered address in the cloud store [container={}, file={}]", container, file);
                     }
                 }
             } catch (ResourceNotFoundException | HttpResponseException e) {
-                throw new HekateException("Failed to register a seed node address to the cloud store "
-                    + "[container=" + container + ", file=" + fileName + ']', e);
+                throw new HekateException("Failed to register the seed node address to the cloud store "
+                    + "[container=" + container + ", file=" + file + ']', e);
             }
         }
     }
@@ -259,20 +259,20 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider {
         try (BlobStoreContext ctx = createContext()) {
             BlobStore store = ctx.getBlobStore();
 
-            String fileName = cluster + '/' + AddressUtils.toFileName(address);
+            String file = cluster + '/' + AddressUtils.toFileName(address);
 
             try {
-                if (store.blobExists(container, fileName)) {
-                    store.removeBlob(container, fileName);
+                if (store.blobExists(container, file)) {
+                    store.removeBlob(container, file);
 
                     if (log.isDebugEnabled()) {
-                        log.debug("Unregister address from the cloud store [container={}, file={}]", container, fileName);
+                        log.debug("Unregister address from the cloud store [container={}, file={}]", container, file);
                     }
                 }
             } catch (ResourceNotFoundException | HttpResponseException e) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Failed to unregister address from the cloud store "
-                        + "[container={}, file={}, cause={}]", container, fileName, e.toString());
+                if (log.isWarnEnabled()) {
+                    log.warn("Failed to unregister the seed node address from the cloud store "
+                        + "[container={}, file={}, cause={}]", container, file, e.toString());
                 }
             }
         }
