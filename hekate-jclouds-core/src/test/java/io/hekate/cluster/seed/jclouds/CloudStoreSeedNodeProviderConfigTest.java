@@ -18,7 +18,6 @@ package io.hekate.cluster.seed.jclouds;
 
 import io.hekate.HekateTestBase;
 import io.hekate.util.format.ToString;
-import java.util.Collections;
 import java.util.Properties;
 import org.junit.Test;
 
@@ -27,8 +26,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-public class CloudSeedNodeProviderConfigTest extends HekateTestBase {
-    private final CloudSeedNodeProviderConfig cfg = new CloudSeedNodeProviderConfig();
+public class CloudStoreSeedNodeProviderConfigTest extends HekateTestBase {
+    private final CloudStoreSeedNodeProviderConfig cfg = new CloudStoreSeedNodeProviderConfig();
 
     @Test
     public void testProvider() {
@@ -45,23 +44,6 @@ public class CloudSeedNodeProviderConfigTest extends HekateTestBase {
         assertSame(cfg, cfg.withProvider("test"));
 
         assertEquals("test", cfg.getProvider());
-    }
-
-    @Test
-    public void testEndpoint() {
-        assertNull(cfg.getEndpoint());
-
-        cfg.setEndpoint("test");
-
-        assertEquals("test", cfg.getEndpoint());
-
-        cfg.setEndpoint(null);
-
-        assertNull(cfg.getEndpoint());
-
-        assertSame(cfg, cfg.withEndpoint("test"));
-
-        assertEquals("test", cfg.getEndpoint());
     }
 
     @Test
@@ -104,54 +86,33 @@ public class CloudSeedNodeProviderConfigTest extends HekateTestBase {
     }
 
     @Test
-    public void testRegions() {
-        assertNull(cfg.getRegions());
+    public void testCleanupInterval() {
+        assertEquals(CloudStoreSeedNodeProviderConfig.DEFAULT_CLEANUP_INTERVAL, cfg.getCleanupInterval());
 
-        cfg.setRegions(Collections.singleton("test1"));
+        cfg.setCleanupInterval(10001);
 
-        assertTrue(cfg.getRegions().contains("test1"));
+        assertEquals(10001, cfg.getCleanupInterval());
 
-        cfg.setRegions(null);
+        assertSame(cfg, cfg.withCleanupInterval(10002));
 
-        assertNull(cfg.getRegions());
-
-        assertSame(cfg, cfg.withRegion("test2"));
-
-        assertTrue(cfg.getRegions().contains("test2"));
+        assertEquals(10002, cfg.getCleanupInterval());
     }
 
     @Test
-    public void testZones() {
-        assertNull(cfg.getZones());
+    public void testContainer() {
+        assertNull(cfg.getContainer());
 
-        cfg.setZones(Collections.singleton("test1"));
+        cfg.setContainer("test");
 
-        assertTrue(cfg.getZones().contains("test1"));
+        assertEquals("test", cfg.getContainer());
 
-        cfg.setZones(null);
+        cfg.setContainer(null);
 
-        assertNull(cfg.getZones());
+        assertNull(cfg.getContainer());
 
-        assertSame(cfg, cfg.withZone("test2"));
+        assertSame(cfg, cfg.withContainer("test"));
 
-        assertTrue(cfg.getZones().contains("test2"));
-    }
-
-    @Test
-    public void testTags() {
-        assertNull(cfg.getTags());
-
-        cfg.setTags(Collections.singletonMap("test1", "1"));
-
-        assertEquals("1", cfg.getTags().get("test1"));
-
-        cfg.setTags(null);
-
-        assertNull(cfg.getTags());
-
-        assertSame(cfg, cfg.withTag("test2", "2"));
-
-        assertEquals("2", cfg.getTags().get("test2"));
+        assertEquals("test", cfg.getContainer());
     }
 
     @Test
