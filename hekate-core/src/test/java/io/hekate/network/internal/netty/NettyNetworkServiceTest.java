@@ -217,7 +217,7 @@ public class NettyNetworkServiceTest extends NetworkTestBase {
 
             fail("Error was expected.");
         } catch (ExecutionException e) {
-            assertTrue(ErrorUtils.isCausedBy(e, IOException.class));
+            assertTrue(ErrorUtils.isCausedBy(IOException.class, e));
         }
     }
 

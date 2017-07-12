@@ -98,7 +98,7 @@ public class BackPressureBroadcastTest extends BackPressureTestBase {
 
         assertFalse(errors.isEmpty());
         assertTrue(errors.toString(), errors.values().stream().allMatch(e ->
-            ErrorUtils.isCausedBy(e, MessageQueueOverflowException.class))
+            ErrorUtils.isCausedBy(MessageQueueOverflowException.class, e))
         );
     }
 }

@@ -163,7 +163,7 @@ public class DefaultFailoverContext implements FailoverContext {
 
     @Override
     public boolean isCausedBy(Class<? extends Throwable> type) {
-        return ErrorUtils.isCausedBy(error, type);
+        return ErrorUtils.isCausedBy(type, error);
     }
 
     @Override

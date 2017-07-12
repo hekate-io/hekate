@@ -78,7 +78,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
                 fail("Error was expected");
             } catch (ExecutionException e) {
-                assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(e, ConnectException.class));
+                assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(ConnectException.class, e));
             }
 
             assertSame(NetworkClient.State.DISCONNECTED, client.state());
@@ -111,7 +111,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
                 fail("Error was expected");
             } catch (ExecutionException e) {
-                assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(e, IOException.class));
+                assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(IOException.class, e));
             }
 
             sendCallback.awaitForErrors("test");
@@ -119,7 +119,7 @@ public class NetworkClientTest extends NetworkTestBase {
             Throwable sendErr = sendCallback.getFailure("test");
 
             assertNotNull(sendErr);
-            assertTrue(getStacktrace(sendErr), ErrorUtils.isCausedBy(sendErr, IOException.class));
+            assertTrue(getStacktrace(sendErr), ErrorUtils.isCausedBy(IOException.class, sendErr));
 
             assertSame(NetworkClient.State.DISCONNECTED, client.state());
             assertNull(client.remoteAddress());
@@ -145,7 +145,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
                 fail("Error was expected");
             } catch (ExecutionException e) {
-                assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(e, ConnectTimeoutException.class));
+                assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(ConnectTimeoutException.class, e));
             }
 
             assertSame(NetworkClient.State.DISCONNECTED, client.state());
@@ -852,7 +852,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
             fail("Error was expected");
         } catch (ExecutionException e) {
-            assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(e, ConnectException.class));
+            assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(ConnectException.class, e));
         }
 
         assertSame(NetworkClient.State.DISCONNECTED, client.state());
@@ -918,7 +918,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
                 fail("Error was expected");
             } catch (ExecutionException e) {
-                assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(e, ConnectException.class));
+                assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(ConnectException.class, e));
             }
 
             messageCallback.awaitForSentOrFailed(i + 1);
@@ -966,7 +966,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
             fail("Error was expected");
         } catch (ExecutionException e) {
-            assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(e, ConnectException.class));
+            assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(ConnectException.class, e));
         }
 
         assertSame(NetworkClient.State.DISCONNECTED, client.state());
@@ -1026,7 +1026,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
                     fail("Error was expected");
                 } catch (ExecutionException e) {
-                    assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(e, ConnectTimeoutException.class));
+                    assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(ConnectTimeoutException.class, e));
                 }
             });
 
@@ -1080,7 +1080,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
                     fail("Error was expected.");
                 } catch (ExecutionException e) {
-                    assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(e, ConnectException.class));
+                    assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(ConnectException.class, e));
                 }
             });
 

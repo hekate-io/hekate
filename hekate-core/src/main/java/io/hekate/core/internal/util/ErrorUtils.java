@@ -37,13 +37,13 @@ public final class ErrorUtils {
      * bottom of the tree is reached.
      * </p>
      *
-     * @param error Error (can be {@code null}).
      * @param type Error type to check for.
      *
+     * @param error Error (can be {@code null}).
      * @return {@code true} if the specified exception {@link Class#isAssignableFrom(Class) is} an error of the specified type or is caused
      * by an error of the specified type.
      */
-    public static boolean isCausedBy(Throwable error, Class<? extends Throwable> type) {
+    public static boolean isCausedBy(Class<? extends Throwable> type, Throwable error) {
         return findCause(error, type) != null;
     }
 

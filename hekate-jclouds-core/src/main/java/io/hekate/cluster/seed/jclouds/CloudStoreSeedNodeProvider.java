@@ -189,7 +189,7 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider {
 
             return Collections.emptyList();
         } catch (HttpResponseException e) {
-            if (ErrorUtils.isCausedBy(e, IOException.class)) {
+            if (ErrorUtils.isCausedBy(IOException.class, e)) {
                 throw new HekateException("Cloud provider connection failure [provider=" + provider + ']', e);
             } else {
                 throw e;

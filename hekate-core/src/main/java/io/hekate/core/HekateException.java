@@ -51,6 +51,6 @@ public class HekateException extends Exception {
      * @return {@code true} if this exception is caused by an error of the specified type.
      */
     public boolean isCausedBy(Class<? extends Throwable> causeType) {
-        return ErrorUtils.isCausedBy(this, causeType);
+        return ErrorUtils.isCausedBy(causeType, this);
     }
 }

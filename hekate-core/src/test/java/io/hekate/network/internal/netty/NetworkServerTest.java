@@ -301,7 +301,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
             fail();
         } catch (ExecutionException e) {
-            assertTrue(ErrorUtils.isCausedBy(e, ConnectException.class));
+            assertTrue(ErrorUtils.isCausedBy(ConnectException.class, e));
         }
 
         server.startAccepting();
@@ -698,7 +698,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
             fail("Error was expected.");
         } catch (ExecutionException e) {
-            assertTrue(getStacktrace(e), ErrorUtils.isCausedBy(e, IOException.class));
+            assertTrue(getStacktrace(e), ErrorUtils.isCausedBy(IOException.class, e));
         }
     }
 

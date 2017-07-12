@@ -229,7 +229,7 @@ public class SendPressureGuardTest extends HekateTestBase {
 
                 fail("Error was expected");
             } catch (ExecutionException e) {
-                assertTrue(getStacktrace(e), ErrorUtils.isCausedBy(e, MessageQueueTimeoutException.class));
+                assertTrue(getStacktrace(e), ErrorUtils.isCausedBy(MessageQueueTimeoutException.class, e));
             }
 
             assertEquals(11, backPressure.queueSize());

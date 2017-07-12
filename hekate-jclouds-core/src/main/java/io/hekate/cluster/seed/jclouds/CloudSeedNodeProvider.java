@@ -222,7 +222,7 @@ public class CloudSeedNodeProvider implements SeedNodeProvider {
 
                 return seedNodes;
             } catch (HttpResponseException e) {
-                if (ErrorUtils.isCausedBy(e, IOException.class)) {
+                if (ErrorUtils.isCausedBy(IOException.class, e)) {
                     throw new HekateException("Cloud provider connection failure [provider=" + provider + ']', e);
                 } else {
                     throw e;

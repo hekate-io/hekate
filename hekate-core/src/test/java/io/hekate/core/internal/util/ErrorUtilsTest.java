@@ -10,12 +10,12 @@ import static org.junit.Assert.assertTrue;
 public class ErrorUtilsTest extends HekateTestBase {
     @Test
     public void testIsCausedBy() {
-        assertFalse(ErrorUtils.isCausedBy(null, Exception.class));
-        assertFalse(ErrorUtils.isCausedBy(new Exception(), IOException.class));
+        assertFalse(ErrorUtils.isCausedBy(Exception.class, null));
+        assertFalse(ErrorUtils.isCausedBy(IOException.class, new Exception()));
 
-        assertTrue(ErrorUtils.isCausedBy(new IOException(), IOException.class));
-        assertTrue(ErrorUtils.isCausedBy(new Exception(new IOException()), IOException.class));
-        assertTrue(ErrorUtils.isCausedBy(new Exception(new Exception(new IOException())), IOException.class));
+        assertTrue(ErrorUtils.isCausedBy(IOException.class, new IOException()));
+        assertTrue(ErrorUtils.isCausedBy(IOException.class, new Exception(new IOException())));
+        assertTrue(ErrorUtils.isCausedBy(IOException.class, new Exception(new Exception(new IOException()))));
     }
 
     @Test

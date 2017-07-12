@@ -117,7 +117,7 @@ public abstract class TaskServiceTestBase extends HekateNodeParamTestBase {
 
             fail("Error was expected.");
         } catch (ExecutionException e) {
-            assertTrue(getStacktrace(e.getCause()), ErrorUtils.isCausedBy(e.getCause(), type));
+            assertTrue(getStacktrace(e.getCause()), ErrorUtils.isCausedBy(type, e.getCause()));
 
             if (check != null) {
                 check.accept(ErrorUtils.findCause(e.getCause(), type));

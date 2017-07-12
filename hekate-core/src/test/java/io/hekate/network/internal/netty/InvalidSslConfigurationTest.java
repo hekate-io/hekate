@@ -48,7 +48,7 @@ public class InvalidSslConfigurationTest extends NetworkTestBase {
 
             fail("Error was expected.");
         } catch (ExecutionException e) {
-            assertTrue(getStacktrace(e), ErrorUtils.isCausedBy(e, SSLHandshakeException.class));
+            assertTrue(getStacktrace(e), ErrorUtils.isCausedBy(SSLHandshakeException.class, e));
         }
     }
 
@@ -67,7 +67,7 @@ public class InvalidSslConfigurationTest extends NetworkTestBase {
 
             fail("Error was expected.");
         } catch (ExecutionException e) {
-            assertTrue(getStacktrace(e), ErrorUtils.isCausedBy(e, ConnectException.class));
+            assertTrue(getStacktrace(e), ErrorUtils.isCausedBy(ConnectException.class, e));
         }
     }
 
@@ -84,7 +84,7 @@ public class InvalidSslConfigurationTest extends NetworkTestBase {
 
             fail("Error was expected.");
         } catch (ExecutionException e) {
-            assertTrue(getStacktrace(e), ErrorUtils.isCausedBy(e, ConnectException.class));
+            assertTrue(getStacktrace(e), ErrorUtils.isCausedBy(ConnectException.class, e));
         }
     }
 }

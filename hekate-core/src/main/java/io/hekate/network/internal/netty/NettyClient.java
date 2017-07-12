@@ -307,7 +307,7 @@ class NettyClient<T> implements NetworkClient<T> {
 
         private boolean isNonFatalIoError(Throwable err) {
             return err instanceof IOException
-                && !ErrorUtils.isCausedBy(err, GeneralSecurityException.class);
+                && !ErrorUtils.isCausedBy(GeneralSecurityException.class, err);
         }
     }
 

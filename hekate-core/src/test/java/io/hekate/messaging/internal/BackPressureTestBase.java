@@ -83,7 +83,7 @@ public abstract class BackPressureTestBase extends MessagingServiceTestBase {
         } catch (TimeoutException | InterruptedException e) {
             throw new AssertionError(e);
         } catch (ExecutionException e) {
-            return ErrorUtils.isCausedBy(e, MessageQueueOverflowException.class);
+            return ErrorUtils.isCausedBy(MessageQueueOverflowException.class, e);
         }
     }
 
@@ -105,7 +105,7 @@ public abstract class BackPressureTestBase extends MessagingServiceTestBase {
         Throwable err = get(errFuture);
 
         assertNotNull(err);
-        assertTrue(err.toString(), ErrorUtils.isCausedBy(err, MessageQueueOverflowException.class));
+        assertTrue(err.toString(), ErrorUtils.isCausedBy(MessageQueueOverflowException.class, err));
     }
 
     protected List<ResponseFuture<String>> requestUpToHighWatermark(MessagingChannel<String> channel) {
