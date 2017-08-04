@@ -47,6 +47,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
+import org.junit.Assume;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -657,6 +658,9 @@ public class NetworkServerTest extends NetworkTestBase {
 
     @Test
     public void testInvalidProtocolVersion() throws Exception {
+        // This test sends fake bytes upon connection and can't work properly in SSL context.
+        Assume.assumeFalse(context().ssl().isPresent());
+
         InetSocketAddress addr = newServerAddress();
 
         NetworkServer server = createAndConfigureServer(cfg ->
