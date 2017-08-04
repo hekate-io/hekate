@@ -633,6 +633,9 @@ public class NetworkServerTest extends NetworkTestBase {
 
     @Test
     public void testInvalidMagicBytes() throws Exception {
+        // This test sends fake bytes upon connection and can't work properly in SSL context.
+        Assume.assumeFalse(context().ssl().isPresent());
+
         InetSocketAddress addr = newServerAddress();
 
         NetworkServer server = createAndConfigureServer(cfg ->
