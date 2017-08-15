@@ -25,7 +25,7 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
         - [ZooKeeper](https://zookeeper.apache.org) (_planned_) 
         - [Etcd](https://github.com/coreos/etcd) (_planned_)
     - Cluster event listeners    
-    - User-defines properties and roles of cluster nodes
+    - User-defined properties and roles of cluster nodes
     - Cluster views and node filtering API
     
 - **Messaging**
