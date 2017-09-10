@@ -30,6 +30,7 @@ import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.failover.FailureInfo;
 import io.hekate.failover.FailureResolution;
 import io.hekate.failover.internal.DefaultFailoverContext;
+import io.hekate.messaging.MessageInterceptor;
 import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessageQueueTimeoutException;
 import io.hekate.messaging.MessageReceiver;
@@ -227,6 +228,9 @@ class MessagingGateway<T> implements HekateSupport {
     private final int nioThreads;
 
     @ToStringIgnore
+    private final MessageInterceptor<T> interceptor;
+
+    @ToStringIgnore
     private final DefaultMessagingChannel<T> channel;
 
     @ToStringIgnore
@@ -238,11 +242,29 @@ class MessagingGateway<T> implements HekateSupport {
     @ToStringIgnore
     private boolean closed;
 
-    public MessagingGateway(String name, HekateSupport hekate, Class<T> baseType, NetworkConnector<MessagingProtocol> net,
-        ClusterNode localNode, ClusterView cluster, MessageReceiver<T> receiver, int nioThreads, MessagingExecutor async,
-        MetricsCallback metrics, ReceivePressureGuard receivePressure, SendPressureGuard sendPressure, FailoverPolicy failoverPolicy,
-        long defaultTimeout, LoadBalancer<T> loadBalancer, int partitions, int backupNodes, Logger log, boolean checkIdle,
-        CloseCallback onBeforeClose) {
+    public MessagingGateway(
+        String name,
+        HekateSupport hekate,
+        Class<T> baseType,
+        NetworkConnector<MessagingProtocol> net,
+        ClusterNode localNode,
+        ClusterView cluster,
+        MessageReceiver<T> receiver,
+        int nioThreads,
+        MessagingExecutor async,
+        MetricsCallback metrics,
+        ReceivePressureGuard receivePressure,
+        SendPressureGuard sendPressure,
+        FailoverPolicy failoverPolicy,
+        long defaultTimeout,
+        LoadBalancer<T> loadBalancer,
+        MessageInterceptor<T> interceptor,
+        int partitions,
+        int backupNodes,
+        Logger log,
+        boolean checkIdle,
+        CloseCallback onBeforeClose
+    ) {
         assert name != null : "Name is null.";
         assert baseType != null : "Base type is null.";
         assert net != null : "Network connector is null.";
@@ -258,6 +280,7 @@ class MessagingGateway<T> implements HekateSupport {
         this.localNode = localNode;
         this.cluster = cluster;
         this.receiver = receiver;
+        this.interceptor = interceptor;
         this.nioThreads = nioThreads;
         this.async = async;
         this.metrics = metrics;
@@ -294,6 +317,14 @@ class MessagingGateway<T> implements HekateSupport {
 
     public int workerThreads() {
         return async.poolSize();
+    }
+
+    public ClusterNode localNode() {
+        return localNode;
+    }
+
+    public MessageInterceptor<T> interceptor() {
+        return interceptor;
     }
 
     public SendFuture send(Object affinityKey, T msg, MessagingOpts<T> opts) {
@@ -567,10 +598,10 @@ class MessagingGateway<T> implements HekateSupport {
     }
 
     private void routeAndSend(MessageContext<T> ctx, SendCallback callback, FailureInfo prevErr) {
-        MessagingClient<T> client = null;
+        MessageRoute<T> route = null;
 
         try {
-            client = selectClient(ctx, prevErr);
+            route = route(ctx, prevErr);
         } catch (HekateException e) {
             notifyOnErrorAsync(ctx, callback, e);
         } catch (RuntimeException | Error e) {
@@ -583,15 +614,15 @@ class MessagingGateway<T> implements HekateSupport {
             notifyOnErrorAsync(ctx, callback, e.getCause());
         }
 
-        if (client != null) {
-            doSend(ctx, client, callback, prevErr);
+        if (route != null) {
+            doSend(ctx, route, callback, prevErr);
         }
     }
 
-    private void doSend(MessageContext<T> ctx, MessagingClient<T> client, SendCallback callback, FailureInfo prevErr) {
+    private void doSend(MessageContext<T> ctx, MessageRoute<T> route, SendCallback callback, FailureInfo prevErr) {
         // Decorate callback with failover, error handling logic, etc.
         SendCallback retryCallback = err -> {
-            client.touch();
+            route.client().touch();
 
             if (err == null || ctx.opts().failover() == null) {
                 // Complete operation.
@@ -609,13 +640,13 @@ class MessagingGateway<T> implements HekateSupport {
                     public void retry(FailoverRoutingPolicy routing, FailureInfo failure) {
                         switch (routing) {
                             case RETRY_SAME_NODE: {
-                                doSend(ctx, client, callback, failure);
+                                doSend(ctx, route, callback, failure);
 
                                 break;
                             }
                             case PREFER_SAME_NODE: {
-                                if (isKnownNode(client.node())) {
-                                    doSend(ctx, client, callback, failure);
+                                if (isKnownNode(route.client().node())) {
+                                    doSend(ctx, route, callback, failure);
                                 } else {
                                     routeAndSend(ctx, callback, failure);
                                 }
@@ -639,11 +670,11 @@ class MessagingGateway<T> implements HekateSupport {
                     }
                 };
 
-                failoverAsync(ctx, err, client.node(), onFailover, prevErr);
+                failoverAsync(ctx, err, route.client().node(), onFailover, prevErr);
             }
         };
 
-        client.send(ctx, retryCallback, prevErr != null);
+        route.client().send(route, retryCallback, prevErr != null);
     }
 
     private void requestAsync(T request, MessageContext<T> ctx, ResponseCallback<T> callback) {
@@ -661,10 +692,10 @@ class MessagingGateway<T> implements HekateSupport {
     }
 
     private void routeAndRequest(MessageContext<T> ctx, ResponseCallback<T> callback, FailureInfo prevErr) {
-        MessagingClient<T> client = null;
+        MessageRoute<T> route = null;
 
         try {
-            client = selectClient(ctx, prevErr);
+            route = route(ctx, prevErr);
         } catch (HekateException e) {
             notifyOnErrorAsync(ctx, callback, e);
         } catch (RuntimeException | Error e) {
@@ -677,15 +708,15 @@ class MessagingGateway<T> implements HekateSupport {
             notifyOnErrorAsync(ctx, callback, e.getCause());
         }
 
-        if (client != null) {
-            doRequest(ctx, client, callback, prevErr);
+        if (route != null) {
+            doRequest(ctx, route, callback, prevErr);
         }
     }
 
-    private void doRequest(MessageContext<T> ctx, MessagingClient<T> client, ResponseCallback<T> callback, FailureInfo prevErr) {
+    private void doRequest(MessageContext<T> ctx, MessageRoute<T> route, ResponseCallback<T> callback, FailureInfo prevErr) {
         // Decorate callback with failover, error handling logic, etc.
         InternalRequestCallback<T> internalCallback = (request, err, reply) -> {
-            client.touch();
+            route.client().touch();
 
             T replyMsg = null;
 
@@ -740,13 +771,13 @@ class MessagingGateway<T> implements HekateSupport {
                     public void retry(FailoverRoutingPolicy routing, FailureInfo failure) {
                         switch (routing) {
                             case RETRY_SAME_NODE: {
-                                doRequest(ctx, client, callback, failure);
+                                doRequest(ctx, route, callback, failure);
 
                                 break;
                             }
                             case PREFER_SAME_NODE: {
-                                if (isKnownNode(client.node())) {
-                                    doRequest(ctx, client, callback, failure);
+                                if (isKnownNode(route.client().node())) {
+                                    doRequest(ctx, route, callback, failure);
                                 } else {
                                     routeAndRequest(ctx, callback, failure);
                                 }
@@ -770,14 +801,14 @@ class MessagingGateway<T> implements HekateSupport {
                     }
                 };
 
-                failoverAsync(ctx, err, client.node(), onFailover, prevErr);
+                failoverAsync(ctx, err, route.client().node(), onFailover, prevErr);
             }
         };
 
         if (ctx.isStream()) {
-            client.stream(ctx, internalCallback, prevErr != null);
+            route.client().stream(route, internalCallback, prevErr != null);
         } else {
-            client.request(ctx, internalCallback, prevErr != null);
+            route.client().request(route, internalCallback, prevErr != null);
         }
     }
 
@@ -921,7 +952,7 @@ class MessagingGateway<T> implements HekateSupport {
             try {
                 Future<?> future = ctx.worker().executeDeferred(timeout, () -> {
                     if (ctx.completeOnTimeout()) {
-                        T msg = ctx.message();
+                        T msg = ctx.originalMessage();
 
                         doNotifyOnError(callback, new MessageTimeoutException("Messaging operation timed out [message=" + msg + ']'));
                     }
@@ -945,8 +976,7 @@ class MessagingGateway<T> implements HekateSupport {
         }
     }
 
-    private MessagingClient<T> selectClient(MessageContext<T> ctx, FailureInfo prevErr) throws HekateException,
-        ClientSelectionRejectedException {
+    private MessageRoute<T> route(MessageContext<T> ctx, FailureInfo prevErr) throws HekateException, ClientSelectionRejectedException {
         assert ctx != null : "Message context is null.";
 
         while (true) {
@@ -980,7 +1010,7 @@ class MessagingGateway<T> implements HekateSupport {
                 LoadBalancerContext balancerCtx = new DefaultLoadBalancerContext(ctx, topology, hekate, partitions, failure);
 
                 // Apply load balancer.
-                selected = ctx.opts().balancer().route(ctx.message(), balancerCtx);
+                selected = ctx.opts().balancer().route(ctx.originalMessage(), balancerCtx);
             }
 
             // Check if routing was successful.
@@ -1019,7 +1049,7 @@ class MessagingGateway<T> implements HekateSupport {
                         }
                     }
                 } else {
-                    return client;
+                    return new MessageRoute<>(client, topology, ctx, interceptor);
                 }
             } finally {
                 lock.unlockRead(readLock);

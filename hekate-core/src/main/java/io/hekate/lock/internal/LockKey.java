@@ -19,7 +19,7 @@ package io.hekate.lock.internal;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 
-class LockAffinityKey {
+class LockKey {
     private final String region;
 
     private final String name;
@@ -27,7 +27,7 @@ class LockAffinityKey {
     @ToStringIgnore
     private final int hash;
 
-    public LockAffinityKey(String region, String name) {
+    public LockKey(String region, String name) {
         this.region = region;
         this.name = name;
 
@@ -38,19 +38,27 @@ class LockAffinityKey {
         this.hash = hash;
     }
 
+    public String region() {
+        return region;
+    }
+
+    public String name() {
+        return name;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
 
-        if (!(o instanceof LockAffinityKey)) {
+        if (!(o instanceof LockKey)) {
             return false;
         }
 
-        LockAffinityKey that = (LockAffinityKey)o;
+        LockKey that = (LockKey)o;
 
-        return that.region.equals(region) && that.name.equals(name);
+        return that.name.equals(name) && that.region.equals(region);
     }
 
     @Override

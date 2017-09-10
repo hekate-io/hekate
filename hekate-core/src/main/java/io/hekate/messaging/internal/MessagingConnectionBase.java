@@ -16,6 +16,8 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.cluster.ClusterNode;
+import io.hekate.messaging.MessageInterceptor;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
@@ -32,7 +34,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-abstract class MessagingConnectionBase<T> {
+abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundContext, MessageInterceptor.ReplyContext {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     private final MessagingGateway<T> gateway;
@@ -68,17 +70,22 @@ abstract class MessagingConnectionBase<T> {
 
     public abstract NetworkFuture<MessagingProtocol> disconnect();
 
-    public abstract void sendNotification(MessageContext<T> ctx, SendCallback callback, boolean retransmit);
+    public abstract void sendNotification(MessageRoute<T> route, SendCallback callback, boolean retransmit);
 
-    public abstract void request(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit);
+    public abstract void request(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit);
 
-    public abstract void stream(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit);
+    public abstract void stream(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit);
 
     public abstract void replyChunk(MessagingWorker worker, int requestId, T chunk, SendCallback callback);
 
     public abstract void reply(MessagingWorker worker, int requestId, T response, SendCallback callback);
 
     protected abstract void disconnectOnError(Throwable t);
+
+    @Override
+    public ClusterNode localNode() {
+        return gateway.localNode();
+    }
 
     public MessagingGateway<T> gateway() {
         return gateway;
@@ -366,6 +373,30 @@ abstract class MessagingConnectionBase<T> {
                 doDiscardRequest(cause, handle);
             }
         }
+    }
+
+    public T prepareInbound(T msg) {
+        MessageInterceptor<T> interceptor = gateway.interceptor();
+
+        if (interceptor != null) {
+            T transformed = interceptor.interceptInbound(msg, this);
+
+            return transformed != null ? transformed : msg;
+        }
+
+        return msg;
+    }
+
+    public T prepareReply(T msg) {
+        MessageInterceptor<T> interceptor = gateway.interceptor();
+
+        if (interceptor != null) {
+            T transformed = interceptor.interceptReply(msg, this);
+
+            return transformed != null ? transformed : msg;
+        }
+
+        return msg;
     }
 
     protected RequestHandle<T> registerRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback) {

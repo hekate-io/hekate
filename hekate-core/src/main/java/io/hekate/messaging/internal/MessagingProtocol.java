@@ -99,7 +99,7 @@ abstract class MessagingProtocol {
 
         private final int requestId;
 
-        private final T payload;
+        private T payload;
 
         private MessagingWorker worker;
 
@@ -117,9 +117,11 @@ abstract class MessagingProtocol {
             this.payload = payload;
         }
 
-        public void prepareReceive(MessagingWorker worker, MessagingConnectionBase<T> processor) {
+        public void prepareReceive(MessagingWorker worker, MessagingConnectionBase<T> conn) {
             this.worker = worker;
-            this.conn = processor;
+            this.conn = conn;
+
+            this.payload = conn.prepareInbound(this.payload);
         }
 
         public void prepareSend(RequestHandle<T> handle, MessagingConnectionBase<T> conn) {
@@ -166,7 +168,9 @@ abstract class MessagingProtocol {
         public void reply(T response, SendCallback callback) {
             responded();
 
-            conn.reply(worker, requestId, response, callback);
+            T transformed = conn.prepareReply(response);
+
+            conn.reply(worker, requestId, transformed, callback);
         }
 
         @Override
@@ -178,7 +182,9 @@ abstract class MessagingProtocol {
         public void partialReply(T response, SendCallback callback) throws UnsupportedOperationException {
             checkNotResponded();
 
-            conn.replyChunk(worker, requestId, response, callback);
+            T transformed = conn.prepareReply(response);
+
+            conn.replyChunk(worker, requestId, transformed, callback);
         }
 
         @Override
@@ -248,7 +254,7 @@ abstract class MessagingProtocol {
     }
 
     static class Notification<T> extends NoReplyMessage<T> implements NetworkSendCallback<MessagingProtocol> {
-        private final T payload;
+        private T payload;
 
         private MessagingWorker worker;
 
@@ -270,6 +276,8 @@ abstract class MessagingProtocol {
 
         public void prepareReceive(MessagingConnectionBase<T> conn) {
             this.conn = conn;
+
+            this.payload = conn.prepareInbound(this.payload);
         }
 
         @Override
@@ -415,7 +423,7 @@ abstract class MessagingProtocol {
         implements Response<T>, NetworkSendCallback<MessagingProtocol> {
         private final int requestId;
 
-        private final T payload;
+        private T payload;
 
         private MessagingWorker worker;
 
@@ -459,6 +467,8 @@ abstract class MessagingProtocol {
         public void prepareReceive(MessagingConnectionBase<T> conn, T request) {
             this.conn = conn;
             this.request = request;
+
+            this.payload = conn.prepareInbound(this.payload);
         }
 
         public int requestId() {
@@ -527,7 +537,7 @@ abstract class MessagingProtocol {
     static class FinalResponse<T> extends MessagingProtocol implements Response<T>, NetworkSendCallback<MessagingProtocol> {
         private final int requestId;
 
-        private final T payload;
+        private T payload;
 
         private MessagingWorker worker;
 
@@ -563,6 +573,8 @@ abstract class MessagingProtocol {
         public void prepareReceive(MessagingConnectionBase<T> conn, T request) {
             this.conn = conn;
             this.request = request;
+
+            this.payload = conn.prepareInbound(this.payload);
         }
 
         public int requestId() {

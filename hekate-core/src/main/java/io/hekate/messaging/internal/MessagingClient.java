@@ -24,11 +24,11 @@ import java.util.List;
 interface MessagingClient<T> {
     ClusterNode node();
 
-    void send(MessageContext<T> ctx, SendCallback callback, boolean retransmit);
+    void send(MessageRoute<T> route, SendCallback callback, boolean retransmit);
 
-    void stream(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit);
+    void stream(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit);
 
-    void request(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit);
+    void request(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit);
 
     void disconnectIfIdle();
 

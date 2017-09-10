@@ -61,9 +61,7 @@ class LockControllerClient {
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private final String region;
-
-    private final String name;
+    private final LockKey key;
 
     private final long lockId;
 
@@ -108,8 +106,7 @@ class LockControllerClient {
         assert channel != null : "Channel is null.";
         assert unlockCallback != null : "Unlock callback is null.";
 
-        this.region = lock.regionName();
-        this.name = lock.name();
+        this.key = new LockKey(lock.regionName(), lock.name());
         this.lockId = lockId;
         this.node = node;
         this.threadId = threadId;
@@ -118,14 +115,14 @@ class LockControllerClient {
         this.callback = callback;
 
         // Make sure that all messages will be routed with the affinity key of this lock.
-        this.channel = channel.withAffinity(new LockAffinityKey(lock.regionName(), lock.name()));
+        this.channel = channel.withAffinity(key);
 
         lockFuture = new LockFuture(this);
         unlockFuture = new LockFuture(this);
     }
 
-    public String name() {
-        return name;
+    public LockKey key() {
+        return key;
     }
 
     public long lockId() {
@@ -439,7 +436,7 @@ class LockControllerClient {
     }
 
     private void remoteLock() {
-        LockRequest lockReq = new LockRequest(lockId, region, name, node, lockTimeout, threadId);
+        LockRequest lockReq = new LockRequest(lockId, key.region(), key.name(), node, lockTimeout, threadId);
 
         ResponseCallback<LockProtocol> rspCallback = new ResponseCallback<LockProtocol>() {
             @Override
@@ -513,7 +510,7 @@ class LockControllerClient {
     }
 
     private void remoteUnlock() {
-        UnlockRequest unlockReq = new UnlockRequest(lockId, region, name, node);
+        UnlockRequest unlockReq = new UnlockRequest(lockId, key.region(), key.name(), node);
 
         channel.request(unlockReq, new ResponseCallback<LockProtocol>() {
             @Override

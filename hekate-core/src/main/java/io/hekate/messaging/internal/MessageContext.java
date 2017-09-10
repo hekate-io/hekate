@@ -82,7 +82,7 @@ class MessageContext<T> {
         return stream;
     }
 
-    public T message() {
+    public T originalMessage() {
         return message;
     }
 

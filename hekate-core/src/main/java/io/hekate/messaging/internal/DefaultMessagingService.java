@@ -44,6 +44,7 @@ import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.TerminatingService;
 import io.hekate.failover.FailoverPolicy;
+import io.hekate.messaging.MessageInterceptor;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingBackPressureConfig;
 import io.hekate.messaging.MessagingChannel;
@@ -195,7 +196,8 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         // Register channel names as a service property.
         channelsConfig.forEach(cfg -> {
             ChannelMetaData meta = new ChannelMetaData(
-                cfg.hasReceiver(), cfg.getBaseType().getCanonicalName(),
+                cfg.hasReceiver(),
+                cfg.getBaseType().getName(),
                 cfg.getPartitions(),
                 cfg.getBackupNodes()
             );
@@ -431,6 +433,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         ClusterNodeFilter filter = cfg.getClusterFilter();
         FailoverPolicy failover = cfg.getFailoverPolicy();
         LoadBalancer<T> loadBalancer = cfg.getLoadBalancer();
+        MessageInterceptor<T> interceptor = cfg.getInterceptor();
         MessagingBackPressureConfig pressureCfg = cfg.getBackPressure();
 
         ClusterNode localNode = cluster.localNode();
@@ -490,9 +493,27 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         // Create gateway.
         MessageReceiver<T> guardedReceiver = applyGuard(receiver);
 
-        MessagingGateway<T> gateway = new MessagingGateway<>(name, hekate, baseType, connector, localNode, clusterView, guardedReceiver,
-            nioThreads, async, channelMetrics, receivePressureGuard, sendPressureGuard, failover, messagingTimeout, loadBalancer,
-            partitions, backupNodes, logger(cfg), checkIdle,
+        MessagingGateway<T> gateway = new MessagingGateway<>(
+            name,
+            hekate,
+            baseType,
+            connector,
+            localNode,
+            clusterView,
+            guardedReceiver,
+            nioThreads,
+            async,
+            channelMetrics,
+            receivePressureGuard,
+            sendPressureGuard,
+            failover,
+            messagingTimeout,
+            loadBalancer,
+            interceptor,
+            partitions,
+            backupNodes,
+            logger(cfg),
+            checkIdle,
             // Before close callback.
             () -> {
                 if (DEBUG) {
@@ -513,7 +534,8 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                 }
 
                 gateways.remove(name);
-            });
+            }
+        );
 
         // Register gateway.
         gateways.put(name, gateway);

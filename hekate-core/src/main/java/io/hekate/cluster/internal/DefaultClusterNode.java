@@ -159,12 +159,12 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
 
     @Override
     public boolean hasService(Class<? extends Service> type) {
-        return services.keySet().contains(type.getCanonicalName());
+        return services.keySet().contains(type.getName());
     }
 
     @Override
     public ServiceInfo service(Class<? extends Service> type) {
-        return services.get(type.getCanonicalName());
+        return services.get(type.getName());
     }
 
     @Override

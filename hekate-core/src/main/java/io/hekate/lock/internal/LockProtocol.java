@@ -44,6 +44,35 @@ abstract class LockProtocol {
         MIGRATION_RESPONSE,
     }
 
+    abstract static class LockRequestBase extends LockProtocol {
+        private final String region;
+
+        private final String lockName;
+
+        private ClusterHash topology;
+
+        public LockRequestBase(String region, String lockName) {
+            this.region = region;
+            this.lockName = lockName;
+        }
+
+        public String region() {
+            return region;
+        }
+
+        public String lockName() {
+            return lockName;
+        }
+
+        public ClusterHash topology() {
+            return topology;
+        }
+
+        public void updateTopology(ClusterHash topology) {
+            this.topology = topology;
+        }
+    }
+
     static class LockOwnerRequest extends LockRequestBase {
         public LockOwnerRequest(String region, String lockName) {
             this(region, lockName, null);
@@ -62,7 +91,7 @@ abstract class LockProtocol {
     }
 
     static class LockOwnerResponse extends LockProtocol {
-        public enum Status {
+        enum Status {
             OK,
 
             RETRY,
@@ -96,35 +125,6 @@ abstract class LockProtocol {
         @Override
         public Type type() {
             return Type.OWNER_RESPONSE;
-        }
-    }
-
-    abstract static class LockRequestBase extends LockProtocol {
-        private final String region;
-
-        private final String lockName;
-
-        private ClusterHash topology;
-
-        public LockRequestBase(String region, String lockName) {
-            this.region = region;
-            this.lockName = lockName;
-        }
-
-        public String region() {
-            return region;
-        }
-
-        public String lockName() {
-            return lockName;
-        }
-
-        public ClusterHash topology() {
-            return topology;
-        }
-
-        public void updateTopology(ClusterHash topology) {
-            this.topology = topology;
         }
     }
 
@@ -360,7 +360,7 @@ abstract class LockProtocol {
     }
 
     static class MigrationResponse extends LockProtocol {
-        public enum Status {
+        enum Status {
             OK,
 
             RETRY

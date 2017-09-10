@@ -117,6 +117,8 @@ class LockControllerServer {
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
+    private static final boolean TRACE = log.isTraceEnabled();
+
     @ToStringIgnore
     private final ReentrantLock sync = new ReentrantLock();
 
@@ -379,8 +381,8 @@ class LockControllerServer {
         sync.lock();
 
         try {
-            if (DEBUG) {
-                log.debug("Updating live nodes [nodes={}]", liveNodes);
+            if (TRACE) {
+                log.trace("Updating live nodes [nodes={}]", liveNodes);
             }
 
             for (Iterator<LockQueueEntry> it = queue.iterator(); it.hasNext(); ) {

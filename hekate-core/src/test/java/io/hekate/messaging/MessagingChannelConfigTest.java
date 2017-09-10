@@ -241,6 +241,26 @@ public class MessagingChannelConfigTest extends HekateTestBase {
     }
 
     @Test
+    public void testInterceptor() {
+        @SuppressWarnings("unchecked")
+        MessageInterceptor<Object> interceptor = mock(MessageInterceptor.class);
+
+        assertNull(cfg.getInterceptor());
+
+        cfg.setInterceptor(interceptor);
+
+        assertSame(interceptor, cfg.getInterceptor());
+
+        cfg.setInterceptor(null);
+
+        assertNull(cfg.getInterceptor());
+
+        assertSame(cfg, cfg.withInterceptor(interceptor));
+
+        assertSame(interceptor, cfg.getInterceptor());
+    }
+
+    @Test
     public void testLoggerName() {
         assertNull(cfg.getLogCategory());
 

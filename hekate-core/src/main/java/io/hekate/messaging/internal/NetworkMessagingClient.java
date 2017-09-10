@@ -79,30 +79,30 @@ class NetworkMessagingClient<T> implements MessagingClient<T> {
     }
 
     @Override
-    public void send(MessageContext<T> ctx, SendCallback callback, boolean retransmit) {
+    public void send(MessageRoute<T> route, SendCallback callback, boolean retransmit) {
         touch();
 
         ensureConnected();
 
-        conn.sendNotification(ctx, callback, retransmit);
+        conn.sendNotification(route, callback, retransmit);
     }
 
     @Override
-    public void stream(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit) {
+    public void stream(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
         touch();
 
         ensureConnected();
 
-        conn.stream(ctx, callback, retransmit);
+        conn.stream(route, callback, retransmit);
     }
 
     @Override
-    public void request(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit) {
+    public void request(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
         touch();
 
         ensureConnected();
 
-        conn.request(ctx, callback, retransmit);
+        conn.request(route, callback, retransmit);
     }
 
     @Override

@@ -79,6 +79,8 @@ public class MessagingChannelConfig<T> {
 
     private LoadBalancer<T> loadBalancer;
 
+    private MessageInterceptor<T> interceptor;
+
     private long messagingTimeout;
 
     private MessagingBackPressureConfig backPressure = new MessagingBackPressureConfig();
@@ -435,8 +437,7 @@ public class MessagingChannelConfig<T> {
     }
 
     /**
-     * Returns the message receiver that should be used to handle incoming messages (see {@link
-     * #setReceiver(MessageReceiver)}).
+     * Returns the message receiver that should be used to handle incoming messages (see {@link #setReceiver(MessageReceiver)}).
      *
      * @return Message receiver.
      */
@@ -591,6 +592,41 @@ public class MessagingChannelConfig<T> {
      */
     public MessagingChannelConfig<T> withLoadBalancer(LoadBalancer<T> loadBalancer) {
         setLoadBalancer(loadBalancer);
+
+        return this;
+    }
+
+    /**
+     * Returns the message interceptor that should be used by the channel (see {@link #setInterceptor(MessageInterceptor)}).
+     *
+     * @return Message interceptor.
+     */
+    public MessageInterceptor<T> getInterceptor() {
+        return interceptor;
+    }
+
+    /**
+     * Sets the message interceptor that should be used by the channel.
+     *
+     * <p>
+     * Interceptors can be registered to the messaging channel in order to apply track message flow or apply transformations to messages.
+     * </p>
+     *
+     * @param interceptor Message interceptor.
+     */
+    public void setInterceptor(MessageInterceptor<T> interceptor) {
+        this.interceptor = interceptor;
+    }
+
+    /**
+     * Fluent-style version of {@link #setInterceptor(MessageInterceptor)}.
+     *
+     * @param interceptor Message interceptor.
+     *
+     * @return This instance.
+     */
+    public MessagingChannelConfig<T> withInterceptor(MessageInterceptor<T> interceptor) {
+        setInterceptor(interceptor);
 
         return this;
     }

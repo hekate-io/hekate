@@ -58,7 +58,7 @@ class RequestHandle<T> {
     }
 
     public T message() {
-        return ctx.message();
+        return ctx.originalMessage();
     }
 
     public int epoch() {

@@ -102,7 +102,7 @@ class ServiceConfigurationContext implements ConfigurationContext {
 
     public void prepare(Object service) {
         Set<String> typeNames = serviceInterfaces(service).stream()
-            .map(Class::getCanonicalName)
+            .map(Class::getName)
             .collect(toSet());
 
         typeNames.forEach(type ->

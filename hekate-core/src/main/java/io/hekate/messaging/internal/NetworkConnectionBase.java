@@ -49,15 +49,17 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void request(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit) {
+    public void request(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
+        MessageContext<T> ctx = route.ctx();
+
         RequestHandle<T> handle = registerRequest(ctx, callback);
 
         Request<T> msg;
 
         if (ctx.hasAffinity()) {
-            msg = new AffinityRequest<>(ctx.affinity(), handle.id(), retransmit, ctx.message());
+            msg = new AffinityRequest<>(ctx.affinity(), handle.id(), retransmit, route.preparePayload());
         } else {
-            msg = new Request<>(handle.id(), retransmit, ctx.message());
+            msg = new Request<>(handle.id(), retransmit, route.preparePayload());
         }
 
         msg.prepareSend(handle, this);
@@ -66,15 +68,17 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void stream(MessageContext<T> ctx, InternalRequestCallback<T> callback, boolean retransmit) {
+    public void stream(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
+        MessageContext<T> ctx = route.ctx();
+
         RequestHandle<T> handle = registerRequest(ctx, callback);
 
         StreamRequest<T> msg;
 
         if (ctx.hasAffinity()) {
-            msg = new AffinityStreamRequest<>(ctx.affinity(), handle.id(), retransmit, ctx.message());
+            msg = new AffinityStreamRequest<>(ctx.affinity(), handle.id(), retransmit, route.preparePayload());
         } else {
-            msg = new StreamRequest<>(handle.id(), retransmit, ctx.message());
+            msg = new StreamRequest<>(handle.id(), retransmit, route.preparePayload());
         }
 
         msg.prepareSend(handle, this);
@@ -83,13 +87,15 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void sendNotification(MessageContext<T> ctx, SendCallback callback, boolean retransmit) {
+    public void sendNotification(MessageRoute<T> route, SendCallback callback, boolean retransmit) {
+        MessageContext<T> ctx = route.ctx();
+
         Notification<T> msg;
 
         if (ctx.hasAffinity()) {
-            msg = new AffinityNotification<>(ctx.affinity(), retransmit, ctx.message());
+            msg = new AffinityNotification<>(ctx.affinity(), retransmit, route.preparePayload());
         } else {
-            msg = new Notification<>(retransmit, ctx.message());
+            msg = new Notification<>(retransmit, route.preparePayload());
         }
 
         msg.prepareSend(ctx.worker(), this, callback);

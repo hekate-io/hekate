@@ -45,6 +45,7 @@ import io.hekate.lock.LockServiceFactory;
 import io.hekate.lock.internal.LockProtocol.LockOwnerRequest;
 import io.hekate.lock.internal.LockProtocol.LockOwnerResponse;
 import io.hekate.lock.internal.LockProtocol.LockRequest;
+import io.hekate.lock.internal.LockProtocol.LockRequestBase;
 import io.hekate.lock.internal.LockProtocol.LockResponse;
 import io.hekate.lock.internal.LockProtocol.MigrationApplyRequest;
 import io.hekate.lock.internal.LockProtocol.MigrationPrepareRequest;
@@ -52,6 +53,7 @@ import io.hekate.lock.internal.LockProtocol.MigrationResponse;
 import io.hekate.lock.internal.LockProtocol.UnlockRequest;
 import io.hekate.lock.internal.LockProtocol.UnlockResponse;
 import io.hekate.messaging.Message;
+import io.hekate.messaging.MessageInterceptor;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingConfigProvider;
@@ -169,6 +171,31 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                 .withNioThreads(nioThreads)
                 .withWorkerThreads(workerThreads)
                 .withMessageCodec(new SingletonCodecFactory<>(new LockProtocolCodec()))
+                .withBackupNodes(0)
+                .withInterceptor(new MessageInterceptor<LockProtocol>() {
+                    @Override
+                    public LockProtocol interceptOutbound(LockProtocol msg, OutboundContext ctx) {
+                        if (msg instanceof LockRequestBase) {
+                            LockRequestBase req = (LockRequestBase)msg;
+
+                            // Store routed topology within the lock request so that it would be possible
+                            // to detect routing collisions (in case of cluster topology changes) on the receiving side.
+                            req.updateTopology(ctx.topology().hash());
+                        }
+
+                        return msg;
+                    }
+
+                    @Override
+                    public LockProtocol interceptInbound(LockProtocol msg, InboundContext ctx) {
+                        return msg;
+                    }
+
+                    @Override
+                    public LockProtocol interceptReply(LockProtocol msg, ReplyContext ctx) {
+                        return msg;
+                    }
+                })
                 .withReceiver(this::processMessage)
         );
     }
