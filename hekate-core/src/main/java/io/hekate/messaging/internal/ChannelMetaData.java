@@ -23,7 +23,7 @@ class ChannelMetaData {
             ServiceInfo service = node.service(MessagingService.class);
 
             if (service != null) {
-                ChannelMetaData meta = parse(service.property(propertyName(channelName)));
+                ChannelMetaData meta = parse(service.stringProperty(propertyName(channelName)));
 
                 if (meta != null && meta.isReceiving()) {
                     return delegate == null || delegate.accept(node);

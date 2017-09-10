@@ -17,7 +17,7 @@
 package io.hekate.core.service.internal;
 
 import io.hekate.core.ServiceInfo;
-import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.core.ServiceProperty;
 import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.Service;
 import io.hekate.util.format.ToString;
@@ -53,7 +53,7 @@ class ServiceConfigurationContext implements ConfigurationContext {
         }
     }
 
-    private final Map<String, Map<String, String>> props = new HashMap<>();
+    private final Map<String, Map<String, ServiceProperty<?>>> props = new HashMap<>();
 
     @ToStringIgnore
     private final ServiceManager manager;
@@ -66,16 +66,39 @@ class ServiceConfigurationContext implements ConfigurationContext {
     }
 
     @Override
-    public void setServiceProperty(String name, String value) {
-        ArgAssert.notNull(name, "Property name");
+    public void setStringProperty(String name, String value) {
+        checkState();
 
-        if (value != null && !value.isEmpty()) {
-            checkState();
+        current.serviceTypes().forEach(type ->
+            props.get(type).put(name, ServiceProperty.forString(name, value))
+        );
+    }
 
-            current.serviceTypes().forEach(type ->
-                props.get(type).put(name, value)
-            );
-        }
+    @Override
+    public void setIntProperty(String name, int value) {
+        checkState();
+
+        current.serviceTypes().forEach(type ->
+            props.get(type).put(name, ServiceProperty.forInteger(name, value))
+        );
+    }
+
+    @Override
+    public void setLongProperty(String name, long value) {
+        checkState();
+
+        current.serviceTypes().forEach(type ->
+            props.get(type).put(name, ServiceProperty.forLong(name, value))
+        );
+    }
+
+    @Override
+    public void setBoolProperty(String name, boolean value) {
+        checkState();
+
+        current.serviceTypes().forEach(type ->
+            props.get(type).put(name, ServiceProperty.forBoolean(name, value))
+        );
     }
 
     @Override
@@ -120,7 +143,7 @@ class ServiceConfigurationContext implements ConfigurationContext {
         Map<String, ServiceInfo> info = new HashMap<>();
 
         props.forEach((type, props) -> {
-            Map<String, String> propsCopy = new HashMap<>();
+            Map<String, ServiceProperty<?>> propsCopy = new HashMap<>();
 
             props.forEach(propsCopy::put);
 

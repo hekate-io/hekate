@@ -31,4 +31,10 @@
         <Bug pattern="EI_EXPOSE_REP2"/>
         <Class name="io.hekate.cluster.internal.DefaultClusterHash"/>
     </Match>
+
+    <!-- Excluded for API design reasons. -->
+    <Match>
+        <Bug pattern="NP_BOOLEAN_RETURN_NULL"/>
+        <Class name="io.hekate.core.ServiceInfo"/>
+    </Match>
 </FindBugsFilter>

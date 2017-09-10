@@ -17,6 +17,7 @@
 package io.hekate.core.service.internal;
 
 import io.hekate.core.ServiceInfo;
+import io.hekate.core.ServiceProperty;
 import io.hekate.util.format.ToStringIgnore;
 import java.io.Serializable;
 import java.util.Map;
@@ -27,9 +28,9 @@ public class DefaultServiceInfo implements ServiceInfo, Serializable {
     @ToStringIgnore
     private final String type;
 
-    private final Map<String, String> props;
+    private final Map<String, ServiceProperty<?>> props;
 
-    public DefaultServiceInfo(String type, Map<String, String> props) {
+    public DefaultServiceInfo(String type, Map<String, ServiceProperty<?>> props) {
         assert type != null : "Service type is null.";
         assert props != null : "Service properties are null.";
 
@@ -43,12 +44,12 @@ public class DefaultServiceInfo implements ServiceInfo, Serializable {
     }
 
     @Override
-    public Map<String, String> properties() {
+    public Map<String, ServiceProperty<?>> properties() {
         return props;
     }
 
     @Override
-    public String property(String name) {
+    public ServiceProperty<?> property(String name) {
         return props.get(name);
     }
 

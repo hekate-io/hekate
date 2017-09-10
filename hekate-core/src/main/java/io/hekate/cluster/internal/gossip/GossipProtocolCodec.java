@@ -35,6 +35,7 @@ import io.hekate.codec.CodecUtils;
 import io.hekate.codec.DataReader;
 import io.hekate.codec.DataWriter;
 import io.hekate.core.ServiceInfo;
+import io.hekate.core.ServiceProperty;
 import io.hekate.core.service.internal.DefaultServiceInfo;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -51,6 +52,8 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
     private static final GossipProtocol.Type[] TYPES = GossipProtocol.Type.values();
 
     private static final GossipNodeStatus[] NODE_STATUSES = GossipNodeStatus.values();
+
+    private static final ServiceProperty.Type[] SERVICE_PROP_TYPES = ServiceProperty.Type.values();
 
     private final Map<Integer, String> readStringDict = new HashMap<>();
 
@@ -552,16 +555,15 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
             for (ServiceInfo service : services.values()) {
                 writeStringWithDictionary(service.type(), out);
 
-                Map<String, String> serviceProps = service.properties();
+                Map<String, ServiceProperty<?>> serviceProps = service.properties();
 
                 int servicePropsSize = serviceProps.size();
 
                 out.writeVarIntUnsigned(servicePropsSize);
 
                 if (servicePropsSize > 0) {
-                    for (Map.Entry<String, String> e : serviceProps.entrySet()) {
-                        writeStringWithDictionary(e.getKey(), out);
-                        writeStringWithDictionary(e.getValue(), out);
+                    for (Map.Entry<String, ServiceProperty<?>> e : serviceProps.entrySet()) {
+                        encodeServiceProperty(e.getValue(), out);
                     }
                 }
             }
@@ -646,16 +648,15 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
 
                 int propSize = in.readVarIntUnsigned();
 
-                Map<String, String> serviceProps;
+                Map<String, ServiceProperty<?>> serviceProps;
 
                 if (propSize > 0) {
                     serviceProps = new HashMap<>(propSize, 1.0f);
 
                     for (int j = 0; j < propSize; j++) {
-                        String key = readStringWithDictionary(in);
-                        String value = readStringWithDictionary(in);
+                        ServiceProperty<?> prop = decodeServiceProperty(in);
 
-                        serviceProps.put(key, value);
+                        serviceProps.put(prop.name(), prop);
                     }
 
                     serviceProps = Collections.unmodifiableMap(serviceProps);
@@ -698,6 +699,62 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         boolean localNode = addr.id().equals(localNodeId);
 
         return new DefaultClusterNode(addr, nodeName, localNode, order, roles, props, services, systemInfo);
+    }
+
+    private void encodeServiceProperty(ServiceProperty<?> prop, DataWriter out) throws IOException {
+        writeStringWithDictionary(prop.name(), out);
+
+        out.writeByte(prop.type().ordinal());
+
+        switch (prop.type()) {
+            case STRING: {
+                writeStringWithDictionary((String)prop.value(), out);
+
+                break;
+            }
+            case INTEGER: {
+                out.writeVarInt((Integer)prop.value());
+
+                break;
+            }
+            case LONG: {
+                out.writeVarLong((Long)prop.value());
+
+                break;
+            }
+            case BOOLEAN: {
+                out.writeBoolean((Boolean)prop.value());
+
+                break;
+            }
+            default: {
+                throw new IllegalArgumentException("Unsupported property type: " + prop);
+            }
+        }
+    }
+
+    private ServiceProperty<?> decodeServiceProperty(DataReader in) throws IOException {
+        String name = readStringWithDictionary(in);
+
+        ServiceProperty.Type type = SERVICE_PROP_TYPES[in.readByte()];
+
+        switch (type) {
+            case STRING: {
+                return ServiceProperty.forString(name, readStringWithDictionary(in));
+            }
+            case INTEGER: {
+                return ServiceProperty.forInteger(name, in.readVarInt());
+            }
+            case LONG: {
+                return ServiceProperty.forLong(name, in.readVarLong());
+            }
+            case BOOLEAN: {
+                return ServiceProperty.forBoolean(name, in.readBoolean());
+            }
+            default: {
+                throw new IllegalArgumentException("Unsupported property type: " + type);
+            }
+        }
     }
 
     private void encodeNodeIdSet(Set<ClusterNodeId> set, DataWriter out) throws IOException {

@@ -202,7 +202,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                 cfg.getBackupNodes()
             );
 
-            ctx.setServiceProperty(ChannelMetaData.propertyName(cfg.getName()), meta.toString());
+            ctx.setStringProperty(ChannelMetaData.propertyName(cfg.getName()), meta.toString());
         });
     }
 
@@ -213,8 +213,10 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             ServiceInfo remService = joining.service(MessagingService.class);
 
             for (MessagingChannelConfig<?> cfg : channelsConfig) {
-                ChannelMetaData locMeta = ChannelMetaData.parse(locService.property(ChannelMetaData.propertyName(cfg.getName().trim())));
-                ChannelMetaData remMeta = ChannelMetaData.parse(remService.property(ChannelMetaData.propertyName(cfg.getName().trim())));
+                String channelName = cfg.getName().trim();
+
+                ChannelMetaData locMeta = ChannelMetaData.parse(locService.stringProperty(ChannelMetaData.propertyName(channelName)));
+                ChannelMetaData remMeta = ChannelMetaData.parse(remService.stringProperty(ChannelMetaData.propertyName(channelName)));
 
                 if (remMeta != null) {
                     if (!locMeta.type().equals(remMeta.type())) {

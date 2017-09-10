@@ -154,7 +154,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
         // Register region names as service property.
         regionsConfig.forEach(cfg ->
-            ctx.setServiceProperty(LockRegionNodeFilter.serviceProperty(cfg.getName().trim()), "1")
+            ctx.setBoolProperty(LockRegionNodeFilter.serviceProperty(cfg.getName().trim()), true)
         );
     }
 

@@ -31,7 +31,31 @@ public interface ConfigurationContext {
      * @param name Property name.
      * @param value Property value (must be not-{@code null} and not empty).
      */
-    void setServiceProperty(String name, String value);
+    void setStringProperty(String name, String value);
+
+    /**
+     * Adds the specified {@link ServiceInfo#properties() service property}.
+     *
+     * @param name Property name.
+     * @param value Property value.
+     */
+    void setIntProperty(String name, int value);
+
+    /**
+     * Adds the specified {@link ServiceInfo#properties() service property}.
+     *
+     * @param name Property name.
+     * @param value Property value.
+     */
+    void setLongProperty(String name, long value);
+
+    /**
+     * Adds the specified {@link ServiceInfo#properties() service property}.
+     *
+     * @param name Property name.
+     * @param value Property value.
+     */
+    void setBoolProperty(String name, boolean value);
 
     /**
      * Searches for all components of the specified type.

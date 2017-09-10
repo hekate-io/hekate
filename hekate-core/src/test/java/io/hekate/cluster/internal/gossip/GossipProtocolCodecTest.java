@@ -30,6 +30,10 @@ import io.hekate.cluster.internal.gossip.GossipProtocol.Update;
 import io.hekate.cluster.internal.gossip.GossipProtocol.UpdateDigest;
 import io.hekate.codec.StreamDataReader;
 import io.hekate.codec.StreamDataWriter;
+import io.hekate.core.ServiceInfo;
+import io.hekate.core.ServiceProperty;
+import io.hekate.core.service.Service;
+import io.hekate.core.service.internal.DefaultServiceInfo;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
@@ -48,6 +52,18 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class GossipProtocolCodecTest extends HekateTestBase {
+    private static class TestClass1 {
+        // No-op.
+    }
+
+    private static class TestClass2 {
+        // No-op.
+    }
+
+    private static class TestClass3 {
+        // No-op.
+    }
+
     private final GossipProtocolCodec codec = new GossipProtocolCodec(new AtomicReference<>(newNodeId()));
 
     @Test
@@ -251,6 +267,53 @@ public class GossipProtocolCodecTest extends HekateTestBase {
                 assertEquals(n1.node().property("p2"), n2.property("p2"));
                 assertEquals(n1.node().property("p3"), n2.property("p3"));
             });
+        });
+    }
+
+    @Test
+    public void testUpdateServiceWithProps() throws Exception {
+        repeat(3, i -> {
+            Consumer<DefaultClusterNodeBuilder> transform = node -> {
+                Map<String, ServiceInfo> services = new HashMap<>();
+
+                int idx = 0;
+
+                for (Class<?> type : Arrays.asList(TestClass1.class, TestClass2.class, TestClass3.class)) {
+                    Map<String, ServiceProperty<?>> serviceProps = new HashMap<>();
+
+                    serviceProps.put("string", ServiceProperty.forString("string", String.valueOf(idx)));
+                    serviceProps.put("int", ServiceProperty.forInteger("int", idx));
+                    serviceProps.put("long", ServiceProperty.forLong("long", idx + 10000));
+                    serviceProps.put("bool", ServiceProperty.forBoolean("bool", idx % 2 == 0));
+
+                    services.put(type.getName(), new DefaultServiceInfo(type.getName(), serviceProps));
+
+                    idx++;
+                }
+
+                node.withServices(services);
+            };
+
+            ClusterAddress from = newNode(transform).address();
+            ClusterAddress to = newNode(transform).address();
+
+            Gossip g1 = newGossip(from, to);
+
+            Update before = new Update(from, to, g1);
+
+            Update after = encodeDecode(before);
+
+            assertEquals(from, after.from());
+            assertEquals(to, after.to());
+            assertNotNull(after.gossip());
+
+            Gossip g2 = after.gossip();
+
+            for (GossipNodeState n1 : g1.members().values()) {
+                ClusterNode n2 = g2.member(n1.id()).node();
+
+                assertServicePropertyEquals(n1.node(), n2);
+            }
         });
     }
 
@@ -472,5 +535,31 @@ public class GossipProtocolCodecTest extends HekateTestBase {
         assertEquals(s1.jvmVendor(), s2.jvmVendor());
         assertEquals(s1.pid(), s2.pid());
         assertEquals(s1.toString(), s2.toString());
+    }
+
+    @SuppressWarnings("unchecked")
+    private void assertServicePropertyEquals(ClusterNode n1, ClusterNode n2) throws Exception {
+        for (ServiceInfo s1 : n1.services().values()) {
+            Class<? extends Service> type = (Class<? extends Service>)Class.forName(s1.type());
+
+            ServiceInfo s2 = n2.service(type);
+
+            Map<String, ServiceProperty<?>> props1 = s1.properties();
+            Map<String, ServiceProperty<?>> props2 = s2.properties();
+
+            assertEquals(props1.keySet(), props2.keySet());
+
+            props1.keySet().forEach(name -> {
+                ServiceProperty<?> p1 = props1.get(name);
+                ServiceProperty<?> p2 = props2.get(name);
+
+                assertEquals(name, p1.name());
+                assertEquals(name, p2.name());
+
+                assertEquals(p1.type(), p2.type());
+                assertEquals(p1.name(), p2.name());
+                assertEquals(p1.value(), p2.value());
+            });
+        }
     }
 }

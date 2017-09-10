@@ -17,6 +17,7 @@
 package io.hekate.core;
 
 import io.hekate.cluster.ClusterNode;
+import io.hekate.core.ServiceProperty.Type;
 import java.util.Map;
 
 /**
@@ -37,7 +38,7 @@ public interface ServiceInfo {
      *
      * @return Service properties.
      */
-    Map<String, String> properties();
+    Map<String, ServiceProperty<?>> properties();
 
     /**
      * Returns the property value or {@code null} if there is no such property.
@@ -46,5 +47,57 @@ public interface ServiceInfo {
      *
      * @return Property value or {@code null}.
      */
-    String property(String name);
+    ServiceProperty<?> property(String name);
+
+    /**
+     * Returns the property value or {@code null} if there is no such property or if property is not of {@link Type#INTEGER} type.
+     *
+     * @param name Property name.
+     *
+     * @return Property value or {@code null}.
+     */
+    default Integer intProperty(String name) {
+        ServiceProperty<?> prop = property(name);
+
+        return prop != null && prop.type() == Type.INTEGER ? (Integer)prop.value() : null;
+    }
+
+    /**
+     * Returns the property value or {@code null} if there is no such property or if property is not of {@link Type#LONG} type.
+     *
+     * @param name Property name.
+     *
+     * @return Property value or {@code null}.
+     */
+    default Long longProperty(String name) {
+        ServiceProperty<?> prop = property(name);
+
+        return prop != null && prop.type() == Type.LONG ? (Long)prop.value() : null;
+    }
+
+    /**
+     * Returns the property value or {@code null} if there is no such property or if property is not of {@link Type#BOOLEAN} type.
+     *
+     * @param name Property name.
+     *
+     * @return Property value or {@code null}.
+     */
+    default Boolean boolProperty(String name) {
+        ServiceProperty<?> prop = property(name);
+
+        return prop != null && prop.type() == Type.BOOLEAN ? (Boolean)prop.value() : null;
+    }
+
+    /**
+     * Returns the property value or {@code null} if there is no such property or if property is not of {@link Type#STRING} type.
+     *
+     * @param name Property name.
+     *
+     * @return Property value or {@code null}.
+     */
+    default String stringProperty(String name) {
+        ServiceProperty<?> prop = property(name);
+
+        return prop != null && prop.type() == Type.STRING ? (String)prop.value() : null;
+    }
 }

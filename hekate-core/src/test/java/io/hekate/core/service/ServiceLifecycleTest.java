@@ -24,12 +24,12 @@ import io.hekate.core.ServiceInfo;
 import io.hekate.core.internal.HekateTestNode;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
-import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -57,9 +57,9 @@ public class ServiceLifecycleTest extends HekateNodeTestBase {
 
         private final AtomicInteger terminated = new AtomicInteger();
 
-        private final Map<String, String> initProps;
+        private final Map<String, Object> initProps;
 
-        public TestServiceBase(Map<String, String> initProps) {
+        public TestServiceBase(Map<String, Object> initProps) {
             this.initProps = initProps;
         }
 
@@ -68,7 +68,19 @@ public class ServiceLifecycleTest extends HekateNodeTestBase {
             configured.incrementAndGet();
 
             if (initProps != null) {
-                initProps.forEach(ctx::setServiceProperty);
+                initProps.forEach((k, v) -> {
+                    if (v instanceof String) {
+                        ctx.setStringProperty(k, (String)v);
+                    } else if (v instanceof Integer) {
+                        ctx.setIntProperty(k, (Integer)v);
+                    } else if (v instanceof Long) {
+                        ctx.setLongProperty(k, (Long)v);
+                    } else if (v instanceof Boolean) {
+                        ctx.setBoolProperty(k, (Boolean)v);
+                    } else {
+                        throw new IllegalArgumentException("Unsupported property type: " + v.getClass());
+                    }
+                });
             }
         }
 
@@ -96,13 +108,13 @@ public class ServiceLifecycleTest extends HekateNodeTestBase {
     }
 
     private static class DefaultServiceA extends TestServiceBase implements ServiceA {
-        public DefaultServiceA(Map<String, String> initServiceProps) {
+        public DefaultServiceA(Map<String, Object> initServiceProps) {
             super(initServiceProps);
         }
     }
 
     private static class DefaultServiceB extends TestServiceBase implements ServiceB {
-        public DefaultServiceB(Map<String, String> initServiceProps) {
+        public DefaultServiceB(Map<String, Object> initServiceProps) {
             super(initServiceProps);
         }
     }
@@ -139,10 +151,27 @@ public class ServiceLifecycleTest extends HekateNodeTestBase {
 
         repeat(5, i -> {
             HekateTestNode node = createNode(c -> {
-                String strIdx = String.valueOf(i + 1);
+                String strVal = String.valueOf(i + 1);
+                Integer intVal = i + 10000;
+                Long longVal = i + 1000000L;
+                Boolean boolVal = i % 2 == 0;
 
-                c.withService(() -> new DefaultServiceA(singletonMap("A", strIdx)));
-                c.withService(() -> new DefaultServiceB(singletonMap("B", strIdx)));
+                Map<String, Object> propsA = new HashMap<>();
+
+                propsA.put("A-string", strVal);
+                propsA.put("A-int", intVal);
+                propsA.put("A-long", longVal);
+                propsA.put("A-bool", boolVal);
+
+                Map<String, Object> propsB = new HashMap<>();
+
+                propsB.put("B-string", strVal);
+                propsB.put("B-int", intVal);
+                propsB.put("B-long", longVal);
+                propsB.put("B-bool", boolVal);
+
+                c.withService(() -> new DefaultServiceA(propsA));
+                c.withService(() -> new DefaultServiceB(propsB));
             });
 
             nodes.add(node);
@@ -162,13 +191,22 @@ public class ServiceLifecycleTest extends HekateNodeTestBase {
                 assertNotNull(serviceA);
                 assertNotNull(serviceB);
 
-                String propA = serviceA.property("A");
-                String propB = serviceB.property("B");
+                int seed = node.joinOrder() - 1;
 
-                say("Checking [join-order=" + node.joinOrder() + ", prop-A=" + propA + ", prop-B=" + propB + ']');
+                String strVal = String.valueOf(seed + 1);
+                Integer intVal = seed + 10000;
+                Long longVal = seed + 1000000L;
+                Boolean boolVal = seed % 2 == 0;
 
-                assertEquals(String.valueOf(node.joinOrder()), propA);
-                assertEquals(String.valueOf(node.joinOrder()), propB);
+                assertEquals(strVal, serviceA.stringProperty("A-string"));
+                assertEquals(intVal, serviceA.intProperty("A-int"));
+                assertEquals(longVal, serviceA.longProperty("A-long"));
+                assertEquals(boolVal, serviceA.boolProperty("A-bool"));
+
+                assertEquals(strVal, serviceB.stringProperty("B-string"));
+                assertEquals(intVal, serviceB.intProperty("B-int"));
+                assertEquals(longVal, serviceB.longProperty("B-long"));
+                assertEquals(boolVal, serviceB.boolProperty("B-bool"));
             });
     }
 }

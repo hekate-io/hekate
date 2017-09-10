@@ -28,8 +28,10 @@ import io.hekate.codec.DataWriter;
 import io.hekate.codec.SingletonCodecFactory;
 import io.hekate.core.HekateException;
 import io.hekate.core.ServiceInfo;
+import io.hekate.core.ServiceProperty;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.core.internal.util.HekateThreadFactory;
+import io.hekate.core.service.internal.DefaultServiceInfo;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.LockInfo;
@@ -492,6 +494,11 @@ public abstract class HekateTestBase {
 
     protected ClusterNode newNode(ClusterNodeId nodeId, boolean local, Consumer<DefaultClusterNodeBuilder> transform, ClusterAddress addr,
         int joinOrder) throws Exception {
+        return newNode(nodeId, local, transform, addr, joinOrder, false);
+    }
+
+    protected ClusterNode newNode(ClusterNodeId nodeId, boolean local, Consumer<DefaultClusterNodeBuilder> transform, ClusterAddress addr,
+        int joinOrder, boolean withSyntheticServices) throws Exception {
         if (nodeId == null) {
             nodeId = newNodeId();
         }
@@ -523,9 +530,31 @@ public abstract class HekateTestBase {
             props.put("test-prop-2", "test-val-2");
             props.put("test-prop-3", "test-val-3");
 
-            Map<String, ServiceInfo> services = Collections.emptyMap();
+            Map<String, ServiceInfo> services;
 
-            return builder.withRoles(roles).withProperties(props).withServices(services).createNode();
+            if (withSyntheticServices) {
+                services = new HashMap<>();
+
+                for (int i = 0; i < 3; i++) {
+                    String type = "Service" + i;
+
+                    Map<String, ServiceProperty<?>> serviceProps = new HashMap<>();
+
+                    serviceProps.put("string", ServiceProperty.forString("string", String.valueOf(i)));
+                    serviceProps.put("int", ServiceProperty.forInteger("int", i));
+                    serviceProps.put("long", ServiceProperty.forLong("long", i + 10000));
+                    serviceProps.put("bool", ServiceProperty.forBoolean("bool", i % 2 == 0));
+
+                    services.put(type, new DefaultServiceInfo(type, serviceProps));
+                }
+            } else {
+                services = Collections.emptyMap();
+            }
+
+            return builder.withRoles(roles)
+                .withProperties(props)
+                .withServices(services)
+                .createNode();
         } else {
             transform.accept(builder);
 

@@ -156,7 +156,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
         // Register process names as service property.
         processesConfig.forEach(cfg ->
-            ctx.setServiceProperty(propertyName(cfg.getName().trim()), "1")
+            ctx.setBoolProperty(propertyName(cfg.getName().trim()), true)
         );
     }
 
