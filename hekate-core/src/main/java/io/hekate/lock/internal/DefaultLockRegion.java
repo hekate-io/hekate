@@ -498,27 +498,9 @@ class DefaultLockRegion implements LockRegion {
                     Map<ClusterNodeId, ClusterHash> topologies = request.topologies();
 
                     // Check if all migrating locks were gathered consistently.
-                    if (!request.isFirstPass() || isConsistent(topologies)) {
+                    if (request.isFirstPass()) {
                         if (DEBUG) {
-                            log.debug("Starting locks migration phase [key={}]", key);
-                        }
-
-                        // Switch to second phase (apply locks).
-                        List<LockMigrationInfo> remainingLocks = applyMigration(request.locks());
-
-                        if (partitions.topology().size() > 1) {
-                            MigrationApplyRequest apply = new MigrationApplyRequest(regionName, key, remainingLocks);
-
-                            sendToNextNode(apply);
-
-                            if (migrationCallback != null) {
-                                migrationCallback.onAfterApplySent(apply);
-                            }
-                        }
-                    } else {
-                        if (DEBUG) {
-                            log.debug("Inconsistent topologies were detected during the preparation phase. "
-                                + "Starting the second round of preparation [key={}]", key);
+                            log.debug("Finished the first round of preparation phase [key={}]", key);
                         }
 
                         ClusterTopology topology = partitions.topology();
@@ -536,6 +518,23 @@ class DefaultLockRegion implements LockRegion {
 
                         if (migrationCallback != null) {
                             migrationCallback.onAfterPrepareSent(prepare);
+                        }
+                    } else {
+                        if (DEBUG) {
+                            log.debug("Starting locks migration phase [key={}]", key);
+                        }
+
+                        // Switch to second phase (apply locks).
+                        List<LockMigrationInfo> remainingLocks = applyMigration(request.locks());
+
+                        if (partitions.topology().size() > 1) {
+                            MigrationApplyRequest apply = new MigrationApplyRequest(regionName, key, remainingLocks);
+
+                            sendToNextNode(apply);
+
+                            if (migrationCallback != null) {
+                                migrationCallback.onAfterApplySent(apply);
+                            }
                         }
                     }
                 } else {
@@ -574,25 +573,14 @@ class DefaultLockRegion implements LockRegion {
                     ClusterTopology topology = partitions.topology();
 
                     if (request.isFirstPass()) {
-                        // First round of preparation.
+                        // First round of preparation (gather topologies).
                         Map<ClusterNodeId, ClusterHash> newTopMap = addToTopologies(receivedTop);
 
-                        List<LockMigrationInfo> migratingLocks;
-
-                        if (isConsistent(newTopMap)) {
-                            // Topologies are consistent among all of the visited nodes.
-                            // Add migrating locks to the request.
-                            migratingLocks = prepareMigration(topology, newTopMap, request.locks());
-                        } else {
-                            // Inconsistency detected.
-                            // No need to add migrating nodes since it will be done during the second round of preparation.
-                            migratingLocks = emptyList();
-                        }
+                        List<LockMigrationInfo> migratingLocks = emptyList();
 
                         nextPrepare = new MigrationPrepareRequest(regionName, key, true, newTopMap, migratingLocks);
                     } else {
-                        // Second round of preparation (inconsistent topologies were detected during the first round).
-                        // Re-gather migrating locks assuming the inconsistent topologies.
+                        // Second round of preparation (gather migrating locks).
                         List<LockMigrationInfo> migration = prepareMigration(topology, receivedTop, request.locks());
 
                         nextPrepare = new MigrationPrepareRequest(regionName, key, false, receivedTop, migration);
@@ -798,7 +786,7 @@ class DefaultLockRegion implements LockRegion {
 
         Map<ClusterNodeId, ClusterHash> topologies = addToTopologies(emptyMap());
 
-        List<LockMigrationInfo> migratingLocks = prepareMigration(topology, topologies, emptyList());
+        List<LockMigrationInfo> migratingLocks = emptyList();
 
         MigrationPrepareRequest prepare = new MigrationPrepareRequest(regionName, migrationKey, true, topologies, migratingLocks);
 
@@ -819,7 +807,7 @@ class DefaultLockRegion implements LockRegion {
 
         migration.addAll(gatheredLocks);
 
-        // Collect only those nodes that require migration.
+        // Collect only those locks that require migration.
         lockClients.values().stream()
             .filter(lock -> {
                 if (lock.manager() == null) {
@@ -1095,24 +1083,6 @@ class DefaultLockRegion implements LockRegion {
 
     private boolean isMigrationCoordinator(ClusterTopology topology) {
         return topology.oldest().id().equals(localNode);
-    }
-
-    private boolean isConsistent(Map<ClusterNodeId, ClusterHash> top) {
-        boolean first = true;
-
-        ClusterHash prev = null;
-
-        for (ClusterHash hash : top.values()) {
-            if (first) {
-                first = false;
-
-                prev = hash;
-            } else if (!Objects.equals(hash, prev)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private Map<ClusterNodeId, ClusterHash> addToTopologies(Map<ClusterNodeId, ClusterHash> oldTopologies) {
