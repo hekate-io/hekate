@@ -105,11 +105,16 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
 
     @Override
     public void stream(T request, ResponseCallback<T> callback) {
+        ArgAssert.notNull(request, "Message");
+        ArgAssert.notNull(callback, "Callback");
+
         gateway.stream(affinityKey, request, this, callback);
     }
 
     @Override
     public StreamFuture<T> stream(T request) {
+        ArgAssert.notNull(request, "Message");
+
         return gateway.stream(affinityKey, request, this);
     }
 
@@ -244,7 +249,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
 
     @Override
     public MessagingOpts<T> forSingleNode(ClusterNode node) {
-        ArgAssert.notNull(node, "Node");
+        assert node != null : "Node must be not null.";
 
         ClusterView newCluster = cluster.forNode(node);
         RendezvousHashMapper newPartitions = partitions.copy(newCluster);
