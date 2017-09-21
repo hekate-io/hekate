@@ -37,19 +37,19 @@ public class ArgAssertTest extends HekateTestBase {
             ArgAssert.notEmpty(null, "something")
         );
 
-        expectErrorMessage(IAE, "something must be have non-whitespace characters.", () ->
+        expectErrorMessage(IAE, "something must have non-whitespace characters.", () ->
             ArgAssert.notEmpty("", "something")
         );
 
-        expectErrorMessage(IAE, "something must be have non-whitespace characters.", () ->
+        expectErrorMessage(IAE, "something must have non-whitespace characters.", () ->
             ArgAssert.notEmpty("   ", "something")
         );
 
-        expectErrorMessage(IAE, "something must be have non-whitespace characters.", () ->
+        expectErrorMessage(IAE, "something must have non-whitespace characters.", () ->
             ArgAssert.notEmpty("\n", "something")
         );
 
-        expectErrorMessage(IAE, "something must be have non-whitespace characters.", () ->
+        expectErrorMessage(IAE, "something must have non-whitespace characters.", () ->
             ArgAssert.notEmpty(System.lineSeparator(), "something")
         );
 

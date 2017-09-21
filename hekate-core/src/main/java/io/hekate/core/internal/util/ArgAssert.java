@@ -22,13 +22,11 @@ public final class ArgAssert {
     }
 
     public static void check(boolean that, String msg) throws IllegalArgumentException {
-        if (!that) {
-            throw new IllegalArgumentException(msg);
-        }
+        doCheck(that, null, msg);
     }
 
     public static <T> T notNull(T obj, String component) {
-        check(obj != null, component + " must be not null.");
+        doCheck(obj != null, component, " must be not null.");
 
         return obj;
     }
@@ -36,7 +34,7 @@ public final class ArgAssert {
     public static String notEmpty(String str, String component) {
         String trimmed = notNull(str, component).trim();
 
-        check(!trimmed.isEmpty(), component + " must be have non-whitespace characters.");
+        doCheck(!trimmed.isEmpty(), component, " must have non-whitespace characters.");
 
         return trimmed;
     }
@@ -47,5 +45,11 @@ public final class ArgAssert {
 
     public static void isTrue(boolean condition, String msg) {
         check(condition, msg);
+    }
+
+    private static void doCheck(boolean that, String component, String msg) throws IllegalArgumentException {
+        if (!that) {
+            throw new IllegalArgumentException(component == null ? msg : component + msg);
+        }
     }
 }
