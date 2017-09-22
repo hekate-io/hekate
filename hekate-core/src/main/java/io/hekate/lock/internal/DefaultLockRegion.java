@@ -325,7 +325,7 @@ class DefaultLockRegion implements LockRegion {
         try {
             if (status == Status.TERMINATED) {
                 if (DEBUG) {
-                    log.debug("Rejected unlocking since region is in {} state [lock-id={}]", status, lockId);
+                    log.debug("Rejected unlocking since region is in {} state [region={}, lock-id={}]", regionName, status, lockId);
                 }
 
                 LockFuture future = new LockFuture(null);
@@ -500,7 +500,7 @@ class DefaultLockRegion implements LockRegion {
                     // Check if all migrating locks were gathered consistently.
                     if (request.isFirstPass()) {
                         if (DEBUG) {
-                            log.debug("Finished the first round of preparation phase [key={}]", key);
+                            log.debug("Finished the first round of preparation phase [region={}, key={}]", regionName, key);
                         }
 
                         ClusterTopology topology = partitions.topology();
@@ -521,7 +521,7 @@ class DefaultLockRegion implements LockRegion {
                         }
                     } else {
                         if (DEBUG) {
-                            log.debug("Starting locks migration phase [key={}]", key);
+                            log.debug("Starting locks migration phase [region={}, key={}]", regionName, key);
                         }
 
                         // Switch to second phase (apply locks).
@@ -779,7 +779,8 @@ class DefaultLockRegion implements LockRegion {
         migrationKey = new LockMigrationKey(localNode, topology.hash(), keyIdGen.incrementAndGet());
 
         if (DEBUG) {
-            log.debug("Starting locks migration [status={}, migration-key={}]", status, migrationKey);
+            log.debug("Starting locks migration "
+                + "[region={}, status={}, topology={}, migration-key={}]", regionName, status, topology, migrationKey);
         }
 
         status = Status.MIGRATING;
@@ -842,9 +843,10 @@ class DefaultLockRegion implements LockRegion {
         if (DEBUG) {
             int total = migration.size();
             int localMigrating = total - gatheredLocks.size();
-            int local = lockClients.size();
+            int totalLocal = lockClients.size();
 
-            log.debug("Gathered migrating locks [local-migrating={}, total-migrating={}, total-local={}]", localMigrating, total, local);
+            log.debug("Gathered migrating locks "
+                + "[region={}, local-migrating={}, total-migrating={}, total-local={}]", regionName, localMigrating, total, totalLocal);
         }
 
         return migration;
@@ -854,7 +856,7 @@ class DefaultLockRegion implements LockRegion {
         assert writeLock.isHeldByCurrentThread() : "Write lock must be held by the thread.";
 
         if (DEBUG) {
-            log.debug("Applying locks migration [status={}, key={}]", status, migrationKey);
+            log.debug("Applying locks migration [region={}, status={}, key={}]", regionName, status, migrationKey);
         }
 
         status = Status.ACTIVE;
@@ -877,7 +879,7 @@ class DefaultLockRegion implements LockRegion {
                 LockControllerServer server = e.getValue();
 
                 if (DEBUG) {
-                    log.debug("Disposing lock server that is not managed by the local node anymore [lock={}]", name);
+                    log.debug("Disposing lock server that is not managed by the local node anymore [region={}, lock={}]", regionName, name);
                 }
 
                 server.dispose();
@@ -901,7 +903,7 @@ class DefaultLockRegion implements LockRegion {
                     lockServers.put(name, server);
 
                     if (DEBUG) {
-                        log.debug("Registering new lock server [lock={}]", name);
+                        log.debug("Registering new lock server [key={}]", key);
                     }
                 }
 
@@ -1057,7 +1059,7 @@ class DefaultLockRegion implements LockRegion {
                 server = new LockControllerServer(name, scheduler);
 
                 if (DEBUG) {
-                    log.debug("Registered new lock server [name={}]", name);
+                    log.debug("Registered new lock server [region={}, name={}]", regionName, name);
                 }
 
                 lockServers.put(name, server);
@@ -1073,7 +1075,7 @@ class DefaultLockRegion implements LockRegion {
         synchronized (lockServersMux) {
             if (server.isFree()) {
                 if (DEBUG) {
-                    log.debug("Unregistered lock server [name={}]", name);
+                    log.debug("Unregistered lock server [region={}, name={}]", regionName, name);
                 }
 
                 lockServers.remove(name, server);
