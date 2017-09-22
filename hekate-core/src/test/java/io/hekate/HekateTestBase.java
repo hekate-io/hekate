@@ -197,6 +197,7 @@ public abstract class HekateTestBase {
         KNOWN_THREAD_PREFIXES.add("Finalizer".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("Attach Listener".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("ForkJoinPool.".toLowerCase());
+        KNOWN_THREAD_PREFIXES.add("Common-Cleaner".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("RMI ".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("JMX ".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("main".toLowerCase());
