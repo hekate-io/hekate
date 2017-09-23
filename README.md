@@ -144,6 +144,14 @@ Complete reference guide is coming soon.
   
 ## Release notes
 
+### v.1.0.2 (23-Sep-2017)
+
+ - Implemented support for intercepting and transforming inbound/outbound messages 
+   (see [MessageInterceptor](https://static.javadoc.io/io.hekate/hekate-all/1.0.2/index.html?io/hekate/messaging/MessageInterceptor.html)).
+ - Upgraded to Netty 4.1.15.Final.
+ - Upgraded to Kryo 4.0.1
+ - Upgraded to Apache jClouds 2.0.2
+
 ### v.1.0.1 (01-Jul-2017)
 
  - Fixed invalid links in javadocs.
