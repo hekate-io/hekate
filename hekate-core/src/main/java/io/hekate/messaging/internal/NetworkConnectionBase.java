@@ -34,8 +34,8 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
 
     private final SendPressureGuard pressureGuard;
 
-    public NetworkConnectionBase(NetworkEndpoint<MessagingProtocol> net, MessagingGateway<T> gateway, MessagingEndpoint<T> messaging) {
-        super(gateway, gateway.async(), messaging);
+    public NetworkConnectionBase(NetworkEndpoint<MessagingProtocol> net, MessagingGateway<T> gateway, MessagingEndpoint<T> endpoint) {
+        super(gateway, gateway.async(), endpoint);
 
         assert net != null : "Endpoint is null.";
 

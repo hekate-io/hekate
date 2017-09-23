@@ -17,6 +17,7 @@
 package io.hekate.messaging.unicast;
 
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.messaging.MessagingEndpoint;
 
 /**
  * Callback for {@link MessagingChannel#request(Object, ResponseCallback) request(...)} operation.
@@ -55,10 +56,11 @@ public interface ResponseCallback<T> {
      *
      * @param err Error ({@code null} if operation was successful).
      * @param reply Response ({@code null} if operation failed).
+     * @param from Messaging endpoint that received this message ({@code null} if operation failed).
      *
      * @return Decision.
      */
-    default ReplyDecision accept(Throwable err, T reply) {
+    default ReplyDecision accept(Throwable err, T reply, MessagingEndpoint<T> from) {
         return ReplyDecision.DEFAULT;
     }
 }

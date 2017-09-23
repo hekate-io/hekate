@@ -94,10 +94,11 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
         switch (type) {
             case CONNECT: {
                 ClusterNodeId to = CodecUtils.readNodeId(in);
+                ClusterNodeId from = CodecUtils.readNodeId(in);
 
                 MessagingChannelId sourceId = decodeSourceId(in);
 
-                return new Connect(to, sourceId);
+                return new Connect(to, from, sourceId);
             }
             case AFFINITY_NOTIFICATION: {
                 boolean retransmit = isRetransmit(flags);
@@ -189,6 +190,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 Connect connect = (Connect)msg;
 
                 CodecUtils.writeNodeId(connect.to(), out);
+                CodecUtils.writeNodeId(connect.from(), out);
 
                 encodeSourceId(connect.channelId(), out);
 

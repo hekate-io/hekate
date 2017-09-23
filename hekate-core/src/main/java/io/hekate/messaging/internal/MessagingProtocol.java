@@ -19,7 +19,6 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageQueueOverflowException;
-import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.unicast.Response;
@@ -193,11 +192,6 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public MessagingChannel<T> channel() {
-            return conn.endpoint().channel();
-        }
-
-        @Override
         public void onComplete(MessagingProtocol message, Optional<Throwable> error, NetworkEndpoint<MessagingProtocol> endpoint) {
             error.ifPresent(err ->
                 conn.notifyOnReplyFailure(handle, err)
@@ -225,17 +219,24 @@ abstract class MessagingProtocol {
     static class Connect extends MessagingProtocol {
         private final ClusterNodeId to;
 
+        private final ClusterNodeId from;
+
         private final MessagingChannelId channelId;
 
-        public Connect(ClusterNodeId to, MessagingChannelId channelId) {
+        public Connect(ClusterNodeId to, ClusterNodeId from, MessagingChannelId channelId) {
             super(false);
 
             this.to = to;
+            this.from = from;
             this.channelId = channelId;
         }
 
         public ClusterNodeId to() {
             return to;
+        }
+
+        public ClusterNodeId from() {
+            return from;
         }
 
         public MessagingChannelId channelId() {
@@ -298,11 +299,6 @@ abstract class MessagingProtocol {
         @Override
         public MessagingEndpoint<T> endpoint() {
             return conn.endpoint();
-        }
-
-        @Override
-        public MessagingChannel<T> channel() {
-            return conn.endpoint().channel();
         }
 
         @Override
@@ -501,11 +497,6 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public MessagingChannel<T> channel() {
-            return conn.endpoint().channel();
-        }
-
-        @Override
         public void onComplete(MessagingProtocol message, Optional<Throwable> error, NetworkEndpoint<MessagingProtocol> endpoint) {
             if (backPressure != null) {
                 backPressure.onDequeue();
@@ -604,11 +595,6 @@ abstract class MessagingProtocol {
         @Override
         public MessagingEndpoint<T> endpoint() {
             return conn.endpoint();
-        }
-
-        @Override
-        public MessagingChannel<T> channel() {
-            return conn.endpoint().channel();
         }
 
         @Override

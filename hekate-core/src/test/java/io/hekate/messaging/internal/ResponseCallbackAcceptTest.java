@@ -17,6 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.failover.FailoverContext;
+import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.unicast.RejectedReplyException;
 import io.hekate.messaging.unicast.ReplyDecision;
 import java.util.List;
@@ -65,7 +66,9 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
-            public ReplyDecision accept(Throwable err, String reply) {
+            public ReplyDecision accept(Throwable err, String reply, MessagingEndpoint<String> from) {
+                assertEquals(receiver.getNodeId(), from.remoteNodeId());
+
                 if (err != null) {
                     return ReplyDecision.COMPLETE;
                 }
@@ -88,7 +91,9 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
-            public ReplyDecision accept(Throwable err, String reply) {
+            public ReplyDecision accept(Throwable err, String reply, MessagingEndpoint<String> from) {
+                assertEquals(receiver.getNodeId(), from.remoteNodeId());
+
                 accepts.incrementAndGet();
 
                 return ReplyDecision.COMPLETE;
@@ -110,7 +115,9 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
-            public ReplyDecision accept(Throwable err, String reply) {
+            public ReplyDecision accept(Throwable err, String reply, MessagingEndpoint<String> from) {
+                assertEquals(receiver.getNodeId(), from.remoteNodeId());
+
                 if (err != null) {
                     return ReplyDecision.COMPLETE;
                 }
@@ -134,7 +141,9 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
-            public ReplyDecision accept(Throwable err, String reply) {
+            public ReplyDecision accept(Throwable err, String reply, MessagingEndpoint<String> from) {
+                assertEquals(receiver.getNodeId(), from.remoteNodeId());
+
                 if (err != null) {
                     return ReplyDecision.COMPLETE;
                 }
@@ -161,7 +170,9 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
-            public ReplyDecision accept(Throwable err, String reply) {
+            public ReplyDecision accept(Throwable err, String reply, MessagingEndpoint<String> from) {
+                assertEquals(receiver.getNodeId(), from.remoteNodeId());
+
                 if (err != null) {
                     return ReplyDecision.COMPLETE;
                 }
@@ -198,7 +209,11 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
-            public ReplyDecision accept(Throwable err, String reply) {
+            public ReplyDecision accept(Throwable err, String reply, MessagingEndpoint<String> from) {
+                if (err == null) {
+                    assertEquals(receiver.getNodeId(), from.remoteNodeId());
+                }
+
                 accepts.incrementAndGet();
 
                 return ReplyDecision.DEFAULT;
@@ -224,7 +239,11 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
-            public ReplyDecision accept(Throwable err, String reply) {
+            public ReplyDecision accept(Throwable err, String reply, MessagingEndpoint<String> from) {
+                if (err == null) {
+                    assertEquals(receiver.getNodeId(), from.remoteNodeId());
+                }
+
                 accepts.incrementAndGet();
 
                 return err == null ? ReplyDecision.COMPLETE : ReplyDecision.REJECT;
@@ -248,7 +267,9 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
-            public ReplyDecision accept(Throwable err, String reply) {
+            public ReplyDecision accept(Throwable err, String reply, MessagingEndpoint<String> from) {
+                assertEquals(receiver.getNodeId(), from.remoteNodeId());
+
                 if (err != null) {
                     return ReplyDecision.COMPLETE;
                 }

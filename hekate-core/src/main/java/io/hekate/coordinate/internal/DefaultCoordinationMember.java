@@ -25,6 +25,7 @@ import io.hekate.coordinate.CoordinationRequestCallback;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.unicast.ReplyDecision;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
@@ -133,7 +134,7 @@ class DefaultCoordinationMember implements CoordinationMember {
 
             channel.request(req, new ResponseCallback<CoordinationProtocol>() {
                 @Override
-                public ReplyDecision accept(Throwable err, CoordinationProtocol reply) {
+                public ReplyDecision accept(Throwable err, CoordinationProtocol reply, MessagingEndpoint<CoordinationProtocol> replyFrom) {
                     if (err != null || reply instanceof CoordinationProtocol.Reject) {
                         return REJECT;
                     } else {

@@ -79,11 +79,4 @@ public interface Response<T> {
      * @return Messaging endpoint.
      */
     MessagingEndpoint<T> endpoint();
-
-    /**
-     * Returns the messaging channel of this message.
-     *
-     * @return Messaging channel.
-     */
-    MessagingChannel<T> channel();
 }

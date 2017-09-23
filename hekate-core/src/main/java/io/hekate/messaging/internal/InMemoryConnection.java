@@ -29,7 +29,7 @@ import io.hekate.network.NetworkFuture;
 
 class InMemoryConnection<T> extends MessagingConnectionBase<T> {
     public InMemoryConnection(MessagingGateway<T> gateway, MessagingExecutor async) {
-        super(gateway, async, new DefaultMessagingEndpoint<>(gateway.id(), gateway.channel()));
+        super(gateway, async, new DefaultMessagingEndpoint<>(gateway.localNode().id(), gateway.channel()));
     }
 
     @Override

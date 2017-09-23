@@ -63,11 +63,11 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
     @Test
     public void testCallback() throws Exception {
-        List<TestChannel> channels = createAndJoinChannels(3, c -> {
-            MessageReceiver<String> receiver = msg -> msg.reply(msg.get() + "-reply");
-
-            c.setReceiver(receiver);
-        });
+        List<TestChannel> channels = createAndJoinChannels(3, c ->
+            c.setReceiver(msg ->
+                msg.reply(msg.get() + "-reply")
+            )
+        );
 
         for (TestChannel from : channels) {
             for (TestChannel to : channels) {

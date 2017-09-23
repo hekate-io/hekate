@@ -49,7 +49,6 @@ import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingBackPressureConfig;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
-import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingConfigProvider;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.MessagingOverflowPolicy;
@@ -617,9 +616,9 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                         return;
                     }
 
-                    MessagingChannelId channelId = connect.channelId();
+                    ClusterNodeId from = connect.from();
 
-                    MessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(channelId, gateway.channel());
+                    MessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(from, gateway.channel());
 
                     NetworkInboundConnection<T> conn = new NetworkInboundConnection<>(client, endpoint, gateway);
 

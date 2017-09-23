@@ -38,6 +38,7 @@ import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.MessagingChannelId;
+import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.UnknownRouteException;
 import io.hekate.messaging.broadcast.AggregateCallback;
@@ -718,21 +719,25 @@ class MessagingGateway<T> implements HekateSupport {
         InternalRequestCallback<T> internalCallback = (request, err, reply) -> {
             route.client().touch();
 
+            MessagingEndpoint<T> replyEndpoint = null;
+
             T replyMsg = null;
 
             // Check if reply is an application-level error message.
             if (err == null) {
                 replyMsg = reply.get();
+                replyEndpoint = reply.endpoint();
 
                 err = tryConvertToError(replyMsg);
 
                 if (err != null) {
                     replyMsg = null;
+                    replyEndpoint = null;
                 }
             }
 
             // Check if request callback can accept operation result.
-            ReplyDecision decision = callback.accept(err, replyMsg);
+            ReplyDecision decision = callback.accept(err, replyMsg, replyEndpoint);
 
             if (decision == null) {
                 decision = ReplyDecision.DEFAULT;

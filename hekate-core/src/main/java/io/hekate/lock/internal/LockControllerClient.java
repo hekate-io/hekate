@@ -27,6 +27,7 @@ import io.hekate.lock.internal.LockProtocol.LockResponse;
 import io.hekate.lock.internal.LockProtocol.UnlockRequest;
 import io.hekate.lock.internal.LockProtocol.UnlockResponse;
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.unicast.ReplyDecision;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
@@ -440,7 +441,7 @@ class LockControllerClient {
 
         ResponseCallback<LockProtocol> rspCallback = new ResponseCallback<LockProtocol>() {
             @Override
-            public ReplyDecision accept(Throwable err, LockProtocol reply) {
+            public ReplyDecision accept(Throwable err, LockProtocol reply, MessagingEndpoint<LockProtocol> from) {
                 if (err == null) {
                     LockResponse lockRsp = (LockResponse)reply;
 
@@ -514,7 +515,7 @@ class LockControllerClient {
 
         channel.request(unlockReq, new ResponseCallback<LockProtocol>() {
             @Override
-            public ReplyDecision accept(Throwable err, LockProtocol reply) {
+            public ReplyDecision accept(Throwable err, LockProtocol reply, MessagingEndpoint<LockProtocol> from) {
                 if (err == null) {
                     UnlockResponse lockRsp = (UnlockResponse)reply;
 

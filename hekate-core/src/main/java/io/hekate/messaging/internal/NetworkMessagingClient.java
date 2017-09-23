@@ -33,7 +33,7 @@ class NetworkMessagingClient<T> implements MessagingClient<T> {
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private final String name;
+    private final String channelName;
 
     private final ClusterNode node;
 
@@ -51,26 +51,26 @@ class NetworkMessagingClient<T> implements MessagingClient<T> {
 
     private volatile boolean closed;
 
-    public NetworkMessagingClient(String name, ClusterNode node, NetworkConnector<MessagingProtocol> net, MessagingGateway<T> gateway,
-        boolean trackIdle) {
-        assert name != null : "Name is null.";
-        assert node != null : "Cluster node is null.";
+    public NetworkMessagingClient(String channelName, ClusterNode remoteNode, NetworkConnector<MessagingProtocol> net,
+        MessagingGateway<T> gateway, boolean trackIdle) {
+        assert channelName != null : "Channel name is null.";
+        assert remoteNode != null : "Remote node is null.";
         assert net != null : "Network connector is null.";
         assert gateway != null : "Gateway is null.";
 
         if (DEBUG) {
-            log.debug("Creating new connection [channel={}, node={}]", name, node);
+            log.debug("Creating new connection [channel={}, node={}]", channelName, remoteNode);
         }
 
-        this.name = name;
-        this.node = node;
+        this.channelName = channelName;
+        this.node = remoteNode;
         this.trackIdle = trackIdle;
 
         NetworkClient<MessagingProtocol> netClient = net.newClient();
 
-        DefaultMessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(gateway.id(), gateway.channel());
+        DefaultMessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(remoteNode.id(), gateway.channel());
 
-        this.conn = new NetworkOutboundConnection<>(node.address(), netClient, gateway, endpoint);
+        this.conn = new NetworkOutboundConnection<>(remoteNode.address(), netClient, gateway, endpoint);
     }
 
     @Override
@@ -108,7 +108,7 @@ class NetworkMessagingClient<T> implements MessagingClient<T> {
     @Override
     public List<NetworkFuture<MessagingProtocol>> close() {
         if (DEBUG) {
-            log.debug("Closing connection [channel={}, node={}]", name, node);
+            log.debug("Closing connection [channel={}, node={}]", channelName, node);
         }
 
         synchronized (mux) {
@@ -135,7 +135,7 @@ class NetworkMessagingClient<T> implements MessagingClient<T> {
                         // Double check with lock.
                         if (connected && idle && !conn.hasPendingRequests()) {
                             if (DEBUG) {
-                                log.debug("Disconnecting idle connection [chanel={}, node={}]", name, node);
+                                log.debug("Disconnecting idle connection [chanel={}, node={}]", channelName, node);
                             }
 
                             connected = false;
@@ -175,7 +175,7 @@ class NetworkMessagingClient<T> implements MessagingClient<T> {
                     // Double check with lock.
                     if (!connected && !closed) {
                         if (DEBUG) {
-                            log.debug("Initializing connection [chanel={}, node={}]", name, node);
+                            log.debug("Initializing connection [chanel={}, node={}]", channelName, node);
                         }
 
                         conn.connect();

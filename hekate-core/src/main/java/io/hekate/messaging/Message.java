@@ -16,6 +16,8 @@
 
 package io.hekate.messaging;
 
+import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
@@ -211,16 +213,29 @@ public interface Message<T> {
     boolean isRequest();
 
     /**
-     * Returns the messaging endpoint.
+     * Returns the endpoint that received this message.
      *
-     * @return Messaging endpoint.
+     * @return Messaging endpoint that received this message.
      */
     MessagingEndpoint<T> endpoint();
 
     /**
-     * Returns the messaging channel.
+     * Returns the messaging channel of this message.
      *
      * @return Messaging channel.
      */
-    MessagingChannel<T> channel();
+    default MessagingChannel<T> channel() {
+        return endpoint().channel();
+    }
+
+    /**
+     * Returns the universally unique identifier of the remote cluster node.
+     *
+     * @return Universally unique identifier of the remote cluster node.
+     *
+     * @see ClusterNode#id()
+     */
+    default ClusterNodeId from() {
+        return endpoint().remoteNodeId();
+    }
 }

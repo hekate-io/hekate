@@ -86,7 +86,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
             MessagingChannelId sourceId = new MessagingChannelId();
 
-            fakeClient.connect(socketAddress, new Connect(invalidNodeId, sourceId), callback);
+            fakeClient.connect(socketAddress, new Connect(invalidNodeId, newNodeId(), sourceId), callback);
 
             fakeClient.send(new Notification<>(false, "fail1"));
             fakeClient.send(new Notification<>(false, "fail2"));
@@ -110,7 +110,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
             try {
                 MessagingEndpoint<String> endpoint = msg.endpoint();
 
-                assertEquals(sender.getId(), endpoint.remoteId());
+                assertEquals(sender.getNodeId(), endpoint.remoteNodeId());
 
                 endpoint.setContext("test");
                 assertEquals("test", endpoint.getContext());

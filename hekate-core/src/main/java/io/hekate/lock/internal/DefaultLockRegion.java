@@ -37,6 +37,7 @@ import io.hekate.lock.internal.LockProtocol.UnlockRequest;
 import io.hekate.lock.internal.LockProtocol.UnlockResponse;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.unicast.ReplyDecision;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
@@ -203,7 +204,7 @@ class DefaultLockRegion implements LockRegion {
 
         lockChannel.withAffinity(new LockKey(regionName, lockName)).request(request, new ResponseCallback<LockProtocol>() {
             @Override
-            public ReplyDecision accept(Throwable err, LockProtocol reply) {
+            public ReplyDecision accept(Throwable err, LockProtocol reply, MessagingEndpoint<LockProtocol> from) {
                 LockOwnerResponse lockReply = (LockOwnerResponse)reply;
 
                 if (err == null && lockReply.status() == LockOwnerResponse.Status.OK) {
@@ -951,7 +952,7 @@ class DefaultLockRegion implements LockRegion {
     private void sendToNextNode(MigrationRequest request) {
         migrationChannel.request(request, new ResponseCallback<LockProtocol>() {
             @Override
-            public ReplyDecision accept(Throwable err, LockProtocol reply) {
+            public ReplyDecision accept(Throwable err, LockProtocol reply, MessagingEndpoint<LockProtocol> from) {
                 if (err == null) {
                     MigrationResponse response = (MigrationResponse)reply;
 

@@ -16,6 +16,8 @@
 
 package io.hekate.messaging;
 
+import io.hekate.cluster.ClusterNodeId;
+
 /**
  * Remote messaging endpoint.
  *
@@ -29,11 +31,11 @@ package io.hekate.messaging;
  */
 public interface MessagingEndpoint<T> {
     /**
-     * Returns the universally unique identifier of a remote channel (see {@link MessagingChannel#id()}).
+     * Returns the universally unique identifier of the remote cluster node.
      *
-     * @return Universally unique identifier of a remote channel.
+     * @return Universally unique identifier of the remote cluster node.
      */
-    MessagingChannelId remoteId();
+    ClusterNodeId remoteNodeId();
 
     /**
      * Returns the custom context object that was set via {@link #setContext(Object)}.
