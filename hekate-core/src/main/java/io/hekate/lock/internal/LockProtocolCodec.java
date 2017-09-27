@@ -289,7 +289,7 @@ class LockProtocolCodec implements Codec<LockProtocol> {
     }
 
     private void encodeKey(LockMigrationKey key, DataWriter out) throws IOException {
-        CodecUtils.writeNodeId(key.node(), out);
+        CodecUtils.writeNodeId(key.coordinator(), out);
 
         CodecUtils.writeTopologyHash(key.topology(), out);
 
@@ -297,13 +297,13 @@ class LockProtocolCodec implements Codec<LockProtocol> {
     }
 
     private LockMigrationKey decodeKey(DataReader in) throws IOException {
-        ClusterNodeId node = CodecUtils.readNodeId(in);
+        ClusterNodeId coordinator = CodecUtils.readNodeId(in);
 
         ClusterHash topology = CodecUtils.readTopologyHash(in);
 
         long id = in.readVarLong();
 
-        return new LockMigrationKey(node, topology, id);
+        return new LockMigrationKey(coordinator, topology, id);
     }
 
     private void encodeTopologies(Map<ClusterNodeId, ClusterHash> topologies, DataWriter out) throws IOException {

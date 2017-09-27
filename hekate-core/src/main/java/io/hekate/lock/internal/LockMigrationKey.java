@@ -26,20 +26,20 @@ import java.util.Objects;
 class LockMigrationKey implements Serializable {
     private static final long serialVersionUID = 1;
 
-    private final ClusterNodeId node;
+    private final ClusterNodeId coordinator;
 
     private final ClusterHash topology;
 
     private final long id;
 
-    public LockMigrationKey(ClusterNodeId node, ClusterHash topology, long id) {
-        this.node = node;
+    public LockMigrationKey(ClusterNodeId coordinator, ClusterHash topology, long id) {
+        this.coordinator = coordinator;
         this.topology = topology;
         this.id = id;
     }
 
-    public ClusterNodeId node() {
-        return node;
+    public ClusterNodeId coordinator() {
+        return coordinator;
     }
 
     public ClusterHash topology() {
@@ -50,8 +50,8 @@ class LockMigrationKey implements Serializable {
         return id;
     }
 
-    public boolean isSameNode(ClusterNodeId other) {
-        return node.equals(other);
+    public boolean isSameCoordinator(ClusterNodeId nodeId) {
+        return coordinator.equals(nodeId);
     }
 
     public boolean isSameTopology(PartitionMapper mapper) {
@@ -70,14 +70,14 @@ class LockMigrationKey implements Serializable {
 
         LockMigrationKey that = (LockMigrationKey)o;
 
-        return id == that.id && Objects.equals(node, that.node) && Objects.equals(topology, that.topology);
+        return id == that.id && Objects.equals(coordinator, that.coordinator) && Objects.equals(topology, that.topology);
     }
 
     @Override
     public int hashCode() {
         int result = 1;
 
-        result = 31 * result + node.hashCode();
+        result = 31 * result + coordinator.hashCode();
         result = 31 * result + topology.hashCode();
         result = 31 * result + Long.hashCode(id);
 

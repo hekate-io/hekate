@@ -31,6 +31,7 @@ import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.unicast.ReplyDecision;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
+import io.hekate.partition.PartitionMapper;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.CancellationException;
@@ -68,7 +69,7 @@ class LockControllerClient {
 
     private final long threadId;
 
-    private final ClusterNodeId node;
+    private final ClusterNodeId localNode;
 
     private final long lockTimeout;
 
@@ -100,16 +101,16 @@ class LockControllerClient {
 
     private Status status = Status.UNLOCKED;
 
-    public LockControllerClient(long lockId, ClusterNodeId node, long threadId, DistributedLock lock,
+    public LockControllerClient(long lockId, ClusterNodeId localNode, long threadId, DistributedLock lock,
         MessagingChannel<LockProtocol> channel, long lockTimeout, AsyncLockCallbackAdaptor callback, UnlockCallback unlockCallback) {
-        assert node != null : "Cluster node is null.";
+        assert localNode != null : "Cluster node is null.";
         assert lock != null : "Lock is null.";
         assert channel != null : "Channel is null.";
         assert unlockCallback != null : "Unlock callback is null.";
 
         this.key = new LockKey(lock.regionName(), lock.name());
         this.lockId = lockId;
-        this.node = node;
+        this.localNode = localNode;
         this.threadId = threadId;
         this.unlockCallback = unlockCallback;
         this.lockTimeout = lockTimeout;
@@ -152,16 +153,17 @@ class LockControllerClient {
         return unlockFuture;
     }
 
-    public ClusterNodeId node() {
-        return node;
+    public ClusterNodeId localNode() {
+        return localNode;
     }
 
-    public void update(ClusterNodeId manager, ClusterTopology topology) {
+    public void update(PartitionMapper mapping) {
         lock.lock();
 
         try {
-            this.topology = topology;
-            this.manager = manager;
+            this.topology = mapping.topology();
+
+            this.manager = mapping.map(key).primaryNode().id();
         } finally {
             lock.unlock();
         }
@@ -437,7 +439,7 @@ class LockControllerClient {
     }
 
     private void remoteLock() {
-        LockRequest lockReq = new LockRequest(lockId, key.region(), key.name(), node, lockTimeout, threadId);
+        LockRequest lockReq = new LockRequest(lockId, key.region(), key.name(), localNode, lockTimeout, threadId);
 
         ResponseCallback<LockProtocol> rspCallback = new ResponseCallback<LockProtocol>() {
             @Override
@@ -511,7 +513,7 @@ class LockControllerClient {
     }
 
     private void remoteUnlock() {
-        UnlockRequest unlockReq = new UnlockRequest(lockId, key.region(), key.name(), node);
+        UnlockRequest unlockReq = new UnlockRequest(lockId, key.region(), key.name(), localNode);
 
         channel.request(unlockReq, new ResponseCallback<LockProtocol>() {
             @Override

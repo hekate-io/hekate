@@ -140,7 +140,7 @@ public abstract class LockServiceTestBase extends HekateNodeParamTestBase {
             Set<ClusterHash> topologies = new HashSet<>();
 
             nodes.forEach(n -> {
-                ClusterHash topology = n.get(DefaultLockService.class).region(REGION_1).effectiveTopology();
+                ClusterHash topology = n.get(DefaultLockService.class).region(REGION_1).lastRebalancedTopology();
 
                 topologies.add(topology);
             });
