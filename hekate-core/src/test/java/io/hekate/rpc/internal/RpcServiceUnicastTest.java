@@ -507,21 +507,35 @@ public class RpcServiceUnicastTest extends RpcServiceTestBase {
 
     @Test
     public void testAsyncResultAfterClientLeave() throws Exception {
+        CountDownLatch callLatch = new CountDownLatch(1);
+        CountDownLatch leaveLatch = new CountDownLatch(1);
+
         TestAsyncRpc rpc = mock(TestAsyncRpc.class);
 
         HekateTestNode client = prepareClientAndServer(rpc).client();
 
         TestAsyncRpc proxy = client.rpc().clientFor(TestAsyncRpc.class).build();
 
-        when(rpc.call()).thenReturn(new CompletableFuture<>());
+        when(rpc.call()).then(invocation -> {
+            callLatch.countDown();
+
+            await(leaveLatch);
+
+            return null;
+        });
 
         // Send RPC request.
         CompletableFuture<Object> callFuture = proxy.call();
 
         assertFalse(callFuture.isDone());
 
+        // Await for the RPC request to reach the server.
+        await(callLatch);
+
         // Stop the client node.
         client.leave();
+
+        leaveLatch.countDown();
 
         assertTrue(callFuture.isDone());
         assertTrue(callFuture.isCompletedExceptionally());
