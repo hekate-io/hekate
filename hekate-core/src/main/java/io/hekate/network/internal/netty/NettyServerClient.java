@@ -47,7 +47,6 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.internal.ThrowableUtil;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.nio.channels.ClosedChannelException;
@@ -191,7 +190,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         Channel channel = ctx.channel();
 
         if (debug) {
-            log.debug("Got connection [address={}]", channel.remoteAddress());
+            log.debug("Got connection [from={}]", channel.remoteAddress());
         }
 
         this.handlerCtx = ctx;
@@ -222,7 +221,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         this.handlerCtx = null;
 
         if (debug) {
-            log.debug("Closed connection [address={}]", address());
+            log.debug("Closed connection [from={}]", address());
         }
     }
 
@@ -273,7 +272,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
 
             if (handlerReg == null) {
                 if (debug) {
-                    log.debug("Closing connection with unsupported protocol [address={}, protocol={}]", address(), protocol);
+                    log.debug("Closing connection with unsupported protocol [from={}, protocol={}]", address(), protocol);
                 }
 
                 HandshakeReject reject = new HandshakeReject("Unsupported protocol [protocol=" + protocol + ']');
@@ -289,7 +288,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                     init(ctx.channel(), handshake, handlerReg);
                 } else {
                     if (debug) {
-                        log.debug("Registering channel to a custom NIO thread [address={}, protocol={}]", address(), protocol);
+                        log.debug("Registering channel to a custom NIO thread [from={}, protocol={}]", address(), protocol);
                     }
 
                     // Unregister and then re-register IdleStateHandler in order to prevent RejectedExecutionException if same
@@ -305,7 +304,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                                     if (register.isSuccess() && channel.isOpen()) {
                                         if (debug) {
                                             log.debug("Registered channel to a custom NIO thread "
-                                                + "[address={}, protocol={}]", address(), protocol);
+                                                + "[from={}, protocol={}]", address(), protocol);
                                         }
 
                                         mayBeCreateIdleStateHandler().ifPresent(handler ->
@@ -334,10 +333,10 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         } else if (realError instanceof IOException) {
             if (debug) {
                 log.debug("Closing inbound network connection due to I/O error "
-                    + "[protocol={}, address={}, reason={}]", protocol, address(), realError.toString());
+                    + "[protocol={}, from={}, reason={}]", protocol, address(), realError.toString());
             }
         } else if (log.isErrorEnabled()) {
-            log.error("Inbound network connection failure [protocol={}, address={}]", protocol, address(), realError);
+            log.error("Inbound network connection failure [protocol={}, from={}]", protocol, address(), realError);
         }
 
         if (disconnect) {
@@ -441,9 +440,9 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         if (localCtx != null) {
             if (debug) {
                 if (pause) {
-                    log.debug("Pausing inbound receiver [address={}, protocol={}]", address(), protocol);
+                    log.debug("Pausing inbound receiver [from={}, protocol={}]", address(), protocol);
                 } else {
-                    log.debug("Resuming Pausing inbound receiver [address={}, protocol={}]", address(), protocol);
+                    log.debug("Resuming Pausing inbound receiver [from={}, protocol={}]", address(), protocol);
                 }
             }
 
@@ -476,7 +475,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                 callback.accept(this);
             } catch (RuntimeException | Error e) {
                 log.error("Got an unexpected runtime error while notifying callback on network inbound receive status change "
-                    + "[pause={}, address={}, protocol={}]", pause, address(), protocol, e);
+                    + "[pause={}, from={}, protocol={}]", pause, address(), protocol, e);
             }
         }
     }
@@ -490,11 +489,11 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                 interval = 0;
 
                 if (debug) {
-                    log.debug("Registering heartbeatless timeout handler [address={}, read-timeout={}]", address(), readTimeout);
+                    log.debug("Registering heartbeatless timeout handler [from={}, read-timeout={}]", address(), readTimeout);
                 }
             } else {
                 if (debug) {
-                    log.debug("Registering heartbeats handler [address={}, interval={}, loss-threshold={}, read-timeout={}]",
+                    log.debug("Registering heartbeat handler [from={}, interval={}, loss-threshold={}, read-timeout={}]",
                         address(), interval, hbLossThreshold, readTimeout);
                 }
             }
@@ -516,7 +515,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         }
 
         if (debug) {
-            log.debug("Initialized connection [address={}, protocol={}]", address(), cfg.getProtocol());
+            log.debug("Initialized connection [from={}, protocol={}]", address(), cfg.getProtocol());
         }
 
         this.eventLoop = channel.eventLoop();
@@ -583,7 +582,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         }
 
         if (debug) {
-            log.debug("Sending to a client [address={}, message={}]", address(), msg);
+            log.debug("Sending to a client [to={}, message={}]", address(), msg);
         }
 
         Channel channel = localCtx.channel();
@@ -602,7 +601,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             deferred = new DeferredMessage(msg, msg, channel);
         } else {
             if (trace) {
-                log.trace("Pre-encoding message [address={}, message={}]", address(), msg);
+                log.trace("Pre-encoding message [to={}, message={}]", address(), msg);
             }
 
             try {
@@ -619,9 +618,9 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         deferred.addListener((ChannelFuture result) -> {
             if (debug) {
                 if (result.isSuccess()) {
-                    log.debug("Done sending message to a client [address={}, message={}]", address(), msg);
+                    log.debug("Done sending message to a client [to={}, message={}]", address(), msg);
                 } else {
-                    log.debug("Failed to send message to a client [address={}, message={}, reason={}]", address(), msg, result.cause());
+                    log.debug("Failed to send message to a client [to={}, message={}]", address(), msg, result.cause());
                 }
             }
 
@@ -678,7 +677,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             onSend.onComplete(msg, Optional.of(error), this);
         } catch (RuntimeException | Error e) {
             log.error("Failed to notify callback on network operation failure "
-                + "[protocol={}, address={}, message={}]", protocol, address(), msg, e);
+                + "[protocol={}, from={}, message={}]", protocol, address(), msg, e);
         }
     }
 
@@ -686,15 +685,14 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         return serverHandler != null;
     }
 
-    private InetAddress address() {
-        // Return address only since remote port is ephemeral and doesn't have much value.
-        return remoteAddress != null ? remoteAddress.getAddress() : null;
+    private InetSocketAddress address() {
+        return remoteAddress;
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName()
-            + "[address=" + address()
+            + "[from=" + address()
             + ", protocol=" + protocol
             + ']';
     }

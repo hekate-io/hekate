@@ -55,7 +55,7 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
 
             if (deferredError == null) {
                 if (debug) {
-                    log.debug("Deferring message sending since handshake is not completed yet [address={}, message={}]", id, def.source());
+                    log.debug("Deferring message sending since handshake is not completed yet [to={}, message={}]", id, def.source());
                 }
 
                 deferred.add(def);
@@ -65,7 +65,7 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
         } else {
             if (deferredError == null) {
                 if (debug) {
-                    log.debug("Writing message directly to the channel [address={}, message={}]", id, msg);
+                    log.debug("Writing message directly to the channel [to={}, message={}]", id, msg);
                 }
 
                 needToFlush = true;
@@ -98,7 +98,7 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
     @Override
     public void close(ChannelHandlerContext ctx, ChannelPromise future) throws Exception {
         if (trace) {
-            log.trace("Deferred handler got channel close event [address={}]", id);
+            log.trace("Deferred handler got channel close event [to={}]", id);
         }
 
         discardDeferred();
@@ -109,7 +109,7 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         if (trace) {
-            log.trace("Deferred handler got channel inactive event [address={}]", id);
+            log.trace("Deferred handler got channel inactive event [to={}]", id);
         }
 
         discardDeferred();
@@ -120,7 +120,7 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         if (trace) {
-            log.trace("Deferred handler got exception caught event [address={}, cause={}]", id, cause.toString());
+            log.trace("Deferred handler got exception caught event [to={}, cause={}]", id, cause.toString());
         }
 
         if (deferredError == null) {
@@ -133,7 +133,7 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
         if (debug) {
-            log.debug("Deferred handler unregistered [address={}]", id);
+            log.debug("Deferred handler unregistered [to={}]", id);
         }
 
         super.handlerRemoved(ctx);
@@ -142,11 +142,11 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
     private void discardDeferred() {
         if (deferred == null) {
             if (trace) {
-                log.trace("Skipped discard deferred notification [address={}]", id);
+                log.trace("Skipped discard deferred notification [to={}]", id);
             }
         } else {
             if (debug) {
-                log.debug("Discarding deferred messages [address={}, size={}]", id, deferred.size());
+                log.debug("Discarding deferred messages [to={}, size={}]", id, deferred.size());
             }
 
             if (deferredError == null) {
@@ -172,19 +172,19 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
 
         if (localDeferred == null) {
             if (trace) {
-                log.trace("Skipped write deferred notification [address={}]", id);
+                log.trace("Skipped write deferred notification [to={}]", id);
             }
         } else {
             if (!localDeferred.isEmpty()) {
                 if (debug) {
-                    log.debug("Writing deferred messages [address={}]", id);
+                    log.debug("Writing deferred messages [to={}]", id);
                 }
 
                 while (!localDeferred.isEmpty()) {
                     DeferredMessage msg = localDeferred.poll();
 
                     if (debug) {
-                        log.debug("Writing deferred message [address={}, message={}]", id, msg.source());
+                        log.debug("Writing deferred message [to={}, message={}]", id, msg.source());
                     }
 
                     ctx.writeAndFlush(msg.encoded(), msg.promise());

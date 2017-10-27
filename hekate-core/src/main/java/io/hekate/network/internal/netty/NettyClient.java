@@ -132,7 +132,7 @@ class NettyClient<T> implements NetworkClient<T> {
             if (future.isSuccess()) {
                 if (future.channel().isOpen()) {
                     if (trace) {
-                        log.trace("Channel connect future completed successfully [channel={}]", id);
+                        log.trace("Channel connect future completed successfully [to={}]", id);
                     }
                 } else {
                     // Channel was disconnect()'ed while we were connecting.
@@ -140,7 +140,7 @@ class NettyClient<T> implements NetworkClient<T> {
                 }
             } else if (firstError == null) {
                 if (trace) {
-                    log.trace("Notifying on connect future failure [channel={}]", id, future.cause());
+                    log.trace("Notifying on connect future failure [to={}]", id, future.cause());
                 }
 
                 firstError = NettySslUtil.unwrap(future.cause());
@@ -160,7 +160,7 @@ class NettyClient<T> implements NetworkClient<T> {
             localAddress = (InetSocketAddress)ctx.channel().localAddress();
 
             if (trace) {
-                log.debug("Channel is active [channel={}]", id);
+                log.debug("Channel is active [to={}]", id);
             }
 
             super.channelActive(ctx);
@@ -172,14 +172,14 @@ class NettyClient<T> implements NetworkClient<T> {
                 HandshakeDoneEvent handshake = (HandshakeDoneEvent)evt;
 
                 if (trace) {
-                    log.trace("Processing handshake event [channel={}, event={}]", id, evt);
+                    log.trace("Processing handshake event [to={}, event={}]", id, evt);
                 }
 
                 // Try to update state and decide on whether the user callback should be notified.
                 boolean notify = withLock(() -> {
                     if (handshake.epoch() == client.epoch && state == CONNECTING) {
                         if (debug) {
-                            log.debug("Updated connection state [from={}, to={}, channel={}]", state, CONNECTED, id);
+                            log.debug("Updated connection state [old={}, new={}, to={}]", state, CONNECTED, id);
                         }
 
                         state = CONNECTED;
@@ -197,7 +197,7 @@ class NettyClient<T> implements NetworkClient<T> {
                     epochConnFuture.complete(client);
                 } else {
                     if (trace) {
-                        log.trace("Skipped processing of handshake event [channel={}, event={}]", id, evt);
+                        log.trace("Skipped processing of handshake event [to={}, event={}]", id, evt);
                     }
                 }
             }
@@ -226,7 +226,7 @@ class NettyClient<T> implements NetworkClient<T> {
             }
 
             if (trace) {
-                log.trace("Exception caught in state handler [channel={}]", id, error);
+                log.trace("Exception caught in state handler [to={}]", id, error);
             }
 
             firstError = NettySslUtil.unwrap(error);
@@ -237,7 +237,7 @@ class NettyClient<T> implements NetworkClient<T> {
         @Override
         public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
             if (trace) {
-                log.trace("Channel unregistered [channel={}]", id);
+                log.trace("Channel unregistered [to={}]", id);
             }
 
             super.channelUnregistered(ctx);
@@ -248,11 +248,11 @@ class NettyClient<T> implements NetworkClient<T> {
         private void becomeDisconnected() {
             if (!connectComplete) {
                 if (trace) {
-                    log.trace("Skipped on-disconnect notification since connect is not complete yet [channel={}, state={}]", id, state);
+                    log.trace("Skipped on-disconnect notification since connect is not complete yet [to={}, state={}]", id, state);
                 }
             } else if (disconnected) {
                 if (trace) {
-                    log.trace("Skipped on-disconnect notification since already disconnected [channel={}, state={}]", id, state);
+                    log.trace("Skipped on-disconnect notification since already disconnected [to={}, state={}]", id, state);
                 }
             } else {
                 disconnected = true;
@@ -261,17 +261,17 @@ class NettyClient<T> implements NetworkClient<T> {
                     if (isNonFatalIoError(firstError)) {
                         if (debug) {
                             log.debug("Closing outbound connection due to I/O error "
-                                + "[channel={}, state={}, cause={}]", id, state, firstError.toString());
+                                + "[to={}, state={}, cause={}]", id, state, firstError.toString());
                         }
                     } else if (log.isErrorEnabled()) {
-                        log.error("Outbound connection failure [channel={}, state={}]", id, state, firstError);
+                        log.error("Outbound connection failure [to={}, state={}]", id, state, firstError);
                     }
                 }
 
                 boolean ignoreError = withLock(() -> {
                     if (localEpoch == client.epoch && state != DISCONNECTED) {
                         if (debug) {
-                            log.debug("Updated connection state [from={}, to={}, channel={}]", state, DISCONNECTED, id);
+                            log.debug("Updated connection state [old={}, new={}, to={}]", state, DISCONNECTED, id);
                         }
 
                         try {
@@ -290,7 +290,7 @@ class NettyClient<T> implements NetworkClient<T> {
                 Optional<Throwable> finalError = ignoreError ? Optional.empty() : Optional.ofNullable(firstError);
 
                 if (trace) {
-                    log.trace("Notifying callbacks on disconnect [channel={}, error={}]", id, finalError);
+                    log.trace("Notifying callbacks on disconnect [to={}, error={}]", id, finalError);
                 }
 
                 callback.onDisconnect(client, finalError);
@@ -369,7 +369,7 @@ class NettyClient<T> implements NetworkClient<T> {
 
     private volatile Object userCtx;
 
-    private volatile InetSocketAddress address;
+    private volatile InetSocketAddress remoteAddress;
 
     private volatile InetSocketAddress localAddress;
 
@@ -415,7 +415,7 @@ class NettyClient<T> implements NetworkClient<T> {
 
     @Override
     public InetSocketAddress remoteAddress() {
-        return address;
+        return remoteAddress;
     }
 
     @Override
@@ -511,13 +511,13 @@ class NettyClient<T> implements NetworkClient<T> {
             } else if (state == CONNECTING || state == CONNECTED) {
                 // Update state.
                 if (debug) {
-                    log.debug("Updated connection state [from={}, to={}, channel={}]", state, DISCONNECTING, id());
+                    log.debug("Updated connection state [old={}, new={}, to={}]", state, DISCONNECTING, id());
                 }
 
                 state = DISCONNECTING;
 
                 if (trace) {
-                    log.trace("Invoking close [channel={}", id());
+                    log.trace("Invoking close [to={}", id());
                 }
 
                 channelCtx.channel().close();
@@ -546,9 +546,9 @@ class NettyClient<T> implements NetworkClient<T> {
         if (localCtx != null) {
             if (debug) {
                 if (pause) {
-                    log.debug("Pausing outbound receiver [channel={}]", id());
+                    log.debug("Pausing outbound receiver [to={}]", id());
                 } else {
-                    log.debug("Resuming outbound receiver [channel={}]", id());
+                    log.debug("Resuming outbound receiver [to={}]", id());
                 }
             }
 
@@ -581,7 +581,7 @@ class NettyClient<T> implements NetworkClient<T> {
                 callback.accept(this);
             } catch (RuntimeException | Error e) {
                 log.error("Got an unexpected runtime error while notifying callback on network outbound receive status change "
-                    + "[pause={}, channel={}]", pause, id(), e);
+                    + "[pause={}, to={}]", pause, id(), e);
             }
         }
     }
@@ -608,20 +608,20 @@ class NettyClient<T> implements NetworkClient<T> {
                 throw new IllegalStateException("I/O thread pool terminated.");
             }
 
-            this.address = address;
+            this.remoteAddress = address;
 
             // Prepare Netty bootstrap.
             Bootstrap bootstrap = new Bootstrap();
 
             if (epoll) {
                 if (debug) {
-                    log.debug("Connecting [channel={}, transport=EPOLL]", id());
+                    log.debug("Connecting [to={}, transport=EPOLL]", id());
                 }
 
                 bootstrap.channel(EpollSocketChannel.class);
             } else {
                 if (debug) {
-                    log.debug("Connecting [channel={}, transport=NIO]", id());
+                    log.debug("Connecting [to={}, transport=NIO]", id());
                 }
 
                 bootstrap.channel(NioSocketChannel.class);
@@ -741,7 +741,7 @@ class NettyClient<T> implements NetworkClient<T> {
         assert lock.isHeldByCurrentThread() : "Thread must hold lock.";
 
         channelCtx = null;
-        address = null;
+        remoteAddress = null;
         localAddress = null;
         connFuture = null;
     }
@@ -775,7 +775,7 @@ class NettyClient<T> implements NetworkClient<T> {
         }
 
         if (debug) {
-            log.debug("Sending message [channel={}, message={}]", id(), msg);
+            log.debug("Sending message [to={}, message={}]", id(), msg);
         }
 
         Channel channel = ctx.channel();
@@ -796,7 +796,7 @@ class NettyClient<T> implements NetworkClient<T> {
             deferred = new DeferredMessage(msg, msg, channel);
         } else {
             if (debug) {
-                log.debug("Pre-encoding message [channel={}, message={}]", id(), msg);
+                log.debug("Pre-encoding message [to={}, message={}]", id(), msg);
             }
 
             try {
@@ -814,9 +814,9 @@ class NettyClient<T> implements NetworkClient<T> {
         deferred.addListener((ChannelFuture result) -> {
             if (debug) {
                 if (result.isSuccess()) {
-                    log.debug("Done sending [channel={}, message={}]", id(), msg);
+                    log.debug("Done sending [to={}, message={}]", id(), msg);
                 } else {
-                    log.debug("Failed to send message [channel={}, message={}]", id(), msg, result.cause());
+                    log.debug("Failed to send message [to={}, message={}]", id(), msg, result.cause());
                 }
             }
 
@@ -849,7 +849,7 @@ class NettyClient<T> implements NetworkClient<T> {
         try {
             onSend.onComplete(msg, Optional.of(error), this);
         } catch (RuntimeException | Error e) {
-            log.error("Failed to notify callback on network operation failure [channel={}, message={}]", id(), msg, e);
+            log.error("Failed to notify callback on network operation failure [to={}, message={}]", id(), msg, e);
         }
     }
 
@@ -866,7 +866,7 @@ class NettyClient<T> implements NetworkClient<T> {
     private <O> void setUserOpt(Bootstrap bootstrap, ChannelOption<O> opt, O value) {
         if (value != null) {
             if (trace) {
-                log.trace("Setting option {} = {} [channel={}]", opt, value, id());
+                log.trace("Setting option {} = {} [to={}]", opt, value, id());
             }
 
             bootstrap.option(opt, value);
@@ -884,7 +884,7 @@ class NettyClient<T> implements NetworkClient<T> {
     }
 
     private String id() {
-        return protocol + ':' + address;
+        return protocol + ':' + remoteAddress;
     }
 
     @Override
@@ -896,14 +896,14 @@ class NettyClient<T> implements NetworkClient<T> {
 
         try {
             localState = state;
-            localAddr = address;
+            localAddr = remoteAddress;
         } finally {
             lock.unlock();
         }
 
         return getClass().getSimpleName() + "["
-            + "address=" + localAddr
-            + ", protocol=" + protocol
+            + "protocol=" + protocol
+            + ", to=" + localAddr
             + ", state=" + localState
             + ']';
     }
