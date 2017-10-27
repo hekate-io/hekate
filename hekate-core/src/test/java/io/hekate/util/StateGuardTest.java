@@ -39,7 +39,7 @@ public class StateGuardTest extends HekateTestBase {
 
             assertTrue(guard.isInitializing());
 
-            expect(IllegalStateException.class, getClass().getSimpleName() + " is already in INITIALIZING state.",
+            expect(IllegalStateException.class, getClass().getSimpleName() + " is already initializing.",
                 guard::becomeInitializing);
         } finally {
             guard.unlockWrite();
@@ -58,7 +58,7 @@ public class StateGuardTest extends HekateTestBase {
             assertTrue(guard.isInitialized());
 
             expect(IllegalStateException.class, getClass().getSimpleName() + " already initialized.", guard::becomeInitialized);
-            expect(IllegalStateException.class, getClass().getSimpleName() + " is already in INITIALIZED state.",
+            expect(IllegalStateException.class, getClass().getSimpleName() + " is already initialized.",
                 guard::becomeInitializing);
         } finally {
             guard.unlockWrite();
@@ -97,8 +97,8 @@ public class StateGuardTest extends HekateTestBase {
 
     @Test
     public void testLockReadWithStateCheck() {
-        expect(IllegalStateException.class, getClass().getSimpleName() + " is terminated.", guard::lockReadWithStateCheck);
-        expect(IllegalStateException.class, getClass().getSimpleName() + " is not in INITIALIZED state.", () ->
+        expect(IllegalStateException.class, getClass().getSimpleName() + " is not initialized.", guard::lockReadWithStateCheck);
+        expect(IllegalStateException.class, getClass().getSimpleName() + " is not initialized.", () ->
             guard.lockReadWithStateCheck(StateGuard.State.INITIALIZED)
         );
 
@@ -131,7 +131,7 @@ public class StateGuardTest extends HekateTestBase {
 
     @Test
     public void testLockWriteWithStateCheck() {
-        expect(IllegalStateException.class, getClass().getSimpleName() + " is terminated.", guard::lockWriteWithStateCheck);
+        expect(IllegalStateException.class, getClass().getSimpleName() + " is not initialized.", guard::lockWriteWithStateCheck);
 
         guard.lockWrite();
         guard.becomeInitialized();

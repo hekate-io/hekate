@@ -23,6 +23,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
+import static io.hekate.util.StateGuard.State.INITIALIZED;
+import static io.hekate.util.StateGuard.State.INITIALIZING;
+import static io.hekate.util.StateGuard.State.TERMINATED;
+import static io.hekate.util.StateGuard.State.TERMINATING;
+
 /**
  * Helper class that provides support for components lifecycle management and locking.
  *
@@ -58,7 +63,7 @@ public class StateGuard {
     @ToStringIgnore
     private final WriteLock writeLock;
 
-    private State state = State.TERMINATED;
+    private State state = TERMINATED;
 
     /**
      * Constructs new instance.
@@ -86,11 +91,11 @@ public class StateGuard {
     public void becomeInitializing() {
         assert writeLock.isHeldByCurrentThread() : "Thread must hold write lock.";
 
-        if (state == State.INITIALIZING || state == State.INITIALIZED) {
-            throw new IllegalStateException(type.getSimpleName() + " is already in " + state + " state.");
+        if (state == INITIALIZING || state == INITIALIZED) {
+            throw new IllegalStateException(type.getSimpleName() + " is already " + state.name().toLowerCase() + '.');
         }
 
-        state = State.INITIALIZING;
+        state = INITIALIZING;
     }
 
     /**
@@ -103,7 +108,7 @@ public class StateGuard {
      * @return {@code true} if this guard is in {@link State#INITIALIZING} state.
      */
     public boolean isInitializing() {
-        return state == State.INITIALIZING;
+        return state == INITIALIZING;
     }
 
     /**
@@ -116,11 +121,11 @@ public class StateGuard {
     public void becomeInitialized() {
         assert writeLock.isHeldByCurrentThread() : "Thread must hold write lock.";
 
-        if (state == State.INITIALIZED) {
+        if (state == INITIALIZED) {
             throw new IllegalStateException(type.getSimpleName() + " already initialized.");
         }
 
-        state = State.INITIALIZED;
+        state = INITIALIZED;
     }
 
     /**
@@ -133,7 +138,7 @@ public class StateGuard {
      * @return {@code true} if this guard is in {@link State#INITIALIZED} state.
      */
     public boolean isInitialized() {
-        return state == State.INITIALIZED;
+        return state == INITIALIZED;
     }
 
     /**
@@ -149,8 +154,8 @@ public class StateGuard {
     public boolean becomeTerminating() {
         assert writeLock.isHeldByCurrentThread() : "Thread must hold write lock.";
 
-        if (state != State.TERMINATED && state != State.TERMINATING) {
-            state = State.TERMINATING;
+        if (state != TERMINATED && state != TERMINATING) {
+            state = TERMINATING;
 
             return true;
         }
@@ -170,8 +175,8 @@ public class StateGuard {
     public boolean becomeTerminated() {
         assert writeLock.isHeldByCurrentThread() : "Thread must hold write lock.";
 
-        if (state != State.TERMINATED) {
-            state = State.TERMINATED;
+        if (state != TERMINATED) {
+            state = TERMINATED;
 
             return true;
         }
@@ -186,13 +191,7 @@ public class StateGuard {
      * @throws IllegalStateException If guard is not in {@link State#INITIALIZED} state.
      */
     public void lockReadWithStateCheck() {
-        readLock.lock();
-
-        if (state != State.INITIALIZED) {
-            readLock.unlock();
-
-            throw new IllegalStateException(type.getSimpleName() + " is " + state.name().toLowerCase() + '.');
-        }
+        lockReadWithStateCheck(INITIALIZED);
     }
 
     /**
@@ -209,7 +208,7 @@ public class StateGuard {
         if (this.state != state) {
             readLock.unlock();
 
-            throw new IllegalStateException(type.getSimpleName() + " is not in " + state + " state.");
+            throw new IllegalStateException(type.getSimpleName() + " is not " + state.name().toLowerCase() + '.');
         }
     }
 
@@ -221,7 +220,7 @@ public class StateGuard {
     public boolean tryLockReadWithStateCheck() {
         readLock.lock();
 
-        if (state != State.INITIALIZED) {
+        if (state != INITIALIZED) {
             readLock.unlock();
 
             return false;
@@ -291,10 +290,10 @@ public class StateGuard {
     public void lockWriteWithStateCheck() {
         writeLock.lock();
 
-        if (state != State.INITIALIZED) {
+        if (state != INITIALIZED) {
             writeLock.unlock();
 
-            throw new IllegalStateException(type.getSimpleName() + " is " + state.name().toLowerCase() + '.');
+            throw new IllegalStateException(type.getSimpleName() + " is not " + INITIALIZED.name().toLowerCase() + '.');
         }
     }
 

@@ -20,6 +20,11 @@ import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.locks.StampedLock;
 
+import static io.hekate.util.StampedStateGuard.State.INITIALIZED;
+import static io.hekate.util.StampedStateGuard.State.INITIALIZING;
+import static io.hekate.util.StampedStateGuard.State.TERMINATED;
+import static io.hekate.util.StampedStateGuard.State.TERMINATING;
+
 /**
  * Helper class that provides support for components lifecycle management and locking.
  *
@@ -52,7 +57,7 @@ public class StampedStateGuard {
     @ToStringIgnore
     private final StampedLock lock = new StampedLock();
 
-    private State state = State.TERMINATED;
+    private State state = TERMINATED;
 
     /**
      * Constructs new instance.
@@ -75,11 +80,11 @@ public class StampedStateGuard {
     public void becomeInitializing() {
         assert lock.isWriteLocked() : "Thread must hold write lock.";
 
-        if (state == State.INITIALIZING || state == State.INITIALIZED) {
-            throw new IllegalStateException(type.getSimpleName() + " is already in " + state + " state.");
+        if (state == INITIALIZING || state == INITIALIZED) {
+            throw new IllegalStateException(type.getSimpleName() + " is already " + state.name().toLowerCase() + '.');
         }
 
-        state = State.INITIALIZING;
+        state = INITIALIZING;
     }
 
     /**
@@ -94,7 +99,7 @@ public class StampedStateGuard {
     public boolean isInitializing() {
         assert lock.isReadLocked() || lock.isWriteLocked() : "Thread must hold read or write lock.";
 
-        return state == State.INITIALIZING;
+        return state == INITIALIZING;
     }
 
     /**
@@ -107,11 +112,11 @@ public class StampedStateGuard {
     public void becomeInitialized() {
         assert lock.isWriteLocked() : "Thread must hold write lock.";
 
-        if (state == State.INITIALIZED) {
-            throw new IllegalStateException(type.getSimpleName() + " already initialized.");
+        if (state == INITIALIZED) {
+            throw new IllegalStateException(type.getSimpleName() + " is already " + INITIALIZED.name().toLowerCase() + '.');
         }
 
-        state = State.INITIALIZED;
+        state = INITIALIZED;
     }
 
     /**
@@ -126,7 +131,7 @@ public class StampedStateGuard {
     public boolean isInitialized() {
         assert lock.isReadLocked() || lock.isWriteLocked() : "Thread must hold read or write lock.";
 
-        return state == State.INITIALIZED;
+        return state == INITIALIZED;
     }
 
     /**
@@ -142,8 +147,8 @@ public class StampedStateGuard {
     public boolean becomeTerminating() {
         assert lock.isWriteLocked() : "Thread must hold write lock.";
 
-        if (state != State.TERMINATING && state != State.TERMINATED) {
-            state = State.TERMINATING;
+        if (state != TERMINATING && state != TERMINATED) {
+            state = TERMINATING;
 
             return true;
         }
@@ -163,8 +168,8 @@ public class StampedStateGuard {
     public boolean becomeTerminated() {
         assert lock.isWriteLocked() : "Thread must hold write lock.";
 
-        if (state != State.TERMINATED) {
-            state = State.TERMINATED;
+        if (state != TERMINATED) {
+            state = TERMINATED;
 
             return true;
         }
@@ -183,10 +188,10 @@ public class StampedStateGuard {
     public long lockReadWithStateCheck() {
         long locked = lock.readLock();
 
-        if (state != State.INITIALIZED) {
+        if (state != INITIALIZED) {
             lock.unlockRead(locked);
 
-            throw new IllegalStateException(type.getSimpleName() + " is " + state.name().toLowerCase() + '.');
+            throw new IllegalStateException(type.getSimpleName() + " is not " + INITIALIZED.name().toLowerCase() + '.');
         }
 
         return locked;
@@ -225,10 +230,10 @@ public class StampedStateGuard {
     public long lockWriteWithStateCheck() {
         long locked = lock.writeLock();
 
-        if (state != State.INITIALIZED) {
+        if (state != INITIALIZED) {
             lock.unlockWrite(locked);
 
-            throw new IllegalStateException(type.getSimpleName() + " is " + state.name().toLowerCase() + '.');
+            throw new IllegalStateException(type.getSimpleName() + " is not " + INITIALIZED.name().toLowerCase() + '.');
         }
 
         return locked;
