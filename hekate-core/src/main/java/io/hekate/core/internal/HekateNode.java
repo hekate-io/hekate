@@ -544,7 +544,7 @@ class HekateNode implements Hekate, Serializable {
             notifyOnLifecycleChange();
 
             // Make sure that we are still initializing (lifecycle listener could request for leave/termination).
-            if (isInitializingForNodeId(localNodeId)) {
+            if (isInitializingFor(localNodeId)) {
                 // Schedule asynchronous initialization and join.
                 runOnSysThread(() ->
                     selectAddressAndBind(localNodeId)
@@ -564,7 +564,7 @@ class HekateNode implements Hekate, Serializable {
             try {
                 // Make sure that we are still initializing with the same node identifier.
                 // Need to perform this check in order to stop early in case of concurrent leave/termination events.
-                if (isInitializingForNodeId(localNodeId)) {
+                if (isInitializingFor(localNodeId)) {
                     if (log.isInfoEnabled()) {
                         log.info("Initializing {}.", HekateVersion.info());
                     }
@@ -625,7 +625,7 @@ class HekateNode implements Hekate, Serializable {
         try {
             // Make sure that we are still initializing with the same node identifier.
             // Need to perform this check in order to stop early in case of concurrent leave/termination events.
-            if (isInitializingForNodeId(localNodeId)) {
+            if (isInitializingFor(localNodeId)) {
                 // Initialize node info.
                 ClusterAddress address = new ClusterAddress(nodeAddress, nodeId);
 
@@ -665,7 +665,7 @@ class HekateNode implements Hekate, Serializable {
                 plugins.start(this);
 
                 // Pre-check state since plugin could initiate leave/termination procedure.
-                if (isInitializingForNodeId(localNodeId)) {
+                if (isInitializingFor(localNodeId)) {
                     // Update state and notify listeners.
                     state.set(INITIALIZED);
 
@@ -1102,7 +1102,7 @@ class HekateNode implements Hekate, Serializable {
         localTerminateFuture.complete(this);
     }
 
-    private boolean isInitializingForNodeId(ClusterNodeId localNodeId) {
+    private boolean isInitializingFor(ClusterNodeId localNodeId) {
         return state.get() == INITIALIZING && localNodeId.equals(nodeId);
     }
 
