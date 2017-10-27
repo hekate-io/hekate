@@ -24,7 +24,7 @@ import io.hekate.core.HekateFutureException;
  * @see CoordinationService
  */
 public class CoordinationException extends HekateFutureException {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1;
 
     /**
      * Constructs new instance.

@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
  * @see MessagingChannel#withTimeout(long, TimeUnit)
  */
 public class MessageTimeoutException extends MessagingException {
-    private static final long serialVersionUID = 1599179762571202891L;
+    private static final long serialVersionUID = 1;
 
     /**
      * Constructs new instance.

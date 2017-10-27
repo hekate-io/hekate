@@ -24,7 +24,7 @@ import io.hekate.core.HekateFutureException;
  * @see ElectionService
  */
 public class LeaderException extends HekateFutureException {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1;
 
     /**
      * Constructs new instance.

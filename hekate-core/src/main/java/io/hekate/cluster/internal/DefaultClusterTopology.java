@@ -340,7 +340,7 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
                 oldest = NOT_A_NODE;
             } else if (size == 1) {
                 oldest = nodes.get(0);
-            } else if (size > 1) {
+            } else {
                 for (ClusterNode node : nodes) {
                     if (oldest == null || oldest.joinOrder() > node.joinOrder()) {
                         oldest = node;
@@ -365,7 +365,7 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
                 youngest = NOT_A_NODE;
             } else if (size == 1) {
                 youngest = nodes.get(0);
-            } else if (size > 1) {
+            } else {
                 for (ClusterNode node : nodes) {
                     if (youngest == null || youngest.joinOrder() < node.joinOrder()) {
                         youngest = node;

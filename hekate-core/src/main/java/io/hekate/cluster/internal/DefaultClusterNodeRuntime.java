@@ -22,7 +22,7 @@ import io.hekate.util.format.ToString;
 import java.io.Serializable;
 
 public class DefaultClusterNodeRuntime implements Serializable, ClusterNodeRuntime {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1;
 
     private static final DefaultClusterNodeRuntime LOCAL_INFO;
 
