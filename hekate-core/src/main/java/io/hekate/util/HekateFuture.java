@@ -19,6 +19,7 @@ package io.hekate.util;
 import io.hekate.core.internal.util.AsyncUtils;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -87,7 +88,11 @@ public abstract class HekateFuture<T, F extends HekateFuture<T, F>> extends Comp
                 if (isCancelled()) {
                     dep.cancel(false);
                 } else if (error != null) {
-                    dep.completeExceptionally(error);
+                    if (error instanceof CompletionException && error.getCause() != null) {
+                        dep.completeExceptionally(error.getCause());
+                    } else {
+                        dep.completeExceptionally(error);
+                    }
                 } else {
                     dep.complete(result);
                 }
