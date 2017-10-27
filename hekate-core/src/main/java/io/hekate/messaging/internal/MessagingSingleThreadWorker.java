@@ -17,6 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.core.internal.util.AsyncUtils;
+import io.hekate.util.format.ToString;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
@@ -37,7 +38,7 @@ class MessagingSingleThreadWorker implements MessagingWorker {
 
         LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
 
-        executor = new ThreadPoolExecutor(0, 1, Long.MAX_VALUE, TimeUnit.MILLISECONDS, queue, factory);
+        executor = new ThreadPoolExecutor(1, 1, Long.MAX_VALUE, TimeUnit.MILLISECONDS, queue, factory);
     }
 
     @Override
@@ -66,5 +67,10 @@ class MessagingSingleThreadWorker implements MessagingWorker {
 
     public void awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         executor.awaitTermination(timeout, unit);
+    }
+
+    @Override
+    public String toString() {
+        return ToString.format(this);
     }
 }
