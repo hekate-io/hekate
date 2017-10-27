@@ -47,7 +47,13 @@
     </scope>
     <option name="exceptionsString" value="java.lang.Error,java.lang.RuntimeException,java.lang.NullPointerException,java.lang.ClassCastException,java.lang.ArrayIndexOutOfBoundsException" />
     <option name="exceptions">
-      <value />
+      <value>
+        <item value="java.lang.Error" />
+        <item value="java.lang.RuntimeException" />
+        <item value="java.lang.NullPointerException" />
+        <item value="java.lang.ClassCastException" />
+        <item value="java.lang.ArrayIndexOutOfBoundsException" />
+      </value>
     </option>
     <option name="ignoreTestCases" value="true" />
     <option name="ignoreLibraryOverrides" value="true" />
@@ -137,9 +143,6 @@
   <inspection_tool class="CssUnusedSymbol" enabled="false" level="WARNING" enabled_by_default="false" />
   <inspection_tool class="DebuggerStatementJS" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="DefaultNotLastCaseInSwitch" enabled="true" level="WARNING" enabled_by_default="true" />
-  <inspection_tool class="Deprecation" enabled="true" level="WARNING" enabled_by_default="true">
-    <option name="IGNORE_INSIDE_DEPRECATED" value="true" />
-  </inspection_tool>
   <inspection_tool class="DivideByZero" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="DivideByZeroJS" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="DocumentWriteJS" enabled="true" level="WARNING" enabled_by_default="true" />
@@ -580,6 +583,7 @@
   </inspection_tool>
   <inspection_tool class="UnnecessaryFullyQualifiedName" enabled="true" level="WARNING" enabled_by_default="true">
     <option name="m_ignoreJavadoc" value="false" />
+    <option name="ignoreInModuleStatements" value="true" />
   </inspection_tool>
   <inspection_tool class="UnnecessaryInheritDoc" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="UnnecessaryModuleDependencyInspection" enabled="false" level="WARNING" enabled_by_default="false" />
