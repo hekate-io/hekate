@@ -38,6 +38,7 @@ import io.hekate.messaging.unicast.LoadBalancingException;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.network.NetworkFuture;
+import java.io.IOException;
 import java.io.InvalidClassException;
 import java.io.NotSerializableException;
 import java.net.Socket;
@@ -492,7 +493,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
                 fail("Error was expected.");
             } catch (ExecutionException e) {
                 assertTrue(ErrorUtils.stackTrace(e), ErrorUtils.isCausedBy(MessagingException.class, e));
-                assertTrue(ErrorUtils.stackTrace(e), ErrorUtils.isCausedBy(ClosedChannelException.class, e));
+                assertTrue(ErrorUtils.stackTrace(e), ErrorUtils.isCausedBy(IOException.class, e));
             }
 
             sender.leave();
