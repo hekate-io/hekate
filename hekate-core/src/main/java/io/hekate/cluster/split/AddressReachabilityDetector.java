@@ -20,6 +20,7 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ConfigCheck;
+import io.hekate.util.format.ToString;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -111,5 +112,10 @@ public class AddressReachabilityDetector implements SplitBrainDetector {
         }
 
         return false;
+    }
+
+    @Override
+    public String toString() {
+        return ToString.format(this);
     }
 }
