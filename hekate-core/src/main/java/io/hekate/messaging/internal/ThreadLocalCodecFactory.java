@@ -79,7 +79,7 @@ class ThreadLocalCodecFactory<T> implements CodecFactory<T> {
 
             @Override
             public String toString() {
-                return "ThreadLocalCodec[factory=" + delegate + ']';
+                return delegate.toString();
             }
         };
     }
