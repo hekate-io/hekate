@@ -86,8 +86,8 @@ import org.springframework.stereotype.Component;
 @ConditionalOnMissingBean(LocalMetricsServiceFactory.class)
 public class HekateLocalMetricsServiceConfigurer {
     @Component
-    static class NamedCounterInjector extends AnnotationInjectorBase<InjectCounter> {
-        public NamedCounterInjector() {
+    static class CounterInjector extends AnnotationInjectorBase<InjectCounter> {
+        public CounterInjector() {
             super(InjectCounter.class, CounterMetric.class);
         }
 
@@ -108,8 +108,8 @@ public class HekateLocalMetricsServiceConfigurer {
     }
 
     @Component
-    static class NamedMetricInjector extends AnnotationInjectorBase<InjectMetric> {
-        public NamedMetricInjector() {
+    static class MetricInjector extends AnnotationInjectorBase<InjectMetric> {
+        public MetricInjector() {
             super(InjectMetric.class, Metric.class);
         }
 
