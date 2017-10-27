@@ -31,8 +31,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
  * Provides support for {@link Metric}s autowiring.
  *
  * <p>
- * This bean can be placed on any {@link Autowired autowire}-capable elements (fields, properties, parameters, etc) of application beans in
- * order to inject {@link Metric} by its {@link MetricConfigBase#setName(String) name}.
+ * This annotation can be placed on any {@link Autowired autowire}-capable elements (fields, properties, parameters, etc) of application
+ * beans in order to inject {@link Metric} by its {@link MetricConfigBase#setName(String) name}.
  * </p>
  *
  * <p>

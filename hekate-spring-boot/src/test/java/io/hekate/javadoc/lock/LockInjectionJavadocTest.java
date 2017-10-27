@@ -71,6 +71,7 @@ public class LockInjectionJavadocTest extends HekateAutoConfigurerTestBase {
     // End:lock_bean
 
     // Start:lock_app
+    @EnableHekate
     @SpringBootApplication
     public static class ExampleApp {
         @Bean

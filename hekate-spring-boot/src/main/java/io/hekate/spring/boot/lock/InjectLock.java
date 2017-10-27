@@ -32,9 +32,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
  * Provides support for {@link DistributedLock}s autowiring.
  *
  * <p>
- * This bean can be placed on any {@link Autowired autowire}-capable elements (fields, properties, parameters, etc) of application beans in
- * order to inject {@link DistributedLock} by its {@link LockRegionConfig#setName(String) region} and {@link LockRegion#get(String)
- * lock} names.
+ * This annotation can be placed on any {@link Autowired autowire}-capable elements (fields, properties, parameters, etc) of application
+ * beans in order to inject {@link DistributedLock} by its {@link LockRegionConfig#setName(String) region} and
+ * {@link LockRegion#get(String) lock} names.
  * </p>
  *
  * <p>

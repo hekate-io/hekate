@@ -31,8 +31,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
  * Provides support for {@link NetworkConnector}s autowiring.
  *
  * <p>
- * This bean can be placed on any {@link Autowired autowire}-capable elements (fields, properties, parameters, etc) of application beans in
- * order to inject {@link NetworkConnector} by its {@link NetworkConnectorConfig#setProtocol(String) protocol name}.
+ * This annotation can be placed on any {@link Autowired autowire}-capable elements (fields, properties, parameters, etc) of application
+ * beans in order to inject {@link NetworkConnector} by its {@link NetworkConnectorConfig#setProtocol(String) protocol name}.
  * </p>
  *
  * <p>
