@@ -93,8 +93,8 @@ import org.springframework.stereotype.Component;
 @ConditionalOnMissingBean(LockServiceFactory.class)
 public class HekateLockServiceConfigurer {
     @Component
-    static class NamedLockRegionInjector extends AnnotationInjectorBase<InjectLockRegion> {
-        public NamedLockRegionInjector() {
+    static class LockRegionInjector extends AnnotationInjectorBase<InjectLockRegion> {
+        public LockRegionInjector() {
             super(InjectLockRegion.class, LockRegion.class);
         }
 
@@ -115,8 +115,8 @@ public class HekateLockServiceConfigurer {
     }
 
     @Component
-    static class NamedLockInjector extends AnnotationInjectorBase<InjectLock> {
-        public NamedLockInjector() {
+    static class LockInjector extends AnnotationInjectorBase<InjectLock> {
+        public LockInjector() {
             super(InjectLock.class, DistributedLock.class);
         }
 

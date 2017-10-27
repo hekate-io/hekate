@@ -72,8 +72,8 @@ import org.springframework.stereotype.Component;
 @ConditionalOnMissingBean(MessagingServiceFactory.class)
 public class HekateMessagingServiceConfigurer {
     @Component
-    static class NamedMessagingChannelInjector extends AnnotationInjectorBase<InjectChannel> {
-        public NamedMessagingChannelInjector() {
+    static class MessagingChannelInjector extends AnnotationInjectorBase<InjectChannel> {
+        public MessagingChannelInjector() {
             super(InjectChannel.class, MessagingChannel.class);
         }
 
