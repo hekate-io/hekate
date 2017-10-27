@@ -22,13 +22,10 @@ import io.hekate.messaging.broadcast.AggregateResult;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,51 +77,10 @@ class AggregateContext<T> implements AggregateResult<T> {
     }
 
     @Override
-    public Throwable errorOf(ClusterNode node) {
-        synchronized (this) {
-            return errors != null ? errors.get(node) : null;
-        }
-    }
-
-    @Override
-    public boolean isSuccess() {
-        synchronized (this) {
-            return errors == null;
-        }
-    }
-
-    @Override
-    public boolean isSuccess(ClusterNode node) {
-        return errorOf(node) == null;
-    }
-
-    @Override
-    public Collection<T> results() {
-        return resultsByNode().values();
-    }
-
-    @Override
-    public Stream<T> stream() {
-        return results().stream();
-    }
-
-    @Override
     public Map<ClusterNode, T> resultsByNode() {
         synchronized (this) {
             return results;
         }
-    }
-
-    @Override
-    public T resultOf(ClusterNode node) {
-        synchronized (this) {
-            return results.get(node);
-        }
-    }
-
-    @Override
-    public Iterator<T> iterator() {
-        return results().iterator();
     }
 
     boolean forgetNode(ClusterNode node) {

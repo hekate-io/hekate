@@ -16,10 +16,12 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityStreamRequest;
+import io.hekate.messaging.internal.MessagingProtocol.ErrorResponse;
 import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.internal.MessagingProtocol.Request;
@@ -29,12 +31,12 @@ import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkFuture;
 
-abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
+abstract class MessagingConnectionNetBase<T> extends MessagingConnectionBase<T> {
     private final NetworkEndpoint<MessagingProtocol> net;
 
     private final SendPressureGuard pressureGuard;
 
-    public NetworkConnectionBase(NetworkEndpoint<MessagingProtocol> net, MessagingGateway<T> gateway, MessagingEndpoint<T> endpoint) {
+    public MessagingConnectionNetBase(NetworkEndpoint<MessagingProtocol> net, MessagingGateway<T> gateway, MessagingEndpoint<T> endpoint) {
         super(gateway, gateway.async(), endpoint);
 
         assert net != null : "Endpoint is null.";
@@ -113,12 +115,17 @@ abstract class NetworkConnectionBase<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void reply(MessagingWorker worker, int requestId, T response, SendCallback callback) {
-        MessagingProtocol.FinalResponse<T> msg = new FinalResponse<>(requestId, response);
+    public void replyFinal(MessagingWorker worker, int requestId, T response, SendCallback callback) {
+        FinalResponse<T> msg = new FinalResponse<>(requestId, response);
 
         msg.prepareSend(worker, this, callback);
 
         net.send(msg, msg /* <-- Message itself is a callback.*/);
+    }
+
+    @Override
+    public void replyError(MessagingWorker worker, int requestId, Throwable cause) {
+        net.send(new ErrorResponse(requestId, ErrorUtils.stackTrace(cause)));
     }
 
     public SendPressureGuard pressureGuard() {

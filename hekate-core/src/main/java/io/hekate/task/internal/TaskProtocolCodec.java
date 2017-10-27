@@ -56,7 +56,12 @@ class TaskProtocolCodec implements Codec<TaskProtocol> {
 
                 break;
             }
-            case APPLY_TASK: {
+            case APPLY_SINGLE_TASK: {
+                delegate.encode(msg, out);
+
+                break;
+            }
+            case APPLY_BULK_TASK: {
                 delegate.encode(msg, out);
 
                 break;
@@ -67,7 +72,7 @@ class TaskProtocolCodec implements Codec<TaskProtocol> {
             case ERROR_RESULT: {
                 ErrorResult error = (ErrorResult)msg;
 
-                out.writeUTF(error.errorStackTrace());
+                delegate.encode(error.cause(), out);
 
                 break;
             }
@@ -109,16 +114,19 @@ class TaskProtocolCodec implements Codec<TaskProtocol> {
 
                 return new CallTask(task);
             }
-            case APPLY_TASK: {
+            case APPLY_SINGLE_TASK: {
+                return (TaskProtocol)delegate.decode(in);
+            }
+            case APPLY_BULK_TASK: {
                 return (TaskProtocol)delegate.decode(in);
             }
             case NULL_RESULT: {
                 return TaskProtocol.NullResult.INSTANCE;
             }
             case ERROR_RESULT: {
-                String stackTrace = in.readUTF();
+                Throwable cause = (Throwable)delegate.decode(in);
 
-                return new ErrorResult(stackTrace);
+                return new ErrorResult(cause);
             }
             case OBJECT_RESULT: {
                 Object result = delegate.decode(in);

@@ -23,8 +23,8 @@ import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.MessagingFutureException;
+import io.hekate.messaging.MessagingRemoteException;
 import io.hekate.messaging.UnknownRouteException;
-import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -133,12 +133,12 @@ public class FailoverRequestTest extends FailoverTestBase {
 
     @Test
     public void testRemoteFailoverFailure() throws Exception {
-        doFailoverFailure(toRemote, ClosedChannelException.class);
+        doFailoverFailure(toRemote, MessagingRemoteException.class);
     }
 
     @Test
     public void testSelfFailoverFailure() throws Exception {
-        doFailoverFailure(toSelf, AssertionError.class);
+        doFailoverFailure(toSelf, MessagingRemoteException.class);
     }
 
     @Test

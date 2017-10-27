@@ -109,7 +109,6 @@ public class TaskServiceFactory implements ServiceFactory<TaskService> {
      * <p>
      * Value of this parameter must be above zero. If not directly specified then the number of available CPUs (see {@link
      * Runtime#availableProcessors()}) will be used as the default value.
-     * value.
      * </p>
      *
      * @param workerThreads Worker thread pool size.
@@ -150,8 +149,8 @@ public class TaskServiceFactory implements ServiceFactory<TaskService> {
      * </p>
      *
      * <p>
-     * If value of this parameter is less than or equals to zero (default value) then connections will not be closed will not be closed
-     * until remote node stays alive.
+     * If value of this parameter is less than or equals to zero (default value) then connections will not be closed will until remote node
+     * stays alive.
      * </p>
      *
      * @param idleSocketTimeout Timeout in milliseconds.

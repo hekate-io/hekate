@@ -40,7 +40,7 @@ public interface ApplicableTask<T, V> extends Serializable {
      *
      * @return Result.
      *
-     * @throws TaskException Task execution error.
+     * @throws Exception Task execution error.
      */
-    V apply(T arg) throws TaskException;
+    V apply(T arg) throws Exception;
 }

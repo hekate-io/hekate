@@ -16,24 +16,17 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.messaging.MessagingEndpoint;
-import io.hekate.network.NetworkEndpoint;
-import java.nio.channels.ClosedChannelException;
+import io.hekate.codec.CodecException;
 
-class NetworkInboundConnection<T> extends NetworkConnectionBase<T> {
-    public NetworkInboundConnection(NetworkEndpoint<MessagingProtocol> net, MessagingEndpoint<T> endpoint, MessagingGateway<T> gateway) {
-        super(net, gateway, endpoint);
+class NotificationPayloadDecodeException extends CodecException {
+    private static final long serialVersionUID = 1L;
+
+    public NotificationPayloadDecodeException(Throwable cause) {
+        super("Failed to decode notification message.", cause);
     }
 
-    public void onConnect() {
-        gateway().receiver().onConnect(endpoint());
-    }
-
-    public void onDisconnect() {
-        gateway().receiver().onDisconnect(endpoint());
-
-        discardRequests(new ClosedChannelException());
-
-        gateway().unregister(this);
+    @Override
+    public Throwable fillInStackTrace() {
+        return this;
     }
 }

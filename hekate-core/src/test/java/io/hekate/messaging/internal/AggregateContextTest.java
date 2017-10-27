@@ -18,8 +18,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -171,7 +171,7 @@ public class AggregateContextTest extends HekateTestBase {
 
         ctx.complete();
 
-        verify(callback).onComplete(isNull(Throwable.class), any());
+        verify(callback).onComplete(isNull(), any());
         verifyNoMoreInteractions(callback);
 
         AggregateContext<String> errCtx = ctx(allNodes(), (err, result) -> {

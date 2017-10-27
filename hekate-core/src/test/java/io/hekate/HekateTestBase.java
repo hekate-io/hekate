@@ -163,7 +163,7 @@ public abstract class HekateTestBase {
     public static final String TEST_ERROR_PREFIX = "*** RELAX:)";
 
     /** Common message for expected errors that were produced by tests. */
-    public static final String TEST_ERROR_MESSAGE = TEST_ERROR_PREFIX + " This exception was created by a test case.";
+    public static final String TEST_ERROR_MESSAGE = TEST_ERROR_PREFIX + " This exception was created by the test case.";
 
     /** Singleton for expected errors ...{@link #TEST_ERROR_MESSAGE RELAX:)}. */
     public static final AssertionError TEST_ERROR = new TestAssertionError(TEST_ERROR_MESSAGE);
@@ -337,7 +337,17 @@ public abstract class HekateTestBase {
     protected static void say(Object msg) {
         String sep = System.lineSeparator();
 
-        System.out.println(sep + "*** [" + TIMESTAMP_FORMAT.format(LocalDateTime.now()) + "]: " + msg + sep);
+        String strMsg = msg instanceof Throwable ? ErrorUtils.stackTrace((Throwable)msg) : String.valueOf(msg);
+
+        System.out.println(sep + "*** [" + TIMESTAMP_FORMAT.format(LocalDateTime.now()) + "]: " + strMsg + sep);
+    }
+
+    protected static void say(Object msg, Object... args) {
+        String sep = System.lineSeparator();
+
+        String strMsg = String.valueOf(msg);
+
+        System.out.println(sep + "*** [" + TIMESTAMP_FORMAT.format(LocalDateTime.now()) + "]: " + String.format(strMsg, args) + sep);
     }
 
     protected static void sayHeader(Object msg) {
@@ -631,45 +641,43 @@ public abstract class HekateTestBase {
         };
     }
 
-    protected void expect(Class<? extends Throwable> error, TestTask task) {
-        expect(error, null, task);
+    protected <T extends Throwable> T expect(Class<T> type, TestTask task) {
+        return expect(type, null, task);
     }
 
-    protected void expect(Class<? extends Throwable> error, String message, TestTask task) {
+    protected <T extends Throwable> T expect(Class<T> type, String messagePart, TestTask task) {
         try {
             task.execute();
 
-            fail("Failure of type " + error.getName() + " was expected.");
+            throw new AssertionError("Failure of type " + type.getName() + " was expected.");
         } catch (AssertionError e) {
             throw e;
         } catch (Throwable t) {
-            assertSame(ErrorUtils.stackTrace(t), error, t.getClass());
+            assertSame(ErrorUtils.stackTrace(t), type, t.getClass());
 
-            if (message != null) {
+            if (messagePart != null) {
                 assertNotNull(t.toString(), t.getMessage());
-                assertTrue(t.toString(), t.getMessage().contains(message));
+                assertTrue(t.toString(), t.getMessage().contains(messagePart));
             }
+
+            return type.cast(t);
         }
     }
 
-    protected void expectErrorMessage(Class<? extends Throwable> error, String message, TestTask task) {
-        try {
-            task.execute();
+    protected <T extends Throwable> T expectExactMessage(Class<T> type, String message, TestTask task) {
+        T error = expect(type, task);
 
-            fail("Failure of type " + error.getName() + " was expected.");
-        } catch (AssertionError e) {
-            throw e;
-        } catch (Throwable t) {
-            assertSame(ErrorUtils.stackTrace(t), error, t.getClass());
+        assertSame(ErrorUtils.stackTrace(error), type, error.getClass());
 
-            assertNotNull(t.toString(), t.getMessage());
-            assertEquals(message, t.getMessage());
-        }
+        assertNotNull(error.toString(), error.getMessage());
+        assertEquals(message, error.getMessage());
+
+        return error;
     }
 
     @SafeVarargs
-    protected final <T> Set<T> toSet(T... nodes) {
-        return new HashSet<>(Arrays.asList(nodes));
+    protected final <T> Set<T> toSet(T... elements) {
+        return new HashSet<>(Arrays.asList(elements));
     }
 
     protected long sayTime(String msg, TestTask task) throws Exception {

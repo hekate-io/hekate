@@ -31,7 +31,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class MessagingServiceSingleNodeTest extends HekateNodeTestBase {
-    private static final int BUILT_IN_CHANNELS = 1; // <-- Task service always registers one channel.
+    private static final int BUILT_IN_CHANNELS = 2; // <-- Task service always registers one channel.
 
     @Test
     public void testEmptyChannels() throws Exception {

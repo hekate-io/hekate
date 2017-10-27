@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class TestBean implements Serializable {
-    private static final long serialVersionUID = 6231323035702817546L;
+    private static final long serialVersionUID = 1;
 
     private long longVal1;
 

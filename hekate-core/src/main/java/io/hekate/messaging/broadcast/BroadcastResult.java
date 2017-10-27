@@ -57,24 +57,17 @@ public interface BroadcastResult<T> {
     Map<ClusterNode, Throwable> errors();
 
     /**
-     * Returns a communication error for the specified node or {@code null} if there was no communication failure with that node.
-     *
-     * @param node Cluster node (must be one of {@link #nodes()}, otherwise results will be unpredictable).
-     *
-     * @return Error in case of a communication error with the specified node or {@code null}.
-     *
-     * @see #errors()
-     */
-    Throwable errorOf(ClusterNode node);
-
-    /**
      * Returns {@code true} if broadcast completed successfully without any {@link #errors() errors}.
      *
      * @return {@code true} if broadcast completed successfully without any errors.
      *
      * @see #errors()
      */
-    boolean isSuccess();
+    default boolean isSuccess() {
+        Map<ClusterNode, Throwable> errors = errors();
+
+        return errors == null || errors.isEmpty();
+    }
 
     /**
      * Returns {@code true} if there was no communication failure with the specified cluster node..
@@ -83,5 +76,22 @@ public interface BroadcastResult<T> {
      *
      * @return {@code true} if there was no communication failure with the specified cluster node.
      */
-    boolean isSuccess(ClusterNode node);
+    default boolean isSuccess(ClusterNode node) {
+        return errorOf(node) == null;
+    }
+
+    /**
+     * Returns a communication error for the specified node or {@code null} if there was no communication failure with that node.
+     *
+     * @param node Cluster node (must be one of {@link #nodes()}, otherwise results will be unpredictable).
+     *
+     * @return Error in case of a communication error with the specified node or {@code null}.
+     *
+     * @see #errors()
+     */
+    default Throwable errorOf(ClusterNode node) {
+        Map<ClusterNode, Throwable> errors = errors();
+
+        return errors != null ? errors.get(node) : null;
+    }
 }

@@ -16,34 +16,37 @@
 
 package io.hekate.task;
 
+import io.hekate.cluster.ClusterNodeId;
+
 /**
- * Signals that there was a task execution failure on remote node. Stack trace of a remote failure can be obtained via {@link
- * #getRemoteStackTrace()}.
+ * Signals that there was a task execution failure on a remote node.
  *
+ * @see #remoteNodeId()
  * @see TaskService
  */
 public class RemoteTaskException extends TaskException {
     private static final long serialVersionUID = 1;
 
-    private final String remoteStackTrace;
+    private final ClusterNodeId remoteNodeId;
 
     /**
-     * Constructs new instance.
+     * Constructs a new instance.
      *
-     * @param remoteStackTrace Stack trace of a remote failure (see {@link #getRemoteStackTrace()}).
+     * @param remoteNodeId Remote node.
+     * @param cause Error cause.
      */
-    public RemoteTaskException(String remoteStackTrace) {
-        super(remoteStackTrace);
+    public RemoteTaskException(ClusterNodeId remoteNodeId, Throwable cause) {
+        super("Remote task execution failed [node-id=" + remoteNodeId + ']', cause);
 
-        this.remoteStackTrace = remoteStackTrace;
+        this.remoteNodeId = remoteNodeId;
     }
 
     /**
-     * Returns the stack trace of a remote failure.
+     * Returns the remote node of this failure.
      *
-     * @return Stack trace of a remote failure.
+     * @return Remote node.
      */
-    public String getRemoteStackTrace() {
-        return remoteStackTrace;
+    public ClusterNodeId remoteNodeId() {
+        return remoteNodeId;
     }
 }

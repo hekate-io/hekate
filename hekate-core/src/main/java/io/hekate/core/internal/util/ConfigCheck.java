@@ -40,6 +40,10 @@ public final class ConfigCheck {
         throw new HekateConfigurationException(component + ": " + cause.toString(), cause);
     }
 
+    public HekateConfigurationException fail(String msg) {
+        throw new HekateConfigurationException(component + ": " + msg);
+    }
+
     public void range(int value, int from, int to, String component) {
         that(value >= from && value <= to, component + " must be within the " + from + ".." + to + " range.");
     }

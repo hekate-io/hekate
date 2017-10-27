@@ -32,7 +32,7 @@ public class MessagingFuture<T> extends HekateFuture<T, MessagingFuture<T>> {
         try {
             return super.get();
         } catch (ExecutionException e) {
-            throw new MessagingFutureException(e.getMessage(), e.getCause());
+            throw new MessagingFutureException("Messaging operation failed (see cause for details).", e.getCause());
         }
     }
 
@@ -41,7 +41,7 @@ public class MessagingFuture<T> extends HekateFuture<T, MessagingFuture<T>> {
         try {
             return super.get(timeout, unit);
         } catch (ExecutionException e) {
-            throw new MessagingFutureException(e.getMessage(), e.getCause());
+            throw new MessagingFutureException("Messaging operation failed (see cause for details).", e.getCause());
         }
     }
 
@@ -50,7 +50,7 @@ public class MessagingFuture<T> extends HekateFuture<T, MessagingFuture<T>> {
         try {
             return super.getUninterruptedly();
         } catch (ExecutionException e) {
-            throw new MessagingFutureException(e.getMessage(), e.getCause());
+            throw new MessagingFutureException("Messaging operation failed (see cause for details).", e.getCause());
         }
     }
 

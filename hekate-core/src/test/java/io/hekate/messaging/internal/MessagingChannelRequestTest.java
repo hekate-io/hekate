@@ -19,19 +19,28 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.event.ClusterEventType;
+import io.hekate.codec.CodecException;
+import io.hekate.core.internal.HekateTestNode;
+import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageInterceptor;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelClosedException;
+import io.hekate.messaging.MessagingChannelConfig;
+import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.MessagingFutureException;
+import io.hekate.messaging.MessagingRemoteException;
+import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.UnknownRouteException;
 import io.hekate.messaging.unicast.LoadBalancingException;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.network.NetworkFuture;
-import java.io.IOException;
+import java.io.InvalidClassException;
+import java.io.NotSerializableException;
+import java.net.Socket;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -53,6 +62,7 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -317,8 +327,8 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
                 sender.requestWithSyncCallback(receiver.getNodeId(), msg);
 
                 fail("Error was expected.");
-            } catch (ClosedChannelException e) {
-                // No-op.
+            } catch (MessagingRemoteException e) {
+                assertTrue(e.remoteStackTrace().contains(TEST_ERROR_MESSAGE));
             }
 
             receiver.awaitForMessage(msg);
@@ -345,8 +355,8 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
                 sender.requestWithSyncCallback(receiver.getNodeId(), "request" + i);
 
                 fail("Error was expected.");
-            } catch (ClosedChannelException e) {
-                // No-op.
+            } catch (MessagingException e) {
+                assertTrue(e.toString(), e.isCausedBy(ClosedChannelException.class));
             }
         });
     }
@@ -374,7 +384,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
                 sender.requestWithSyncCallback(receiver.getNodeId(), "request" + i);
 
                 fail("Error was expected.");
-            } catch (ClosedChannelException e) {
+            } catch (MessagingException e) {
                 // No-op.
             }
         });
@@ -429,7 +439,8 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
                 } else if (cause instanceof MessagingChannelClosedException) {
                     assertEquals("Channel closed [channel=test_channel]", cause.getMessage());
                 } else {
-                    assertTrue(getStacktrace(cause), cause instanceof ClosedChannelException);
+                    assertTrue(getStacktrace(cause), cause instanceof MessagingException);
+                    assertTrue(getStacktrace(cause), ErrorUtils.isCausedBy(ClosedChannelException.class, cause));
                 }
             }
 
@@ -480,7 +491,8 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
                 fail("Error was expected.");
             } catch (ExecutionException e) {
-                assertTrue(e.getCause().toString(), e.getCause() instanceof IOException);
+                assertTrue(ErrorUtils.stackTrace(e), ErrorUtils.isCausedBy(MessagingException.class, e));
+                assertTrue(ErrorUtils.stackTrace(e), ErrorUtils.isCausedBy(ClosedChannelException.class, e));
             }
 
             sender.leave();
@@ -884,10 +896,10 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         receiver.leave();
 
-        Throwable err = replyAndGetError(request);
+        MessagingException err = (MessagingException)replyAndGetError(request);
 
         assertNotNull(err);
-        assertTrue(err.toString(), err instanceof ClosedChannelException);
+        assertTrue(err.toString(), err.getCause() instanceof ClosedChannelException);
     }
 
     @Test
@@ -925,6 +937,86 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
                 to.assertReceived(msg2 + "-###-@@@");
             }
         }
+    }
+
+    @Test
+    public void testNonSerializableRequest() throws Exception {
+        HekateTestNode sender = prepareObjectSenderAndReceiver(msg ->
+            msg.reply("OK")
+        );
+
+        repeat(5, i -> {
+            MessagingFutureException err = expect(MessagingFutureException.class, () ->
+                get(sender.messaging().channel("test").forRemotes().request(new Socket()))
+            );
+
+            assertSame(err.toString(), MessagingException.class, err.getCause().getClass());
+            assertTrue(err.isCausedBy(CodecException.class));
+            assertTrue(err.isCausedBy(NotSerializableException.class));
+        });
+    }
+
+    @Test
+    public void testNonDeSerializableRequest() throws Exception {
+        HekateTestNode sender = prepareObjectSenderAndReceiver(msg ->
+            msg.reply("OK")
+        );
+
+        repeat(5, i -> {
+            MessagingFutureException err = expect(MessagingFutureException.class, () ->
+                get(sender.messaging().channel("test").forRemotes().request(new NonDeserializableMock()))
+            );
+
+            assertSame(err.toString(), MessagingRemoteException.class, err.getCause().getClass());
+            assertTrue(ErrorUtils.stackTrace(err).contains(TEST_ERROR_MESSAGE));
+        });
+    }
+
+    @Test
+    public void testNonSerializableResponse() throws Exception {
+        HekateTestNode sender = prepareObjectSenderAndReceiver(msg ->
+            msg.reply(new Socket())
+        );
+
+        repeat(5, i -> {
+            MessagingFutureException err = expect(MessagingFutureException.class, () ->
+                get(sender.messaging().channel("test").forRemotes().request("OK"))
+            );
+
+            assertSame(err.toString(), MessagingRemoteException.class, err.getCause().getClass());
+            assertTrue(ErrorUtils.stackTrace(err).contains(NotSerializableException.class.getName() + ": " + Socket.class.getName()));
+        });
+    }
+
+    @Test
+    public void testNonDeserializableResponse() throws Exception {
+        HekateTestNode sender = prepareObjectSenderAndReceiver(msg ->
+            msg.reply(new NonDeserializableMock())
+        );
+
+        repeat(5, i -> {
+            MessagingFutureException err = expect(MessagingFutureException.class, () ->
+                get(sender.messaging().channel("test").forRemotes().request("OK"))
+            );
+
+            assertSame(err.toString(), MessagingException.class, err.getCause().getClass());
+            assertTrue(ErrorUtils.stackTrace(err).contains(InvalidClassException.class.getName() + ": " + TEST_ERROR_MESSAGE));
+        });
+    }
+
+    private HekateTestNode prepareObjectSenderAndReceiver(MessageReceiver<Object> receiver) throws Exception {
+        createNode(boot -> boot.withService(MessagingServiceFactory.class, f -> {
+            f.withChannel(MessagingChannelConfig.of(Object.class)
+                .withName("test")
+                .withReceiver(receiver)
+            );
+        })).join();
+
+        return createNode(boot -> boot.withService(MessagingServiceFactory.class, f -> {
+            f.withChannel(MessagingChannelConfig.of(Object.class)
+                .withName("test")
+            );
+        })).join();
     }
 
     private Throwable replyAndGetError(Message<String> reply) throws Exception {

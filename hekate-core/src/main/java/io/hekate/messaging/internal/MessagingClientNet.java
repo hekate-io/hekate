@@ -28,8 +28,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class NetworkMessagingClient<T> implements MessagingClient<T> {
-    private static final Logger log = LoggerFactory.getLogger(NetworkMessagingClient.class);
+class MessagingClientNet<T> implements MessagingClient<T> {
+    private static final Logger log = LoggerFactory.getLogger(MessagingClientNet.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
@@ -37,7 +37,7 @@ class NetworkMessagingClient<T> implements MessagingClient<T> {
 
     private final ClusterNode node;
 
-    private final NetworkOutboundConnection<T> conn;
+    private final MessagingConnectionNetOut<T> conn;
 
     private final boolean trackIdle;
 
@@ -51,7 +51,7 @@ class NetworkMessagingClient<T> implements MessagingClient<T> {
 
     private volatile boolean closed;
 
-    public NetworkMessagingClient(String channelName, ClusterNode remoteNode, NetworkConnector<MessagingProtocol> net,
+    public MessagingClientNet(String channelName, ClusterNode remoteNode, NetworkConnector<MessagingProtocol> net,
         MessagingGateway<T> gateway, boolean trackIdle) {
         assert channelName != null : "Channel name is null.";
         assert remoteNode != null : "Remote node is null.";
@@ -70,7 +70,7 @@ class NetworkMessagingClient<T> implements MessagingClient<T> {
 
         DefaultMessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(remoteNode.id(), gateway.channel());
 
-        this.conn = new NetworkOutboundConnection<>(remoteNode.address(), netClient, gateway, endpoint);
+        this.conn = new MessagingConnectionNetOut<>(remoteNode.address(), netClient, gateway, endpoint);
     }
 
     @Override
@@ -164,7 +164,7 @@ class NetworkMessagingClient<T> implements MessagingClient<T> {
     }
 
     // Package level for testing purposes.
-    NetworkOutboundConnection<T> connection() {
+    MessagingConnectionNetOut<T> connection() {
         return conn;
     }
 

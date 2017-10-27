@@ -19,7 +19,9 @@ package io.hekate.task.internal;
 import io.hekate.HekateTestContext;
 import io.hekate.core.Hekate;
 import io.hekate.core.internal.HekateTestNode;
+import io.hekate.messaging.MessagingRemoteException;
 import io.hekate.task.RemoteTaskException;
+import io.hekate.task.TaskException;
 import io.hekate.task.TaskFuture;
 import io.hekate.task.TaskFutureException;
 import io.hekate.task.TaskService;
@@ -99,8 +101,8 @@ public class TaskRunTest extends TaskServiceTestBase {
                 });
 
                 assertErrorCausedBy(future, RemoteTaskException.class, err -> {
-                    assertTrue(err.getMessage().contains(TEST_ERROR.getClass().getName()));
-                    assertTrue(err.getMessage().contains(TEST_ERROR.getMessage()));
+                    assertEquals(TEST_ERROR.getClass(), err.getCause().getClass());
+                    assertEquals(TEST_ERROR_MESSAGE, err.getCause().getMessage());
                 });
 
             }
@@ -119,9 +121,11 @@ public class TaskRunTest extends TaskServiceTestBase {
                     throw new NonSerializableTestException();
                 });
 
-                assertErrorCausedBy(future, RemoteTaskException.class, err ->
-                    assertTrue(err.getMessage().contains(NonSerializableTestException.class.getName()))
-                );
+                assertErrorCausedBy(future, TaskException.class, err -> {
+                    MessagingRemoteException msgErr = (MessagingRemoteException)err.getCause();
+
+                    assertTrue(msgErr.getMessage().contains(NonSerializableTestException.class.getName()));
+                });
             }
 
             nodes.forEach(n -> n.leaveAsync().join());
@@ -187,8 +191,8 @@ public class TaskRunTest extends TaskServiceTestBase {
 
             fail("Error was expected.");
         } catch (TaskFutureException e) {
-            assertTrue(getStacktrace(e), e.isCausedBy(RemoteTaskException.class));
-            assertTrue(e.findCause(RemoteTaskException.class).getMessage().contains(TEST_ERROR_MESSAGE));
+            assertSame(getStacktrace(e), RemoteTaskException.class, e.getCause().getClass());
+            assertSame(getStacktrace(e), TEST_ERROR.getClass(), e.getCause().getCause().getClass());
         }
 
         assertEquals(6, attempts.get());
@@ -227,8 +231,8 @@ public class TaskRunTest extends TaskServiceTestBase {
 
             fail("Error was expected.");
         } catch (TaskFutureException e) {
-            assertTrue(getStacktrace(e), e.isCausedBy(RemoteTaskException.class));
-            assertTrue(e.findCause(RemoteTaskException.class).getMessage().contains(TEST_ERROR_MESSAGE));
+            assertSame(getStacktrace(e), RemoteTaskException.class, e.getCause().getClass());
+            assertSame(getStacktrace(e), TEST_ERROR.getClass(), e.getCause().getCause().getClass());
         }
 
         assertEquals(6, attempts.get());

@@ -16,24 +16,27 @@
 
 package io.hekate.messaging.unicast;
 
+import io.hekate.cluster.ClusterNode;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.MessagingChannel;
 
 /**
- * Marker interface for application-specific error replies.
+ * Marker interface for application-specific error responses.
  *
  * <p>
  * Messages can implement this interface in order to indicated that particular {@link Response} represents an application-specific error
  * that should be treated as a messaging failure. If {@link MessagingChannel} receives a reply of this type then it will call the
- * {@link #asError()} method and will fail the messaging operation (or will apply a {@link FailoverPolicy} if it was {@link
- * MessagingChannel#withFailover(FailoverPolicy) specified}) using the resulting error.
+ * {@link #asError(ClusterNode)} method and will fail the messaging operation (or will apply a {@link FailoverPolicy} if it is {@link
+ * MessagingChannel#withFailover(FailoverPolicy) configured}) using the resulting error.
  * </p>
  */
-public interface ReplyFailure {
+public interface FailureResponse {
     /**
      * Converts this reply to an error.
      *
+     * @param fromNode From which node this message was received.
+     *
      * @return Error.
      */
-    Throwable asError();
+    Throwable asError(ClusterNode fromNode);
 }

@@ -153,6 +153,27 @@
             <channel name="another.channel"/>
         </messaging>
 
+        <rpc id="rpc" nio-threads="0" worker-threads="8" idle-socket-timeout-ms="0">
+            <client name="someRpcClient" interface="foo.bar.SomeRpcService" tag="some-tag-1">
+                <load-balancer>
+                    <s:bean class="foo.bar.SomeRpcLoadBalancer"/>
+                </load-balancer>
+                <failover-policy>
+                    <s:bean class="foo.bar.SomeFailoverPolicy"/>
+                </failover-policy>
+            </client>
+
+            <server>
+                <tags>
+                    <tag>some-tag-1</tag>
+                    <tag>some-tag-2</tag>
+                </tags>
+                <handler>
+                    <s:bean class="foo.bar.SomeRpcServiceImpl"/>
+                </handler>
+            </server>
+        </rpc>
+
         <tasks id="tasks" nio-threads="0" worker-threads="8" idle-socket-timeout-ms="0"/>
 
         <locks id="locks" retry-interval-ms="100" nio-threads="0" worker-threads="1">

@@ -16,15 +16,13 @@
 
 package io.hekate.messaging;
 
-import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.messaging.unicast.SendCallback;
 
 /**
- * Message with an arbitrary payload.
+ * Message with arbitrary payload.
  *
  * <p>
  * This interface represents a message that was received by a {@link MessagingChannel} and provides methods for sending responses.
@@ -38,35 +36,7 @@ import io.hekate.messaging.unicast.SendCallback;
  *
  * @see MessageReceiver
  */
-public interface Message<T> {
-    /**
-     * Returns the payload of this message.
-     *
-     * @return Payload.
-     */
-    T get();
-
-    /**
-     * Casts the payload of this message to the specified type.
-     *
-     * @param type Payload type.
-     * @param <P> Payload type.
-     *
-     * @return Payload.
-     *
-     * @throws ClassCastException If payload can't be cast to the specified type.
-     */
-    <P extends T> P get(Class<P> type);
-
-    /**
-     * Returns {@code true} if this message has a {@link #get() payload} of the specified type.
-     *
-     * @param type Payload type.
-     *
-     * @return {@code true} if this message has a {@link #get() payload} of the specified type.
-     */
-    boolean is(Class<? extends T> type);
-
+public interface Message<T> extends MessageBase<T> {
     /**
      * Returns {@code true} if the sender is waiting for a response message.
      *
@@ -211,31 +181,4 @@ public interface Message<T> {
      * @return {@code true} if this message represents a request and can be {@link #reply(Object) replied}.
      */
     boolean isRequest();
-
-    /**
-     * Returns the endpoint that received this message.
-     *
-     * @return Messaging endpoint that received this message.
-     */
-    MessagingEndpoint<T> endpoint();
-
-    /**
-     * Returns the messaging channel of this message.
-     *
-     * @return Messaging channel.
-     */
-    default MessagingChannel<T> channel() {
-        return endpoint().channel();
-    }
-
-    /**
-     * Returns the universally unique identifier of the remote cluster node.
-     *
-     * @return Universally unique identifier of the remote cluster node.
-     *
-     * @see ClusterNode#id()
-     */
-    default ClusterNodeId from() {
-        return endpoint().remoteNodeId();
-    }
 }

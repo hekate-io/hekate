@@ -16,9 +16,11 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityStreamRequest;
+import io.hekate.messaging.internal.MessagingProtocol.ErrorResponse;
 import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.internal.MessagingProtocol.Request;
@@ -27,8 +29,8 @@ import io.hekate.messaging.internal.MessagingProtocol.StreamRequest;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkFuture;
 
-class InMemoryConnection<T> extends MessagingConnectionBase<T> {
-    public InMemoryConnection(MessagingGateway<T> gateway, MessagingExecutor async) {
+class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
+    public MessagingConnectionMem(MessagingGateway<T> gateway, MessagingExecutor async) {
         super(gateway, async, new DefaultMessagingEndpoint<>(gateway.localNode().id(), gateway.channel()));
     }
 
@@ -130,11 +132,11 @@ class InMemoryConnection<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void reply(MessagingWorker worker, int requestId, T response, SendCallback callback) {
+    public void replyFinal(MessagingWorker worker, int requestId, T response, SendCallback callback) {
         RequestHandle<T> handle = requests().get(requestId);
 
         if (handle != null) {
-            FinalResponse<T> msg = new MessagingProtocol.FinalResponse<>(requestId, response);
+            FinalResponse<T> msg = new FinalResponse<>(requestId, response);
 
             if (callback != null) {
                 callback.onComplete(null);
@@ -146,6 +148,21 @@ class InMemoryConnection<T> extends MessagingConnectionBase<T> {
                 onAsyncDequeue();
 
                 doReceiveResponse(handle, msg);
+            });
+        }
+    }
+
+    @Override
+    public void replyError(MessagingWorker worker, int requestId, Throwable cause) {
+        RequestHandle<T> handle = requests().get(requestId);
+
+        if (handle != null) {
+            onAsyncEnqueue();
+
+            worker.execute(() -> {
+                onAsyncDequeue();
+
+                doReceiveError(handle, new ErrorResponse(requestId, ErrorUtils.stackTrace(cause)));
             });
         }
     }

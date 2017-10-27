@@ -11,6 +11,7 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   io.hekate.spring.boot.cluster.HekateCloudStoreSeedNodeProviderConfigurer,\
   io.hekate.spring.boot.cluster.HekateStaticSeedNodeProviderConfigurer,\
   io.hekate.spring.boot.messaging.HekateMessagingServiceConfigurer,\
+  io.hekate.spring.boot.rpc.HekateRpcServiceConfigurer,\
   io.hekate.spring.boot.coordination.HekateCoordinationServiceConfigurer,\
   io.hekate.spring.boot.election.HekateElectionServiceConfigurer,\
   io.hekate.spring.boot.lock.HekateLockServiceConfigurer,\

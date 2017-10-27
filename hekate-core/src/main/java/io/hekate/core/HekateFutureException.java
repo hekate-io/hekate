@@ -55,6 +55,6 @@ public class HekateFutureException extends ExecutionException {
      * @return Error or {@code null}.
      */
     public <T extends Throwable> T findCause(Class<T> type) {
-        return ErrorUtils.findCause(this, type);
+        return ErrorUtils.findCause(type, this);
     }
 }

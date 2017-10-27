@@ -26,13 +26,16 @@ import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityStreamRequest;
 import io.hekate.messaging.internal.MessagingProtocol.Connect;
+import io.hekate.messaging.internal.MessagingProtocol.ErrorResponse;
 import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.internal.MessagingProtocol.Request;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
 import io.hekate.messaging.internal.MessagingProtocol.StreamRequest;
 import io.hekate.network.NetworkMessage;
+import io.hekate.util.format.ToString;
 import java.io.IOException;
+import java.util.OptionalInt;
 
 class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
     private static final int FLAG_BYTES = 1;
@@ -105,14 +108,14 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 int affinity = in.readInt();
 
-                T payload = delegate.decode(in);
+                T payload = decodeNotificationPayload(in);
 
                 return new AffinityNotification<>(affinity, retransmit, payload);
             }
             case NOTIFICATION: {
                 boolean retransmit = isRetransmit(flags);
 
-                T payload = delegate.decode(in);
+                T payload = decodeNotificationPayload(in);
 
                 return new Notification<>(retransmit, payload);
             }
@@ -122,7 +125,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 int affinity = in.readInt();
                 int requestId = in.readVarInt();
 
-                T payload = delegate.decode(in);
+                T payload = decodeAffinityRequestPayload(requestId, affinity, in);
 
                 return new AffinityRequest<>(affinity, requestId, retransmit, payload);
             }
@@ -131,7 +134,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 int requestId = in.readVarInt();
 
-                T payload = delegate.decode(in);
+                T payload = decodeRequestPayload(requestId, in);
 
                 return new Request<>(requestId, retransmit, payload);
             }
@@ -141,7 +144,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 int affinity = in.readInt();
                 int requestId = in.readVarInt();
 
-                T payload = delegate.decode(in);
+                T payload = decodeAffinityRequestPayload(requestId, affinity, in);
 
                 return new AffinityStreamRequest<>(affinity, requestId, retransmit, payload);
             }
@@ -150,23 +153,29 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 int requestId = in.readVarInt();
 
-                T payload = delegate.decode(in);
+                T payload = decodeRequestPayload(requestId, in);
 
                 return new StreamRequest<>(requestId, retransmit, payload);
             }
             case RESPONSE_CHUNK: {
                 int requestId = in.readVarInt();
 
-                T payload = delegate.decode(in);
+                T payload = decodeResponsePayload(requestId, in);
 
                 return new ResponseChunk<>(requestId, payload);
             }
             case FINAL_RESPONSE: {
                 int requestId = in.readVarInt();
 
-                T payload = delegate.decode(in);
+                T payload = decodeResponsePayload(requestId, in);
 
                 return new FinalResponse<>(requestId, payload);
+            }
+            case ERROR_RESPONSE: {
+                int requestId = in.readVarInt();
+                String stackTrace = in.readUTF();
+
+                return new ErrorResponse(requestId, stackTrace);
             }
             default: {
                 throw new IllegalArgumentException("Unexpected message type: " + type);
@@ -268,6 +277,13 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 break;
             }
+            case ERROR_RESPONSE:
+                ErrorResponse response = msg.cast();
+
+                out.writeVarInt(response.requestId());
+                out.writeUTF(response.stackTrace());
+
+                break;
             default: {
                 throw new IllegalArgumentException("Unexpected message type: " + type);
             }
@@ -284,6 +300,38 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
         long loBits = in.readLong();
 
         return new MessagingChannelId(hiBits, loBits);
+    }
+
+    private T decodeAffinityRequestPayload(int requestId, int affinity, DataReader in) throws RequestPayloadDecodeException {
+        try {
+            return delegate.decode(in);
+        } catch (Throwable t) {
+            throw new RequestPayloadDecodeException(requestId, OptionalInt.of(affinity), t);
+        }
+    }
+
+    private T decodeRequestPayload(int requestId, DataReader in) throws RequestPayloadDecodeException {
+        try {
+            return delegate.decode(in);
+        } catch (Throwable t) {
+            throw new RequestPayloadDecodeException(requestId, OptionalInt.empty(), t);
+        }
+    }
+
+    private T decodeResponsePayload(int requestId, DataReader in) throws ResponsePayloadDecodeException {
+        try {
+            return delegate.decode(in);
+        } catch (Throwable t) {
+            throw new ResponsePayloadDecodeException(requestId, t);
+        }
+    }
+
+    private T decodeNotificationPayload(DataReader in) throws NotificationPayloadDecodeException {
+        try {
+            return delegate.decode(in);
+        } catch (Throwable t) {
+            throw new NotificationPayloadDecodeException(t);
+        }
     }
 
     private static int setType(int flags, MessagingProtocol.Type type) {
@@ -304,5 +352,10 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
     private static boolean isRetransmit(byte flags) {
         return (flags & MASK_RETRANSMIT) != 0;
+    }
+
+    @Override
+    public String toString() {
+        return ToString.format(this);
     }
 }

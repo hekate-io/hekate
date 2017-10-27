@@ -91,7 +91,9 @@ public interface MessageInterceptor<T> {
      * @return Transformed message or the original message if transformation is not required. Returning {@code null} will be interpreted as
      * if no transformation had been applied and the original message should be send to the target node.
      */
-    T interceptOutbound(T msg, OutboundContext ctx);
+    default T interceptOutbound(T msg, OutboundContext ctx) {
+        return msg;
+    }
 
     /**
      * Intercepts the inbound message.
@@ -102,7 +104,9 @@ public interface MessageInterceptor<T> {
      * @return Transformed message or the original message if transformation is not required. Returning {@code null} will be interpreted as
      * if no transformation had been applied and the original message should be processed by the {@link MessageReceiver}.
      */
-    T interceptInbound(T msg, InboundContext ctx);
+    default T interceptInbound(T msg, InboundContext ctx) {
+        return msg;
+    }
 
     /**
      * Intercepts the outbound reply.
@@ -116,5 +120,7 @@ public interface MessageInterceptor<T> {
      * @see Message#reply(Object)
      * @see Message#partialReply(Object)
      */
-    T interceptReply(T msg, ReplyContext ctx);
+    default T interceptReply(T msg, ReplyContext ctx) {
+        return msg;
+    }
 }

@@ -42,7 +42,7 @@ public abstract class TaskServiceTestBase extends HekateNodeParamTestBase {
     }
 
     public static class NonSerializableTestException extends RuntimeException {
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 1;
 
         private final NonSerializable nonSerializable = new NonSerializable();
 
@@ -120,7 +120,7 @@ public abstract class TaskServiceTestBase extends HekateNodeParamTestBase {
             assertTrue(getStacktrace(e.getCause()), ErrorUtils.isCausedBy(type, e.getCause()));
 
             if (check != null) {
-                check.accept(ErrorUtils.findCause(e.getCause(), type));
+                check.accept(ErrorUtils.findCause(type, e.getCause()));
             }
         }
     }

@@ -37,7 +37,7 @@ public class ConfigCheckTest extends HekateTestBase {
 
     @Test
     public void testThatFailure() {
-        expectErrorMessage(HCE, PREFIX + "Test message", () ->
+        expectExactMessage(HCE, PREFIX + "Test message", () ->
             check.that(Boolean.valueOf("false"), "Test message")
         );
 
@@ -46,14 +46,14 @@ public class ConfigCheckTest extends HekateTestBase {
 
     @Test
     public void testFail() {
-        expectErrorMessage(HCE, PREFIX + "java.lang.Exception: test error message", () ->
+        expectExactMessage(HCE, PREFIX + "java.lang.Exception: test error message", () ->
             check.fail(new Exception("test error message"))
         );
     }
 
     @Test
     public void testIsPowerOfTwo() {
-        expectErrorMessage(HCE, PREFIX + "Ten must be a power of two [value=10]", () ->
+        expectExactMessage(HCE, PREFIX + "Ten must be a power of two [value=10]", () ->
             check.isPowerOfTwo(10, "Ten")
         );
 
@@ -62,7 +62,7 @@ public class ConfigCheckTest extends HekateTestBase {
 
     @Test
     public void testRange() {
-        expectErrorMessage(HCE, PREFIX + "Ten must be within the 1..5 range.", () ->
+        expectExactMessage(HCE, PREFIX + "Ten must be within the 1..5 range.", () ->
             check.range(10, 1, 5, "Ten")
         );
 
@@ -74,11 +74,11 @@ public class ConfigCheckTest extends HekateTestBase {
 
     @Test
     public void testPositiveInt() {
-        expectErrorMessage(HCE, PREFIX + "Zero must be greater than 0 [value=0]", () ->
+        expectExactMessage(HCE, PREFIX + "Zero must be greater than 0 [value=0]", () ->
             check.positive(0, "Zero")
         );
 
-        expectErrorMessage(HCE, PREFIX + "Negative must be greater than 0 [value=-1]", () ->
+        expectExactMessage(HCE, PREFIX + "Negative must be greater than 0 [value=-1]", () ->
             check.positive(-1, "Negative")
         );
 
@@ -87,11 +87,11 @@ public class ConfigCheckTest extends HekateTestBase {
 
     @Test
     public void testPositiveLong() {
-        expectErrorMessage(HCE, PREFIX + "Zero must be greater than 0 [value=0]", () ->
+        expectExactMessage(HCE, PREFIX + "Zero must be greater than 0 [value=0]", () ->
             check.positive(0L, "Zero")
         );
 
-        expectErrorMessage(HCE, PREFIX + "Negative must be greater than 0 [value=-1]", () ->
+        expectExactMessage(HCE, PREFIX + "Negative must be greater than 0 [value=-1]", () ->
             check.positive(-1L, "Negative")
         );
 
@@ -100,7 +100,7 @@ public class ConfigCheckTest extends HekateTestBase {
 
     @Test
     public void testNonNegativeInt() {
-        expectErrorMessage(HCE, PREFIX + "Negative must be greater than or equals to 0 [value=-1]", () ->
+        expectExactMessage(HCE, PREFIX + "Negative must be greater than or equals to 0 [value=-1]", () ->
             check.nonNegative(-1, "Negative")
         );
 
@@ -110,7 +110,7 @@ public class ConfigCheckTest extends HekateTestBase {
 
     @Test
     public void testUnique() {
-        expectErrorMessage(HCE, PREFIX + "duplicated One [value=one]", () ->
+        expectExactMessage(HCE, PREFIX + "duplicated One [value=one]", () ->
             check.unique("one", Collections.singleton("one"), "One")
         );
 
@@ -121,7 +121,7 @@ public class ConfigCheckTest extends HekateTestBase {
 
     @Test
     public void testIsTrue() {
-        expectErrorMessage(HCE, PREFIX + "True Epic fail", () ->
+        expectExactMessage(HCE, PREFIX + "True Epic fail", () ->
             check.isTrue(Boolean.valueOf("false"), "True Epic fail")
         );
 
@@ -132,14 +132,14 @@ public class ConfigCheckTest extends HekateTestBase {
     public void testIsFalse() {
         check.isFalse(false, "Success");
 
-        expectErrorMessage(HCE, PREFIX + "Epic fail", () ->
+        expectExactMessage(HCE, PREFIX + "Epic fail", () ->
             check.isFalse(true, "Epic fail")
         );
     }
 
     @Test
     public void testNotNull() {
-        expectErrorMessage(HCE, PREFIX + "Epic fail must be not null.", () ->
+        expectExactMessage(HCE, PREFIX + "Epic fail must be not null.", () ->
             check.notNull(null, "Epic fail")
         );
 
@@ -148,19 +148,19 @@ public class ConfigCheckTest extends HekateTestBase {
 
     @Test
     public void testNotEmpty() {
-        expectErrorMessage(HCE, PREFIX + "Epic fail must be not null.", () ->
+        expectExactMessage(HCE, PREFIX + "Epic fail must be not null.", () ->
             check.notEmpty(null, "Epic fail")
         );
 
-        expectErrorMessage(HCE, PREFIX + "Epic fail must be a non-empty string.", () ->
+        expectExactMessage(HCE, PREFIX + "Epic fail must be a non-empty string.", () ->
             check.notEmpty("", "Epic fail")
         );
 
-        expectErrorMessage(HCE, PREFIX + "Epic fail must be a non-empty string.", () ->
+        expectExactMessage(HCE, PREFIX + "Epic fail must be a non-empty string.", () ->
             check.notEmpty("  ", "Epic fail")
         );
 
-        expectErrorMessage(HCE, PREFIX + "Epic fail must be a non-empty string.", () ->
+        expectExactMessage(HCE, PREFIX + "Epic fail must be a non-empty string.", () ->
             check.notEmpty("\n", "Epic fail")
         );
 

@@ -16,8 +16,8 @@
 
 package io.hekate.task.internal;
 
-import io.hekate.core.internal.util.ErrorUtils;
-import io.hekate.messaging.unicast.ReplyFailure;
+import io.hekate.cluster.ClusterNode;
+import io.hekate.messaging.unicast.FailureResponse;
 import io.hekate.task.ApplicableTask;
 import io.hekate.task.RemoteTaskException;
 import io.hekate.util.format.ToString;
@@ -35,7 +35,9 @@ abstract class TaskProtocol {
 
         CALL_TASK,
 
-        APPLY_TASK,
+        APPLY_SINGLE_TASK,
+
+        APPLY_BULK_TASK,
 
         NULL_RESULT,
 
@@ -78,19 +80,19 @@ abstract class TaskProtocol {
         }
     }
 
-    static class ApplyTask extends TaskProtocol implements Externalizable {
+    static class ApplyBulkTask extends TaskProtocol implements Externalizable {
         private static final long serialVersionUID = 1;
 
         private ApplicableTask<Object, Object> task;
 
         private List<Object> args;
 
-        public ApplyTask(ApplicableTask<Object, Object> task, List<Object> args) {
+        public ApplyBulkTask(ApplicableTask<Object, Object> task, List<Object> args) {
             this.task = task;
             this.args = args;
         }
 
-        public ApplyTask() {
+        public ApplyBulkTask() {
             // Constructor for serialization.
         }
 
@@ -104,7 +106,7 @@ abstract class TaskProtocol {
 
         @Override
         public Type type() {
-            return Type.APPLY_TASK;
+            return Type.APPLY_BULK_TASK;
         }
 
         @Override
@@ -133,6 +135,51 @@ abstract class TaskProtocol {
         }
     }
 
+    static class ApplySingleTask extends TaskProtocol implements Externalizable {
+        private static final long serialVersionUID = 1;
+
+        private ApplicableTask<Object, Object> task;
+
+        private Object arg;
+
+        public ApplySingleTask(ApplicableTask<Object, Object> task, Object arg) {
+            this.task = task;
+            this.arg = arg;
+        }
+
+        public ApplySingleTask() {
+            // Constructor for serialization.
+        }
+
+        public ApplicableTask<Object, Object> task() {
+            return task;
+        }
+
+        public Object arg() {
+            return arg;
+        }
+
+        @Override
+        public Type type() {
+            return Type.APPLY_SINGLE_TASK;
+        }
+
+        @Override
+        public void writeExternal(ObjectOutput out) throws IOException {
+            out.writeObject(task);
+
+            out.writeObject(arg);
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+            task = (ApplicableTask<Object, Object>)in.readObject();
+
+            arg = in.readObject();
+        }
+    }
+
     static final class NullResult extends TaskProtocol {
         public static final NullResult INSTANCE = new NullResult();
 
@@ -146,19 +193,15 @@ abstract class TaskProtocol {
         }
     }
 
-    static class ErrorResult extends TaskProtocol implements ReplyFailure {
-        private final String errorStackTrace;
+    static class ErrorResult extends TaskProtocol implements FailureResponse {
+        private final Throwable cause;
 
         public ErrorResult(Throwable cause) {
-            errorStackTrace = ErrorUtils.stackTrace(cause);
+            this.cause = cause;
         }
 
-        public ErrorResult(String errorStackTrace) {
-            this.errorStackTrace = errorStackTrace;
-        }
-
-        public String errorStackTrace() {
-            return errorStackTrace;
+        public Throwable cause() {
+            return cause;
         }
 
         @Override
@@ -167,8 +210,8 @@ abstract class TaskProtocol {
         }
 
         @Override
-        public Throwable asError() {
-            return new RemoteTaskException(errorStackTrace());
+        public Throwable asError(ClusterNode fromNode) {
+            return new RemoteTaskException(fromNode.id(), cause);
         }
     }
 

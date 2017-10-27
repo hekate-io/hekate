@@ -37,8 +37,11 @@ import io.hekate.task.RunnableTask;
 import io.hekate.task.TaskException;
 import io.hekate.task.TaskFuture;
 import io.hekate.task.TaskService;
-import io.hekate.task.internal.TaskProtocol.ApplyTask;
+import io.hekate.task.internal.TaskProtocol.ApplyBulkTask;
+import io.hekate.task.internal.TaskProtocol.ApplySingleTask;
+import io.hekate.task.internal.TaskProtocol.CallTask;
 import io.hekate.task.internal.TaskProtocol.ObjectResult;
+import io.hekate.task.internal.TaskProtocol.RunTask;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,6 +77,8 @@ class FilteredTaskService implements TaskService {
 
                     complete(result);
                 }
+            } else if (err instanceof TaskException) {
+                completeExceptionally(err);
             } else {
                 completeExceptionally(new TaskException("Task execution failed [task=" + task + ']', err));
             }
@@ -110,6 +115,8 @@ class FilteredTaskService implements TaskService {
                 });
 
                 complete(new DefaultMultiNodeResult<>(aggregate.nodes(), aggregate.errors(), values));
+            } else if (err instanceof TaskException) {
+                completeExceptionally(err);
             } else {
                 completeExceptionally(new TaskException("Task execution failed [task=" + task + ']', err));
             }
@@ -152,6 +159,8 @@ class FilteredTaskService implements TaskService {
                         complete(result);
                     }
                 }
+            } else if (err instanceof TaskException) {
+                completeExceptionally(err);
             } else {
                 completeExceptionally(new TaskException("Task execution failed [task=" + task + ']', err));
             }
@@ -218,7 +227,7 @@ class FilteredTaskService implements TaskService {
 
         MultiNodeTaskFuture<Void> future = new MultiNodeTaskFuture<>(task);
 
-        channel.aggregate(new TaskProtocol.RunTask(task), future);
+        channel.aggregate(new RunTask(task), future);
 
         return future;
     }
@@ -229,7 +238,7 @@ class FilteredTaskService implements TaskService {
 
         MultiNodeTaskFuture<T> future = new MultiNodeTaskFuture<>(task);
 
-        channel.aggregate(new TaskProtocol.CallTask(task), future);
+        channel.aggregate(new CallTask(task), future);
 
         return future;
     }
@@ -240,7 +249,7 @@ class FilteredTaskService implements TaskService {
 
         SingleTaskFuture<Object> future = new SingleTaskFuture<>(task);
 
-        channel.request(new TaskProtocol.RunTask(task), future);
+        channel.request(new RunTask(task), future);
 
         return future;
     }
@@ -251,7 +260,7 @@ class FilteredTaskService implements TaskService {
 
         SingleTaskFuture<T> future = new SingleTaskFuture<>(task);
 
-        channel.request(new TaskProtocol.CallTask(task), future);
+        channel.request(new CallTask(task), future);
 
         return future;
     }
@@ -261,7 +270,14 @@ class FilteredTaskService implements TaskService {
         ArgAssert.notNull(arg, "Argument");
         ArgAssert.notNull(task, "Task");
 
-        return call(() -> task.apply(arg));
+        SingleTaskFuture<V> future = new SingleTaskFuture<>(task);
+
+        @SuppressWarnings("unchecked")
+        ApplicableTask<Object, Object> objTask = (ApplicableTask<Object, Object>)task;
+
+        channel.request(new ApplySingleTask(objTask, arg), future);
+
+        return future;
     }
 
     @Override
@@ -295,7 +311,7 @@ class FilteredTaskService implements TaskService {
 
         int taskCapacity = argsSize / nodesSize + 1;
 
-        Map<ClusterNodeId, ApplyTask> msgByNode = new HashMap<>(Math.min(nodesSize, argsSize), 1.0f);
+        Map<ClusterNodeId, ApplyBulkTask> msgByNode = new HashMap<>(Math.min(nodesSize, argsSize), 1.0f);
 
         for (Iterator<T> argIt = args.iterator(); argIt.hasNext(); ) {
             for (Iterator<ClusterNode> topologyIt = nodes.iterator(); topologyIt.hasNext() && argIt.hasNext(); ) {
@@ -304,12 +320,12 @@ class FilteredTaskService implements TaskService {
 
                 ArgAssert.check(arg != null, "Arguments collection contains null value.");
 
-                ApplyTask msg = msgByNode.get(nodeId);
+                ApplyBulkTask msg = msgByNode.get(nodeId);
 
                 if (msg == null) {
                     List<Object> batchArgs = new ArrayList<>(taskCapacity);
 
-                    msg = new ApplyTask(untypedTask, batchArgs);
+                    msg = new ApplyBulkTask(untypedTask, batchArgs);
 
                     msgByNode.put(nodeId, msg);
                 }
@@ -320,10 +336,10 @@ class FilteredTaskService implements TaskService {
 
         ApplyTaskFuture<V> future = new ApplyTaskFuture<>(task, msgByNode.size(), argsSize);
 
-        MessagingChannel<TaskProtocol> lb = channel.withLoadBalancer(LoadBalancers.roundRobin());
+        MessagingChannel<TaskProtocol> taskChannel = channel.withLoadBalancer(LoadBalancers.roundRobin());
 
-        for (ApplyTask msg : msgByNode.values()) {
-            lb.request(msg, future);
+        for (ApplyBulkTask msg : msgByNode.values()) {
+            taskChannel.request(msg, future);
         }
 
         return future;

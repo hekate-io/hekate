@@ -18,6 +18,7 @@ package io.hekate.network.internal.netty;
 
 import io.hekate.HekateTestBase;
 import io.hekate.codec.Codec;
+import io.hekate.codec.CodecException;
 import io.hekate.codec.DataReader;
 import io.hekate.codec.DataWriter;
 import io.netty.buffer.ByteBuf;
@@ -219,7 +220,8 @@ public class NettyMessageTest extends HekateTestBase {
             thread.awaitTermination(3, TimeUnit.SECONDS);
         }
 
-        assertSame(TEST_ERROR, expected);
+        assertTrue(expected.toString(), expected instanceof CodecException);
+        assertSame(TEST_ERROR, expected.getCause());
         assertEquals(1, buf.refCnt());
     }
 }

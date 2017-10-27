@@ -73,12 +73,18 @@ class NettyMessage extends InputStream implements DataReader, NetworkMessage<Obj
                 if (log != null && log.isDebugEnabled()) {
                     log.debug("Message decoded [message={}]", decoded);
                 }
-            } catch (IOException | RuntimeException | Error e) {
+            } catch (CodecException e) {
                 // Mark buffer as fully consumed in case of an error
                 // in order to suppress errors reporting on dirty buffer.
                 buf.skipBytes(buf.readableBytes());
 
                 throw e;
+            } catch (IOException | RuntimeException | Error e) {
+                // Mark buffer as fully consumed in case of an error
+                // in order to suppress errors reporting on dirty buffer.
+                buf.skipBytes(buf.readableBytes());
+
+                throw new CodecException("Failed to decode message.", e);
             }
         }
 

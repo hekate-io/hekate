@@ -19,7 +19,10 @@ package io.hekate.task.internal;
 import io.hekate.HekateTestContext;
 import io.hekate.core.Hekate;
 import io.hekate.core.internal.HekateTestNode;
+import io.hekate.core.internal.util.ErrorUtils;
+import io.hekate.messaging.MessagingException;
 import io.hekate.task.MultiNodeResult;
+import io.hekate.task.RemoteTaskException;
 import java.nio.channels.ClosedChannelException;
 import java.util.List;
 import org.junit.Test;
@@ -104,10 +107,16 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
                 assertTrue(errResult.results().isEmpty());
                 nodes.forEach(n -> {
                     assertFalse(errResult.isSuccess(n.localNode()));
-                    assertNotNull(errResult.errorOf(n.localNode()));
+                    Throwable err = errResult.errorOf(n.localNode());
 
-                    assertTrue(errResult.errorOf(n.localNode()).getMessage().contains(TestAssertionError.class.getName()));
-                    assertTrue(errResult.errorOf(n.localNode()).getMessage().contains(TEST_ERROR_MESSAGE));
+                    assertNotNull(err);
+                    assertSame(RemoteTaskException.class, err.getClass());
+
+                    RemoteTaskException taskErr = (RemoteTaskException)err;
+
+                    assertEquals(n.localNode().id(), taskErr.remoteNodeId());
+                    assertEquals(TEST_ERROR.getClass(), taskErr.getCause().getClass());
+                    assertEquals(TEST_ERROR.getMessage(), taskErr.getCause().getMessage());
                 });
 
                 NODES.clear();
@@ -135,11 +144,13 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
                 nodes.forEach(n -> {
                     if (n.cluster().topology().youngest().equals(n.localNode())) {
                         assertFalse(partErrResult.isSuccess(n.localNode()));
-                        assertNotNull(partErrResult.errorOf(n.localNode()));
-                        assertNotNull(partErrResult.errors().get(n.localNode()));
 
-                        assertTrue(partErrResult.errorOf(n.localNode()).getMessage().contains(TestAssertionError.class.getName()));
-                        assertTrue(partErrResult.errorOf(n.localNode()).getMessage().contains(TEST_ERROR_MESSAGE));
+                        RemoteTaskException err = (RemoteTaskException)partErrResult.errorOf(n.localNode());
+
+                        assertNotNull(err);
+                        assertSame(err, partErrResult.errors().get(n.localNode()));
+
+                        assertEquals(TEST_ERROR.getClass(), err.getCause().getClass());
                     } else {
                         assertTrue(partErrResult.isSuccess(n.localNode()));
                     }
@@ -171,7 +182,11 @@ public class TaskBroadcastTest extends TaskServiceTestBase {
         }));
 
         assertFalse(result.isSuccess());
-        assertEquals(ClosedChannelException.class, result.errorOf(target.localNode()).getClass());
+
+        Throwable error = result.errorOf(target.localNode());
+
+        assertSame(MessagingException.class, error.getClass());
+        assertTrue(ErrorUtils.stackTrace(error), ErrorUtils.isCausedBy(ClosedChannelException.class, error));
 
         source.awaitForStatus(Hekate.State.DOWN);
 

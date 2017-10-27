@@ -182,7 +182,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
             assertEquals(new HashSet<>(result.results()), result.stream().collect(Collectors.toSet()));
             assertNull(result.errorOf(channel.getNode().localNode()));
             assertNull(result.resultOf(channel.getNode().localNode()));
-            assertFalse(result.isSuccess(channel.getNode().localNode()));
+            assertTrue(result.isSuccess(channel.getNode().localNode()));
             assertTrue(result.toString().startsWith(AggregateResult.class.getSimpleName()));
         });
     }

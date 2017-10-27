@@ -17,7 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.failover.FailoverContext;
-import java.nio.channels.ClosedChannelException;
+import io.hekate.messaging.MessagingRemoteException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,7 +50,7 @@ public class FailoverContextTest extends FailoverTestBase {
             FailoverContext ctx = contexts.get(i);
 
             assertEquals(i, ctx.attempt());
-            assertSame(ClosedChannelException.class, ctx.error().getClass());
+            assertSame(MessagingRemoteException.class, ctx.error().getClass());
             assertEquals(receiver.getNode().localNode(), ctx.failedNode());
         }
     }

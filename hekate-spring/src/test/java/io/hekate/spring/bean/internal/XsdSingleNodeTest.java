@@ -16,6 +16,7 @@
 
 package io.hekate.spring.bean.internal;
 
+import foo.bar.SomeRpcService;
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterService;
 import io.hekate.coordinate.CoordinationService;
@@ -32,6 +33,7 @@ import io.hekate.metrics.local.CounterMetric;
 import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkService;
+import io.hekate.rpc.RpcService;
 import io.hekate.task.TaskService;
 import io.hekate.util.format.ToString;
 import org.junit.Test;
@@ -64,6 +66,14 @@ public class XsdSingleNodeTest extends HekateTestBase {
     @Autowired
     @Qualifier("messaging")
     private MessagingService messaging;
+
+    @Autowired
+    @Qualifier("rpc")
+    private RpcService rpc;
+
+    @Autowired
+    @Qualifier("someRpcClient")
+    private SomeRpcService rpcClient;
 
     @Autowired
     @Qualifier("tasks")
@@ -120,6 +130,8 @@ public class XsdSingleNodeTest extends HekateTestBase {
         assertNotNull(locks);
         assertNotNull(messaging);
         assertNotNull(tasks);
+        assertNotNull(rpc);
+        assertNotNull(rpcClient);
         assertNotNull(metrics);
         assertNotNull(clusterMetrics);
         assertNotNull(coordination);

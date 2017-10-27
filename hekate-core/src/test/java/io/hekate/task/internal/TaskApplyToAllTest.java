@@ -19,6 +19,7 @@ package io.hekate.task.internal;
 import io.hekate.HekateTestContext;
 import io.hekate.core.Hekate;
 import io.hekate.core.internal.HekateTestNode;
+import io.hekate.messaging.MessagingRemoteException;
 import io.hekate.messaging.UnknownRouteException;
 import io.hekate.task.RemoteTaskException;
 import io.hekate.task.TaskException;
@@ -124,12 +125,12 @@ public class TaskApplyToAllTest extends TaskServiceTestBase {
 
             for (HekateTestNode node : nodes) {
                 TaskFuture<Collection<Object>> future = node.tasks().applyToAll(Arrays.asList(1, 2, 3), arg -> {
-                    throw new TaskException(TEST_ERROR_MESSAGE);
+                    throw new Exception(TEST_ERROR_MESSAGE);
                 });
 
                 assertErrorCausedBy(future, RemoteTaskException.class, err -> {
-                    assertTrue(err.getMessage().contains(TaskException.class.getName()));
-                    assertTrue(err.getMessage().contains(TEST_ERROR_MESSAGE));
+                    assertSame(Exception.class, err.getCause().getClass());
+                    assertEquals(TEST_ERROR_MESSAGE, err.getCause().getMessage());
                 });
             }
 
@@ -145,15 +146,15 @@ public class TaskApplyToAllTest extends TaskServiceTestBase {
             for (HekateTestNode node : nodes) {
                 TaskFuture<Collection<Object>> future = node.tasks().applyToAll(Arrays.asList(1, 2, 3), arg -> {
                     if (arg == 2) {
-                        throw new TaskException(TEST_ERROR_MESSAGE);
+                        throw new Exception(TEST_ERROR_MESSAGE);
                     } else {
                         return arg;
                     }
                 });
 
                 assertErrorCausedBy(future, RemoteTaskException.class, err -> {
-                    assertTrue(err.getMessage().contains(TaskException.class.getName()));
-                    assertTrue(err.getMessage().contains(TEST_ERROR_MESSAGE));
+                    assertSame(Exception.class, err.getCause().getClass());
+                    assertEquals(TEST_ERROR_MESSAGE, err.getCause().getMessage());
                 });
             }
 
@@ -171,10 +172,9 @@ public class TaskApplyToAllTest extends TaskServiceTestBase {
                     throw TEST_ERROR;
                 });
 
-                assertErrorCausedBy(future, RemoteTaskException.class, err -> {
-                    assertTrue(err.getMessage().contains(TEST_ERROR.getClass().getName()));
-                    assertTrue(err.getMessage().contains(TEST_ERROR.getMessage()));
-                });
+                assertErrorCausedBy(future, RemoteTaskException.class, err ->
+                    assertSame(TEST_ERROR.getClass(), err.getCause().getClass())
+                );
             }
 
             nodes.forEach(n -> n.leaveAsync().join());
@@ -195,14 +195,9 @@ public class TaskApplyToAllTest extends TaskServiceTestBase {
                     }
                 });
 
-                assertErrorCausedBy(future, RemoteTaskException.class, err -> {
-                    assertTrue(err.getMessage().contains(TEST_ERROR.getClass().getName()));
-                    assertTrue(err.getMessage().contains(TEST_ERROR.getMessage()));
-
-                    RemoteTaskException remote = (RemoteTaskException)err;
-
-                    assertTrue(remote.getRemoteStackTrace(), remote.getRemoteStackTrace().contains(TEST_ERROR.getClass().getName()));
-                });
+                assertErrorCausedBy(future, RemoteTaskException.class, err ->
+                    assertSame(TEST_ERROR.getClass(), err.getCause().getClass())
+                );
             }
 
             nodes.forEach(n -> n.leaveAsync().join());
@@ -223,16 +218,18 @@ public class TaskApplyToAllTest extends TaskServiceTestBase {
     @Test
     public void testNonSerializableException() throws Exception {
         repeat(3, i -> {
-            List<HekateTestNode> nodes = createAndJoin(i + 1);
+            List<HekateTestNode> nodes = createAndJoin(i + 2);
 
             for (HekateTestNode node : nodes) {
-                TaskFuture<Collection<Object>> future = node.tasks().applyToAll(Arrays.asList(1, 2, 3), arg -> {
+                TaskFuture<Collection<Object>> future = node.tasks().forRemotes().applyToAll(Arrays.asList(1, 2, 3), arg -> {
                     throw new NonSerializableTestException();
                 });
 
-                assertErrorCausedBy(future, RemoteTaskException.class, err ->
-                    assertTrue(err.getMessage().contains(NonSerializableTestException.class.getName()))
-                );
+                assertErrorCausedBy(future, TaskException.class, err -> {
+                    MessagingRemoteException msgErr = (MessagingRemoteException)err.getCause();
+
+                    assertTrue(msgErr.getMessage().contains(NonSerializableTestException.class.getName()));
+                });
             }
 
             nodes.forEach(n -> n.leaveAsync().join());
@@ -283,7 +280,7 @@ public class TaskApplyToAllTest extends TaskServiceTestBase {
 
                 TaskFuture<Collection<Object>> future = tasks.applyToAll(Arrays.asList(1, 2, 3), arg -> {
                     if (arg == 2 && (attempts.get() == 0 || ThreadLocalRandom.current().nextBoolean())) {
-                        throw new TaskException(TEST_ERROR_MESSAGE);
+                        throw new Exception(TEST_ERROR_MESSAGE);
                     } else {
                         return arg;
                     }

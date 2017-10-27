@@ -20,6 +20,7 @@ import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
+import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.internal.MessagingProtocol.Connect;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkClientCallback;
@@ -30,7 +31,7 @@ import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
 
-class NetworkOutboundConnection<T> extends NetworkConnectionBase<T> {
+class MessagingConnectionNetOut<T> extends MessagingConnectionNetBase<T> {
     private final ClusterAddress address;
 
     private final NetworkClient<MessagingProtocol> net;
@@ -43,7 +44,7 @@ class NetworkOutboundConnection<T> extends NetworkConnectionBase<T> {
 
     private int epoch;
 
-    public NetworkOutboundConnection(ClusterAddress address, NetworkClient<MessagingProtocol> net, MessagingGateway<T> gateway,
+    public MessagingConnectionNetOut(ClusterAddress address, NetworkClient<MessagingProtocol> net, MessagingGateway<T> gateway,
         MessagingEndpoint<T> endpoint) {
         super(net, gateway, endpoint);
 
@@ -83,7 +84,8 @@ class NetworkOutboundConnection<T> extends NetworkConnectionBase<T> {
                         }
                     }
 
-                    discardRequests(localEpoch, cause.orElseGet(ClosedChannelException::new));
+                    discardRequests(localEpoch, new MessagingException("Messaging operation failed [remote-node-id=" + address.id()
+                        + ", address=" + netAddress + ']', cause.orElseGet(ClosedChannelException::new)));
                 }
             });
         }

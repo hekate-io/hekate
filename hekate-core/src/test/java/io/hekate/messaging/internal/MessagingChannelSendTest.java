@@ -17,14 +17,22 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNodeId;
+import io.hekate.codec.CodecException;
+import io.hekate.core.internal.HekateTestNode;
+import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.core.internal.util.Waiting;
 import io.hekate.messaging.MessageInterceptor;
 import io.hekate.messaging.MessagingChannelClosedException;
+import io.hekate.messaging.MessagingChannelConfig;
+import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.MessagingFutureException;
+import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.UnknownRouteException;
 import io.hekate.messaging.unicast.LoadBalancingException;
 import io.hekate.messaging.unicast.SendFuture;
 import io.hekate.network.NetworkFuture;
+import java.io.NotSerializableException;
+import java.net.Socket;
 import java.nio.channels.ClosedChannelException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -34,6 +42,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -192,8 +201,8 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
                 sender.sendWithSyncCallback(receiver.getNodeId(), "request" + i);
 
                 fail("Error was expected.");
-            } catch (ClosedChannelException e) {
-                // No-op.
+            } catch (MessagingException e) {
+                assertSame(ErrorUtils.stackTrace(e), ClosedChannelException.class, e.getCause().getClass());
             }
         });
     }
@@ -468,5 +477,33 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
                 to.awaitForMessage("test2-" + from.getNodeId() + "-###-@@@");
             }
         }
+    }
+
+    @Test
+    public void testNonSerializableMessage() throws Exception {
+        createNode(boot -> boot.withService(MessagingServiceFactory.class, f -> {
+            f.withChannel(MessagingChannelConfig.of(Object.class)
+                .withName("test")
+                .withReceiver(msg -> {
+                    // No-op.
+                })
+            );
+        })).join();
+
+        HekateTestNode sender = createNode(boot -> boot.withService(MessagingServiceFactory.class, f -> {
+            f.withChannel(MessagingChannelConfig.of(Object.class)
+                .withName("test")
+            );
+        })).join();
+
+        repeat(5, i -> {
+            MessagingFutureException err = expect(MessagingFutureException.class, () ->
+                get(sender.messaging().channel("test").forRemotes().send(new Socket()))
+            );
+
+            assertSame(err.toString(), MessagingException.class, err.getCause().getClass());
+            assertTrue(err.isCausedBy(CodecException.class));
+            assertTrue(err.isCausedBy(NotSerializableException.class));
+        });
     }
 }

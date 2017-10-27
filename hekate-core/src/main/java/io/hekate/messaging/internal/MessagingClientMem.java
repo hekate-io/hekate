@@ -24,7 +24,7 @@ import io.hekate.util.format.ToStringIgnore;
 import java.util.Collections;
 import java.util.List;
 
-class InMemoryMessagingClient<T> implements MessagingClient<T> {
+class MessagingClientMem<T> implements MessagingClient<T> {
     private static class AsyncEnforcedExecutor implements MessagingExecutor {
         private final MessagingExecutor delegate;
 
@@ -69,9 +69,9 @@ class InMemoryMessagingClient<T> implements MessagingClient<T> {
     private final ClusterNode node;
 
     @ToStringIgnore
-    private final InMemoryConnection<T> conn;
+    private final MessagingConnectionMem<T> conn;
 
-    public InMemoryMessagingClient(ClusterNode node, MessagingGateway<T> gateway) {
+    public MessagingClientMem(ClusterNode node, MessagingGateway<T> gateway) {
         assert node != null : "Cluster node is null.";
         assert gateway != null : "Gateway is null.";
 
@@ -79,7 +79,7 @@ class InMemoryMessagingClient<T> implements MessagingClient<T> {
 
         AsyncEnforcedExecutor asyncEnforced = new AsyncEnforcedExecutor(gateway.async());
 
-        conn = new InMemoryConnection<>(gateway, asyncEnforced);
+        conn = new MessagingConnectionMem<>(gateway, asyncEnforced);
     }
 
     @Override

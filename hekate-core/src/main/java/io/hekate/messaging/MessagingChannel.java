@@ -33,6 +33,7 @@ import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.messaging.unicast.SendFuture;
 import io.hekate.messaging.unicast.StreamFuture;
 import io.hekate.partition.PartitionMapper;
+import io.hekate.partition.RendezvousHashMapper;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
@@ -228,8 +229,14 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * Returns a copy of this channel that will apply the specified affinity key to all messaging operations.
      *
      * <p>
-     * Specifying an affinity key ensures that all messages sent with the same key will always be transmitted over the same network
+     * Specifying the affinity key ensures that all messages submitted with the same key will always be transmitted over the same network
      * connection and will always be processed by the same thread.
+     * </p>
+     *
+     * <p>
+     * {@link #withLoadBalancer(LoadBalancer) Load balancer} can also make use of the affinity key to perform consistent routing of
+     * messages among the cluster node. For example, the default load balancer makes sure that all messages, having the same key, are always
+     * routed to the same node (unless the cluster topology doesn't change).
      * </p>
      *
      * @param affinityKey Affinity key (if {@code null} then affinity key will be cleared).
@@ -314,6 +321,12 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     /**
      * Returns a copy of this channel that will use the specified load balancer and will inherit all other options from this instance.
      *
+     * <p>
+     * If not specified or set to {@code null} then the default load balancer will be used. Default load balancer uses
+     * {@link RendezvousHashMapper} to route messages if {@link #withAffinity(Object) affinit key} is specified or uses random distribution
+     * of messages among the cluster nodes if {@link #withAffinity(Object) affinity key} is not specified.
+     * </p>
+     *
      * @param balancer Load balancer.
      *
      * @return Channel wrapper.
@@ -325,12 +338,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     /**
      * Returns the asynchronous task executor of this channel.
      *
-     * <p>
-     * The returned executor can be a single-thread or a wrapper over the multi-threaded executor depending on the {@link
-     * MessagingChannelConfig#setWorkerThreads(int)} value.
-     * </p>
-     *
      * @return Asynchronous task executor of this channel.
+     *
+     * @see MessagingChannelConfig#setWorkerThreads(int)
      */
     Executor executor();
 }

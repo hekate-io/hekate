@@ -243,7 +243,10 @@ public class ElectionServiceTest extends HekateNodeParamTestBase {
             }
 
             // Stop leader.
-            HekateTestNode oldLeader = nodes.stream().filter(n -> leaders.contains(n.localNode())).findFirst().orElse(null);
+            HekateTestNode oldLeader = nodes.stream()
+                .filter(n -> leaders.contains(n.localNode()))
+                .findFirst()
+                .orElseThrow(AssertionError::new);
 
             ClusterNode oldLeaderNode = oldLeader.localNode();
 

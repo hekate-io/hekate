@@ -121,6 +121,13 @@
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
+            <xsd:element name="rpc" type="rpcServiceType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.rpc.RpcServiceFactory'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
             <xsd:element name="tasks" type="taskServiceType" minOccurs="0" maxOccurs="1">
                 <xsd:annotation>
                     <xsd:documentation>
@@ -1180,6 +1187,117 @@
                         </xsd:annotation>
                     </xsd:attribute>
                 </xsd:complexType>
+            </xsd:element>
+        </xsd:all>
+    </xsd:complexType>
+
+    <xsd:complexType name="rpcServiceType">
+        <xsd:complexContent>
+            <xsd:extension base="abstractServiceType">
+                <xsd:sequence minOccurs="1" maxOccurs="unbounded">
+                    <xsd:choice>
+                        <xsd:element name="client" type="rpcClientType" minOccurs="0">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    Registers 'io.hekate.rpc.RpcClientConfig'.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="server" type="rpcServerType" minOccurs="0">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    Registers 'io.hekate.rpc.RpcServerConfig'.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                    </xsd:choice>
+                </xsd:sequence>
+                <xsd:attribute name="worker-threads" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.rpc.RpcServiceFactory#setWorkerThreads(int)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="nio-threads" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.rpc.RpcServiceFactory#setNioThreads(int)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="idle-socket-timeout-ms" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation>
+                            See javadoc of 'io.hekate.rpc.RpcServiceFactory#setIdleSocketTimeout(int)'.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="rpcClientType">
+        <xsd:all minOccurs="0">
+            <xsd:element name="load-balancer" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of
+                        'io.hekate.rpc.RpcClientConfig#setLoadBalancer(io.hekate.rpc.RpcLoadBalancer)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="failover-policy" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.rpc.RpcClientConfig#setFailoverPolicy(io.hekate.failover.FailoverPolicy)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:all>
+        <xsd:attribute name="name" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation>
+                    Sets the bean name for this RPC client.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="interface" type="xsd:string" use="required">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.rpc.RpcClientConfig#setRpcInterface(java.lang.Class)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="tag" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.rpc.RpcClientConfig#setTag(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="rpcServerType">
+        <xsd:all minOccurs="0">
+            <xsd:element name="tags" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.rpc.RpcServerConfig#setTags(java.util.Set)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="tag" type="xsd:string" minOccurs="0" maxOccurs="unbounded"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="handler" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.rpc.RpcServerConfig#setHandler(java.lang.Object)'.
+                    </xsd:documentation>
+                </xsd:annotation>
             </xsd:element>
         </xsd:all>
     </xsd:complexType>

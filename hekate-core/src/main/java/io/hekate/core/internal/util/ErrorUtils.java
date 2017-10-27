@@ -44,20 +44,20 @@ public final class ErrorUtils {
      * by an error of the specified type.
      */
     public static boolean isCausedBy(Class<? extends Throwable> type, Throwable error) {
-        return findCause(error, type) != null;
+        return findCause(type, error) != null;
     }
 
     /**
      * Returns an error instance of the specified type by scanning the {@link Throwable#getCause() cause} tree.
      *
-     * @param error Error (can be {@code null}).
-     * @param type Error type to search for.
      * @param <T> Error type to search for.
      *
+     * @param type Error type to search for.
+     * @param error Error (can be {@code null}).
      * @return Error or {@code null} if the specified error is not of the specified type and is not {@link Throwable#getCause() caused} by
      * an error of the specified type.
      */
-    public static <T extends Throwable> T findCause(Throwable error, Class<T> type) {
+    public static <T extends Throwable> T findCause(Class<T> type, Throwable error) {
         ArgAssert.notNull(type, "error type");
 
         Throwable cause = error;

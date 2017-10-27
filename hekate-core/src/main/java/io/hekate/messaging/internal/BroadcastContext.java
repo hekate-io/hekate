@@ -77,25 +77,6 @@ class BroadcastContext<T> implements BroadcastResult<T> {
         }
     }
 
-    @Override
-    public Throwable errorOf(ClusterNode node) {
-        synchronized (this) {
-            return errors != null ? errors.get(node) : null;
-        }
-    }
-
-    @Override
-    public boolean isSuccess() {
-        synchronized (this) {
-            return errors == null;
-        }
-    }
-
-    @Override
-    public boolean isSuccess(ClusterNode node) {
-        return errorOf(node) == null;
-    }
-
     public boolean forgetNode(ClusterNode node) {
         synchronized (this) {
             nodes = Collections.unmodifiableSet(nodes.stream().filter(n -> !n.equals(node)).collect(toSet()));

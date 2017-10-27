@@ -15,8 +15,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -80,8 +80,6 @@ public class BroadcastContextTest extends HekateTestBase {
 
     @Test
     public void testOnSendSuccess() {
-        BroadcastCallback<String> callback = callbackMock();
-
         BroadcastContext<String> ctx = ctx(allNodes(), new BroadcastCallback<String>() {
             @Override
             public void onComplete(Throwable err, BroadcastResult<String> result) {
@@ -148,7 +146,7 @@ public class BroadcastContextTest extends HekateTestBase {
 
         ctx.complete();
 
-        verify(callback).onComplete(isNull(Throwable.class), any());
+        verify(callback).onComplete(isNull(), any());
         verifyNoMoreInteractions(callback);
 
         BroadcastContext<String> errCtx = ctx(allNodes(), (err, result) -> {

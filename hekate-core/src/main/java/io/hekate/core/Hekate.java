@@ -35,6 +35,7 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
 import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.NetworkService;
 import io.hekate.network.NetworkServiceFactory;
+import io.hekate.rpc.RpcService;
 import io.hekate.task.TaskService;
 import java.util.List;
 import java.util.Map;
@@ -258,6 +259,13 @@ public interface Hekate extends HekateSupport {
      * @return Service.
      */
     TaskService tasks();
+
+    /**
+     * Returns the {@link RpcService}.
+     *
+     * @return Service.
+     */
+    RpcService rpc();
 
     /**
      * Returns the {@link MessagingService}.

@@ -51,6 +51,9 @@ import io.hekate.metrics.local.LocalMetricsServiceFactory;
 import io.hekate.metrics.local.ProbeConfig;
 import io.hekate.network.NetworkConnectorConfig;
 import io.hekate.network.NetworkServiceFactory;
+import io.hekate.rpc.RpcClientConfig;
+import io.hekate.rpc.RpcServerConfig;
+import io.hekate.rpc.RpcServiceFactory;
 import io.hekate.spring.bean.HekateSpringBootstrap;
 import io.hekate.spring.bean.cluster.ClusterServiceBean;
 import io.hekate.spring.bean.codec.CodecServiceBean;
@@ -67,6 +70,8 @@ import io.hekate.spring.bean.metrics.LocalMetricsServiceBean;
 import io.hekate.spring.bean.metrics.MetricBean;
 import io.hekate.spring.bean.network.NetworkConnectorBean;
 import io.hekate.spring.bean.network.NetworkServiceBean;
+import io.hekate.spring.bean.rpc.RpcClientBean;
+import io.hekate.spring.bean.rpc.RpcServiceBean;
 import io.hekate.spring.bean.task.TaskServiceBean;
 import io.hekate.task.TaskServiceFactory;
 import java.util.ArrayList;
@@ -86,6 +91,7 @@ import org.springframework.beans.factory.support.ManagedMap;
 import org.springframework.beans.factory.support.ManagedSet;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
+import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
 
 import static java.util.stream.Collectors.toSet;
@@ -150,6 +156,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         parseClusterService(rootEl, ctx).ifPresent(services::add);
         parseNetworkService(rootEl, ctx).ifPresent(services::add);
         parseMessagingService(rootEl, ctx).ifPresent(services::add);
+        parseRpcService(rootEl, ctx).ifPresent(services::add);
         parseTaskService(rootEl, ctx).ifPresent(services::add);
         parseLockService(rootEl, ctx).ifPresent(services::add);
         parseCoordinationService(rootEl, ctx).ifPresent(services::add);
@@ -708,10 +715,10 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 setProperty(backPressure, inboundEl, "inHighWatermark", "high-watermark");
             }
 
-            Optional.of(registerInnerBean(backPressure, ctx));
+            return Optional.of(registerInnerBean(backPressure, ctx));
+        } else {
+            return Optional.empty();
         }
-
-        return Optional.empty();
     }
 
     private Optional<RuntimeBeanReference> parseTaskService(Element rootEl, ParserContext ctx) {
@@ -731,6 +738,89 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             }
 
             return Optional.of(registerInnerBean(tasks, ctx));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<RuntimeBeanReference> parseRpcService(Element rootEl, ParserContext ctx) {
+        Element rpcEl = getChildElementByTagName(rootEl, "rpc");
+
+        if (rpcEl != null) {
+            BeanDefinitionBuilder rpc = newBean(RpcServiceFactory.class, rpcEl);
+
+            setProperty(rpc, rpcEl, "workerThreads", "worker-threads");
+            setProperty(rpc, rpcEl, "nioThreads", "nio-threads");
+            setProperty(rpc, rpcEl, "idleSocketTimeout", "idle-socket-timeout-ms");
+
+            // RPC clients.
+            ManagedList<RuntimeBeanReference> clients = new ManagedList<>();
+
+            getChildElementsByTagName(rpcEl, "client").forEach(clientEl -> {
+                BeanDefinitionBuilder client = newBean(RpcClientConfig.class, clientEl);
+
+                // Attributes.
+                setProperty(client, clientEl, "rpcInterface", "interface");
+                setProperty(client, clientEl, "tag", "tag");
+                setProperty(client, clientEl, "timeout", "timeout-ms");
+
+                // Nested elements.
+                setBeanOrRef(client, clientEl, "loadBalancer", "load-balancer", ctx);
+                setBeanOrRef(client, clientEl, "failoverPolicy", "failover-policy", ctx);
+
+                String name = clientEl.getAttribute("name");
+
+                if (!name.isEmpty()) {
+                    BeanDefinitionBuilder clientBean = newBean(RpcClientBean.class, clientEl);
+
+                    setProperty(clientBean, clientEl, "rpcInterface", "interface");
+                    setProperty(clientBean, clientEl, "tag", "tag");
+
+                    deferredBaseBeans.put(clientBean, name);
+                }
+            });
+
+            if (!clients.isEmpty()) {
+                rpc.addPropertyValue("clients", clients);
+            }
+
+            // RPC servers.
+            ManagedList<RuntimeBeanReference> servers = new ManagedList<>();
+
+            getChildElementsByTagName(rpcEl, "server").forEach(serverEl -> {
+                BeanDefinitionBuilder server = newBean(RpcServerConfig.class, serverEl);
+
+                // Attributes.
+                setProperty(server, serverEl, "rpcInterface", "interface");
+                setProperty(server, serverEl, "tag", "tag");
+                setProperty(server, serverEl, "timeout", "timeout-ms");
+
+                // Nested elements.
+                setBeanOrRef(server, serverEl, "handler", "handler", ctx);
+
+                ManagedSet<String> tags = new ManagedSet<>();
+
+                subElements(serverEl, "tags", "tag").stream()
+                    .map(DomUtils::getTextValue)
+                    .filter(it -> !it.isEmpty())
+                    .forEach(tags::add);
+
+                if (!tags.isEmpty()) {
+                    server.addPropertyValue("tags", tags);
+                }
+            });
+
+            if (!servers.isEmpty()) {
+                rpc.addPropertyValue("servers", servers);
+            }
+
+            String id = rpcEl.getAttribute("id");
+
+            if (!id.isEmpty()) {
+                deferredBaseBeans.put(newBean(RpcServiceBean.class, rpcEl), id);
+            }
+
+            return Optional.of(registerInnerBean(rpc, ctx));
         } else {
             return Optional.empty();
         }

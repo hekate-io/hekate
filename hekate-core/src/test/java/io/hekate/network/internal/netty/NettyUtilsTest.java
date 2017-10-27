@@ -13,10 +13,10 @@ import org.junit.Test;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.same;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,7 +33,7 @@ public class NettyUtilsTest extends HekateTestBase {
 
         EventExecutorGroup mock = mock(EventExecutorGroup.class);
 
-        when(mock.shutdownGracefully(anyLong(), anyLong(), any(TimeUnit.class))).thenReturn(genericMock(Future.class));
+        when(mock.shutdownGracefully(anyLong(), anyLong(), any())).thenReturn(genericMock(Future.class));
 
         NettyUtils.shutdown(mock);
 

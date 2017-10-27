@@ -15,7 +15,7 @@ public class ArgAssertTest extends HekateTestBase {
 
     @Test
     public void testCheck() throws Exception {
-        expectErrorMessage(IAE, "test message", () ->
+        expectExactMessage(IAE, "test message", () ->
             ArgAssert.check(false, "test message")
         );
 
@@ -24,7 +24,7 @@ public class ArgAssertTest extends HekateTestBase {
 
     @Test
     public void testNotNull() throws Exception {
-        expectErrorMessage(IAE, "something must be not null.", () ->
+        expectExactMessage(IAE, "something must be not null.", () ->
             ArgAssert.notNull(null, "something")
         );
 
@@ -33,23 +33,23 @@ public class ArgAssertTest extends HekateTestBase {
 
     @Test
     public void testNotEmpty() throws Exception {
-        expectErrorMessage(IAE, "something must be not null.", () ->
+        expectExactMessage(IAE, "something must be not null.", () ->
             ArgAssert.notEmpty(null, "something")
         );
 
-        expectErrorMessage(IAE, "something must have non-whitespace characters.", () ->
+        expectExactMessage(IAE, "something must have non-whitespace characters.", () ->
             ArgAssert.notEmpty("", "something")
         );
 
-        expectErrorMessage(IAE, "something must have non-whitespace characters.", () ->
+        expectExactMessage(IAE, "something must have non-whitespace characters.", () ->
             ArgAssert.notEmpty("   ", "something")
         );
 
-        expectErrorMessage(IAE, "something must have non-whitespace characters.", () ->
+        expectExactMessage(IAE, "something must have non-whitespace characters.", () ->
             ArgAssert.notEmpty("\n", "something")
         );
 
-        expectErrorMessage(IAE, "something must have non-whitespace characters.", () ->
+        expectExactMessage(IAE, "something must have non-whitespace characters.", () ->
             ArgAssert.notEmpty(System.lineSeparator(), "something")
         );
 
@@ -59,7 +59,7 @@ public class ArgAssertTest extends HekateTestBase {
 
     @Test
     public void testIsFalse() throws Exception {
-        expectErrorMessage(IAE, "test message", () ->
+        expectExactMessage(IAE, "test message", () ->
             ArgAssert.isFalse(true, "test message")
         );
 
@@ -68,7 +68,7 @@ public class ArgAssertTest extends HekateTestBase {
 
     @Test
     public void testIsTrue() throws Exception {
-        expectErrorMessage(IAE, "test message", () ->
+        expectExactMessage(IAE, "test message", () ->
             ArgAssert.isTrue(false, "test message")
         );
 

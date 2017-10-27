@@ -158,7 +158,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
         repeat(channels.size() - 1, i -> {
             TestChannel target = channels.get(i);
 
-            NetworkMessagingClient<String> client = (NetworkMessagingClient<String>)source.getImpl().clientOf(target.getNodeId());
+            MessagingClientNet<String> client = (MessagingClientNet<String>)source.getImpl().clientOf(target.getNodeId());
 
             // Induce failure by closing existing network connections.
             get(client.connection().disconnect());
@@ -193,7 +193,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
         repeat(channels.size() - 1, i -> {
             TestChannel target = channels.get(i);
 
-            NetworkMessagingClient<String> client = (NetworkMessagingClient<String>)source.getImpl().clientOf(target.getNodeId());
+            MessagingClientNet<String> client = (MessagingClientNet<String>)source.getImpl().clientOf(target.getNodeId());
 
             // Induce failure by closing existing network connections.
             get(client.connection().disconnect());

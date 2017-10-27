@@ -35,7 +35,6 @@ import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessageQueueTimeoutException;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessageTimeoutException;
-import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
@@ -47,11 +46,11 @@ import io.hekate.messaging.broadcast.AggregateResult;
 import io.hekate.messaging.broadcast.BroadcastCallback;
 import io.hekate.messaging.broadcast.BroadcastFuture;
 import io.hekate.messaging.broadcast.BroadcastResult;
+import io.hekate.messaging.unicast.FailureResponse;
 import io.hekate.messaging.unicast.LoadBalancer;
 import io.hekate.messaging.unicast.LoadBalancerContext;
 import io.hekate.messaging.unicast.RejectedReplyException;
 import io.hekate.messaging.unicast.ReplyDecision;
-import io.hekate.messaging.unicast.ReplyFailure;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.messaging.unicast.ResponseFuture;
@@ -98,7 +97,7 @@ class MessagingGateway<T> implements HekateSupport {
     }
 
     private static class ClientSelectionRejectedException extends Exception {
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 1;
 
         public ClientSelectionRejectedException(Throwable cause) {
             super(null, cause, false, false);
@@ -208,7 +207,7 @@ class MessagingGateway<T> implements HekateSupport {
     private final boolean checkIdle;
 
     @ToStringIgnore
-    private final Set<NetworkInboundConnection<T>> inbound = new HashSet<>();
+    private final Set<MessagingConnectionNetIn<T>> inbound = new HashSet<>();
 
     @ToStringIgnore
     private final StampedLock lock = new StampedLock();
@@ -326,6 +325,10 @@ class MessagingGateway<T> implements HekateSupport {
 
     public MessageInterceptor<T> interceptor() {
         return interceptor;
+    }
+
+    public Logger log() {
+        return log;
     }
 
     public SendFuture send(Object affinityKey, T msg, MessagingOpts<T> opts) {
@@ -527,7 +530,7 @@ class MessagingGateway<T> implements HekateSupport {
                 clients.clear();
 
                 // Close all inbound connections.
-                List<NetworkInboundConnection<T>> localInbound;
+                List<MessagingConnectionNetIn<T>> localInbound;
 
                 synchronized (inbound) {
                     // Create a local copy of inbound connections since they are removing themselves from the list during disconnect.
@@ -537,7 +540,7 @@ class MessagingGateway<T> implements HekateSupport {
                 }
 
                 disconnects.addAll(localInbound.stream()
-                    .map(NetworkInboundConnection::disconnect)
+                    .map(MessagingConnectionNetIn::disconnect)
                     .filter(Objects::nonNull)
                     .collect(toList()));
 
@@ -728,7 +731,7 @@ class MessagingGateway<T> implements HekateSupport {
                 replyMsg = reply.get();
                 replyEndpoint = reply.endpoint();
 
-                err = tryConvertToError(replyMsg);
+                err = tryConvertToError(replyMsg, route.receiver());
 
                 if (err != null) {
                     replyMsg = null;
@@ -817,7 +820,7 @@ class MessagingGateway<T> implements HekateSupport {
         }
     }
 
-    boolean register(NetworkInboundConnection<T> conn) {
+    boolean register(MessagingConnectionNetIn<T> conn) {
         long readLock = lock.readLock();
 
         try {
@@ -835,7 +838,7 @@ class MessagingGateway<T> implements HekateSupport {
         }
     }
 
-    void unregister(NetworkInboundConnection<T> conn) {
+    void unregister(MessagingConnectionNetIn<T> conn) {
         long readLock = lock.readLock();
 
         try {
@@ -1177,9 +1180,9 @@ class MessagingGateway<T> implements HekateSupport {
 
     private MessagingClient<T> createClient(ClusterNode node) {
         if (localNode.equals(node)) {
-            return new InMemoryMessagingClient<>(localNode, this);
+            return new MessagingClientMem<>(localNode, this);
         } else {
-            return new NetworkMessagingClient<>(name, node, net, this, checkIdle);
+            return new MessagingClientNet<>(name, node, net, this, checkIdle);
         }
     }
 
@@ -1273,15 +1276,15 @@ class MessagingGateway<T> implements HekateSupport {
         return new MessagingChannelClosedException("Channel closed [channel=" + name + ']', cause);
     }
 
-    private Throwable tryConvertToError(T replyMsg) {
+    private Throwable tryConvertToError(T replyMsg, ClusterNode fromNode) {
         Throwable err = null;
 
         // Check if message should be converted to an error.
-        if (replyMsg instanceof ReplyFailure) {
-            err = ((ReplyFailure)replyMsg).asError();
+        if (replyMsg instanceof FailureResponse) {
+            err = ((FailureResponse)replyMsg).asError(fromNode);
 
             if (err == null) {
-                err = new IllegalArgumentException(ReplyFailure.class.getSimpleName() + " message returned null error "
+                err = new IllegalArgumentException(FailureResponse.class.getSimpleName() + " message returned null error "
                     + "[message=" + replyMsg + ']');
             }
         }
@@ -1308,6 +1311,6 @@ class MessagingGateway<T> implements HekateSupport {
 
     @Override
     public String toString() {
-        return ToString.format(MessagingChannel.class, this);
+        return ToString.format(this);
     }
 }

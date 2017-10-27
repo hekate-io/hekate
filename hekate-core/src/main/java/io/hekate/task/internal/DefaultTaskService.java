@@ -17,6 +17,7 @@
 package io.hekate.task.internal;
 
 import io.hekate.cluster.ClusterFilter;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.core.HekateException;
@@ -41,7 +42,8 @@ import io.hekate.task.RunnableTask;
 import io.hekate.task.TaskFuture;
 import io.hekate.task.TaskService;
 import io.hekate.task.TaskServiceFactory;
-import io.hekate.task.internal.TaskProtocol.ApplyTask;
+import io.hekate.task.internal.TaskProtocol.ApplyBulkTask;
+import io.hekate.task.internal.TaskProtocol.ApplySingleTask;
 import io.hekate.task.internal.TaskProtocol.CallTask;
 import io.hekate.task.internal.TaskProtocol.ErrorResult;
 import io.hekate.task.internal.TaskProtocol.NullResult;
@@ -311,19 +313,25 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
     private void handleMessage(Message<TaskProtocol> msg) {
         TaskProtocol taskMsg = msg.get();
 
+        ClusterNodeId from = msg.from();
+
         switch (taskMsg.type()) {
             case RUN_TASK: {
                 RunTask runTask = (RunTask)taskMsg;
 
-                try {
-                    Runnable task = runTask.task();
+                Runnable task = runTask.task();
 
+                try {
                     inject(task);
 
                     task.run();
 
                     msg.reply(NullResult.INSTANCE);
                 } catch (Throwable t) {
+                    if (log.isErrorEnabled()) {
+                        log.error("Failed to execute runnable task [from-node-id={}, task={}]", from, task, t);
+                    }
+
                     msg.reply(new ErrorResult(t));
                 }
 
@@ -332,8 +340,9 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
             case CALL_TASK: {
                 CallTask callTask = (CallTask)taskMsg;
 
+                Callable<?> task = callTask.task();
+
                 try {
-                    Callable<?> task = callTask.task();
 
                     inject(task);
 
@@ -345,35 +354,69 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
                         msg.reply(new ObjectResult(result));
                     }
                 } catch (Throwable t) {
+                    if (log.isErrorEnabled()) {
+                        log.error("Failed to execute callable task [from-node-id={}, task={}]", from, task, t);
+                    }
+
                     msg.reply(new ErrorResult(t));
                 }
 
                 break;
             }
-            case APPLY_TASK: {
-                ApplyTask applyTask = (ApplyTask)taskMsg;
+            case APPLY_SINGLE_TASK: {
+                ApplySingleTask applyBulkTask = (ApplySingleTask)taskMsg;
 
-                ApplicableTask<Object, Object> task = applyTask.task();
-                List<Object> args = applyTask.args();
+                ApplicableTask<Object, ?> task = applyBulkTask.task();
+
+                Object arg = applyBulkTask.arg();
+
+                try {
+                    inject(task);
+
+                    Object result = task.apply(arg);
+
+                    msg.reply(new ObjectResult(result));
+                } catch (Throwable t) {
+                    if (log.isErrorEnabled()) {
+                        log.error("Failed to execute apply task [from-node-id={}, task={}, arg={}]", from, task, arg, t);
+                    }
+
+                    msg.reply(new ErrorResult(t));
+                }
+
+                break;
+            }
+            case APPLY_BULK_TASK: {
+                ApplyBulkTask applyBulkTask = (ApplyBulkTask)taskMsg;
+
+                ApplicableTask<Object, Object> task = applyBulkTask.task();
+
+                List<Object> args = applyBulkTask.args();
 
                 if (args.size() == 1) {
                     // Execute on the same thread if this is a single argument task.
+                    Object arg = args.get(0);
+
                     try {
                         inject(task);
 
-                        Object result = task.apply(args.get(0));
+                        Object result = task.apply(arg);
 
                         msg.reply(new ObjectResult(Collections.singleton(result)));
                     } catch (Throwable t) {
+                        if (log.isErrorEnabled()) {
+                            log.error("Failed to execute apply task [from-node-id={}, task={}, arg={}]", from, task, arg, t);
+                        }
+
                         msg.reply(new ErrorResult(t));
                     }
                 } else {
                     // Distribute workload among threads.
                     ApplyTaskCallback callback = new ApplyTaskCallback(args.size(), msg);
 
-                    try {
-                        MessagingChannel<TaskProtocol> channel = msg.endpoint().channel();
+                    MessagingChannel<TaskProtocol> channel = msg.endpoint().channel();
 
+                    try {
                         inject(task);
 
                         for (Object arg : args) {
@@ -385,11 +428,19 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
                                         callback.onResult(result);
                                     }
                                 } catch (Throwable t) {
+                                    if (log.isErrorEnabled()) {
+                                        log.error("Failed to execute apply task [from-node-id={}, task={}, arg={}]", from, task, arg, t);
+                                    }
+
                                     callback.onError(t);
                                 }
                             });
                         }
                     } catch (Throwable t) {
+                        if (log.isErrorEnabled()) {
+                            log.error("Failed to execute multi-arg apply task [from-node-id={}, task={}]", from, task, t);
+                        }
+
                         callback.onError(t);
                     }
                 }

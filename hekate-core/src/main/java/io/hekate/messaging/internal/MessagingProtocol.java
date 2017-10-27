@@ -17,6 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNodeId;
+import io.hekate.codec.CodecException;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannelId;
@@ -26,6 +27,7 @@ import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkSendCallback;
 import io.hekate.util.format.ToString;
+import io.hekate.util.format.ToStringIgnore;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
@@ -49,7 +51,9 @@ abstract class MessagingProtocol {
 
         RESPONSE_CHUNK,
 
-        FINAL_RESPONSE
+        FINAL_RESPONSE,
+
+        ERROR_RESPONSE
     }
 
     abstract static class NoReplyMessage<T> extends MessagingProtocol implements Message<T> {
@@ -169,7 +173,7 @@ abstract class MessagingProtocol {
 
             T transformed = conn.prepareReply(response);
 
-            conn.reply(worker, requestId, transformed, callback);
+            conn.replyFinal(worker, requestId, transformed, callback);
         }
 
         @Override
@@ -194,7 +198,7 @@ abstract class MessagingProtocol {
         @Override
         public void onComplete(MessagingProtocol message, Optional<Throwable> error, NetworkEndpoint<MessagingProtocol> endpoint) {
             error.ifPresent(err ->
-                conn.notifyOnReplyFailure(handle, err)
+                conn.notifyOnRequestFailure(handle, err)
             );
         }
 
@@ -415,8 +419,7 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class ResponseChunk<T> extends NoReplyMessage<T>
-        implements Response<T>, NetworkSendCallback<MessagingProtocol> {
+    static class ResponseChunk<T> extends NoReplyMessage<T> implements Response<T>, NetworkSendCallback<MessagingProtocol> {
         private final int requestId;
 
         private T payload;
@@ -438,7 +441,7 @@ abstract class MessagingProtocol {
             this.payload = payload;
         }
 
-        public boolean prepareSend(MessagingWorker worker, NetworkConnectionBase<T> conn, SendCallback callback) {
+        public boolean prepareSend(MessagingWorker worker, MessagingConnectionNetBase<T> conn, SendCallback callback) {
             this.worker = worker;
             this.conn = conn;
             this.callback = callback;
@@ -547,7 +550,7 @@ abstract class MessagingProtocol {
             this.payload = payload;
         }
 
-        public void prepareSend(MessagingWorker worker, NetworkConnectionBase<T> conn, SendCallback callback) {
+        public void prepareSend(MessagingWorker worker, MessagingConnectionNetBase<T> conn, SendCallback callback) {
             this.worker = worker;
             this.conn = conn;
             this.callback = callback;
@@ -604,7 +607,13 @@ abstract class MessagingProtocol {
             }
 
             if (error.isPresent()) {
-                conn.notifyOnSendFailure(worker, payload, error.get(), callback);
+                Throwable cause = error.get();
+
+                if (cause instanceof CodecException) {
+                    conn.replyError(worker, requestId, cause);
+                }
+
+                conn.notifyOnSendFailure(worker, payload, cause, callback);
             } else {
                 conn.notifyOnSendSuccess(worker, payload, callback);
             }
@@ -623,6 +632,33 @@ abstract class MessagingProtocol {
         @Override
         public String toString() {
             return getClass().getSimpleName() + "[payload=" + payload + ']';
+        }
+    }
+
+    static class ErrorResponse extends MessagingProtocol {
+        private final int requestId;
+
+        @ToStringIgnore
+        private final String stackTrace;
+
+        public ErrorResponse(int requestId, String stackTrace) {
+            super(false);
+
+            this.requestId = requestId;
+            this.stackTrace = stackTrace;
+        }
+
+        public int requestId() {
+            return requestId;
+        }
+
+        public String stackTrace() {
+            return stackTrace;
+        }
+
+        @Override
+        public Type type() {
+            return Type.ERROR_RESPONSE;
         }
     }
 

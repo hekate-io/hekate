@@ -61,6 +61,7 @@ import io.hekate.network.NetworkService;
 import io.hekate.network.internal.NetworkBindCallback;
 import io.hekate.network.internal.NetworkServerFailure;
 import io.hekate.network.internal.NetworkServiceManager;
+import io.hekate.rpc.RpcService;
 import io.hekate.task.TaskService;
 import io.hekate.util.StateGuard;
 import io.hekate.util.format.ToString;
@@ -160,6 +161,8 @@ class HekateNode implements Hekate, Serializable {
 
     private final CodecService codec;
 
+    private final RpcService rpc;
+
     private boolean preTerminated;
 
     private JoinFuture joinFuture = new JoinFuture();
@@ -255,6 +258,7 @@ class HekateNode implements Hekate, Serializable {
         election = services.findService(ElectionService.class);
         coordination = services.findService(CoordinationService.class);
         tasks = services.findService(TaskService.class);
+        rpc = services.findService(RpcService.class);
         localMetrics = services.findService(LocalMetricsService.class);
         clusterMetrics = services.findService(ClusterMetricsService.class);
 
@@ -283,6 +287,11 @@ class HekateNode implements Hekate, Serializable {
     @Override
     public TaskService tasks() {
         return tasks;
+    }
+
+    @Override
+    public RpcService rpc() {
+        return rpc;
     }
 
     @Override
@@ -1097,10 +1106,6 @@ class HekateNode implements Hekate, Serializable {
         return state.get() == INITIALIZING && localNodeId.equals(nodeId);
     }
 
-    private boolean isInitializedForNodeId(ClusterNodeId localNodeId) {
-        return state.get() == INITIALIZED && localNodeId.equals(nodeId);
-    }
-
     private void notifyOnLifecycleChange() {
         for (LifecycleListener listener : listeners) {
             try {
@@ -1135,6 +1140,7 @@ class HekateNode implements Hekate, Serializable {
         core.add(NetworkService.class);
         core.add(ClusterService.class);
         core.add(MessagingService.class);
+        core.add(RpcService.class);
         core.add(TaskService.class);
         core.add(LocalMetricsService.class);
         core.add(ClusterMetricsService.class);

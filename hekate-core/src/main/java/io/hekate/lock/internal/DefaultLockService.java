@@ -185,16 +185,6 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
                         return msg;
                     }
-
-                    @Override
-                    public LockProtocol interceptInbound(LockProtocol msg, InboundContext ctx) {
-                        return msg;
-                    }
-
-                    @Override
-                    public LockProtocol interceptReply(LockProtocol msg, ReplyContext ctx) {
-                        return msg;
-                    }
                 })
                 .withReceiver(this::processMessage)
         );
