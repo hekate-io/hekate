@@ -68,7 +68,7 @@ public class HekateCloudStoreSeedNodeProviderConfigurerTest extends HekateAutoCo
             "hekate.cluster.seed.cloudstore.properties.jclouds.regions:" + testRegion,
         }, CloudStoreEnabledConfig.class);
 
-        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).getSeedNodeProvider();
+        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();
 
         assertTrue(provider instanceof CloudStoreSeedNodeProvider);
 
@@ -87,7 +87,7 @@ public class HekateCloudStoreSeedNodeProviderConfigurerTest extends HekateAutoCo
             "hekate.cluster.seed.cloudstore.enable:false"
         }, CloudStoreDisabledConfig.class);
 
-        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).getSeedNodeProvider();
+        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();
 
         assertFalse(provider instanceof CloudStoreSeedNodeProvider);
     }

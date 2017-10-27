@@ -71,7 +71,7 @@ public class HekateCloudSeedNodeProviderConfigurerTest extends HekateAutoConfigu
             "hekate.cluster.seed.cloud.properties.test.property:test.value",
         }, CloudEnabledConfig.class);
 
-        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).getSeedNodeProvider();
+        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();
 
         assertTrue(provider instanceof CloudSeedNodeProvider);
 
@@ -94,7 +94,7 @@ public class HekateCloudSeedNodeProviderConfigurerTest extends HekateAutoConfigu
             "hekate.cluster.seed.cloud.enable:false"
         }, CloudDisabledConfig.class);
 
-        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).getSeedNodeProvider();
+        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();
 
         assertFalse(provider instanceof CloudSeedNodeProvider);
     }

@@ -64,7 +64,7 @@ public class HekateFsSeedNodeProviderConfigurerTest extends HekateAutoConfigurer
             "hekate.cluster.seed.filesystem.work-dir:" + tempDir.getAbsolutePath()
         }, FsEnabledConfig.class);
 
-        FsSeedNodeProvider provider = (FsSeedNodeProvider)getNode().get(DefaultClusterService.class).getSeedNodeProvider();
+        FsSeedNodeProvider provider = (FsSeedNodeProvider)getNode().get(DefaultClusterService.class).seedNodeProvider();
 
         assertEquals(tempDir.getAbsolutePath(), provider.getWorkDir().getAbsolutePath());
     }
@@ -75,7 +75,7 @@ public class HekateFsSeedNodeProviderConfigurerTest extends HekateAutoConfigurer
             "hekate.cluster.seed.filesystem.enable:false"
         }, FsDisabledConfig.class);
 
-        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).getSeedNodeProvider();
+        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();
 
         assertFalse(provider instanceof FsSeedNodeProvider);
     }

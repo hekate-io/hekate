@@ -48,7 +48,7 @@ public class HekateStaticSeedNodeProviderConfigurerTest extends HekateAutoConfig
             "hekate.cluster.seed.static.addresses:localhost:10012,localhost:10013"
         }, EnabledConfig.class);
 
-        StaticSeedNodeProvider provider = (StaticSeedNodeProvider)getNode().get(DefaultClusterService.class).getSeedNodeProvider();
+        StaticSeedNodeProvider provider = (StaticSeedNodeProvider)getNode().get(DefaultClusterService.class).seedNodeProvider();
 
         say("Addresses: " + provider.getAddresses());
 
@@ -63,7 +63,7 @@ public class HekateStaticSeedNodeProviderConfigurerTest extends HekateAutoConfig
             "hekate.cluster.seed.static.enable:false"
         }, DisabledConfig.class);
 
-        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).getSeedNodeProvider();
+        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();
 
         assertFalse(provider instanceof StaticSeedNodeProvider);
     }

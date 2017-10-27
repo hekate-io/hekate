@@ -48,7 +48,7 @@ public class HekateMulticastSeedNodeProviderConfigurerTest extends HekateAutoCon
             "hekate.cluster.seed.multicast.waitTime:20"
         }, MulticastEnabledConfig.class);
 
-        MulticastSeedNodeProvider provider = (MulticastSeedNodeProvider)getNode().get(DefaultClusterService.class).getSeedNodeProvider();
+        MulticastSeedNodeProvider provider = (MulticastSeedNodeProvider)getNode().get(DefaultClusterService.class).seedNodeProvider();
 
         assertEquals(10, provider.interval());
         assertEquals(20, provider.waitTime());
@@ -60,7 +60,7 @@ public class HekateMulticastSeedNodeProviderConfigurerTest extends HekateAutoCon
             "hekate.cluster.seed.multicast.enable:false"
         }, MulticastDisabledConfig.class);
 
-        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).getSeedNodeProvider();
+        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();
 
         assertFalse(provider instanceof MulticastSeedNodeProvider);
     }

@@ -75,7 +75,7 @@ public class HekateJdbcSeedNodeProviderConfigurerTest extends HekateAutoConfigur
             "hekate.cluster.seed.jdbc.enable:true"
         }, JdbcEnabledConfig.class);
 
-        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).getSeedNodeProvider();
+        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();
 
         assertTrue(provider instanceof JdbcSeedNodeProvider);
     }
@@ -86,7 +86,7 @@ public class HekateJdbcSeedNodeProviderConfigurerTest extends HekateAutoConfigur
             "hekate.cluster.seed.jdbc.enable:false"
         }, JdbcDisabledConfig.class);
 
-        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).getSeedNodeProvider();
+        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();
 
         assertFalse(provider instanceof JdbcSeedNodeProvider);
     }

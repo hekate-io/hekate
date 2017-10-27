@@ -114,11 +114,11 @@ public class DefaultClusterService implements ClusterService, DependentService, 
             this.eventTypes = eventTypes;
         }
 
-        public ClusterEventListener getListener() {
+        public ClusterEventListener listener() {
             return listener;
         }
 
-        public ClusterEventType[] getEventTypes() {
+        public ClusterEventType[] eventTypes() {
             return eventTypes;
         }
 
@@ -371,7 +371,7 @@ public class DefaultClusterService implements ClusterService, DependentService, 
             initListeners.forEach(listener -> ctx.cluster().addListener(listener));
 
             // Register deferred listeners.
-            deferredListeners.forEach(deferred -> ctx.cluster().addListener(deferred.getListener(), deferred.getEventTypes()));
+            deferredListeners.forEach(deferred -> ctx.cluster().addListener(deferred.listener(), deferred.eventTypes()));
 
             // Prepare gossip manager.
             gossipMgr = new GossipManager(initCtx.clusterName(), node, failureDetector, speedUpGossipSize, createGossipListener());
@@ -579,23 +579,23 @@ public class DefaultClusterService implements ClusterService, DependentService, 
         return node;
     }
 
-    public SeedNodeProvider getSeedNodeProvider() {
+    public SeedNodeProvider seedNodeProvider() {
         return seedNodeProvider;
     }
 
-    public FailureDetector getFailureDetector() {
+    public FailureDetector failureDetector() {
         return failureDetector;
     }
 
-    public SplitBrainDetector getSplitBrainDetector() {
+    public SplitBrainDetector splitBrainDetector() {
         return splitBrainDetector;
     }
 
-    public SplitBrainAction getSplitBrainAction() {
+    public SplitBrainAction splitBrainAction() {
         return splitBrainAction;
     }
 
-    public List<ClusterAcceptor> getAcceptors() {
+    public List<ClusterAcceptor> acceptors() {
         return unmodifiableList(acceptors);
     }
 

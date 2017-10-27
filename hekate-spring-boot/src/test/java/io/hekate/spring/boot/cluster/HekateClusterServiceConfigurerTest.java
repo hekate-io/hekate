@@ -120,7 +120,7 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
     public void testFailureDetectorConfig() {
         registerAndRefresh(FailureDetectorConfigTestConfig.class);
 
-        DefaultFailureDetector detector = (DefaultFailureDetector)getNode().get(DefaultClusterService.class).getFailureDetector();
+        DefaultFailureDetector detector = (DefaultFailureDetector)getNode().get(DefaultClusterService.class).failureDetector();
 
         assertEquals(FailureDetectorConfigTestConfig.HEARTBEAT_INTERVAL, detector.heartbeatInterval());
     }
@@ -129,7 +129,7 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
     public void testFailureDetector() {
         registerAndRefresh(FailureDetectorTestConfig.class);
 
-        FailureDetector detector = getNode().get(DefaultClusterService.class).getFailureDetector();
+        FailureDetector detector = getNode().get(DefaultClusterService.class).failureDetector();
 
         assertSame(FailureDetectorTestConfig.TestFailureDetector.class, detector.getClass());
     }
@@ -138,7 +138,7 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
     public void testAcceptors() {
         registerAndRefresh(JoinAcceptorsTestConfig.class);
 
-        List<ClusterAcceptor> acceptors = getNode().get(DefaultClusterService.class).getAcceptors();
+        List<ClusterAcceptor> acceptors = getNode().get(DefaultClusterService.class).acceptors();
 
         assertTrue(acceptors.stream().anyMatch(v -> v instanceof JoinAcceptorsTestConfig.TestAcceptor));
     }
@@ -147,10 +147,10 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
     public void testSplitBrainDetector() {
         registerAndRefresh(new String[]{"hekate.cluster.split-brain-action=REJOIN"}, SplitBrainTestConfig.class);
 
-        SplitBrainDetector detector = getNode().get(DefaultClusterService.class).getSplitBrainDetector();
+        SplitBrainDetector detector = getNode().get(DefaultClusterService.class).splitBrainDetector();
 
         assertNotNull(detector);
         assertSame(SplitBrainTestConfig.TestDetector.class, detector.getClass());
-        assertSame(SplitBrainAction.REJOIN, getNode().get(DefaultClusterService.class).getSplitBrainAction());
+        assertSame(SplitBrainAction.REJOIN, getNode().get(DefaultClusterService.class).splitBrainAction());
     }
 }
