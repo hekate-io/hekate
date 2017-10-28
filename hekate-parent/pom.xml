@@ -62,10 +62,10 @@
 
         <!-- Production dependencies.-->
         <slf4j.version>1.7.21</slf4j.version>
-        <netty.version>4.1.15.Final</netty.version>
+        <netty.version>4.1.16.Final</netty.version>
         <netty.tcnative.version>2.0.6.Final</netty.tcnative.version>
-        <spring.version>4.3.9.RELEASE</spring.version>
-        <spring.boot.version>1.5.4.RELEASE</spring.boot.version>
+        <spring.version>4.3.12.RELEASE</spring.version>
+        <spring.boot.version>1.5.8.RELEASE</spring.boot.version>
         <logback.version>1.2.1</logback.version>
         <kryo.version>4.0.1</kryo.version>
         <fst.version>2.52</fst.version>
