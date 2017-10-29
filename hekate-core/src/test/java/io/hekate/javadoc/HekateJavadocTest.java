@@ -43,6 +43,10 @@ public class HekateJavadocTest extends HekateTestBase {
         hekate.leaveAsync().get();
         // End:sync_leave
 
+        // Start:sync_init
+        hekate.initializeAsync().get();
+        // End:sync_init
+
         // Start:sync_join
         hekate.joinAsync().get();
         // End:sync_join

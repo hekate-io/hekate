@@ -53,7 +53,7 @@ public class ClusterServiceSplitBrainTest extends HekateNodeParamTestBase {
 
         detector.awaitForChecks(5);
 
-        assertSame(Hekate.State.INITIALIZED, node.state());
+        assertSame(Hekate.State.JOINING, node.state());
 
         detector.setValid(true);
 
@@ -81,7 +81,7 @@ public class ClusterServiceSplitBrainTest extends HekateNodeParamTestBase {
 
         leaving.leave();
 
-        node.awaitForStatus(Hekate.State.INITIALIZED);
+        node.awaitForStatus(Hekate.State.JOINING);
 
         detector.awaitForChecks(5);
 

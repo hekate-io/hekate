@@ -59,6 +59,7 @@ import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.internal.util.Waiting;
+import io.hekate.core.service.ClusterServiceManager;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.DependencyContext;
@@ -102,8 +103,8 @@ import org.slf4j.LoggerFactory;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toSet;
 
-public class DefaultClusterService implements ClusterService, DependentService, ConfigurableService, InitializingService,
-    TerminatingService, NetworkConfigProvider {
+public class DefaultClusterService implements ClusterService, ClusterServiceManager, DependentService, ConfigurableService,
+    InitializingService, TerminatingService, NetworkConfigProvider {
     private static class DeferredListener {
         private final ClusterEventListener listener;
 
@@ -406,8 +407,138 @@ public class DefaultClusterService implements ClusterService, DependentService, 
     }
 
     @Override
-    public void postInitialize(InitializationContext ctx) throws HekateException {
-        initJoining(ctx);
+    public void joinAsync() {
+        guard.lockReadWithStateCheck();
+
+        try {
+            ctx.cluster().onStartJoining().thenAcceptAsync(proceed -> {
+                if (proceed && guard.isInitialized()) {
+                    if (log.isInfoEnabled()) {
+                        log.info("Joining cluster [cluster={}, local-node={}]", ctx.clusterName(), ctx.localNode());
+                    }
+
+                    // Prepare a repeatable join task to re-run in case of a recoverable failure during the join process.
+                    Runnable repeatableJoinTask = new Runnable() {
+                        @Override
+                        public void run() {
+                            ClusterAddress address;
+                            SeedNodeManager localSeedNodeMgr;
+
+                            guard.lockRead();
+
+                            try {
+                                // Check that there were no concurrent leave/terminate events.
+                                if (guard.isInitialized()) {
+                                    address = node.address();
+                                    localSeedNodeMgr = seedNodeMgr;
+                                } else {
+                                    return;
+                                }
+                            } finally {
+                                guard.unlockRead();
+                            }
+
+                            try {
+                                // Start components.
+                                // Note that we are doing it in unlocked context in order to prevent thread blocking.
+
+                                // Check if node is not in a split-brain mode before trying to join.
+                                if (splitBrainDetector != null) {
+                                    boolean valid = splitBrainDetector.isValid(node);
+
+                                    if (!valid) {
+                                        // Try to schedule a new join attempt.
+                                        guard.lockRead();
+
+                                        try {
+                                            // Check that there were no concurrent leave/terminate events.
+                                            if (guard.isInitialized()) {
+                                                log.warn("Split-brain detected ...will wait for {} ms before making another attempt "
+                                                    + "[split-brain-detector={}]", gossipInterval, splitBrainDetector);
+
+                                                serviceThread.schedule(this, gossipInterval, TimeUnit.MILLISECONDS);
+                                            }
+                                        } finally {
+                                            guard.unlockRead();
+                                        }
+
+                                        return;
+                                    }
+                                }
+
+                                // Start seed nodes discovery.
+                                try {
+                                    localSeedNodeMgr.startDiscovery(address.socket());
+                                } catch (HekateException e) {
+                                    boolean initialized = false;
+
+                                    // Try to schedule a new join attempt.
+                                    guard.lockRead();
+
+                                    try {
+                                        // Check that there were no concurrent leave/terminate events.
+                                        if (guard.isInitialized()) {
+                                            initialized = true;
+
+                                            log.error("Failed to start seed nodes discovery "
+                                                + "...will wait for {}ms before making another attempt.", gossipInterval, e);
+
+                                            serviceThread.schedule(this, gossipInterval, TimeUnit.MILLISECONDS);
+                                        }
+                                    } finally {
+                                        guard.unlockRead();
+                                    }
+
+                                    if (!initialized) {
+                                        // Make sure that seed nodes discovery is stopped in case of concurrent service termination.
+                                        localSeedNodeMgr.stopDiscovery(address.socket());
+                                    }
+
+                                    return;
+                                }
+
+                                if (DEBUG) {
+                                    log.debug("Initializing failure detector [address={}]", address);
+                                }
+
+                                failureDetector.initialize(() -> address);
+
+                                if (DEBUG) {
+                                    log.debug("Initialized failure detector [address={}]", address);
+                                }
+
+                                // Schedule asynchronous join task.
+                                boolean scheduled = scheduleAsyncJoin();
+
+                                // Operation was rejected.
+                                // Stop components (in unlocked context in order to prevent thread blocking).
+                                if (!scheduled) {
+                                    if (DEBUG) {
+                                        log.debug("Stopped initialization sequence due to a concurrent leave/terminate event.");
+                                    }
+
+                                    // Make sure that seed nodes discovery is stopped.
+                                    localSeedNodeMgr.stopDiscovery(address.socket());
+
+                                    // Make sure that failure detector is terminated.
+                                    try {
+                                        failureDetector.terminate();
+                                    } catch (RuntimeException | Error e) {
+                                        log.error("Got an unexpected runtime error during the failure detector termination.", e);
+                                    }
+                                }
+                            } catch (HekateException | RuntimeException | Error e) {
+                                ctx.terminate(e);
+                            }
+                        }
+                    };
+
+                    repeatableJoinTask.run();
+                }
+            }, serviceThread);
+        } finally {
+            guard.unlockRead();
+        }
     }
 
     @Override
@@ -599,170 +730,47 @@ public class DefaultClusterService implements ClusterService, DependentService, 
         return unmodifiableList(acceptors);
     }
 
-    private void initJoining(InitializationContext ctx) {
-        // Prepare a repeatable join task to re-run in case of a recoverable failure during the join process.
-        Runnable repeatableJoinTask = new Runnable() {
-            @Override
-            public void run() {
-                ClusterAddress address;
-                SeedNodeManager localSeedNodeMgr;
+    private boolean scheduleAsyncJoin() {
+        guard.lockWrite();
 
-                guard.lockRead();
-
-                try {
-                    // Check that there were no concurrent leave/terminate events.
-                    if (guard.isInitialized()) {
-                        address = node.address();
-                        localSeedNodeMgr = seedNodeMgr;
-                    } else {
-                        return;
-                    }
-                } finally {
-                    guard.unlockRead();
-                }
-
-                try {
-                    // Start components.
-                    // Note that we are doing it in unlocked context in order to prevent thread blocking.
-
-                    // Check if node is not in a split-brain mode before trying to join.
-                    if (splitBrainDetector != null) {
-                        boolean valid = splitBrainDetector.isValid(node);
-
-                        if (!valid) {
-                            // Try to schedule a new join attempt.
-                            guard.lockRead();
-
-                            try {
-                                // Check that there were no concurrent leave/terminate events.
-                                if (guard.isInitialized()) {
-                                    log.warn("Split-brain detected ...will wait for {} ms before making another attempt "
-                                        + "[split-brain-detector={}]", gossipInterval, splitBrainDetector);
-
-                                    serviceThread.schedule(this, gossipInterval, TimeUnit.MILLISECONDS);
-                                }
-                            } finally {
-                                guard.unlockRead();
-                            }
-
-                            return;
-                        }
-                    }
-
-                    // Start seed nodes discovery.
-                    try {
-                        localSeedNodeMgr.startDiscovery(address.socket());
-                    } catch (HekateException e) {
-                        boolean initialized = false;
-
-                        // Try to schedule a new join attempt.
-                        guard.lockRead();
-
-                        try {
-                            // Check that there were no concurrent leave/terminate events.
-                            if (guard.isInitialized()) {
-                                initialized = true;
-
-                                log.error("Failed to start seed nodes discovery ...will wait for {}ms before making another attempt.",
-                                    gossipInterval, e);
-
-                                serviceThread.schedule(this, gossipInterval, TimeUnit.MILLISECONDS);
-                            }
-                        } finally {
-                            guard.unlockRead();
-                        }
-
-                        if (!initialized) {
-                            // Make sure that seed nodes discovery is stopped in case of concurrent service termination.
-                            localSeedNodeMgr.stopDiscovery(address.socket());
-                        }
-
-                        return;
-                    }
-
-                    if (DEBUG) {
-                        log.debug("Initializing failure detector [address={}]", address);
-                    }
-
-                    failureDetector.initialize(() -> address);
-
-                    if (DEBUG) {
-                        log.debug("Initialized failure detector [address={}]", address);
-                    }
-
-                    startJoining(address, localSeedNodeMgr, ctx);
-                } catch (HekateException | RuntimeException | Error e) {
-                    ctx.terminate(e);
-                }
-            }
-        };
-
-        runOnServiceThread(repeatableJoinTask);
-    }
-
-    private void startJoining(ClusterAddress address, SeedNodeManager localSeedNodeMgr, InitializationContext ctx) {
-        ctx.cluster().onStartJoining().thenAcceptAsync(proceed -> {
-            boolean discard = false;
-
-            guard.lockWrite();
-
-            try {
-                if (proceed && guard.isInitialized()) {
-                    if (DEBUG) {
-                        log.debug("Scheduling a periodic gossip task [interval={}]", gossipInterval);
-                    }
-
-                    // Schedule gossip task.
-                    gossipTask = scheduleOn(gossipThread, this::gossip, gossipInterval);
-
-                    // Schedule heartbeat task.
-                    long hbInterval = failureDetector.heartbeatInterval();
-
-                    if (hbInterval > 0) {
-                        if (DEBUG) {
-                            log.debug("Scheduling a periodic heartbeat task [interval={}]", hbInterval);
-                        }
-
-                        heartbeatTask = scheduleOn(gossipThread, this::heartbeat, hbInterval);
-                    } else {
-                        if (DEBUG) {
-                            log.debug("Will not register a periodic heartbeat task [interval={}]", hbInterval);
-                        }
-                    }
-
-                    if (DEBUG) {
-                        log.debug("Scheduling an asynchronous join task [interval={}]", gossipInterval);
-                    }
-
-                    // Schedule task for asynchronous join.
-                    joinTask = scheduleOn(serviceThread, this::doJoin, 0, gossipInterval);
-                } else {
-                    discard = true;
-                }
-            } catch (RuntimeException | Error e) {
-                ctx.terminate(e);
-            } finally {
-                guard.unlockWrite();
-            }
-
-            // Operation was rejected.
-            // Stop components (in unlocked context in order to prevent thread blocking).
-            if (discard) {
+        try {
+            if (guard.isInitialized()) {
                 if (DEBUG) {
-                    log.debug("Stopped initialization sequence due to a concurrent leave/terminate event.");
+                    log.debug("Scheduling a periodic gossip task [interval={}]", gossipInterval);
                 }
 
-                // Make sure that seed nodes discovery is stopped.
-                localSeedNodeMgr.stopDiscovery(address.socket());
+                // Schedule gossip task.
+                gossipTask = scheduleOn(gossipThread, DefaultClusterService.this::gossip, gossipInterval);
 
-                // Make sure that failure detector is terminated.
-                try {
-                    failureDetector.terminate();
-                } catch (RuntimeException | Error e) {
-                    log.error("Got an unexpected runtime error during the failure detector termination.", e);
+                // Schedule heartbeat task.
+                long hbInterval = failureDetector.heartbeatInterval();
+
+                if (hbInterval > 0) {
+                    if (DEBUG) {
+                        log.debug("Scheduling a periodic heartbeat task [interval={}]", hbInterval);
+                    }
+
+                    heartbeatTask = scheduleOn(gossipThread, DefaultClusterService.this::heartbeat, hbInterval);
+                } else {
+                    if (DEBUG) {
+                        log.debug("Will not register a periodic heartbeat task [interval={}]", hbInterval);
+                    }
                 }
+
+                if (DEBUG) {
+                    log.debug("Scheduling an asynchronous join task [interval={}]", gossipInterval);
+                }
+
+                // Schedule task for asynchronous join.
+                joinTask = scheduleOn(serviceThread, DefaultClusterService.this::doJoin, 0, gossipInterval);
+
+                return true;
+            } else {
+                return false;
             }
-        }, serviceThread);
+        } finally {
+            guard.unlockWrite();
+        }
     }
 
     private void doJoin() {
@@ -809,13 +817,18 @@ public class DefaultClusterService implements ClusterService, DependentService, 
 
         try {
             if (guard.isInitialized()) {
-                if (log.isInfoEnabled()) {
-                    log.info("Leaving cluster...");
-                }
-
                 UpdateBase msg = gossipMgr.leave();
 
-                send(msg);
+                if (msg == null) {
+                    // Doo not need to go through the cluster leave protocol (gossip manager decision).
+                    ctx.cluster().onLeave();
+                } else {
+                    if (log.isInfoEnabled()) {
+                        log.info("Leaving cluster...");
+                    }
+
+                    send(msg);
+                }
             }
         } catch (RuntimeException | Error t) {
             log.error("Got runtime error while leaving cluster.", t);

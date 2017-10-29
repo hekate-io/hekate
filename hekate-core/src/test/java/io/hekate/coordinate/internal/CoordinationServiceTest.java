@@ -349,7 +349,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
     @Test
     public void testCoordinatorLeave() throws Exception {
-        repeat(3, i ->
+        repeat(30, i ->
             doTestCoordinatorLeave(coordinator ->
                 coordinator.leaveAsync()
             )

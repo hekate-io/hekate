@@ -679,31 +679,31 @@ public class GossipManager {
     }
 
     public UpdateBase leave() {
-        if (status == LEAVING) {
+        if (status == LEAVING || status == DOWN) {
             if (DEBUG) {
                 log.debug("Skipped leaving since local node is in {} state [gossip={}]", status, localGossip);
-            }
-        } else if (status == DOWN || !localGossip.isConvergent()) {
-            leaveScheduled = true;
-
-            if (DEBUG) {
-                log.debug("Scheduled leave operation to be executed after join since local node is in {} state.", status);
             }
         } else {
             leaveScheduled = true;
 
-            GossipNodeState newState = localGossip.member(id).status(LEAVING);
+            if (localGossip.isConvergent()) {
+                GossipNodeState newState = localGossip.member(id).status(LEAVING);
 
-            updateLocalGossip(localGossip.update(id, newState));
+                updateLocalGossip(localGossip.update(id, newState));
 
-            if (DEBUG) {
-                log.debug("Leaving cluster [gossip={}]", localGossip);
-            }
+                if (DEBUG) {
+                    log.debug("Leaving cluster [gossip={}]", localGossip);
+                }
 
-            updateLocalSate();
-
-            if (tryCoordinate()) {
                 updateLocalSate();
+
+                if (tryCoordinate()) {
+                    updateLocalSate();
+                }
+            } else {
+                if (DEBUG) {
+                    log.debug("Scheduled leave operation to be executed once gossip reaches its convergent sate [gossip={}]", localGossip);
+                }
             }
 
             return gossip();

@@ -38,6 +38,7 @@ import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateException;
 import io.hekate.core.HekateFutureException;
 import io.hekate.core.HekateVersion;
+import io.hekate.core.InitializationFuture;
 import io.hekate.core.JoinFuture;
 import io.hekate.core.LeaveFuture;
 import io.hekate.core.TerminateFuture;
@@ -48,6 +49,7 @@ import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.resource.ResourceService;
 import io.hekate.core.service.ClusterContext;
+import io.hekate.core.service.ClusterServiceManager;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
@@ -121,7 +123,9 @@ class HekateNode implements Hekate, Serializable {
 
     private final Map<String, String> nodeProps;
 
-    private final NetworkServiceManager net;
+    private final NetworkServiceManager networkManager;
+
+    private final ClusterServiceManager clusterManager;
 
     private final PluginManager plugins;
 
@@ -164,6 +168,8 @@ class HekateNode implements Hekate, Serializable {
     private final RpcService rpc;
 
     private boolean preTerminated;
+
+    private InitializationFuture initFuture = new InitializationFuture();
 
     private JoinFuture joinFuture = new JoinFuture();
 
@@ -263,9 +269,10 @@ class HekateNode implements Hekate, Serializable {
         clusterMetrics = services.findService(ClusterMetricsService.class);
 
         // Get internal service managers.
-        net = services.findService(NetworkServiceManager.class);
+        networkManager = services.findService(NetworkServiceManager.class);
+        clusterManager = services.findService(ClusterServiceManager.class);
 
-        check.notNull(net, NetworkServiceManager.class.getName(), "not found");
+        check.notNull(networkManager, NetworkServiceManager.class.getName(), "not found");
     }
 
     @Override
@@ -335,8 +342,96 @@ class HekateNode implements Hekate, Serializable {
     }
 
     @Override
+    public InitializationFuture initializeAsync() {
+        if (DEBUG) {
+            log.debug("Initializing...");
+        }
+
+        guard.lockWrite();
+
+        try {
+            switch (state.get()) {
+                case DOWN: {
+                    state.set(INITIALIZING);
+
+                    break;
+                }
+                case INITIALIZING:
+                case INITIALIZED:
+                case JOINING:
+                case UP: {
+                    if (DEBUG) {
+                        log.debug("Skipped initialization request since already in {} state.", state);
+                    }
+
+                    return initFuture.fork();
+                }
+                case LEAVING:
+                case TERMINATING: {
+                    throw new IllegalStateException(Hekate.class.getSimpleName() + " is in " + state + " state.");
+                }
+                default: {
+                    throw new IllegalArgumentException("Unexpected state: " + state);
+                }
+            }
+
+            // Generate new ID for this node.
+            ClusterNodeId localNodeId = new ClusterNodeId();
+
+            nodeId = localNodeId;
+
+            // Initialize asynchronous task executor.
+            sysWorker = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory(nodeName, "Sys"));
+
+            // Initialize cluster event manager.
+            clusterEvents.start(new HekateThreadFactory(nodeName, "ClusterEvent"));
+
+            notifyOnLifecycleChange();
+
+            // Make sure that we are still initializing (lifecycle listener could request for leave/termination).
+            if (isInitializingFor(localNodeId)) {
+                // Schedule asynchronous initialization.
+                runOnSysThread(() ->
+                    selectAddressAndBind(localNodeId)
+                );
+            }
+
+            return initFuture.fork();
+        } finally {
+            guard.unlockWrite();
+        }
+    }
+
+    @Override
+    public Hekate initialize() throws InterruptedException, HekateFutureException {
+        return initializeAsync().get();
+    }
+
+    @Override
     public JoinFuture joinAsync() {
-        return doJoin(false);
+        JoinFuture localJoinFuture;
+
+        guard.lockRead();
+
+        try {
+            localJoinFuture = this.joinFuture;
+        } finally {
+            guard.unlockRead();
+        }
+
+        initializeAsync().thenRun(() -> {
+            try {
+                if (state.get() == INITIALIZED) {
+                    clusterManager.joinAsync();
+                }
+            } catch (RuntimeException | Error e) {
+                if (log.isErrorEnabled()) {
+                    log.error("Got and unexpected runtime error while joining the cluster.", e);
+                }
+            }
+        });
+
+        return localJoinFuture.fork();
     }
 
     @Override
@@ -487,76 +582,6 @@ class HekateNode implements Hekate, Serializable {
         return SerializationHandle.INSTANCE;
     }
 
-    private JoinFuture doJoin(boolean rejoin) {
-        if (DEBUG) {
-            log.debug("Joining...");
-        }
-
-        guard.lockWrite();
-
-        try {
-            switch (state.get()) {
-                case DOWN: {
-                    state.set(INITIALIZING);
-
-                    break;
-                }
-                case INITIALIZING:
-                case INITIALIZED:
-                case JOINING:
-                case UP: {
-                    if (DEBUG) {
-                        log.debug("Skipped join request since already in {} state.", state);
-                    }
-
-                    return joinFuture.fork();
-                }
-                case LEAVING:
-                case TERMINATING: {
-                    // Report an error only if this is not a rejoin.
-                    if (rejoin) {
-                        if (DEBUG) {
-                            log.debug("Skipped rejoin request since already in {} state.", state);
-                        }
-
-                        // Safe to return null from rejoin.
-                        return null;
-                    } else {
-                        throw new IllegalStateException(Hekate.class.getSimpleName() + " is in " + state + " state.");
-                    }
-                }
-                default: {
-                    throw new IllegalArgumentException("Unexpected state: " + state);
-                }
-            }
-
-            // Generate new ID for this node.
-            ClusterNodeId localNodeId = new ClusterNodeId();
-
-            nodeId = localNodeId;
-
-            // Initialize asynchronous task executor.
-            sysWorker = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory(nodeName, "Sys"));
-
-            // Initialize cluster event manager.
-            clusterEvents.start(new HekateThreadFactory(nodeName, "ClusterEvent"));
-
-            notifyOnLifecycleChange();
-
-            // Make sure that we are still initializing (lifecycle listener could request for leave/termination).
-            if (isInitializingFor(localNodeId)) {
-                // Schedule asynchronous initialization and join.
-                runOnSysThread(() ->
-                    selectAddressAndBind(localNodeId)
-                );
-            }
-
-            return joinFuture.fork();
-        } finally {
-            guard.unlockWrite();
-        }
-    }
-
     private void selectAddressAndBind(ClusterNodeId localNodeId) {
         try {
             guard.lockWrite();
@@ -569,12 +594,8 @@ class HekateNode implements Hekate, Serializable {
                         log.info("Initializing {}.", HekateVersion.info());
                     }
 
-                    if (log.isInfoEnabled()) {
-                        log.info("Joining cluster [cluster={}, node-name={}, node-id={}]", clusterName, nodeName, nodeId);
-                    }
-
                     // Bind network service.
-                    net.bind(new NetworkBindCallback() {
+                    networkManager.bind(new NetworkBindCallback() {
                         @Override
                         public void onBind(InetSocketAddress address) {
                             guard.lockRead();
@@ -583,7 +604,7 @@ class HekateNode implements Hekate, Serializable {
                                 if (state.get() == INITIALIZING) {
                                     // Continue initialization on the system thread.
                                     runOnSysThread(() ->
-                                        initialize(address, localNodeId)
+                                        doInitializeNode(address, localNodeId)
                                     );
                                 } else {
                                     if (DEBUG) {
@@ -619,7 +640,7 @@ class HekateNode implements Hekate, Serializable {
         }
     }
 
-    private void initialize(InetSocketAddress nodeAddress, ClusterNodeId localNodeId) {
+    private void doInitializeNode(InetSocketAddress nodeAddress, ClusterNodeId localNodeId) {
         guard.lockWrite();
 
         try {
@@ -627,7 +648,7 @@ class HekateNode implements Hekate, Serializable {
             // Need to perform this check in order to stop early in case of concurrent leave/termination events.
             if (isInitializingFor(localNodeId)) {
                 // Initialize node info.
-                ClusterAddress address = new ClusterAddress(nodeAddress, nodeId);
+                ClusterAddress address = new ClusterAddress(nodeAddress, localNodeId);
 
                 DefaultClusterNode localNode = new DefaultClusterNodeBuilder()
                     .withAddress(address)
@@ -650,7 +671,7 @@ class HekateNode implements Hekate, Serializable {
                 }
 
                 // Initialize services and plugins.
-                InitializationContext ctx = newInitializationContext(localNode);
+                InitializationContext ctx = createInitContext(localNode);
 
                 if (log.isInfoEnabled()) {
                     log.info("Initializing services...");
@@ -666,8 +687,10 @@ class HekateNode implements Hekate, Serializable {
 
                 // Pre-check state since plugin could initiate leave/termination procedure.
                 if (isInitializingFor(localNodeId)) {
-                    // Update state and notify listeners.
+                    // Update state and notify listeners/future.
                     state.set(INITIALIZED);
+
+                    initFuture.complete(this);
 
                     notifyOnLifecycleChange();
                 }
@@ -687,7 +710,10 @@ class HekateNode implements Hekate, Serializable {
         }
     }
 
-    private ClusterContext newClusterContext(DefaultClusterNode localNode) {
+    private ClusterContext createClusterContext(DefaultClusterNode localNode) {
+        assert localNode != null : "Local node is null.";
+        assert guard.isWriteLocked() : "Thread must hold a write.";
+
         JoinFuture localJoinFuture = joinFuture;
 
         return new ClusterContext() {
@@ -862,8 +888,11 @@ class HekateNode implements Hekate, Serializable {
         };
     }
 
-    private InitializationContext newInitializationContext(DefaultClusterNode localNode) {
-        ClusterContext clusterCtx = newClusterContext(localNode);
+    private InitializationContext createInitContext(DefaultClusterNode localNode) {
+        assert localNode != null : "Local node is null.";
+        assert guard.isWriteLocked() : "Thread must hold a write.";
+
+        ClusterContext clusterCtx = createClusterContext(localNode);
 
         return new InitializationContext() {
             @Override
@@ -942,7 +971,7 @@ class HekateNode implements Hekate, Serializable {
                 notifyOnLifecycleChange();
 
                 runOnSysThread(() ->
-                    doTerminate(cause, future)
+                    doTerminate(future, cause)
                 );
 
                 return future.fork();
@@ -991,7 +1020,8 @@ class HekateNode implements Hekate, Serializable {
         }
     }
 
-    private void doTerminate(Throwable cause, TerminateFuture localTerminateFuture) {
+    private void doTerminate(TerminateFuture future, Throwable cause) {
+        assert future != null : "Termination future is null.";
         assert state.get() == TERMINATING : "Unexpected service state: " + state;
 
         if (cause == null) {
@@ -1018,6 +1048,7 @@ class HekateNode implements Hekate, Serializable {
 
         clusterEvents.stop();
 
+        InitializationFuture notifyInit = null;
         JoinFuture notifyJoin = null;
         LeaveFuture notifyLeave = null;
 
@@ -1045,9 +1076,13 @@ class HekateNode implements Hekate, Serializable {
 
             terminateFutureRef.set(null);
 
-            // Join/Leave futures must be notified only if this is not a rejoin.
+            // Init/Join/Leave futures must be notified only if this is not a rejoin.
             // Otherwise they can be prematurely notified if rejoining happens before node is UP.
             if (!rejoin) {
+                if (!initFuture.isDone()) {
+                    notifyInit = initFuture;
+                }
+
                 if (!joinFuture.isDone()) {
                     notifyJoin = joinFuture;
                 }
@@ -1055,6 +1090,10 @@ class HekateNode implements Hekate, Serializable {
                 if (!leaveFuture.isDone()) {
                     notifyLeave = leaveFuture;
                 }
+            }
+
+            if (notifyInit != null || initFuture.isDone()) {
+                initFuture = new InitializationFuture();
             }
 
             if (notifyJoin != null || joinFuture.isDone()) {
@@ -1073,10 +1112,22 @@ class HekateNode implements Hekate, Serializable {
 
             // Run rejoin process (if not already requested by a lifecycle listener).
             if (rejoin && state.get() == DOWN) {
-                doJoin(true);
+                joinAsync();
             }
         } finally {
             guard.unlockWrite();
+        }
+
+        if (notifyInit != null) {
+            if (DEBUG) {
+                log.debug("Notifying initialization future.");
+            }
+
+            if (cause == null) {
+                notifyInit.complete(this);
+            } else {
+                notifyInit.completeExceptionally(cause);
+            }
         }
 
         if (notifyJoin != null) {
@@ -1099,7 +1150,7 @@ class HekateNode implements Hekate, Serializable {
             notifyLeave.complete(this);
         }
 
-        localTerminateFuture.complete(this);
+        future.complete(this);
     }
 
     private boolean isInitializingFor(ClusterNodeId localNodeId) {

@@ -114,6 +114,23 @@ public class HekateBootstrap {
     }
 
     /**
+     * Constructs a new {@link Hekate} instance and synchronously {@link Hekate#initialize() initializes} it without joining the cluster.
+     *
+     * <p>
+     * Joining to the cluster can be later performed via {@link Hekate#join()} method.
+     * </p>
+     *
+     * @return new {@link Hekate} instance.
+     *
+     * @throws HekateConfigurationException If configuration is invalid.
+     * @throws HekateFutureException If failure occurred while initializing or joining to cluster.
+     * @throws InterruptedException If the current thread was interrupted while awaiting for completion of this operation.
+     */
+    public Hekate initialize() throws HekateFutureException, InterruptedException {
+        return create().initialize();
+    }
+
+    /**
      * Returns the node name (see {@link #setNodeName(String)}).
      *
      * @return Node name.

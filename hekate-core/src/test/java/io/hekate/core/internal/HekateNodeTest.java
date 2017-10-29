@@ -17,6 +17,7 @@
 package io.hekate.core.internal;
 
 import io.hekate.HekateNodeTestBase;
+import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventListener;
@@ -24,6 +25,7 @@ import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
 import io.hekate.core.HekateFutureException;
+import io.hekate.core.InitializationFuture;
 import io.hekate.core.JoinFuture;
 import io.hekate.core.LeaveFuture;
 import io.hekate.core.TerminateFuture;
@@ -111,6 +113,66 @@ public class HekateNodeTest extends HekateNodeTestBase {
     }
 
     @Test
+    public void testInitializeJoinLeave() throws Exception {
+        repeat(50, i -> {
+            if (i == 0) {
+                expect(IllegalStateException.class, node::localNode);
+                expect(IllegalStateException.class, node::getTopology);
+            } else {
+                assertNotNull(node.localNode());
+                assertNotNull(node.getTopology());
+            }
+
+            assertSame(Hekate.State.DOWN, node.state());
+
+            node.initialize();
+
+            ClusterNode localNode = node.localNode();
+
+            assertNotNull(localNode);
+            assertEquals(0, localNode.joinOrder());
+            assertSame(Hekate.State.INITIALIZED, node.state());
+            assertNotNull(node.getTopology());
+            assertTrue(node.getTopology().isEmpty());
+
+            node.join();
+
+            assertNotNull(node.localNode());
+            assertSame(Hekate.State.UP, node.state());
+            assertEquals(1, localNode.joinOrder());
+            assertNotNull(node.getTopology());
+            assertEquals(1, node.getTopology().nodes().size());
+            assertTrue(node.getTopology().contains(node.localNode()));
+
+            node.leave();
+        });
+    }
+
+    @Test
+    public void testInitializeLeave() throws Exception {
+        repeat(50, i -> {
+            if (i == 0) {
+                expect(IllegalStateException.class, node::localNode);
+                expect(IllegalStateException.class, node::getTopology);
+            } else {
+                assertNotNull(node.localNode());
+                assertNotNull(node.getTopology());
+            }
+
+            assertSame(Hekate.State.DOWN, node.state());
+
+            node.initialize();
+
+            assertNotNull(node.localNode());
+            assertSame(Hekate.State.INITIALIZED, node.state());
+            assertNotNull(node.getTopology());
+            assertTrue(node.getTopology().isEmpty());
+
+            node.leave();
+        });
+    }
+
+    @Test
     public void testJoinTerminate() throws Exception {
         repeat(50, i -> {
             if (i == 0) {
@@ -131,6 +193,31 @@ public class HekateNodeTest extends HekateNodeTestBase {
             assertNotNull(node.getTopology());
             assertEquals(1, node.getTopology().nodes().size());
             assertTrue(node.getTopology().contains(node.localNode()));
+
+            node.terminate();
+        });
+    }
+
+    @Test
+    public void testInitializeTerminate() throws Exception {
+        repeat(50, i -> {
+            if (i == 0) {
+                expect(IllegalStateException.class, node::localNode);
+                expect(IllegalStateException.class, node::getTopology);
+            } else {
+                assertNotNull(node.localNode());
+                assertNotNull(node.getTopology());
+            }
+
+            assertSame(Hekate.State.DOWN, node.state());
+
+            node.initialize();
+
+            assertNotNull(node.localNode());
+            assertEquals(0, node.localNode().joinOrder());
+            assertSame(Hekate.State.INITIALIZED, node.state());
+            assertNotNull(node.getTopology());
+            assertTrue(node.getTopology().isEmpty());
 
             node.terminate();
         });
@@ -204,6 +291,24 @@ public class HekateNodeTest extends HekateNodeTestBase {
     }
 
     @Test
+    public void testInitializeTerminateNoWait() throws Exception {
+        for (int i = 0; i < 50; i++) {
+            say("Initialize " + i);
+
+            InitializationFuture join = node.initializeAsync();
+
+            say("Terminate " + i);
+
+            TerminateFuture terminate = node.terminateAsync();
+
+            join.get();
+            terminate.get();
+
+            assertSame(Hekate.State.DOWN, node.state());
+        }
+    }
+
+    @Test
     public void testMultipleJoinCalls() throws Exception {
         List<JoinFuture> futures = new ArrayList<>();
 
@@ -260,7 +365,7 @@ public class HekateNodeTest extends HekateNodeTestBase {
         try (ServerSocket sock = new ServerSocket()) {
             sock.bind(node.getSocketAddress());
 
-            repeat(10, i -> {
+            repeat(5, i -> {
                 try {
                     node.join();
 

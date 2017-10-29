@@ -156,12 +156,12 @@ import java.util.Set;
  * The lifecycle of each {@link Hekate} instance is controlled in the following methods:
  * </p>
  * <ul>
- * <li>{@link #join()} - initializes this instance and joins the cluster. Usually this methods shouldn't be called manually unless you
- * instructed this instance to {@link #leave() leave} the cluster and then want it to join back.</li>
+ * <li>{@link #initialize()} - initializes this instance and all of services.</li>
+ *
+ * <li>{@link #join()} - initializes this instance (if not {@link #initializeAsync() initialized} yet) and joins the cluster.</li>
  *
  * <li>{@link #leave()} - leaves the cluster and then {@link #terminate() terminates} this instance. This is the recommended way to
- * shutdown
- * gracefully.</li>
+ * shutdown gracefully.</li>
  *
  * <li>{@link #terminate()} - terminates this instance, bypassing the cluster leave protocol (i.e. remote nodes will notice that this node
  * left the cluster only based on their failure detection settings). In general, it is recommended to use {@link #leave() graceful}
@@ -191,8 +191,8 @@ import java.util.Set;
  * </ul>
  *
  * <p>
- * The Current state of the {@link Hekate} instance can be inspected via {@link Hekate#state()} method. State changes can be monitored
- * via {@link #addListener(LifecycleListener)} methods.
+ * Current state of the {@link Hekate} instance can be inspected via {@link Hekate#state()} method. State changes can be monitored by
+ * registering a listener via {@link #addListener(LifecycleListener)} method.
  * </p>
  *
  * @see HekateBootstrap
@@ -403,6 +403,35 @@ public interface Hekate extends HekateSupport {
     <A> A getAttribute(String name);
 
     /**
+     * Asynchronously initializes this instance without joining to the cluster.
+     *
+     * <p>
+     * The {@link InitializationFuture} object returned by this method can be used to obtain the result of this operation.
+     * </p>
+     *
+     * @return Future of this operation.
+     *
+     * @see #joinAsync()
+     */
+    InitializationFuture initializeAsync();
+
+    /**
+     * Synchronously initializes this instance without joining to the cluster..
+     *
+     * <p>
+     * This method is simply a shortcut for the following sequence of method calls:
+     * ${source: HekateJavadocTest.java#sync_init}
+     * </p>
+     *
+     * @return This instance.
+     *
+     * @throws HekateFutureException If failure occurred during initialization.
+     * @throws InterruptedException If thread gets interrupted while awaiting for completion of this operation.
+     * @see #initializeAsync()
+     */
+    Hekate initialize() throws InterruptedException, HekateFutureException;
+
+    /**
      * Asynchronously initializes this instance and joins the cluster.
      *
      * <p>
@@ -410,10 +439,8 @@ public interface Hekate extends HekateSupport {
      * </p>
      *
      * @return Future of this operation.
-     *
-     * @throws IllegalStateException If this instance is in {@link State#LEAVING LEAVING} or {@link State#TERMINATING TERMINATING} state.
      */
-    JoinFuture joinAsync() throws IllegalStateException;
+    JoinFuture joinAsync();
 
     /**
      * Synchronously initializes this instance and joins the cluster.
