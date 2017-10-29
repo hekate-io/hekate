@@ -125,6 +125,8 @@ import org.springframework.context.event.ContextRefreshedEvent;
  */
 public class HekateSpringBootstrap extends HekateBootstrap implements InitializingBean, DisposableBean, FactoryBean<Hekate>,
     ApplicationContextAware, ApplicationListener<ContextRefreshedEvent> {
+    private boolean deferredJoin;
+
     @ToStringIgnore
     private Hekate node;
 
@@ -154,7 +156,7 @@ public class HekateSpringBootstrap extends HekateBootstrap implements Initializi
         withService(injection);
         withService(resource);
 
-        node = join();
+        node = isDeferredJoin() ? initialize() : join();
     }
 
     @Override
@@ -185,8 +187,35 @@ public class HekateSpringBootstrap extends HekateBootstrap implements Initializi
         }
     }
 
+    /**
+     * the flag indicating that {@link Hekate} node should not join the cluster during the Spring context initialization (see {@link
+     * #setDeferredJoin(boolean)}).
+     *
+     * @return {@code true} if node should be joined manually.
+     */
+    public boolean isDeferredJoin() {
+        return deferredJoin;
+    }
+
+    /**
+     * Sets the flag indicating that {@link Hekate} node should not join the cluster during the Spring context initialization.
+     *
+     * <p>
+     * If set to {@code true} then node should be joined manually by the application logic via {@link Hekate#join()} method.
+     * </p>
+     *
+     * <p>
+     * Default value of this parameter is {@code false}.
+     * </p>
+     *
+     * @param deferredJoin {@code true} if node should be joined manually.
+     */
+    public void setDeferredJoin(boolean deferredJoin) {
+        this.deferredJoin = deferredJoin;
+    }
+
     @Override
-    public Hekate getObject() throws Exception {
+    public Hekate getObject() {
         return node;
     }
 

@@ -20,6 +20,7 @@ import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
+import io.hekate.core.HekateFutureException;
 import io.hekate.core.PropertyProvider;
 import io.hekate.core.plugin.Plugin;
 import io.hekate.core.service.ServiceFactory;
@@ -43,9 +44,13 @@ import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.ApplicationContextException;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
 /**
  * <span class="startHere">&laquo; start here</span>Auto-configuration for {@link Hekate} instances.
@@ -143,6 +148,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnMissingBean(Hekate.class)
 public class HekateConfigurer {
+    /**
+     * Exposes {@link Hekate} node state as a health-check endpoint for Spring Actuator.
+     */
     @Configuration
     @AutoConfigureBefore(EndpointAutoConfiguration.class)
     @ConditionalOnClass(HealthIndicator.class)
@@ -151,6 +159,41 @@ public class HekateConfigurer {
         @Bean
         public HekateHealthIndicator hekateHealthIndicator(Hekate node) {
             return new HekateHealthIndicator(node);
+        }
+    }
+
+    /**
+     * Handler for {@link HekateSpringBootstrap#setDeferredJoin(boolean) deferred join}.
+     *
+     * <p>
+     * Performs {@link Hekate#join()} when {@link ApplicationReadyEvent} gets fired.
+     * </p>
+     */
+    @Component
+    static class HekateDeferredJoinHandler implements ApplicationListener<ApplicationReadyEvent> {
+        private final Hekate hekate;
+
+        /**
+         * Constructs a new instance.
+         *
+         * @param hekate Node.
+         */
+        public HekateDeferredJoinHandler(Hekate hekate) {
+            this.hekate = hekate;
+        }
+
+        @Override
+        public void onApplicationEvent(ApplicationReadyEvent event) {
+            try {
+                // Handle deferred join when application is ready.
+                if (hekate.state() == Hekate.State.INITIALIZED) {
+                    hekate.join();
+                }
+            } catch (InterruptedException e) {
+                throw new ApplicationContextException("Thread got interrupted while awaiting for cluster join.", e);
+            } catch (HekateFutureException e) {
+                throw new ApplicationContextException("Failed to join the cluster.", e);
+            }
         }
     }
 
