@@ -46,7 +46,7 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableAutoConfiguration
     static class DefaultTestConfig {
         @Component
-        public static class Listener {
+        public static class TestClusterListener {
             private final List<ClusterEvent> events = Collections.synchronizedList(new ArrayList<>());
 
             @EventListener
@@ -57,6 +57,16 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
             @EventListener
             public void onLeave(ClusterLeaveEvent evt) {
                 events.add(evt);
+            }
+        }
+
+        @Component
+        public static class TestLifecycleListener implements Hekate.LifecycleListener {
+            private final List<Hekate.State> states = Collections.synchronizedList(new ArrayList<>());
+
+            @Override
+            public void onStateChanged(Hekate changed) {
+                states.add(changed.state());
             }
         }
 
@@ -91,13 +101,23 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
         assertNotNull(app.codecService);
         assertNotNull(app.networkService);
 
-        DefaultTestConfig.Listener listener = get(DefaultTestConfig.Listener.class);
+        DefaultTestConfig.TestClusterListener clusterListener = get(DefaultTestConfig.TestClusterListener.class);
+        DefaultTestConfig.TestLifecycleListener lifecycleListener = get(DefaultTestConfig.TestLifecycleListener.class);
 
         getContext().close();
 
-        assertEquals(2, listener.events.size());
-        assertSame(ClusterEventType.JOIN, listener.events.get(0).type());
-        assertSame(ClusterEventType.LEAVE, listener.events.get(1).type());
+        assertEquals(2, clusterListener.events.size());
+        assertSame(ClusterEventType.JOIN, clusterListener.events.get(0).type());
+        assertSame(ClusterEventType.LEAVE, clusterListener.events.get(1).type());
+
+        assertEquals(lifecycleListener.states.toString(), 7, lifecycleListener.states.size());
+        assertSame(Hekate.State.INITIALIZING, lifecycleListener.states.get(0));
+        assertSame(Hekate.State.INITIALIZED, lifecycleListener.states.get(1));
+        assertSame(Hekate.State.JOINING, lifecycleListener.states.get(2));
+        assertSame(Hekate.State.UP, lifecycleListener.states.get(3));
+        assertSame(Hekate.State.LEAVING, lifecycleListener.states.get(4));
+        assertSame(Hekate.State.TERMINATING, lifecycleListener.states.get(5));
+        assertSame(Hekate.State.DOWN, lifecycleListener.states.get(6));
     }
 
     @Test

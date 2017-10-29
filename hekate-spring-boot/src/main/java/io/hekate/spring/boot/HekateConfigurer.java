@@ -205,19 +205,23 @@ public class HekateConfigurer {
 
     private final List<PropertyProvider> propertyProviders;
 
+    private final List<Hekate.LifecycleListener> listeners;
+
     /**
      * Constructs new instance with autowired dependencies.
      *
      * @param propertyProviders All {@link PropertyProvider}s found in the application context.
      * @param services All {@link ServiceFactory}s found in the application context.
      * @param plugins All {@link Plugin}s found in the application context.
+     * @param listeners All {@link Hekate.LifecycleListener}s found in the application context.
      * @param codec Default codec factory.
      */
     public HekateConfigurer(Optional<List<PropertyProvider>> propertyProviders, Optional<List<ServiceFactory<?>>> services,
-        Optional<List<Plugin>> plugins, CodecFactory<Object> codec) {
+        Optional<List<Plugin>> plugins, Optional<List<Hekate.LifecycleListener>> listeners, CodecFactory<Object> codec) {
         this.services = services.orElse(null);
         this.plugins = plugins.orElse(null);
         this.propertyProviders = propertyProviders.orElse(null);
+        this.listeners = listeners.orElse(null);
         this.codec = codec;
     }
 
@@ -245,6 +249,7 @@ public class HekateConfigurer {
         factory.setServices(services);
         factory.setPlugins(plugins);
         factory.setPropertyProviders(propertyProviders);
+        factory.setLifecycleListeners(listeners);
 
         return factory;
     }

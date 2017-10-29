@@ -246,6 +246,9 @@ class HekateNode implements Hekate, Serializable {
         nodeRoles = unmodifiableSet(roles);
         nodeProps = unmodifiableMap(props);
 
+        // Lifecycle listeners.
+        StreamUtils.nullSafe(cfg.getLifecycleListeners()).forEach(listeners::add);
+
         // Cluster event manager.
         clusterEvents = new ClusterEventManager(this);
 

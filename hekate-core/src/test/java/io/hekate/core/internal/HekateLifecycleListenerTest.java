@@ -29,15 +29,51 @@ import org.junit.Test;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 
 public class HekateLifecycleListenerTest extends HekateNodeTestBase {
     private HekateTestNode node;
+
+    private Hekate.LifecycleListener defaultListenerMock = mock(Hekate.LifecycleListener.class);
 
     @Override
     public void setUp() throws Exception {
         super.setUp();
 
-        node = createNode();
+        node = createNode(boot -> boot.withLifecycleListener(defaultListenerMock));
+    }
+
+    @Test
+    public void testPreConfigured() throws Exception {
+        repeat(3, i -> {
+            List<Hekate.State> state = Collections.synchronizedList(new ArrayList<>());
+
+            doAnswer(invocation -> {
+                state.add(((Hekate)invocation.getArgument(0)).state());
+
+                return null;
+            }).when(defaultListenerMock).onStateChanged(any(Hekate.class));
+
+            node.join();
+
+            assertSame(Hekate.State.INITIALIZING, state.get(0));
+            assertSame(Hekate.State.INITIALIZED, state.get(1));
+            assertSame(Hekate.State.JOINING, state.get(2));
+            assertSame(Hekate.State.UP, state.get(3));
+
+            state.clear();
+
+            node.leave();
+
+            assertSame(Hekate.State.LEAVING, state.get(0));
+            assertSame(Hekate.State.TERMINATING, state.get(1));
+            assertSame(Hekate.State.DOWN, state.get(2));
+
+            reset(defaultListenerMock);
+        });
     }
 
     @Test
