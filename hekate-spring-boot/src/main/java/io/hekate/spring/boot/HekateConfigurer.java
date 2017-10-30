@@ -44,6 +44,7 @@ import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.ApplicationContextException;
@@ -117,7 +118,8 @@ import org.springframework.stereotype.Component;
  * </p>
  *
  * <p>
- * Additionally each service has its own auto-configuration class that simplifies configuration and registration of services and components.
+ * Additionally each service has its own auto-configuration class that simplifies configuration and registration of services and
+ * components.
  * Please see the documentation of the following classes:
  * </p>
  * <ul>
@@ -142,6 +144,24 @@ import org.springframework.stereotype.Component;
  * <li>{@link HekateBootstrap#setRoles(List) 'hekate.roles'}</li>
  * <li>{@link HekateBootstrap#setProperties(Map) 'hekate.properties'}</li>
  * </ul>
+ *
+ * <h2>Deferred cluster joining</h2>
+ * <p>
+ * It is possible to control the timing of when {@link Hekate} node will start joining the cluster by specifying the following properties:
+ * </p>
+ * <ul>
+ * <li>{@link HekateSpringBootstrap#setDeferredJoin(boolean) 'hekate.deferred-join'} - if set to {@code false} (default value) then joining
+ * will happen synchronously during the Spring Application context initialization</li>
+ * <li>{@link HekateSpringBootstrap#setDeferredJoin(boolean) 'hekate.deferred-join'} - if set to {@code true} then joining will be deferred
+ * until the Spring Application context gets fully initialized (signalled by {@link ApplicationReadyEvent}).</li>
+ * </ul>
+ *
+ * <p>
+ * Furthermore it is also possible to completely disable joining to the cluster by setting the {@code 'hekate.deferred-join-condition'}
+ * property value to {@code 'manual'}. In such case it is up to the application logic to decide on when to call the {@link Hekate#join()}
+ * method in order to start joining the cluster. Alternative value of this property is {@code 'app-ready'} which will fall back to the
+ * default behavior.
+ * </p>
  *
  * @see HekateHealthIndicator
  */
@@ -170,7 +190,8 @@ public class HekateConfigurer {
      * </p>
      */
     @Component
-    static class HekateDeferredJoinHandler implements ApplicationListener<ApplicationReadyEvent> {
+    @ConditionalOnProperty(value = "hekate.deferred-join-condition", havingValue = "app-ready", matchIfMissing = true)
+    static class HekateDeferredJoinReadyHandler implements ApplicationListener<ApplicationReadyEvent> {
         private final Hekate hekate;
 
         /**
@@ -178,7 +199,7 @@ public class HekateConfigurer {
          *
          * @param hekate Node.
          */
-        public HekateDeferredJoinHandler(Hekate hekate) {
+        public HekateDeferredJoinReadyHandler(Hekate hekate) {
             this.hekate = hekate;
         }
 
