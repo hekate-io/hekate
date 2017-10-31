@@ -933,12 +933,12 @@ public class GossipManager {
         updateWatchNodes();
 
         if (leaveScheduled
-            // Cane leave only if in convergent state (otherwise node can join/leave unnoticed by some nodes).
+            // Can leave only if in convergent state (otherwise node can join/leave unnoticed by some nodes).
             && localGossip.isConvergent()
-            // ...and only if in UP or LEAVING state.
+            // ...and only if in JOINING or UP state.
             && (newStatus == JOINING || newStatus == UP)) {
             if (DEBUG) {
-                log.debug("Processing scheduled leave operation [gossip={}]", gossip());
+                log.debug("Processing scheduled leave operation [gossip={}]", localGossip);
             }
 
             return leave() != null;
