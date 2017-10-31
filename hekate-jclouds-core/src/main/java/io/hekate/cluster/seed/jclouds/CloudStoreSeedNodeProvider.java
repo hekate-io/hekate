@@ -244,8 +244,8 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider {
 
                     store.putBlob(container, blob);
 
-                    if (log.isDebugEnabled()) {
-                        log.debug("Registered address in the cloud store [container={}, file={}]", container, file);
+                    if (log.isInfoEnabled()) {
+                        log.info("Registered address to the cloud store [container={}, file={}]", container, file);
                     }
                 }
             } catch (ResourceNotFoundException | HttpResponseException e) {
@@ -265,8 +265,8 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider {
                 if (store.blobExists(container, file)) {
                     store.removeBlob(container, file);
 
-                    if (log.isDebugEnabled()) {
-                        log.debug("Unregister address from the cloud store [container={}, file={}]", container, file);
+                    if (log.isInfoEnabled()) {
+                        log.info("Unregistered address from the cloud store [container={}, file={}]", container, file);
                     }
                 }
             } catch (ResourceNotFoundException | HttpResponseException e) {
