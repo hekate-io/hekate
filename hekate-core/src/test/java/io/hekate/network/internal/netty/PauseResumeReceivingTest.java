@@ -305,6 +305,9 @@ public class PauseResumeReceivingTest extends NetworkTestBase {
             // Check that pause/resume after disconnect doesn't cause errors.
             doPause(client);
             doResume(client);
+
+            // Await for server endpoint to be disconnected.
+            busyWait("server endpoint disconnect", () -> server.clients(client.protocol()).isEmpty());
         });
     }
 
