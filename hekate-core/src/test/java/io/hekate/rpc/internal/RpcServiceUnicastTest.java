@@ -537,9 +537,6 @@ public class RpcServiceUnicastTest extends RpcServiceTestBase {
 
         leaveLatch.countDown();
 
-        assertTrue(callFuture.isDone());
-        assertTrue(callFuture.isCompletedExceptionally());
-
         ExecutionException err = expect(ExecutionException.class, () -> get(callFuture));
 
         assertSame(MessagingException.class, err.getCause().getClass());
@@ -580,9 +577,6 @@ public class RpcServiceUnicastTest extends RpcServiceTestBase {
         ctx.server().leave();
 
         awaitForTopology(ctx.client());
-
-        assertTrue(callFuture.isDone());
-        assertTrue(callFuture.isCompletedExceptionally());
 
         ExecutionException err = expect(ExecutionException.class, () -> get(callFuture));
 
