@@ -32,7 +32,7 @@ import static org.junit.Assert.assertNotNull;
 
 public class InfluxDbMetricsPluginConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableAutoConfiguration
-    static class InfluxDbTestConfig extends HekateTestConfigBase {
+    public static class InfluxDbTestConfig extends HekateTestConfigBase {
         // No-op.
     }
 
@@ -49,13 +49,13 @@ public class InfluxDbMetricsPluginConfigurerTest extends HekateAutoConfigurerTes
         String database = "testdb";
 
         registerAndRefresh(new String[]{
-            "hekate.metrics.influxdb.enable:true",
-            "hekate.metrics.influxdb.url:" + url,
-            "hekate.metrics.influxdb.user:" + user,
-            "hekate.metrics.influxdb.password:" + password,
-            "hekate.metrics.influxdb.database:" + database,
-            "hekate.metrics.influxdb.max-queue-size:100500",
-            "hekate.metrics.influxdb.timeout:100501"
+            "hekate.metrics.influxdb.enable=true",
+            "hekate.metrics.influxdb.url=" + url,
+            "hekate.metrics.influxdb.user=" + user,
+            "hekate.metrics.influxdb.password=" + password,
+            "hekate.metrics.influxdb.database=" + database,
+            "hekate.metrics.influxdb.max-queue-size=100500",
+            "hekate.metrics.influxdb.timeout=100501"
         }, InfluxDbTestConfig.class);
 
         assertNotNull(get(LocalMetricsService.class));

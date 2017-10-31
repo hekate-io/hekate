@@ -31,21 +31,21 @@ import static org.junit.Assert.assertFalse;
 public class HekateMulticastSeedNodeProviderConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableHekate
     @EnableAutoConfiguration
-    static class MulticastEnabledConfig {
+    public static class MulticastEnabledConfig {
         // No-op.
     }
 
     @EnableAutoConfiguration
-    static class MulticastDisabledConfig extends HekateTestConfigBase {
+    public static class MulticastDisabledConfig extends HekateTestConfigBase {
         // No-op.
     }
 
     @Test
     public void testEnabled() throws Exception {
         registerAndRefresh(new String[]{
-            "hekate.cluster.seed.multicast.enable:true",
-            "hekate.cluster.seed.multicast.interval:10",
-            "hekate.cluster.seed.multicast.waitTime:20"
+            "hekate.cluster.seed.multicast.enable=true",
+            "hekate.cluster.seed.multicast.interval=10",
+            "hekate.cluster.seed.multicast.waitTime=20"
         }, MulticastEnabledConfig.class);
 
         MulticastSeedNodeProvider provider = (MulticastSeedNodeProvider)getNode().get(DefaultClusterService.class).seedNodeProvider();
@@ -57,7 +57,7 @@ public class HekateMulticastSeedNodeProviderConfigurerTest extends HekateAutoCon
     @Test
     public void testDisabled() throws Exception {
         registerAndRefresh(new String[]{
-            "hekate.cluster.seed.multicast.enable:false"
+            "hekate.cluster.seed.multicast.enable=false"
         }, MulticastDisabledConfig.class);
 
         SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();

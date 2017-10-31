@@ -32,7 +32,7 @@ import static org.junit.Assert.assertNotNull;
 
 public class HekateCoordinationServiceConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableAutoConfiguration
-    static class CoordinationTestConfig extends HekateTestConfigBase {
+    public static class CoordinationTestConfig extends HekateTestConfigBase {
         @Autowired
         private CoordinationService coordinationService;
 

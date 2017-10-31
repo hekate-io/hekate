@@ -32,7 +32,7 @@ import static org.junit.Assert.assertNotNull;
 
 public class HekateNetworkServiceConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableAutoConfiguration
-    static class NetworkTestConfig extends HekateTestConfigBase {
+    public static class NetworkTestConfig extends HekateTestConfigBase {
         private static class InnerBean {
             @InjectConnector("test2")
             private NetworkConnector<Object> innerConnector;

@@ -34,12 +34,12 @@ import static org.junit.Assert.assertFalse;
 public class HekateFsSeedNodeProviderConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableHekate
     @EnableAutoConfiguration
-    static class FsEnabledConfig {
+    public static class FsEnabledConfig {
         // No-op.
     }
 
     @EnableAutoConfiguration
-    static class FsDisabledConfig extends HekateTestConfigBase {
+    public static class FsDisabledConfig extends HekateTestConfigBase {
         // No-op.
     }
 
@@ -60,8 +60,8 @@ public class HekateFsSeedNodeProviderConfigurerTest extends HekateAutoConfigurer
     @Test
     public void testEnabled() throws Exception {
         registerAndRefresh(new String[]{
-            "hekate.cluster.seed.filesystem.enable:true",
-            "hekate.cluster.seed.filesystem.work-dir:" + tempDir.getAbsolutePath()
+            "hekate.cluster.seed.filesystem.enable=true",
+            "hekate.cluster.seed.filesystem.work-dir=" + tempDir.getAbsolutePath()
         }, FsEnabledConfig.class);
 
         FsSeedNodeProvider provider = (FsSeedNodeProvider)getNode().get(DefaultClusterService.class).seedNodeProvider();
@@ -72,7 +72,7 @@ public class HekateFsSeedNodeProviderConfigurerTest extends HekateAutoConfigurer
     @Test
     public void testDisabled() throws Exception {
         registerAndRefresh(new String[]{
-            "hekate.cluster.seed.filesystem.enable:false"
+            "hekate.cluster.seed.filesystem.enable=false"
         }, FsDisabledConfig.class);
 
         SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();

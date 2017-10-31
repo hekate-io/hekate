@@ -96,7 +96,7 @@ public class HekateTaskServiceConfigurerTest extends HekateAutoConfigurerTestBas
     }
 
     @EnableAutoConfiguration
-    static class TaskConfig extends HekateTestConfigBase {
+    public static class TaskConfig extends HekateTestConfigBase {
         private static final SeedNodeProviderMock SEED_NODE_PROVIDER_MOCK = new SeedNodeProviderMock();
 
         @Autowired(required = false)
@@ -110,7 +110,7 @@ public class HekateTaskServiceConfigurerTest extends HekateAutoConfigurerTestBas
 
     @Test
     public void testService() throws Exception {
-        registerAndRefresh(new String[]{"hekate.task.enable:true"}, TaskConfig.class);
+        registerAndRefresh(new String[]{"hekate.task.enable=true"}, TaskConfig.class);
 
         assertNotNull(get("taskService", TaskService.class));
         assertNotNull(get(TaskConfig.class).taskService);
@@ -120,8 +120,8 @@ public class HekateTaskServiceConfigurerTest extends HekateAutoConfigurerTestBas
 
     @Test
     public void testInjection() throws Exception {
-        registerAndRefresh(new String[]{"hekate.task.enable:true", "endpoints.jmx.enabled:false"}, TaskConfig.class);
-        registerAndRefresh(new String[]{"hekate.task.enable:true", "endpoints.jmx.enabled:false"}, TaskConfig.class);
+        registerAndRefresh(new String[]{"hekate.task.enable=true", "endpoints.jmx.enabled=false"}, TaskConfig.class);
+        registerAndRefresh(new String[]{"hekate.task.enable=true", "endpoints.jmx.enabled=false"}, TaskConfig.class);
 
         Hekate node = getNode();
 

@@ -50,7 +50,7 @@ public class HekateRpcServiceConfigurerTest extends HekateAutoConfigurerTestBase
     }
 
     @EnableAutoConfiguration
-    static class RpcTestConfig extends HekateTestConfigBase {
+    public static class RpcTestConfig extends HekateTestConfigBase {
         private static class InnerBean {
             @InjectRpcClient(tag = "rpc-1")
             private TestRpc rpc1;

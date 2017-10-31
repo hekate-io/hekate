@@ -29,18 +29,18 @@ import static org.junit.Assert.assertNotNull;
 
 public class StatsdMetricsPluginConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableAutoConfiguration
-    static class StatsdTestConfig extends HekateTestConfigBase {
+    public static class StatsdTestConfig extends HekateTestConfigBase {
         // No-op.
     }
 
     @Test
     public void test() {
         registerAndRefresh(new String[]{
-            "hekate.metrics.statsd.enable:true",
-            "hekate.metrics.statsd.host:localhost",
-            "hekate.metrics.statsd.port:8125",
-            "hekate.metrics.statsd.batch-size:100500",
-            "hekate.metrics.statsd.max-queue-size:100501",
+            "hekate.metrics.statsd.enable=true",
+            "hekate.metrics.statsd.host=localhost",
+            "hekate.metrics.statsd.port=8125",
+            "hekate.metrics.statsd.batch-size=100500",
+            "hekate.metrics.statsd.max-queue-size=100501",
         }, StatsdTestConfig.class);
 
         assertNotNull(get(LocalMetricsService.class));

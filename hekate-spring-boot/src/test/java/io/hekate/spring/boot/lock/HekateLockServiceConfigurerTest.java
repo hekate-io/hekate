@@ -33,7 +33,7 @@ import static org.junit.Assert.assertNotNull;
 
 public class HekateLockServiceConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableAutoConfiguration
-    static class LockTestConfig extends HekateTestConfigBase {
+    public static class LockTestConfig extends HekateTestConfigBase {
         private static class InnerBean {
             @InjectLockRegion("test1")
             private LockRegion innerRegion;

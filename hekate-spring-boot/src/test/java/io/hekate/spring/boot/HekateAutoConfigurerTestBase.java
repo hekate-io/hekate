@@ -19,22 +19,28 @@ package io.hekate.spring.boot;
 import io.hekate.HekateTestBase;
 import io.hekate.core.Hekate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 import org.junit.After;
-import org.springframework.boot.test.util.EnvironmentTestUtils;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.boot.Banner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public abstract class HekateAutoConfigurerTestBase extends HekateTestBase {
-    private final List<AnnotationConfigApplicationContext> allCtx = new ArrayList<>();
 
-    private AnnotationConfigApplicationContext ctx;
+    public static final String[] EMPTY_ARGS = new String[0];
+
+    private final List<ConfigurableApplicationContext> allCtx = new ArrayList<>();
+
+    private ConfigurableApplicationContext ctx;
 
     @After
     public void tearDown() throws Exception {
-        allCtx.forEach(AbstractApplicationContext::close);
+        allCtx.forEach(ConfigurableApplicationContext::close);
 
         ctx = null;
     }
@@ -43,16 +49,17 @@ public abstract class HekateAutoConfigurerTestBase extends HekateTestBase {
         registerAndRefresh(null, annotatedClasses);
     }
 
-    protected void registerAndRefresh(String[] env, Class<?>... annotatedClasses) {
-        ctx = new AnnotationConfigApplicationContext();
+    protected void registerAndRefresh(String[] args, Class<?>... annotatedClasses) {
+        String[] nullSafeArgs = args == null ? EMPTY_ARGS : Stream.of(args).map(arg -> "--" + arg).toArray(String[]::new);
 
-        ctx.register(annotatedClasses);
+        assertTrue("Context parameters must use '=' to separate name and value: " + Arrays.toString(args),
+            Stream.of(nullSafeArgs).allMatch(arg -> arg.indexOf('=') > 0)
+        );
 
-        if (env != null && env.length > 0) {
-            EnvironmentTestUtils.addEnvironment(ctx, env);
-        }
+        SpringApplication app = new SpringApplication((Object[])annotatedClasses);
+        app.setBannerMode(Banner.Mode.OFF);
 
-        ctx.refresh();
+        ctx = app.run(nullSafeArgs);
 
         allCtx.add(ctx);
     }
@@ -75,7 +82,7 @@ public abstract class HekateAutoConfigurerTestBase extends HekateTestBase {
         return getContext().getBean(name, type);
     }
 
-    protected AnnotationConfigApplicationContext getContext() {
+    protected ConfigurableApplicationContext getContext() {
         assertNotNull("Application context not initialized.", ctx);
 
         return ctx;

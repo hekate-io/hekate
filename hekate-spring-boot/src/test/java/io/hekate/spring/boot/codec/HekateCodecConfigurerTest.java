@@ -14,15 +14,15 @@ import static org.junit.Assert.assertEquals;
 
 public class HekateCodecConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableAutoConfiguration
-    static class TestConfig extends HekateTestConfigBase {
+    public static class TestConfig extends HekateTestConfigBase {
         // No-op.
     }
 
     @Test
     public void testKryo() throws Exception {
         registerAndRefresh(new String[]{
-            "hekate.codec:kryo",
-            "hekate.codec.kryo.knownTypes.100500:" + DefaultClusterNode.class.getName()
+            "hekate.codec=kryo",
+            "hekate.codec.kryo.knownTypes.100500=" + DefaultClusterNode.class.getName()
         }, TestConfig.class);
 
         KryoCodecFactory<Object> codec = (KryoCodecFactory<Object>)get(HekateBootstrap.class).getDefaultCodec();
@@ -33,8 +33,8 @@ public class HekateCodecConfigurerTest extends HekateAutoConfigurerTestBase {
     @Test
     public void testFst() throws Exception {
         registerAndRefresh(new String[]{
-            "hekate.codec:fst",
-            "hekate.codec.fst.knownTypes.100500:" + DefaultClusterNode.class.getName(),
+            "hekate.codec=fst",
+            "hekate.codec.fst.knownTypes.100500=" + DefaultClusterNode.class.getName(),
         }, TestConfig.class);
 
         FstCodecFactory<Object> codec = (FstCodecFactory<Object>)get(HekateBootstrap.class).getDefaultCodec();
@@ -45,7 +45,7 @@ public class HekateCodecConfigurerTest extends HekateAutoConfigurerTestBase {
     @Test
     public void testJdk() throws Exception {
         registerAndRefresh(new String[]{
-            "hekate.codec:jdk",
+            "hekate.codec=jdk",
         }, TestConfig.class);
 
         assertEquals(JdkCodecFactory.class, get(HekateBootstrap.class).getDefaultCodec().getClass());

@@ -38,7 +38,7 @@ import static org.junit.Assert.assertTrue;
 public class HekateJdbcSeedNodeProviderConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableHekate
     @EnableAutoConfiguration
-    static class JdbcEnabledConfig {
+    public static class JdbcEnabledConfig {
         @Bean
         public DataSource dataSource() {
             return JdbcSeedNodeProviderTest.newDataSource();
@@ -46,7 +46,7 @@ public class HekateJdbcSeedNodeProviderConfigurerTest extends HekateAutoConfigur
     }
 
     @EnableAutoConfiguration
-    static class JdbcDisabledConfig extends HekateTestConfigBase {
+    public static class JdbcDisabledConfig extends HekateTestConfigBase {
         // No-op.
     }
 
@@ -72,7 +72,7 @@ public class HekateJdbcSeedNodeProviderConfigurerTest extends HekateAutoConfigur
     @Test
     public void testEnabled() throws Exception {
         registerAndRefresh(new String[]{
-            "hekate.cluster.seed.jdbc.enable:true"
+            "hekate.cluster.seed.jdbc.enable=true"
         }, JdbcEnabledConfig.class);
 
         SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();
@@ -83,7 +83,7 @@ public class HekateJdbcSeedNodeProviderConfigurerTest extends HekateAutoConfigur
     @Test
     public void testDisabled() throws Exception {
         registerAndRefresh(new String[]{
-            "hekate.cluster.seed.jdbc.enable:false"
+            "hekate.cluster.seed.jdbc.enable=false"
         }, JdbcDisabledConfig.class);
 
         SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();

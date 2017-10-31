@@ -37,12 +37,12 @@ import static org.junit.Assert.assertTrue;
 public class HekateCloudStoreSeedNodeProviderConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableHekate
     @EnableAutoConfiguration
-    static class CloudStoreEnabledConfig {
+    public static class CloudStoreEnabledConfig {
         // No-op.
     }
 
     @EnableAutoConfiguration
-    static class CloudStoreDisabledConfig extends HekateTestConfigBase {
+    public static class CloudStoreDisabledConfig extends HekateTestConfigBase {
         // No-op.
     }
 
@@ -59,13 +59,13 @@ public class HekateCloudStoreSeedNodeProviderConfigurerTest extends HekateAutoCo
         String testRegion = HekateTestProps.get("AWS_TEST_REGION");
 
         registerAndRefresh(new String[]{
-            "hekate.cluster:" + UUID.randomUUID().toString(),
-            "hekate.cluster.seed.cloudstore.enable:true",
-            "hekate.cluster.seed.cloudstore.provider:aws-s3",
-            "hekate.cluster.seed.cloudstore.container:" + testContainer,
-            "hekate.cluster.seed.cloudstore.identity:" + testIdentity,
-            "hekate.cluster.seed.cloudstore.credential:" + testCredential,
-            "hekate.cluster.seed.cloudstore.properties.jclouds.regions:" + testRegion,
+            "hekate.cluster=" + UUID.randomUUID().toString(),
+            "hekate.cluster.seed.cloudstore.enable=true",
+            "hekate.cluster.seed.cloudstore.provider=aws-s3",
+            "hekate.cluster.seed.cloudstore.container=" + testContainer,
+            "hekate.cluster.seed.cloudstore.identity=" + testIdentity,
+            "hekate.cluster.seed.cloudstore.credential=" + testCredential,
+            "hekate.cluster.seed.cloudstore.properties.jclouds.regions=" + testRegion,
         }, CloudStoreEnabledConfig.class);
 
         SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();
@@ -84,7 +84,7 @@ public class HekateCloudStoreSeedNodeProviderConfigurerTest extends HekateAutoCo
     @Test
     public void testDisabled() throws Exception {
         registerAndRefresh(new String[]{
-            "hekate.cluster.seed.cloudstore.enable:false"
+            "hekate.cluster.seed.cloudstore.enable=false"
         }, CloudStoreDisabledConfig.class);
 
         SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();

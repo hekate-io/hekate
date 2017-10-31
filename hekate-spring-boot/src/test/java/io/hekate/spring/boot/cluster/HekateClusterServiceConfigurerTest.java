@@ -43,7 +43,7 @@ import static org.junit.Assert.assertTrue;
 
 public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableAutoConfiguration
-    static class ClusterListenerTestConfig extends HekateTestConfigBase {
+    public static class ClusterListenerTestConfig extends HekateTestConfigBase {
         private final AtomicInteger fired = new AtomicInteger();
 
         @Autowired
@@ -56,7 +56,7 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
     }
 
     @EnableAutoConfiguration
-    static class FailureDetectorConfigTestConfig extends HekateTestConfigBase {
+    public static class FailureDetectorConfigTestConfig extends HekateTestConfigBase {
         private static final int HEARTBEAT_INTERVAL = 100500;
 
         @Bean
@@ -66,7 +66,7 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
     }
 
     @EnableAutoConfiguration
-    static class FailureDetectorTestConfig extends HekateTestConfigBase {
+    public static class FailureDetectorTestConfig extends HekateTestConfigBase {
         private static class TestFailureDetector extends DefaultFailureDetector {
             // No-op.
         }
@@ -78,7 +78,7 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
     }
 
     @EnableAutoConfiguration
-    static class JoinAcceptorsTestConfig extends HekateTestConfigBase {
+    public static class JoinAcceptorsTestConfig extends HekateTestConfigBase {
         private static class TestAcceptor implements ClusterAcceptor {
             @Override
             public String acceptJoin(ClusterNode joining, Hekate local) {
@@ -93,7 +93,7 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
     }
 
     @EnableAutoConfiguration
-    static class SplitBrainTestConfig extends HekateTestConfigBase {
+    public static class SplitBrainTestConfig extends HekateTestConfigBase {
         private static class TestDetector implements SplitBrainDetector {
             @Override
             public boolean isValid(ClusterNode localNode) {

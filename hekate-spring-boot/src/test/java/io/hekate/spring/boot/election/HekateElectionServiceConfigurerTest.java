@@ -32,7 +32,7 @@ import static org.mockito.Mockito.mock;
 
 public class HekateElectionServiceConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableAutoConfiguration
-    static class LeaderTestConfig extends HekateTestConfigBase {
+    public static class LeaderTestConfig extends HekateTestConfigBase {
         @Autowired
         private ElectionService electionService;
 

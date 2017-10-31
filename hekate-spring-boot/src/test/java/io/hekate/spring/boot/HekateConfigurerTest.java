@@ -42,9 +42,8 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
-    @EnableHekate
     @EnableAutoConfiguration
-    static class DefaultTestConfig {
+    public static class DefaultTestConfig extends HekateTestConfigBase {
         @Component
         public static class TestClusterListener {
             private final List<ClusterEvent> events = Collections.synchronizedList(new ArrayList<>());
@@ -81,7 +80,7 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
     }
 
     @EnableAutoConfiguration
-    static class DisableTestConfig {
+    public static class DisableTestConfig {
         @Autowired(required = false)
         private Hekate node;
     }

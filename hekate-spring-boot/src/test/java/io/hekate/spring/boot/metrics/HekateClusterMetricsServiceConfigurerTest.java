@@ -27,7 +27,7 @@ import static org.junit.Assert.assertNotNull;
 
 public class HekateClusterMetricsServiceConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableAutoConfiguration
-    static class ClusterMetricsTestConfig extends HekateTestConfigBase {
+    public static class ClusterMetricsTestConfig extends HekateTestConfigBase {
         @Autowired(required = false)
         private ClusterMetricsService clusterMetricsService;
     }

@@ -43,7 +43,7 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
     }
 
     @EnableAutoConfiguration
-    static class MessagingTestConfig extends HekateTestConfigBase {
+    public static class MessagingTestConfig extends HekateTestConfigBase {
         @Component
         private static class InnerComponent {
             private final MessagingChannel<Object> channel3;
@@ -117,7 +117,7 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
     }
 
     @EnableAutoConfiguration
-    static class MessagingTypeSafetyTestConfig extends HekateTestConfigBase {
+    public static class MessagingTypeSafetyTestConfig extends HekateTestConfigBase {
         @Component
         private static class InnerComponent {
             private final MessagingChannel<String> channel1;

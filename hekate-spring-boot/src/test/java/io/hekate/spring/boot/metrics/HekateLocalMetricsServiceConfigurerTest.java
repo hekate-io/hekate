@@ -40,7 +40,7 @@ import static org.junit.Assert.assertTrue;
 
 public class HekateLocalMetricsServiceConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableAutoConfiguration
-    static class LocalMetricsTestConfig extends HekateTestConfigBase {
+    public static class LocalMetricsTestConfig extends HekateTestConfigBase {
         private static class InnerBean {
             @InjectCounter("test.counter2")
             private CounterMetric counter;
@@ -108,7 +108,7 @@ public class HekateLocalMetricsServiceConfigurerTest extends HekateAutoConfigure
     }
 
     @EnableAutoConfiguration
-    static class MetricListenerTestConfig extends HekateTestConfigBase {
+    public static class MetricListenerTestConfig extends HekateTestConfigBase {
         private static class Listener implements MetricsListener {
             @Override
             public void onUpdate(MetricsUpdateEvent event) {

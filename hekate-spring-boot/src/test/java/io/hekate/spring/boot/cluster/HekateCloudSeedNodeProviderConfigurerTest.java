@@ -37,12 +37,12 @@ import static org.junit.Assert.assertTrue;
 public class HekateCloudSeedNodeProviderConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableHekate
     @EnableAutoConfiguration
-    static class CloudEnabledConfig {
+    public static class CloudEnabledConfig {
         // No-op.
     }
 
     @EnableAutoConfiguration
-    static class CloudDisabledConfig extends HekateTestConfigBase {
+    public static class CloudDisabledConfig extends HekateTestConfigBase {
         // No-op.
     }
 
@@ -59,16 +59,16 @@ public class HekateCloudSeedNodeProviderConfigurerTest extends HekateAutoConfigu
         String testEndpoint = "https://ec2." + testRegion + ".amazonaws.com";
 
         registerAndRefresh(new String[]{
-            "hekate.cluster:" + UUID.randomUUID().toString(),
-            "hekate.cluster.seed.cloud.enable:true",
-            "hekate.cluster.seed.cloud.provider:aws-ec2",
-            "hekate.cluster.seed.cloud.endpoint:" + testEndpoint,
-            "hekate.cluster.seed.cloud.identity:" + testIdentity,
-            "hekate.cluster.seed.cloud.credential:" + testCredential,
-            "hekate.cluster.seed.cloud.regions:" + testRegion,
-            "hekate.cluster.seed.cloud.zones:" + testRegion + "a, " + testRegion + 'b',
-            "hekate.cluster.seed.cloud.tags.HEKATE:1",
-            "hekate.cluster.seed.cloud.properties.test.property:test.value",
+            "hekate.cluster=" + UUID.randomUUID().toString(),
+            "hekate.cluster.seed.cloud.enable=true",
+            "hekate.cluster.seed.cloud.provider=aws-ec2",
+            "hekate.cluster.seed.cloud.endpoint=" + testEndpoint,
+            "hekate.cluster.seed.cloud.identity=" + testIdentity,
+            "hekate.cluster.seed.cloud.credential=" + testCredential,
+            "hekate.cluster.seed.cloud.regions=" + testRegion,
+            "hekate.cluster.seed.cloud.zones=" + testRegion + "a, " + testRegion + 'b',
+            "hekate.cluster.seed.cloud.tags.HEKATE=1",
+            "hekate.cluster.seed.cloud.properties.test.property=test.value",
         }, CloudEnabledConfig.class);
 
         SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();
@@ -91,7 +91,7 @@ public class HekateCloudSeedNodeProviderConfigurerTest extends HekateAutoConfigu
     @Test
     public void testDisabled() throws Exception {
         registerAndRefresh(new String[]{
-            "hekate.cluster.seed.cloud.enable:false"
+            "hekate.cluster.seed.cloud.enable=false"
         }, CloudDisabledConfig.class);
 
         SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();

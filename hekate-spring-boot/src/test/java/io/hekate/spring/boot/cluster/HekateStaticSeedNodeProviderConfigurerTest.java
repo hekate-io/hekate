@@ -31,21 +31,21 @@ import static org.junit.Assert.assertTrue;
 public class HekateStaticSeedNodeProviderConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableHekate
     @EnableAutoConfiguration
-    static class EnabledConfig {
+    public static class EnabledConfig {
         // No-op.
     }
 
     @EnableHekate
     @EnableAutoConfiguration
-    static class DisabledConfig {
+    public static class DisabledConfig {
         // No-op.
     }
 
     @Test
     public void testEnabled() throws Exception {
         registerAndRefresh(new String[]{
-            "hekate.cluster.seed.static.enable:true",
-            "hekate.cluster.seed.static.addresses:localhost:10012,localhost:10013"
+            "hekate.cluster.seed.static.enable=true",
+            "hekate.cluster.seed.static.addresses=localhost:10012,localhost:10013"
         }, EnabledConfig.class);
 
         StaticSeedNodeProvider provider = (StaticSeedNodeProvider)getNode().get(DefaultClusterService.class).seedNodeProvider();
@@ -60,7 +60,7 @@ public class HekateStaticSeedNodeProviderConfigurerTest extends HekateAutoConfig
     @Test
     public void testDisabled() throws Exception {
         registerAndRefresh(new String[]{
-            "hekate.cluster.seed.static.enable:false"
+            "hekate.cluster.seed.static.enable=false"
         }, DisabledConfig.class);
 
         SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();
