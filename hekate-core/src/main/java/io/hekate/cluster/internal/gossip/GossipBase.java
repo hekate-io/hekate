@@ -41,7 +41,7 @@ public abstract class GossipBase {
         return seen().contains(id);
     }
 
-    public boolean hasSeen(Set<ClusterNodeId> ids) {
+    public boolean hasSeenAll(Set<ClusterNodeId> ids) {
         assert ids != null : "Nodes set is null.";
 
         return seen().containsAll(ids);

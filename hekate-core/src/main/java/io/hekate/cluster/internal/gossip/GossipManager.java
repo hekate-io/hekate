@@ -20,7 +20,6 @@ import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.health.FailureDetector;
-import io.hekate.cluster.internal.DefaultClusterNode;
 import io.hekate.cluster.internal.gossip.GossipProtocol.JoinAccept;
 import io.hekate.cluster.internal.gossip.GossipProtocol.JoinReject;
 import io.hekate.cluster.internal.gossip.GossipProtocol.JoinReply;
@@ -79,6 +78,8 @@ public class GossipManager {
 
     private Set<ClusterNode> lastTopology = Collections.emptySet();
 
+    private GossipNodeStatus lastStatus;
+
     private Set<ClusterAddress> knownAddresses = Collections.emptySet();
 
     private boolean leaveScheduled;
@@ -99,6 +100,7 @@ public class GossipManager {
         id = node.id();
 
         status = DOWN;
+        lastStatus = DOWN;
 
         updateLocalGossip(new Gossip());
 
@@ -460,7 +462,7 @@ public class GossipManager {
 
                 Set<ClusterNodeId> remoteSeen = remote.seen();
 
-                if (!localGossip.hasSeen(remoteSeen)) {
+                if (!localGossip.hasSeenAll(remoteSeen)) {
                     updateLocalGossip(localGossip.seen(remoteSeen));
 
                     seenChanged = true;
@@ -734,9 +736,9 @@ public class GossipManager {
             seedNodesSate = null;
 
             if (status == DOWN) {
-                status = JOINING;
+                localGossip = localGossip.update(id, new GossipNodeState(node, JOINING));
 
-                listener.onStatusChange(DOWN, JOINING, DefaultClusterNode.NON_JOINED_ORDER, lastTopology);
+                updateLocalSate();
             }
 
             GossipNodeState upState = new GossipNodeState(node, UP).order(1);
@@ -907,30 +909,17 @@ public class GossipManager {
     }
 
     private boolean updateLocalSate() {
-        GossipNodeState thisNode = localGossip.member(id);
+        GossipNodeStatus newStatus = localGossip.member(id).status();
 
-        GossipNodeStatus newStatus = thisNode.status();
-
-        if (newStatus == status) {
-            // Local node's status didn't change -> notify on topology change only.
-            updateTopology(true);
-        } else {
-            // Local node's status was changed -> notify on status change only (since status change event also includes topology).
-            GossipNodeStatus oldStatus = status;
-
-            status = newStatus;
-
+        if (newStatus != status) {
             if (DEBUG) {
-                log.debug("Updated local node state [old={}, new={}]", oldStatus, newStatus);
+                log.debug("Updated local node state [old={}, new={}]", status, newStatus);
             }
 
-            updateTopology(false /* <- do not fire topology change event */);
-
-            // Do notify on status change.
-            listener.onStatusChange(oldStatus, newStatus, thisNode.order(), lastTopology);
+            status = newStatus;
         }
 
-        updateWatchNodes();
+        updateTopology();
 
         if (leaveScheduled
             // Can leave only if in convergent state (otherwise node can join/leave unnoticed by some nodes).
@@ -947,9 +936,7 @@ public class GossipManager {
         return false;
     }
 
-    private void updateTopology(boolean notifyOnChange) {
-        Set<ClusterNode> oldTopology = lastTopology;
-
+    private void updateTopology() {
         Set<ClusterNode> newTopology = localGossip.members().values().stream()
             .filter(s -> s.node().equals(node) || s.status() == UP)
             .map(GossipNodeState::node)
@@ -957,13 +944,27 @@ public class GossipManager {
 
         newTopology = Collections.unmodifiableSet(newTopology);
 
-        lastTopology = newTopology;
+        Set<ClusterNode> oldTopology = lastTopology;
 
-        if (notifyOnChange && !oldTopology.equals(newTopology)) {
+        GossipNodeState thisNode = localGossip.member(id);
+
+        GossipNodeStatus newStatus = thisNode.status();
+        GossipNodeStatus oldStatus = this.lastStatus;
+
+        if (oldStatus != newStatus) {
+            lastStatus = newStatus;
+            lastTopology = newTopology;
+
+            listener.onStatusChange(oldStatus, newStatus, thisNode.order(), newTopology);
+        } else if (!oldTopology.equals(newTopology)) {
+            lastTopology = newTopology;
+
             listener.onTopologyChange(oldTopology, newTopology);
         }
 
         updateKnownAddresses();
+
+        updateWatchNodes();
     }
 
     private void updateKnownAddresses() {

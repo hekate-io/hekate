@@ -169,8 +169,8 @@ public class GossipTest extends HekateTestBase {
         assertTrue(g3.hasSeen(s2.id()));
         assertTrue(g3.hasSeen(s3.id()));
 
-        assertTrue(g3.hasSeen(toSet(s1.id(), s2.id(), s3.id())));
-        assertFalse(g3.hasSeen(toSet(s1.id(), s2.id(), s3.id(), newNodeId())));
+        assertTrue(g3.hasSeenAll(toSet(s1.id(), s2.id(), s3.id())));
+        assertFalse(g3.hasSeenAll(toSet(s1.id(), s2.id(), s3.id(), newNodeId())));
 
         assertSame(g3, g3.seen(toSet(s1.id(), s2.id(), s3.id())));
     }
