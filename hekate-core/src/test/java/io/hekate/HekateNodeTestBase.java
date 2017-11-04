@@ -23,7 +23,7 @@ import io.hekate.cluster.seed.SeedNodeProviderMock;
 import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.metrics.cluster.ClusterMetricsServiceFactory;
-import io.hekate.network.internal.netty.NetworkServiceFactoryForTest;
+import io.hekate.network.netty.NetworkServiceFactoryForTest;
 import io.hekate.task.TaskServiceFactory;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;

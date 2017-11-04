@@ -26,7 +26,7 @@ import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
 import io.hekate.core.HekateSupport;
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.core.internal.util.AsyncUtils;
+import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.format.ToString;
 import java.util.Arrays;
 import java.util.EnumSet;

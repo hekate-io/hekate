@@ -83,7 +83,7 @@ public class NetworkConnectorConfigTest extends HekateTestBase {
     }
 
     @Test
-    public void testLoggerCategory() {
+    public void testLogCategory() {
         assertNull(cfg.getLogCategory());
 
         cfg.setLogCategory("test");

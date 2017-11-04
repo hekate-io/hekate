@@ -17,10 +17,10 @@
 package io.hekate.lock.internal;
 
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.lock.AsyncLockCallback;
 import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockOwnerInfo;
+import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.HashMap;

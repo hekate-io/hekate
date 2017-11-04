@@ -18,10 +18,10 @@ package io.hekate.cluster.internal;
 
 import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.core.HekateException;
-import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.core.internal.util.Waiting;
 import io.hekate.network.NetworkService;
+import io.hekate.util.async.AsyncUtils;
+import io.hekate.util.async.Waiting;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.HashSet;

@@ -17,13 +17,13 @@
 package io.hekate.metrics.statsd;
 
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.core.internal.util.AsyncUtils;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Utils;
-import io.hekate.core.internal.util.Waiting;
 import io.hekate.metrics.Metric;
 import io.hekate.metrics.MetricFilter;
+import io.hekate.util.async.AsyncUtils;
+import io.hekate.util.async.Waiting;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.io.IOException;

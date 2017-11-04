@@ -16,7 +16,7 @@
 
 package io.hekate.util;
 
-import io.hekate.core.internal.util.AsyncUtils;
+import io.hekate.util.async.AsyncUtils;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;

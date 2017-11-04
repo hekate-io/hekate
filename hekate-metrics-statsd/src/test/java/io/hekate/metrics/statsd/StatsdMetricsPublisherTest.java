@@ -16,8 +16,8 @@
 
 package io.hekate.metrics.statsd;
 
-import io.hekate.core.internal.util.Waiting;
 import io.hekate.metrics.Metric;
+import io.hekate.util.async.Waiting;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;

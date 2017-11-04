@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
  * Context for {@link ClusterService}.
  *
  * <p>
- * This interface is mostly addressed for providing feedback from a {@link ClusterService} back to the {@link Hekate} instance. However
+ * This interface is attended to providing feedback from a {@link ClusterService} back to the {@link Hekate} instance. However
  * other services can also use it in order to obtain current cluster topology or register cluster event listeners.
  * </p>
  *

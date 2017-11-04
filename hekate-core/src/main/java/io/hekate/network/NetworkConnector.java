@@ -18,7 +18,6 @@ package io.hekate.network;
 
 import io.hekate.codec.Codec;
 import io.hekate.codec.CodecFactory;
-import java.util.Optional;
 
 /**
  * Network connector.
@@ -54,13 +53,4 @@ public interface NetworkConnector<T> {
      * @return New client.
      */
     NetworkClient<T> newClient();
-
-    /**
-     * Returns a {@link NetworkServerHandler} that is configured for this connector (if any).
-     *
-     * @return {@link NetworkServerHandler} that is configured for this connector (if any).
-     *
-     * @see NetworkConnectorConfig#setServerHandler(NetworkServerHandler)
-     */
-    Optional<NetworkServerHandler<T>> serverHandler();
 }

@@ -22,7 +22,7 @@ import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.network.address.AddressPattern;
 import io.hekate.network.address.AddressSelector;
-import io.hekate.network.internal.netty.NettyNetworkService;
+import io.hekate.network.internal.NettyNetworkService;
 import io.hekate.util.format.ToString;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -631,12 +631,12 @@ public class NetworkServiceFactory implements ServiceFactory<NetworkService> {
     /**
      * Fluent-style version of {@link #setTcpReceiveBufferSize(Integer)}.
      *
-     * @param soReceiveBufferSize Buffer size in bytes.
+     * @param tcpReceiveBufferSize Buffer size in bytes.
      *
      * @return This instance.
      */
-    public NetworkServiceFactory withTcpReceiveBufferSize(Integer soReceiveBufferSize) {
-        setTcpReceiveBufferSize(soReceiveBufferSize);
+    public NetworkServiceFactory withTcpReceiveBufferSize(Integer tcpReceiveBufferSize) {
+        setTcpReceiveBufferSize(tcpReceiveBufferSize);
 
         return this;
     }

@@ -17,8 +17,8 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.network.internal.netty.NettySpyForTest;
-import io.hekate.network.internal.netty.NetworkServiceFactoryForTest;
+import io.hekate.network.netty.NettySpyForTest;
+import io.hekate.network.netty.NetworkServiceFactoryForTest;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 

@@ -16,7 +16,7 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.core.internal.util.AsyncUtils;
+import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.format.ToString;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
