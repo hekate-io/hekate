@@ -138,8 +138,8 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
 
     @Override
     protected void doParse(Element rootEl, ParserContext ctx, BeanDefinitionBuilder boot) {
-        setProperty(boot, rootEl, "name", "nodeName");
-        setProperty(boot, rootEl, "cluster", "clusterName");
+        setProperty(boot, rootEl, "nodeName", "name");
+        setProperty(boot, rootEl, "clusterName", "cluster");
 
         parseNodeRoles(boot, rootEl);
 
