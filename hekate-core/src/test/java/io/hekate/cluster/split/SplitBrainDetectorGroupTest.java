@@ -19,6 +19,7 @@ package io.hekate.cluster.split;
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.HekateConfigurationException;
+import io.hekate.test.SplitBrainDetectorMock;
 import java.util.Arrays;
 import org.junit.Test;
 

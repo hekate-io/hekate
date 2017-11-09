@@ -30,6 +30,8 @@ import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.core.service.TerminatingService;
+import io.hekate.test.HekateTestError;
+import io.hekate.test.HekateTestException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -246,7 +248,7 @@ public class ServiceManagerTest extends HekateTestBase {
             public void preInitialize(InitializationContext ctx) throws HekateException {
                 super.preInitialize(ctx);
 
-                throw new TestHekateException(TEST_ERROR_MESSAGE);
+                throw new HekateTestException(HekateTestError.MESSAGE);
             }
         };
 
@@ -296,7 +298,7 @@ public class ServiceManagerTest extends HekateTestBase {
             public void initialize(InitializationContext ctx) throws HekateException {
                 super.initialize(ctx);
 
-                throw new TestHekateException(TEST_ERROR_MESSAGE);
+                throw new HekateTestException(HekateTestError.MESSAGE);
             }
         };
 
@@ -348,7 +350,7 @@ public class ServiceManagerTest extends HekateTestBase {
             public void postInitialize(InitializationContext ctx) throws HekateException {
                 super.postInitialize(ctx);
 
-                throw new TestHekateException(TEST_ERROR_MESSAGE);
+                throw new HekateTestException(HekateTestError.MESSAGE);
             }
         };
 
@@ -407,7 +409,7 @@ public class ServiceManagerTest extends HekateTestBase {
             public void preTerminate() throws HekateException {
                 super.preTerminate();
 
-                throw new TestHekateException(TEST_ERROR_MESSAGE);
+                throw new HekateTestException(HekateTestError.MESSAGE);
             }
         };
 
@@ -458,7 +460,7 @@ public class ServiceManagerTest extends HekateTestBase {
             public void terminate() throws HekateException {
                 super.terminate();
 
-                throw new TestHekateException(TEST_ERROR_MESSAGE);
+                throw new HekateTestException(HekateTestError.MESSAGE);
             }
         };
 
@@ -509,7 +511,7 @@ public class ServiceManagerTest extends HekateTestBase {
             public void postTerminate() throws HekateException {
                 super.postTerminate();
 
-                throw new TestHekateException(TEST_ERROR_MESSAGE);
+                throw new HekateTestException(HekateTestError.MESSAGE);
             }
         };
 

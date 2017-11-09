@@ -16,7 +16,7 @@
 
 package io.hekate.cluster.seed.jdbc;
 
-import io.hekate.HekateTestBase;
+import io.hekate.test.HekateTestError;
 import java.io.PrintWriter;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
@@ -49,7 +49,7 @@ public class BrokenDataSourceMock implements DataSource {
         return (Connection)Proxy.newProxyInstance(classLoader, interfaces, (proxy, method, args) -> {
             if (method.getName().toLowerCase().contains("statement")) {
                 if (errors.get() > 0 && errors.getAndDecrement() > 0) {
-                    throw new SQLException(HekateTestBase.TEST_ERROR_MESSAGE);
+                    throw new SQLException(HekateTestError.MESSAGE);
                 }
             }
 

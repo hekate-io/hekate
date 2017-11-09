@@ -17,13 +17,18 @@
 package io.hekate.codec;
 
 import io.hekate.HekateTestBase;
+import io.hekate.util.format.ToString;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -54,6 +59,34 @@ public abstract class CodecTestBase<T extends CodecFactory<Object>> extends Heka
         public String getStrVal() {
             return strVal;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (!(o instanceof ObjA)) {
+                return false;
+            }
+
+            ObjA objA = (ObjA)o;
+
+            if (intVal != objA.intVal) {
+                return false;
+            }
+
+            return strVal != null ? strVal.equals(objA.strVal) : objA.strVal == null;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = intVal;
+
+            result = 31 * result + (strVal != null ? strVal.hashCode() : 0);
+
+            return result;
+        }
     }
 
     public static class ObjB implements Serializable {
@@ -79,6 +112,34 @@ public abstract class CodecTestBase<T extends CodecFactory<Object>> extends Heka
         public List<ObjA> getListVal() {
             return listVal;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (!(o instanceof ObjB)) {
+                return false;
+            }
+
+            ObjB objB = (ObjB)o;
+
+            if (objVal != null ? !objVal.equals(objB.objVal) : objB.objVal != null) {
+                return false;
+            }
+
+            return listVal != null ? listVal.equals(objB.listVal) : objB.listVal == null;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = objVal != null ? objVal.hashCode() : 0;
+
+            result = 31 * result + (listVal != null ? listVal.hashCode() : 0);
+
+            return result;
+        }
     }
 
     protected final T factory;
@@ -97,12 +158,65 @@ public abstract class CodecTestBase<T extends CodecFactory<Object>> extends Heka
     }
 
     @Test
+    public void testUnmodifiableMap() throws Exception {
+        Map<Object, Object> map = new HashMap<>();
+
+        map.put(new ObjA(), new ObjA());
+        map.put(new ObjB(), new ObjB());
+
+        Codec<Object> codec = factory.createCodec();
+
+        Map<Object, Object> decoded = encodeDecode(codec, codec, Collections.unmodifiableMap(map));
+
+        assertEquals(map, decoded);
+    }
+
+    @Test
+    public void testUnmodifiableSet() throws Exception {
+        Set<Object> set = new HashSet<>();
+
+        set.add(new ObjA());
+        set.add(new ObjB());
+
+        Codec<Object> codec = factory.createCodec();
+
+        Set<Object> decoded = encodeDecode(codec, codec, Collections.unmodifiableSet(set));
+
+        assertEquals(set, decoded);
+    }
+
+    @Test
+    public void testUnmodifiableList() throws Exception {
+        List<Object> list = new ArrayList<>();
+
+        list.add(new ObjA());
+        list.add(new ObjB());
+
+        Codec<Object> codec = factory.createCodec();
+
+        List<Object> decoded = encodeDecode(codec, codec, Collections.unmodifiableList(list));
+
+        assertEquals(list, decoded);
+    }
+
+    @Test
+    public void testArrayAsList() throws Exception {
+        List<Object> list = Arrays.asList(new ObjA(), new ObjB());
+
+        Codec<Object> codec = factory.createCodec();
+
+        List<Object> decoded = encodeDecode(codec, codec, list);
+
+        assertEquals(list, decoded);
+    }
+
+    @Test
     public void testToString() {
         assertTrue(factory.toString().startsWith(factory.getClass().getSimpleName()));
 
         Codec<Object> codec = factory.createCodec();
 
-        assertTrue(codec.toString().startsWith(codec.getClass().getSimpleName()));
+        assertEquals(ToString.format(codec), codec.toString());
     }
 
     @Test

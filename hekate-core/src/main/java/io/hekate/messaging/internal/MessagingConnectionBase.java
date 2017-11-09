@@ -266,7 +266,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                                 onReceiveAsyncDequeue();
 
                                 doReceiveResponse(handle, m.cast());
-                            }, error -> notifyOnRequestFailure(handle, error));
+                            }, error -> handleReceiveError(error, netMsg, from));
                         } else {
                             doReceiveResponse(handle, netMsg.decode().cast());
                         }
@@ -289,7 +289,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                                 onReceiveAsyncDequeue();
 
                                 doReceiveResponseChunk(handle, m.cast());
-                            }, error -> notifyOnRequestFailure(handle, error));
+                            }, error -> handleReceiveError(error, netMsg, from));
                         } else {
                             doReceiveResponseChunk(handle, netMsg.decode().cast());
                         }
@@ -312,7 +312,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                                 onReceiveAsyncDequeue();
 
                                 doReceiveError(handle, m.cast());
-                            }, error -> notifyOnRequestFailure(handle, error));
+                            }, error -> handleReceiveError(error, netMsg, from));
                         } else {
                             doReceiveError(handle, netMsg.decode().cast());
                         }
@@ -540,6 +540,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
             }
 
             MessagingWorker worker = async.workerFor(e.affinity().orElse(randomAffinity()));
+
             replyError(worker, e.requestId(), cause);
         } else if (error instanceof ResponsePayloadDecodeException) {
             ResponsePayloadDecodeException e = (ResponsePayloadDecodeException)error;

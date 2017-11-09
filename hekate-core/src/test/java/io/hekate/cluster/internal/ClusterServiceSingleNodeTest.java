@@ -32,6 +32,8 @@ import io.hekate.core.HekateException;
 import io.hekate.core.HekateFutureException;
 import io.hekate.core.JoinFuture;
 import io.hekate.core.internal.HekateTestNode;
+import io.hekate.test.HekateTestError;
+import io.hekate.test.HekateTestException;
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -387,7 +389,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
                 fail();
             } catch (HekateFutureException e) {
                 assertTrue(e.isCausedBy(AssertionError.class));
-                assertEquals(TEST_ERROR_MESSAGE, e.getCause().getMessage());
+                assertEquals(HekateTestError.MESSAGE, e.getCause().getMessage());
             }
 
             assertNull(error.get());
@@ -409,7 +411,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
                 @Override
                 public void startDiscovery(String cluster, InetSocketAddress node) throws HekateException {
                     if (errorsCounter.getAndDecrement() > 1) {
-                        throw new TestHekateException(TEST_ERROR_MESSAGE);
+                        throw new HekateTestException(HekateTestError.MESSAGE);
                     }
                 }
             });
@@ -431,7 +433,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
                 @Override
                 public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
                     if (errorsCounter.getAndDecrement() > 1) {
-                        throw new TestHekateException(TEST_ERROR_MESSAGE);
+                        throw new HekateTestException(HekateTestError.MESSAGE);
                     }
                     return Collections.emptyList();
                 }

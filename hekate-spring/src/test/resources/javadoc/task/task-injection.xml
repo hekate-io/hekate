@@ -22,7 +22,7 @@
 
     <bean class="foo.bar.SomeBean"/>
 
-    <bean name="seedNodeProviderMock" class="io.hekate.cluster.seed.SeedNodeProviderMock"/>
+    <bean name="seedNodeProviderMock" class="io.hekate.test.SeedNodeProviderMock"/>
 
     <bean class="io.hekate.spring.bean.HekateSpringBootstrap">
         <property name="services">

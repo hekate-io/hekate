@@ -42,6 +42,10 @@ public class RpcServiceTest extends RpcServiceTestBase {
         Object callB();
     }
 
+    public RpcServiceTest(MultiCodecTestContext ctx) {
+        super(ctx);
+    }
+
     @Test
     public void testServers() throws Exception {
         TestRpcA rpcA = mock(TestRpcA.class);

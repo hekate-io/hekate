@@ -27,8 +27,6 @@ import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.util.stream.Collectors.toMap;
-
 class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
     private static final Logger log = LoggerFactory.getLogger(RpcService.class);
 
@@ -57,14 +55,15 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
                     } else {
                         String errMsg = "RPC aggregation failed [" + ToString.formatProperties(aggregate.request()) + ']';
 
-                        Map<ClusterNode, Object> partialResults = aggregate.resultsByNode().entrySet().stream()
-                            .collect(toMap(Map.Entry::getKey, e -> {
-                                if (e.getValue() instanceof ObjectResponse) {
-                                    return ((ObjectResponse)e.getValue()).object();
-                                } else {
-                                    return null;
-                                }
-                            }));
+                        Map<ClusterNode, Object> partialResults = new HashMap<>(aggregate.resultsByNode().size(), 1.0f);
+
+                        aggregate.resultsByNode().forEach((node, response) -> {
+                            if (response instanceof ObjectResponse) {
+                                partialResults.put(node, ((ObjectResponse)response).object());
+                            } else {
+                                partialResults.put(node, null);
+                            }
+                        });
 
                         throw new RpcAggregateException(errMsg, aggregate.errors(), partialResults);
                     }

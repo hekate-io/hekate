@@ -16,7 +16,6 @@
 
 package io.hekate.task.internal;
 
-import io.hekate.HekateTestContext;
 import io.hekate.core.Hekate;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.MessagingRemoteException;
@@ -37,7 +36,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class TaskApplyTest extends TaskServiceTestBase {
-    public TaskApplyTest(HekateTestContext params) {
+    public TaskApplyTest(MultiCodecTestContext params) {
         super(params);
     }
 

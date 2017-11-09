@@ -63,18 +63,14 @@ public class JdkCodecFactoryTest extends HekateTestBase {
     private DummyMessage encodeDecode(DummyMessage msg) throws Exception {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
 
-        StreamDataWriter out = new StreamDataWriter(bout);
-
         Codec<DummyMessage> encoder = new JdkCodecFactory<DummyMessage>().createCodec();
 
-        encoder.encode(msg, out);
+        encoder.encode(msg, new StreamDataWriter(bout));
 
         ByteArrayInputStream bin = new ByteArrayInputStream(bout.toByteArray());
 
-        StreamDataReader in = new StreamDataReader(bin);
-
         Codec<DummyMessage> decoder = new JdkCodecFactory<DummyMessage>().createCodec();
 
-        return decoder.decode(in);
+        return decoder.decode(new StreamDataReader(bin));
     }
 }

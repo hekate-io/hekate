@@ -62,6 +62,10 @@ public class RpcServiceAggregateTest extends RpcServiceTestBase {
 
     private HekateTestNode server2;
 
+    public RpcServiceAggregateTest(MultiCodecTestContext ctx) {
+        super(ctx);
+    }
+
     @Override
     public void setUp() throws Exception {
         super.setUp();

@@ -10,6 +10,10 @@ import io.hekate.rpc.RpcAffinityKey;
 import io.hekate.rpc.RpcException;
 import io.hekate.rpc.RpcServerConfig;
 import io.hekate.rpc.RpcServiceFactory;
+import io.hekate.test.HekateTestError;
+import io.hekate.test.NonSerializable;
+import io.hekate.test.NonSerializableTestException;
+import io.hekate.test.SerializableTestException;
 import java.io.InvalidObjectException;
 import java.io.NotSerializableException;
 import java.net.Socket;
@@ -72,15 +76,11 @@ public class RpcServiceUnicastTest extends RpcServiceTestBase {
 
     @Rpc
     public interface TestRpcWithError {
-        Object callWithError() throws TestRpcException;
+        Object callWithError() throws SerializableTestException;
     }
 
-    public static class TestRpcException extends Exception {
-        private static final long serialVersionUID = 1;
-
-        public TestRpcException(String message) {
-            super(message);
-        }
+    public RpcServiceUnicastTest(MultiCodecTestContext ctx) {
+        super(ctx);
     }
 
     @Test
@@ -285,9 +285,9 @@ public class RpcServiceUnicastTest extends RpcServiceTestBase {
         TestRpcWithError proxy = client.rpc().clientFor(TestRpcWithError.class).build();
 
         repeat(3, i -> {
-            when(rpc.callWithError()).thenThrow(new RuntimeException(TEST_ERROR_MESSAGE));
+            when(rpc.callWithError()).thenThrow(new RuntimeException(HekateTestError.MESSAGE));
 
-            expectExactMessage(RuntimeException.class, TEST_ERROR_MESSAGE, proxy::callWithError);
+            expectExactMessage(RuntimeException.class, HekateTestError.MESSAGE, proxy::callWithError);
 
             verify(rpc).callWithError();
             verifyNoMoreInteractions(rpc);
@@ -304,9 +304,9 @@ public class RpcServiceUnicastTest extends RpcServiceTestBase {
         TestRpcWithError proxy = client.rpc().clientFor(TestRpcWithError.class).build();
 
         repeat(3, i -> {
-            when(rpc.callWithError()).thenThrow(new NoClassDefFoundError(TEST_ERROR_MESSAGE));
+            when(rpc.callWithError()).thenThrow(new NoClassDefFoundError(HekateTestError.MESSAGE));
 
-            expectExactMessage(NoClassDefFoundError.class, TEST_ERROR_MESSAGE, proxy::callWithError);
+            expectExactMessage(NoClassDefFoundError.class, HekateTestError.MESSAGE, proxy::callWithError);
 
             verify(rpc).callWithError();
             verifyNoMoreInteractions(rpc);
@@ -323,9 +323,9 @@ public class RpcServiceUnicastTest extends RpcServiceTestBase {
         TestRpcWithError proxy = client.rpc().clientFor(TestRpcWithError.class).build();
 
         repeat(3, i -> {
-            when(rpc.callWithError()).thenThrow(new TestRpcException(TEST_ERROR_MESSAGE));
+            when(rpc.callWithError()).thenThrow(new SerializableTestException());
 
-            expectExactMessage(TestRpcException.class, TEST_ERROR_MESSAGE, proxy::callWithError);
+            expectExactMessage(SerializableTestException.class, HekateTestError.MESSAGE, proxy::callWithError);
 
             verify(rpc).callWithError();
             verifyNoMoreInteractions(rpc);
@@ -342,14 +342,16 @@ public class RpcServiceUnicastTest extends RpcServiceTestBase {
         TestRpcWithError proxy = client.rpc().clientFor(TestRpcWithError.class).build();
 
         repeat(3, i -> {
-            NonSerializableRpcException testError = new NonSerializableRpcException(true);
+            NonSerializableTestException testError = new NonSerializableTestException(true);
 
             when(rpc.callWithError()).thenThrow(testError);
 
             RpcException err = expect(RpcException.class, proxy::callWithError);
 
-            assertTrue(ErrorUtils.isCausedBy(MessagingRemoteException.class, err));
-            assertTrue(ErrorUtils.stackTrace(err).contains(NonSerializableRpcException.class.getName() + ": " + TEST_ERROR_MESSAGE));
+            String stackTrace = ErrorUtils.stackTrace(err);
+
+            assertTrue(stackTrace, ErrorUtils.isCausedBy(MessagingRemoteException.class, err));
+            assertTrue(stackTrace, stackTrace.contains(NonSerializableTestException.class.getName() + ": " + HekateTestError.MESSAGE));
 
             verify(rpc).callWithError();
             verifyNoMoreInteractions(rpc);
@@ -366,14 +368,14 @@ public class RpcServiceUnicastTest extends RpcServiceTestBase {
         TestRpcWithError proxy = client.rpc().clientFor(TestRpcWithError.class).build();
 
         repeat(3, i -> {
-            NonSerializableRpcException testError = new NonSerializableRpcException(false);
+            NonSerializableTestException testError = new NonSerializableTestException(false);
 
             when(rpc.callWithError()).thenThrow(testError);
 
             RpcException err = expect(RpcException.class, proxy::callWithError);
 
-            assertTrue(ErrorUtils.isCausedBy(CodecException.class, err));
-            assertTrue(ErrorUtils.stackTrace(err).contains(InvalidObjectException.class.getName() + ": " + TEST_ERROR_MESSAGE));
+            assertTrue(ErrorUtils.isCausedBy(InvalidObjectException.class, err));
+            assertTrue(ErrorUtils.stackTrace(err).contains(InvalidObjectException.class.getName() + ": " + HekateTestError.MESSAGE));
 
             verify(rpc).callWithError();
             verifyNoMoreInteractions(rpc);
@@ -390,10 +392,13 @@ public class RpcServiceUnicastTest extends RpcServiceTestBase {
         TestRpcC proxy = client.rpc().clientFor(TestRpcC.class).build();
 
         repeat(3, i -> {
-            RpcException err = expect(RpcException.class, () -> proxy.callC(1, new Socket()));
+            RpcException err = expect(RpcException.class, () -> proxy.callC(1, new NonSerializable()));
 
-            assertTrue(ErrorUtils.isCausedBy(CodecException.class, err));
-            assertTrue(ErrorUtils.stackTrace(err).contains(NotSerializableException.class.getName() + ": " + Socket.class.getName()));
+            String stackTrace = ErrorUtils.stackTrace(err);
+
+            assertTrue(stackTrace, ErrorUtils.isCausedBy(CodecException.class, err));
+            assertTrue(stackTrace, stackTrace.contains(NotSerializableException.class.getName()));
+            assertTrue(stackTrace, stackTrace.contains(Socket.class.getName()));
 
             verifyNoMoreInteractions(rpc);
             reset(rpc);
@@ -409,12 +414,15 @@ public class RpcServiceUnicastTest extends RpcServiceTestBase {
         TestRpcB proxy = client.rpc().clientFor(TestRpcB.class).build();
 
         repeat(3, i -> {
-            when(rpc.callB()).thenReturn(new Socket());
+            when(rpc.callB()).thenReturn(new NonSerializable());
 
             RpcException err = expect(RpcException.class, proxy::callB);
 
-            assertTrue(ErrorUtils.isCausedBy(MessagingRemoteException.class, err));
-            assertTrue(ErrorUtils.stackTrace(err).contains(NotSerializableException.class.getName() + ": " + Socket.class.getName()));
+            String stackTrace = ErrorUtils.stackTrace(err);
+
+            assertTrue(stackTrace, ErrorUtils.isCausedBy(MessagingRemoteException.class, err));
+            assertTrue(stackTrace, stackTrace.contains(NotSerializableException.class.getName()));
+            assertTrue(stackTrace, stackTrace.contains(Socket.class.getName()));
 
             verify(rpc).callB();
             verifyNoMoreInteractions(rpc);

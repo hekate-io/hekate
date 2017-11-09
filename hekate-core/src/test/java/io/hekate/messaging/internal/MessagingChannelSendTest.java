@@ -30,6 +30,8 @@ import io.hekate.messaging.UnknownRouteException;
 import io.hekate.messaging.unicast.LoadBalancingException;
 import io.hekate.messaging.unicast.SendFuture;
 import io.hekate.network.NetworkFuture;
+import io.hekate.test.HekateTestError;
+import io.hekate.test.HekateTestException;
 import io.hekate.util.async.Waiting;
 import java.io.NotSerializableException;
 import java.net.Socket;
@@ -338,14 +340,14 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
 
         repeat(3, i -> {
             SendFuture future = sender.withLoadBalancer((msg, topology) -> {
-                throw new TestHekateException(TEST_ERROR_MESSAGE);
+                throw new HekateTestException(HekateTestError.MESSAGE);
             }).send("failed" + i);
 
             try {
                 future.get();
             } catch (MessagingFutureException e) {
-                assertTrue(e.isCausedBy(TestHekateException.class));
-                assertEquals(TEST_ERROR_MESSAGE, e.getCause().getMessage());
+                assertTrue(e.isCausedBy(HekateTestException.class));
+                assertEquals(HekateTestError.MESSAGE, e.getCause().getMessage());
             }
         });
 

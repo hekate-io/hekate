@@ -26,12 +26,12 @@ import io.hekate.codec.CodecFactory;
 import io.hekate.codec.DataReader;
 import io.hekate.codec.DataWriter;
 import io.hekate.codec.SingletonCodecFactory;
-import io.hekate.core.HekateException;
 import io.hekate.core.ServiceInfo;
 import io.hekate.core.ServiceProperty;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.service.internal.DefaultServiceInfo;
+import io.hekate.test.HekateTestError;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.LockInfo;
@@ -122,34 +122,6 @@ public abstract class HekateTestBase {
         }
     }
 
-    /** Unchecked error for tests. */
-    public static class TestAssertionError extends AssertionError {
-        private static final long serialVersionUID = 1;
-
-        public TestAssertionError(String message) {
-            super(message);
-        }
-
-        @Override
-        public synchronized Throwable fillInStackTrace() {
-            return this;
-        }
-    }
-
-    /** Checked error for tests. */
-    public static class TestHekateException extends HekateException {
-        private static final long serialVersionUID = 1;
-
-        public TestHekateException(String message) {
-            super(message);
-        }
-
-        @Override
-        public synchronized Throwable fillInStackTrace() {
-            return this;
-        }
-    }
-
     /** Maximum timeout in {@link TimeUnit#MINUTES} for each individual test case (see {@link #testTimeoutRule}). */
     public static final int MAX_TEST_TIMEOUT = 5;
 
@@ -159,14 +131,8 @@ public abstract class HekateTestBase {
     /** Interval between loops of {@link #busyWait(String, Callable)}. */
     public static final int BUSY_WAIT_INTERVAL = 25;
 
-    /** Common prefix for messages of expected errors that were produced by tests. */
-    public static final String TEST_ERROR_PREFIX = "*** RELAX:)";
-
-    /** Common message for expected errors that were produced by tests. */
-    public static final String TEST_ERROR_MESSAGE = TEST_ERROR_PREFIX + " This exception was created by the test case.";
-
-    /** Singleton for expected errors ...{@link #TEST_ERROR_MESSAGE RELAX:)}. */
-    public static final AssertionError TEST_ERROR = new TestAssertionError(TEST_ERROR_MESSAGE);
+    /** Singleton for expected errors ...{@link HekateTestError#TEST_ERROR_MESSAGE RELAX:)}. */
+    public static final AssertionError TEST_ERROR = new HekateTestError(HekateTestError.MESSAGE);
 
     /** Timestamp format for test messages (see {@link #say(Object)}). */
     public static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");

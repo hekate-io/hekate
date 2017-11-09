@@ -16,12 +16,12 @@
 
 package io.hekate.task.internal;
 
-import io.hekate.HekateNodeParamTestBase;
-import io.hekate.HekateTestContext;
+import io.hekate.HekateNodeMultiCodecTestBase;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.task.TaskServiceFactory;
+import io.hekate.test.NonSerializable;
 import io.hekate.util.HekateFuture;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,16 +31,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import org.junit.Before;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public abstract class TaskServiceTestBase extends HekateNodeParamTestBase {
-    protected static class NonSerializable {
-        // No-op.
-    }
-
+public abstract class TaskServiceTestBase extends HekateNodeMultiCodecTestBase {
     public static class NonSerializableTestException extends RuntimeException {
         private static final long serialVersionUID = 1;
 
@@ -58,11 +54,10 @@ public abstract class TaskServiceTestBase extends HekateNodeParamTestBase {
 
     protected static final AtomicReference<HekateTestNode> REF = new AtomicReference<>();
 
-    public TaskServiceTestBase(HekateTestContext params) {
+    public TaskServiceTestBase(MultiCodecTestContext params) {
         super(params);
     }
 
-    @Before
     @Override
     public void setUp() throws Exception {
         super.setUp();
@@ -70,6 +65,9 @@ public abstract class TaskServiceTestBase extends HekateNodeParamTestBase {
         COUNTER.set(0);
         NODES.clear();
         REF.set(null);
+
+        // Double check that non-serializable field is not null.
+        assertNotNull(new NonSerializable().nonSerializableFiled);
     }
 
     protected void assertErrorCausedBy(HekateFuture future, Class<? extends Throwable> type) throws Exception {

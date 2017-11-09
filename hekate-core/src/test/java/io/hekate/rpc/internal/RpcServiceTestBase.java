@@ -1,6 +1,6 @@
 package io.hekate.rpc.internal;
 
-import io.hekate.HekateNodeTestBase;
+import io.hekate.HekateNodeMultiCodecTestBase;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.rpc.RpcServerConfig;
 import io.hekate.rpc.RpcServiceFactory;
@@ -10,7 +10,7 @@ import java.util.List;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public abstract class RpcServiceTestBase extends HekateNodeTestBase {
+public abstract class RpcServiceTestBase extends HekateNodeMultiCodecTestBase {
     protected static class ClientAndServer {
         private final HekateTestNode client;
 
@@ -47,6 +47,10 @@ public abstract class RpcServiceTestBase extends HekateNodeTestBase {
         public List<HekateTestNode> servers() {
             return servers;
         }
+    }
+
+    public RpcServiceTestBase(MultiCodecTestContext ctx) {
+        super(ctx);
     }
 
     protected ClientAndServer prepareClientAndServer(Object rpc) throws Exception {

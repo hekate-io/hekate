@@ -23,6 +23,7 @@ import io.hekate.core.HekateException;
 import io.hekate.network.NetworkService;
 import io.hekate.network.PingCallback;
 import io.hekate.network.PingResult;
+import io.hekate.test.HekateTestError;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -72,7 +73,7 @@ public class SeedNodeManagerTest extends HekateTestBase {
 
             fail("Error was expected.");
         } catch (AssertionError e) {
-            assertEquals(TEST_ERROR_MESSAGE, e.getMessage());
+            assertEquals(HekateTestError.MESSAGE, e.getMessage());
         }
     }
 
@@ -90,7 +91,7 @@ public class SeedNodeManagerTest extends HekateTestBase {
 
             fail("Error was expected.");
         } catch (AssertionError e) {
-            assertEquals(TEST_ERROR_MESSAGE, e.getMessage());
+            assertEquals(HekateTestError.MESSAGE, e.getMessage());
         }
     }
 

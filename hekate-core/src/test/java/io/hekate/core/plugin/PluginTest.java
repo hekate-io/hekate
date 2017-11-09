@@ -26,6 +26,8 @@ import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.metrics.local.LocalMetricsServiceFactory;
+import io.hekate.test.HekateTestError;
+import io.hekate.test.HekateTestException;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -122,7 +124,7 @@ public class PluginTest extends HekateNodeTestBase {
             public void install(HekateBootstrap boot) {
                 super.install(boot);
 
-                throw new HekateConfigurationException(TEST_ERROR_MESSAGE);
+                throw new HekateConfigurationException(HekateTestError.MESSAGE);
             }
         };
         TestPlugin act3 = new TestPlugin();
@@ -132,7 +134,7 @@ public class PluginTest extends HekateNodeTestBase {
 
             fail("Error was expected.");
         } catch (HekateConfigurationException e) {
-            assertEquals(TEST_ERROR_MESSAGE, e.getMessage());
+            assertEquals(HekateTestError.MESSAGE, e.getMessage());
         }
 
         assertEquals(1, act1.getInstalled());
@@ -157,7 +159,7 @@ public class PluginTest extends HekateNodeTestBase {
             public void start(Hekate hekate) throws HekateException {
                 super.start(hekate);
 
-                throw new TestHekateException(TEST_ERROR_MESSAGE);
+                throw new HekateTestException(HekateTestError.MESSAGE);
             }
         };
         TestPlugin act3 = new TestPlugin();
@@ -170,7 +172,7 @@ public class PluginTest extends HekateNodeTestBase {
 
                 fail("Error was expected.");
             } catch (HekateFutureException e) {
-                assertEquals(TEST_ERROR_MESSAGE, e.getCause().getMessage());
+                assertEquals(HekateTestError.MESSAGE, e.getCause().getMessage());
             }
 
             assertSame(Hekate.State.DOWN, node.state());
@@ -197,7 +199,7 @@ public class PluginTest extends HekateNodeTestBase {
             public void stop() throws HekateException {
                 super.stop();
 
-                throw new TestHekateException(TEST_ERROR_MESSAGE);
+                throw new HekateTestException(HekateTestError.MESSAGE);
             }
         };
         TestPlugin act3 = new TestPlugin();

@@ -38,6 +38,7 @@ import io.hekate.core.TerminateFuture;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.service.Service;
 import io.hekate.network.NetworkServiceFactory;
+import io.hekate.test.HekateTestError;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -766,7 +767,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
     @Test
     public void testJoinRejectCustom() throws Exception {
-        String rejectReason = HekateTestBase.TEST_ERROR_PREFIX + " This is a test reject.";
+        String rejectReason = HekateTestError.MESSAGE_PREFIX + " This is a test reject.";
 
         HekateTestNode existing = createNode(c ->
             c.service(ClusterServiceFactory.class).get().withAcceptor((newNode, node) -> rejectReason)

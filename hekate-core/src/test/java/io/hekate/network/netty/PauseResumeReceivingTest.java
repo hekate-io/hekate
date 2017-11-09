@@ -18,7 +18,6 @@ package io.hekate.network.netty;
 
 import io.hekate.HekateTestContext;
 import io.hekate.network.NetworkClient;
-import io.hekate.network.NetworkClientCallbackMock;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkMessage;
 import io.hekate.network.NetworkSendCallbackMock;
@@ -26,6 +25,7 @@ import io.hekate.network.NetworkServer;
 import io.hekate.network.NetworkServerCallbackMock;
 import io.hekate.network.NetworkServerHandlerMock;
 import io.hekate.network.internal.NetworkTestBase;
+import io.hekate.test.NetworkClientCallbackMock;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import org.junit.Test;

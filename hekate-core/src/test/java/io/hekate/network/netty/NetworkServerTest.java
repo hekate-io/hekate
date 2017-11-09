@@ -22,7 +22,6 @@ import io.hekate.core.HekateConfigurationException;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.network.NetworkClient;
-import io.hekate.network.NetworkClientCallbackMock;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkMessage;
 import io.hekate.network.NetworkSendCallbackMock;
@@ -32,6 +31,8 @@ import io.hekate.network.NetworkServerFailure;
 import io.hekate.network.NetworkServerHandler;
 import io.hekate.network.NetworkServerHandlerConfig;
 import io.hekate.network.internal.NetworkTestBase;
+import io.hekate.test.HekateTestError;
+import io.hekate.test.NetworkClientCallbackMock;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -174,7 +175,7 @@ public class NetworkServerTest extends NetworkTestBase {
             listener.assertStarts(1);
             listener.assertStops(0);
 
-            nettyServer.nettyChannel().get().pipeline().fireExceptionCaught(new TestIoException(TEST_ERROR_MESSAGE));
+            nettyServer.nettyChannel().get().pipeline().fireExceptionCaught(new TestIoException(HekateTestError.MESSAGE));
 
             await(errorLatch.get());
 
@@ -189,7 +190,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
             listener.getErrors().forEach(e -> {
                 assertTrue(e.toString(), e instanceof IOException);
-                assertEquals(TEST_ERROR_MESSAGE, e.getMessage());
+                assertEquals(HekateTestError.MESSAGE, e.getMessage());
             });
         });
     }
@@ -229,7 +230,7 @@ public class NetworkServerTest extends NetworkTestBase {
             listener.assertStarts(1);
             listener.assertStops(0);
 
-            nettyServer.nettyChannel().get().pipeline().fireExceptionCaught(new TestIoException(TEST_ERROR_MESSAGE));
+            nettyServer.nettyChannel().get().pipeline().fireExceptionCaught(new TestIoException(HekateTestError.MESSAGE));
 
             await(errorLatch.get());
 
@@ -246,7 +247,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
             listener.getErrors().forEach(e -> {
                 assertTrue(e.toString(), e instanceof IOException);
-                assertEquals(TEST_ERROR_MESSAGE, e.getMessage());
+                assertEquals(HekateTestError.MESSAGE, e.getMessage());
             });
         });
     }
@@ -458,7 +459,7 @@ public class NetworkServerTest extends NetworkTestBase {
                 assertEquals("msg_" + i + "_" + j, events.get(j));
             }
 
-            assertEquals(TEST_ERROR_MESSAGE, events.get(messagesPerClient + 1));
+            assertEquals(HekateTestError.MESSAGE, events.get(messagesPerClient + 1));
             assertEquals("disconnect", events.get(messagesPerClient + 2));
         }
     }

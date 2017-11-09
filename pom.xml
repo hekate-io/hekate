@@ -35,8 +35,6 @@
         <module>hekate-core</module>
         <module>hekate-spring</module>
         <module>hekate-spring-boot</module>
-        <module>hekate-codec-kryo</module>
-        <module>hekate-codec-fst</module>
         <module>hekate-jclouds-core</module>
         <module>hekate-jclouds-aws</module>
         <module>hekate-metrics-influxdb</module>

@@ -19,12 +19,14 @@ package io.hekate;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.health.DefaultFailureDetector;
 import io.hekate.cluster.health.DefaultFailureDetectorConfig;
-import io.hekate.cluster.seed.SeedNodeProviderMock;
 import io.hekate.cluster.split.SplitBrainAction;
+import io.hekate.codec.CodecFactory;
+import io.hekate.codec.JdkCodecFactory;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.metrics.cluster.ClusterMetricsServiceFactory;
 import io.hekate.network.netty.NetworkServiceFactoryForTest;
 import io.hekate.task.TaskServiceFactory;
+import io.hekate.test.SeedNodeProviderMock;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -97,6 +99,7 @@ public class HekateNodeTestBase extends HekateTestBase {
 
         boot.setClusterName("test");
         boot.setNodeName("node-" + address.getPort() + '-' + allNodes.size());
+        boot.setDefaultCodec(defaultCodec());
 
         if (ctx.resources() != null) {
             boot.withService(ctx::resources);
@@ -145,6 +148,10 @@ public class HekateNodeTestBase extends HekateTestBase {
         allNodes.add(node);
 
         return node;
+    }
+
+    protected CodecFactory<Object> defaultCodec() {
+        return new JdkCodecFactory<>();
     }
 
     protected void awaitForTopology(HekateTestNode... nodes) {

@@ -32,6 +32,7 @@ import io.hekate.core.TerminateFuture;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.network.internal.NettyNetworkService;
 import io.hekate.network.internal.NetworkServiceManagerMock;
+import io.hekate.test.HekateTestError;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
@@ -400,7 +401,7 @@ public class HekateNodeTest extends HekateNodeTestBase {
 
             NetworkServiceManagerMock netMock = node.get(NetworkServiceManagerMock.class);
 
-            netMock.fireServerFailure(new IOException(TEST_ERROR_MESSAGE));
+            netMock.fireServerFailure(new IOException(HekateTestError.MESSAGE));
 
             node.awaitForStatus(Hekate.State.DOWN);
         });

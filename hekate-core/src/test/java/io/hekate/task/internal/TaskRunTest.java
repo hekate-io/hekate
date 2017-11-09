@@ -16,7 +16,6 @@
 
 package io.hekate.task.internal;
 
-import io.hekate.HekateTestContext;
 import io.hekate.core.Hekate;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.MessagingRemoteException;
@@ -25,6 +24,7 @@ import io.hekate.task.TaskException;
 import io.hekate.task.TaskFuture;
 import io.hekate.task.TaskFutureException;
 import io.hekate.task.TaskService;
+import io.hekate.test.HekateTestError;
 import java.nio.channels.ClosedChannelException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class TaskRunTest extends TaskServiceTestBase {
-    public TaskRunTest(HekateTestContext params) {
+    public TaskRunTest(MultiCodecTestContext params) {
         super(params);
     }
 
@@ -102,7 +102,7 @@ public class TaskRunTest extends TaskServiceTestBase {
 
                 assertErrorCausedBy(future, RemoteTaskException.class, err -> {
                     assertEquals(TEST_ERROR.getClass(), err.getCause().getClass());
-                    assertEquals(TEST_ERROR_MESSAGE, err.getCause().getMessage());
+                    assertEquals(HekateTestError.MESSAGE, err.getCause().getMessage());
                 });
 
             }

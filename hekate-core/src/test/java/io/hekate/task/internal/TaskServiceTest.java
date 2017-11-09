@@ -16,7 +16,6 @@
 
 package io.hekate.task.internal;
 
-import io.hekate.HekateTestContext;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.service.Service;
 import io.hekate.failover.FailoverPolicy;
@@ -48,7 +47,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
 
     private TaskService tasks;
 
-    public TaskServiceTest(HekateTestContext params) {
+    public TaskServiceTest(MultiCodecTestContext params) {
         super(params);
     }
 

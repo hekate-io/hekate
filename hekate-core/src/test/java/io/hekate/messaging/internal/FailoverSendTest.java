@@ -22,6 +22,7 @@ import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.UnknownRouteException;
 import io.hekate.messaging.unicast.SendFuture;
+import io.hekate.test.HekateTestError;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
@@ -37,7 +38,7 @@ public class FailoverSendTest extends FailoverTestBase {
         spy = msg -> {
             if (msg instanceof MessagingProtocol.Notification) {
                 if (failures.decrementAndGet() >= 0) {
-                    throw new IOException(TEST_ERROR_MESSAGE);
+                    throw new IOException(HekateTestError.MESSAGE);
                 }
             }
         };

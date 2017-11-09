@@ -37,6 +37,10 @@ import io.hekate.messaging.unicast.LoadBalancingException;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.network.NetworkFuture;
+import io.hekate.test.HekateTestError;
+import io.hekate.test.HekateTestException;
+import io.hekate.test.NonDeserializable;
+import io.hekate.test.NonSerializable;
 import io.hekate.util.async.Waiting;
 import java.io.IOException;
 import java.io.InvalidClassException;
@@ -329,7 +333,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
                 fail("Error was expected.");
             } catch (MessagingRemoteException e) {
-                assertTrue(e.remoteStackTrace().contains(TEST_ERROR_MESSAGE));
+                assertTrue(e.remoteStackTrace().contains(HekateTestError.MESSAGE));
             }
 
             receiver.awaitForMessage(msg);
@@ -693,14 +697,14 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         repeat(3, i -> {
             ResponseFuture<String> future = sender.withLoadBalancer((msg, topology) -> {
-                throw new TestHekateException(TEST_ERROR_MESSAGE);
+                throw new HekateTestException(HekateTestError.MESSAGE);
             }).request("failed" + i);
 
             try {
                 future.response();
             } catch (MessagingFutureException e) {
-                assertTrue(e.isCausedBy(TestHekateException.class));
-                assertEquals(TEST_ERROR_MESSAGE, e.getCause().getMessage());
+                assertTrue(e.isCausedBy(HekateTestException.class));
+                assertEquals(HekateTestError.MESSAGE, e.getCause().getMessage());
             }
         });
 
@@ -948,7 +952,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         repeat(5, i -> {
             MessagingFutureException err = expect(MessagingFutureException.class, () ->
-                get(sender.messaging().channel("test").forRemotes().request(new Socket()))
+                get(sender.messaging().channel("test").forRemotes().request(new NonSerializable()))
             );
 
             assertSame(err.toString(), MessagingException.class, err.getCause().getClass());
@@ -965,11 +969,11 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         repeat(5, i -> {
             MessagingFutureException err = expect(MessagingFutureException.class, () ->
-                get(sender.messaging().channel("test").forRemotes().request(new NonDeserializableMock()))
+                get(sender.messaging().channel("test").forRemotes().request(new NonDeserializable()))
             );
 
             assertSame(err.toString(), MessagingRemoteException.class, err.getCause().getClass());
-            assertTrue(ErrorUtils.stackTrace(err).contains(TEST_ERROR_MESSAGE));
+            assertTrue(ErrorUtils.stackTrace(err).contains(HekateTestError.MESSAGE));
         });
     }
 
@@ -992,7 +996,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
     @Test
     public void testNonDeserializableResponse() throws Exception {
         HekateTestNode sender = prepareObjectSenderAndReceiver(msg ->
-            msg.reply(new NonDeserializableMock())
+            msg.reply(new NonDeserializable())
         );
 
         repeat(5, i -> {
@@ -1001,7 +1005,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             );
 
             assertSame(err.toString(), MessagingException.class, err.getCause().getClass());
-            assertTrue(ErrorUtils.stackTrace(err).contains(InvalidClassException.class.getName() + ": " + TEST_ERROR_MESSAGE));
+            assertTrue(ErrorUtils.stackTrace(err).contains(InvalidClassException.class.getName() + ": " + HekateTestError.MESSAGE));
         });
     }
 

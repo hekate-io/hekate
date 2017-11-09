@@ -16,7 +16,6 @@
 
 package io.hekate.task.internal;
 
-import io.hekate.HekateTestContext;
 import io.hekate.core.Hekate;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.MessagingRemoteException;
@@ -25,6 +24,7 @@ import io.hekate.task.RemoteTaskException;
 import io.hekate.task.TaskException;
 import io.hekate.task.TaskFuture;
 import io.hekate.task.TaskService;
+import io.hekate.test.HekateTestError;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,7 +46,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class TaskApplyToAllTest extends TaskServiceTestBase {
-    public TaskApplyToAllTest(HekateTestContext params) {
+    public TaskApplyToAllTest(MultiCodecTestContext params) {
         super(params);
     }
 
@@ -125,12 +125,12 @@ public class TaskApplyToAllTest extends TaskServiceTestBase {
 
             for (HekateTestNode node : nodes) {
                 TaskFuture<Collection<Object>> future = node.tasks().applyToAll(Arrays.asList(1, 2, 3), arg -> {
-                    throw new Exception(TEST_ERROR_MESSAGE);
+                    throw new Exception(HekateTestError.MESSAGE);
                 });
 
                 assertErrorCausedBy(future, RemoteTaskException.class, err -> {
                     assertSame(Exception.class, err.getCause().getClass());
-                    assertEquals(TEST_ERROR_MESSAGE, err.getCause().getMessage());
+                    assertEquals(HekateTestError.MESSAGE, err.getCause().getMessage());
                 });
             }
 
@@ -146,7 +146,7 @@ public class TaskApplyToAllTest extends TaskServiceTestBase {
             for (HekateTestNode node : nodes) {
                 TaskFuture<Collection<Object>> future = node.tasks().applyToAll(Arrays.asList(1, 2, 3), arg -> {
                     if (arg == 2) {
-                        throw new Exception(TEST_ERROR_MESSAGE);
+                        throw new Exception(HekateTestError.MESSAGE);
                     } else {
                         return arg;
                     }
@@ -154,7 +154,7 @@ public class TaskApplyToAllTest extends TaskServiceTestBase {
 
                 assertErrorCausedBy(future, RemoteTaskException.class, err -> {
                     assertSame(Exception.class, err.getCause().getClass());
-                    assertEquals(TEST_ERROR_MESSAGE, err.getCause().getMessage());
+                    assertEquals(HekateTestError.MESSAGE, err.getCause().getMessage());
                 });
             }
 
@@ -280,7 +280,7 @@ public class TaskApplyToAllTest extends TaskServiceTestBase {
 
                 TaskFuture<Collection<Object>> future = tasks.applyToAll(Arrays.asList(1, 2, 3), arg -> {
                     if (arg == 2 && (attempts.get() == 0 || ThreadLocalRandom.current().nextBoolean())) {
-                        throw new Exception(TEST_ERROR_MESSAGE);
+                        throw new Exception(HekateTestError.MESSAGE);
                     } else {
                         return arg;
                     }

@@ -31,6 +31,7 @@ import io.hekate.cluster.internal.DefaultClusterNodeRuntime;
 import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
+import io.hekate.codec.JavaSerializable;
 import io.hekate.codec.internal.DefaultCodecService;
 import io.hekate.coordinate.CoordinationService;
 import io.hekate.core.Hekate;
@@ -100,9 +101,9 @@ import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toSet;
 
-class HekateNode implements Hekate, Serializable {
-    private static class SerializationHandle implements Serializable {
-        private static final SerializationHandle INSTANCE = new SerializationHandle();
+class HekateNode implements Hekate, JavaSerializable {
+    static class SerializationHandle implements Serializable {
+        static final SerializationHandle INSTANCE = new SerializationHandle();
 
         private static final long serialVersionUID = 1;
 

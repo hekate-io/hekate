@@ -16,7 +16,6 @@
 
 package io.hekate.task.internal;
 
-import io.hekate.HekateTestContext;
 import io.hekate.core.Hekate;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.internal.util.ErrorUtils;
@@ -35,7 +34,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class TaskAggregateTest extends TaskServiceTestBase {
-    public TaskAggregateTest(HekateTestContext params) {
+    public TaskAggregateTest(MultiCodecTestContext params) {
         super(params);
     }
 

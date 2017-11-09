@@ -22,6 +22,8 @@ import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateConfigurationException;
 import io.hekate.core.HekateException;
 import io.hekate.core.plugin.Plugin;
+import io.hekate.test.HekateTestError;
+import io.hekate.test.HekateTestException;
 import java.util.Arrays;
 import org.junit.Test;
 
@@ -101,7 +103,7 @@ public class PluginManagerTest extends HekateTestBase {
             public void install(HekateBootstrap boot) {
                 super.install(boot);
 
-                throw new HekateConfigurationException(TEST_ERROR_MESSAGE);
+                throw new HekateConfigurationException(HekateTestError.MESSAGE);
             }
         };
         TestPlugin plugin3 = new TestPlugin();
@@ -113,7 +115,7 @@ public class PluginManagerTest extends HekateTestBase {
 
             fail("Error was expected.");
         } catch (HekateConfigurationException e) {
-            assertEquals(TEST_ERROR_MESSAGE, e.getMessage());
+            assertEquals(HekateTestError.MESSAGE, e.getMessage());
         }
 
         mgr.stop();
@@ -139,7 +141,7 @@ public class PluginManagerTest extends HekateTestBase {
             public void start(Hekate hekate) throws HekateException {
                 super.start(hekate);
 
-                throw new TestHekateException(TEST_ERROR_MESSAGE);
+                throw new HekateTestException(HekateTestError.MESSAGE);
             }
         };
         TestPlugin plugin3 = new TestPlugin();
@@ -153,7 +155,7 @@ public class PluginManagerTest extends HekateTestBase {
 
             fail("Error was expected.");
         } catch (HekateException e) {
-            assertEquals(TEST_ERROR_MESSAGE, e.getMessage());
+            assertEquals(HekateTestError.MESSAGE, e.getMessage());
         }
 
         mgr.stop();
@@ -179,7 +181,7 @@ public class PluginManagerTest extends HekateTestBase {
             public void stop() throws HekateException {
                 super.stop();
 
-                throw new TestHekateException(TEST_ERROR_MESSAGE);
+                throw new HekateTestException(HekateTestError.MESSAGE);
             }
         };
         TestPlugin plugin3 = new TestPlugin();

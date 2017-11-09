@@ -16,15 +16,17 @@
 
 package io.hekate.task.internal;
 
-import io.hekate.HekateTestContext;
 import io.hekate.core.Hekate;
 import io.hekate.core.internal.HekateTestNode;
+import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.MessagingRemoteException;
 import io.hekate.task.RemoteTaskException;
 import io.hekate.task.TaskException;
 import io.hekate.task.TaskFuture;
 import io.hekate.task.TaskFutureException;
 import io.hekate.task.TaskService;
+import io.hekate.test.HekateTestError;
+import io.hekate.test.NonSerializable;
 import java.io.NotSerializableException;
 import java.nio.channels.ClosedChannelException;
 import java.util.List;
@@ -38,7 +40,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class TaskCallTest extends TaskServiceTestBase {
-    public TaskCallTest(HekateTestContext params) {
+    public TaskCallTest(MultiCodecTestContext params) {
         super(params);
     }
 
@@ -118,12 +120,12 @@ public class TaskCallTest extends TaskServiceTestBase {
 
             for (HekateTestNode node : nodes) {
                 TaskFuture<Object> future = node.tasks().call(() -> {
-                    throw new Exception(TEST_ERROR_MESSAGE);
+                    throw new Exception(HekateTestError.MESSAGE);
                 });
 
                 assertErrorCausedBy(future, RemoteTaskException.class, err -> {
                     assertEquals(Exception.class, err.getCause().getClass());
-                    assertEquals(TEST_ERROR_MESSAGE, err.getCause().getMessage());
+                    assertEquals(HekateTestError.MESSAGE, err.getCause().getMessage());
                 });
             }
 
@@ -143,7 +145,7 @@ public class TaskCallTest extends TaskServiceTestBase {
 
                 assertErrorCausedBy(future, RemoteTaskException.class, err -> {
                     assertEquals(TEST_ERROR.getClass(), err.getCause().getClass());
-                    assertEquals(TEST_ERROR_MESSAGE, err.getCause().getMessage());
+                    assertEquals(HekateTestError.MESSAGE, err.getCause().getMessage());
                 });
             }
 
@@ -181,7 +183,7 @@ public class TaskCallTest extends TaskServiceTestBase {
                 TaskFuture<Object> future = node.tasks().forRemotes().call(NonSerializable::new);
 
                 assertErrorCausedBy(future, MessagingRemoteException.class, err ->
-                    assertTrue(err.getMessage().contains(NotSerializableException.class.getName()))
+                    assertTrue(ErrorUtils.stackTrace(err), err.getMessage().contains(NotSerializableException.class.getName()))
                 );
             }
 

@@ -16,43 +16,13 @@
 
 package io.hekate.codec;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-
 /**
  * Codec factory that uses the standard Java Serialization API for data encoding/decoding.
  *
  * @param <T> Base type of object that should be supported by the codec (can be {@link Object}).
  */
 public class JdkCodecFactory<T> implements CodecFactory<T> {
-    private static final Codec<Object> CODEC = new Codec<Object>() {
-        @Override
-        public boolean isStateful() {
-            return false;
-        }
-
-        @Override
-        public Class<Object> baseType() {
-            return Object.class;
-        }
-
-        @Override
-        public Object decode(DataReader in) throws IOException {
-            try (ObjectInputStream objIn = new ObjectInputStream(in.asStream())) {
-                return objIn.readObject();
-            } catch (ClassNotFoundException e) {
-                throw new CodecException("Failed to deserialize message.", e);
-            }
-        }
-
-        @Override
-        public void encode(Object message, DataWriter out) throws IOException {
-            try (ObjectOutputStream objOut = new ObjectOutputStream(out.asStream())) {
-                objOut.writeObject(message);
-            }
-        }
-    };
+    private static final JdkCodec CODEC = new JdkCodec();
 
     @Override
     @SuppressWarnings("unchecked")

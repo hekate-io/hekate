@@ -21,10 +21,10 @@ import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.health.FailureDetector;
 import io.hekate.cluster.health.FailureDetectorMock;
 import io.hekate.cluster.seed.SeedNodeProvider;
-import io.hekate.cluster.seed.SeedNodeProviderMock;
 import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.cluster.split.SplitBrainDetector;
 import io.hekate.core.HekateConfigurationException;
+import io.hekate.test.SeedNodeProviderMock;
 import java.util.Collections;
 import org.junit.Test;
 
