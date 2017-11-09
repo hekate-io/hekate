@@ -84,8 +84,8 @@ public final class ToString {
         public boolean format(Object obj, StringBuilder buf, boolean prependSeparator) throws IllegalAccessException {
             Object val = field.get(obj);
 
-            // Try to use custom formatter.
             if (formatter != null) {
+                // Try to use custom formatter.
                 String fmtVal = formatter.format(val);
 
                 if (fmtVal != null) {
@@ -99,16 +99,12 @@ public final class ToString {
                 }
 
                 return false;
-            }
+            } else if (val != null) {
+                // Use default formatting (only if value is not null).
+                if (prependSeparator) {
+                    buf.append(", ");
+                }
 
-            // Use default formatting.
-            if (prependSeparator) {
-                buf.append(", ");
-            }
-
-            if (val == null) {
-                buf.append(nameEq).append("null");
-            } else {
                 buf.append(nameEq);
 
                 if (val.getClass().isArray()) {
@@ -120,9 +116,11 @@ public final class ToString {
                 } else {
                     buf.append(val);
                 }
-            }
 
-            return true;
+                return true;
+            } else {
+                return false;
+            }
         }
 
         private static void formatArray(StringBuilder buf, Object val) {

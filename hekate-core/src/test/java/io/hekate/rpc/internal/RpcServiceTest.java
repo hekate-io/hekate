@@ -294,7 +294,7 @@ public class RpcServiceTest extends RpcServiceTestBase {
         expectExactMessage(
             HekateConfigurationException.class,
             RpcServerConfig.class.getSimpleName() + ": Can't register the same RPC interface multiple times "
-                + "[key=RpcKey[type=" + TestRpcA.class.getName() + ", tag=null]]",
+                + "[key=RpcKey[type=" + TestRpcA.class.getName() + "]]",
             () -> createNode(c ->
                 c.withService(RpcServiceFactory.class, f -> {
                     f.withServer(new RpcServerConfig()
@@ -330,7 +330,7 @@ public class RpcServiceTest extends RpcServiceTestBase {
         expectExactMessage(
             HekateConfigurationException.class,
             RpcServerConfig.class.getSimpleName() + ": Can't register the same RPC interface multiple times "
-                + "[key=RpcKey[type=" + TestRpcA.class.getName() + ", tag=null]]",
+                + "[key=RpcKey[type=" + TestRpcA.class.getName() + "]]",
             () -> createNode(c ->
                 c.withService(RpcServiceFactory.class, f -> {
                     f.withServer(new RpcServerConfig()
