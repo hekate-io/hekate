@@ -573,7 +573,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
         NetworkClient<String> client = createClient(f -> f.setIdleTimeout(hbInterval * hbLossThreshold * 2));
 
-        repeat(3, i -> {
+        repeat(300, i -> {
             NetworkClientCallbackMock<String> callback = new NetworkClientCallbackMock<>();
 
             client.connect(server.address(), callback).get();
@@ -595,7 +595,7 @@ public class NetworkClientTest extends NetworkTestBase {
             assertEquals(0, callback.getMessages().size());
 
             callback.assertConnects(1);
-            callback.assertDisconnects(1);
+            callback.awaitForDisconnects(1);
             callback.assertMaxErrors(1);
         });
     }
