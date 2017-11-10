@@ -11,9 +11,9 @@ import java.util.Arrays;
 import java.util.GregorianCalendar;
 
 /**
- * Utility class that automatically registers {@code de.javakaffee:kryo-serializers} if they are available on the classpath.
+ * Utility class that can try to register {@code de.javakaffee:kryo-serializers} if they are available on the classpath.
  */
-final class KryoSerializersRegistrar {
+final class JavaKaffeeSerializersRegistrar {
     private static final boolean SUPPORTED;
 
     private static final Class<?> ARRAYS_AS_LIST_CLASS = Arrays.asList(1, 2).getClass();
@@ -30,11 +30,11 @@ final class KryoSerializersRegistrar {
         SUPPORTED = supported;
     }
 
-    private KryoSerializersRegistrar() {
+    private JavaKaffeeSerializersRegistrar() {
         // No-op.
     }
 
-    public static void register(Kryo kryo) {
+    public static void tryRegister(Kryo kryo) {
         if (SUPPORTED) {
             kryo.register(ARRAYS_AS_LIST_CLASS, new ArraysAsListSerializer());
             kryo.register(GregorianCalendar.class, new GregorianCalendarSerializer());

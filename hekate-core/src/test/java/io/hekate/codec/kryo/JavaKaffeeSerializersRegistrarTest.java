@@ -5,9 +5,9 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
 
-public class KryoSerializersRegistrarTest extends HekateTestBase {
+public class JavaKaffeeSerializersRegistrarTest extends HekateTestBase {
     @Test
     public void testSupported() {
-        assertTrue(KryoSerializersRegistrar.isSupported());
+        assertTrue(JavaKaffeeSerializersRegistrar.isSupported());
     }
 }

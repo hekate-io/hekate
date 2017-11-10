@@ -72,7 +72,8 @@ class KryoCodec implements Codec<Object> {
             kryo.setInstantiatorStrategy(factory.getInstantiatorStrategy());
         }
 
-        KryoSerializersRegistrar.register(kryo);
+        // Try to register extended serializers for the JDK classes that are not supported by Kryo out of the box.
+        JavaKaffeeSerializersRegistrar.tryRegister(kryo);
 
         // Enforce JDK default serialization (required for writeReplace/readResolve/etc).
         kryo.addDefaultSerializer(JavaSerializable.class, new JavaSerializer());
