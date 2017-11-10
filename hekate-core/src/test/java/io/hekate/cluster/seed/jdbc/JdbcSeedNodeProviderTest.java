@@ -54,12 +54,7 @@ public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderCommonTe
     public static Collection<DataSource> getDataSources() {
         List<DataSource> dataSources = new ArrayList<>();
 
-        // H2
-        JdbcDataSource h2 = new JdbcDataSource();
-
-        h2.setURL("jdbc:h2:mem:test");
-
-        dataSources.add(h2);
+        dataSources.add(newH2DataSource());
 
         // MySQL
         if (HekateTestProps.is("MYSQL_ENABLED")) {
@@ -72,7 +67,7 @@ public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderCommonTe
             dataSources.add(mysql);
         }
 
-        // MySQL
+        // PostgreSQL
         if (HekateTestProps.is("POSTGRES_ENABLED")) {
             PGSimpleDataSource postgres = new PGSimpleDataSource();
 
@@ -104,6 +99,14 @@ public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderCommonTe
 
             st.execute(sql);
         }
+    }
+
+    public static JdbcDataSource newH2DataSource() {
+        JdbcDataSource h2 = new JdbcDataSource();
+
+        h2.setURL("jdbc:h2:mem:test");
+
+        return h2;
     }
 
     @Override

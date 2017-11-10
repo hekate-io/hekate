@@ -41,7 +41,7 @@ public class HekateJdbcSeedNodeProviderConfigurerTest extends HekateAutoConfigur
     public static class JdbcEnabledConfig {
         @Bean
         public DataSource dataSource() {
-            return JdbcSeedNodeProviderTest.getDataSources().iterator().next();
+            return JdbcSeedNodeProviderTest.newH2DataSource();
         }
     }
 
@@ -54,7 +54,7 @@ public class HekateJdbcSeedNodeProviderConfigurerTest extends HekateAutoConfigur
 
     @Before
     public void setUp() throws Exception {
-        keepDbAlive = JdbcSeedNodeProviderTest.getDataSources().iterator().next().getConnection();
+        keepDbAlive = JdbcSeedNodeProviderTest.newH2DataSource().getConnection();
 
         JdbcSeedNodeProviderTest.initializeDatabase(keepDbAlive, new JdbcSeedNodeProviderConfig());
     }
