@@ -1,14 +1,13 @@
 package io.hekate.spring.boot.codec;
 
 import com.esotericsoftware.kryo.Kryo;
-import io.hekate.codec.CodecFactory;
 import io.hekate.codec.kryo.KryoCodecFactory;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
 import io.hekate.spring.boot.HekateConfigurer;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -28,9 +27,8 @@ import org.springframework.context.annotation.Configuration;
  *
  * <h2>Configuration</h2>
  * <p>
- * This auto-configuration is enabled by default. If multiple implementations of the {@link CodecFactory} interface exist on the classpath,
- * then it is possible to enforce usage of {@link KryoCodecFactory} by setting the {@code 'hekate.codec'} property to {@code kryo} in the
- * application's configuration.
+ * This auto-configuration can be enabled by setting the {@code 'hekate.codec'} property to {@code 'kryo'} in the application's
+ * configuration.
  * </p>
  *
  * <p>
@@ -45,8 +43,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnHekateEnabled
 @ConditionalOnClass(Kryo.class)
-@ConditionalOnMissingBean(CodecFactory.class)
-@AutoConfigureBefore({HekateConfigurer.class, HekateJdkCodecConfigurer.class})
+@AutoConfigureBefore(HekateConfigurer.class)
 @ConditionalOnProperty(name = "hekate.codec", havingValue = "kryo")
 public class HekateKryoCodecConfigurer {
     /**
@@ -55,6 +52,7 @@ public class HekateKryoCodecConfigurer {
      * @return Codec factory.
      */
     @Bean
+    @Qualifier("default")
     @ConfigurationProperties(prefix = "hekate.codec.kryo")
     public KryoCodecFactory<Object> kryoCodecFactory() {
         return new KryoCodecFactory<>();

@@ -74,6 +74,21 @@ public class KryoCodecFactory<T> implements CodecFactory<T> {
     @ToStringIgnore
     private InstantiatorStrategy instantiatorStrategy = new DefaultInstantiatorStrategy(new StdInstantiatorStrategy());
 
+    /**
+     * Returns {@code true} if Kryo is available on the classpath.
+     *
+     * @return {@code true} if Kryo is available on the classpath.
+     */
+    public static boolean isAvailable() {
+        try {
+            Class.forName("com.esotericsoftware.kryo.Kryo", false, Thread.currentThread().getContextClassLoader());
+
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public Codec<T> createCodec() {

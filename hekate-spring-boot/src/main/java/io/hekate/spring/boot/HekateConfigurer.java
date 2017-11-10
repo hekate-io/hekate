@@ -38,6 +38,7 @@ import io.hekate.spring.boot.task.HekateTaskServiceConfigurer;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.actuate.autoconfigure.ConditionalOnEnabledHealthIndicator;
 import org.springframework.boot.actuate.autoconfigure.EndpointAutoConfiguration;
 import org.springframework.boot.actuate.health.HealthIndicator;
@@ -237,13 +238,18 @@ public class HekateConfigurer {
      * @param listeners All {@link Hekate.LifecycleListener}s found in the application context.
      * @param codec Default codec factory.
      */
-    public HekateConfigurer(Optional<List<PropertyProvider>> propertyProviders, Optional<List<ServiceFactory<?>>> services,
-        Optional<List<Plugin>> plugins, Optional<List<Hekate.LifecycleListener>> listeners, CodecFactory<Object> codec) {
+    public HekateConfigurer(
+        Optional<List<PropertyProvider>> propertyProviders,
+        Optional<List<ServiceFactory<?>>> services,
+        Optional<List<Plugin>> plugins,
+        Optional<List<Hekate.LifecycleListener>> listeners,
+        @Qualifier("default") Optional<CodecFactory<Object>> codec
+    ) {
         this.services = services.orElse(null);
         this.plugins = plugins.orElse(null);
         this.propertyProviders = propertyProviders.orElse(null);
         this.listeners = listeners.orElse(null);
-        this.codec = codec;
+        this.codec = codec.orElse(null);
     }
 
     /**
@@ -266,11 +272,14 @@ public class HekateConfigurer {
     public HekateSpringBootstrap hekate() {
         HekateSpringBootstrap factory = new HekateSpringBootstrap();
 
-        factory.setDefaultCodec(codec);
         factory.setServices(services);
         factory.setPlugins(plugins);
         factory.setPropertyProviders(propertyProviders);
         factory.setLifecycleListeners(listeners);
+
+        if (codec != null) {
+            factory.setDefaultCodec(codec);
+        }
 
         return factory;
     }

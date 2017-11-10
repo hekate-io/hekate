@@ -20,9 +20,9 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
+import io.hekate.codec.AutoSelectCodecFactory;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
-import io.hekate.codec.JdkCodecFactory;
 import io.hekate.core.internal.HekateNodeFactory;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.StreamUtils;
@@ -83,7 +83,7 @@ public class HekateBootstrap {
 
     private List<ServiceFactory<? extends Service>> services;
 
-    private CodecFactory<Object> defaultCodec = new JdkCodecFactory<>();
+    private CodecFactory<Object> defaultCodec = new AutoSelectCodecFactory<>();
 
     private List<Plugin> plugins;
 
@@ -501,7 +501,7 @@ public class HekateBootstrap {
      * Sets the codec factory that should be used by the {@link CodecService}.
      *
      * <p>
-     * This parameter is mandatory and can't be {@code null}. If not configured then {@link JdkCodecFactory} will be used by default.
+     * This parameter is mandatory and can't be {@code null}. If not configured then {@link AutoSelectCodecFactory} will be used by default.
      * </p>
      *
      * @param defaultCodec Default codec factory.

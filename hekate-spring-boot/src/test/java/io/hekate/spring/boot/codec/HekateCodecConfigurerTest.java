@@ -1,6 +1,7 @@
 package io.hekate.spring.boot.codec;
 
 import io.hekate.cluster.internal.DefaultClusterNode;
+import io.hekate.codec.AutoSelectCodecFactory;
 import io.hekate.codec.JdkCodecFactory;
 import io.hekate.codec.fst.FstCodecFactory;
 import io.hekate.codec.kryo.KryoCodecFactory;
@@ -22,7 +23,7 @@ public class HekateCodecConfigurerTest extends HekateAutoConfigurerTestBase {
     public void testDefault() throws Exception {
         registerAndRefresh(TestConfig.class);
 
-        assertEquals(JdkCodecFactory.class, get(HekateBootstrap.class).getDefaultCodec().getClass());
+        assertEquals(AutoSelectCodecFactory.class, get(HekateBootstrap.class).getDefaultCodec().getClass());
     }
 
     @Test
