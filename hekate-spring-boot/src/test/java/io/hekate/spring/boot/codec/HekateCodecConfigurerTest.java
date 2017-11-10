@@ -19,6 +19,13 @@ public class HekateCodecConfigurerTest extends HekateAutoConfigurerTestBase {
     }
 
     @Test
+    public void testDefault() throws Exception {
+        registerAndRefresh(TestConfig.class);
+
+        assertEquals(JdkCodecFactory.class, get(HekateBootstrap.class).getDefaultCodec().getClass());
+    }
+
+    @Test
     public void testKryo() throws Exception {
         registerAndRefresh(new String[]{
             "hekate.codec=kryo",

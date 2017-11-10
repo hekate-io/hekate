@@ -5,6 +5,7 @@ import io.hekate.codec.fst.FstCodecFactory;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
 import io.hekate.spring.boot.HekateConfigurer;
 import java.util.Map;
+import org.nustaq.serialization.FSTConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -18,35 +19,12 @@ import org.springframework.context.annotation.Configuration;
  *
  * <h2>Module dependency</h2>
  * <p>
- * FST integration is provided by the 'hekate-codec-fst' module and can be imported into the project dependency management system
- * as in the example below:
+ * FST integration requires
+ * <a href="https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22de.ruedigermoeller%22%20a%3A%22fst%22" target="_blank">
+ * 'de.ruedigermoeller:fst'
+ * </a>
+ * to be on the project's classpath.
  * </p>
- * <div class="tabs">
- * <ul>
- * <li><a href="#maven">Maven</a></li>
- * <li><a href="#gradle">Gradle</a></li>
- * <li><a href="#ivy">Ivy</a></li>
- * </ul>
- * <div id="maven">
- * <pre>{@code
- * <dependency>
- *   <groupId>io.hekate</groupId>
- *   <artifactId>hekate-codec-fst</artifactId>
- *   <version>REPLACE_VERSION</version>
- * </dependency>
- * }</pre>
- * </div>
- * <div id="gradle">
- * <pre>{@code
- * compile group: 'io.hekate', name: 'hekate-codec-fst', version: 'REPLACE_VERSION'
- * }</pre>
- * </div>
- * <div id="ivy">
- * <pre>{@code
- * <dependency org="io.hekate" name="hekate-codec-fst" rev="REPLACE_VERSION"/>
- * }</pre>
- * </div>
- * </div>
  *
  * <h2>Configuration</h2>
  * <p>
@@ -66,10 +44,10 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @ConditionalOnHekateEnabled
-@AutoConfigureBefore({HekateConfigurer.class, HekateKryoCodecConfigurer.class})
-@ConditionalOnClass(FstCodecFactory.class)
+@ConditionalOnClass(FSTConfiguration.class)
 @ConditionalOnMissingBean(CodecFactory.class)
-@ConditionalOnProperty(name = "hekate.codec", havingValue = "fst", matchIfMissing = true)
+@AutoConfigureBefore({HekateConfigurer.class, HekateJdkCodecConfigurer.class})
+@ConditionalOnProperty(name = "hekate.codec", havingValue = "fst")
 public class HekateFstCodecConfigurer {
     /**
      * Constructs a new instance of {@link FstCodecFactory}.

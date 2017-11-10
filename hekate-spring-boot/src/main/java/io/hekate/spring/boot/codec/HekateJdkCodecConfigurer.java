@@ -5,7 +5,6 @@ import io.hekate.codec.JdkCodecFactory;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
 import io.hekate.spring.boot.HekateConfigurer;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -27,8 +26,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @ConditionalOnHekateEnabled
-@AutoConfigureBefore({HekateConfigurer.class, HekateKryoCodecConfigurer.class, HekateFstCodecConfigurer.class})
-@ConditionalOnClass(JdkCodecFactory.class)
+@AutoConfigureBefore(HekateConfigurer.class)
 @ConditionalOnMissingBean(CodecFactory.class)
 @ConditionalOnProperty(name = "hekate.codec", havingValue = "jdk", matchIfMissing = true)
 public class HekateJdkCodecConfigurer {

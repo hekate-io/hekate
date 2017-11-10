@@ -1,5 +1,6 @@
 package io.hekate.spring.boot.codec;
 
+import com.esotericsoftware.kryo.Kryo;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.kryo.KryoCodecFactory;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
@@ -18,35 +19,12 @@ import org.springframework.context.annotation.Configuration;
  *
  * <h2>Module dependency</h2>
  * <p>
- * Kryo integration is provided by the 'hekate-codec-kryo' module and can be imported into the project dependency management system
- * as in the example below:
+ * Kryo integration requires
+ * <a href="https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.esotericsoftware%22%20a%3A%22kryo-shaded%22" target="_blank">
+ * 'com.esotericsoftware:kryo-shaded'
+ * </a>
+ * to be on the project's classpath.
  * </p>
- * <div class="tabs">
- * <ul>
- * <li><a href="#maven">Maven</a></li>
- * <li><a href="#gradle">Gradle</a></li>
- * <li><a href="#ivy">Ivy</a></li>
- * </ul>
- * <div id="maven">
- * <pre>{@code
- * <dependency>
- *   <groupId>io.hekate</groupId>
- *   <artifactId>hekate-codec-kryo</artifactId>
- *   <version>REPLACE_VERSION</version>
- * </dependency>
- * }</pre>
- * </div>
- * <div id="gradle">
- * <pre>{@code
- * compile group: 'io.hekate', name: 'hekate-codec-kryo', version: 'REPLACE_VERSION'
- * }</pre>
- * </div>
- * <div id="ivy">
- * <pre>{@code
- * <dependency org="io.hekate" name="hekate-codec-kryo" rev="REPLACE_VERSION"/>
- * }</pre>
- * </div>
- * </div>
  *
  * <h2>Configuration</h2>
  * <p>
@@ -66,10 +44,10 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @ConditionalOnHekateEnabled
-@AutoConfigureBefore(HekateConfigurer.class)
-@ConditionalOnClass(KryoCodecFactory.class)
+@ConditionalOnClass(Kryo.class)
 @ConditionalOnMissingBean(CodecFactory.class)
-@ConditionalOnProperty(name = "hekate.codec", havingValue = "kryo", matchIfMissing = true)
+@AutoConfigureBefore({HekateConfigurer.class, HekateJdkCodecConfigurer.class})
+@ConditionalOnProperty(name = "hekate.codec", havingValue = "kryo")
 public class HekateKryoCodecConfigurer {
     /**
      * Constructs a new instance of {@link KryoCodecFactory}.
