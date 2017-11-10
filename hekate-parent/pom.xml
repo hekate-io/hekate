@@ -79,6 +79,8 @@
         <mockito.version>2.10.0</mockito.version>
         <jmh.version>1.18</jmh.version>
         <h2.version>1.4.193</h2.version>
+        <mysql.version>6.0.6</mysql.version>
+        <postgresql.version>42.1.4</postgresql.version>
 
         <!-- Maven plugins.-->
         <maven.compiler.plugin.version>3.0</maven.compiler.plugin.version>
@@ -274,6 +276,18 @@
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>${h2.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${mysql.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${postgresql.version}</version>
             </dependency>
 
             <!-- Testing. -->

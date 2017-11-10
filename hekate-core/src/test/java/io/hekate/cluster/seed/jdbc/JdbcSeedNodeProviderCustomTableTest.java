@@ -16,7 +16,13 @@
 
 package io.hekate.cluster.seed.jdbc;
 
+import javax.sql.DataSource;
+
 public class JdbcSeedNodeProviderCustomTableTest extends JdbcSeedNodeProviderTest {
+    public JdbcSeedNodeProviderCustomTableTest(DataSource ds) {
+        super(ds);
+    }
+
     @Override
     protected JdbcSeedNodeProviderConfig createConfig() {
         return new JdbcSeedNodeProviderConfig()

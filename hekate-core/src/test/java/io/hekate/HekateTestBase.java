@@ -131,7 +131,7 @@ public abstract class HekateTestBase {
     /** Interval between loops of {@link #busyWait(String, Callable)}. */
     public static final int BUSY_WAIT_INTERVAL = 25;
 
-    /** Singleton for expected errors ...{@link HekateTestError#TEST_ERROR_MESSAGE RELAX:)}. */
+    /** Singleton for expected errors ...{@link HekateTestError#MESSAGE RELAX:)}. */
     public static final AssertionError TEST_ERROR = new HekateTestError(HekateTestError.MESSAGE);
 
     /** Timestamp format for test messages (see {@link #say(Object)}). */
@@ -178,6 +178,7 @@ public abstract class HekateTestBase {
         KNOWN_THREAD_PREFIXES.add("com.google.inject.internal.util.$Finalizer".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("Keep-Alive-Timer".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("H2 Close".toLowerCase());
+        KNOWN_THREAD_PREFIXES.add("Abandoned connection cleanup thread".toLowerCase());
     }
 
     /** Test timeout rule (see {@link #MAX_TEST_TIMEOUT}). */

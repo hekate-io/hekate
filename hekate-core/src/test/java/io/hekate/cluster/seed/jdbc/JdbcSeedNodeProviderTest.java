@@ -16,25 +16,75 @@
 
 package io.hekate.cluster.seed.jdbc;
 
+import com.mysql.cj.jdbc.MysqlDataSource;
+import io.hekate.HekateTestProps;
 import io.hekate.cluster.seed.PersistentSeedNodeProviderCommonTest;
 import io.hekate.core.HekateException;
 import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import javax.sql.DataSource;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+import org.postgresql.ds.PGSimpleDataSource;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@RunWith(Parameterized.class)
 public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderCommonTest<JdbcSeedNodeProvider> {
-    public static final String DB_URL = "jdbc:h2:mem:test";
+    private final DataSource ds;
 
     private Connection keepDbAlive;
+
+    public JdbcSeedNodeProviderTest(DataSource ds) {
+        this.ds = ds;
+    }
+
+    @Parameters(name = "{index}:{0}")
+    public static Collection<DataSource> getDataSources() {
+        List<DataSource> dataSources = new ArrayList<>();
+
+        // H2
+        JdbcDataSource h2 = new JdbcDataSource();
+
+        h2.setURL("jdbc:h2:mem:test");
+
+        dataSources.add(h2);
+
+        // MySQL
+        if (HekateTestProps.is("MYSQL_ENABLED")) {
+            MysqlDataSource mysql = new MysqlDataSource();
+
+            mysql.setURL(HekateTestProps.get("MYSQL_URL"));
+            mysql.setUser(HekateTestProps.get("MYSQL_USER"));
+            mysql.setPassword(HekateTestProps.get("MYSQL_PASSWORD"));
+
+            dataSources.add(mysql);
+        }
+
+        // MySQL
+        if (HekateTestProps.is("POSTGRES_ENABLED")) {
+            PGSimpleDataSource postgres = new PGSimpleDataSource();
+
+            postgres.setUrl(HekateTestProps.get("POSTGRES_URL"));
+            postgres.setUser(HekateTestProps.get("POSTGRES_USER"));
+            postgres.setPassword(HekateTestProps.get("POSTGRES_PASSWORD"));
+
+            dataSources.add(postgres);
+        }
+
+        return dataSources;
+    }
 
     public static void initializeDatabase(DataSource ds, JdbcSeedNodeProviderConfig cfg) throws SQLException {
         try (Connection conn = ds.getConnection()) {
@@ -47,28 +97,20 @@ public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderCommonTe
             Statement st = conn.createStatement()
         ) {
             String sql = "CREATE TABLE IF NOT EXISTS " + cfg.getTable() + " ("
-                + cfg.getHostColumn() + " VARCHAR,"
-                + cfg.getPortColumn() + " NUMBER, "
-                + cfg.getClusterColumn() + " VARCHAR "
+                + cfg.getHostColumn() + " VARCHAR(255),"
+                + cfg.getPortColumn() + " INT, "
+                + cfg.getClusterColumn() + " VARCHAR(255) "
                 + ")";
 
             st.execute(sql);
         }
     }
 
-    public static JdbcDataSource newDataSource() {
-        JdbcDataSource ds = new JdbcDataSource();
-
-        ds.setURL(DB_URL);
-
-        return ds;
-    }
-
     @Override
     public void setUp() throws Exception {
         super.setUp();
 
-        keepDbAlive = newDataSource().getConnection();
+        keepDbAlive = datasource().getConnection();
     }
 
     @Override
@@ -86,7 +128,7 @@ public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderCommonTe
 
     @Test
     public void testDbErrorOnStopDiscovery() throws Exception {
-        BrokenDataSourceMock errDs = new BrokenDataSourceMock(newDataSource());
+        BrokenDataSourceMock errDs = new BrokenDataSourceMock(datasource());
 
         JdbcSeedNodeProvider provider = createProvider(errDs);
 
@@ -115,7 +157,7 @@ public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderCommonTe
 
     @Test
     public void testDbErrorOnStartDiscovery() throws Exception {
-        BrokenDataSourceMock errDs = new BrokenDataSourceMock(newDataSource());
+        BrokenDataSourceMock errDs = new BrokenDataSourceMock(datasource());
 
         JdbcSeedNodeProvider provider = createProvider(errDs);
 
@@ -146,7 +188,7 @@ public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderCommonTe
 
     @Test
     public void testDbErrorOnGetNodes() throws Exception {
-        BrokenDataSourceMock errDs = new BrokenDataSourceMock(newDataSource());
+        BrokenDataSourceMock errDs = new BrokenDataSourceMock(datasource());
 
         JdbcSeedNodeProvider provider = createProvider(errDs);
 
@@ -175,13 +217,17 @@ public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderCommonTe
         assertTrue(provider.findSeedNodes(CLUSTER_1).isEmpty());
     }
 
+    public DataSource datasource() {
+        return ds;
+    }
+
     protected JdbcSeedNodeProviderConfig createConfig() {
         return new JdbcSeedNodeProviderConfig();
     }
 
     @Override
     protected JdbcSeedNodeProvider createProvider() throws Exception {
-        return createProvider(newDataSource());
+        return createProvider(datasource());
     }
 
     private JdbcSeedNodeProvider createProvider(DataSource ds) throws Exception {

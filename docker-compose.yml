@@ -23,3 +23,22 @@ services:
     ports:
       - "8083:8083"
       - "8086:8086"
+  mysql:
+    container_name: hekate-test-mysql
+    image: "mysql:5.7.20"
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: hekate-test
+      MYSQL_USER: hekate-test
+      MYSQL_PASSWORD: hekate-test
+  postges:
+    container_name: hekate-test-postgres
+    image: "postgres:9.3.19-alpine"
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: hekate-test
+      POSTGRES_USER: hekate-test
+      POSTGRES_PASSWORD: hekate-test

@@ -19,6 +19,7 @@ package io.hekate.spring.boot;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.core.Hekate;
+import io.hekate.core.Hekate.LifecycleListener;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateFutureException;
 import io.hekate.core.PropertyProvider;
@@ -227,7 +228,7 @@ public class HekateConfigurer {
 
     private final List<PropertyProvider> propertyProviders;
 
-    private final List<Hekate.LifecycleListener> listeners;
+    private final List<LifecycleListener> listeners;
 
     /**
      * Constructs new instance with autowired dependencies.
@@ -235,14 +236,14 @@ public class HekateConfigurer {
      * @param propertyProviders All {@link PropertyProvider}s found in the application context.
      * @param services All {@link ServiceFactory}s found in the application context.
      * @param plugins All {@link Plugin}s found in the application context.
-     * @param listeners All {@link Hekate.LifecycleListener}s found in the application context.
+     * @param listeners All {@link LifecycleListener}s found in the application context.
      * @param codec Default codec factory.
      */
     public HekateConfigurer(
         Optional<List<PropertyProvider>> propertyProviders,
         Optional<List<ServiceFactory<?>>> services,
         Optional<List<Plugin>> plugins,
-        Optional<List<Hekate.LifecycleListener>> listeners,
+        Optional<List<LifecycleListener>> listeners,
         @Qualifier("default") Optional<CodecFactory<Object>> codec
     ) {
         this.services = services.orElse(null);
