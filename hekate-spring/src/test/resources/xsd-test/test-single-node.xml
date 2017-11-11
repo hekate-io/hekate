@@ -42,12 +42,12 @@
         </property-providers>
 
         <default-codec>
-            <s:bean class="io.hekate.codec.JdkCodecFactory"/>
+            <s:bean class="io.hekate.codec.fst.FstCodecFactory"/>
         </default-codec>
 
         <cluster id="cluster" gossip-interval-ms="1000" gossip-speedup-size="100">
             <seed-node-provider>
-                <jdbc cleanup-interval-ms="60000"
+                <jdbc cleanup-interval-ms="60001"
                     query-timeout-sec="5"
                     table="cn"
                     cluster-column="c"
@@ -62,7 +62,7 @@
             </seed-node-provider>
 
             <failure-detection>
-                <heartbeat interval-ms="500" loss-threshold="6" quorum="2"/>
+                <heartbeat interval-ms="501" loss-threshold="5" quorum="3"/>
             </failure-detection>
 
             <split-brain-detection action="TERMINATE">
@@ -154,27 +154,59 @@
         </messaging>
 
         <rpc id="rpc" nio-threads="0" worker-threads="8" idle-socket-timeout-ms="0">
-            <client name="someRpcClient" interface="foo.bar.SomeRpcService" tag="some-tag-1">
-                <load-balancer>
-                    <s:bean class="foo.bar.SomeRpcLoadBalancer"/>
-                </load-balancer>
-                <failover-policy>
-                    <s:bean class="foo.bar.SomeFailoverPolicy"/>
-                </failover-policy>
-            </client>
+            <back-pressure>
+                <outbound low-watermark="50" high-watermark="100" overflow="BLOCK"/>
+                <inbound low-watermark="50" high-watermark="100"/>
+            </back-pressure>
 
-            <server>
-                <tags>
-                    <tag>some-tag-1</tag>
-                    <tag>some-tag-2</tag>
-                </tags>
-                <handler>
-                    <s:bean class="foo.bar.SomeRpcServiceImpl"/>
-                </handler>
-            </server>
+            <clients>
+                <client name="someRpcClient1" interface="foo.bar.SomeRpcService" tag="some-tag-1">
+                    <load-balancer>
+                        <s:bean class="foo.bar.SomeRpcLoadBalancer"/>
+                    </load-balancer>
+                    <failover-policy>
+                        <s:bean class="foo.bar.SomeFailoverPolicy"/>
+                    </failover-policy>
+                </client>
+
+                <client name="someRpcClient2" interface="foo.bar.SomeRpcService" tag="some-tag-2">
+                    <load-balancer>
+                        <s:bean class="foo.bar.SomeRpcLoadBalancer"/>
+                    </load-balancer>
+                    <failover-policy>
+                        <s:bean class="foo.bar.SomeFailoverPolicy"/>
+                    </failover-policy>
+                </client>
+            </clients>
+            <servers>
+                <server>
+                    <tags>
+                        <tag>server-1-tag-1</tag>
+                        <tag>server-1-tag-2</tag>
+                    </tags>
+                    <handler>
+                        <s:bean class="foo.bar.SomeRpcServiceImpl"/>
+                    </handler>
+                </server>
+
+                <server>
+                    <tags>
+                        <tag>server-2-tag-1</tag>
+                        <tag>server-2-tag-2</tag>
+                    </tags>
+                    <handler>
+                        <s:bean class="foo.bar.SomeRpcServiceImpl"/>
+                    </handler>
+                </server>
+            </servers>
         </rpc>
 
-        <tasks id="tasks" nio-threads="0" worker-threads="8" idle-socket-timeout-ms="0"/>
+        <tasks id="tasks" nio-threads="0" worker-threads="8" idle-socket-timeout-ms="0">
+            <back-pressure>
+                <outbound low-watermark="50" high-watermark="100" overflow="BLOCK"/>
+                <inbound low-watermark="50" high-watermark="100"/>
+            </back-pressure>
+        </tasks>
 
         <locks id="locks" retry-interval-ms="100" nio-threads="0" worker-threads="1">
             <region name="region1">
@@ -192,7 +224,7 @@
                 </handler>
             </process>
 
-            <process name="someProcess3">
+            <process name="someProcess2">
                 <handler>
                     <s:bean class="foo.bar.SomeCoordinationHandler"/>
                 </handler>

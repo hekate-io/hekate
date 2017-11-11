@@ -1,6 +1,8 @@
 package io.hekate.spring.boot.rpc;
 
 import io.hekate.core.Hekate;
+import io.hekate.messaging.MessagingBackPressureConfig;
+import io.hekate.messaging.MessagingOverflowPolicy;
 import io.hekate.rpc.RpcClientConfig;
 import io.hekate.rpc.RpcServerConfig;
 import io.hekate.rpc.RpcService;
@@ -47,7 +49,12 @@ import org.springframework.stereotype.Component;
  * <ul>
  * <li>{@link RpcServiceFactory#setNioThreads(int) 'hekate.rpc.nio-threads'}</li>
  * <li>{@link RpcServiceFactory#setWorkerThreads(int) 'hekate.rpc.worker-threads'}</li>
- * <li>{@link RpcServiceFactory#setIdleSocketTimeout(int) 'hekate.rpc.idle-socket-timeout'}</li>
+ * <li>{@link RpcServiceFactory#setIdleSocketTimeout(long) 'hekate.rpc.idle-socket-timeout'}</li>
+ * <li>{@link MessagingBackPressureConfig#setInLowWatermark(int) 'hekate.rpc.back-bressure.in-low-watermark'}</li>
+ * <li>{@link MessagingBackPressureConfig#setInHighWatermark(int) 'hekate.rpc.back-bressure.in-high-watermark'}</li>
+ * <li>{@link MessagingBackPressureConfig#setOutLowWatermark(int) 'hekate.rpc.back-bressure.out-low-watermark'}</li>
+ * <li>{@link MessagingBackPressureConfig#setOutHighWatermark(int) 'hekate.rpc.back-bressure.out-high-watermark'}</li>
+ * <li>{@link MessagingBackPressureConfig#setOutOverflow(MessagingOverflowPolicy) 'hekate.rpc.back-bressure.out-overflow'}</li>
  * </ul>
  *
  * <h2>Injection of RPC client proxies</h2>

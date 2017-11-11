@@ -44,32 +44,6 @@ public class TaskServiceFactoryTest extends HekateTestBase {
     }
 
     @Test
-    public void testIdleSocketTimeout() {
-        assertEquals(0, factory.getIdleSocketTimeout());
-
-        factory.setIdleSocketTimeout(10000);
-
-        assertEquals(10000, factory.getIdleSocketTimeout());
-
-        assertSame(factory, factory.withIdleSocketTimeout(20000));
-
-        assertEquals(20000, factory.getIdleSocketTimeout());
-    }
-
-    @Test
-    public void testNioThreads() {
-        assertEquals(0, factory.getNioThreads());
-
-        factory.setNioThreads(10000);
-
-        assertEquals(10000, factory.getNioThreads());
-
-        assertSame(factory, factory.withNioThreads(20000));
-
-        assertEquals(20000, factory.getNioThreads());
-    }
-
-    @Test
     public void testWorkerThreads() {
         assertEquals(Runtime.getRuntime().availableProcessors(), factory.getWorkerThreads());
 

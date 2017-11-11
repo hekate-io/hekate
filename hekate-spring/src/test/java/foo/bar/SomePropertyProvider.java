@@ -23,6 +23,6 @@ import java.util.Map;
 public class SomePropertyProvider implements PropertyProvider {
     @Override
     public Map<String, String> getProperties() {
-        return Collections.singletonMap("some-property", "some-value");
+        return Collections.singletonMap("some-property-from-provider", "some-value-from-provider");
     }
 }

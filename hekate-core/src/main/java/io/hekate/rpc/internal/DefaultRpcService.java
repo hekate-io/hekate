@@ -16,6 +16,7 @@ import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.TerminatingService;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageInterceptor;
+import io.hekate.messaging.MessagingBackPressureConfig;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingConfigProvider;
@@ -123,6 +124,8 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
     private final long idleSocketTimeout;
 
+    private final MessagingBackPressureConfig backPressure;
+
     @ToStringIgnore
     private final List<RpcServerConfig> serverConfigs = new LinkedList<>();
 
@@ -155,6 +158,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
         workerThreads = factory.getWorkerThreads();
         nioThreads = factory.getNioThreads();
         idleSocketTimeout = factory.getIdleSocketTimeout();
+        backPressure = new MessagingBackPressureConfig(factory.getBackPressure());
 
         nullSafe(factory.getClients()).forEach(clientConfigs::add);
         nullSafe(factory.getServers()).forEach(serverConfigs::add);
@@ -279,6 +283,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
             .withNioThreads(nioThreads)
             .withWorkerThreads(workerThreads)
             .withIdleSocketTimeout(idleSocketTimeout)
+            .withBackPressure(backPressure)
             .withLogCategory(RpcService.class.getName())
             .withMessageCodec(new RpcProtocolCodecFactory(codec))
             .withInterceptor(new MessageInterceptor<RpcProtocol>() {

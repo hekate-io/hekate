@@ -107,30 +107,6 @@ public class RpcServiceFactoryTest extends HekateTestBase {
     }
 
     @Test
-    public void testNioThreads() {
-        assertEquals(0, factory.getNioThreads());
-
-        factory.setNioThreads(10);
-
-        assertEquals(10, factory.getNioThreads());
-
-        assertSame(factory, factory.withNioThreads(100));
-        assertEquals(100, factory.getNioThreads());
-    }
-
-    @Test
-    public void testIdleSocketTimeout() {
-        assertEquals(0, factory.getIdleSocketTimeout());
-
-        factory.setIdleSocketTimeout(10);
-
-        assertEquals(10, factory.getIdleSocketTimeout());
-
-        assertSame(factory, factory.withIdleSocketTimeout(100));
-        assertEquals(100, factory.getIdleSocketTimeout());
-    }
-
-    @Test
     public void testToString() {
         assertEquals(ToString.format(factory), factory.toString());
     }

@@ -35,6 +35,26 @@ public class MessagingBackPressureConfig {
     private MessagingOverflowPolicy outOverflow = MessagingOverflowPolicy.IGNORE;
 
     /**
+     * Constructs a new instance.
+     */
+    public MessagingBackPressureConfig() {
+        // No-op.
+    }
+
+    /**
+     * Copy constructor.
+     *
+     * @param src Copy from.
+     */
+    public MessagingBackPressureConfig(MessagingBackPressureConfig src) {
+        inLowWatermark = src.getInLowWatermark();
+        inHighWatermark = src.getInHighWatermark();
+        outLowWatermark = src.getOutLowWatermark();
+        outHighWatermark = src.getOutHighWatermark();
+        outOverflow = src.getOutOverflow();
+    }
+
+    /**
      * Returns the low watermark of inbound (receiving) queue size (see {@link #setInLowWatermark(int)}).
      *
      * @return Low watermark of inbound queue size.

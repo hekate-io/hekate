@@ -17,6 +17,8 @@
 package io.hekate.spring.boot.task;
 
 import io.hekate.core.Hekate;
+import io.hekate.messaging.MessagingBackPressureConfig;
+import io.hekate.messaging.MessagingOverflowPolicy;
 import io.hekate.spring.bean.task.TaskServiceBean;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
 import io.hekate.spring.boot.HekateConfigurer;
@@ -39,8 +41,13 @@ import org.springframework.context.annotation.Configuration;
  * <ul>
  * <li>{@link TaskServiceFactory#setWorkerThreads(int) 'hekate.task.worker-threads'}</li>
  * <li>{@link TaskServiceFactory#setNioThreads(int) 'hekate.task.nio-threads'}</li>
- * <li>{@link TaskServiceFactory#setIdleSocketTimeout(int) 'hekate.task.idle-socket-timeout'}</li>
+ * <li>{@link TaskServiceFactory#setIdleSocketTimeout(long) 'hekate.task.idle-socket-timeout'}</li>
  * <li>{@link TaskServiceFactory#setLocalExecutionEnabled(boolean) 'hekate.task.local-execution-enabled'}</li>
+ * <li>{@link MessagingBackPressureConfig#setInLowWatermark(int) 'hekate.task.back-bressure.in-low-watermark'}</li>
+ * <li>{@link MessagingBackPressureConfig#setInHighWatermark(int) 'hekate.task.back-bressure.in-high-watermark'}</li>
+ * <li>{@link MessagingBackPressureConfig#setOutLowWatermark(int) 'hekate.task.back-bressure.out-low-watermark'}</li>
+ * <li>{@link MessagingBackPressureConfig#setOutHighWatermark(int) 'hekate.task.back-bressure.out-high-watermark'}</li>
+ * <li>{@link MessagingBackPressureConfig#setOutOverflow(MessagingOverflowPolicy) 'hekate.task.back-bressure.out-overflow'}</li>
  * </ul>
  *
  * @see TaskService

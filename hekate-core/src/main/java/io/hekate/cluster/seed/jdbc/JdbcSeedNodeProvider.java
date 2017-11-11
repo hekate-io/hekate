@@ -57,7 +57,7 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider {
 
     private final DataSource ds;
 
-    private final int timeout;
+    private final int queryTimeout;
 
     private final long cleanupInterval;
 
@@ -87,7 +87,7 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider {
         check.notEmpty(cfg.getClusterColumn(), "cluster name column");
 
         ds = cfg.getDataSource();
-        timeout = cfg.getQueryTimeout();
+        queryTimeout = cfg.getQueryTimeout();
         cleanupInterval = cfg.getCleanupInterval();
 
         String table = cfg.getTable().trim();
@@ -97,7 +97,7 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider {
 
         selSql = "SELECT " + host + ", " + port + " FROM " + table + " WHERE " + cluster + " = ?";
         delSql = "DELETE FROM " + table + " WHERE " + host + " = ? AND " + port + " = ? AND " + cluster + " = ?";
-        insSql = "INSERT INTO " + table + " (" + host + ", " + port + "," + cluster + ") VALUES (?, ?, ?)";
+        insSql = "INSERT INTO " + table + " (" + host + ", " + port + ", " + cluster + ") VALUES (?, ?, ?)";
     }
 
     @Override
@@ -110,8 +110,8 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider {
                 log.debug("Executing SQL query [sql={}, cluster={}]", selSql, cluster);
             }
 
-            if (timeout > 0) {
-                st.setQueryTimeout(timeout);
+            if (queryTimeout > 0) {
+                st.setQueryTimeout(queryTimeout);
             }
 
             st.setString(1, cluster);
@@ -169,13 +169,68 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider {
         // No-op.
     }
 
+    /**
+     * Returns the data source of this provider.
+     *
+     * @return Data source.
+     *
+     * @see JdbcSeedNodeProviderConfig#setDataSource(DataSource)
+     */
+    public DataSource dataSource() {
+        return ds;
+    }
+
+    /**
+     * Returns the JDBC query timeout in seconds.
+     *
+     * @return Timeout in seconds.
+     *
+     * @see JdbcSeedNodeProviderConfig#setQueryTimeout(int)
+     */
+    public int queryTimeout() {
+        return queryTimeout;
+    }
+
+    /**
+     * Returns the SQL string for selecting records from the seed nodes table.
+     *
+     * @return SQL string.
+     *
+     * @see JdbcSeedNodeProviderConfig#setTable(String)
+     */
+    public String selectSql() {
+        return selSql;
+    }
+
+    /**
+     * Returns the SQL string for inserting new records into the seed nodes table.
+     *
+     * @return SQL string.
+     *
+     * @see JdbcSeedNodeProviderConfig#setTable(String)
+     */
+    public String deleteSql() {
+        return delSql;
+    }
+
+    /**
+     * Returns the SQL string for deleting records from the seed nodes table.
+     *
+     * @return SQL string.
+     *
+     * @see JdbcSeedNodeProviderConfig#setTable(String)
+     */
+    public String insertSql() {
+        return insSql;
+    }
+
     private void doUnregister(String cluster, InetSocketAddress address) throws HekateException {
         try (Connection conn = ds.getConnection()) {
             conn.setAutoCommit(false);
 
             try (PreparedStatement delSt = conn.prepareStatement(delSql)) {
-                if (timeout > 0) {
-                    delSt.setQueryTimeout(timeout);
+                if (queryTimeout > 0) {
+                    delSt.setQueryTimeout(queryTimeout);
                 }
 
                 String host = AddressUtils.host(address);
@@ -219,9 +274,9 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider {
                 PreparedStatement delSt = conn.prepareStatement(delSql);
                 PreparedStatement insSt = conn.prepareStatement(insSql)
             ) {
-                if (timeout > 0) {
-                    delSt.setQueryTimeout(timeout);
-                    insSt.setQueryTimeout(timeout);
+                if (queryTimeout > 0) {
+                    delSt.setQueryTimeout(queryTimeout);
+                    insSt.setQueryTimeout(queryTimeout);
                 }
 
                 String host = address.getHostAddress();

@@ -307,6 +307,17 @@ public class DefaultFailureDetector implements FailureDetector {
         }
     }
 
+    /**
+     * Returns the amount of heartbeats that can be lost before considering a node failure.
+     *
+     * @return Amount of heartbeats that can be lost before considering a node failure.
+     *
+     * @see DefaultFailureDetectorConfig#setHeartbeatLossThreshold(int)
+     */
+    public int heartbeatLossThreshold() {
+        return hbLossThreshold;
+    }
+
     // Package level for testing purposes.
     boolean isMonitored(ClusterAddress node) {
         readLock.lock();

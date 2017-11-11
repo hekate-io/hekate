@@ -16,11 +16,23 @@
 
 package io.hekate.spring.bean.internal;
 
+import foo.bar.SomeClusterAcceptor;
+import foo.bar.SomeFailoverPolicy;
 import foo.bar.SomeRpcService;
+import foo.bar.SomeRpcServiceImpl;
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterService;
+import io.hekate.cluster.health.DefaultFailureDetector;
+import io.hekate.cluster.internal.DefaultClusterService;
+import io.hekate.cluster.seed.jdbc.JdbcSeedNodeProvider;
+import io.hekate.cluster.split.HostReachabilityDetector;
+import io.hekate.cluster.split.SplitBrainAction;
+import io.hekate.cluster.split.SplitBrainDetectorGroup;
+import io.hekate.codec.CodecService;
+import io.hekate.codec.fst.FstCodecFactory;
 import io.hekate.coordinate.CoordinationService;
 import io.hekate.core.Hekate;
+import io.hekate.core.HekateBootstrap;
 import io.hekate.election.ElectionService;
 import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockRegion;
@@ -33,9 +45,12 @@ import io.hekate.metrics.local.CounterMetric;
 import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkService;
+import io.hekate.rpc.RpcClientBuilder;
+import io.hekate.rpc.RpcServerInfo;
 import io.hekate.rpc.RpcService;
 import io.hekate.task.TaskService;
 import io.hekate.util.format.ToString;
+import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,11 +61,16 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration("classpath*:xsd-test/test-single-node.xml")
 public class XsdSingleNodeTest extends HekateTestBase {
+    @Autowired
+    private HekateBootstrap bootstrap;
+
     @Autowired
     @Qualifier("hekateBean")
     private Hekate hekate;
@@ -72,7 +92,7 @@ public class XsdSingleNodeTest extends HekateTestBase {
     private RpcService rpc;
 
     @Autowired
-    @Qualifier("someRpcClient")
+    @Qualifier("someRpcClient1")
     private SomeRpcService rpcClient;
 
     @Autowired
@@ -125,6 +145,7 @@ public class XsdSingleNodeTest extends HekateTestBase {
 
     @Test
     public void test() {
+        assertNotNull(bootstrap);
         assertNotNull(hekate);
         assertNotNull(cluster);
         assertNotNull(locks);
@@ -144,8 +165,15 @@ public class XsdSingleNodeTest extends HekateTestBase {
         assertNotNull(counter);
         assertNotNull(probe);
 
-        assertEquals("some-value", hekate.localNode().property("some-property"));
-        assertEquals(String.class, hekate.messaging().channel("some.channel", String.class).baseType());
+        verifyLocalNode();
+
+        verifyCluster();
+
+        verifyMessaging();
+
+        verifyRpc();
+
+        verifyCoordination();
 
         say("Done: " + ToString.format(this));
     }
@@ -153,5 +181,88 @@ public class XsdSingleNodeTest extends HekateTestBase {
     @Override
     protected void assertAllThreadsStopped() throws InterruptedException {
         // Do not check threads since Spring context gets terminated after all tests have been run.
+    }
+
+    private void verifyLocalNode() {
+        assertEquals("test-cluster", bootstrap.getClusterName());
+        assertEquals("test-node", hekate.localNode().name());
+
+        assertEquals(3, hekate.localNode().roles().size());
+        assertEquals(toSet("role 1", "role 2", "role 3"), hekate.localNode().roles());
+
+        assertEquals("prop val 1", hekate.localNode().property("prop 1"));
+        assertEquals("prop val 2", hekate.localNode().property("prop 2"));
+        assertEquals("prop val 3", hekate.localNode().property("prop 3"));
+
+        assertEquals("some-value-from-provider", hekate.localNode().property("some-property-from-provider"));
+
+        assertTrue(hekate.get(CodecService.class).codecFactory().toString().contains(FstCodecFactory.class.getSimpleName()));
+    }
+
+    private void verifyMessaging() {
+        assertNotNull(hekate.messaging().channel("some.channel"));
+        assertNotNull(hekate.messaging().channel("another.channel"));
+
+        assertEquals(String.class, hekate.messaging().channel("some.channel").baseType());
+    }
+
+    private void verifyCluster() {
+        DefaultClusterService cluster = hekate.get(DefaultClusterService.class);
+
+        JdbcSeedNodeProvider jdbc = (JdbcSeedNodeProvider)cluster.seedNodeProvider();
+
+        assertEquals(60001, jdbc.cleanupInterval());
+        assertEquals(5, jdbc.queryTimeout());
+        assertEquals(JdbcDataSource.class, jdbc.dataSource().getClass());
+        assertTrue(jdbc.insertSql(), jdbc.insertSql().startsWith("INSERT INTO cn (h, p, c)"));
+
+        DefaultFailureDetector detector = (DefaultFailureDetector)cluster.failureDetector();
+
+        assertEquals(501, detector.heartbeatInterval());
+        assertEquals(5, detector.heartbeatLossThreshold());
+        assertEquals(3, detector.failureQuorum());
+
+        assertSame(SplitBrainAction.TERMINATE, cluster.splitBrainAction());
+
+        SplitBrainDetectorGroup splitBrain = (SplitBrainDetectorGroup)cluster.splitBrainDetector();
+
+        assertSame(SplitBrainDetectorGroup.GroupPolicy.ANY_VALID, splitBrain.getGroupPolicy());
+        assertEquals(2, splitBrain.getDetectors().size());
+
+        assertEquals(HostReachabilityDetector.class, splitBrain.getDetectors().get(0).getClass());
+        assertEquals(SplitBrainDetectorGroup.class, splitBrain.getDetectors().get(1).getClass());
+
+        assertEquals(1, cluster.acceptors().stream().filter(a -> a instanceof SomeClusterAcceptor).count());
+    }
+
+    private void verifyRpc() {
+        assertEquals(2, hekate.rpc().servers().size());
+
+        RpcServerInfo server1 = hekate.rpc().servers().stream()
+            .filter(s -> s.tags().contains("server-1-tag-1"))
+            .findFirst()
+            .orElseThrow(AssertionError::new);
+
+        RpcServerInfo server2 = hekate.rpc().servers().stream()
+            .filter(s -> s.tags().contains("server-2-tag-1"))
+            .findFirst()
+            .orElseThrow(AssertionError::new);
+
+        RpcClientBuilder<SomeRpcService> client1 = hekate.rpc().clientFor(SomeRpcService.class, "some-tag-1");
+        RpcClientBuilder<SomeRpcService> client2 = hekate.rpc().clientFor(SomeRpcService.class, "some-tag-2");
+
+        assertEquals(SomeRpcServiceImpl.class, server1.rpc().getClass());
+        assertEquals(toSet("server-1-tag-1", "server-1-tag-2"), server1.tags());
+
+        assertEquals(SomeRpcServiceImpl.class, server2.rpc().getClass());
+        assertEquals(toSet("server-2-tag-1", "server-2-tag-2"), server2.tags());
+
+        assertEquals(SomeFailoverPolicy.class, client1.failover().getClass());
+        assertEquals(SomeFailoverPolicy.class, client2.failover().getClass());
+    }
+
+    private void verifyCoordination() {
+        assertNotNull(hekate.coordination().process("someProcess1"));
+        assertNotNull(hekate.coordination().process("someProcess2"));
     }
 }

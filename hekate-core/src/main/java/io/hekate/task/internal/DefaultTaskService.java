@@ -31,6 +31,7 @@ import io.hekate.core.service.TerminatingService;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.Message;
+import io.hekate.messaging.MessagingBackPressureConfig;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingConfigProvider;
@@ -52,7 +53,6 @@ import io.hekate.task.internal.TaskProtocol.RunTask;
 import io.hekate.util.StateGuard;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -62,58 +62,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DefaultTaskService implements TaskService, InitializingService, TerminatingService, DependentService, MessagingConfigProvider {
-    private static class ApplyTaskCallback {
-        private final int expect;
-
-        private final Message<TaskProtocol> request;
-
-        private final List<Object> results;
-
-        private volatile boolean completed;
-
-        public ApplyTaskCallback(int expect, Message<TaskProtocol> request) {
-            this.expect = expect;
-            this.request = request;
-
-            results = new ArrayList<>(expect);
-        }
-
-        public boolean isCompleted() {
-            return completed;
-        }
-
-        void onResult(Object result) {
-            boolean ready = false;
-
-            synchronized (this) {
-                results.add(result);
-
-                if (results.size() == expect) {
-                    completed = ready = true;
-                }
-            }
-
-            if (ready) {
-                request.reply(new ObjectResult(results));
-            }
-        }
-
-        void onError(Throwable error) {
-            boolean reply = false;
-
-            synchronized (this) {
-                // Make sure that we reply only once.
-                if (!completed) {
-                    completed = reply = true;
-                }
-            }
-
-            if (reply) {
-                request.reply(new ErrorResult(error));
-            }
-        }
-    }
-
     private static final Logger log = LoggerFactory.getLogger(DefaultTaskService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -127,6 +75,8 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
     private final int nioThreadPoolSize;
 
     private final long idleSocketTimeout;
+
+    private final MessagingBackPressureConfig backPressure;
 
     @ToStringIgnore
     private final StateGuard guard = new StateGuard(TaskService.class);
@@ -153,6 +103,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
         workerThreadPoolSize = factory.getWorkerThreads();
         nioThreadPoolSize = factory.getNioThreads();
         idleSocketTimeout = factory.getIdleSocketTimeout();
+        backPressure = new MessagingBackPressureConfig(factory.getBackPressure());
         codec = factory.getTaskCodec();
     }
 
@@ -176,6 +127,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
             .withIdleSocketTimeout(idleSocketTimeout)
             .withNioThreads(nioThreadPoolSize)
             .withWorkerThreads(workerThreadPoolSize)
+            .withBackPressure(backPressure)
             .withMessageCodec(() -> new TaskProtocolCodec(codec.createCodec()));
 
         if (localExecutionEnabled) {

@@ -645,11 +645,9 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
 
                 // Attributes.
                 setProperty(channel, channelEl, "name", "name");
-                setProperty(channel, channelEl, "nioThreads", "nio-threads");
                 setProperty(channel, channelEl, "workerThreads", "worker-threads");
                 setProperty(channel, channelEl, "backupNodes", "backup-nodes");
                 setProperty(channel, channelEl, "partitions", "partitions");
-                setProperty(channel, channelEl, "idleSocketTimeout", "idle-socket-timeout-ms");
                 setProperty(channel, channelEl, "logCategory", "log-category");
                 setProperty(channel, channelEl, "messagingTimeout", "messaging-timeout-ms");
 
@@ -660,10 +658,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 setBeanOrRef(channel, channelEl, "clusterFilter", "cluster-filter", ctx);
                 setBeanOrRef(channel, channelEl, "failoverPolicy", "failover-policy", ctx);
 
-                // Back pressure element.
-                parseMessagingBackPressure(channelEl, ctx).ifPresent(backPressureRef ->
-                    channel.addPropertyValue("backPressure", backPressureRef)
-                );
+                parseCommonMessagingConfig(channelEl, channel, ctx);
 
                 // Register channel bean definition.
                 channels.add(registerInnerBean(channel, ctx));
@@ -695,8 +690,18 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         }
     }
 
-    private Optional<RuntimeBeanReference> parseMessagingBackPressure(Element channelEl, ParserContext ctx) {
-        Element backPressureEl = getChildElementByTagName(channelEl, "back-pressure");
+    private void parseCommonMessagingConfig(Element el, BeanDefinitionBuilder bean, ParserContext ctx) {
+        setProperty(bean, el, "nioThreads", "nio-threads");
+        setProperty(bean, el, "idleSocketTimeout", "idle-socket-timeout-ms");
+
+        // Back pressure element.
+        parseMessagingBackPressure(el, ctx).ifPresent(backPressureRef ->
+            bean.addPropertyValue("backPressure", backPressureRef)
+        );
+    }
+
+    private Optional<RuntimeBeanReference> parseMessagingBackPressure(Element el, ParserContext ctx) {
+        Element backPressureEl = getChildElementByTagName(el, "back-pressure");
 
         if (backPressureEl != null) {
             BeanDefinitionBuilder backPressure = newBean(MessagingBackPressureConfig.class, backPressureEl);
@@ -727,9 +732,9 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         if (tasksEl != null) {
             BeanDefinitionBuilder tasks = newBean(TaskServiceFactory.class, tasksEl);
 
+            parseCommonMessagingConfig(tasksEl, tasks, ctx);
+
             setProperty(tasks, tasksEl, "workerThreads", "worker-threads");
-            setProperty(tasks, tasksEl, "nioThreads", "nio-threads");
-            setProperty(tasks, tasksEl, "idleSocketTimeout", "idle-socket-timeout-ms");
 
             String id = tasksEl.getAttribute("id");
 
@@ -749,14 +754,14 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         if (rpcEl != null) {
             BeanDefinitionBuilder rpc = newBean(RpcServiceFactory.class, rpcEl);
 
+            parseCommonMessagingConfig(rpcEl, rpc, ctx);
+
             setProperty(rpc, rpcEl, "workerThreads", "worker-threads");
-            setProperty(rpc, rpcEl, "nioThreads", "nio-threads");
-            setProperty(rpc, rpcEl, "idleSocketTimeout", "idle-socket-timeout-ms");
 
             // RPC clients.
             ManagedList<RuntimeBeanReference> clients = new ManagedList<>();
 
-            getChildElementsByTagName(rpcEl, "client").forEach(clientEl -> {
+            subElements(rpcEl, "clients", "client").forEach(clientEl -> {
                 BeanDefinitionBuilder client = newBean(RpcClientConfig.class, clientEl);
 
                 // Attributes.
@@ -766,7 +771,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
 
                 // Nested elements.
                 setBeanOrRef(client, clientEl, "loadBalancer", "load-balancer", ctx);
-                setBeanOrRef(client, clientEl, "failoverPolicy", "failover-policy", ctx);
+                setBeanOrRef(client, clientEl, "failover", "failover-policy", ctx);
 
                 String name = clientEl.getAttribute("name");
 
@@ -778,6 +783,8 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
 
                     deferredBaseBeans.put(clientBean, name);
                 }
+
+                clients.add(registerInnerBean(client, ctx));
             });
 
             if (!clients.isEmpty()) {
@@ -787,7 +794,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             // RPC servers.
             ManagedList<RuntimeBeanReference> servers = new ManagedList<>();
 
-            getChildElementsByTagName(rpcEl, "server").forEach(serverEl -> {
+            subElements(rpcEl, "servers", "server").forEach(serverEl -> {
                 BeanDefinitionBuilder server = newBean(RpcServerConfig.class, serverEl);
 
                 // Attributes.
@@ -808,6 +815,8 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 if (!tags.isEmpty()) {
                     server.addPropertyValue("tags", tags);
                 }
+
+                servers.add(registerInnerBean(server, ctx));
             });
 
             if (!servers.isEmpty()) {
