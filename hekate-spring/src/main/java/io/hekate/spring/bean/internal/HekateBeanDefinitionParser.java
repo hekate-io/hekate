@@ -589,7 +589,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 BeanDefinitionBuilder conn = newBean(NetworkConnectorConfig.class, connEl);
 
                 setProperty(conn, connEl, "protocol", "protocol");
-                setProperty(conn, connEl, "idleTimeout", "idle-timeout-ms");
+                setProperty(conn, connEl, "idleSocketTimeout", "idle-socket-timeout-ms");
                 setProperty(conn, connEl, "nioThreads", "nio-threads");
                 setProperty(conn, connEl, "logCategory", "log-category");
 
@@ -649,7 +649,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 setProperty(channel, channelEl, "workerThreads", "worker-threads");
                 setProperty(channel, channelEl, "backupNodes", "backup-nodes");
                 setProperty(channel, channelEl, "partitions", "partitions");
-                setProperty(channel, channelEl, "idleTimeout", "idle-timeout-ms");
+                setProperty(channel, channelEl, "idleSocketTimeout", "idle-socket-timeout-ms");
                 setProperty(channel, channelEl, "logCategory", "log-category");
                 setProperty(channel, channelEl, "messagingTimeout", "messaging-timeout-ms");
 

@@ -278,7 +278,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
             .withName(CHANNEL_NAME)
             .withNioThreads(nioThreads)
             .withWorkerThreads(workerThreads)
-            .withIdleTimeout(idleSocketTimeout)
+            .withIdleSocketTimeout(idleSocketTimeout)
             .withLogCategory(RpcService.class.getName())
             .withMessageCodec(new RpcProtocolCodecFactory(codec))
             .withInterceptor(new MessageInterceptor<RpcProtocol>() {

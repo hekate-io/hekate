@@ -260,7 +260,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
                     .withName(CHANNEL_NAME)
                     .withLogCategory(getClass().getName())
                     .withMessageCodec(MetricsProtocolCodec::new)
-                    .withIdleTimeout(replicationInterval * IDLE_TIMEOUT_MULTIPLY)
+                    .withIdleSocketTimeout(replicationInterval * IDLE_TIMEOUT_MULTIPLY)
                     .withClusterFilter(METRICS_SUPPORT_FILTER)
                     .withWorkerThreads(1)
                     .withReceiver(this::handleMessage)

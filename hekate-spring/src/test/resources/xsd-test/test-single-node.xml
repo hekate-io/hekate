@@ -103,7 +103,7 @@
             <connectors>
                 <connector
                     protocol="test.protocol.1"
-                    idle-timeout-ms="0"
+                    idle-socket-timeout-ms="0"
                     nio-threads="0"
                     log-category="foo.bar.NetworkConnector">
                     <message-codec>
@@ -124,7 +124,7 @@
                 base-type="java.lang.String"
                 nio-threads="1"
                 worker-threads="0"
-                idle-timeout-ms="60000"
+                idle-socket-timeout-ms="60000"
                 messaging-timeout-ms="5000"
                 backup-nodes="2"
                 partitions="512"

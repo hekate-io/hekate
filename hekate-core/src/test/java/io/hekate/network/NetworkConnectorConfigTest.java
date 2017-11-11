@@ -57,16 +57,16 @@ public class NetworkConnectorConfigTest extends HekateTestBase {
     }
 
     @Test
-    public void testIdleTimeout() throws Exception {
-        assertEquals(0, cfg.getIdleTimeout());
+    public void testIdleSocketTimeout() throws Exception {
+        assertEquals(0, cfg.getIdleSocketTimeout());
 
-        cfg.setIdleTimeout(1000);
+        cfg.setIdleSocketTimeout(1000);
 
-        assertEquals(1000, cfg.getIdleTimeout());
+        assertEquals(1000, cfg.getIdleSocketTimeout());
 
-        assertSame(cfg, cfg.withIdleTimeout(2000));
+        assertSame(cfg, cfg.withIdleSocketTimeout(2000));
 
-        assertEquals(2000, cfg.getIdleTimeout());
+        assertEquals(2000, cfg.getIdleSocketTimeout());
     }
 
     @Test

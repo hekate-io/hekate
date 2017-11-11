@@ -616,7 +616,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
         factory.setProtocol(protocol);
         factory.setCodecFactory(codecFactory);
-        factory.setIdleTimeout(cfg.getIdleTimeout());
+        factory.setIdleTimeout(cfg.getIdleSocketTimeout());
         factory.setLoggerCategory(cfg.getLogCategory());
 
         factory.setConnectTimeout(connectTimeout);

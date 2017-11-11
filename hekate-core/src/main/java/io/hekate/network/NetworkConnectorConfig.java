@@ -41,7 +41,7 @@ import java.util.List;
 public class NetworkConnectorConfig<T> {
     private String protocol;
 
-    private long idleTimeout;
+    private long idleSocketTimeout;
 
     private int nioThreads;
 
@@ -97,12 +97,12 @@ public class NetworkConnectorConfig<T> {
 
     /**
      * Returns the timeout in milliseconds for {@link NetworkClient}s to stay idle before being automatically disconnected (see {@link
-     * #setIdleTimeout(long)}).
+     * #setIdleSocketTimeout(long)}).
      *
      * @return Timeout in milliseconds.
      */
-    public long getIdleTimeout() {
-        return idleTimeout;
+    public long getIdleSocketTimeout() {
+        return idleSocketTimeout;
     }
 
     /**
@@ -121,21 +121,21 @@ public class NetworkConnectorConfig<T> {
      * Default value of this parameter is 0.
      * </p>
      *
-     * @param idleTimeout Timeout in milliseconds.
+     * @param idleSocketTimeout Timeout in milliseconds.
      */
-    public void setIdleTimeout(long idleTimeout) {
-        this.idleTimeout = idleTimeout;
+    public void setIdleSocketTimeout(long idleSocketTimeout) {
+        this.idleSocketTimeout = idleSocketTimeout;
     }
 
     /**
-     * Fluent-style version of {@link #setIdleTimeout(long)}.
+     * Fluent-style version of {@link #setIdleSocketTimeout(long)}.
      *
      * @param idleTimeout Timeout in milliseconds.
      *
      * @return This instance.
      */
-    public NetworkConnectorConfig<T> withIdleTimeout(long idleTimeout) {
-        setIdleTimeout(idleTimeout);
+    public NetworkConnectorConfig<T> withIdleSocketTimeout(long idleTimeout) {
+        setIdleSocketTimeout(idleTimeout);
 
         return this;
     }

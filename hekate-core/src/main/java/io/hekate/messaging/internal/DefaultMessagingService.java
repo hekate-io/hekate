@@ -426,7 +426,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         Class<T> baseType = cfg.getBaseType();
         int nioThreads = cfg.getNioThreads();
         int workerThreads = cfg.getWorkerThreads();
-        long idleTimeout = cfg.getIdleTimeout();
+        long idleTimeout = cfg.getIdleSocketTimeout();
         long messagingTimeout = cfg.getMessagingTimeout();
         int partitions = cfg.getPartitions();
         int backupNodes = cfg.getBackupNodes();

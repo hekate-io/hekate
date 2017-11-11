@@ -384,10 +384,10 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
-        <xsd:attribute name="idle-timeout-ms" type="xsd:string">
+        <xsd:attribute name="idle-socket-timeout-ms" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
-                    See javadoc of 'io.hekate.network.NetworkConnectorConfig#setIdleTimeout(long)'.
+                    See javadoc of 'io.hekate.network.NetworkConnectorConfig#setIdleSocketTimeout(long)'.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
@@ -1119,10 +1119,10 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
-        <xsd:attribute name="idle-timeout-ms" type="xsd:string">
+        <xsd:attribute name="idle-socket-timeout-ms" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
-                    See javadoc of 'io.hekate.messaging.MessagingChannelConfig#setIdleTimeout(long)'.
+                    See javadoc of 'io.hekate.messaging.MessagingChannelConfig#setIdleSocketTimeout(long)'.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>

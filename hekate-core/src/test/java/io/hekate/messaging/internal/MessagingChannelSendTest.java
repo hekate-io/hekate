@@ -138,9 +138,9 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
         repeat(3, j -> {
             int idlePoolTimeout = 20 * (j + 1);
 
-            TestChannel sender = createChannel(c -> c.setIdleTimeout(idlePoolTimeout)).join();
+            TestChannel sender = createChannel(c -> c.setIdleSocketTimeout(idlePoolTimeout)).join();
 
-            TestChannel receiver = createChannel(c -> c.setIdleTimeout(idlePoolTimeout)).join();
+            TestChannel receiver = createChannel(c -> c.setIdleSocketTimeout(idlePoolTimeout)).join();
 
             awaitForChannelsTopology(sender, receiver);
 

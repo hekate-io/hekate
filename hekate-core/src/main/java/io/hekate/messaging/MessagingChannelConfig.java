@@ -63,7 +63,7 @@ public class MessagingChannelConfig<T> {
 
     private int nioThreads;
 
-    private long idleTimeout;
+    private long idleSocketTimeout;
 
     private int partitions = RendezvousHashMapper.DEFAULT_PARTITIONS;
 
@@ -202,12 +202,12 @@ public class MessagingChannelConfig<T> {
     }
 
     /**
-     * Returns the idle socket timeout in milliseconds (see {@link #setIdleTimeout(long)}).
+     * Returns the idle socket timeout in milliseconds (see {@link #setIdleSocketTimeout(long)}).
      *
      * @return Idle socket timeout in milliseconds.
      */
-    public long getIdleTimeout() {
-        return idleTimeout;
+    public long getIdleSocketTimeout() {
+        return idleSocketTimeout;
     }
 
     /**
@@ -224,21 +224,21 @@ public class MessagingChannelConfig<T> {
      * alive.
      * </p>
      *
-     * @param idleTimeout Timeout in milliseconds.
+     * @param idleSocketTimeout Timeout in milliseconds.
      */
-    public void setIdleTimeout(long idleTimeout) {
-        this.idleTimeout = idleTimeout;
+    public void setIdleSocketTimeout(long idleSocketTimeout) {
+        this.idleSocketTimeout = idleSocketTimeout;
     }
 
     /**
-     * Fluent-style version of {@link #setIdleTimeout(long)}.
+     * Fluent-style version of {@link #setIdleSocketTimeout(long)}.
      *
      * @param idleTimeout Timeout in milliseconds.
      *
      * @return This instance.
      */
-    public MessagingChannelConfig<T> withIdleTimeout(long idleTimeout) {
-        setIdleTimeout(idleTimeout);
+    public MessagingChannelConfig<T> withIdleSocketTimeout(long idleTimeout) {
+        setIdleSocketTimeout(idleTimeout);
 
         return this;
     }

@@ -173,7 +173,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
             .withName(CHANNEL_NAME)
             .withLogCategory(getClass().getName())
             .withClusterFilter(n -> n.hasService(TaskService.class))
-            .withIdleTimeout(idleSocketTimeout)
+            .withIdleSocketTimeout(idleSocketTimeout)
             .withNioThreads(nioThreadPoolSize)
             .withWorkerThreads(workerThreadPoolSize)
             .withMessageCodec(() -> new TaskProtocolCodec(codec.createCodec()));

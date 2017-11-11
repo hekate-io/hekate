@@ -202,10 +202,10 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         repeat(3, j -> {
             int idleTimeout = 20 * (j + 1);
 
-            TestChannel sender = createChannel(c -> c.setIdleTimeout(idleTimeout)).join();
+            TestChannel sender = createChannel(c -> c.setIdleSocketTimeout(idleTimeout)).join();
 
             TestChannel receiver = createChannel(c -> {
-                c.setIdleTimeout(idleTimeout);
+                c.setIdleSocketTimeout(idleTimeout);
                 c.setReceiver(msg -> msg.reply("ok"));
             }).join();
 
@@ -233,10 +233,10 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
     @Test
     public void testNoFailuresWithSmallIdleTimeout() throws Exception {
-        TestChannel sender = createChannel(c -> c.setIdleTimeout(1)).join();
+        TestChannel sender = createChannel(c -> c.setIdleSocketTimeout(1)).join();
 
         TestChannel receiver = createChannel(c -> {
-            c.setIdleTimeout(5);
+            c.setIdleSocketTimeout(5);
             c.setReceiver(msg -> msg.reply("ok"));
         }).join();
 
@@ -255,12 +255,12 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         repeat(3, j -> {
             int idleTimeout = 20 * (j + 1);
 
-            TestChannel sender = createChannel(c -> c.setIdleTimeout(idleTimeout)).join();
+            TestChannel sender = createChannel(c -> c.setIdleSocketTimeout(idleTimeout)).join();
 
             AtomicReference<CountDownLatch> latchRef = new AtomicReference<>();
 
             TestChannel receiver = createChannel(c -> {
-                c.setIdleTimeout(idleTimeout);
+                c.setIdleSocketTimeout(idleTimeout);
                 c.setReceiver(msg -> {
                     assertTrue(msg.mustReply());
 

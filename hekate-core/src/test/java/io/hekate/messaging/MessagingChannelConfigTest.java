@@ -75,16 +75,16 @@ public class MessagingChannelConfigTest extends HekateTestBase {
     }
 
     @Test
-    public void testIdleTimeout() {
-        assertEquals(0, cfg.getIdleTimeout());
+    public void testIdleSocketTimeout() {
+        assertEquals(0, cfg.getIdleSocketTimeout());
 
-        cfg.setIdleTimeout(10001);
+        cfg.setIdleSocketTimeout(10001);
 
-        assertEquals(10001, cfg.getIdleTimeout());
+        assertEquals(10001, cfg.getIdleSocketTimeout());
 
-        assertSame(cfg, cfg.withIdleTimeout(10002));
+        assertSame(cfg, cfg.withIdleSocketTimeout(10002));
 
-        assertEquals(10002, cfg.getIdleTimeout());
+        assertEquals(10002, cfg.getIdleSocketTimeout());
     }
 
     @Test
