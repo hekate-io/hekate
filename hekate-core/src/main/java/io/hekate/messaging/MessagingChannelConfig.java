@@ -207,7 +207,7 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
      *
      * <p>
      * Value of this parameter must be above zero and must be a power of two.
-     * Default value is {@value RendezvousHashMapper#DEFAULT_PARTITIONS}.
+     * Default value is specified by {@link RendezvousHashMapper#DEFAULT_PARTITIONS}.
      * </p>
      *
      * @param partitions Total amount of partitions that should be managed by the channel's partition mapper (value must be a power of
