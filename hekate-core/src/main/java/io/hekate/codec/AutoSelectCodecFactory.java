@@ -11,8 +11,8 @@ import io.hekate.util.format.ToString;
  * This factory uses the following selection algorithm:
  * </p>
  * <ul>
- * <li>If Kryo is {@link KryoCodecFactory#isAvailable() available} then {@link KryoCodecFactory} will be used</li>
- * <li>If FST is {@link FstCodecFactory#isAvailable() available} then {@link FstCodecFactory} will be used</li>
+ * <li>If Kryo is {@link #isKryoAvailable()  available} then {@link KryoCodecFactory} will be used</li>
+ * <li>If FST is {@link #isFstAvailable() available} then {@link FstCodecFactory} will be used</li>
  * <li>otherwise {@link JdkCodecFactory} will be used</li>
  * </ul>
  *
@@ -25,12 +25,42 @@ public class AutoSelectCodecFactory<T> implements CodecFactory<T> {
      * Constructs a new instance.
      */
     public AutoSelectCodecFactory() {
-        if (KryoCodecFactory.isAvailable()) {
+        if (isKryoAvailable()) {
             factory = new KryoCodecFactory<>();
-        } else if (FstCodecFactory.isAvailable()) {
+        } else if (isFstAvailable()) {
             factory = new FstCodecFactory<>();
         } else {
             factory = new JdkCodecFactory<>();
+        }
+    }
+
+    /**
+     * Returns {@code true} if Kryo is available on the classpath.
+     *
+     * @return {@code true} if Kryo is available on the classpath.
+     */
+    public static boolean isKryoAvailable() {
+        try {
+            Class.forName("com.esotericsoftware.kryo.Kryo", false, Thread.currentThread().getContextClassLoader());
+
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /**
+     * Returns {@code true} if FST is available on the classpath.
+     *
+     * @return {@code true} if FST is available on the classpath.
+     */
+    public static boolean isFstAvailable() {
+        try {
+            Class.forName("org.nustaq.serialization.FSTConfiguration", false, Thread.currentThread().getContextClassLoader());
+
+            return true;
+        } catch (Throwable t) {
+            return false;
         }
     }
 

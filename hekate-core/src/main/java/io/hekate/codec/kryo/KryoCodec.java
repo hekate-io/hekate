@@ -44,6 +44,22 @@ class KryoCodec implements Codec<Object> {
 
     private static final int BUFFER_SIZE = 4096; // Same with Kryo's Input/Output default buffer size.
 
+    private static final boolean KRYO_SERIALIZERS_SUPPORTED;
+
+    static {
+        boolean supported = true;
+
+        try {
+            String className = "de.javakaffee.kryoserializers.ArraysAsListSerializer";
+
+            Class.forName(className, false, Thread.currentThread().getContextClassLoader());
+        } catch (Throwable t) {
+            supported = false;
+        }
+
+        KRYO_SERIALIZERS_SUPPORTED = supported;
+    }
+
     @ToStringIgnore
     private final Kryo kryo;
 
@@ -73,7 +89,9 @@ class KryoCodec implements Codec<Object> {
         }
 
         // Try to register extended serializers for the JDK classes that are not supported by Kryo out of the box.
-        JavaKaffeeSerializersRegistrar.tryRegister(kryo);
+        if (KRYO_SERIALIZERS_SUPPORTED) {
+            JavaKaffeeSerializersRegistrar.tryRegister(kryo);
+        }
 
         // Enforce JDK default serialization (required for writeReplace/readResolve/etc).
         kryo.addDefaultSerializer(JavaSerializable.class, new JavaSerializer());

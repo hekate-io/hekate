@@ -59,21 +59,6 @@ public class FstCodecFactory<T> implements CodecFactory<T> {
 
     private Map<Integer, Class<?>> knownTypes;
 
-    /**
-     * Returns {@code true} if FST is available on the classpath.
-     *
-     * @return {@code true} if FST is available on the classpath.
-     */
-    public static boolean isAvailable() {
-        try {
-            Class.forName("org.nustaq.serialization.FSTConfiguration", false, Thread.currentThread().getContextClassLoader());
-
-            return true;
-        } catch (Throwable t) {
-            return false;
-        }
-    }
-
     @Override
     public Codec<T> createCodec() {
         Class<?>[] preRegister;

@@ -14,41 +14,21 @@ import java.util.GregorianCalendar;
  * Utility class that can try to register {@code de.javakaffee:kryo-serializers} if they are available on the classpath.
  */
 final class JavaKaffeeSerializersRegistrar {
-    private static final boolean SUPPORTED;
-
     private static final Class<?> ARRAYS_AS_LIST_CLASS = Arrays.asList(1, 2).getClass();
-
-    static {
-        boolean supported = true;
-
-        try {
-            Class.forName("de.javakaffee.kryoserializers.ArraysAsListSerializer").newInstance();
-        } catch (Throwable t) {
-            supported = false;
-        }
-
-        SUPPORTED = supported;
-    }
 
     private JavaKaffeeSerializersRegistrar() {
         // No-op.
     }
 
     public static void tryRegister(Kryo kryo) {
-        if (SUPPORTED) {
-            kryo.register(ARRAYS_AS_LIST_CLASS, new ArraysAsListSerializer());
-            kryo.register(GregorianCalendar.class, new GregorianCalendarSerializer());
-            kryo.register(InvocationHandler.class, new JdkProxySerializer());
-            kryo.register(GregorianCalendar.class, new GregorianCalendarSerializer());
-            kryo.register(InvocationHandler.class, new JdkProxySerializer());
+        kryo.register(ARRAYS_AS_LIST_CLASS, new ArraysAsListSerializer());
+        kryo.register(GregorianCalendar.class, new GregorianCalendarSerializer());
+        kryo.register(InvocationHandler.class, new JdkProxySerializer());
+        kryo.register(GregorianCalendar.class, new GregorianCalendarSerializer());
+        kryo.register(InvocationHandler.class, new JdkProxySerializer());
 
-            UnmodifiableCollectionsSerializer.registerSerializers(kryo);
+        UnmodifiableCollectionsSerializer.registerSerializers(kryo);
 
-            SynchronizedCollectionsSerializer.registerSerializers(kryo);
-        }
-    }
-
-    public static boolean isSupported() {
-        return SUPPORTED;
+        SynchronizedCollectionsSerializer.registerSerializers(kryo);
     }
 }
