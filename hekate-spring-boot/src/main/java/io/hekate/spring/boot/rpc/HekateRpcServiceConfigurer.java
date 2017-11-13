@@ -54,7 +54,7 @@ import org.springframework.stereotype.Component;
  * <li>{@link MessagingBackPressureConfig#setInHighWatermark(int) 'hekate.rpc.back-bressure.in-high-watermark'}</li>
  * <li>{@link MessagingBackPressureConfig#setOutLowWatermark(int) 'hekate.rpc.back-bressure.out-low-watermark'}</li>
  * <li>{@link MessagingBackPressureConfig#setOutHighWatermark(int) 'hekate.rpc.back-bressure.out-high-watermark'}</li>
- * <li>{@link MessagingBackPressureConfig#setOutOverflow(MessagingOverflowPolicy) 'hekate.rpc.back-bressure.out-overflow'}</li>
+ * <li>{@link MessagingBackPressureConfig#setOutOverflowPolicy(MessagingOverflowPolicy) 'hekate.rpc.back-bressure.out-overflow-policy'}</li>
  * </ul>
  *
  * <h2>Injection of RPC client proxies</h2>

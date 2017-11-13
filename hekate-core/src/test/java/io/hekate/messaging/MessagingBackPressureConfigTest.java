@@ -80,15 +80,15 @@ public class MessagingBackPressureConfigTest extends HekateTestBase {
 
     @Test
     public void testOutOverflowPolicy() {
-        assertSame(MessagingOverflowPolicy.IGNORE, cfg.getOutOverflow());
+        assertSame(MessagingOverflowPolicy.IGNORE, cfg.getOutOverflowPolicy());
 
-        cfg.setOutOverflow(MessagingOverflowPolicy.BLOCK);
+        cfg.setOutOverflowPolicy(MessagingOverflowPolicy.BLOCK);
 
-        assertSame(MessagingOverflowPolicy.BLOCK, cfg.getOutOverflow());
+        assertSame(MessagingOverflowPolicy.BLOCK, cfg.getOutOverflowPolicy());
 
-        assertSame(cfg, cfg.withOutOverflow(MessagingOverflowPolicy.FAIL));
+        assertSame(cfg, cfg.withOutOverflowPolicy(MessagingOverflowPolicy.FAIL));
 
-        assertSame(MessagingOverflowPolicy.FAIL, cfg.getOutOverflow());
+        assertSame(MessagingOverflowPolicy.FAIL, cfg.getOutOverflowPolicy());
     }
 
     @Test

@@ -88,7 +88,7 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
 
         MessagingChannel<String> sender = createChannel(c -> {
             useBackPressure(c);
-            c.getBackPressure().setOutOverflow(MessagingOverflowPolicy.BLOCK);
+            c.getBackPressure().setOutOverflowPolicy(MessagingOverflowPolicy.BLOCK);
         }).join().get().forRemotes();
 
         // Enforce back pressure on sender.
@@ -172,7 +172,7 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
                 // Use blocking policy.
                 bp.setOutLowWatermark(0);
                 bp.setOutHighWatermark(1);
-                bp.setOutOverflow(MessagingOverflowPolicy.BLOCK);
+                bp.setOutOverflowPolicy(MessagingOverflowPolicy.BLOCK);
             })
         ).join();
 

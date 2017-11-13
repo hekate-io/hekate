@@ -66,7 +66,7 @@ public abstract class BackPressureTestBase extends MessagingServiceTestBase {
 
     protected MessagingChannelConfig<String> useBackPressure(MessagingChannelConfig<String> cfg) {
         return cfg.withBackPressure(bp -> {
-            bp.setOutOverflow(MessagingOverflowPolicy.FAIL);
+            bp.setOutOverflowPolicy(MessagingOverflowPolicy.FAIL);
             bp.setOutLowWatermark(lowWatermark);
             bp.setOutHighWatermark(highWatermark);
             bp.setInLowWatermark(lowWatermark);

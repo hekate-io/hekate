@@ -47,7 +47,9 @@ import org.springframework.context.annotation.Configuration;
  * <li>{@link MessagingBackPressureConfig#setInHighWatermark(int) 'hekate.task.back-bressure.in-high-watermark'}</li>
  * <li>{@link MessagingBackPressureConfig#setOutLowWatermark(int) 'hekate.task.back-bressure.out-low-watermark'}</li>
  * <li>{@link MessagingBackPressureConfig#setOutHighWatermark(int) 'hekate.task.back-bressure.out-high-watermark'}</li>
- * <li>{@link MessagingBackPressureConfig#setOutOverflow(MessagingOverflowPolicy) 'hekate.task.back-bressure.out-overflow'}</li>
+ * <li>
+ * {@link MessagingBackPressureConfig#setOutOverflowPolicy(MessagingOverflowPolicy) 'hekate.task.back-bressure.out-overflow-policy'}
+ * </li>
  * </ul>
  *
  * @see TaskService

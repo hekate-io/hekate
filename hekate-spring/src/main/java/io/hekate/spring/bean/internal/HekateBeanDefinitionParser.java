@@ -712,7 +712,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             if (outboundEl != null) {
                 setProperty(backPressure, outboundEl, "outLowWatermark", "low-watermark");
                 setProperty(backPressure, outboundEl, "outHighWatermark", "high-watermark");
-                setProperty(backPressure, outboundEl, "outOverflow", "overflow");
+                setProperty(backPressure, outboundEl, "outOverflowPolicy", "overflow");
             }
 
             if (inboundEl != null) {

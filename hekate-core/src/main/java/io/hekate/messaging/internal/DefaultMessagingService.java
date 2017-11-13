@@ -174,7 +174,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                 int inHi = pressureCfg.getInHighWatermark();
                 int inLo = pressureCfg.getInLowWatermark();
 
-                MessagingOverflowPolicy outOverflow = pressureCfg.getOutOverflow();
+                MessagingOverflowPolicy outOverflow = pressureCfg.getOutOverflowPolicy();
 
                 check.notNull(outOverflow, "outbound queue overflow policy");
 
@@ -480,7 +480,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             int inLoWatermark = pressureCfg.getInLowWatermark();
             int outHiWatermark = pressureCfg.getOutHighWatermark();
             int outLoWatermark = pressureCfg.getOutLowWatermark();
-            MessagingOverflowPolicy outOverflow = pressureCfg.getOutOverflow();
+            MessagingOverflowPolicy outOverflow = pressureCfg.getOutOverflowPolicy();
 
             if (outOverflow != MessagingOverflowPolicy.IGNORE) {
                 sendPressureGuard = new SendPressureGuard(outLoWatermark, outHiWatermark, outOverflow);

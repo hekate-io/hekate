@@ -32,7 +32,7 @@ public class MessagingBackPressureConfig {
 
     private int outHighWatermark;
 
-    private MessagingOverflowPolicy outOverflow = MessagingOverflowPolicy.IGNORE;
+    private MessagingOverflowPolicy outOverflowPolicy = MessagingOverflowPolicy.IGNORE;
 
     /**
      * Constructs a new instance.
@@ -51,7 +51,7 @@ public class MessagingBackPressureConfig {
         inHighWatermark = src.getInHighWatermark();
         outLowWatermark = src.getOutLowWatermark();
         outHighWatermark = src.getOutHighWatermark();
-        outOverflow = src.getOutOverflow();
+        outOverflowPolicy = src.getOutOverflowPolicy();
     }
 
     /**
@@ -141,7 +141,7 @@ public class MessagingBackPressureConfig {
      * Sets the low watermark of outbound (sending) queue size.
      *
      * <p>
-     * This parameter is mandatory only if {@link #setOutOverflow(MessagingOverflowPolicy)} is set to any other value besides
+     * This parameter is mandatory only if {@link #setOutOverflowPolicy(MessagingOverflowPolicy)} is set to any other value besides
      * {@link MessagingOverflowPolicy#IGNORE}. Value of this parameter must be less than the value of {@link #setOutHighWatermark(int)}
      * parameter.
      * </p>
@@ -149,7 +149,7 @@ public class MessagingBackPressureConfig {
      * @param outLowWatermark Low watermark of outbound queue size.
      *
      * @see #setOutHighWatermark(int)
-     * @see #setOutOverflow(MessagingOverflowPolicy)
+     * @see #setOutOverflowPolicy(MessagingOverflowPolicy)
      */
     public void setOutLowWatermark(int outLowWatermark) {
         this.outLowWatermark = outLowWatermark;
@@ -181,14 +181,14 @@ public class MessagingBackPressureConfig {
      * Sets the high watermark of outbound (sending) queue size.
      *
      * <p>
-     * This parameter is mandatory only if {@link #setOutOverflow(MessagingOverflowPolicy)} is set to any other value besides
+     * This parameter is mandatory only if {@link #setOutOverflowPolicy(MessagingOverflowPolicy)} is set to any other value besides
      * {@link MessagingOverflowPolicy#IGNORE}.
      * </p>
      *
      * @param outHighWatermark High watermark of outbound queue size.
      *
      * @see #setOutLowWatermark(int)
-     * @see #setOutOverflow(MessagingOverflowPolicy)
+     * @see #setOutOverflowPolicy(MessagingOverflowPolicy)
      */
     public void setOutHighWatermark(int outHighWatermark) {
         this.outHighWatermark = outHighWatermark;
@@ -209,12 +209,12 @@ public class MessagingBackPressureConfig {
 
     /**
      * Returns the policy that should be applied when {@link MessagingChannel}'s outbound (sending) queue size exceeds the
-     * {@link #setOutHighWatermark(int) limit} (see {@link #setOutOverflow(MessagingOverflowPolicy)}).
+     * {@link #setOutHighWatermark(int) limit} (see {@link #setOutOverflowPolicy(MessagingOverflowPolicy)}).
      *
      * @return Policy.
      */
-    public MessagingOverflowPolicy getOutOverflow() {
-        return outOverflow;
+    public MessagingOverflowPolicy getOutOverflowPolicy() {
+        return outOverflowPolicy;
     }
 
     /**
@@ -226,21 +226,21 @@ public class MessagingBackPressureConfig {
      * #setOutHighWatermark(int)} must be set to a value that is greater than zero.
      * </p>
      *
-     * @param outOverflow Policy.
+     * @param outOverflowPolicy Policy.
      */
-    public void setOutOverflow(MessagingOverflowPolicy outOverflow) {
-        this.outOverflow = outOverflow;
+    public void setOutOverflowPolicy(MessagingOverflowPolicy outOverflowPolicy) {
+        this.outOverflowPolicy = outOverflowPolicy;
     }
 
     /**
-     * Fluent-style version of {@link #setOutOverflow(MessagingOverflowPolicy)}.
+     * Fluent-style version of {@link #setOutOverflowPolicy(MessagingOverflowPolicy)}.
      *
      * @param outOverflow Policy.
      *
      * @return This instance.
      */
-    public MessagingBackPressureConfig withOutOverflow(MessagingOverflowPolicy outOverflow) {
-        setOutOverflow(outOverflow);
+    public MessagingBackPressureConfig withOutOverflowPolicy(MessagingOverflowPolicy outOverflow) {
+        setOutOverflowPolicy(outOverflow);
 
         return this;
     }

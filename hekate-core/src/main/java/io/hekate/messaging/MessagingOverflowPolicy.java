@@ -19,7 +19,7 @@ package io.hekate.messaging;
 /**
  * Policy that defines how {@link MessagingChannel} should behave in case of its send queue overflow.
  *
- * @see MessagingBackPressureConfig#setOutOverflow(MessagingOverflowPolicy)
+ * @see MessagingBackPressureConfig#setOutOverflowPolicy(MessagingOverflowPolicy)
  * @see MessagingBackPressureConfig#setOutLowWatermark(int)
  * @see MessagingBackPressureConfig#setOutHighWatermark(int)
  */

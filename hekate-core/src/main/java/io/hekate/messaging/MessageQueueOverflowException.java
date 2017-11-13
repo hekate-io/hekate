@@ -22,7 +22,7 @@ package io.hekate.messaging;
  * <p>
  * This error is thrown by a {@link MessagingChannel} when its send queue size goes above the
  * {@link MessagingBackPressureConfig#setOutHighWatermark(int) high watermark} and {@link MessagingOverflowPolicy#FAIL} is
- * {@link MessagingBackPressureConfig#setOutOverflow(MessagingOverflowPolicy) being used}.
+ * {@link MessagingBackPressureConfig#setOutOverflowPolicy(MessagingOverflowPolicy) being used}.
  * </p>
  *
  * @see MessagingBackPressureConfig
