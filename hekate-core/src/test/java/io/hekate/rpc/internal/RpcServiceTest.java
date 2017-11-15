@@ -105,7 +105,7 @@ public class RpcServiceTest extends RpcServiceTestBase {
         ));
 
         assertEquals(
-            RpcServerConfig.class.getSimpleName() + ": RPC handler must implement at least one @Rpc-annotated interface "
+            RpcServerConfig.class.getSimpleName() + ": RPC handler must implement at least one @Rpc-annotated public interface "
                 + "[handler=" + notAnRpc + ']',
             err.getMessage()
         );

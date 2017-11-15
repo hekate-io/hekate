@@ -55,15 +55,25 @@ import java.util.Set;
  * <p>
  * TODO
  * </p>
+ * <p>
+ * ${source: rpc/RpcServiceJavadocTest.java#interface}
+ * </p>
  *
  * <h2>RPC server</h2>
  * <p>
  * TODO
  * </p>
+ * </p>
+ * <p>
+ * ${source: rpc/RpcServiceJavadocTest.java#impl}
+ * </p>
  *
  * <h2>RPC client</h2>
  * <p>
  * TODO
+ * </p>
+ * <p>
+ * ${source: rpc/RpcServiceJavadocTest.java#client}
  * </p>
  *
  * <h2>Routing and load balancing</h2>
@@ -118,7 +128,7 @@ public interface RpcService extends Service {
     <T> RpcClientBuilder<T> clientFor(Class<T> type);
 
     /**
-     * Returns an immutable list of all registered RPC servers.
+     * Returns an immutable list of all RPC servers registered on this node.
      *
      * @return Immutable list of RPC servers.
      *

@@ -208,8 +208,8 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
             List<RpcInterface<?>> rpcs = RpcTypeAnalyzer.analyze(cfg.getHandler());
 
             if (rpcs.isEmpty()) {
-                throw check.fail("RPC handler must implement at least one @" + Rpc.class.getSimpleName() + "-annotated interface "
-                    + "[handler=" + cfg.getHandler() + ']');
+                throw check.fail("RPC handler must implement at least one @" + Rpc.class.getSimpleName() + "-annotated public "
+                    + "interface [handler=" + cfg.getHandler() + ']');
             }
 
             // Gather tags.

@@ -66,12 +66,14 @@ public class RpcServiceJavadocTest extends HekateNodeTestBase {
         RpcService rpc = hekate.rpc();
         // End:access
 
+        // Start:client
         SomeRpcService client = hekate.rpc().clientFor(SomeRpcService.class)
             // Setup some timeout for remote calls (optional).
             .withTimeout(3, TimeUnit.SECONDS)
             .build();
 
         System.out.println(client.helloWorld("Hekate"));
+        // End:client
 
         assertNotNull(rpc);
 
