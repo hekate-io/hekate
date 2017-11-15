@@ -179,6 +179,16 @@ public class SpringJavadocTest extends HekateTestBase {
         doTest("javadoc/network/service-bean.xml");
     }
 
+    @Test
+    public void testRpcXsd() {
+        doTest("javadoc/rpc/rpc-xsd.xml");
+    }
+
+    @Test
+    public void testRpcBean() {
+        doTest("javadoc/rpc/rpc-bean.xml");
+    }
+
     private void doTest(String resource) {
         doTest(resource, null);
     }
