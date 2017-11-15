@@ -24,9 +24,88 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class StateGuardTest extends HekateTestBase {
     private final StateGuard guard = new StateGuard(getClass());
+
+    @Test
+    public void testWithReadLock() {
+        Runnable task = mock(Runnable.class);
+
+        guard.withReadLock(task);
+
+        verify(task).run();
+        verifyNoMoreInteractions(task);
+    }
+
+    @Test
+    public void testWithWriteLock() {
+        Runnable task = mock(Runnable.class);
+
+        doAnswer(invocationOnMock -> {
+            assertTrue(guard.isWriteLocked());
+
+            return null;
+        }).when(task).run();
+
+        guard.withWriteLock(task);
+
+        verify(task).run();
+        verifyNoMoreInteractions(task);
+
+        assertFalse(guard.isWriteLocked());
+    }
+
+    @Test
+    public void testWithReadLockIfInitialized() {
+        Runnable task = mock(Runnable.class);
+
+        doAnswer(invocationOnMock -> {
+            assertTrue(guard.isInitialized());
+
+            return null;
+        }).when(task).run();
+
+        assertFalse(guard.withReadLockIfInitialized(task));
+
+        verifyNoMoreInteractions(task);
+
+        guard.withWriteLock(guard::becomeInitialized);
+
+        guard.withReadLockIfInitialized(task);
+
+        verify(task).run();
+        verifyNoMoreInteractions(task);
+    }
+
+    @Test
+    public void testWithWriteLockIfInitialized() {
+        Runnable task = mock(Runnable.class);
+
+        doAnswer(invocationOnMock -> {
+            assertTrue(guard.isWriteLocked());
+            assertTrue(guard.isInitialized());
+
+            return null;
+        }).when(task).run();
+
+        assertFalse(guard.withWriteLockIfInitialized(task));
+
+        verifyNoMoreInteractions(task);
+
+        guard.withWriteLock(guard::becomeInitialized);
+
+        guard.withWriteLockIfInitialized(task);
+
+        verify(task).run();
+        verifyNoMoreInteractions(task);
+
+        assertFalse(guard.isWriteLocked());
+    }
 
     @Test
     public void testBecomeInitializing() {

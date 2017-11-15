@@ -82,6 +82,84 @@ public class StateGuard {
     }
 
     /**
+     * Conditionally executes the specified task in the {@link #readLock read}-locked context if this guard is in {@link #isInitialized()
+     * initialized} state.
+     *
+     * @param task Task.
+     *
+     * @return {@code true} if task was executed or {@code false} if this guard is not in the {@link #isInitialized() initialized} state.
+     */
+    public boolean withReadLockIfInitialized(Runnable task) {
+        lockRead();
+
+        try {
+            if (isInitialized()) {
+                task.run();
+
+                return true;
+            }
+        } finally {
+            unlockRead();
+        }
+
+        return false;
+    }
+
+    /**
+     * Conditionally executes the specified task in the {@link #writeLock write}-locked context if this guard is in {@link #isInitialized()
+     * initialized} state.
+     *
+     * @param task Task.
+     *
+     * @return {@code true} if task was executed or {@code false} if this guard is not in the {@link #isInitialized() initialized} state.
+     */
+    public boolean withWriteLockIfInitialized(Runnable task) {
+        lockWrite();
+
+        try {
+            if (isInitialized()) {
+                task.run();
+
+                return true;
+            }
+        } finally {
+            unlockWrite();
+        }
+
+        return false;
+    }
+
+    /**
+     * Executes the specified task while holding the {@link #lockRead() read} lock.
+     *
+     * @param task Task.
+     */
+    public void withReadLock(Runnable task) {
+        lockRead();
+
+        try {
+            task.run();
+        } finally {
+            unlockRead();
+        }
+    }
+
+    /**
+     * Executes the specified task while holding the {@link #lockWrite() write} lock.
+     *
+     * @param task Task.
+     */
+    public void withWriteLock(Runnable task) {
+        lockWrite();
+
+        try {
+            task.run();
+        } finally {
+            unlockWrite();
+        }
+    }
+
+    /**
      * Switches this guard to {@link State#INITIALIZING} state.
      *
      * <p>
