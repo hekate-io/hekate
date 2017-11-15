@@ -63,7 +63,6 @@ import java.util.Set;
  * <p>
  * TODO
  * </p>
- * </p>
  * <p>
  * ${source: rpc/RpcServiceJavadocTest.java#impl}
  * </p>
