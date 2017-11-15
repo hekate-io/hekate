@@ -107,7 +107,7 @@ import java.util.List;
  * All messages of a coordination process are guaranteed to be send and received with the same consistent cluster topology (i.e.
  * both sender and receiver has exactly the same cluster topology view). If topology mismatch is detected between the sender and the
  * receiver then {@link CoordinationService} will transparently send a retry response back to the sender so that it could retry sending
- * later once its topology gets consistent with the receiver or halt the coordination process and restart it with a more up to date
+ * later once its topology gets consistent with the receiver or cancel the coordination process and restart it with a more up to date
  * cluster topology.
  * </p>
  *

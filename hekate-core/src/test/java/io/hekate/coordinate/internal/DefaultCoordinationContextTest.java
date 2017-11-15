@@ -46,6 +46,7 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -65,9 +66,9 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
 
     @Before
     public void setUp() throws Exception {
-        topology = newTopology();
+        ctx = newContext(true);
 
-        ctx = new DefaultCoordinationContext("test", mock(Hekate.class), topology, channel, async, handler, 100, onComplete);
+        topology = ctx.topology();
     }
 
     @Test
@@ -100,7 +101,7 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
         assertFalse(ctx.isCancelled());
 
         ctx.cancel();
-        ctx.halt();
+        ctx.postCancel();
 
         verifyNoMoreInteractions(handler);
     }
@@ -116,13 +117,13 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
         assertTrue(ctx.isCancelled());
 
         ctx.coordinate();
-        ctx.halt();
+        ctx.postCancel();
 
         verifyNoMoreInteractions(handler);
     }
 
     @Test
-    public void testHalt() throws Exception {
+    public void testPostCancel() throws Exception {
         assertFalse(ctx.isDone());
 
         ctx.coordinate();
@@ -134,7 +135,7 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
 
         assertFalse(ctx.isDone());
 
-        ctx.halt();
+        ctx.postCancel();
 
         verifyNoMoreInteractions(handler);
 
@@ -143,7 +144,7 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
         assertTrue(ctx.isCancelled());
         assertTrue(ctx.isDone());
 
-        ctx.halt();
+        ctx.postCancel();
 
         order.verify(handler).cancel(ctx);
     }
@@ -173,18 +174,26 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
     }
 
     @Test
-    public void testProcessMessageRejectNotPrepared() throws Exception {
-        ClusterNodeId from = topology.last().id();
+    public void testProcessMessageNotPrepared() throws Exception {
+        DefaultCoordinationContext memberCtx = newContext(false);
 
-        Request req = new Request("test", from, topology.hash(), "ignore");
+        ClusterNodeId from = memberCtx.topology().last().id();
+
+        Request req = new Request("test", from, memberCtx.topology().hash(), "ignore");
 
         Message<CoordinationProtocol> msg = newRequest(req);
 
-        ctx.processMessage(msg);
+        assertFalse(memberCtx.isPrepared());
 
-        verify(msg).reply(any(Reject.class));
+        memberCtx.processMessage(msg);
 
-        verifyNoMoreInteractions(handler);
+        verify(msg, times(2)).get(eq(CoordinationProtocol.Request.class));
+        verify(handler).prepare(eq(memberCtx));
+        verify(handler).process(any(CoordinationRequest.class), eq(memberCtx));
+
+        assertTrue(memberCtx.isPrepared());
+
+        verifyNoMoreInteractions(msg, handler);
     }
 
     @Test
@@ -229,10 +238,16 @@ public class DefaultCoordinationContextTest extends HekateTestBase {
         verifyNoMoreInteractions(handler);
     }
 
-    private ClusterTopology newTopology() throws Exception {
-        ClusterNode n1 = newLocalNode(newNodeId(1));
+    private DefaultCoordinationContext newContext(boolean coordinator) throws Exception {
+        ClusterTopology topology = newTopology(coordinator);
+
+        return new DefaultCoordinationContext("test", mock(Hekate.class), topology, channel, async, handler, 100, onComplete);
+    }
+
+    private ClusterTopology newTopology(boolean coordinator) throws Exception {
+        ClusterNode n1 = coordinator ? newLocalNode(newNodeId(1)) : newNode(newNodeId(1));
         ClusterNode n2 = newNode(newNodeId(2));
-        ClusterNode n3 = newNode(newNodeId(3));
+        ClusterNode n3 = !coordinator ? newLocalNode(newNodeId(3)) : newNode(newNodeId(3));
 
         return DefaultClusterTopology.of(1, toSet(n1, n2, n3));
     }

@@ -105,7 +105,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
 
                     async.execute(() -> {
                         try {
-                            localCtx.halt();
+                            localCtx.postCancel();
                         } catch (RuntimeException | Error e) {
                             log.error("Got an unexpected runtime error during coordination [process={}]", name, e);
                         }
@@ -192,7 +192,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
 
                         async.execute(() -> {
                             try {
-                                oldCtx.halt();
+                                oldCtx.postCancel();
                             } catch (RuntimeException | Error e) {
                                 log.error("Got an unexpected runtime error during coordination [process={}]", name, e);
                             }

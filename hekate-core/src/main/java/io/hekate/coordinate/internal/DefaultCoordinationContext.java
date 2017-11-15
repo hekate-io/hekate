@@ -201,16 +201,10 @@ class DefaultCoordinationContext implements CoordinationContext {
     }
 
     public void coordinate() {
-        if (!future.isCancelled()) {
-            if (DEBUG) {
-                log.debug("Preparing [context={}]", this);
-            }
-
-            prepared = true;
-
-            handler.prepare(this);
-
+        if (!future.isDone()) {
             if (isCoordinator()) {
+                ensurePrepared();
+
                 if (DEBUG) {
                     log.debug("Coordinating [context={}]", this);
                 }
@@ -229,13 +223,7 @@ class DefaultCoordinationContext implements CoordinationContext {
 
         boolean reject = false;
 
-        if (!prepared) {
-            reject = true;
-
-            if (DEBUG) {
-                log.debug("Rejected coordination request (context not prepared) [message={}, context={}]", request, this);
-            }
-        } else if (future.isCancelled()) {
+        if (future.isDone()) {
             reject = true;
 
             if (DEBUG) {
@@ -252,6 +240,10 @@ class DefaultCoordinationContext implements CoordinationContext {
         if (reject) {
             msg.reply(CoordinationProtocol.Reject.INSTANCE);
         } else {
+            if (!isCoordinator()) {
+                ensurePrepared();
+            }
+
             if (DEBUG) {
                 log.debug("Processing coordination request [message={}, context={}]", request, this);
             }
@@ -259,16 +251,6 @@ class DefaultCoordinationContext implements CoordinationContext {
             DefaultCoordinationMember member = membersById.get(request.from());
 
             handler.process(new DefaultCoordinationRequest(name, member, msg), this);
-        }
-    }
-
-    public void halt() {
-        if (prepared && future.isCancelled()) {
-            if (DEBUG) {
-                log.debug("Halted [context={}]", this);
-            }
-
-            handler.cancel(this);
         }
     }
 
@@ -282,9 +264,35 @@ class DefaultCoordinationContext implements CoordinationContext {
         }
     }
 
+    public void postCancel() {
+        if (prepared && future.isCancelled()) {
+            if (DEBUG) {
+                log.debug("Post-cancelled [context={}]", this);
+            }
+
+            handler.cancel(this);
+        }
+    }
+
     @Override
     public Hekate hekate() {
         return hekate.hekate();
+    }
+
+    public boolean isPrepared() {
+        return prepared;
+    }
+
+    private void ensurePrepared() {
+        if (!prepared) {
+            if (DEBUG) {
+                log.debug("Preparing [context={}]", this);
+            }
+
+            prepared = true;
+
+            handler.prepare(this);
+        }
     }
 
     @Override

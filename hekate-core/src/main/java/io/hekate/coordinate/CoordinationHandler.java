@@ -30,8 +30,7 @@ package io.hekate.coordinate;
  * </p>
  * <ul>
  * <li>{@link #initialize()} - gets called during the {@link CoordinationService} initialization</li>
- * <li>{@link #prepare(CoordinationContext)} - gets called every time when cluster topology change is detected in order to prepare this
- * handler for coordination</li>
+ * <li>{@link #prepare(CoordinationContext)} - gets called once per coordination round in order to prepare this handler</li>
  * <li>{@link #coordinate(CoordinationContext)} - gets called only on the coordinator node in order start coordination</li>
  * <li>{@link #process(CoordinationRequest, CoordinationContext)} gets called when a new request is received either from a coordinator or
  * from some other member</li>

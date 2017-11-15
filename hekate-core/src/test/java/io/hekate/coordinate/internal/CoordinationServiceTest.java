@@ -418,7 +418,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
         // Expect 2 but not 3 since one coordination should be interrupted by a concurrent join.
         awaitForCoordinatedValue("2", Arrays.asList(n1, n2, n3));
 
-        assertEquals(2, aborts.get());
+        assertEquals(1, aborts.get());
     }
 
     private void doTestCoordinatorLeave(Function<HekateTestNode, Future<?>> stopAction) throws Exception {
