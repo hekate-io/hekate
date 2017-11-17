@@ -14,16 +14,13 @@
  * under the License.
  */
 
-package io.hekate.messaging;
+package io.hekate.messaging.loadbalance;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.messaging.internal.LoadBalancerContextMock;
-import io.hekate.messaging.unicast.LoadBalancer;
-import io.hekate.messaging.unicast.LoadBalancerContext;
-import io.hekate.messaging.unicast.LoadBalancers;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;

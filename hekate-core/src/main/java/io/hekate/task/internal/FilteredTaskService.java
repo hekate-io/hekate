@@ -27,7 +27,7 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.UnknownRouteException;
 import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.AggregateResult;
-import io.hekate.messaging.unicast.LoadBalancers;
+import io.hekate.messaging.loadbalance.LoadBalancers;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.task.ApplicableTask;

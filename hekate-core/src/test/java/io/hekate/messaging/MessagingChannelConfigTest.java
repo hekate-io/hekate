@@ -20,7 +20,7 @@ import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.codec.CodecFactory;
 import io.hekate.failover.FailoverPolicy;
-import io.hekate.messaging.unicast.LoadBalancer;
+import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.partition.RendezvousHashMapper;
 import org.junit.Test;
 

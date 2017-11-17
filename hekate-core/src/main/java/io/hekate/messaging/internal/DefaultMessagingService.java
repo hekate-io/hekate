@@ -52,7 +52,7 @@ import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.MessagingOverflowPolicy;
 import io.hekate.messaging.MessagingService;
 import io.hekate.messaging.MessagingServiceFactory;
-import io.hekate.messaging.unicast.LoadBalancer;
+import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.NetworkConfigProvider;
 import io.hekate.network.NetworkConnector;

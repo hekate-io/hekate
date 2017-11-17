@@ -17,6 +17,7 @@
 package io.hekate.messaging.unicast;
 
 import io.hekate.messaging.MessagingException;
+import io.hekate.messaging.loadbalance.LoadBalancer;
 
 /**
  * Message load balancing failure.

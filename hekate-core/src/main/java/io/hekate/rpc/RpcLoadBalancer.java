@@ -1,7 +1,7 @@
 package io.hekate.rpc;
 
 import io.hekate.messaging.MessagingService;
-import io.hekate.messaging.unicast.LoadBalancer;
+import io.hekate.messaging.loadbalance.LoadBalancer;
 
 /**
  * Client-side load balancer for RPC requests.

@@ -1,6 +1,6 @@
 package io.hekate.rpc;
 
-import io.hekate.messaging.unicast.LoadBalancerContext;
+import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

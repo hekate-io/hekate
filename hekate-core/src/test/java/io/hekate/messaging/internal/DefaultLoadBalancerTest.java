@@ -8,7 +8,8 @@ import io.hekate.core.HekateSupport;
 import io.hekate.failover.FailoverContext;
 import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.failover.internal.DefaultFailoverContext;
-import io.hekate.messaging.unicast.LoadBalancer;
+import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
+import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.partition.RendezvousHashMapper;
 import java.util.HashSet;
@@ -22,7 +23,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 
 public class DefaultLoadBalancerTest extends HekateTestBase {
-
     private ClusterNode n1;
 
     private ClusterNode n2;

@@ -29,7 +29,7 @@ import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.AggregateResult;
 import io.hekate.messaging.broadcast.BroadcastCallback;
-import io.hekate.messaging.unicast.LoadBalancer;
+import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.partition.RendezvousHashMapper;

@@ -3,7 +3,7 @@ package io.hekate.rpc.internal;
 import io.hekate.core.HekateConfigurationException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.failover.FailoverPolicy;
-import io.hekate.messaging.unicast.LoadBalancerContext;
+import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcClientBuilder;
 import io.hekate.rpc.RpcClientConfig;

@@ -2,7 +2,7 @@ package foo.bar;
 
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.core.HekateException;
-import io.hekate.messaging.unicast.LoadBalancerContext;
+import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import io.hekate.rpc.RpcLoadBalancer;
 import io.hekate.rpc.RpcRequest;
 

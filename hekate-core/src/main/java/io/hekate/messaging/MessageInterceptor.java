@@ -18,7 +18,7 @@ package io.hekate.messaging;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.messaging.unicast.LoadBalancer;
+import io.hekate.messaging.loadbalance.LoadBalancer;
 
 /**
  * Message interceptor.

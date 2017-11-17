@@ -25,7 +25,7 @@ import io.hekate.cluster.ClusterTopology;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateSupport;
 import io.hekate.failover.FailureInfo;
-import io.hekate.messaging.unicast.LoadBalancerContext;
+import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.util.format.ToString;
 import java.util.Iterator;

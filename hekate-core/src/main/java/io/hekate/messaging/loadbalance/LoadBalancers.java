@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package io.hekate.messaging.unicast;
+package io.hekate.messaging.loadbalance;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
@@ -29,7 +29,7 @@ import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Predefined load balancers.
+ * Common load balancers.
  */
 public final class LoadBalancers {
     private static class Random<T> implements LoadBalancer<T> {

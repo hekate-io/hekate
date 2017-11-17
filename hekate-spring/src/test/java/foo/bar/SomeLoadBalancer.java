@@ -18,8 +18,8 @@ package foo.bar;
 
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.core.HekateException;
-import io.hekate.messaging.unicast.LoadBalancer;
-import io.hekate.messaging.unicast.LoadBalancerContext;
+import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.loadbalance.LoadBalancerContext;
 
 public class SomeLoadBalancer implements LoadBalancer<Object> {
     @Override

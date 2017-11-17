@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package io.hekate.messaging.unicast;
+package io.hekate.messaging.loadbalance;
 
 import io.hekate.cluster.ClusterFilter;
 import io.hekate.cluster.ClusterNodeFilter;

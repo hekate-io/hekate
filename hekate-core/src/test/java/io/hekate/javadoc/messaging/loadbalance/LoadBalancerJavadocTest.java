@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package io.hekate.javadoc.messaging.unicast;
+package io.hekate.javadoc.messaging.loadbalance;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNodeId;
@@ -22,8 +22,8 @@ import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.core.HekateException;
 import io.hekate.messaging.internal.LoadBalancerContextMock;
-import io.hekate.messaging.unicast.LoadBalancer;
-import io.hekate.messaging.unicast.LoadBalancerContext;
+import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;

@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package io.hekate.messaging.unicast;
+package io.hekate.messaging.loadbalance;
 
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterNodeId;
@@ -23,6 +23,7 @@ import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingService;
+import io.hekate.messaging.unicast.LoadBalancingException;
 
 /**
  * Load balancer for unicast messaging.
@@ -37,7 +38,7 @@ import io.hekate.messaging.MessagingService;
  *
  * <p>
  * Below is the example that uses a modulo-based approach for load balancing:
- * ${source: messaging/unicast/LoadBalancerJavadocTest.java#load_balancer}
+ * ${source: messaging/loadbalance/LoadBalancerJavadocTest.java#load_balancer}
  * </p>
  *
  * <p>

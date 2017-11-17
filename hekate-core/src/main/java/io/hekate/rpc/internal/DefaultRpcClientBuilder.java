@@ -21,7 +21,7 @@ import io.hekate.cluster.ClusterView;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.unicast.LoadBalancer;
+import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.rpc.RpcClientBuilder;
 import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcLoadBalancer;
