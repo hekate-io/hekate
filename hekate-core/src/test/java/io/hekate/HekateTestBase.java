@@ -196,9 +196,9 @@ public abstract class HekateTestBase {
 
             time.set(now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
 
-            System.out.println("#######################################");
+            System.out.println("########");
             System.out.println("# Starting: " + description.getDisplayName() + " [start-time=" + TIMESTAMP_FORMAT.format(now) + ']');
-            System.out.println("#--------------------------------------");
+            System.out.println("#-------");
         }
 
         @Override
@@ -215,9 +215,9 @@ public abstract class HekateTestBase {
                 time.remove();
             }
 
-            System.out.println("#--------------------------------------");
+            System.out.println("#-------");
             System.out.println("# Finished: " + description.getDisplayName() + durationInfo);
-            System.out.println("#######################################");
+            System.out.println("########");
             System.out.println();
             System.out.println();
         }
@@ -321,9 +321,9 @@ public abstract class HekateTestBase {
         String sep = System.lineSeparator();
 
         System.out.println(sep
-            + "***************************" + sep
+            + "**************" + sep
             + "*** [" + TIMESTAMP_FORMAT.format(LocalDateTime.now()) + "]: " + msg + sep
-            + "***************************"
+            + "**************"
         );
     }
 
