@@ -33,7 +33,7 @@ install: true
 
 script:
   - 'rm -rf $HOME/.m2/repository/io/hekate'
-  - './mvnw clean install -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'
+  - './mvnw -B clean install'
 
 after_success:
   - 'bash <(curl -s https://codecov.io/bash)'
