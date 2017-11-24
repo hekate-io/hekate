@@ -14,7 +14,15 @@
  * under the License.
  */
 
+package io.hekate.rpc;
+
+import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
+
 /**
- * Load balancer API.
+ * Default implementation of {@link RpcLoadBalancer} interface.
+ *
+ * @see DefaultLoadBalancer
  */
-package io.hekate.messaging.loadbalance;
+public class DefaultRpcLoadBalancer extends DefaultLoadBalancer<RpcRequest> implements RpcLoadBalancer {
+    // No-op.
+}

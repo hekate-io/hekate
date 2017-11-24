@@ -19,7 +19,6 @@ package io.hekate.messaging;
 import io.hekate.cluster.ClusterFilterSupport;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
-import io.hekate.cluster.ClusterService;
 import io.hekate.codec.CodecFactory;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
@@ -29,10 +28,10 @@ import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.AggregateResult;
 import io.hekate.messaging.broadcast.BroadcastCallback;
+import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.messaging.unicast.SendCallback;
-import io.hekate.partition.RendezvousHashMapper;
 import java.util.List;
 
 /**
@@ -40,51 +39,42 @@ import java.util.List;
  *
  * <h2>Overview</h2>
  * <p>
- * Messaging service provides support for building message-oriented communications among {@link Hekate} nodes. Message exchange is based on
- * the concept of messaging channels. Messaging channels hide all the complexity of managing resources (like socket and threads) and
- * provide
- * high level API for implementing various messaging patterns.
+ * Messaging service provides support for building message-oriented communications in the cluster of {@link Hekate} nodes. Message exchange
+ * is based on the concept of messaging channels. Such channels hide all the complexities of managing resources (like socket and threads)
+ * and provide a high level API for implementing various messaging patterns.
  * </p>
  *
  * <h2>Messaging Channels</h2>
  * <p>
- * Messages exchange is based on the concept of channels. Channel is a communication unit that can act as a sender, as a receiver or
- * perform both of those roles simultaneously. Channels provide support for unicast messaging (node to node communication) and broadcast
- * messaging (node to many nodes communication). Note that unicast and broadcast in this context are NOT related to UDP (all communications
- * are TCP-based) and merely outline communication patterns.
+ * Messaging channel is a communication unit that can act as a sender, as a receiver or perform both of those roles simultaneously.
+ * Channels provide support for unicast messaging (node to node communication) and broadcast messaging (node to many nodes communication).
+ * Note that "unicast" and "broadcast" in this context are NOT related to UDP (all communications are TCP-based) and merely outline
+ * the communication patterns.
  * </p>
  *
  * <h2>Configuring channels</h2>
  * <p>
- * Channels can be registered within the service via {@link MessagingServiceFactory#withChannel(MessagingChannelConfig)} method.
- * This methods accept an instance of {@link MessagingChannelConfig} class that specifies the channel configuration options.
+ * Configuration of a messaging channel is represented by the {@link MessagingChannelConfig} class. Instances of this class be registered
+ * via the {@link MessagingServiceFactory#withChannel(MessagingChannelConfig)} method.
  * </p>
  *
  * <p>
- * Below are the key configuration options:
+ * Below are the key configuration options of a messaging channel:
  * </p>
  * <ul>
- * <li>
- * {@link MessagingChannelConfig#setName(String) Channel Name} - only channels with the same name can communicate with each other.
+ * <li>{@link MessagingChannelConfig#setName(String) Channel Name} - only channels with the same name can communicate with each other.
  * Note that channel name must be unique within each {@link MessagingService} instance and any attempt to register multiple channels with
- * the same name will result in an error.
- * </li>
- * <li>
- * {@link MessagingChannelConfig#setReceiver(MessageReceiver) Message Receiver} if channel should be able to receive messages from remote
- * nodes (i.e. act as a server)
- * </li>
- * <li>
- * {@link MessagingChannelConfig#setMessageCodec(CodecFactory) Message Codec} - for messages serialization/deserialization.
- * If not specified then the {@link HekateBootstrap#setDefaultCodec(CodecFactory) default codec} will be used.
- * </li>
- * <li>
- * {@link MessagingChannelConfig#setNioThreads(int) NIO} and {@link MessagingChannelConfig#setWorkerThreads(int) worker} thread pool
- * options
- * </li>
+ * the same name will result in an error</li>
+ * <li>{@link MessagingChannelConfig#setReceiver(MessageReceiver) Message Receiver} if channel should be able to receive messages from
+ * remote nodes (i.e. act as a server)</li>
+ * <li>{@link MessagingChannelConfig#setMessageCodec(CodecFactory) Message Codec} - for messages serialization/deserialization.
+ * If not specified then the {@link HekateBootstrap#setDefaultCodec(CodecFactory) default codec} will be used.</li>
+ * <li>{@link MessagingChannelConfig#setNioThreads(int) NIO} and {@link MessagingChannelConfig#setWorkerThreads(int) worker} thread pool
+ * options</li>
  * </ul>
  *
  * <p>
- * Below is the example of messaging channel configuration:
+ * Example:
  * </p>
  *
  * <div class="tabs">
@@ -114,8 +104,9 @@ import java.util.List;
  *
  * <h2>Accessing channels</h2>
  * <p>
- * Once configured and registered, channels can be accessed via {@link MessagingService#channel(String)} method with the {@link
- * MessagingChannelConfig#setName(String) channel name}.
+ * Channel can be accessed via the {@link MessagingService#channel(String, Class)} method, with the first parameter being the
+ * {@link MessagingChannelConfig#setName(String) channel name} and the second parameter being the
+ * {@link MessagingChannelConfig#of(Class) base type} of messages that can be transferred over that channel:
  * ${source: messaging/MessagingServiceJavadocTest.java#access_channel}
  * </p>
  *
@@ -155,7 +146,7 @@ import java.util.List;
  * <h3>Send and Forget</h3>
  * <p>
  * {@link MessagingChannel#send(Object)} provides support for unidirectional communications (i.e. when remote node doesn't need to send
- * any reply) using the send and forget approach:
+ * back a response) using the fire and forget approach:
  * ${source: messaging/MessagingServiceJavadocTest.java#unicast_send_sync}
  * </p>
  *
@@ -200,15 +191,14 @@ import java.util.List;
  *
  * <h2>Receiving messages</h2>
  * <p>
- * Messaging channel can process operation requests from remote nodes (i.e. act as a messaging server) by registering an instance of {@link
- * MessageReceiver} interface within the channel configuration. Such receiver will be notified on every message that was submitted by a
- * remote node via {@link MessagingChannel#send(Object) send(...)}/{@link MessagingChannel#request(Object) request(...)}/{@link
- * MessagingChannel#broadcast(Object) broadcast(...)}/{@link MessagingChannel#aggregate(Object) aggregate(...)} methods.
+ * Messaging channel can receive messages from remote nodes by {@link MessagingChannelConfig#setReceiver(MessageReceiver) registering} an
+ * instance of {@link MessageReceiver} interface. Received messages are represented by the {@link Message} interface. This interface
+ * provides methods for {@link Message#get() getting} the payload of a received message as well as methods for {@link Message#reply(Object)
+ * replying} to that message.
  * </p>
  *
  * <p>
- * Received messages are wrapped with an instance of {@link Message} interface. This interface provides methods for getting the message
- * payload and also sending back a response (in case of request-response communications).
+ * <b>Important:</b> Only one receiver can be registered per each messaging channel.
  * </p>
  *
  * <p>
@@ -216,37 +206,48 @@ import java.util.List;
  * ${source: messaging/MessagingServiceJavadocTest.java#message_receiver}
  * </p>
  *
+ * <h2>Routing and load balancing</h2>
  * <p>
- * Receiver can be registered within the channel configuration via {@link MessagingChannelConfig#setReceiver(MessageReceiver)}
- * method. Note that only one receiver can be registered per each channel.
+ * Every messaging channel uses an instance of {@link LoadBalancer} interface to perform routing of unicast operations
+ * (like {@link MessagingChannel#send(Object) send(...)} and {@link MessagingChannel#request(Object) request(...)}). Load balancer can
+ * be pre-configured via the {@link MessagingChannelConfig#setLoadBalancer(LoadBalancer)} method or specified dynamically via the {@link
+ * MessagingChannel#withLoadBalancer(LoadBalancer)} method. If load balancer is not specified then messaging channel will fall back to the
+ * {@link DefaultLoadBalancer}.
+ * </p>
+ * <p>
+ * Note that load balancing does not get applied to broadcast operations (like {@link MessagingChannel#broadcast(Object)} and {@link
+ * MessagingChannel#aggregate(Object)}). Such operations are submitted to all nodes within the channel's cluster topology.
+ * Please see the "<a href="#topology_filterring">Cluster topology filtering</a>" section for details of how to control the channel's
+ * cluster topology.
  * </p>
  *
- * <h2>Message routing and load balancing</h2>
+ * <h3>Consistent routing</h3>
  * <p>
- * {@link MessagingChannel} uses {@link ClusterService} to find remote nodes that are capable of receiving messages from this channel. By
- * default each channel sees all nodes who's messaging service is configured with a channel of the same {@link
- * MessagingChannelConfig#setName(String) name} and having a {@link MessagingChannelConfig#setReceiver(MessageReceiver) message receiver}
- * (i.e. capable to receive messages from remote nodes).
+ * Applications can provide an affinity key to the {@link LoadBalancer} so that it could perform consistent routing based on some
+ * application-specific criteria. For example, if the {@link DefaultLoadBalancer} is being used by the messaging channel then it will make
+ * sure that all messages with the same affinity key will always be routed to the same cluster node (unless the cluster topology doesn't
+ * change) by using the channel's {@link MessagingChannel#partitions() partition mapper}. Custom implementations of the {@link LoadBalancer}
+ * interface can use their own algorithms for consistent routing.
+ * </p>
+ *
+ * <h3>Thread affinity</h3>
+ * <p>
+ * Besides providing a hint to the {@link LoadBalancer}, specifying an affinity key also instructs the messaging channel to process all
+ * messages of the same affinity key on the same thread. This applies both to sending a message (see {@link SendCallback} or {@link
+ * ResponseCallback}) and to receiving a message (see {@link MessageReceiver#receive(Message)}).
+ * </p>
+ *
+ * <a name="topology_filterring"></a>
+ * <h3>Cluster topology filtering</h3>
+ * <p>
+ * It is possible to narrow down the list of nodes that are visible to the {@link MessagingChannel} by setting a {@link ClusterNodeFilter}.
+ * Such filter can be pre-configured via the {@link MessagingChannelConfig#setClusterFilter(ClusterNodeFilter)} method or set dynamically
+ * via the {@link MessagingChannel#filter(ClusterNodeFilter)} method.
  * </p>
  *
  * <p>
- * By default all messaging operations will try to use all nodes that are visible to each particular channel instance as a messaging
- * destination. For example, if {@link MessagingChannel#aggregate(Object, AggregateCallback) aggregate(...)} method is called on a channel
- * instance that doesn't have any filtering applied, then all nodes in the cluster that have a {@link MessageReceiver} configured (for the
- * same channel name) will receive an aggregation request.
- * </p>
- *
- * <p>
- * It is possible to narrow down the list of nodes that are visible to a channel. This can be done by configuring an instance of {@link
- * ClusterNodeFilter}. Filter can be configured statically within the {@link MessagingChannelConfig#setClusterFilter(ClusterNodeFilter)
- * channel configuration} or {@link MessagingChannel#filter(ClusterNodeFilter) dynamically} for each {@link MessagingChannel} instance.
- * Key difference between static and dynamic filter is that static filter is always gets applied to the cluster topology before any other
- * dynamic filter and is always automatically applied when channel is {@link MessagingService#channel(String) obtained} from the {@link
- * MessagingService}.
- * </p>
- *
- * <p>
- * {@link MessagingChannel} extends the {@link ClusterFilterSupport} interface which a number of shortcut methods for common use cases:
+ * Note that the {@link MessagingChannel} interface extends the {@link ClusterFilterSupport} interface, which gives it a number of shortcut
+ * methods for dynamic filtering of the cluster topology:
  * </p>
  * <ul>
  * <li>{@link MessagingChannel#forRemotes()}</li>
@@ -258,25 +259,13 @@ import java.util.List;
  * <li>...{@link ClusterFilterSupport etc}</li>
  * </ul>
  *
- * <h2>Message affinity</h2>
  * <p>
- * By default, all unicast operations (like {@link MessagingChannel#send(Object, SendCallback) send(...)} and
- * {@link MessagingChannel#request(Object, ResponseCallback) request(...)}) are processed on randomly selected nodes and randomly selected
- * threads of these nodes. If you want to consistently route some messages based on certain criteria, then an affinity key should be
- * specified via {@link MessagingChannel#withAffinity(Object)}. All such messages will be routed via {@link RendezvousHashMapper} so that
- * in
- * a stable cluster topology all messages with the same key will always be routed to the same node and will always be processed by the same
- * thread of that node.
- * </p>
- *
- * <p>
- * Default routing behavior can be overridden by {@link MessagingChannel#withLoadBalancer(LoadBalancer) specifying} a custom implementation
- * of the {@link LoadBalancer} interface. If load balancer is specified then it takes full control over message routing within the cluster.
+ * If filter is specified then all messaging operations will be distributed among only those nodes that match the filter's criteria.
  * </p>
  *
  * <h2>Thread pooling</h2>
  * <p>
- * Messaging service manages a pool of threads for each of its registered channels. The following  threads pools are managed:
+ * Messaging service manages a pool of threads for each of its registered channels. The following  thread pools are managed:
  * </p>
  *
  * <ul>
@@ -293,12 +282,14 @@ import java.util.List;
  *
  * <h2>Messaging failover</h2>
  * <p>
- * Failover of the messaging errors is controlled by the {@link FailoverPolicy} interface. Implementations of this interface can be
+ * Failover of messaging errors is controlled by the {@link FailoverPolicy} interface. Implementations of this interface can be
  * configured for each {@link MessagingChannel} individually via {@link MessagingChannelConfig#setFailoverPolicy(FailoverPolicy)} method or
  * defined at runtime via {@link MessagingChannel#withFailover(FailoverPolicy)}. In case of a messaging error this interface will be called
- * by the channel in order to decided on whether another attempt should be performed or operation should fail.
- * On the {@link MessageReceiver#receive(Message) receiving} side it is possible to detect messages that were retransmitted by the failover
- * logic by checking the {@link Message#isRetransmit()} flag.
+ * by the channel in order to decided on whether the message should be retransmitted or the messaging operation should fail.
+ * </p>
+ * <p>
+ * On the {@link MessageReceiver#receive(Message) receiving} side it is possible to detect messages that were retransmitted by checking the
+ * {@link Message#isRetransmit()} flag.
  * </p>
  *
  * <p>

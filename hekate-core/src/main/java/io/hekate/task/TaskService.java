@@ -130,13 +130,11 @@ import java.util.concurrent.TimeUnit;
  * </p>
  *
  * <a name="cluster_filtering"></a>
- * <h2>Routing and cluster nodes filtering</h2>
+ * <h2>Routing and cluster filtering</h2>
  * <p>
- * Each task can be submitted to a single node (via {@link #run(RunnableTask) run(...)}/{@link #call(CallableTask) call(...)}) or to
- * multiple nodes at once (via {@link #broadcast(RunnableTask) broadcast(...)}/{@link #aggregate(CallableTask) aggregate(...)}) for
- * parallel execution. Target nodes are selected based on cluster filtering rules. {@link TaskService} extends the {@link
- * ClusterFilterSupport} interface which provides a general purpose {@link TaskService#filter(ClusterNodeFilter)} method for dynamic
- * filtering as well as a number shortcut methods for common use cases:
+ * Routing of tasks among the cluster nodes is based on the cluster topology view of the {@link TaskService}. By default, it includes all
+ * of the cluster nodes that have {@link TaskServiceFactory#setLocalExecutionEnabled(boolean)} set to {@code true}. It is possible to
+ * dynamically narrow down the list of those nodes via the following methods:
  * </p>
  * <ul>
  * <li>{@link TaskService#forRemotes()}</li>
@@ -147,26 +145,29 @@ import java.util.concurrent.TimeUnit;
  * <li>{@link TaskService#forYoungest()}</li>
  * <li>...{@link ClusterFilterSupport etc}</li>
  * </ul>
- *
- * <p>
- * <b>Note:</b> if multiple nodes match the cluster filtering criteria then each single task operation (e.g. {@link #run(RunnableTask)
- * run(...)}/{@link #call(CallableTask) call(...)}) will be executed on a randomly selected node.
+ * <p>It is possible to combine multiple filters by chaining the calls of those methods. However, please note that in such case it is
+ * highly recommended to cache and reuse the final "filtered" {@link TaskService} instance. Doing so, allows it to build the cluster view
+ * only once and then reuse it for all subsequent operations. Also, such "filtered" instance will automatically track changes of the cluster
+ * topology (nodes addition/removal) and will update its internal view if changed nodes do match the filtering criteria.
  * </p>
  *
+ *
  * <p>
- * Several examples below illustrate the usage of cluster nodes filtering API:
+ * Below are the examples of the filtering API:
  * ${source: task/TaskServiceJavadocTest.java#filter_nodes}
  * </p>
  *
  * <h2>Task affinity</h2>
  * <p>
- * By default, all tasks that are sent to the cluster are executed on randomly selected nodes and randomly selected threads of these nodes.
- * If you want to consistently process tasks based on certain criteria, then the affinity key should be specified via {@link
- * #withAffinity(Object)}. For example, if tasks change some user account data, then such tasks can use an account identifier or user name
- * as an affinity key to make sure that all tasks for a particular user are always performed on the same node and on the same thread.
+ * By default, every task that is submitted to the cluster is executed on a randomly selected node and on a randomly selected thread of
+ * that node. If it is required to consistently route some tasks to the same node and to the same thread of that node then
+ * an {@link #withAffinity(Object) affinity key} should be specified for such tasks. For example - if some tasks are supposed to change
+ * data of some user's account, then all such tasks should use an identifier of that account as its affinity key. This will make sure that
+ * all tasks, that are related to that account, will always be executed on the same node and on the same thread of that node (unless the
+ * cluster topology doesn't change).
  * </p>
  *
- * <h2>Notes on tasks serialization</h2>
+ * <h2>Notes on serialization</h2>
  * <p>
  * Tasks are serializable {@link FunctionalInterface functional interfaces} that can be specified as lambda expressions, anonymous/inner
  * classes or as regular Java classes. If the task is defined as a lambda or as an anonymous inner class then it is important to make sure

@@ -19,6 +19,7 @@ package io.hekate.javadoc.rpc;
 import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
+import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcServerConfig;
 import io.hekate.rpc.RpcService;
@@ -66,17 +67,48 @@ public class RpcServiceJavadocTest extends HekateNodeTestBase {
         RpcService rpc = hekate.rpc();
         // End:access
 
-        // Start:client
-        SomeRpcService client = hekate.rpc().clientFor(SomeRpcService.class)
-            // Setup some timeout for remote calls (optional).
-            .withTimeout(3, TimeUnit.SECONDS)
-            .build();
-
-        System.out.println(client.helloWorld("Hekate"));
-        // End:client
-
         assertNotNull(rpc);
 
+        clientExample(hekate);
+
         hekate.leave();
+    }
+
+    @Test
+    public void exampleRpcServerConfig() throws Exception {
+        // Start:server
+        // Prepare service factory.
+        RpcServiceFactory factory = new RpcServiceFactory()
+            // Register RPC server configuration.
+            .withServer(new RpcServerConfig()
+                // RPC implementation.
+                .withHandler(new SomeRpcServiceImpl())
+            );
+
+        // Start node.
+        Hekate hekate = new HekateBootstrap()
+            .withService(factory)
+            .join();
+        // End:server
+
+        clientExample(hekate);
+
+        hekate.leave();
+    }
+
+    private void clientExample(Hekate hekate) {
+        // Start:client
+        SomeRpcService client = hekate.rpc().clientFor(SomeRpcService.class)
+            // Set some configuration options (optional).
+            .withTimeout(3, TimeUnit.SECONDS) // RPC timeout.
+            .withFailover(new FailoverPolicyBuilder() // Failover policy.
+                .withMaxAttempts(3) // Up to 3 times.
+                .withConstantRetryDelay(200) // 200ms delay between attempts.
+            )
+            .build();
+
+        // Call RPC method.
+        System.out.println(client.helloWorld("Hekate"));
+        // End:client
     }
 }
