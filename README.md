@@ -151,6 +151,7 @@ Complete reference guide is coming soon.
  
  - Implemented Remote Procedure Call service for Java objects
  - Merged Kryo and FST codecs into the `hekate-core` module (dropped `hekate-kryo` and `hekate-fst` modules)
+ - Moved load balancing APIs to the `io.hekate.messaging.loadbalance` package
  - Moved Netty-based implementation of networking APIs to public packages
  - Added back pressure configuration options to the Task Service API
  - Added 'deferredJoin' property to Spring bootstrap in order to control the timing of joining the cluster.
