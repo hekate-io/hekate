@@ -195,8 +195,8 @@ import java.util.concurrent.CompletableFuture;
  * </p>
  * <p>
  * Note that there can be only one @{@link RpcAffinityKey}-annotated parameter per RPC method and value of that parameter can't be {@code
- * null}. Also it is important to make sure that type of that parameter provides consistent implementation of {@link #hashCode()}  and
- * {@link #equals(Object)} methods.
+ * null}. Also it is important to make sure that type of that parameter provides consistent implementation of {@link Object#hashCode()} and
+ * {@link Object#equals(Object)} methods.
  * </p>
  *
  * <h3>Thread affinity</h3>
