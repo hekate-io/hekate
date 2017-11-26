@@ -173,8 +173,7 @@ public interface GossipPolicy {
             }
 
             // If all selected nodes are DOWN or LEAVING then try to add any other non LEAVING/DOWN node.
-            Predicate<GossipNodeState> isLiveNode =
-                s -> s.status() != GossipNodeStatus.DOWN && s.status() != GossipNodeStatus.LEAVING;
+            Predicate<GossipNodeState> isLiveNode = s -> s.status() != GossipNodeStatus.DOWN && s.status() != GossipNodeStatus.LEAVING;
 
             if (!targets.isEmpty() && targets.stream().noneMatch(isLiveNode)) {
                 List<GossipNodeState> nonDown = nodes.stream().filter(isLiveNode).collect(toList());
