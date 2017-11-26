@@ -31,7 +31,7 @@ public class DefaultFailoverContext implements FailoverContext {
 
         private long delay;
 
-        private FailoverRoutingPolicy routingPolicy = FailoverRoutingPolicy.RETRY_SAME_NODE;
+        private FailoverRoutingPolicy routingPolicy = FailoverRoutingPolicy.PREFER_SAME_NODE;
 
         public Resolution(boolean retry) {
             this.retry = retry;

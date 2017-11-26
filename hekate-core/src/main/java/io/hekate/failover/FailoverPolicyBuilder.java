@@ -42,7 +42,7 @@ public class FailoverPolicyBuilder {
      * @return New failover policy.
      */
     public FailoverPolicy build() {
-        if (retryUntil == null) {
+        if (retryUntil == null && retryDelay == null) {
             return FailoverPolicy.alwaysFail();
         }
 
@@ -52,7 +52,7 @@ public class FailoverPolicyBuilder {
             return FailoverPolicy.alwaysFail();
         }
 
-        List<Class<? extends Throwable>> localErrorTypes = errorTypes == null || errorTypes.isEmpty() ? null : new ArrayList<>(errorTypes);
+        List<Class<? extends Throwable>> localErrorTypes = StreamUtils.nullSafe(errorTypes).collect(toList());
 
         return doBuild(localRetryUntil, retryDelay, localErrorTypes, routingPolicy);
     }
@@ -283,7 +283,7 @@ public class FailoverPolicyBuilder {
         return new FailoverPolicy() {
             @Override
             public FailureResolution apply(FailoverContext ctx) {
-                if (errTypes != null) {
+                if (errTypes != null && !errTypes.isEmpty()) {
                     boolean found = false;
 
                     for (Class<? extends Throwable> errorType : errTypes) {

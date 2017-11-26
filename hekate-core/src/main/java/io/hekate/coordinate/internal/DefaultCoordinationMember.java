@@ -86,6 +86,7 @@ class DefaultCoordinationMember implements CoordinationMember {
             .withFailover(new FailoverPolicyBuilder()
                 // Retry to death.
                 .withRetryUntil(ctx -> !cancelled)
+                .withAlwaysRetrySameNode()
                 .withConstantRetryDelay(failoverDelay)
             );
 
