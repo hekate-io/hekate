@@ -83,9 +83,11 @@ public class DefaultFailureDetector implements FailureDetector {
         public synchronized void onHeartbeatSent() {
             lostHeartbeats++;
 
-            if (lostHeartbeats > 0 && lostHeartbeats <= hbLossThreshold && log.isWarnEnabled()) {
-                log.warn("Heartbeat loss detected [lost={}, loss-threshold={}, interval={}, node={}]",
-                    lostHeartbeats, hbLossThreshold, hbInterval, address);
+            if (DEBUG) {
+                if (lostHeartbeats > 0 && lostHeartbeats <= hbLossThreshold) {
+                    log.debug("Heartbeat loss detected [lost={}, loss-threshold={}, interval={}, node={}]",
+                        lostHeartbeats, hbLossThreshold, hbInterval, address);
+                }
             }
         }
 
