@@ -38,11 +38,11 @@ public class ClusterMetricsCallback {
 
         register(GossipProtocol.Type.GOSSIP_UPDATE, "hekate.cluster.gossip.update", service);
         register(GossipProtocol.Type.GOSSIP_UPDATE_DIGEST, "hekate.cluster.gossip.digest", service);
-        register(GossipProtocol.Type.JOIN_REQUEST, "hekate.cluster.gossip.join_request", service);
-        register(GossipProtocol.Type.JOIN_ACCEPT, "hekate.cluster.gossip.join_accept", service);
-        register(GossipProtocol.Type.JOIN_REJECT, "hekate.cluster.gossip.join_reject", service);
-        register(GossipProtocol.Type.HEARTBEAT_REQUEST, "hekate.cluster.gossip.hb_request", service);
-        register(GossipProtocol.Type.HEARTBEAT_REPLY, "hekate.cluster.gossip.hb_response", service);
+        register(GossipProtocol.Type.JOIN_REQUEST, "hekate.cluster.gossip.join-request", service);
+        register(GossipProtocol.Type.JOIN_ACCEPT, "hekate.cluster.gossip.join-accept", service);
+        register(GossipProtocol.Type.JOIN_REJECT, "hekate.cluster.gossip.join-reject", service);
+        register(GossipProtocol.Type.HEARTBEAT_REQUEST, "hekate.cluster.gossip.hb-request", service);
+        register(GossipProtocol.Type.HEARTBEAT_REPLY, "hekate.cluster.gossip.hb-response", service);
     }
 
     public void onGossipMessage(GossipProtocol.Type type) {

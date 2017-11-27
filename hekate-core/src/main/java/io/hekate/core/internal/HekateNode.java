@@ -196,6 +196,10 @@ class HekateNode implements Hekate, JavaSerializable {
         ConfigCheck check = ConfigCheck.get(HekateBootstrap.class);
 
         check.notEmpty(cfg.getClusterName(), "cluster name");
+        check.validSysName(cfg.getClusterName(), "cluster name");
+
+        check.validSysName(cfg.getNodeName(), "node name");
+
         check.notNull(cfg.getDefaultCodec(), "default codec");
         check.isFalse(cfg.getDefaultCodec().createCodec().isStateful(), "default codec can't be stateful.");
 

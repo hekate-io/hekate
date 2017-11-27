@@ -201,7 +201,7 @@ public class FailoverSendTest extends FailoverTestBase {
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
             assertTrue(e.getCause().toString(), e.getCause() instanceof MessagingException);
-            assertEquals("Channel closed [channel=test_channel]", e.getCause().getMessage());
+            assertEquals("Channel closed [channel=test-channel]", e.getCause().getMessage());
         }
     }
 

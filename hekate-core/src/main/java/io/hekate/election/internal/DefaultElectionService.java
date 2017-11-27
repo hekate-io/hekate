@@ -110,6 +110,7 @@ public class DefaultElectionService implements ElectionService, DependentService
 
         candidatesConfig.forEach(cfg -> {
             check.notEmpty(cfg.getGroup(), "group");
+            check.validSysName(cfg.getGroup(), "group");
             check.notNull(cfg.getCandidate(), "candidate");
 
             String group = cfg.getGroup().trim();

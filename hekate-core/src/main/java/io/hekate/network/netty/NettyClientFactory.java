@@ -103,7 +103,7 @@ public class NettyClientFactory<T> implements NetworkConnector<T> {
     }
 
     /**
-     * Sets the protocol identifier.
+     * Sets the protocol identifier. Can contain only alpha-numeric characters and non-repeatable dots/hyphens.
      *
      * <p>
      * Must be the same with the server-side protocol identifier (see {@link NetworkServerHandlerConfig#setProtocol(String)}).
@@ -113,7 +113,7 @@ public class NettyClientFactory<T> implements NetworkConnector<T> {
      * This parameter is mandatory and doesn't have a default value.
      * </p>
      *
-     * @param protocol Protocol identifier.
+     * @param protocol Protocol identifier (can contain only alpha-numeric characters and non-repeatable dots/hyphens).
      */
     public void setProtocol(String protocol) {
         this.protocol = protocol;

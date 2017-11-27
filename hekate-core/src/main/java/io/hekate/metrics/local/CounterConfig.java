@@ -101,7 +101,8 @@ public class CounterConfig extends MetricConfigBase<CounterConfig> {
     }
 
     /**
-     * Sets the name of a metric that will hold the total value of this counter.
+     * Sets the name of a metric that will hold the total value of this counter. Can contain only alpha-numeric characters and
+     * non-repeatable dots/hyphens.
      *
      * <p>
      * This parameter is optional. If specified then an additional metric of that name will be registered within the {@link
@@ -112,7 +113,8 @@ public class CounterConfig extends MetricConfigBase<CounterConfig> {
      * <b>Note:</b> In most cases this parameter makes sense only if {@link #setAutoReset(boolean)} is set to {@code true}.
      * </p>
      *
-     * @param totalName Name of a metric that will hols the total value of this counter.
+     * @param totalName Name of a metric that will hols the total value of this counter (can contain only alpha-numeric characters and
+     * non-repeatable dots/hyphens).
      */
     public void setTotalName(String totalName) {
         this.totalName = totalName;

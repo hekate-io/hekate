@@ -474,6 +474,8 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
     private String checkCounterConfig(CounterConfig cfg) {
         COUNTER_CHECK.notNull(cfg, "configuration");
         COUNTER_CHECK.notEmpty(cfg.getName(), "name");
+        COUNTER_CHECK.validSysName(cfg.getName(), "name");
+        COUNTER_CHECK.validSysName(cfg.getTotalName(), "total name");
 
         return cfg.getName().trim();
     }
@@ -481,6 +483,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
     private String checkProbeConfig(ProbeConfig cfg) {
         PROBE_CHECK.notNull(cfg, "configuration");
         PROBE_CHECK.notEmpty(cfg.getName(), "name");
+        PROBE_CHECK.validSysName(cfg.getName(), "name");
         PROBE_CHECK.notNull(cfg.getProbe(), "probe");
 
         return cfg.getName().trim();

@@ -34,9 +34,9 @@ public abstract class MetricConfigBase<T extends MetricConfigBase<T>> {
     }
 
     /**
-     * Sets the name of this metric.
+     * Sets the name of this metric. Can contain only alpha-numeric characters and non-repeatable dots/hyphens.
      *
-     * @param name Name of this metric.
+     * @param name Name of this metric (can contain only alpha-numeric characters and non-repeatable dots/hyphens).
      */
     public void setName(String name) {
         this.name = name;

@@ -590,6 +590,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         String protocol = cfg.getProtocol();
 
         check.notEmpty(protocol, "protocol");
+        check.validSysName(protocol, "protocol");
         check.unique(protocol, connectors.keySet(), "protocol");
 
         boolean useCoreLoop;

@@ -838,7 +838,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
     @Test
     public void testWrongProtocol() throws Exception {
-        NetworkServer server = createServer(createHandler("WRONG_PROTOCOL", (msg, from) -> {
+        NetworkServer server = createServer(createHandler("WRONG-PROTOCOL", (msg, from) -> {
             // No-op.
         }));
 
@@ -895,7 +895,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
     @Test
     public void testWrongProtocolWithDeferredMessages() throws Exception {
-        NetworkServer server = createServer(createHandler("WRONG_PROTOCOL", (msg, from) -> {
+        NetworkServer server = createServer(createHandler("WRONG-PROTOCOL", (msg, from) -> {
             // No-op.
         }));
 

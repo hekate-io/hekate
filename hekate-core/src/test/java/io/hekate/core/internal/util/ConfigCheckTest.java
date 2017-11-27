@@ -166,4 +166,41 @@ public class ConfigCheckTest extends HekateTestBase {
 
         check.notEmpty("777", "Success");
     }
+
+    @Test
+    public void testSysName() {
+        expectExactMessage(HCE, PREFIX + "Epic fail can contain only alpha-numeric characters and non-repeatable dots/hyphens "
+                + "[value=-not-valid-]",
+            () -> check.validSysName("-not-valid-", "Epic fail")
+        );
+
+        check.validSysName(null, "ignore");
+        check.validSysName("", "ignore");
+        check.validSysName("  ", "ignore");
+        check.validSysName("X", "ignore");
+        check.validSysName("XXX", "ignore");
+        check.validSysName("x", "ignore");
+        check.validSysName("xxx", "ignore");
+        check.validSysName("xxx-x", "ignore");
+        check.validSysName("xxx-xxx", "ignore");
+        check.validSysName("x-xxx", "ignore");
+        check.validSysName("xxx.x", "ignore");
+        check.validSysName("xxx.xxx", "ignore");
+        check.validSysName("x.xxx", "ignore");
+        check.validSysName("x.xxx-x", "ignore");
+        check.validSysName("x-xxx.x", "ignore");
+        check.validSysName("x-xxx.x-x.x.x", "ignore");
+        check.validSysName("x-xxx.x-x.x.x", "ignore");
+        check.validSysName("  x-xxx.x-x.x.x  ", "ignore");
+
+        expect(HCE, () -> check.validSysName("-", "ignore"));
+        expect(HCE, () -> check.validSysName(".", "ignore"));
+        expect(HCE, () -> check.validSysName("x..x", "ignore"));
+        expect(HCE, () -> check.validSysName("x--x", "ignore"));
+        expect(HCE, () -> check.validSysName("-xxx", "ignore"));
+        expect(HCE, () -> check.validSysName("xxx-", "ignore"));
+        expect(HCE, () -> check.validSysName(".xxx-", "ignore"));
+        expect(HCE, () -> check.validSysName("xxx.", "ignore"));
+        expect(HCE, () -> check.validSysName("xxx-.-xxx", "ignore"));
+    }
 }

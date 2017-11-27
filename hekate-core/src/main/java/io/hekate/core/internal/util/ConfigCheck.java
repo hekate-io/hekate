@@ -18,8 +18,11 @@ package io.hekate.core.internal.util;
 
 import io.hekate.core.HekateConfigurationException;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public final class ConfigCheck {
+    private static final Pattern SYS_NAME = Pattern.compile("^[a-z0-9]+([\\-\\.]{1}[a-z0-9]+)*$", Pattern.CASE_INSENSITIVE);
+
     private final String component;
 
     private ConfigCheck(String component) {
@@ -42,6 +45,17 @@ public final class ConfigCheck {
 
     public HekateConfigurationException fail(String msg) {
         throw new HekateConfigurationException(component + ": " + msg);
+    }
+
+    public void validSysName(String value, String component) {
+        if (value != null) {
+            String trimmed = value.trim();
+
+            if (!trimmed.isEmpty() && !SYS_NAME.matcher(trimmed).matches()) {
+                throw fail(component + " can contain only alpha-numeric characters and non-repeatable dots/hyphens "
+                    + "[value=" + trimmed + ']');
+            }
+        }
     }
 
     public void range(int value, int from, int to, String component) {

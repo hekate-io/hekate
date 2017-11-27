@@ -145,6 +145,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
         processesConfig.forEach(cfg -> {
             check.notEmpty(cfg.getName(), "name");
+            check.validSysName(cfg.getName(), "name");
             check.notNull(cfg.getHandler(), "handler");
 
             String name = cfg.getName().trim();

@@ -372,6 +372,7 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
         ConfigCheck check = ConfigCheck.get(NettyClientFactory.class);
 
         check.notEmpty(factory.getProtocol(), "protocol");
+        check.validSysName(factory.getProtocol(), "protocol");
         check.notNull(factory.getCodecFactory(), "codec factory");
         check.notNull(factory.getEventLoop(), "event loops group");
 

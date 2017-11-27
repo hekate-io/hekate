@@ -45,7 +45,7 @@ public class NetworkServerHandlerConfig<T> {
     }
 
     /**
-     * Sets the connector protocol identifier.
+     * Sets the connector protocol identifier. Can contain only alpha-numeric characters and non-repeatable dots/hyphens.
      *
      * <p>
      * Only clients that have the same {@link NetworkConnectorConfig#setProtocol(String) protocol identifier} will be processed by the
@@ -61,7 +61,7 @@ public class NetworkServerHandlerConfig<T> {
      * NetworkServer}.
      * </p>
      *
-     * @param protocol Protocol identifier.
+     * @param protocol Protocol identifier (can contain only alpha-numeric characters and non-repeatable dots/hyphens).
      */
     public void setProtocol(String protocol) {
         this.protocol = protocol;

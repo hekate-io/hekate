@@ -144,6 +144,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
         regionsConfig.forEach(cfg -> {
             check.notEmpty(cfg.getName(), "name");
+            check.validSysName(cfg.getName(), "name");
 
             String name = cfg.getName().trim();
 

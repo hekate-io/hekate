@@ -153,6 +153,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
         channelsConfig.forEach(cfg -> {
             check.notEmpty(cfg.getName(), "name");
+            check.validSysName(cfg.getName(), "name");
             check.notNull(cfg.getBaseType(), "base type");
             check.positive(cfg.getPartitions(), "partitions");
             check.isPowerOfTwo(cfg.getPartitions(), "partitions size");

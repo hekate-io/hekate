@@ -61,7 +61,7 @@ public class LockRegionConfig {
     }
 
     /**
-     * Sets the lock region name.
+     * Sets the lock region name. Can contain only alpha-numeric characters and non-repeatable dots/hyphens.
      *
      * <p>
      * This name can be used to obtain reference to {@link LockRegion} via {@link LockService#region(String)}.
@@ -71,7 +71,7 @@ public class LockRegionConfig {
      * Value of this parameter is mandatory and must be unique across all regions registered within the {@link LockServiceFactory}.
      * </p>
      *
-     * @param name Region name.
+     * @param name Region name (can contain only alpha-numeric characters and non-repeatable dots/hyphens).
      */
     public void setName(String name) {
         this.name = name;

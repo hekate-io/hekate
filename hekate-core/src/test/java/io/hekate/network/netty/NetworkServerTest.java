@@ -387,7 +387,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
         NetworkServer server = createServer();
 
-        server.addHandler(createHandler("test_context", new NetworkServerHandler<String>() {
+        server.addHandler(createHandler("test-context", new NetworkServerHandler<String>() {
             @Override
             public void onConnect(String msg, NetworkEndpoint<String> client) {
                 List<String> events = new LinkedList<>();
@@ -432,7 +432,7 @@ public class NetworkServerTest extends NetworkTestBase {
         server.start(newServerAddress(), listener).get();
 
         for (int i = 0; i < clients; i++) {
-            NetworkClient<String> client = createClient(c -> c.setProtocol("test_context"));
+            NetworkClient<String> client = createClient(c -> c.setProtocol("test-context"));
 
             client.connect(server.address(), "client_" + i, new NetworkClientCallbackMock<>()).get();
 
@@ -470,7 +470,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
         CompletableFuture<NetworkEndpoint<String>> serverClientFuture = new CompletableFuture<>();
 
-        server.addHandler(createHandler("external_client", new NetworkServerHandler<String>() {
+        server.addHandler(createHandler("external-client", new NetworkServerHandler<String>() {
             @Override
             public void onMessage(NetworkMessage<String> msg, NetworkEndpoint<String> from) {
                 // No-op.
@@ -486,7 +486,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
         server.start(newServerAddress(), listener).get();
 
-        NetworkClient<String> client = createClient(c -> c.setProtocol("external_client"));
+        NetworkClient<String> client = createClient(c -> c.setProtocol("external-client"));
 
         NetworkClientCallbackMock<String> clientCallback = new NetworkClientCallbackMock<>();
 
@@ -520,7 +520,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
         CompletableFuture<NetworkEndpoint<String>> serverClientFuture = new CompletableFuture<>();
 
-        server.addHandler(createHandler("external_client", new NetworkServerHandler<String>() {
+        server.addHandler(createHandler("external-client", new NetworkServerHandler<String>() {
             @Override
             public void onMessage(NetworkMessage<String> msg, NetworkEndpoint<String> from) {
                 // No-op.
@@ -534,7 +534,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
         server.start(newServerAddress(), new NetworkServerCallbackMock()).get();
 
-        NetworkClient<String> client = createClient(c -> c.setProtocol("external_client"));
+        NetworkClient<String> client = createClient(c -> c.setProtocol("external-client"));
 
         client.connect(server.address(), new NetworkClientCallbackMock<>());
 
@@ -561,25 +561,25 @@ public class NetworkServerTest extends NetworkTestBase {
         // Prepare server.
         NetworkServer server = createServer();
 
-        server.addHandler(createHandler("protocol_1", (msg, from) -> {
+        server.addHandler(createHandler("protocol-1", (msg, from) -> {
             // No-op.
         }));
-        server.addHandler(createHandler("protocol_2", (msg, from) -> {
+        server.addHandler(createHandler("protocol-2", (msg, from) -> {
             // No-op.
         }));
 
-        assertTrue(server.clients("protocol_1").isEmpty());
-        assertTrue(server.clients("protocol_2").isEmpty());
-        assertTrue(server.clients("some_unknown_protocol").isEmpty());
+        assertTrue(server.clients("protocol-1").isEmpty());
+        assertTrue(server.clients("protocol-2").isEmpty());
+        assertTrue(server.clients("some-unknown-protocol").isEmpty());
 
         server.start(newServerAddress(), new NetworkServerCallbackMock()).get();
 
         repeat(3, i -> {
             // Connect clients.
-            NetworkClient<String> p1c1 = createClient(c -> c.setProtocol("protocol_1"));
-            NetworkClient<String> p1c2 = createClient(c -> c.setProtocol("protocol_1"));
-            NetworkClient<String> p2c1 = createClient(c -> c.setProtocol("protocol_2"));
-            NetworkClient<String> p2c2 = createClient(c -> c.setProtocol("protocol_2"));
+            NetworkClient<String> p1c1 = createClient(c -> c.setProtocol("protocol-1"));
+            NetworkClient<String> p1c2 = createClient(c -> c.setProtocol("protocol-1"));
+            NetworkClient<String> p2c1 = createClient(c -> c.setProtocol("protocol-2"));
+            NetworkClient<String> p2c2 = createClient(c -> c.setProtocol("protocol-2"));
 
             get(p1c1.connect(server.address(), new NetworkClientCallbackMock<>()));
             get(p1c2.connect(server.address(), new NetworkClientCallbackMock<>()));
@@ -587,8 +587,8 @@ public class NetworkServerTest extends NetworkTestBase {
             get(p2c2.connect(server.address(), new NetworkClientCallbackMock<>()));
 
             // Verify that for each client there is a server endpoint.
-            List<NetworkEndpoint<?>> connectedP1 = server.clients("protocol_1");
-            List<NetworkEndpoint<?>> connectedP2 = server.clients("protocol_2");
+            List<NetworkEndpoint<?>> connectedP1 = server.clients("protocol-1");
+            List<NetworkEndpoint<?>> connectedP2 = server.clients("protocol-2");
 
             assertEquals(2, connectedP1.size());
             assertTrue(connectedP1.stream().anyMatch(e -> e.remoteAddress().equals(p1c1.localAddress())));
@@ -602,12 +602,12 @@ public class NetworkServerTest extends NetworkTestBase {
             get(p1c1.disconnect());
             get(p2c1.disconnect());
 
-            busyWait("'protocol_1' server disconnect", () -> server.clients("protocol_1").size() == 1);
-            busyWait("'protocol_1' server disconnect", () -> server.clients("protocol_2").size() == 1);
+            busyWait("'protocol-1' server disconnect", () -> server.clients("protocol-1").size() == 1);
+            busyWait("'protocol-1' server disconnect", () -> server.clients("protocol-2").size() == 1);
 
             // Verify that clients were removed from server endpoints list.
-            connectedP1 = server.clients("protocol_1");
-            connectedP2 = server.clients("protocol_2");
+            connectedP1 = server.clients("protocol-1");
+            connectedP2 = server.clients("protocol-2");
 
             assertEquals(1, connectedP1.size());
             assertTrue(connectedP1.stream().anyMatch(e -> e.remoteAddress().equals(p1c2.localAddress())));
@@ -619,8 +619,8 @@ public class NetworkServerTest extends NetworkTestBase {
             get(connectedP1.get(0).disconnect());
             get(connectedP2.get(0).disconnect());
 
-            busyWait("'protocol_1' client disconnect", () -> p1c2.state() == NetworkClient.State.DISCONNECTED);
-            busyWait("'protocol_2' client disconnect", () -> p2c2.state() == NetworkClient.State.DISCONNECTED);
+            busyWait("'protocol-1' client disconnect", () -> p1c2.state() == NetworkClient.State.DISCONNECTED);
+            busyWait("'protocol-2' client disconnect", () -> p2c2.state() == NetworkClient.State.DISCONNECTED);
 
             // Verify that clients were disconnected too.
             assertSame(NetworkClient.State.DISCONNECTED, p1c1.state());
@@ -628,8 +628,8 @@ public class NetworkServerTest extends NetworkTestBase {
             assertSame(NetworkClient.State.DISCONNECTED, p2c1.state());
             assertSame(NetworkClient.State.DISCONNECTED, p2c2.state());
 
-            busyWait("'protocol_1' all clients disconnect", () -> server.clients("protocol_1").isEmpty());
-            busyWait("'protocol_2' all clients disconnect", () -> server.clients("protocol_2").isEmpty());
+            busyWait("'protocol-1' all clients disconnect", () -> server.clients("protocol-1").isEmpty());
+            busyWait("'protocol-2' all clients disconnect", () -> server.clients("protocol-2").isEmpty());
         });
     }
 

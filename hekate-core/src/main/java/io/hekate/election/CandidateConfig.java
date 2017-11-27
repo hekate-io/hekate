@@ -64,7 +64,7 @@ public class CandidateConfig {
     }
 
     /**
-     * Sets the election group name.
+     * Sets the election group name. Can contain only alpha-numeric characters and non-repeatable dots/hyphens.
      *
      * <p>
      * Only one {@link Candidate candidate} among all candidates that are registered with the same group name will be
@@ -77,7 +77,7 @@ public class CandidateConfig {
      * ElectionServiceFactory}.
      * </p>
      *
-     * @param group Group name.
+     * @param group Group name (can contain only alpha-numeric characters and non-repeatable dots/hyphens).
      */
     public void setGroup(String group) {
         this.group = group;

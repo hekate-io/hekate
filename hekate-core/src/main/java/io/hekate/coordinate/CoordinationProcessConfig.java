@@ -63,10 +63,10 @@ public class CoordinationProcessConfig {
     }
 
     /**
-     * Sets the coordination process name.
+     * Sets the coordination process name. Can contain only alpha-numeric characters and non-repeatable dots/hyphens
      *
      * <p>
-     * This name must be the same on all cluster nodes that participate in this coordination process.
+     * This name must be the same on all of the cluster nodes that participate in this coordination process.
      * </p>
      *
      * @param name Process name.

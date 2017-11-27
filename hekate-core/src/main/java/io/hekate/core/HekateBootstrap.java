@@ -140,13 +140,13 @@ public class HekateBootstrap {
     }
 
     /**
-     * Sets the node name.
+     * Sets the node name. Can contain only alpha-numeric characters and non-repeatable dots/hyphens.
      *
      * <p>
      * Node name is optional and its default value is {@code null}.
      * </p>
      *
-     * @param nodeName Node name.
+     * @param nodeName Node name (can contain only alpha-numeric characters and non-repeatable dots/hyphens).
      *
      * @see ClusterNode#name()
      */
@@ -177,7 +177,7 @@ public class HekateBootstrap {
     }
 
     /**
-     * Sets the cluster name.
+     * Sets the cluster name. Can contain only alpha-numeric characters and non-repeatable dots/hyphens.
      *
      * <p>
      * Only those instances that are configured with the same cluster name can form a cluster. Instances with different cluster names will
@@ -193,7 +193,7 @@ public class HekateBootstrap {
      * together with {@link ClusterView#filter(ClusterNodeFilter) nodes filtering} by role.
      * </p>
      *
-     * @param clusterName Cluster name.
+     * @param clusterName Cluster name (can contain only alpha-numeric characters and non-repeatable dots/hyphens).
      */
     public void setClusterName(String clusterName) {
         this.clusterName = clusterName;

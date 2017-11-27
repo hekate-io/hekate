@@ -408,13 +408,13 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
             get(channel.send(channel.getNodeId(), "test"));
         } catch (MessagingFutureException e) {
             assertTrue(e.getCause().toString(), e.getCause() instanceof LoadBalancingException);
-            assertEquals("No suitable receivers [channel=test_channel]", e.getCause().getMessage());
+            assertEquals("No suitable receivers [channel=test-channel]", e.getCause().getMessage());
         }
 
         try {
             channel.sendWithSyncCallback(channel.getNodeId(), "test");
         } catch (LoadBalancingException e) {
-            assertEquals("No suitable receivers [channel=test_channel]", e.getMessage());
+            assertEquals("No suitable receivers [channel=test-channel]", e.getMessage());
         }
     }
 
@@ -432,13 +432,13 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
             get(channel.send(channel.getNodeId(), "test"));
         } catch (MessagingFutureException e) {
             assertTrue(e.getCause().toString(), e.getCause() instanceof MessagingChannelClosedException);
-            assertEquals("Channel closed [channel=test_channel]", e.getCause().getMessage());
+            assertEquals("Channel closed [channel=test-channel]", e.getCause().getMessage());
         }
 
         try {
             channel.sendWithSyncCallback(channel.getNodeId(), "test");
         } catch (MessagingChannelClosedException e) {
-            assertEquals("Channel closed [channel=test_channel]", e.getMessage());
+            assertEquals("Channel closed [channel=test-channel]", e.getMessage());
         }
     }
 

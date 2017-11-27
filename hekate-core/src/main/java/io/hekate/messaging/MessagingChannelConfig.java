@@ -158,7 +158,7 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
     }
 
     /**
-     * Sets the channel name.
+     * Sets the channel name. Can contain only alpha-numeric characters and non-repeatable dots/hyphens.
      *
      * <p>
      * Each channel must have a unique name within the {@link MessagingService} instance. Messages that were sent by the particular channel
@@ -173,7 +173,7 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
      * This parameter is mandatory and doesn't have a default value.
      * </p>
      *
-     * @param name Unique channel name.
+     * @param name Unique channel name (can contain only alpha-numeric characters and non-repeatable dots/hyphens).
      */
     public void setName(String name) {
         this.name = name;

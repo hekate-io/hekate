@@ -53,7 +53,7 @@ public abstract class MessagingServiceTestBase extends HekateNodeParamTestBase {
         }
     }
 
-    public static final String TEST_CHANNEL_NAME = "test_channel";
+    public static final String TEST_CHANNEL_NAME = "test-channel";
 
     public static final String TEST_NODE_ROLE = "test_comm";
 

@@ -693,6 +693,7 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
         ConfigCheck check = ConfigCheck.get(NetworkServerHandlerConfig.class);
 
         check.notEmpty(handler.getProtocol(), "protocol");
+        check.validSysName(handler.getProtocol(), "protocol");
         check.unique(handler.getProtocol(), handlers.keySet(), "protocol");
         check.notNull(handler.getHandler(), "handler");
         check.notNull(handler.getCodecFactory() != null, "codec factory");

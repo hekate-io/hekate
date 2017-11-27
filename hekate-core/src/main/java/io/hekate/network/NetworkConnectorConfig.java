@@ -61,7 +61,7 @@ public class NetworkConnectorConfig<T> {
     }
 
     /**
-     * Sets the connector protocol identifier.
+     * Sets the connector protocol identifier. Can contain only alpha-numeric characters and non-repeatable dots/hyphens.
      *
      * <p>
      * This protocol identifier can be used to obtain references to {@link NetworkConnector} instances via {@link
@@ -76,7 +76,7 @@ public class NetworkConnectorConfig<T> {
      * <b>Note:</b> Protocol identifier must be unique across all registered {@link NetworkConnector}s within the {@link NetworkService}.
      * </p>
      *
-     * @param protocol Protocol identifier.
+     * @param protocol Protocol identifier (can contain only alpha-numeric characters and non-repeatable dots/hyphens).
      */
     public void setProtocol(String protocol) {
         this.protocol = protocol;
