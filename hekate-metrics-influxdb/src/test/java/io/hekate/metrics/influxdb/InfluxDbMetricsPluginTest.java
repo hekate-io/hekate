@@ -38,7 +38,7 @@ public class InfluxDbMetricsPluginTest extends InfluxDbMetricsTestBase {
 
             boot.withService(LocalMetricsServiceFactory.class)
                 .withRefreshInterval(100)
-                .withMetric(new ProbeConfig("test_metric")
+                .withMetric(new ProbeConfig("test-metric")
                     .withProbe(() -> 1000)
                 )
                 .withListener(event -> published.countDown());

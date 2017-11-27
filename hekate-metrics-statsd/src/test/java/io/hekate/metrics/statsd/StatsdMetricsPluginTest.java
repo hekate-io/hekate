@@ -36,12 +36,12 @@ public class StatsdMetricsPluginTest extends StatsdMetricsTestBase {
             boot.withPlugin(new StatsdMetricsPlugin(new StatsdMetricsConfig()
                 .withHost(localhost)
                 .withPort(testPort)
-                .withFilter(metric -> metric.name().equals("test_metric")))
+                .withFilter(metric -> metric.name().equals("test-metric")))
             );
 
             boot.withService(LocalMetricsServiceFactory.class)
                 .withRefreshInterval(100)
-                .withMetric(new ProbeConfig("test_metric")
+                .withMetric(new ProbeConfig("test-metric")
                     .withProbe(() -> 1000)
                 )
                 .withListener(event -> published.countDown());
