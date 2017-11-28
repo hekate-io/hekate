@@ -35,6 +35,8 @@ public class TaskServiceJavadocTest extends HekateNodeTestBase {
         // Start:configure
         // Prepare task service factory.
         TaskServiceFactory factory = new TaskServiceFactory()
+            // Enable execution of remote tasks on this node.
+            .withServerMode(true)
             // Configure some settings (optional).
             .withWorkerThreads(16);
 

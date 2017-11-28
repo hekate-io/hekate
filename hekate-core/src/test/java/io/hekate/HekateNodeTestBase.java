@@ -132,7 +132,7 @@ public class HekateNodeTestBase extends HekateTestBase {
         });
 
         boot.withService(TaskServiceFactory.class, tasks ->
-            tasks.setLocalExecutionEnabled(false)
+            tasks.setServerMode(false)
         );
 
         boot.withService(ClusterMetricsServiceFactory.class, metrics ->

@@ -27,7 +27,9 @@
     <bean class="io.hekate.spring.bean.HekateSpringBootstrap">
         <property name="services">
             <list>
-                <bean class="io.hekate.task.TaskServiceFactory"/>
+                <bean class="io.hekate.task.TaskServiceFactory">
+                    <property name="serverMode" value="true"/>
+                </bean>
                 <bean class="io.hekate.cluster.ClusterServiceFactory">
                     <property name="seedNodeProvider" ref="seedNodeProviderMock"/>
                 </bean>

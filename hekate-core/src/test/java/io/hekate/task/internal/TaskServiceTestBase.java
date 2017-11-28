@@ -100,7 +100,7 @@ public abstract class TaskServiceTestBase extends HekateNodeMultiCodecTestBase {
     protected HekateTestNode createTaskNode(NodeConfigurer configurer) throws Exception {
         return createNode(c -> {
             c.withService(TaskServiceFactory.class, tasks ->
-                tasks.withLocalExecutionEnabled(true)
+                tasks.withServerMode(true)
             );
 
             if (configurer != null) {

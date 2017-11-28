@@ -75,6 +75,16 @@ import java.util.concurrent.TimeUnit;
  * ${source: task/TaskServiceJavadocTest.java#access}
  * </p>
  *
+ * <h2>Client/Server mode</h2>
+ * <p>
+ * {@link TaskService} can be configured to act as a server or as a client. In the server mode the task service will be able to execute
+ * tasks that were submitted by remote nodes as well submit tasks for execution to remote nodes. In the client it will be able only to
+ * submit tasks to remote nodes but will not be able to accept and execute tasks from remote nodes.
+ * </p>
+ * <p>
+ * Task service's mode can be configured by setting the {@link TaskServiceFactory#setServerMode(boolean)} flag.
+ * </p>
+ *
  * <h2>Runnable tasks</h2>
  * <p>
  * Runnable task represent an operation that can be executed on a cluster with the {@code void} result. Such tasks are represented by
@@ -133,7 +143,7 @@ import java.util.concurrent.TimeUnit;
  * <h2>Routing and cluster filtering</h2>
  * <p>
  * Routing of tasks among the cluster nodes is based on the cluster topology view of the {@link TaskService}. By default, it includes all
- * of the cluster nodes that have {@link TaskServiceFactory#setLocalExecutionEnabled(boolean)} set to {@code true}. It is possible to
+ * of the cluster nodes that have {@link TaskServiceFactory#setServerMode(boolean)} set to {@code true}. It is possible to
  * dynamically narrow down the list of those nodes via the following methods:
  * </p>
  * <ul>
@@ -147,7 +157,8 @@ import java.util.concurrent.TimeUnit;
  * </ul>
  * <p>It is possible to combine multiple filters by chaining the calls of those methods. However, please note that in such case it is
  * highly recommended to cache and reuse the final "filtered" {@link TaskService} instance. Doing so, allows it to build the cluster view
- * only once and then reuse it for all subsequent operations. Also, such "filtered" instance will automatically track changes of the cluster
+ * only once and then reuse it for all subsequent operations. Also, such "filtered" instance will automatically track changes of the
+ * cluster
  * topology (nodes addition/removal) and will update its internal view if changed nodes do match the filtering criteria.
  * </p>
  *

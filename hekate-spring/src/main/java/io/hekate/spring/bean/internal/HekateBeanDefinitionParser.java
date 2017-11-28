@@ -735,6 +735,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             parseCommonMessagingConfig(tasksEl, tasks, ctx);
 
             setProperty(tasks, tasksEl, "workerThreads", "worker-threads");
+            setProperty(tasks, tasksEl, "serverMoe", "serverMode");
 
             String id = tasksEl.getAttribute("id");
 

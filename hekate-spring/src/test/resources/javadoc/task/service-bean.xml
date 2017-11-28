@@ -26,6 +26,7 @@
             <list>
                 <!-- Task service. -->
                 <bean class="io.hekate.task.TaskServiceFactory">
+                    <property name="serverMode" value="true"/>
                     <property name="workerThreads" value="16"/>
                 </bean>
 

@@ -68,7 +68,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
 
     private static final String CHANNEL_NAME = "hekate.tasks";
 
-    private final boolean localExecutionEnabled;
+    private final boolean serverMode;
 
     private final int workerThreadPoolSize;
 
@@ -99,7 +99,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
         check.notNull(factory, "factory");
         check.positive(factory.getWorkerThreads(), "worker thread pool size");
 
-        localExecutionEnabled = factory.isLocalExecutionEnabled();
+        serverMode = factory.isServerMode();
         workerThreadPoolSize = factory.getWorkerThreads();
         nioThreadPoolSize = factory.getNioThreads();
         idleSocketTimeout = factory.getIdleSocketTimeout();
@@ -130,7 +130,7 @@ public class DefaultTaskService implements TaskService, InitializingService, Ter
             .withBackPressure(backPressure)
             .withMessageCodec(() -> new TaskProtocolCodec(codec.createCodec()));
 
-        if (localExecutionEnabled) {
+        if (serverMode) {
             cfg.withReceiver(this::handleMessage);
         }
 

@@ -31,16 +31,16 @@ public class TaskServiceFactoryTest extends HekateTestBase {
     private final TaskServiceFactory factory = new TaskServiceFactory();
 
     @Test
-    public void testLocalExecutionEnabled() {
-        assertTrue(factory.isLocalExecutionEnabled());
+    public void testServerMode() {
+        assertFalse(factory.isServerMode());
 
-        factory.setLocalExecutionEnabled(false);
+        factory.setServerMode(true);
 
-        assertFalse(factory.isLocalExecutionEnabled());
+        assertTrue(factory.isServerMode());
 
-        assertSame(factory, factory.withLocalExecutionEnabled(true));
+        assertSame(factory, factory.withServerMode(false));
 
-        assertTrue(factory.isLocalExecutionEnabled());
+        assertFalse(factory.isServerMode());
     }
 
     @Test

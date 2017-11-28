@@ -39,10 +39,10 @@ import org.springframework.context.annotation.Configuration;
  * For example:
  * </p>
  * <ul>
+ * <li>{@link TaskServiceFactory#setServerMode(boolean) 'hekate.task.server-mode'}</li>
  * <li>{@link TaskServiceFactory#setWorkerThreads(int) 'hekate.task.worker-threads'}</li>
  * <li>{@link TaskServiceFactory#setNioThreads(int) 'hekate.task.nio-threads'}</li>
  * <li>{@link TaskServiceFactory#setIdleSocketTimeout(long) 'hekate.task.idle-socket-timeout'}</li>
- * <li>{@link TaskServiceFactory#setLocalExecutionEnabled(boolean) 'hekate.task.local-execution-enabled'}</li>
  * <li>{@link MessagingBackPressureConfig#setInLowWatermark(int) 'hekate.task.back-bressure.in-low-watermark'}</li>
  * <li>{@link MessagingBackPressureConfig#setInHighWatermark(int) 'hekate.task.back-bressure.in-high-watermark'}</li>
  * <li>{@link MessagingBackPressureConfig#setOutLowWatermark(int) 'hekate.task.back-bressure.out-low-watermark'}</li>

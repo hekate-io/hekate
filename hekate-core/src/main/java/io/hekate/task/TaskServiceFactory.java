@@ -39,48 +39,53 @@ import io.hekate.util.format.ToString;
  * @see TaskService
  */
 public class TaskServiceFactory extends MessagingConfigBase<TaskServiceFactory> implements ServiceFactory<TaskService> {
-    private boolean localExecutionEnabled = true;
+    private boolean serverMode;
 
     private int workerThreads = Runtime.getRuntime().availableProcessors();
 
     private CodecFactory<Object> taskCodec;
 
     /**
-     * Returns <tt>true</tt> if local execution of tasks is enabled (see {@link #setLocalExecutionEnabled(boolean)}).
+     * Returns <tt>true</tt> if the task service should work in the server mode (see {@link #setServerMode(boolean)}).
      *
      * @return <tt>true</tt> if local execution of tasks is enabled.
      */
-    public boolean isLocalExecutionEnabled() {
-        return localExecutionEnabled;
+    public boolean isServerMode() {
+        return serverMode;
     }
 
     /**
      * Sets the flag indicating that task execution should be enabled on this node.
      *
-     * <p>
-     * If execution of tasks is disabled then the service will be able to submit tasks to remote nodes but will not accepts tasks from them
-     * (i.e. service will act as a client).
-     * </p>
+     * <ul>
+     * <li>
+     * If this flag is set to {@code true} then the local node will be able to execute tasks as well as submit tasks for execution.
+     * </li>
+     * <li>
+     * If this flag is set to {@code false} then execution of tasks will be disabled on the local node. In such case the local node will
+     * act as a client and will be able to submit tasks to remote nodes but will not accepts tasks from them.
+     * </li>
+     * </ul>
      *
      * <p>
-     * Default value of this parameter is {@code true}.
+     * Default value of this parameter is {@code false} (i.e. task execution is disabled by default).
      * </p>
      *
-     * @param localExecutionEnabled {@code true} to enable or {@code false} to disable execution of tasks on the local node.
+     * @param serverMode {@code true} to enable or {@code false} to disable execution of tasks on the local node.
      */
-    public void setLocalExecutionEnabled(boolean localExecutionEnabled) {
-        this.localExecutionEnabled = localExecutionEnabled;
+    public void setServerMode(boolean serverMode) {
+        this.serverMode = serverMode;
     }
 
     /**
-     * Fluent-style version of {@link #setLocalExecutionEnabled(boolean)}.
+     * Fluent-style version of {@link #setServerMode(boolean)}.
      *
-     * @param localExecutionEnabled {@code true} to enable or {@code false} to disable execution of tasks on the local node.
+     * @param serverMode {@code true} to enable or {@code false} to disable execution of tasks on the local node.
      *
      * @return This instance.
      */
-    public TaskServiceFactory withLocalExecutionEnabled(boolean localExecutionEnabled) {
-        setLocalExecutionEnabled(localExecutionEnabled);
+    public TaskServiceFactory withServerMode(boolean serverMode) {
+        setServerMode(serverMode);
 
         return this;
     }

@@ -1339,6 +1339,13 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
+        <xsd:attribute name="server-mode" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.task.TaskServiceFactory#setServerMode(boolean)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
         <xsd:attribute name="worker-threads" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>

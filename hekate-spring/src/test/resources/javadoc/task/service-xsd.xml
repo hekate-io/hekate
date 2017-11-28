@@ -26,7 +26,7 @@
 
     <h:node id="hekate">
         <!-- Task service. -->
-        <h:tasks worker-threads="16"/>
+        <h:tasks server-mode="true" worker-threads="16"/>
 
         <!-- ...other services... -->
     </h:node>

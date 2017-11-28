@@ -43,7 +43,9 @@ public class TaskInjectionJavadocTest extends HekateTestBase {
             .withService(new ClusterServiceFactory()
                 .withSeedNodeProvider(seedNodeProvider)
             )
-            .withService(new TaskServiceFactory())
+            .withService(new TaskServiceFactory()
+                .withServerMode(true)
+            )
             .join();
 
         try {
