@@ -19,7 +19,7 @@ package io.hekate.task.internal;
 import io.hekate.core.Hekate;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.MessagingRemoteException;
-import io.hekate.messaging.UnknownRouteException;
+import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.task.RemoteTaskException;
 import io.hekate.task.TaskException;
 import io.hekate.task.TaskFuture;
@@ -210,7 +210,7 @@ public class TaskApplyToAllTest extends TaskServiceTestBase {
 
         TaskFuture<Collection<Integer>> future = node.tasks().forRemotes().applyToAll(Arrays.asList(1, 2, 3), arg -> arg);
 
-        assertErrorCausedBy(future, UnknownRouteException.class, err ->
+        assertErrorCausedBy(future, EmptyTopologyException.class, err ->
             assertEquals("No suitable task executors in the cluster topology.", err.getMessage())
         );
     }

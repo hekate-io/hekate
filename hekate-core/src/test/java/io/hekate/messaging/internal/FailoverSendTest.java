@@ -20,7 +20,7 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.MessagingFutureException;
-import io.hekate.messaging.UnknownRouteException;
+import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.unicast.SendFuture;
 import io.hekate.test.HekateTestError;
 import java.io.IOException;
@@ -222,7 +222,7 @@ public class FailoverSendTest extends FailoverTestBase {
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
-            assertTrue(getStacktrace(e), e.isCausedBy(UnknownRouteException.class));
+            assertTrue(getStacktrace(e), e.isCausedBy(EmptyTopologyException.class));
         }
 
         assertEquals(0, failoverCalls.get());

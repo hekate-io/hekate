@@ -16,7 +16,7 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.messaging.UnknownRouteException;
+import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.unicast.SendCallback;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -133,7 +133,7 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
 
                     from.send(to.getNodeId(), "failed", sendFailure);
 
-                    sendFailure.awaitAndCheck(UnknownRouteException.class);
+                    sendFailure.awaitAndCheck(EmptyTopologyException.class);
                 }
             }
         }

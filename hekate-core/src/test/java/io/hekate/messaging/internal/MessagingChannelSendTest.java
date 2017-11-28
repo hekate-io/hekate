@@ -27,11 +27,11 @@ import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.UnknownRouteException;
-import io.hekate.messaging.unicast.LoadBalancingException;
+import io.hekate.messaging.loadbalance.EmptyTopologyException;
+import io.hekate.messaging.loadbalance.LoadBalancerException;
 import io.hekate.messaging.unicast.SendFuture;
 import io.hekate.network.NetworkFuture;
 import io.hekate.test.HekateTestError;
-import io.hekate.test.HekateTestException;
 import io.hekate.util.async.Waiting;
 import java.io.NotSerializableException;
 import java.net.Socket;
@@ -113,7 +113,7 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
         }
     }
 
-    @Test(expected = UnknownRouteException.class)
+    @Test(expected = EmptyTopologyException.class)
     public void testUnknownNodeCallback() throws Exception {
         TestChannel channel = createChannel().join();
 
@@ -129,7 +129,7 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
-            assertTrue("" + e, e.isCausedBy(UnknownRouteException.class));
+            assertTrue("" + e, e.isCausedBy(EmptyTopologyException.class));
         }
     }
 
@@ -340,13 +340,13 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
 
         repeat(3, i -> {
             SendFuture future = sender.withLoadBalancer((msg, topology) -> {
-                throw new HekateTestException(HekateTestError.MESSAGE);
+                throw new LoadBalancerException(HekateTestError.MESSAGE);
             }).send("failed" + i);
 
             try {
                 future.get();
             } catch (MessagingFutureException e) {
-                assertTrue(e.isCausedBy(HekateTestException.class));
+                assertTrue(e.isCausedBy(LoadBalancerException.class));
                 assertEquals(HekateTestError.MESSAGE, e.getCause().getMessage());
             }
         });
@@ -367,7 +367,7 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
             try {
                 future.get();
             } catch (MessagingFutureException e) {
-                assertTrue(e.isCausedBy(LoadBalancingException.class));
+                assertTrue(e.isCausedBy(LoadBalancerException.class));
                 assertEquals("Load balancer failed to select a target node.", e.getCause().getMessage());
             }
         });
@@ -407,13 +407,13 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
         try {
             get(channel.send(channel.getNodeId(), "test"));
         } catch (MessagingFutureException e) {
-            assertTrue(e.getCause().toString(), e.getCause() instanceof LoadBalancingException);
+            assertTrue(e.getCause().toString(), e.getCause() instanceof LoadBalancerException);
             assertEquals("No suitable receivers [channel=test-channel]", e.getCause().getMessage());
         }
 
         try {
             channel.sendWithSyncCallback(channel.getNodeId(), "test");
-        } catch (LoadBalancingException e) {
+        } catch (LoadBalancerException e) {
             assertEquals("No suitable receivers [channel=test-channel]", e.getMessage());
         }
     }

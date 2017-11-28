@@ -14,25 +14,22 @@
  * under the License.
  */
 
-package io.hekate.messaging.unicast;
+package io.hekate.messaging.loadbalance;
 
-import io.hekate.messaging.MessagingException;
-import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.UnknownRouteException;
 
 /**
- * Message load balancing failure.
- *
- * @see LoadBalancer
+ * Signals that there are no suitable cluster nodes to perform load balancing.
  */
-public class LoadBalancingException extends MessagingException {
-    private static final long serialVersionUID = 1;
+public class EmptyTopologyException extends UnknownRouteException {
+    private static final long serialVersionUID = 1L;
 
     /**
-     * Constructs new instance.
+     * Constructs a new instance.
      *
      * @param message Error message.
      */
-    public LoadBalancingException(String message) {
+    public EmptyTopologyException(String message) {
         super(message);
     }
 }

@@ -46,6 +46,7 @@ import io.hekate.messaging.broadcast.BroadcastCallback;
 import io.hekate.messaging.broadcast.BroadcastFuture;
 import io.hekate.messaging.broadcast.BroadcastResult;
 import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
+import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import io.hekate.messaging.unicast.FailureResponse;
@@ -433,7 +434,7 @@ class MessagingGateway<T> implements HekateSupport {
                         // Special case for unknown routes.
                         //-----------------------------------------------
                         // Can happen in some rare cases if node leaves the cluster at the same time with this operation.
-                        // We exclude such nodes from the operation's results as if it had left the cluster right before we event tried.
+                        // We exclude such nodes from the operation's results as if it had left the cluster right before we even tried.
                         completed = broadcast.forgetNode(node);
                     } else {
                         completed = broadcast.onSendFailure(node, err);
@@ -996,7 +997,7 @@ class MessagingGateway<T> implements HekateSupport {
                 Throwable cause = prevErr != null ? prevErr.error() : null;
 
                 if (cause == null) {
-                    throw new UnknownRouteException("No suitable receivers [channel=" + name + ']');
+                    throw new EmptyTopologyException("No suitable receivers [channel=" + name + ']');
                 } else {
                     throw new ClientSelectionRejectedException(cause);
                 }

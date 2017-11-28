@@ -18,7 +18,6 @@ package io.hekate.messaging.loadbalance;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
-import io.hekate.core.HekateException;
 import io.hekate.failover.FailureInfo;
 import java.util.Collections;
 import java.util.List;
@@ -34,7 +33,7 @@ import static java.util.stream.Collectors.toList;
 public final class LoadBalancers {
     private static class Random<T> implements LoadBalancer<T> {
         @Override
-        public ClusterNodeId route(T msg, LoadBalancerContext ctx) throws HekateException {
+        public ClusterNodeId route(T msg, LoadBalancerContext ctx) {
             ClusterNode target = ctx.random();
 
             return target != null ? target.id() : null;
@@ -53,7 +52,7 @@ public final class LoadBalancers {
         private volatile int counter;
 
         @Override
-        public ClusterNodeId route(T msg, LoadBalancerContext ctx) throws HekateException {
+        public ClusterNodeId route(T msg, LoadBalancerContext ctx) {
             assert !ctx.topology().isEmpty() : "Topology is empty.";
 
             int idx = COUNTER.getAndUpdate(this, val -> {

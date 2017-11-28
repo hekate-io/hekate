@@ -18,12 +18,10 @@ package io.hekate.messaging.loadbalance;
 
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterNodeId;
-import io.hekate.core.HekateException;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingService;
-import io.hekate.messaging.unicast.LoadBalancingException;
 
 /**
  * Load balancer for unicast messaging.
@@ -60,7 +58,7 @@ public interface LoadBalancer<T> {
      *
      * <p>
      * Returning {@code null} from this method (if target node can't be selected for some reason) will cause message sending operation to
-     * fail with {@link LoadBalancingException}.
+     * fail with {@link LoadBalancerException}.
      * </p>
      *
      * @param message Message.
@@ -68,7 +66,7 @@ public interface LoadBalancer<T> {
      *
      * @return Node that should be used for the messaging operation.
      *
-     * @throws HekateException if failed to perform message routing.
+     * @throws LoadBalancerException if failed to perform load balancing.
      */
-    ClusterNodeId route(T message, LoadBalancerContext ctx) throws HekateException;
+    ClusterNodeId route(T message, LoadBalancerContext ctx) throws LoadBalancerException;
 }

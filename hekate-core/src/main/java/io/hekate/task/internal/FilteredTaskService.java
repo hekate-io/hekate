@@ -24,9 +24,9 @@ import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.UnknownRouteException;
 import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.AggregateResult;
+import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.loadbalance.LoadBalancers;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
@@ -298,7 +298,7 @@ class FilteredTaskService implements TaskService {
         if (nodes.isEmpty()) {
             TaskFuture<Collection<V>> future = new TaskFuture<>();
 
-            future.completeExceptionally(new UnknownRouteException("No suitable task executors in the cluster topology."));
+            future.completeExceptionally(new EmptyTopologyException("No suitable task executors in the cluster topology."));
 
             return future;
         }

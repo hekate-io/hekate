@@ -18,7 +18,6 @@ package io.hekate.messaging.loadbalance;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
-import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.failover.FailureInfo;
 import io.hekate.partition.Partition;
@@ -32,7 +31,7 @@ import static java.util.stream.Collectors.toList;
  * Default implementation of the {@link LoadBalancer} interface.
  *
  * <p>
- * This load balancer uses {@link #nonAffinityRoute(LoadBalancerContext)} and {@link #affinityRoute(LoadBalancerContext)}
+ * This load balancer uses {@link #nonAffinityRoute(Object, LoadBalancerContext)} and {@link #affinityRoute(Object, LoadBalancerContext)}
  * methods to perform actual load balancing. Which of those methods will be used depends on whether the load balanced operation has an
  * {@link LoadBalancerContext#affinityKey() affinity key} or not. Please see the documentation of those methods for more details about their
  * logic.
@@ -42,14 +41,14 @@ import static java.util.stream.Collectors.toList;
  */
 public class DefaultLoadBalancer<T> implements LoadBalancer<T> {
     @Override
-    public ClusterNodeId route(T message, LoadBalancerContext ctx) throws HekateException {
+    public ClusterNodeId route(T message, LoadBalancerContext ctx) throws LoadBalancerException {
         ClusterNode selected;
 
         if (ctx.hasAffinity()) {
-            selected = affinityRoute(ctx);
+            selected = affinityRoute(message, ctx);
 
         } else {
-            selected = nonAffinityRoute(ctx);
+            selected = nonAffinityRoute(message, ctx);
 
         }
 
@@ -61,11 +60,12 @@ public class DefaultLoadBalancer<T> implements LoadBalancer<T> {
      * to be {@link LoadBalancerContext#failure() failed} then another random non-failed node will be selected. If all nodes are known to be
      * failed then this method will fallback to the initially selected node.
      *
+     * @param message Message.
      * @param ctx Load balancer context.
      *
      * @return Selected node.
      */
-    protected ClusterNode nonAffinityRoute(LoadBalancerContext ctx) {
+    protected ClusterNode nonAffinityRoute(T message, LoadBalancerContext ctx) {
         // Select any random node.
         ClusterNode selected = ctx.random();
 
@@ -102,11 +102,12 @@ public class DefaultLoadBalancer<T> implements LoadBalancer<T> {
      * initially selected node.
      * </p>
      *
+     * @param message Message.
      * @param ctx Load balancer context.
      *
      * @return Selected node.
      */
-    protected ClusterNode affinityRoute(LoadBalancerContext ctx) {
+    protected ClusterNode affinityRoute(T message, LoadBalancerContext ctx) {
         ArgAssert.isTrue(ctx.hasAffinity(), "Can't load balance on non-affinity context.");
 
         // Use partition-based routing.

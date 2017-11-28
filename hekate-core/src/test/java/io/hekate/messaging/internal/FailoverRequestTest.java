@@ -24,7 +24,7 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingRemoteException;
-import io.hekate.messaging.UnknownRouteException;
+import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -158,7 +158,7 @@ public class FailoverRequestTest extends FailoverTestBase {
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
-            assertTrue(getStacktrace(e), e.isCausedBy(UnknownRouteException.class));
+            assertTrue(getStacktrace(e), e.isCausedBy(EmptyTopologyException.class));
         }
 
         assertEquals(0, failoverCalls.get());

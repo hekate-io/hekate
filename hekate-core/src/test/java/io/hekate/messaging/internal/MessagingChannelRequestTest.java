@@ -33,12 +33,12 @@ import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingRemoteException;
 import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.UnknownRouteException;
-import io.hekate.messaging.unicast.LoadBalancingException;
+import io.hekate.messaging.loadbalance.EmptyTopologyException;
+import io.hekate.messaging.loadbalance.LoadBalancerException;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.network.NetworkFuture;
 import io.hekate.test.HekateTestError;
-import io.hekate.test.HekateTestException;
 import io.hekate.test.NonDeserializable;
 import io.hekate.test.NonSerializable;
 import io.hekate.util.async.Waiting;
@@ -177,7 +177,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         }
     }
 
-    @Test(expected = UnknownRouteException.class)
+    @Test(expected = EmptyTopologyException.class)
     public void testUnknownNodeCallback() throws Exception {
         TestChannel channel = createChannel().join();
 
@@ -193,7 +193,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
-            assertTrue("" + e, e.isCausedBy(UnknownRouteException.class));
+            assertTrue("" + e, e.isCausedBy(EmptyTopologyException.class));
         }
     }
 
@@ -439,7 +439,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause();
 
-                if (cause instanceof LoadBalancingException) {
+                if (cause instanceof LoadBalancerException) {
                     assertTrue(cause.getMessage(), cause.getMessage().contains("Node is not within the channel topology"));
                 } else if (cause instanceof MessagingChannelClosedException) {
                     assertEquals("Channel closed [channel=test-channel]", cause.getMessage());
@@ -697,13 +697,13 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         repeat(3, i -> {
             ResponseFuture<String> future = sender.withLoadBalancer((msg, topology) -> {
-                throw new HekateTestException(HekateTestError.MESSAGE);
+                throw new LoadBalancerException(HekateTestError.MESSAGE);
             }).request("failed" + i);
 
             try {
                 future.response();
             } catch (MessagingFutureException e) {
-                assertTrue(e.isCausedBy(HekateTestException.class));
+                assertTrue(e.isCausedBy(LoadBalancerException.class));
                 assertEquals(HekateTestError.MESSAGE, e.getCause().getMessage());
             }
         });
@@ -729,7 +729,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             try {
                 future.response();
             } catch (MessagingFutureException e) {
-                assertTrue(e.isCausedBy(LoadBalancingException.class));
+                assertTrue(e.isCausedBy(LoadBalancerException.class));
                 assertEquals("Load balancer failed to select a target node.", e.getCause().getMessage());
             }
         });
@@ -850,13 +850,13 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         try {
             get(channel.request(channel.getNodeId(), "test"));
         } catch (MessagingFutureException e) {
-            assertTrue(e.getCause().toString(), e.getCause() instanceof LoadBalancingException);
+            assertTrue(e.getCause().toString(), e.getCause() instanceof LoadBalancerException);
             assertEquals("No suitable receivers [channel=test-channel]", e.getCause().getMessage());
         }
 
         try {
             channel.requestWithSyncCallback(channel.getNodeId(), "test");
-        } catch (LoadBalancingException e) {
+        } catch (LoadBalancerException e) {
             assertEquals("No suitable receivers [channel=test-channel]", e.getMessage());
         }
     }

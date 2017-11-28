@@ -16,14 +16,14 @@
 
 package io.hekate.messaging;
 
-import io.hekate.messaging.unicast.LoadBalancingException;
+import io.hekate.messaging.loadbalance.LoadBalancerException;
 
 /**
  * Signals that target node of a messaging operation couldn't be found.
  *
  * @see MessagingService
  */
-public class UnknownRouteException extends LoadBalancingException {
+public class UnknownRouteException extends LoadBalancerException {
     private static final long serialVersionUID = 1;
 
     /**

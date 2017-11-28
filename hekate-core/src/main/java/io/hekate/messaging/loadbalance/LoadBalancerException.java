@@ -14,15 +14,24 @@
  * under the License.
  */
 
-package foo.bar;
+package io.hekate.messaging.loadbalance;
 
-import io.hekate.cluster.ClusterNodeId;
-import io.hekate.messaging.loadbalance.LoadBalancer;
-import io.hekate.messaging.loadbalance.LoadBalancerContext;
+import io.hekate.messaging.MessagingException;
 
-public class SomeLoadBalancer implements LoadBalancer<Object> {
-    @Override
-    public ClusterNodeId route(Object message, LoadBalancerContext ctx) {
-        return ctx.topology().random().id();
+/**
+ * Message load balancing failure.
+ *
+ * @see LoadBalancer
+ */
+public class LoadBalancerException extends MessagingException {
+    private static final long serialVersionUID = 1;
+
+    /**
+     * Constructs new instance.
+     *
+     * @param message Error message.
+     */
+    public LoadBalancerException(String message) {
+        super(message);
     }
 }
