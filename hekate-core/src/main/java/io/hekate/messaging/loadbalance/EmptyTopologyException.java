@@ -16,8 +16,6 @@
 
 package io.hekate.messaging.loadbalance;
 
-import io.hekate.messaging.UnknownRouteException;
-
 /**
  * Signals that there are no suitable cluster nodes to perform load balancing.
  */

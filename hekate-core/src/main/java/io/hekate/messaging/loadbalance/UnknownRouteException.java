@@ -14,20 +14,18 @@
  * under the License.
  */
 
-package io.hekate.messaging;
-
-import io.hekate.messaging.loadbalance.LoadBalancerException;
+package io.hekate.messaging.loadbalance;
 
 /**
- * Signals that target node of a messaging operation couldn't be found.
+ * Signals that the node load balanced node couldn't be found in the cluster topology.
  *
- * @see MessagingService
+ * @see LoadBalancer#route(Object, LoadBalancerContext)
  */
 public class UnknownRouteException extends LoadBalancerException {
     private static final long serialVersionUID = 1;
 
     /**
-     * Constructs new instance.
+     * Constructs a new instance.
      *
      * @param message Error message.
      */
