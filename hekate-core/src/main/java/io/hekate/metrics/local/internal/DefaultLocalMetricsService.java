@@ -22,6 +22,8 @@ import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.internal.util.Utils;
+import io.hekate.core.service.ConfigurableService;
+import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.TerminatingService;
@@ -31,6 +33,7 @@ import io.hekate.metrics.local.CounterMetric;
 import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.metrics.local.LocalMetricsServiceFactory;
 import io.hekate.metrics.local.MetricConfigBase;
+import io.hekate.metrics.local.MetricsConfigProvider;
 import io.hekate.metrics.local.MetricsListener;
 import io.hekate.metrics.local.ProbeConfig;
 import io.hekate.util.StateGuard;
@@ -39,6 +42,7 @@ import io.hekate.util.async.Waiting;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -52,7 +56,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DefaultLocalMetricsService implements LocalMetricsService, InitializingService, TerminatingService {
+public class DefaultLocalMetricsService implements LocalMetricsService, InitializingService, ConfigurableService, TerminatingService {
     private static final Logger log = LoggerFactory.getLogger(DefaultLocalMetricsService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -93,21 +97,33 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
     public DefaultLocalMetricsService(LocalMetricsServiceFactory factory) {
         assert factory != null : "Factory is null.";
 
-        ConfigCheck check = ConfigCheck.get(LocalMetricsServiceFactory.class);
-
-        check.positive(factory.getRefreshInterval(), "refresh interval");
+        ConfigCheck.get(LocalMetricsServiceFactory.class).positive(factory.getRefreshInterval(), "refresh interval");
 
         refreshInterval = factory.getRefreshInterval();
 
-        StreamUtils.nullSafe(factory.getMetrics()).forEach(metricsConfig::add);
-
+        // Register JVM metrics.
         StreamUtils.nullSafe(new JvmMetricsProvider().configureMetrics()).forEach(metricsConfig::add);
 
+        // Register pre-configured metrics.
+        StreamUtils.nullSafe(factory.getMetrics()).forEach(metricsConfig::add);
+
+        // Register metrics from pre-configured providers.
         StreamUtils.nullSafe(factory.getConfigProviders()).forEach(provider ->
             StreamUtils.nullSafe(provider.configureMetrics()).forEach(metricsConfig::add)
         );
 
+        // Register pre-configured listeners.
         StreamUtils.nullSafe(factory.getListeners()).forEach(initListeners::add);
+    }
+
+    @Override
+    public void configure(ConfigurationContext ctx) {
+        Collection<MetricsConfigProvider> providers = ctx.findComponents(MetricsConfigProvider.class);
+
+        // Collect configurations from providers.
+        StreamUtils.nullSafe(providers).forEach(provider ->
+            StreamUtils.nullSafe(provider.configureMetrics()).forEach(metricsConfig::add)
+        );
     }
 
     @Override
@@ -384,7 +400,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
 
                 CounterMetric total = null;
 
-                String totalName = cfg.getTotalName() != null ? cfg.getTotalName().trim() : null;
+                String totalName = totalName(cfg);
 
                 if (totalName != null) {
                     COUNTER_CHECK.unique(totalName, allMetrics.keySet(), "metric name");
@@ -487,6 +503,10 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
         PROBE_CHECK.notNull(cfg.getProbe(), "probe");
 
         return cfg.getName().trim();
+    }
+
+    private String totalName(CounterConfig cfg) {
+        return cfg.getTotalName() != null ? cfg.getTotalName().trim() : null;
     }
 
     @Override
