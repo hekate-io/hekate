@@ -326,16 +326,13 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                     log.debug("Terminating...");
                 }
 
-                waiting = new ArrayList<>();
-
                 // Close all gateways.
                 // Need to create a copy since gateways can remove themselves from the gateways map.
                 ArrayList<MessagingGateway<?>> gatewaysCopy = new ArrayList<>(gateways.values());
 
-                waiting.addAll(gatewaysCopy.stream()
+                waiting = gatewaysCopy.stream()
                     .map(MessagingGateway::close)
-                    .collect(Collectors.toList())
-                );
+                    .collect(Collectors.toList());
 
                 gateways.clear();
 

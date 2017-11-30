@@ -131,8 +131,6 @@ public class SeedNodeManagerTest extends HekateTestBase {
     @Test
     public void testCleaning() throws Exception {
         Map<InetSocketAddress, Boolean> addresses = new ConcurrentHashMap<>();
-        Map<InetSocketAddress, Boolean> canPing = new ConcurrentHashMap<>();
-        Map<InetSocketAddress, Boolean> alive = new ConcurrentHashMap<>();
 
         InetSocketAddress address1 = newSocketAddress();
         InetSocketAddress address2 = newSocketAddress();
@@ -142,8 +140,8 @@ public class SeedNodeManagerTest extends HekateTestBase {
         addresses.put(address2, true);
         addresses.put(address3, true);
 
-        canPing.putAll(addresses);
-        alive.putAll(addresses);
+        Map<InetSocketAddress, Boolean> canPing = new ConcurrentHashMap<>(addresses);
+        Map<InetSocketAddress, Boolean> alive = new ConcurrentHashMap<>(addresses);
 
         Exchanger<String> latch = new Exchanger<>();
 

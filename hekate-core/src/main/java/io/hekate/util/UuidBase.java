@@ -122,12 +122,8 @@ public abstract class UuidBase<T extends UuidBase<T>> implements Serializable, C
             return -1;
         } else if (hiBits > hiBits2) {
             return 1;
-        } else if (loBits < loBits2) {
-            return -1;
-        } else if (loBits > loBits2) {
-            return 1;
         } else {
-            return 0;
+            return Long.compare(loBits, loBits2);
         }
     }
 

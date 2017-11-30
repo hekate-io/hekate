@@ -26,7 +26,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public abstract class PersistentSeedNodeProviderCommonTest<T extends SeedNodeProvider> extends SeedNodeProviderCommonTest<T> {
+public abstract class PersistentSeedNodeProviderTestBase<T extends SeedNodeProvider> extends SeedNodeProviderTestBase<T> {
     @Test
     public void testGetCleanupInterval() throws Exception {
         SeedNodeProvider provider = createProvider();

@@ -16,7 +16,7 @@
 
 package io.hekate.cluster.seed.fs;
 
-import io.hekate.cluster.seed.PersistentSeedNodeProviderCommonTest;
+import io.hekate.cluster.seed.PersistentSeedNodeProviderTestBase;
 import io.hekate.core.internal.util.AddressUtils;
 import java.io.File;
 import java.net.InetSocketAddress;
@@ -28,7 +28,7 @@ import static io.hekate.core.internal.util.AddressUtils.FILE_SEPARATOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class FsSeedNodeProviderTest extends PersistentSeedNodeProviderCommonTest<FsSeedNodeProvider> {
+public class FsSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase<FsSeedNodeProvider> {
     private File tempDir;
 
     @Override

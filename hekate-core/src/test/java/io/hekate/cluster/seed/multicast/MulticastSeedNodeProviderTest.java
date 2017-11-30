@@ -17,7 +17,7 @@
 package io.hekate.cluster.seed.multicast;
 
 import io.hekate.HekateTestProps;
-import io.hekate.cluster.seed.SeedNodeProviderCommonTest;
+import io.hekate.cluster.seed.SeedNodeProviderTestBase;
 import io.hekate.core.HekateException;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -37,7 +37,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class MulticastSeedNodeProviderTest extends SeedNodeProviderCommonTest<MulticastSeedNodeProviderTest.TestProvider> {
+public class MulticastSeedNodeProviderTest extends SeedNodeProviderTestBase<MulticastSeedNodeProviderTest.TestProvider> {
     public static class TestProvider extends MulticastSeedNodeProvider {
         private final AtomicInteger receivedDiscovery = new AtomicInteger();
 

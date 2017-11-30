@@ -145,46 +145,59 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         createChannel(c -> c.setReceiver(msg -> {
             try {
-                if ("send".equals(msg.get()) || "broadcast".equals(msg.get())) {
-                    assertFalse(msg.mustReply());
-                    assertFalse(msg.isRequest());
-                    assertFalse(msg.isStream());
+                switch (msg.get()) {
+                    case "send":
+                    case "broadcast": {
+                        assertFalse(msg.mustReply());
+                        assertFalse(msg.isRequest());
+                        assertFalse(msg.isStream());
 
-                    assertResponseUnsupported(msg);
-                } else if ("request".equals(msg.get()) || "aggregate".equals(msg.get())) {
-                    assertTrue(msg.mustReply());
-                    assertTrue(msg.isRequest());
-                    assertFalse(msg.isStream());
+                        assertResponseUnsupported(msg);
 
-                    msg.reply("ok");
+                        break;
+                    }
+                    case "request":
+                    case "aggregate": {
+                        assertTrue(msg.mustReply());
+                        assertTrue(msg.isRequest());
+                        assertFalse(msg.isStream());
 
-                    assertFalse(msg.mustReply());
-                    assertTrue(msg.isRequest());
-                    assertFalse(msg.isStream());
+                        msg.reply("ok");
 
-                    assertResponded(msg);
-                } else if ("stream-request".equals(msg.get())) {
-                    assertTrue(msg.mustReply());
-                    assertTrue(msg.isRequest());
-                    assertTrue(msg.isStream());
+                        assertFalse(msg.mustReply());
+                        assertTrue(msg.isRequest());
+                        assertFalse(msg.isStream());
 
-                    for (int i = 0; i < 5; i++) {
-                        msg.partialReply("ok");
+                        assertResponded(msg);
 
+                        break;
+                    }
+                    case "stream-request": {
                         assertTrue(msg.mustReply());
                         assertTrue(msg.isRequest());
                         assertTrue(msg.isStream());
+
+                        for (int i = 0; i < 5; i++) {
+                            msg.partialReply("ok");
+
+                            assertTrue(msg.mustReply());
+                            assertTrue(msg.isRequest());
+                            assertTrue(msg.isStream());
+                        }
+
+                        msg.reply("ok");
+
+                        assertFalse(msg.mustReply());
+                        assertTrue(msg.isRequest());
+                        assertTrue(msg.isStream());
+
+                        assertResponded(msg);
+
+                        break;
                     }
-
-                    msg.reply("ok");
-
-                    assertFalse(msg.mustReply());
-                    assertTrue(msg.isRequest());
-                    assertTrue(msg.isStream());
-
-                    assertResponded(msg);
-                } else {
-                    fail("Unexpected message: " + msg);
+                    default: {
+                        fail("Unexpected message: " + msg);
+                    }
                 }
 
                 errRef.exchange(null);

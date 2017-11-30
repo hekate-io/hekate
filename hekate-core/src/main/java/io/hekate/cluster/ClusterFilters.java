@@ -42,35 +42,39 @@ public final class ClusterFilters {
         public List<ClusterNode> apply(List<ClusterNode> nodes) {
             int size = nodes.size();
 
-            if (size == 0) {
-                return emptyList();
-            } else if (size == 1) {
-                ClusterNode node = nodes.get(0);
-
-                return node.isLocal() ? singletonList(node) : emptyList();
-            } else {
-                ClusterNode local = null;
-
-                NavigableSet<ClusterNode> sortedNodes = new TreeSet<>(comparator);
-
-                for (ClusterNode node : nodes) {
-                    if (node.isLocal()) {
-                        local = node;
-                    }
-
-                    sortedNodes.add(node);
-                }
-
-                if (local == null) {
+            switch (size) {
+                case 0: {
                     return emptyList();
-                } else {
-                    ClusterNode next = sortedNodes.higher(local);
+                }
+                case 1: {
+                    ClusterNode node = nodes.get(0);
 
-                    if (next == null) {
-                        next = sortedNodes.first();
+                    return node.isLocal() ? singletonList(node) : emptyList();
+                }
+                default: {
+                    ClusterNode local = null;
+
+                    NavigableSet<ClusterNode> sortedNodes = new TreeSet<>(comparator);
+
+                    for (ClusterNode node : nodes) {
+                        if (node.isLocal()) {
+                            local = node;
+                        }
+
+                        sortedNodes.add(node);
                     }
 
-                    return singletonList(next);
+                    if (local == null) {
+                        return emptyList();
+                    } else {
+                        ClusterNode next = sortedNodes.higher(local);
+
+                        if (next == null) {
+                            next = sortedNodes.first();
+                        }
+
+                        return singletonList(next);
+                    }
                 }
             }
         }

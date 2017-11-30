@@ -37,7 +37,7 @@ import static org.mockito.Mockito.reset;
 public class HekateLifecycleListenerTest extends HekateNodeTestBase {
     private HekateTestNode node;
 
-    private Hekate.LifecycleListener defaultListenerMock = mock(Hekate.LifecycleListener.class);
+    private final Hekate.LifecycleListener defaultListenerMock = mock(Hekate.LifecycleListener.class);
 
     @Override
     public void setUp() throws Exception {

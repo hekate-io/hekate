@@ -377,9 +377,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         repeat(5, i -> {
             List<HekateTestNode> permanentNodes = createAndJoinNodes(i + 1);
 
-            List<HekateTestNode> allNodes = new ArrayList<>();
-
-            allNodes.addAll(permanentNodes);
+            List<HekateTestNode> allNodes = new ArrayList<>(permanentNodes);
 
             repeat(3, j -> {
                 HekateTestNode node = createNode();
@@ -408,9 +406,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         repeat(5, i -> {
             List<HekateTestNode> permanentNodes = createAndJoinNodes(i + 1);
 
-            List<HekateTestNode> allNodes = new ArrayList<>();
-
-            allNodes.addAll(permanentNodes);
+            List<HekateTestNode> allNodes = new ArrayList<>(permanentNodes);
 
             AtomicReference<HekateTestNode> toLeave = new AtomicReference<>(createNode());
 
@@ -488,9 +484,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         repeat(5, i -> {
             List<HekateTestNode> permanentNodes = createAndJoinNodes(i + 1);
 
-            List<HekateTestNode> allNodes = new ArrayList<>();
-
-            allNodes.addAll(permanentNodes);
+            List<HekateTestNode> allNodes = new ArrayList<>(permanentNodes);
 
             AtomicReference<HekateTestNode> toLeave = new AtomicReference<>(createNode());
 
@@ -528,9 +522,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         repeat(3, i -> {
             List<HekateTestNode> permanentNodes = createAndJoinNodes(i + 1);
 
-            List<HekateTestNode> allNodes = new ArrayList<>();
-
-            allNodes.addAll(permanentNodes);
+            List<HekateTestNode> allNodes = new ArrayList<>(permanentNodes);
 
             AtomicReference<HekateTestNode> toTerminate = new AtomicReference<>(createNode());
 
@@ -567,9 +559,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         repeat(3, i -> {
             List<HekateTestNode> permanentNodes = createAndJoinNodes(i + 1);
 
-            List<HekateTestNode> allNodes = new ArrayList<>();
-
-            allNodes.addAll(permanentNodes);
+            List<HekateTestNode> allNodes = new ArrayList<>(permanentNodes);
 
             AtomicReference<HekateTestNode> toTerminate = new AtomicReference<>(createNode());
 

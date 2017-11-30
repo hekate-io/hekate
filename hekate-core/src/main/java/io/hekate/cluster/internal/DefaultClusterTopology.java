@@ -103,16 +103,22 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
         if (safe) {
             this.nodes = nodes;
         } else {
-            int size = nodes.size();
+            switch (nodes.size()) {
+                case 0: {
+                    this.nodes = emptyList();
 
-            if (size == 0) {
-                this.nodes = emptyList();
-            } else if (size == 1) {
-                this.nodes = singletonList(nodes.get(0));
-            } else {
-                List<ClusterNode> copy = new ArrayList<>(nodes);
+                    break;
+                }
+                case 1: {
+                    this.nodes = singletonList(nodes.get(0));
 
-                this.nodes = sortedUnmodifiableList(copy);
+                    break;
+                }
+                default: {
+                    List<ClusterNode> copy = new ArrayList<>(nodes);
+
+                    this.nodes = sortedUnmodifiableList(copy);
+                }
             }
         }
     }
@@ -264,31 +270,39 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
         if (remoteNodes == null) {
             int size = nodes.size();
 
-            if (size == 0) {
-                remoteNodes = emptyList();
-            } else if (size == 1) {
-                ClusterNode node = nodes.get(0);
-
-                if (node.isLocal()) {
+            switch (size) {
+                case 0: {
                     remoteNodes = emptyList();
-                } else {
-                    remoteNodes = singletonList(node);
-                }
-            } else {
-                for (ClusterNode node : nodes) {
-                    if (!node.isLocal()) {
-                        if (remoteNodes == null) {
-                            remoteNodes = new ArrayList<>(size);
-                        }
 
-                        remoteNodes.add(node);
+                    break;
+                }
+                case 1: {
+                    ClusterNode node = nodes.get(0);
+
+                    if (node.isLocal()) {
+                        remoteNodes = emptyList();
+                    } else {
+                        remoteNodes = singletonList(node);
                     }
-                }
 
-                if (remoteNodes == null) {
-                    remoteNodes = emptyList();
-                } else {
-                    remoteNodes = unmodifiableList(remoteNodes);
+                    break;
+                }
+                default: {
+                    for (ClusterNode node : nodes) {
+                        if (!node.isLocal()) {
+                            if (remoteNodes == null) {
+                                remoteNodes = new ArrayList<>(size);
+                            }
+
+                            remoteNodes.add(node);
+                        }
+                    }
+
+                    if (remoteNodes == null) {
+                        remoteNodes = emptyList();
+                    } else {
+                        remoteNodes = unmodifiableList(remoteNodes);
+                    }
                 }
             }
 
@@ -334,16 +348,22 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
         ClusterNode oldest = this.oldestNodeCache;
 
         if (oldest == null) {
-            int size = nodes.size();
+            switch (nodes.size()) {
+                case 0: {
+                    oldest = NOT_A_NODE;
 
-            if (size == 0) {
-                oldest = NOT_A_NODE;
-            } else if (size == 1) {
-                oldest = nodes.get(0);
-            } else {
-                for (ClusterNode node : nodes) {
-                    if (oldest == null || oldest.joinOrder() > node.joinOrder()) {
-                        oldest = node;
+                    break;
+                }
+                case 1: {
+                    oldest = nodes.get(0);
+
+                    break;
+                }
+                default: {
+                    for (ClusterNode node : nodes) {
+                        if (oldest == null || oldest.joinOrder() > node.joinOrder()) {
+                            oldest = node;
+                        }
                     }
                 }
             }
@@ -359,16 +379,22 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
         ClusterNode youngest = this.youngestNodeCache;
 
         if (youngest == null) {
-            int size = nodes.size();
+            switch (nodes.size()) {
+                case 0: {
+                    youngest = NOT_A_NODE;
 
-            if (size == 0) {
-                youngest = NOT_A_NODE;
-            } else if (size == 1) {
-                youngest = nodes.get(0);
-            } else {
-                for (ClusterNode node : nodes) {
-                    if (youngest == null || youngest.joinOrder() < node.joinOrder()) {
-                        youngest = node;
+                    break;
+                }
+                case 1: {
+                    youngest = nodes.get(0);
+
+                    break;
+                }
+                default: {
+                    for (ClusterNode node : nodes) {
+                        if (youngest == null || youngest.joinOrder() < node.joinOrder()) {
+                            youngest = node;
+                        }
                     }
                 }
             }

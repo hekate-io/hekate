@@ -29,7 +29,7 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public abstract class SeedNodeProviderCommonTest<T extends SeedNodeProvider> extends HekateNodeTestBase {
+public abstract class SeedNodeProviderTestBase<T extends SeedNodeProvider> extends HekateNodeTestBase {
     protected static final String CLUSTER_1 = UUID.randomUUID().toString();
 
     protected static final String CLUSTER_2 = UUID.randomUUID().toString();

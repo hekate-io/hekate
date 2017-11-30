@@ -18,7 +18,7 @@ package io.hekate.cluster.seed.jdbc;
 
 import com.mysql.cj.jdbc.MysqlDataSource;
 import io.hekate.HekateTestProps;
-import io.hekate.cluster.seed.PersistentSeedNodeProviderCommonTest;
+import io.hekate.cluster.seed.PersistentSeedNodeProviderTestBase;
 import io.hekate.core.HekateException;
 import java.net.InetSocketAddress;
 import java.sql.Connection;
@@ -41,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
-public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderCommonTest<JdbcSeedNodeProvider> {
+public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase<JdbcSeedNodeProvider> {
     private final DataSource ds;
 
     private Connection keepDbAlive;

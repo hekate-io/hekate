@@ -190,9 +190,7 @@ public class NetworkServerHandlerMock<T> implements NetworkServerHandler<T> {
             if (ctx != null) {
                 List<T> msgs = ctx.messages;
 
-                if (msgs.containsAll(expected)) {
-                    return true;
-                }
+                return msgs.containsAll(expected);
             }
 
             return false;
@@ -210,9 +208,7 @@ public class NetworkServerHandlerMock<T> implements NetworkServerHandler<T> {
             if (ctx != null) {
                 List<T> connects = ctx.connects;
 
-                if (!connects.isEmpty()) {
-                    return true;
-                }
+                return !connects.isEmpty();
             }
 
             return false;

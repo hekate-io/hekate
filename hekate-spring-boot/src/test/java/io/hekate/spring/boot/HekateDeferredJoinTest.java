@@ -14,7 +14,7 @@ import static org.junit.Assert.assertEquals;
 
 public class HekateDeferredJoinTest extends HekateAutoConfigurerTestBase {
     static class TestListener implements Hekate.LifecycleListener {
-        private List<String> events = Collections.synchronizedList(new ArrayList<>());
+        private final List<String> events = Collections.synchronizedList(new ArrayList<>());
 
         @EventListener(ApplicationReadyEvent.class)
         public void onAppReady() {
