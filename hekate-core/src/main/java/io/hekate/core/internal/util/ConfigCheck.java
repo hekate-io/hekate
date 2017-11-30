@@ -21,7 +21,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 public final class ConfigCheck {
-    private static final Pattern SYS_NAME = Pattern.compile("^[a-z0-9]+([\\-\\.]{1}[a-z0-9]+)*$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern SYS_NAME = Pattern.compile("^[a-z0-9]+([-.][a-z0-9]+)*$", Pattern.CASE_INSENSITIVE);
 
     private final String component;
 
