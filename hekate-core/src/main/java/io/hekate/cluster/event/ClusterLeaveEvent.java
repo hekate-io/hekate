@@ -26,14 +26,20 @@ import java.util.List;
  * Cluster leave event.
  *
  * <p>
- * This event is fired by the {@link ClusterService} every time when local node leaves the cluster. For more details about the cluster
- * events processing please see the documentation of {@link ClusterEventListener} interface.
+ * This event is fired by the {@link ClusterService} every time when local node leaves the cluster.
+ * Reason of this event can be obtained via the {@link #reason()} method.
+ * </p>
+ *
+ * <p>
+ * For more details about the cluster events processing please see the documentation of {@link ClusterEventListener} interface.
  * </p>
  *
  * @see ClusterEventListener
  */
 public class ClusterLeaveEvent extends ClusterEventBase {
     private static final long serialVersionUID = 1;
+
+    private final ClusterLeaveReason reason;
 
     private final List<ClusterNode> added;
 
@@ -42,16 +48,28 @@ public class ClusterLeaveEvent extends ClusterEventBase {
     /**
      * Constructs a new instance.
      *
+     * @param reason Reason of this event.
      * @param topology Topology.
      * @param added List of newly joined nodes (see {@link #added()}).
      * @param removed List of nodes that left the cluster (see {@link #removed()}).
      * @param hekate Delegate for {@link #hekate()}.
      */
-    public ClusterLeaveEvent(ClusterTopology topology, List<ClusterNode> added, List<ClusterNode> removed, HekateSupport hekate) {
+    public ClusterLeaveEvent(ClusterLeaveReason reason, ClusterTopology topology, List<ClusterNode> added, List<ClusterNode> removed,
+        HekateSupport hekate) {
         super(topology, hekate);
 
+        this.reason = reason;
         this.added = added;
         this.removed = removed;
+    }
+
+    /**
+     * Returns the reason of this event.
+     *
+     * @return Reason.
+     */
+    public ClusterLeaveReason reason() {
+        return reason;
     }
 
     /**

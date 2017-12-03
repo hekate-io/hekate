@@ -22,6 +22,7 @@ import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.event.ClusterJoinEvent;
 import io.hekate.cluster.event.ClusterLeaveEvent;
+import io.hekate.cluster.event.ClusterLeaveReason;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
 import io.hekate.core.HekateSupport;
@@ -164,10 +165,10 @@ class ClusterEventManager implements HekateSupport {
         return future;
     }
 
-    public CompletableFuture<?> ensureLeaveEventFired(ClusterTopology topology) {
+    public CompletableFuture<?> ensureLeaveEventFired(ClusterLeaveReason reason, ClusterTopology topology) {
         // If join event had been fired then we need to fire leave event too.
         if (joinEventFired.compareAndSet(true, false)) {
-            ClusterLeaveEvent event = new ClusterLeaveEvent(topology, emptyList(), emptyList(), this);
+            ClusterLeaveEvent event = new ClusterLeaveEvent(reason, topology, emptyList(), emptyList(), this);
 
             return fireAsync(event);
         } else {

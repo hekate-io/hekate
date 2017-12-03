@@ -24,6 +24,7 @@ import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.event.ClusterJoinEvent;
 import io.hekate.cluster.event.ClusterLeaveEvent;
+import io.hekate.cluster.event.ClusterLeaveReason;
 import io.hekate.cluster.seed.SeedNodeProviderAdaptor;
 import io.hekate.cluster.seed.StaticSeedNodeProvider;
 import io.hekate.cluster.seed.StaticSeedNodeProviderConfig;
@@ -73,7 +74,47 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
     }
 
     @Test
-    public void testJoinLeaveEventsAfterJoin() throws Exception {
+    public void testJoinLeaveEventsWithListenerBeforeJoin() throws Exception {
+        repeat(50, i -> {
+            List<ClusterEvent> events = new CopyOnWriteArrayList<>();
+
+            ClusterEventListener listener = events::add;
+
+            node.cluster().addListener(listener);
+
+            node.join();
+
+            ClusterNode clusterNode = this.node.localNode();
+
+            node.leave();
+
+            node.cluster().removeListener(listener);
+
+            assertEquals(2, events.size());
+            assertSame(ClusterEventType.JOIN, events.get(0).type());
+            assertSame(ClusterEventType.LEAVE, events.get(1).type());
+
+            ClusterJoinEvent join = events.get(0).asJoin();
+
+            assertEquals(1, join.topology().size());
+            assertEquals(clusterNode, join.topology().localNode());
+            assertEquals(clusterNode, join.topology().localNode());
+            assertTrue(join.topology().contains(clusterNode));
+            assertFalse(join.topology().remoteNodes().contains(clusterNode));
+
+            ClusterLeaveEvent leave = events.get(1).asLeave();
+
+            assertEquals(1, leave.topology().size());
+            assertEquals(clusterNode, leave.topology().localNode());
+            assertEquals(1, join.topology().localNode().joinOrder());
+            assertTrue(leave.topology().contains(clusterNode));
+            assertFalse(leave.topology().remoteNodes().contains(clusterNode));
+            assertSame(ClusterLeaveReason.LEAVE, leave.reason());
+        });
+    }
+
+    @Test
+    public void testJoinLeaveEventsWithListenerAfterJoin() throws Exception {
         repeat(50, i -> {
             node.join();
 
@@ -94,17 +135,19 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
             assertSame(ClusterEventType.LEAVE, events.get(1).type());
 
             ClusterJoinEvent join = events.get(0).asJoin();
-            ClusterLeaveEvent leave = events.get(1).asLeave();
 
             assertEquals(1, join.topology().size());
             assertEquals(clusterNode, join.topology().localNode());
             assertEquals(1, join.topology().localNode().joinOrder());
             assertTrue(join.topology().contains(clusterNode));
 
+            ClusterLeaveEvent leave = events.get(1).asLeave();
+
             assertEquals(1, leave.topology().size());
             assertEquals(clusterNode, leave.topology().localNode());
             assertEquals(1, leave.topology().localNode().joinOrder());
             assertTrue(leave.topology().contains(clusterNode));
+            assertSame(ClusterLeaveReason.LEAVE, leave.reason());
         });
     }
 
@@ -130,55 +173,19 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
             assertSame(ClusterEventType.LEAVE, events.get(1).type());
 
             ClusterJoinEvent join = events.get(0).asJoin();
-            ClusterLeaveEvent leave = events.get(1).asLeave();
 
             assertEquals(1, join.topology().size());
             assertEquals(clusterNode, join.topology().localNode());
             assertEquals(1, join.topology().localNode().joinOrder());
             assertTrue(join.topology().contains(clusterNode));
+
+            ClusterLeaveEvent leave = events.get(1).asLeave();
 
             assertEquals(1, leave.topology().size());
             assertEquals(clusterNode, leave.topology().localNode());
             assertEquals(1, leave.topology().localNode().joinOrder());
             assertTrue(leave.topology().contains(clusterNode));
-        });
-    }
-
-    @Test
-    public void testJoinLeaveEventsBeforeJoin() throws Exception {
-        repeat(50, i -> {
-            List<ClusterEvent> events = new CopyOnWriteArrayList<>();
-
-            ClusterEventListener listener = events::add;
-
-            node.cluster().addListener(listener);
-
-            node.join();
-
-            ClusterNode clusterNode = this.node.localNode();
-
-            node.leave();
-
-            node.cluster().removeListener(listener);
-
-            assertEquals(2, events.size());
-            assertSame(ClusterEventType.JOIN, events.get(0).type());
-            assertSame(ClusterEventType.LEAVE, events.get(1).type());
-
-            ClusterJoinEvent join = events.get(0).asJoin();
-            ClusterLeaveEvent leave = events.get(1).asLeave();
-
-            assertEquals(1, join.topology().size());
-            assertEquals(clusterNode, join.topology().localNode());
-            assertEquals(clusterNode, join.topology().localNode());
-            assertTrue(join.topology().contains(clusterNode));
-            assertFalse(join.topology().remoteNodes().contains(clusterNode));
-
-            assertEquals(1, leave.topology().size());
-            assertEquals(clusterNode, leave.topology().localNode());
-            assertEquals(1, join.topology().localNode().joinOrder());
-            assertTrue(leave.topology().contains(clusterNode));
-            assertFalse(leave.topology().remoteNodes().contains(clusterNode));
+            assertSame(ClusterLeaveReason.TERMINATE, leave.reason());
         });
     }
 

@@ -25,6 +25,7 @@ import io.hekate.cluster.event.ClusterChangeEvent;
 import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.event.ClusterJoinEvent;
+import io.hekate.cluster.event.ClusterLeaveReason;
 import io.hekate.cluster.internal.DefaultClusterNode;
 import io.hekate.cluster.internal.DefaultClusterNodeBuilder;
 import io.hekate.cluster.internal.DefaultClusterNodeRuntime;
@@ -469,7 +470,7 @@ class HekateNode implements Hekate, JavaSerializable {
                 return future;
             } else if (state.get() == INITIALIZING || state.get() == INITIALIZED) {
                 // Since we are still initializing it is safe to run termination process (and bypass leave protocol).
-                terminateAsync();
+                doTerminateAsync(ClusterLeaveReason.LEAVE);
 
                 return leaveFuture.fork();
             } else if (state.compareAndSet(JOINING, LEAVING) || state.compareAndSet(UP, LEAVING)) {
@@ -549,7 +550,7 @@ class HekateNode implements Hekate, JavaSerializable {
 
     @Override
     public TerminateFuture terminateAsync() {
-        return doTerminateAsync(null);
+        return doTerminateAsync(ClusterLeaveReason.TERMINATE);
     }
 
     @Override
@@ -630,7 +631,7 @@ class HekateNode implements Hekate, JavaSerializable {
 
                             String msg = "Failed to start network service [address=" + address + ", reason=" + failure.cause() + ']';
 
-                            doTerminateAsync(new HekateException(msg, failure.cause()));
+                            doTerminateAsync(ClusterLeaveReason.TERMINATE, new HekateException(msg, failure.cause()));
 
                             return failure.fail();
                         }
@@ -644,7 +645,7 @@ class HekateNode implements Hekate, JavaSerializable {
                 guard.unlockWrite();
             }
         } catch (HekateException | RuntimeException | Error e) {
-            doTerminateAsync(e);
+            doTerminateAsync(ClusterLeaveReason.TERMINATE, e);
         }
     }
 
@@ -712,7 +713,7 @@ class HekateNode implements Hekate, JavaSerializable {
                 }
             }
         } catch (HekateException | RuntimeException | Error e) {
-            doTerminateAsync(e);
+            doTerminateAsync(ClusterLeaveReason.TERMINATE, e);
         } finally {
             guard.unlockWrite();
         }
@@ -930,17 +931,17 @@ class HekateNode implements Hekate, JavaSerializable {
 
             @Override
             public void rejoin() {
-                doTerminateAsync(true, null);
+                doTerminateAsync(true, ClusterLeaveReason.SPLIT_BRAIN, null);
             }
 
             @Override
             public void terminate() {
-                terminateAsync();
+                doTerminateAsync(ClusterLeaveReason.SPLIT_BRAIN);
             }
 
             @Override
             public void terminate(Throwable e) {
-                doTerminateAsync(e);
+                doTerminateAsync(ClusterLeaveReason.TERMINATE, e);
             }
 
             @Override
@@ -950,11 +951,15 @@ class HekateNode implements Hekate, JavaSerializable {
         };
     }
 
-    private TerminateFuture doTerminateAsync(Throwable cause) {
-        return doTerminateAsync(false, cause);
+    private TerminateFuture doTerminateAsync(ClusterLeaveReason reason) {
+        return doTerminateAsync(false, reason, null);
     }
 
-    private TerminateFuture doTerminateAsync(boolean rejoin, Throwable cause) {
+    private TerminateFuture doTerminateAsync(ClusterLeaveReason reason, Throwable cause) {
+        return doTerminateAsync(false, reason, cause);
+    }
+
+    private TerminateFuture doTerminateAsync(boolean rejoin, ClusterLeaveReason reason, Throwable cause) {
         guard.lockWrite();
 
         try {
@@ -979,7 +984,7 @@ class HekateNode implements Hekate, JavaSerializable {
                 notifyOnLifecycleChange();
 
                 runOnSysThread(() ->
-                    doTerminate(future, cause)
+                    doTerminate(reason, future, cause)
                 );
 
                 return future.fork();
@@ -1012,7 +1017,7 @@ class HekateNode implements Hekate, JavaSerializable {
 
     private void doLeave() {
         if (state.get() == LEAVING) {
-            clusterEvents.ensureLeaveEventFired(topology).thenRun(() ->
+            clusterEvents.ensureLeaveEventFired(ClusterLeaveReason.LEAVE, topology).thenRun(() ->
                 runOnSysThread(this::preTerminateServices)
             );
         }
@@ -1028,8 +1033,9 @@ class HekateNode implements Hekate, JavaSerializable {
         }
     }
 
-    private void doTerminate(TerminateFuture future, Throwable cause) {
+    private void doTerminate(ClusterLeaveReason reason, TerminateFuture future, Throwable cause) {
         assert future != null : "Termination future is null.";
+        assert reason != null : "Reason is null";
         assert state.get() == TERMINATING : "Unexpected service state: " + state;
 
         if (cause == null) {
@@ -1043,7 +1049,7 @@ class HekateNode implements Hekate, JavaSerializable {
         }
 
         try {
-            AsyncUtils.getUninterruptedly(clusterEvents.ensureLeaveEventFired(topology));
+            AsyncUtils.getUninterruptedly(clusterEvents.ensureLeaveEventFired(reason, topology));
         } catch (ExecutionException e) {
             log.error("Got an unexpected error while awaiting for cluster leave event processing.", e);
         }

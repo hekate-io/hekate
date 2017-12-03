@@ -24,6 +24,7 @@ import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.event.ClusterJoinEvent;
 import io.hekate.cluster.event.ClusterLeaveEvent;
+import io.hekate.cluster.event.ClusterLeaveReason;
 import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.core.Hekate;
 import java.util.ArrayList;
@@ -441,7 +442,9 @@ public class ClusterEventManagerTest extends HekateTestBase {
     private ClusterLeaveEvent newLeaveEvent() throws Exception {
         ClusterTopology topology = newTopology();
 
-        return new ClusterLeaveEvent(topology, emptyList(), singletonList(topology.localNode()), mock(Hekate.class));
+        Hekate hekate = mock(Hekate.class);
+
+        return new ClusterLeaveEvent(ClusterLeaveReason.LEAVE, topology, emptyList(), singletonList(topology.localNode()), hekate);
     }
 
     private ClusterTopology newTopology() throws Exception {

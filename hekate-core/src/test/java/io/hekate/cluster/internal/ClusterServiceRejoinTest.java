@@ -22,6 +22,7 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventType;
+import io.hekate.cluster.event.ClusterLeaveReason;
 import io.hekate.cluster.internal.gossip.GossipNodeStatus;
 import io.hekate.cluster.internal.gossip.GossipSpyAdaptor;
 import io.hekate.cluster.split.SplitBrainAction;
@@ -127,6 +128,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                 assertEquals(events.toString(), 2, events.size());
                 assertSame(ClusterEventType.JOIN, events.get(0).type());
                 assertSame(ClusterEventType.LEAVE, events.get(1).type());
+                assertSame(ClusterLeaveReason.SPLIT_BRAIN, events.get(1).asLeave().reason());
 
                 hanged.stopRecording();
                 hanged.clearEvents();
@@ -293,6 +295,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                 assertEquals(events.toString(), 2, events.size());
                 assertSame(ClusterEventType.JOIN, events.get(0).type());
                 assertSame(ClusterEventType.LEAVE, events.get(1).type());
+                assertSame(ClusterLeaveReason.SPLIT_BRAIN, events.get(1).asLeave().reason());
 
                 hanged.stopRecording();
                 hanged.clearEvents();
@@ -372,6 +375,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                 assertEquals(events.toString(), 2, events.size());
                 assertSame(ClusterEventType.JOIN, events.get(0).type());
                 assertSame(ClusterEventType.LEAVE, events.get(1).type());
+                assertSame(ClusterLeaveReason.SPLIT_BRAIN, events.get(1).asLeave().reason());
 
                 hanged.stopRecording();
                 hanged.clearEvents();
@@ -432,6 +436,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                 assertEquals(events.toString(), 2, events.size());
                 assertSame(ClusterEventType.JOIN, events.get(0).type());
                 assertSame(ClusterEventType.LEAVE, events.get(1).type());
+                assertSame(ClusterLeaveReason.LEAVE, events.get(1).asLeave().reason());
 
                 hanged.stopRecording();
                 hanged.clearEvents();
@@ -504,6 +509,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
             assertEquals(events.toString(), 2, events.size());
             assertSame(ClusterEventType.JOIN, events.get(0).type());
             assertSame(ClusterEventType.LEAVE, events.get(1).type());
+            assertSame(ClusterLeaveReason.SPLIT_BRAIN, events.get(1).asLeave().reason());
 
             hanged.stopRecording();
             hanged.clearEvents();
