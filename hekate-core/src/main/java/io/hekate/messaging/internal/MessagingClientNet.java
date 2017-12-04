@@ -33,6 +33,14 @@ class MessagingClientNet<T> implements MessagingClient<T> {
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
+    private static final int STATE_DISCONNECTED = 1;
+
+    private static final int STATE_CONNECTED = 2;
+
+    private static final int STATE_IDLE = 3;
+
+    private static final int STATE_CLOSED = 4;
+
     private final String channelName;
 
     private final ClusterNode node;
@@ -44,12 +52,7 @@ class MessagingClientNet<T> implements MessagingClient<T> {
     @ToStringIgnore
     private final Object mux = new Object();
 
-    @ToStringIgnore
-    private volatile boolean idle;
-
-    private volatile boolean connected;
-
-    private volatile boolean closed;
+    private volatile int state = STATE_DISCONNECTED;
 
     public MessagingClientNet(String channelName, ClusterNode remoteNode, NetworkConnector<MessagingProtocol> net,
         MessagingGateway<T> gateway, boolean trackIdle) {
@@ -70,7 +73,14 @@ class MessagingClientNet<T> implements MessagingClient<T> {
 
         DefaultMessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(remoteNode.id(), gateway.channel());
 
-        this.conn = new MessagingConnectionNetOut<>(remoteNode.address(), netClient, gateway, endpoint);
+        this.conn = new MessagingConnectionNetOut<>(remoteNode.address(), netClient, gateway, endpoint, () -> {
+            // On internal disconnect:
+            synchronized (mux) {
+                if (state != STATE_CLOSED) {
+                    state = STATE_DISCONNECTED;
+                }
+            }
+        });
     }
 
     @Override
@@ -80,8 +90,6 @@ class MessagingClientNet<T> implements MessagingClient<T> {
 
     @Override
     public void send(MessageRoute<T> route, SendCallback callback, boolean retransmit) {
-        touch();
-
         ensureConnected();
 
         conn.sendNotification(route, callback, retransmit);
@@ -89,8 +97,6 @@ class MessagingClientNet<T> implements MessagingClient<T> {
 
     @Override
     public void stream(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
-        touch();
-
         ensureConnected();
 
         conn.stream(route, callback, retransmit);
@@ -98,8 +104,6 @@ class MessagingClientNet<T> implements MessagingClient<T> {
 
     @Override
     public void request(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
-        touch();
-
         ensureConnected();
 
         conn.request(route, callback, retransmit);
@@ -113,7 +117,7 @@ class MessagingClientNet<T> implements MessagingClient<T> {
 
         synchronized (mux) {
             // Mark as closed.
-            closed = true;
+            state = STATE_CLOSED;
 
             return Collections.singletonList(conn.disconnect());
         }
@@ -122,67 +126,68 @@ class MessagingClientNet<T> implements MessagingClient<T> {
     @Override
     public boolean isConnected() {
         synchronized (mux) {
-            return connected;
+            return state == STATE_CONNECTED || state == STATE_IDLE;
         }
     }
 
     @Override
     public void disconnectIfIdle() {
         if (trackIdle) {
-            if (connected) {
-                if (idle && !conn.hasPendingRequests()) {
+            if (state == STATE_CONNECTED) {
+                if (!conn.hasPendingRequests()) {
                     synchronized (mux) {
                         // Double check with lock.
-                        if (connected && idle && !conn.hasPendingRequests()) {
+                        if (state == STATE_CONNECTED && !conn.hasPendingRequests()) {
+                            state = STATE_IDLE;
+                        }
+                    }
+                }
+            } else if (state == STATE_IDLE) {
+                synchronized (mux) {
+                    // Double check with lock.
+                    if (state == STATE_IDLE) {
+                        if (conn.hasPendingRequests()) {
+                            state = STATE_CONNECTED;
+                        } else {
                             if (DEBUG) {
                                 log.debug("Disconnecting idle connection [chanel={}, node={}]", channelName, node);
                             }
 
-                            connected = false;
+                            state = STATE_DISCONNECTED;
 
                             conn.disconnect();
                         }
                     }
                 }
-
-                idle = true;
             }
         }
     }
 
     @Override
     public void touch() {
-        if (trackIdle) {
-            if (idle) {
-                synchronized (mux) {
-                    if (!closed && connected) {
-                        idle = false;
-                    }
+        if (trackIdle && state == STATE_IDLE) {
+            synchronized (mux) {
+                if (state == STATE_IDLE) {
+                    state = STATE_CONNECTED;
                 }
             }
         }
     }
 
-    // Package level for testing purposes.
-    MessagingConnectionNetOut<T> connection() {
-        return conn;
-    }
-
     private void ensureConnected() {
-        if (!connected) {
-            if (!closed) {
-                synchronized (mux) {
-                    // Double check with lock.
-                    if (!connected && !closed) {
-                        if (DEBUG) {
-                            log.debug("Initializing connection [chanel={}, node={}]", channelName, node);
-                        }
-
-                        conn.connect();
-
-                        connected = true;
-                        idle = false;
+        if (state != STATE_CONNECTED) {
+            synchronized (mux) {
+                // Double check with lock.
+                if (state == STATE_DISCONNECTED) {
+                    if (DEBUG) {
+                        log.debug("Initializing connection [chanel={}, node={}]", channelName, node);
                     }
+
+                    conn.connect();
+
+                    state = STATE_CONNECTED;
+                } else if (state == STATE_IDLE) {
+                    state = STATE_CONNECTED;
                 }
             }
         }

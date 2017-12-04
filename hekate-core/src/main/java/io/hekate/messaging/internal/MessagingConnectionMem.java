@@ -171,4 +171,9 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
     protected void disconnectOnError(Throwable t) {
         discardRequests(t);
     }
+
+    @Override
+    protected int epoch() {
+        return 0;
+    }
 }

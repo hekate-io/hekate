@@ -29,7 +29,6 @@ import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
 import io.hekate.messaging.internal.MessagingProtocol.StreamRequest;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkEndpoint;
-import io.hekate.network.NetworkFuture;
 
 abstract class MessagingConnectionNetBase<T> extends MessagingConnectionBase<T> {
     private final NetworkEndpoint<MessagingProtocol> net;
@@ -39,15 +38,10 @@ abstract class MessagingConnectionNetBase<T> extends MessagingConnectionBase<T> 
     public MessagingConnectionNetBase(NetworkEndpoint<MessagingProtocol> net, MessagingGateway<T> gateway, MessagingEndpoint<T> endpoint) {
         super(gateway, gateway.async(), endpoint);
 
-        assert net != null : "Endpoint is null.";
+        assert net != null : "Network endpoint is null.";
 
         this.net = net;
         this.pressureGuard = gateway.sendGuard();
-    }
-
-    @Override
-    public NetworkFuture<MessagingProtocol> disconnect() {
-        return net.disconnect();
     }
 
     @Override
@@ -135,5 +129,9 @@ abstract class MessagingConnectionNetBase<T> extends MessagingConnectionBase<T> 
     @Override
     protected void disconnectOnError(Throwable t) {
         net.disconnect();
+    }
+
+    protected NetworkEndpoint<MessagingProtocol> net() {
+        return net;
     }
 }

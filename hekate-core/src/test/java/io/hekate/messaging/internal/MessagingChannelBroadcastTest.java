@@ -161,7 +161,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             MessagingClientNet<String> client = (MessagingClientNet<String>)source.getImpl().clientOf(target.getNodeId());
 
             // Induce failure by closing existing network connections.
-            get(client.connection().disconnect());
+            client.close();
 
             BroadcastTestCallback callback = new BroadcastTestCallback();
 
@@ -196,7 +196,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             MessagingClientNet<String> client = (MessagingClientNet<String>)source.getImpl().clientOf(target.getNodeId());
 
             // Induce failure by closing existing network connections.
-            get(client.connection().disconnect());
+            client.close();
 
             BroadcastResult<String> result = get(source.get().broadcast("test" + i));
 

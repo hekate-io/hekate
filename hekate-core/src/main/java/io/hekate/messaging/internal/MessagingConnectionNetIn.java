@@ -18,11 +18,17 @@ package io.hekate.messaging.internal;
 
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.network.NetworkEndpoint;
+import io.hekate.network.NetworkFuture;
 import java.nio.channels.ClosedChannelException;
 
 class MessagingConnectionNetIn<T> extends MessagingConnectionNetBase<T> {
     public MessagingConnectionNetIn(NetworkEndpoint<MessagingProtocol> net, MessagingEndpoint<T> endpoint, MessagingGateway<T> gateway) {
         super(net, gateway, endpoint);
+    }
+
+    @Override
+    public NetworkFuture<MessagingProtocol> disconnect() {
+        return net().disconnect();
     }
 
     public void onConnect() {
@@ -35,5 +41,10 @@ class MessagingConnectionNetIn<T> extends MessagingConnectionNetBase<T> {
         discardRequests(new ClosedChannelException());
 
         gateway().unregister(this);
+    }
+
+    @Override
+    protected int epoch() {
+        return 0;
     }
 }

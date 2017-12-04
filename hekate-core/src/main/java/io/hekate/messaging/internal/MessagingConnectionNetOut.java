@@ -26,12 +26,22 @@ import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkClientCallback;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkMessage;
-import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+
+import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
 
 class MessagingConnectionNetOut<T> extends MessagingConnectionNetBase<T> {
+    interface DisconnectCallback {
+        void onDisconnect();
+    }
+
+    private static final AtomicIntegerFieldUpdater<MessagingConnectionNetOut> EPOCH_UPDATER = newUpdater(
+        MessagingConnectionNetOut.class,
+        "connectEpoch"
+    );
+
     private final ClusterAddress address;
 
     private final NetworkClient<MessagingProtocol> net;
@@ -40,52 +50,48 @@ class MessagingConnectionNetOut<T> extends MessagingConnectionNetBase<T> {
 
     private final ClusterNodeId localNodeId;
 
+    private final DisconnectCallback callback;
+
     private final Object mux = new Object();
 
-    private int epoch;
+    @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
+    private volatile int connectEpoch;
 
     public MessagingConnectionNetOut(ClusterAddress address, NetworkClient<MessagingProtocol> net, MessagingGateway<T> gateway,
-        MessagingEndpoint<T> endpoint) {
+        MessagingEndpoint<T> endpoint, DisconnectCallback callback) {
         super(net, gateway, endpoint);
 
         assert address != null : "Address is null.";
+        assert callback != null : "Disconnect callback is null.";
 
         this.channelId = gateway.id();
         this.localNodeId = gateway.localNode().id();
         this.address = address;
         this.net = net;
+        this.callback = callback;
     }
 
     public NetworkFuture<MessagingProtocol> connect() {
+        Connect payload = new Connect(address.id(), localNodeId, channelId);
+
         synchronized (mux) {
-            // Update connection epoch.
-            int localEpoch = ++epoch;
+            // Update the connection's epoch.
+            int localEpoch = EPOCH_UPDATER.incrementAndGet(this);
 
-            setEpoch(localEpoch);
-
-            final InetSocketAddress netAddress = address.socket();
-
-            Connect connectMsg = new Connect(address.id(), localNodeId, channelId);
-
-            return net.connect(netAddress, connectMsg, new NetworkClientCallback<MessagingProtocol>() {
+            return net.connect(address.socket(), payload, new NetworkClientCallback<MessagingProtocol>() {
                 @Override
-                public void onMessage(NetworkMessage<MessagingProtocol> message, NetworkClient<MessagingProtocol> from) throws IOException {
+                public void onMessage(NetworkMessage<MessagingProtocol> message, NetworkClient<MessagingProtocol> from) {
                     receive(message, from);
                 }
 
                 @Override
                 public void onDisconnect(NetworkClient<MessagingProtocol> client, Optional<Throwable> cause) {
-                    synchronized (mux) {
-                        // Check if there were no disconnects for this epoch.
-                        if (localEpoch == epoch) {
-                            Connect msg = new Connect(address.id(), localNodeId, channelId);
-
-                            client.ensureConnected(netAddress, msg, this);
-                        }
+                    // Notify only if this is an internal disconnect.
+                    if (localEpoch == connectEpoch) {
+                        callback.onDisconnect();
                     }
 
-                    discardRequests(localEpoch, new MessagingException("Messaging operation failed [remote-node-id=" + address.id()
-                        + ", address=" + netAddress + ']', cause.orElseGet(ClosedChannelException::new)));
+                    discardRequests(localEpoch, wrapError(cause));
                 }
             });
         }
@@ -94,10 +100,19 @@ class MessagingConnectionNetOut<T> extends MessagingConnectionNetBase<T> {
     @Override
     public NetworkFuture<MessagingProtocol> disconnect() {
         synchronized (mux) {
-            // Prevent auto-reconnect.
-            epoch++;
-
-            return super.disconnect();
+            return net.disconnect();
         }
+    }
+
+    @Override
+    protected int epoch() {
+        // Volatile read.
+        return connectEpoch;
+    }
+
+    private MessagingException wrapError(Optional<Throwable> cause) {
+        String msg = "Messaging operation failed [address=" + address + ']';
+
+        return new MessagingException(msg, cause.orElseGet(ClosedChannelException::new));
     }
 }

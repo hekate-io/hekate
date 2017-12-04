@@ -25,9 +25,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 class RequestRegistry<T> {
     private static final int REQUEST_MAP_INIT_CAPACITY = 128;
 
-    private final AtomicInteger idGen = new AtomicInteger();
-
     private final Map<Integer, RequestHandle<T>> requests = new ConcurrentHashMap<>(REQUEST_MAP_INIT_CAPACITY);
+
+    private final AtomicInteger idGen = new AtomicInteger();
 
     private final MetricsCallback metrics;
 

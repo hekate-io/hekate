@@ -52,8 +52,6 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
 
     private final RequestRegistry<T> requests;
 
-    private volatile int epoch;
-
     public MessagingConnectionBase(MessagingGateway<T> gateway, MessagingExecutor async, MessagingEndpoint<T> endpoint) {
         assert gateway != null : "Gateway is null.";
         assert async != null : "Executor is null.";
@@ -85,6 +83,8 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
     public abstract void replyError(MessagingWorker worker, int requestId, Throwable cause);
 
     protected abstract void disconnectOnError(Throwable t);
+
+    protected abstract int epoch();
 
     @Override
     public ClusterNode localNode() {
@@ -387,7 +387,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
     }
 
     public void discardRequests(Throwable cause) {
-        discardRequests(epoch, cause);
+        discardRequests(epoch(), cause);
     }
 
     public void discardRequests(int epoch, Throwable cause) {
@@ -435,11 +435,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
     }
 
     protected RequestHandle<T> registerRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
-        return requests.register(epoch, ctx, callback);
-    }
-
-    protected void setEpoch(int epoch) {
-        this.epoch = epoch;
+        return requests.register(epoch(), ctx, callback);
     }
 
     protected void doReceiveRequest(RequestBase<T> msg, MessagingWorker worker) {
