@@ -31,13 +31,15 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class MessagingServiceSingleNodeTest extends HekateNodeTestBase {
+    private static final int BUILT_IN_CHANNELS = 1; // <-- RPC service always registers one channel.
+
     @Test
     public void testEmptyChannels() throws Exception {
         HekateTestNode node = createNode(boot ->
             boot.withService(new MessagingServiceFactory())
         ).join();
 
-        assertEquals(0, node.messaging().allChannels().size());
+        assertEquals(BUILT_IN_CHANNELS, node.messaging().allChannels().size());
 
         assertFalse(node.messaging().hasChannel("no-such-channel"));
 
@@ -91,7 +93,7 @@ public class MessagingServiceSingleNodeTest extends HekateNodeTestBase {
         assertSame(channel1, node.messaging().channel("channel1", String.class));
         assertSame(channel2, node.messaging().channel("channel2", String.class));
 
-        assertEquals(2, node.messaging().allChannels().size());
+        assertEquals(2 + BUILT_IN_CHANNELS, node.messaging().allChannels().size());
         assertTrue(node.messaging().allChannels().contains(channel1));
         assertTrue(node.messaging().allChannels().contains(channel2));
 
