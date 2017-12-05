@@ -110,13 +110,13 @@ Complete reference guide is coming soon.
 ```
 
  * Other artifacts:
-    - [hekate-jclouds-core](hekate-jclouds-core/README.md) - Integration with the [Apache JClouds](http://jclouds.apache.org) for cloud 
-      environments.
-    - [hekate-jclouds-aws](hekate-jclouds-aws/README.md) - Extended integration with the [Amazon EC2](https://aws.amazon.com) cloud environment.
+    - [hekate-jclouds-core](hekate-jclouds-core/README.md) - Integration with the [Apache JClouds](http://jclouds.apache.org) 
+      for cloud environments.
+    - [hekate-jclouds-aws](hekate-jclouds-aws/README.md) - Extended integration with the [Amazon EC2](https://aws.amazon.com) cloud.
     - [hekate-metrics-influxdb](hekate-metrics-influxdb/README.md) - Metrics publishing to the [InfluxDB](https://www.influxdata.com) 
       (time-series data storage).
-    - [hekate-metrics-statsd](hekate-metrics-statsd/README.md) - Metrics publishing to the [StatsD](https://github.com/etsy/statsd) (statistics 
-      aggregation daemon). 
+    - [hekate-metrics-statsd](hekate-metrics-statsd/README.md) - Metrics publishing to the [StatsD](https://github.com/etsy/statsd) 
+      (statistics aggregation daemon). 
 
 ## How to build
 
