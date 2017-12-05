@@ -70,9 +70,6 @@
             </channel>
         </messaging>
 
-        <!-- Task service. -->
-        <tasks worker-threads="8"/>
-
         <!-- Lock service. -->
         <locks>
             <region name="region1">

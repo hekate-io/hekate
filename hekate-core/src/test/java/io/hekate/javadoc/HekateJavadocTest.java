@@ -22,8 +22,6 @@ import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.network.NetworkServiceFactory;
-import io.hekate.task.TaskService;
-import io.hekate.task.TaskServiceFactory;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
@@ -70,22 +68,14 @@ public class HekateJavadocTest extends HekateTestBase {
                 cluster.setGossipInterval(1000); // Gossip once per second.
                 cluster.setSpeedUpGossipSize(100); // Speed up convergence if cluster is <= 100 nodes.
             })
-            .withService(new TaskServiceFactory()
-                .withNioThreads(2) // NIO threads for network communications
-                .withWorkerThreads(8) // Worker threads for tasks execution.
-            )
             // ...some other services...
             .join();
 
         // Get cluster service.
         ClusterService cluster = hekate.cluster();
-
-        // Get task service.
-        TaskService tasks = hekate.tasks();
         // End:configure_services
 
         assertNotNull(cluster);
-        assertNotNull(tasks);
 
         hekate.leave();
     }

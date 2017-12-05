@@ -36,7 +36,6 @@ import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.NetworkService;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.rpc.RpcService;
-import io.hekate.task.TaskService;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,7 +53,6 @@ import java.util.Set;
  * <ul>
  * <li><b>{@link ClusterService}</b> - manages dynamic information about the cluster members and provides support for application to get
  * notified upon cluster membership changes</li>
- * <li><b>{@link TaskService}</b> - provides support for distributed execution of tasks and closures</li>
  * <li><b>{@link MessagingService}</b> - provides high-level API for asynchronous messaging among the cluster nodes with built-in failover
  * and load balancing</li>
  * <li><b>{@link LockService}</b> - provides support for distributed locks</li>
@@ -252,13 +250,6 @@ public interface Hekate extends HekateSupport {
      * @return Service.
      */
     ClusterService cluster();
-
-    /**
-     * Returns the {@link TaskService}.
-     *
-     * @return Service.
-     */
-    TaskService tasks();
 
     /**
      * Returns the {@link RpcService}.

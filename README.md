@@ -12,8 +12,8 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
 ## Features
 
 - **Cluster**
-    - Gossip-based decentralized cluster membership
-    - Pluggable bootstrap (aka seed nodes discovery)
+    - Gossip-based Decentralized Cluster Membership
+    - Pluggable Bootstrapping (aka Seed Node Discovery)
         - Multicast
         - JDBC
         - Shared File System
@@ -24,56 +24,53 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
             - etc
         - [ZooKeeper](https://zookeeper.apache.org) (_planned_) 
         - [Etcd](https://github.com/coreos/etcd) (_planned_)
-    - Cluster event listeners    
-    - User-defined properties and roles of cluster nodes
-    - Cluster views and node filtering API
+    - Cluster Event Listeners    
+    - User-defined Properties and Roles of Cluster Nodes
+    - Cluster Views and Node Filtering API
     
 - **Messaging**
-    - Asynchronous ([Netty](http://netty.io)-based)
-    - Cluster-aware load balancing and routing
-    - SSL/TLS encryption of socket communications (optional)
-    - Custom failover policies
-    - Back pressure policies
-    - Pluggable serialization
+    - Synchronous and Asynchronous ([Netty](http://netty.io)-based) APIs
+    - Cluster-aware Load Balancing and Routing
+    - SSL/TLS Encryption of Network Communications (optional)
+    - Back Pressure Policies
+    - Pluggable Serialization
         - [Kryo](https://github.com/EsotericSoftware/kryo)
         - [FST](https://github.com/RuedigerMoeller/fast-serialization)
-        - JDK serialization
-        - Manual serialization
+        - JDK Serialization
+        - Manual Serialization
         
-- **Distributed Closure and Task Execution**
-    - Execute Runnable/Callable tasks on the cluster
-    - Split/Aggregate for parallel processing of large tasks
-    - Pluggable load balancing and routing
+- **Remote Procedure Calls (RPC)**
+    - Type-safe Invocation of Remote Java objects
+    - Automatic Discovery and Load Balancing
+    - Synchronous and Asynchronous APIs
+    - Multi-node Broadcasting and Aggregation of Results
+    - Pluggable Failover and Retry Policies
+    - ...and everything from the "Messaging" section above:)
     
-- **Synchronous and Asynchronous RPCs**
-    - Type-safe invocation of remote Java objects
-    - Automatic discovery and load balancing
-    - Multi-node broadcasting and aggregation of results
-    - Pluggable failover and retry policies
-    
-- **Cluster Leader Election (aka cluster singleton)**
-    - Decentralized leader election
-    - Followers are aware of the current leader
-    - Leader can dynamically yield leadership
+- **Cluster Leader Election (aka Cluster Singleton)**
+    - Decentralized Leader Election
+    - Followers are Aware of the Current Leader
+    - Leader can Dynamically Yield Leadership
 
 - **Distributed Locks**
-    - Synchronous and asynchronous reentrant locks
-    - Decentralized lock management
-    - Configurable lock groups (aka Lock Regions)
+    - Synchronous and Asynchronous Reentrant Locks
+    - Decentralized Lock Management
+    - Configurable Lock Groups (aka Lock Regions)
 
 - **Distributed Metrics**
-    - Custom user-defined metrics (Counters and Probes)
-    - Cluster-wide (nodes can see metrics of other nodes)
-    - Recording
+    - Custom Metrics (User-defined Counters and Probes)
+    - Cluster-wide (Nodes can See Metrics of Other Nodes)
+    - Metrics-based Load Balancing
+    - Recording and Analysis
         - [StatsD](https://github.com/etsy/statsd)
         - [InfluxDB](https://www.influxdata.com/time-series-platform/influxdb/)
         - [CloudWatch](https://aws.amazon.com/cloudwatch/) (_planned_)
                 
 - **Spring Framework/Boot Support (optional)**
-    - Spring-compliant beans
+    - Spring-compliant Beans
     - [Spring XML Schema](http://docs.spring.io/spring/docs/current/spring-framework-reference/html/xsd-configuration.html) 
-      to simplify configuration
-    - [Spring Boot](https://projects.spring.io/spring-boot) auto-configurations and helper annotations
+      to Simplify Configuration
+    - [Spring Boot](https://projects.spring.io/spring-boot) Auto-configurations and @Annotations
 
 - **Raft-based Replicated State Machines (_planned_)**
 
@@ -113,13 +110,13 @@ Complete reference guide is coming soon.
 ```
 
  * Other artifacts:
-    - [hekate-jclouds-core](hekate-jclouds-core/README.md) - Base integration with [Apache JClouds](http://jclouds.apache.org) for cloud 
+    - [hekate-jclouds-core](hekate-jclouds-core/README.md) - Integration with the [Apache JClouds](http://jclouds.apache.org) for cloud 
       environments.
-    - [hekate-jclouds-aws](hekate-jclouds-aws/README.md) - Integration with [Amazon EC2](https://aws.amazon.com) cloud environment.
-    - [hekate-metrics-influxdb](hekate-metrics-influxdb/README.md) - Metrics publishing to [InfluxDB](https://www.influxdata.com) 
-      time-series data storage.
-    - [hekate-metrics-statsd](hekate-metrics-statsd/README.md) - Metrics publishing to [StatsD](https://github.com/etsy/statsd) statistics 
-      aggregation daemon. 
+    - [hekate-jclouds-aws](hekate-jclouds-aws/README.md) - Extended integration with the [Amazon EC2](https://aws.amazon.com) cloud environment.
+    - [hekate-metrics-influxdb](hekate-metrics-influxdb/README.md) - Metrics publishing to the [InfluxDB](https://www.influxdata.com) 
+      (time-series data storage).
+    - [hekate-metrics-statsd](hekate-metrics-statsd/README.md) - Metrics publishing to the [StatsD](https://github.com/etsy/statsd) (statistics 
+      aggregation daemon). 
 
 ## How to build
 
@@ -132,7 +129,7 @@ Complete reference guide is coming soon.
 
 ### Building project (no tests):
 
- - cd to the project's root folder
+ - `cd` to the project's root folder
  - run `./mvnw clean package -DskipTests=true`
  
 ### Building project (with tests):
@@ -149,12 +146,12 @@ Complete reference guide is coming soon.
 
  New features and improvements:
  
- - Implemented Remote Procedure Call service for Java objects
- - Merged Kryo and FST codecs into the `hekate-core` module (dropped `hekate-kryo` and `hekate-fst` modules)
+ - Remote Procedure Call (RPC) service for Java objects
+ - Added 'deferredJoin' property to Spring bootstrap in order to control the timing of joining the cluster. 
  - Moved load balancing APIs to the `io.hekate.messaging.loadbalance` package
  - Moved Netty-based implementation of networking APIs to public packages
- - Added back pressure configuration options to the Task Service API
- - Added 'deferredJoin' property to Spring bootstrap in order to control the timing of joining the cluster.
+ - Merged Kryo and FST codecs into the `hekate-core` module (dropped `hekate-kryo` and `hekate-fst` modules)
+ - Dropped Task Service (replaced by the RPC service) 
  
  Dependency upgrades:
  

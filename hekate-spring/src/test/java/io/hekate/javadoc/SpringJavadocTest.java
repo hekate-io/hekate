@@ -83,16 +83,6 @@ public class SpringJavadocTest extends HekateTestBase {
     }
 
     @Test
-    public void testTaskXsd() {
-        doTest("javadoc/task/service-xsd.xml");
-    }
-
-    @Test
-    public void testTaskBean() {
-        doTest("javadoc/task/service-bean.xml");
-    }
-
-    @Test
     public void testLockXsd() {
         doTest("javadoc/lock/service-xsd.xml", (node, ctx) -> {
             assertNotNull(node.locks().region("region1"));

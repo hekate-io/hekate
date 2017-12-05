@@ -35,7 +35,6 @@ import io.hekate.spring.boot.messaging.HekateMessagingServiceConfigurer;
 import io.hekate.spring.boot.metrics.cluster.HekateClusterMetricsServiceConfigurer;
 import io.hekate.spring.boot.metrics.local.HekateLocalMetricsServiceConfigurer;
 import io.hekate.spring.boot.network.HekateNetworkServiceConfigurer;
-import io.hekate.spring.boot.task.HekateTaskServiceConfigurer;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -133,7 +132,6 @@ import org.springframework.stereotype.Component;
  * <li>{@link HekateLockServiceConfigurer}</li>
  * <li>{@link HekateCoordinationServiceConfigurer}</li>
  * <li>{@link HekateElectionServiceConfigurer}</li>
- * <li>{@link HekateTaskServiceConfigurer}</li>
  * </ul>
  *
  * <h2>Configuration options</h2>

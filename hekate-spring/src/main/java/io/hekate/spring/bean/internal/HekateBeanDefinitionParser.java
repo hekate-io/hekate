@@ -72,8 +72,6 @@ import io.hekate.spring.bean.network.NetworkConnectorBean;
 import io.hekate.spring.bean.network.NetworkServiceBean;
 import io.hekate.spring.bean.rpc.RpcClientBean;
 import io.hekate.spring.bean.rpc.RpcServiceBean;
-import io.hekate.spring.bean.task.TaskServiceBean;
-import io.hekate.task.TaskServiceFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -157,7 +155,6 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         parseNetworkService(rootEl, ctx).ifPresent(services::add);
         parseMessagingService(rootEl, ctx).ifPresent(services::add);
         parseRpcService(rootEl, ctx).ifPresent(services::add);
-        parseTaskService(rootEl, ctx).ifPresent(services::add);
         parseLockService(rootEl, ctx).ifPresent(services::add);
         parseCoordinationService(rootEl, ctx).ifPresent(services::add);
         parseElectionService(rootEl, ctx).ifPresent(services::add);
@@ -721,29 +718,6 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             }
 
             return Optional.of(registerInnerBean(backPressure, ctx));
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    private Optional<RuntimeBeanReference> parseTaskService(Element rootEl, ParserContext ctx) {
-        Element tasksEl = getChildElementByTagName(rootEl, "tasks");
-
-        if (tasksEl != null) {
-            BeanDefinitionBuilder tasks = newBean(TaskServiceFactory.class, tasksEl);
-
-            parseCommonMessagingConfig(tasksEl, tasks, ctx);
-
-            setProperty(tasks, tasksEl, "workerThreads", "worker-threads");
-            setProperty(tasks, tasksEl, "serverMoe", "serverMode");
-
-            String id = tasksEl.getAttribute("id");
-
-            if (!id.isEmpty()) {
-                deferredBaseBeans.put(newBean(TaskServiceBean.class, tasksEl), id);
-            }
-
-            return Optional.of(registerInnerBean(tasks, ctx));
         } else {
             return Optional.empty();
         }

@@ -128,13 +128,6 @@
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="tasks" type="taskServiceType" minOccurs="0" maxOccurs="1">
-                <xsd:annotation>
-                    <xsd:documentation>
-                        Registers 'io.hekate.task.TaskServiceFactory'.
-                    </xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
             <xsd:element name="locks" type="lockServiceType" minOccurs="0" maxOccurs="1">
                 <xsd:annotation>
                     <xsd:documentation>
@@ -1319,54 +1312,6 @@
                 </xsd:annotation>
             </xsd:element>
         </xsd:all>
-    </xsd:complexType>
-
-    <xsd:complexType name="taskServiceType">
-        <xsd:sequence>
-            <xsd:element name="back-pressure" type="messagingBackPressureType" minOccurs="0" maxOccurs="1">
-                <xsd:annotation>
-                    <xsd:documentation>
-                        See javadoc of
-                        'io.hekate.messaging.MessagingConfigBase#setBackPressure(io.hekate.messaging.MessagingBackPressureConfig)'.
-                    </xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
-        </xsd:sequence>
-        <xsd:attribute name="id" type="xsd:string" use="optional">
-            <xsd:annotation>
-                <xsd:documentation>
-                    The unique identifier of this service bean.
-                </xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
-        <xsd:attribute name="server-mode" type="xsd:string">
-            <xsd:annotation>
-                <xsd:documentation>
-                    See javadoc of 'io.hekate.task.TaskServiceFactory#setServerMode(boolean)'.
-                </xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
-        <xsd:attribute name="worker-threads" type="xsd:string">
-            <xsd:annotation>
-                <xsd:documentation>
-                    See javadoc of 'io.hekate.task.TaskServiceFactory#setWorkerThreads(int)'.
-                </xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
-        <xsd:attribute name="nio-threads" type="xsd:string">
-            <xsd:annotation>
-                <xsd:documentation>
-                    See javadoc of 'io.hekate.messaging.MessagingConfigBase#setNioThreads(int)'.
-                </xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
-        <xsd:attribute name="idle-socket-timeout-ms" type="xsd:string">
-            <xsd:annotation>
-                <xsd:documentation>
-                    See javadoc of 'io.hekate.messaging.MessagingConfigBase#setIdleSocketTimeout(int)'.
-                </xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
     </xsd:complexType>
 
     <xsd:complexType name="lockServiceType">

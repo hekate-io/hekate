@@ -48,7 +48,6 @@ import io.hekate.network.NetworkService;
 import io.hekate.rpc.RpcClientBuilder;
 import io.hekate.rpc.RpcServerInfo;
 import io.hekate.rpc.RpcService;
-import io.hekate.task.TaskService;
 import io.hekate.util.format.ToString;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Test;
@@ -94,10 +93,6 @@ public class XsdSingleNodeTest extends HekateTestBase {
     @Autowired
     @Qualifier("someRpcClient1")
     private SomeRpcService rpcClient;
-
-    @Autowired
-    @Qualifier("tasks")
-    private TaskService tasks;
 
     @Autowired
     @Qualifier("metrics")
@@ -150,7 +145,6 @@ public class XsdSingleNodeTest extends HekateTestBase {
         assertNotNull(cluster);
         assertNotNull(locks);
         assertNotNull(messaging);
-        assertNotNull(tasks);
         assertNotNull(rpc);
         assertNotNull(rpcClient);
         assertNotNull(metrics);

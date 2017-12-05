@@ -100,10 +100,6 @@
                         </bean>
                     </property>
                 </bean>
-                <!-- Task service. -->
-                <bean class="io.hekate.task.TaskServiceFactory">
-                    <property name="workerThreads" value="8"/>
-                </bean>
                 <!-- Lock service. -->
                 <bean class="io.hekate.lock.LockServiceFactory">
                     <property name="regions">

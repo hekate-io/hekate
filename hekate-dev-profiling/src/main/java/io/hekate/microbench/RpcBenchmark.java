@@ -24,7 +24,6 @@ import io.hekate.core.HekateBootstrap;
 import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcServerConfig;
 import io.hekate.rpc.RpcServiceFactory;
-import io.hekate.task.TaskFutureException;
 import java.util.List;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Param;
@@ -150,7 +149,7 @@ public class RpcBenchmark {
     }
 
     @Benchmark
-    public String measure(BenchmarkContext ctx) throws TaskFutureException, InterruptedException {
+    public String measure(BenchmarkContext ctx) throws InterruptedException {
         TestBean arg1 = TestBean.random();
         TestBean arg2 = TestBean.random();
 

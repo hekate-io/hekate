@@ -25,7 +25,6 @@ import io.hekate.codec.JdkCodecFactory;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.metrics.cluster.ClusterMetricsServiceFactory;
 import io.hekate.network.netty.NetworkServiceFactoryForTest;
-import io.hekate.task.TaskServiceFactory;
 import io.hekate.test.SeedNodeProviderMock;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -130,10 +129,6 @@ public class HekateNodeTestBase extends HekateTestBase {
 
             ctx.ssl().ifPresent(net::setSsl);
         });
-
-        boot.withService(TaskServiceFactory.class, tasks ->
-            tasks.setServerMode(false)
-        );
 
         boot.withService(ClusterMetricsServiceFactory.class, metrics ->
             metrics.setEnabled(false)

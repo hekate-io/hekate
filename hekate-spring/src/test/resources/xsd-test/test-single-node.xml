@@ -201,13 +201,6 @@
             </servers>
         </rpc>
 
-        <tasks id="tasks" nio-threads="0" worker-threads="8" idle-socket-timeout-ms="0">
-            <back-pressure>
-                <outbound low-watermark="50" high-watermark="100" overflow="BLOCK"/>
-                <inbound low-watermark="50" high-watermark="100"/>
-            </back-pressure>
-        </tasks>
-
         <locks id="locks" retry-interval-ms="100" nio-threads="0" worker-threads="1">
             <region name="region1">
                 <lock name="someLock1"/>

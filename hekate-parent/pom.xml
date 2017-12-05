@@ -660,10 +660,6 @@
                             <packages>io.hekate.rpc*</packages>
                         </group>
                         <group>
-                            <title>Distributed Tasks API</title>
-                            <packages>io.hekate.task*</packages>
-                        </group>
-                        <group>
                             <title>Distributed Lock API</title>
                             <packages>io.hekate.lock*</packages>
                         </group>

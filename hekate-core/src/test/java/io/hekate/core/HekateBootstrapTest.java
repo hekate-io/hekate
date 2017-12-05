@@ -232,7 +232,6 @@ public class HekateBootstrapTest extends HekateTestBase {
                 assertNotNull(node.cluster());
                 assertNotNull(node.network());
                 assertNotNull(node.messaging());
-                assertNotNull(node.tasks());
                 assertNotNull(node.locks());
                 assertNotNull(node.coordination());
                 assertNotNull(node.election());

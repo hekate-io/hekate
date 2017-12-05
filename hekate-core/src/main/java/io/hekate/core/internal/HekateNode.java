@@ -65,7 +65,6 @@ import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.NetworkServerFailure;
 import io.hekate.network.NetworkService;
 import io.hekate.rpc.RpcService;
-import io.hekate.task.TaskService;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.format.ToString;
@@ -150,8 +149,6 @@ class HekateNode implements Hekate, JavaSerializable {
     private final NetworkService network;
 
     private final ClusterService cluster;
-
-    private final TaskService tasks;
 
     private final MessagingService messaging;
 
@@ -272,7 +269,6 @@ class HekateNode implements Hekate, JavaSerializable {
         locks = services.findService(LockService.class);
         election = services.findService(ElectionService.class);
         coordination = services.findService(CoordinationService.class);
-        tasks = services.findService(TaskService.class);
         rpc = services.findService(RpcService.class);
         localMetrics = services.findService(LocalMetricsService.class);
         clusterMetrics = services.findService(ClusterMetricsService.class);
@@ -298,11 +294,6 @@ class HekateNode implements Hekate, JavaSerializable {
     @Override
     public ClusterService cluster() {
         return cluster;
-    }
-
-    @Override
-    public TaskService tasks() {
-        return tasks;
     }
 
     @Override
@@ -1206,7 +1197,6 @@ class HekateNode implements Hekate, JavaSerializable {
         core.add(ClusterService.class);
         core.add(MessagingService.class);
         core.add(RpcService.class);
-        core.add(TaskService.class);
         core.add(LocalMetricsService.class);
         core.add(ClusterMetricsService.class);
         core.add(LockService.class);
