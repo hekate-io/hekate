@@ -132,19 +132,19 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
     }
 
     @Override
-    protected Object doInvoke(MessagingChannel<RpcProtocol> callChannel, Object[] args) throws MessagingFutureException,
+    protected Object doInvoke(MessagingChannel<RpcProtocol> channel, Object[] args) throws MessagingFutureException,
         InterruptedException, TimeoutException {
         CallRequest<T> request = new CallRequest<>(rpc(), tag(), method(), args);
 
-        AggregateFuture<RpcProtocol> future = callChannel.aggregate(request);
+        AggregateFuture<RpcProtocol> future = channel.aggregate(request);
 
         if (method().isAsync()) {
             return future.thenApply(converter);
         } else {
             AggregateResult<RpcProtocol> result;
 
-            if (callChannel.timeout() > 0) {
-                result = future.get(callChannel.timeout(), TimeUnit.MILLISECONDS);
+            if (channel.timeout() > 0) {
+                result = future.get(channel.timeout(), TimeUnit.MILLISECONDS);
             } else {
                 result = future.get();
             }
