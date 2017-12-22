@@ -479,7 +479,7 @@ class MessagingGateway<T> implements HekateSupport {
                     } else if (err instanceof UnknownRouteException) {
                         // Special case for unknown routes.
                         //-----------------------------------------------
-                        // It may happen that in some rare cases the node leaves the cluster at the same time with this operation.
+                        // It may happen that in some rare cases some node leaves the cluster at the same time with this operation.
                         // We exclude such a node from the results of the operation, as if there was no such node at all.
                         completed = aggregate.forgetNode(node);
                     } else {
