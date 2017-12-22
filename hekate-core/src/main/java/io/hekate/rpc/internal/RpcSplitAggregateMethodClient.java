@@ -1,15 +1,12 @@
 package io.hekate.rpc.internal;
 
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.core.internal.util.Utils;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFuture;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
-import io.hekate.messaging.loadbalance.LoadBalancer;
-import io.hekate.messaging.loadbalance.LoadBalancerContext;
-import io.hekate.messaging.loadbalance.LoadBalancerException;
+import io.hekate.messaging.loadbalance.LoadBalancers;
+import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.rpc.RpcAggregate;
 import io.hekate.rpc.RpcException;
@@ -24,11 +21,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,17 +36,77 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         Object[] split(Object arg, int clusterSize);
     }
 
-    private static class RoundRobin implements LoadBalancer<RpcProtocol> {
-        private static final AtomicIntegerFieldUpdater<RoundRobin> IDX = AtomicIntegerFieldUpdater.newUpdater(RoundRobin.class, "idx");
+    private static class AggregateFuture extends MessagingFuture<Object> implements ResponseCallback<RpcProtocol> {
+        private final int parts;
 
-        @SuppressWarnings("unused") // <- Updated via AtomicIntegerFieldUpdater.
-        private volatile int idx;
+        private final List<RpcProtocol> responses;
+
+        private final Function<Throwable, Throwable> errorPolicy;
+
+        private final Function<List<RpcProtocol>, Object> aggregator;
+
+        private int collectedParts;
+
+        private Throwable firstError;
+
+        public AggregateFuture(int parts, Function<Throwable, Throwable> errorPolicy, Function<List<RpcProtocol>, Object> aggregator) {
+            this.parts = parts;
+            this.errorPolicy = errorPolicy;
+            this.aggregator = aggregator;
+            this.responses = new ArrayList<>(parts);
+        }
 
         @Override
-        public ClusterNodeId route(RpcProtocol message, LoadBalancerContext ctx) throws LoadBalancerException {
-            int nodeIdx = IDX.getAndIncrement(this);
+        public void onComplete(Throwable err, Response<RpcProtocol> rsp) {
+            if (!isDone()) {
+                Throwable mappedErr = null;
 
-            return ctx.topology().nodes().get(Utils.mod(nodeIdx, ctx.size())).id();
+                // Check for errors.
+                if (err != null && errorPolicy != null) {
+                    mappedErr = errorPolicy.apply(err);
+                }
+
+                // Collect/aggregate results.
+                boolean allDone = false;
+
+                Object okResult = null;
+                Throwable errResult = null;
+
+                synchronized (responses) {
+                    if (mappedErr == null) {
+                        if (rsp != null) { // <-- Can be null if there was a real error but it was ignored by the error policy.
+                            responses.add(rsp.get());
+                        }
+                    } else {
+                        if (firstError == null) {
+                            firstError = mappedErr;
+                        }
+                    }
+
+                    // Check if we've collected all results.
+                    collectedParts++;
+
+                    if (collectedParts == parts) {
+                        allDone = true;
+
+                        // Check if should complete successfully or exceptionally.
+                        if (firstError == null) {
+                            okResult = aggregator.apply(responses);
+                        } else {
+                            errResult = firstError;
+                        }
+                    }
+                }
+
+                // Complete if we've collected all results.
+                if (allDone) {
+                    if (errResult == null) {
+                        complete(okResult);
+                    } else {
+                        completeExceptionally(errResult);
+                    }
+                }
+            }
         }
     }
 
@@ -62,7 +116,7 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
     private final Splitter splitter;
 
-    private final BiConsumer<CompletableFuture<Object>, Throwable> errorCheck;
+    private final Function<Throwable, Throwable> errorPolicy;
 
     private final Function<List<RpcProtocol>, Object> aggregator;
 
@@ -149,17 +203,25 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         RpcAggregate cfg = method.aggregate().get();
 
         if (cfg.remoteErrors() == RpcAggregate.RemoteErrors.IGNORE) {
-            errorCheck = null;
+            errorPolicy = null;
         } else {
-            errorCheck = (future, err) -> {
+            errorPolicy = err -> {
                 if (cfg.remoteErrors() == RpcAggregate.RemoteErrors.WARN) {
                     if (log.isWarnEnabled()) {
                         log.warn("RPC aggregation failed [rpc={}, method={}]", rpc, method, err);
                     }
+
+                    return null;
+                } else if (cfg.remoteErrors() == RpcAggregate.RemoteErrors.IGNORE) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("RPC aggregation failed [rpc={}, method={}]", rpc, method, err);
+                    }
+
+                    return null;
                 } else {
                     String errMsg = "RPC aggregation failed [rpc=" + rpc + ", method=" + method + "]";
 
-                    future.completeExceptionally(new RpcException(errMsg));
+                    return new RpcException(errMsg);
                 }
             };
         }
@@ -169,7 +231,7 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
     protected Object doInvoke(MessagingChannel<RpcProtocol> channel, Object[] args) throws MessagingFutureException,
         InterruptedException, TimeoutException {
         // RPC messaging future.
-        MessagingFuture<Object> future = new MessagingFuture<>();
+        MessagingFuture<Object> future;
 
         int clusterSize = channel.cluster().topology().size();
 
@@ -177,17 +239,19 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         if (clusterSize == 0) {
             EmptyTopologyException err = new EmptyTopologyException("No suitable RPC servers [rpc=" + rpc() + ']');
 
+            future = new MessagingFuture<>();
+
             future.completeExceptionally(err);
         } else {
             // Split argument into parts.
             Object[] parts = split(args, clusterSize);
 
+            AggregateFuture aggregateFuture = new AggregateFuture(parts.length, errorPolicy, aggregator);
+
             // Use Round Robin load balancing to distribute parts among the cluster nodes.
-            MessagingChannel<RpcProtocol> roundRobin = channel.withLoadBalancer(new RoundRobin());
+            MessagingChannel<RpcProtocol> roundRobin = channel.withLoadBalancer(LoadBalancers.roundRobin());
 
             // Process each part as a separate RPC request with a shared callback.
-            ResponseCallback<RpcProtocol> partCallback = prepareCallback(future, parts.length);
-
             for (Object part : parts) {
                 // Substitute the original argument with the part that should be submitted to the remote node.
                 Object[] partArgs = substituteArgs(args, part);
@@ -195,8 +259,10 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
                 // Submit RPC request.
                 CallRequest<T> call = new CallRequest<>(rpc(), tag(), method(), partArgs);
 
-                roundRobin.request(call, partCallback);
+                roundRobin.request(call, aggregateFuture /* <-- Future is a callback. */);
             }
+
+            future = aggregateFuture;
         }
 
         // Return results.
@@ -215,46 +281,6 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         Object arg = ArgAssert.notNull(args[splitArgIdx], "Splittable argument");
 
         return splitter.split(arg, clusterSize);
-    }
-
-    private ResponseCallback<RpcProtocol> prepareCallback(MessagingFuture<Object> future, int parts) {
-        List<RpcProtocol> results = new ArrayList<>(parts);
-
-        return (err, rsp) -> {
-            if (!future.isDone()) {
-                // Check for errors.
-                if (err != null && errorCheck != null) {
-                    errorCheck.accept(future, err);
-
-                    // Skip processing if future had been already completed by the error check.
-                    if (future.isDone()) {
-                        return;
-                    }
-                }
-
-                // Collect results.
-                boolean aggregated = false;
-                Object aggregate = null;
-
-                synchronized (results) {
-                    RpcProtocol result = err == null ? rsp.get() : null;
-
-                    results.add(result);
-
-                    // Check if we've collected all results.
-                    if (results.size() == parts) {
-                        aggregated = true;
-
-                        aggregate = aggregator.apply(results);
-                    }
-                }
-
-                // Complete if we've collected all results.
-                if (aggregated) {
-                    future.complete(aggregate);
-                }
-            }
-        };
     }
 
     private Object[] substituteArgs(Object[] args, Object part) {
