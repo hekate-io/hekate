@@ -149,19 +149,21 @@ public class RpcTypeAnalyzerTest extends HekateTestBase {
         List<?> method(@RpcSplit List<Object> arg);
     }
 
+    private final RpcTypeAnalyzer analyzer = new RpcTypeAnalyzer();
+
     @Test
     public void testAnalyzeWithoutRpcAnnotation() {
-        assertTrue(RpcTypeAnalyzer.analyze(mock(NotAnRpc.class)).isEmpty());
+        assertTrue(analyzer.analyze(mock(NotAnRpc.class)).isEmpty());
     }
 
     @Test
     public void testAnalyzeNonPublic() {
-        assertTrue(RpcTypeAnalyzer.analyze(mock(NonPublic.class)).isEmpty());
+        assertTrue(analyzer.analyze(mock(NonPublic.class)).isEmpty());
     }
 
     @Test
     public void testAnalyzeA() throws Exception {
-        List<RpcInterface<?>> rpcs = RpcTypeAnalyzer.analyze(mock(TypeA.class));
+        List<RpcInterface<?>> rpcs = analyzer.analyze(mock(TypeA.class));
 
         assertEquals(1, rpcs.size());
 
@@ -173,7 +175,7 @@ public class RpcTypeAnalyzerTest extends HekateTestBase {
 
     @Test
     public void testAnalyzeB() throws Exception {
-        List<RpcInterface<?>> rpcs = RpcTypeAnalyzer.analyze(mock(TypeB.class));
+        List<RpcInterface<?>> rpcs = analyzer.analyze(mock(TypeB.class));
 
         assertEquals(1, rpcs.size());
 
@@ -185,7 +187,7 @@ public class RpcTypeAnalyzerTest extends HekateTestBase {
 
     @Test
     public void testAnalyzeC() throws Exception {
-        List<RpcInterface<?>> rpcs = RpcTypeAnalyzer.analyze(mock(TypeC.class));
+        List<RpcInterface<?>> rpcs = analyzer.analyze(mock(TypeC.class));
 
         assertEquals(3, rpcs.size());
 
@@ -228,16 +230,28 @@ public class RpcTypeAnalyzerTest extends HekateTestBase {
 
     @Test
     public void testAnalyzeType() {
-        expect(IllegalArgumentException.class, () -> RpcTypeAnalyzer.analyzeType(Runnable.class));
+        expect(IllegalArgumentException.class, () -> analyzer.analyzeType(Runnable.class));
 
-        RpcInterfaceInfo<TypeA> info = RpcTypeAnalyzer.analyzeType(TypeA.class);
+        RpcInterfaceInfo<TypeA> info = analyzer.analyzeType(TypeA.class);
 
         verifyTypeA(info);
     }
 
     @Test
+    public void testAnalyzeTypeCache() {
+        RpcInterfaceInfo<TypeA> info1 = analyzer.analyzeType(TypeA.class);
+        RpcInterfaceInfo<TypeA> info2 = analyzer.analyzeType(TypeA.class);
+        RpcInterfaceInfo<TypeA> info3 = analyzer.analyzeType(TypeA.class);
+
+        verifyTypeA(info1);
+
+        assertSame(info1, info2);
+        assertSame(info1, info3);
+    }
+
+    @Test
     public void testAffinityKey() {
-        RpcInterfaceInfo<RpcWithAffinity> type = RpcTypeAnalyzer.analyzeType(RpcWithAffinity.class);
+        RpcInterfaceInfo<RpcWithAffinity> type = analyzer.analyzeType(RpcWithAffinity.class);
 
         assertEquals(3, type.methods().size());
 
@@ -252,7 +266,7 @@ public class RpcTypeAnalyzerTest extends HekateTestBase {
 
     @Test
     public void testDuplicatedAffinityKey() {
-        RpcInterfaceInfo<RpcWithDuplicatedAffinity> type = RpcTypeAnalyzer.analyzeType(RpcWithDuplicatedAffinity.class);
+        RpcInterfaceInfo<RpcWithDuplicatedAffinity> type = analyzer.analyzeType(RpcWithDuplicatedAffinity.class);
 
         assertEquals(1, type.methods().size());
 
@@ -266,12 +280,12 @@ public class RpcTypeAnalyzerTest extends HekateTestBase {
         expectExactMessage(IllegalArgumentException.class,
             '@' + Rpc.class.getSimpleName() + " version must be greater than or equals to the minimum client version "
                 + "[type=" + InvalidMinClientVersion.class.getName() + ", version=1, min-client-version=3]",
-            () -> RpcTypeAnalyzer.analyzeType(InvalidMinClientVersion.class));
+            () -> analyzer.analyzeType(InvalidMinClientVersion.class));
     }
 
     @Test
     public void testAggregateType() {
-        RpcInterfaceInfo<AggregateType> type = RpcTypeAnalyzer.analyzeType(AggregateType.class);
+        RpcInterfaceInfo<AggregateType> type = analyzer.analyzeType(AggregateType.class);
 
         RpcMethodInfo col = findMethod("collection", type);
         RpcMethodInfo lst = findMethod("list", type);
@@ -296,7 +310,7 @@ public class RpcTypeAnalyzerTest extends HekateTestBase {
 
     @Test
     public void testAggregateAsyncType() {
-        RpcInterfaceInfo<AggregateAsyncType> type = RpcTypeAnalyzer.analyzeType(AggregateAsyncType.class);
+        RpcInterfaceInfo<AggregateAsyncType> type = analyzer.analyzeType(AggregateAsyncType.class);
 
         RpcMethodInfo col = findMethod("collection", type);
         RpcMethodInfo lst = findMethod("list", type);
@@ -325,7 +339,7 @@ public class RpcTypeAnalyzerTest extends HekateTestBase {
             "Method annotated with @RpcAggregate has unsupported return type ["
                 + "supported-types={Collection, List, Set, Map, CompletableFuture<Collection|List|Set|Map>}, "
                 + "method=public abstract void " + InvalidAggregateTypeA.class.getName() + ".someMethod()]",
-            () -> RpcTypeAnalyzer.analyzeType(InvalidAggregateTypeA.class));
+            () -> analyzer.analyzeType(InvalidAggregateTypeA.class));
     }
 
     @Test
@@ -334,7 +348,7 @@ public class RpcTypeAnalyzerTest extends HekateTestBase {
             "Method annotated with @RpcAggregate has unsupported return type ["
                 + "supported-types={Collection, List, Set, Map, CompletableFuture<Collection|List|Set|Map>}, "
                 + "method=public abstract java.util.ArrayList " + InvalidAggregateTypeB.class.getName() + ".someMethod()]",
-            () -> RpcTypeAnalyzer.analyzeType(InvalidAggregateTypeB.class));
+            () -> analyzer.analyzeType(InvalidAggregateTypeB.class));
     }
 
     @Test
@@ -342,7 +356,7 @@ public class RpcTypeAnalyzerTest extends HekateTestBase {
         expectExactMessage(IllegalArgumentException.class,
             "Only one argument can be annotated with @RpcSplit [method="
                 + "public abstract java.util.List " + RpcWithDuplicatedSplit.class.getName() + ".method(java.util.List,java.util.List)]",
-            () -> RpcTypeAnalyzer.analyzeType(RpcWithDuplicatedSplit.class));
+            () -> analyzer.analyzeType(RpcWithDuplicatedSplit.class));
     }
 
     @Test
@@ -351,7 +365,7 @@ public class RpcTypeAnalyzerTest extends HekateTestBase {
             "Parameter annotated with @RpcSplit has unsupported type ["
                 + "supported-types={Collection, List, Set, Map}, "
                 + "method=public abstract java.util.List " + RpcWithInvalidSplitType.class.getName() + ".method(java.lang.Object)]",
-            () -> RpcTypeAnalyzer.analyzeType(RpcWithInvalidSplitType.class));
+            () -> analyzer.analyzeType(RpcWithInvalidSplitType.class));
     }
 
     @Test
@@ -359,7 +373,7 @@ public class RpcTypeAnalyzerTest extends HekateTestBase {
         expectExactMessage(IllegalArgumentException.class,
             "@RpcSplit can't be used together with @RpcAffinityKey [method="
                 + "public abstract java.util.List " + RpcWithAffinityAndSplit.class.getName() + ".method(java.lang.Object,java.util.List)]",
-            () -> RpcTypeAnalyzer.analyzeType(RpcWithAffinityAndSplit.class));
+            () -> analyzer.analyzeType(RpcWithAffinityAndSplit.class));
     }
 
     @Test
@@ -367,12 +381,7 @@ public class RpcTypeAnalyzerTest extends HekateTestBase {
         expectExactMessage(IllegalArgumentException.class,
             "@RpcSplit can be used only in @RpcAggregate-annotated methods "
                 + "[method=public abstract java.util.List " + RpcSplitWithoutAggregate.class.getName() + ".method(java.util.List)]",
-            () -> RpcTypeAnalyzer.analyzeType(RpcSplitWithoutAggregate.class));
-    }
-
-    @Test
-    public void testUtilityClass() throws Exception {
-        assertValidUtilityClass(RpcTypeAnalyzer.class);
+            () -> analyzer.analyzeType(RpcSplitWithoutAggregate.class));
     }
 
     private RpcMethodInfo findMethod(String name, RpcInterfaceInfo<?> type) {

@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -15,14 +17,12 @@ import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Arrays.asList;
 
-final class RpcTypeAnalyzer {
-    private RpcTypeAnalyzer() {
-        // No-op.
-    }
+class RpcTypeAnalyzer {
+    private ConcurrentMap<Class<?>, List<RpcInterfaceInfo<?>>> cache = new ConcurrentHashMap<>();
 
-    public static <T> RpcInterfaceInfo<T> analyzeType(Class<T> type) {
+    public <T> RpcInterfaceInfo<T> analyzeType(Class<T> type) {
         @SuppressWarnings("unchecked")
-        RpcInterfaceInfo<T> info = (RpcInterfaceInfo<T>)doAnalyzeType(type).stream()
+        RpcInterfaceInfo<T> info = (RpcInterfaceInfo<T>)cached(type).stream()
             .filter(t -> t.javaType() == type)
             .findFirst()
             .orElseThrow(() ->
@@ -33,12 +33,18 @@ final class RpcTypeAnalyzer {
         return info;
     }
 
-    public static List<RpcInterface<?>> analyze(Object target) {
-        List<RpcInterfaceInfo<?>> rpcInterfaces = doAnalyzeType(target.getClass());
+    public List<RpcInterface<?>> analyze(Object target) {
+        Class<?> type = target.getClass();
+
+        List<RpcInterfaceInfo<?>> rpcInterfaces = cached(type);
 
         return rpcInterfaces.stream()
             .map(info -> new RpcInterface<>(info, target))
             .collect(Collectors.toList());
+    }
+
+    private List<RpcInterfaceInfo<?>> cached(Class<?> type) {
+        return cache.computeIfAbsent(type, RpcTypeAnalyzer::doAnalyzeType);
     }
 
     private static List<RpcInterfaceInfo<?>> doAnalyzeType(Class<?> type) {

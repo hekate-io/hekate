@@ -132,6 +132,8 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     @ToStringIgnore
     private final StateGuard guard = new StateGuard(RpcService.class);
 
+    private final RpcTypeAnalyzer typeAnalyzer = new RpcTypeAnalyzer();
+
     @ToStringIgnore
     private final Map<RpcKey, RpcClientBuilder<?>> clients = new ConcurrentHashMap<>();
 
@@ -205,7 +207,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
         serverConfigs.forEach(cfg -> {
             check.notNull(cfg.getHandler(), "Handler");
 
-            List<RpcInterface<?>> rpcs = RpcTypeAnalyzer.analyze(cfg.getHandler());
+            List<RpcInterface<?>> rpcs = typeAnalyzer.analyze(cfg.getHandler());
 
             if (rpcs.isEmpty()) {
                 throw check.fail("RPC handler must implement at least one @" + Rpc.class.getSimpleName() + "-annotated public "
@@ -426,7 +428,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     }
 
     private RpcClientBuilder<?> createClient(RpcKey key) {
-        RpcInterfaceInfo<?> type = RpcTypeAnalyzer.analyzeType(key.type());
+        RpcInterfaceInfo<?> type = typeAnalyzer.analyzeType(key.type());
 
         MessagingChannel<RpcProtocol> clientChannel = channelForClient(key, type);
 
