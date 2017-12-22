@@ -43,6 +43,8 @@ public class RpcMethodInfo {
 
     private final Optional<RpcAggregate> aggregate;
 
+    private final OptionalInt splitArg;
+
     private final OptionalInt affinityArg;
 
     @ToStringIgnore
@@ -62,9 +64,22 @@ public class RpcMethodInfo {
         this.signature = shortSignature(javaMethod);
         this.javaMethod = javaMethod;
         this.affinityArg = findAffinityArg(javaMethod);
+        this.splitArg = findSplitArg(javaMethod);
         this.async = isAsyncReturnType(javaMethod);
         this.realReturnType = findRealReturnType(javaMethod);
         this.aggregate = findAggregate(javaMethod);
+
+        if (splitArg.isPresent()) {
+            if (affinityArg.isPresent()) {
+                throw new IllegalArgumentException("@" + RpcSplit.class.getSimpleName() + " can't be used together with "
+                    + "@" + RpcAffinityKey.class.getSimpleName() + " [method=" + javaMethod + ']');
+            }
+
+            if (!aggregate.isPresent()) {
+                throw new IllegalArgumentException("@" + RpcSplit.class.getSimpleName() + " can be used only in "
+                    + "@" + RpcAggregate.class.getSimpleName() + "-annotated methods [method=" + javaMethod + ']');
+            }
+        }
     }
 
     /**
@@ -101,6 +116,15 @@ public class RpcMethodInfo {
      */
     public Optional<RpcAggregate> aggregate() {
         return aggregate;
+    }
+
+    /**
+     * Returns the zero-based index of an argument that is annotated with {@link RpcSplit} (if presents).
+     *
+     * @return Zero-based index of an argument that is annotated with {@link RpcSplit}.
+     */
+    public OptionalInt splitArg() {
+        return splitArg;
     }
 
     /**
@@ -159,6 +183,7 @@ public class RpcMethodInfo {
             && !Set.class.equals(returnType)
             && !List.class.equals(returnType)
             && !Map.class.equals(returnType)) {
+            // Allowed types info for the error message.
             String col = Collection.class.getSimpleName();
             String lst = List.class.getSimpleName();
             String set = Set.class.getSimpleName();
@@ -172,6 +197,48 @@ public class RpcMethodInfo {
         }
 
         return aggregate;
+    }
+
+    private static OptionalInt findSplitArg(Method meth) {
+        OptionalInt splitIdx = OptionalInt.empty();
+
+        Annotation[][] parameters = meth.getParameterAnnotations();
+
+        for (int i = 0; i < parameters.length; i++) {
+            Annotation[] annotations = parameters[i];
+
+            for (int j = 0; j < annotations.length; j++) {
+                if (annotations[j].annotationType().equals(RpcSplit.class)) {
+                    if (splitIdx.isPresent()) {
+                        throw new IllegalArgumentException("Only one argument can be annotated with @" + RpcSplit.class.getSimpleName()
+                            + " [method=" + meth + ']');
+                    }
+
+                    splitIdx = OptionalInt.of(i);
+                }
+            }
+        }
+
+        if (splitIdx.isPresent()) {
+            Class<?> splitType = meth.getParameterTypes()[splitIdx.getAsInt()];
+
+            // Verify parameter type.
+            if (!Collection.class.equals(splitType)
+                && !Set.class.equals(splitType)
+                && !List.class.equals(splitType)
+                && !Map.class.equals(splitType)) {
+                // Allowed types info for the error message.
+                String col = Collection.class.getSimpleName();
+                String lst = List.class.getSimpleName();
+                String set = Set.class.getSimpleName();
+                String map = Map.class.getSimpleName();
+
+                throw new IllegalArgumentException("Parameter annotated with @" + RpcSplit.class.getSimpleName() + " has unsupported "
+                    + "type [supported-types={" + col + ", " + lst + ", " + set + ", " + map + "}, method=" + meth + ']');
+            }
+        }
+
+        return splitIdx;
     }
 
     private static OptionalInt findAffinityArg(Method meth) {

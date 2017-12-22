@@ -34,7 +34,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-public class RpcServiceUnicastTest extends RpcServiceTestBase {
+public class RpcUnicastTest extends RpcServiceTestBase {
     @Rpc
     public interface TestRpcA {
         void callA();
@@ -79,7 +79,7 @@ public class RpcServiceUnicastTest extends RpcServiceTestBase {
         Object callWithError() throws SerializableTestException;
     }
 
-    public RpcServiceUnicastTest(MultiCodecTestContext ctx) {
+    public RpcUnicastTest(MultiCodecTestContext ctx) {
         super(ctx);
     }
 

@@ -27,7 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-public class RpcServiceAggregateTest extends RpcServiceTestBase {
+public class RpcAggregateTest extends RpcServiceTestBase {
     @Rpc
     public interface AggregateRpc {
         @RpcAggregate
@@ -62,7 +62,7 @@ public class RpcServiceAggregateTest extends RpcServiceTestBase {
 
     private HekateTestNode server2;
 
-    public RpcServiceAggregateTest(MultiCodecTestContext ctx) {
+    public RpcAggregateTest(MultiCodecTestContext ctx) {
         super(ctx);
     }
 

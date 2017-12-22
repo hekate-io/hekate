@@ -6,6 +6,7 @@ import io.hekate.rpc.RpcAffinityKey;
 import io.hekate.rpc.RpcAggregate;
 import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
+import io.hekate.rpc.RpcSplit;
 import io.hekate.util.format.ToString;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -119,6 +120,33 @@ public class RpcTypeAnalyzerTest extends HekateTestBase {
     @SuppressWarnings("unused")
     public interface RpcWithDuplicatedAffinity {
         void key(@RpcAffinityKey Object arg1, @RpcAffinityKey Object arg2);
+    }
+
+    @Rpc
+    @SuppressWarnings("unused")
+    public interface RpcWithDuplicatedSplit {
+        @RpcAggregate
+        List<?> method(@RpcSplit List<Object> arg1, @RpcSplit List<Object> arg2);
+    }
+
+    @Rpc
+    @SuppressWarnings("unused")
+    public interface RpcWithInvalidSplitType {
+        @RpcAggregate
+        List<?> method(@RpcSplit Object arg);
+    }
+
+    @Rpc
+    @SuppressWarnings("unused")
+    public interface RpcWithAffinityAndSplit {
+        @RpcAggregate
+        List<?> method(@RpcAffinityKey Object key, @RpcSplit List<Object> arg);
+    }
+
+    @Rpc
+    @SuppressWarnings("unused")
+    public interface RpcSplitWithoutAggregate {
+        List<?> method(@RpcSplit List<Object> arg);
     }
 
     @Test
@@ -307,6 +335,39 @@ public class RpcTypeAnalyzerTest extends HekateTestBase {
                 + "supported-types={Collection, List, Set, Map, CompletableFuture<Collection|List|Set|Map>}, "
                 + "method=public abstract java.util.ArrayList " + InvalidAggregateTypeB.class.getName() + ".someMethod()]",
             () -> RpcTypeAnalyzer.analyzeType(InvalidAggregateTypeB.class));
+    }
+
+    @Test
+    public void testMultipleSplit() {
+        expectExactMessage(IllegalArgumentException.class,
+            "Only one argument can be annotated with @RpcSplit [method="
+                + "public abstract java.util.List " + RpcWithDuplicatedSplit.class.getName() + ".method(java.util.List,java.util.List)]",
+            () -> RpcTypeAnalyzer.analyzeType(RpcWithDuplicatedSplit.class));
+    }
+
+    @Test
+    public void testInvalidSplitType() {
+        expectExactMessage(IllegalArgumentException.class,
+            "Parameter annotated with @RpcSplit has unsupported type ["
+                + "supported-types={Collection, List, Set, Map}, "
+                + "method=public abstract java.util.List " + RpcWithInvalidSplitType.class.getName() + ".method(java.lang.Object)]",
+            () -> RpcTypeAnalyzer.analyzeType(RpcWithInvalidSplitType.class));
+    }
+
+    @Test
+    public void testSplitWithAffinity() {
+        expectExactMessage(IllegalArgumentException.class,
+            "@RpcSplit can't be used together with @RpcAffinityKey [method="
+                + "public abstract java.util.List " + RpcWithAffinityAndSplit.class.getName() + ".method(java.lang.Object,java.util.List)]",
+            () -> RpcTypeAnalyzer.analyzeType(RpcWithAffinityAndSplit.class));
+    }
+
+    @Test
+    public void testSplitWithoutAggregate() {
+        expectExactMessage(IllegalArgumentException.class,
+            "@RpcSplit can be used only in @RpcAggregate-annotated methods "
+                + "[method=public abstract java.util.List " + RpcSplitWithoutAggregate.class.getName() + ".method(java.util.List)]",
+            () -> RpcTypeAnalyzer.analyzeType(RpcSplitWithoutAggregate.class));
     }
 
     @Test

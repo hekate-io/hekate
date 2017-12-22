@@ -109,11 +109,19 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
         Map<Method, RpcMethodClientBase<T>> clients = new HashMap<>(type.methods().size(), 1.0f);
 
         for (RpcMethodInfo method : type.methods()) {
+            RpcMethodClientBase<T> client;
+
             if (method.aggregate().isPresent()) {
-                clients.put(method.javaMethod(), new RpcAggregateMethodClient<>(type, tag, method, channel));
+                if (method.splitArg().isPresent()) {
+                    client = new RpcSplitAggregateMethodClient<>(type, tag, method, channel);
+                } else {
+                    client = new RpcAggregateMethodClient<>(type, tag, method, channel);
+                }
             } else {
-                clients.put(method.javaMethod(), new RpcUnicastMethodClient<>(type, tag, method, channel));
+                client = new RpcUnicastMethodClient<>(type, tag, method, channel);
             }
+
+            clients.put(method.javaMethod(), client);
         }
 
         Class<?>[] proxyType = {type.javaType()};

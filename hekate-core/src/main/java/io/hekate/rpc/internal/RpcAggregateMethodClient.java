@@ -14,7 +14,6 @@ import io.hekate.rpc.internal.RpcProtocol.CallRequest;
 import io.hekate.rpc.internal.RpcProtocol.ObjectResponse;
 import io.hekate.util.format.ToString;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +26,10 @@ import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.hekate.rpc.internal.RpcUtils.mergeToList;
+import static io.hekate.rpc.internal.RpcUtils.mergeToMap;
+import static io.hekate.rpc.internal.RpcUtils.mergeToSet;
+
 class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
     private static final Logger log = LoggerFactory.getLogger(RpcService.class);
 
@@ -37,9 +40,12 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
         assert method.aggregate().isPresent() : "Not an aggregate method [rpc=" + rpc + ", method=" + method + ']';
 
-        Consumer<AggregateResult<RpcProtocol>> errorCheck;
-
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Error handling.
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         RpcAggregate config = method.aggregate().get();
+
+        Consumer<AggregateResult<RpcProtocol>> errorCheck;
 
         if (config.remoteErrors() == RpcAggregate.RemoteErrors.IGNORE) {
             errorCheck = null;
@@ -71,6 +77,9 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
             };
         }
 
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Aggregation of results.
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         if (method.realReturnType().equals(Map.class)) {
             converter = aggregate -> {
                 if (errorCheck != null) {
@@ -79,14 +88,9 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
                 Map<Object, Object> merged = new HashMap<>();
 
-                aggregate.results().forEach(rpcResult -> {
-                    if (rpcResult instanceof ObjectResponse) {
-                        @SuppressWarnings("unchecked")
-                        Map<Object, Object> part = (Map<Object, Object>)((ObjectResponse)rpcResult).object();
-
-                        merged.putAll(part);
-                    }
-                });
+                aggregate.results().forEach(rpcResult ->
+                    mergeToMap(rpcResult, merged)
+                );
 
                 return merged;
             };
@@ -98,14 +102,9 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
                 Set<Object> merged = new HashSet<>();
 
-                aggregate.results().forEach(rpcResult -> {
-                    if (rpcResult instanceof ObjectResponse) {
-                        @SuppressWarnings("unchecked")
-                        Collection<Object> part = (Collection<Object>)((ObjectResponse)rpcResult).object();
-
-                        merged.addAll(part);
-                    }
-                });
+                aggregate.results().forEach(rpcResult ->
+                    mergeToSet(rpcResult, merged)
+                );
 
                 return merged;
             };
@@ -117,14 +116,9 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
                 List<Object> merged = new ArrayList<>();
 
-                aggregate.results().forEach(rpcResult -> {
-                    if (rpcResult instanceof ObjectResponse) {
-                        @SuppressWarnings("unchecked")
-                        Collection<Object> part = (Collection<Object>)((ObjectResponse)rpcResult).object();
-
-                        merged.addAll(part);
-                    }
-                });
+                aggregate.results().forEach(rpcResult ->
+                    mergeToList(rpcResult, merged)
+                );
 
                 return merged;
             };

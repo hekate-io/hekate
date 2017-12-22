@@ -92,6 +92,24 @@ import java.util.concurrent.CompletableFuture;
  * <li>{@link CompletableFuture}{@code <}{@link List}|{@link Set}|{@link Collection}|{@link Map}{@code >}</li>
  * </ul>
  *
+ * <h3>Arguments splitting</h3>
+ * <p>
+ * RPC service provides support for Map/Reduce style of data processing. This can be achieved by placing @{@link RpcSplit} annotation on
+ * one of an @{@link RpcAggregate}-annotated method's parameter. Such parameter must be of one of the following types:
+ * </p>
+ * <ul>
+ * <li>{@link List}</li>
+ * <li>{@link Set}</li>
+ * <li>{@link Map}</li>
+ * <li>{@link Collection}</li>
+ * </ul>
+ * <p>
+ * If @{@link RpcSplit} annotation is present then the value of that parameter will be split into smaller chunks (sub-collections) based
+ * on the number of available cluster nodes. All chunks will be evenly distributed among the cluster nodes for parallel processing and once
+ * processing on all nodes is completed then results of each node will be aggregated the same way as during the regular {@link RpcAggregate}
+ * call.
+ * </p>
+ *
  * <h3>RPC interface versioning</h3>
  * <p>
  * RPC interface can define client compatibility rules by using the interface versioning approach. Version can be specified via {@link

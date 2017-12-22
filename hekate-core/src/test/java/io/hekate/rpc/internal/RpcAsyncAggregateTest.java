@@ -31,7 +31,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-public class RpcServiceAsyncAggregateTest extends RpcServiceTestBase {
+public class RpcAsyncAggregateTest extends RpcServiceTestBase {
     @Rpc
     public interface AggregateRpc {
         @RpcAggregate
@@ -63,7 +63,7 @@ public class RpcServiceAsyncAggregateTest extends RpcServiceTestBase {
 
     private HekateTestNode server2;
 
-    public RpcServiceAsyncAggregateTest(MultiCodecTestContext ctx) {
+    public RpcAsyncAggregateTest(MultiCodecTestContext ctx) {
         super(ctx);
     }
 
