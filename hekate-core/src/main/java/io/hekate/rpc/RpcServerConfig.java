@@ -71,12 +71,12 @@ public class RpcServerConfig {
      *
      * <p>
      * Such tag can be specified on the RPC client side in order to disambiguate selection of the target server
-     * (see {@link RpcService#clientFor(Class, String)} method) .
+     * (see {@link RpcService#clientFor(Class, String)} method).
      * </p>
      *
      * <p>
      * Note that tags are optional and if not specified then RPC clients should also be constructed without any tags in order to
-     * be able discover this server (see {@link RpcService#clientFor(Class)} method).
+     * be able to discover this server (see {@link RpcService#clientFor(Class)} method).
      * </p>
      *
      * @param tags Tags of this server.
