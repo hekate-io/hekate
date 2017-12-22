@@ -64,11 +64,11 @@ public final class LoadBalancers {
             ClusterNode node = ctx.nodes().get(idx);
 
             if (ctx.failure().isPresent()) {
-                FailureInfo prevErr = ctx.failure().get();
+                FailureInfo failure = ctx.failure().get();
 
-                if (prevErr.routing() == RE_ROUTE && prevErr.isFailed(node)) {
+                if (failure.routing() == RE_ROUTE && failure.isFailed(node)) {
                     List<ClusterNode> nonFailed = ctx.stream()
-                        .filter(n -> !prevErr.isFailed(n))
+                        .filter(n -> !failure.isFailed(n))
                         .collect(toList());
 
                     if (!nonFailed.isEmpty()) {
