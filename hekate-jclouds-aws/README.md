@@ -7,6 +7,6 @@ for [Hekate.io](https://github.com/hekate-io/hekate) library.
  <dependency>
      <groupId>io.hekate</groupId>
      <artifactId>hekate-jclouds-aws</artifactId>
-     <version>1.0.1</version>
+     <version>1.0.2</version>
  </dependency>
  ```
