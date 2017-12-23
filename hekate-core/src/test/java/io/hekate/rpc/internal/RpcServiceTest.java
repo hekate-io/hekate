@@ -190,6 +190,16 @@ public class RpcServiceTest extends RpcServiceTestBase {
     }
 
     @Test
+    public void testClusterOfType() throws Exception {
+        TestRpcA rpc = mock(TestRpcA.class);
+
+        ClientAndServer ctx = prepareClientAndServer(rpc);
+
+        assertTrue(ctx.client().rpc().clusterOf(TestRpcA.class).topology().contains(ctx.server().localNode()));
+        assertFalse(ctx.client().rpc().clusterOf(TestRpcA.class).topology().contains(ctx.client().localNode()));
+    }
+
+    @Test
     public void testPreConfiguredClientBuilder() throws Exception {
         HekateTestNode server = createNode(boot ->
             boot.withService(RpcServiceFactory.class)

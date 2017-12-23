@@ -2,6 +2,7 @@ package io.hekate.rpc;
 
 import io.hekate.cluster.ClusterFilterSupport;
 import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterView;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.DefaultServiceFactory;
@@ -299,6 +300,29 @@ public interface RpcService extends Service {
      * @return Builder.
      */
     <T> RpcClientBuilder<T> clientFor(Class<T> type);
+
+    /**
+     * Returns the cluster view that includes only those nodes that have a {@link #servers() server} for the specified
+     * {@link Rpc}-annotated Java interface and tag.
+     *
+     * @param type {@link Rpc}-annotated Java interface.
+     * @param tag Tag (see {@link RpcServerConfig#setTags(Set)}).
+     *
+     * @return Cluster view that includes only those node that have a {@link #servers() server} for the specified {@link Rpc}-annotated
+     * Java interface and tag.
+     */
+    ClusterView clusterOf(Class<?> type, String tag);
+
+    /**
+     * Returns the cluster view that includes only those nodes that have a {@link #servers() server} for the specified
+     * {@link Rpc}-annotated Java interface.
+     *
+     * @param type {@link Rpc}-annotated Java interface.
+     *
+     * @return Cluster view that includes only those node that have a {@link #servers() server} for the specified {@link Rpc}-annotated
+     * Java interface.
+     */
+    ClusterView clusterOf(Class<?> type);
 
     /**
      * Returns an immutable list of all RPC servers registered on this node.

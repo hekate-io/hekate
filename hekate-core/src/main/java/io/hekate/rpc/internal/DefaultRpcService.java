@@ -1,5 +1,6 @@
 package io.hekate.rpc.internal;
 
+import io.hekate.cluster.ClusterView;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.core.HekateException;
@@ -397,6 +398,22 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
         } finally {
             guard.unlockRead();
         }
+    }
+
+    @Override
+    public ClusterView clusterOf(Class<?> type) {
+        return clusterOf(type, null);
+    }
+
+    @Override
+    public ClusterView clusterOf(Class<?> type, String tag) {
+        ArgAssert.notNull(type, "Type");
+
+        RpcInterfaceInfo<?> rpcType = typeAnalyzer.analyzeType(type);
+
+        RpcKey key = new RpcKey(type, tag);
+
+        return channelForClient(key, rpcType).cluster();
     }
 
     @Override
