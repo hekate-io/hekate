@@ -155,9 +155,9 @@ Complete reference guide is coming soon.
  
  Dependency upgrades:
  
- - Upgraded to Netty 4.1.17.Final.
- - Upgraded to Spring Framework 4.3.12.RELEASE 
- - Upgraded to Spring Boot 1.5.8.RELEASE 
+ - Upgraded to Netty 4.1.19.Final.
+ - Upgraded to Spring Framework 4.3.13.RELEASE 
+ - Upgraded to Spring Boot 1.5.9.RELEASE 
  - Upgraded to AWS SDK 1.11.213
  - Upgraded to FST 2.52 
  - Upgraded to InfluxDB-Java 2.7 

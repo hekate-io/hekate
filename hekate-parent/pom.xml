@@ -62,15 +62,15 @@
 
         <!-- Production dependencies.-->
         <slf4j.version>1.7.21</slf4j.version>
-        <netty.version>4.1.17.Final</netty.version>
+        <netty.version>4.1.19.Final</netty.version>
         <netty.tcnative.version>2.0.7.Final</netty.tcnative.version>
-        <spring.version>4.3.12.RELEASE</spring.version>
-        <spring.boot.version>1.5.8.RELEASE</spring.boot.version>
+        <spring.version>4.3.13.RELEASE</spring.version>
+        <spring.boot.version>1.5.9.RELEASE</spring.boot.version>
         <logback.version>1.2.1</logback.version>
         <kryo.version>4.0.1</kryo.version>
         <kryo.serializers.version>0.42</kryo.serializers.version>
         <fst.version>2.52</fst.version>
-        <jclouds.version>2.0.2</jclouds.version>
+        <jclouds.version>2.0.3</jclouds.version>
         <aws.sdk.version>1.11.213</aws.sdk.version>
         <influxdb.version>2.7</influxdb.version>
 
