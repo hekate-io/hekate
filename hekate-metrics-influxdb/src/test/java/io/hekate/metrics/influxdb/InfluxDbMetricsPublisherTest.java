@@ -242,7 +242,7 @@ public class InfluxDbMetricsPublisherTest extends InfluxDbMetricsTestBase {
             }
         }
 
-        busyWait("full queue", () -> maxQueueSize == publisher.queueSize());
+        busyWait("full queue", () -> maxQueueSize <= publisher.queueSize());
 
         Waiting stopped = publisher.stopAsync();
 

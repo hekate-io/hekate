@@ -245,7 +245,7 @@ public class StatsdMetricsPublisherTest extends StatsdMetricsTestBase {
             publisher.publish(singleton(new TestMetric("test.metric", i)));
         }
 
-        busyWait("full queue", () -> maxQueueSize == publisher.queueSize());
+        busyWait("full queue", () -> maxQueueSize <= publisher.queueSize());
 
         Waiting stopped = publisher.stopAsync();
 
