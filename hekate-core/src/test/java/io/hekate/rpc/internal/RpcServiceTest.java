@@ -171,8 +171,7 @@ public class RpcServiceTest extends RpcServiceTestBase {
 
         assertEquals(ToString.format(builder), builder.toString());
 
-        TestRpcA proxy = builder
-            .build();
+        TestRpcA proxy = builder.build();
 
         repeat(3, i -> {
             when(lb.route(any(RpcRequest.class), any(LoadBalancerContext.class))).thenReturn(ctx.server().localNode().id());
