@@ -37,6 +37,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class InfluxDbMetricsPublisherTest extends InfluxDbMetricsTestBase {
     private interface WriteDelegate {
@@ -219,36 +220,44 @@ public class InfluxDbMetricsPublisherTest extends InfluxDbMetricsTestBase {
 
     @Test
     public void testStopWithFullQueue() throws Exception {
-        int maxQueueSize = InfluxDbMetricsConfig.DEFAULT_QUEUE_SIZE;
-
         CountDownLatch resume = new CountDownLatch(1);
 
-        writeDelegate = (db, points, original) -> {
-            await(resume);
+        List<Future<?>> futures;
 
-            original.run();
-        };
+        try {
+            writeDelegate = (db, points, original) -> {
+                try {
+                    resume.await();
+                } catch (InterruptedException e) {
+                    fail("Thread was unexpectedly interrupted.");
+                }
 
-        publisher.start("test", "test-host", 10002);
+                original.run();
+            };
 
-        List<Future<?>> futures = new ArrayList<>();
+            publisher.start("test", "test-host", 10002);
 
-        for (int i = 0; i < maxQueueSize * 2; i++) {
-            CompletableFuture<Void> future = publisher.publish(single("test.metric", i));
+            futures = new ArrayList<>();
 
-            // Ignore the first one since it could be consumed or not consumed by the publisher thread.
-            if (i > 0) {
-                futures.add(future);
+            int maxQueueSize = InfluxDbMetricsConfig.DEFAULT_QUEUE_SIZE;
+
+            for (int i = 0; i < maxQueueSize * 2; i++) {
+                CompletableFuture<Void> future = publisher.publish(single("test.metric", i));
+
+                // Ignore the first one since it could be consumed or not consumed by the publisher thread.
+                if (i > 0) {
+                    futures.add(future);
+                }
             }
+
+            assertEquals(maxQueueSize, publisher.queueSize());
+        } finally {
+            Waiting stopped = publisher.stopAsync();
+
+            resume.countDown();
+
+            stopped.await();
         }
-
-        busyWait("full queue", () -> maxQueueSize <= publisher.queueSize());
-
-        Waiting stopped = publisher.stopAsync();
-
-        resume.countDown();
-
-        stopped.await();
 
         for (Future<?> future : futures) {
             assertTrue(future.isCancelled());

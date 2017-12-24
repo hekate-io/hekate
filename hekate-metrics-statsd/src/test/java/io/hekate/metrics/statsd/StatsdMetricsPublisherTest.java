@@ -34,6 +34,7 @@ import org.junit.Test;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 public class StatsdMetricsPublisherTest extends StatsdMetricsTestBase {
     private interface WriteDelegate {
@@ -229,29 +230,35 @@ public class StatsdMetricsPublisherTest extends StatsdMetricsTestBase {
 
     @Test
     public void testStopWithFullQueue() throws Exception {
-        int maxQueueSize = StatsdMetricsConfig.DEFAULT_QUEUE_SIZE;
-
         CountDownLatch resume = new CountDownLatch(1);
 
-        writeDelegate = (db, points, original) -> {
-            await(resume);
+        try {
+            writeDelegate = (db, points, original) -> {
+                try {
+                    resume.await();
+                } catch (InterruptedException e) {
+                    fail("Thread was unexpectedly interrupted.");
+                }
 
-            original.run();
-        };
+                original.run();
+            };
 
-        publisher.start("test-host", 10002);
+            publisher.start("test-host", 10002);
 
-        for (int i = 0; i < maxQueueSize * 2; i++) {
-            publisher.publish(singleton(new TestMetric("test.metric", i)));
+            int maxQueueSize = StatsdMetricsConfig.DEFAULT_QUEUE_SIZE;
+
+            for (int i = 0; i < maxQueueSize * 2; i++) {
+                publisher.publish(singleton(new TestMetric("test.metric", i)));
+            }
+
+            assertEquals(maxQueueSize, publisher.queueSize());
+        } finally {
+            Waiting stopped = publisher.stopAsync();
+
+            resume.countDown();
+
+            stopped.await();
         }
-
-        busyWait("full queue", () -> maxQueueSize <= publisher.queueSize());
-
-        Waiting stopped = publisher.stopAsync();
-
-        resume.countDown();
-
-        stopped.await();
     }
 
     @Test
