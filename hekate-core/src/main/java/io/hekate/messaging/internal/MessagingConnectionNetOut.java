@@ -52,22 +52,24 @@ class MessagingConnectionNetOut<T> extends MessagingConnectionNetBase<T> {
 
     private final DisconnectCallback callback;
 
-    private final Object mux = new Object();
+    private final Object mux;
 
     @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
     private volatile int connectEpoch;
 
     public MessagingConnectionNetOut(ClusterAddress address, NetworkClient<MessagingProtocol> net, MessagingGateway<T> gateway,
-        MessagingEndpoint<T> endpoint, DisconnectCallback callback) {
+        MessagingEndpoint<T> endpoint, Object mux, DisconnectCallback callback) {
         super(net, gateway, endpoint);
 
         assert address != null : "Address is null.";
+        assert mux != null : "Mutex must be not null.";
         assert callback != null : "Disconnect callback is null.";
 
         this.channelId = gateway.id();
         this.localNodeId = gateway.localNode().id();
         this.address = address;
         this.net = net;
+        this.mux = mux;
         this.callback = callback;
     }
 
@@ -87,8 +89,10 @@ class MessagingConnectionNetOut<T> extends MessagingConnectionNetBase<T> {
                 @Override
                 public void onDisconnect(NetworkClient<MessagingProtocol> client, Optional<Throwable> cause) {
                     // Notify only if this is an internal disconnect.
-                    if (localEpoch == connectEpoch) {
-                        callback.onDisconnect();
+                    synchronized (mux) {
+                        if (localEpoch == connectEpoch) {
+                            callback.onDisconnect();
+                        }
                     }
 
                     discardRequests(localEpoch, wrapError(cause));

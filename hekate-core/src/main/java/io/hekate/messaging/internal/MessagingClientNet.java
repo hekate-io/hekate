@@ -73,7 +73,7 @@ class MessagingClientNet<T> implements MessagingClient<T> {
 
         DefaultMessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(remoteNode.id(), gateway.channel());
 
-        this.conn = new MessagingConnectionNetOut<>(remoteNode.address(), netClient, gateway, endpoint, () -> {
+        this.conn = new MessagingConnectionNetOut<>(remoteNode.address(), netClient, gateway, endpoint, mux, () -> {
             // On internal disconnect:
             synchronized (mux) {
                 if (state != STATE_CLOSED) {
@@ -183,6 +183,9 @@ class MessagingClientNet<T> implements MessagingClient<T> {
                         log.debug("Initializing connection [chanel={}, node={}]", channelName, node);
                     }
 
+                    // Important to connect before updating the 'state' flag.
+                    // Otherwise the double check logic will be broken and concurrent threads
+                    // will try to access the client while it is not connected yet.
                     conn.connect();
 
                     state = STATE_CONNECTED;

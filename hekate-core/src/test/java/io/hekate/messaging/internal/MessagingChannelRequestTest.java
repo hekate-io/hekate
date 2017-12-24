@@ -242,7 +242,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        runParallel(4, 500, s ->
+        runParallel(4, 1000, s ->
             sender.request(receiver.getNodeId(), "test").get()
         );
 
