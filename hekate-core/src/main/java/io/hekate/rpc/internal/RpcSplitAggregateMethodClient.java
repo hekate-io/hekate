@@ -221,7 +221,7 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
                 } else {
                     String errMsg = "RPC aggregation failed [rpc=" + rpc + ", method=" + method + "]";
 
-                    return new RpcException(errMsg);
+                    return new RpcException(errMsg, err);
                 }
             };
         }
