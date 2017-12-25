@@ -88,7 +88,7 @@ class LockControllerClient {
     @ToStringIgnore
     private final LockFuture unlockFuture;
 
-    private final AsyncLockCallbackAdaptor callback;
+    private final AsyncLockCallbackAdaptor asyncCallback;
 
     @ToStringIgnore
     private ClusterTopology topology;
@@ -102,7 +102,7 @@ class LockControllerClient {
     private Status status = Status.UNLOCKED;
 
     public LockControllerClient(long lockId, ClusterNodeId localNode, long threadId, DistributedLock lock,
-        MessagingChannel<LockProtocol> channel, long lockTimeout, AsyncLockCallbackAdaptor callback, UnlockCallback unlockCallback) {
+        MessagingChannel<LockProtocol> channel, long lockTimeout, AsyncLockCallbackAdaptor asyncCallback, UnlockCallback unlockCallback) {
         assert localNode != null : "Cluster node is null.";
         assert lock != null : "Lock is null.";
         assert channel != null : "Channel is null.";
@@ -114,7 +114,7 @@ class LockControllerClient {
         this.threadId = threadId;
         this.unlockCallback = unlockCallback;
         this.lockTimeout = lockTimeout;
-        this.callback = callback;
+        this.asyncCallback = asyncCallback;
 
         // Make sure that all messages will be routed with the affinity key of this lock.
         this.channel = channel.withAffinity(key);
@@ -224,8 +224,8 @@ class LockControllerClient {
             }
         }
 
-        if (wasLocked && callback != null) {
-            callback.onLockRelease(this);
+        if (wasLocked && asyncCallback != null) {
+            asyncCallback.onLockRelease(this);
         }
 
         if (!unlockFuture.isDone()) {
@@ -328,8 +328,8 @@ class LockControllerClient {
         if (complete) {
             lockFuture.complete(true);
 
-            if (callback != null) {
-                callback.onLockAcquire(this);
+            if (asyncCallback != null) {
+                asyncCallback.onLockAcquire(this);
             }
         }
 
@@ -337,7 +337,7 @@ class LockControllerClient {
     }
 
     private boolean notifyOnLockBusy(ClusterNodeId ownerId, long ownerThreadId, ClusterHash requestTopology) {
-        if (callback != null) {
+        if (asyncCallback != null) {
             lock.lock();
 
             try {
@@ -353,11 +353,11 @@ class LockControllerClient {
                     if (lockOwner == null) {
                         lockOwner = newOwner;
 
-                        callback.onLockBusy(newOwner);
+                        asyncCallback.onLockBusy(newOwner);
                     } else if (!lockOwner.equals(newOwner)) {
                         lockOwner = newOwner;
 
-                        callback.onLockOwnerChange(newOwner);
+                        asyncCallback.onLockOwnerChange(newOwner);
                     }
                 }
             } finally {
@@ -425,8 +425,8 @@ class LockControllerClient {
             unlockCallback.onUnlock(this);
 
             if (complete) {
-                if (callback != null) {
-                    callback.onLockRelease(this);
+                if (asyncCallback != null) {
+                    asyncCallback.onLockRelease(this);
                 }
 
                 unlockFuture.complete(true);
@@ -441,7 +441,7 @@ class LockControllerClient {
     private void remoteLock() {
         LockRequest lockReq = new LockRequest(lockId, key.region(), key.name(), localNode, lockTimeout, threadId);
 
-        ResponseCallback<LockProtocol> rspCallback = new ResponseCallback<LockProtocol>() {
+        ResponseCallback<LockProtocol> callback = new ResponseCallback<LockProtocol>() {
             @Override
             public ReplyDecision accept(Throwable err, LockProtocol reply, MessagingEndpoint<LockProtocol> from) {
                 if (err == null) {
@@ -503,12 +503,12 @@ class LockControllerClient {
             }
         };
 
-        if (callback == null) {
+        if (asyncCallback == null) {
             // Send single request if we don't need to subscribe for updates.
-            channel.request(lockReq, rspCallback);
+            channel.request(lockReq, callback);
         } else {
             // Open a stream if we need to receive lock owner updates.
-            channel.stream(lockReq, rspCallback);
+            channel.stream(lockReq, callback);
         }
     }
 
