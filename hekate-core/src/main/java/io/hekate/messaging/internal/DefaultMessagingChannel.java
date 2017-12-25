@@ -59,8 +59,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     private final long timeout;
 
     public DefaultMessagingChannel(MessagingGateway<T> gateway, ClusterView cluster, RendezvousHashMapper partitions,
-        LoadBalancer<T> balancer, FailoverPolicy failover,
-        long timeout, Object affinityKey) {
+        LoadBalancer<T> balancer, FailoverPolicy failover, long timeout, Object affinityKey) {
         assert gateway != null : "Gateway is null.";
         assert cluster != null : "Cluster view is null.";
         assert partitions != null : "Partition mapper is null.";
