@@ -352,11 +352,11 @@ class MessagingGateway<T> implements HekateSupport {
         try {
             long timeout = backPressureAcquire(ctx.opts().timeout(), msg);
 
-            routeAndSend(ctx, callback, null);
-
             if (timeout > 0) {
                 doScheduleTimeout(timeout, ctx, callback);
             }
+
+            routeAndSend(ctx, callback, null);
         } catch (InterruptedException | MessageQueueOverflowException | MessageQueueTimeoutException e) {
             notifyOnErrorAsync(ctx, callback, e);
         }
@@ -687,11 +687,11 @@ class MessagingGateway<T> implements HekateSupport {
         try {
             long timeout = backPressureAcquire(ctx.opts().timeout(), request);
 
-            routeAndRequest(ctx, callback, null);
-
             if (timeout > 0) {
                 doScheduleTimeout(timeout, ctx, callback);
             }
+
+            routeAndRequest(ctx, callback, null);
         } catch (InterruptedException | MessageQueueOverflowException | MessageQueueTimeoutException e) {
             notifyOnErrorAsync(ctx, callback, e);
         }
