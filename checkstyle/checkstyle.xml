@@ -189,12 +189,9 @@
 
         <module name="RedundantImport"/>
 
-        <!-- TODO: Disabled due to https://github.com/checkstyle/checkstyle/issues/2840 -->
-        <!--
-            <module name="UnusedImports">
-                <property name="processJavadoc" value="true"/>
-            </module>
-        -->
+        <module name="UnusedImports">
+            <property name="processJavadoc" value="true"/>
+        </module>
 
         <!--
             Javadocs.
@@ -264,6 +261,24 @@
 
         <module name="RedundantModifier">
             <property name="tokens" value="METHOD_DEF,VARIABLE_DEF,ANNOTATION_FIELD_DEF,INTERFACE_DEF,CLASS_DEF,ENUM_DEF"/>
+        </module>
+
+        <!--
+            Annotations.
+        -->
+        <module name="AnnotationLocation">
+            <property name="allowSamelineMultipleAnnotations" value="false"/>
+            <property name="allowSamelineSingleParameterlessAnnotation" value="false"/>
+            <property name="allowSamelineParameterizedAnnotation" value="false"/>
+            <property name="tokens" value="CLASS_DEF, INTERFACE_DEF, ENUM_DEF, METHOD_DEF, CTOR_DEF, VARIABLE_DEF, ANNOTATION_DEF, TYPECAST,
+                                           LITERAL_NEW, DOT, ANNOTATION_FIELD_DEF"/>
+        </module>
+
+        <module name="AnnotationLocation">
+            <property name="allowSamelineMultipleAnnotations" value="true"/>
+            <property name="allowSamelineSingleParameterlessAnnotation" value="false"/>
+            <property name="allowSamelineParameterizedAnnotation" value="false"/>
+            <property name="tokens" value="PARAMETER_DEF, LITERAL_THROWS, IMPLEMENTS_CLAUSE, TYPE_ARGUMENT"/>
         </module>
 
         <!--
