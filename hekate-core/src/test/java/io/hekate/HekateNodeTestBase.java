@@ -124,7 +124,7 @@ public class HekateNodeTestBase extends HekateTestBase {
             net.setHeartbeatInterval(ctx.hbInterval());
             net.setHeartbeatLossThreshold(ctx.hbLossThreshold());
             net.setAcceptRetryInterval(0);
-            net.setNioThreads(ctx.hbLossThreshold());
+            net.setNioThreads(3);
             net.setTransport(ctx.transport());
 
             ctx.ssl().ifPresent(net::setSsl);
