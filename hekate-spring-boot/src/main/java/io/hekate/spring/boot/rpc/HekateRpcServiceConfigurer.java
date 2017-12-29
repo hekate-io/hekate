@@ -7,7 +7,6 @@ import io.hekate.rpc.RpcClientConfig;
 import io.hekate.rpc.RpcServerConfig;
 import io.hekate.rpc.RpcService;
 import io.hekate.rpc.RpcServiceFactory;
-import io.hekate.spring.bean.lock.LockRegionBean;
 import io.hekate.spring.bean.rpc.RpcClientBean;
 import io.hekate.spring.bean.rpc.RpcServiceBean;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
@@ -81,7 +80,7 @@ public class HekateRpcServiceConfigurer {
         protected void registerBeans(InjectRpcClient annotation, ResolvableType targetType, BeanDefinitionRegistry registry) {
             String tag = annotation.tag().isEmpty() ? "" : '#' + annotation.tag();
 
-            String name = LockRegionBean.class.getName() + tag + "-" + targetType.toString();
+            String name = RpcClientBean.class.getName() + tag + "-" + targetType.toString();
 
             if (!registry.containsBeanDefinition(name)) {
                 BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(RpcClientBean.class)
