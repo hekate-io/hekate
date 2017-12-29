@@ -133,6 +133,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     @ToStringIgnore
     private final StateGuard guard = new StateGuard(RpcService.class);
 
+    @ToStringIgnore
     private final RpcTypeAnalyzer typeAnalyzer = new RpcTypeAnalyzer();
 
     @ToStringIgnore
