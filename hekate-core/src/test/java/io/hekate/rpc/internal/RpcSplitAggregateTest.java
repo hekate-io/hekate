@@ -26,6 +26,9 @@ import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.AdditionalMatchers.or;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
@@ -107,6 +110,20 @@ public class RpcSplitAggregateTest extends RpcServiceTestBase {
     }
 
     @Test
+    public void testSmallList() throws Exception {
+        repeat(3, i -> {
+            when(rpc1.list(anyList())).thenReturn(singletonList(i));
+            when(rpc2.list(anyList())).thenReturn(singletonList(i));
+
+            List<Object> result = client.list(singletonList(i));
+
+            assertEquals(1, result.size());
+
+            reset(rpc1, rpc2);
+        });
+    }
+
+    @Test
     public void testLargerList() throws Exception {
         repeat(3, i -> {
             when(rpc1.list(or(eq(asList(i + 1, i + 3)), eq(asList(i + 2, i + 4))))).thenReturn(asList(i, i, i));
@@ -158,6 +175,20 @@ public class RpcSplitAggregateTest extends RpcServiceTestBase {
             verify(rpc2).set(or(eq(singleton(i + 1)), eq(singleton(i + 2))));
 
             verifyNoMoreInteractions(rpc1, rpc2);
+            reset(rpc1, rpc2);
+        });
+    }
+
+    @Test
+    public void testSmallSet() throws Exception {
+        repeat(3, i -> {
+            when(rpc1.set(anySet())).thenReturn(toSet("a" + i));
+            when(rpc2.set(anySet())).thenReturn(toSet("b" + i));
+
+            Set<Object> result = client.set(toSet(i));
+
+            assertEquals(1, result.size());
+
             reset(rpc1, rpc2);
         });
     }
@@ -223,6 +254,20 @@ public class RpcSplitAggregateTest extends RpcServiceTestBase {
             verify(rpc2).map(or(eq(singletonMap(i + 1, i)), eq(singletonMap(i + 2, i))));
 
             verifyNoMoreInteractions(rpc1, rpc2);
+            reset(rpc1, rpc2);
+        });
+    }
+
+    @Test
+    public void testSmallerMap() throws Exception {
+        repeat(3, i -> {
+            when(rpc1.map(anyMap())).thenReturn(singletonMap("a", i));
+            when(rpc2.map(anyMap())).thenReturn(singletonMap("b", i));
+
+            Map<Object, Object> result = client.map(singletonMap("d", i));
+
+            assertEquals(1, result.size());
+
             reset(rpc1, rpc2);
         });
     }

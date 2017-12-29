@@ -295,9 +295,9 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
     private Map<Object, Object>[] splitMap(int clusterSize, Map<Object, Object> map) {
         @SuppressWarnings("unchecked")
-        Map<Object, Object>[] parts = new Map[clusterSize];
+        Map<Object, Object>[] parts = new Map[Math.min(clusterSize, map.size())];
 
-        int partCapacity = map.size() / clusterSize + 1;
+        int partCapacity = partCapacity(map.size(), parts.length);
 
         for (int i = 0; i < parts.length; i++) {
             parts[i] = new HashMap<>(partCapacity, 1.0f);
@@ -306,12 +306,11 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         int idx = 0;
 
         for (Map.Entry<Object, Object> e : map.entrySet()) {
-            if (idx == clusterSize) {
+            if (idx == parts.length) {
                 idx = 0;
             }
 
             parts[idx++].put(e.getKey(), e.getValue());
-
         }
 
         return parts;
@@ -319,9 +318,9 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
     private Collection<Object>[] splitCollection(int clusterSize, Collection<Object> col) {
         @SuppressWarnings("unchecked")
-        Collection<Object>[] parts = new Collection[clusterSize];
+        Collection<Object>[] parts = new Collection[Math.min(clusterSize, col.size())];
 
-        int partCapacity = col.size() / clusterSize + 1;
+        int partCapacity = partCapacity(col.size(), parts.length);
 
         for (int i = 0; i < parts.length; i++) {
             parts[i] = new ArrayList<>(partCapacity);
@@ -330,12 +329,11 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         int idx = 0;
 
         for (Object o : col) {
-            if (idx == clusterSize) {
+            if (idx == parts.length) {
                 idx = 0;
             }
 
             parts[idx++].add(o);
-
         }
 
         return parts;
@@ -343,9 +341,9 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
     private Set<Object>[] splitSet(int clusterSize, Set<Object> set) {
         @SuppressWarnings("unchecked")
-        Set<Object>[] parts = new Set[clusterSize];
+        Set<Object>[] parts = new Set[Math.min(clusterSize, set.size())];
 
-        int partCapacity = set.size() / clusterSize + 1;
+        int partCapacity = partCapacity(set.size(), parts.length);
 
         for (int i = 0; i < parts.length; i++) {
             parts[i] = new HashSet<>(partCapacity, 1.0f);
@@ -354,14 +352,17 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         int idx = 0;
 
         for (Object o : set) {
-            if (idx == clusterSize) {
+            if (idx == parts.length) {
                 idx = 0;
             }
 
             parts[idx++].add(o);
-
         }
 
         return parts;
+    }
+
+    private int partCapacity(int size, int clusterSize) {
+        return size / clusterSize + 1;
     }
 }
