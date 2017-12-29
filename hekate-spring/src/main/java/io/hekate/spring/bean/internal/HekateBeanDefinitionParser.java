@@ -234,7 +234,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             String id = clusterEl.getAttribute("id");
 
             if (!id.isEmpty()) {
-                deferredBaseBeans.put(newBean(ClusterServiceBean.class, clusterEl), id);
+                deferredBaseBeans.put(newLazyBean(ClusterServiceBean.class, clusterEl), id);
             }
 
             return Optional.of(registerInnerBean(cluster, ctx));
@@ -598,7 +598,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 String protocol = connEl.getAttribute("protocol");
 
                 if (!protocol.isEmpty()) {
-                    BeanDefinitionBuilder connBean = newBean(NetworkConnectorBean.class, netEl);
+                    BeanDefinitionBuilder connBean = newLazyBean(NetworkConnectorBean.class, netEl);
 
                     setProperty(connBean, connEl, "protocol", "protocol");
 
@@ -613,7 +613,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             String id = netEl.getAttribute("id");
 
             if (!id.isEmpty()) {
-                deferredBaseBeans.put(newBean(NetworkServiceBean.class, netEl), id);
+                deferredBaseBeans.put(newLazyBean(NetworkServiceBean.class, netEl), id);
             }
 
             return Optional.of(registerInnerBean(net, ctx));
@@ -663,7 +663,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 String name = channelEl.getAttribute("name");
 
                 if (!name.isEmpty()) {
-                    BeanDefinitionBuilder channelBean = newBean(MessagingChannelBean.class, channelEl);
+                    BeanDefinitionBuilder channelBean = newLazyBean(MessagingChannelBean.class, channelEl);
 
                     setProperty(channelBean, channelEl, "channel", "name");
 
@@ -678,7 +678,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             String id = msgEl.getAttribute("id");
 
             if (!id.isEmpty()) {
-                deferredBaseBeans.put(newBean(MessagingServiceBean.class, msgEl), id);
+                deferredBaseBeans.put(newLazyBean(MessagingServiceBean.class, msgEl), id);
             }
 
             return Optional.of(registerInnerBean(msg, ctx));
@@ -751,7 +751,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 String name = clientEl.getAttribute("name");
 
                 if (!name.isEmpty()) {
-                    BeanDefinitionBuilder clientBean = newBean(RpcClientBean.class, clientEl);
+                    BeanDefinitionBuilder clientBean = newLazyBean(RpcClientBean.class, clientEl);
 
                     setProperty(clientBean, clientEl, "rpcInterface", "interface");
                     setProperty(clientBean, clientEl, "tag", "tag");
@@ -801,7 +801,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             String id = rpcEl.getAttribute("id");
 
             if (!id.isEmpty()) {
-                deferredBaseBeans.put(newBean(RpcServiceBean.class, rpcEl), id);
+                deferredBaseBeans.put(newLazyBean(RpcServiceBean.class, rpcEl), id);
             }
 
             return Optional.of(registerInnerBean(rpc, ctx));
@@ -832,7 +832,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 String name = regionEl.getAttribute("name");
 
                 if (!name.isEmpty()) {
-                    BeanDefinitionBuilder regionBean = newBean(LockRegionBean.class, regionEl);
+                    BeanDefinitionBuilder regionBean = newLazyBean(LockRegionBean.class, regionEl);
 
                     setProperty(regionBean, regionEl, "region", "name");
 
@@ -843,7 +843,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                     String lockName = lockEl.getAttribute("name");
 
                     if (!lockName.isEmpty()) {
-                        BeanDefinitionBuilder lockBean = newBean(LockBean.class, lockEl);
+                        BeanDefinitionBuilder lockBean = newLazyBean(LockBean.class, lockEl);
 
                         setProperty(lockBean, regionEl, "region", "name");
                         setProperty(lockBean, lockEl, "name", "name");
@@ -860,7 +860,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             String id = locksEl.getAttribute("id");
 
             if (!id.isEmpty()) {
-                deferredBaseBeans.put(newBean(LockServiceBean.class, locksEl), id);
+                deferredBaseBeans.put(newLazyBean(LockServiceBean.class, locksEl), id);
             }
 
             return Optional.of(registerInnerBean(locks, ctx));
@@ -895,7 +895,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             String id = coordinationEl.getAttribute("id");
 
             if (!id.isEmpty()) {
-                deferredBaseBeans.put(newBean(CoordinationServiceBean.class, coordinationEl), id);
+                deferredBaseBeans.put(newLazyBean(CoordinationServiceBean.class, coordinationEl), id);
             }
 
             return Optional.of(registerInnerBean(coordination, ctx));
@@ -931,7 +931,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             String id = leaderEl.getAttribute("id");
 
             if (!id.isEmpty()) {
-                deferredBaseBeans.put(newBean(ElectionServiceBean.class, leaderEl), id);
+                deferredBaseBeans.put(newLazyBean(ElectionServiceBean.class, leaderEl), id);
             }
 
             return Optional.of(registerInnerBean(leader, ctx));
@@ -961,7 +961,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 String name = counterEl.getAttribute("name");
 
                 if (!name.isEmpty()) {
-                    BeanDefinitionBuilder counterBean = newBean(CounterMetricBean.class, metricsEl);
+                    BeanDefinitionBuilder counterBean = newLazyBean(CounterMetricBean.class, metricsEl);
 
                     setProperty(counterBean, counterEl, "name", "name");
 
@@ -984,7 +984,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 String name = probeEl.getAttribute("name");
 
                 if (!name.isEmpty()) {
-                    BeanDefinitionBuilder probeBean = newBean(MetricBean.class, metricsEl);
+                    BeanDefinitionBuilder probeBean = newLazyBean(MetricBean.class, metricsEl);
 
                     setProperty(probeBean, probeEl, "name", "name");
 
@@ -1007,7 +1007,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             String id = metricsEl.getAttribute("id");
 
             if (!id.isEmpty()) {
-                deferredBaseBeans.put(newBean(LocalMetricsServiceBean.class, metricsEl), id);
+                deferredBaseBeans.put(newLazyBean(LocalMetricsServiceBean.class, metricsEl), id);
             }
 
             return Optional.of(registerInnerBean(metrics, ctx));
@@ -1029,7 +1029,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             String id = metricsEl.getAttribute("id");
 
             if (!id.isEmpty()) {
-                deferredBaseBeans.put(newBean(ClusterMetricsServiceBean.class, metricsEl), id);
+                deferredBaseBeans.put(newLazyBean(ClusterMetricsServiceBean.class, metricsEl), id);
             }
 
             return Optional.of(registerInnerBean(metrics, ctx));
@@ -1115,6 +1115,10 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         }
 
         return Optional.empty();
+    }
+
+    private BeanDefinitionBuilder newLazyBean(Class<?> type, Element element) {
+        return newBean(type, element).setLazyInit(true);
     }
 
     private BeanDefinitionBuilder newBean(Class<?> type, Element element) {

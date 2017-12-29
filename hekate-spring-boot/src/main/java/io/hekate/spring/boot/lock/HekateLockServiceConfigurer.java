@@ -41,6 +41,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.ResolvableType;
 import org.springframework.stereotype.Component;
 
@@ -104,6 +105,7 @@ public class HekateLockServiceConfigurer {
 
             if (!registry.containsBeanDefinition(name)) {
                 AbstractBeanDefinition def = BeanDefinitionBuilder.rootBeanDefinition(LockRegionBean.class)
+                    .setLazyInit(true)
                     .addPropertyValue("region", annotation.value())
                     .getBeanDefinition();
 
@@ -126,6 +128,7 @@ public class HekateLockServiceConfigurer {
 
             if (!registry.containsBeanDefinition(name)) {
                 AbstractBeanDefinition def = BeanDefinitionBuilder.rootBeanDefinition(LockBean.class)
+                    .setLazyInit(true)
                     .addPropertyValue("region", annotation.region())
                     .addPropertyValue("name", annotation.name())
                     .getBeanDefinition();
@@ -173,6 +176,7 @@ public class HekateLockServiceConfigurer {
      *
      * @return Service bean.
      */
+    @Lazy
     @Bean
     public LockServiceBean lockService() {
         return new LockServiceBean();

@@ -23,6 +23,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.ResolvableType;
 import org.springframework.stereotype.Component;
 
@@ -84,6 +85,7 @@ public class HekateRpcServiceConfigurer {
 
             if (!registry.containsBeanDefinition(name)) {
                 BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(RpcClientBean.class)
+                    .setLazyInit(true)
                     .addPropertyValue("rpcInterface", targetType.getType().getTypeName());
 
                 if (!annotation.tag().isEmpty()) {
@@ -142,6 +144,7 @@ public class HekateRpcServiceConfigurer {
      *
      * @return Service bean.
      */
+    @Lazy
     @Bean
     public RpcServiceBean rpcService() {
         return new RpcServiceBean();

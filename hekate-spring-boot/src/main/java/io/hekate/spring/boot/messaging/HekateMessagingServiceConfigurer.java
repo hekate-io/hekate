@@ -38,6 +38,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.ResolvableType;
 import org.springframework.stereotype.Component;
 
@@ -83,6 +84,7 @@ public class HekateMessagingServiceConfigurer {
 
             if (!registry.containsBeanDefinition(name)) {
                 AbstractBeanDefinition def = BeanDefinitionBuilder.rootBeanDefinition(MessagingChannelBean.class)
+                    .setLazyInit(true)
                     .addPropertyValue("channel", annotation.value())
                     .getBeanDefinition();
 
@@ -125,6 +127,7 @@ public class HekateMessagingServiceConfigurer {
      *
      * @return Service bean.
      */
+    @Lazy
     @Bean
     public MessagingServiceBean messagingService() {
         return new MessagingServiceBean();

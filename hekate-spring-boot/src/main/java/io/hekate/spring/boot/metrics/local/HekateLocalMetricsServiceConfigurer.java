@@ -40,6 +40,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.ResolvableType;
 import org.springframework.stereotype.Component;
 
@@ -97,6 +98,7 @@ public class HekateLocalMetricsServiceConfigurer {
 
             if (!registry.containsBeanDefinition(name)) {
                 AbstractBeanDefinition def = BeanDefinitionBuilder.rootBeanDefinition(CounterMetricBean.class)
+                    .setLazyInit(true)
                     .addPropertyValue("name", annotation.value())
                     .getBeanDefinition();
 
@@ -119,6 +121,7 @@ public class HekateLocalMetricsServiceConfigurer {
 
             if (!registry.containsBeanDefinition(name)) {
                 AbstractBeanDefinition def = BeanDefinitionBuilder.rootBeanDefinition(MetricBean.class)
+                    .setLazyInit(true)
                     .addPropertyValue("name", annotation.value())
                     .getBeanDefinition();
 
@@ -166,6 +169,7 @@ public class HekateLocalMetricsServiceConfigurer {
      *
      * @return Service bean.
      */
+    @Lazy
     @Bean
     public LocalMetricsServiceBean metricsService() {
         return new LocalMetricsServiceBean();

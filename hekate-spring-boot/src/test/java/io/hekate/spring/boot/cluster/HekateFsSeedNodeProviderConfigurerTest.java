@@ -66,7 +66,7 @@ public class HekateFsSeedNodeProviderConfigurerTest extends HekateAutoConfigurer
 
         FsSeedNodeProvider provider = (FsSeedNodeProvider)getNode().get(DefaultClusterService.class).seedNodeProvider();
 
-        assertEquals(tempDir.getAbsolutePath(), provider.getWorkDir().getAbsolutePath());
+        assertEquals(tempDir.getCanonicalPath(), provider.getWorkDir().getCanonicalPath());
     }
 
     @Test

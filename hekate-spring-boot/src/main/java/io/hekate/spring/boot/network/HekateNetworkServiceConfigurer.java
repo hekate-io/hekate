@@ -101,6 +101,7 @@ public class HekateNetworkServiceConfigurer {
 
             if (!registry.containsBeanDefinition(name)) {
                 AbstractBeanDefinition def = BeanDefinitionBuilder.rootBeanDefinition(NetworkConnectorBean.class)
+                    .setLazyInit(true)
                     .addPropertyValue("protocol", annotation.value())
                     .getBeanDefinition();
 

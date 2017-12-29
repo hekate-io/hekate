@@ -27,6 +27,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 
 /**
  * <span class="startHere">&laquo; start here</span>Auto-configuration for {@link ClusterMetricsService}.
@@ -34,9 +35,12 @@ import org.springframework.context.annotation.Configuration;
  * <h2>Configuration properties</h2>
  * <p>
  * It is possible to configure {@link ClusterMetricsServiceFactory} via application properties prefixed with
- * {@code 'hekate.metrics.cluster'} (for example {@link ClusterMetricsServiceFactory#setReplicationInterval(long)
- * 'hekate.metrics.cluster.replication-interval'})
+ * {@code 'hekate.metrics.cluster'}:
  * </p>
+ * <ul>
+ * <li>{@link ClusterMetricsServiceFactory#setReplicationInterval(long) 'hekate.metrics.cluster.replication-interval'}</li>
+ * <li>{@link ClusterMetricsServiceFactory#setEnabled(boolean) 'hekate.metrics.cluster.enabled'}</li>
+ * </ul>
  *
  * @see ClusterMetricsService
  * @see HekateConfigurer
@@ -63,6 +67,7 @@ public class HekateClusterMetricsServiceConfigurer {
      *
      * @return Service bean.
      */
+    @Lazy
     @Bean
     public ClusterMetricsServiceBean clusterMetricsService() {
         return new ClusterMetricsServiceBean();
