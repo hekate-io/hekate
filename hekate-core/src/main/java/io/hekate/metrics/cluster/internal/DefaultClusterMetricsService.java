@@ -358,6 +358,11 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
     }
 
     @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    @Override
     public Optional<ClusterNodeMetrics> of(ClusterNodeId node) {
         ArgAssert.notNull(node, "Node");
 

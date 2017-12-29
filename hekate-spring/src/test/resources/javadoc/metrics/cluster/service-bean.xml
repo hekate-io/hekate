@@ -26,6 +26,7 @@
             <list>
                 <!-- Cluster metrics service. -->
                 <bean class="io.hekate.metrics.cluster.ClusterMetricsServiceFactory">
+                    <property name="enabled" value="true"/>
                     <property name="replicationInterval" value="1000"/>
                 </bean>
 

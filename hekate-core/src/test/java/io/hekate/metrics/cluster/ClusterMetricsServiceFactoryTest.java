@@ -32,15 +32,15 @@ public class ClusterMetricsServiceFactoryTest extends HekateTestBase {
 
     @Test
     public void testEnabled() {
-        assertTrue(factory.isEnabled());
-
-        factory.setEnabled(false);
-
         assertFalse(factory.isEnabled());
 
-        assertSame(factory, factory.withEnabled(true));
+        factory.setEnabled(true);
 
         assertTrue(factory.isEnabled());
+
+        assertSame(factory, factory.withEnabled(false));
+
+        assertFalse(factory.isEnabled());
     }
 
     @Test

@@ -1022,6 +1022,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         if (metricsEl != null) {
             BeanDefinitionBuilder metrics = newBean(ClusterMetricsServiceFactory.class, metricsEl);
 
+            setProperty(metrics, metricsEl, "enabled", "enabled");
             setProperty(metrics, metricsEl, "replicationInterval", "replication-interval-ms");
 
             setBeanOrRef(metrics, metricsEl, "replicationFilter", "filter", ctx);

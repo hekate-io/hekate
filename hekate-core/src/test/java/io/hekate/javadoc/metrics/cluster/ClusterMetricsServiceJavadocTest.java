@@ -23,6 +23,8 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
 import io.hekate.metrics.cluster.ClusterMetricsServiceFactory;
 import org.junit.Test;
 
+import static org.junit.Assert.assertNotNull;
+
 public class ClusterMetricsServiceJavadocTest extends HekateNodeTestBase {
     @Test
     public void exampleBootstrap() throws Exception {
@@ -30,7 +32,8 @@ public class ClusterMetricsServiceJavadocTest extends HekateNodeTestBase {
         // Prepare service factory.
         ClusterMetricsServiceFactory factory = new ClusterMetricsServiceFactory()
             // Replicate metrics once per second.
-            .withReplicationInterval(1000);
+            .withReplicationInterval(1000)
+            .withEnabled(true);
 
         // Start node.
         Hekate hekate = new HekateBootstrap()
@@ -41,6 +44,8 @@ public class ClusterMetricsServiceJavadocTest extends HekateNodeTestBase {
         // Start:access
         ClusterMetricsService metrics = hekate.clusterMetrics();
         // End:access
+
+        assertNotNull(metrics);
 
         // Start:usage
         // Iterate over all remote nodes in the cluster.

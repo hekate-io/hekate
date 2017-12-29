@@ -74,7 +74,8 @@ import java.util.Optional;
  * </div>
  *
  * <p>
- * For all available configuration options please see the documentation of {@link ClusterMetricsServiceFactory} class.
+ * Note that cluster metrics are disabled by default and should be enabled via the {@link ClusterMetricsServiceFactory#setEnabled(boolean)}
+ * configuration option. For other configuration options please see the documentation of {@link ClusterMetricsServiceFactory} class.
  * </p>
  *
  * <h2>Accessing service</h2>
@@ -111,6 +112,17 @@ import java.util.Optional;
  */
 @DefaultServiceFactory(ClusterMetricsServiceFactory.class)
 public interface ClusterMetricsService extends Service {
+    /**
+     * Returns {@code true} if cluster metrics are enabled on this node.
+     *
+     * <p>
+     * Cluster metrics can be enabled/disabled via the {@link ClusterMetricsServiceFactory#setEnabled(boolean)} configuration option.
+     * </p>
+     *
+     * @return {@code true} if cluster metrics are enabled on this node.
+     */
+    boolean isEnabled();
+
     /**
      * Returns the metrics of the specified cluster node.
      *

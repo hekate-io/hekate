@@ -1587,6 +1587,13 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
+        <xsd:attribute name="enabled" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.metrics.cluster.ClusterMetricsServiceFactory#setEnabled(boolean)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
         <xsd:attribute name="replication-interval-ms" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>

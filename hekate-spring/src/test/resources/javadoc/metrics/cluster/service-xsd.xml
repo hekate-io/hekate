@@ -26,7 +26,7 @@
 
     <h:node id="hekate">
         <!-- Cluster metrics service. -->
-        <h:cluster-metrics replication-interval-ms="1000"/>
+        <h:cluster-metrics enabled="true" replication-interval-ms="1000"/>
 
         <!-- ...other services... -->
     </h:node>
