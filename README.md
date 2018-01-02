@@ -87,7 +87,7 @@ Complete reference guide is coming soon.
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring-boot</artifactId>
-    <version>1.0.2</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
@@ -96,7 +96,7 @@ Complete reference guide is coming soon.
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring</artifactId>
-    <version>1.0.2</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
@@ -105,7 +105,7 @@ Complete reference guide is coming soon.
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-core</artifactId>
-    <version>1.0.2</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
@@ -142,25 +142,25 @@ Complete reference guide is coming soon.
   
 ## Release notes
 
-### v.2.0.0 (almost ready)
+### v.2.0.0 (2-Jan-2018)
 
  New features and improvements:
  
- - Remote Procedure Call (RPC) service for Java objects
+ - Remote Procedure Call (RPC) service for Java objects.
  - Added 'deferredJoin' property to Spring bootstrap in order to control the timing of joining the cluster. 
- - Moved load balancing APIs to the `io.hekate.messaging.loadbalance` package
- - Moved Netty-based implementation of networking APIs to public packages
- - Merged Kryo and FST codecs into the `hekate-core` module (dropped `hekate-kryo` and `hekate-fst` modules)
- - Dropped Task Service (replaced by the RPC service) 
+ - Moved load balancing APIs to the `io.hekate.messaging.loadbalance` package.
+ - Moved Netty-based implementation of networking APIs to public packages.
+ - Merged Kryo and FST codecs into the `hekate-core` module (dropped `hekate-kryo` and `hekate-fst` modules).
+ - Dropped Task Service (replaced by the RPC service). 
  
  Dependency upgrades:
  
  - Upgraded to Netty 4.1.19.Final.
- - Upgraded to Spring Framework 4.3.13.RELEASE 
- - Upgraded to Spring Boot 1.5.9.RELEASE 
- - Upgraded to AWS SDK 1.11.213
- - Upgraded to FST 2.52 
- - Upgraded to InfluxDB-Java 2.7 
+ - Upgraded to Spring Framework 4.3.13.RELEASE. 
+ - Upgraded to Spring Boot 1.5.9.RELEASE. 
+ - Upgraded to AWS SDK 1.11.213.
+ - Upgraded to FST 2.52. 
+ - Upgraded to InfluxDB-Java 2.7. 
 
 ### v.1.0.2 (23-Sep-2017)
 
@@ -172,21 +172,21 @@ Complete reference guide is coming soon.
  Dependency upgrades:
  
  - Upgraded to Netty 4.1.15.Final.
- - Upgraded to Kryo 4.0.1
- - Upgraded to Apache jClouds 2.0.2
+ - Upgraded to Kryo 4.0.1.
+ - Upgraded to Apache jClouds 2.0.2.
 
 ### v.1.0.1 (01-Jul-2017)
 
  New features and improvements:
 
  - Fixed invalid links in javadocs.
- - Fixed invalid URL in `<scm>` section of pom.xml files  
+ - Fixed invalid URL in `<scm>` section of pom.xml files.  
  
  Dependency upgrades:
  
- - Upgraded to Spring Boot 1.5.4.RELEASE
- - Upgraded to AWS Java SDK 1.11.158
- - Upgraded to Spring Framework 4.3.9.RELEASE
+ - Upgraded to Spring Boot 1.5.4.RELEASE.
+ - Upgraded to AWS Java SDK 1.11.158.
+ - Upgraded to Spring Framework 4.3.9.RELEASE.
 
 ### v.1.0.0 (30-Jun-2017)
 
