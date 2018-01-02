@@ -128,6 +128,19 @@ public class RpcMethodInfo {
     }
 
     /**
+     * Returns the type of a {@link #splitArg()}.
+     *
+     * @return Type of a {@link #splitArg()}.
+     */
+    public Optional<Class<?>> splitArgType() {
+        if (splitArg.isPresent()) {
+            return Optional.of(javaMethod.getParameterTypes()[splitArg.getAsInt()]);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    /**
      * Returns the real return type of this method.
      *
      * <p>

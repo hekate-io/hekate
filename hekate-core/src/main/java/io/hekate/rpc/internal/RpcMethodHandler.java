@@ -1,6 +1,7 @@
 package io.hekate.rpc.internal;
 
 import io.hekate.messaging.Message;
+import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.rpc.RpcMethodInfo;
 import io.hekate.rpc.internal.RpcProtocol.CompactCallRequest;
 import io.hekate.rpc.internal.RpcProtocol.ErrorResponse;
@@ -9,6 +10,7 @@ import io.hekate.rpc.internal.RpcProtocol.ObjectResponse;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.function.BiConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,13 +19,13 @@ class RpcMethodHandler {
 
     private final Object target;
 
-    private final RpcMethodInfo info;
+    private final RpcMethodInfo method;
 
-    public RpcMethodHandler(RpcMethodInfo info, Object target) {
-        assert info != null : "Method info is null.";
+    public RpcMethodHandler(RpcMethodInfo method, Object target) {
+        assert method != null : "Method info is null.";
         assert target != null : "Target is null.";
 
-        this.info = info;
+        this.method = method;
         this.target = target;
     }
 
@@ -31,71 +33,81 @@ class RpcMethodHandler {
         return target;
     }
 
-    public RpcMethodInfo info() {
-        return info;
+    public RpcMethodInfo method() {
+        return method;
     }
 
     public void handle(Message<RpcProtocol> msg) {
         // Enforces type check.
         CompactCallRequest call = msg.get(CompactCallRequest.class);
 
+        doHandle(call.args(), msg.endpoint(), (err, result) -> {
+            if (err == null) {
+                if (result == null) {
+                    // Null result (works for void method too).
+                    msg.reply(NullResponse.INSTANCE);
+                } else {
+                    // Non-null result.
+                    msg.reply(new ObjectResponse(result));
+                }
+            } else {
+                msg.reply(new ErrorResponse(err));
+            }
+        });
+    }
+
+    protected void doHandle(Object[] args, MessagingEndpoint<RpcProtocol> from, BiConsumer<Throwable, Object> callback) {
         try {
             Object result;
 
-            if (call.args() == null) {
+            if (args == null) {
                 // Call without arguments.
-                result = info.javaMethod().invoke(target);
+                result = method.javaMethod().invoke(target);
             } else {
                 // Call with arguments.
-                result = info.javaMethod().invoke(target, call.args());
+                result = method.javaMethod().invoke(target, args);
             }
 
             if (result == null) {
                 // Synchronous null result (works for void method too).
-                msg.reply(NullResponse.INSTANCE);
+                callback.accept(null, null);
             } else if (result instanceof CompletableFuture<?>) {
                 // Setup handling of asynchronous result.
                 CompletableFuture<?> future = (CompletableFuture<?>)result;
 
                 future.whenComplete((asyncResult, asyncErr) -> {
                     if (asyncErr == null) {
-                        if (asyncResult == null) {
-                            // Asynchronous null result (works for void method too).
-                            msg.reply(NullResponse.INSTANCE);
-                        } else {
-                            // Asynchronous non-null result.
-                            msg.reply(new ObjectResponse(asyncResult));
-                        }
+                        callback.accept(null, asyncResult);
                     } else {
                         if (asyncErr instanceof CompletionException && asyncErr.getCause() != null) {
                             // Unwrap asynchronous error.
-                            msg.reply(new ErrorResponse(asyncErr.getCause()));
+                            callback.accept(asyncErr.getCause(), null);
                         } else {
                             // Return error as is.
-                            msg.reply(new ErrorResponse(asyncErr));
+                            callback.accept(asyncErr, null);
                         }
                     }
                 });
             } else {
                 // Synchronous non-null result.
-                msg.reply(new ObjectResponse(result));
+                callback.accept(null, result);
             }
         } catch (InvocationTargetException e) {
             // Unwrap reflections error.
             Throwable cause = e.getCause();
 
             if (log.isErrorEnabled()) {
-                log.error("RPC failure [from-node-id={}, method={}, target={}]", msg.from(), info, target, cause);
+                log.error("RPC failure [from-node-id={}, method={}, target={}]", from.remoteNodeId(), method, target, cause);
             }
 
-            msg.reply(new ErrorResponse(cause));
+            callback.accept(cause, null);
         } catch (Throwable t) {
             if (log.isErrorEnabled()) {
-                log.error("RPC failure [from-node-id={}, method={}, target={}]", msg.from(), info, target, t);
+                log.error("RPC failure [from-node-id={}, method={}, target={}]", from.remoteNodeId(), method, target, t);
             }
 
             // Return error as is.
-            msg.reply(new ErrorResponse(t));
+            callback.accept(t, null);
         }
     }
 }

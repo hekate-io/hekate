@@ -6,8 +6,6 @@ import io.hekate.messaging.MessagingFuture;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.loadbalance.LoadBalancers;
-import io.hekate.messaging.unicast.Response;
-import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.rpc.RpcAggregate;
 import io.hekate.rpc.RpcException;
 import io.hekate.rpc.RpcInterfaceInfo;
@@ -32,91 +30,13 @@ import static io.hekate.rpc.internal.RpcUtils.mergeToMap;
 import static io.hekate.rpc.internal.RpcUtils.mergeToSet;
 
 class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
-    private interface Splitter {
-        Object[] split(Object arg, int clusterSize);
-    }
-
-    private static class AggregateFuture extends MessagingFuture<Object> implements ResponseCallback<RpcProtocol> {
-        private final int parts;
-
-        private final List<RpcProtocol> responses;
-
-        private final Function<Throwable, Throwable> errorPolicy;
-
-        private final Function<List<RpcProtocol>, Object> aggregator;
-
-        private int collectedParts;
-
-        private Throwable firstError;
-
-        public AggregateFuture(int parts, Function<Throwable, Throwable> errorPolicy, Function<List<RpcProtocol>, Object> aggregator) {
-            this.parts = parts;
-            this.errorPolicy = errorPolicy;
-            this.aggregator = aggregator;
-            this.responses = new ArrayList<>(parts);
-        }
-
-        @Override
-        public void onComplete(Throwable err, Response<RpcProtocol> rsp) {
-            if (!isDone()) {
-                Throwable mappedErr = null;
-
-                // Check for errors.
-                if (err != null && errorPolicy != null) {
-                    mappedErr = errorPolicy.apply(err);
-                }
-
-                // Collect/aggregate results.
-                boolean allDone = false;
-
-                Object okResult = null;
-                Throwable errResult = null;
-
-                synchronized (responses) {
-                    if (mappedErr == null) {
-                        if (rsp != null) { // <-- Can be null if there was a real error but it was ignored by the error policy.
-                            responses.add(rsp.get());
-                        }
-                    } else {
-                        if (firstError == null) {
-                            firstError = mappedErr;
-                        }
-                    }
-
-                    // Check if we've collected all results.
-                    collectedParts++;
-
-                    if (collectedParts == parts) {
-                        allDone = true;
-
-                        // Check if should complete successfully or exceptionally.
-                        if (firstError == null) {
-                            okResult = aggregator.apply(responses);
-                        } else {
-                            errResult = firstError;
-                        }
-                    }
-                }
-
-                // Complete if we've collected all results.
-                if (allDone) {
-                    if (errResult == null) {
-                        complete(okResult);
-                    } else {
-                        completeExceptionally(errResult);
-                    }
-                }
-            }
-        }
-    }
-
     private static final Logger log = LoggerFactory.getLogger(RpcService.class);
 
     private final int splitArgIdx;
 
-    private final Splitter splitter;
+    private final RpcArgSplitter splitter;
 
-    private final Function<Throwable, Throwable> errorPolicy;
+    private final RpcErrorMappingPolicy errorPolicy;
 
     private final Function<List<RpcProtocol>, Object> aggregator;
 
@@ -125,13 +45,14 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
         assert method.aggregate().isPresent() : "Not an aggregate method [rpc=" + rpc + ", method=" + method + ']';
         assert method.splitArg().isPresent() : "Split argument index is not defined.";
+        assert method.splitArgType().isPresent() : "Split argument index is not defined.";
 
         this.splitArgIdx = method.splitArg().getAsInt();
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Splitting.
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        Class<?> splitArgType = method.javaMethod().getParameterTypes()[splitArgIdx];
+        Class<?> splitArgType = method.splitArgType().get();
 
         if (splitArgType.equals(Map.class)) {
             // Map.
@@ -162,7 +83,9 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Aggregation.
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        if (method.realReturnType().equals(Map.class)) {
+        Class<?> returnType = method.realReturnType();
+
+        if (returnType.equals(Map.class)) {
             // Map.
             aggregator = results -> {
                 Map<Object, Object> merged = new HashMap<>();
@@ -173,7 +96,7 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
                 return merged;
             };
-        } else if (method.realReturnType().equals(Set.class)) {
+        } else if (returnType.equals(Set.class)) {
             // Set.
             aggregator = results -> {
                 Set<Object> merged = new HashSet<>();
@@ -200,26 +123,26 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Error handling.
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        RpcAggregate cfg = method.aggregate().get();
+        RpcAggregate.RemoteErrors policy = method.aggregate().get().remoteErrors();
 
-        if (cfg.remoteErrors() == RpcAggregate.RemoteErrors.IGNORE) {
-            errorPolicy = null;
+        if (policy == RpcAggregate.RemoteErrors.IGNORE) {
+            errorPolicy = err -> {
+                if (log.isDebugEnabled()) {
+                    log.debug("RPC aggregation failed [method={}]", method, err);
+                }
+
+                return null;
+            };
         } else {
             errorPolicy = err -> {
-                if (cfg.remoteErrors() == RpcAggregate.RemoteErrors.WARN) {
+                if (policy == RpcAggregate.RemoteErrors.WARN) {
                     if (log.isWarnEnabled()) {
-                        log.warn("RPC aggregation failed [rpc={}, method={}]", rpc, method, err);
-                    }
-
-                    return null;
-                } else if (cfg.remoteErrors() == RpcAggregate.RemoteErrors.IGNORE) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("RPC aggregation failed [rpc={}, method={}]", rpc, method, err);
+                        log.warn("RPC aggregation failed [method={}]", method, err);
                     }
 
                     return null;
                 } else {
-                    String errMsg = "RPC aggregation failed [rpc=" + rpc + ", method=" + method + "]";
+                    String errMsg = "RPC aggregation failed [method=" + method + "]";
 
                     return new RpcException(errMsg, err);
                 }
@@ -246,7 +169,7 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
             // Split argument into parts.
             Object[] parts = split(args, clusterSize);
 
-            AggregateFuture aggregateFuture = new AggregateFuture(parts.length, errorPolicy, aggregator);
+            RpcSplitAggregateFuture aggregateFuture = new RpcSplitAggregateFuture(parts.length, errorPolicy, aggregator);
 
             // Use Round Robin load balancing to distribute parts among the cluster nodes.
             MessagingChannel<RpcProtocol> roundRobin = channel.withLoadBalancer(LoadBalancers.roundRobin());
@@ -257,7 +180,7 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
                 Object[] partArgs = substituteArgs(args, part);
 
                 // Submit RPC request.
-                CallRequest<T> call = new CallRequest<>(rpc(), tag(), method(), partArgs);
+                CallRequest<T> call = new CallRequest<>(rpc(), tag(), method(), partArgs, true /* <- Split. */);
 
                 roundRobin.request(call, aggregateFuture /* <-- Future is a callback. */);
             }
@@ -293,7 +216,7 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         return partArgs;
     }
 
-    private Map<Object, Object>[] splitMap(int clusterSize, Map<Object, Object> map) {
+    private static Map<Object, Object>[] splitMap(int clusterSize, Map<Object, Object> map) {
         @SuppressWarnings("unchecked")
         Map<Object, Object>[] parts = new Map[Math.min(clusterSize, map.size())];
 
@@ -316,7 +239,7 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         return parts;
     }
 
-    private Collection<Object>[] splitCollection(int clusterSize, Collection<Object> col) {
+    private static Collection<Object>[] splitCollection(int clusterSize, Collection<Object> col) {
         @SuppressWarnings("unchecked")
         Collection<Object>[] parts = new Collection[Math.min(clusterSize, col.size())];
 
@@ -339,7 +262,7 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         return parts;
     }
 
-    private Set<Object>[] splitSet(int clusterSize, Set<Object> set) {
+    private static Set<Object>[] splitSet(int clusterSize, Set<Object> set) {
         @SuppressWarnings("unchecked")
         Set<Object>[] parts = new Set[Math.min(clusterSize, set.size())];
 
@@ -362,7 +285,7 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         return parts;
     }
 
-    private int partCapacity(int size, int clusterSize) {
+    private static int partCapacity(int size, int clusterSize) {
         return size / clusterSize + 1;
     }
 }

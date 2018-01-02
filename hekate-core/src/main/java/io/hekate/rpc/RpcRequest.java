@@ -60,4 +60,11 @@ public interface RpcRequest {
      * @see #args()
      */
     boolean hasArgs();
+
+    /**
+     * Returns {@code true} if this is an {@link RpcAggregate} request with {@link RpcSplit} of an argument.
+     *
+     * @return {@code true} if this is an {@link RpcAggregate} request with {@link RpcSplit} of an argument.
+     */
+    boolean isSplit();
 }

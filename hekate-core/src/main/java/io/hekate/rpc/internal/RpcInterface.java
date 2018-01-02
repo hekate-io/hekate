@@ -15,7 +15,13 @@ class RpcInterface<T> {
     public RpcInterface(RpcInterfaceInfo<T> type, Object target) {
         this.type = type;
         this.methods = unmodifiableList(type.methods().stream()
-            .map(method -> new RpcMethodHandler(method, target))
+            .map(method -> {
+                if (method.aggregate().isPresent() && method.splitArg().isPresent()) {
+                    return new RpcSplitAggregateMethodHandler(method, target);
+                } else {
+                    return new RpcMethodHandler(method, target);
+                }
+            })
             .collect(toList())
         );
     }

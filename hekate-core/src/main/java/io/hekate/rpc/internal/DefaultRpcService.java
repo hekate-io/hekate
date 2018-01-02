@@ -7,7 +7,6 @@ import io.hekate.core.HekateException;
 import io.hekate.core.ServiceInfo;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
-import io.hekate.core.internal.util.Utils;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.DependencyContext;
@@ -34,6 +33,7 @@ import io.hekate.rpc.RpcService;
 import io.hekate.rpc.RpcServiceFactory;
 import io.hekate.rpc.internal.RpcProtocol.CallRequest;
 import io.hekate.rpc.internal.RpcProtocol.CompactCallRequest;
+import io.hekate.rpc.internal.RpcProtocol.CompactSplitCallRequest;
 import io.hekate.util.StateGuard;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -61,57 +61,6 @@ import static java.util.stream.Collectors.toList;
 
 public class DefaultRpcService implements RpcService, ConfigurableService, DependentService, InitializingService, TerminatingService,
     MessagingConfigProvider {
-    private static class RpcKey {
-        private final Class<?> type;
-
-        private final String tag;
-
-        public RpcKey(Class<?> type, String tag) {
-            this.type = type;
-            this.tag = Utils.nullOrTrim(tag);
-        }
-
-        public Class<?> type() {
-            return type;
-        }
-
-        public String tag() {
-            return tag;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-
-            if (!(o instanceof RpcKey)) {
-                return false;
-            }
-
-            RpcKey rpcKey = (RpcKey)o;
-
-            if (!type.equals(rpcKey.type)) {
-                return false;
-            }
-
-            return tag != null ? tag.equals(rpcKey.tag) : rpcKey.tag == null;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = type.hashCode();
-
-            result = 31 * result + (tag != null ? tag.hashCode() : 0);
-
-            return result;
-        }
-
-        @Override
-        public String toString() {
-            return ToString.format(this);
-        }
-    }
 
     private static final Logger log = LoggerFactory.getLogger(DefaultRpcService.class);
 
@@ -137,7 +86,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     private final RpcTypeAnalyzer typeAnalyzer = new RpcTypeAnalyzer();
 
     @ToStringIgnore
-    private final Map<RpcKey, RpcClientBuilder<?>> clients = new ConcurrentHashMap<>();
+    private final Map<RpcTypeKey, RpcClientBuilder<?>> clients = new ConcurrentHashMap<>();
 
     @ToStringIgnore
     private final List<RpcClientConfig> clientConfigs = new LinkedList<>();
@@ -204,7 +153,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
         ConfigCheck check = ConfigCheck.get(RpcServerConfig.class);
 
-        Set<RpcKey> uniqueRpcTypes = new HashSet<>();
+        Set<RpcTypeKey> uniqueRpcTypes = new HashSet<>();
 
         serverConfigs.forEach(cfg -> {
             check.notNull(cfg.getHandler(), "Handler");
@@ -245,7 +194,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
                 // Register RPC servers so that other nodes would be able to discover which RPCs are provided by this node.
                 if (tags.isEmpty()) {
                     // Register RPC without tags.
-                    RpcKey key = new RpcKey(rpc.type().javaType(), null);
+                    RpcTypeKey key = new RpcTypeKey(rpc.type().javaType(), null);
 
                     if (!uniqueRpcTypes.add(key)) {
                         throw check.fail("Can't register the same RPC interface multiple times [key=" + key + ']');
@@ -255,12 +204,12 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
                     // Register method indexes.
                     methodIdxs.forEach(e ->
-                        ctx.setIntProperty(methodProperty(type, e.getKey().info()), e.getValue())
+                        ctx.setIntProperty(methodProperty(type, e.getKey().method()), e.getValue())
                     );
                 } else {
                     // Register RPC for each tag.
                     tags.forEach(tag -> {
-                        RpcKey tagKey = new RpcKey(rpc.type().javaType(), tag);
+                        RpcTypeKey tagKey = new RpcTypeKey(rpc.type().javaType(), tag);
 
                         if (!uniqueRpcTypes.add(tagKey)) {
                             throw check.fail("Can't register the same RPC interface multiple times [key=" + tagKey + ']');
@@ -270,7 +219,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
                         // Register method indexes.
                         methodIdxs.forEach(e ->
-                            ctx.setIntProperty(taggedMethodProperty(type, e.getKey().info(), tag), e.getValue())
+                            ctx.setIntProperty(taggedMethodProperty(type, e.getKey().method(), tag), e.getValue())
                         );
                     });
                 }
@@ -294,8 +243,8 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
                 @Override
                 public RpcProtocol interceptOutbound(RpcProtocol msg, OutboundContext ctx) {
                     // Convert method calls to compact representations.
-                    if (msg.type() == RpcProtocol.Type.CALL_REQUEST) {
-                        CallRequest req = (CallRequest)msg;
+                    if (msg instanceof CallRequest) {
+                        CallRequest<?> req = (CallRequest<?>)msg;
 
                         // Use the method's index instead of the method signature.
                         String methodIdxProp;
@@ -308,7 +257,11 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
                         int methodIdx = ctx.receiver().service(RpcService.class).intProperty(methodIdxProp);
 
-                        return new CompactCallRequest(methodIdx, req.args());
+                        if (req.isSplit()) {
+                            return new CompactSplitCallRequest(methodIdx, req.args());
+                        } else {
+                            return new CompactCallRequest(methodIdx, req.args());
+                        }
                     }
 
                     return msg;
@@ -336,7 +289,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
             channel = messaging.channel(CHANNEL_NAME, RpcProtocol.class);
 
             clientConfigs.forEach(cfg -> {
-                RpcKey key = new RpcKey(cfg.getRpcInterface(), cfg.getTag());
+                RpcTypeKey key = new RpcTypeKey(cfg.getRpcInterface(), cfg.getTag());
 
                 RpcClientBuilder<?> client = createClient(key).withTimeout(cfg.getTimeout(), TimeUnit.MILLISECONDS);
 
@@ -387,7 +340,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     public <T> RpcClientBuilder<T> clientFor(Class<T> type, String tag) {
         ArgAssert.notNull(type, "Type");
 
-        RpcKey key = new RpcKey(type, tag);
+        RpcTypeKey key = new RpcTypeKey(type, tag);
 
         guard.lockReadWithStateCheck();
 
@@ -412,7 +365,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
         RpcInterfaceInfo<?> rpcType = typeAnalyzer.analyzeType(type);
 
-        RpcKey key = new RpcKey(type, tag);
+        RpcTypeKey key = new RpcTypeKey(type, tag);
 
         return channelForClient(key, rpcType).cluster();
     }
@@ -422,11 +375,22 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
         return servers;
     }
 
+    @Override
+    public int nioThreads() {
+        return nioThreads;
+    }
+
+    @Override
+    public int workerThreads() {
+        return workerThreads;
+    }
+
     private void handleMessage(Message<RpcProtocol> msg) {
         RpcProtocol rpcMsg = msg.get();
 
         switch (rpcMsg.type()) {
-            case COMPACT_CALL_REQUEST: {
+            case COMPACT_CALL_REQUEST:
+            case COMPACT_SPLIT_CALL_REQUEST: {
                 CompactCallRequest call = (CompactCallRequest)rpcMsg;
 
                 RpcMethodHandler method = rpcMethodIndex.get(call.methodIdx());
@@ -435,7 +399,8 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
                 break;
             }
-            case CALL_REQUEST: // <-- Should fail since it must be converted to a compact representation by the message interceptor.
+            case CALL_REQUEST:
+            case SPLIT_CALL_REQUEST:
             case OBJECT_RESPONSE:
             case NULL_RESPONSE:
             case ERROR_RESPONSE:
@@ -445,7 +410,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
         }
     }
 
-    private RpcClientBuilder<?> createClient(RpcKey key) {
+    private RpcClientBuilder<?> createClient(RpcTypeKey key) {
         RpcInterfaceInfo<?> type = typeAnalyzer.analyzeType(key.type());
 
         MessagingChannel<RpcProtocol> clientChannel = channelForClient(key, type);
@@ -459,7 +424,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
         return client;
     }
 
-    private MessagingChannel<RpcProtocol> channelForClient(RpcKey key, RpcInterfaceInfo<?> type) {
+    private MessagingChannel<RpcProtocol> channelForClient(RpcTypeKey key, RpcInterfaceInfo<?> type) {
         String rpcName;
 
         if (key.tag() == null) {

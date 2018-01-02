@@ -126,16 +126,16 @@ public class RpcSplitAggregateTest extends RpcServiceTestBase {
     @Test
     public void testLargerList() throws Exception {
         repeat(3, i -> {
-            when(rpc1.list(or(eq(asList(i + 1, i + 3)), eq(asList(i + 2, i + 4))))).thenReturn(asList(i, i, i));
-            when(rpc2.list(or(eq(asList(i + 1, i + 3)), eq(asList(i + 2, i + 4))))).thenReturn(asList(i, i, i));
+            when(rpc1.list(anyList())).thenReturn(asList(i, i, i));
+            when(rpc2.list(anyList())).thenReturn(asList(i, i, i));
 
             List<Object> result = client.list(asList(i + 1, i + 2, i + 3, i + 4));
 
-            assertEquals(6, result.size());
+            assertEquals(12, result.size());
             assertTrue(result.stream().allMatch(r -> (Integer)r == i));
 
-            verify(rpc1).list(or(eq(asList(i + 1, i + 3)), eq(asList(i + 2, i + 4))));
-            verify(rpc2).list(or(eq(asList(i + 1, i + 3)), eq(asList(i + 2, i + 4))));
+            verify(rpc1, times(2)).list(anyList());
+            verify(rpc2, times(2)).list(anyList());
 
             verifyNoMoreInteractions(rpc1, rpc2);
             reset(rpc1, rpc2);
@@ -196,15 +196,15 @@ public class RpcSplitAggregateTest extends RpcServiceTestBase {
     @Test
     public void testLargerSet() throws Exception {
         repeat(3, i -> {
-            when(rpc1.set(or(eq(toSet(i + 1, i + 3)), eq(toSet(i + 2, i + 4))))).thenReturn(toSet("a" + i));
-            when(rpc2.set(or(eq(toSet(i + 1, i + 3)), eq(toSet(i + 2, i + 4))))).thenReturn(toSet("b" + i));
+            when(rpc1.set(anySet())).thenAnswer(invocation -> invocation.getArgument(0));
+            when(rpc2.set(anySet())).thenAnswer(invocation -> invocation.getArgument(0));
 
             Set<Object> result = client.set(toSet(i + 1, i + 2, i + 3, i + 4));
 
-            assertEquals(result, toSet("a" + i, "b" + i));
+            assertEquals(result, toSet(i + 1, i + 2, i + 3, i + 4));
 
-            verify(rpc1).set(or(eq(toSet(i + 1, i + 3)), eq(toSet(i + 2, i + 4))));
-            verify(rpc2).set(or(eq(toSet(i + 1, i + 3)), eq(toSet(i + 2, i + 4))));
+            verify(rpc1, times(2)).set(anySet());
+            verify(rpc2, times(2)).set(anySet());
 
             verifyNoMoreInteractions(rpc1, rpc2);
             reset(rpc1, rpc2);
@@ -275,26 +275,20 @@ public class RpcSplitAggregateTest extends RpcServiceTestBase {
     @Test
     public void testLargerMap() throws Exception {
         repeat(3, i -> {
-            Map<Object, Object> m1 = Stream.of(i + 1, i + 3).collect(toMap(o -> o, o -> o + "test"));
-            Map<Object, Object> m2 = Stream.of(i + 2, i + 4).collect(toMap(o -> o, o -> o + "test"));
 
-            when(rpc1.map(or(eq(m1), eq(m2)))).thenReturn(m1);
-            when(rpc2.map(or(eq(m1), eq(m2)))).thenReturn(m2);
+            when(rpc1.map(anyMap())).thenAnswer(invocation -> invocation.getArgument(0));
+            when(rpc2.map(anyMap())).thenAnswer(invocation -> invocation.getArgument(0));
 
-            Map<Object, Object> args = new HashMap<>();
-            args.putAll(m1);
-            args.putAll(m2);
+            Map<Object, Object> args = Stream.of(i + 1, i + 2, i + 3, i + 4).collect(toMap(o -> o, o -> o + "test"));
 
             Map<Object, Object> result = client.map(args);
 
-            Map<Object, Object> expected = new HashMap<>();
-            expected.putAll(m1);
-            expected.putAll(m2);
+            Map<Object, Object> expected = new HashMap<>(args);
 
             assertEquals(expected, result);
 
-            verify(rpc1).map(or(eq(m1), eq(m2)));
-            verify(rpc2).map(or(eq(m1), eq(m2)));
+            verify(rpc1, times(2)).map(anyMap());
+            verify(rpc2, times(2)).map(anyMap());
 
             verifyNoMoreInteractions(rpc1, rpc2);
             reset(rpc1, rpc2);

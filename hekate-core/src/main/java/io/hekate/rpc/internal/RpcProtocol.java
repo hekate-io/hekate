@@ -29,7 +29,11 @@ abstract class RpcProtocol {
     enum Type {
         CALL_REQUEST,
 
+        SPLIT_CALL_REQUEST,
+
         COMPACT_CALL_REQUEST,
+
+        COMPACT_SPLIT_CALL_REQUEST,
 
         OBJECT_RESPONSE,
 
@@ -45,14 +49,21 @@ abstract class RpcProtocol {
 
         private final String rpcTag;
 
+        private final boolean split;
+
         @ToStringIgnore
         private final Object[] args;
 
         public CallRequest(RpcInterfaceInfo<T> rpcType, String rpcTag, RpcMethodInfo rpcMethod, Object[] args) {
+            this(rpcType, rpcTag, rpcMethod, args, false);
+        }
+
+        public CallRequest(RpcInterfaceInfo<T> rpcType, String rpcTag, RpcMethodInfo rpcMethod, Object[] args, boolean split) {
             this.rpcType = rpcType;
             this.rpcTag = rpcTag;
             this.rpcMethod = rpcMethod;
             this.args = args;
+            this.split = split;
         }
 
         public RpcMethodInfo rpcMethod() {
@@ -94,6 +105,11 @@ abstract class RpcProtocol {
         }
 
         @Override
+        public boolean isSplit() {
+            return split;
+        }
+
+        @Override
         public Type type() {
             return Type.CALL_REQUEST;
         }
@@ -121,6 +137,17 @@ abstract class RpcProtocol {
         @Override
         public Type type() {
             return Type.COMPACT_CALL_REQUEST;
+        }
+    }
+
+    static class CompactSplitCallRequest extends CompactCallRequest {
+        public CompactSplitCallRequest(int methodIdx, Object[] args) {
+            super(methodIdx, args);
+        }
+
+        @Override
+        public Type type() {
+            return Type.COMPACT_SPLIT_CALL_REQUEST;
         }
     }
 

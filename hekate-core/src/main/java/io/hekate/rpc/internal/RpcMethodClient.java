@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
-class RpcUnicastMethodClient<T> extends RpcMethodClientBase<T> {
+class RpcMethodClient<T> extends RpcMethodClientBase<T> {
     private static final Function<Response<RpcProtocol>, Object> RESPONSE_CONVERTER = response -> {
         RpcProtocol result = response.get();
 
@@ -23,7 +23,7 @@ class RpcUnicastMethodClient<T> extends RpcMethodClientBase<T> {
         }
     };
 
-    public RpcUnicastMethodClient(RpcInterfaceInfo<T> rpc, String tag, RpcMethodInfo method, MessagingChannel<RpcProtocol> channel) {
+    public RpcMethodClient(RpcInterfaceInfo<T> rpc, String tag, RpcMethodInfo method, MessagingChannel<RpcProtocol> channel) {
         super(rpc, tag, method, channel);
     }
 

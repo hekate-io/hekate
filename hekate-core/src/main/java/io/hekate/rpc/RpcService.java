@@ -332,4 +332,20 @@ public interface RpcService extends Service {
      * @see RpcServiceFactory#setServers(List)
      */
     List<RpcServerInfo> servers();
+
+    /**
+     * Returns the size of a thread pool for handling NIO-based socket connections
+     * (see {@link RpcServiceFactory#setNioThreads(int)}).
+     *
+     * @return Size of a thread pool for handling NIO-based socket connections.
+     */
+    int nioThreads();
+
+    /**
+     * Returns the worker thread pool size (see {@link RpcServiceFactory#setWorkerThreads(int)}).
+     *
+     * @return Worker thread pool size.
+     */
+    int workerThreads();
+
 }

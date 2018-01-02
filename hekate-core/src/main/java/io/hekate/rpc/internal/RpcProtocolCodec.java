@@ -4,6 +4,7 @@ import io.hekate.codec.Codec;
 import io.hekate.codec.DataReader;
 import io.hekate.codec.DataWriter;
 import io.hekate.rpc.internal.RpcProtocol.CompactCallRequest;
+import io.hekate.rpc.internal.RpcProtocol.CompactSplitCallRequest;
 import io.hekate.rpc.internal.RpcProtocol.ErrorResponse;
 import io.hekate.rpc.internal.RpcProtocol.NullResponse;
 import io.hekate.rpc.internal.RpcProtocol.ObjectResponse;
@@ -47,6 +48,15 @@ class RpcProtocolCodec implements Codec<RpcProtocol> {
 
                 break;
             }
+            case COMPACT_SPLIT_CALL_REQUEST: {
+                CompactSplitCallRequest request = (CompactSplitCallRequest)msg;
+
+                out.writeVarInt(request.methodIdx());
+
+                delegate.encode(request.args(), out);
+
+                break;
+            }
             case OBJECT_RESPONSE: {
                 ObjectResponse response = (ObjectResponse)msg;
 
@@ -67,6 +77,7 @@ class RpcProtocolCodec implements Codec<RpcProtocol> {
                 break;
             }
             case CALL_REQUEST:
+            case SPLIT_CALL_REQUEST:
             default: {
                 throw new IllegalArgumentException("Unsupported message type: " + msg);
             }
@@ -85,6 +96,13 @@ class RpcProtocolCodec implements Codec<RpcProtocol> {
 
                 return new CompactCallRequest(methodIdx, args);
             }
+            case COMPACT_SPLIT_CALL_REQUEST: {
+                int methodIdx = in.readVarInt();
+
+                Object[] args = (Object[])delegate.decode(in);
+
+                return new CompactSplitCallRequest(methodIdx, args);
+            }
             case OBJECT_RESPONSE: {
                 Object obj = delegate.decode(in);
 
@@ -99,6 +117,7 @@ class RpcProtocolCodec implements Codec<RpcProtocol> {
                 return new ErrorResponse(cause);
             }
             case CALL_REQUEST:
+            case SPLIT_CALL_REQUEST:
             default: {
                 throw new IllegalArgumentException("Unsupported message type: " + type);
             }

@@ -118,7 +118,7 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
                     client = new RpcAggregateMethodClient<>(type, tag, method, channel);
                 }
             } else {
-                client = new RpcUnicastMethodClient<>(type, tag, method, channel);
+                client = new RpcMethodClient<>(type, tag, method, channel);
             }
 
             clients.put(method.javaMethod(), client);
