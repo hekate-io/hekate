@@ -108,7 +108,9 @@ public class AddressReachabilityDetector implements SplitBrainDetector {
 
             return true;
         } catch (IOException e) {
-            log.warn("Address reachability check failed [host={}, timeout={}, error={}]", address, timeout, e.toString());
+            if (log.isWarnEnabled()) {
+                log.warn("Address reachability check failed [host={}, timeout={}, error={}]", address, timeout, e.toString());
+            }
         }
 
         return false;

@@ -89,12 +89,16 @@ public class HostReachabilityDetector implements SplitBrainDetector {
                     log.debug("Address reachability check success [host={}, timeout={}]", host, timeout);
                 }
             } else {
-                log.warn("Address reachability check failed [host={}, timeout={}]", host, timeout);
+                if (log.isWarnEnabled()) {
+                    log.warn("Address reachability check failed [host={}, timeout={}]", host, timeout);
+                }
             }
 
             return reachable;
         } catch (IOException e) {
-            log.warn("Address reachability check failed with an error [host={}, timeout={}, cause={}]", host, timeout, e.toString());
+            if (log.isWarnEnabled()) {
+                log.warn("Address reachability check failed with an error [host={}, timeout={}, cause={}]", host, timeout, e.toString());
+            }
         }
 
         return false;
