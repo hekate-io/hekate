@@ -24,6 +24,7 @@ import io.hekate.cluster.seed.jdbc.JdbcSeedNodeProviderTest;
 import io.hekate.spring.boot.EnableHekate;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
 import io.hekate.spring.boot.HekateTestConfigBase;
+import io.hekate.test.JdbcTestDataSources;
 import java.sql.Connection;
 import javax.sql.DataSource;
 import org.junit.After;
@@ -41,7 +42,7 @@ public class HekateJdbcSeedNodeProviderConfigurerTest extends HekateAutoConfigur
     public static class JdbcEnabledConfig {
         @Bean
         public DataSource dataSource() {
-            return JdbcSeedNodeProviderTest.newH2DataSource();
+            return JdbcTestDataSources.h2();
         }
     }
 
@@ -54,7 +55,7 @@ public class HekateJdbcSeedNodeProviderConfigurerTest extends HekateAutoConfigur
 
     @Before
     public void setUp() throws Exception {
-        keepDbAlive = JdbcSeedNodeProviderTest.newH2DataSource().getConnection();
+        keepDbAlive = JdbcTestDataSources.h2().getConnection();
 
         JdbcSeedNodeProviderTest.initializeDatabase(keepDbAlive, new JdbcSeedNodeProviderConfig());
     }

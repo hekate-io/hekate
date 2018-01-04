@@ -28,6 +28,7 @@ import io.hekate.cluster.seed.jdbc.JdbcSeedNodeProvider;
 import io.hekate.cluster.seed.multicast.MulticastSeedNodeProvider;
 import io.hekate.cluster.split.AddressReachabilityDetector;
 import io.hekate.cluster.split.HostReachabilityDetector;
+import io.hekate.cluster.split.JdbcConnectivityDetector;
 import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.cluster.split.SplitBrainDetector;
 import io.hekate.cluster.split.SplitBrainDetectorGroup;
@@ -254,6 +255,7 @@ import java.util.function.Predicate;
  * <ul>
  * <li>{@link AddressReachabilityDetector} - checks connectivity with a pre-configured socket address</li>
  * <li>{@link HostReachabilityDetector} - detector that checks reachability of a pre-configured host address</li>
+ * <li>{@link JdbcConnectivityDetector} - detector that checks reachability of a JDBC database</li>
  * </ul>
  *
  * <p>

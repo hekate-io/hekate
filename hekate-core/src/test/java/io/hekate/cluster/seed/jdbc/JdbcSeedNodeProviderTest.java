@@ -16,24 +16,19 @@
 
 package io.hekate.cluster.seed.jdbc;
 
-import com.mysql.cj.jdbc.MysqlDataSource;
-import io.hekate.HekateTestProps;
 import io.hekate.cluster.seed.PersistentSeedNodeProviderTestBase;
 import io.hekate.core.HekateException;
+import io.hekate.test.JdbcTestDataSources;
 import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import javax.sql.DataSource;
-import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import org.postgresql.ds.PGSimpleDataSource;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -52,33 +47,7 @@ public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase
 
     @Parameters(name = "{index}:{0}")
     public static Collection<DataSource> getDataSources() {
-        List<DataSource> dataSources = new ArrayList<>();
-
-        dataSources.add(newH2DataSource());
-
-        // MySQL
-        if (HekateTestProps.is("MYSQL_ENABLED")) {
-            MysqlDataSource mysql = new MysqlDataSource();
-
-            mysql.setURL(HekateTestProps.get("MYSQL_URL"));
-            mysql.setUser(HekateTestProps.get("MYSQL_USER"));
-            mysql.setPassword(HekateTestProps.get("MYSQL_PASSWORD"));
-
-            dataSources.add(mysql);
-        }
-
-        // PostgreSQL
-        if (HekateTestProps.is("POSTGRES_ENABLED")) {
-            PGSimpleDataSource postgres = new PGSimpleDataSource();
-
-            postgres.setUrl(HekateTestProps.get("POSTGRES_URL"));
-            postgres.setUser(HekateTestProps.get("POSTGRES_USER"));
-            postgres.setPassword(HekateTestProps.get("POSTGRES_PASSWORD"));
-
-            dataSources.add(postgres);
-        }
-
-        return dataSources;
+        return JdbcTestDataSources.all();
     }
 
     public static void initializeDatabase(DataSource ds, JdbcSeedNodeProviderConfig cfg) throws SQLException {
@@ -99,14 +68,6 @@ public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase
 
             st.execute(sql);
         }
-    }
-
-    public static JdbcDataSource newH2DataSource() {
-        JdbcDataSource h2 = new JdbcDataSource();
-
-        h2.setURL("jdbc:h2:mem:test");
-
-        return h2;
     }
 
     @Override
