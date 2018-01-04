@@ -66,13 +66,13 @@ public class RpcBenchmark {
 
     @Rpc
     public interface TestRpc {
-        String call(Object arg1, Object arg2);
+        Object call(Object arg);
     }
 
     public static class TestRpcImpl implements TestRpc {
         @Override
-        public String call(Object arg1, Object arg2) {
-            return arg1 + ":" + arg2;
+        public Object call(Object arg) {
+            return arg;
         }
     }
 
@@ -149,10 +149,9 @@ public class RpcBenchmark {
     }
 
     @Benchmark
-    public String measure(BenchmarkContext ctx) throws InterruptedException {
-        TestBean arg1 = TestBean.random();
-        TestBean arg2 = TestBean.random();
+    public Object measure(BenchmarkContext ctx) throws InterruptedException {
+        TestBean arg = TestBean.random();
 
-        return ctx.rpc.call(arg1, arg2);
+        return ctx.rpc.call(arg);
     }
 }
