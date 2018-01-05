@@ -56,6 +56,7 @@ import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
+import io.hekate.core.internal.util.Jvm;
 import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.service.ClusterServiceManager;
 import io.hekate.core.service.ConfigurableService;
@@ -1417,7 +1418,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                 switch (splitBrainAction) {
                     case REJOIN: {
                         if (log.isWarnEnabled()) {
-                            log.warn("Rejoining due to cluster state inconsistency.");
+                            log.warn("Rejoining due to inconsistency of the cluster state.");
                         }
 
                         ctx.rejoin();
@@ -1426,10 +1427,19 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                     }
                     case TERMINATE: {
                         if (log.isErrorEnabled()) {
-                            log.error("Terminating due to cluster state inconsistency.");
+                            log.error("Terminating due to inconsistency of the cluster state.");
                         }
 
                         ctx.terminate();
+
+                        break;
+                    }
+                    case KILL_JVM: {
+                        if (log.isErrorEnabled()) {
+                            log.error("Killing the JVM due to inconsistency of the cluster state.");
+                        }
+
+                        Jvm.exit(250);
 
                         break;
                     }

@@ -24,6 +24,7 @@ import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateFutureException;
 import io.hekate.core.internal.HekateTestNode;
+import io.hekate.core.internal.util.Jvm;
 import io.hekate.test.SplitBrainDetectorMock;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
@@ -32,6 +33,11 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class ClusterServiceSplitBrainTest extends HekateNodeParamTestBase {
     public ClusterServiceSplitBrainTest(HekateTestContext params) {
@@ -112,6 +118,45 @@ public class ClusterServiceSplitBrainTest extends HekateNodeParamTestBase {
         node.awaitForStatus(Hekate.State.DOWN);
 
         assertEquals(1, detector.getChecks());
+    }
+
+    @Test
+    public void testKillJvmWhenOtherNodeLeaves() throws Exception {
+        try {
+            SplitBrainDetectorMock detector = new SplitBrainDetectorMock(true);
+
+            HekateTestNode node = createNode(c -> {
+                ClusterServiceFactory cluster = c.service(ClusterServiceFactory.class).get();
+
+                cluster.setSplitBrainAction(SplitBrainAction.KILL_JVM);
+                cluster.setSplitBrainDetector(detector);
+            });
+
+            Jvm.ExitHandler jvmExitHandler = mock(Jvm.ExitHandler.class);
+
+            doAnswer(invocation -> node.leaveAsync()).when(jvmExitHandler).exit(anyInt());
+
+            Jvm.setExitHandler(jvmExitHandler);
+
+            node.join();
+
+            HekateTestNode leaving = createNode().join();
+
+            awaitForTopology(leaving, node);
+
+            detector.setValid(false);
+
+            leaving.leave();
+
+            node.awaitForStatus(Hekate.State.DOWN);
+
+            assertEquals(1, detector.getChecks());
+
+            verify(jvmExitHandler).exit(250);
+            verifyNoMoreInteractions(jvmExitHandler);
+        } finally {
+            Jvm.setExitHandler(null);
+        }
     }
 
     @Test

@@ -16,7 +16,6 @@
 
 package io.hekate.core.internal.util;
 
-import java.lang.management.ManagementFactory;
 import java.nio.charset.Charset;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -37,8 +36,6 @@ public final class Utils {
 
     private static final DecimalFormatSymbols NUMBER_FORMAT_SYMBOLS;
 
-    private static String pid;
-
     static {
         // Formatting options.
         NUMBER_FORMAT_SYMBOLS = new DecimalFormatSymbols(Locale.getDefault());
@@ -48,25 +45,6 @@ public final class Utils {
 
     private Utils() {
         // No-op.
-    }
-
-    public static String pid() {
-        // No synchronization here:
-        // 1) Pid never changes
-        // 1) Extraction is cheap and it is ok if several threads will do it in parallel
-        if (pid == null) {
-            String jvmName = ManagementFactory.getRuntimeMXBean().getName();
-
-            int index = jvmName.indexOf('@');
-
-            if (index < 0) {
-                pid = "";
-            } else {
-                pid = jvmName.substring(0, index);
-            }
-        }
-
-        return pid;
     }
 
     public static String numberFormat(String pattern, Number number) {

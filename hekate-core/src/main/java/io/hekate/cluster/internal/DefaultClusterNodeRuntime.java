@@ -17,7 +17,7 @@
 package io.hekate.cluster.internal;
 
 import io.hekate.cluster.ClusterNodeRuntime;
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.internal.util.Jvm;
 import io.hekate.util.format.ToString;
 import java.io.Serializable;
 
@@ -35,7 +35,7 @@ public class DefaultClusterNodeRuntime implements Serializable, ClusterNodeRunti
         String osName = getProperty("os.name");
         String osVersion = getProperty("os.version");
         String osArch = getProperty("os.arch");
-        String pid = Utils.pid();
+        String pid = Jvm.pid();
 
         LOCAL_INFO = new DefaultClusterNodeRuntime(
             cpus,
