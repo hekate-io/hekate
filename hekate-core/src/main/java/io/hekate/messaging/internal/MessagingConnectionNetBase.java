@@ -35,25 +35,25 @@ abstract class MessagingConnectionNetBase<T> extends MessagingConnectionBase<T> 
 
     private final SendPressureGuard pressureGuard;
 
-    public MessagingConnectionNetBase(NetworkEndpoint<MessagingProtocol> net, MessagingGateway<T> gateway, MessagingEndpoint<T> endpoint) {
-        super(gateway, gateway.async(), endpoint);
+    public MessagingConnectionNetBase(NetworkEndpoint<MessagingProtocol> net, MessagingContext<T> ctx, MessagingEndpoint<T> endpoint) {
+        super(ctx, ctx.async(), endpoint);
 
         assert net != null : "Network endpoint is null.";
 
         this.net = net;
-        this.pressureGuard = gateway.sendGuard();
+        this.pressureGuard = ctx.sendGuard();
     }
 
     @Override
     public void request(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
-        MessageContext<T> ctx = route.ctx();
+        MessageContext<T> msgCtx = route.ctx();
 
-        RequestHandle<T> handle = registerRequest(ctx, callback);
+        RequestHandle<T> handle = registerRequest(msgCtx, callback);
 
         Request<T> msg;
 
-        if (ctx.hasAffinity()) {
-            msg = new AffinityRequest<>(ctx.affinity(), handle.id(), retransmit, route.preparePayload());
+        if (msgCtx.hasAffinity()) {
+            msg = new AffinityRequest<>(msgCtx.affinity(), handle.id(), retransmit, route.preparePayload());
         } else {
             msg = new Request<>(handle.id(), retransmit, route.preparePayload());
         }
@@ -65,14 +65,14 @@ abstract class MessagingConnectionNetBase<T> extends MessagingConnectionBase<T> 
 
     @Override
     public void stream(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
-        MessageContext<T> ctx = route.ctx();
+        MessageContext<T> msgCtx = route.ctx();
 
-        RequestHandle<T> handle = registerRequest(ctx, callback);
+        RequestHandle<T> handle = registerRequest(msgCtx, callback);
 
         StreamRequest<T> msg;
 
-        if (ctx.hasAffinity()) {
-            msg = new AffinityStreamRequest<>(ctx.affinity(), handle.id(), retransmit, route.preparePayload());
+        if (msgCtx.hasAffinity()) {
+            msg = new AffinityStreamRequest<>(msgCtx.affinity(), handle.id(), retransmit, route.preparePayload());
         } else {
             msg = new StreamRequest<>(handle.id(), retransmit, route.preparePayload());
         }
@@ -84,17 +84,17 @@ abstract class MessagingConnectionNetBase<T> extends MessagingConnectionBase<T> 
 
     @Override
     public void sendNotification(MessageRoute<T> route, SendCallback callback, boolean retransmit) {
-        MessageContext<T> ctx = route.ctx();
+        MessageContext<T> msgCtx = route.ctx();
 
         Notification<T> msg;
 
-        if (ctx.hasAffinity()) {
-            msg = new AffinityNotification<>(ctx.affinity(), retransmit, route.preparePayload());
+        if (msgCtx.hasAffinity()) {
+            msg = new AffinityNotification<>(msgCtx.affinity(), retransmit, route.preparePayload());
         } else {
             msg = new Notification<>(retransmit, route.preparePayload());
         }
 
-        msg.prepareSend(ctx.worker(), this, callback);
+        msg.prepareSend(msgCtx.worker(), this, callback);
 
         net.send(msg, msg /* <-- Message itself is a callback.*/);
     }

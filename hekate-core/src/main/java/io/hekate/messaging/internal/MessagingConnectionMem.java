@@ -30,8 +30,8 @@ import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkFuture;
 
 class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
-    public MessagingConnectionMem(MessagingGateway<T> gateway, MessagingExecutor async) {
-        super(gateway, async, new DefaultMessagingEndpoint<>(gateway.localNode().id(), gateway.channel()));
+    public MessagingConnectionMem(MessagingContext<T> ctx, MessagingExecutor async) {
+        super(ctx, async, new DefaultMessagingEndpoint<>(ctx.localNode().id(), ctx.channel()));
     }
 
     @Override
@@ -41,12 +41,12 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
 
     @Override
     public void sendNotification(MessageRoute<T> route, SendCallback callback, boolean retransmit) {
-        MessageContext<T> ctx = route.ctx();
+        MessageContext<T> msgCtx = route.ctx();
 
         Notification<T> msg;
 
-        if (ctx.hasAffinity()) {
-            msg = new AffinityNotification<>(ctx.affinity(), retransmit, route.preparePayload());
+        if (msgCtx.hasAffinity()) {
+            msg = new AffinityNotification<>(msgCtx.affinity(), retransmit, route.preparePayload());
         } else {
             msg = new Notification<>(retransmit, route.preparePayload());
         }
@@ -57,7 +57,7 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
 
         onAsyncEnqueue();
 
-        ctx.worker().execute(() -> {
+        msgCtx.worker().execute(() -> {
             onAsyncDequeue();
 
             doReceiveNotification(msg);
@@ -66,47 +66,47 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
 
     @Override
     public void request(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
-        MessageContext<T> ctx = route.ctx();
+        MessageContext<T> msgCtx = route.ctx();
 
-        RequestHandle<T> handle = registerRequest(ctx, callback);
+        RequestHandle<T> handle = registerRequest(msgCtx, callback);
 
         Request<T> msg;
 
-        if (ctx.hasAffinity()) {
-            msg = new AffinityRequest<>(ctx.affinity(), handle.id(), retransmit, route.preparePayload());
+        if (msgCtx.hasAffinity()) {
+            msg = new AffinityRequest<>(msgCtx.affinity(), handle.id(), retransmit, route.preparePayload());
         } else {
             msg = new Request<>(handle.id(), retransmit, route.preparePayload());
         }
 
         onAsyncEnqueue();
 
-        ctx.worker().execute(() -> {
+        msgCtx.worker().execute(() -> {
             onAsyncDequeue();
 
-            doReceiveRequest(msg, ctx.worker());
+            doReceiveRequest(msg, msgCtx.worker());
         });
     }
 
     @Override
     public void stream(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
-        MessageContext<T> ctx = route.ctx();
+        MessageContext<T> msgCtx = route.ctx();
 
-        RequestHandle<T> handle = registerRequest(ctx, callback);
+        RequestHandle<T> handle = registerRequest(msgCtx, callback);
 
         StreamRequest<T> msg;
 
-        if (ctx.hasAffinity()) {
-            msg = new AffinityStreamRequest<>(ctx.affinity(), handle.id(), retransmit, route.preparePayload());
+        if (msgCtx.hasAffinity()) {
+            msg = new AffinityStreamRequest<>(msgCtx.affinity(), handle.id(), retransmit, route.preparePayload());
         } else {
             msg = new StreamRequest<>(handle.id(), retransmit, route.preparePayload());
         }
 
         onAsyncEnqueue();
 
-        ctx.worker().execute(() -> {
+        msgCtx.worker().execute(() -> {
             onAsyncDequeue();
 
-            doReceiveRequest(msg, ctx.worker());
+            doReceiveRequest(msg, msgCtx.worker());
         });
     }
 

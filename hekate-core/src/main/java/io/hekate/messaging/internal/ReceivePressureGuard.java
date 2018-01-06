@@ -27,6 +27,7 @@ class ReceivePressureGuard {
 
     private final int hiMark;
 
+    @ToStringIgnore
     private final AtomicInteger queueSize = new AtomicInteger();
 
     @ToStringIgnore

@@ -55,11 +55,11 @@ class MessagingClientNet<T> implements MessagingClient<T> {
     private volatile int state = STATE_DISCONNECTED;
 
     public MessagingClientNet(String channelName, ClusterNode remoteNode, NetworkConnector<MessagingProtocol> net,
-        MessagingGateway<T> gateway, boolean trackIdle) {
+        MessagingContext<T> ctx, boolean trackIdle) {
         assert channelName != null : "Channel name is null.";
         assert remoteNode != null : "Remote node is null.";
         assert net != null : "Network connector is null.";
-        assert gateway != null : "Gateway is null.";
+        assert ctx != null : "Messaging context is null.";
 
         if (DEBUG) {
             log.debug("Creating new connection [channel={}, node={}]", channelName, remoteNode);
@@ -71,9 +71,9 @@ class MessagingClientNet<T> implements MessagingClient<T> {
 
         NetworkClient<MessagingProtocol> netClient = net.newClient();
 
-        DefaultMessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(remoteNode.id(), gateway.channel());
+        DefaultMessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(remoteNode.id(), ctx.channel());
 
-        this.conn = new MessagingConnectionNetOut<>(remoteNode.address(), netClient, gateway, endpoint, mux, () -> {
+        this.conn = new MessagingConnectionNetOut<>(remoteNode.address(), netClient, ctx, endpoint, mux, () -> {
             // On internal disconnect:
             synchronized (mux) {
                 if (state != STATE_CLOSED) {

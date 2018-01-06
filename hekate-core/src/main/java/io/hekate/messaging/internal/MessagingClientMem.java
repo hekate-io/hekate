@@ -71,15 +71,15 @@ class MessagingClientMem<T> implements MessagingClient<T> {
     @ToStringIgnore
     private final MessagingConnectionMem<T> conn;
 
-    public MessagingClientMem(ClusterNode node, MessagingGateway<T> gateway) {
+    public MessagingClientMem(ClusterNode node, MessagingContext<T> ctx) {
         assert node != null : "Cluster node is null.";
-        assert gateway != null : "Gateway is null.";
+        assert ctx != null : "Messaging context is null.";
 
         this.node = node;
 
-        AsyncEnforcedExecutor asyncEnforced = new AsyncEnforcedExecutor(gateway.async());
+        AsyncEnforcedExecutor asyncEnforced = new AsyncEnforcedExecutor(ctx.async());
 
-        conn = new MessagingConnectionMem<>(gateway, asyncEnforced);
+        conn = new MessagingConnectionMem<>(ctx, asyncEnforced);
     }
 
     @Override

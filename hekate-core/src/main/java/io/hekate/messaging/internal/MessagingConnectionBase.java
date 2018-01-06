@@ -38,7 +38,7 @@ import org.slf4j.Logger;
 abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundContext, MessageInterceptor.ReplyContext {
     private final Logger log;
 
-    private final MessagingGateway<T> gateway;
+    private final MessagingContext<T> ctx;
 
     private final MessageReceiver<T> receiver;
 
@@ -52,18 +52,18 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
 
     private final RequestRegistry<T> requests;
 
-    public MessagingConnectionBase(MessagingGateway<T> gateway, MessagingExecutor async, MessagingEndpoint<T> endpoint) {
-        assert gateway != null : "Gateway is null.";
+    public MessagingConnectionBase(MessagingContext<T> ctx, MessagingExecutor async, MessagingEndpoint<T> endpoint) {
+        assert ctx != null : "Messaging context is null.";
         assert async != null : "Executor is null.";
         assert endpoint != null : "Messaging endpoint is null.";
 
-        this.gateway = gateway;
+        this.ctx = ctx;
         this.async = async;
         this.endpoint = endpoint;
-        this.log = gateway.log();
-        this.receiver = gateway.receiver();
-        this.metrics = gateway.metrics();
-        this.pressureGuard = gateway.receiveGuard();
+        this.log = ctx.log();
+        this.receiver = ctx.receiver();
+        this.metrics = ctx.metrics();
+        this.pressureGuard = ctx.receiveGuard();
 
         this.requests = new RequestRegistry<>(metrics);
     }
@@ -88,11 +88,11 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
 
     @Override
     public ClusterNode localNode() {
-        return gateway.localNode();
+        return ctx.localNode();
     }
 
-    public MessagingGateway<T> gateway() {
-        return gateway;
+    public MessagingContext<T> gateway() {
+        return ctx;
     }
 
     public RequestRegistry<T> requests() {
@@ -411,7 +411,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
     }
 
     public T prepareInbound(T msg) {
-        MessageInterceptor<T> interceptor = gateway.interceptor();
+        MessageInterceptor<T> interceptor = ctx.interceptor();
 
         if (interceptor != null) {
             T transformed = interceptor.interceptInbound(msg, this);
@@ -423,7 +423,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
     }
 
     public T prepareReply(T msg) {
-        MessageInterceptor<T> interceptor = gateway.interceptor();
+        MessageInterceptor<T> interceptor = ctx.interceptor();
 
         if (interceptor != null) {
             T transformed = interceptor.interceptReply(msg, this);
@@ -434,8 +434,8 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
         return msg;
     }
 
-    protected RequestHandle<T> registerRequest(MessageContext<T> ctx, InternalRequestCallback<T> callback) {
-        return requests.register(epoch(), ctx, callback);
+    protected RequestHandle<T> registerRequest(MessageContext<T> msgCtx, InternalRequestCallback<T> callback) {
+        return requests.register(epoch(), msgCtx, callback);
     }
 
     protected void doReceiveRequest(RequestBase<T> msg, MessagingWorker worker) {

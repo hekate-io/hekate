@@ -33,6 +33,7 @@ class SendPressureGuard {
 
     private final MessagingOverflowPolicy policy;
 
+    @ToStringIgnore
     private final AtomicInteger queueSize = new AtomicInteger();
 
     @ToStringIgnore

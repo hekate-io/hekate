@@ -57,16 +57,16 @@ class MessagingConnectionNetOut<T> extends MessagingConnectionNetBase<T> {
     @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
     private volatile int connectEpoch;
 
-    public MessagingConnectionNetOut(ClusterAddress address, NetworkClient<MessagingProtocol> net, MessagingGateway<T> gateway,
+    public MessagingConnectionNetOut(ClusterAddress address, NetworkClient<MessagingProtocol> net, MessagingContext<T> ctx,
         MessagingEndpoint<T> endpoint, Object mux, DisconnectCallback callback) {
-        super(net, gateway, endpoint);
+        super(net, ctx, endpoint);
 
         assert address != null : "Address is null.";
         assert mux != null : "Mutex must be not null.";
         assert callback != null : "Disconnect callback is null.";
 
-        this.channelId = gateway.id();
-        this.localNodeId = gateway.localNode().id();
+        this.channelId = ctx.id();
+        this.localNodeId = ctx.localNode().id();
         this.address = address;
         this.net = net;
         this.mux = mux;

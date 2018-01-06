@@ -16,6 +16,8 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.messaging.MessagingChannelClosedException;
+import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.unicast.SendCallback;
 import java.util.ArrayList;
@@ -28,6 +30,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class MessagingServiceTest extends MessagingServiceTestBase {
     private static class ExpectedSendFailure implements SendCallback {
@@ -74,6 +77,30 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
 
         assertEquals(getWorkerThreads(), channel.getWorkerThreads());
         assertEquals(getNioThreads(), channel.getNioThreadPoolSize());
+    }
+
+    @Test
+    public void testRejoin() throws Exception {
+        TestChannel receiver = createChannel(c -> c.setReceiver(msg -> msg.reply("OK"))).join();
+        TestChannel sender = createChannel().join();
+
+        awaitForChannelsTopology(sender, receiver);
+
+        repeat(3, i -> {
+            get(sender.request(receiver.getNodeId(), "success"));
+
+            sender.leave();
+
+            MessagingFutureException err = expect(MessagingFutureException.class, () ->
+                get(sender.request(receiver.getNodeId(), "fail"))
+            );
+
+            assertTrue(err.isCausedBy(MessagingChannelClosedException.class));
+
+            sender.join();
+
+            get(sender.request(receiver.getNodeId(), "success"));
+        });
     }
 
     @Test

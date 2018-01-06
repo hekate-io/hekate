@@ -19,10 +19,12 @@ package io.hekate.rpc.internal;
 import io.hekate.core.HekateConfigurationException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.failover.FailoverPolicy;
+import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcClientBuilder;
 import io.hekate.rpc.RpcClientConfig;
+import io.hekate.rpc.RpcException;
 import io.hekate.rpc.RpcLoadBalancer;
 import io.hekate.rpc.RpcRequest;
 import io.hekate.rpc.RpcServerConfig;
@@ -212,6 +214,29 @@ public class RpcServiceTest extends RpcServiceTestBase {
 
         assertTrue(ctx.client().rpc().clusterOf(TestRpcA.class).topology().contains(ctx.server().localNode()));
         assertFalse(ctx.client().rpc().clusterOf(TestRpcA.class).topology().contains(ctx.client().localNode()));
+    }
+
+    @Test
+    public void testRejoin() throws Exception {
+        TestRpcA rpc = mock(TestRpcA.class);
+
+        ClientAndServer ctx = prepareClientAndServer(rpc);
+
+        TestRpcA client = ctx.client().rpc().clientFor(TestRpcA.class).build();
+
+        repeat(3, i -> {
+            client.callA();
+
+            ctx.client().leave();
+
+            RpcException err = expect(RpcException.class, client::callA);
+
+            assertTrue(err.isCausedBy(MessagingChannelClosedException.class));
+
+            ctx.client().join();
+
+            client.callA();
+        });
     }
 
     @Test

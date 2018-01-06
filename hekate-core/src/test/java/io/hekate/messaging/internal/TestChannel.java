@@ -99,8 +99,8 @@ public class TestChannel {
         return node;
     }
 
-    public MessagingGateway<String> getImpl() {
-        return channel.gateway();
+    public MessagingContext<String> getImpl() {
+        return channel.context();
     }
 
     public TestChannel join() throws HekateFutureException, InterruptedException {
