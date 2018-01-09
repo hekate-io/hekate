@@ -133,11 +133,11 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
         nullSafe(factory.getServers()).forEach(serverConfigs::add);
 
         nullSafe(factory.getClientProviders()).forEach(provider ->
-            nullSafe(provider.getRpcClientConfig()).forEach(clientConfigs::add)
+            nullSafe(provider.configureRpcClients()).forEach(clientConfigs::add)
         );
 
         nullSafe(factory.getServerProviders()).forEach(provider ->
-            nullSafe(provider.getRpcServerConfig()).forEach(serverConfigs::add)
+            nullSafe(provider.configureRpcServers()).forEach(serverConfigs::add)
         );
     }
 
@@ -151,7 +151,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     public void configure(ConfigurationContext ctx) {
         // Collect client configurations from providers.
         nullSafe(ctx.findComponents(RpcClientConfigProvider.class)).forEach(provider ->
-            nullSafe(provider.getRpcClientConfig()).forEach(clientConfigs::add)
+            nullSafe(provider.configureRpcClients()).forEach(clientConfigs::add)
         );
 
         // Validate client configurations.
@@ -161,7 +161,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
         // Collect server configurations from providers.
         nullSafe(ctx.findComponents(RpcServerConfigProvider.class)).forEach(provider ->
-            nullSafe(provider.getRpcServerConfig()).forEach(serverConfigs::add)
+            nullSafe(provider.configureRpcServers()).forEach(serverConfigs::add)
         );
 
         // Register RPC servers.

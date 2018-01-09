@@ -38,5 +38,5 @@ public interface RpcClientConfigProvider {
      *
      * @return RPC clients configuration.
      */
-    Collection<RpcClientConfig> getRpcClientConfig();
+    Collection<RpcClientConfig> configureRpcClients();
 }

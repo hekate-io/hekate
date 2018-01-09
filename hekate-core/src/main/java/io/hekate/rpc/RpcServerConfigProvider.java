@@ -38,5 +38,5 @@ public interface RpcServerConfigProvider {
      *
      * @return RPC servers configuration.
      */
-    Collection<RpcServerConfig> getRpcServerConfig();
+    Collection<RpcServerConfig> configureRpcServers();
 }
