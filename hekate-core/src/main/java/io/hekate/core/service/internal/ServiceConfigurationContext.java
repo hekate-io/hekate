@@ -53,6 +53,10 @@ class ServiceConfigurationContext implements ConfigurationContext {
         }
     }
 
+    private final String nodeName;
+
+    private final String clusterName;
+
     private final Map<String, Map<String, ServiceProperty<?>>> props = new HashMap<>();
 
     @ToStringIgnore
@@ -61,8 +65,20 @@ class ServiceConfigurationContext implements ConfigurationContext {
     @ToStringIgnore
     private ServiceRef current;
 
-    public ServiceConfigurationContext(ServiceManager manager) {
+    public ServiceConfigurationContext(String nodeName, String clusterName, ServiceManager manager) {
+        this.nodeName = nodeName;
+        this.clusterName = clusterName;
         this.manager = manager;
+    }
+
+    @Override
+    public String nodeName() {
+        return nodeName;
+    }
+
+    @Override
+    public String clusterName() {
+        return clusterName;
     }
 
     @Override

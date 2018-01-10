@@ -1211,7 +1211,7 @@ class HekateNode implements Hekate, JavaSerializable {
             StreamUtils.nullSafe(cfg.getServices()).forEach(factories::add);
         }
 
-        return new ServiceManager(this, builtIn, core, factories);
+        return new ServiceManager(nodeName, clusterName, this, builtIn, core, factories);
     }
 
     private List<ClusterNode> getDiff(Set<ClusterNode> oldNodes, Set<ClusterNode> newNodes) {

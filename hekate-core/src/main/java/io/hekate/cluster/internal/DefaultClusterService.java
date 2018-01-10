@@ -233,6 +233,9 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     private ScheduledFuture<?> joinTask;
 
     @ToStringIgnore
+    private String clusterName;
+
+    @ToStringIgnore
     private volatile InitializationContext ctx;
 
     @ToStringIgnore
@@ -302,6 +305,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     @Override
     public void configure(ConfigurationContext ctx) {
+        clusterName = ctx.clusterName();
+
         Collection<ClusterAcceptor> customAcceptors = ctx.findComponents(ClusterAcceptor.class);
 
         acceptors.addAll(customAcceptors);
@@ -698,6 +703,11 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         }
 
         return future;
+    }
+
+    @Override
+    public String clusterName() {
+        return clusterName;
     }
 
     @Override

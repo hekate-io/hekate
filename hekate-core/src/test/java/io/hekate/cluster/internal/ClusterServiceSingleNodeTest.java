@@ -74,6 +74,17 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
     }
 
     @Test
+    public void testClusterName() throws Exception {
+        HekateTestNode node = createNode(boot -> boot.withClusterName("hekate.test-cluster-name")).join();
+
+        assertEquals("hekate.test-cluster-name", node.cluster().clusterName());
+
+        node.leave();
+
+        assertEquals("hekate.test-cluster-name", node.cluster().clusterName());
+    }
+
+    @Test
     public void testJoinLeaveEventsWithListenerBeforeJoin() throws Exception {
         repeat(50, i -> {
             List<ClusterEvent> events = new CopyOnWriteArrayList<>();

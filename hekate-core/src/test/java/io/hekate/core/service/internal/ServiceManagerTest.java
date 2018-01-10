@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -739,7 +740,14 @@ public class ServiceManagerTest extends HekateTestBase {
     private ServiceManager createManager(List<TestFactory> factories) throws HekateException {
         List<CoreTestService> services = Collections.singletonList(new CoreTestService());
 
-        ServiceManager manager = new ServiceManager(mock(Hekate.class), services, Collections.emptyList(), factories);
+        ServiceManager manager = new ServiceManager(
+            "test-node",
+            "test-cluster",
+            mock(Hekate.class),
+            services,
+            emptyList(),
+            factories
+        );
 
         manager.instantiate();
 

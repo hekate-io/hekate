@@ -45,6 +45,10 @@ public class ServiceManager {
         // No-op.
     };
 
+    private final String nodeName;
+
+    private final String clusterName;
+
     private final Hekate container;
 
     private final ServiceInitOrder initOrder = new ServiceInitOrder();
@@ -65,13 +69,17 @@ public class ServiceManager {
 
     private Set<Class<? extends Service>> serviceTypes;
 
-    public ServiceManager(Hekate container, List<? extends Service> builtInServices, List<Class<? extends Service>> coreServices,
+    public ServiceManager(String nodeName, String clusterName, Hekate container,
+        List<? extends Service> builtInServices,
+        List<Class<? extends Service>> coreServices,
         List<? extends ServiceFactory<?>> factories) {
         assert container != null : "Container is null.";
         assert builtInServices != null : "Built-in services list is null.";
         assert coreServices != null : "Core services list is null.";
         assert factories != null : "Service factories list is null.";
 
+        this.nodeName = nodeName;
+        this.clusterName = clusterName;
         this.container = container;
         this.builtInServices = builtInServices;
         this.coreServices = coreServices;
@@ -116,7 +124,7 @@ public class ServiceManager {
         handlers.forEach(initOrder::register);
 
         // Configure services.
-        ServiceConfigurationContext cfgCtx = new ServiceConfigurationContext(this);
+        ServiceConfigurationContext cfgCtx = new ServiceConfigurationContext(nodeName, clusterName, this);
 
         handlers.forEach(handler ->
             handler.configure(cfgCtx)

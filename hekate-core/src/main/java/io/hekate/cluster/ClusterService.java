@@ -290,6 +290,15 @@ import java.util.function.Predicate;
 @DefaultServiceFactory(ClusterServiceFactory.class)
 public interface ClusterService extends Service, ClusterView {
     /**
+     * Returns the cluster name.
+     *
+     * @return Cluster name.
+     *
+     * @see HekateBootstrap#setClusterName(String)
+     */
+    String clusterName();
+
+    /**
      * Returns the local cluster node.
      *
      * @return Local cluster node.
