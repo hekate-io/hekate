@@ -694,7 +694,7 @@
                             <packages>io.hekate.net*</packages>
                         </group>
                         <group>
-                            <title>Services and Plugins API</title>
+                            <title>Core Services and Plugins API</title>
                             <packages>io.hekate.core.*:</packages>
                         </group>
                         <group>
