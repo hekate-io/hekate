@@ -76,28 +76,6 @@ public class NettyNetworkServiceTest extends NetworkTestBase {
     }
 
     @Test
-    public void testStartStop() throws Exception {
-        NettyNetworkService net = createService();
-
-        repeat(5, i -> {
-            net.start();
-
-            net.stop();
-        });
-    }
-
-    @Test
-    public void testStopWithoutStart() throws Exception {
-        NettyNetworkService net = createService();
-
-        repeat(5, i -> {
-            net.start();
-
-            net.stop();
-        });
-    }
-
-    @Test
     public void testClientAfterServiceStop() throws Exception {
         NettyNetworkService serverService = createService(c ->
             c.withConnector(new NetworkConnectorConfig<String>()

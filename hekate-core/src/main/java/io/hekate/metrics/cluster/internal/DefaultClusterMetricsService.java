@@ -37,13 +37,13 @@ import io.hekate.messaging.MessagingConfigProvider;
 import io.hekate.messaging.MessagingService;
 import io.hekate.metrics.Metric;
 import io.hekate.metrics.MetricFilter;
+import io.hekate.metrics.MetricValue;
 import io.hekate.metrics.cluster.ClusterMetricsService;
 import io.hekate.metrics.cluster.ClusterMetricsServiceFactory;
 import io.hekate.metrics.cluster.ClusterNodeMetrics;
 import io.hekate.metrics.cluster.internal.MetricsProtocol.UpdateRequest;
 import io.hekate.metrics.cluster.internal.MetricsProtocol.UpdateResponse;
 import io.hekate.metrics.local.LocalMetricsService;
-import io.hekate.metrics.local.internal.StaticMetric;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
@@ -76,7 +76,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
         private long version;
 
-        private Map<String, StaticMetric> metrics;
+        private Map<String, MetricValue> metrics;
 
         private volatile Optional<ClusterNodeMetrics> publicMetrics = Optional.empty();
 
@@ -92,11 +92,11 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
             return version;
         }
 
-        public Map<String, StaticMetric> metrics() {
+        public Map<String, MetricValue> metrics() {
             return metrics;
         }
 
-        public void updateMetrics(long version, Map<String, StaticMetric> metrics) {
+        public void updateMetrics(long version, Map<String, MetricValue> metrics) {
             this.version = version;
             this.metrics = metrics;
 
@@ -473,13 +473,13 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
 
         Collection<Metric> metrics = metricsMap.values();
 
-        Map<String, StaticMetric> fixedMetrics = new HashMap<>(metrics.size(), 1.0f);
+        Map<String, MetricValue> fixedMetrics = new HashMap<>(metrics.size(), 1.0f);
 
         metrics.forEach(metric -> {
             if (filter == null || filter.accept(metric)) {
                 String name = metric.name();
 
-                fixedMetrics.put(name, new StaticMetric(name, metric.value()));
+                fixedMetrics.put(name, new MetricValue(name, metric.value()));
             }
         });
 
@@ -619,7 +619,7 @@ public class DefaultClusterMetricsService implements ClusterMetricsService, Depe
                             ////////////////////////////////////////////////////////
                             // Remote is later -> Update local metrics.
                             ////////////////////////////////////////////////////////
-                            Map<String, StaticMetric> remoteMetrics = update.metrics();
+                            Map<String, MetricValue> remoteMetrics = update.metrics();
 
                             if (DEBUG) {
                                 log.debug("Updating metrics [node={}, metrics={}]", node, remoteMetrics);

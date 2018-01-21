@@ -565,6 +565,10 @@ class MessagingContext<T> implements HekateSupport {
         return baseType;
     }
 
+    public ClusterView cluster() {
+        return cluster;
+    }
+
     DefaultMessagingChannel<T> channel() {
         return channel;
     }

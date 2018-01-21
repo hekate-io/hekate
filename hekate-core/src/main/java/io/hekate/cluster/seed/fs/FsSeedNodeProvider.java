@@ -23,6 +23,7 @@ import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
+import io.hekate.core.jmx.JmxSupport;
 import io.hekate.util.format.ToString;
 import java.io.File;
 import java.io.FileFilter;
@@ -55,7 +56,7 @@ import org.slf4j.LoggerFactory;
  * @see ClusterServiceFactory#setSeedNodeProvider(SeedNodeProvider)
  * @see SeedNodeProvider
  */
-public class FsSeedNodeProvider implements SeedNodeProvider {
+public class FsSeedNodeProvider implements SeedNodeProvider, JmxSupport {
     private static final Logger log = LoggerFactory.getLogger(FsSeedNodeProvider.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -179,6 +180,21 @@ public class FsSeedNodeProvider implements SeedNodeProvider {
      */
     public File getWorkDir() {
         return workDir;
+    }
+
+    @Override
+    public FsSeedNodeProviderJmx createJmxObject() {
+        return new FsSeedNodeProviderJmx() {
+            @Override
+            public String getWorkDir() {
+                return workDir.getAbsolutePath();
+            }
+
+            @Override
+            public long getCleanupInterval() {
+                return cleanupInterval;
+            }
+        };
     }
 
     private void doRegister(String cluster, InetSocketAddress node) throws HekateException {

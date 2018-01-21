@@ -22,12 +22,17 @@ import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.internal.util.Utils;
+import io.hekate.core.jmx.JmxService;
+import io.hekate.core.jmx.JmxServiceException;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
+import io.hekate.core.service.DependencyContext;
+import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.TerminatingService;
 import io.hekate.metrics.Metric;
+import io.hekate.metrics.MetricValue;
 import io.hekate.metrics.local.CounterConfig;
 import io.hekate.metrics.local.CounterMetric;
 import io.hekate.metrics.local.LocalMetricsService;
@@ -35,6 +40,7 @@ import io.hekate.metrics.local.LocalMetricsServiceFactory;
 import io.hekate.metrics.local.MetricConfigBase;
 import io.hekate.metrics.local.MetricsConfigProvider;
 import io.hekate.metrics.local.MetricsListener;
+import io.hekate.metrics.local.MetricsSnapshot;
 import io.hekate.metrics.local.ProbeConfig;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
@@ -52,11 +58,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DefaultLocalMetricsService implements LocalMetricsService, InitializingService, ConfigurableService, TerminatingService {
+public class DefaultLocalMetricsService implements LocalMetricsService, DependentService, InitializingService, ConfigurableService,
+    TerminatingService {
     private static final Logger log = LoggerFactory.getLogger(DefaultLocalMetricsService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -89,10 +95,12 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
     private final List<MetricsListener> listeners = new CopyOnWriteArrayList<>();
 
     @ToStringIgnore
-    private final AtomicInteger tickSeq = new AtomicInteger();
+    private JmxService jmx;
 
     @ToStringIgnore
     private ScheduledExecutorService worker;
+
+    private volatile MetricsSnapshot snapshot = emptySnapshot();
 
     public DefaultLocalMetricsService(LocalMetricsServiceFactory factory) {
         assert factory != null : "Factory is null.";
@@ -117,6 +125,11 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
     }
 
     @Override
+    public void resolve(DependencyContext ctx) {
+        jmx = ctx.optional(JmxService.class);
+    }
+
+    @Override
     public void configure(ConfigurationContext ctx) {
         Collection<MetricsConfigProvider> providers = ctx.findComponents(MetricsConfigProvider.class);
 
@@ -137,12 +150,18 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
                 log.debug("Initializing...");
             }
 
-            tickSeq.set(0);
+            // Initialize pre-configured metrics.
+            initializeMetrics();
 
-            registerMetrics();
-
+            // Register pre-configured listeners.
             listeners.addAll(initListeners);
 
+            // Register JMX bean (optional).
+            if (jmx != null) {
+                jmx.register(new DefaultLocalMetricsServiceJmx(this));
+            }
+
+            // Start metrics updates.
             worker = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("LocalMetrics"));
 
             worker.scheduleAtFixedRate(() -> {
@@ -184,7 +203,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
                 probes.clear();
                 listeners.clear();
 
-                tickSeq.set(0);
+                snapshot = emptySnapshot();
             }
         } finally {
             guard.unlockWrite();
@@ -200,11 +219,16 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
     }
 
     @Override
+    public MetricsSnapshot snapshot() {
+        return snapshot;
+    }
+
+    @Override
     public CounterMetric register(CounterConfig cfg) {
         String name = checkCounterConfig(cfg);
 
         // Check for an existing counter.
-        guard.lockRead();
+        guard.lockReadWithStateCheck();
 
         try {
             CounterMetric existing = counters.get(name);
@@ -217,17 +241,17 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
         }
 
         // Register if counter doesn't exist.
-        return doRegister(name, cfg);
+        return doRegisterCounter(name, cfg);
     }
 
     @Override
     public Metric register(ProbeConfig cfg) {
         String name = checkProbeConfig(cfg);
 
-        guard.lockWrite();
+        guard.lockWriteWithStateCheck();
 
         try {
-            return doRegister(name, cfg);
+            return doRegisterProbe(name, cfg);
         } finally {
             guard.unlockWrite();
         }
@@ -294,6 +318,11 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
         }
     }
 
+    @Override
+    public long refreshInterval() {
+        return refreshInterval;
+    }
+
     /**
      * Returns all registered {@link #addListener(MetricsListener) listeners}.
      *
@@ -303,16 +332,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
         return new ArrayList<>(listeners);
     }
 
-    /**
-     * Returns the configuration value of {@link LocalMetricsServiceFactory#getRefreshInterval()}.
-     *
-     * @return Value of {@link LocalMetricsServiceFactory#getRefreshInterval()}.
-     */
-    public long refreshInterval() {
-        return refreshInterval;
-    }
-
-    private void registerMetrics() {
+    private void initializeMetrics() {
         Map<String, CounterConfig> countersCfg = new HashMap<>();
         Map<String, ProbeConfig> probesCfg = new HashMap<>();
 
@@ -362,30 +382,46 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
             }
         });
 
-        countersCfg.forEach(this::doRegister);
-        probesCfg.forEach(this::doRegister);
+        countersCfg.forEach(this::doRegisterCounter);
+        probesCfg.forEach(this::doRegisterProbe);
     }
 
-    private Metric doRegister(String name, ProbeConfig cfg) {
-        assert guard.isWriteLocked() : "Thread must hold the write lock.";
+    private Metric doRegisterProbe(String name, ProbeConfig cfg) {
+        assert cfg != null : "Probe configuration is null.";
 
-        if (DEBUG) {
-            log.debug("Registering probe [config={}]", cfg);
+        guard.lockWriteWithStateCheck();
+
+        try {
+            if (DEBUG) {
+                log.debug("Registering probe [config={}]", cfg);
+            }
+
+            PROBE_CHECK.unique(name, allMetrics.keySet(), "name");
+
+            DefaultProbeMetric metricProbe = new DefaultProbeMetric(name, cfg.getProbe(), cfg.getInitValue());
+
+            probes.put(name, metricProbe);
+
+            allMetrics.put(name, metricProbe);
+
+            if (jmx != null) {
+                try {
+                    jmx.register(new DefaultMetricJmx(name, this), name);
+                } catch (JmxServiceException e) {
+                    throw PROBE_CHECK.fail(e);
+                }
+            }
+
+            return metricProbe;
+        } finally {
+            guard.unlockWrite();
         }
-
-        PROBE_CHECK.unique(name, allMetrics.keySet(), "name");
-
-        DefaultProbeMetric metricProbe = new DefaultProbeMetric(name, cfg.getProbe(), cfg.getInitValue());
-
-        probes.put(name, metricProbe);
-
-        allMetrics.put(name, metricProbe);
-
-        return metricProbe;
     }
 
-    private CounterMetric doRegister(String name, CounterConfig cfg) {
-        guard.lockWrite();
+    private CounterMetric doRegisterCounter(String name, CounterConfig cfg) {
+        assert cfg != null : "Counter configuration is null.";
+
+        guard.lockWriteWithStateCheck();
 
         try {
             // Double check that counter wasn't registered while we were waiting for the write lock.
@@ -398,6 +434,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
 
                 COUNTER_CHECK.unique(name, allMetrics.keySet(), "metric name");
 
+                // Try register 'total' metric for this counter (if required).
                 CounterMetric total = null;
 
                 String totalName = totalName(cfg);
@@ -408,13 +445,32 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
                     total = new DefaultCounterMetric(totalName, false);
 
                     allMetrics.put(totalName, total);
+
+                    // Register JMX bean for the total metric (optional).
+                    if (jmx != null) {
+                        try {
+                            jmx.register(new DefaultMetricJmx(totalName, this), totalName);
+                        } catch (JmxServiceException e) {
+                            throw COUNTER_CHECK.fail(e);
+                        }
+                    }
                 }
 
+                // Register counter.
                 DefaultCounterMetric counter = new DefaultCounterMetric(name, cfg.isAutoReset(), total);
 
                 counters.put(name, counter);
 
                 allMetrics.put(name, counter);
+
+                // Register JMX bean for this counter (optional).
+                if (jmx != null) {
+                    try {
+                        jmx.register(new DefaultMetricJmx(name, this), name);
+                    } catch (JmxServiceException e) {
+                        throw COUNTER_CHECK.fail(e);
+                    }
+                }
 
                 return counter;
             } else {
@@ -427,22 +483,21 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
 
     // Package level for testing purposes.
     void updateMetrics() {
-        Map<String, Metric> snapshot;
+        DefaultMetricsUpdateEvent event;
 
         guard.lockWrite();
 
         try {
             if (guard.isInitialized()) {
-                snapshot = !listeners.isEmpty() ? new HashMap<>(allMetrics.size(), 1.0f) : null;
+                Map<String, Metric> metrics = new HashMap<>(allMetrics.size(), 1.0f);
 
+                // Update probes.
                 probes.forEach((name, probe) -> {
                     if (!probe.isFailed()) {
                         try {
                             long newValue = probe.update();
 
-                            if (snapshot != null) {
-                                snapshot.put(name, new StaticMetric(name, newValue));
-                            }
+                            metrics.put(name, new MetricValue(name, newValue));
                         } catch (RuntimeException | Error err) {
                             log.error("Unexpected error while getting the probe value. "
                                 + "Probe will not be tried any more [name={}]", name, err);
@@ -452,6 +507,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
                     }
                 });
 
+                // Update counters.
                 counters.values().forEach(cnt -> {
                     long val;
 
@@ -461,22 +517,30 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
                         val = cnt.value();
                     }
 
-                    if (snapshot != null) {
-                        snapshot.put(cnt.name(), new StaticMetric(cnt.name(), val));
+                    metrics.put(cnt.name(), new MetricValue(cnt.name(), val));
+                });
+
+                // Collect other (artificial) metrics.
+                allMetrics.forEach((name, metric) -> {
+                    if (!metrics.containsKey(name)) {
+                        metrics.put(name, new MetricValue(metric.name(), metric.value()));
                     }
                 });
+
+                // Prepare event.
+                event = new DefaultMetricsUpdateEvent(snapshot.tick() + 1, Collections.unmodifiableMap(metrics));
+
+                // Update the latest snapshot.
+                this.snapshot = event;
             } else {
-                snapshot = null;
+                event = null;
             }
         } finally {
             guard.unlockWrite();
         }
 
-        if (snapshot != null) {
-            int tick = tickSeq.getAndIncrement();
-
-            DefaultMetricsUpdateEvent event = new DefaultMetricsUpdateEvent(tick, Collections.unmodifiableMap(snapshot));
-
+        // Notify listeners.
+        if (event != null) {
             listeners.forEach(listener -> {
                 try {
                     listener.onUpdate(event);
@@ -507,6 +571,10 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Initiali
 
     private String totalName(CounterConfig cfg) {
         return cfg.getTotalName() != null ? cfg.getTotalName().trim() : null;
+    }
+
+    private DefaultMetricsUpdateEvent emptySnapshot() {
+        return new DefaultMetricsUpdateEvent(0, Collections.emptyMap());
     }
 
     @Override

@@ -35,8 +35,8 @@ import java.util.List;
  *
  * <h2>Service configuration</h2>
  * <p>
- * {@link LockService} can be registered and configured in {@link HekateBootstrap} with the help of {@link
- * LockServiceFactory} as shown in the example below:
+ * {@link LockService} can be registered and configured in {@link HekateBootstrap} with the help of {@link LockServiceFactory} as shown in
+ * the example below:
  * </p>
  *
  * <div class="tabs">

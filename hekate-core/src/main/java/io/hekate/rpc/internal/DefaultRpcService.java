@@ -16,6 +16,7 @@
 
 package io.hekate.rpc.internal;
 
+import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterView;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
@@ -23,6 +24,7 @@ import io.hekate.core.HekateException;
 import io.hekate.core.ServiceInfo;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
+import io.hekate.core.jmx.JmxService;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.DependencyContext;
@@ -119,6 +121,9 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     private CodecFactory<Object> codec;
 
     @ToStringIgnore
+    private JmxService jmx;
+
+    @ToStringIgnore
     private MessagingChannel<RpcProtocol> channel;
 
     public DefaultRpcService(RpcServiceFactory factory) {
@@ -145,6 +150,8 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     public void resolve(DependencyContext ctx) {
         messaging = ctx.require(MessagingService.class);
         codec = ctx.require(CodecService.class).codecFactory();
+
+        jmx = ctx.optional(JmxService.class);
     }
 
     @Override
@@ -155,8 +162,12 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
         );
 
         // Validate client configurations.
-        clientConfigs.forEach(cfg ->
-            ConfigCheck.get(RpcClientConfig.class).notNull(cfg.getRpcInterface(), "RPC interface")
+        clientConfigs.forEach(cfg -> {
+                ConfigCheck check = ConfigCheck.get(RpcClientConfig.class);
+
+                check.notNull(cfg.getRpcInterface(), "RPC interface");
+                check.validSysName(cfg.getTag(), "tag");
+            }
         );
 
         // Collect server configurations from providers.
@@ -225,6 +236,9 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
                 } else {
                     // Register RPC for each tag.
                     tags.forEach(tag -> {
+                        // Verify tag format.
+                        check.validSysName(tag, "tag");
+
                         RpcTypeKey tagKey = new RpcTypeKey(rpc.type().javaType(), tag);
 
                         if (!uniqueRpcTypes.add(tagKey)) {
@@ -302,8 +316,10 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
                 log.debug("Initializing...");
             }
 
+            // Initialize RPC messaging channel.
             channel = messaging.channel(CHANNEL_NAME, RpcProtocol.class);
 
+            // Initialize clients.
             clientConfigs.forEach(cfg -> {
                 RpcTypeKey key = new RpcTypeKey(cfg.getRpcInterface(), cfg.getTag());
 
@@ -319,6 +335,32 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
                 clients.put(key, client);
             });
+
+            // Register to JMX (optional).
+            if (jmx != null) {
+                for (RpcServerInfo server : servers) {
+                    // Register one JMX bean per each 'RPC interface + tag' combination.
+                    for (RpcInterfaceInfo<?> rpcFace : server.interfaces()) {
+                        if (server.tags().isEmpty()) {
+                            // Register single JMX bean if server doesn't have any tags.
+                            String name = rpcFace.name();
+
+                            ClusterView cluster = clusterOf(rpcFace.javaType());
+
+                            jmx.register(new DefaultRpcServerJmx(rpcFace, null, server, cluster), name);
+                        } else {
+                            // Register one JMX bean per each tag.
+                            for (String tag : server.tags()) {
+                                String name = rpcFace.name() + '#' + tag;
+
+                                ClusterView cluster = clusterOf(rpcFace.javaType(), tag);
+
+                                jmx.register(new DefaultRpcServerJmx(rpcFace, tag, server, cluster), name);
+                            }
+                        }
+                    }
+                }
+            }
 
             if (DEBUG) {
                 log.debug("Initialized.");
@@ -379,11 +421,15 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     public ClusterView clusterOf(Class<?> type, String tag) {
         ArgAssert.notNull(type, "Type");
 
-        RpcInterfaceInfo<?> rpcType = typeAnalyzer.analyzeType(type);
+        guard.lockReadWithStateCheck();
 
-        RpcTypeKey key = new RpcTypeKey(type, tag);
+        try {
+            RpcInterfaceInfo<?> rpcType = typeAnalyzer.analyzeType(type);
 
-        return channelForClient(key, rpcType).cluster();
+            return channel.cluster().filter(filterFor(rpcType, null));
+        } finally {
+            guard.unlockRead();
+        }
     }
 
     @Override
@@ -429,7 +475,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     private RpcClientBuilder<?> createClient(RpcTypeKey key) {
         RpcInterfaceInfo<?> type = typeAnalyzer.analyzeType(key.type());
 
-        MessagingChannel<RpcProtocol> clientChannel = channelForClient(key, type);
+        MessagingChannel<RpcProtocol> clientChannel = channelForClient(type, key.tag());
 
         DefaultRpcClientBuilder<?> client = new DefaultRpcClientBuilder<>(type, key.tag(), clientChannel);
 
@@ -440,22 +486,26 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
         return client;
     }
 
-    private MessagingChannel<RpcProtocol> channelForClient(RpcTypeKey key, RpcInterfaceInfo<?> type) {
+    private MessagingChannel<RpcProtocol> channelForClient(RpcInterfaceInfo<?> type, String tag) {
+        return this.channel.filter(filterFor(type, tag));
+    }
+
+    private ClusterNodeFilter filterFor(RpcInterfaceInfo<?> type, String tag) {
         String rpcName;
 
-        if (key.tag() == null) {
+        if (tag == null) {
             rpcName = nameProperty(type);
         } else {
-            rpcName = taggedNameProperty(type, key.tag());
+            rpcName = taggedNameProperty(type, tag);
         }
 
-        return this.channel.filter(node -> {
+        return node -> {
             ServiceInfo service = node.service(RpcService.class);
 
             Integer minClientVer = service.intProperty(rpcName);
 
             return minClientVer != null && minClientVer <= type.version();
-        });
+        };
     }
 
     @Override

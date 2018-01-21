@@ -106,6 +106,11 @@ public class ClusterAddress implements Comparable<ClusterAddress>, Serializable 
         return id.hashCode();
     }
 
+    /**
+     * Returns the string representation of this address formatted as {@link #socket()}:{@link #id()}.
+     *
+     * @return String representation of this address formatted as {@link #socket()}:{@link #id()}.
+     */
     @Override
     public String toString() {
         return socket + ":" + id;

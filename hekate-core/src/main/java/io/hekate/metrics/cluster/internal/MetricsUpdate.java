@@ -17,7 +17,7 @@
 package io.hekate.metrics.cluster.internal;
 
 import io.hekate.cluster.ClusterNodeId;
-import io.hekate.metrics.local.internal.StaticMetric;
+import io.hekate.metrics.MetricValue;
 import io.hekate.util.format.ToString;
 import java.util.Map;
 
@@ -26,9 +26,9 @@ class MetricsUpdate {
 
     private final long ver;
 
-    private final Map<String, StaticMetric> metrics;
+    private final Map<String, MetricValue> metrics;
 
-    public MetricsUpdate(ClusterNodeId node, long ver, Map<String, StaticMetric> metrics) {
+    public MetricsUpdate(ClusterNodeId node, long ver, Map<String, MetricValue> metrics) {
         this.node = node;
         this.ver = ver;
         this.metrics = metrics;
@@ -42,7 +42,7 @@ class MetricsUpdate {
         return ver;
     }
 
-    public Map<String, StaticMetric> metrics() {
+    public Map<String, MetricValue> metrics() {
         return metrics;
     }
 

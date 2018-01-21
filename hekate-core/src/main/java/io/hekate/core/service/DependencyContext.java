@@ -17,6 +17,7 @@
 package io.hekate.core.service;
 
 import io.hekate.core.Hekate;
+import io.hekate.core.HekateBootstrap;
 
 /**
  * Context for {@link DependentService}.
@@ -24,6 +25,25 @@ import io.hekate.core.Hekate;
  * @see DependentService#resolve(DependencyContext)
  */
 public interface DependencyContext {
+    /**
+     * Returns the node node.
+     *
+     * @return Name of this node.
+     *
+     * @see HekateBootstrap#setNodeName(String)
+     */
+    String nodeName();
+
+    /**
+     * Returns the cluster name.
+     *
+     * @return Name of the local node's cluster.
+     *
+     * @see HekateBootstrap#setClusterName(String)
+     */
+    String clusterName();
+
+
     /**
      * Returns the {@link Hekate} instance that manages this service.
      * <p>

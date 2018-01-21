@@ -18,9 +18,9 @@ package io.hekate.cluster.seed.fs;
 
 import io.hekate.cluster.seed.PersistentSeedNodeProviderTestBase;
 import io.hekate.core.internal.util.AddressUtils;
+import io.hekate.test.TestUtils;
 import java.io.File;
 import java.net.InetSocketAddress;
-import java.nio.file.Files;
 import org.junit.Test;
 
 import static io.hekate.core.internal.util.AddressUtils.FILE_PREFIX;
@@ -35,12 +35,12 @@ public class FsSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase<F
     public void setUp() throws Exception {
         super.setUp();
 
-        tempDir = Files.createTempDirectory("hekate_fs_seed").toFile();
+        tempDir = TestUtils.createTempDir();
     }
 
     @Override
     public void tearDown() throws Exception {
-        deleteDirectory(tempDir);
+        TestUtils.deleteDir(tempDir);
 
         super.tearDown();
     }

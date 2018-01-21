@@ -14,32 +14,34 @@
  * under the License.
  */
 
-package io.hekate.metrics.local.internal;
+package io.hekate.test;
 
-import io.hekate.metrics.Metric;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 
-public class StaticMetric implements Metric {
-    private final String name;
-
-    private final long value;
-
-    public StaticMetric(String name, long value) {
-        this.name = name;
-        this.value = value;
+public final class TestUtils {
+    private TestUtils() {
+        // No-op.
     }
 
-    @Override
-    public String name() {
-        return name;
+    public static File createTempDir() throws IOException {
+        return Files.createTempDirectory("hekate_test").toFile();
     }
 
-    @Override
-    public long value() {
-        return value;
-    }
+    public static void deleteDir(File dir) {
+        File[] files = dir.listFiles();
 
-    @Override
-    public String toString() {
-        return Metric.class.getSimpleName() + "[name=" + name + ", value=" + value + ']';
+        if (files != null) {
+            for (File f : files) {
+                if (f.isDirectory()) {
+                    deleteDir(f);
+                }
+
+                f.delete();
+            }
+        }
+
+        dir.delete();
     }
 }

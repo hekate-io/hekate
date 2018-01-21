@@ -193,7 +193,7 @@ class MessagingGateway<T> {
         return workerThreads;
     }
 
-    public long idleTimeout() {
+    public long idleSocketTimeout() {
         return idleTimeout;
     }
 

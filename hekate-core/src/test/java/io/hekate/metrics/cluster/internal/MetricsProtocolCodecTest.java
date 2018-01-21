@@ -20,9 +20,9 @@ import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.codec.StreamDataReader;
 import io.hekate.codec.StreamDataWriter;
+import io.hekate.metrics.MetricValue;
 import io.hekate.metrics.cluster.internal.MetricsProtocol.UpdateRequest;
 import io.hekate.metrics.cluster.internal.MetricsProtocol.UpdateResponse;
-import io.hekate.metrics.local.internal.StaticMetric;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
@@ -91,8 +91,8 @@ public class MetricsProtocolCodecTest extends HekateTestBase {
 
     private void assertEqualsUpdates(MetricsUpdate u1, MetricsUpdate u2) {
         for (String name : u1.metrics().keySet()) {
-            StaticMetric m1 = u1.metrics().get(name);
-            StaticMetric m2 = u2.metrics().get(name);
+            MetricValue m1 = u1.metrics().get(name);
+            MetricValue m2 = u2.metrics().get(name);
 
             assertNotNull(m2);
             assertEquals(m1.name(), m2.name());
@@ -104,10 +104,10 @@ public class MetricsProtocolCodecTest extends HekateTestBase {
         List<MetricsUpdate> updates = new ArrayList<>();
 
         for (int i = 0; i < 3; i++) {
-            Map<String, StaticMetric> metrics = new HashMap<>();
+            Map<String, MetricValue> metrics = new HashMap<>();
 
             for (int j = 0; j < 3; j++) {
-                metrics.put("m" + j, new StaticMetric("m" + j, j + 1));
+                metrics.put("m" + j, new MetricValue("m" + j, j + 1));
             }
 
             updates.add(new MetricsUpdate(newNodeId(), i, metrics));

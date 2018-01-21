@@ -21,7 +21,7 @@ import io.hekate.codec.Codec;
 import io.hekate.codec.CodecUtils;
 import io.hekate.codec.DataReader;
 import io.hekate.codec.DataWriter;
-import io.hekate.metrics.local.internal.StaticMetric;
+import io.hekate.metrics.MetricValue;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -124,7 +124,7 @@ class MetricsProtocolCodec implements Codec<MetricsProtocol> {
                 // Metrics.
                 int size = in.readVarIntUnsigned();
 
-                Map<String, StaticMetric> metrics = new HashMap<>(size, 1.0f);
+                Map<String, MetricValue> metrics = new HashMap<>(size, 1.0f);
 
                 for (int j = 0; j < size; j++) {
                     int key = in.readVarInt();
@@ -143,7 +143,7 @@ class MetricsProtocolCodec implements Codec<MetricsProtocol> {
 
                     long val = in.readVarLong();
 
-                    metrics.put(name, new StaticMetric(name, val));
+                    metrics.put(name, new MetricValue(name, val));
                 }
 
                 MetricsUpdate update = new MetricsUpdate(node, ver, metrics);
@@ -169,11 +169,11 @@ class MetricsProtocolCodec implements Codec<MetricsProtocol> {
                 out.writeVarLong(update.version());
 
                 // Metrics.
-                Map<String, StaticMetric> metrics = update.metrics();
+                Map<String, MetricValue> metrics = update.metrics();
 
                 out.writeVarIntUnsigned(metrics.size());
 
-                for (StaticMetric metric : metrics.values()) {
+                for (MetricValue metric : metrics.values()) {
                     String name = metric.name();
 
                     Integer key = writeDict.get(name);

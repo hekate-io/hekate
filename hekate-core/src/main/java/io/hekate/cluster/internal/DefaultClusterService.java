@@ -58,6 +58,7 @@ import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Jvm;
 import io.hekate.core.internal.util.StreamUtils;
+import io.hekate.core.jmx.JmxService;
 import io.hekate.core.service.ClusterServiceManager;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
@@ -174,9 +175,9 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     private final FailureDetector failureDetector;
 
-    private final SplitBrainDetector splitBrainDetector;
-
     private final SplitBrainAction splitBrainAction;
+
+    private final SplitBrainDetector splitBrainDetector;
 
     @ToStringIgnore
     private final AtomicBoolean splitBrainDetectorActive = new AtomicBoolean();
@@ -213,6 +214,9 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     @ToStringIgnore
     private LocalMetricsService metrics;
+
+    @ToStringIgnore
+    private JmxService jmx;
 
     @ToStringIgnore
     private ClusterMetricsCallback metricsCallback;
@@ -298,15 +302,16 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     @Override
     public void resolve(DependencyContext ctx) {
+        clusterName = ctx.clusterName();
+
         net = ctx.require(NetworkService.class);
 
         metrics = ctx.optional(LocalMetricsService.class);
+        jmx = ctx.optional(JmxService.class);
     }
 
     @Override
     public void configure(ConfigurationContext ctx) {
-        clusterName = ctx.clusterName();
-
         Collection<ClusterAcceptor> customAcceptors = ctx.findComponents(ClusterAcceptor.class);
 
         acceptors.addAll(customAcceptors);
@@ -406,6 +411,18 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             // Prepare metrics callback (optional).
             if (metrics != null) {
                 metricsCallback = new ClusterMetricsCallback(metrics);
+            }
+
+            // Register JMX beans (optional).
+            if (jmx != null) {
+                jmx.register(new DefaultClusterServiceJmx(this));
+
+                jmx.register(failureDetector);
+                jmx.register(seedNodeProvider);
+
+                if (splitBrainDetector != null) {
+                    jmx.register(splitBrainDetector);
+                }
             }
         } finally {
             guard.unlockWrite();

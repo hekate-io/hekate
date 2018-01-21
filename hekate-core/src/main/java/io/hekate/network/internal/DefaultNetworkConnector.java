@@ -16,20 +16,30 @@
 
 package io.hekate.network.internal;
 
+import io.hekate.core.jmx.JmxSupport;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkConnector;
+import io.hekate.network.NetworkConnectorJmx;
 import io.hekate.network.netty.NettyClientFactory;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 
-class DefaultNetworkConnector<T> implements NetworkConnector<T> {
+class DefaultNetworkConnector<T> implements NetworkConnector<T>, JmxSupport {
     private final String protocol;
 
     @ToStringIgnore
     private final NettyClientFactory<T> factory;
 
-    public DefaultNetworkConnector(String protocol, NettyClientFactory<T> factory) {
+    @ToStringIgnore
+    private final int nioThreads;
+
+    @ToStringIgnore
+    private final boolean server;
+
+    public DefaultNetworkConnector(String protocol, int nioThreads, boolean server, NettyClientFactory<T> factory) {
         this.protocol = protocol;
+        this.nioThreads = nioThreads;
+        this.server = server;
         this.factory = factory;
     }
 
@@ -41,6 +51,36 @@ class DefaultNetworkConnector<T> implements NetworkConnector<T> {
     @Override
     public NetworkClient<T> newClient() {
         return factory.newClient();
+    }
+
+    @Override
+    public NetworkConnectorJmx createJmxObject() {
+        return new NetworkConnectorJmx() {
+            @Override
+            public String getProtocol() {
+                return protocol;
+            }
+
+            @Override
+            public long getIdleSocketTimeout() {
+                return factory.getIdleTimeout();
+            }
+
+            @Override
+            public int getNioThreads() {
+                return nioThreads;
+            }
+
+            @Override
+            public boolean isServer() {
+                return server;
+            }
+
+            @Override
+            public String getLogCategory() {
+                return factory.getLoggerCategory();
+            }
+        };
     }
 
     @Override

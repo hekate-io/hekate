@@ -47,7 +47,7 @@ import io.hekate.core.TerminateFuture;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.core.internal.util.StreamUtils;
+import io.hekate.core.jmx.JmxService;
 import io.hekate.core.resource.ResourceService;
 import io.hekate.core.service.ClusterContext;
 import io.hekate.core.service.ClusterServiceManager;
@@ -92,6 +92,7 @@ import static io.hekate.core.Hekate.State.JOINING;
 import static io.hekate.core.Hekate.State.LEAVING;
 import static io.hekate.core.Hekate.State.TERMINATING;
 import static io.hekate.core.Hekate.State.UP;
+import static io.hekate.core.internal.util.StreamUtils.nullSafe;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
@@ -182,44 +183,44 @@ class HekateNode implements Hekate, JavaSerializable {
 
     private volatile DefaultClusterNode node;
 
-    public HekateNode(HekateBootstrap cfg) {
-        assert cfg != null : "Bootstrap is null.";
+    public HekateNode(HekateBootstrap boot) {
+        assert boot != null : "Bootstrap is null.";
 
         // Install plugins.
-        plugins = new PluginManager(cfg);
+        plugins = new PluginManager(boot);
 
         plugins.install();
 
         // Check configuration.
         ConfigCheck check = ConfigCheck.get(HekateBootstrap.class);
 
-        check.notEmpty(cfg.getClusterName(), "cluster name");
-        check.validSysName(cfg.getClusterName(), "cluster name");
+        check.notEmpty(boot.getClusterName(), "cluster name");
+        check.validSysName(boot.getClusterName(), "cluster name");
 
-        check.validSysName(cfg.getNodeName(), "node name");
+        check.validSysName(boot.getNodeName(), "node name");
 
-        check.notNull(cfg.getDefaultCodec(), "default codec");
-        check.isFalse(cfg.getDefaultCodec().createCodec().isStateful(), "default codec can't be stateful.");
+        check.notNull(boot.getDefaultCodec(), "default codec");
+        check.isFalse(boot.getDefaultCodec().createCodec().isStateful(), "default codec can't be stateful.");
 
         // Basic properties.
-        this.nodeName = cfg.getNodeName() != null ? cfg.getNodeName().trim() : "";
-        this.clusterName = cfg.getClusterName().trim();
+        this.nodeName = boot.getNodeName() != null ? boot.getNodeName().trim() : "";
+        this.clusterName = boot.getClusterName().trim();
 
         // Node roles.
         Set<String> roles;
 
-        if (cfg.getRoles() == null) {
+        if (boot.getRoles() == null) {
             roles = emptySet();
         } else {
             // Filter out nulls and trim non-null values.
-            roles = unmodifiableSet(StreamUtils.nullSafe(cfg.getRoles()).map(String::trim).collect(toSet()));
+            roles = unmodifiableSet(nullSafe(boot.getRoles()).map(String::trim).collect(toSet()));
         }
 
         // Node properties.
         Map<String, String> props = new HashMap<>();
 
-        if (cfg.getProperties() != null) {
-            cfg.getProperties().forEach((k, v) -> {
+        if (boot.getProperties() != null) {
+            boot.getProperties().forEach((k, v) -> {
                 // Trim non-null property keys and values.
                 String key = k == null ? null : k.trim();
                 String value = v == null ? null : v.trim();
@@ -229,8 +230,8 @@ class HekateNode implements Hekate, JavaSerializable {
         }
 
         // Node properties from providers.
-        if (cfg.getPropertyProviders() != null) {
-            StreamUtils.nullSafe(cfg.getPropertyProviders()).forEach(provider -> {
+        if (boot.getPropertyProviders() != null) {
+            nullSafe(boot.getPropertyProviders()).forEach(provider -> {
                 Map<String, String> providerProps = provider.getProperties();
 
                 if (providerProps != null && !providerProps.isEmpty()) {
@@ -250,18 +251,25 @@ class HekateNode implements Hekate, JavaSerializable {
         nodeProps = unmodifiableMap(props);
 
         // Lifecycle listeners.
-        StreamUtils.nullSafe(cfg.getLifecycleListeners()).forEach(listeners::add);
+        nullSafe(boot.getLifecycleListeners()).forEach(listeners::add);
 
         // Cluster event manager.
         clusterEvents = new ClusterEventManager(this);
 
         // Service manager.
-        services = createServiceManager(cfg);
+        services = createServiceManager(boot.getDefaultCodec(), boot.getServices());
 
         // Instantiate services.
         services.instantiate();
 
-        // Core services.
+        // Get internal service managers.
+        networkManager = services.findService(NetworkServiceManager.class);
+        clusterManager = services.findService(ClusterServiceManager.class);
+
+        check.notNull(networkManager, NetworkServiceManager.class.getName(), "not found");
+        check.notNull(clusterManager, ClusterServiceManager.class.getName(), "not found");
+
+        // Cache core services.
         codec = services.findService(CodecService.class);
         cluster = services.findService(ClusterService.class);
         messaging = services.findService(MessagingService.class);
@@ -272,12 +280,6 @@ class HekateNode implements Hekate, JavaSerializable {
         rpc = services.findService(RpcService.class);
         localMetrics = services.findService(LocalMetricsService.class);
         clusterMetrics = services.findService(ClusterMetricsService.class);
-
-        // Get internal service managers.
-        networkManager = services.findService(NetworkServiceManager.class);
-        clusterManager = services.findService(ClusterServiceManager.class);
-
-        check.notNull(networkManager, NetworkServiceManager.class.getName(), "not found");
     }
 
     @Override
@@ -670,7 +672,7 @@ class HekateNode implements Hekate, JavaSerializable {
                     log.info("Initialized local node info [node={}]", localNode.toDetailedString());
                 }
 
-                // Initialize services and plugins.
+                // Initialize services.
                 InitializationContext ctx = createInitContext(localNode);
 
                 if (log.isInfoEnabled()) {
@@ -683,6 +685,14 @@ class HekateNode implements Hekate, JavaSerializable {
 
                 services.postInitialize(ctx);
 
+                // Register to JMX (optional).
+                JmxService jmx = services.findService(JmxService.class);
+
+                if (jmx != null) {
+                    jmx.register(new HekateNodeJmx(this));
+                }
+
+                // Start plugins.
                 plugins.start(this);
 
                 // Pre-check state since plugin could initiate leave/termination procedure.
@@ -1182,9 +1192,9 @@ class HekateNode implements Hekate, JavaSerializable {
         });
     }
 
-    private ServiceManager createServiceManager(HekateBootstrap cfg) {
-        // Codec factory.
-        CodecFactory<Object> defaultCodec = HekateCodecHelper.wrap(cfg.getDefaultCodec(), this);
+    private ServiceManager createServiceManager(CodecFactory<Object> codec, List<ServiceFactory<? extends Service>> services) {
+        // Wrap codec factory.
+        CodecFactory<Object> defaultCodec = HekateCodecHelper.wrap(codec, this);
 
         // Prepare built-in services.
         List<Service> builtIn = singletonList(new DefaultCodecService(defaultCodec));
@@ -1206,10 +1216,8 @@ class HekateNode implements Hekate, JavaSerializable {
         // Prepare custom services.
         List<ServiceFactory<? extends Service>> factories = new ArrayList<>();
 
-        if (cfg.getServices() != null) {
-            // Filter out null values.
-            StreamUtils.nullSafe(cfg.getServices()).forEach(factories::add);
-        }
+        // Filter out null values.
+        nullSafe(services).forEach(factories::add);
 
         return new ServiceManager(nodeName, clusterName, this, builtIn, core, factories);
     }

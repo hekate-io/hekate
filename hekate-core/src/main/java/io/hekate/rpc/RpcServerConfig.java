@@ -78,7 +78,7 @@ public class RpcServerConfig {
     }
 
     /**
-     * Sets tags that should be attached to this RPC server.
+     * Sets tags that should be attached to this RPC server. Can contain only alpha-numeric characters and non-repeatable dots/hyphens.
      *
      * <p>
      * Tags make it possible to expose multiple implementations (or different configuration) of the same RPC interface as RPC
@@ -95,7 +95,7 @@ public class RpcServerConfig {
      * be able to discover this server (see {@link RpcService#clientFor(Class)} method).
      * </p>
      *
-     * @param tags Tags of this server.
+     * @param tags Tags of this server. Can contain only alpha-numeric characters and non-repeatable dots/hyphens.
      */
     public void setTags(Set<String> tags) {
         this.tags = tags;
@@ -104,7 +104,7 @@ public class RpcServerConfig {
     /**
      * Fluent-style version of {@link #setTags(Set)}.
      *
-     * @param tag Tag of this server.
+     * @param tag Tag of this server. Can contain only alpha-numeric characters and non-repeatable dots/hyphens.
      *
      * @return This instance.
      */

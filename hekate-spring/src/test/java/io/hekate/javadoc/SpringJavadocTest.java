@@ -19,6 +19,7 @@ package io.hekate.javadoc;
 import io.hekate.HekateTestBase;
 import io.hekate.codec.CodecService;
 import io.hekate.core.Hekate;
+import io.hekate.core.jmx.JmxService;
 import io.hekate.lock.LockRegion;
 import io.hekate.messaging.MessagingChannel;
 import java.util.function.BiConsumer;
@@ -177,6 +178,22 @@ public class SpringJavadocTest extends HekateTestBase {
     @Test
     public void testRpcBean() {
         doTest("javadoc/rpc/rpc-bean.xml");
+    }
+
+    @Test
+    public void testJmxXsd() {
+        doTest("javadoc/core/jmx/service-xsd.xml", (node, ctx) -> {
+            assertTrue(node.has(JmxService.class));
+            assertNotNull(node.get(JmxService.class));
+        });
+    }
+
+    @Test
+    public void testJmxBean() {
+        doTest("javadoc/core/jmx/service-bean.xml", (node, ctx) -> {
+            assertTrue(node.has(JmxService.class));
+            assertNotNull(node.get(JmxService.class));
+        });
     }
 
     private void doTest(String resource) {

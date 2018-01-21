@@ -100,6 +100,13 @@
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
+            <xsd:element name="jmx" type="jmxServiceType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.core.jmx.JmxServiceFactory.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
             <xsd:element name="network" type="networkServiceType" minOccurs="0" maxOccurs="1">
                 <xsd:annotation>
                     <xsd:documentation>
@@ -1601,6 +1608,18 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="jmxServiceType">
+        <xsd:all>
+            <xsd:element name="server" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc 'io.hekate.core.jmx.JmxServiceFactory#setServer(javax.management.MBeanServer)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:all>
     </xsd:complexType>
 
     <xsd:complexType name="propertiesType">

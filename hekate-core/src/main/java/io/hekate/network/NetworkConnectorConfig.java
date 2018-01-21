@@ -52,7 +52,7 @@ public class NetworkConnectorConfig<T> {
     private String logCategory;
 
     /**
-     * Returns the connector protocol identifier (see {@link #setProtocol(String)}).
+     * Returns the connector's protocol identifier (see {@link #setProtocol(String)}).
      *
      * @return Protocol identifier.
      */
@@ -61,7 +61,7 @@ public class NetworkConnectorConfig<T> {
     }
 
     /**
-     * Sets the connector protocol identifier. Can contain only alpha-numeric characters and non-repeatable dots/hyphens.
+     * Sets the connector's protocol identifier. Can contain only alpha-numeric characters and non-repeatable dots/hyphens.
      *
      * <p>
      * This protocol identifier can be used to obtain references to {@link NetworkConnector} instances via {@link

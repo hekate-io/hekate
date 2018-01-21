@@ -31,6 +31,7 @@ import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.StreamUtils;
+import io.hekate.core.jmx.JmxService;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.DependencyContext;
@@ -95,8 +96,6 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     private ScheduledExecutorService timer;
 
-    private ClusterNodeId nodeId;
-
     private CodecService codec;
 
     private NetworkService net;
@@ -104,6 +103,11 @@ public class DefaultMessagingService implements MessagingService, DependentServi
     private ClusterService cluster;
 
     private LocalMetricsService metrics;
+
+    private JmxService jmx;
+
+    // Volatile since accessed out of the guarded context.
+    private volatile ClusterNodeId nodeId;
 
     public DefaultMessagingService(MessagingServiceFactory factory) {
         assert factory != null : "Factory is null.";
@@ -120,6 +124,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         codec = ctx.require(CodecService.class);
 
         metrics = ctx.optional(LocalMetricsService.class);
+        jmx = ctx.optional(JmxService.class);
     }
 
     @Override
@@ -232,7 +237,9 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
                 timer = newTimer();
 
-                gateways.values().forEach(this::initializeProxy);
+                for (MessagingGateway<?> gateway : gateways.values()) {
+                    initializeGateway(gateway);
+                }
 
                 cluster.addListener(this::updateTopology, ClusterEventType.JOIN, ClusterEventType.CHANGE);
             }
@@ -393,7 +400,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         gateways.put(gateway.name(), gateway);
     }
 
-    private <T> void initializeProxy(MessagingGateway<T> gateway) {
+    private <T> void initializeGateway(MessagingGateway<T> gateway) throws HekateException {
         assert gateway != null : "Channel gateway is null.";
         assert guard.isWriteLocked() : "Thread must hold a write lock.";
 
@@ -425,13 +432,13 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         MessageReceiver<T> guardedReceiver = applyGuard(gateway.unguardedReceiver());
 
         // Schedule idle connections checking (if required).
-        long idleTimeout = gateway.idleTimeout();
+        long idleSocketTimeout = gateway.idleSocketTimeout();
 
         ScheduledFuture<?> checkIdle;
 
-        if (idleTimeout > 0) {
+        if (idleSocketTimeout > 0) {
             if (DEBUG) {
-                log.debug("Scheduling new task for idle channel handling [check-interval={}]", idleTimeout);
+                log.debug("Scheduling new task for idle channel handling [check-interval={}]", idleSocketTimeout);
             }
 
             checkIdle = timer.scheduleWithFixedDelay(() -> {
@@ -444,7 +451,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                 } catch (RuntimeException | Error e) {
                     log.error("Got an unexpected error while checking for idle connections [channel={}]", name, e);
                 }
-            }, idleTimeout, idleTimeout, TimeUnit.MILLISECONDS);
+            }, idleSocketTimeout, idleSocketTimeout, TimeUnit.MILLISECONDS);
         } else {
             checkIdle = null;
         }
@@ -484,6 +491,11 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         );
 
         gateway.init(ctx);
+
+        // Register to JMX (optional).
+        if (jmx != null) {
+            jmx.register(new DefaultMessagingChannelJmx(gateway), ctx.name());
+        }
     }
 
     private <T> MessageReceiver<T> applyGuard(final MessageReceiver<T> receiver) {
@@ -521,7 +533,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
                     // Reject connections if their target node doesn't match with the local node.
                     // This can happen in rare cases if node is restarted on the same address and remote nodes
-                    // haven't detected cluster topology change yet.
+                    // haven't detected the cluster topology change yet.
                     if (!connect.to().equals(nodeId)) {
                         // Channel rejected connection.
                         client.disconnect();

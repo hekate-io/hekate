@@ -19,9 +19,12 @@ package io.hekate.cluster.health;
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.core.HekateException;
+import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
+import io.hekate.core.jmx.JmxSupport;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -64,7 +67,7 @@ import static java.util.stream.Collectors.toList;
  * @see DefaultFailureDetectorConfig
  * @see ClusterServiceFactory#setFailureDetector(FailureDetector)
  */
-public class DefaultFailureDetector implements FailureDetector {
+public class DefaultFailureDetector implements FailureDetector, JmxSupport {
     private static class NodeMonitor {
         private final ClusterAddress address;
 
@@ -172,6 +175,8 @@ public class DefaultFailureDetector implements FailureDetector {
 
     @Override
     public void initialize(FailureDetectorContext context) throws HekateException {
+        ArgAssert.notNull(context, "Context");
+
         writeLock.lock();
 
         try {
@@ -207,7 +212,7 @@ public class DefaultFailureDetector implements FailureDetector {
 
     @Override
     public boolean isAlive(ClusterAddress node) {
-        assert node != null : "Node is null.";
+        ArgAssert.notNull(node, "Node");
 
         readLock.lock();
 
@@ -254,7 +259,7 @@ public class DefaultFailureDetector implements FailureDetector {
 
     @Override
     public void onHeartbeatReply(ClusterAddress node) {
-        assert node != null : "Node is null.";
+        ArgAssert.notNull(node, "Node");
 
         boolean updateMonitors = false;
 
@@ -293,8 +298,8 @@ public class DefaultFailureDetector implements FailureDetector {
 
     @Override
     public void update(Set<ClusterAddress> nodes) {
-        assert nodes != null : "Nodes list is null.";
-        assert nodes.contains(localNode) : "Nodes list doesn't contain a local node.";
+        ArgAssert.notNull(nodes, "Node list");
+        ArgAssert.isTrue(nodes.contains(localNode), "Node list doesn't contain the local node.");
 
         writeLock.lock();
 
@@ -320,8 +325,56 @@ public class DefaultFailureDetector implements FailureDetector {
         return hbLossThreshold;
     }
 
-    // Package level for testing purposes.
-    boolean isMonitored(ClusterAddress node) {
+    /**
+     * Returns addresses of all nodes that are monitored by this failure detector.
+     *
+     * @return Addresses of all nodes that are monitored by this failure detector.
+     */
+    public List<ClusterAddress> monitored() {
+        readLock.lock();
+
+        try {
+            return new ArrayList<>(monitors.keySet());
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    @Override
+    public DefaultFailureDetectorJmx createJmxObject() {
+        return new DefaultFailureDetectorJmx() {
+            @Override
+            public long getHeartbeatInterval() {
+                return heartbeatInterval();
+            }
+
+            @Override
+            public int getHeartbeatLossThreshold() {
+                return heartbeatLossThreshold();
+            }
+
+            @Override
+            public int getFailureDetectionQuorum() {
+                return failureQuorum();
+            }
+
+            @Override
+            public List<String> getMonitoredAddresses() {
+                return monitored().stream().map(ClusterAddress::toString).collect(toList());
+            }
+        };
+    }
+
+    /**
+     * Returns {@code true} if the specified node is in the list of {@link #monitored()} nodes.
+     *
+     * @param node Node to check.
+     *
+     * @return {@code true} if the specified node is in the list of {@link #monitored()} nodes.
+     */
+    public boolean isMonitored(ClusterAddress node) {
+        ArgAssert.notNull(node, "Node");
+
         readLock.lock();
 
         try {

@@ -16,6 +16,7 @@
 
 package io.hekate.core.service.internal;
 
+import io.hekate.core.Hekate;
 import io.hekate.core.ServiceInfo;
 import io.hekate.core.ServiceProperty;
 import io.hekate.core.service.ConfigurationContext;
@@ -53,9 +54,7 @@ class ServiceConfigurationContext implements ConfigurationContext {
         }
     }
 
-    private final String nodeName;
-
-    private final String clusterName;
+    private final Hekate container;
 
     private final Map<String, Map<String, ServiceProperty<?>>> props = new HashMap<>();
 
@@ -65,20 +64,9 @@ class ServiceConfigurationContext implements ConfigurationContext {
     @ToStringIgnore
     private ServiceRef current;
 
-    public ServiceConfigurationContext(String nodeName, String clusterName, ServiceManager manager) {
-        this.nodeName = nodeName;
-        this.clusterName = clusterName;
+    public ServiceConfigurationContext(Hekate container, ServiceManager manager) {
+        this.container = container;
         this.manager = manager;
-    }
-
-    @Override
-    public String nodeName() {
-        return nodeName;
-    }
-
-    @Override
-    public String clusterName() {
-        return clusterName;
     }
 
     @Override
@@ -121,6 +109,12 @@ class ServiceConfigurationContext implements ConfigurationContext {
     public <T> Collection<T> findComponents(Class<T> type) {
         List<T> result = new ArrayList<>();
 
+        // Check if container matches the specified type.
+        if (type.isAssignableFrom(container.getClass())) {
+            result.add(type.cast(container));
+        }
+
+        // Find matching services.
         List<ServiceHandler> handlers = manager.getHandlers();
 
         // Use index-based iteration since new handlers can be added dynamically during services configuration.

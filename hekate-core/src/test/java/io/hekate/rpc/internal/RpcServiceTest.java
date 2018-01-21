@@ -130,6 +130,44 @@ public class RpcServiceTest extends RpcServiceTestBase {
     }
 
     @Test
+    public void failIfRpcServerHasInvalidTag() throws Exception {
+        HekateConfigurationException err = expect(HekateConfigurationException.class, () -> createNode(boot ->
+            boot.withService(RpcServiceFactory.class, rpc -> {
+                    rpc.withServer(new RpcServerConfig()
+                        .withTag("invalid tag")
+                        .withHandler(mock(TestRpcA.class))
+                    );
+                }
+            )
+        ));
+
+        assertEquals(
+            RpcServerConfig.class.getSimpleName() + ": tag can contain only alpha-numeric characters and non-repeatable "
+                + "dots/hyphens [value=invalid tag]",
+            err.getMessage()
+        );
+    }
+
+    @Test
+    public void failIfRpcClientHasInvalidTag() throws Exception {
+        HekateConfigurationException err = expect(HekateConfigurationException.class, () -> createNode(boot ->
+            boot.withService(RpcServiceFactory.class, rpc -> {
+                    rpc.withClient(new RpcClientConfig()
+                        .withTag("invalid tag")
+                        .withRpcInterface(TestRpcA.class)
+                    );
+                }
+            )
+        ));
+
+        assertEquals(
+            RpcClientConfig.class.getSimpleName() + ": tag can contain only alpha-numeric characters and non-repeatable "
+                + "dots/hyphens [value=invalid tag]",
+            err.getMessage()
+        );
+    }
+
+    @Test
     public void testClientForReturnsSameInstance() throws Exception {
         HekateTestNode node = createNode().join();
 

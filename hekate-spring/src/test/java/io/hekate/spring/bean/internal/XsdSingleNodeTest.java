@@ -33,6 +33,7 @@ import io.hekate.codec.fst.FstCodecFactory;
 import io.hekate.coordinate.CoordinationService;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
+import io.hekate.core.jmx.JmxService;
 import io.hekate.election.ElectionService;
 import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockRegion;
@@ -49,6 +50,7 @@ import io.hekate.rpc.RpcClientBuilder;
 import io.hekate.rpc.RpcServerInfo;
 import io.hekate.rpc.RpcService;
 import io.hekate.util.format.ToString;
+import java.lang.management.ManagementFactory;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -159,6 +161,8 @@ public class XsdSingleNodeTest extends HekateTestBase {
         assertNotNull(counter);
         assertNotNull(probe);
 
+        verifyJmx();
+
         verifyLocalNode();
 
         verifyCluster();
@@ -175,6 +179,12 @@ public class XsdSingleNodeTest extends HekateTestBase {
     @Override
     protected void assertAllThreadsStopped() throws InterruptedException {
         // Do not check threads since Spring context gets terminated after all tests have been run.
+    }
+
+    private void verifyJmx() {
+        assertTrue(hekate.has(JmxService.class));
+        assertNotNull(hekate.get(JmxService.class));
+        assertSame(ManagementFactory.getPlatformMBeanServer(), hekate.get(JmxService.class).server());
     }
 
     private void verifyLocalNode() {

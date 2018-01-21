@@ -32,7 +32,6 @@ import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.service.internal.DefaultServiceInfo;
 import io.hekate.test.HekateTestError;
-import java.io.File;
 import java.io.IOException;
 import java.lang.management.LockInfo;
 import java.lang.management.ManagementFactory;
@@ -691,22 +690,6 @@ public abstract class HekateTestBase {
 
     protected <V> V runAsyncAndGet(Callable<V> task) throws InterruptedException, ExecutionException, TimeoutException {
         return get(runAsync(task));
-    }
-
-    protected void deleteDirectory(File dir) {
-        File[] files = dir.listFiles();
-
-        if (files != null) {
-            for (File f : files) {
-                if (f.isDirectory()) {
-                    deleteDirectory(f);
-                }
-
-                f.delete();
-            }
-        }
-
-        dir.delete();
     }
 
     protected void assertValidUtilityClass(Class<?> type) throws Exception {

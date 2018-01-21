@@ -86,7 +86,8 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * Returns the cluster view of this channel.
      *
      * <p>
-     * The returned cluster view contains only those nodes that do match the channel's {@link ClusterFilterSupport filtering} criteria.
+     * The returned cluster view contains only those nodes that have a {@link MessagingChannelConfig#setReceiver(MessageReceiver) receiver}
+     * and do match the channel's {@link ClusterFilterSupport filtering} criteria.
      * </p>
      *
      * @return Cluster view.

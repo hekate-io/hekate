@@ -69,10 +69,14 @@ public class ServiceManager {
 
     private Set<Class<? extends Service>> serviceTypes;
 
-    public ServiceManager(String nodeName, String clusterName, Hekate container,
+    public ServiceManager(
+        String nodeName,
+        String clusterName,
+        Hekate container,
         List<? extends Service> builtInServices,
         List<Class<? extends Service>> coreServices,
-        List<? extends ServiceFactory<?>> factories) {
+        List<? extends ServiceFactory<?>> factories
+    ) {
         assert container != null : "Container is null.";
         assert builtInServices != null : "Built-in services list is null.";
         assert coreServices != null : "Core services list is null.";
@@ -84,6 +88,14 @@ public class ServiceManager {
         this.builtInServices = builtInServices;
         this.coreServices = coreServices;
         this.factories = new ArrayList<>(factories);
+    }
+
+    public String nodeName() {
+        return nodeName;
+    }
+
+    public String clusterName() {
+        return clusterName;
     }
 
     public Hekate container() {
@@ -124,7 +136,7 @@ public class ServiceManager {
         handlers.forEach(initOrder::register);
 
         // Configure services.
-        ServiceConfigurationContext cfgCtx = new ServiceConfigurationContext(nodeName, clusterName, this);
+        ServiceConfigurationContext cfgCtx = new ServiceConfigurationContext(container, this);
 
         handlers.forEach(handler ->
             handler.configure(cfgCtx)

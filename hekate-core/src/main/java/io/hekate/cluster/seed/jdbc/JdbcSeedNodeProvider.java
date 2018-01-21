@@ -22,6 +22,7 @@ import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
+import io.hekate.core.jmx.JmxSupport;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.net.InetAddress;
@@ -50,7 +51,7 @@ import org.slf4j.LoggerFactory;
  * @see ClusterServiceFactory#setSeedNodeProvider(SeedNodeProvider)
  * @see SeedNodeProvider
  */
-public class JdbcSeedNodeProvider implements SeedNodeProvider {
+public class JdbcSeedNodeProvider implements SeedNodeProvider, JmxSupport {
     private static final Logger log = LoggerFactory.getLogger(JdbcSeedNodeProvider.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -222,6 +223,41 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider {
      */
     public String insertSql() {
         return insSql;
+    }
+
+    @Override
+    public JdbcSeedNodeProviderJmx createJmxObject() {
+        return new JdbcSeedNodeProviderJmx() {
+            @Override
+            public String getDataSourceInfo() {
+                return ds.toString();
+            }
+
+            @Override
+            public int getQueryTimeout() {
+                return queryTimeout;
+            }
+
+            @Override
+            public long getCleanupInterval() {
+                return cleanupInterval;
+            }
+
+            @Override
+            public String getInsertSql() {
+                return insSql;
+            }
+
+            @Override
+            public String getSelectSql() {
+                return selSql;
+            }
+
+            @Override
+            public String getDeleteSql() {
+                return delSql;
+            }
+        };
     }
 
     private void doUnregister(String cluster, InetSocketAddress address) throws HekateException {

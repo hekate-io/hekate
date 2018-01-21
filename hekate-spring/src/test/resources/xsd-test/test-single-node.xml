@@ -45,6 +45,12 @@
             <s:bean class="io.hekate.codec.fst.FstCodecFactory"/>
         </default-codec>
 
+        <jmx>
+            <server>
+                <s:bean class="java.lang.management.ManagementFactory" factory-method="getPlatformMBeanServer"/>
+            </server>
+        </jmx>
+
         <cluster id="cluster" gossip-interval-ms="1000" gossip-speedup-size="100">
             <seed-node-provider>
                 <jdbc cleanup-interval-ms="60001"

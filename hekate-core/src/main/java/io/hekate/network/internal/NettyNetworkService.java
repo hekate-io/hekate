@@ -27,6 +27,8 @@ import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.StreamUtils;
+import io.hekate.core.jmx.JmxService;
+import io.hekate.core.jmx.JmxSupport;
 import io.hekate.core.resource.ResourceService;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
@@ -37,8 +39,6 @@ import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.NetworkBindCallback;
 import io.hekate.core.service.NetworkServiceManager;
 import io.hekate.core.service.TerminatingService;
-import io.hekate.metrics.local.CounterConfig;
-import io.hekate.metrics.local.CounterMetric;
 import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkClientCallback;
@@ -53,14 +53,15 @@ import io.hekate.network.NetworkServerFuture;
 import io.hekate.network.NetworkServerHandler;
 import io.hekate.network.NetworkService;
 import io.hekate.network.NetworkServiceFactory;
+import io.hekate.network.NetworkServiceJmx;
 import io.hekate.network.NetworkSslConfig;
 import io.hekate.network.NetworkTransportType;
 import io.hekate.network.PingCallback;
 import io.hekate.network.PingResult;
 import io.hekate.network.address.AddressSelector;
 import io.hekate.network.netty.NettyClientFactory;
-import io.hekate.network.netty.NettyMetricsFactory;
 import io.hekate.network.netty.NettyMetricsSink;
+import io.hekate.network.netty.NettyServer;
 import io.hekate.network.netty.NettyServerFactory;
 import io.hekate.network.netty.NettyServerHandlerConfig;
 import io.hekate.network.netty.NettyUtils;
@@ -92,29 +93,20 @@ import org.slf4j.LoggerFactory;
 import static java.util.stream.Collectors.toList;
 
 public class NettyNetworkService implements NetworkService, NetworkServiceManager, DependentService, ConfigurableService,
-    InitializingService, TerminatingService {
+    InitializingService, TerminatingService, JmxSupport {
     private static class ConnectorRegistration<T> {
-        private final String protocol;
-
         private final EventLoopGroup eventLoop;
-
-        private final NettyServerHandlerConfig<T> serverHandler;
 
         private final NetworkConnector<T> connector;
 
-        public ConnectorRegistration(String protocol, EventLoopGroup eventLoop, NetworkConnector<T> connector,
-            NettyServerHandlerConfig<T> serverHandler) {
-            assert protocol != null : "Protocol is null.";
+        private final NettyServerHandlerConfig<T> serverHandler;
+
+        public ConnectorRegistration(EventLoopGroup eventLoop, NetworkConnector<T> connector, NettyServerHandlerConfig<T> serverHandler) {
             assert connector != null : "Connector is null.";
 
-            this.protocol = protocol;
             this.eventLoop = eventLoop;
-            this.serverHandler = serverHandler;
             this.connector = connector;
-        }
-
-        public String protocol() {
-            return protocol;
+            this.serverHandler = serverHandler;
         }
 
         public boolean hasEventLoop() {
@@ -137,20 +129,6 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     private static final Logger log = LoggerFactory.getLogger(NettyNetworkService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
-
-    private static final String METRIC_CONN_ACTIVE = "conn.active";
-
-    private static final String METRIC_MSG_ERR = "msg.err";
-
-    private static final String METRIC_MSG_QUEUE = "msg.queue";
-
-    private static final String METRIC_MSG_OUT = "msg.out";
-
-    private static final String METRIC_MSG_IN = "msg.in";
-
-    private static final String METRIC_BYTES_IN = "bytes.in";
-
-    private static final String METRIC_BYTES_OUT = "bytes.out";
 
     private static final int NIO_ACCEPTOR_THREADS = 1;
 
@@ -208,10 +186,10 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     private ResourceService resources;
 
     @ToStringIgnore
-    private NettyMetricsFactory serverMetrics;
+    private JmxService jmx;
 
     @ToStringIgnore
-    private NettyMetricsFactory clientMetrics;
+    private NettyMetricsBuilder metrics;
 
     @ToStringIgnore
     private EventLoopGroup acceptorLoop;
@@ -220,7 +198,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     private EventLoopGroup coreLoop;
 
     @ToStringIgnore
-    private NetworkServer server;
+    private NettyServer server;
 
     public NettyNetworkService(NetworkServiceFactory factory) {
         assert factory != null : "Factory is null.";
@@ -271,11 +249,12 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         codec = ctx.require(CodecService.class);
         resources = ctx.require(ResourceService.class);
 
+        jmx = ctx.optional(JmxService.class);
+
         LocalMetricsService metricsService = ctx.optional(LocalMetricsService.class);
 
         if (metricsService != null) {
-            serverMetrics = createMetricsAdaptor(true, metricsService);
-            clientMetrics = createMetricsAdaptor(false, metricsService);
+            metrics = new NettyMetricsBuilder(metricsService);
         }
     }
 
@@ -316,37 +295,28 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         guard.lockWrite();
 
         try {
-            guard.becomeInitialized();
+            guard.becomeInitializing();
 
+            // Prepare event loops.
             acceptorLoop = newEventLoop(NIO_ACCEPTOR_THREADS, "NioAcceptor");
             coreLoop = newEventLoop(nioThreadPoolSize, "NioWorker-core");
 
-            NettyServerFactory serverFactory = new NettyServerFactory();
+            // Prepare server factory.
+            NettyServerFactory factory = new NettyServerFactory();
 
-            serverFactory.setAutoAccept(false);
-            serverFactory.setHeartbeatInterval(heartbeatInterval);
-            serverFactory.setHeartbeatLossThreshold(heartbeatLossThreshold);
-            serverFactory.setSoBacklog(soBacklog);
-            serverFactory.setSoReceiveBufferSize(soReceiveBufferSize);
-            serverFactory.setSoSendBufferSize(soSendBufferSize);
-            serverFactory.setSoReuseAddress(soReuseAddress);
-            serverFactory.setTcpNoDelay(tcpNoDelay);
-            serverFactory.setAcceptorEventLoop(acceptorLoop);
-            serverFactory.setWorkerEventLoop(coreLoop);
-            serverFactory.setSsl(serverSsl);
-            serverFactory.setMetrics(serverMetrics);
+            factory.setAutoAccept(false);
+            factory.setHeartbeatInterval(heartbeatInterval);
+            factory.setHeartbeatLossThreshold(heartbeatLossThreshold);
+            factory.setSoBacklog(soBacklog);
+            factory.setSoReceiveBufferSize(soReceiveBufferSize);
+            factory.setSoSendBufferSize(soSendBufferSize);
+            factory.setSoReuseAddress(soReuseAddress);
+            factory.setTcpNoDelay(tcpNoDelay);
+            factory.setAcceptorEventLoop(acceptorLoop);
+            factory.setWorkerEventLoop(coreLoop);
+            factory.setSsl(serverSsl);
 
-            server = serverFactory.createServer();
-
-            connectorConfigs.forEach(protocolCfg -> {
-                ConnectorRegistration<?> reg = createRegistration(protocolCfg);
-
-                connectors.put(reg.protocol(), reg);
-
-                if (reg.serverHandler() != null) {
-                    server.addHandler(reg.serverHandler());
-                }
-            });
+            server = factory.createServer();
 
             // Using wildcard address.
             InetSocketAddress wildcard = new InetSocketAddress(initPort);
@@ -370,10 +340,12 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
                 public NetworkServerFailure.Resolution onFailure(NetworkServer server, NetworkServerFailure err) {
                     Throwable cause = err.cause();
 
+                    // Retry only in case of IO errors.
                     if (cause instanceof IOException) {
                         int initPort = wildcard.getPort();
 
                         if (initPort > 0 && portRange > 0 && server.state() == NetworkServer.State.STARTING) {
+                            // Try to increment the port.
                             int prevPort = err.lastTriedAddress().getPort();
 
                             int newPort = prevPort + 1;
@@ -385,6 +357,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
                                     log.info("Couldn't bind on port {} ...will try next port [new-address={}]", prevPort, newAddress);
                                 }
 
+                                // Retry with the next port.
                                 return err.retry().withRetryAddress(newAddress);
                             }
                         } else if (server.state() == NetworkServer.State.STARTED && acceptorFailoverInterval > 0) {
@@ -393,10 +366,12 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
                                     acceptorFailoverInterval, err.attempt(), err.lastTriedAddress(), cause);
                             }
 
+                            // Failed while server had already been running for a while -> Retry with the same port.
                             return err.retry().withRetryDelay(acceptorFailoverInterval);
                         }
                     }
 
+                    // Fail.
                     return callback.onFailure(err);
                 }
             });
@@ -406,8 +381,45 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     }
 
     @Override
-    public void initialize(InitializationContext ctx) {
-        // No-op.
+    public void initialize(InitializationContext ctx) throws HekateException {
+        guard.lockWrite();
+
+        try {
+            guard.becomeInitialized();
+
+            if (DEBUG) {
+                log.debug("Initializing...");
+            }
+
+            // Enable server metrics gathering.
+            if (metrics != null) {
+                server.setMetrics(metrics.createServerFactory());
+            }
+
+            // Register connectors.
+            connectorConfigs.forEach(cfg -> {
+                ConnectorRegistration<?> reg = register(cfg);
+
+                if (reg.serverHandler() != null) {
+                    server.addHandler(reg.serverHandler());
+                }
+            });
+
+            // Register JMX (optional).
+            if (jmx != null) {
+                jmx.register(this);
+
+                for (ConnectorRegistration<?> conn : connectors.values()) {
+                    jmx.register(conn.connector(), conn.connector().protocol());
+                }
+            }
+
+            if (DEBUG) {
+                log.debug("Initialized.");
+            }
+        } finally {
+            guard.unlockWrite();
+        }
     }
 
     @Override
@@ -498,7 +510,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     public <T> NetworkConnector<T> connector(String protocol) throws IllegalArgumentException {
         ArgAssert.notNull(protocol, "Protocol");
 
-        guard.tryLockReadWithStateCheck();
+        guard.lockReadWithStateCheck();
 
         try {
             ConnectorRegistration<?> module = connectors.get(protocol);
@@ -516,7 +528,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
     @Override
     public boolean hasConnector(String protocol) {
-        guard.tryLockReadWithStateCheck();
+        guard.lockReadWithStateCheck();
 
         try {
             return connectors.containsKey(protocol);
@@ -553,12 +565,67 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         });
     }
 
+    @Override
+    public NetworkServiceJmx createJmxObject() {
+        return new NetworkServiceJmx() {
+            @Override
+            public int getConnectTimeout() {
+                return connectTimeout;
+            }
+
+            @Override
+            public int getHeartbeatInterval() {
+                return heartbeatInterval;
+            }
+
+            @Override
+            public int getHeartbeatLossThreshold() {
+                return heartbeatLossThreshold;
+            }
+
+            @Override
+            public int getNioThreads() {
+                return nioThreadPoolSize;
+            }
+
+            @Override
+            public NetworkTransportType getTransport() {
+                return transport;
+            }
+
+            @Override
+            public boolean isSsl() {
+                return serverSsl != null;
+            }
+
+            @Override
+            public boolean isTcpNoDelay() {
+                return tcpNoDelay;
+            }
+
+            @Override
+            public Integer getTcpReceiveBufferSize() {
+                return soReceiveBufferSize;
+            }
+
+            @Override
+            public Integer getTcpSendBufferSize() {
+                return soSendBufferSize;
+            }
+
+            @Override
+            public Boolean getTcpReuseAddress() {
+                return soReuseAddress;
+            }
+        };
+    }
+
     protected <T> NettyClientFactory<T> createClientFactory() {
         return new NettyClientFactory<>();
     }
 
     // Package level for testing purposes.
-    void start() {
+    void start() throws HekateException {
         // Safe to use null since we don't use this parameter in any of those method.
         preInitialize(null);
         initialize(null);
@@ -584,7 +651,10 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         }
     }
 
-    private <T> ConnectorRegistration<T> createRegistration(NetworkConnectorConfig<T> cfg) {
+    private <T> ConnectorRegistration<T> register(NetworkConnectorConfig<T> cfg) {
+        assert cfg != null : "Connector configuration is null.";
+
+        // Sanity checks.
         ConfigCheck check = ConfigCheck.get(NetworkConnectorConfig.class);
 
         String protocol = cfg.getProtocol();
@@ -593,18 +663,23 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         check.validSysName(protocol, "protocol");
         check.unique(protocol, connectors.keySet(), "protocol");
 
+        // Decide which event loop to use for this connector.
+        int nioThreads = cfg.getNioThreads();
+
         boolean useCoreLoop;
         EventLoopGroup eventLoop;
 
-        if (cfg.getNioThreads() > 0) {
+        if (nioThreads > 0) {
             useCoreLoop = false;
 
-            eventLoop = newEventLoop(cfg.getNioThreads(), "NioWorker-" + protocol);
+            eventLoop = newEventLoop(nioThreads, "NioWorker-" + protocol);
         } else {
             useCoreLoop = true;
+
             eventLoop = coreLoop;
         }
 
+        // Resolve codec.
         CodecFactory<T> codecFactory;
 
         if (cfg.getMessageCodec() == null) {
@@ -613,6 +688,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
             codecFactory = cfg.getMessageCodec();
         }
 
+        // Prepare factory.
         NettyClientFactory<T> factory = createClientFactory();
 
         factory.setProtocol(protocol);
@@ -629,12 +705,13 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
         factory.setEventLoop(eventLoop);
 
-        if (serverMetrics != null) {
-            NettyMetricsSink metricsSink = clientMetrics.createSink(protocol);
+        if (metrics != null) {
+            NettyMetricsSink metricsSink = metrics.createClientFactory().createSink(protocol);
 
             factory.setMetrics(metricsSink);
         }
 
+        // Prepare server handler (if configured).
         NettyServerHandlerConfig<T> handlerCfg = null;
 
         if (cfg.getServerHandler() != null) {
@@ -652,9 +729,23 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
             }
         }
 
-        NetworkConnector<T> connector = new DefaultNetworkConnector<>(protocol, factory);
+        // Register connector.
+        NetworkConnector<T> conn = new DefaultNetworkConnector<>(
+            protocol,
+            nioThreads,
+            handlerCfg != null, // <-- Has server handler.
+            factory
+        );
 
-        return new ConnectorRegistration<>(protocol, !useCoreLoop ? eventLoop : null, connector, handlerCfg);
+        ConnectorRegistration<T> reg = new ConnectorRegistration<>(
+            useCoreLoop ? null : eventLoop, // <-- Decide which event loop to use for this connector.
+            conn,
+            handlerCfg
+        );
+
+        connectors.put(protocol, reg);
+
+        return reg;
     }
 
     private NetworkConnectorConfig<Object> pingConnector() {
@@ -691,101 +782,6 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         return ping;
     }
 
-    private NettyMetricsFactory createMetricsAdaptor(boolean server, LocalMetricsService metrics) {
-        // Overall bytes metrics.
-        CounterMetric allBytesSent = counter(METRIC_BYTES_OUT, true, metrics);
-        CounterMetric allBytesReceived = counter(METRIC_BYTES_IN, true, metrics);
-
-        // Overall message metrics.
-        CounterMetric allMsgSent = counter(METRIC_MSG_OUT, true, metrics);
-        CounterMetric allMsgReceived = counter(METRIC_MSG_IN, true, metrics);
-        CounterMetric allMsgQueue = counter(METRIC_MSG_QUEUE, false, metrics);
-        CounterMetric allMsgFailed = counter(METRIC_MSG_ERR, true, metrics);
-
-        // Overall connection metrics.
-        CounterMetric allConnections = counter(METRIC_CONN_ACTIVE, false, metrics);
-
-        return protocol -> {
-            // Connector bytes metrics.
-            CounterMetric bytesSent = counter(METRIC_BYTES_OUT, protocol, server, true, metrics);
-            CounterMetric bytesReceived = counter(METRIC_BYTES_IN, protocol, server, true, metrics);
-
-            // Connector message metrics.
-            CounterMetric msgSent = counter(METRIC_MSG_OUT, protocol, server, true, metrics);
-            CounterMetric msgReceived = counter(METRIC_MSG_IN, protocol, server, true, metrics);
-            CounterMetric msgQueue = counter(METRIC_MSG_QUEUE, protocol, server, false, metrics);
-            CounterMetric msgFailed = counter(METRIC_MSG_ERR, protocol, server, true, metrics);
-
-            // Connector connection metrics.
-            CounterMetric connections = counter(METRIC_CONN_ACTIVE, protocol, server, false, metrics);
-
-            return new NettyMetricsSink() {
-                @Override
-                public void onBytesSent(long bytes) {
-                    bytesSent.add(bytes);
-
-                    allBytesSent.add(bytes);
-                }
-
-                @Override
-                public void onBytesReceived(long bytes) {
-                    bytesReceived.add(bytes);
-
-                    allBytesReceived.add(bytes);
-                }
-
-                @Override
-                public void onMessageSent() {
-                    msgSent.increment();
-
-                    allMsgSent.increment();
-                }
-
-                @Override
-                public void onMessageReceived() {
-                    msgReceived.increment();
-
-                    allMsgReceived.increment();
-                }
-
-                @Override
-                public void onMessageSendError() {
-                    msgFailed.increment();
-
-                    allMsgFailed.increment();
-                }
-
-                @Override
-                public void onMessageEnqueue() {
-                    msgQueue.increment();
-
-                    allMsgQueue.increment();
-                }
-
-                @Override
-                public void onMessageDequeue() {
-                    msgQueue.decrement();
-
-                    allMsgQueue.decrement();
-                }
-
-                @Override
-                public void onConnect() {
-                    connections.increment();
-
-                    allConnections.increment();
-                }
-
-                @Override
-                public void onDisconnect() {
-                    connections.decrement();
-
-                    allConnections.decrement();
-                }
-            };
-        };
-    }
-
     private <T> CodecFactory<T> defaultCodecFactory() {
         return codec.codecFactory();
     }
@@ -807,39 +803,6 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
     private void shutdown(EventLoopGroup group) {
         NettyUtils.shutdown(group).awaitUninterruptedly();
-    }
-
-    private static CounterMetric counter(String name, boolean autoReset, LocalMetricsService metrics) {
-        return counter(name, null, null, autoReset, metrics);
-    }
-
-    private static CounterMetric counter(String name, String protocol, Boolean server, boolean autoReset, LocalMetricsService metrics) {
-        String counterName = "";
-
-        if (protocol != null) {
-            counterName += protocol + '.';
-        }
-
-        counterName += "network.";
-
-        if (server != null) {
-            counterName += server ? "server." : "client.";
-        }
-
-        counterName += name;
-
-        CounterConfig cfg = new CounterConfig(counterName);
-
-        cfg.setAutoReset(autoReset);
-
-        if (autoReset) {
-            cfg.setName(counterName + ".current");
-            cfg.setTotalName(counterName + ".total");
-        } else {
-            cfg.setName(counterName);
-        }
-
-        return metrics.register(cfg);
     }
 
     @Override

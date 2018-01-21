@@ -22,6 +22,7 @@ import io.hekate.cluster.seed.fs.FsSeedNodeProvider;
 import io.hekate.spring.boot.EnableHekate;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
 import io.hekate.spring.boot.HekateTestConfigBase;
+import io.hekate.test.TestUtils;
 import java.io.File;
 import java.nio.file.Files;
 import org.junit.Before;
@@ -52,7 +53,7 @@ public class HekateFsSeedNodeProviderConfigurerTest extends HekateAutoConfigurer
 
     @Override
     public void tearDown() throws Exception {
-        deleteDirectory(tempDir);
+        TestUtils.deleteDir(tempDir);
 
         super.tearDown();
     }

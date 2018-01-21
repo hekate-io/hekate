@@ -16,18 +16,11 @@
 
 package io.hekate.metrics.local;
 
-import io.hekate.metrics.MetricsSource;
-
 /**
  * Metrics update event.
  *
  * @see MetricsListener#onUpdate(MetricsUpdateEvent)
  */
-public interface MetricsUpdateEvent extends MetricsSource {
-    /**
-     * Returns the sequence number of this event (starting with 0).
-     *
-     * @return Sequence number of this event.
-     */
-    int tick();
+public interface MetricsUpdateEvent extends MetricsSnapshot {
+    // No-op.
 }

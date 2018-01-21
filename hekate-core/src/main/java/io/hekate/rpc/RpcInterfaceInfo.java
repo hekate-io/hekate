@@ -26,7 +26,7 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Meta-information about {@link Rpc}-annotated interface.
+ * Meta-information about an {@link Rpc}-annotated interface.
  *
  * @param <T> Interface type.
  *

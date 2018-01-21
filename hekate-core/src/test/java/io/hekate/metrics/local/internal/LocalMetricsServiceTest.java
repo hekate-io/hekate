@@ -27,6 +27,7 @@ import io.hekate.metrics.local.CounterMetric;
 import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.metrics.local.LocalMetricsServiceFactory;
 import io.hekate.metrics.local.MetricsListener;
+import io.hekate.metrics.local.MetricsSnapshot;
 import io.hekate.metrics.local.MetricsUpdateEvent;
 import io.hekate.metrics.local.ProbeConfig;
 import io.hekate.util.format.ToString;
@@ -575,6 +576,21 @@ public class LocalMetricsServiceTest extends HekateNodeTestBase {
         node.join();
 
         assertFalse(metrics.listeners().contains(listener));
+    }
+
+    @Test
+    public void testSnapshot() throws Exception {
+        MetricsSnapshot snapshot = metrics.snapshot();
+
+        for (int i = 0; i < 5; i++) {
+            MetricsSnapshot previous = snapshot;
+
+            busyWait("snapshot update", () ->
+                metrics.snapshot().tick() > previous.tick()
+            );
+
+            snapshot = metrics.snapshot();
+        }
     }
 
     @Test

@@ -255,7 +255,7 @@ public class NettyServerFactory extends NetworkServerFactoryBase {
     }
 
     @Override
-    public NetworkServer createServer() {
-        return new NettyServer(this);
+    public NettyServer createServer() {
+        return new DefaultNettyServer(this);
     }
 }

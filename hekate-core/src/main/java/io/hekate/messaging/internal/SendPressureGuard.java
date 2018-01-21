@@ -56,6 +56,18 @@ class SendPressureGuard {
         this.policy = policy;
     }
 
+    public int loMark() {
+        return loMark;
+    }
+
+    public int hiMark() {
+        return hiMark;
+    }
+
+    public MessagingOverflowPolicy policy() {
+        return policy;
+    }
+
     public void onEnqueueIgnorePolicy() {
         queueSize.incrementAndGet();
     }

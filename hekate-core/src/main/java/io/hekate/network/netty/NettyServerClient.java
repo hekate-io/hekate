@@ -23,7 +23,7 @@ import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkSendCallback;
 import io.hekate.network.NetworkServerHandler;
-import io.hekate.network.netty.NettyServer.HandlerRegistration;
+import io.hekate.network.netty.DefaultNettyServer.HandlerRegistration;
 import io.hekate.network.netty.NetworkProtocol.HandshakeAccept;
 import io.hekate.network.netty.NetworkProtocol.HandshakeReject;
 import io.hekate.network.netty.NetworkProtocol.HandshakeRequest;

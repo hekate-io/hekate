@@ -38,6 +38,7 @@ import io.hekate.cluster.split.HostReachabilityDetector;
 import io.hekate.cluster.split.SplitBrainDetectorGroup;
 import io.hekate.coordinate.CoordinationProcessConfig;
 import io.hekate.coordinate.CoordinationServiceFactory;
+import io.hekate.core.jmx.JmxServiceFactory;
 import io.hekate.election.CandidateConfig;
 import io.hekate.election.ElectionServiceFactory;
 import io.hekate.lock.LockRegionConfig;
@@ -151,6 +152,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
 
         ManagedList<RuntimeBeanReference> services = new ManagedList<>();
 
+        parseJmxService(rootEl, ctx).ifPresent(services::add);
         parseClusterService(rootEl, ctx).ifPresent(services::add);
         parseNetworkService(rootEl, ctx).ifPresent(services::add);
         parseMessagingService(rootEl, ctx).ifPresent(services::add);
@@ -210,6 +212,20 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         BeanDefinitionBuilder serviceDef = newBean(CodecServiceBean.class, rootEl);
 
         deferredBaseBeans.put(serviceDef, null);
+    }
+
+    private Optional<RuntimeBeanReference> parseJmxService(Element rootEl, ParserContext ctx) {
+        Element jmxEl = getChildElementByTagName(rootEl, "jmx");
+
+        if (jmxEl != null) {
+            BeanDefinitionBuilder jmx = newBean(JmxServiceFactory.class, jmxEl);
+
+            setBeanOrRef(jmx, jmxEl, "server", "server", ctx);
+
+            return Optional.of(registerInnerBean(jmx, ctx));
+        } else {
+            return Optional.empty();
+        }
     }
 
     private Optional<RuntimeBeanReference> parseClusterService(Element rootEl, ParserContext ctx) {

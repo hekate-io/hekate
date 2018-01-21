@@ -23,6 +23,7 @@ import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Utils;
+import io.hekate.core.jmx.JmxSupport;
 import io.hekate.network.netty.NettyUtils;
 import io.hekate.util.async.Waiting;
 import io.hekate.util.format.ToString;
@@ -76,7 +77,7 @@ import static java.util.stream.Collectors.toList;
  * @see ClusterServiceFactory#setSeedNodeProvider(SeedNodeProvider)
  * @see MulticastSeedNodeProviderConfig
  */
-public class MulticastSeedNodeProvider implements SeedNodeProvider {
+public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport {
     private enum MessageTYpe {
         DISCOVERY,
 
@@ -412,6 +413,31 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider {
      */
     public long waitTime() {
         return waitTime;
+    }
+
+    @Override
+    public MulticastSeedNodeProviderJmx createJmxObject() {
+        return new MulticastSeedNodeProviderJmx() {
+            @Override
+            public String getGroup() {
+                return group().toString();
+            }
+
+            @Override
+            public int getTtl() {
+                return ttl();
+            }
+
+            @Override
+            public long getInterval() {
+                return interval();
+            }
+
+            @Override
+            public long getWaitTime() {
+                return waitTime();
+            }
+        };
     }
 
     private void cleanup() {

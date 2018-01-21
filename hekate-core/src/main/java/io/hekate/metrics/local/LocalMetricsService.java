@@ -179,6 +179,17 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
 @DefaultServiceFactory(LocalMetricsServiceFactory.class)
 public interface LocalMetricsService extends Service, MetricsSource {
     /**
+     * Returns an immutable snapshot of metrics that were aggregated by this service.
+     *
+     * <p>
+     * Note that snapshots get aggregated once per {@link LocalMetricsServiceFactory#setRefreshInterval(long)}.
+     * </p>
+     *
+     * @return Metrics snapshot.
+     */
+    MetricsSnapshot snapshot();
+
+    /**
      * Registers a new counter with the specified configuration or returns an existing one if counter with the same name already exists.
      * If there is another metric of other than {@link CounterMetric counter} type then an error will be thrown.
      *
@@ -231,4 +242,11 @@ public interface LocalMetricsService extends Service, MetricsSource {
      * @param listener Listener.
      */
     void removeListener(MetricsListener listener);
+
+    /**
+     * Returns the configuration value of {@link LocalMetricsServiceFactory#getRefreshInterval()}.
+     *
+     * @return Value of {@link LocalMetricsServiceFactory#getRefreshInterval()}.
+     */
+    long refreshInterval();
 }

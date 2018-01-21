@@ -39,5 +39,4 @@ public class InjectionServiceJavadocTest extends HekateNodeTestBase {
             // In real world it should be started via Spring bootstrap.
         }
     }
-
 }

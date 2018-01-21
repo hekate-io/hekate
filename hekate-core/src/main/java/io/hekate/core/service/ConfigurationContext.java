@@ -16,7 +16,6 @@
 
 package io.hekate.core.service;
 
-import io.hekate.core.HekateBootstrap;
 import io.hekate.core.ServiceInfo;
 import java.util.Collection;
 
@@ -26,24 +25,6 @@ import java.util.Collection;
  * @see ConfigurableService#configure(ConfigurationContext)
  */
 public interface ConfigurationContext {
-    /**
-     * Returns the node node.
-     *
-     * @return Name of this node.
-     *
-     * @see HekateBootstrap#setNodeName(String)
-     */
-    String nodeName();
-
-    /**
-     * Returns the cluster name.
-     *
-     * @return Name of the local node's cluster.
-     *
-     * @see HekateBootstrap#setClusterName(String)
-     */
-    String clusterName();
-
     /**
      * Adds the specified {@link ServiceInfo#properties() service property}.
      *

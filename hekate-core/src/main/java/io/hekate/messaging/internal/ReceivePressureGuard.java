@@ -44,6 +44,14 @@ class ReceivePressureGuard {
         this.hiMark = hiMark;
     }
 
+    public int loMark() {
+        return loMark;
+    }
+
+    public int hiMark() {
+        return hiMark;
+    }
+
     public void onEnqueue(NetworkEndpoint<?> endpoint) {
         assert endpoint != null : "Endpoint is  null.";
 
