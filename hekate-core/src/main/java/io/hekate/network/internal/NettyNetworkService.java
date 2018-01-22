@@ -93,7 +93,7 @@ import org.slf4j.LoggerFactory;
 import static java.util.stream.Collectors.toList;
 
 public class NettyNetworkService implements NetworkService, NetworkServiceManager, DependentService, ConfigurableService,
-    InitializingService, TerminatingService, JmxSupport {
+    InitializingService, TerminatingService, JmxSupport<NetworkServiceJmx> {
     private static class ConnectorRegistration<T> {
         private final EventLoopGroup eventLoop;
 
@@ -566,7 +566,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     }
 
     @Override
-    public NetworkServiceJmx createJmxObject() {
+    public NetworkServiceJmx jmx() {
         return new NetworkServiceJmx() {
             @Override
             public int getConnectTimeout() {

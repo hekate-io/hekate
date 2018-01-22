@@ -39,6 +39,7 @@ import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateException;
 import io.hekate.core.HekateFutureException;
+import io.hekate.core.HekateJmx;
 import io.hekate.core.HekateVersion;
 import io.hekate.core.InitializationFuture;
 import io.hekate.core.JoinFuture;
@@ -48,6 +49,7 @@ import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.jmx.JmxService;
+import io.hekate.core.jmx.JmxSupport;
 import io.hekate.core.resource.ResourceService;
 import io.hekate.core.service.ClusterContext;
 import io.hekate.core.service.ClusterServiceManager;
@@ -102,7 +104,7 @@ import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toSet;
 
-class HekateNode implements Hekate, JavaSerializable {
+class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
     static class SerializationHandle implements Serializable {
         static final SerializationHandle INSTANCE = new SerializationHandle();
 
@@ -580,6 +582,11 @@ class HekateNode implements Hekate, JavaSerializable {
         return this;
     }
 
+    @Override
+    public HekateJmx jmx() {
+        return new HekateNodeJmx(this);
+    }
+
     protected Object writeReplace() throws ObjectStreamException {
         return SerializationHandle.INSTANCE;
     }
@@ -689,7 +696,7 @@ class HekateNode implements Hekate, JavaSerializable {
                 JmxService jmx = services.findService(JmxService.class);
 
                 if (jmx != null) {
-                    jmx.register(new HekateNodeJmx(this));
+                    jmx.register(this);
                 }
 
                 // Start plugins.

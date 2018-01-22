@@ -67,7 +67,7 @@ import static java.util.stream.Collectors.toList;
  * @see DefaultFailureDetectorConfig
  * @see ClusterServiceFactory#setFailureDetector(FailureDetector)
  */
-public class DefaultFailureDetector implements FailureDetector, JmxSupport {
+public class DefaultFailureDetector implements FailureDetector, JmxSupport<DefaultFailureDetectorJmx> {
     private static class NodeMonitor {
         private final ClusterAddress address;
 
@@ -341,7 +341,7 @@ public class DefaultFailureDetector implements FailureDetector, JmxSupport {
     }
 
     @Override
-    public DefaultFailureDetectorJmx createJmxObject() {
+    public DefaultFailureDetectorJmx jmx() {
         return new DefaultFailureDetectorJmx() {
             @Override
             public long getHeartbeatInterval() {

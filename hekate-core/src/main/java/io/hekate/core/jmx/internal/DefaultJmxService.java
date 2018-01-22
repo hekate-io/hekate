@@ -171,7 +171,7 @@ public class DefaultJmxService implements JmxService, DependentService, Initiali
         Object realMxBean;
 
         if (mxBean instanceof JmxSupport) {
-            realMxBean = ((JmxSupport)mxBean).createJmxObject();
+            realMxBean = ((JmxSupport)mxBean).jmx();
         } else {
             realMxBean = mxBean;
         }

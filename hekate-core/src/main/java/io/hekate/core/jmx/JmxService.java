@@ -70,6 +70,14 @@ import javax.management.ObjectName;
  * ${source: core/jmx/JmxServiceJavadocTest.java#access}
  * </p>
  *
+ * <h2>Registering MXBeans</h2>
+ * <p>
+ * JMX objects can be registered to the {@link JmxService} via {@link #register(Object)} method. Such objects must implement exactly one
+ * {@link MXBean}-annotated interface (i.e. 'MXBean' suffix in interface name is not supported). Alternatively, instead of implementing
+ * such interface directly, objects can implement {@link JmxSupport} interface. In such case the object that is returned by the {@link
+ * JmxSupport#jmx()} method will be registered as an MX bean.
+ * </p>
+ *
  * <h2>JMX object names</h2>
  * <p>
  * {@link ObjectName}s of all registered beans are constructed based on the {@link HekateBootstrap#setClusterName(String) cluster name},

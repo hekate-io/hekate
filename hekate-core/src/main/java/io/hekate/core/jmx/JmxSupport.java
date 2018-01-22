@@ -17,22 +17,25 @@
 package io.hekate.core.jmx;
 
 import javax.management.MBeanServer;
+import javax.management.MXBean;
 
 /**
  * Adaptor interface that can be implemented by any object that indirectly provides JMX support.
  *
  * <p>
  * If object that implement this interface is passed to the {@link JmxService#register(Object)} method then the real management object that
- * will be registered to the {@link MBeanServer} will be an object that is returned by the {@link #createJmxObject()} method.
+ * will be registered to the {@link MBeanServer} will be an object that is returned by the {@link #jmx()} method.
  * </p>
+ *
+ * @param <T> {@link MXBean} interface type.
  *
  * @see JmxService#register(Object, String)
  */
-public interface JmxSupport {
+public interface JmxSupport<T> {
     /**
      * Creates a JMX object.
      *
      * @return JMX object.
      */
-    Object createJmxObject();
+    T jmx();
 }

@@ -24,7 +24,7 @@ import io.hekate.network.netty.NettyClientFactory;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 
-class DefaultNetworkConnector<T> implements NetworkConnector<T>, JmxSupport {
+class DefaultNetworkConnector<T> implements NetworkConnector<T>, JmxSupport<NetworkConnectorJmx> {
     private final String protocol;
 
     @ToStringIgnore
@@ -54,7 +54,7 @@ class DefaultNetworkConnector<T> implements NetworkConnector<T>, JmxSupport {
     }
 
     @Override
-    public NetworkConnectorJmx createJmxObject() {
+    public NetworkConnectorJmx jmx() {
         return new NetworkConnectorJmx() {
             @Override
             public String getProtocol() {

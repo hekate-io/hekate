@@ -24,6 +24,7 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterServiceFactory;
+import io.hekate.cluster.ClusterServiceJmx;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
 import io.hekate.cluster.event.ClusterEvent;
@@ -59,6 +60,7 @@ import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Jvm;
 import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.jmx.JmxService;
+import io.hekate.core.jmx.JmxSupport;
 import io.hekate.core.service.ClusterServiceManager;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
@@ -106,7 +108,7 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toSet;
 
 public class DefaultClusterService implements ClusterService, ClusterServiceManager, DependentService, ConfigurableService,
-    InitializingService, TerminatingService, NetworkConfigProvider {
+    InitializingService, TerminatingService, NetworkConfigProvider, JmxSupport<ClusterServiceJmx> {
     private static class DeferredListener {
         private final ClusterEventListener listener;
 
@@ -415,7 +417,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
             // Register JMX beans (optional).
             if (jmx != null) {
-                jmx.register(new DefaultClusterServiceJmx(this));
+                jmx.register(this);
 
                 jmx.register(failureDetector);
                 jmx.register(seedNodeProvider);
@@ -756,6 +758,11 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     public List<ClusterAcceptor> acceptors() {
         return unmodifiableList(acceptors);
+    }
+
+    @Override
+    public ClusterServiceJmx jmx() {
+        return new DefaultClusterServiceJmx(this);
     }
 
     private boolean scheduleAsyncJoin() {

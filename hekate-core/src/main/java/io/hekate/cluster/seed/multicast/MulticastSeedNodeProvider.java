@@ -77,7 +77,7 @@ import static java.util.stream.Collectors.toList;
  * @see ClusterServiceFactory#setSeedNodeProvider(SeedNodeProvider)
  * @see MulticastSeedNodeProviderConfig
  */
-public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport {
+public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<MulticastSeedNodeProviderJmx> {
     private enum MessageTYpe {
         DISCOVERY,
 
@@ -416,7 +416,7 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport {
     }
 
     @Override
-    public MulticastSeedNodeProviderJmx createJmxObject() {
+    public MulticastSeedNodeProviderJmx jmx() {
         return new MulticastSeedNodeProviderJmx() {
             @Override
             public String getGroup() {

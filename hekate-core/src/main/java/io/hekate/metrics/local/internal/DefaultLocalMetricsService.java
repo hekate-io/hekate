@@ -24,6 +24,7 @@ import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxServiceException;
+import io.hekate.core.jmx.JmxSupport;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.DependencyContext;
@@ -37,6 +38,7 @@ import io.hekate.metrics.local.CounterConfig;
 import io.hekate.metrics.local.CounterMetric;
 import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.metrics.local.LocalMetricsServiceFactory;
+import io.hekate.metrics.local.LocalMetricsServiceJmx;
 import io.hekate.metrics.local.MetricConfigBase;
 import io.hekate.metrics.local.MetricsConfigProvider;
 import io.hekate.metrics.local.MetricsListener;
@@ -62,7 +64,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DefaultLocalMetricsService implements LocalMetricsService, DependentService, InitializingService, ConfigurableService,
-    TerminatingService {
+    TerminatingService, JmxSupport<LocalMetricsServiceJmx> {
     private static final Logger log = LoggerFactory.getLogger(DefaultLocalMetricsService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -158,7 +160,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
 
             // Register JMX bean (optional).
             if (jmx != null) {
-                jmx.register(new DefaultLocalMetricsServiceJmx(this));
+                jmx.register(this);
             }
 
             // Start metrics updates.
@@ -330,6 +332,11 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
      */
     public List<MetricsListener> listeners() {
         return new ArrayList<>(listeners);
+    }
+
+    @Override
+    public LocalMetricsServiceJmx jmx() {
+        return new DefaultLocalMetricsServiceJmx(this);
     }
 
     private void initializeMetrics() {

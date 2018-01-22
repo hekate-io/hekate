@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
  * @see ClusterServiceFactory#setSeedNodeProvider(SeedNodeProvider)
  * @see SeedNodeProvider
  */
-public class FsSeedNodeProvider implements SeedNodeProvider, JmxSupport {
+public class FsSeedNodeProvider implements SeedNodeProvider, JmxSupport<FsSeedNodeProviderJmx> {
     private static final Logger log = LoggerFactory.getLogger(FsSeedNodeProvider.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -183,7 +183,7 @@ public class FsSeedNodeProvider implements SeedNodeProvider, JmxSupport {
     }
 
     @Override
-    public FsSeedNodeProviderJmx createJmxObject() {
+    public FsSeedNodeProviderJmx jmx() {
         return new FsSeedNodeProviderJmx() {
             @Override
             public String getWorkDir() {
