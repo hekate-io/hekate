@@ -78,9 +78,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
         if (workerThreads() > 0) {
             int timeout = 100;
 
-            TestChannel sender = createChannel(c -> {
-                c.withMessagingTimeout(timeout);
-            }).join();
+            TestChannel sender = createChannel(c -> c.withMessagingTimeout(timeout)).join();
 
             repeat(3, i -> {
                 CountDownLatch receiverReadyLatch = new CountDownLatch(1);
@@ -102,14 +100,19 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
                 awaitForChannelsTopology(sender, receiver);
 
+                // Submit requests.
+                // Note we are using the same affinity key for all messages so that they would all go to the same thread.
                 List<ResponseFuture<String>> futures = Stream.of(i, i + 1, i + 2)
                     .map(req -> sender.get().forRemotes().withAffinity("1").request("must-fail-" + req))
                     .collect(toList());
 
+                // Await for the first message to be received.
                 await(receiverReadyLatch);
 
+                // Wait for a while to make sure that time out happens on the receiver side.
                 sleep(timeout);
 
+                // Check results (all requests should time out).
                 try {
                     for (ResponseFuture<String> future : futures) {
                         MessagingFutureException e = expect(MessagingFutureException.class, () -> get(future));
@@ -118,11 +121,14 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
                         assertTrue(e.findCause(MessageTimeoutException.class).getMessage().startsWith("Messaging operation timed out"));
                     }
                 } finally {
+                    // Resume the receiver thread.
                     receiverHangLatch.countDown();
                 }
 
+                // Await for the first message to be processed.
                 await(receiverDoneLatch);
 
+                // Stop receiver (ensures that all pending messages will be processed in some way).
                 receiver.leave();
 
                 // Receiver must be called only once by the first request, all other request should be skipped because of timeouts.
