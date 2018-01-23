@@ -77,21 +77,28 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
     public void testRequestTimeoutOnReceiver() throws Exception {
         // Test only if messages are processed by worker threads (NIO threads ignore timeouts anyway).
         if (workerThreads() > 0) {
-            TestChannel sender = createChannel(c -> c.withMessagingTimeout(300)).join();
+            int timeout = 300;
+
+            TestChannel sender = createChannel(c -> {
+                c.withMessagingTimeout(timeout);
+            }).join();
 
             repeat(3, i -> {
-                CountDownLatch hangLatch = new CountDownLatch(1);
-                CountDownLatch procDoneLatch = new CountDownLatch(1);
+                CountDownLatch receiverReadyLatch = new CountDownLatch(1);
+                CountDownLatch receiverHangLatch = new CountDownLatch(1);
+                CountDownLatch receiverDoneLatch = new CountDownLatch(1);
                 AtomicInteger receiverCalls = new AtomicInteger();
 
                 TestChannel receiver = createChannel(c -> c.withReceiver(msg -> {
-                    await(hangLatch);
+                    receiverReadyLatch.countDown();
+
+                    await(receiverHangLatch);
 
                     receiverCalls.incrementAndGet();
 
                     msg.reply("done");
 
-                    procDoneLatch.countDown();
+                    receiverDoneLatch.countDown();
                 })).join();
 
                 awaitForChannelsTopology(sender, receiver);
@@ -99,6 +106,8 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
                 List<ResponseFuture<String>> futures = Stream.of(i, i + 1, i + 2)
                     .map(req -> sender.get().forRemotes().withAffinity("1").request("must-fail-" + req))
                     .collect(toList());
+
+                await(receiverReadyLatch);
 
                 busyWait("timeouts", () -> futures.stream().allMatch(CompletableFuture::isDone));
 
@@ -110,10 +119,10 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
                         assertTrue(e.findCause(MessageTimeoutException.class).getMessage().startsWith("Messaging operation timed out"));
                     }
                 } finally {
-                    hangLatch.countDown();
+                    receiverHangLatch.countDown();
                 }
 
-                await(procDoneLatch);
+                await(receiverDoneLatch);
 
                 receiver.leave();
 
