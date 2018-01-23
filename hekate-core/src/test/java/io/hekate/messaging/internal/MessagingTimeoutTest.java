@@ -22,7 +22,6 @@ import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.messaging.unicast.StreamFuture;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -77,7 +76,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
     public void testRequestTimeoutOnReceiver() throws Exception {
         // Test only if messages are processed by worker threads (NIO threads ignore timeouts anyway).
         if (workerThreads() > 0) {
-            int timeout = 300;
+            int timeout = 100;
 
             TestChannel sender = createChannel(c -> {
                 c.withMessagingTimeout(timeout);
@@ -109,7 +108,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
                 await(receiverReadyLatch);
 
-                busyWait("timeouts", () -> futures.stream().allMatch(CompletableFuture::isDone));
+                sleep(timeout);
 
                 try {
                     for (ResponseFuture<String> future : futures) {
