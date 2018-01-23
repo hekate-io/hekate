@@ -41,72 +41,78 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
 
     @Override
     public void sendNotification(MessageRoute<T> route, SendCallback callback, boolean retransmit) {
-        MessageContext<T> msgCtx = route.ctx();
+        MessageContext<T> ctx = route.ctx();
 
         Notification<T> msg;
 
-        if (msgCtx.hasAffinity()) {
-            msg = new AffinityNotification<>(msgCtx.affinity(), retransmit, route.preparePayload());
+        if (ctx.hasAffinity()) {
+            msg = new AffinityNotification<>(ctx.affinity(), retransmit, ctx.opts().timeout(), route.preparePayload());
         } else {
-            msg = new Notification<>(retransmit, route.preparePayload());
+            msg = new Notification<>(retransmit, ctx.opts().timeout(), route.preparePayload());
         }
 
         if (callback != null) {
             callback.onComplete(null);
         }
 
+        long receivedAtMillis = msg.hasTimeout() ? System.nanoTime() : 0;
+
         onAsyncEnqueue();
 
-        msgCtx.worker().execute(() -> {
+        ctx.worker().execute(() -> {
             onAsyncDequeue();
 
-            doReceiveNotification(msg);
+            receiveNotificationAsync(msg, receivedAtMillis);
         });
     }
 
     @Override
     public void request(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
-        MessageContext<T> msgCtx = route.ctx();
+        MessageContext<T> ctx = route.ctx();
 
-        RequestHandle<T> handle = registerRequest(msgCtx, callback);
+        RequestHandle<T> handle = registerRequest(ctx, callback);
 
         Request<T> msg;
 
-        if (msgCtx.hasAffinity()) {
-            msg = new AffinityRequest<>(msgCtx.affinity(), handle.id(), retransmit, route.preparePayload());
+        if (ctx.hasAffinity()) {
+            msg = new AffinityRequest<>(ctx.affinity(), handle.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
         } else {
-            msg = new Request<>(handle.id(), retransmit, route.preparePayload());
+            msg = new Request<>(handle.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
         }
+
+        long receivedAtMillis = msg.hasTimeout() ? System.nanoTime() : 0;
 
         onAsyncEnqueue();
 
-        msgCtx.worker().execute(() -> {
+        ctx.worker().execute(() -> {
             onAsyncDequeue();
 
-            doReceiveRequest(msg, msgCtx.worker());
+            receiveRequestAsync(msg, ctx.worker(), receivedAtMillis);
         });
     }
 
     @Override
     public void stream(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
-        MessageContext<T> msgCtx = route.ctx();
+        MessageContext<T> ctx = route.ctx();
 
-        RequestHandle<T> handle = registerRequest(msgCtx, callback);
+        RequestHandle<T> handle = registerRequest(ctx, callback);
 
         StreamRequest<T> msg;
 
-        if (msgCtx.hasAffinity()) {
-            msg = new AffinityStreamRequest<>(msgCtx.affinity(), handle.id(), retransmit, route.preparePayload());
+        if (ctx.hasAffinity()) {
+            msg = new AffinityStreamRequest<>(ctx.affinity(), handle.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
         } else {
-            msg = new StreamRequest<>(handle.id(), retransmit, route.preparePayload());
+            msg = new StreamRequest<>(handle.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
         }
+
+        long receivedAtMillis = msg.hasTimeout() ? System.nanoTime() : 0;
 
         onAsyncEnqueue();
 
-        msgCtx.worker().execute(() -> {
+        ctx.worker().execute(() -> {
             onAsyncDequeue();
 
-            doReceiveRequest(msg, msgCtx.worker());
+            receiveRequestAsync(msg, ctx.worker(), receivedAtMillis);
         });
     }
 

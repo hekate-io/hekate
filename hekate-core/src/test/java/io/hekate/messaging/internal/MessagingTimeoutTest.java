@@ -19,12 +19,18 @@ package io.hekate.messaging.internal;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingFutureException;
+import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.messaging.unicast.StreamFuture;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Exchanger;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 import org.junit.Test;
 
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -52,15 +58,69 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
             hangLatchRef.set(new CountDownLatch(1));
 
             try {
-                get(sender.get().forRemotes().request("must-fail-" + i));
-            } catch (MessagingFutureException e) {
+                MessagingFutureException e = expect(MessagingFutureException.class, () ->
+                    get(sender.get().forRemotes().request("must-fail-" + i))
+                );
+
                 assertTrue(getStacktrace(e), e.isCausedBy(MessageTimeoutException.class));
-                assertEquals("Messaging operation timed out [message=must-fail-" + i + ']',
-                    e.findCause(MessageTimeoutException.class).getMessage());
+                assertEquals(
+                    "Messaging operation timed out [message=must-fail-" + i + ']',
+                    e.findCause(MessageTimeoutException.class).getMessage()
+                );
             } finally {
                 hangLatchRef.get().countDown();
             }
         });
+    }
+
+    @Test
+    public void testRequestTimeoutOnReceiver() throws Exception {
+        // Test only if messages are processed by worker threads (NIO threads ignore timeouts anyway).
+        if (workerThreads() > 0) {
+            TestChannel sender = createChannel(c -> c.withMessagingTimeout(300)).join();
+
+            repeat(3, i -> {
+                CountDownLatch hangLatch = new CountDownLatch(1);
+                CountDownLatch procDoneLatch = new CountDownLatch(1);
+                AtomicInteger receiverCalls = new AtomicInteger();
+
+                TestChannel receiver = createChannel(c -> c.withReceiver(msg -> {
+                    await(hangLatch);
+
+                    receiverCalls.incrementAndGet();
+
+                    msg.reply("done");
+
+                    procDoneLatch.countDown();
+                })).join();
+
+                awaitForChannelsTopology(sender, receiver);
+
+                List<ResponseFuture<String>> futures = Stream.of(i, i + 1, i + 2)
+                    .map(req -> sender.get().forRemotes().withAffinity("1").request("must-fail-" + req))
+                    .collect(toList());
+
+                busyWait("timeouts", () -> futures.stream().allMatch(CompletableFuture::isDone));
+
+                try {
+                    for (ResponseFuture<String> future : futures) {
+                        MessagingFutureException e = expect(MessagingFutureException.class, () -> get(future));
+
+                        assertTrue(getStacktrace(e), e.isCausedBy(MessageTimeoutException.class));
+                        assertTrue(e.findCause(MessageTimeoutException.class).getMessage().startsWith("Messaging operation timed out"));
+                    }
+                } finally {
+                    hangLatch.countDown();
+                }
+
+                await(procDoneLatch);
+
+                receiver.leave();
+
+                // Receiver must be called only once by the first request, all other request should be skipped because of timeouts.
+                assertEquals(1, receiverCalls.get());
+            });
+        }
     }
 
     @Test

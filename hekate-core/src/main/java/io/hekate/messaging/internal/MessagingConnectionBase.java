@@ -31,8 +31,10 @@ import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkMessage;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 
 abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundContext, MessageInterceptor.ReplyContext {
@@ -110,6 +112,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                     } else {
                         if (async.isAsync()) {
                             int affinity = randomAffinity();
+                            long receivedAtNanos = receivedAtNanos(netMsg);
 
                             MessagingWorker worker = async.workerFor(affinity);
 
@@ -118,10 +121,10 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                             netMsg.handleAsync(worker, m -> {
                                 onReceiveAsyncDequeue();
 
-                                doReceiveNotification(m.cast());
+                                receiveNotificationAsync(m.cast(), receivedAtNanos);
                             }, error -> handleReceiveError(error, netMsg, from));
                         } else {
-                            doReceiveNotification(netMsg.decode().cast());
+                            receiveNotificationSync(netMsg.decode().cast());
                         }
                     }
 
@@ -135,6 +138,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                     } else {
                         if (async.isAsync()) {
                             int affinity = MessagingProtocolCodec.previewAffinity(netMsg);
+                            long receivedAtNanos = receivedAtNanos(netMsg);
 
                             MessagingWorker worker = async.workerFor(affinity);
 
@@ -143,10 +147,10 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                             netMsg.handleAsync(worker, m -> {
                                 onReceiveAsyncDequeue();
 
-                                doReceiveNotification(m.cast());
+                                receiveNotificationAsync(m.cast(), receivedAtNanos);
                             }, error -> handleReceiveError(error, netMsg, from));
                         } else {
-                            doReceiveNotification(netMsg.decode().cast());
+                            receiveNotificationSync(netMsg.decode().cast());
                         }
                     }
 
@@ -161,15 +165,17 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                         MessagingWorker worker = async.pooledWorker();
 
                         if (async.isAsync()) {
+                            long receivedAtNanos = receivedAtNanos(netMsg);
+
                             onReceiveAsyncEnqueue(from);
 
                             netMsg.handleAsync(worker, m -> {
                                 onReceiveAsyncDequeue();
 
-                                doReceiveRequest(m.cast(), worker);
+                                receiveRequestAsync(m.cast(), worker, receivedAtNanos);
                             }, error -> handleReceiveError(error, netMsg, from));
                         } else {
-                            doReceiveRequest(netMsg.decode().cast(), worker);
+                            receiveRequestSync(netMsg.decode().cast(), worker);
                         }
                     }
 
@@ -186,15 +192,17 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                         MessagingWorker worker = async.workerFor(affinity);
 
                         if (async.isAsync()) {
+                            long receivedAtNanos = receivedAtNanos(netMsg);
+
                             onReceiveAsyncEnqueue(from);
 
                             netMsg.handleAsync(worker, m -> {
                                 onReceiveAsyncDequeue();
 
-                                doReceiveRequest(m.cast(), worker);
+                                receiveRequestAsync(m.cast(), worker, receivedAtNanos);
                             }, error -> handleReceiveError(error, netMsg, from));
                         } else {
-                            doReceiveRequest(netMsg.decode().cast(), worker);
+                            receiveRequestSync(netMsg.decode().cast(), worker);
                         }
                     }
 
@@ -212,15 +220,17 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                         MessagingWorker worker = async.workerFor(affinity);
 
                         if (async.isAsync()) {
+                            long receivedAtNanos = receivedAtNanos(netMsg);
+
                             onReceiveAsyncEnqueue(from);
 
                             netMsg.handleAsync(worker, m -> {
                                 onReceiveAsyncDequeue();
 
-                                doReceiveRequest(m.cast(), worker);
+                                receiveRequestAsync(m.cast(), worker, receivedAtNanos);
                             }, error -> handleReceiveError(error, netMsg, from));
                         } else {
-                            doReceiveRequest(netMsg.decode().cast(), worker);
+                            receiveRequestSync(netMsg.decode().cast(), worker);
                         }
                     }
 
@@ -237,15 +247,17 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                         MessagingWorker worker = async.workerFor(affinity);
 
                         if (async.isAsync()) {
+                            long receivedAtNanos = receivedAtNanos(netMsg);
+
                             onReceiveAsyncEnqueue(from);
 
                             netMsg.handleAsync(worker, m -> {
                                 onReceiveAsyncDequeue();
 
-                                doReceiveRequest(m.cast(), worker);
+                                receiveRequestAsync(m.cast(), worker, receivedAtNanos);
                             }, error -> handleReceiveError(error, netMsg, from));
                         } else {
-                            doReceiveRequest(netMsg.decode().cast(), worker);
+                            receiveRequestSync(netMsg.decode().cast(), worker);
                         }
                     }
 
@@ -438,30 +450,34 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
         return requests.register(epoch(), msgCtx, callback);
     }
 
-    protected void doReceiveRequest(RequestBase<T> msg, MessagingWorker worker) {
-        try {
-            msg.prepareReceive(worker, this);
+    protected void receiveRequestAsync(RequestBase<T> msg, MessagingWorker worker, long receivedAtNanos) {
+        if (!isExpired(msg, receivedAtNanos)) {
+            try {
+                msg.prepareReceive(worker, this);
 
-            receiver.receive(msg);
-        } catch (RuntimeException | Error e) {
-            if (log.isErrorEnabled()) {
-                log.error("Got an unexpected runtime error during request processing "
-                    + "[from-node-id={}, message={}]", msg.from(), msg, e);
+                receiver.receive(msg);
+            } catch (RuntimeException | Error e) {
+                if (log.isErrorEnabled()) {
+                    log.error("Got an unexpected runtime error during request processing "
+                        + "[from-node-id={}, message={}]", msg.from(), msg, e);
+                }
+
+                replyError(worker, msg.requestId(), e);
             }
-
-            replyError(worker, msg.requestId(), e);
         }
     }
 
-    protected void doReceiveNotification(Notification<T> msg) {
-        try {
-            msg.prepareReceive(this);
+    protected void receiveNotificationAsync(Notification<T> msg, long receivedAtNanos) {
+        if (!isExpired(msg, receivedAtNanos)) {
+            try {
+                msg.prepareReceive(this);
 
-            receiver.receive(msg);
-        } catch (RuntimeException | Error e) {
-            if (log.isErrorEnabled()) {
-                log.error("Got an unexpected runtime error during notification processing "
-                    + "[from-node-id={}, message={}]", msg.from(), msg, e);
+                receiver.receive(msg);
+            } catch (RuntimeException | Error e) {
+                if (log.isErrorEnabled()) {
+                    log.error("Got an unexpected runtime error during notification processing "
+                        + "[from-node-id={}, message={}]", msg.from(), msg, e);
+                }
             }
         }
     }
@@ -522,6 +538,22 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
         if (metrics != null) {
             metrics.onAsyncDequeue();
         }
+    }
+
+    private void receiveRequestSync(RequestBase<T> msg, MessagingWorker worker) {
+        receiveRequestAsync(msg, worker, 0);
+    }
+
+    private void receiveNotificationSync(Notification<T> msg) {
+        receiveNotificationAsync(msg, 0);
+    }
+
+    private boolean isExpired(RequestBase<T> msg, long receivedAtNanos) {
+        return receivedAtNanos > 0 && System.nanoTime() - receivedAtNanos >= TimeUnit.MILLISECONDS.toNanos(msg.timeout());
+    }
+
+    private boolean isExpired(Notification<T> msg, long receivedAtNanos) {
+        return receivedAtNanos > 0 && System.nanoTime() - receivedAtNanos >= TimeUnit.MILLISECONDS.toNanos(msg.timeout());
     }
 
     private void handleReceiveError(Throwable error, NetworkMessage<MessagingProtocol> msg, NetworkEndpoint<MessagingProtocol> from) {
@@ -634,6 +666,10 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                 log.error("Failed to notify callback on response failure [message={}]", message, e);
             }
         }
+    }
+
+    private long receivedAtNanos(NetworkMessage<MessagingProtocol> netMsg) throws IOException {
+        return MessagingProtocolCodec.previewHasTimeout(netMsg) ? System.nanoTime() : 0;
     }
 
     private int randomAffinity() {

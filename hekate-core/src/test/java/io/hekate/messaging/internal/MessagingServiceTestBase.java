@@ -78,11 +78,11 @@ public abstract class MessagingServiceTestBase extends HekateNodeParamTestBase {
         ));
     }
 
-    public int getWorkerThreads() {
+    public int workerThreads() {
         return workerThreads;
     }
 
-    public int getNioThreads() {
+    public int nioThreads() {
         return nioThreads;
     }
 

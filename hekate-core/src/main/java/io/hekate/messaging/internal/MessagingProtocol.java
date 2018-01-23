@@ -29,6 +29,7 @@ import io.hekate.network.NetworkSendCallback;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
@@ -136,6 +137,8 @@ abstract class MessagingProtocol {
     }
 
     static class Notification<T> extends NoReplyMessage<T> implements NetworkSendCallback<MessagingProtocol> {
+        private final long timeout;
+
         private T payload;
 
         private MessagingWorker worker;
@@ -144,9 +147,12 @@ abstract class MessagingProtocol {
 
         private SendCallback callback;
 
-        public Notification(boolean retransmit, T payload) {
+        private long receivedAt;
+
+        public Notification(boolean retransmit, long timeout, T payload) {
             super(retransmit);
 
+            this.timeout = timeout;
             this.payload = payload;
         }
 
@@ -169,6 +175,18 @@ abstract class MessagingProtocol {
             this.conn = conn;
 
             this.payload = conn.prepareInbound(this.payload);
+        }
+
+        public long timeout() {
+            return timeout;
+        }
+
+        public boolean hasTimeout() {
+            return timeout > 0;
+        }
+
+        public boolean isExpired() {
+            return receivedAt > 0 && System.nanoTime() - receivedAt > TimeUnit.MILLISECONDS.toNanos(timeout);
         }
 
         @Override
@@ -205,8 +223,8 @@ abstract class MessagingProtocol {
     static class AffinityNotification<T> extends Notification<T> {
         private final int affinity;
 
-        public AffinityNotification(int affinity, boolean retransmit, T payload) {
-            super(retransmit, payload);
+        public AffinityNotification(int affinity, boolean retransmit, long timeout, T payload) {
+            super(retransmit, timeout, payload);
 
             this.affinity = affinity;
         }
@@ -226,6 +244,8 @@ abstract class MessagingProtocol {
 
         private final int requestId;
 
+        private final long timeout;
+
         private T payload;
 
         private MessagingWorker worker;
@@ -234,13 +254,16 @@ abstract class MessagingProtocol {
 
         private RequestHandle<T> handle;
 
+        private long receivedAt;
+
         @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
         private volatile int mustReply;
 
-        public RequestBase(int requestId, boolean retransmit, T payload) {
+        public RequestBase(int requestId, boolean retransmit, long timeout, T payload) {
             super(retransmit);
 
             this.requestId = requestId;
+            this.timeout = timeout;
             this.payload = payload;
         }
 
@@ -266,6 +289,18 @@ abstract class MessagingProtocol {
 
         public int requestId() {
             return requestId;
+        }
+
+        public long timeout() {
+            return timeout;
+        }
+
+        public boolean hasTimeout() {
+            return timeout > 0;
+        }
+
+        public boolean isExpired() {
+            return receivedAt > 0 && System.nanoTime() - receivedAt > TimeUnit.MILLISECONDS.toNanos(timeout);
         }
 
         @Override
@@ -345,8 +380,8 @@ abstract class MessagingProtocol {
     }
 
     static class Request<T> extends RequestBase<T> {
-        public Request(int requestId, boolean retransmit, T payload) {
-            super(requestId, retransmit, payload);
+        public Request(int requestId, boolean retransmit, long timeout, T payload) {
+            super(requestId, retransmit, timeout, payload);
         }
 
         @Override
@@ -368,8 +403,8 @@ abstract class MessagingProtocol {
     static class AffinityRequest<T> extends Request<T> {
         private final int affinity;
 
-        public AffinityRequest(int affinity, int requestId, boolean retransmit, T payload) {
-            super(requestId, retransmit, payload);
+        public AffinityRequest(int affinity, int requestId, boolean retransmit, long timeout, T payload) {
+            super(requestId, retransmit, timeout, payload);
 
             this.affinity = affinity;
         }
@@ -385,8 +420,8 @@ abstract class MessagingProtocol {
     }
 
     static class StreamRequest<T> extends RequestBase<T> {
-        public StreamRequest(int requestId, boolean retransmit, T payload) {
-            super(requestId, retransmit, payload);
+        public StreamRequest(int requestId, boolean retransmit, long timeout, T payload) {
+            super(requestId, retransmit, timeout, payload);
         }
 
         @Override
@@ -403,8 +438,8 @@ abstract class MessagingProtocol {
     static class AffinityStreamRequest<T> extends StreamRequest<T> {
         private final int affinity;
 
-        public AffinityStreamRequest(int affinity, int requestId, boolean retransmit, T payload) {
-            super(requestId, retransmit, payload);
+        public AffinityStreamRequest(int affinity, int requestId, boolean retransmit, long timeout, T payload) {
+            super(requestId, retransmit, timeout, payload);
 
             this.affinity = affinity;
         }
