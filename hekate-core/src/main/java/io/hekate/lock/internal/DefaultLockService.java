@@ -56,6 +56,7 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingConfigProvider;
 import io.hekate.messaging.MessagingService;
+import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
@@ -100,6 +101,8 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
     private MessagingService messaging;
 
+    private LocalMetricsService metrics;
+
     public DefaultLockService(LockServiceFactory factory) {
         assert factory != null : "Factory is null.";
 
@@ -122,8 +125,9 @@ public class DefaultLockService implements LockService, InitializingService, Dep
     @Override
     public void resolve(DependencyContext ctx) {
         messaging = ctx.require(MessagingService.class);
-
         cluster = ctx.require(ClusterService.class).filter(HAS_SERVICE_FILTER);
+
+        metrics = ctx.optional(LocalMetricsService.class);
     }
 
     @Override
@@ -220,9 +224,16 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
                     String name = cfg.getName().trim();
 
-                    LockRegionNodeFilter regionFilter = new LockRegionNodeFilter(name);
+                    DefaultLockRegion region = new DefaultLockRegion(
+                        name,
+                        node.id(),
+                        scheduler,
+                        retryInterval,
+                        metrics,
+                        channel.filter(new LockRegionNodeFilter(name))
+                    );
 
-                    regions.put(name, new DefaultLockRegion(name, node.id(), scheduler, channel.filter(regionFilter), retryInterval));
+                    regions.put(name, region);
                 });
             }
 

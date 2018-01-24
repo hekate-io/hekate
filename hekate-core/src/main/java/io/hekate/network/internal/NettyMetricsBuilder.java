@@ -23,15 +23,15 @@ import io.hekate.network.netty.NettyMetricsFactory;
 import io.hekate.network.netty.NettyMetricsSink;
 
 class NettyMetricsBuilder {
-    private static final String METRIC_CONN_ACTIVE = "conn.active";
+    private static final String METRIC_CONNECTIONS = "connections";
 
-    private static final String METRIC_MSG_ERR = "msg.err";
+    private static final String METRIC_CONNECTIONS_ACTIVE = "connections.active";
 
-    private static final String METRIC_MSG_QUEUE = "msg.queue";
+    private static final String METRIC_MSG_QUEUE = "messages.queue";
 
-    private static final String METRIC_MSG_OUT = "msg.out";
+    private static final String METRIC_MSG_OUT = "messages.out";
 
-    private static final String METRIC_MSG_IN = "msg.in";
+    private static final String METRIC_MSG_IN = "messages.in";
 
     private static final String METRIC_BYTES_IN = "bytes.in";
 
@@ -46,113 +46,107 @@ class NettyMetricsBuilder {
     }
 
     public NettyMetricsFactory createServerFactory() {
-        return doCreateFactory(true);
+        return doCreateFactory();
     }
 
     public NettyMetricsFactory createClientFactory() {
-        return doCreateFactory(false);
+        return doCreateFactory();
     }
 
-    private NettyMetricsFactory doCreateFactory(boolean server) {
+    private NettyMetricsFactory doCreateFactory() {
         // Overall bytes.
-        CounterMetric allBytesSent = counter(METRIC_BYTES_OUT, true);
-        CounterMetric allBytesReceived = counter(METRIC_BYTES_IN, true);
+        CounterMetric globalBytesSent = counter(METRIC_BYTES_OUT, true, true);
+        CounterMetric globalBytesReceived = counter(METRIC_BYTES_IN, true, true);
 
         // Overall messages.
-        CounterMetric allMsgSent = counter(METRIC_MSG_OUT, true);
-        CounterMetric allMsgReceived = counter(METRIC_MSG_IN, true);
-        CounterMetric allMsgQueue = counter(METRIC_MSG_QUEUE, false);
-        CounterMetric allMsgFailed = counter(METRIC_MSG_ERR, true);
+        CounterMetric globalMsgSent = counter(METRIC_MSG_OUT, true, true);
+        CounterMetric globalMsgReceived = counter(METRIC_MSG_IN, true, true);
+        CounterMetric globalMsgQueue = counter(METRIC_MSG_QUEUE, false, false);
 
         // Overall connections.
-        CounterMetric allConnections = counter(METRIC_CONN_ACTIVE, false);
+        CounterMetric globalConns = counter(METRIC_CONNECTIONS, false, true);
+        CounterMetric globalConnsAct = counter(METRIC_CONNECTIONS_ACTIVE, false, false);
 
         return protocol -> {
-            // Connector bytes.
-            CounterMetric bytesSent = counter(METRIC_BYTES_OUT, protocol, server, true);
-            CounterMetric bytesReceived = counter(METRIC_BYTES_IN, protocol, server, true);
+            // Bytes.
+            CounterMetric bytesSent = counter(METRIC_BYTES_OUT, protocol, true, true);
+            CounterMetric bytesReceived = counter(METRIC_BYTES_IN, protocol, true, true);
 
-            // Connector messages.
-            CounterMetric msgSent = counter(METRIC_MSG_OUT, protocol, server, true);
-            CounterMetric msgReceived = counter(METRIC_MSG_IN, protocol, server, true);
-            CounterMetric msgQueue = counter(METRIC_MSG_QUEUE, protocol, server, false);
-            CounterMetric msgFailed = counter(METRIC_MSG_ERR, protocol, server, true);
+            // Messages.
+            CounterMetric msgQueue = counter(METRIC_MSG_QUEUE, protocol, false, false);
+            CounterMetric msgSent = counter(METRIC_MSG_OUT, protocol, true, true);
+            CounterMetric msgReceived = counter(METRIC_MSG_IN, protocol, true, true);
 
-            // Connector connections.
-            CounterMetric connections = counter(METRIC_CONN_ACTIVE, protocol, server, false);
+            // Connections.
+            CounterMetric conns = counter(METRIC_CONNECTIONS, protocol, true, true);
+            CounterMetric connsAct = counter(METRIC_CONNECTIONS_ACTIVE, protocol, false, false);
 
             return new NettyMetricsSink() {
                 @Override
                 public void onBytesSent(long bytes) {
                     bytesSent.add(bytes);
 
-                    allBytesSent.add(bytes);
+                    globalBytesSent.add(bytes);
                 }
 
                 @Override
                 public void onBytesReceived(long bytes) {
                     bytesReceived.add(bytes);
 
-                    allBytesReceived.add(bytes);
+                    globalBytesReceived.add(bytes);
                 }
 
                 @Override
                 public void onMessageSent() {
                     msgSent.increment();
 
-                    allMsgSent.increment();
+                    globalMsgSent.increment();
                 }
 
                 @Override
                 public void onMessageReceived() {
                     msgReceived.increment();
 
-                    allMsgReceived.increment();
-                }
-
-                @Override
-                public void onMessageSendError() {
-                    msgFailed.increment();
-
-                    allMsgFailed.increment();
+                    globalMsgReceived.increment();
                 }
 
                 @Override
                 public void onMessageEnqueue() {
                     msgQueue.increment();
 
-                    allMsgQueue.increment();
+                    globalMsgQueue.increment();
                 }
 
                 @Override
                 public void onMessageDequeue() {
                     msgQueue.decrement();
 
-                    allMsgQueue.decrement();
+                    globalMsgQueue.decrement();
                 }
 
                 @Override
                 public void onConnect() {
-                    connections.increment();
+                    connsAct.increment();
+                    globalConnsAct.increment();
 
-                    allConnections.increment();
+                    conns.increment();
+                    globalConns.increment();
                 }
 
                 @Override
                 public void onDisconnect() {
-                    connections.decrement();
-
-                    allConnections.decrement();
+                    connsAct.decrement();
+                    globalConnsAct.decrement();
                 }
             };
         };
     }
 
-    private CounterMetric counter(String name, boolean autoReset) {
-        return counter(name, null, null, autoReset);
+    private CounterMetric counter(String name, boolean autoReset, boolean withTotal) {
+        return counter(name, null, autoReset, withTotal);
     }
 
-    private CounterMetric counter(String name, String protocol, Boolean server, boolean autoReset) {
+    private CounterMetric counter(String name, String protocol, boolean autoReset, boolean withTotal) {
         String counterName = "";
 
         if (protocol != null) {
@@ -163,18 +157,14 @@ class NettyMetricsBuilder {
 
         counterName += "network.";
 
-        if (server != null) {
-            counterName += server ? "server." : "client.";
-        }
-
         counterName += name;
 
         CounterConfig cfg = new CounterConfig(counterName);
 
         cfg.setAutoReset(autoReset);
 
-        if (autoReset) {
-            cfg.setName(counterName + ".current");
+        if (withTotal) {
+            cfg.setName(counterName + ".interim");
             cfg.setTotalName(counterName + ".total");
         } else {
             cfg.setName(counterName);

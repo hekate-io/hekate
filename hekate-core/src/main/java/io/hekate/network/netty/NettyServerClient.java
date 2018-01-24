@@ -142,11 +142,9 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                     future.channel().pipeline().fireExceptionCaught(future.cause());
                 }
 
-                // Notify metrics on failed operation.
+                // Update metrics.
                 if (metrics != null) {
                     metrics.onMessageDequeue();
-
-                    metrics.onMessageSendError();
                 }
             }
         };
@@ -565,10 +563,6 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
 
         if (localCtx == null) {
             // Notify on failure.
-            if (metrics != null) {
-                metrics.onMessageSendError();
-            }
-
             if (onSend != null) {
                 NettyUtils.runAtAllCost(eventLoop, () ->
                     notifyOnError(msg, onSend, WRITE_CLOSED_CHANNEL_EXCEPTION)

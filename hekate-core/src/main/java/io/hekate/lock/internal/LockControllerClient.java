@@ -88,6 +88,10 @@ class LockControllerClient {
     @ToStringIgnore
     private final LockFuture unlockFuture;
 
+    @ToStringIgnore
+    private final LockRegionMetrics metrics;
+
+    @ToStringIgnore
     private final AsyncLockCallbackAdaptor asyncCallback;
 
     @ToStringIgnore
@@ -101,8 +105,17 @@ class LockControllerClient {
 
     private Status status = Status.UNLOCKED;
 
-    public LockControllerClient(long lockId, ClusterNodeId localNode, long threadId, DistributedLock lock,
-        MessagingChannel<LockProtocol> channel, long lockTimeout, AsyncLockCallbackAdaptor asyncCallback, UnlockCallback unlockCallback) {
+    public LockControllerClient(
+        long lockId,
+        ClusterNodeId localNode,
+        long threadId,
+        DistributedLock lock,
+        MessagingChannel<LockProtocol> channel,
+        long lockTimeout,
+        LockRegionMetrics metrics,
+        AsyncLockCallbackAdaptor asyncCallback,
+        UnlockCallback unlockCallback
+    ) {
         assert localNode != null : "Cluster node is null.";
         assert lock != null : "Lock is null.";
         assert channel != null : "Channel is null.";
@@ -112,8 +125,9 @@ class LockControllerClient {
         this.lockId = lockId;
         this.localNode = localNode;
         this.threadId = threadId;
-        this.unlockCallback = unlockCallback;
         this.lockTimeout = lockTimeout;
+        this.metrics = metrics;
+        this.unlockCallback = unlockCallback;
         this.asyncCallback = asyncCallback;
 
         // Make sure that all messages will be routed with the affinity key of this lock.
@@ -224,8 +238,14 @@ class LockControllerClient {
             }
         }
 
-        if (wasLocked && asyncCallback != null) {
-            asyncCallback.onLockRelease(this);
+        if (wasLocked) {
+            if (metrics != null) {
+                metrics.onUnlock();
+            }
+
+            if (asyncCallback != null) {
+                asyncCallback.onLockRelease(this);
+            }
         }
 
         if (!unlockFuture.isDone()) {
@@ -296,6 +316,10 @@ class LockControllerClient {
                     lockOwner = new DefaultLockOwnerInfo(threadId, topology.localNode());
 
                     complete = true;
+
+                    if (metrics != null) {
+                        metrics.onLock();
+                    }
 
                     break;
                 }
@@ -399,6 +423,10 @@ class LockControllerClient {
                     status = Status.UNLOCKED;
 
                     complete = true;
+
+                    if (metrics != null) {
+                        metrics.onUnlock();
+                    }
 
                     break;
                 }

@@ -215,7 +215,7 @@ class MessagingContext<T> implements HekateSupport {
     private final MessagingExecutor async;
 
     @ToStringIgnore
-    private final MetricsCallback metrics;
+    private final MessagingMetrics metrics;
 
     @ToStringIgnore
     private final ReceivePressureGuard receivePressure;
@@ -250,7 +250,7 @@ class MessagingContext<T> implements HekateSupport {
         MessageReceiver<T> receiver,
         int nioThreads,
         MessagingExecutor async,
-        MetricsCallback metrics,
+        MessagingMetrics metrics,
         ReceivePressureGuard receivePressure,
         SendPressureGuard sendPressure,
         MessageInterceptor<T> interceptor,
@@ -577,7 +577,7 @@ class MessagingContext<T> implements HekateSupport {
         return async;
     }
 
-    MetricsCallback metrics() {
+    MessagingMetrics metrics() {
         return metrics;
     }
 

@@ -29,9 +29,9 @@ class RequestRegistry<T> {
 
     private final AtomicInteger idGen = new AtomicInteger();
 
-    private final MetricsCallback metrics;
+    private final MessagingMetrics metrics;
 
-    public RequestRegistry(MetricsCallback metrics) {
+    public RequestRegistry(MessagingMetrics metrics) {
         this.metrics = metrics;
     }
 

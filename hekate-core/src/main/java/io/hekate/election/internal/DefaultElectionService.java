@@ -63,9 +63,7 @@ public class DefaultElectionService implements ElectionService, DependentService
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private static final String THREAD_PREFIX = "Election";
-
-    private static final String LOCK_REGION = "election.service";
+    private static final String LOCK_REGION = "hekate.election";
 
     private final StateGuard guard = new StateGuard(ElectionService.class);
 
@@ -241,11 +239,12 @@ public class DefaultElectionService implements ElectionService, DependentService
         }
 
         String group = cfg.getGroup().trim();
+
         Candidate candidate = cfg.getCandidate();
 
         DistributedLock lock = locks.region(LOCK_REGION).get(group);
 
-        ExecutorService worker = Executors.newSingleThreadExecutor(new HekateThreadFactory(THREAD_PREFIX + '-' + group));
+        ExecutorService worker = Executors.newSingleThreadExecutor(new HekateThreadFactory("Election" + '-' + group));
 
         CandidateHandler handler = new CandidateHandler(group, candidate, worker, lock, hekate.localNode(), hekate);
 

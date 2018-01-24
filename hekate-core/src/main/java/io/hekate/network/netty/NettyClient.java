@@ -646,18 +646,16 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
             // Prepare common listener that should be attached to all write operations.
             GenericFutureListener<ChannelFuture> allWritesListener = (ChannelFuture future) -> {
                 if (future.isSuccess()) {
-                    // Notify metrics on successful operation.
+                    // Successful operation.
                     if (metrics != null) {
                         metrics.onMessageDequeue();
 
                         metrics.onMessageSent();
                     }
                 } else {
-                    // Notify metrics on failed operation.
+                    // Failed operation.
                     if (metrics != null) {
                         metrics.onMessageDequeue();
-
-                        metrics.onMessageSendError();
                     }
 
                     Channel channel = future.channel();
@@ -751,10 +749,6 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
 
         if (localCtx == null) {
             // Notify on channel close error.
-            if (metrics != null) {
-                metrics.onMessageSendError();
-            }
-
             if (onSend != null) {
                 NettyUtils.runAtAllCost(eventLoop, () ->
                     notifyOnError(msg, onSend, WRITE_CLOSED_CHANNEL_EXCEPTION)

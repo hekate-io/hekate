@@ -426,7 +426,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         }
 
         // Prepare metrics.
-        MetricsCallback channelMetrics = metrics != null ? new MetricsCallback(name, metrics) : null;
+        MessagingMetrics channelMetrics = metrics != null ? new MessagingMetrics(name, metrics) : null;
 
         // Make sure that receiver is guarded with lock.
         MessageReceiver<T> guardedReceiver = applyGuard(gateway.unguardedReceiver());

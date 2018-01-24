@@ -58,11 +58,6 @@ public interface NettyMetricsSink {
     void onDisconnect();
 
     /**
-     * Failed to send a message.
-     */
-    void onMessageSendError();
-
-    /**
      * Message added to the queue.
      */
     void onMessageEnqueue();

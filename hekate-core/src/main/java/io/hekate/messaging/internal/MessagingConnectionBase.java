@@ -46,7 +46,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
 
     private final MessagingExecutor async;
 
-    private final MetricsCallback metrics;
+    private final MessagingMetrics metrics;
 
     private final ReceivePressureGuard pressureGuard;
 

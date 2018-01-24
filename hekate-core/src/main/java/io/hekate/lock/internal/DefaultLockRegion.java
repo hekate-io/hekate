@@ -41,6 +41,7 @@ import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.unicast.ReplyDecision;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
+import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -97,6 +98,9 @@ class DefaultLockRegion implements LockRegion {
     private final ClusterNodeId localNode;
 
     @ToStringIgnore
+    private final LockRegionMetrics metrics;
+
+    @ToStringIgnore
     private final MessagingChannel<LockProtocol> lockChannel;
 
     @ToStringIgnore
@@ -145,8 +149,14 @@ class DefaultLockRegion implements LockRegion {
     @ToStringIgnore
     private LockMigrationCallback migrationCallback;
 
-    public DefaultLockRegion(String regionName, ClusterNodeId localNode, ScheduledExecutorService scheduler,
-        MessagingChannel<LockProtocol> channel, long retryInterval) {
+    public DefaultLockRegion(
+        String regionName,
+        ClusterNodeId localNode,
+        ScheduledExecutorService scheduler,
+        long retryInterval,
+        LocalMetricsService metricsService,
+        MessagingChannel<LockProtocol> channel
+    ) {
         assert regionName != null : "Region name is null.";
         assert localNode != null : "Local node is null.";
         assert scheduler != null : "Scheduler is null.";
@@ -176,6 +186,13 @@ class DefaultLockRegion implements LockRegion {
                 .withConstantRetryDelay(retryInterval)
                 .withRetryUntil(failover -> !isTerminated())
             );
+
+        // Configure metrics.
+        if (metricsService == null) {
+            metrics = null;
+        } else {
+            metrics = new LockRegionMetrics(regionName, metricsService);
+        }
     }
 
     @Override
@@ -261,11 +278,20 @@ class DefaultLockRegion implements LockRegion {
         readLock.lock();
 
         try {
-            long lockId = lockIdGen.incrementAndGet();
-
             long threadId = Thread.currentThread().getId();
 
-            LockControllerClient lockClient = new LockControllerClient(lockId, localNode, threadId, lock, lockChannel, timeout, callback,
+            long lockId = lockIdGen.incrementAndGet();
+
+            // Create lock controller.
+            LockControllerClient lockClient = new LockControllerClient(
+                lockId,
+                localNode,
+                threadId,
+                lock,
+                lockChannel,
+                timeout,
+                metrics,
+                callback,
                 unlocked -> { // On unlock.
                     lockClients.remove(lockId);
 
