@@ -142,6 +142,54 @@ public class ClusterNodeJmx {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof ClusterNodeJmx)) {
+            return false;
+        }
+
+        ClusterNodeJmx that = (ClusterNodeJmx)o;
+
+        if (port != that.port) {
+            return false;
+        }
+
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
+
+        if (host != null ? !host.equals(that.host) : that.host != null) {
+            return false;
+        }
+
+        if (id != null ? !id.equals(that.id) : that.id != null) {
+            return false;
+        }
+
+        if (roles != null ? !roles.equals(that.roles) : that.roles != null) {
+            return false;
+        }
+
+        return properties != null ? properties.equals(that.properties) : that.properties == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
+
+        result = 31 * result + (host != null ? host.hashCode() : 0);
+        result = 31 * result + port;
+        result = 31 * result + (id != null ? id.hashCode() : 0);
+        result = 31 * result + (roles != null ? roles.hashCode() : 0);
+        result = 31 * result + (properties != null ? properties.hashCode() : 0);
+
+        return result;
+    }
+
+    @Override
     public String toString() {
         return ToString.format(this);
     }

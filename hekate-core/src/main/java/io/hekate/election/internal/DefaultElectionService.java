@@ -23,6 +23,7 @@ import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.internal.util.Utils;
+import io.hekate.core.jmx.JmxService;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.DependencyContext;
@@ -71,6 +72,8 @@ public class DefaultElectionService implements ElectionService, DependentService
 
     private final Map<String, CandidateHandler> handlers = new HashMap<>();
 
+    private JmxService jmx;
+
     private Hekate hekate;
 
     private LockService locks;
@@ -90,6 +93,8 @@ public class DefaultElectionService implements ElectionService, DependentService
         hekate = ctx.hekate();
 
         locks = ctx.require(LockService.class);
+
+        jmx = ctx.optional(JmxService.class);
     }
 
     @Override
@@ -141,6 +146,12 @@ public class DefaultElectionService implements ElectionService, DependentService
 
             if (!candidatesConfig.isEmpty()) {
                 candidatesConfig.forEach(this::doRegister);
+
+                if (jmx != null) {
+                    for (CandidateHandler handler : handlers.values()) {
+                        jmx.register(handler, handler.group());
+                    }
+                }
             }
         } finally {
             guard.unlockWrite();

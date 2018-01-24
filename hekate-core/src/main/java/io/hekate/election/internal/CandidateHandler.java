@@ -17,10 +17,13 @@
 package io.hekate.election.internal;
 
 import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterNodeJmx;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateSupport;
 import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.core.jmx.JmxSupport;
 import io.hekate.election.Candidate;
+import io.hekate.election.CandidateJmx;
 import io.hekate.election.FollowerContext;
 import io.hekate.election.LeaderChangeListener;
 import io.hekate.election.LeaderContext;
@@ -39,7 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class CandidateHandler implements AsyncLockCallback {
+class CandidateHandler implements AsyncLockCallback, JmxSupport<CandidateJmx> {
     private class DefaultFollowerContext implements FollowerContext {
         private final AtomicReference<ClusterNode> leader;
 
@@ -165,6 +168,10 @@ class CandidateHandler implements AsyncLockCallback {
         this.hekate = hekate;
     }
 
+    public String group() {
+        return group;
+    }
+
     @Override
     public void onLockAcquire(DistributedLock lock) {
         if (!terminated) {
@@ -280,6 +287,35 @@ class CandidateHandler implements AsyncLockCallback {
 
     public LeaderFuture leaderFuture() {
         return leaderFuture.fork();
+    }
+
+    @Override
+    public CandidateJmx jmx() {
+        return new CandidateJmx() {
+            @Override
+            public String getGroup() {
+                return group;
+            }
+
+            @Override
+            public String getCandidateType() {
+                return candidate.getClass().getName();
+            }
+
+            @Override
+            public boolean isLeader() {
+                ClusterNode leader = leaderFuture().getNow(null);
+
+                return leader != null && leader.equals(localNode);
+            }
+
+            @Override
+            public ClusterNodeJmx getLeaderNode() {
+                ClusterNode leader = leaderFuture().getNow(null);
+
+                return leader != null ? ClusterNodeJmx.of(leader) : null;
+            }
+        };
     }
 
     private void updateLeaderFuture(ClusterNode leader) {
