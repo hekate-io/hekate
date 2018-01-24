@@ -16,12 +16,14 @@
 
 package io.hekate.cluster;
 
+import io.hekate.core.jmx.JmxTypeName;
 import javax.management.MXBean;
 
 /**
  * JMX interface for {@link ClusterService}.
  */
 @MXBean
+@JmxTypeName("ClusterService")
 public interface ClusterServiceJmx {
     /**
      * Returns the local node.

@@ -16,12 +16,14 @@
 
 package io.hekate.network;
 
+import io.hekate.core.jmx.JmxTypeName;
 import javax.management.MXBean;
 
 /**
  * JMX interface for {@link NetworkService}.
  */
 @MXBean
+@JmxTypeName("NetworkService")
 public interface NetworkServiceJmx {
     /**
      * Returns the value of {@link NetworkServiceFactory#setConnectTimeout(int)}.

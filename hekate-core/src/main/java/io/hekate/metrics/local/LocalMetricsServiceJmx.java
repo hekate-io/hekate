@@ -16,6 +16,7 @@
 
 package io.hekate.metrics.local;
 
+import io.hekate.core.jmx.JmxTypeName;
 import java.util.Map;
 import javax.management.MXBean;
 
@@ -23,6 +24,7 @@ import javax.management.MXBean;
  * JMX interface for {@link LocalMetricsService}.
  */
 @MXBean
+@JmxTypeName("LocalMetricsService")
 public interface LocalMetricsServiceJmx {
     /**
      * Returns the snapshot of all metrics.

@@ -19,6 +19,7 @@ package io.hekate.core.jmx.internal;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.Utils;
+import io.hekate.core.jmx.JmxTypeName;
 import java.util.Hashtable;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
@@ -68,7 +69,11 @@ final class JmxUtils {
 
         Hashtable<String, String> attrs = new Hashtable<>();
 
-        attrs.put("type", type.getSimpleName());
+        if (type.isAnnotationPresent(JmxTypeName.class)) {
+            attrs.put("type", type.getAnnotation(JmxTypeName.class).value());
+        } else {
+            attrs.put("type", type.getSimpleName());
+        }
 
         if (mayBeName != null) {
             attrs.put("name", mayBeName);

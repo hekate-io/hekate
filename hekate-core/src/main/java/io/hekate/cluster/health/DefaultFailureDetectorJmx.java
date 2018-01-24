@@ -17,6 +17,7 @@
 package io.hekate.cluster.health;
 
 import io.hekate.cluster.ClusterAddress;
+import io.hekate.core.jmx.JmxTypeName;
 import java.util.List;
 import javax.management.MXBean;
 
@@ -24,6 +25,7 @@ import javax.management.MXBean;
  * JMX interface for {@link DefaultFailureDetector}.
  */
 @MXBean
+@JmxTypeName("DefaultFailureDetector")
 public interface DefaultFailureDetectorJmx {
     /**
      * Returns the value of {@link DefaultFailureDetectorConfig#setHeartbeatInterval(long)}.

@@ -16,6 +16,7 @@
 
 package io.hekate.cluster.seed.jdbc;
 
+import io.hekate.core.jmx.JmxTypeName;
 import javax.management.MXBean;
 import javax.sql.DataSource;
 
@@ -23,6 +24,7 @@ import javax.sql.DataSource;
  * JMX interface for {@link JdbcSeedNodeProvider}.
  */
 @MXBean
+@JmxTypeName("JdbcSeedNodeProvider")
 public interface JdbcSeedNodeProviderJmx {
     /**
      * Returns the string representation of {@link JdbcSeedNodeProviderConfig#setDataSource(DataSource)}.

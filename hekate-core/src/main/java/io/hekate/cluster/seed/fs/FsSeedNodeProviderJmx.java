@@ -16,6 +16,7 @@
 
 package io.hekate.cluster.seed.fs;
 
+import io.hekate.core.jmx.JmxTypeName;
 import java.io.File;
 import javax.management.MXBean;
 
@@ -23,6 +24,7 @@ import javax.management.MXBean;
  * JMX interface for {@link FsSeedNodeProvider}.
  */
 @MXBean
+@JmxTypeName("FsSeedNodeProvider")
 public interface FsSeedNodeProviderJmx {
     /**
      * Returns the string representation of {@link FsSeedNodeProviderConfig#setWorkDir(File)}.

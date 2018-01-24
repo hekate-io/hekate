@@ -16,12 +16,14 @@
 
 package io.hekate.metrics;
 
+import io.hekate.core.jmx.JmxTypeName;
 import javax.management.MXBean;
 
 /**
  * JMX interface for each individual {@link Metric}.
  */
 @MXBean
+@JmxTypeName("Metric")
 public interface MetricJmx {
     /**
      * Returns the name of this metric.

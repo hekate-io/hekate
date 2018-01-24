@@ -16,12 +16,14 @@
 
 package io.hekate.network;
 
+import io.hekate.core.jmx.JmxTypeName;
 import javax.management.MXBean;
 
 /**
  * JMX interface for {@link NetworkConnector}.
  */
 @MXBean
+@JmxTypeName("NetworkConnector")
 public interface NetworkConnectorJmx {
     /**
      * Returns the value of {@link NetworkConnectorConfig#setProtocol(String)}.

@@ -18,6 +18,7 @@ package io.hekate.rpc;
 
 import io.hekate.cluster.ClusterNodeJmx;
 import io.hekate.core.jmx.JmxService;
+import io.hekate.core.jmx.JmxTypeName;
 import java.util.Set;
 import javax.management.MXBean;
 
@@ -31,6 +32,7 @@ import javax.management.MXBean;
  * </p>
  */
 @MXBean
+@JmxTypeName("RpcServer")
 public interface RpcServerJmx {
     /**
      * Returns the class name of the server's {@link RpcInterfaceInfo#javaType() RPC interface}.

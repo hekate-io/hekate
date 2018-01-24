@@ -16,12 +16,14 @@
 
 package io.hekate.cluster.seed.multicast;
 
+import io.hekate.core.jmx.JmxTypeName;
 import javax.management.MXBean;
 
 /**
  * JMX interface for {@link MulticastSeedNodeProvider}.
  */
 @MXBean
+@JmxTypeName("MulticastSeedNodeProvider")
 public interface MulticastSeedNodeProviderJmx {
     /**
      * Returns the string value of {@link MulticastSeedNodeProvider#group()}.

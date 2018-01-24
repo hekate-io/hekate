@@ -18,6 +18,7 @@ package io.hekate.core;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
+import io.hekate.core.jmx.JmxTypeName;
 import java.net.SocketAddress;
 import javax.management.MXBean;
 
@@ -25,6 +26,7 @@ import javax.management.MXBean;
  * JMX interface for {@link Hekate} instance.
  */
 @MXBean
+@JmxTypeName("Hekate")
 public interface HekateJmx {
     /**
      * Returns the {@link HekateVersion#fullVersion()}  string.

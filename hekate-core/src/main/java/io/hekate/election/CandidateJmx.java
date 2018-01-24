@@ -17,12 +17,14 @@
 package io.hekate.election;
 
 import io.hekate.cluster.ClusterNodeJmx;
+import io.hekate.core.jmx.JmxTypeName;
 import javax.management.MXBean;
 
 /**
  * JMX interface for {@link Candidate}.
  */
 @MXBean
+@JmxTypeName("Candidate")
 public interface CandidateJmx {
     /**
      * Returns the value of {@link CandidateConfig#setGroup(String)}.

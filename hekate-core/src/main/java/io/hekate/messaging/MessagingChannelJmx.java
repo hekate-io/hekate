@@ -17,12 +17,14 @@
 package io.hekate.messaging;
 
 import io.hekate.cluster.ClusterNodeJmx;
+import io.hekate.core.jmx.JmxTypeName;
 import javax.management.MXBean;
 
 /**
  * JMX interface for {@link MessagingChannel}.
  */
 @MXBean
+@JmxTypeName("MessagingChannel")
 public interface MessagingChannelJmx {
     /**
      * See {@link MessagingChannel#id()}.
