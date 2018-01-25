@@ -110,7 +110,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
                 await(receiverReadyLatch);
 
                 // Wait for a while to make sure that time out happens on the receiver side.
-                sleep(timeout);
+                sleep(timeout * 2);
 
                 // Check results (all requests should time out).
                 try {
