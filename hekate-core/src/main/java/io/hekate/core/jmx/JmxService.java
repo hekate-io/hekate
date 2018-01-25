@@ -31,8 +31,8 @@ import javax.management.ObjectName;
  *
  * <h2>Overview</h2>
  * <p>
- * The {@link JmxService} is an utility service that provides the abstraction layer of JMX facilities that are provided by the JMV.
- * This service is primarily intended to be used by the {@link Hekate} internal components and services.
+ * The {@link JmxService} is the utility service that provides an abstraction layer on top of JMX facilities that are provided by the JMV.
+ * This service is primarily intended to be used by the {@link Hekate}'s internal components and services.
  * </p>
  *
  * <h2>Service configuration</h2>
