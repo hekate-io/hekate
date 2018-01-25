@@ -123,16 +123,15 @@ Complete reference guide is coming soon.
 ### Software requirements:
 
  - Latest stable [Oracle JDK 8](http://www.oracle.com/technetwork/java/) or [Open JDK 8](http://openjdk.java.net/)
- - Latest stable [Apache Maven](http://maven.apache.org/) (3.3+)
  - Latest stable [Docker](https://www.docker.com) (required for tests only)
 
 
-### Building project (no tests):
+### Building (no tests):
 
  - `cd` to the project's root folder
  - run `./mvnw clean package -DskipTests=true`
  
-### Building project (with tests):
+### Building (with tests):
  
   - cd to the project's root folder
   - make a copy of `test.properties` file with name `my_test.properties`
@@ -142,11 +141,28 @@ Complete reference guide is coming soon.
   
 ## Release notes
 
+### v.2.1.0 (almost ready)
+
+ New features and improvements:
+ 
+ - JMX support by main services and components.
+ - JDBC-based Split-brain detection 
+   (see [JdbcConnectivityDetector](https://static.javadoc.io/io.hekate/hekate-all/2.1.0/index.html?io/hekate/cluster/split/JdbcConnectivityDetector.html)).
+ - Added a new option for killing the JVM in case if the cluster node is in the Split-brain state 
+   (see `io.hekate.cluster.split.SplitBrainAction#KILL_JVM`).
+ - Optimized the processing of timeouts by the messaging service (skip expired messages on the receiving side).
+
+ Dependency upgrades:
+ 
+ - Upgraded to Netty 4.1.20.Final.
+ - Upgraded to FST 2.57. 
+
 ### v.2.0.0 (2-Jan-2018)
 
  New features and improvements:
  
- - Remote Procedure Call (RPC) service for Java objects.
+ - Remote Procedure Call (RPC) service for Java objects 
+   (see [RpcService](https://static.javadoc.io/io.hekate/hekate-all/2.0.0/index.html?io/hekate/rpc/RpcService.html)).
  - Added 'deferredJoin' property to Spring bootstrap in order to control the timing of joining the cluster. 
  - Moved load balancing APIs to the `io.hekate.messaging.loadbalance` package.
  - Moved Netty-based implementation of networking APIs to public packages.
