@@ -149,7 +149,7 @@ Complete reference guide is coming soon.
  - JDBC-based Split-brain detection 
    (see [JdbcConnectivityDetector](https://static.javadoc.io/io.hekate/hekate-all/2.1.0/index.html?io/hekate/cluster/split/JdbcConnectivityDetector.html)).
  - Added a new option for killing the JVM in case if the cluster node is in the Split-brain state 
-   (see `io.hekate.cluster.split.SplitBrainAction#KILL_JVM`).
+   (see [SplitBrainAction](https://static.javadoc.io/io.hekate/hekate-all/2.1.0/index.html?io/hekate/cluster/split/SplitBrainAction.html)).
  - Optimized the processing of timeouts by the messaging service (skip expired messages on the receiving side).
 
  Dependency upgrades:
