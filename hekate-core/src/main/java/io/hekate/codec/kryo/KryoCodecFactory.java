@@ -47,6 +47,13 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
  * to be on the project's classpath.
  * </p>
  *
+ * <p>
+ * It is also recommended to add
+ * <a href="https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22de.javakaffee%22%20a%3A%22kryo-serializers%22" target="_blank">
+ * 'de.javakaffee:kryo-serializers'
+ * </a> as it provides extended support for some of the JDK's built-in types as well as for some popular third-party libraries.
+ * </p>
+ *
  * <h2>Configuration</h2>
  * <p>
  * Each call of {@link #createCodec()} method will produces a new independent {@link Kryo} instance and will configure it
