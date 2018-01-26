@@ -441,7 +441,7 @@ public final class CodecUtils {
     // Code borrowed from 'stream-lib' (Apache 2.0 license) - see https://github.com/addthis/stream-lib
     public static long readVarLong(DataInput in) throws IOException {
         long raw = readVarLongUnsigned(in);
-        // This undoes the trick in writeSignedVarLong()
+        // This undoes the trick in writeVarLong()
         long temp = (raw << 63 >> 63 ^ raw) >> 1;
         // This extra step lets us deal with the largest signed values by treating
         // negative results from read unsigned methods as like unsigned values
@@ -489,7 +489,7 @@ public final class CodecUtils {
     // Code borrowed from 'stream-lib' (Apache 2.0 license) - see https://github.com/addthis/stream-lib
     public static int readVarInt(DataInput in) throws IOException {
         int raw = readVarIntUnsigned(in);
-        // This undoes the trick in writeSignedVarInt()
+        // This undoes the trick in writeVarInt()
         int temp = (raw << 31 >> 31 ^ raw) >> 1;
         // This extra step lets us deal with the largest signed values by treating
         // negative results from read unsigned methods as like unsigned values.
