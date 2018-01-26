@@ -19,6 +19,9 @@ package io.hekate.codec;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.Service;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * <span class="startHere">&laquo; start here</span>Main entry point to data serialization API.
@@ -48,4 +51,52 @@ public interface CodecService extends Service {
      * @return Codec factory.
      */
     <T> CodecFactory<T> codecFactory();
+
+    /**
+     * Encodes the specified object into the specified stream.
+     *
+     * @param obj Object.
+     * @param out Stream.
+     *
+     * @throws IOException Signals encoding failure.
+     * @see #decodeFromStream(InputStream)
+     */
+    void encodeToStream(Object obj, OutputStream out) throws IOException;
+
+    /**
+     * Decodes an object from the specified stream.
+     *
+     * @param in Stream to read data from.
+     * @param <T> Object type.
+     *
+     * @return Decoded object.
+     *
+     * @throws IOException Signals decoding failure.
+     * @see #encodeToStream(Object, OutputStream)
+     */
+    <T> T decodeFromStream(InputStream in) throws IOException;
+
+    /**
+     * Encodes the specified object into an array of bytes.
+     *
+     * @param obj Object.
+     *
+     * @return Bytes.
+     *
+     * @throws IOException Signals encoding failure.
+     * @see #decodeFromByteArray(byte[])
+     */
+    byte[] encodeToByteArray(Object obj) throws IOException;
+
+    /**
+     * Decodes an object from the specified array of bytes.
+     *
+     * @param bytes Bytes.
+     * @param <T> Object type.
+     *
+     * @return Decoded object.
+     *
+     * @throws IOException Signals decoding failure.
+     */
+    <T> T decodeFromByteArray(byte[] bytes) throws IOException;
 }
