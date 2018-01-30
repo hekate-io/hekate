@@ -109,65 +109,10 @@ import static java.util.stream.Collectors.toSet;
 
 public class DefaultClusterService implements ClusterService, ClusterServiceManager, DependentService, ConfigurableService,
     InitializingService, TerminatingService, NetworkConfigProvider, JmxSupport<ClusterServiceJmx> {
-    private static class DeferredListener {
-        private final ClusterEventListener listener;
-
-        private final ClusterEventType[] eventTypes;
-
-        public DeferredListener(ClusterEventListener listener, ClusterEventType[] eventTypes) {
-            this.listener = listener;
-            this.eventTypes = eventTypes;
-        }
-
-        public ClusterEventListener listener() {
-            return listener;
-        }
-
-        public ClusterEventType[] eventTypes() {
-            return eventTypes;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-
-            if (!(o instanceof DeferredListener)) {
-                return false;
-            }
-
-            DeferredListener that = (DeferredListener)o;
-
-            return listener.equals(that.listener);
-        }
-
-        @Override
-        public int hashCode() {
-            return listener.hashCode();
-        }
-    }
 
     private static final Logger log = LoggerFactory.getLogger(DefaultClusterService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
-
-    private static final ClusterAcceptor DEFAULT_JOIN_ACCEPTOR = (joining, hekate) -> {
-        boolean locLoopback = hekate.localNode().socket().getAddress().isLoopbackAddress();
-        boolean remLoopback = joining.socket().getAddress().isLoopbackAddress();
-
-        if (locLoopback != remLoopback) {
-            if (locLoopback) {
-                return "Cluster is configured with loopback addresses while node is configured to use a non-loopback address "
-                    + "[rejected-by=" + hekate.localNode().address() + ']';
-            } else {
-                return "Cluster is configured with non-loopback addresses while node is configured to use a loopback address "
-                    + "[rejected-by=" + hekate.localNode().address() + ']';
-            }
-        }
-
-        return null;
-    };
 
     private final long gossipInterval;
 
@@ -203,7 +148,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     private final List<ClusterEventListener> initListeners;
 
     @ToStringIgnore
-    private final List<DeferredListener> deferredListeners = new CopyOnWriteArrayList<>();
+    private final List<DeferredClusterListener> deferredListeners = new CopyOnWriteArrayList<>();
 
     @ToStringIgnore
     private SeedNodeManager seedNodeMgr;
@@ -286,18 +231,33 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         }
 
         // Pre-configured event listeners.
-        List<ClusterEventListener> initListeners = new ArrayList<>();
+        List<ClusterEventListener> listeners = new ArrayList<>();
 
-        initListeners.add(new ClusterEventLogger());
+        listeners.add(new ClusterEventLogger());
 
-        StreamUtils.nullSafe(factory.getClusterListeners()).forEach(initListeners::add);
+        StreamUtils.nullSafe(factory.getClusterListeners()).forEach(listeners::add);
 
-        this.initListeners = unmodifiableList(initListeners);
+        initListeners = unmodifiableList(listeners);
 
         // Join acceptors.
         acceptors = new ArrayList<>();
 
-        acceptors.add(DEFAULT_JOIN_ACCEPTOR);
+        acceptors.add((joining, hekate) -> {
+            boolean locLoopback = hekate.localNode().socket().getAddress().isLoopbackAddress();
+            boolean remLoopback = joining.socket().getAddress().isLoopbackAddress();
+
+            if (locLoopback != remLoopback) {
+                if (locLoopback) {
+                    return "Cluster is configured with loopback addresses while node is configured to use a non-loopback address "
+                        + "[rejected-by=" + hekate.localNode().address() + ']';
+                } else {
+                    return "Cluster is configured with non-loopback addresses while node is configured to use a loopback address "
+                        + "[rejected-by=" + hekate.localNode().address() + ']';
+                }
+            }
+
+            return null;
+        });
 
         StreamUtils.nullSafe(factory.getAcceptors()).forEach(acceptors::add);
     }
@@ -369,7 +329,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         try {
             guard.becomeInitialized();
 
-            this.ctx = initCtx;
+            ctx = initCtx;
 
             node = initCtx.localNode();
 
@@ -660,7 +620,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             if (guard.isInitialized()) {
                 requireContext().cluster().addListener(listener);
             } else {
-                deferredListeners.add(new DeferredListener(listener, eventTypes));
+                deferredListeners.add(new DeferredClusterListener(listener, eventTypes));
             }
         } finally {
             guard.unlockRead();
@@ -677,7 +637,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             if (guard.isInitialized()) {
                 requireContext().cluster().removeListener(listener);
             } else {
-                deferredListeners.remove(new DeferredListener(listener, null));
+                deferredListeners.remove(new DeferredClusterListener(listener, null));
             }
         } finally {
             guard.unlockRead();
@@ -715,7 +675,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             if (guard.isInitialized()) {
                 requireContext().cluster().addListenerAsync(listener);
             } else {
-                deferredListeners.add(new DeferredListener(listener, null));
+                deferredListeners.add(new DeferredClusterListener(listener, null));
             }
         } finally {
             guard.unlockRead();
@@ -855,7 +815,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                 UpdateBase msg = gossipMgr.leave();
 
                 if (msg == null) {
-                    // Doo not need to go through the cluster leave protocol (gossip manager decision).
+                    // Do not need to go through the cluster leave protocol (gossip manager decision).
                     ctx.cluster().onLeave();
                 } else {
                     if (log.isInfoEnabled()) {
