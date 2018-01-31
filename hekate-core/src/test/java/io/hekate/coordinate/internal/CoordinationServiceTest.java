@@ -91,6 +91,8 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
             if ("get".equals(command)) {
                 request.reply(lastValue);
+            } else if ("prepare".equals(command)) {
+                request.reply("ok");
             } else {
                 lastValue = command.substring("put_".length());
 
@@ -422,8 +424,9 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
     }
 
     private void doTestCoordinatorLeave(Function<HekateTestNode, Future<?>> stopAction) throws Exception {
-        CountDownLatch blockLatch = new CountDownLatch(1);
-        CountDownLatch proceedLatch = new CountDownLatch(1);
+        CountDownLatch coordinatorReady = new CountDownLatch(1);
+        CountDownLatch allPrepared = new CountDownLatch(2);
+        CountDownLatch proceed = new CountDownLatch(1);
 
         AtomicReference<ClusterNode> coordinatorRef = new AtomicReference<>();
 
@@ -431,23 +434,35 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
             private final AtomicInteger stack = new AtomicInteger();
 
             @Override
-            public void prepare(CoordinationContext ctx) {
-                super.prepare(ctx);
-
-                stack.incrementAndGet();
-            }
-
-            @Override
             public void coordinate(CoordinationContext ctx) {
-                if (ctx.size() == 3 && blockLatch.getCount() > 0) {
+                if (ctx.size() == 3 && coordinatorReady.getCount() > 0) {
                     coordinatorRef.set(ctx.coordinator().node());
 
-                    blockLatch.countDown();
+                    // Make sure that all members will be prepared by the time of coordinator termination.
+                    ctx.broadcast("prepare", responses -> {
+                        // No-op.
+                    });
 
-                    await(proceedLatch);
+                    coordinatorReady.countDown();
+
+                    await(proceed);
                 } else {
                     super.coordinate(ctx);
                 }
+            }
+
+            @Override
+            public void prepare(CoordinationContext ctx) {
+                super.prepare(ctx);
+
+                say(ctx);
+
+                if (ctx.size() == 3) {
+                    // Notify on prepare.
+                    allPrepared.countDown();
+                }
+
+                stack.incrementAndGet();
             }
 
             @Override
@@ -480,7 +495,11 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
         n3.join(); // <-- Coordination should block.
 
-        await(blockLatch);
+        // Await for all members to become prepared.
+        await(allPrepared);
+
+        // Await for coordinator to become ready.
+        await(coordinatorReady);
 
         HekateTestNode coordinator = Stream.of(n1, n2, n3)
             .filter(n -> n.localNode().equals(coordinatorRef.get()))
@@ -491,7 +510,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
         Future<?> termFuture = stopAction.apply(coordinator);
 
-        proceedLatch.countDown();
+        proceed.countDown();
 
         get(termFuture);
 
