@@ -1620,6 +1620,13 @@
                 </xsd:annotation>
             </xsd:element>
         </xsd:all>
+        <xsd:attribute name="domain" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc 'io.hekate.core.jmx.JmxServiceFactory#setDomain(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
     </xsd:complexType>
 
     <xsd:complexType name="propertiesType">

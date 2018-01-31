@@ -16,7 +16,6 @@
 
 package io.hekate.core.jmx.internal;
 
-import io.hekate.core.HekateBootstrap;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.core.jmx.JmxTypeName;
@@ -35,23 +34,21 @@ final class JmxUtils {
     /**
      * Constructs a new JMX object name.
      *
-     * @param cluster Cluster name (see {@link HekateBootstrap#setClusterName(String)}).
-     * @param node Node name (see {@link HekateBootstrap#setNodeName(String)}).
+     * @param domain JMX domain.
      * @param type JMX interface.
      *
      * @return Object name.
      *
      * @throws MalformedObjectNameException Signals on malformed object name.
      */
-    public static ObjectName jmxName(String cluster, String node, Class<?> type) throws MalformedObjectNameException {
-        return jmxName(cluster, node, type, null);
+    public static ObjectName jmxName(String domain, Class<?> type) throws MalformedObjectNameException {
+        return jmxName(domain, type, null);
     }
 
     /**
      * Constructs a new JMX object name.
      *
-     * @param cluster Cluster name (see {@link HekateBootstrap#setClusterName(String)}).
-     * @param node Node name (see {@link HekateBootstrap#setNodeName(String)}).
+     * @param domain JMX domain.
      * @param type JMX interface.
      * @param name Value for the {@link ObjectName}'s {@code name} attribute.
      *
@@ -59,12 +56,10 @@ final class JmxUtils {
      *
      * @throws MalformedObjectNameException Signals on malformed object name.
      */
-    public static ObjectName jmxName(String cluster, String node, Class<?> type, String name) throws MalformedObjectNameException {
-        ArgAssert.notEmpty(cluster, "Cluster");
-        ArgAssert.notNull(cluster, "Node");
+    public static ObjectName jmxName(String domain, Class<?> type, String name) throws MalformedObjectNameException {
+        ArgAssert.notEmpty(domain, "Domain");
         ArgAssert.notNull(type, "Type");
 
-        String domain = cluster + (node.isEmpty() ? "" : '.' + node);
         String mayBeName = Utils.nullOrTrim(name);
 
         Hashtable<String, String> attrs = new Hashtable<>();
@@ -79,6 +74,6 @@ final class JmxUtils {
             attrs.put("name", mayBeName);
         }
 
-        return new ObjectName(domain, attrs);
+        return new ObjectName(domain.trim(), attrs);
     }
 }

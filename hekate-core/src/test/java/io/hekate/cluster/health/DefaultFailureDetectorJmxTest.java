@@ -30,8 +30,8 @@ import static org.junit.Assert.assertTrue;
 public class DefaultFailureDetectorJmxTest extends HekateNodeTestBase {
     @Test
     public void test() throws Exception {
-        HekateTestNode node1 = createNode(boot -> boot.withService(JmxServiceFactory.class)).join();
-        HekateTestNode node2 = createNode(boot -> boot.withService(JmxServiceFactory.class)).join();
+        HekateTestNode node1 = createNode(boot -> boot.withService(JmxServiceFactory.class, jmx -> jmx.withDomain("test-node-1"))).join();
+        HekateTestNode node2 = createNode(boot -> boot.withService(JmxServiceFactory.class, jmx -> jmx.withDomain("test-node-2"))).join();
 
         awaitForTopology(node1, node2);
 

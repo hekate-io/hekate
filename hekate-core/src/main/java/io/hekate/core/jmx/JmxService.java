@@ -85,15 +85,12 @@ import javax.management.ObjectName;
  * </p>
  *
  * <p>
- * {@code [cluster_name].[node_name]:type=[simple_class_name],name=[name_attribute]}
+ * {@code [domain]:type=[simple_class_name],name=[name_attribute]}
  * </p>
  *
  * <ul>
  * <li>
- * {@code [cluster_name]} - value of {@link HekateBootstrap#setClusterName(String)}
- * </li>
- * <li>
- * {@code [node_name]} - (optional) value of {@link HekateBootstrap#setNodeName(String)}.
+ * {@code [domain]} - value of {@link JmxServiceFactory#setDomain(String)}
  * </li>
  * <li>
  * {@code [simple_class_name]} - {@link Class#getSimpleName()} of the JMX bean object
@@ -105,6 +102,15 @@ import javax.management.ObjectName;
  */
 @DefaultServiceFactory(JmxServiceFactory.class)
 public interface JmxService extends Service {
+    /**
+     * Returns the JMX domain of this service.
+     *
+     * @return JMX domain.
+     *
+     * @see JmxServiceFactory#setDomain(String)
+     */
+    String domain();
+
     /**
      * Returns the list of names of all MBeans that are registered to this service.
      *

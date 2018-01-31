@@ -26,16 +26,16 @@ import static org.junit.Assert.assertEquals;
 public class JmxUtilsTest extends HekateTestBase {
     @Test
     public void testClusterAndNodeName() throws Exception {
-        ObjectName name = new ObjectName("foo.bar.test-node", "type", getClass().getSimpleName());
+        ObjectName name = new ObjectName("foo.bar", "type", getClass().getSimpleName());
 
-        assertEquals(name, JmxUtils.jmxName("foo.bar", "test-node", getClass()));
+        assertEquals(name, JmxUtils.jmxName("foo.bar", getClass()));
     }
 
     @Test
     public void testClusterNameOnly() throws Exception {
         ObjectName name = new ObjectName("foo.bar", "type", getClass().getSimpleName());
 
-        assertEquals(name, JmxUtils.jmxName("foo.bar", "", getClass()));
+        assertEquals(name, JmxUtils.jmxName("foo.bar", getClass()));
     }
 
     @Test
@@ -45,9 +45,9 @@ public class JmxUtilsTest extends HekateTestBase {
         attrs.put("name", "test-name");
         attrs.put("type", getClass().getSimpleName());
 
-        ObjectName name = new ObjectName("foo.bar.test-node", attrs);
+        ObjectName name = new ObjectName("foo.bar", attrs);
 
-        assertEquals(name, JmxUtils.jmxName("foo.bar", "test-node", getClass(), "test-name"));
+        assertEquals(name, JmxUtils.jmxName("foo.bar", getClass(), "test-name"));
     }
 
     @Test

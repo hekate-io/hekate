@@ -183,8 +183,12 @@ public class XsdSingleNodeTest extends HekateTestBase {
 
     private void verifyJmx() {
         assertTrue(hekate.has(JmxService.class));
-        assertNotNull(hekate.get(JmxService.class));
-        assertSame(ManagementFactory.getPlatformMBeanServer(), hekate.get(JmxService.class).server());
+
+        JmxService jmx = hekate.get(JmxService.class);
+
+        assertNotNull(jmx);
+        assertEquals("foo.bar", jmx.domain());
+        assertSame(ManagementFactory.getPlatformMBeanServer(), jmx.server());
     }
 
     private void verifyLocalNode() {

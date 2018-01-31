@@ -45,7 +45,7 @@
             <s:bean class="io.hekate.codec.fst.FstCodecFactory"/>
         </default-codec>
 
-        <jmx>
+        <jmx domain="foo.bar">
             <server>
                 <s:bean class="java.lang.management.ManagementFactory" factory-method="getPlatformMBeanServer"/>
             </server>

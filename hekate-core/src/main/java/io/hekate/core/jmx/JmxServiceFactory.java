@@ -21,16 +21,61 @@ import io.hekate.core.service.ServiceFactory;
 import io.hekate.util.format.ToString;
 import java.lang.management.ManagementFactory;
 import javax.management.MBeanServer;
+import javax.management.ObjectName;
 
 /**
  * Factory for {@link JmxService}.
  */
 public class JmxServiceFactory implements ServiceFactory<JmxService> {
+    /** Default value ({@value}) for {@link #setDomain(String)}. */
+    public static final String DEFAULT_DOMAIN = "io.hekate";
+
+    private String domain = DEFAULT_DOMAIN;
+
     private MBeanServer server = defaultServer();
 
     @Override
     public JmxService createService() {
         return new DefaultJmxService(this);
+    }
+
+    /**
+     * Returns the JMX domain (see {@link #setDomain(String)}).
+     *
+     * @return JMX domain.
+     */
+    public String getDomain() {
+        return domain;
+    }
+
+    /**
+     * Sets the JMX domain.
+     *
+     * <p>
+     * Value of this parameter is used as a JMX domain name when constructing {@link ObjectName}s for JMX components.
+     * </p>
+     *
+     * <p>
+     * Default value of this parameter is {@value #DEFAULT_DOMAIN}.
+     * </p>
+     *
+     * @param domain JMX domain.
+     */
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
+
+    /**
+     * Fluent-style version of {@link #setDomain(String)}.
+     *
+     * @param domain JMX domain.
+     *
+     * @return This instance.         T
+     */
+    public JmxServiceFactory withDomain(String domain) {
+        setDomain(domain);
+
+        return this;
     }
 
     /**

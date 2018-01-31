@@ -37,8 +37,10 @@ public class CandidateJmxTest extends HekateNodeTestBase {
         List<HekateTestNode> nodes = new ArrayList<>();
 
         for (int i = 0; i < 3; i++) {
+            String jmxDomain = "test-node-" + i;
+
             createNode(boot -> {
-                boot.withService(JmxServiceFactory.class);
+                boot.withService(JmxServiceFactory.class, jmx -> jmx.withDomain(jmxDomain));
                 boot.withService(ElectionServiceFactory.class, election -> {
                     election.withCandidate(new CandidateConfig()
                         .withGroup("test-group-1")

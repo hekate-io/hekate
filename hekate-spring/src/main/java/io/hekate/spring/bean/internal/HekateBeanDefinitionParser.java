@@ -220,6 +220,8 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         if (jmxEl != null) {
             BeanDefinitionBuilder jmx = newBean(JmxServiceFactory.class, jmxEl);
 
+            setProperty(jmx, jmxEl, "domain", "domain");
+
             setBeanOrRef(jmx, jmxEl, "server", "server", ctx);
 
             return Optional.of(registerInnerBean(jmx, ctx));

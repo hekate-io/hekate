@@ -23,11 +23,25 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
 
 public class JmxServiceFactoryTest extends HekateTestBase {
     private final JmxServiceFactory factory = new JmxServiceFactory();
+
+    @Test
+    public void testDomain() {
+        assertEquals(JmxServiceFactory.DEFAULT_DOMAIN, factory.getDomain());
+
+        factory.setDomain(null);
+
+        assertNull(factory.getDomain());
+
+        assertSame(factory, factory.withDomain("some.domain"));
+
+        assertEquals("some.domain", factory.getDomain());
+    }
 
     @Test
     public void testServer() {

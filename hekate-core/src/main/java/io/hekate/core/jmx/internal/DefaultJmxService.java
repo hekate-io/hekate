@@ -19,16 +19,17 @@ package io.hekate.core.jmx.internal;
 import io.hekate.core.HekateException;
 import io.hekate.core.HekateUncheckedException;
 import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxServiceException;
 import io.hekate.core.jmx.JmxServiceFactory;
 import io.hekate.core.jmx.JmxSupport;
-import io.hekate.core.service.DependencyContext;
-import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.TerminatingService;
 import io.hekate.util.StateGuard;
+import io.hekate.util.format.ToString;
+import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -47,32 +48,32 @@ import org.slf4j.LoggerFactory;
 import static io.hekate.core.jmx.internal.JmxUtils.jmxName;
 import static java.util.stream.Collectors.toList;
 
-public class DefaultJmxService implements JmxService, DependentService, InitializingService, TerminatingService {
+public class DefaultJmxService implements JmxService, InitializingService, TerminatingService {
     private static final Logger log = LoggerFactory.getLogger(DefaultJmxService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
+    private final String domain;
+
+    @ToStringIgnore
     private final StateGuard guard = new StateGuard(JmxService.class);
 
+    @ToStringIgnore
     private final MBeanServer server;
 
+    @ToStringIgnore
     private final List<ObjectName> names = new ArrayList<>();
-
-    private String clusterName;
-
-    private String nodeName;
 
     public DefaultJmxService(JmxServiceFactory factory) {
         assert factory != null : "Service factory is null.";
-        assert factory.getServer() != null : "JMX server is null.";
 
         server = factory.getServer();
-    }
+        domain = factory.getDomain();
 
-    @Override
-    public void resolve(DependencyContext ctx) {
-        clusterName = ctx.clusterName();
-        nodeName = ctx.nodeName();
+        ConfigCheck check = ConfigCheck.get(JmxServiceFactory.class);
+
+        check.notNull(server, "server");
+        check.notEmpty(domain, "domain");
     }
 
     @Override
@@ -133,6 +134,11 @@ public class DefaultJmxService implements JmxService, DependentService, Initiali
     }
 
     @Override
+    public String domain() {
+        return domain;
+    }
+
+    @Override
     public List<ObjectName> names() {
         guard.lockRead();
 
@@ -151,7 +157,7 @@ public class DefaultJmxService implements JmxService, DependentService, Initiali
     @Override
     public ObjectName nameFor(Class<?> jmxInterface, String nameAttribute) {
         try {
-            return jmxName(clusterName, nodeName, jmxInterface, nameAttribute);
+            return jmxName(domain, jmxInterface, nameAttribute);
         } catch (MalformedObjectNameException e) {
             // Should not happen.
             throw new HekateUncheckedException("Failed to construct JMX object name.", e);
@@ -241,6 +247,6 @@ public class DefaultJmxService implements JmxService, DependentService, Initiali
 
     @Override
     public String toString() {
-        return JmxService.class.getSimpleName();
+        return ToString.format(JmxService.class, this);
     }
 }

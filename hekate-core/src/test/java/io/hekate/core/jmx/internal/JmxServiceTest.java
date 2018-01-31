@@ -24,6 +24,7 @@ import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxServiceException;
 import io.hekate.core.jmx.JmxServiceFactory;
+import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
 import java.util.Hashtable;
 import javax.management.InstanceAlreadyExistsException;
@@ -81,7 +82,7 @@ public class JmxServiceTest extends HekateNodeTestBase {
 
     @Test
     public void testNameFor() throws Exception {
-        String domain = node.cluster().clusterName() + '.' + node.localNode().name();
+        String domain = JmxServiceFactory.DEFAULT_DOMAIN;
 
         ObjectName name1 = new ObjectName(domain, "type", TestMxBeanA.class.getSimpleName());
 
@@ -170,6 +171,8 @@ public class JmxServiceTest extends HekateNodeTestBase {
 
     @Test
     public void testToString() {
-        assertEquals(JmxService.class.getSimpleName(), new JmxServiceFactory().createService().toString());
+        JmxService service = new JmxServiceFactory().createService();
+
+        assertEquals(ToString.format(JmxService.class, service), service.toString());
     }
 }
