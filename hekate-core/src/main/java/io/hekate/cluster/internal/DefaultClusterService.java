@@ -58,7 +58,6 @@ import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Jvm;
-import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxSupport;
 import io.hekate.core.service.ClusterServiceManager;
@@ -88,7 +87,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -104,7 +102,9 @@ import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.hekate.core.internal.util.StreamUtils.nullSafe;
 import static java.util.Collections.unmodifiableList;
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toSet;
 
 public class DefaultClusterService implements ClusterService, ClusterServiceManager, DependentService, ConfigurableService,
@@ -133,9 +133,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     private final List<ClusterAcceptor> acceptors;
 
     @ToStringIgnore
-    private final Set<ClusterNodeId> asyncAcceptors = Collections.synchronizedSet(new HashSet<>());
-
-    @ToStringIgnore
     private final GossipListener gossipSpy;
 
     @ToStringIgnore
@@ -145,10 +142,13 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     private final AtomicReference<ClusterNodeId> localNodeIdRef = new AtomicReference<>();
 
     @ToStringIgnore
-    private final List<ClusterEventListener> initListeners;
+    private final List<ClusterEventListener> listeners;
 
     @ToStringIgnore
     private final List<DeferredClusterListener> deferredListeners = new CopyOnWriteArrayList<>();
+
+    @ToStringIgnore
+    private ClusterAcceptManager acceptMgr;
 
     @ToStringIgnore
     private SeedNodeManager seedNodeMgr;
@@ -159,14 +159,13 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     @ToStringIgnore
     private NetworkService net;
 
-    @ToStringIgnore
     private LocalMetricsService metrics;
 
     @ToStringIgnore
-    private JmxService jmx;
+    private ClusterMetricsSink metricsSink;
 
     @ToStringIgnore
-    private ClusterMetricsCallback metricsCallback;
+    private JmxService jmx;
 
     @ToStringIgnore
     private ScheduledExecutorService serviceThread;
@@ -230,36 +229,17 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             seedNodeProvider = factory.getSeedNodeProvider();
         }
 
-        // Pre-configured event listeners.
-        List<ClusterEventListener> listeners = new ArrayList<>();
+        // Pre-configured (unmodifiable) event listeners.
+        this.listeners = unmodifiableList(nullSafe(factory.getClusterListeners()).collect(toCollection(() -> {
+            List<ClusterEventListener> listeners = new ArrayList<>();
 
-        listeners.add(new ClusterEventLogger());
+            listeners.add(new ClusterEventLogger());
 
-        StreamUtils.nullSafe(factory.getClusterListeners()).forEach(listeners::add);
-
-        initListeners = unmodifiableList(listeners);
+            return listeners;
+        })));
 
         // Join acceptors.
-        acceptors = new ArrayList<>();
-
-        acceptors.add((joining, hekate) -> {
-            boolean locLoopback = hekate.localNode().socket().getAddress().isLoopbackAddress();
-            boolean remLoopback = joining.socket().getAddress().isLoopbackAddress();
-
-            if (locLoopback != remLoopback) {
-                if (locLoopback) {
-                    return "Cluster is configured with loopback addresses while node is configured to use a non-loopback address "
-                        + "[rejected-by=" + hekate.localNode().address() + ']';
-                } else {
-                    return "Cluster is configured with non-loopback addresses while node is configured to use a loopback address "
-                        + "[rejected-by=" + hekate.localNode().address() + ']';
-                }
-            }
-
-            return null;
-        });
-
-        StreamUtils.nullSafe(factory.getAcceptors()).forEach(acceptors::add);
+        this.acceptors = nullSafe(factory.getAcceptors()).collect(toCollection(ArrayList::new));
     }
 
     @Override
@@ -330,22 +310,22 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             guard.becomeInitialized();
 
             ctx = initCtx;
-
             node = initCtx.localNode();
+            localNodeIdRef.set(initCtx.localNode().id());
 
+            // Register cluster listeners.
+            listeners.forEach(listener -> ctx.cluster().addListener(listener));
+            deferredListeners.forEach(deferred -> ctx.cluster().addListener(deferred.listener(), deferred.eventTypes()));
+
+            // Prepare seed node manager.
             seedNodeMgr = new SeedNodeManager(initCtx.clusterName(), seedNodeProvider);
-
-            localNodeIdRef.set(node.id());
 
             // Prepare workers.
             gossipThread = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("ClusterGossip"));
             serviceThread = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("Cluster"));
 
-            // Register listeners from service configuration.
-            initListeners.forEach(listener -> ctx.cluster().addListener(listener));
-
-            // Register deferred listeners.
-            deferredListeners.forEach(deferred -> ctx.cluster().addListener(deferred.listener(), deferred.eventTypes()));
+            // Prepare accept manager.
+            acceptMgr = new ClusterAcceptManager(acceptors, serviceThread);
 
             // Prepare gossip manager.
             gossipMgr = new GossipManager(initCtx.clusterName(), node, failureDetector, speedUpGossipSize, createGossipListener());
@@ -370,9 +350,9 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                 }
             });
 
-            // Prepare metrics callback (optional).
+            // Prepare metrics sink (optional).
             if (metrics != null) {
-                metricsCallback = new ClusterMetricsCallback(metrics);
+                metricsSink = new ClusterMetricsSink(metrics);
             }
 
             // Register JMX beans (optional).
@@ -549,16 +529,16 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
         try {
             if (guard.becomeTerminated()) {
+                acceptMgr.terminate();
+
                 if (seedNodeMgr != null) {
                     waiting.add(seedNodeMgr.stopCleaning());
 
-                    if (node != null) {
-                        InetSocketAddress address = node.socket();
+                    InetSocketAddress localAddress = node.socket();
 
-                        SeedNodeManager localSeedNodeManager = this.seedNodeMgr;
+                    SeedNodeManager localSeedNodeMgr = seedNodeMgr;
 
-                        waiting.add(() -> localSeedNodeManager.stopDiscovery(address));
-                    }
+                    waiting.add(() -> localSeedNodeMgr.stopDiscovery(localAddress));
                 }
 
                 waiting.add(AsyncUtils.shutdown(gossipThread));
@@ -574,17 +554,16 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                     waiting.add(failureDetector::terminate);
                 }
 
-                asyncAcceptors.clear();
-
                 localNodeIdRef.set(null);
 
                 node = null;
                 commMgr = null;
                 gossipMgr = null;
+                acceptMgr = null;
                 serviceThread = null;
                 gossipThread = null;
                 seedNodeMgr = null;
-                metricsCallback = null;
+                metricsSink = null;
             }
         } finally {
             guard.unlockWrite();
@@ -880,8 +859,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
         try {
             if (guard.isInitialized()) {
-                if (metricsCallback != null) {
-                    metricsCallback.onGossipMessage(msg.type());
+                if (metricsSink != null) {
+                    metricsSink.onGossipMessage(msg.type());
                 }
 
                 if (msg instanceof GossipMessage) {
@@ -943,9 +922,30 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
                         if (reject == null) {
                             // Asynchronously validate and process the join request so that the validation would not block gossiping thread.
-                            acceptAndProcessAsync(request);
+                            acceptMgr.check(request.fromNode(), ctx.hekate()).thenAcceptAsync(rejectReason -> {
+                                guard.lockRead();
+
+                                try {
+                                    if (guard.isInitialized()) {
+                                        JoinReply reply;
+
+                                        if (rejectReason.isPresent()) {
+                                            reply = gossipMgr.reject(request, rejectReason.get());
+
+                                        } else {
+                                            reply = gossipMgr.processJoinRequest(request);
+                                        }
+
+                                        send(reply);
+                                    }
+                                } catch (RuntimeException | Error e) {
+                                    log.error("Got an unexpected error while processing a node join request [request={}]", request, e);
+                                } finally {
+                                    guard.unlockRead();
+                                }
+                            }, gossipThread);
                         } else {
-                            // Send an immediate reject.
+                            // Immediate reject.
                             send(reject);
                         }
 
@@ -1103,8 +1103,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                     ClusterTopology topology = event.topology();
 
                                     if (guard.isInitialized()) {
-                                        if (metricsCallback != null) {
-                                            metricsCallback.onTopologyChange(topology);
+                                        if (metricsSink != null) {
+                                            metricsSink.onTopologyChange(topology);
                                         }
 
                                         if (isCoordinator(topology)) {
@@ -1183,8 +1183,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                             if (guard.isInitialized()) {
                                 ClusterTopology topology = event.topology();
 
-                                if (metricsCallback != null) {
-                                    metricsCallback.onTopologyChange(topology);
+                                if (metricsSink != null) {
+                                    metricsSink.onTopologyChange(topology);
                                 }
 
                                 if (isCoordinator(topology)) {
@@ -1284,94 +1284,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                 seedNodeMgr.startCleaning(net, () -> knownAddresses);
             }
         };
-    }
-
-    private void acceptAndProcessAsync(JoinRequest request) {
-        assert request != null : "Request is null";
-
-        ClusterNodeId joining = request.from().id();
-
-        // Check that request validation is not running yet for the joining node.
-        if (!asyncAcceptors.contains(joining)) {
-            // Add concurrent validations guard.
-            asyncAcceptors.add(joining);
-
-            // Run the acceptance check on the system thread.
-            runOnServiceThread(() -> {
-                guard.lockRead();
-
-                try {
-                    if (guard.isInitialized()) {
-                        String rejectReason = acceptJoiningNode(request.fromNode());
-
-                        // Process the results of the acceptance testing on the gossip thread.
-                        runOnGossipThread(() -> {
-                            // Enable subsequent validations of the joining node.
-                            asyncAcceptors.remove(joining);
-
-                            guard.lockRead();
-
-                            try {
-                                if (guard.isInitialized()) {
-                                    JoinReply reply;
-
-                                    if (rejectReason == null) {
-                                        reply = gossipMgr.processJoinRequest(request);
-                                    } else {
-                                        reply = gossipMgr.reject(request, rejectReason);
-
-                                    }
-
-                                    send(reply);
-                                }
-                            } catch (RuntimeException | Error e) {
-                                log.error("Got an unexpected error while processing a node join request [request={}]", request, e);
-                            } finally {
-                                guard.unlockRead();
-                            }
-                        });
-                    } else {
-                        if (DEBUG) {
-                            log.debug("Skipped join request acceptance testing since service is not started [request={}]", request);
-                        }
-                    }
-                } catch (RuntimeException | Error e) {
-                    log.error("Got an unexpected error while processing a node join request [request={}]", request, e);
-                } finally {
-                    guard.unlockRead();
-                }
-            });
-        }
-    }
-
-    private String acceptJoiningNode(ClusterNode newNode) {
-        if (DEBUG) {
-            log.debug("Checking the join acceptors [node={}]", newNode);
-        }
-
-        String rejectReason = null;
-
-        for (ClusterAcceptor acceptor : acceptors) {
-            rejectReason = acceptor.acceptJoin(newNode, ctx.hekate());
-
-            if (rejectReason != null) {
-                if (DEBUG) {
-                    log.debug("Rejected cluster join request [node={}, reason={}, acceptor={}]", newNode, rejectReason, acceptor);
-                }
-
-                break;
-            }
-        }
-
-        if (DEBUG) {
-            if (rejectReason == null) {
-                log.debug("New node accepted [node={}]", newNode);
-            } else {
-                log.debug("New node rejected [node={}, reason={}]", newNode, rejectReason);
-            }
-        }
-
-        return rejectReason;
     }
 
     private void checkSplitBrain(ClusterNode localNode) {

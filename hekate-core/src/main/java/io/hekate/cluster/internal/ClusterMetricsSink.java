@@ -23,14 +23,14 @@ import io.hekate.metrics.local.CounterMetric;
 import io.hekate.metrics.local.LocalMetricsService;
 import java.util.EnumMap;
 
-public class ClusterMetricsCallback {
+public class ClusterMetricsSink {
     private final EnumMap<GossipProtocol.Type, CounterMetric> counters;
 
     private final CounterMetric topologySize;
 
     private final CounterMetric topologyVersion;
 
-    public ClusterMetricsCallback(LocalMetricsService service) {
+    public ClusterMetricsSink(LocalMetricsService service) {
         counters = new EnumMap<>(GossipProtocol.Type.class);
 
         topologySize = service.register(new CounterConfig("hekate.cluster.topology.size"));
