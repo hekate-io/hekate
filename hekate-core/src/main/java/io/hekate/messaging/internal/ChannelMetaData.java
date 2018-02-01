@@ -54,15 +54,9 @@ class ChannelMetaData {
 
     private final String type;
 
-    private final int partitions;
-
-    private final int backupNodes;
-
-    public ChannelMetaData(boolean receiving, String type, int partitions, int backupNodes) {
+    public ChannelMetaData(boolean receiving, String type) {
         this.receiving = receiving;
         this.type = type;
-        this.partitions = partitions;
-        this.backupNodes = backupNodes;
     }
 
     public static ChannelMetaData parse(String str) {
@@ -74,10 +68,8 @@ class ChannelMetaData {
 
         boolean receiving = Boolean.valueOf(tokens[0]);
         String type = tokens[1];
-        int partitions = Integer.parseInt(tokens[2]);
-        int backupNodes = Integer.parseInt(tokens[3]);
 
-        return new ChannelMetaData(receiving, type, partitions, backupNodes);
+        return new ChannelMetaData(receiving, type);
     }
 
     public static String propertyName(String channel) {
@@ -92,19 +84,11 @@ class ChannelMetaData {
         return type;
     }
 
-    public int partitions() {
-        return partitions;
-    }
-
-    public int backupNodes() {
-        return backupNodes;
-    }
-
     public boolean isReceiving() {
         return receiving;
     }
 
     public String toString() {
-        return String.valueOf(receiving) + ':' + type + ':' + partitions + ':' + backupNodes;
+        return String.valueOf(receiving) + ':' + type;
     }
 }

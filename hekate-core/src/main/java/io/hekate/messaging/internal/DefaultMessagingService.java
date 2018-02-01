@@ -148,9 +148,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         gateways.values().forEach(proxy -> {
             ChannelMetaData meta = new ChannelMetaData(
                 proxy.hasReceiver(),
-                proxy.baseType().getName(),
-                proxy.partitions(),
-                proxy.backupNodes()
+                proxy.baseType().getName()
             );
 
             ctx.setStringProperty(ChannelMetaData.propertyName(proxy.name()), meta.toString());
@@ -176,26 +174,6 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                             + "[channel=" + channel
                             + ", joining-type=" + remMeta.type()
                             + ", cluster-type=" + locMeta.type()
-                            + ", rejected-by=" + local.localNode().address()
-                            + ']';
-                    }
-
-                    if (locMeta.partitions() != remMeta.partitions()) {
-                        return "Invalid " + MessagingChannelConfig.class.getSimpleName() + " - "
-                            + "'partitions' value mismatch between the joining node and the cluster "
-                            + "[channel=" + channel
-                            + ", joining-value=" + remMeta.partitions()
-                            + ", cluster-value=" + locMeta.partitions()
-                            + ", rejected-by=" + local.localNode().address()
-                            + ']';
-                    }
-
-                    if (locMeta.backupNodes() != remMeta.backupNodes()) {
-                        return "Invalid " + MessagingChannelConfig.class.getSimpleName() + " - "
-                            + "'backupNodes' value mismatch between the joining node and the cluster "
-                            + "[channel=" + channel
-                            + ", joining-value=" + remMeta.backupNodes()
-                            + ", cluster-value=" + locMeta.backupNodes()
                             + ", rejected-by=" + local.localNode().address()
                             + ']';
                     }
