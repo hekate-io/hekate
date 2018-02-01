@@ -244,23 +244,28 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
     @Test
     public void testAggregate() throws Exception {
-        List<AffinityCollector> collectors = new ArrayList<>();
-        List<TestChannel> receivers = new ArrayList<>();
+        int testNodes = 3;
 
-        for (int i = 0; i < 3; i++) {
+        List<AffinityCollector> collectors = new ArrayList<>(testNodes);
+        List<TestChannel> receivers = new ArrayList<>(testNodes);
+
+        for (int i = 0; i < testNodes; i++) {
             AffinityCollector collector = new AffinityCollector();
 
-            receivers.add(createChannel(c -> c.setReceiver(msg -> {
-                    collector.collect(msg.get());
+            receivers.add(createChannel(c -> {
+                c.setBackupNodes(testNodes - 1);
+                c.setReceiver(msg -> {
+                        collector.collect(msg.get());
 
-                    msg.reply("ok");
-                }
-            )).join());
+                        msg.reply("ok");
+                    }
+                );
+            }).join());
 
             collectors.add(collector);
         }
 
-        TestChannel sender = createChannel().join();
+        TestChannel sender = createChannel(c -> c.withBackupNodes(testNodes - 1)).join();
 
         int partitionSize = 10;
 

@@ -32,6 +32,7 @@ import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.messaging.unicast.SendCallback;
+import io.hekate.partition.Partition;
 import java.util.List;
 
 /**
@@ -226,8 +227,20 @@ import java.util.List;
  * Applications can provide an affinity key to the {@link LoadBalancer} so that it could perform consistent routing based on some
  * application-specific criteria. For example, if the {@link DefaultLoadBalancer} is being used by the messaging channel then it will make
  * sure that all messages with the same affinity key will always be routed to the same cluster node (unless the cluster topology doesn't
- * change) by using the channel's {@link MessagingChannel#partitions() partition mapper}. Custom implementations of the {@link LoadBalancer}
- * interface can use their own algorithms for consistent routing.
+ * change) by using the channel's {@link MessagingChannel#partitions() partition mapper}. Custom implementations of the {@link
+ * LoadBalancer} interface can use their own algorithms for consistent routing.
+ * </p>
+ *
+ * <p>
+ * Affinity key can be specified via the {@link MessagingChannel#withAffinity(Object)} method. This method returns a lightweight wrapper
+ * over the messaging channel instance. Such wrapper will apply the specified affinity key to all messaging operations of that wrapper.
+ * </p>
+ *
+ * <p>
+ * If affinity key is specified for a broadcast operation then messaging channel will use its {@link MessagingChannel#partitions()
+ * partition mapper} to select the target {@link Partition} for that key. Once the partition is selected then all of its
+ * {@link Partition#nodes() nodes} will be used for broadcast (i.e. {@link Partition#primaryNode() primary node} + {@link
+ * Partition#backupNodes() backup nodes}).
  * </p>
  *
  * <h3>Thread affinity</h3>

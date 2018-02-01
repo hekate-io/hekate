@@ -445,7 +445,15 @@ class MessagingContext<T> implements HekateSupport {
 
         checkMessageType(msg);
 
-        List<ClusterNode> nodes = opts.cluster().topology().nodes();
+        List<ClusterNode> nodes;
+
+        if (affinityKey == null) {
+            // Use the whole topology if affinity key is not specified.
+            nodes = opts.cluster().topology().nodes();
+        } else {
+            // Use only nodes that are mapped to the partition.
+            nodes = opts.partitions().map(affinityKey).nodes();
+        }
 
         if (nodes.isEmpty()) {
             callback.onComplete(null, new EmptyAggregateResult<>(msg));
