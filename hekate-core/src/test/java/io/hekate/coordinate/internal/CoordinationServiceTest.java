@@ -425,7 +425,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
     private void doTestCoordinatorLeave(Function<HekateTestNode, Future<?>> stopAction) throws Exception {
         CountDownLatch coordinatorReady = new CountDownLatch(1);
-        CountDownLatch allPrepared = new CountDownLatch(2);
+        CountDownLatch allPrepared = new CountDownLatch(3);
         CountDownLatch proceed = new CountDownLatch(1);
 
         AtomicReference<ClusterNode> coordinatorRef = new AtomicReference<>();
