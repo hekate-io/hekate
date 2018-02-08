@@ -151,10 +151,11 @@ Complete reference guide is coming soon.
  - Added a configuration option for JVM termination in case a node considers itself in Split-brain state
    (see [SplitBrainAction](https://static.javadoc.io/io.hekate/hekate-all/2.1.0/index.html?io/hekate/cluster/split/SplitBrainAction.html)).
  - Optimized timeouts processing in the messaging service (expired messages are ignored when received).
+ - Added [TimerMetric](https://static.javadoc.io/io.hekate/hekate-all/2.1.0/index.html?io/hekate/metrics/local/TimerMetric.html).
 
  Dependency upgrades:
  
- - Upgraded to Netty 4.1.20.Final.
+ - Upgraded to Netty 4.1.21.Final.
  - Upgraded to FST 2.57. 
 
 ### v.2.0.0 (2-Jan-2018)
