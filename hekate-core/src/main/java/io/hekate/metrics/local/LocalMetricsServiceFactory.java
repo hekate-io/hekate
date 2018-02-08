@@ -20,6 +20,7 @@ import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.metrics.local.internal.DefaultLocalMetricsService;
 import io.hekate.util.format.ToString;
+import io.hekate.util.time.SystemTimeSupplier;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,6 +51,8 @@ public class LocalMetricsServiceFactory implements ServiceFactory<LocalMetricsSe
     private List<MetricsConfigProvider> configProviders;
 
     private List<MetricsListener> listeners;
+
+    private SystemTimeSupplier systemTime;
 
     /**
      * Returns the time interval in milliseconds to poll for metric changes and {@link #setListeners(List) listeners} notification (see
@@ -196,6 +199,41 @@ public class LocalMetricsServiceFactory implements ServiceFactory<LocalMetricsSe
         }
 
         listeners.add(listener);
+
+        return this;
+    }
+
+    /**
+     * Returns the system time supplier for time-based metrics (see {@link #setSystemTime(SystemTimeSupplier)}).
+     *
+     * @return System time supplier.
+     */
+    public SystemTimeSupplier getSystemTime() {
+        return systemTime;
+    }
+
+    /**
+     * Returns the system time supplier for time-based metrics.
+     *
+     * <p>
+     * This property is optional and is intended to be used for testing purposes for system time emulation.
+     * </p>
+     *
+     * @param systemTime System time supplier.
+     */
+    public void setSystemTime(SystemTimeSupplier systemTime) {
+        this.systemTime = systemTime;
+    }
+
+    /**
+     * Fluent-style version of {@link #setSystemTime(SystemTimeSupplier)}.
+     *
+     * @param systemTime System time supplier.
+     *
+     * @return This instance.
+     */
+    public LocalMetricsServiceFactory withSystemTime(SystemTimeSupplier systemTime) {
+        setSystemTime(systemTime);
 
         return this;
     }

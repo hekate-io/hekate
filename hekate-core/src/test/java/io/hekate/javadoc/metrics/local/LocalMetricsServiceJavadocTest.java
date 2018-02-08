@@ -25,37 +25,61 @@ import io.hekate.metrics.local.CounterMetric;
 import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.metrics.local.LocalMetricsServiceFactory;
 import io.hekate.metrics.local.ProbeConfig;
+import io.hekate.metrics.local.TimeSpan;
+import io.hekate.metrics.local.TimerConfig;
+import io.hekate.metrics.local.TimerMetric;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
 
 public class LocalMetricsServiceJavadocTest extends HekateNodeTestBase {
     // Start:counter_example
-    public static class ExampleService {
-        private final CounterMetric active;
+    public static class CounterExampleService {
+        private final CounterMetric tasks;
 
-        public ExampleService(Hekate hekate) {
+        public CounterExampleService(Hekate hekate) {
             // Register counter.
-            active = hekate.localMetrics().register(new CounterConfig()
-                .withName("tasks.active")
-                .withTotalName("tasks.total")
+            tasks = hekate.localMetrics().register(new CounterConfig()
+                .withName("task.active")
+                .withTotalName("task.total")
             );
         }
 
         public void processTask(Runnable task) {
             // Increment before starting the task.
-            active.increment();
+            tasks.increment();
 
             try {
                 // Run some long and heavy task.
                 task.run();
             } finally {
                 // Decrement once tasks is completed.
-                active.decrement();
+                tasks.decrement();
             }
         }
     }
     // End:counter_example
+
+    // Start:timer_example
+    public static class TimerExampleService {
+        private final TimerMetric timer;
+
+        public TimerExampleService(Hekate hekate) {
+            // Register timer.
+            timer = hekate.localMetrics().register(new TimerConfig()
+                .withName("task.time")
+                .withRateName("task.rate")
+            );
+        }
+
+        public void processTask(Runnable task) {
+            try (TimeSpan time = timer.start()) {
+                // Run the task.
+                task.run();
+            }
+        }
+    }
+    // End:timer_example
 
     @Test
     public void exampleBootstrap() throws Exception {
@@ -64,9 +88,11 @@ public class LocalMetricsServiceJavadocTest extends HekateNodeTestBase {
         LocalMetricsServiceFactory factory = new LocalMetricsServiceFactory()
             // Set metrics refresh interval to 1 second.
             .withRefreshInterval(1000)
-            // Register some custom counter.
+            // Register counter.
             .withMetric(new CounterConfig("example.counter"))
-            // Register some custom probe.
+            // Register timer.
+            .withMetric(new TimerConfig("example.timer"))
+            // Register probe.
             .withMetric(new ProbeConfig()
                 .withName("cpu.count")
                 .withProbe(() -> Runtime.getRuntime().availableProcessors())
@@ -82,14 +108,22 @@ public class LocalMetricsServiceJavadocTest extends HekateNodeTestBase {
         LocalMetricsService metrics = hekate.localMetrics();
         // End:access
 
-        ExampleService exampleService = new ExampleService(hekate);
+        CounterExampleService counterExampleService = new CounterExampleService(hekate);
+        TimerExampleService timerExampleService = new TimerExampleService(hekate);
 
         for (int i = 0; i < 5; i++) {
-            exampleService.processTask(() -> {
+            counterExampleService.processTask(() -> {
                 // Start:counter_example_usage
-                System.out.println("Active tasks: " + hekate.localMetrics().get("tasks.active"));
-                System.out.println(" Total tasks: " + hekate.localMetrics().get("tasks.total"));
+                System.out.println("Active tasks: " + hekate.localMetrics().get("task.active"));
+                System.out.println(" Total tasks: " + hekate.localMetrics().get("task.total"));
                 // End:counter_example_usage
+            });
+
+            timerExampleService.processTask(() -> {
+                // Start:timer_example_usage
+                System.out.println("Task time: " + hekate.localMetrics().get("task.time"));
+                System.out.println("Task rate: " + hekate.localMetrics().get("task.rate"));
+                // End:timer_example_usage
             });
         }
 
@@ -101,18 +135,23 @@ public class LocalMetricsServiceJavadocTest extends HekateNodeTestBase {
         // End:probe_example
 
         Metric memoryFree = metrics.metric("memory.free");
-        Metric tasksActive = metrics.metric("tasks.active");
-        Metric tasksTotal = metrics.metric("tasks.total");
+        Metric taskActive = metrics.metric("task.active");
+        Metric taskTotal = metrics.metric("task.total");
+        Metric taskTime = metrics.metric("task.time");
+        Metric taskRate = metrics.metric("task.rate");
 
         assertNotNull(memoryFree);
-        assertNotNull(tasksActive);
-        assertNotNull(tasksTotal);
+        assertNotNull(taskActive);
+        assertNotNull(taskTotal);
+        assertNotNull(taskTime);
+        assertNotNull(taskRate);
 
         // Start:listener
+        // Listen for metrics updates.
         hekate.localMetrics().addListener(event -> {
             System.out.println("Free memory: " + event.get("memory.free"));
-            System.out.println("Active tasks: " + event.get("tasks.active"));
-            System.out.println("Total tasks: " + event.get("tasks.total"));
+            System.out.println("Active tasks: " + event.get("task.active"));
+            System.out.println("Total tasks: " + event.get("task.total"));
         });
         // End:listener
 

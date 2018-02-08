@@ -16,8 +16,6 @@
 
 package io.hekate.metrics.local;
 
-import io.hekate.util.format.ToString;
-
 /**
  * Configuration for {@link Probe}.
  *
@@ -118,10 +116,5 @@ public class ProbeConfig extends MetricConfigBase<ProbeConfig> {
         setInitValue(initValue);
 
         return this;
-    }
-
-    @Override
-    public String toString() {
-        return ToString.format(this);
     }
 }

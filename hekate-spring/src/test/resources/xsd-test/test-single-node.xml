@@ -258,6 +258,11 @@
                 </probe>
             </probes>
 
+            <timers>
+                <timer name="timer1" rate-name="timer1.rate"/>
+                <timer name="timer2" rate-name="timer2.rate"/>
+            </timers>
+
             <listeners>
                 <listener>
                     <s:bean class="foo.bar.SomeMetricsListener"/>

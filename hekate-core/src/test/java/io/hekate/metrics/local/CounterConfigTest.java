@@ -16,7 +16,6 @@
 
 package io.hekate.metrics.local;
 
-import io.hekate.HekateTestBase;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -25,25 +24,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-public class CounterConfigTest extends HekateTestBase {
+public class CounterConfigTest extends MetricConfigTestBase {
     private CounterConfig cfg = new CounterConfig();
-
-    @Test
-    public void testName() {
-        assertNull(cfg.getName());
-
-        cfg.setName("test1");
-
-        assertEquals("test1", cfg.getName());
-
-        cfg.setName(null);
-
-        assertNull(cfg.getName());
-
-        assertSame(cfg, cfg.withName("test2"));
-
-        assertEquals("test2", cfg.getName());
-    }
 
     @Test
     public void testTotalName() {
@@ -84,5 +66,10 @@ public class CounterConfigTest extends HekateTestBase {
         cfg.setName(null);
 
         assertNull(cfg.getName());
+    }
+
+    @Override
+    protected MetricConfigBase<?> createConfig() {
+        return new CounterConfig();
     }
 }

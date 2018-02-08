@@ -1476,7 +1476,7 @@
                         <xsd:element name="counter" type="metricCounterType" minOccurs="0" maxOccurs="unbounded">
                             <xsd:annotation>
                                 <xsd:documentation>
-                                    Registers 'io.hekate.metrics.CounterConfig'.
+                                    Registers 'io.hekate.metrics.local.CounterConfig'.
                                 </xsd:documentation>
                             </xsd:annotation>
                         </xsd:element>
@@ -1489,7 +1489,20 @@
                         <xsd:element name="probe" type="metricProbeType" minOccurs="0" maxOccurs="unbounded">
                             <xsd:annotation>
                                 <xsd:documentation>
-                                    Registers 'io.hekate.metrics.ProbeConfig'.
+                                    Registers 'io.hekate.metrics.local.ProbeConfig'.
+                                </xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="timers" minOccurs="0" maxOccurs="1">
+                <xsd:complexType>
+                    <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+                        <xsd:element name="timer" type="metricTimerType" minOccurs="0" maxOccurs="unbounded">
+                            <xsd:annotation>
+                                <xsd:documentation>
+                                    Registers 'io.hekate.metrics.local.TimerConfig'.
                                 </xsd:documentation>
                             </xsd:annotation>
                         </xsd:element>
@@ -1499,7 +1512,7 @@
             <xsd:element name="listeners" minOccurs="0" maxOccurs="1">
                 <xsd:annotation>
                     <xsd:documentation>
-                        See javadoc of 'io.hekate.metrics.MetricsServiceFactory#setListeners(java.util.List)'.
+                        See javadoc of 'io.hekate.metrics.local.LocalMetricsServiceFactory#setListeners(java.util.List)'.
                     </xsd:documentation>
                 </xsd:annotation>
                 <xsd:complexType>
@@ -1525,7 +1538,7 @@
         <xsd:attribute name="refresh-interval-ms" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
-                    See javadoc of 'io.hekate.metrics.MetricsServiceFactory#setRefreshInterval(long)'.
+                    See javadoc of 'io.hekate.metrics.local.LocalMetricsServiceFactory#setRefreshInterval(long)'.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
@@ -1535,21 +1548,21 @@
         <xsd:attribute name="name" type="xsd:string" use="required">
             <xsd:annotation>
                 <xsd:documentation>
-                    See javadoc of 'io.hekate.metrics.CounterConfig#setName(java.lang.String)'.
+                    See javadoc of 'io.hekate.metrics.local.CounterConfig#setName(java.lang.String)'.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
         <xsd:attribute name="total-name" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
-                    See javadoc of 'io.hekate.metrics.CounterConfig#setTotalName(java.lang.String)'.
+                    See javadoc of 'io.hekate.metrics.local.CounterConfig#setTotalName(java.lang.String)'.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
         <xsd:attribute name="auto-reset" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
-                    See javadoc of 'io.hekate.metrics.CounterConfig#setAutoReset(boolean)'.
+                    See javadoc of 'io.hekate.metrics.local.CounterConfig#setAutoReset(boolean)'.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
@@ -1561,19 +1574,36 @@
                 <xsd:attribute name="name" type="xsd:string" use="required">
                     <xsd:annotation>
                         <xsd:documentation>
-                            See javadoc of 'io.hekate.metrics.ProbeConfig#setName(java.lang.String)'.
+                            See javadoc of 'io.hekate.metrics.local.ProbeConfig#setName(java.lang.String)'.
                         </xsd:documentation>
                     </xsd:annotation>
                 </xsd:attribute>
                 <xsd:attribute name="init-value" type="xsd:string">
                     <xsd:annotation>
                         <xsd:documentation>
-                            See javadoc of 'io.hekate.metrics.ProbeConfig#setInitValue(long)'.
+                            See javadoc of 'io.hekate.metrics.local.ProbeConfig#setInitValue(long)'.
                         </xsd:documentation>
                     </xsd:annotation>
                 </xsd:attribute>
             </xsd:extension>
         </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="metricTimerType">
+        <xsd:attribute name="name" type="xsd:string" use="required">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.metrics.local.TimerConfig#setName(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="rate-name" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.metrics.local.TimerConfig#setRateName(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
     </xsd:complexType>
 
     <xsd:complexType name="clusterMetricsServiceType">

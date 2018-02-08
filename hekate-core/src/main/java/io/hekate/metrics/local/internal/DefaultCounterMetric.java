@@ -81,7 +81,7 @@ class DefaultCounterMetric implements CounterMetric {
         return counter.sum();
     }
 
-    public long reset() {
+    public long getAndReset() {
         return counter.sumThenReset();
     }
 

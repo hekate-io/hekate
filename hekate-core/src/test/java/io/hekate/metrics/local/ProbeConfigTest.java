@@ -16,32 +16,14 @@
 
 package io.hekate.metrics.local;
 
-import io.hekate.HekateTestBase;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
-public class ProbeConfigTest extends HekateTestBase {
+public class ProbeConfigTest extends MetricConfigTestBase {
     private ProbeConfig cfg = new ProbeConfig();
-
-    @Test
-    public void testName() {
-        assertNull(cfg.getName());
-
-        cfg.setName("test1");
-
-        assertEquals("test1", cfg.getName());
-
-        cfg.setName(null);
-
-        assertNull(cfg.getName());
-
-        assertSame(cfg, cfg.withName("test2"));
-
-        assertEquals("test2", cfg.getName());
-    }
 
     @Test
     public void testProbe() {
@@ -86,5 +68,10 @@ public class ProbeConfigTest extends HekateTestBase {
         cfg.setName(null);
 
         assertNull(cfg.getName());
+    }
+
+    @Override
+    protected MetricConfigBase<?> createConfig() {
+        return new ProbeConfig();
     }
 }

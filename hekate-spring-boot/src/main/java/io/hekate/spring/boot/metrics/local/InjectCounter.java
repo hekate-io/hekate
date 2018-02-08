@@ -43,7 +43,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
  * 1) Define a bean that will use {@link InjectCounter} annotation to inject {@link CounterMetric} into its field.
  * ${source:metrics/MetricsInjectionJavadocTest.java#counter_bean}
  * 2) Define a Spring Boot application that will provide counter configuration.
- * ${source:metrics/MetricsInjectionJavadocTest.java#app}
+ * ${source:metrics/MetricsInjectionJavadocTest.java#counter_app}
  * </p>
  *
  * @see HekateLocalMetricsServiceConfigurer

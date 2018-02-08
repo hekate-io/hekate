@@ -67,6 +67,8 @@ public class ClusterServiceJavadocTest extends HekateNodeTestBase {
             ClusterService cluster = hekate.cluster();
             // End:get_service
 
+            assertNotNull(cluster);
+
             // Start:cluster_event_listener
             hekate.cluster().addListener(event -> {
                 switch (event.type()) {

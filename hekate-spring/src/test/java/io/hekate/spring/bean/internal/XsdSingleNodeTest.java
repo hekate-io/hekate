@@ -44,6 +44,7 @@ import io.hekate.metrics.Metric;
 import io.hekate.metrics.cluster.ClusterMetricsService;
 import io.hekate.metrics.local.CounterMetric;
 import io.hekate.metrics.local.LocalMetricsService;
+import io.hekate.metrics.local.TimerMetric;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkService;
 import io.hekate.rpc.RpcClientBuilder;
@@ -140,6 +141,10 @@ public class XsdSingleNodeTest extends HekateTestBase {
     @Qualifier("probe1")
     private Metric probe;
 
+    @Autowired
+    @Qualifier("timer1")
+    private TimerMetric timer;
+
     @Test
     public void test() {
         assertNotNull(bootstrap);
@@ -159,6 +164,7 @@ public class XsdSingleNodeTest extends HekateTestBase {
         assertNotNull(lockRegion);
         assertNotNull(lock);
         assertNotNull(counter);
+        assertNotNull(timer);
         assertNotNull(probe);
 
         verifyJmx();

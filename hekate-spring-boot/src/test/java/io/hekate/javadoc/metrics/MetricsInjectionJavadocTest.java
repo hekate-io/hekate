@@ -22,10 +22,13 @@ import io.hekate.cluster.seed.StaticSeedNodeProviderConfig;
 import io.hekate.metrics.Metric;
 import io.hekate.metrics.local.CounterConfig;
 import io.hekate.metrics.local.CounterMetric;
+import io.hekate.metrics.local.TimerConfig;
+import io.hekate.metrics.local.TimerMetric;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.spring.boot.EnableHekate;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
 import io.hekate.spring.boot.metrics.local.InjectCounter;
+import io.hekate.spring.boot.metrics.local.InjectTimer;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import org.junit.Test;
@@ -56,7 +59,17 @@ public class MetricsInjectionJavadocTest extends HekateAutoConfigurerTestBase {
     }
     // End:metric_bean
 
-    // Start:app
+    // Start:timer_bean
+    @Component
+    public static class AppBean {
+        @InjectTimer("my-timer")
+        private TimerMetric timer;
+
+        // ... other fields and methods...
+    }
+    // End:timer_bean
+
+    // Start:counter_app
     @EnableHekate
     @SpringBootApplication
     public static class MyApp {
@@ -70,7 +83,22 @@ public class MetricsInjectionJavadocTest extends HekateAutoConfigurerTestBase {
 
         // ... other beans and methods...
     }
-    // End:app
+    // End:counter_app
+
+    // Start:timer_app
+    @EnableHekate
+    @SpringBootApplication
+    public static class App {
+        @Bean
+        public TimerConfig timerMetricConfig() {
+            return new TimerConfig()
+                .withName("my-timer")
+                .withRateName("my-timer.rate");
+        }
+
+        // ... other beans and methods...
+    }
+    // End:timer_app
 
     public static class FasterMyApp extends MyApp {
         @Bean
@@ -82,10 +110,11 @@ public class MetricsInjectionJavadocTest extends HekateAutoConfigurerTestBase {
     }
 
     @Test
-    public void testChannel() {
+    public void testMetrics() {
         registerAndRefresh(FasterMyApp.class);
 
         assertNotNull(get(MyBean.class).counter);
         assertNotNull(get(SomeBean.class).metric);
+        assertNotNull(get(AppBean.class).timer);
     }
 }

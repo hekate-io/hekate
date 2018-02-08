@@ -44,11 +44,14 @@ import io.hekate.metrics.local.MetricsConfigProvider;
 import io.hekate.metrics.local.MetricsListener;
 import io.hekate.metrics.local.MetricsSnapshot;
 import io.hekate.metrics.local.ProbeConfig;
+import io.hekate.metrics.local.TimerConfig;
+import io.hekate.metrics.local.TimerMetric;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import io.hekate.util.time.SystemTimeSupplier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -73,6 +76,8 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
 
     private static final ConfigCheck PROBE_CHECK = ConfigCheck.get(ProbeConfig.class);
 
+    private static final ConfigCheck TIMER_CHECK = ConfigCheck.get(TimerConfig.class);
+
     private final long refreshInterval;
 
     @ToStringIgnore
@@ -85,16 +90,22 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
     private final StateGuard guard = new StateGuard(LocalMetricsService.class);
 
     @ToStringIgnore
-    private final Map<String, Metric> allMetrics = new HashMap<>();
-
-    @ToStringIgnore
     private final Map<String, DefaultCounterMetric> counters = new HashMap<>();
 
     @ToStringIgnore
     private final Map<String, DefaultProbeMetric> probes = new HashMap<>();
 
     @ToStringIgnore
+    private final Map<String, DefaultTimeMetric> timers = new HashMap<>();
+
+    @ToStringIgnore
+    private final Map<String, Metric> allMetrics = new HashMap<>();
+
+    @ToStringIgnore
     private final List<MetricsListener> listeners = new CopyOnWriteArrayList<>();
+
+    @ToStringIgnore
+    private final SystemTimeSupplier time;
 
     @ToStringIgnore
     private JmxService jmx;
@@ -102,6 +113,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
     @ToStringIgnore
     private ScheduledExecutorService worker;
 
+    @ToStringIgnore
     private volatile MetricsSnapshot snapshot = emptySnapshot();
 
     public DefaultLocalMetricsService(LocalMetricsServiceFactory factory) {
@@ -109,7 +121,8 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
 
         ConfigCheck.get(LocalMetricsServiceFactory.class).positive(factory.getRefreshInterval(), "refresh interval");
 
-        refreshInterval = factory.getRefreshInterval();
+        this.refreshInterval = factory.getRefreshInterval();
+        this.time = factory.getSystemTime() != null ? factory.getSystemTime() : SystemTimeSupplier.DEFAULT;
 
         // Register JVM metrics.
         StreamUtils.nullSafe(new JvmMetricsProvider().configureMetrics()).forEach(metricsConfig::add);
@@ -203,6 +216,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
                 allMetrics.clear();
                 counters.clear();
                 probes.clear();
+                timers.clear();
                 listeners.clear();
 
                 snapshot = emptySnapshot();
@@ -244,6 +258,27 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
 
         // Register if counter doesn't exist.
         return doRegisterCounter(name, cfg);
+    }
+
+    @Override
+    public TimerMetric register(TimerConfig cfg) {
+        String name = checkTimerConfig(cfg);
+
+        // Check for an existing timer.
+        guard.lockReadWithStateCheck();
+
+        try {
+            TimerMetric existing = timers.get(name);
+
+            if (existing != null) {
+                return existing;
+            }
+        } finally {
+            guard.unlockRead();
+        }
+
+        // Register if timer doesn't exist.
+        return doRegisterTimer(name, cfg);
     }
 
     @Override
@@ -299,6 +334,25 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
     }
 
     @Override
+    public TimerMetric timer(String name) {
+        String safeName = ArgAssert.notEmpty(name, "timer name");
+
+        guard.lockReadWithStateCheck();
+
+        try {
+            TimerMetric timer = timers.get(safeName);
+
+            if (timer != null) {
+                return timer;
+            }
+        } finally {
+            guard.unlockRead();
+        }
+
+        return register(new TimerConfig(safeName));
+    }
+
+    @Override
     public Map<String, Metric> allMetrics() {
         guard.lockReadWithStateCheck();
 
@@ -342,6 +396,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
     private void initializeMetrics() {
         Map<String, CounterConfig> countersCfg = new HashMap<>();
         Map<String, ProbeConfig> probesCfg = new HashMap<>();
+        Map<String, TimerConfig> timersCfg = new HashMap<>();
 
         metricsConfig.forEach(cfg -> {
             if (cfg instanceof CounterConfig) {
@@ -384,6 +439,33 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
                 } else {
                     oldCfg.setInitValue(Math.max(oldCfg.getInitValue(), newCfg.getInitValue()));
                 }
+            } else if (cfg instanceof TimerConfig) {
+                TimerConfig newCfg = (TimerConfig)cfg;
+
+                String name = checkTimerConfig(newCfg);
+
+                TimerConfig oldCfg = timersCfg.get(name);
+
+                if (oldCfg == null) {
+                    timersCfg.put(name, newCfg);
+                } else {
+                    String oldRate = Utils.nullOrTrim(oldCfg.getRateName());
+                    String newRate = Utils.nullOrTrim(newCfg.getRateName());
+
+                    if (newRate != null) {
+                        if (oldRate == null) {
+                            oldCfg.setRateName(newRate);
+                        } else {
+                            TIMER_CHECK.isTrue(Objects.equals(oldRate, newRate),
+                                "can't merge configurations of a timer metric with different 'rate' names "
+                                    + "[timer=" + name
+                                    + ", rate-name-1=" + oldRate
+                                    + ", rate-name-2=" + newRate
+                                    + ']');
+                        }
+                    }
+                }
+
             } else {
                 throw new IllegalArgumentException("Unsupported metric type: " + cfg);
             }
@@ -391,6 +473,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
 
         countersCfg.forEach(this::doRegisterCounter);
         probesCfg.forEach(this::doRegisterProbe);
+        timersCfg.forEach(this::doRegisterTimer);
     }
 
     private Metric doRegisterProbe(String name, ProbeConfig cfg) {
@@ -403,7 +486,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
                 log.debug("Registering probe [config={}]", cfg);
             }
 
-            PROBE_CHECK.unique(name, allMetrics.keySet(), "name");
+            PROBE_CHECK.unique(name, allMetrics.keySet(), "metric name");
 
             DefaultProbeMetric metricProbe = new DefaultProbeMetric(name, cfg.getProbe(), cfg.getInitValue());
 
@@ -444,7 +527,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
                 // Try register 'total' metric for this counter (if required).
                 CounterMetric total = null;
 
-                String totalName = totalName(cfg);
+                String totalName = Utils.nullOrTrim(cfg.getTotalName());
 
                 if (totalName != null) {
                     COUNTER_CHECK.unique(totalName, allMetrics.keySet(), "metric name");
@@ -488,6 +571,62 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
         }
     }
 
+    private TimerMetric doRegisterTimer(String name, TimerConfig cfg) {
+        assert cfg != null : "Timer configuration is null.";
+
+        guard.lockWriteWithStateCheck();
+
+        try {
+            // Double check that timer wasn't registered while we were waiting for the write lock.
+            TimerMetric existing = timers.get(name);
+
+            if (existing == null) {
+                if (DEBUG) {
+                    log.debug("Registering timer [config={}]", cfg);
+                }
+
+                String rateName = Utils.nullOrTrim(cfg.getRateName());
+
+                TIMER_CHECK.unique(name, allMetrics.keySet(), "metric name");
+
+                if (rateName != null) {
+                    TIMER_CHECK.unique(rateName, allMetrics.keySet(), "metric name");
+                }
+
+                // Register timer.
+                DefaultTimeMetric timer = new DefaultTimeMetric(name, time, rateName);
+
+                timers.put(timer.name(), timer);
+
+                allMetrics.put(timer.name(), timer);
+
+                // Register 'rate' metric for this timer (if required).
+                if (timer.hasRate()) {
+                    allMetrics.put(timer.rate().name(), timer.rate());
+                }
+
+                // Register JMX beans for this timer (optional).
+                if (jmx != null) {
+                    try {
+                        jmx.register(new DefaultMetricJmx(timer.name(), this), timer.name());
+
+                        if (timer.hasRate()) {
+                            jmx.register(new DefaultMetricJmx(timer.rate().name(), this), timer.rate().name());
+                        }
+                    } catch (JmxServiceException e) {
+                        throw TIMER_CHECK.fail(e);
+                    }
+                }
+
+                return timer;
+            } else {
+                return existing;
+            }
+        } finally {
+            guard.unlockWrite();
+        }
+    }
+
     // Package level for testing purposes.
     void updateMetrics() {
         DefaultMetricsUpdateEvent event;
@@ -515,22 +654,34 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
                 });
 
                 // Update counters.
-                counters.values().forEach(cnt -> {
+                counters.forEach((name, counter) -> {
                     long val;
 
-                    if (cnt.isAutoReset()) {
-                        val = cnt.reset();
+                    if (counter.isAutoReset()) {
+                        val = counter.getAndReset();
                     } else {
-                        val = cnt.value();
+                        val = counter.value();
                     }
 
-                    metrics.put(cnt.name(), new MetricValue(cnt.name(), val));
+                    metrics.put(name, new MetricValue(name, val));
+                });
+
+                // Update timers.
+                timers.forEach((name, timer) -> {
+                    DefaultTimeMetric.Aggregate time = timer.aggregateAndReset();
+
+                    metrics.put(name, new MetricValue(name, time.avgTime()));
+
+                    if (timer.hasRate()) {
+                        metrics.put(timer.rate().name(), new MetricValue(timer.rate().name(), time.rate()));
+                    }
                 });
 
                 // Collect other (artificial) metrics.
                 allMetrics.forEach((name, metric) -> {
+                    // TODO: Optimize (we are re-checking more existing values than we are actually adding).
                     if (!metrics.containsKey(name)) {
-                        metrics.put(name, new MetricValue(metric.name(), metric.value()));
+                        metrics.put(name, new MetricValue(name, metric.value()));
                     }
                 });
 
@@ -576,8 +727,13 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
         return cfg.getName().trim();
     }
 
-    private String totalName(CounterConfig cfg) {
-        return cfg.getTotalName() != null ? cfg.getTotalName().trim() : null;
+    private String checkTimerConfig(TimerConfig cfg) {
+        COUNTER_CHECK.notNull(cfg, "configuration");
+        COUNTER_CHECK.notEmpty(cfg.getName(), "name");
+        COUNTER_CHECK.validSysName(cfg.getName(), "name");
+        COUNTER_CHECK.validSysName(cfg.getRateName(), "rate name");
+
+        return cfg.getName().trim();
     }
 
     private DefaultMetricsUpdateEvent emptySnapshot() {

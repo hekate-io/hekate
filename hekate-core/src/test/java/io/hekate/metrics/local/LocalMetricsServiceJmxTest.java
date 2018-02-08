@@ -14,18 +14,14 @@
  * under the License.
  */
 
-package io.hekate.metrics;
+package io.hekate.metrics.local;
 
 import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxServiceFactory;
-import io.hekate.metrics.local.CounterConfig;
-import io.hekate.metrics.local.CounterMetric;
-import io.hekate.metrics.local.LocalMetricsServiceFactory;
-import io.hekate.metrics.local.LocalMetricsServiceJmx;
-import io.hekate.metrics.local.ProbeConfig;
+import io.hekate.metrics.MetricJmx;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.management.ObjectName;
 import org.junit.Test;
@@ -50,6 +46,10 @@ public class LocalMetricsServiceJmxTest extends HekateNodeTestBase {
                 metrics.withMetric(new ProbeConfig()
                     .withName("pre-p")
                     .withProbe(preProbe::get)
+                );
+                metrics.withMetric(new TimerConfig()
+                    .withName("pre-t")
+                    .withRateName("pre-t.rate")
                 );
             });
         }).join();
@@ -76,6 +76,11 @@ public class LocalMetricsServiceJmxTest extends HekateNodeTestBase {
                 .withProbe(probe::get)
             );
 
+            node.localMetrics().register(new TimerConfig()
+                .withName("t")
+                .withRateName("t.rate")
+            );
+
             CounterMetric preCounter = node.localMetrics().counter("pre-c");
             CounterMetric counter = node.localMetrics().counter("c");
 
@@ -85,10 +90,18 @@ public class LocalMetricsServiceJmxTest extends HekateNodeTestBase {
             ObjectName jmxPreCounter = jmx.nameFor(MetricJmx.class, "pre-c");
             ObjectName jmxPreCounterTot = jmx.nameFor(MetricJmx.class, "pre-c.total");
             ObjectName jmxPreProbe = jmx.nameFor(MetricJmx.class, "pre-p");
+            ObjectName jmxPreTimer = jmx.nameFor(MetricJmx.class, "pre-t");
+            ObjectName jmxPreTimerRate = jmx.nameFor(MetricJmx.class, "pre-t.rate");
 
             ObjectName jmxCounter = jmx.nameFor(MetricJmx.class, "c");
             ObjectName jmxCounterTot = jmx.nameFor(MetricJmx.class, "c.total");
             ObjectName jmxProbe = jmx.nameFor(MetricJmx.class, "p");
+
+            assertEquals("pre-c", jmxAttribute(jmxPreCounter, "Name", node));
+            assertEquals("pre-c.total", jmxAttribute(jmxPreCounterTot, "Name", node));
+            assertEquals("pre-p", jmxAttribute(jmxPreProbe, "Name", node));
+            assertEquals("pre-t", jmxAttribute(jmxPreTimer, "Name", node));
+            assertEquals("pre-t.rate", jmxAttribute(jmxPreTimerRate, "Name", node));
 
             preCounter.increment();
             preProbe.incrementAndGet();

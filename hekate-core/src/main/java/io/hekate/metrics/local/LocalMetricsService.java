@@ -88,9 +88,12 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
  *
  * <p>
  * Counters can be registered within the {@link LocalMetricsService} either at
- * {@link LocalMetricsServiceFactory#withMetric(MetricConfigBase)} configuration time} or dynamically at {@link
- * LocalMetricsService#register(CounterConfig) runtime}. Each counter starts with zero value. Configuration of each counter is
- * represented by the {@link CounterConfig} class with the following key properties:
+ * {@link LocalMetricsServiceFactory#withMetric(MetricConfigBase) configuration time} or {@link LocalMetricsService#register(CounterConfig)
+ * dynamically} at runtime. Once registered they can be accessed via the {@link LocalMetricsService#counter(String)} method.
+ * </p>
+ *
+ * <p>
+ * Configuration of each counter is represented by the {@link CounterConfig} class with the following key properties:
  * </p>
  * <ul>
  * <li>{@link CounterConfig#setName(String) Metric name} - unique name of the counter;</li>
@@ -99,11 +102,11 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
  * </ul>
  *
  * <p>
- * For information about all available configuration options please see the documentation of {@link CounterConfig} class.
+ * For more information about configuration options please see the documentation of {@link CounterConfig} class.
  * </p>
  *
  * <p>
- * The code example below illustrates the basic usage of counter for tracking tasks execution metrics in some imaginary service:
+ * The code example below illustrates the basic usage of counter for tracking task executions in some imaginary service:
  * ${source: metrics/local/LocalMetricsServiceJavadocTest.java#counter_example}
  * </p>
  * <p>
@@ -118,19 +121,22 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
  * </p>
  *
  * <p>
- * Probes can be registered within the {@link LocalMetricsService} either at {@link LocalMetricsServiceFactory#withMetric(MetricConfigBase)}
- * configuration time} or dynamically at {@link LocalMetricsService#register(ProbeConfig) runtime}. Configuration of each probe
- * is represented by the {@link ProbeConfig} class with the following key properties:
+ * Probes can be registered within the {@link LocalMetricsService} either at {@link LocalMetricsServiceFactory#withMetric(MetricConfigBase)
+ * configuration time} or dynamically at {@link LocalMetricsService#register(ProbeConfig) runtime}.
+ * </p>
+ *
+ * <p>
+ * Configuration of each probe is represented by the {@link ProbeConfig} class with the following key properties:
  * </p>
  * <ul>
  * <li>{@link ProbeConfig#setName(String) Metric name} - unique name of the probe;</li>
- * <li>{@link ProbeConfig#setInitValue(long) Initial value} - initial value that the probe should start with;</li>
  * <li>{@link ProbeConfig#setProbe(Probe) Probe} - implementation of {@link Probe} interface that is responsible for
  * obtaining the probe value from the third-party source;</li>
+ * <li>{@link ProbeConfig#setInitValue(long) Initial value} - (optional) initial value that the probe should start with;</li>
  * </ul>
  *
  * <p>
- * For information about all available configuration options please see the documentation of {@link ProbeConfig} class.
+ * For more information about configuration options please see the documentation of {@link ProbeConfig} class.
  * </p>
  *
  * <p>
@@ -139,8 +145,43 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
  * </p>
  *
  * <p>
- * The code example below illustrates the basic implementation of a probe:
+ * The code example below illustrates the basic implementation of the {@link Probe} interface:
  * ${source: metrics/local/LocalMetricsServiceJavadocTest.java#probe_example}
+ * </p>
+ *
+ * <h2>Timers</h2>
+ * <p>
+ * Timers measure the amount of time (in nanoseconds) it takes to process an arbitrary operation and can optionally provide a
+ * {@link TimerConfig#setRateName(String) rate} of that operation per {@link LocalMetricsServiceFactory#setRefreshInterval(long) refresh
+ * interval}.
+ * </p>
+ *
+ * <p>
+ * Timers can be registered within the {@link LocalMetricsService} either {@link LocalMetricsServiceFactory#withMetric(MetricConfigBase)
+ * statically} or {@link LocalMetricsService#register(TimerConfig) dynamically}. Once registered they can be accessed via
+ * the {@link LocalMetricsService#timer(String)} method.
+ * </p>
+ *
+ * <p>
+ * Configuration of each timer is represented by the {@link TimerConfig} class with the following key properties:
+ * </p>
+ * <ul>
+ * <li>{@link TimerConfig#setName(String) Timer metric name} - unique name of the timer;</li>
+ * <li>{@link TimerConfig#setRateName(String) Rate metric name} - (optional) name of a metric that will hold the rate value of this
+ * timer;</li>
+ * </ul>
+ *
+ * <p>
+ * For more information about configuration options please see the documentation of {@link TimerConfig} class.
+ * </p>
+ *
+ * <p>
+ * The following code example shows the basic use of a timer to track the time/rate of execution in some imaginary service:
+ * ${source: metrics/local/LocalMetricsServiceJavadocTest.java#timer_example}
+ * </p>
+ * <p>
+ * ... and access those values in some other components of the program:
+ * ${source: metrics/local/LocalMetricsServiceJavadocTest.java#timer_example_usage}
  * </p>
  *
  * <h2>Accessing metrics</h2>
@@ -191,7 +232,7 @@ public interface LocalMetricsService extends Service, MetricsSource {
 
     /**
      * Registers a new counter with the specified configuration or returns an existing one if counter with the same name already exists.
-     * If there is another metric of other than {@link CounterMetric counter} type then an error will be thrown.
+     * If there is another metric of a different type then an error will be thrown.
      *
      * @param config Counter configuration.
      *
@@ -200,8 +241,18 @@ public interface LocalMetricsService extends Service, MetricsSource {
     CounterMetric register(CounterConfig config);
 
     /**
-     * Registers a probe with the specified configuration. If there is another metric with the same {@link
-     * ProbeConfig#setName(String) name} then an error will be thrown.
+     * Registers a new timer with the specified configuration or returns an existing one if timer with the same name already exists.
+     * If there is another metric of a different type then an error will be thrown.
+     *
+     * @param config Timer configuration.
+     *
+     * @return Timer.
+     */
+    TimerMetric register(TimerConfig config);
+
+    /**
+     * Registers a probe with the specified configuration.
+     * If there is another metric with the same {@link  ProbeConfig#setName(String) name} then an error will be thrown.
      *
      * @param config Probe configuration.
      *
@@ -213,11 +264,21 @@ public interface LocalMetricsService extends Service, MetricsSource {
      * Returns a counter for the specified name or register a new counter with the default {@link CounterConfig configuration} if there is
      * no such counter.
      *
-     * @param name Name of the counter (see {@link CounterConfig#setName(String)}).
+     * @param name Counter name (see {@link CounterConfig#setName(String)}).
      *
      * @return Counter.
      */
     CounterMetric counter(String name);
+
+    /**
+     * Returns a timer for the specified name or register a new timer with the default {@link TimerConfig configuration} if there is
+     * no such timer.
+     *
+     * @param name Timer name (see {@link TimerConfig#setName(String)}).
+     *
+     * @return Timer.
+     */
+    TimerMetric timer(String name);
 
     /**
      * Registers the specified listener.

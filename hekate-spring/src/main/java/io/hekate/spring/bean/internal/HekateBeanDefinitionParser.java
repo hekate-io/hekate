@@ -50,6 +50,7 @@ import io.hekate.metrics.cluster.ClusterMetricsServiceFactory;
 import io.hekate.metrics.local.CounterConfig;
 import io.hekate.metrics.local.LocalMetricsServiceFactory;
 import io.hekate.metrics.local.ProbeConfig;
+import io.hekate.metrics.local.TimerConfig;
 import io.hekate.network.NetworkConnectorConfig;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.rpc.RpcClientConfig;
@@ -69,6 +70,7 @@ import io.hekate.spring.bean.metrics.ClusterMetricsServiceBean;
 import io.hekate.spring.bean.metrics.CounterMetricBean;
 import io.hekate.spring.bean.metrics.LocalMetricsServiceBean;
 import io.hekate.spring.bean.metrics.MetricBean;
+import io.hekate.spring.bean.metrics.TimerMetricBean;
 import io.hekate.spring.bean.network.NetworkConnectorBean;
 import io.hekate.spring.bean.network.NetworkServiceBean;
 import io.hekate.spring.bean.rpc.RpcClientBean;
@@ -1007,6 +1009,25 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                     setProperty(probeBean, probeEl, "name", "name");
 
                     deferredBaseBeans.put(probeBean, name);
+                }
+            });
+
+            subElements(metricsEl, "timers", "timer").forEach(timerEl -> {
+                BeanDefinitionBuilder timer = newBean(TimerConfig.class, timerEl);
+
+                setProperty(timer, timerEl, "name", "name");
+                setProperty(timer, timerEl, "rateName", "rate-name");
+
+                allMetrics.add(registerInnerBean(timer, ctx));
+
+                String name = timerEl.getAttribute("name");
+
+                if (!name.isEmpty()) {
+                    BeanDefinitionBuilder timerBean = newLazyBean(TimerMetricBean.class, metricsEl);
+
+                    setProperty(timerBean, timerEl, "name", "name");
+
+                    deferredBaseBeans.put(timerBean, name);
                 }
             });
 

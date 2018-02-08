@@ -16,9 +16,9 @@
 
 package io.hekate.spring.boot.metrics.local;
 
-import io.hekate.metrics.Metric;
 import io.hekate.metrics.local.LocalMetricsService;
-import io.hekate.metrics.local.MetricConfigBase;
+import io.hekate.metrics.local.TimerConfig;
+import io.hekate.metrics.local.TimerMetric;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -28,11 +28,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
- * Provides support for {@link Metric}s autowiring.
+ * Provides support for {@link TimerMetric}s autowiring.
  *
  * <p>
  * This annotation can be placed on any {@link Autowired autowire}-capable elements (fields, properties, parameters, etc) of application
- * beans in order to inject {@link Metric} by its {@link MetricConfigBase#setName(String) name}.
+ * beans in order to inject {@link TimerMetric} by its {@link TimerConfig#setName(String) name}.
+ * </p>
+ *
+ * <p>
+ * Below is the example of how this annotation can be used.
+ * </p>
+ *
+ * <p>
+ * 1) Define a bean that will use {@link InjectTimer} annotation to inject {@link TimerMetric} into its field.
+ * ${source:metrics/MetricsInjectionJavadocTest.java#timer_bean}
+ * 2) Define a Spring Boot application that will provide timer configuration.
+ * ${source:metrics/MetricsInjectionJavadocTest.java#timer_app}
  * </p>
  *
  * @see HekateLocalMetricsServiceConfigurer
@@ -42,12 +53,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
-public @interface InjectMetric {
+public @interface InjectTimer {
     /**
-     * Specifies the {@link MetricConfigBase#setName(String) name} of a {@link Metric} that should be injected (see {@link
-     * LocalMetricsService#metric(String)}).
+     * Specifies the {@link TimerConfig#setName(String) name} of a {@link TimerConfig} that should be injected (see {@link
+     * LocalMetricsService#timer(String)}).
      *
-     * @return Name of a {@link Metric}.
+     * @return Name of a {@link TimerConfig}.
      */
     String value();
 }

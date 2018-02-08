@@ -23,9 +23,11 @@ import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.metrics.local.LocalMetricsServiceFactory;
 import io.hekate.metrics.local.MetricConfigBase;
 import io.hekate.metrics.local.MetricsListener;
+import io.hekate.metrics.local.TimerMetric;
 import io.hekate.spring.bean.metrics.CounterMetricBean;
 import io.hekate.spring.bean.metrics.LocalMetricsServiceBean;
 import io.hekate.spring.bean.metrics.MetricBean;
+import io.hekate.spring.bean.metrics.TimerMetricBean;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
 import io.hekate.spring.boot.HekateConfigurer;
 import io.hekate.spring.boot.internal.AnnotationInjectorBase;
@@ -98,6 +100,29 @@ public class HekateLocalMetricsServiceConfigurer {
 
             if (!registry.containsBeanDefinition(name)) {
                 AbstractBeanDefinition def = BeanDefinitionBuilder.rootBeanDefinition(CounterMetricBean.class)
+                    .setLazyInit(true)
+                    .addPropertyValue("name", annotation.value())
+                    .getBeanDefinition();
+
+                def.addQualifier(new AutowireCandidateQualifier(annotation.annotationType(), annotation.value()));
+
+                registry.registerBeanDefinition(name, def);
+            }
+        }
+    }
+
+    @Component
+    static class TimerInjector extends AnnotationInjectorBase<InjectTimer> {
+        public TimerInjector() {
+            super(InjectTimer.class, TimerMetric.class);
+        }
+
+        @Override
+        protected void registerBeans(InjectTimer annotation, ResolvableType targetType, BeanDefinitionRegistry registry) {
+            String name = TimerMetricBean.class.getName() + "-" + annotation.value();
+
+            if (!registry.containsBeanDefinition(name)) {
+                AbstractBeanDefinition def = BeanDefinitionBuilder.rootBeanDefinition(TimerMetricBean.class)
                     .setLazyInit(true)
                     .addPropertyValue("name", annotation.value())
                     .getBeanDefinition();

@@ -16,6 +16,8 @@
 
 package io.hekate.metrics.local;
 
+import io.hekate.util.format.ToString;
+
 /**
  * Abstract base class for metric configurations.
  *
@@ -54,5 +56,10 @@ public abstract class MetricConfigBase<T extends MetricConfigBase<T>> {
         setName(name);
 
         return (T)this;
+    }
+
+    @Override
+    public String toString() {
+        return ToString.format(this);
     }
 }

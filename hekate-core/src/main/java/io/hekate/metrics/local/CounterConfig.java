@@ -16,13 +16,11 @@
 
 package io.hekate.metrics.local;
 
-import io.hekate.util.format.ToString;
-
 /**
  * Configuration for {@link CounterMetric}.
  *
  * <p>
- * Fore more details about metrics and counters please see the documentation of {@link LocalMetricsService}.
+ * Fore more details about counters and other metrics please see the documentation of {@link LocalMetricsService}.
  * </p>
  *
  * @see LocalMetricsServiceFactory#withMetric(MetricConfigBase)
@@ -41,7 +39,7 @@ public class CounterConfig extends MetricConfigBase<CounterConfig> {
     }
 
     /**
-     * Constructs new instance with the specified metric name.
+     * Constructs new instance with the specified name.
      *
      * @param name Name of this counter (see {@link #setName(String)}).
      */
@@ -131,10 +129,5 @@ public class CounterConfig extends MetricConfigBase<CounterConfig> {
         setTotalName(totalName);
 
         return this;
-    }
-
-    @Override
-    public String toString() {
-        return ToString.format(this);
     }
 }

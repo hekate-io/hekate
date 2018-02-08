@@ -18,6 +18,8 @@ package io.hekate.metrics.local;
 
 import io.hekate.HekateTestBase;
 import io.hekate.core.HekateException;
+import io.hekate.util.format.ToString;
+import io.hekate.util.time.SystemTimeSupplier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -134,5 +136,29 @@ public class LocalMetricsServiceFactoryTest extends HekateTestBase {
 
         assertEquals(1, factory.getListeners().size());
         assertTrue(factory.getListeners().contains(l1));
+    }
+
+    @Test
+    public void testSystemTime() {
+        assertNull(factory.getSystemTime());
+
+        SystemTimeSupplier time = () -> 0;
+
+        factory.setSystemTime(time);
+
+        assertSame(time, factory.getSystemTime());
+
+        factory.setSystemTime(null);
+
+        assertNull(factory.getSystemTime());
+
+        assertSame(factory, factory.withSystemTime(time));
+
+        assertSame(time, factory.getSystemTime());
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals(ToString.format(factory), factory.toString());
     }
 }
