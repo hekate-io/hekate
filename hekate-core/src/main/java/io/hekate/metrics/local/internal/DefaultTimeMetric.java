@@ -71,10 +71,12 @@ class DefaultTimeMetric implements TimerMetric {
         this.count = new DefaultCounterMetric(rateName == null ? name + ".rate" : rateName, false);
     }
 
+    @Override
     public boolean hasRate() {
         return rateName != null;
     }
 
+    @Override
     public Metric rate() {
         return count;
     }

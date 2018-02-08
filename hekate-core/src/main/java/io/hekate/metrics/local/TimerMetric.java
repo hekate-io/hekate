@@ -44,6 +44,25 @@ public interface TimerMetric extends Metric {
     TimeSpan start();
 
     /**
+     * Returns {@code true} if this timer has a {@link TimerConfig#setRateName(String) rate metric}.
+     *
+     * @return {@code true} if this timer has a {@link TimerConfig#setRateName(String) rate metric}.
+     *
+     * @see #rate()
+     */
+    boolean hasRate();
+
+    /**
+     * Returns the {@link TimerConfig#setRateName(String) rate metric} of this timer or {@code null} if this timer doesn't have a
+     * rate metric.
+     *
+     * @return Metric or {@code null}.
+     *
+     * @see #hasRate()
+     */
+    Metric rate();
+
+    /**
      * Measures the duration of the specified {@link Callable} task.
      *
      * @param task Task to measure.

@@ -16,6 +16,8 @@
 
 package io.hekate.metrics.local.internal;
 
+import io.hekate.core.HekateConfigurationException;
+import io.hekate.core.HekateFutureException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.metrics.local.TimeSpan;
 import io.hekate.metrics.local.TimerConfig;
@@ -25,7 +27,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 import org.junit.Test;
 
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class LocalMetricsServiceTimerTest extends LocalMetricsServiceTestBase {
@@ -45,7 +50,53 @@ public class LocalMetricsServiceTimerTest extends LocalMetricsServiceTestBase {
     private SystemTimeMock time = new SystemTimeMock();
 
     @Test
-    public void test() throws Exception {
+    public void testAutoRegister() throws Exception {
+        TimerMetric timer = metrics.timer("t");
+
+        assertNotNull(timer);
+
+        assertTrue(metrics.allMetrics().containsKey("t"));
+        assertEquals("t", metrics.metric("t").name());
+    }
+
+    @Test
+    public void testMergeConfigurations() throws Exception {
+        restart(c -> {
+            c.withRefreshInterval(Long.MAX_VALUE);
+            c.withMetric(new TimerConfig("t0"));
+            c.withMetric(new TimerConfig("t0").withRateName("t0.rate"));
+            c.withConfigProvider(() -> singletonList(
+                new TimerConfig("t0")
+            ));
+        });
+
+        assertTrue(metrics.allMetrics().containsKey("t0"));
+
+        TimerMetric t0 = metrics.timer("t0");
+
+        assertSame(t0, metrics.allMetrics().get("t0"));
+
+        assertTrue(t0.hasRate());
+        assertEquals("t0", t0.name());
+        assertEquals("t0.rate", t0.rate().name());
+    }
+
+    @Test
+    public void testCanNotMergeRateNames() throws Exception {
+        try {
+            restart(c -> {
+                c.withMetric(new TimerConfig("t").withRateName("t.rate1"));
+                c.withMetric(new TimerConfig("t").withRateName("t.rate2"));
+            });
+        } catch (HekateFutureException e) {
+            assertTrue(getStacktrace(e), e.getCause() instanceof HekateConfigurationException);
+            assertEquals("TimerConfig: can't merge configurations of a timer metric with different 'rate' names "
+                + "[timer=t, rate-name-1=t.rate1, rate-name-2=t.rate2]", e.getCause().getMessage());
+        }
+    }
+
+    @Test
+    public void testUpdate() throws Exception {
         metrics.register(new TimerConfig("t0"));
 
         TimerMetric t1 = metrics.register(new TimerConfig("t1"));

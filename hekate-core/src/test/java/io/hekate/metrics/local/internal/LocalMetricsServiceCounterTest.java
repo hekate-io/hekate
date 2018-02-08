@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 
 public class LocalMetricsServiceCounterTest extends LocalMetricsServiceTestBase {
     @Test
-    public void testCounterDefaultValue() throws Exception {
+    public void testDefaultValue() throws Exception {
         metrics.register(new CounterConfig("c"));
 
         assertTrue(metrics.allMetrics().containsKey("c"));
@@ -40,7 +40,7 @@ public class LocalMetricsServiceCounterTest extends LocalMetricsServiceTestBase 
     }
 
     @Test
-    public void testCounterAutoRegister() throws Exception {
+    public void testAutoRegister() throws Exception {
         CounterMetric counter = metrics.counter("c");
 
         assertNotNull(counter);
@@ -53,7 +53,7 @@ public class LocalMetricsServiceCounterTest extends LocalMetricsServiceTestBase 
     }
 
     @Test
-    public void testCounterTotal() throws Exception {
+    public void testTotal() throws Exception {
         CounterMetric counter = metrics.register(new CounterConfig("c").withTotalName("ct").withAutoReset(true));
         Metric total = metrics.metric("ct");
 
@@ -76,7 +76,7 @@ public class LocalMetricsServiceCounterTest extends LocalMetricsServiceTestBase 
     }
 
     @Test
-    public void testCounterIncrement() throws Exception {
+    public void testIncrement() throws Exception {
         CounterMetric c = metrics.register(new CounterConfig("c"));
 
         Metric metric = metrics.metric("c");
@@ -93,7 +93,7 @@ public class LocalMetricsServiceCounterTest extends LocalMetricsServiceTestBase 
     }
 
     @Test
-    public void testCounterDecrement() throws Exception {
+    public void testDecrement() throws Exception {
         CounterMetric c = metrics.register(new CounterConfig("c"));
 
         c.add(9);
@@ -112,7 +112,7 @@ public class LocalMetricsServiceCounterTest extends LocalMetricsServiceTestBase 
     }
 
     @Test
-    public void testCounterAdd() throws Exception {
+    public void testAdd() throws Exception {
         CounterMetric c = metrics.register(new CounterConfig("c"));
 
         Metric metric = metrics.metric("c");
@@ -134,7 +134,7 @@ public class LocalMetricsServiceCounterTest extends LocalMetricsServiceTestBase 
     }
 
     @Test
-    public void testCounterSubtract() throws Exception {
+    public void testSubtract() throws Exception {
         CounterMetric c = metrics.register(new CounterConfig("c"));
 
         Metric metric = metrics.metric("c");
@@ -185,7 +185,7 @@ public class LocalMetricsServiceCounterTest extends LocalMetricsServiceTestBase 
     }
 
     @Test
-    public void testCounterCanNotMergeTotalNames() throws Exception {
+    public void testCanNotMergeTotalNames() throws Exception {
         try {
             restart(c -> {
                 c.withMetric(new CounterConfig("c").withTotalName("c.total1"));
