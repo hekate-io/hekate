@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
+import java.util.function.Supplier;
 
 import static io.hekate.util.StateGuard.State.INITIALIZED;
 import static io.hekate.util.StateGuard.State.INITIALIZING;
@@ -34,8 +35,6 @@ import static io.hekate.util.StateGuard.State.TERMINATING;
  * <p>
  * Internally this class is backed by {@link ReentrantReadWriteLock}.
  * </p>
- *
- * @see StampedStateGuard
  */
 public class StateGuard {
     /**
@@ -145,6 +144,24 @@ public class StateGuard {
     }
 
     /**
+     * Executes the specified task while holding the {@link #lockRead() read} lock.
+     *
+     * @param task Task.
+     * @param <T> Result type.
+     *
+     * @return Task execution result.
+     */
+    public <T> T withReadLock(Supplier<T> task) {
+        lockRead();
+
+        try {
+            return task.get();
+        } finally {
+            unlockRead();
+        }
+    }
+
+    /**
      * Executes the specified task while holding the {@link #lockWrite() write} lock.
      *
      * @param task Task.
@@ -154,6 +171,24 @@ public class StateGuard {
 
         try {
             task.run();
+        } finally {
+            unlockWrite();
+        }
+    }
+
+    /**
+     * Executes the specified task while holding the {@link #lockWrite() write} lock.
+     *
+     * @param task Task.
+     * @param <T> Result type.
+     *
+     * @return Task execution result.
+     */
+    public <T> T withWriteLock(Supplier<T> task) {
+        lockWrite();
+
+        try {
+            return task.get();
         } finally {
             unlockWrite();
         }

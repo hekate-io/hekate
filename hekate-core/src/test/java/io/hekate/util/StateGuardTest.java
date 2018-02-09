@@ -19,6 +19,7 @@ package io.hekate.util;
 import io.hekate.HekateTestBase;
 import io.hekate.util.format.ToString;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -30,10 +31,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class StateGuardTest extends HekateTestBase {
+    private interface TestTask extends Supplier<String> {
+        // No-op.
+    }
+
     private final StateGuard guard = new StateGuard(getClass());
 
     @Test
-    public void testWithReadLock() {
+    public void testRunWithReadLock() {
         Runnable task = mock(Runnable.class);
 
         guard.withReadLock(task);
@@ -43,7 +48,14 @@ public class StateGuardTest extends HekateTestBase {
     }
 
     @Test
-    public void testWithWriteLock() {
+    public void testGetWithReadLock() {
+        Supplier<String> task = () -> "test";
+
+        assertEquals("test", guard.withReadLock(task));
+    }
+
+    @Test
+    public void testRunWithWriteLock() {
         Runnable task = mock(Runnable.class);
 
         doAnswer(invocationOnMock -> {
@@ -61,7 +73,25 @@ public class StateGuardTest extends HekateTestBase {
     }
 
     @Test
-    public void testWithReadLockIfInitialized() {
+    public void testGetWithWriteLock() {
+        TestTask task = mock(TestTask.class);
+
+        doAnswer(invocationOnMock -> {
+            assertTrue(guard.isWriteLocked());
+
+            return "test";
+        }).when(task).get();
+
+        assertEquals("test", guard.withWriteLock(task));
+
+        verify(task).get();
+        verifyNoMoreInteractions(task);
+
+        assertFalse(guard.isWriteLocked());
+    }
+
+    @Test
+    public void testRunWithReadLockIfInitialized() {
         Runnable task = mock(Runnable.class);
 
         doAnswer(invocationOnMock -> {
@@ -83,7 +113,7 @@ public class StateGuardTest extends HekateTestBase {
     }
 
     @Test
-    public void testWithWriteLockIfInitialized() {
+    public void testRunWithWriteLockIfInitialized() {
         Runnable task = mock(Runnable.class);
 
         doAnswer(invocationOnMock -> {

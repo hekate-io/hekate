@@ -351,9 +351,8 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
             log.debug("Initializing...");
         }
 
-        guard.lockWrite();
-
-        try {
+        return guard.withWriteLock(() -> {
+            // Try to become INITIALIZING.
             switch (state.get()) {
                 case DOWN: {
                     state.set(INITIALIZING);
@@ -401,9 +400,7 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
             }
 
             return initFuture.fork();
-        } finally {
-            guard.unlockWrite();
-        }
+        });
     }
 
     @Override
@@ -413,15 +410,7 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
 
     @Override
     public JoinFuture joinAsync() {
-        JoinFuture localJoinFuture;
-
-        guard.lockRead();
-
-        try {
-            localJoinFuture = this.joinFuture;
-        } finally {
-            guard.unlockRead();
-        }
+        JoinFuture localJoinFuture = guard.withReadLock(() -> this.joinFuture);
 
         initializeAsync().thenRun(() -> {
             try {
@@ -449,9 +438,7 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
             log.debug("Leaving...");
         }
 
-        guard.lockWrite();
-
-        try {
+        return guard.withWriteLock(() -> {
             if (state.get() == DOWN) {
                 if (DEBUG) {
                     log.debug("Skipped leave request since already in {} state.", state);
@@ -491,9 +478,7 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
 
                 return leaveFuture.fork();
             }
-        } finally {
-            guard.unlockWrite();
-        }
+        });
     }
 
     @Override
@@ -592,60 +577,59 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
     }
 
     private void selectAddressAndBind(ClusterNodeId localNodeId) {
+        guard.lockWrite();
+
         try {
-            guard.lockWrite();
-
-            try {
-                // Make sure that we are still initializing with the same node identifier.
-                // Need to perform this check in order to stop early in case of concurrent leave/termination events.
-                if (isInitializingFor(localNodeId)) {
-                    if (log.isInfoEnabled()) {
-                        log.info("Initializing {}.", HekateVersion.info());
-                    }
-
-                    // Bind network service.
-                    networkManager.bind(new NetworkBindCallback() {
-                        @Override
-                        public void onBind(InetSocketAddress address) {
-                            guard.lockRead();
-
-                            try {
-                                if (state.get() == INITIALIZING) {
-                                    // Continue initialization on the system thread.
-                                    runOnSysThread(() ->
-                                        doInitializeNode(address, localNodeId)
-                                    );
-                                } else {
-                                    if (DEBUG) {
-                                        log.debug("Stopped initialization sequence due to a concurrent leave/terminate event.");
-                                    }
-                                }
-                            } finally {
-                                guard.unlockRead();
-                            }
-                        }
-
-                        @Override
-                        public NetworkServerFailure.Resolution onFailure(NetworkServerFailure failure) {
-                            InetSocketAddress address = failure.lastTriedAddress();
-
-                            String msg = "Failed to start network service [address=" + address + ", reason=" + failure.cause() + ']';
-
-                            doTerminateAsync(ClusterLeaveReason.TERMINATE, new HekateException(msg, failure.cause()));
-
-                            return failure.fail();
-                        }
-                    });
-                } else {
-                    if (DEBUG) {
-                        log.debug("Stopped initialization sequence due to a concurrent leave/terminate event.");
-                    }
+            // Make sure that we are still initializing with the same node identifier.
+            // Need to perform this check in order to stop early in case of concurrent leave/termination events.
+            if (isInitializingFor(localNodeId)) {
+                if (log.isInfoEnabled()) {
+                    log.info("Initializing {}.", HekateVersion.info());
                 }
-            } finally {
-                guard.unlockWrite();
+
+                // Bind network service.
+                networkManager.bind(new NetworkBindCallback() {
+                    @Override
+                    public void onBind(InetSocketAddress address) {
+                        guard.lockRead();
+
+                        try {
+                            if (state.get() == INITIALIZING) {
+                                // Continue initialization on the system thread.
+                                runOnSysThread(() ->
+                                    doInitializeNode(address, localNodeId)
+                                );
+                            } else {
+                                if (DEBUG) {
+                                    log.debug("Stopped initialization sequence due to a concurrent leave/terminate event.");
+                                }
+                            }
+                        } finally {
+                            guard.unlockRead();
+                        }
+                    }
+
+                    @Override
+                    public NetworkServerFailure.Resolution onFailure(NetworkServerFailure failure) {
+                        InetSocketAddress address = failure.lastTriedAddress();
+
+                        String msg = "Failed to start network service [address=" + address + ", reason=" + failure.cause() + ']';
+
+                        doTerminateAsync(ClusterLeaveReason.TERMINATE, new HekateException(msg, failure.cause()));
+
+                        return failure.fail();
+                    }
+                });
+            } else {
+                if (DEBUG) {
+                    log.debug("Stopped initialization sequence due to a concurrent leave/terminate event.");
+                }
             }
         } catch (HekateException | RuntimeException | Error e) {
+            // Schedule termination while still holding the write lock.
             doTerminateAsync(ClusterLeaveReason.TERMINATE, e);
+        } finally {
+            guard.unlockWrite();
         }
     }
 
@@ -721,6 +705,7 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
                 }
             }
         } catch (HekateException | RuntimeException | Error e) {
+            // Schedule termination while still holding the write lock.
             doTerminateAsync(ClusterLeaveReason.TERMINATE, e);
         } finally {
             guard.unlockWrite();
@@ -739,19 +724,15 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
                 CompletableFuture<Boolean> future = new CompletableFuture<>();
 
                 runOnSysThread(() -> {
-                    boolean changed;
-
-                    guard.lockWrite();
-
-                    try {
-                        changed = state.compareAndSet(INITIALIZED, JOINING);
-
-                        if (changed) {
+                    boolean changed = guard.withWriteLock(() -> {
+                        if (state.compareAndSet(INITIALIZED, JOINING)) {
                             notifyOnLifecycleChange();
+
+                            return true;
+                        } else {
+                            return false;
                         }
-                    } finally {
-                        guard.unlockWrite();
-                    }
+                    });
 
                     future.complete(changed);
                 });
@@ -764,9 +745,7 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
                 CompletableFuture<ClusterJoinEvent> future = new CompletableFuture<>();
 
                 runOnSysThread(() -> {
-                    guard.lockWrite();
-
-                    try {
+                    guard.withWriteLock(() -> {
                         if (state.compareAndSet(JOINING, UP)) {
                             localNode.setJoinOrder(joinOrder);
 
@@ -802,9 +781,7 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
                         } else {
                             future.complete(null);
                         }
-                    } finally {
-                        guard.unlockWrite();
-                    }
+                    });
                 });
 
                 return future;
@@ -815,9 +792,7 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
                 CompletableFuture<ClusterChangeEvent> future = new CompletableFuture<>();
 
                 runOnSysThread(() -> {
-                    guard.lockWrite();
-
-                    try {
+                    guard.withWriteLock(() -> {
                         if (clusterEvents.isJoinEventFired()) {
                             DefaultClusterTopology lastTopology = topology;
 
@@ -856,9 +831,7 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
                         } else {
                             future.complete(null);
                         }
-                    } finally {
-                        guard.unlockWrite();
-                    }
+                    });
                 });
 
                 return future;
@@ -968,9 +941,7 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
     }
 
     private TerminateFuture doTerminateAsync(boolean rejoin, ClusterLeaveReason reason, Throwable cause) {
-        guard.lockWrite();
-
-        try {
+        return guard.withWriteLock(() -> {
             if (state.compareAndSet(INITIALIZING, TERMINATING)
                 || state.compareAndSet(INITIALIZED, TERMINATING)
                 || state.compareAndSet(JOINING, TERMINATING)
@@ -1018,9 +989,7 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
 
                 return future;
             }
-        } finally {
-            guard.unlockWrite();
-        }
+        });
     }
 
     private void doLeave() {

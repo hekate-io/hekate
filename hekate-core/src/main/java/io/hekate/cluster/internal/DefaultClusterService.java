@@ -397,6 +397,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                     address = node.address();
                                     localSeedNodeMgr = seedNodeMgr;
                                 } else {
+                                    // Stop since there was a concurrent leave/terminate event.
                                     return;
                                 }
                             } finally {
@@ -413,19 +414,12 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
                                     if (!valid) {
                                         // Try to schedule a new join attempt.
-                                        guard.lockRead();
+                                        guard.withReadLockIfInitialized(() -> {
+                                            log.warn("Split-brain detected ...will wait for {} ms before making another attempt "
+                                                + "[split-brain-detector={}]", gossipInterval, splitBrainDetector);
 
-                                        try {
-                                            // Check that there were no concurrent leave/terminate events.
-                                            if (guard.isInitialized()) {
-                                                log.warn("Split-brain detected ...will wait for {} ms before making another attempt "
-                                                    + "[split-brain-detector={}]", gossipInterval, splitBrainDetector);
-
-                                                serviceThread.schedule(this, gossipInterval, TimeUnit.MILLISECONDS);
-                                            }
-                                        } finally {
-                                            guard.unlockRead();
-                                        }
+                                            serviceThread.schedule(this, gossipInterval, TimeUnit.MILLISECONDS);
+                                        });
 
                                         return;
                                     }
@@ -435,26 +429,22 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                 try {
                                     localSeedNodeMgr.startDiscovery(address.socket());
                                 } catch (HekateException e) {
-                                    boolean initialized = false;
-
                                     // Try to schedule a new join attempt.
-                                    guard.lockRead();
-
-                                    try {
+                                    boolean scheduled = guard.withReadLock(() -> {
                                         // Check that there were no concurrent leave/terminate events.
                                         if (guard.isInitialized()) {
-                                            initialized = true;
-
                                             log.error("Failed to start seed nodes discovery "
                                                 + "...will wait for {}ms before making another attempt.", gossipInterval, e);
 
                                             serviceThread.schedule(this, gossipInterval, TimeUnit.MILLISECONDS);
-                                        }
-                                    } finally {
-                                        guard.unlockRead();
-                                    }
 
-                                    if (!initialized) {
+                                            return true;
+                                        } else {
+                                            return false;
+                                        }
+                                    });
+
+                                    if (!scheduled) {
                                         // Make sure that seed nodes discovery is stopped in case of concurrent service termination.
                                         localSeedNodeMgr.stopDiscovery(address.socket());
                                     }
@@ -462,6 +452,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                     return;
                                 }
 
+                                // Initialize failure detector.
                                 if (DEBUG) {
                                     log.debug("Initializing failure detector [address={}]", address);
                                 }
@@ -473,11 +464,9 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                 }
 
                                 // Schedule asynchronous join task.
-                                boolean scheduled = scheduleAsyncJoin();
-
-                                // Operation was rejected.
-                                // Stop components (in unlocked context in order to prevent thread blocking).
-                                if (!scheduled) {
+                                if (!scheduleAsyncJoin()) {
+                                    // Operation was rejected.
+                                    // Stop components (in unlocked context in order to prevent thread blocking).
                                     if (DEBUG) {
                                         log.debug("Stopped initialization sequence due to a concurrent leave/terminate event.");
                                     }
@@ -508,26 +497,18 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     @Override
     public void preTerminate() {
-        guard.lockRead();
-
-        try {
-            if (guard.isInitialized()) {
-                if (ctx.state() == Hekate.State.LEAVING) {
-                    runOnGossipThread(this::doLeave);
-                }
+        guard.withReadLockIfInitialized(() -> {
+            if (ctx.state() == Hekate.State.LEAVING) {
+                runOnGossipThread(this::doLeave);
             }
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     @Override
     public void terminate() throws HekateException {
         List<Waiting> waiting = new ArrayList<>();
 
-        guard.lockWrite();
-
-        try {
+        guard.withWriteLock(() -> {
             if (guard.becomeTerminated()) {
                 acceptMgr.terminate();
 
@@ -565,9 +546,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                 seedNodeMgr = null;
                 metricsSink = null;
             }
-        } finally {
-            guard.unlockWrite();
-        }
+        });
 
         Waiting.awaitAll(waiting).awaitUninterruptedly();
     }
@@ -705,9 +684,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     }
 
     private boolean scheduleAsyncJoin() {
-        guard.lockWrite();
-
-        try {
+        return guard.withWriteLock(() -> {
             if (guard.isInitialized()) {
                 if (DEBUG) {
                     log.debug("Scheduling a periodic gossip task [interval={}]", gossipInterval);
@@ -742,94 +719,70 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             } else {
                 return false;
             }
-        } finally {
-            guard.unlockWrite();
-        }
+        });
     }
 
     private void doJoin() {
-        guard.lockRead();
+        guard.withReadLockIfInitialized(() -> {
+            try {
+                List<InetSocketAddress> nodes = seedNodeMgr.getSeedNodes();
 
-        try {
-            if (guard.isInitialized()) {
-                try {
-                    List<InetSocketAddress> nodes = seedNodeMgr.getSeedNodes();
+                // Schedule join task to run on a gossiper thread.
+                runOnGossipThread(() -> {
+                    guard.lockRead();
 
-                    // Schedule join task to run on a gossiper thread.
-                    runOnGossipThread(() -> {
-                        guard.lockRead();
+                    try {
+                        if (guard.isInitialized()) {
+                            JoinRequest msg = gossipMgr.join(nodes);
 
-                        try {
-                            if (guard.isInitialized()) {
-                                JoinRequest msg = gossipMgr.join(nodes);
-
-                                if (msg != null && log.isInfoEnabled()) {
-                                    log.info("Sending cluster join request [seed-node={}].", msg.toAddress());
-                                }
-
-                                sendAndDisconnect(msg);
+                            if (msg != null && log.isInfoEnabled()) {
+                                log.info("Sending cluster join request [seed-node={}].", msg.toAddress());
                             }
-                        } catch (RuntimeException | Error t) {
-                            log.error("Got runtime error while joining cluster.", t);
-                        } finally {
-                            guard.unlockRead();
+
+                            sendAndDisconnect(msg);
                         }
-                    });
-                } catch (HekateException e) {
-                    log.error("Failed to obtain seed nodes ...will wait for {} ms before trying another attempt.", gossipInterval, e);
-                }
+                    } catch (RuntimeException | Error t) {
+                        log.error("Got runtime error while joining cluster.", t);
+                    } finally {
+                        guard.unlockRead();
+                    }
+                });
+            } catch (HekateException e) {
+                log.error("Failed to obtain seed nodes ...will wait for {} ms before trying another attempt.", gossipInterval, e);
             }
-        } catch (RuntimeException | Error t) {
-            log.error("Got runtime error while joining cluster.", t);
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     private void doLeave() {
-        guard.lockRead();
+        guard.withReadLockIfInitialized(() -> {
+            UpdateBase msg = gossipMgr.leave();
 
-        try {
-            if (guard.isInitialized()) {
-                UpdateBase msg = gossipMgr.leave();
-
-                if (msg == null) {
-                    // Do not need to go through the cluster leave protocol (gossip manager decision).
-                    ctx.cluster().onLeave();
-                } else {
-                    if (log.isInfoEnabled()) {
-                        log.info("Leaving cluster...");
-                    }
-
-                    send(msg);
+            if (msg == null) {
+                // Do not need to go through the cluster leave protocol (gossip manager decision).
+                ctx.cluster().onLeave();
+            } else {
+                if (log.isInfoEnabled()) {
+                    log.info("Leaving cluster...");
                 }
+
+                send(msg);
             }
-        } catch (RuntimeException | Error t) {
-            log.error("Got runtime error while leaving cluster.", t);
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     private void gossip() {
-        guard.lockRead();
-
         try {
-            if (guard.isInitialized()) {
-                gossipMgr.batchGossip(GossipPolicy.RANDOM_PREFER_UNSEEN).forEach(this::send);
-            }
+            guard.withReadLockIfInitialized(() ->
+                gossipMgr.batchGossip(GossipPolicy.RANDOM_PREFER_UNSEEN).forEach(this::send)
+            );
         } catch (RuntimeException | Error t) {
             log.error("Got runtime error while processing a gossip tick.", t);
-        } finally {
-            guard.unlockRead();
         }
     }
 
     private void heartbeat() {
-        guard.lockRead();
-
         try {
-            if (guard.isInitialized()) {
+            guard.withReadLockIfInitialized(() -> {
                 // Check nodes aliveness.
                 boolean failureDetected = gossipMgr.checkAliveness();
 
@@ -844,20 +797,16 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                 if (failureDetected) {
                     gossip();
                 }
-            }
+            });
         } catch (RuntimeException | Error t) {
             log.error("Got runtime error while processing heartbeats tick.", t);
-        } finally {
-            guard.unlockRead();
         }
     }
 
     private void process(GossipProtocol msg) {
         assert msg != null : "Message is null.";
 
-        guard.lockRead();
-
-        try {
+        guard.withReadLockIfInitialized(() -> {
             if (guard.isInitialized()) {
                 if (metricsSink != null) {
                     metricsSink.onGossipMessage(msg.type());
@@ -893,153 +842,124 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                     log.debug("Ignored message since service is not started [message={}]", msg);
                 }
             }
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     private void doProcess(GossipProtocol msg) {
-        guard.lockRead();
+        guard.withReadLock(() -> {
+            try {
+                if (guard.isInitialized()) {
+                    switch (msg.type()) {
+                        case GOSSIP_UPDATE:
+                        case GOSSIP_UPDATE_DIGEST: {
+                            UpdateBase update = (UpdateBase)msg;
 
-        try {
-            if (guard.isInitialized()) {
-                switch (msg.type()) {
-                    case GOSSIP_UPDATE:
-                    case GOSSIP_UPDATE_DIGEST: {
-                        UpdateBase update = (UpdateBase)msg;
+                            GossipMessage reply = gossipMgr.processUpdate(update);
 
-                        GossipMessage reply = gossipMgr.processUpdate(update);
+                            send(reply);
 
-                        send(reply);
-
-                        break;
-                    }
-                    case JOIN_REQUEST: {
-                        JoinRequest request = (JoinRequest)msg;
-
-                        // Check that the join request can be accepted.
-                        JoinReject reject = gossipMgr.acceptJoinRequest(request);
-
-                        if (reject == null) {
-                            // Asynchronously validate and process the join request so that the validation would not block gossiping thread.
-                            acceptMgr.check(request.fromNode(), ctx.hekate()).thenAcceptAsync(rejectReason -> {
-                                guard.lockRead();
-
-                                try {
-                                    if (guard.isInitialized()) {
-                                        JoinReply reply;
-
-                                        if (rejectReason.isPresent()) {
-                                            reply = gossipMgr.reject(request, rejectReason.get());
-
-                                        } else {
-                                            reply = gossipMgr.processJoinRequest(request);
-                                        }
-
-                                        send(reply);
-                                    }
-                                } catch (RuntimeException | Error e) {
-                                    log.error("Got an unexpected error while processing a node join request [request={}]", request, e);
-                                } finally {
-                                    guard.unlockRead();
-                                }
-                            }, gossipThread);
-                        } else {
-                            // Immediate reject.
-                            send(reject);
+                            break;
                         }
+                        case JOIN_REQUEST: {
+                            JoinRequest request = (JoinRequest)msg;
 
-                        break;
+                            // Check that the join request can be accepted.
+                            JoinReject reject = gossipMgr.acceptJoinRequest(request);
+
+                            if (reject == null) {
+                                // Asynchronously validate and process the join request so that it won't not block the gossiping thread.
+                                acceptMgr.check(request.fromNode(), ctx.hekate()).thenAcceptAsync(rejectReason -> {
+                                    try {
+                                        guard.withReadLockIfInitialized(() -> {
+                                            JoinReply reply;
+
+                                            if (rejectReason.isPresent()) {
+                                                reply = gossipMgr.reject(request, rejectReason.get());
+
+                                            } else {
+                                                reply = gossipMgr.processJoinRequest(request);
+                                            }
+
+                                            send(reply);
+                                        });
+                                    } catch (RuntimeException | Error e) {
+                                        log.error("Got an unexpected error while processing a node join request [request={}]", request, e);
+                                    }
+
+                                }, gossipThread);
+                            } else {
+                                // Immediate reject.
+                                send(reject);
+                            }
+
+                            break;
+                        }
+                        case JOIN_ACCEPT: {
+                            JoinAccept accept = (JoinAccept)msg;
+
+                            GossipMessage reply = gossipMgr.processJoinAccept(accept);
+
+                            send(reply);
+
+                            break;
+                        }
+                        case JOIN_REJECT: {
+                            JoinReject reject = (JoinReject)msg;
+
+                            // Try to select another node to join.
+                            JoinRequest newRequest = gossipMgr.processJoinReject(reject);
+
+                            sendAndDisconnect(newRequest);
+
+                            break;
+                        }
+                        case HEARTBEAT_REQUEST:
+                        case HEARTBEAT_REPLY:
+                        case CONNECT:
+                        default: {
+                            throw new IllegalArgumentException("Unexpected message type: " + msg);
+                        }
                     }
-                    case JOIN_ACCEPT: {
-                        JoinAccept accept = (JoinAccept)msg;
-
-                        GossipMessage reply = gossipMgr.processJoinAccept(accept);
-
-                        send(reply);
-
-                        break;
-                    }
-                    case JOIN_REJECT: {
-                        JoinReject reject = (JoinReject)msg;
-
-                        // Try to select another node to join.
-                        JoinRequest newRequest = gossipMgr.processJoinReject(reject);
-
-                        sendAndDisconnect(newRequest);
-
-                        break;
-                    }
-                    case HEARTBEAT_REQUEST:
-                    case HEARTBEAT_REPLY:
-                    case CONNECT:
-                    default: {
-                        throw new IllegalArgumentException("Unexpected message type: " + msg);
+                } else {
+                    if (DEBUG) {
+                        log.debug("Ignored message since service is not started [message={}]", msg);
                     }
                 }
-            } else {
-                if (DEBUG) {
-                    log.debug("Ignored message since service is not started [message={}]", msg);
-                }
+            } catch (RuntimeException | Error e) {
+                log.error("Got runtime error while processing gossip message [message={}]", msg, e);
             }
-        } catch (RuntimeException | Error e) {
-            log.error("Got runtime error while processing gossip message [message={}]", msg, e);
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     private void processSendFailure(GossipProtocol msg, Throwable error) {
         assert msg != null : "Message is null.";
         assert error != null : "Error is null.";
 
-        guard.lockRead();
+        guard.withReadLockIfInitialized(() -> {
+            if (msg.type() == GossipProtocol.Type.JOIN_REQUEST) {
+                JoinRequest request = (JoinRequest)msg;
 
-        try {
-            if (guard.isInitialized()) {
-                if (msg.type() == GossipProtocol.Type.JOIN_REQUEST) {
-                    JoinRequest request = (JoinRequest)msg;
-
-                    runOnGossipThread(() -> processJoinSendFailure(request));
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Failed to sent gossip message [error={}, message={}]", error.toString(), msg);
-                    }
-                }
+                runOnGossipThread(() -> processJoinSendFailure(request));
             } else {
-                if (DEBUG) {
-                    log.debug("Ignored message failure since service is not started [message={}]", msg);
+                if (log.isDebugEnabled()) {
+                    log.debug("Failed to sent gossip message [error={}, message={}]", error.toString(), msg);
                 }
             }
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     private void processJoinSendFailure(JoinRequest msg) {
-        guard.lockRead();
-
-        try {
-            if (guard.isInitialized()) {
-                if (msg.type() == GossipProtocol.Type.JOIN_REQUEST) {
-                    if (DEBUG) {
-                        log.debug("Processing join message send failure notification [message={}]", msg);
-                    }
-
-                    JoinRequest newReq = gossipMgr.processJoinFailure(msg);
-
-                    sendAndDisconnect(newReq);
-                }
-            } else {
+        guard.withReadLockIfInitialized(() -> {
+            if (msg.type() == GossipProtocol.Type.JOIN_REQUEST) {
                 if (DEBUG) {
-                    log.debug("Ignored message failure since service is not started [message={}]", msg);
+                    log.debug("Processing join message send failure notification [message={}]", msg);
                 }
+
+                JoinRequest newReq = gossipMgr.processJoinFailure(msg);
+
+                sendAndDisconnect(newReq);
             }
-        } catch (RuntimeException | Error e) {
-            log.error("Got runtime error while processing notification on message submission failure [message={}]", msg, e);
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     private GossipListener createGossipListener() {
@@ -1177,10 +1097,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
                 ctx.cluster().onTopologyChange(newTopology).thenAcceptAsync(event -> {
                     if (event != null) {
-                        guard.lockRead();
-
-                        try {
-                            if (guard.isInitialized()) {
+                        guard.withReadLockIfInitialized(() -> {
+                            try {
                                 ClusterTopology topology = event.topology();
 
                                 if (metricsSink != null) {
@@ -1196,12 +1114,10 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                 if (!event.removed().isEmpty()) {
                                     checkSplitBrain(node);
                                 }
+                            } catch (RuntimeException | Error e) {
+                                log.error("Got an unexpected runtime error.", e);
                             }
-                        } catch (RuntimeException | Error e) {
-                            log.error("Got an unexpected runtime error.", e);
-                        } finally {
-                            guard.unlockRead();
-                        }
+                        });
                     }
                 }, gossipThread);
             }
@@ -1317,46 +1233,40 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     }
 
     private void applySplitBrainPolicy() {
-        guard.lockRead();
-
-        try {
-            if (guard.isInitialized()) {
-                switch (splitBrainAction) {
-                    case REJOIN: {
-                        if (log.isWarnEnabled()) {
-                            log.warn("Rejoining due to inconsistency of the cluster state.");
-                        }
-
-                        ctx.rejoin();
-
-                        break;
+        guard.withReadLockIfInitialized(() -> {
+            switch (splitBrainAction) {
+                case REJOIN: {
+                    if (log.isWarnEnabled()) {
+                        log.warn("Rejoining due to inconsistency of the cluster state.");
                     }
-                    case TERMINATE: {
-                        if (log.isErrorEnabled()) {
-                            log.error("Terminating due to inconsistency of the cluster state.");
-                        }
 
-                        ctx.terminate();
+                    ctx.rejoin();
 
-                        break;
+                    break;
+                }
+                case TERMINATE: {
+                    if (log.isErrorEnabled()) {
+                        log.error("Terminating due to inconsistency of the cluster state.");
                     }
-                    case KILL_JVM: {
-                        if (log.isErrorEnabled()) {
-                            log.error("Killing the JVM due to inconsistency of the cluster state.");
-                        }
 
-                        Jvm.exit(250);
+                    ctx.terminate();
 
-                        break;
+                    break;
+                }
+                case KILL_JVM: {
+                    if (log.isErrorEnabled()) {
+                        log.error("Killing the JVM due to inconsistency of the cluster state.");
                     }
-                    default: {
-                        throw new IllegalArgumentException("Unexpected policy: " + splitBrainAction);
-                    }
+
+                    Jvm.exit(250);
+
+                    break;
+                }
+                default: {
+                    throw new IllegalArgumentException("Unexpected policy: " + splitBrainAction);
                 }
             }
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     private void send(GossipMessage msg) {
