@@ -16,9 +16,11 @@
 
 package io.hekate.messaging.unicast;
 
+import io.hekate.cluster.ClusterTopology;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageBase;
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.messaging.loadbalance.LoadBalancer;
 
 /**
  * Response of {@link MessagingChannel#request(Object, ResponseCallback) request(...)} operation.
@@ -32,8 +34,23 @@ public interface Response<T> extends MessageBase<T> {
      * Returns the request.
      *
      * @return Request.
+     *
+     * @see #request(Class)
      */
     T request();
+
+    /**
+     * Casts the request of this message to the specified type.
+     *
+     * @param type Request type.
+     * @param <P> Request type.
+     *
+     * @return request.
+     *
+     * @throws ClassCastException If payload can't be cast to the specified type.
+     * @see #request()
+     */
+    <P extends T> P request(Class<P> type);
 
     /**
      * Returns {@code true} if this message represents a partial response that was produced by the {@link Message#partialReply(Object,
@@ -44,4 +61,11 @@ public interface Response<T> extends MessageBase<T> {
      * @see MessagingChannel#stream(Object, ResponseCallback)
      */
     boolean isPartial();
+
+    /**
+     * Cluster topology that was used by the {@link LoadBalancer} to submit the request.
+     *
+     * @return Cluster topology that was used by the {@link LoadBalancer} to submit the request.
+     */
+    ClusterTopology topology();
 }

@@ -20,15 +20,26 @@ import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
+import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 class MessageContext<T> {
     interface TimeoutListener {
         void onTimeout();
     }
 
-    private static final AtomicIntegerFieldUpdater<MessageContext> COMPLETED = newUpdater(MessageContext.class, "completed");
+    private static final AtomicIntegerFieldUpdater<MessageContext> COMPLETED = newUpdater(
+        MessageContext.class,
+        "completed"
+    );
+
+    private static final AtomicReferenceFieldUpdater<MessageContext, Future> TIMEOUT_FUTURE = newUpdater(
+        MessageContext.class,
+        Future.class,
+        "timeoutFuture"
+    );
 
     private final int affinity;
 
@@ -45,9 +56,10 @@ class MessageContext<T> {
     private final MessagingOpts<T> opts;
 
     @ToStringIgnore
-    private TimeoutListener timeoutListener;
+    private volatile TimeoutListener timeoutListener;
 
     @ToStringIgnore
+    @SuppressWarnings("unused") // <-- Updated via AtomicReferenceFieldUpdater.
     private volatile Future<?> timeoutFuture;
 
     @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
@@ -131,13 +143,11 @@ class MessageContext<T> {
     }
 
     public void setTimeoutFuture(Future<?> timeoutFuture) {
-        Future<?> oldFuture = this.timeoutFuture;
+        Future<?> oldFuture = TIMEOUT_FUTURE.getAndSet(this, timeoutFuture);
 
         if (oldFuture != null) {
             oldFuture.cancel(false);
         }
-
-        this.timeoutFuture = timeoutFuture;
     }
 
     private boolean doComplete() {

@@ -35,24 +35,24 @@ class RequestRegistry<T> {
         this.metrics = metrics;
     }
 
-    public RequestHandle<T> register(int epoch, MessageContext<T> ctx, InternalRequestCallback<T> callback) {
+    public RequestHandle<T> register(int epoch, MessageRoute<T> route, InternalRequestCallback<T> callback) {
         while (true) {
             Integer id = idGen.incrementAndGet();
 
-            RequestHandle<T> handle = new RequestHandle<>(id, this, ctx, epoch, callback);
+            RequestHandle<T> req = new RequestHandle<>(id, this, route, epoch, callback);
 
             // Do not overwrite very very very old requests.
-            if (requests.putIfAbsent(id, handle) == null) {
+            if (requests.putIfAbsent(id, req) == null) {
                 onRequestRegister();
 
-                if (ctx.opts().hasTimeout()) {
+                if (route.ctx().opts().hasTimeout()) {
                     // Unregister if messaging operation gets timed out.
-                    ctx.setTimeoutListener(() ->
+                    route.ctx().setTimeoutListener(() ->
                         unregister(id)
                     );
                 }
 
-                return handle;
+                return req;
             }
         }
     }
@@ -64,10 +64,10 @@ class RequestRegistry<T> {
     public List<RequestHandle<T>> unregisterEpoch(int epoch) {
         List<RequestHandle<T>> removed = new ArrayList<>(requests.size());
 
-        for (RequestHandle<T> handle : requests.values()) {
-            if (handle.epoch() == epoch) {
-                if (handle.unregister()) {
-                    removed.add(handle);
+        for (RequestHandle<T> req : requests.values()) {
+            if (req.epoch() == epoch) {
+                if (req.unregister()) {
+                    removed.add(req);
                 }
             }
         }
@@ -82,9 +82,9 @@ class RequestRegistry<T> {
     }
 
     public boolean unregister(Integer id) {
-        RequestHandle<T> handle = requests.remove(id);
+        RequestHandle<T> req = requests.remove(id);
 
-        if (handle != null) {
+        if (req != null) {
             onRequestUnregister(1);
 
             return true;

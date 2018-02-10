@@ -37,7 +37,6 @@ import io.hekate.lock.internal.LockProtocol.UnlockRequest;
 import io.hekate.lock.internal.LockProtocol.UnlockResponse;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.unicast.ReplyDecision;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
@@ -221,25 +220,27 @@ class DefaultLockRegion implements LockRegion {
 
         lockChannel.withAffinity(new LockKey(regionName, lockName)).request(request, new ResponseCallback<LockProtocol>() {
             @Override
-            public ReplyDecision accept(Throwable err, LockProtocol reply, MessagingEndpoint<LockProtocol> from) {
-                LockOwnerResponse lockReply = (LockOwnerResponse)reply;
+            public ReplyDecision accept(Throwable err, Response<LockProtocol> reply) {
+                if (err == null) {
+                    LockOwnerResponse lockReply = reply.get(LockOwnerResponse.class);
 
-                if (err == null && lockReply.status() == LockOwnerResponse.Status.OK) {
-                    ClusterNodeId ownerId = lockReply.owner();
+                    if (lockReply.status() == LockOwnerResponse.Status.OK) {
+                        ClusterNodeId ownerId = lockReply.owner();
 
-                    if (ownerId == null) {
-                        future.complete(Optional.empty());
-                    } else {
-                        ClusterTopology topology = lockChannel.cluster().topology();
+                        if (ownerId == null) {
+                            future.complete(Optional.empty());
+                        } else {
+                            ClusterTopology topology = lockChannel.cluster().topology();
 
-                        ClusterNode ownerNode = topology.get(ownerId);
+                            ClusterNode ownerNode = topology.get(ownerId);
 
-                        // Check that lock owner is in the local topology.
-                        // It could be removed while we were waiting for response.
-                        if (ownerNode != null) {
-                            DefaultLockOwnerInfo info = new DefaultLockOwnerInfo(lockReply.threadId(), ownerNode);
+                            // Check that lock owner is in the local topology.
+                            // It could be removed while we were waiting for response.
+                            if (ownerNode != null) {
+                                DefaultLockOwnerInfo info = new DefaultLockOwnerInfo(lockReply.threadId(), ownerNode);
 
-                            future.complete(Optional.of(info));
+                                future.complete(Optional.of(info));
+                            }
                         }
                     }
                 }
@@ -971,9 +972,9 @@ class DefaultLockRegion implements LockRegion {
     private void sendToNextNode(MigrationRequest request) {
         migrationChannel.request(request, new ResponseCallback<LockProtocol>() {
             @Override
-            public ReplyDecision accept(Throwable err, LockProtocol reply, MessagingEndpoint<LockProtocol> from) {
+            public ReplyDecision accept(Throwable err, Response<LockProtocol> reply) {
                 if (err == null) {
-                    MigrationResponse response = (MigrationResponse)reply;
+                    MigrationResponse response = reply.get(MigrationResponse.class);
 
                     if (DEBUG) {
                         log.debug("Got {} response [request={}]", response.status(), request);

@@ -185,10 +185,10 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
                             // Store routed topology within the lock request so that it would be possible
                             // to detect routing collisions (in case of cluster topology changes) on the receiving side.
-                            req.updateTopology(ctx.topology().hash());
+                            return req.withTopology(ctx.topology().hash());
+                        } else {
+                            return msg;
                         }
-
-                        return msg;
                     }
                 })
                 .withReceiver(this::processMessage)

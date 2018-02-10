@@ -49,12 +49,15 @@ abstract class LockProtocol {
 
         private final String lockName;
 
-        private ClusterHash topology;
+        private final ClusterHash topology;
 
-        public LockRequestBase(String region, String lockName) {
+        public LockRequestBase(String region, String lockName, ClusterHash topology) {
             this.region = region;
             this.lockName = lockName;
+            this.topology = topology;
         }
+
+        public abstract LockRequestBase withTopology(ClusterHash topology);
 
         public String region() {
             return region;
@@ -67,10 +70,6 @@ abstract class LockProtocol {
         public ClusterHash topology() {
             return topology;
         }
-
-        public void updateTopology(ClusterHash topology) {
-            this.topology = topology;
-        }
     }
 
     static class LockOwnerRequest extends LockRequestBase {
@@ -79,9 +78,12 @@ abstract class LockProtocol {
         }
 
         public LockOwnerRequest(String region, String lockName, ClusterHash topology) {
-            super(region, lockName);
+            super(region, lockName, topology);
+        }
 
-            updateTopology(topology);
+        @Override
+        public LockRequestBase withTopology(ClusterHash topology) {
+            return new LockOwnerRequest(region(), lockName(), topology);
         }
 
         @Override
@@ -142,14 +144,12 @@ abstract class LockProtocol {
         }
 
         public LockRequest(long lockId, String region, String lockName, ClusterNodeId node, long timeout, ClusterHash hash, long threadId) {
-            super(region, lockName);
+            super(region, lockName, hash);
 
             this.lockId = lockId;
             this.node = node;
             this.timeout = timeout;
             this.threadId = threadId;
-
-            updateTopology(hash);
         }
 
         @Override
@@ -174,6 +174,11 @@ abstract class LockProtocol {
         @Override
         public Type type() {
             return Type.LOCK_REQUEST;
+        }
+
+        @Override
+        public LockRequestBase withTopology(ClusterHash topology) {
+            return new LockRequest(lockId, region(), lockName(), node, timeout, topology, threadId);
         }
     }
 
@@ -232,12 +237,10 @@ abstract class LockProtocol {
         }
 
         public UnlockRequest(long lockId, String region, String lockName, ClusterNodeId node, ClusterHash topology) {
-            super(region, lockName);
+            super(region, lockName, topology);
 
             this.lockId = lockId;
             this.node = node;
-
-            updateTopology(topology);
         }
 
         @Override
@@ -259,6 +262,11 @@ abstract class LockProtocol {
         @Override
         public Type type() {
             return Type.UNLOCK_REQUEST;
+        }
+
+        @Override
+        public LockRequestBase withTopology(ClusterHash topology) {
+            return new UnlockRequest(lockId, region(), lockName(), node, topology);
         }
     }
 

@@ -17,13 +17,12 @@
 package io.hekate.messaging.unicast;
 
 import io.hekate.core.HekateException;
-import io.hekate.messaging.MessagingEndpoint;
 import java.util.Optional;
 
 /**
  * Signals that the result of a request operation was {@link ReplyDecision#REJECT rejected} by a {@link ResponseCallback}.
  *
- * @see ResponseCallback#accept(Throwable, Object, MessagingEndpoint)
+ * @see ResponseCallback#accept(Throwable, Response)
  */
 public class RejectedReplyException extends HekateException {
     private static final long serialVersionUID = 1;

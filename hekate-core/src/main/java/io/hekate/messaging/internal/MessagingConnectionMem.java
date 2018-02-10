@@ -70,14 +70,14 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
     public void request(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
         MessageContext<T> ctx = route.ctx();
 
-        RequestHandle<T> handle = registerRequest(ctx, callback);
+        RequestHandle<T> req = registerRequest(route, callback);
 
         Request<T> msg;
 
         if (ctx.hasAffinity()) {
-            msg = new AffinityRequest<>(ctx.affinity(), handle.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
+            msg = new AffinityRequest<>(ctx.affinity(), req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
         } else {
-            msg = new Request<>(handle.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
+            msg = new Request<>(req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
         }
 
         long receivedAtMillis = msg.hasTimeout() ? System.nanoTime() : 0;
@@ -95,14 +95,14 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
     public void stream(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
         MessageContext<T> ctx = route.ctx();
 
-        RequestHandle<T> handle = registerRequest(ctx, callback);
+        RequestHandle<T> req = registerRequest(route, callback);
 
         StreamRequest<T> msg;
 
         if (ctx.hasAffinity()) {
-            msg = new AffinityStreamRequest<>(ctx.affinity(), handle.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
+            msg = new AffinityStreamRequest<>(ctx.affinity(), req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
         } else {
-            msg = new StreamRequest<>(handle.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
+            msg = new StreamRequest<>(req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
         }
 
         long receivedAtMillis = msg.hasTimeout() ? System.nanoTime() : 0;

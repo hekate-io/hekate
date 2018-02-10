@@ -17,9 +17,9 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.failover.FailoverContext;
-import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.unicast.RejectedReplyException;
 import io.hekate.messaging.unicast.ReplyDecision;
+import io.hekate.messaging.unicast.Response;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
@@ -66,8 +66,8 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
-            public ReplyDecision accept(Throwable err, String reply, MessagingEndpoint<String> from) {
-                assertEquals(receiver.getNodeId(), from.remoteNodeId());
+            public ReplyDecision accept(Throwable err, Response<String> reply) {
+                assertEquals(receiver.getNodeId(), reply.endpoint().remoteNodeId());
 
                 if (err != null) {
                     return ReplyDecision.COMPLETE;
@@ -91,8 +91,8 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
-            public ReplyDecision accept(Throwable err, String reply, MessagingEndpoint<String> from) {
-                assertEquals(receiver.getNodeId(), from.remoteNodeId());
+            public ReplyDecision accept(Throwable err, Response<String> reply) {
+                assertEquals(receiver.getNodeId(), reply.from());
 
                 accepts.incrementAndGet();
 
@@ -115,8 +115,8 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
-            public ReplyDecision accept(Throwable err, String reply, MessagingEndpoint<String> from) {
-                assertEquals(receiver.getNodeId(), from.remoteNodeId());
+            public ReplyDecision accept(Throwable err, Response<String> reply) {
+                assertEquals(receiver.getNodeId(), reply.from());
 
                 if (err != null) {
                     return ReplyDecision.COMPLETE;
@@ -141,8 +141,8 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
-            public ReplyDecision accept(Throwable err, String reply, MessagingEndpoint<String> from) {
-                assertEquals(receiver.getNodeId(), from.remoteNodeId());
+            public ReplyDecision accept(Throwable err, Response<String> reply) {
+                assertEquals(receiver.getNodeId(), reply.from());
 
                 if (err != null) {
                     return ReplyDecision.COMPLETE;
@@ -170,8 +170,8 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
-            public ReplyDecision accept(Throwable err, String reply, MessagingEndpoint<String> from) {
-                assertEquals(receiver.getNodeId(), from.remoteNodeId());
+            public ReplyDecision accept(Throwable err, Response<String> reply) {
+                assertEquals(receiver.getNodeId(), reply.from());
 
                 if (err != null) {
                     return ReplyDecision.COMPLETE;
@@ -209,9 +209,9 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
-            public ReplyDecision accept(Throwable err, String reply, MessagingEndpoint<String> from) {
+            public ReplyDecision accept(Throwable err, Response<String> reply) {
                 if (err == null) {
-                    assertEquals(receiver.getNodeId(), from.remoteNodeId());
+                    assertEquals(receiver.getNodeId(), reply.from());
                 }
 
                 accepts.incrementAndGet();
@@ -239,9 +239,9 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
-            public ReplyDecision accept(Throwable err, String reply, MessagingEndpoint<String> from) {
+            public ReplyDecision accept(Throwable err, Response<String> reply) {
                 if (err == null) {
-                    assertEquals(receiver.getNodeId(), from.remoteNodeId());
+                    assertEquals(receiver.getNodeId(), reply.from());
                 }
 
                 accepts.incrementAndGet();
@@ -267,8 +267,8 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
-            public ReplyDecision accept(Throwable err, String reply, MessagingEndpoint<String> from) {
-                assertEquals(receiver.getNodeId(), from.remoteNodeId());
+            public ReplyDecision accept(Throwable err, Response<String> reply) {
+                assertEquals(receiver.getNodeId(), reply.from());
 
                 if (err != null) {
                     return ReplyDecision.COMPLETE;

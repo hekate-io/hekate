@@ -17,6 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterTopology;
 import io.hekate.codec.CodecException;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageQueueOverflowException;
@@ -29,7 +30,6 @@ import io.hekate.network.NetworkSendCallback;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
@@ -147,8 +147,6 @@ abstract class MessagingProtocol {
 
         private SendCallback callback;
 
-        private long receivedAt;
-
         public Notification(boolean retransmit, long timeout, T payload) {
             super(retransmit);
 
@@ -183,10 +181,6 @@ abstract class MessagingProtocol {
 
         public boolean hasTimeout() {
             return timeout > 0;
-        }
-
-        public boolean isExpired() {
-            return receivedAt > 0 && System.nanoTime() - receivedAt > TimeUnit.MILLISECONDS.toNanos(timeout);
         }
 
         @Override
@@ -254,8 +248,6 @@ abstract class MessagingProtocol {
 
         private RequestHandle<T> handle;
 
-        private long receivedAt;
-
         @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
         private volatile int mustReply;
 
@@ -297,10 +289,6 @@ abstract class MessagingProtocol {
 
         public boolean hasTimeout() {
             return timeout > 0;
-        }
-
-        public boolean isExpired() {
-            return receivedAt > 0 && System.nanoTime() - receivedAt > TimeUnit.MILLISECONDS.toNanos(timeout);
         }
 
         @Override
@@ -463,7 +451,7 @@ abstract class MessagingProtocol {
 
         private MessagingConnectionBase<T> conn;
 
-        private T request;
+        private MessageRoute<T> route;
 
         private SendPressureGuard backPressure;
 
@@ -511,9 +499,9 @@ abstract class MessagingProtocol {
             }
         }
 
-        public void prepareReceive(MessagingConnectionBase<T> conn, T request) {
+        public void prepareReceive(MessagingConnectionBase<T> conn, MessageRoute<T> route) {
             this.conn = conn;
-            this.request = request;
+            this.route = route;
 
             this.payload = conn.prepareInbound(this.payload);
         }
@@ -543,6 +531,11 @@ abstract class MessagingProtocol {
         }
 
         @Override
+        public ClusterTopology topology() {
+            return route.topology();
+        }
+
+        @Override
         public MessagingEndpoint<T> endpoint() {
             return conn.endpoint();
         }
@@ -554,7 +547,12 @@ abstract class MessagingProtocol {
 
         @Override
         public T request() {
-            return request;
+            return route.ctx().originalMessage();
+        }
+
+        @Override
+        public <P extends T> P request(Class<P> type) {
+            return type.cast(request());
         }
 
         @Override
@@ -572,7 +570,7 @@ abstract class MessagingProtocol {
 
         private MessagingConnectionBase<T> conn;
 
-        private T request;
+        private MessageRoute<T> route;
 
         private SendPressureGuard backPressure;
 
@@ -618,9 +616,9 @@ abstract class MessagingProtocol {
             }
         }
 
-        public void prepareReceive(MessagingConnectionBase<T> conn, T request) {
+        public void prepareReceive(MessagingConnectionBase<T> conn, MessageRoute<T> route) {
             this.conn = conn;
-            this.request = request;
+            this.route = route;
 
             this.payload = conn.prepareInbound(this.payload);
         }
@@ -650,6 +648,11 @@ abstract class MessagingProtocol {
         }
 
         @Override
+        public ClusterTopology topology() {
+            return route.topology();
+        }
+
+        @Override
         public MessagingEndpoint<T> endpoint() {
             return conn.endpoint();
         }
@@ -661,7 +664,12 @@ abstract class MessagingProtocol {
 
         @Override
         public T request() {
-            return request;
+            return route.ctx().originalMessage();
+        }
+
+        @Override
+        public <P extends T> P request(Class<P> type) {
+            return type.cast(request());
         }
 
         @Override

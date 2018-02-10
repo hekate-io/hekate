@@ -27,7 +27,6 @@ import io.hekate.lock.internal.LockProtocol.LockResponse;
 import io.hekate.lock.internal.LockProtocol.UnlockRequest;
 import io.hekate.lock.internal.LockProtocol.UnlockResponse;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.unicast.ReplyDecision;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
@@ -471,13 +470,15 @@ class LockControllerClient {
 
         ResponseCallback<LockProtocol> callback = new ResponseCallback<LockProtocol>() {
             @Override
-            public ReplyDecision accept(Throwable err, LockProtocol reply, MessagingEndpoint<LockProtocol> from) {
+            public ReplyDecision accept(Throwable err, Response<LockProtocol> reply) {
                 if (err == null) {
-                    LockResponse lockRsp = (LockResponse)reply;
+                    LockResponse lockRsp = reply.get(LockResponse.class);
 
                     switch (lockRsp.status()) {
                         case OK: {
-                            if (becomeLocked(lockReq.topology())) {
+                            ClusterHash topology = reply.topology().hash();
+
+                            if (becomeLocked(topology)) {
                                 return COMPLETE;
                             } else {
                                 // Retry if still LOCKING.
@@ -502,7 +503,9 @@ class LockControllerClient {
                             return COMPLETE;
                         }
                         case LOCK_INFO: {
-                            if (notifyOnLockBusy(lockRsp.owner(), lockRsp.ownerThreadId(), lockReq.topology())) {
+                            ClusterHash topology = reply.topology().hash();
+
+                            if (notifyOnLockBusy(lockRsp.owner(), lockRsp.ownerThreadId(), topology)) {
                                 return COMPLETE;
                             } else {
                                 // Retry if still LOCKING.
@@ -545,13 +548,15 @@ class LockControllerClient {
 
         channel.request(unlockReq, new ResponseCallback<LockProtocol>() {
             @Override
-            public ReplyDecision accept(Throwable err, LockProtocol reply, MessagingEndpoint<LockProtocol> from) {
+            public ReplyDecision accept(Throwable err, Response<LockProtocol> reply) {
                 if (err == null) {
-                    UnlockResponse lockRsp = (UnlockResponse)reply;
+                    UnlockResponse lockRsp = reply.get(UnlockResponse.class);
 
                     switch (lockRsp.status()) {
                         case OK: {
-                            if (becomeUnlocked(unlockReq.topology())) {
+                            ClusterHash topology = reply.topology().hash();
+
+                            if (becomeUnlocked(topology)) {
                                 return COMPLETE;
                             } else {
                                 return REJECT;

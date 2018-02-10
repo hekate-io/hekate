@@ -29,7 +29,7 @@ class RequestHandle<T> {
 
     private final int epoch;
 
-    private final MessageContext<T> ctx;
+    private final MessageRoute<T> route;
 
     @ToStringIgnore
     private final InternalRequestCallback<T> callback;
@@ -41,10 +41,16 @@ class RequestHandle<T> {
     @SuppressWarnings("unused")
     private volatile int unregistered;
 
-    public RequestHandle(Integer id, RequestRegistry<T> registry, MessageContext<T> ctx, int epoch, InternalRequestCallback<T> callback) {
+    public RequestHandle(
+        Integer id,
+        RequestRegistry<T> registry,
+        MessageRoute<T> route,
+        int epoch,
+        InternalRequestCallback<T> callback
+    ) {
         this.id = id;
         this.registry = registry;
-        this.ctx = ctx;
+        this.route = route;
         this.epoch = epoch;
         this.callback = callback;
     }
@@ -54,11 +60,11 @@ class RequestHandle<T> {
     }
 
     public MessagingWorker worker() {
-        return ctx.worker();
+        return route.ctx().worker();
     }
 
     public T message() {
-        return ctx.originalMessage();
+        return route.ctx().originalMessage();
     }
 
     public int epoch() {
@@ -70,7 +76,11 @@ class RequestHandle<T> {
     }
 
     public MessageContext<T> context() {
-        return ctx;
+        return route.ctx();
+    }
+
+    public MessageRoute<T> route() {
+        return route;
     }
 
     public boolean isRegistered() {

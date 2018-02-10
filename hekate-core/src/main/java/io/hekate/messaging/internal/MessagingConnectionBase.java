@@ -17,6 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterNodeId;
 import io.hekate.messaging.MessageInterceptor;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingEndpoint;
@@ -32,8 +33,8 @@ import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkMessage;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 
@@ -111,10 +112,9 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                         log.error("Received an unexpected message [message={}]", netMsg);
                     } else {
                         if (async.isAsync()) {
-                            int affinity = randomAffinity();
                             long receivedAtNanos = receivedAtNanos(netMsg);
 
-                            MessagingWorker worker = async.workerFor(affinity);
+                            MessagingWorker worker = async.pooledWorker();
 
                             onReceiveAsyncEnqueue(from);
 
@@ -214,10 +214,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                             log.error("Received an unexpected message [message={}, from={}]", netMsg, from);
                         }
                     } else {
-                        // Use artificial affinity since all of the stream's operations must be handled by the same stream.
-                        int affinity = randomAffinity();
-
-                        MessagingWorker worker = async.workerFor(affinity);
+                        MessagingWorker worker = async.pooledWorker();
 
                         if (async.isAsync()) {
                             long receivedAtNanos = receivedAtNanos(netMsg);
@@ -446,8 +443,8 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
         return msg;
     }
 
-    protected RequestHandle<T> registerRequest(MessageContext<T> msgCtx, InternalRequestCallback<T> callback) {
-        return requests.register(epoch(), msgCtx, callback);
+    protected RequestHandle<T> registerRequest(MessageRoute<T> route, InternalRequestCallback<T> callback) {
+        return requests.register(epoch(), route, callback);
     }
 
     protected void receiveRequestAsync(RequestBase<T> msg, MessagingWorker worker, long receivedAtNanos) {
@@ -485,7 +482,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
     protected void doReceiveResponse(RequestHandle<T> request, FinalResponse<T> msg) {
         if (request.isRegistered()) {
             try {
-                msg.prepareReceive(this, request.message());
+                msg.prepareReceive(this, request.route());
 
                 request.callback().onComplete(request, null, msg);
             } catch (RuntimeException | Error e) {
@@ -505,7 +502,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
             }
 
             try {
-                msg.prepareReceive(this, request.message());
+                msg.prepareReceive(this, request.route());
 
                 request.callback().onComplete(request, null, msg);
             } catch (RuntimeException | Error e) {
@@ -557,17 +554,25 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
     }
 
     private void handleReceiveError(Throwable error, NetworkMessage<MessagingProtocol> msg, NetworkEndpoint<MessagingProtocol> from) {
+        ClusterNodeId fromId = endpoint.remoteNodeId();
+        InetSocketAddress fromAddr = from.remoteAddress();
+
         if (error instanceof RequestPayloadDecodeException) {
             RequestPayloadDecodeException e = (RequestPayloadDecodeException)error;
 
             Throwable cause = e.getCause();
 
             if (log.isErrorEnabled()) {
-                log.error("Failed to decode request message "
-                    + "[from-node-id={}, from-address={}]", endpoint.remoteNodeId(), from.remoteAddress(), cause);
+                log.error("Failed to decode request message [from-node-id={}, from-address={}]", fromId, fromAddr, cause);
             }
 
-            MessagingWorker worker = async.workerFor(e.affinity().orElse(randomAffinity()));
+            MessagingWorker worker;
+
+            if (e.affinity().isPresent()) {
+                worker = async.workerFor(e.affinity().getAsInt());
+            } else {
+                worker = async.pooledWorker();
+            }
 
             replyError(worker, e.requestId(), cause);
         } else if (error instanceof ResponsePayloadDecodeException) {
@@ -576,8 +581,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
             Throwable cause = e.getCause();
 
             if (log.isErrorEnabled()) {
-                log.error("Failed to decode response message "
-                    + "[from-node-id={}, from-address={}]", endpoint.remoteNodeId(), from.remoteAddress(), cause);
+                log.error("Failed to decode response message [from-node-id={}, from-address={}]", fromId, fromAddr, cause);
             }
 
             RequestHandle<T> handle = requests.get(e.requestId());
@@ -586,11 +590,9 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                 notifyOnRequestFailure(handle, cause);
             }
         } else if (error instanceof NotificationPayloadDecodeException) {
-            log.error("Failed to decode notification message "
-                + "[from-node-id={}, from-address={}]", endpoint.remoteNodeId(), from.remoteAddress(), error);
+            log.error("Failed to decode notification message [from-node-id={}, from-address={}]", fromId, fromAddr, error);
         } else {
-            log.error("Got error during message processing "
-                + "[from-node-id={}, from-address={}, message={}]", endpoint.remoteNodeId(), from.remoteAddress(), msg, error);
+            log.error("Got error during message processing [from-node-id={}, from-address={}, message={}]", fromId, fromAddr, msg, error);
 
             disconnectOnError(error);
         }
@@ -670,9 +672,5 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
 
     private long receivedAtNanos(NetworkMessage<MessagingProtocol> netMsg) throws IOException {
         return MessagingProtocolCodec.previewHasTimeout(netMsg) ? System.nanoTime() : 0;
-    }
-
-    private int randomAffinity() {
-        return ThreadLocalRandom.current().nextInt();
     }
 }

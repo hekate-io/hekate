@@ -36,7 +36,6 @@ import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.MessagingChannelId;
-import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.AggregateFuture;
@@ -615,11 +614,13 @@ class MessagingContext<T> implements HekateSupport {
         }
 
         if (route != null) {
-            doSend(ctx, route, callback, prevErr);
+            doSend(route, callback, prevErr);
         }
     }
 
-    private void doSend(MessageContext<T> ctx, MessageRoute<T> route, SendCallback callback, FailureInfo prevErr) {
+    private void doSend(MessageRoute<T> route, SendCallback callback, FailureInfo prevErr) {
+        MessageContext<T> ctx = route.ctx();
+
         // Decorate callback with failover, error handling logic, etc.
         SendCallback retryCallback = err -> {
             route.client().touch();
@@ -640,13 +641,13 @@ class MessagingContext<T> implements HekateSupport {
                     public void retry(FailoverRoutingPolicy routing, FailureInfo failure) {
                         switch (routing) {
                             case RETRY_SAME_NODE: {
-                                doSend(ctx, route, callback, failure);
+                                doSend(route, callback, failure);
 
                                 break;
                             }
                             case PREFER_SAME_NODE: {
                                 if (isKnownNode(route.client().node())) {
-                                    doSend(ctx, route, callback, failure);
+                                    doSend(route, callback, failure);
                                 } else {
                                     routeAndSend(ctx, callback, failure);
                                 }
@@ -709,34 +710,27 @@ class MessagingContext<T> implements HekateSupport {
         }
 
         if (route != null) {
-            doRequest(ctx, route, callback, prevErr);
+            doRequest(route, callback, prevErr);
         }
     }
 
-    private void doRequest(MessageContext<T> ctx, MessageRoute<T> route, ResponseCallback<T> callback, FailureInfo prevErr) {
+    private void doRequest(MessageRoute<T> route, ResponseCallback<T> callback, FailureInfo prevErr) {
         // Decorate callback with failover, error handling logic, etc.
+        final MessageContext<T> ctx = route.ctx();
+
         InternalRequestCallback<T> internalCallback = (request, err, reply) -> {
             route.client().touch();
 
-            MessagingEndpoint<T> replyEndpoint = null;
-
-            T replyMsg = null;
-
             // Check if reply is an application-level error message.
             if (err == null) {
-                replyMsg = reply.get();
-                replyEndpoint = reply.endpoint();
-
-                err = tryConvertToError(replyMsg, route.receiver());
-
-                if (err != null) {
-                    replyMsg = null;
-                    replyEndpoint = null;
-                }
+                err = tryConvertToError(reply.get(), route.receiver());
             }
 
-            // Check if request callback can accept operation result.
-            ReplyDecision decision = callback.accept(err, replyMsg, replyEndpoint);
+            // Resolve effective reply.
+            Response<T> effectiveReply = err == null ? reply : null;
+
+            // Check if request callback can accept the response.
+            ReplyDecision decision = callback.accept(err, effectiveReply);
 
             if (decision == null) {
                 decision = ReplyDecision.DEFAULT;
@@ -762,26 +756,29 @@ class MessagingContext<T> implements HekateSupport {
                 }
             } else {
                 // No more interactions with this request.
-                // If failover action were successful then a new request will be registered.
+                // If failover actions will be successful then a new request will be registered.
                 request.unregister();
 
                 // Apply failover actions.
                 if (decision == ReplyDecision.REJECT) {
-                    err = new RejectedReplyException("Response was rejected by a request callback", replyMsg, err);
+                    Object rejected = reply != null ? reply.get() : null;
+
+                    err = new RejectedReplyException("Response was rejected by the request callback", rejected, err);
                 }
 
+                // Failover callback.
                 FailoverCallback onFailover = new FailoverCallback() {
                     @Override
                     public void retry(FailoverRoutingPolicy routing, FailureInfo failure) {
                         switch (routing) {
                             case RETRY_SAME_NODE: {
-                                doRequest(ctx, route, callback, failure);
+                                doRequest(route, callback, failure);
 
                                 break;
                             }
                             case PREFER_SAME_NODE: {
                                 if (isKnownNode(route.client().node())) {
-                                    doRequest(ctx, route, callback, failure);
+                                    doRequest(route, callback, failure);
                                 } else {
                                     routeAndRequest(ctx, callback, failure);
                                 }

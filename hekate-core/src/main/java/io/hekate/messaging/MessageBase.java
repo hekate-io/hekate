@@ -33,7 +33,7 @@ public interface MessageBase<T> {
     T get();
 
     /**
-     * Casts the payload of this message ot the specified type.
+     * Casts the payload of this message to the specified type.
      *
      * @param type Payload type.
      * @param <P> Payload type.
