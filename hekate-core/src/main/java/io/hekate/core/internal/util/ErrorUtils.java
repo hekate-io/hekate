@@ -54,8 +54,8 @@ public final class ErrorUtils {
      * </p>
      *
      * @param type Error type to check for.
-     *
      * @param error Error (can be {@code null}).
+     *
      * @return {@code true} if the specified exception {@link Class#isAssignableFrom(Class) is} an error of the specified type or is caused
      * by an error of the specified type.
      */
@@ -67,9 +67,9 @@ public final class ErrorUtils {
      * Returns an error instance of the specified type by scanning the {@link Throwable#getCause() cause} tree.
      *
      * @param <T> Error type to search for.
-     *
      * @param type Error type to search for.
      * @param error Error (can be {@code null}).
+     *
      * @return Error or {@code null} if the specified error is not of the specified type and is not {@link Throwable#getCause() caused} by
      * an error of the specified type.
      */

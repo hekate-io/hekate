@@ -43,7 +43,6 @@ public interface DependencyContext {
      */
     String clusterName();
 
-
     /**
      * Returns the {@link Hekate} instance that manages this service.
      * <p>
