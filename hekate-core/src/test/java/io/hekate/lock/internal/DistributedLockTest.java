@@ -752,7 +752,7 @@ public class DistributedLockTest extends LockServiceTestBase {
             });
 
             // Queue lock with timeout (should fail since main lock is held).
-            if (lock.tryLock(BUSY_WAIT_INTERVAL * 4, TimeUnit.MILLISECONDS)) {
+            if (lock.tryLock(BUSY_WAIT_INTERVAL * 10, TimeUnit.MILLISECONDS)) {
                 lock.unlock();
 
                 fail("Unexpected lock.");
