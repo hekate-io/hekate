@@ -254,7 +254,6 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                 }
 
                 // Close all gateways.
-
                 waiting = gateways.values().stream()
                     .map(MessagingGateway::context)
                     .filter(Objects::nonNull)
