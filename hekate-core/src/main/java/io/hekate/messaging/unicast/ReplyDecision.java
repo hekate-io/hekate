@@ -17,12 +17,11 @@
 package io.hekate.messaging.unicast;
 
 import io.hekate.failover.FailoverPolicy;
-import io.hekate.messaging.MessagingEndpoint;
 
 /**
  * Result of {@link ResponseCallback} acceptance check.
  *
- * @see ResponseCallback#accept(Throwable, Object, MessagingEndpoint)
+ * @see ResponseCallback#accept(Throwable, Response)
  */
 public enum ReplyDecision {
     /**
