@@ -34,6 +34,7 @@ import org.junit.Test;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class StatsdMetricsPublisherTest extends StatsdMetricsTestBase {
@@ -251,7 +252,9 @@ public class StatsdMetricsPublisherTest extends StatsdMetricsTestBase {
                 publisher.publish(singleton(new TestMetric("test.metric", i)));
             }
 
-            assertEquals(maxQueueSize, publisher.queueSize());
+            int queueSize = publisher.queueSize();
+
+            assertTrue(queueSize > 0 && queueSize <= maxQueueSize);
         } finally {
             Waiting stopped = publisher.stopAsync();
 

@@ -250,7 +250,9 @@ public class InfluxDbMetricsPublisherTest extends InfluxDbMetricsTestBase {
                 }
             }
 
-            assertEquals(maxQueueSize, publisher.queueSize());
+            int queueSize = publisher.queueSize();
+
+            assertTrue(queueSize > 0 && queueSize <= maxQueueSize);
         } finally {
             Waiting stopped = publisher.stopAsync();
 
