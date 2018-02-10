@@ -154,6 +154,39 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
     @Test
     public void testStream() throws Exception {
+        AtomicReference<CountDownLatch> hangLatchRef = new AtomicReference<>();
+
+        createChannel(c -> c.withReceiver(msg -> {
+            await(hangLatchRef.get());
+
+            msg.reply("done");
+        })).join();
+
+        TestChannel sender = createChannel(c -> c.withMessagingTimeout(1)).join();
+
+        assertEquals(1, sender.get().timeout());
+
+        repeat(5, i -> {
+            hangLatchRef.set(new CountDownLatch(1));
+
+            try {
+                MessagingFutureException e = expect(MessagingFutureException.class, () ->
+                    get(sender.get().forRemotes().stream("must-fail-" + i))
+                );
+
+                assertTrue(getStacktrace(e), e.isCausedBy(MessageTimeoutException.class));
+                assertEquals(
+                    "Messaging operation timed out [message=must-fail-" + i + ']',
+                    e.findCause(MessageTimeoutException.class).getMessage()
+                );
+            } finally {
+                hangLatchRef.get().countDown();
+            }
+        });
+    }
+
+    @Test
+    public void testStreamNoTimeout() throws Exception {
         Exchanger<Message<String>> msgRef = new Exchanger<>();
 
         createChannel(c -> c.withReceiver(msg -> {

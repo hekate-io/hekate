@@ -30,9 +30,9 @@ class MessageContext<T> {
         void onTimeout();
     }
 
-    private static final AtomicIntegerFieldUpdater<MessageContext> COMPLETED = newUpdater(
+    private static final AtomicIntegerFieldUpdater<MessageContext> STATE = newUpdater(
         MessageContext.class,
-        "completed"
+        "state"
     );
 
     private static final AtomicReferenceFieldUpdater<MessageContext, Future> TIMEOUT_FUTURE = newUpdater(
@@ -40,6 +40,14 @@ class MessageContext<T> {
         Future.class,
         "timeoutFuture"
     );
+
+    private static final int STATE_PENDING = 0;
+
+    private static final int STATE_RECEIVED = 1;
+
+    private static final int STATE_COMPLETED = 2;
+
+    private static final int STATE_ANY = -1;
 
     private final int affinity;
 
@@ -63,7 +71,7 @@ class MessageContext<T> {
     private volatile Future<?> timeoutFuture;
 
     @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
-    private volatile int completed;
+    private volatile int state;
 
     public MessageContext(T message, int affinity, Object affinityKey, MessagingWorker worker, MessagingOpts<T> opts, boolean stream) {
         assert message != null : "Message is null.";
@@ -107,11 +115,11 @@ class MessageContext<T> {
     }
 
     public boolean isCompleted() {
-        return completed == 1;
+        return state == STATE_COMPLETED;
     }
 
     public boolean complete() {
-        boolean completed = doComplete();
+        boolean completed = doComplete(STATE_ANY);
 
         if (completed) {
             Future<?> localFuture = this.timeoutFuture;
@@ -125,7 +133,7 @@ class MessageContext<T> {
     }
 
     public boolean completeOnTimeout() {
-        boolean completed = doComplete();
+        boolean completed = doComplete(STATE_PENDING);
 
         if (completed) {
             if (timeoutListener != null) {
@@ -147,16 +155,58 @@ class MessageContext<T> {
         }
     }
 
-    public void setTimeoutFuture(Future<?> timeoutFuture) {
-        Future<?> oldFuture = TIMEOUT_FUTURE.getAndSet(this, timeoutFuture);
+    public void keepAlive() {
+        STATE.compareAndSet(this, STATE_PENDING, STATE_RECEIVED);
+    }
 
-        if (oldFuture != null) {
-            oldFuture.cancel(false);
+    public void setTimeoutFuture(Future<?> timeoutFuture) {
+        // 1) Try to set as initial timeout future.
+        if (!TIMEOUT_FUTURE.compareAndSet(this, null, timeoutFuture)) {
+            // 2) This is a refreshed future -> Try to refresh with state checks.
+            if (STATE.compareAndSet(this, STATE_RECEIVED, STATE_PENDING)) {
+                // Refreshed timeout future for streams.
+                this.timeoutFuture = timeoutFuture;
+
+                // Double-check that we didn't switch to COMPLETED state while updating the future field.
+                if (isCompleted()) {
+                    timeoutFuture.cancel(false);
+                }
+            }
         }
     }
 
-    private boolean doComplete() {
-        return COMPLETED.compareAndSet(this, 0, 1);
+    private boolean doComplete(int expectedState) {
+        while (true) {
+            int localState = this.state;
+
+            if (expectedState != STATE_ANY && localState != expectedState) {
+                // Precondition didn't match.
+                return false;
+            }
+
+            switch (localState) {
+                case STATE_PENDING: {
+                    if (STATE.compareAndSet(this, STATE_PENDING, STATE_COMPLETED)) {
+                        return true;
+                    }
+
+                    break;
+                }
+                case STATE_RECEIVED: {
+                    if (STATE.compareAndSet(this, STATE_RECEIVED, STATE_COMPLETED)) {
+                        return true;
+                    }
+
+                    break;
+                }
+                case STATE_COMPLETED: {
+                    return false;
+                }
+                default: {
+                    throw new IllegalArgumentException("Unexpected state of messaging context: " + localState);
+                }
+            }
+        }
     }
 
     @Override

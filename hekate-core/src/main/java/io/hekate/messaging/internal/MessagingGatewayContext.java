@@ -757,9 +757,9 @@ class MessagingGatewayContext<T> implements HekateSupport {
                     /////////////////////////////////////////////////////////////
                     // Response chunk.
                     /////////////////////////////////////////////////////////////
-                    // Reset timeout on every response chunk.
+                    // Ensure that stream doesn't get timed out.
                     if (ctx.opts().hasTimeout()) {
-                        doScheduleTimeout(ctx.opts().timeout(), ctx, callback);
+                        ctx.keepAlive();
                     }
 
                     // Accept chunk.
@@ -963,9 +963,13 @@ class MessagingGatewayContext<T> implements HekateSupport {
             try {
                 Future<?> future = ctx.worker().executeDeferred(timeout, () -> {
                     if (ctx.completeOnTimeout()) {
+                        // Timed out.
                         T msg = ctx.originalMessage();
 
                         doNotifyOnError(callback, new MessageTimeoutException("Messaging operation timed out [message=" + msg + ']'));
+                    } else {
+                        // Try reschedule next timeout (for streams).
+                        doScheduleTimeout(timeout, ctx, callback);
                     }
                 });
 
