@@ -71,7 +71,7 @@ class MessagingClientMem<T> implements MessagingClient<T> {
     @ToStringIgnore
     private final MessagingConnectionMem<T> conn;
 
-    public MessagingClientMem(ClusterNode node, MessagingContext<T> ctx) {
+    public MessagingClientMem(ClusterNode node, MessagingGatewayContext<T> ctx) {
         assert node != null : "Cluster node is null.";
         assert ctx != null : "Messaging context is null.";
 

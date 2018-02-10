@@ -57,7 +57,7 @@ class MessagingConnectionNetOut<T> extends MessagingConnectionNetBase<T> {
     @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
     private volatile int connectEpoch;
 
-    public MessagingConnectionNetOut(ClusterAddress address, NetworkClient<MessagingProtocol> net, MessagingContext<T> ctx,
+    public MessagingConnectionNetOut(ClusterAddress address, NetworkClient<MessagingProtocol> net, MessagingGatewayContext<T> ctx,
         MessagingEndpoint<T> endpoint, Object mux, DisconnectCallback callback) {
         super(net, ctx, endpoint);
 

@@ -55,7 +55,7 @@ class MessagingClientNet<T> implements MessagingClient<T> {
     private volatile int state = STATE_DISCONNECTED;
 
     public MessagingClientNet(String channelName, ClusterNode remoteNode, NetworkConnector<MessagingProtocol> net,
-        MessagingContext<T> ctx, boolean trackIdle) {
+        MessagingGatewayContext<T> ctx, boolean trackIdle) {
         assert channelName != null : "Channel name is null.";
         assert remoteNode != null : "Remote node is null.";
         assert net != null : "Network connector is null.";

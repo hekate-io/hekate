@@ -258,7 +258,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                 waiting = gateways.values().stream()
                     .map(MessagingGateway::context)
                     .filter(Objects::nonNull)
-                    .map(MessagingContext::close)
+                    .map(MessagingGatewayContext::close)
                     .collect(Collectors.toList());
 
                 // Shutdown timer.
@@ -421,7 +421,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
             checkIdle = timer.scheduleWithFixedDelay(() -> {
                 try {
-                    MessagingContext<T> ctx = gateway.context();
+                    MessagingGatewayContext<T> ctx = gateway.context();
 
                     if (ctx != null) {
                         ctx.checkIdleConnections();
@@ -435,7 +435,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         }
 
         // Create context.
-        MessagingContext<T> ctx = new MessagingContext<>(
+        MessagingGatewayContext<T> ctx = new MessagingGatewayContext<>(
             name,
             hekate,
             gateway.baseType(),
@@ -530,7 +530,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                     }
 
                     // Reject connection if channel is not initialized.
-                    MessagingContext<T> ctx = connectTo.context();
+                    MessagingGatewayContext<T> ctx = connectTo.context();
 
                     if (ctx == null) {
                         client.disconnect();

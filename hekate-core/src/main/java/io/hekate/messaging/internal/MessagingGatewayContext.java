@@ -83,7 +83,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toList;
 
-class MessagingContext<T> implements HekateSupport {
+class MessagingGatewayContext<T> implements HekateSupport {
     interface CloseCallback {
         void onBeforeClose();
     }
@@ -240,7 +240,7 @@ class MessagingContext<T> implements HekateSupport {
     @ToStringIgnore
     private boolean closed;
 
-    public MessagingContext(
+    public MessagingGatewayContext(
         String name,
         HekateSupport hekate,
         Class<T> baseType,

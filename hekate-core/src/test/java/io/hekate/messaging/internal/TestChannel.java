@@ -99,7 +99,7 @@ public class TestChannel {
         return node;
     }
 
-    public MessagingContext<String> getImpl() {
+    public MessagingGatewayContext<String> getImpl() {
         return channel.context();
     }
 

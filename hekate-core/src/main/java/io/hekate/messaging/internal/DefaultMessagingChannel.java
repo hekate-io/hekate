@@ -262,7 +262,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     // Package level for testing purposes.
-    MessagingContext<T> context() {
+    MessagingGatewayContext<T> context() {
         return gateway.requireContext();
     }
 

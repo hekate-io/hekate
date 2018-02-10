@@ -89,7 +89,7 @@ class MessagingGateway<T> {
     private final CodecService codecService;
 
     @ToStringIgnore
-    private volatile MessagingContext<T> ctx;
+    private volatile MessagingGatewayContext<T> ctx;
 
     public MessagingGateway(MessagingChannelConfig<T> cfg, Hekate hekate, ClusterService cluster, CodecService codecService) {
         assert cfg != null : "Messaging channel configuration is null.";
@@ -285,8 +285,8 @@ class MessagingGateway<T> {
         return requireContext().executor();
     }
 
-    public MessagingContext<T> requireContext() {
-        MessagingContext<T> ctx = this.ctx;
+    public MessagingGatewayContext<T> requireContext() {
+        MessagingGatewayContext<T> ctx = this.ctx;
 
         if (ctx == null) {
             throw new IllegalStateException("Messaging channel is not initialized [name=" + name + ']');
@@ -295,11 +295,11 @@ class MessagingGateway<T> {
         return ctx;
     }
 
-    public MessagingContext<T> context() {
+    public MessagingGatewayContext<T> context() {
         return ctx;
     }
 
-    public void init(MessagingContext<T> ctx) {
+    public void init(MessagingGatewayContext<T> ctx) {
         assert ctx != null : "Messaging context is null.";
 
         this.ctx = ctx;

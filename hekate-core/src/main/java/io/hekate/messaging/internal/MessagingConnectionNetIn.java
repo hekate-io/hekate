@@ -22,7 +22,7 @@ import io.hekate.network.NetworkFuture;
 import java.nio.channels.ClosedChannelException;
 
 class MessagingConnectionNetIn<T> extends MessagingConnectionNetBase<T> {
-    public MessagingConnectionNetIn(NetworkEndpoint<MessagingProtocol> net, MessagingEndpoint<T> endpoint, MessagingContext<T> ctx) {
+    public MessagingConnectionNetIn(NetworkEndpoint<MessagingProtocol> net, MessagingEndpoint<T> endpoint, MessagingGatewayContext<T> ctx) {
         super(net, ctx, endpoint);
     }
 

@@ -41,7 +41,7 @@ import org.slf4j.Logger;
 abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundContext, MessageInterceptor.ReplyContext {
     private final Logger log;
 
-    private final MessagingContext<T> ctx;
+    private final MessagingGatewayContext<T> ctx;
 
     private final MessageReceiver<T> receiver;
 
@@ -55,7 +55,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
 
     private final RequestRegistry<T> requests;
 
-    public MessagingConnectionBase(MessagingContext<T> ctx, MessagingExecutor async, MessagingEndpoint<T> endpoint) {
+    public MessagingConnectionBase(MessagingGatewayContext<T> ctx, MessagingExecutor async, MessagingEndpoint<T> endpoint) {
         assert ctx != null : "Messaging context is null.";
         assert async != null : "Executor is null.";
         assert endpoint != null : "Messaging endpoint is null.";
@@ -94,7 +94,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
         return ctx.localNode();
     }
 
-    public MessagingContext<T> gateway() {
+    public MessagingGatewayContext<T> gateway() {
         return ctx;
     }
 

@@ -30,7 +30,7 @@ import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkFuture;
 
 class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
-    public MessagingConnectionMem(MessagingContext<T> ctx, MessagingExecutor async) {
+    public MessagingConnectionMem(MessagingGatewayContext<T> ctx, MessagingExecutor async) {
         super(ctx, async, new DefaultMessagingEndpoint<>(ctx.localNode().id(), ctx.channel()));
     }
 
