@@ -137,9 +137,14 @@ class MessageContext<T> {
     }
 
     public void setTimeoutListener(TimeoutListener timeoutListener) {
+        assert timeoutListener != null : "Timeout listener is null.";
         assert opts.hasTimeout() : "Timeout listener can be set only for time-limited contexts.";
 
         this.timeoutListener = timeoutListener;
+
+        if (isCompleted()) {
+            timeoutListener.onTimeout();
+        }
     }
 
     public void setTimeoutFuture(Future<?> timeoutFuture) {

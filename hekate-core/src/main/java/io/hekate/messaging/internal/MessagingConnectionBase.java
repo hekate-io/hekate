@@ -496,11 +496,6 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
 
     protected void doReceiveResponseChunk(RequestHandle<T> request, ResponseChunk<T> msg) {
         if (request.isRegistered()) {
-            if (request.context().opts().hasTimeout()) {
-                // Reset timeout on every response chunk.
-                gateway().scheduleTimeout(request.context(), request.callback());
-            }
-
             try {
                 msg.prepareReceive(this, request.route());
 

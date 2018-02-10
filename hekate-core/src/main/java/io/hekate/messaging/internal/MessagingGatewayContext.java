@@ -739,8 +739,11 @@ class MessagingGatewayContext<T> implements HekateSupport {
             FailoverPolicy failover = ctx.opts().failover();
 
             if (decision == ReplyDecision.COMPLETE || decision == ReplyDecision.DEFAULT && err == null || failover == null) {
-                // Check if this is the final reply or an error (ignore chunks).
+                // Check if this is the final response or an error (ignore chunks).
                 if (err != null || !reply.isPartial()) {
+                    /////////////////////////////////////////////////////////////
+                    // Final response or error.
+                    /////////////////////////////////////////////////////////////
                     // Make sure that callback will be notified only once.
                     if (ctx.complete()) {
                         request.unregister();
@@ -751,12 +754,22 @@ class MessagingGatewayContext<T> implements HekateSupport {
                         callback.onComplete(err, reply);
                     }
                 } else if (!ctx.isCompleted()) {
+                    /////////////////////////////////////////////////////////////
+                    // Response chunk.
+                    /////////////////////////////////////////////////////////////
+                    // Reset timeout on every response chunk.
+                    if (ctx.opts().hasTimeout()) {
+                        doScheduleTimeout(ctx.opts().timeout(), ctx, callback);
+                    }
+
                     // Accept chunk.
                     callback.onComplete(null, reply);
                 }
             } else {
-                // No more interactions with this request.
-                // If failover actions will be successful then a new request will be registered.
+                /////////////////////////////////////////////////////////////
+                // Apply failover.
+                /////////////////////////////////////////////////////////////
+                // Unregister request (if failover actions will be successful then a new request will be registered).
                 request.unregister();
 
                 // Apply failover actions.
@@ -802,6 +815,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
                     }
                 };
 
+                // Apply failover.
                 failoverAsync(ctx, err, route.client().node(), onFailover, prevErr);
             }
         };
@@ -931,10 +945,6 @@ class MessagingGatewayContext<T> implements HekateSupport {
         if (clientsToClose != null) {
             clientsToClose.forEach(MessagingClient::close);
         }
-    }
-
-    void scheduleTimeout(MessageContext<T> ctx, Object callback) {
-        doScheduleTimeout(ctx.opts().timeout(), ctx, callback);
     }
 
     // This method is for testing purposes only.
