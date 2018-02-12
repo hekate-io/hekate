@@ -825,12 +825,12 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         repeat(25, j -> {
             received.clear();
 
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < 50; i++) {
                 get(channel1.get().withAffinity(j).request("test" + i));
             }
 
             List<ClusterNode> singleNode = received.entrySet().stream()
-                .filter(e -> e.getValue().size() == 5)
+                .filter(e -> e.getValue().size() == 50)
                 .map(Map.Entry::getKey)
                 .collect(toList());
 
