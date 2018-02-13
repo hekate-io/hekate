@@ -255,6 +255,16 @@ public class RpcServiceTest extends RpcServiceTestBase {
     }
 
     @Test
+    public void testClusterOfTypeAndTag() throws Exception {
+        TestRpcA rpc = mock(TestRpcA.class);
+
+        ClientAndServer ctx = prepareClientAndServer(rpc, "test");
+
+        assertTrue(ctx.client().rpc().clusterOf(TestRpcA.class, "test").topology().contains(ctx.server().localNode()));
+        assertFalse(ctx.client().rpc().clusterOf(TestRpcA.class, "test").topology().contains(ctx.client().localNode()));
+    }
+
+    @Test
     public void testRejoin() throws Exception {
         TestRpcA rpc = mock(TestRpcA.class);
 

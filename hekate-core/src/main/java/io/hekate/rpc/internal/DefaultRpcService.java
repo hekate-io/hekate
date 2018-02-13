@@ -426,7 +426,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
         try {
             RpcInterfaceInfo<?> rpcType = typeAnalyzer.analyzeType(type);
 
-            return channel.cluster().filter(filterFor(rpcType, null));
+            return channel.cluster().filter(filterFor(rpcType, tag));
         } finally {
             guard.unlockRead();
         }
