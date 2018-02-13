@@ -20,6 +20,7 @@ import io.hekate.metrics.Metric;
 import io.hekate.metrics.local.TimeSpan;
 import io.hekate.metrics.local.TimerMetric;
 import io.hekate.util.time.SystemTimeSupplier;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
 class DefaultTimeMetric implements TimerMetric {
@@ -53,6 +54,8 @@ class DefaultTimeMetric implements TimerMetric {
 
     private final String name;
 
+    private final TimeUnit unit;
+
     private final SystemTimeSupplier time;
 
     private final DefaultCounterMetric count;
@@ -61,11 +64,13 @@ class DefaultTimeMetric implements TimerMetric {
 
     private final String rateName;
 
-    public DefaultTimeMetric(String name, SystemTimeSupplier time, String rateName) {
+    public DefaultTimeMetric(String name, TimeUnit unit, SystemTimeSupplier time, String rateName) {
         assert name != null : "Name is null.";
+        assert unit != null : "Time unit is null.";
         assert time != null : "Time is null.";
 
         this.name = name;
+        this.unit = unit;
         this.time = time;
         this.rateName = rateName;
         this.count = new DefaultCounterMetric(rateName == null ? name + ".rate" : rateName, false);
@@ -111,6 +116,6 @@ class DefaultTimeMetric implements TimerMetric {
     private void update(long time) {
         count.add(1);
 
-        sum.add(time);
+        sum.add(unit.convert(time, TimeUnit.NANOSECONDS));
     }
 }

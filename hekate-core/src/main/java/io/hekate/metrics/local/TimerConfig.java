@@ -16,6 +16,8 @@
 
 package io.hekate.metrics.local;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Configuration for {@link TimerMetric}.
  *
@@ -28,6 +30,8 @@ package io.hekate.metrics.local;
  */
 public class TimerConfig extends MetricConfigBase<TimerConfig> {
     private String rateName;
+
+    private TimeUnit timeUnit = TimeUnit.NANOSECONDS;
 
     /**
      * Constructs new instance.
@@ -80,6 +84,41 @@ public class TimerConfig extends MetricConfigBase<TimerConfig> {
      */
     public TimerConfig withRateName(String rateName) {
         setRateName(rateName);
+
+        return this;
+    }
+
+    /**
+     * Returns the time unit of this timer (see {@link #setTimeUnit(TimeUnit)}).
+     *
+     * @return Time unit.
+     */
+    public TimeUnit getTimeUnit() {
+        return timeUnit;
+    }
+
+    /**
+     * Sets the time unit of this timer.
+     *
+     * <p>
+     * Default value of this parameter is {@link TimeUnit#NANOSECONDS}.
+     * </p>
+     *
+     * @param timeUnit Time unit.
+     */
+    public void setTimeUnit(TimeUnit timeUnit) {
+        this.timeUnit = timeUnit != null ? timeUnit : TimeUnit.NANOSECONDS;
+    }
+
+    /**
+     * Fluent-style version of {@link #setTimeUnit(TimeUnit)}.
+     *
+     * @param timeUnit Time unit.
+     *
+     * @return This instance.
+     */
+    public TimerConfig withTimeUnit(TimeUnit timeUnit) {
+        setTimeUnit(timeUnit);
 
         return this;
     }

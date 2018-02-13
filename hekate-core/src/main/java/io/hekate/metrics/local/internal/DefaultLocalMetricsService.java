@@ -464,6 +464,17 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
                                     + ']');
                         }
                     }
+
+                    TimeUnit oldUnit = oldCfg.getTimeUnit();
+                    TimeUnit newUnit = newCfg.getTimeUnit();
+
+                    if (oldUnit != newUnit) {
+                        throw TIMER_CHECK.fail("can't merge configurations of a timer metric with different time units "
+                            + "[timer=" + name
+                            + ", unit-1=" + oldUnit
+                            + ", unit-2=" + newUnit
+                            + ']');
+                    }
                 }
 
             } else {
@@ -594,7 +605,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
                 }
 
                 // Register timer.
-                DefaultTimeMetric timer = new DefaultTimeMetric(name, time, rateName);
+                DefaultTimeMetric timer = new DefaultTimeMetric(name, cfg.getTimeUnit(), time, rateName);
 
                 timers.put(timer.name(), timer);
 
@@ -732,6 +743,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
         COUNTER_CHECK.notEmpty(cfg.getName(), "name");
         COUNTER_CHECK.validSysName(cfg.getName(), "name");
         COUNTER_CHECK.validSysName(cfg.getRateName(), "rate name");
+        COUNTER_CHECK.notNull(cfg.getTimeUnit(), "timeUnit");
 
         return cfg.getName().trim();
     }

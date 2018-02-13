@@ -23,6 +23,7 @@ import io.hekate.metrics.local.TimeSpan;
 import io.hekate.metrics.local.TimerConfig;
 import io.hekate.metrics.local.TimerMetric;
 import io.hekate.util.time.SystemTimeSupplier;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 import org.junit.Test;
@@ -92,6 +93,20 @@ public class LocalMetricsServiceTimerTest extends LocalMetricsServiceTestBase {
             assertTrue(getStacktrace(e), e.getCause() instanceof HekateConfigurationException);
             assertEquals("TimerConfig: can't merge configurations of a timer metric with different 'rate' names "
                 + "[timer=t, rate-name-1=t.rate1, rate-name-2=t.rate2]", e.getCause().getMessage());
+        }
+    }
+
+    @Test
+    public void testCanNotMergeTimeUnits() throws Exception {
+        try {
+            restart(c -> {
+                c.withMetric(new TimerConfig("t").withTimeUnit(TimeUnit.SECONDS));
+                c.withMetric(new TimerConfig("t").withTimeUnit(TimeUnit.MINUTES));
+            });
+        } catch (HekateFutureException e) {
+            assertTrue(getStacktrace(e), e.getCause() instanceof HekateConfigurationException);
+            assertEquals("TimerConfig: can't merge configurations of a timer metric with different time units "
+                + "[timer=t, unit-1=SECONDS, unit-2=MINUTES]", e.getCause().getMessage());
         }
     }
 

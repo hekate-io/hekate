@@ -16,6 +16,7 @@
 
 package io.hekate.metrics.local;
 
+import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -40,6 +41,27 @@ public class TimerConfigTest extends MetricConfigTestBase {
         assertSame(cfg, cfg.withRateName("test2"));
 
         assertEquals("test2", cfg.getRateName());
+    }
+
+    @Test
+    public void testTimeUnit() {
+        assertSame(TimeUnit.NANOSECONDS, cfg.getTimeUnit());
+
+        cfg.setTimeUnit(null);
+
+        assertSame(TimeUnit.NANOSECONDS, cfg.getTimeUnit());
+
+        assertSame(cfg, cfg.withTimeUnit(null));
+
+        assertSame(TimeUnit.NANOSECONDS, cfg.getTimeUnit());
+
+        cfg.setTimeUnit(TimeUnit.SECONDS);
+
+        assertSame(TimeUnit.SECONDS, cfg.getTimeUnit());
+
+        assertSame(cfg, cfg.withTimeUnit(TimeUnit.MINUTES));
+
+        assertSame(TimeUnit.MINUTES, cfg.getTimeUnit());
     }
 
     @Override
