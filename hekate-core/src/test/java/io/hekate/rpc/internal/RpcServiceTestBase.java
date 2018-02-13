@@ -72,6 +72,7 @@ public abstract class RpcServiceTestBase extends HekateNodeMultiCodecTestBase {
     protected ClientAndServer prepareClientAndServer(Object rpc) throws Exception {
         return prepareClientAndServer(rpc, null);
     }
+
     protected ClientAndServer prepareClientAndServer(Object rpc, String tag) throws Exception {
         HekateTestNode server = createNode(boot -> {
             boot.withNodeName("rpc-server");
