@@ -47,5 +47,5 @@ public enum SplitBrainAction {
      * Kills the JVM via {@link System#exit(int)} with exit code {@code 250}. This policy is expected to be used with some sort of a shell
      * script or a process monitoring daemon that is capable of restarting processes.
      */
-    KILL_JVM;
+    KILL_JVM
 }

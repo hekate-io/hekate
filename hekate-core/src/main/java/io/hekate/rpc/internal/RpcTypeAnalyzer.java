@@ -34,7 +34,7 @@ import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Arrays.asList;
 
 class RpcTypeAnalyzer {
-    private ConcurrentMap<Class<?>, List<RpcInterfaceInfo<?>>> cache = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Class<?>, List<RpcInterfaceInfo<?>>> cache = new ConcurrentHashMap<>();
 
     public <T> RpcInterfaceInfo<T> analyzeType(Class<T> type) {
         @SuppressWarnings("unchecked")

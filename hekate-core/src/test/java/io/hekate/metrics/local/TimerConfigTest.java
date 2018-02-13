@@ -24,7 +24,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
 public class TimerConfigTest extends MetricConfigTestBase {
-    private TimerConfig cfg = new TimerConfig();
+    private final TimerConfig cfg = new TimerConfig();
 
     @Test
     public void testTotalName() {

@@ -37,7 +37,7 @@ import static org.junit.Assert.assertTrue;
 
 public class LocalMetricsServiceTimerTest extends LocalMetricsServiceTestBase {
     private static class SystemTimeMock implements SystemTimeSupplier {
-        private AtomicLong time = new AtomicLong();
+        private final AtomicLong time = new AtomicLong();
 
         @Override
         public long nanoTime() {
@@ -49,7 +49,7 @@ public class LocalMetricsServiceTimerTest extends LocalMetricsServiceTestBase {
         }
     }
 
-    private SystemTimeMock time = new SystemTimeMock();
+    private final SystemTimeMock time = new SystemTimeMock();
 
     @Test
     public void testAutoRegister() throws Exception {
