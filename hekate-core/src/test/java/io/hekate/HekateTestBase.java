@@ -195,9 +195,9 @@ public abstract class HekateTestBase {
 
         @Override
         protected void starting(Description description) {
-            if (CURRENT_TEST_NAME.compareAndSet(null, description.getDisplayName())) {
-                LocalDateTime now = LocalDateTime.now();
+            LocalDateTime now = LocalDateTime.now();
 
+            if (CURRENT_TEST_NAME.compareAndSet(null, description.getDisplayName())) {
                 time.set(now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
 
                 System.out.println("#######################################");
@@ -205,7 +205,7 @@ public abstract class HekateTestBase {
                 System.out.println("#--------------------------------------");
             } else {
                 System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                System.out.println("!!! KILLING THE JVM.");
+                System.out.println("!!! KILLING THE JVM [" + TIMESTAMP_FORMAT.format(now) + ']');
                 System.out.println("!!! --------------------------------------------");
                 System.out.println("!!! Previous test case hanged: " + CURRENT_TEST_NAME.get());
                 System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
