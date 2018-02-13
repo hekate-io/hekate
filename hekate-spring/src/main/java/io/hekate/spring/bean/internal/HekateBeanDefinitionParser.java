@@ -1017,6 +1017,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
 
                 setProperty(timer, timerEl, "name", "name");
                 setProperty(timer, timerEl, "rateName", "rate-name");
+                setProperty(timer, timerEl, "timeUnit", "unit");
 
                 allMetrics.add(registerInnerBean(timer, ctx));
 

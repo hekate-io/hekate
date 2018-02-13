@@ -52,6 +52,7 @@ import io.hekate.rpc.RpcServerInfo;
 import io.hekate.rpc.RpcService;
 import io.hekate.util.format.ToString;
 import java.lang.management.ManagementFactory;
+import java.util.concurrent.TimeUnit;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -164,8 +165,12 @@ public class XsdSingleNodeTest extends HekateTestBase {
         assertNotNull(lockRegion);
         assertNotNull(lock);
         assertNotNull(counter);
-        assertNotNull(timer);
         assertNotNull(probe);
+
+        assertNotNull(timer);
+        assertSame(TimeUnit.SECONDS, timer.timeUnit());
+        assertTrue(timer.hasRate());
+        assertEquals("timer1.rate", timer.rate().name());
 
         verifyJmx();
 

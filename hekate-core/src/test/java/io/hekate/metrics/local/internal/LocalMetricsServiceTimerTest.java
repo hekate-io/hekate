@@ -30,6 +30,7 @@ import org.junit.Test;
 
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -56,6 +57,8 @@ public class LocalMetricsServiceTimerTest extends LocalMetricsServiceTestBase {
 
         assertNotNull(timer);
 
+        assertFalse(timer.hasRate());
+        assertSame(TimeUnit.NANOSECONDS, timer.timeUnit());
         assertTrue(metrics.allMetrics().containsKey("t"));
         assertEquals("t", metrics.metric("t").name());
     }

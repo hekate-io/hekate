@@ -54,7 +54,7 @@ class DefaultTimeMetric implements TimerMetric {
 
     private final String name;
 
-    private final TimeUnit unit;
+    private final TimeUnit timeUnit;
 
     private final SystemTimeSupplier time;
 
@@ -64,13 +64,13 @@ class DefaultTimeMetric implements TimerMetric {
 
     private final String rateName;
 
-    public DefaultTimeMetric(String name, TimeUnit unit, SystemTimeSupplier time, String rateName) {
+    public DefaultTimeMetric(String name, TimeUnit timeUnit, SystemTimeSupplier time, String rateName) {
         assert name != null : "Name is null.";
-        assert unit != null : "Time unit is null.";
+        assert timeUnit != null : "Time unit is null.";
         assert time != null : "Time is null.";
 
         this.name = name;
-        this.unit = unit;
+        this.timeUnit = timeUnit;
         this.time = time;
         this.rateName = rateName;
         this.count = new DefaultCounterMetric(rateName == null ? name + ".rate" : rateName, false);
@@ -84,6 +84,11 @@ class DefaultTimeMetric implements TimerMetric {
     @Override
     public Metric rate() {
         return count;
+    }
+
+    @Override
+    public TimeUnit timeUnit() {
+        return timeUnit;
     }
 
     @Override
@@ -116,6 +121,6 @@ class DefaultTimeMetric implements TimerMetric {
     private void update(long time) {
         count.add(1);
 
-        sum.add(unit.convert(time, TimeUnit.NANOSECONDS));
+        sum.add(timeUnit.convert(time, TimeUnit.NANOSECONDS));
     }
 }

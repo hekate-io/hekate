@@ -1597,6 +1597,13 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
+        <xsd:attribute name="unit" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.metrics.local.TimerConfig#setTimeUnit(java.util.concurrent.TimeUnit)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
         <xsd:attribute name="rate-name" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>

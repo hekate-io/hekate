@@ -18,6 +18,7 @@ package io.hekate.metrics.local;
 
 import io.hekate.metrics.Metric;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Metric for tracking the duration of an arbitrary event.
@@ -61,6 +62,13 @@ public interface TimerMetric extends Metric {
      * @see #hasRate()
      */
     Metric rate();
+
+    /**
+     * Returns the {@link TimerConfig#setTimeUnit(TimeUnit) time unit }of this timer.
+     *
+     * @return Time unit.
+     */
+    TimeUnit timeUnit();
 
     /**
      * Measures the duration of the specified {@link Callable} task.

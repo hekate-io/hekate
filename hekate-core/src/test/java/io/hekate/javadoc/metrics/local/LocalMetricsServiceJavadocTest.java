@@ -28,6 +28,7 @@ import io.hekate.metrics.local.ProbeConfig;
 import io.hekate.metrics.local.TimeSpan;
 import io.hekate.metrics.local.TimerConfig;
 import io.hekate.metrics.local.TimerMetric;
+import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
@@ -69,6 +70,7 @@ public class LocalMetricsServiceJavadocTest extends HekateNodeTestBase {
             timer = hekate.localMetrics().register(new TimerConfig()
                 .withName("task.time")
                 .withRateName("task.rate")
+                .withTimeUnit(TimeUnit.MICROSECONDS)
             );
         }
 

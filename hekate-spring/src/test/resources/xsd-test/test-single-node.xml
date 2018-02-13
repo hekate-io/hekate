@@ -259,7 +259,7 @@
             </probes>
 
             <timers>
-                <timer name="timer1" rate-name="timer1.rate"/>
+                <timer name="timer1" unit="SECONDS" rate-name="timer1.rate"/>
                 <timer name="timer2" rate-name="timer2.rate"/>
             </timers>
 
