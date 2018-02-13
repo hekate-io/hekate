@@ -148,6 +148,9 @@ public abstract class HekateTestBase {
     /** Prefixes for {@link Thread#getName() thread names} that should NOT be checked by {@link #assertAllThreadsStopped()}. */
     private static final List<String> KNOWN_THREAD_PREFIXES = new ArrayList<>();
 
+    /** Name of the currently running test case. */
+    private static final AtomicReference<String> CURRENT_TEST_NAME = new AtomicReference<>();
+
     static {
         // Fallback thread.
         KNOWN_THREAD_PREFIXES.add("HekateAsyncFallback".toLowerCase());
@@ -192,17 +195,29 @@ public abstract class HekateTestBase {
 
         @Override
         protected void starting(Description description) {
-            LocalDateTime now = LocalDateTime.now();
+            if (CURRENT_TEST_NAME.compareAndSet(null, description.getDisplayName())) {
+                LocalDateTime now = LocalDateTime.now();
 
-            time.set(now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
+                time.set(now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
 
-            System.out.println("#######################################");
-            System.out.println("# Starting: " + description.getDisplayName() + " [start-time=" + TIMESTAMP_FORMAT.format(now) + ']');
-            System.out.println("#--------------------------------------");
+                System.out.println("#######################################");
+                System.out.println("# Starting: " + description.getDisplayName() + " [start-time=" + TIMESTAMP_FORMAT.format(now) + ']');
+                System.out.println("#--------------------------------------");
+            } else {
+                System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                System.out.println("!!! KILLING THE JVM.");
+                System.out.println("!!! --------------------------------------------");
+                System.out.println("!!! Previous test case hanged: " + CURRENT_TEST_NAME.get());
+                System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                System.out.println(threadDump());
+                System.exit(-1);
+            }
         }
 
         @Override
         protected void finished(Description description) {
+            CURRENT_TEST_NAME.set(null);
+
             String durationInfo = "";
 
             if (time.get() != null) {
@@ -224,6 +239,8 @@ public abstract class HekateTestBase {
 
         @Override
         protected void failed(Throwable e, Description description) {
+            CURRENT_TEST_NAME.set(null);
+
             if (e instanceof TestTimedOutException) {
                 System.out.println(threadDump());
             }
