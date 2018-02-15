@@ -197,21 +197,20 @@ public abstract class HekateTestBase {
         protected void starting(Description description) {
             LocalDateTime now = LocalDateTime.now();
 
-            if (CURRENT_TEST_NAME.compareAndSet(null, description.getDisplayName())) {
-                time.set(now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
-
-                System.out.println("#######################################");
-                System.out.println("# Starting: " + description.getDisplayName() + " [start-time=" + TIMESTAMP_FORMAT.format(now) + ']');
-                System.out.println("#--------------------------------------");
-            } else {
+            if (!CURRENT_TEST_NAME.compareAndSet(null, description.getDisplayName())) {
                 System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                System.out.println("!!! KILLING THE JVM [" + TIMESTAMP_FORMAT.format(now) + ']');
-                System.out.println("!!! --------------------------------------------");
-                System.out.println("!!! Previous test case hanged: " + CURRENT_TEST_NAME.get());
+                System.out.println("!!! TEST HANGED [" + TIMESTAMP_FORMAT.format(now) + "] " + CURRENT_TEST_NAME.get());
                 System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 System.out.println(threadDump());
-                System.exit(-1);
             }
+
+            CURRENT_TEST_NAME.set(description.getDisplayName());
+
+            time.set(now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
+
+            System.out.println("#######################################");
+            System.out.println("# Starting: " + description.getDisplayName() + " [start-time=" + TIMESTAMP_FORMAT.format(now) + ']');
+            System.out.println("#--------------------------------------");
         }
 
         @Override
