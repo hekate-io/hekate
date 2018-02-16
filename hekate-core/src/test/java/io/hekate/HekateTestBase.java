@@ -201,6 +201,7 @@ public abstract class HekateTestBase {
                 System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 System.out.println("!!! TEST HANGED [" + TIMESTAMP_FORMAT.format(now) + "] " + CURRENT_TEST_NAME.get());
                 System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                
                 System.out.println(threadDump());
             }
 
