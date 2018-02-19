@@ -112,6 +112,9 @@ public final class AsyncUtils {
                     return future.get();
                 } catch (InterruptedException e) {
                     interrupted = true;
+
+                    // Make sure that interrupted flag is reset to 'false'.
+                    Thread.interrupted();
                 }
             }
         } finally {
