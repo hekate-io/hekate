@@ -30,11 +30,15 @@ class NettyWriteQueue {
 
     private final Runnable flushTask;
 
+    private volatile boolean writable;
+
     public NettyWriteQueue() {
-        this(null);
+        this(true, null);
     }
 
-    public NettyWriteQueue(NettySpy spy) {
+    public NettyWriteQueue(boolean writable, NettySpy spy) {
+        this.writable = writable;
+
         flushTask = () -> {
             flushScheduled.set(false);
 
@@ -74,7 +78,19 @@ class NettyWriteQueue {
     public void enqueue(DeferredMessage msg, Executor executor) {
         queue.add(msg);
 
-        // Check if flush operation should be enqueued too.
+        if (writable) {
+            flush(executor);
+        }
+    }
+
+    public void enableWrites(Executor executor) {
+        writable = true;
+
+        flush(executor);
+    }
+
+    private void flush(Executor executor) {
+        // Check if flush operation is not scheduled yet.
         if (flushScheduled.compareAndSet(false, true)) {
             executor.execute(flushTask);
         }

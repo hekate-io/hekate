@@ -71,10 +71,18 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
 
         private final Codec<Object> codec;
 
-        public ChannelContext(Channel channel, GenericFutureListener<ChannelFuture> writeListener, Codec<Object> codec) {
+        private final NettyWriteQueue writeQueue;
+
+        public ChannelContext(Channel channel, GenericFutureListener<ChannelFuture> writeListener, Codec<Object> codec,
+            NettyWriteQueue queue) {
             this.channel = channel;
             this.writeListener = writeListener;
             this.codec = codec;
+            this.writeQueue = queue;
+        }
+
+        public NettyWriteQueue queue() {
+            return writeQueue;
         }
 
         public Channel channel() {
@@ -345,9 +353,9 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
 
     private final int affinity = ThreadLocalRandom.current().nextInt();
 
-    private final NettyWriteQueue writeQueue;
-
     private final SslContext ssl;
+
+    private final NettySpy spy;
 
     private NetworkFuture<T> connFuture;
 
@@ -397,8 +405,7 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
         eventLoop = factory.getEventLoop().next();
         metrics = factory.getMetrics();
         ssl = factory.getSsl();
-
-        writeQueue = new NettyWriteQueue(factory.getSpy());
+        spy = factory.getSpy();
     }
 
     @Override
@@ -670,7 +677,11 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
             // Prepare codec.
             Codec<Object> codec = codecFactory.createCodec();
 
+            // Prepare channel state handler.
             NettyClientStateHandler<T> stateHandler = new NettyClientStateHandler<>(this, callback);
+
+            // Prepare write queue.
+            NettyWriteQueue writeQueue = new NettyWriteQueue(false, spy);
 
             // Prepare channel handlers.
             bootstrap.handler(new ChannelInitializer() {
@@ -714,6 +725,9 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
                     pipe.addLast(msgHandler);
                     pipe.addLast(NettyClientStateHandler.class.getName(), stateHandler);
                     pipe.addLast(NettyClientDeferHandler.class.getName(), deferHandler);
+
+                    // Notify queue on channel readiness.
+                    writeQueue.enableWrites(eventLoop);
                 }
             });
 
@@ -725,7 +739,7 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
 
             Channel channel = future.channel();
 
-            channelCtx = new ChannelContext(channel, allWritesListener, codec);
+            channelCtx = new ChannelContext(channel, allWritesListener, codec, writeQueue);
         } finally {
             lock.unlock();
         }
@@ -827,7 +841,7 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
 
         // Enqueue write operation.
         if (!failed) {
-            writeQueue.enqueue(deferred, eventLoop);
+            ctx.queue().enqueue(deferred, eventLoop);
         }
     }
 
