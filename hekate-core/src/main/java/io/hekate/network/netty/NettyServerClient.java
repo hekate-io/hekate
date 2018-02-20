@@ -613,6 +613,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                 }
             }
 
+            // Notify user callback.
             if (onSend != null) {
                 try {
                     onSend.onComplete(msg, Optional.ofNullable(result.cause()), NettyServerClient.this);
@@ -624,6 +625,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             }
         });
 
+        // Enqueue write operation.
         if (!failed) {
             writeQueue.enqueue(deferredMsg, localCtx.executor());
         }
