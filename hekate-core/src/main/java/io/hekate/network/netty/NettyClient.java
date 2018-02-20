@@ -656,27 +656,44 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
                 protected void initChannel(Channel ch) throws Exception {
                     NettyClient<T> client = NettyClient.this;
 
-                    NettyClientHandler<T> msgHandler = new NettyClientHandler<>(id(), localEpoch, protocol, affinity, login,
-                        connectTimeout, idleTimeout, log, metrics, client, callback);
+                    // Protocol handler.
+                    NettyClientProtocolHandler<T> protocolHandler = new NettyClientProtocolHandler<>(
+                        id(),
+                        localEpoch,
+                        protocol,
+                        affinity,
+                        login,
+                        connectTimeout,
+                        idleTimeout,
+                        log,
+                        metrics,
+                        client,
+                        callback
+                    );
 
+                    // Handler for deferred messages.
                     NettyClientDeferHandler deferHandler = new NettyClientDeferHandler(id(), log);
 
-                    NetworkProtocolCodec netCodec = new NetworkProtocolCodec(codec);
+                    // Protocol codec.
+                    NetworkProtocolCodec protocolCodec = new NetworkProtocolCodec(codec);
 
-                    ChannelPipeline pipe = ch.pipeline();
+                    // Build pipeline.
+                    ChannelPipeline pipeline = ch.pipeline();
 
                     if (ssl != null) {
+                        // Configure SSL.
                         SslHandler sslHandler = ssl.newHandler(ch.alloc(), AddressUtils.host(address), address.getPort());
 
                         if (connectTimeout != null && connectTimeout > 0) {
                             sslHandler.setHandshakeTimeoutMillis(connectTimeout);
                         }
 
-                        pipe.addLast(sslHandler);
+                        pipeline.addLast(sslHandler);
                     }
 
                     if (metrics != null) {
-                        pipe.addLast(new ChannelTrafficShapingHandler(0, 0, TRAFFIC_SHAPING_INTERVAL) {
+                        // Configure metrics.
+                        pipeline.addLast(new ChannelTrafficShapingHandler(0, 0, TRAFFIC_SHAPING_INTERVAL) {
                             @Override
                             protected void doAccounting(TrafficCounter counter) {
                                 metrics.onBytesReceived(counter.lastReadBytes());
@@ -685,13 +702,13 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
                         });
                     }
 
-                    pipe.addLast(NetworkVersionEncoder.INSTANCE);
-                    pipe.addLast(DECODER_HANDLER_ID, netCodec.decoder());
-                    pipe.addLast(ENCODER_HANDLER_ID, netCodec.encoder());
+                    pipeline.addLast(NetworkVersionEncoder.INSTANCE);
+                    pipeline.addLast(DECODER_HANDLER_ID, protocolCodec.decoder());
+                    pipeline.addLast(ENCODER_HANDLER_ID, protocolCodec.encoder());
 
-                    pipe.addLast(msgHandler);
-                    pipe.addLast(NettyClientStateHandler.class.getName(), stateHandler);
-                    pipe.addLast(NettyClientDeferHandler.class.getName(), deferHandler);
+                    pipeline.addLast(protocolHandler);
+                    pipeline.addLast(NettyClientStateHandler.class.getName(), stateHandler);
+                    pipeline.addLast(NettyClientDeferHandler.class.getName(), deferHandler);
 
                     // Notify queue on channel readiness.
                     writeQueue.enableWrites(eventLoop);

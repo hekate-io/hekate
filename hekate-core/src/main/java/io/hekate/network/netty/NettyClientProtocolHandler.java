@@ -40,7 +40,7 @@ import static io.hekate.network.NetworkClient.State.CONNECTED;
 import static io.hekate.network.NetworkClient.State.CONNECTING;
 import static io.hekate.network.NetworkClient.State.DISCONNECTED;
 
-class NettyClientHandler<T> extends SimpleChannelInboundHandler {
+class NettyClientProtocolHandler<T> extends SimpleChannelInboundHandler {
     private static final String CONNECT_TIMEOUT_HANDLER_ID = "timeout_handler";
 
     private final Logger log;
@@ -79,8 +79,19 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
 
     private State state = CONNECTING;
 
-    public NettyClientHandler(String id, int epoch, String protocol, int affinity, T login, Integer connTimeout, long idleTimeout,
-        Logger log, NettyMetricsSink metrics, NettyClient<T> client, NetworkClientCallback<T> callback) {
+    public NettyClientProtocolHandler(
+        String id,
+        int epoch,
+        String protocol,
+        int affinity,
+        T login,
+        Integer connTimeout,
+        long idleTimeout,
+        Logger log,
+        NettyMetricsSink metrics,
+        NettyClient<T> client,
+        NetworkClientCallback<T> callback
+    ) {
         this.log = log;
         this.id = id;
         this.epoch = epoch;
@@ -114,9 +125,9 @@ class NettyClientHandler<T> extends SimpleChannelInboundHandler {
                 log.debug("Registering connect timeout handler [to={}, timeout={}]", id, connTimeout);
             }
 
-            IdleStateHandler idleStateHandler = new IdleStateHandler(connTimeout, 0, 0, TimeUnit.MILLISECONDS);
+            IdleStateHandler connectTimeoutHandler = new IdleStateHandler(connTimeout, 0, 0, TimeUnit.MILLISECONDS);
 
-            ctx.pipeline().addFirst(CONNECT_TIMEOUT_HANDLER_ID, idleStateHandler);
+            ctx.pipeline().addFirst(CONNECT_TIMEOUT_HANDLER_ID, connectTimeoutHandler);
         }
     }
 
