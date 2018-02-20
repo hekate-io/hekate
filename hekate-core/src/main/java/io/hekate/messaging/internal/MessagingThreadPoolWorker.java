@@ -41,7 +41,7 @@ class MessagingThreadPoolWorker implements MessagingWorker {
 
         LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
 
-        executor = new ThreadPoolExecutor(parallelism, parallelism, Long.MAX_VALUE, TimeUnit.NANOSECONDS, queue, factory);
+        executor = new ThreadPoolExecutor(parallelism, parallelism, 0, TimeUnit.NANOSECONDS, queue, factory);
     }
 
     @Override

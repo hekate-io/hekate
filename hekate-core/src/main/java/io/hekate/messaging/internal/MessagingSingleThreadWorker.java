@@ -38,7 +38,7 @@ class MessagingSingleThreadWorker implements MessagingWorker {
 
         LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
 
-        executor = new ThreadPoolExecutor(1, 1, Long.MAX_VALUE, TimeUnit.MILLISECONDS, queue, factory);
+        executor = new ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, queue, factory);
     }
 
     @Override

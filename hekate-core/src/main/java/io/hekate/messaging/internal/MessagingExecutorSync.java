@@ -17,7 +17,6 @@
 package io.hekate.messaging.internal;
 
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
@@ -25,10 +24,6 @@ class MessagingExecutorSync implements MessagingExecutor {
     private final MessagingSingleThreadWorker worker;
 
     public MessagingExecutorSync(ThreadFactory threadFactory, ScheduledExecutorService timer) {
-        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, threadFactory);
-
-        executor.setRemoveOnCancelPolicy(true);
-
         worker = new MessagingSingleThreadWorker(threadFactory, timer);
     }
 
