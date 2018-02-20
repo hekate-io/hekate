@@ -775,11 +775,8 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
     }
 
     private void write(T msg, NetworkSendCallback<T> onSend, ChannelContext ctx) {
-        if (!ctx.supportedType(msg)) {
-            String expected = ctx.codec().baseType().getName();
-            String real = msg.getClass().getName();
-
-            notifyOnError(msg, onSend, new CodecException("Unsupported message type [expected=" + expected + ", real=" + real + ']'));
+        if (!validateMessageType(msg, onSend, ctx)) {
+            return;
         }
 
         if (debug) {
@@ -842,6 +839,27 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
         // Enqueue write operation.
         if (!failed) {
             ctx.queue().enqueue(deferred, eventLoop);
+        }
+    }
+
+    private boolean validateMessageType(T msg, NetworkSendCallback<T> onSend, ChannelContext ctx) {
+        if (ctx.supportedType(msg)) {
+            return true;
+        } else {
+            String expected = ctx.codec().baseType().getName();
+            String real = msg.getClass().getName();
+
+            CodecException err = new CodecException("Unsupported message type [expected=" + expected + ", real=" + real + ']');
+
+            if (onSend == null) {
+                if (log.isErrorEnabled()) {
+                    log.error("Message sending failed.", err);
+                }
+            } else {
+                notifyOnError(msg, onSend, err);
+            }
+
+            return false;
         }
     }
 
