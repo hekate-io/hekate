@@ -74,7 +74,7 @@ public class MessagingBenchmark {
             int workerThreadPoolSize = mode.workers;
 
             MessagingChannelConfig<byte[]> channel = MessagingChannelConfig.of(byte[].class)
-                .withName("test_channel")
+                .withName("test.channel")
                 .withNioThreads(nioThreadPoolSize)
                 .withWorkerThreads(workerThreadPoolSize);
 
@@ -94,7 +94,7 @@ public class MessagingBenchmark {
 
         @Override
         protected void initialize(List<Hekate> nodes) {
-            channel = nodes.get(0).messaging().channel("test_channel", byte[].class).forRemotes();
+            channel = nodes.get(0).messaging().channel("test.channel", byte[].class).forRemotes();
         }
     }
 
