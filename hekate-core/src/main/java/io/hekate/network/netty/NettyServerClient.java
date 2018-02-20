@@ -34,7 +34,6 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.timeout.IdleState;
@@ -72,8 +71,6 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
     private final InetSocketAddress localAddress;
 
     private final EventLoopGroup coreEventLoopGroup;
-
-    private final ChannelFutureListener writeListener;
 
     private final NettyWriteQueue writeQueue = new NettyWriteQueue();
 
@@ -125,29 +122,6 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         this.hbDisabled = hbDisabled;
         this.handlers = handlers;
         this.coreEventLoopGroup = coreEventLoopGroup;
-
-        writeListener = future -> {
-            if (future.isSuccess()) {
-                // Notify metrics on successful operation.
-                if (metrics != null) {
-                    metrics.onMessageDequeue();
-
-                    metrics.onMessageSent();
-                }
-            } else {
-                ChannelPipeline pipeline = future.channel().pipeline();
-
-                // Notify on error (only if pipeline is not empty).
-                if (pipeline.last() != null) {
-                    future.channel().pipeline().fireExceptionCaught(future.cause());
-                }
-
-                // Update metrics.
-                if (metrics != null) {
-                    metrics.onMessageDequeue();
-                }
-            }
-        };
 
         hbFlushListener = future -> hbFlushed = true;
     }
@@ -583,20 +557,20 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             log.debug("Sending to a client [to={}, message={}]", address(), msg);
         }
 
-        Channel channel = localCtx.channel();
-
         if (metrics != null) {
             metrics.onMessageEnqueue();
         }
 
+        Channel channel = localCtx.channel();
+
         // Prepare deferred message.
-        DeferredMessage deferred;
+        DeferredMessage deferredMsg;
 
         boolean failed = false;
 
         // Maybe pre-encode message.
         if (codec.isStateful()) {
-            deferred = new DeferredMessage(msg, msg, channel);
+            deferredMsg = new DeferredMessage(msg, channel);
         } else {
             if (trace) {
                 log.trace("Pre-encoding message [to={}, message={}]", address(), msg);
@@ -605,24 +579,39 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             try {
                 ByteBuf buf = NetworkProtocolCodec.preEncode(msg, codec, localCtx.alloc());
 
-                deferred = new DeferredMessage(buf, msg, channel);
+                deferredMsg = new DeferredMessage(buf, msg, channel);
             } catch (CodecException e) {
-                deferred = fail(msg, channel, e);
+                deferredMsg = fail(msg, channel, e);
 
                 failed = true;
             }
         }
 
-        deferred.addListener((ChannelFuture result) -> {
-            if (debug) {
-                if (result.isSuccess()) {
-                    log.debug("Done sending message to a client [to={}, message={}]", address(), msg);
-                } else {
-                    log.debug("Failed to send message to a client [to={}, message={}]", address(), msg, result.cause());
-                }
+        deferredMsg.addListener((ChannelFuture result) -> {
+            if (metrics != null) {
+                metrics.onMessageDequeue();
             }
 
-            writeListener.operationComplete(result);
+            if (result.isSuccess()) {
+                // Successful operation.
+                if (debug) {
+                    log.debug("Done sending message to a client [to={}, message={}]", address(), msg);
+                }
+
+                if (metrics != null) {
+                    metrics.onMessageSent();
+                }
+            } else {
+                // Failed operation.
+                if (debug) {
+                    log.debug("Failed to send message to a client [to={}, message={}]", address(), msg, result.cause());
+                }
+
+                // Notify channel pipeline on error (ignore if channel is already closed).
+                if (channel.isOpen()) {
+                    channel.pipeline().fireExceptionCaught(result.cause());
+                }
+            }
 
             if (onSend != null) {
                 try {
@@ -636,7 +625,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         });
 
         if (!failed) {
-            writeQueue.enqueue(deferred, localCtx.executor());
+            writeQueue.enqueue(deferredMsg, localCtx.executor());
         }
     }
 

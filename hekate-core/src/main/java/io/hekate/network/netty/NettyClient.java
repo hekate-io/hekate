@@ -46,7 +46,6 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.traffic.ChannelTrafficShapingHandler;
 import io.netty.handler.traffic.TrafficCounter;
-import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.internal.ThrowableUtil;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
@@ -64,25 +63,21 @@ import static io.hekate.network.NetworkClient.State.DISCONNECTED;
 import static io.hekate.network.NetworkClient.State.DISCONNECTING;
 
 class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
-    private static class ChannelContext {
+    private static class NettyClientContext {
         private final Channel channel;
-
-        private final GenericFutureListener<ChannelFuture> writeListener;
 
         private final Codec<Object> codec;
 
-        private final NettyWriteQueue writeQueue;
+        private final NettyWriteQueue queue;
 
-        public ChannelContext(Channel channel, GenericFutureListener<ChannelFuture> writeListener, Codec<Object> codec,
-            NettyWriteQueue queue) {
+        public NettyClientContext(Channel channel, Codec<Object> codec, NettyWriteQueue queue) {
             this.channel = channel;
-            this.writeListener = writeListener;
             this.codec = codec;
-            this.writeQueue = queue;
+            this.queue = queue;
         }
 
         public NettyWriteQueue queue() {
-            return writeQueue;
+            return queue;
         }
 
         public Channel channel() {
@@ -91,10 +86,6 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
 
         public Codec<Object> codec() {
             return codec;
-        }
-
-        public GenericFutureListener<ChannelFuture> writeListener() {
-            return writeListener;
         }
 
         public boolean supportedType(Object msg) {
@@ -365,7 +356,7 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
 
     private State state = DISCONNECTED;
 
-    private volatile ChannelContext channelCtx;
+    private volatile NettyClientContext clientCtx;
 
     private volatile Object userCtx;
 
@@ -497,7 +488,7 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
 
     @Override
     public boolean isReceiving() {
-        ChannelContext localCtx = this.channelCtx;
+        NettyClientContext localCtx = this.clientCtx;
 
         return localCtx != null && localCtx.channel().config().isAutoRead();
     }
@@ -520,9 +511,9 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
                     log.trace("Invoking close [to={}", id());
                 }
 
-                channelCtx.channel().close();
+                clientCtx.channel().close();
 
-                channelCtx = null;
+                clientCtx = null;
 
                 return discFuture;
             } else {
@@ -542,13 +533,13 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
 
     @Override
     public Optional<Channel> nettyChannel() {
-        ChannelContext channelCtx = this.channelCtx;
+        NettyClientContext localCtx = this.clientCtx;
 
-        return channelCtx != null ? Optional.of(channelCtx.channel) : Optional.empty();
+        return localCtx != null ? Optional.of(localCtx.channel()) : Optional.empty();
     }
 
     private void pauseReceiver(boolean pause, Consumer<NetworkEndpoint<T>> callback) {
-        ChannelContext localCtx = this.channelCtx;
+        NettyClientContext localCtx = this.clientCtx;
 
         if (localCtx != null) {
             if (debug) {
@@ -650,30 +641,6 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
             // Update state.
             state = CONNECTING;
 
-            // Prepare common listener that should be attached to all write operations.
-            GenericFutureListener<ChannelFuture> allWritesListener = (ChannelFuture future) -> {
-                if (future.isSuccess()) {
-                    // Successful operation.
-                    if (metrics != null) {
-                        metrics.onMessageDequeue();
-
-                        metrics.onMessageSent();
-                    }
-                } else {
-                    // Failed operation.
-                    if (metrics != null) {
-                        metrics.onMessageDequeue();
-                    }
-
-                    Channel channel = future.channel();
-
-                    // Notify channel pipeline on error (ignore if channel is already closed).
-                    if (channel.isOpen()) {
-                        channel.pipeline().fireExceptionCaught(future.cause());
-                    }
-                }
-            };
-
             // Prepare codec.
             Codec<Object> codec = codecFactory.createCodec();
 
@@ -739,7 +706,7 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
 
             Channel channel = future.channel();
 
-            channelCtx = new ChannelContext(channel, allWritesListener, codec, writeQueue);
+            clientCtx = new NettyClientContext(channel, codec, writeQueue);
         } finally {
             lock.unlock();
         }
@@ -752,14 +719,14 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
     private void cleanup() {
         assert lock.isHeldByCurrentThread() : "Thread must hold lock.";
 
-        channelCtx = null;
+        clientCtx = null;
         remoteAddress = null;
         localAddress = null;
         connFuture = null;
     }
 
     private void doSend(T msg, NetworkSendCallback<T> onSend) {
-        ChannelContext localCtx = this.channelCtx;
+        NettyClientContext localCtx = this.clientCtx;
 
         if (localCtx == null) {
             // Notify on channel close error.
@@ -774,7 +741,7 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
         }
     }
 
-    private void write(T msg, NetworkSendCallback<T> onSend, ChannelContext ctx) {
+    private void write(T msg, NetworkSendCallback<T> onSend, NettyClientContext ctx) {
         if (!validateMessageType(msg, onSend, ctx)) {
             return;
         }
@@ -783,22 +750,22 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
             log.debug("Sending message [to={}, message={}]", id(), msg);
         }
 
-        Channel channel = ctx.channel();
-        Codec<Object> codec = ctx.codec();
-
         // Update metrics.
         if (metrics != null) {
             metrics.onMessageEnqueue();
         }
 
-        boolean failed = false;
+        Channel channel = ctx.channel();
+        Codec<Object> codec = ctx.codec();
 
         // Prepare deferred message.
-        DeferredMessage deferred;
+        DeferredMessage deferredMsg;
+
+        boolean failed = false;
 
         // Maybe pre-encode message.
         if (codec.isStateful()) {
-            deferred = new DeferredMessage(msg, msg, channel);
+            deferredMsg = new DeferredMessage(msg, channel);
         } else {
             if (debug) {
                 log.debug("Pre-encoding message [to={}, message={}]", id(), msg);
@@ -807,26 +774,40 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
             try {
                 ByteBuf buf = NetworkProtocolCodec.preEncode(msg, codec, channel.alloc());
 
-                deferred = new DeferredMessage(buf, msg, channel);
+                deferredMsg = new DeferredMessage(buf, msg, channel);
             } catch (CodecException e) {
-                deferred = fail(msg, channel, e);
+                deferredMsg = fail(msg, channel, e);
 
                 failed = true;
             }
         }
 
         // Register listener.
-        deferred.addListener((ChannelFuture result) -> {
-            if (debug) {
-                if (result.isSuccess()) {
-                    log.debug("Done sending [to={}, message={}]", id(), msg);
-                } else {
-                    log.debug("Failed to send message [to={}, message={}]", id(), msg, result.cause());
-                }
+        deferredMsg.addListener((ChannelFuture result) -> {
+            if (metrics != null) {
+                metrics.onMessageDequeue();
             }
 
-            // Notify common listener.
-            ctx.writeListener().operationComplete(result);
+            if (result.isSuccess()) {
+                // Successful operation.
+                if (debug) {
+                    log.debug("Done sending [to={}, message={}]", id(), msg);
+                }
+
+                if (metrics != null) {
+                    metrics.onMessageSent();
+                }
+            } else {
+                // Failed operation.
+                if (debug) {
+                    log.debug("Failed to send message [to={}, message={}]", id(), msg, result.cause());
+                }
+
+                // Notify channel pipeline on error (ignore if channel is already closed).
+                if (channel.isOpen()) {
+                    channel.pipeline().fireExceptionCaught(result.cause());
+                }
+            }
 
             // Notify user callback.
             if (onSend != null) {
@@ -838,11 +819,11 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
 
         // Enqueue write operation.
         if (!failed) {
-            ctx.queue().enqueue(deferred, eventLoop);
+            ctx.queue().enqueue(deferredMsg, eventLoop);
         }
     }
 
-    private boolean validateMessageType(T msg, NetworkSendCallback<T> onSend, ChannelContext ctx) {
+    private boolean validateMessageType(T msg, NetworkSendCallback<T> onSend, NettyClientContext ctx) {
         if (ctx.supportedType(msg)) {
             return true;
         } else {
