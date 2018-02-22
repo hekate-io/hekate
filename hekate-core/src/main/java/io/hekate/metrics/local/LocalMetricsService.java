@@ -33,8 +33,9 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
  * application-specific metrics. The following types of metrics are supported by this service:
  * </p>
  * <ul>
- * <li>{@link CounterMetric Couters} - metrics with incrementing/decrementing values. </li>
- * <li>{@link Probe Probes} - metrics that obtain their values from some third-party source.</li>
+ * <li><a href="#counters">Counters</a> - metrics with incrementing/decrementing values. </li>
+ * <li><a href="#probes">Probes</a> - metrics that obtain their values from some third-party source.</li>
+ * <li><a href="#timers">Timers</a> - for tracking durations of arbitrary events.</li>
  * </ul>
  *
  * <p>
@@ -79,6 +80,7 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
  * ${source: metrics/local/LocalMetricsServiceJavadocTest.java#access}
  * </p>
  *
+ * <a name="counters"></a>
  * <h2>Counters</h2>
  * <p>
  * Counters are typically used to track custom application statistics like the amount of processed transactions, active connections or
@@ -114,6 +116,7 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
  * ${source: metrics/local/LocalMetricsServiceJavadocTest.java#counter_example_usage}
  * </p>
  *
+ * <a name="probes"></a>
  * <h2>Probes</h2>
  * <p>
  * Probes provide metrics based on periodic polling of some third-party sources. Examples of such sources are current CPU utilization,
@@ -149,6 +152,7 @@ import io.hekate.metrics.cluster.ClusterMetricsService;
  * ${source: metrics/local/LocalMetricsServiceJavadocTest.java#probe_example}
  * </p>
  *
+ * <a name="timers"></a>
  * <h2>Timers</h2>
  * <p>
  * Timers measure the amount of time (in nanoseconds) it takes to process an arbitrary operation and can optionally provide a

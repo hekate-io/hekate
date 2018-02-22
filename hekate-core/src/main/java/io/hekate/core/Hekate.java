@@ -26,6 +26,7 @@ import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.coordinate.CoordinationService;
 import io.hekate.core.inject.InjectionService;
+import io.hekate.core.jmx.JmxService;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.election.ElectionService;
@@ -63,6 +64,7 @@ import java.util.Set;
  * <li><b>{@link NetworkService}</b> - provides configuration options and low level API for network communications</li>
  * <li><b>{@link CodecService}</b> - provides abstraction layer of data serialization API</li>
  * <li><b>{@link InjectionService}</b> - provides support for dependency injection</li>
+ * <li><b>{@link JmxService}</b> - provides JXM support</li>
  * </ul>
  *
  * <h2>Instantiation</h2>
