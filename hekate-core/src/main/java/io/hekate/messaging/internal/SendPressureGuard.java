@@ -37,6 +37,9 @@ class SendPressureGuard {
     private final AtomicInteger queueSize = new AtomicInteger();
 
     @ToStringIgnore
+    private final AtomicInteger blockedSize = new AtomicInteger();
+
+    @ToStringIgnore
     private final ReentrantLock lock = new ReentrantLock();
 
     @ToStringIgnore
@@ -118,8 +121,9 @@ class SendPressureGuard {
     public void onDequeue() {
         int size = queueSize.decrementAndGet();
 
-        if (size == loMark) { // <-- Strict equality to make sure that only a single thread will notify others.
+        if (size > 0 && size - blockedSize.get() == loMark) { // <-- Strict equality so that only a single thread will notify others.
             lock.lock();
+
             try {
                 block.signalAll();
             } finally {
@@ -147,42 +151,54 @@ class SendPressureGuard {
     private long block(long timeout, Object msg) throws InterruptedException, MessageQueueTimeoutException {
         assert lock.isHeldByCurrentThread() : "Thread must hold lock.";
 
-        long deadline = timeout > 0 ? TimeUnit.MILLISECONDS.toNanos(timeout) : Long.MAX_VALUE;
+        blockedSize.incrementAndGet();
 
-        while (deadline > 0 && !stopped && queueSize.get() > loMark) {
-            deadline = block.awaitNanos(deadline);
-        }
+        try {
+            long deadline = timeout > 0 ? TimeUnit.MILLISECONDS.toNanos(timeout) : Long.MAX_VALUE;
 
-        if (timeout > 0) {
-            return checkDeadline(TimeUnit.NANOSECONDS.toMillis(deadline), msg);
-        } else {
-            return timeout;
+            while (deadline > 0 && !stopped && queueSize.get() - blockedSize.get() > loMark) {
+                deadline = block.awaitNanos(deadline);
+            }
+
+            if (timeout > 0) {
+                return checkDeadline(TimeUnit.NANOSECONDS.toMillis(deadline), msg);
+            } else {
+                return timeout;
+            }
+        } finally {
+            blockedSize.decrementAndGet();
         }
     }
 
     private long blockUninterruptedly(long timeout, Object msg) throws MessageQueueTimeoutException {
         assert lock.isHeldByCurrentThread() : "Thread must hold lock.";
 
-        boolean interrupted = false;
+        blockedSize.incrementAndGet();
 
-        long deadline = timeout > 0 ? TimeUnit.MILLISECONDS.toNanos(timeout) : Long.MAX_VALUE;
+        try {
+            boolean interrupted = false;
 
-        while (deadline > 0 && !stopped && queueSize.get() > loMark) {
-            try {
-                deadline = block.awaitNanos(deadline);
-            } catch (InterruptedException err) {
-                interrupted = true;
+            long deadline = timeout > 0 ? TimeUnit.MILLISECONDS.toNanos(timeout) : Long.MAX_VALUE;
+
+            while (deadline > 0 && !stopped && queueSize.get() - blockedSize.get() > loMark) {
+                try {
+                    deadline = block.awaitNanos(deadline);
+                } catch (InterruptedException err) {
+                    interrupted = true;
+                }
             }
-        }
 
-        if (interrupted) {
-            Thread.currentThread().interrupt();
-        }
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
 
-        if (timeout > 0) {
-            return checkDeadline(TimeUnit.NANOSECONDS.toMillis(deadline), msg);
-        } else {
-            return timeout;
+            if (timeout > 0) {
+                return checkDeadline(TimeUnit.NANOSECONDS.toMillis(deadline), msg);
+            } else {
+                return timeout;
+            }
+        } finally {
+            blockedSize.decrementAndGet();
         }
     }
 

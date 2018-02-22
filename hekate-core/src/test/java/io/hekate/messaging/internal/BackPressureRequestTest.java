@@ -24,6 +24,7 @@ import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingOverflowPolicy;
 import io.hekate.messaging.unicast.ResponseFuture;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -74,6 +75,34 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
         requests.stream().filter(Message::mustReply).forEach(r -> r.reply("ok"));
 
         for (Future<?> future : futureResponses) {
+            get(future);
+        }
+    }
+
+    @Test
+    public void testContinuousBlocking() throws Exception {
+        createChannel(c -> useBackPressure(c)
+            .withReceiver(msg -> msg.reply("ok"))
+        ).join();
+
+        MessagingChannel<String> sender = createChannel(cfg -> {
+            useBackPressure(cfg);
+            cfg.getBackPressure().withOutOverflowPolicy(MessagingOverflowPolicy.BLOCK);
+        }).join().get().forRemotes();
+
+        int requests = 1000;
+
+        List<ResponseFuture<String>> asyncResponses = new ArrayList<>(requests);
+
+        for (int i = 0; i < requests; i++) {
+            if (i > 0 && i % 100 == 0) {
+                say("Submitted requests: %s", i);
+            }
+
+            asyncResponses.add(sender.request("test-" + i));
+        }
+
+        for (ResponseFuture<String> future : asyncResponses) {
             get(future);
         }
     }

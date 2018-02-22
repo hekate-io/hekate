@@ -24,17 +24,51 @@ import io.hekate.messaging.MessagingOverflowPolicy;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import org.junit.Test;
 
 import static java.lang.Thread.currentThread;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class SendPressureGuardTest extends HekateTestBase {
+    @Test
+    public void testBlockOneByOne() throws Exception {
+        SendPressureGuard backPressure = new SendPressureGuard(0, 1, MessagingOverflowPolicy.BLOCK);
+
+        // Lock queue.
+        backPressure.onEnqueue();
+
+        Future<?> future1 = runAsync(() -> {
+            backPressure.onEnqueue();
+            backPressure.onDequeue();
+
+            return null;
+        });
+
+        Future<?> future2 = runAsync(() -> {
+            backPressure.onEnqueue();
+            backPressure.onDequeue();
+
+            return null;
+        });
+
+        // Await for threads to be blocked.
+        busyWait("treads blocked", () -> backPressure.queueSize() == 3);
+
+        assertFalse(future1.isDone());
+        assertFalse(future2.isDone());
+
+        // Unlock queue.
+        backPressure.onDequeue();
+
+        // Eventually both should be unblocked.
+        get(future1);
+        get(future2);
+    }
+
     @Test
     public void testBlock() throws Exception {
         SendPressureGuard backPressure = new SendPressureGuard(5, 10, MessagingOverflowPolicy.BLOCK);
@@ -54,15 +88,16 @@ public class SendPressureGuardTest extends HekateTestBase {
                 return null;
             });
 
-            expect(TimeoutException.class, () -> future.get(300, TimeUnit.MILLISECONDS));
+            // Await for thread to be blocked.
+            busyWait("tread blocked", () -> backPressure.queueSize() == 11);
 
-            assertEquals(11, backPressure.queueSize());
+            assertFalse(future.isDone());
 
             for (int j = 0; j < 6; j++) {
                 backPressure.onDequeue();
             }
 
-            assertNull(get(future));
+            get(future);
 
             assertEquals(5, backPressure.queueSize());
 
@@ -127,6 +162,41 @@ public class SendPressureGuardTest extends HekateTestBase {
     }
 
     @Test
+    public void testBlockUninterruptedlyOneByOne() throws Exception {
+        SendPressureGuard backPressure = new SendPressureGuard(0, 1, MessagingOverflowPolicy.BLOCK_UNINTERRUPTEDLY);
+
+        // Lock queue.
+        backPressure.onEnqueue();
+
+        Future<?> future1 = runAsync(() -> {
+            backPressure.onEnqueue();
+            backPressure.onDequeue();
+
+            return null;
+        });
+
+        Future<?> future2 = runAsync(() -> {
+            backPressure.onEnqueue();
+            backPressure.onDequeue();
+
+            return null;
+        });
+
+        // Await for threads to be blocked.
+        busyWait("treads blocked", () -> backPressure.queueSize() == 3);
+
+        assertFalse(future1.isDone());
+        assertFalse(future2.isDone());
+
+        // Unlock queue.
+        backPressure.onDequeue();
+
+        // Eventually both should be unblocked.
+        get(future1);
+        get(future2);
+    }
+
+    @Test
     public void testBlockUninterruptedly() throws Exception {
         SendPressureGuard backPressure = new SendPressureGuard(5, 10, MessagingOverflowPolicy.BLOCK_UNINTERRUPTEDLY);
 
@@ -147,15 +217,16 @@ public class SendPressureGuardTest extends HekateTestBase {
                 return null;
             });
 
-            expect(TimeoutException.class, () -> future.get(300, TimeUnit.MILLISECONDS));
+            // Await for thread to be blocked.
+            busyWait("tread blocked", () -> backPressure.queueSize() == 11);
 
-            assertEquals(11, backPressure.queueSize());
+            assertFalse(future.isDone());
 
             for (int j = 0; j < 6; j++) {
                 backPressure.onDequeue();
             }
 
-            assertNull(get(future));
+            get(future);
 
             assertEquals(5, backPressure.queueSize());
 
@@ -275,7 +346,7 @@ public class SendPressureGuardTest extends HekateTestBase {
 
         busyWait("blocked", () -> backPressure.queueSize() == 2);
 
-        expect(TimeoutException.class, () -> async.get(100, TimeUnit.MILLISECONDS));
+        assertFalse(async.isDone());
 
         backPressure.terminate();
 

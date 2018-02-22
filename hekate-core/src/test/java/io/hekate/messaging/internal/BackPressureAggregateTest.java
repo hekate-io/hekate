@@ -18,7 +18,9 @@ package io.hekate.messaging.internal;
 
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.messaging.MessagingOverflowPolicy;
 import io.hekate.messaging.broadcast.AggregateFuture;
+import io.hekate.messaging.broadcast.AggregateResult;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -30,6 +32,8 @@ import org.junit.Test;
 import org.junit.runners.Parameterized.Parameters;
 
 import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class BackPressureAggregateTest extends BackPressureTestBase {
     public static final int RECEIVERS = 2;
@@ -114,6 +118,43 @@ public class BackPressureAggregateTest extends BackPressureTestBase {
 
         for (Future<?> future : futureResponses) {
             get(future);
+        }
+    }
+
+    @Test
+    public void testContinuousBlocking() throws Exception {
+        int remoteNodes = 2;
+
+        for (int i = 0; i < remoteNodes; i++) {
+            createChannel(c -> useBackPressure(c)
+                .withReceiver(msg -> msg.reply("ok"))
+            ).join();
+        }
+
+        MessagingChannel<String> sender = createChannel(cfg -> {
+            useBackPressure(cfg);
+            cfg.getBackPressure().withOutOverflowPolicy(MessagingOverflowPolicy.BLOCK);
+        }).join().get().forRemotes();
+
+        get(sender.cluster().futureOf(topology -> topology.size() == remoteNodes));
+
+        int requests = 1000;
+
+        List<AggregateFuture<String>> asyncResponses = new ArrayList<>(requests);
+
+        for (int i = 0; i < requests; i++) {
+            if (i > 0 && i % 100 == 0) {
+                say("Submitted requests: %s", i);
+            }
+
+            asyncResponses.add(sender.aggregate("test-" + i));
+        }
+
+        for (AggregateFuture<String> future : asyncResponses) {
+            AggregateResult<String> result = get(future);
+
+            assertTrue(result.isSuccess());
+            assertEquals(2, result.resultsByNode().size());
         }
     }
 
