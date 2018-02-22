@@ -141,7 +141,7 @@ Complete reference guide is coming soon.
   
 ## Release notes
 
-### v.2.1.0 (almost ready)
+### v.2.1.0 (22-Feb-2018)
 
  New features and improvements:
  
