@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -41,32 +42,44 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 public class SeedNodeManagerTest extends HekateTestBase {
+    private SeedNodeProvider provider;
+
+    private SeedNodeManager manager;
+
+    @Before
+    public void setUp() {
+        provider = mock(SeedNodeProvider.class);
+
+        manager = createManager(provider);
+
+        // Ignore initialization methods that manager calls on the provider.
+        reset(provider);
+    }
+
     @Test
     public void testNeverReturnsNull() throws Exception {
-        SeedNodeManager manager = createManager(new SeedNodeProviderAdaptor() {
-            @Override
-            public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
-                return null;
-            }
-        });
+        when(provider.findSeedNodes(any(String.class))).thenReturn(null);
 
         List<InetSocketAddress> nodes = manager.getSeedNodes();
 
         assertNotNull(nodes);
         assertTrue(nodes.isEmpty());
+
+        verify(provider).findSeedNodes(any(String.class));
+        verifyNoMoreInteractions(provider);
     }
 
     @Test
     public void testErrorOnGetSeedNodes() throws Exception {
-        SeedNodeManager manager = createManager(new SeedNodeProviderAdaptor() {
-            @Override
-            public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
-                throw TEST_ERROR;
-            }
-        });
+        when(provider.findSeedNodes(any(String.class))).thenThrow(TEST_ERROR);
 
         try {
             manager.getSeedNodes();
@@ -75,16 +88,14 @@ public class SeedNodeManagerTest extends HekateTestBase {
         } catch (AssertionError e) {
             assertEquals(HekateTestError.MESSAGE, e.getMessage());
         }
+
+        verify(provider).findSeedNodes(any(String.class));
+        verifyNoMoreInteractions(provider);
     }
 
     @Test
     public void testErrorOnStartDiscovery() throws Exception {
-        SeedNodeManager manager = createManager(new SeedNodeProviderAdaptor() {
-            @Override
-            public void startDiscovery(String cluster, InetSocketAddress node) throws HekateException {
-                throw TEST_ERROR;
-            }
-        });
+        doThrow(TEST_ERROR).when(provider).startDiscovery(any(String.class), any(InetSocketAddress.class));
 
         try {
             manager.startDiscovery(newSocketAddress());
@@ -93,39 +104,51 @@ public class SeedNodeManagerTest extends HekateTestBase {
         } catch (AssertionError e) {
             assertEquals(HekateTestError.MESSAGE, e.getMessage());
         }
+
+        verify(provider).startDiscovery(any(String.class), any(InetSocketAddress.class));
+        verifyNoMoreInteractions(provider);
     }
 
     @Test
     public void testNoErrorOnSuspendDiscovery() throws Exception {
-        SeedNodeManager manager = createManager(new SeedNodeProviderAdaptor() {
-            @Override
-            public void suspendDiscovery() throws HekateException {
-                throw TEST_ERROR;
-            }
-        });
+        doThrow(TEST_ERROR).when(provider).suspendDiscovery();
 
         manager.suspendDiscovery();
+
+        verify(provider).suspendDiscovery();
+        verifyNoMoreInteractions(provider);
+    }
+
+    @Test
+    public void testStopDiscoveryWithoutStartDiscovery() throws Exception {
+        manager.stopDiscovery(newSocketAddress());
+
+        verifyNoMoreInteractions(provider);
     }
 
     @Test
     public void testNoErrorOnStopDiscovery() throws Exception {
-        SeedNodeManager manager = createManager(new SeedNodeProviderAdaptor() {
-            @Override
-            public void startDiscovery(String cluster, InetSocketAddress node) throws HekateException {
-                throw TEST_ERROR;
-            }
-        });
+        doThrow(TEST_ERROR).when(provider).stopDiscovery(any(String.class), any(InetSocketAddress.class));
+
+        manager.startDiscovery(newSocketAddress());
 
         manager.stopDiscovery(newSocketAddress());
+
+        verify(provider).startDiscovery(any(String.class), any(InetSocketAddress.class));
+        verify(provider).stopDiscovery(any(String.class), any(InetSocketAddress.class));
+        verifyNoMoreInteractions(provider);
     }
 
     @Test
     public void testStopCleaningWithoutStarting() throws Exception {
-        SeedNodeManager manager = createManager(new SeedNodeProviderAdaptor());
+        manager.stopCleaning();
+        manager.stopCleaning();
+        manager.stopCleaning();
+    }
 
-        manager.stopCleaning();
-        manager.stopCleaning();
-        manager.stopCleaning();
+    @Test
+    public void testToString() throws Exception {
+        assertEquals(provider.toString(), manager.toString());
     }
 
     @Test
