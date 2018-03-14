@@ -71,7 +71,7 @@
         <kryo.serializers.version>0.42</kryo.serializers.version>
         <fst.version>2.57</fst.version>
         <jclouds.version>2.0.3</jclouds.version>
-        <aws.sdk.version>1.11.213</aws.sdk.version>
+        <aws.sdk.version>1.11.294</aws.sdk.version>
         <influxdb.version>2.7</influxdb.version>
 
         <!-- Test dependencies.-->
