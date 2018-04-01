@@ -20,7 +20,6 @@ import io.hekate.metrics.MetricFilter;
 import io.hekate.metrics.MetricFilterGroup;
 import io.hekate.metrics.MetricNameFilter;
 import io.hekate.metrics.MetricRegexFilter;
-import io.hekate.metrics.cloudwatch.CloudWatchMetricsConfig;
 import io.hekate.metrics.influxdb.InfluxDbMetricsConfig;
 import io.hekate.metrics.influxdb.InfluxDbMetricsPlugin;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
@@ -156,7 +155,7 @@ public class InfluxDbMetricsPluginConfigurer {
 
     /**
      * Conditionally constructs a new configuration for {@link InfluxDbMetricsPlugin} if application doesn't provide its own {@link Bean}
-     * of {@link CloudWatchMetricsConfig} type.
+     * of {@link InfluxDbMetricsConfig} type.
      *
      * @param filter Metric filter (see {@link #influxDbMetricFilter(InfluxDbFilterProperties)}).
      *
