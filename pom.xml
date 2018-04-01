@@ -39,6 +39,7 @@
         <module>hekate-jclouds-aws</module>
         <module>hekate-metrics-influxdb</module>
         <module>hekate-metrics-statsd</module>
+        <module>hekate-metrics-cloudwatch</module>
         <module>hekate-all</module>
     </modules>
 

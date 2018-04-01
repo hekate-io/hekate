@@ -66,6 +66,13 @@
         </dependency>
 
         <dependency>
+            <artifactId>hekate-metrics-cloudwatch</artifactId>
+            <groupId>${project.groupId}</groupId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
             <groupId>com.esotericsoftware</groupId>
             <artifactId>kryo-shaded</artifactId>
             <optional>true</optional>

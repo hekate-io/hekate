@@ -92,6 +92,13 @@
             <optional>true</optional>
         </dependency>
 
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>hekate-metrics-cloudwatch</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+
         <!-- Optional dependencies to avoid Javadoc errors. -->
         <dependency>
             <groupId>com.esotericsoftware</groupId>

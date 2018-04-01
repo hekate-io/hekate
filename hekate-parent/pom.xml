@@ -264,6 +264,12 @@
                 <version>${aws.sdk.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-cloudwatch</artifactId>
+                <version>${aws.sdk.version}</version>
+            </dependency>
+
             <!-- Metrics. -->
             <dependency>
                 <groupId>org.influxdb</groupId>
@@ -759,6 +765,8 @@
                             ${project.parent.basedir}/../hekate-metrics-influxdb/src/test/resources/javadoc;
                             ${project.parent.basedir}/../hekate-metrics-statsd/src/test/java/io/hekate/javadoc;
                             ${project.parent.basedir}/../hekate-metrics-statsd/src/test/resources/javadoc;
+                            ${project.parent.basedir}/../hekate-metrics-cloudwatch/src/test/java/io/hekate/javadoc;
+                            ${project.parent.basedir}/../hekate-metrics-cloudwatch/src/test/resources/javadoc;
                         </argument>
                     </arguments>
                 </configuration>

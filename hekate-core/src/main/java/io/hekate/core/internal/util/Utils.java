@@ -118,4 +118,35 @@ public final class Utils {
 
         return trimmed == null ? defaultVal : trimmed;
     }
+
+    public static String camelCase(CharSequence str) {
+        StringBuilder buf = new StringBuilder();
+
+        boolean capitalize = true;
+
+        for (int i = 0, len = str.length(); i < len; ++i) {
+            char c = str.charAt(i);
+
+            switch (c) {
+                case '-':
+                case '.':
+                case '_': {
+                    capitalize = true;
+
+                    break;
+                }
+                default: {
+                    if (capitalize) {
+                        buf.append(Character.toUpperCase(c));
+
+                        capitalize = false;
+                    } else {
+                        buf.append(c);
+                    }
+                }
+            }
+        }
+
+        return buf.toString();
+    }
 }
