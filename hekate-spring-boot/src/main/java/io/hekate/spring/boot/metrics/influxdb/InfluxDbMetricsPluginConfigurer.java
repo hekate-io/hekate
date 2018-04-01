@@ -16,10 +16,17 @@
 
 package io.hekate.spring.boot.metrics.influxdb;
 
+import io.hekate.metrics.MetricFilter;
+import io.hekate.metrics.MetricFilterGroup;
+import io.hekate.metrics.MetricNameFilter;
+import io.hekate.metrics.MetricRegexFilter;
+import io.hekate.metrics.cloudwatch.CloudWatchMetricsConfig;
 import io.hekate.metrics.influxdb.InfluxDbMetricsConfig;
 import io.hekate.metrics.influxdb.InfluxDbMetricsPlugin;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
 import io.hekate.spring.boot.HekateConfigurer;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -27,6 +34,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 /**
  * Auto-configuration for {@link InfluxDbMetricsPlugin}.
@@ -78,6 +87,8 @@ import org.springframework.context.annotation.Configuration;
  * <li>{@link InfluxDbMetricsConfig#setPassword(String) 'hekate.metrics.influxdb.password'}</li>
  * <li>{@link InfluxDbMetricsConfig#setMaxQueueSize(int) 'hekate.metrics.influxdb.max-queue-size'}</li>
  * <li>{@link InfluxDbMetricsConfig#setTimeout(long) 'hekate.metrics.influxdb.timeout'}</li>
+ * <li>'hekate.metrics.influxdb.regex-filters' - list of regular expressions to filter metrics that should be published to InfluxDB</li>
+ * <li>'hekate.metrics.influxdb.name-filters' - list of metric names that should be published to InfluxDB</li>
  * </ul>
  *
  * @see InfluxDbMetricsPlugin
@@ -88,23 +99,86 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnClass(InfluxDbMetricsPlugin.class)
 @ConditionalOnProperty(value = "hekate.metrics.influxdb.enable", havingValue = "true")
 public class InfluxDbMetricsPluginConfigurer {
+    @Component
+    @ConfigurationProperties("hekate.metrics.influxdb")
+    static class InfluxDbFilterProperties {
+        private List<String> regexFilters;
+
+        private List<String> nameFilters;
+
+        public List<String> getRegexFilters() {
+            return regexFilters;
+        }
+
+        public void setRegexFilters(List<String> regexFilters) {
+            this.regexFilters = regexFilters;
+        }
+
+        public List<String> getNameFilters() {
+            return nameFilters;
+        }
+
+        public void setNameFilters(List<String> nameFilters) {
+            this.nameFilters = nameFilters;
+        }
+    }
+
     /**
-     * Conditionally constructs a new configuration for {@link InfluxDbMetricsPlugin} if application doesn't provide its own {@link Bean} of
-     * {@link InfluxDbMetricsConfig} type.
+     * Filter group for {@link #influxDbMetricsConfig(MetricFilterGroup)}.
+     *
+     * @param filterProps Filter properties.
+     *
+     * @return Filter group.
+     *
+     * @see InfluxDbMetricsConfig#setFilter(MetricFilter)
+     */
+    @Bean
+    @Qualifier("influxDbMetricFilter")
+    public MetricFilterGroup influxDbMetricFilter(InfluxDbFilterProperties filterProps) {
+        MetricFilterGroup group = new MetricFilterGroup();
+
+        if (!CollectionUtils.isEmpty(filterProps.getRegexFilters())) {
+            filterProps.getRegexFilters().stream()
+                .filter(it -> it != null && !it.trim().isEmpty())
+                .map(regex -> new MetricRegexFilter(regex.trim()))
+                .forEach(group::withFilter);
+        }
+
+        if (!CollectionUtils.isEmpty(filterProps.getNameFilters())) {
+            filterProps.getNameFilters().stream()
+                .filter(it -> it != null && !it.trim().isEmpty())
+                .map(it -> new MetricNameFilter(it.trim()))
+                .forEach(group::withFilter);
+        }
+
+        return group;
+    }
+
+    /**
+     * Conditionally constructs a new configuration for {@link InfluxDbMetricsPlugin} if application doesn't provide its own {@link Bean}
+     * of {@link CloudWatchMetricsConfig} type.
+     *
+     * @param filter Metric filter (see {@link #influxDbMetricFilter(InfluxDbFilterProperties)}).
      *
      * @return New configuration.
      */
     @Bean
     @ConditionalOnMissingBean(InfluxDbMetricsConfig.class)
     @ConfigurationProperties(prefix = "hekate.metrics.influxdb")
-    public InfluxDbMetricsConfig influxDbMetricsConfig() {
-        return new InfluxDbMetricsConfig();
+    public InfluxDbMetricsConfig influxDbMetricsConfig(@Qualifier("influxDbMetricFilter") MetricFilterGroup filter) {
+        InfluxDbMetricsConfig cfg = new InfluxDbMetricsConfig();
+
+        if (!CollectionUtils.isEmpty(filter.getFilters())) {
+            cfg.setFilter(filter);
+        }
+
+        return cfg;
     }
 
     /**
      * Constructs new {@link InfluxDbMetricsPlugin}.
      *
-     * @param cfg Configuration (see {@link #influxDbMetricsConfig()}).
+     * @param cfg Configuration (see {@link #influxDbMetricsConfig(MetricFilterGroup)}).
      *
      * @return New plugin.
      */

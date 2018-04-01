@@ -17,6 +17,9 @@
 package io.hekate.spring.boot.metrics.influxdb;
 
 import io.hekate.HekateTestProps;
+import io.hekate.metrics.MetricFilterGroup;
+import io.hekate.metrics.MetricNameFilter;
+import io.hekate.metrics.MetricRegexFilter;
 import io.hekate.metrics.influxdb.InfluxDbMetricsConfig;
 import io.hekate.metrics.influxdb.InfluxDbMetricsPlugin;
 import io.hekate.metrics.local.LocalMetricsService;
@@ -50,6 +53,10 @@ public class InfluxDbMetricsPluginConfigurerTest extends HekateAutoConfigurerTes
 
         registerAndRefresh(new String[]{
             "hekate.metrics.influxdb.enable=true",
+            "hekate.metrics.influxdb.regex-filters[0]=jvm\\..*",
+            "hekate.metrics.influxdb.regex-filters[1]=hekate\\..*",
+            "hekate.metrics.influxdb.name-filters[0]=jvm.free.mem",
+            "hekate.metrics.influxdb.name-filters[1]=hekate.network.bytes.out",
             "hekate.metrics.influxdb.url=" + url,
             "hekate.metrics.influxdb.user=" + user,
             "hekate.metrics.influxdb.password=" + password,
@@ -68,5 +75,20 @@ public class InfluxDbMetricsPluginConfigurerTest extends HekateAutoConfigurerTes
         assertEquals(password, cfg.getPassword());
         assertEquals(100500, cfg.getMaxQueueSize());
         assertEquals(100501, cfg.getTimeout());
+
+        MetricFilterGroup filterGroup = (MetricFilterGroup)cfg.getFilter();
+
+        assertNotNull(filterGroup);
+        assertEquals(filterGroup.toString(), 4, filterGroup.getFilters().size());
+
+        MetricRegexFilter regexFilter1 = (MetricRegexFilter)filterGroup.getFilters().get(0);
+        MetricRegexFilter regexFilter2 = (MetricRegexFilter)filterGroup.getFilters().get(1);
+        MetricNameFilter nameFilter1 = (MetricNameFilter)filterGroup.getFilters().get(2);
+        MetricNameFilter nameFilter2 = (MetricNameFilter)filterGroup.getFilters().get(3);
+
+        assertEquals("jvm\\..*", regexFilter1.pattern());
+        assertEquals("hekate\\..*", regexFilter2.pattern());
+        assertEquals("jvm.free.mem", nameFilter1.metricName());
+        assertEquals("hekate.network.bytes.out", nameFilter2.metricName());
     }
 }

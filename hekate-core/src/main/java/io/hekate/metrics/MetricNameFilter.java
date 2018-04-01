@@ -16,36 +16,36 @@
 
 package io.hekate.metrics;
 
+import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.util.format.ToString;
-import java.util.regex.Pattern;
 
 /**
- * Implementation of {@link MetricFilter} that uses a regular expression to match against a {@link Metric#name()}.
+ * Implementation of {@link MetricFilter} that uses an exact match of a pre-defined string against a {@link Metric#name()}.
  */
-public class MetricRegexFilter implements MetricFilter {
-    private final Pattern pattern;
+public class MetricNameFilter implements MetricFilter {
+    private final String metricName;
 
     /**
-     * Constructs new instance with the specified regular expression.
+     * Constructs a new instance.
      *
-     * @param regex Regular expression.
+     * @param metricName Metric name.
      */
-    public MetricRegexFilter(String regex) {
-        pattern = Pattern.compile(regex);
+    public MetricNameFilter(String metricName) {
+        this.metricName = ArgAssert.notEmpty(metricName, "Metric name");
+    }
+
+    /**
+     * Returns the metric name.
+     *
+     * @return Metric name.
+     */
+    public String metricName() {
+        return metricName;
     }
 
     @Override
     public boolean accept(Metric metric) {
-        return pattern.matcher(metric.name()).matches();
-    }
-
-    /**
-     * Returns the regular expression of this filter.
-     *
-     * @return Regular expression.
-     */
-    public String pattern() {
-        return pattern.pattern();
+        return metricName.equals(metric.name());
     }
 
     @Override

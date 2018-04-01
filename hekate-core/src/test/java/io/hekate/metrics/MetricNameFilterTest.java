@@ -17,32 +17,31 @@
 package io.hekate.metrics;
 
 import io.hekate.HekateTestBase;
+import io.hekate.util.format.ToString;
 import org.junit.Test;
-import org.mockito.stubbing.OngoingStubbing;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-public class MetricRegexFilterTest extends HekateTestBase {
+public class MetricNameFilterTest extends HekateTestBase {
     @Test
     public void test() {
-        String pattern = "test\\.test\\..*";
+        MetricNameFilter filter = new MetricNameFilter("test");
 
-        MetricRegexFilter filter = new MetricRegexFilter(pattern);
+        assertEquals("test", filter.metricName());
 
-        assertEquals(pattern, filter.pattern());
+        assertTrue(filter.accept(new MetricValue("test", 10)));
 
-        OngoingStubbing<String> stub = when(mock(Metric.class).name());
+        assertFalse(filter.accept(new MetricValue("test.1", 10)));
+        assertFalse(filter.accept(new MetricValue("1.test.1", 10)));
+        assertFalse(filter.accept(new MetricValue("1.test", 10)));
+    }
 
-        assertTrue(filter.accept(stub.thenReturn("test.test.1").getMock()));
-        assertTrue(filter.accept(stub.thenReturn("test.test.2").getMock()));
+    @Test
+    public void testToString() {
+        MetricNameFilter filter = new MetricNameFilter("test");
 
-        assertFalse(filter.accept(stub.thenReturn("test1").getMock()));
-        assertFalse(filter.accept(stub.thenReturn("test1test.2").getMock()));
-        assertFalse(filter.accept(stub.thenReturn("invalid").getMock()));
-        assertFalse(filter.accept(stub.thenReturn("invalid.test").getMock()));
+        assertEquals(ToString.format(filter), filter.toString());
     }
 }

@@ -15,6 +15,6 @@
  */
 
 /**
- * Auto-configuration for {@link io.hekate.metrics.local.LocalMetricsService}.
+ * Auto-configuration for {@link io.hekate.metrics.influxdb.InfluxDbMetricsPlugin}.
  */
 package io.hekate.spring.boot.metrics.influxdb;
