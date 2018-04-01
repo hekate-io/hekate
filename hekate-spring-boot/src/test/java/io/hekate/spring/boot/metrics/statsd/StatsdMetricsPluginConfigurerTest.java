@@ -16,6 +16,9 @@
 
 package io.hekate.spring.boot.metrics.statsd;
 
+import io.hekate.metrics.MetricFilterGroup;
+import io.hekate.metrics.MetricNameFilter;
+import io.hekate.metrics.MetricRegexFilter;
 import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.metrics.statsd.StatsdMetricsConfig;
 import io.hekate.metrics.statsd.StatsdMetricsPlugin;
@@ -37,6 +40,10 @@ public class StatsdMetricsPluginConfigurerTest extends HekateAutoConfigurerTestB
     public void test() {
         registerAndRefresh(new String[]{
             "hekate.metrics.statsd.enable=true",
+            "hekate.metrics.statsd.regex-filters[0]=jvm\\..*",
+            "hekate.metrics.statsd.regex-filters[1]=hekate\\..*",
+            "hekate.metrics.statsd.name-filters[0]=jvm.free.mem",
+            "hekate.metrics.statsd.name-filters[1]=hekate.network.bytes.out",
             "hekate.metrics.statsd.host=localhost",
             "hekate.metrics.statsd.port=8125",
             "hekate.metrics.statsd.batch-size=100500",
@@ -52,5 +59,20 @@ public class StatsdMetricsPluginConfigurerTest extends HekateAutoConfigurerTestB
         assertEquals(8125, cfg.getPort());
         assertEquals(100500, cfg.getBatchSize());
         assertEquals(100501, cfg.getMaxQueueSize());
+
+        MetricFilterGroup filterGroup = (MetricFilterGroup)cfg.getFilter();
+
+        assertNotNull(filterGroup);
+        assertEquals(filterGroup.toString(), 4, filterGroup.getFilters().size());
+
+        MetricRegexFilter regexFilter1 = (MetricRegexFilter)filterGroup.getFilters().get(0);
+        MetricRegexFilter regexFilter2 = (MetricRegexFilter)filterGroup.getFilters().get(1);
+        MetricNameFilter nameFilter1 = (MetricNameFilter)filterGroup.getFilters().get(2);
+        MetricNameFilter nameFilter2 = (MetricNameFilter)filterGroup.getFilters().get(3);
+
+        assertEquals("jvm\\..*", regexFilter1.pattern());
+        assertEquals("hekate\\..*", regexFilter2.pattern());
+        assertEquals("jvm.free.mem", nameFilter1.metricName());
+        assertEquals("hekate.network.bytes.out", nameFilter2.metricName());
     }
 }

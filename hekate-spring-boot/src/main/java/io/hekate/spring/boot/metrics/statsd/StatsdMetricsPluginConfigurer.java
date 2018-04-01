@@ -16,10 +16,17 @@
 
 package io.hekate.spring.boot.metrics.statsd;
 
+import io.hekate.metrics.MetricFilter;
+import io.hekate.metrics.MetricFilterGroup;
+import io.hekate.metrics.MetricNameFilter;
+import io.hekate.metrics.MetricRegexFilter;
+import io.hekate.metrics.influxdb.InfluxDbMetricsConfig;
 import io.hekate.metrics.statsd.StatsdMetricsConfig;
 import io.hekate.metrics.statsd.StatsdMetricsPlugin;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
 import io.hekate.spring.boot.HekateConfigurer;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -27,6 +34,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 /**
  * Auto-configuration for {@link StatsdMetricsPlugin}.
@@ -77,6 +86,8 @@ import org.springframework.context.annotation.Configuration;
  * <li>{@link StatsdMetricsConfig#setPort(int) 'hekate.metrics.statsd.port'}</li>
  * <li>{@link StatsdMetricsConfig#setBatchSize(int) 'hekate.metrics.statsd.batch-size'}</li>
  * <li>{@link StatsdMetricsConfig#setMaxQueueSize(int) 'hekate.metrics.statsd.max-queue-size'}</li>
+ * <li>'hekate.metrics.statsd.regex-filters' - list of regular expressions to filter metrics that should be published to StatsD</li>
+ * <li>'hekate.metrics.statsd.name-filters' - list of metric names that should be published to StatsD</li>
  * </ul>
  *
  * @see StatsdMetricsPlugin
@@ -87,23 +98,86 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnClass(StatsdMetricsPlugin.class)
 @ConditionalOnProperty(value = "hekate.metrics.statsd.enable", havingValue = "true")
 public class StatsdMetricsPluginConfigurer {
+    @Component
+    @ConfigurationProperties("hekate.metrics.statsd")
+    static class StatsdFilterProperties {
+        private List<String> regexFilters;
+
+        private List<String> nameFilters;
+
+        public List<String> getRegexFilters() {
+            return regexFilters;
+        }
+
+        public void setRegexFilters(List<String> regexFilters) {
+            this.regexFilters = regexFilters;
+        }
+
+        public List<String> getNameFilters() {
+            return nameFilters;
+        }
+
+        public void setNameFilters(List<String> nameFilters) {
+            this.nameFilters = nameFilters;
+        }
+    }
+
     /**
-     * Conditionally constructs a new configuration for {@link StatsdMetricsPlugin} if application doesn't provide its own {@link Bean} of
-     * {@link StatsdMetricsConfig} type.
+     * Filter group for {@link #statsdMetricsConfig(MetricFilterGroup)}.
+     *
+     * @param filterProps Filter properties.
+     *
+     * @return Filter group.
+     *
+     * @see InfluxDbMetricsConfig#setFilter(MetricFilter)
+     */
+    @Bean
+    @Qualifier("statsdMetricFilter")
+    public MetricFilterGroup statsdMetricFilter(StatsdFilterProperties filterProps) {
+        MetricFilterGroup group = new MetricFilterGroup();
+
+        if (!CollectionUtils.isEmpty(filterProps.getRegexFilters())) {
+            filterProps.getRegexFilters().stream()
+                .filter(it -> it != null && !it.trim().isEmpty())
+                .map(regex -> new MetricRegexFilter(regex.trim()))
+                .forEach(group::withFilter);
+        }
+
+        if (!CollectionUtils.isEmpty(filterProps.getNameFilters())) {
+            filterProps.getNameFilters().stream()
+                .filter(it -> it != null && !it.trim().isEmpty())
+                .map(it -> new MetricNameFilter(it.trim()))
+                .forEach(group::withFilter);
+        }
+
+        return group;
+    }
+
+    /**
+     * Conditionally constructs a new configuration for {@link StatsdMetricsPlugin} if application doesn't provide its own {@link Bean}
+     * of {@link StatsdMetricsConfig} type.
+     *
+     * @param filter Metric filter (see {@link #statsdMetricFilter(StatsdFilterProperties)}).
      *
      * @return New configuration.
      */
     @Bean
     @ConditionalOnMissingBean(StatsdMetricsConfig.class)
     @ConfigurationProperties(prefix = "hekate.metrics.statsd")
-    public StatsdMetricsConfig statsdMetricsConfig() {
-        return new StatsdMetricsConfig();
+    public StatsdMetricsConfig statsdMetricsConfig(@Qualifier("statsdMetricFilter") MetricFilterGroup filter) {
+        StatsdMetricsConfig cfg = new StatsdMetricsConfig();
+
+        if (!CollectionUtils.isEmpty(filter.getFilters())) {
+            cfg.setFilter(filter);
+        }
+
+        return cfg;
     }
 
     /**
      * Constructs new {@link StatsdMetricsPlugin}.
      *
-     * @param cfg Configuration (see {@link #statsdMetricsConfig()}).
+     * @param cfg Configuration (see {@link #statsdMetricsConfig(MetricFilterGroup)}).
      *
      * @return New plugin.
      */
