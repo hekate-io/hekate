@@ -54,6 +54,11 @@ import org.jclouds.domain.Credentials;
  * Each {@link StatisticSet} contains average values that were aggregated during that interval.
  * </p>
  *
+ * <p>
+ * <b>Important! </b> Publishing metrics the Amazon CloudWatch service requires {@code cloudwatch:PutMetricData} permission to be set
+ * for the EC2 instance's IAM role.
+ * </p>
+ *
  * <h2>Module Dependency</h2>
  * <p>
  * CloudWatch support is provided by the 'hekate-metrics-cloudwatch' module and can be imported into the project dependency management
