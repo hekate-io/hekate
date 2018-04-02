@@ -522,9 +522,9 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
         say("Done awaiting for coordination.");
 
-        assertEquals(n1.toString(), 0, h1.stack());
-        assertEquals(n2.toString(), 0, h2.stack());
-        assertEquals(n3.toString(), 0, h3.stack());
+        busyWait("empty stack of " + n1.toString(), () -> h1.stack() == 0);
+        busyWait("empty stack of " + n2.toString(), () -> h2.stack() == 0);
+        busyWait("empty stack of " + n3.toString(), () -> h3.stack() == 0);
 
         n1.leave();
         n2.leave();
