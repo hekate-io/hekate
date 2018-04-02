@@ -159,6 +159,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     @ToStringIgnore
     private NetworkService net;
 
+    @ToStringIgnore
     private LocalMetricsService metrics;
 
     @ToStringIgnore
