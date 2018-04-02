@@ -16,6 +16,7 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFutureException;
@@ -69,7 +70,7 @@ public class BackPressureSendTest extends BackPressureParametrizedTestBase {
 
             fail("Error was expected");
         } catch (MessagingFutureException e) {
-            assertTrue(e.toString(), e.isCausedBy(MessageQueueOverflowException.class));
+            assertTrue(ErrorUtils.stackTrace(e), e.isCausedBy(MessageQueueOverflowException.class));
         }
     }
 }
