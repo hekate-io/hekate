@@ -50,8 +50,6 @@ public class CloudWatchMetricsPublisherTest extends HekateTestBase {
         Long.MAX_VALUE,
         "TestNamespace",
         "TestInstanceId",
-        "TestImageId",
-        "TestInstanceType",
         null,
         captor
     );
@@ -222,8 +220,6 @@ public class CloudWatchMetricsPublisherTest extends HekateTestBase {
             10,
             "TestNamespace",
             "TestInstanceId",
-            "TestImageId",
-            "TestInstanceType",
             null,
             captor
         );
@@ -252,8 +248,6 @@ public class CloudWatchMetricsPublisherTest extends HekateTestBase {
             Long.MAX_VALUE,
             "TestNamespace",
             "TestInstanceId",
-            "TestImageId",
-            "TestInstanceType",
             m -> m.name().startsWith("include"),
             captor
         );
@@ -298,8 +292,6 @@ public class CloudWatchMetricsPublisherTest extends HekateTestBase {
             10,
             "TestNamespace",
             "TestInstanceId",
-            "TestImageId",
-            "TestInstanceType",
             null,
             request -> {
                 if (fail.get()) {
@@ -358,8 +350,6 @@ public class CloudWatchMetricsPublisherTest extends HekateTestBase {
                 assertNull(d.getStorageResolution());
 
                 assertEquals("TestInstanceId", extractDimensionValue("InstanceId", d));
-                assertEquals("TestImageId", extractDimensionValue("ImageId", d));
-                assertEquals("TestInstanceType", extractDimensionValue("InstanceType", d));
                 assertEquals(TEST_NODE_NAME, extractDimensionValue("NodeName", d));
 
                 StatisticSet stats = d.getStatisticValues();

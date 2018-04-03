@@ -40,7 +40,7 @@
     <dependencies>
         <!-- Production dependencies.-->
         <dependency>
-            <artifactId>hekate-jclouds-aws</artifactId>
+            <artifactId>hekate-core</artifactId>
             <groupId>${project.groupId}</groupId>
             <version>${project.version}</version>
         </dependency>

@@ -16,11 +16,11 @@
 
 package io.hekate.spring.boot.metrics.cloudwatch;
 
-import io.hekate.cluster.seed.jclouds.aws.AwsMetaDataProvider;
 import io.hekate.metrics.MetricFilter;
 import io.hekate.metrics.MetricFilterGroup;
 import io.hekate.metrics.MetricNameFilter;
 import io.hekate.metrics.MetricRegexFilter;
+import io.hekate.metrics.cloudwatch.CloudWatchMetaDataProvider;
 import io.hekate.metrics.cloudwatch.CloudWatchMetricsConfig;
 import io.hekate.metrics.cloudwatch.CloudWatchMetricsPlugin;
 import io.hekate.metrics.influxdb.InfluxDbMetricsPlugin;
@@ -169,7 +169,7 @@ public class CloudWatchMetricsPluginConfigurer {
     @ConditionalOnMissingBean(CloudWatchMetricsConfig.class)
     @ConfigurationProperties(prefix = "hekate.metrics.cloudwatch")
     public CloudWatchMetricsConfig cloudWatchMetricsConfig(
-        Optional<AwsMetaDataProvider> metaDataProvider,
+        Optional<CloudWatchMetaDataProvider> metaDataProvider,
         @Qualifier("cloudWatchMetricFilter") MetricFilterGroup filter
     ) {
         CloudWatchMetricsConfig cfg = new CloudWatchMetricsConfig();

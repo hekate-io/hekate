@@ -62,7 +62,7 @@ public class CloudWatchMetricsPluginTest extends HekateNodeTestBase {
             boot.withPlugin(new CloudWatchMetricsPlugin(new CloudWatchMetricsConfig()
                 .withPublishInterval(10)
                 .withRegion(awsRegion)
-                .withMetaDataProvider(new AwsMetaDataProviderMock())
+                .withMetaDataProvider(new CloudWatchMetaDataProviderMock())
                 .withAccessKey(awsAccessKey)
                 .withSecretKey(awsSecretKey)
                 .withPublishInterval(publishIntervalSeconds)

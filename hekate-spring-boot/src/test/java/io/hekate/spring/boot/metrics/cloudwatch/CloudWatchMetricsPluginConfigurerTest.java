@@ -18,10 +18,10 @@ package io.hekate.spring.boot.metrics.cloudwatch;
 
 import com.amazonaws.http.IdleConnectionReaper;
 import io.hekate.HekateTestProps;
-import io.hekate.cluster.seed.jclouds.aws.AwsMetaDataProvider;
 import io.hekate.metrics.MetricFilterGroup;
 import io.hekate.metrics.MetricNameFilter;
 import io.hekate.metrics.MetricRegexFilter;
+import io.hekate.metrics.cloudwatch.CloudWatchMetaDataProvider;
 import io.hekate.metrics.cloudwatch.CloudWatchMetricsConfig;
 import io.hekate.metrics.cloudwatch.CloudWatchMetricsPlugin;
 import io.hekate.metrics.local.LocalMetricsService;
@@ -40,21 +40,11 @@ public class CloudWatchMetricsPluginConfigurerTest extends HekateAutoConfigurerT
     @EnableAutoConfiguration
     public static class CloudWatchTestConfig extends HekateTestConfigBase {
         @Bean
-        public AwsMetaDataProvider awsMetaDataProvider() {
-            return new AwsMetaDataProvider() {
+        public CloudWatchMetaDataProvider awsMetaDataProvider() {
+            return new CloudWatchMetaDataProvider() {
                 @Override
                 public String getInstanceId() {
                     return "TestInstanceId";
-                }
-
-                @Override
-                public String getAmiId() {
-                    return "TestAmiId";
-                }
-
-                @Override
-                public String getInstanceType() {
-                    return "TestInstanceType";
                 }
 
                 @Override

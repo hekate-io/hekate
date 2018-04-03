@@ -22,9 +22,6 @@ import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
 import com.amazonaws.services.cloudwatch.model.StatisticSet;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.seed.jclouds.aws.AwsCredentialsSupplier;
-import io.hekate.cluster.seed.jclouds.aws.AwsMetaDataProvider;
-import io.hekate.cluster.seed.jclouds.aws.DefaultAwsMetaDataProvider;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateException;
@@ -39,7 +36,6 @@ import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.metrics.local.LocalMetricsServiceFactory;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.jclouds.domain.Credentials;
 
 /**
  * <span class="startHere">&laquo; start here</span>Amazon CloudWatch metrics publisher plugin.
@@ -123,8 +119,6 @@ import org.jclouds.domain.Credentials;
  * <ul>
  * <li>{@code NodeName} - Name of a publisher node (see {@link ClusterNode#name()})</li>
  * <li>{@code InstanceId} - EC2 instance ID</li>
- * <li>{@code InstanceType} - EC2 instance type</li>
- * <li>{@code ImageId} - AMI ID</li>
  * </ul>
  *
  * <h2>Metrics Filtering</h2>
@@ -150,7 +144,7 @@ public class CloudWatchMetricsPlugin implements Plugin {
 
         int interval = cfg.getPublishInterval();
         String namespace = cfg.getNamespace();
-        MetricFilter filter = cfg.getFilter();
+        MetricFilter metricFilter = cfg.getFilter();
 
         ConfigCheck check = ConfigCheck.get(CloudWatchMetricsConfig.class);
 
@@ -158,33 +152,35 @@ public class CloudWatchMetricsPlugin implements Plugin {
         check.notEmpty(namespace, "namespace");
 
         // Resolve instance meta-data.
-        AwsMetaDataProvider metaData = cfg.getMetaDataProvider();
+        CloudWatchMetaDataProvider metaData = cfg.getMetaDataProvider();
 
         if (metaData == null) {
-            metaData = new DefaultAwsMetaDataProvider();
+            metaData = new DefaultCloudWatchMetaDataProvider();
         }
 
         String ec2Region = metaData.getInstanceRegion();
         String ec2InstanceId = metaData.getInstanceId();
-        String ec2ImageId = metaData.getAmiId();
-        String ec2InstanceType = metaData.getInstanceType();
 
         String region = resolveRegion(cfg.getRegion(), ec2Region);
 
-        // Resolve credentials.
-        Credentials credentials = new AwsCredentialsSupplier()
-            .withIdentity(cfg.getAccessKey())
-            .withCredential(cfg.getSecretKey())
-            .get();
-
         // Prepare CloudWatch client.
-        AmazonCloudWatchClientBuilder cloudWatchBuilder = AmazonCloudWatchClientBuilder.standard()
-            .withCredentials(new AWSStaticCredentialsProvider(
-                new BasicAWSCredentials(
-                    credentials.identity,
-                    credentials.credential
+        AmazonCloudWatchClientBuilder cloudWatchBuilder = AmazonCloudWatchClientBuilder.standard();
+
+        // Resolve credentials.
+        String accessKey = cfg.getAccessKey();
+        String secretKey = cfg.getSecretKey();
+
+        if (accessKey != null && !accessKey.trim().isEmpty() && secretKey != null && !secretKey.trim().isEmpty()) {
+            // Use pre-configured credentials.
+            cloudWatchBuilder.withCredentials(
+                new AWSStaticCredentialsProvider(
+                    new BasicAWSCredentials(
+                        accessKey.trim(),
+                        secretKey.trim()
+                    )
                 )
-            ));
+            );
+        }
 
         if (region != null) {
             cloudWatchBuilder.withRegion(region);
@@ -199,9 +195,7 @@ public class CloudWatchMetricsPlugin implements Plugin {
             TimeUnit.SECONDS.toMillis(interval),
             namespace,
             ec2InstanceId,
-            ec2ImageId,
-            ec2InstanceType,
-            filter,
+            metricFilter,
             cloudWatchClient
         );
     }

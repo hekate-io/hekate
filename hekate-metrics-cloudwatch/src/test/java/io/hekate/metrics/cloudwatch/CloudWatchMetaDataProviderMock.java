@@ -16,22 +16,10 @@
 
 package io.hekate.metrics.cloudwatch;
 
-import io.hekate.cluster.seed.jclouds.aws.AwsMetaDataProvider;
-
-public class AwsMetaDataProviderMock implements AwsMetaDataProvider {
+public class CloudWatchMetaDataProviderMock implements CloudWatchMetaDataProvider {
     @Override
     public String getInstanceId() {
         return "TestInstanceId";
-    }
-
-    @Override
-    public String getAmiId() {
-        return "TestAmiId";
-    }
-
-    @Override
-    public String getInstanceType() {
-        return "TestInstanceType";
     }
 
     @Override

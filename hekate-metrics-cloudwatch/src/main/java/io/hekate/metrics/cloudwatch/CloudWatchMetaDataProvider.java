@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package io.hekate.cluster.seed.jclouds.aws;
+package io.hekate.metrics.cloudwatch;
 
 import com.amazonaws.util.EC2MetadataUtils;
 
@@ -25,27 +25,13 @@ import com.amazonaws.util.EC2MetadataUtils;
  * This interface provides an abstraction layer for {@link EC2MetadataUtils}.
  * </p>
  */
-public interface AwsMetaDataProvider {
+public interface CloudWatchMetaDataProvider {
     /**
      * See {@link EC2MetadataUtils#getInstanceId()}.
      *
      * @return ID of this instance.
      */
     String getInstanceId();
-
-    /**
-     * See {@link EC2MetadataUtils#getAmiId()}.
-     *
-     * @return AMI ID used to launch the instance.
-     */
-    String getAmiId();
-
-    /**
-     * See {@link EC2MetadataUtils#getInstanceType()}.
-     *
-     * @return Type of the instance.
-     */
-    String getInstanceType();
 
     /**
      * See {@link EC2MetadataUtils#getEC2InstanceRegion()}.

@@ -21,7 +21,7 @@ import io.hekate.HekateNodeTestBase;
 import io.hekate.HekateTestProps;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
-import io.hekate.metrics.cloudwatch.AwsMetaDataProviderMock;
+import io.hekate.metrics.cloudwatch.CloudWatchMetaDataProviderMock;
 import io.hekate.metrics.cloudwatch.CloudWatchMetricsConfig;
 import io.hekate.metrics.cloudwatch.CloudWatchMetricsPlugin;
 import org.junit.Assume;
@@ -55,7 +55,7 @@ public class CloudWatchMetricsPluginJavadocTest extends HekateNodeTestBase {
             cloudWatchCfg.setRegion(awsRegion);
             cloudWatchCfg.setAccessKey(awsAccessKey);
             cloudWatchCfg.setSecretKey(awsSecretKey);
-            cloudWatchCfg.setMetaDataProvider(new AwsMetaDataProviderMock());
+            cloudWatchCfg.setMetaDataProvider(new CloudWatchMetaDataProviderMock());
 
             // Start:boot
             Hekate node = new HekateBootstrap()

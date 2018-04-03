@@ -58,10 +58,6 @@ class CloudWatchMetricsPublisher {
 
     private final String instanceId;
 
-    private final String imageId;
-
-    private final String instanceType;
-
     private final MetricFilter filter;
 
     @ToStringIgnore
@@ -83,8 +79,6 @@ class CloudWatchMetricsPublisher {
         long interval,
         String namespace,
         String instanceId,
-        String imageId,
-        String instanceType,
         MetricFilter filter,
         CloudWatchClient cloudWatch
     ) {
@@ -92,14 +86,10 @@ class CloudWatchMetricsPublisher {
         assert interval > 0 : "Interval must be above zero [value=" + interval + ']';
         assert namespace != null : "Metrics namespace is null.";
         assert instanceId != null : "AWS instance ID is null.";
-        assert imageId != null : "AWS image ID is null.";
-        assert instanceType != null : "AWS instance type is null.";
 
         this.interval = interval;
         this.namespace = namespace;
         this.instanceId = instanceId;
-        this.imageId = imageId;
-        this.instanceType = instanceType;
         this.filter = filter;
         this.cloudWatch = cloudWatch;
     }
@@ -291,8 +281,6 @@ class CloudWatchMetricsPublisher {
         List<Dimension> dimensions = new ArrayList<>();
 
         dimensions.add(new Dimension().withName("InstanceId").withValue(instanceId));
-        dimensions.add(new Dimension().withName("ImageId").withValue(imageId));
-        dimensions.add(new Dimension().withName("InstanceType").withValue(instanceType));
 
         if (!fromNode.isEmpty()) {
             dimensions.add(new Dimension().withName("NodeName").withValue(fromNode));

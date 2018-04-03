@@ -14,32 +14,22 @@
  * under the License.
  */
 
-package io.hekate.cluster.seed.jclouds.aws;
+package io.hekate.metrics.cloudwatch;
 
 import com.amazonaws.util.EC2MetadataUtils;
 import io.hekate.util.format.ToString;
 
 /**
- * Default implementation of {@link AwsMetaDataProvider}.
+ * Default implementation of {@link CloudWatchMetaDataProvider}.
  *
  * <p>
  * This class uses {@link EC2MetadataUtils} to obtain meta-data of a running instance.
  * </p>
  */
-public class DefaultAwsMetaDataProvider implements AwsMetaDataProvider {
+public class DefaultCloudWatchMetaDataProvider implements CloudWatchMetaDataProvider {
     @Override
     public String getInstanceId() {
         return EC2MetadataUtils.getInstanceId();
-    }
-
-    @Override
-    public String getAmiId() {
-        return EC2MetadataUtils.getAmiId();
-    }
-
-    @Override
-    public String getInstanceType() {
-        return EC2MetadataUtils.getInstanceType();
     }
 
     @Override

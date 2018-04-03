@@ -19,8 +19,6 @@ package io.hekate.metrics.cloudwatch;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudwatch.model.StatisticSet;
 import com.amazonaws.util.EC2MetadataUtils;
-import io.hekate.cluster.seed.jclouds.aws.AwsMetaDataProvider;
-import io.hekate.cluster.seed.jclouds.aws.DefaultAwsMetaDataProvider;
 import io.hekate.core.Hekate;
 import io.hekate.metrics.MetricFilter;
 import io.hekate.metrics.local.LocalMetricsServiceFactory;
@@ -54,7 +52,7 @@ public class CloudWatchMetricsConfig {
     /** See {@link #setFilter(MetricFilter)}. */
     private MetricFilter filter;
 
-    private AwsMetaDataProvider metaDataProvider;
+    private CloudWatchMetaDataProvider metaDataProvider;
 
     /**
      * Returns the namespace for metrics publishing (see {@link #setNamespace(String)}).
@@ -275,11 +273,11 @@ public class CloudWatchMetricsConfig {
     }
 
     /**
-     * Returns the EC2 meta-data provider (see {@link #setMetaDataProvider(AwsMetaDataProvider)}).
+     * Returns the EC2 meta-data provider (see {@link #setMetaDataProvider(CloudWatchMetaDataProvider)}).
      *
      * @return EC2 meta-data provider.
      */
-    public AwsMetaDataProvider getMetaDataProvider() {
+    public CloudWatchMetaDataProvider getMetaDataProvider() {
         return metaDataProvider;
     }
 
@@ -287,23 +285,23 @@ public class CloudWatchMetricsConfig {
      * Sets the EC2 meta-data provider.
      *
      * <p>
-     * This parameter is optional and if not specified then {@link DefaultAwsMetaDataProvider} will be used by default.
+     * This parameter is optional and if not specified then {@link DefaultCloudWatchMetaDataProvider} will be used by default.
      * </p>
      *
      * @param metaDataProvider EC2 meta-data provider.
      */
-    public void setMetaDataProvider(AwsMetaDataProvider metaDataProvider) {
+    public void setMetaDataProvider(CloudWatchMetaDataProvider metaDataProvider) {
         this.metaDataProvider = metaDataProvider;
     }
 
     /**
-     * Fluent-style version of {@link #setMetaDataProvider(AwsMetaDataProvider)}.
+     * Fluent-style version of {@link #setMetaDataProvider(CloudWatchMetaDataProvider)}.
      *
      * @param metaDataProvider EC2 meta-data provider.
      *
      * @return This instance.
      */
-    public CloudWatchMetricsConfig withMetaDataProvider(AwsMetaDataProvider metaDataProvider) {
+    public CloudWatchMetricsConfig withMetaDataProvider(CloudWatchMetaDataProvider metaDataProvider) {
         setMetaDataProvider(metaDataProvider);
 
         return this;
