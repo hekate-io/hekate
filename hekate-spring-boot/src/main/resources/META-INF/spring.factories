@@ -20,4 +20,5 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   io.hekate.spring.boot.metrics.local.HekateLocalMetricsServiceConfigurer,\
   io.hekate.spring.boot.metrics.local.HekateLocalMetricsPublisherConfigurer,\
   io.hekate.spring.boot.metrics.influxdb.InfluxDbMetricsPluginConfigurer,\
+  io.hekate.spring.boot.metrics.cloudwatch.CloudWatchMetricsPluginConfigurer,\
   io.hekate.spring.boot.metrics.statsd.StatsdMetricsPluginConfigurer
