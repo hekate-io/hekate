@@ -172,7 +172,7 @@ public class GossipManager {
         }
     }
 
-    public JoinRequest processJoinFailure(JoinRequest msg) {
+    public JoinRequest processJoinFailure(JoinRequest msg, Throwable cause) {
         assert msg != null : "Message is null.";
 
         if (localGossip.hasMembers()) {
@@ -187,7 +187,7 @@ public class GossipManager {
             log.debug("Processing join request failure [message={}]", msg);
         }
 
-        seedNodesSate.onFailure(msg.toAddress());
+        seedNodesSate.onFailure(msg.toAddress(), cause);
 
         return tryJoin(false);
     }

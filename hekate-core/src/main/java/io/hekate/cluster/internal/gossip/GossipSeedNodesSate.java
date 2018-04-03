@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GossipSeedNodesSate {
     private enum Status {
@@ -89,6 +91,8 @@ public class GossipSeedNodesSate {
         }
     }
 
+    private static final Logger log = LoggerFactory.getLogger(GossipSeedNodesSate.class);
+
     private final InetSocketAddress localAddress;
 
     private List<SeedNodeStatus> seeds;
@@ -105,6 +109,7 @@ public class GossipSeedNodesSate {
         this.seeds = uniqueAddresses.stream()
             .map(SeedNodeStatus::new)
             .sorted()
+            .peek(it -> log.info("Discovered new seed node [address={}]", it))
             .collect(Collectors.toList());
     }
 
@@ -148,7 +153,13 @@ public class GossipSeedNodesSate {
                 .filter(s -> s.address().equals(address))
                 .findFirst()
                 // ...or create new initial state for new addresses.
-                .orElse(new SeedNodeStatus(address)))
+                .orElseGet(() -> {
+                    if (log.isInfoEnabled()) {
+                        log.info("Discovered new seed node [address={}]", address);
+                    }
+
+                    return new SeedNodeStatus(address);
+                }))
             .sorted()
             .collect(Collectors.toList());
 
@@ -164,17 +175,29 @@ public class GossipSeedNodesSate {
             .ifPresent(s -> s.updateStatus(Status.RETRY));
     }
 
-    public void onFailure(InetSocketAddress seed) {
+    public void onFailure(InetSocketAddress seed, Throwable cause) {
         seeds.stream()
-            .filter(s -> s.status() != Status.BAN && s.address().equals(seed))
+            .filter(s -> s.status() != Status.BAN && s.status() != Status.FAILED && s.address().equals(seed))
             .findFirst()
-            .ifPresent(s -> s.updateStatus(Status.FAILED));
+            .ifPresent(s -> {
+                if (log.isWarnEnabled()) {
+                    log.warn("Couldn't contact seed node [address={}, cause={}]", s.address(), "" + cause);
+                }
+
+                s.updateStatus(Status.FAILED);
+            });
     }
 
     public void onBan(InetSocketAddress seed) {
-        seeds.stream().filter(s -> s.address().equals(seed))
+        seeds.stream().filter(s -> s.address().equals(seed) && s.status() != Status.BAN)
             .findFirst()
-            .ifPresent(s -> s.updateStatus(Status.BAN));
+            .ifPresent(s -> {
+                if (log.isInfoEnabled()) {
+                    log.info("Seed node banned [address={}]", s.address());
+                }
+
+                s.updateStatus(Status.BAN);
+            });
     }
 
     private boolean triedAllNodes() {

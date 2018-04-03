@@ -163,7 +163,7 @@ public class GossipManagerTest extends HekateTestBase {
 
         InetSocketAddress failed = seedNodes.remove(0);
 
-        JoinRequest request = m.processJoinFailure(new JoinRequest(m.node(), CLUSTER_ID, failed));
+        JoinRequest request = m.processJoinFailure(new JoinRequest(m.node(), CLUSTER_ID, failed), TEST_ERROR);
 
         assertEquals(seedNodes.toString(), failed, request.toAddress());
 
@@ -188,13 +188,13 @@ public class GossipManagerTest extends HekateTestBase {
 
         assertEquals(failed, m.join(Collections.singletonList(failed)).toAddress());
 
-        assertEquals(failed, m.processJoinFailure(new JoinRequest(m.node(), CLUSTER_ID, failed)).toAddress());
+        assertEquals(failed, m.processJoinFailure(new JoinRequest(m.node(), CLUSTER_ID, failed), TEST_ERROR).toAddress());
 
         assertNull(m.join(Collections.singletonList(failed)));
 
         assertSame(GossipNodeStatus.UP, m.status());
 
-        assertNull(m.processJoinFailure(new JoinRequest(m.node(), CLUSTER_ID, failed)));
+        assertNull(m.processJoinFailure(new JoinRequest(m.node(), CLUSTER_ID, failed), TEST_ERROR));
     }
 
     @Test

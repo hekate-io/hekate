@@ -940,7 +940,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             if (msg.type() == GossipProtocol.Type.JOIN_REQUEST) {
                 JoinRequest request = (JoinRequest)msg;
 
-                runOnGossipThread(() -> processJoinSendFailure(request));
+                runOnGossipThread(() -> processJoinSendFailure(request, error));
             } else {
                 if (log.isDebugEnabled()) {
                     log.debug("Failed to sent gossip message [error={}, message={}]", error.toString(), msg);
@@ -949,14 +949,14 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         });
     }
 
-    private void processJoinSendFailure(JoinRequest msg) {
+    private void processJoinSendFailure(JoinRequest msg, Throwable cause) {
         guard.withReadLockIfInitialized(() -> {
             if (msg.type() == GossipProtocol.Type.JOIN_REQUEST) {
                 if (DEBUG) {
                     log.debug("Processing join message send failure notification [message={}]", msg);
                 }
 
-                JoinRequest newReq = gossipMgr.processJoinFailure(msg);
+                JoinRequest newReq = gossipMgr.processJoinFailure(msg, cause);
 
                 sendAndDisconnect(newReq);
             }

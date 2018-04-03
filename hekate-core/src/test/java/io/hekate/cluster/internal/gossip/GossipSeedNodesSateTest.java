@@ -214,7 +214,7 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
             assertEquals(addr, s.nextSeed());
         }
 
-        seeds.forEach(s::onFailure);
+        seeds.forEach(seed -> s.onFailure(seed, TEST_ERROR));
 
         assertTrue(s.isSelfJoin());
     }
