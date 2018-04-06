@@ -109,7 +109,11 @@ public class GossipSeedNodesSate {
         this.seeds = uniqueAddresses.stream()
             .map(SeedNodeStatus::new)
             .sorted()
-            .peek(it -> log.info("Discovered new seed node [address={}]", it))
+            .peek(it -> {
+                if (log.isInfoEnabled() && !localAddress.equals(it.address())) {
+                    log.info("Discovered new seed node [address={}]", it);
+                }
+            })
             .collect(Collectors.toList());
     }
 
@@ -154,7 +158,7 @@ public class GossipSeedNodesSate {
                 .findFirst()
                 // ...or create new initial state for new addresses.
                 .orElseGet(() -> {
-                    if (log.isInfoEnabled()) {
+                    if (log.isInfoEnabled() && !address.equals(localAddress)) {
                         log.info("Discovered new seed node [address={}]", address);
                     }
 
