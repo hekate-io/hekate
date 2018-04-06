@@ -318,7 +318,7 @@ public class CloudWatchMetricsPublisherTest extends HekateTestBase {
 
                 busyWait("metrics published", () -> !captor.requests().isEmpty());
 
-                assertFalse(publisher.isThrottleAsyncErrors());
+                busyWait("errors throttling disabled", () -> !publisher.isThrottleAsyncErrors());
 
                 verifyCommonRequestData(captor.requests().get(0));
 
