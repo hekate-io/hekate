@@ -29,6 +29,7 @@ import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.event.ClusterJoinEvent;
 import io.hekate.cluster.event.ClusterLeaveEvent;
 import io.hekate.cluster.internal.gossip.GossipNodeStatus;
+import io.hekate.cluster.internal.gossip.GossipProtocol;
 import io.hekate.cluster.internal.gossip.GossipSpyAdaptor;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateFutureException;
@@ -44,6 +45,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -882,6 +884,71 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         assertSame(Hekate.State.UP, joining.state());
 
         awaitForTopology(joining);
+    }
+
+    @Test
+    public void testJoiningNodeNonReachable() throws Exception {
+        disableNodeFailurePostCheck();
+
+        repeat(3, i -> {
+            CountDownLatch failureLatch = new CountDownLatch(1);
+
+            HekateTestNode coordinator = createNode();
+
+            coordinator.setGossipSpy(new GossipSpyAdaptor() {
+                @Override
+                public void onNodeFailureSuspected(ClusterNode failed, GossipNodeStatus status) {
+                    super.onNodeFailureSuspected(failed, status);
+
+                    failureLatch.countDown();
+                }
+
+                @Override
+                public Optional<Throwable> onBeforeSend(GossipProtocol msg) {
+                    // Emulate misconfigured network (fail all outgoing message).
+                    return Optional.of(TEST_ERROR);
+                }
+            });
+
+            get(coordinator.joinAsync());
+
+            HekateTestNode joining = createNode();
+
+            joining.joinAsync();
+
+            await(failureLatch);
+
+            coordinator.leave();
+
+            awaitForTopology(joining);
+
+            assertSame(Hekate.State.UP, joining.state());
+
+            joining.leave();
+        });
+    }
+
+    @Test
+    public void testNodeBecomesNonReachable() throws Exception {
+        disableNodeFailurePostCheck();
+
+        repeat(3, i -> {
+            List<HekateTestNode> nodes = createAndJoinNodes(3).stream()
+                .sorted(Comparator.comparing(n1 -> n1.localNode().id()))
+                .collect(toList());
+
+            nodes.get(1).setGossipSpy(new GossipSpyAdaptor() {
+                @Override
+                public Optional<Throwable> onBeforeSend(GossipProtocol msg) {
+                    // Emulate misconfigured network (fail all outgoing message).
+                    return Optional.of(TEST_ERROR);
+                }
+            });
+
+            get(nodes.get(i).leaveAsync());
+
+            nodes.forEach(n -> n.leaveAsync().join());
+        });
     }
 
     private void verifyJoinOrder(List<HekateTestNode> nodes) {

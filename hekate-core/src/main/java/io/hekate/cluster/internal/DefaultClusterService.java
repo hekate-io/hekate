@@ -88,6 +88,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -328,8 +329,11 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             // Prepare accept manager.
             acceptMgr = new ClusterAcceptManager(acceptors, serviceThread);
 
+            // Prepare gossip listener.
+            GossipListener gossipListener = createGossipListener();
+
             // Prepare gossip manager.
-            gossipMgr = new GossipManager(initCtx.clusterName(), node, failureDetector, speedUpGossipSize, createGossipListener());
+            gossipMgr = new GossipManager(initCtx.clusterName(), node, failureDetector, speedUpGossipSize, gossipListener);
 
             // Prepare gossip communication manager.
             NetworkConnector<GossipProtocol> connector = net.connector(GossipProtocolCodec.PROTOCOL_ID);
@@ -348,6 +352,11 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                 @Override
                 public void onSendFailure(GossipProtocol msg, Throwable error) {
                     processSendFailure(msg, error);
+                }
+
+                @Override
+                public Optional<Throwable> onBeforeSend(GossipProtocol msg) {
+                    return gossipListener.onBeforeSend(msg);
                 }
             });
 
@@ -1195,6 +1204,15 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                         throw new IllegalStateException("Unexpected status: " + state);
                     }
                 }
+            }
+
+            @Override
+            public Optional<Throwable> onBeforeSend(GossipProtocol msg) {
+                if (gossipSpy != null) {
+                    return gossipSpy.onBeforeSend(msg);
+                }
+
+                return Optional.empty();
             }
 
             private void startSeedNodeCleaner() {

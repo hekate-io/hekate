@@ -37,6 +37,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.Before;
@@ -1071,6 +1072,11 @@ public class GossipManagerTest extends HekateTestBase {
             @Override
             public void onNodeInconsistency(GossipNodeStatus status) {
                 say("Cluster consistency failure on " + node + " (status=" + status + ')');
+            }
+
+            @Override
+            public Optional<Throwable> onBeforeSend(GossipProtocol msg) {
+                return Optional.empty();
             }
         });
     }

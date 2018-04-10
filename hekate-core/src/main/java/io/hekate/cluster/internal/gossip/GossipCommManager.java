@@ -16,7 +16,6 @@
 
 package io.hekate.cluster.internal.gossip;
 
-import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.internal.gossip.GossipProtocol.Connect;
 import io.hekate.cluster.internal.gossip.GossipProtocol.GossipMessage;
@@ -46,6 +45,8 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
         void onSendSuccess(GossipProtocol msg);
 
         void onSendFailure(GossipProtocol msg, Throwable error);
+
+        Optional<Throwable> onBeforeSend(GossipProtocol msg);
     }
 
     private static class EndpointHolder {
@@ -134,98 +135,106 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
     }
 
     public void send(GossipMessage msg, Runnable onComplete) {
-        ClusterAddress addr = msg.to();
+        Optional<Throwable> callbackErr = callback.onBeforeSend(msg);
 
-        ClusterNodeId id = addr.id();
+        if (callbackErr.isPresent()) {
+            Throwable err = callbackErr.get();
 
-        Callback localCallback;
-
-        EndpointHolder holder;
-
-        boolean newConnection = false;
-
-        synchronized (mux) {
-            localCallback = callback;
-
-            holder = clients.get(id);
-
-            if (holder == null) {
-                newConnection = true;
-
-                NetworkClient<GossipProtocol> client = net.newClient();
-
-                client.setContext(id);
-
-                holder = new EndpointHolder(client, true);
-
-                clients.put(id, holder);
-
-                Connect connectMsg = new Connect(msg.from().id());
-
-                client.connect(addr.socket(), connectMsg, netClientCallback);
-            }
-        }
-
-        if (newConnection && DEBUG) {
-            log.debug("Created a new outbound connection [to={}]", addr);
-        }
-
-        if (TRACE) {
-            log.trace("Sending message [outboundConnection={}, message={}]", holder.isOutbound(), msg);
-        }
-
-        holder.endpoint().send(msg, (sent, error, endpoint) -> {
-            if (error.isPresent()) {
-                if (TRACE) {
-                    log.trace("Failed to send a message [reason={}, message={}]", error.get(), sent);
-                }
-
-                localCallback.onSendFailure(sent, error.get());
-
-                if (onComplete != null) {
-                    onComplete.run();
-                }
-            } else {
-                localCallback.onSendSuccess(sent);
-
-                if (onComplete != null) {
-                    onComplete.run();
-                }
-            }
-        });
-    }
-
-    public void sendAndDisconnect(GossipProtocol msg, Runnable onComplete) {
-        NetworkClient<GossipProtocol> sendOnceClient = net.newClient();
-
-        sendOnceClient.connect(msg.toAddress(), msg, new NetworkClientCallback<GossipProtocol>() {
-            @Override
-            public void onMessage(NetworkMessage<GossipProtocol> message, NetworkClient<GossipProtocol> from) {
-                // No-op.
+            if (TRACE) {
+                log.trace("Failed to send a message [reason={}, message={}]", err, msg);
             }
 
-            @Override
-            public void onConnect(NetworkClient<GossipProtocol> client) {
-                client.disconnect();
+            callback.onSendFailure(msg, err);
+        } else {
+            EndpointHolder holder;
 
-                callback.onSendSuccess(msg);
+            synchronized (mux) {
+                ClusterNodeId nodeId = msg.to().id();
 
-                if (onComplete != null) {
-                    onComplete.run();
+                holder = clients.get(nodeId);
+
+                if (holder == null) {
+                    if (DEBUG) {
+                        log.debug("Created a new outbound connection [to={}]", msg.to());
+                    }
+
+                    NetworkClient<GossipProtocol> client = net.newClient();
+
+                    client.setContext(nodeId);
+
+                    holder = new EndpointHolder(client, true);
+
+                    clients.put(nodeId, holder);
+
+                    Connect connectMsg = new Connect(msg.from().id());
+
+                    client.connect(msg.to().socket(), connectMsg, netClientCallback);
                 }
             }
 
-            @Override
-            public void onDisconnect(NetworkClient<GossipProtocol> client, Optional<Throwable> cause) {
-                cause.ifPresent(err -> {
-                    callback.onSendFailure(msg, err);
+            if (TRACE) {
+                log.trace("Sending message [outboundConnection={}, message={}]", holder.isOutbound(), msg);
+            }
+
+            holder.endpoint().send(msg, (sent, err, endpoint) -> {
+                if (err.isPresent()) {
+                    if (TRACE) {
+                        log.trace("Failed to send a message [reason={}, message={}]", err.get(), sent);
+                    }
+
+                    callback.onSendFailure(sent, err.get());
 
                     if (onComplete != null) {
                         onComplete.run();
                     }
-                });
-            }
-        });
+                } else {
+                    callback.onSendSuccess(sent);
+
+                    if (onComplete != null) {
+                        onComplete.run();
+                    }
+                }
+            });
+        }
+    }
+
+    public void sendAndDisconnect(GossipProtocol msg, Runnable onComplete) {
+        Optional<Throwable> callbackErr = callback.onBeforeSend(msg);
+
+        if (callbackErr.isPresent()) {
+            callback.onSendFailure(msg, callbackErr.get());
+        } else {
+            NetworkClient<GossipProtocol> sendOnceClient = net.newClient();
+
+            sendOnceClient.connect(msg.toAddress(), msg, new NetworkClientCallback<GossipProtocol>() {
+                @Override
+                public void onMessage(NetworkMessage<GossipProtocol> message, NetworkClient<GossipProtocol> from) {
+                    // No-op.
+                }
+
+                @Override
+                public void onConnect(NetworkClient<GossipProtocol> client) {
+                    client.disconnect();
+
+                    callback.onSendSuccess(msg);
+
+                    if (onComplete != null) {
+                        onComplete.run();
+                    }
+                }
+
+                @Override
+                public void onDisconnect(NetworkClient<GossipProtocol> client, Optional<Throwable> cause) {
+                    cause.ifPresent(err -> {
+                        callback.onSendFailure(msg, err);
+
+                        if (onComplete != null) {
+                            onComplete.run();
+                        }
+                    });
+                }
+            });
+        }
     }
 
     @Override

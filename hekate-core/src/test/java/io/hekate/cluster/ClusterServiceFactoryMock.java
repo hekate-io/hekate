@@ -18,7 +18,9 @@ package io.hekate.cluster;
 
 import io.hekate.cluster.internal.gossip.GossipListener;
 import io.hekate.cluster.internal.gossip.GossipNodeStatus;
+import io.hekate.cluster.internal.gossip.GossipProtocol;
 import io.hekate.util.StateGuard;
+import java.util.Optional;
 import java.util.Set;
 
 public class ClusterServiceFactoryMock extends ClusterServiceFactory {
@@ -107,6 +109,17 @@ public class ClusterServiceFactoryMock extends ClusterServiceFactory {
             if (delegate != null) {
                 delegate.onNodeInconsistency(status);
             }
+        }
+
+        @Override
+        public Optional<Throwable> onBeforeSend(GossipProtocol msg) {
+            GossipListener delegate = this.delegate;
+
+            if (delegate != null) {
+                return delegate.onBeforeSend(msg);
+            }
+
+            return Optional.empty();
         }
     }
 

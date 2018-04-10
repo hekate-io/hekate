@@ -18,6 +18,7 @@ package io.hekate.cluster.internal.gossip;
 
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNode;
+import java.util.Optional;
 import java.util.Set;
 
 public interface GossipListener {
@@ -36,4 +37,6 @@ public interface GossipListener {
     void onNodeFailure(ClusterNode failed, GossipNodeStatus status);
 
     void onNodeInconsistency(GossipNodeStatus status);
+
+    Optional<Throwable> onBeforeSend(GossipProtocol msg);
 }
