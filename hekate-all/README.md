@@ -6,7 +6,7 @@ All-in-One Maven module that contains all binary/source code and javadocs of [He
  <dependency>
      <groupId>io.hekate</groupId>
      <artifactId>hekate-all</artifactId>
-     <version>2.2.0</version>
+     <version>2.2.1</version>
  </dependency>
  ```
  **NOTICE:** Dependencies on third party libraries are **not included** in this module. 

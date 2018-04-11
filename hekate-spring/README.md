@@ -8,6 +8,6 @@ with [Spring Framework](https://projects.spring.io/spring-framework/)
  <dependency>
      <groupId>io.hekate</groupId>
      <artifactId>hekate-spring</artifactId>
-     <version>2.2.0</version>
+     <version>2.2.1</version>
  </dependency>
  ```
