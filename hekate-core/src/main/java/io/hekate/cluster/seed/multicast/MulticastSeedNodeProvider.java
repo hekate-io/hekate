@@ -334,33 +334,7 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
 
     @Override
     public void suspendDiscovery() {
-        Waiting waiting = null;
-
-        synchronized (mux) {
-            if (discoveryFuture != null) {
-                if (DEBUG) {
-                    log.debug("Canceling discovery task.");
-                }
-
-                discoveryFuture.cancel(false);
-
-                discoveryFuture = null;
-            }
-
-            if (sender != null && sender.isOpen()) {
-                if (DEBUG) {
-                    log.debug("Closing multicast sender channel [channel={}]", sender);
-                }
-
-                waiting = sender.close()::await;
-
-                sender = null;
-            }
-        }
-
-        if (waiting != null) {
-            waiting.awaitUninterruptedly();
-        }
+        suspendDiscoveryAsync().awaitUninterruptedly();
     }
 
     @Override
@@ -447,46 +421,62 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
     }
 
     private void cleanup() {
-        try {
-            Waiting eventLoopStop = null;
+        Waiting suspended;
+        Waiting closed = Waiting.NO_WAIT;
+        Waiting stopped;
 
-            synchronized (mux) {
-                suspendDiscovery();
+        synchronized (mux) {
+            suspended = suspendDiscoveryAsync();
 
-                if (listener != null && listener.isOpen()) {
-                    if (DEBUG) {
-                        log.debug("Closing multicast listener channel [channel={}]", listener);
-                    }
-
-                    listener.close();
+            if (listener != null && listener.isOpen()) {
+                if (DEBUG) {
+                    log.debug("Closing multicast listener channel [channel={}]", listener);
                 }
 
-                if (eventLoop != null) {
-                    if (DEBUG) {
-                        log.debug("Terminating multicast thread pool...");
-                    }
+                closed = listener.close()::await;
+            }
 
-                    eventLoopStop = NettyUtils.shutdown(eventLoop);
+            stopped = NettyUtils.shutdown(eventLoop);
 
-                    if (DEBUG) {
-                        log.debug("Terminated multicast thread pool.");
-                    }
+            localNode = null;
+            seedNodes = null;
+            discoveryFuture = null;
+            listener = null;
+            eventLoop = null;
+        }
+
+        // Await for termination out of synchronized context in order to prevent deadlocks.
+        suspended.awaitUninterruptedly();
+        closed.awaitUninterruptedly();
+        stopped.awaitUninterruptedly();
+    }
+
+    private Waiting suspendDiscoveryAsync() {
+        Waiting waiting = Waiting.NO_WAIT;
+
+        synchronized (mux) {
+            if (discoveryFuture != null) {
+                if (DEBUG) {
+                    log.debug("Canceling discovery task.");
                 }
-            }
 
-            // Await for thread pool termination out of synchronized context in order to prevent deadlocks.
-            if (eventLoopStop != null) {
-                eventLoopStop.awaitUninterruptedly();
-            }
-        } finally {
-            synchronized (mux) {
-                localNode = null;
-                seedNodes = null;
+                discoveryFuture.cancel(false);
+
                 discoveryFuture = null;
-                listener = null;
-                eventLoop = null;
+            }
+
+            if (sender != null && sender.isOpen()) {
+                if (DEBUG) {
+                    log.debug("Closing multicast sender channel [channel={}]", sender);
+                }
+
+                waiting = sender.close()::await;
+
+                sender = null;
             }
         }
+
+        return waiting;
     }
 
     private SimpleChannelInboundHandler<DatagramPacket> createSenderHandler(SeedNode thisNode) {
