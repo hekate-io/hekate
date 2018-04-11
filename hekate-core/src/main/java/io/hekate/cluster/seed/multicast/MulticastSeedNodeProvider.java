@@ -334,6 +334,8 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
 
     @Override
     public void suspendDiscovery() {
+        Waiting waiting = null;
+
         synchronized (mux) {
             if (discoveryFuture != null) {
                 if (DEBUG) {
@@ -350,10 +352,14 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
                     log.debug("Closing multicast sender channel [channel={}]", sender);
                 }
 
-                sender.close();
+                waiting = sender.close()::await;
 
                 sender = null;
             }
+        }
+
+        if (waiting != null) {
+            waiting.awaitUninterruptedly();
         }
     }
 
