@@ -87,7 +87,7 @@ Complete reference guide is coming soon.
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring-boot</artifactId>
-    <version>2.1.0</version>
+    <version>2.2.0</version>
 </dependency>
 ```
 
@@ -96,7 +96,7 @@ Complete reference guide is coming soon.
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring</artifactId>
-    <version>2.1.0</version>
+    <version>2.2.0</version>
 </dependency>
 ```
 
@@ -105,7 +105,7 @@ Complete reference guide is coming soon.
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-core</artifactId>
-    <version>2.1.0</version>
+    <version>2.2.0</version>
 </dependency>
 ```
 
@@ -141,11 +141,11 @@ Complete reference guide is coming soon.
   
 ## Release notes
 
-### v.2.2.0 (almost ready)
+### v.2.2.0 (11-Apr-2018)
 
  New features and improvements:
  
- - Metrics publishing to Amazon CloudWatch (see [CloudWatchMetricsPlugin](https://static.javadoc.io/io.hekate/hekate-all/2.0.0/index.html?io/hekate/metrics/cloudwatch/CloudWatchMetricsPlugin.html)).
+ - Metrics publishing to Amazon CloudWatch (see [CloudWatchMetricsPlugin](https://static.javadoc.io/io.hekate/hekate-all/2.2.0/index.html?io/hekate/metrics/cloudwatch/CloudWatchMetricsPlugin.html)).
  - Better logging of seed node discovery events.
 
  Dependency upgrades:
@@ -162,11 +162,11 @@ Complete reference guide is coming soon.
  
  - JMX support by main services and components.
  - JDBC-based Split-brain detection 
-   (see [JdbcConnectivityDetector](https://static.javadoc.io/io.hekate/hekate-all/2.1.0/index.html?io/hekate/cluster/split/JdbcConnectivityDetector.html)).
+   (see [JdbcConnectivityDetector](https://static.javadoc.io/io.hekate/hekate-all/2.2.0/index.html?io/hekate/cluster/split/JdbcConnectivityDetector.html)).
  - Added a configuration option for JVM termination in case a node considers itself in Split-brain state
-   (see [SplitBrainAction](https://static.javadoc.io/io.hekate/hekate-all/2.1.0/index.html?io/hekate/cluster/split/SplitBrainAction.html)).
+   (see [SplitBrainAction](https://static.javadoc.io/io.hekate/hekate-all/2.2.0/index.html?io/hekate/cluster/split/SplitBrainAction.html)).
  - Optimized timeouts processing in the messaging service (expired messages are ignored when received).
- - Added [TimerMetric](https://static.javadoc.io/io.hekate/hekate-all/2.1.0/index.html?io/hekate/metrics/local/TimerMetric.html).
+ - Added [TimerMetric](https://static.javadoc.io/io.hekate/hekate-all/2.2.0/index.html?io/hekate/metrics/local/TimerMetric.html).
 
  Dependency upgrades:
  
@@ -178,7 +178,7 @@ Complete reference guide is coming soon.
  New features and improvements:
  
  - Remote Procedure Call (RPC) service for Java objects 
-   (see [RpcService](https://static.javadoc.io/io.hekate/hekate-all/2.0.0/index.html?io/hekate/rpc/RpcService.html)).
+   (see [RpcService](https://static.javadoc.io/io.hekate/hekate-all/2.2.0/index.html?io/hekate/rpc/RpcService.html)).
  - Added 'deferredJoin' property to Spring bootstrap in order to control the timing of joining the cluster. 
  - Moved load balancing APIs to the `io.hekate.messaging.loadbalance` package.
  - Moved Netty-based implementation of networking APIs to public packages.
@@ -199,7 +199,7 @@ Complete reference guide is coming soon.
  New features and improvements:
  
  - Implemented support for intercepting and transforming inbound/outbound messages 
-   (see [MessageInterceptor](https://static.javadoc.io/io.hekate/hekate-all/1.0.2/index.html?io/hekate/messaging/MessageInterceptor.html)).
+   (see [MessageInterceptor](https://static.javadoc.io/io.hekate/hekate-all/2.2.0/index.html?io/hekate/messaging/MessageInterceptor.html)).
    
  Dependency upgrades:
  

@@ -7,6 +7,6 @@ for [Hekate.io](https://github.com/hekate-io/hekate) library.
  <dependency>
      <groupId>io.hekate</groupId>
      <artifactId>hekate-metrics-statsd</artifactId>
-     <version>2.1.0</version>
+     <version>2.2.0</version>
  </dependency>
  ```
