@@ -60,11 +60,11 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
 - **Distributed Metrics**
     - Custom Metrics (User-defined Counters and Probes)
     - Cluster-wide (Nodes can See Metrics of Other Nodes)
-    - Metrics-based Load Balancing
+    - Metrics-based Load Balancing (_planned_)
     - Recording and Analysis
         - [StatsD](https://github.com/etsy/statsd)
         - [InfluxDB](https://www.influxdata.com/time-series-platform/influxdb/)
-        - [CloudWatch](https://aws.amazon.com/cloudwatch/) (_planned_)
+        - [CloudWatch](https://aws.amazon.com/cloudwatch/) (_work in progress_)
                 
 - **Spring Framework/Boot Support (optional)**
     - Spring-compliant Beans
@@ -140,6 +140,21 @@ Complete reference guide is coming soon.
   - run `./mvnw clean package`
   
 ## Release notes
+
+### v.2.2.0 (almost ready)
+
+ New features and improvements:
+ 
+ - Metrics publishing to Amazon CloudWatch (see [CloudWatchMetricsPlugin](https://static.javadoc.io/io.hekate/hekate-all/2.0.0/index.html?io/hekate/metrics/cloudwatch/CloudWatchMetricsPlugin.html)).
+ - Better logging of seed node discovery events.
+
+ Dependency upgrades:
+ 
+ - Upgraded to Kryo 4.0.2.
+ - Upgraded to Spring Framework 4.3.16.RELEASE.
+ - Upgraded to Spring Boot 1.5.12.RELEASE.
+ - Upgraded to Apache JClouds 2.1.0.
+ - Upgraded to AWS SDK 1.11.294.
 
 ### v.2.1.0 (22-Feb-2018)
 
