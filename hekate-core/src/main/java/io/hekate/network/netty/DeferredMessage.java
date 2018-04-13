@@ -16,28 +16,20 @@
 
 package io.hekate.network.netty;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.DefaultChannelPromise;
 
 class DeferredMessage extends DefaultChannelPromise {
-    private final Object payload;
-
     private final Object source;
 
     public DeferredMessage(Object payload, Channel channel) {
-        this(payload, payload /* <-- Payload and Source are the same. */, channel);
-    }
-
-    public DeferredMessage(Object payload, Object source, Channel channel) {
         super(channel);
 
-        this.payload = payload;
-        this.source = source;
+        this.source = payload;
     }
 
-    public Object encoded() {
-        return payload;
+    public Object payload() {
+        return source;
     }
 
     public Object source() {
@@ -45,7 +37,7 @@ class DeferredMessage extends DefaultChannelPromise {
     }
 
     public boolean isPreEncoded() {
-        return payload instanceof ByteBuf;
+        return false;
     }
 
     @Override

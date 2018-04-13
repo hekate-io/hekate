@@ -16,13 +16,23 @@
 
 package io.hekate.network.netty;
 
+import io.netty.util.ReferenceCountUtil;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+
+import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
 
 class NettyWriteQueue {
     private static final int MAX_FLUSH_BATCH_SIZE = 64;
+
+    private static final int WRITABLE_OFF = 0;
+
+    private static final int WRITABLE_ON = 1;
+
+    private static final AtomicIntegerFieldUpdater<NettyWriteQueue> WRITABLE_UPDATER = newUpdater(NettyWriteQueue.class, "writable");
 
     private final Queue<DeferredMessage> queue = new ConcurrentLinkedQueue<>();
 
@@ -30,14 +40,14 @@ class NettyWriteQueue {
 
     private final Runnable flushTask;
 
-    private volatile boolean writable;
+    private volatile int writable;
 
     public NettyWriteQueue() {
         this(true, null);
     }
 
     public NettyWriteQueue(boolean writable, NettySpy spy) {
-        this.writable = writable;
+        this.writable = writable ? WRITABLE_ON : WRITABLE_OFF;
 
         flushTask = () -> {
             flushScheduled.set(false);
@@ -54,7 +64,11 @@ class NettyWriteQueue {
 
                     msg.channel().write(msg, msg.promise());
                 } catch (Throwable e) {
-                    msg.promise().tryFailure(e);
+                    if (msg.promise().tryFailure(e)) {
+                        if (msg.isPreEncoded()) {
+                            ReferenceCountUtil.release(msg);
+                        }
+                    }
                 }
 
                 lastNonFlushed = msg;
@@ -78,15 +92,15 @@ class NettyWriteQueue {
     public void enqueue(DeferredMessage msg, Executor executor) {
         queue.add(msg);
 
-        if (writable) {
+        if (writable == WRITABLE_ON) {
             flush(executor);
         }
     }
 
     public void enableWrites(Executor executor) {
-        writable = true;
-
-        flush(executor);
+        if (WRITABLE_UPDATER.compareAndSet(this, WRITABLE_OFF, WRITABLE_ON)) {
+            flush(executor);
+        }
     }
 
     private void flush(Executor executor) {

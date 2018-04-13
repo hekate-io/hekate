@@ -55,8 +55,10 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -393,6 +395,46 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
                 // No-op.
             }
         });
+    }
+
+    @Test
+    public void testNetworkDisconnectWhileReplying() throws Throwable {
+        TestChannel sender = createChannel().join();
+
+        Exchanger<Message<String>> messageExchanger = new Exchanger<>();
+
+        TestChannel receiver = createChannel(c ->
+            c.withReceiver(msg -> {
+                try {
+                    messageExchanger.exchange(msg);
+                } catch (InterruptedException e) {
+                    fail("Thread was unexpectedly interrupted.");
+                }
+            })
+        ).join();
+
+        awaitForChannelsTopology(sender, receiver);
+
+        sender.request(receiver.getNodeId(), "test");
+
+        Message<String> msg = messageExchanger.exchange(null, 3, TimeUnit.SECONDS);
+
+        receiver.leave();
+
+        Exchanger<Throwable> errExchanger = new Exchanger<>();
+
+        msg.reply("fail", err -> {
+            try {
+                errExchanger.exchange(err);
+            } catch (InterruptedException e) {
+                fail("Thread was unexpectedly interrupted .");
+            }
+        });
+
+        Throwable err = errExchanger.exchange(null, 3, TimeUnit.SECONDS);
+
+        assertTrue(getStacktrace(err), err instanceof MessagingException);
+        assertTrue(getStacktrace(err), ErrorUtils.isCausedBy(ClosedChannelException.class, err));
     }
 
     @Test

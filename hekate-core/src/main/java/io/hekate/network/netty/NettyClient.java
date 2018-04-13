@@ -106,18 +106,21 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
 
         private final NetworkClientCallback<V> callback;
 
+        private final NettyWriteQueue queue;
+
         private Throwable firstError;
 
         private boolean disconnected;
 
         private boolean connectComplete;
 
-        public NettyClientStateHandler(NettyClient<V> client, NetworkClientCallback<V> callback) {
+        public NettyClientStateHandler(NettyClient<V> client, NettyWriteQueue queue, NetworkClientCallback<V> callback) {
             this.client = client;
             this.id = client.id();
             this.localEpoch = client.epoch;
             this.epochConnFuture = client.connFuture;
             this.epochDiscFuture = client.discFuture;
+            this.queue = queue;
             this.callback = callback;
         }
 
@@ -242,6 +245,9 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
         }
 
         private void becomeDisconnected() {
+            // Make sure that all pending writes are flushed in order to trigger write failures on buffered messages.
+            queue.enableWrites(eventLoop);
+
             if (!connectComplete) {
                 if (trace) {
                     log.trace("Skipped on-disconnect notification since connect is not complete yet [to={}, state={}]", id, state);
@@ -644,11 +650,11 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
             // Prepare codec.
             Codec<Object> codec = codecFactory.createCodec();
 
-            // Prepare channel state handler.
-            NettyClientStateHandler<T> stateHandler = new NettyClientStateHandler<>(this, callback);
-
             // Prepare write queue.
             NettyWriteQueue writeQueue = new NettyWriteQueue(false, spy);
+
+            // Prepare channel state handler.
+            NettyClientStateHandler<T> stateHandler = new NettyClientStateHandler<>(this, writeQueue, callback);
 
             // Prepare channel handlers.
             bootstrap.handler(new ChannelInitializer() {
@@ -675,7 +681,7 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
                     NettyClientDeferHandler deferHandler = new NettyClientDeferHandler(id(), log);
 
                     // Protocol codec.
-                    NetworkProtocolCodec protocolCodec = new NetworkProtocolCodec(codec);
+                    NetworkProtocolCodec protocol = new NetworkProtocolCodec(codec);
 
                     // Build pipeline.
                     ChannelPipeline pipeline = ch.pipeline();
@@ -703,8 +709,8 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
                     }
 
                     pipeline.addLast(NetworkVersionEncoder.INSTANCE);
-                    pipeline.addLast(DECODER_HANDLER_ID, protocolCodec.decoder());
-                    pipeline.addLast(ENCODER_HANDLER_ID, protocolCodec.encoder());
+                    pipeline.addLast(DECODER_HANDLER_ID, protocol.decoder());
+                    pipeline.addLast(ENCODER_HANDLER_ID, protocol.encoder());
 
                     pipeline.addLast(protocolHandler);
                     pipeline.addLast(NettyClientStateHandler.class.getName(), stateHandler);
@@ -791,7 +797,7 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
             try {
                 ByteBuf buf = NetworkProtocolCodec.preEncode(msg, codec, channel.alloc());
 
-                deferredMsg = new DeferredMessage(buf, msg, channel);
+                deferredMsg = new DeferredEncodedMessage(buf, msg, channel);
             } catch (CodecException e) {
                 deferredMsg = fail(msg, channel, e);
 
@@ -862,7 +868,7 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
     }
 
     private DeferredMessage fail(T msg, Channel channel, Throwable error) {
-        DeferredMessage promise = new DeferredMessage(msg, msg, channel);
+        DeferredMessage promise = new DeferredMessage(msg, channel);
 
         promise.setFailure(error);
 

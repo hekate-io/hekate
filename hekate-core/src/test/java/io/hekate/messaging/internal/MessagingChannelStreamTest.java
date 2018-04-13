@@ -16,13 +16,19 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.core.internal.util.ErrorUtils;
+import io.hekate.messaging.Message;
+import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.messaging.unicast.StreamFuture;
+import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Exchanger;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
@@ -31,6 +37,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class MessagingChannelStreamTest extends MessagingServiceTestBase {
     public MessagingChannelStreamTest(MessagingTestContext ctx) {
@@ -195,5 +202,60 @@ public class MessagingChannelStreamTest extends MessagingServiceTestBase {
 
             receiver.checkReceiverError();
         });
+    }
+
+    @Test
+    public void testNetworkDisconnectWhileReplying() throws Throwable {
+        TestChannel sender = createChannel().join();
+
+        Exchanger<Message<String>> messageExchanger = new Exchanger<>();
+
+        TestChannel receiver = createChannel(c ->
+            c.withReceiver(msg -> {
+                try {
+                    messageExchanger.exchange(msg);
+                } catch (InterruptedException e) {
+                    fail("Thread was unexpectedly interrupted.");
+                }
+            })
+        ).join();
+
+        awaitForChannelsTopology(sender, receiver);
+
+        sender.get().forNode(receiver.getNodeId()).stream("test");
+
+        Message<String> msg = messageExchanger.exchange(null, 3, TimeUnit.SECONDS);
+
+        receiver.leave();
+
+        Exchanger<Throwable> errExchanger = new Exchanger<>();
+
+        for (int i = 0; i < 10; i++) {
+            msg.partialReply("fail", err -> {
+                try {
+                    errExchanger.exchange(err);
+                } catch (InterruptedException e) {
+                    fail("Thread was unexpectedly interrupted .");
+                }
+            });
+
+            Throwable partialErr = errExchanger.exchange(null, 3, TimeUnit.SECONDS);
+
+            assertTrue(getStacktrace(partialErr), partialErr instanceof MessagingException);
+            assertTrue(getStacktrace(partialErr), ErrorUtils.isCausedBy(ClosedChannelException.class, partialErr));
+        }
+
+        msg.reply("fail", err -> {
+            try {
+                errExchanger.exchange(err);
+            } catch (InterruptedException e) {
+                fail("Thread was unexpectedly interrupted .");
+            }
+        });
+
+        Throwable err = errExchanger.exchange(null, 3, TimeUnit.SECONDS);
+
+        assertTrue(getStacktrace(err), err instanceof MessagingException);
+        assertTrue(getStacktrace(err), ErrorUtils.isCausedBy(ClosedChannelException.class, err));
     }
 }

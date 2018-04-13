@@ -60,7 +60,7 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
 
                 deferred.add(def);
             } else if (promise.tryFailure(deferredError)) {
-                ReferenceCountUtil.release(def.encoded());
+                ReferenceCountUtil.release(def.payload());
             }
         } else {
             if (deferredError == null) {
@@ -159,7 +159,7 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
                 try {
                     msg.promise().tryFailure(deferredError);
                 } finally {
-                    ReferenceCountUtil.release(msg.encoded());
+                    ReferenceCountUtil.release(msg.payload());
                 }
             }
 
@@ -187,7 +187,7 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
                         log.debug("Writing deferred message [to={}, message={}]", id, msg.source());
                     }
 
-                    ctx.writeAndFlush(msg.encoded(), msg.promise());
+                    ctx.writeAndFlush(msg.payload(), msg.promise());
                 }
             }
 

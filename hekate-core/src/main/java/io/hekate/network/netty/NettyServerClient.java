@@ -579,7 +579,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             try {
                 ByteBuf buf = NetworkProtocolCodec.preEncode(msg, codec, localCtx.alloc());
 
-                deferredMsg = new DeferredMessage(buf, msg, channel);
+                deferredMsg = new DeferredEncodedMessage(buf, msg, channel);
             } catch (CodecException e) {
                 deferredMsg = fail(msg, channel, e);
 
@@ -675,7 +675,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
     }
 
     private DeferredMessage fail(Object msg, Channel channel, Throwable error) {
-        DeferredMessage promise = new DeferredMessage(msg, msg, channel);
+        DeferredMessage promise = new DeferredMessage(msg, channel);
 
         promise.setFailure(error);
 
