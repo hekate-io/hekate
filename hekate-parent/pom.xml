@@ -576,7 +576,15 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven.surefire.plugin.version}</version>
                 <configuration>
-                    <argLine>${surefireArgLine} -Xms512m -Xmx512m -XX:+PrintGC -XX:+PrintGCDateStamps -XX:+UseG1GC</argLine>
+                    <argLine>
+                        ${surefireArgLine}
+                        -Xms512m
+                        -Xmx512m
+                        -XX:+PrintGC
+                        -XX:+PrintGCDateStamps
+                        -XX:+UseG1GC
+                        -XX:+CrashOnOutOfMemoryError
+                    </argLine>
                     <trimStackTrace>false</trimStackTrace>
                 </configuration>
             </plugin>
