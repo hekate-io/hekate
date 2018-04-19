@@ -62,8 +62,8 @@
 
         <!-- Production dependencies.-->
         <slf4j.version>1.7.21</slf4j.version>
-        <netty.version>4.1.22.Final</netty.version>
-        <netty.tcnative.version>2.0.7.Final</netty.tcnative.version>
+        <netty.version>4.1.24.Final</netty.version>
+        <netty.tcnative.version>2.0.8.Final</netty.tcnative.version>
         <spring.version>4.3.16.RELEASE</spring.version>
         <spring.boot.version>1.5.12.RELEASE</spring.boot.version>
         <logback.version>1.2.1</logback.version>
