@@ -141,6 +141,17 @@ Complete reference guide is coming soon.
   
 ## Release notes
 
+### v.2.2.2 (21-Apr-2018)
+
+ Bug fixes:
+ 
+ - Fixed a memory leak when trying to write to a closed network channel.
+
+ Dependency Upgrades:
+
+ - Upgraded to Netty 4.1.21.Final.
+
+
 ### v.2.2.1 (12-Apr-2018)
 
  Bug fixes:
