@@ -289,12 +289,12 @@ public final class CodecUtils {
             if (bits <= 63) {
                 if (scale == 0) {
                     out.writeByte(DECIMAL_SMALL_UNSCALED);
-                    writeVarLong(unscaled.longValue(), out);
                 } else {
                     out.writeByte(DECIMAL_SMALL_SCALED);
                     writeVarIntUnsigned(scale, out);
-                    writeVarLong(unscaled.longValue(), out);
                 }
+
+                writeVarLong(unscaled.longValue(), out);
             } else {
                 byte[] bytes = unscaled.toByteArray();
 

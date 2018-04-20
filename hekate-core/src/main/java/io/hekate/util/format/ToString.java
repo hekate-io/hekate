@@ -212,11 +212,11 @@ public final class ToString {
 
                 if (alias == null) {
                     realName = name;
-                    realApproxSize = approxSize + realName.length() + 2/* this is for '[' ']' */;
                 } else {
                     realName = alias.getSimpleName();
-                    realApproxSize = approxSize + realName.length() + 2/* this is for '[' ']' */;
                 }
+
+                realApproxSize = approxSize + realName.length() + 2/* this is for '[' ']' */;
 
                 buf = new StringBuilder(realApproxSize);
 

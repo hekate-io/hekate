@@ -105,13 +105,11 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
             long prevTime = 0;
 
             for (Long time : series) {
-                if (prevTime == 0) {
-                    prevTime = time;
-                } else {
+                if (prevTime != 0) {
                     assertTrue(time - prevTime >= failoverDelay);
-
-                    prevTime = time;
                 }
+                
+                prevTime = time;
             }
         });
 

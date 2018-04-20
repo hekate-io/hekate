@@ -166,17 +166,15 @@ public final class ClusterFilters {
         ArgAssert.notNull(nodeId, "Node");
 
         return nodes -> {
-            if (nodes.isEmpty()) {
-                return emptyList();
-            } else {
+            if (!nodes.isEmpty()) {
                 for (ClusterNode node : nodes) {
                     if (node.id().equals(nodeId)) {
                         return singletonList(node);
                     }
                 }
-
-                return emptyList();
             }
+
+            return emptyList();
         };
     }
 

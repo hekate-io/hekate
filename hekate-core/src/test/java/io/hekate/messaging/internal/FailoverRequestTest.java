@@ -238,13 +238,11 @@ public class FailoverRequestTest extends FailoverTestBase {
         long prevTime = 0;
 
         for (Long time : times) {
-            if (prevTime == 0) {
-                prevTime = time;
-            } else {
+            if (prevTime != 0) {
                 assertTrue(time - prevTime >= TimeUnit.MILLISECONDS.toNanos(failoverDelay));
-
-                prevTime = time;
             }
+
+            prevTime = time;
         }
     }
 

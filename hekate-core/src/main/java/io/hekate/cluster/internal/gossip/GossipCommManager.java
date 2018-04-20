@@ -183,16 +183,12 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
                     }
 
                     callback.onSendFailure(sent, err.get());
-
-                    if (onComplete != null) {
-                        onComplete.run();
-                    }
                 } else {
                     callback.onSendSuccess(sent);
+                }
 
-                    if (onComplete != null) {
-                        onComplete.run();
-                    }
+                if (onComplete != null) {
+                    onComplete.run();
                 }
             });
         }

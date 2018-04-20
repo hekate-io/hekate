@@ -315,8 +315,6 @@ class DefaultLockRegion implements LockRegion {
                 }
 
                 lockClient.unlockFuture().complete(true);
-
-                return lockClient;
             } else {
                 if (activeMapping == null) {
                     if (DEBUG) {
@@ -337,9 +335,9 @@ class DefaultLockRegion implements LockRegion {
 
                     lockClient.becomeLocking();
                 }
-
-                return lockClient;
             }
+
+            return lockClient;
         } finally {
             readLock.unlock();
         }
@@ -512,7 +510,7 @@ class DefaultLockRegion implements LockRegion {
             } else if (key.isSameCoordinator(localNode)) {
                 replyMigrationOk(msg);
 
-                if (migrationKey != null && key.equals(migrationKey) && key.isSameTopology(latestMapping)) {
+                if (key.equals(migrationKey) && key.isSameTopology(latestMapping)) {
                     if (DEBUG) {
                         log.debug("Coordinator received migration prepare request [request={}]", request);
                     }

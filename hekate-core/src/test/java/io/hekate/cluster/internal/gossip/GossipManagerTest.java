@@ -949,7 +949,7 @@ public class GossipManagerTest extends HekateTestBase {
 
         int i = 0;
 
-        while (true) {
+        do {
             say("Round: " + i);
 
             i++;
@@ -967,11 +967,7 @@ public class GossipManagerTest extends HekateTestBase {
 
                 processGossipConversation(to, mgr, gossip);
             }
-
-            if (isSameGossipVersion(nodes)) {
-                break;
-            }
-        }
+        } while (!isSameGossipVersion(nodes));
     }
 
     private void gossipTillConvergence(List<GossipManager> nodes) {

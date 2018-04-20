@@ -26,7 +26,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
 public class CloudWatchMetricsConfigTest extends HekateTestBase {
-    private CloudWatchMetricsConfig cfg = new CloudWatchMetricsConfig();
+    private final CloudWatchMetricsConfig cfg = new CloudWatchMetricsConfig();
 
     @Test
     public void testNamespace() {

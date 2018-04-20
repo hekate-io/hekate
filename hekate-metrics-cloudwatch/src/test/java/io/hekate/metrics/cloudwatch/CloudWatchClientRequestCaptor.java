@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.List;
 
 class CloudWatchClientRequestCaptor implements CloudWatchMetricsPublisher.CloudWatchClient {
-    private List<PutMetricDataRequest> requests = Collections.synchronizedList(new ArrayList<>());
+    private final List<PutMetricDataRequest> requests = Collections.synchronizedList(new ArrayList<>());
 
     @Override
     public void putMetrics(PutMetricDataRequest request) {
