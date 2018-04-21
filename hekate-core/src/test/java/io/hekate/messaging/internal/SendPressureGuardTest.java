@@ -312,12 +312,18 @@ public class SendPressureGuardTest extends HekateTestBase {
             Future<Long> future = runAsync(() -> {
                 enqueueLatch.countDown();
 
-                return backPressure.onEnqueue(300, "test");
+                long remainingTime = backPressure.onEnqueue(300, "test");
+
+                say("Enqueued [remaining=" + remainingTime + ']');
+
+                return remainingTime;
             });
 
             await(enqueueLatch);
 
             sleep(50);
+
+            assertFalse(future.isDone());
 
             while (backPressure.queueSize() > 1) {
                 backPressure.onDequeue();
@@ -326,7 +332,7 @@ public class SendPressureGuardTest extends HekateTestBase {
             long remainingTime = get(future);
 
             assertTrue("remaining time:" + remainingTime, remainingTime > 0);
-            assertTrue("remaining time:" + remainingTime, remainingTime <= 290);
+            assertTrue("remaining time:" + remainingTime, remainingTime <= 250);
             assertEquals(1, backPressure.queueSize());
 
             backPressure.onDequeue();
