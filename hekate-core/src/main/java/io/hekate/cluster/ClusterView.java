@@ -36,12 +36,6 @@ import java.util.function.Predicate;
  * </p>
  *
  * <p>
- * Note that if particular {@link ClusterEvent} doesn't contain any nodes matching the specified filter then such event will still be
- * propagated to {@link ClusterEventListener}s as an empty event (i.e. will not contain any nodes). This is done in order to keep track of
- * {@link ClusterTopology#version() topology version} changes.
- * </p>
- *
- * <p>
  * Cluster views can be stacked. If you call {@link #filter(ClusterNodeFilter)} method on a view that is already filtered then the
  * resulting view will contain only those nodes that match both filters (i.e. existing filter of this view and the new filter).
  * </p>
