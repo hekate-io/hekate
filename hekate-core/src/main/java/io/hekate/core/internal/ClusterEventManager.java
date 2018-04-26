@@ -108,17 +108,17 @@ class ClusterEventManager implements HekateSupport {
 
     private final StateGuard guard = new StateGuard(ClusterEventManager.class);
 
-    private final ThreadLocal<Boolean> inAsync = new ThreadLocal<>();
+    private final Hekate hekate;
 
     private final List<FilteredListener> listeners = new CopyOnWriteArrayList<>();
 
-    private final Hekate hekate;
+    private final ThreadLocal<Boolean> insideWorker = new ThreadLocal<>();
 
     private ExecutorService worker;
 
-    private volatile boolean joinEventFired;
+    private ClusterTopology lastTopology;
 
-    private volatile ClusterTopology lastTopology;
+    private volatile boolean joinEventFired;
 
     public ClusterEventManager(Hekate hekate) {
         this.hekate = hekate;
@@ -139,7 +139,7 @@ class ClusterEventManager implements HekateSupport {
             CompletableFuture<?> future = new CompletableFuture<>();
 
             worker.execute(() -> {
-                inAsync.set(true);
+                insideWorker.set(true);
 
                 try {
                     if (DEBUG) {
@@ -162,7 +162,7 @@ class ClusterEventManager implements HekateSupport {
                         log.error("Failed to notify cluster event processing future [event={}]", event, t);
                     }
                 } finally {
-                    inAsync.remove();
+                    insideWorker.remove();
                 }
             });
 
@@ -229,7 +229,7 @@ class ClusterEventManager implements HekateSupport {
         Future<?> future = guard.withReadLock(() -> {
             FilteredListener filtered = new FilteredListener(null, listener);
 
-            if (worker == null || inAsync.get() != null) {
+            if (worker == null || insideWorker.get() != null) {
                 if (TRACE) {
                     log.trace("Unregistering cluster event listener [listener={}]", filtered);
                 }
@@ -330,7 +330,7 @@ class ClusterEventManager implements HekateSupport {
 
     private Optional<Future<?>> doAddListenerAsync(FilteredListener listener) {
         return guard.withReadLock(() -> {
-            if (worker == null || inAsync.get() != null) {
+            if (worker == null || insideWorker.get() != null) {
                 if (TRACE) {
                     log.trace("Registering cluster event listener [listener={}]", listener);
                 }
@@ -346,7 +346,7 @@ class ClusterEventManager implements HekateSupport {
                 CompletableFuture<?> future = new CompletableFuture<>();
 
                 worker.submit(() -> {
-                    inAsync.set(true);
+                    insideWorker.set(true);
 
                     try {
                         if (TRACE) {
@@ -376,7 +376,7 @@ class ClusterEventManager implements HekateSupport {
                             }
                         }
                     } finally {
-                        inAsync.remove();
+                        insideWorker.remove();
                     }
                 });
 

@@ -91,21 +91,25 @@ public class PluginJavadocTest extends HekateTestBase {
             .join();
         // End:register
 
-        verifyFileContents(node);
+        try {
+            verifyFileContents(node);
 
-        Hekate n2 = new HekateBootstrap().join();
+            Hekate n2 = new HekateBootstrap().join();
 
-        get(node.cluster().futureOf(topology -> topology.size() == 2));
+            try {
+                get(node.cluster().futureOf(topology -> topology.size() == 2));
 
-        verifyFileContents(node);
+                verifyFileContents(node);
+            } finally {
+                n2.leave();
+            }
 
-        n2.leave();
+            get(node.cluster().futureOf(topology -> topology.size() == 1));
 
-        get(node.cluster().futureOf(topology -> topology.size() == 1));
-
-        verifyFileContents(node);
-
-        node.leave();
+            verifyFileContents(node);
+        } finally {
+            node.leave();
+        }
     }
 
     private void verifyFileContents(Hekate node) throws IOException {

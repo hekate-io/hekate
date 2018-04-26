@@ -87,15 +87,19 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -104,6 +108,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.hekate.core.internal.util.StreamUtils.nullSafe;
+import static java.util.Collections.synchronizedList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toSet;
@@ -146,7 +151,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     private final List<ClusterEventListener> listeners;
 
     @ToStringIgnore
-    private final List<DeferredClusterListener> deferredListeners = new CopyOnWriteArrayList<>();
+    private final List<DeferredClusterListener> deferredListeners = synchronizedList(new LinkedList<>());
 
     @ToStringIgnore
     private ClusterAcceptManager acceptMgr;
@@ -604,9 +609,9 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         try {
             if (guard.isInitialized()) {
                 requireContext().cluster().removeListener(listener);
-            } else {
-                deferredListeners.remove(new DeferredClusterListener(listener, null));
             }
+
+            deferredListeners.remove(new DeferredClusterListener(listener, null));
         } finally {
             guard.unlockRead();
         }
@@ -616,40 +621,78 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     public CompletableFuture<ClusterTopology> futureOf(Predicate<ClusterTopology> predicate) {
         ArgAssert.notNull(predicate, "Predicate");
 
-        CompletableFuture<ClusterTopology> future = new CompletableFuture<>();
+        return guard.withReadLock(() -> {
+            // Completable future that gets completed upon a cluster event that has a matching topology.
+            class PredicateFuture extends CompletableFuture<ClusterTopology> implements ClusterEventListener {
+                public PredicateFuture() {
+                    // Unregister listener when this future gets completed.
+                    whenComplete((topology, err) ->
+                        removeListener(this)
+                    );
+                }
 
-        ClusterEventListener listener = new ClusterEventListener() {
-            @Override
-            public void onEvent(ClusterEvent event) {
-                InitializationContext localCtx = requireContext();
-
-                if (future.isDone()) {
-                    localCtx.cluster().removeListener(this);
-                } else if (predicate.test(event.topology())) {
-                    localCtx.cluster().removeListener(this);
-
-                    future.complete(event.topology());
-                } else if (event.type() == ClusterEventType.LEAVE) {
-                    localCtx.cluster().removeListener(this);
-
-                    future.cancel(false);
+                @Override
+                public void onEvent(ClusterEvent event) throws HekateException {
+                    if (!isDone()) {
+                        if (predicate.test(event.topology())) {
+                            complete(event.topology());
+                        } else if (event.type() == ClusterEventType.LEAVE) {
+                            cancel(false);
+                        }
+                    }
                 }
             }
-        };
 
-        guard.lockRead();
+            PredicateFuture future = new PredicateFuture();
 
-        try {
             if (guard.isInitialized()) {
-                requireContext().cluster().addListenerAsync(listener);
+                requireContext().cluster().addListenerAsync(future);
             } else {
-                deferredListeners.add(new DeferredClusterListener(listener, null));
+                deferredListeners.add(new DeferredClusterListener(future, null));
             }
-        } finally {
-            guard.unlockRead();
-        }
 
-        return future;
+            return future;
+        });
+    }
+
+    @Override
+    public boolean awaitFor(Predicate<ClusterTopology> predicate) {
+        return awaitFor(predicate, Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+    }
+
+    @Override
+    public boolean awaitFor(Predicate<ClusterTopology> predicate, long timeout, TimeUnit timeUnit) {
+        ArgAssert.notNull(predicate, "Predicate");
+
+        // Fast try against the current topology.
+        ClusterTopology immediateTopology = tryTopology(predicate);
+
+        if (immediateTopology != null) {
+            // Complete immediately.
+            return true;
+        } else {
+            // Await via future object.
+            Future<?> future = guard.withReadLock(() ->
+                guard.isInitialized() ? futureOf(predicate) : null
+            );
+
+            if (future == null) {
+                return false;
+            } else {
+                try {
+                    future.get(timeout, timeUnit);
+
+                    return true;
+                } catch (InterruptedException | TimeoutException e) {
+                    // Notify that this future is not needed anymore.
+                    future.cancel(false);
+
+                    return false;
+                } catch (CancellationException | ExecutionException e) {
+                    return false;
+                }
+            }
+        }
     }
 
     @Override
@@ -1324,10 +1367,22 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         InitializationContext localCtx = this.ctx;
 
         if (localCtx == null) {
-            throw new IllegalStateException("Cluster service is not joined.");
+            throw new IllegalStateException("Cluster service is not initialized.");
         }
 
         return localCtx;
+    }
+
+    private ClusterTopology tryTopology(Predicate<ClusterTopology> predicate) {
+        ClusterTopology topology = guard.withReadLock(() ->
+            guard.isInitialized() ? topology() : null
+        );
+
+        if (topology != null && predicate.test(topology)) {
+            return topology;
+        } else {
+            return null;
+        }
     }
 
     private static ScheduledFuture<?> scheduleOn(ScheduledExecutorService executor, Runnable task, long intervalMs) {

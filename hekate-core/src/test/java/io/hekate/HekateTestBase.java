@@ -201,7 +201,7 @@ public abstract class HekateTestBase {
                 System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 System.out.println("!!! TEST HANGED [" + TIMESTAMP_FORMAT.format(now) + "] " + CURRENT_TEST_NAME.get());
                 System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                
+
                 System.out.println(threadDump());
             }
 
@@ -419,6 +419,10 @@ public abstract class HekateTestBase {
 
         if (!failedThreads.isEmpty()) {
             FAILED_THREAD_NAMES_CACHE.addAll(failedThreads);
+        }
+
+        if (!failedThreads.isEmpty()) {
+            System.out.println(threadDump());
         }
 
         assertTrue(failedThreads.toString(), failedThreads.isEmpty());

@@ -949,6 +949,9 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
     // This method is for testing purposes only.
     MessagingClient<T> clientOf(ClusterNodeId nodeId) throws MessagingException {
+        // Ensure that we are using the latest topology.
+        updateTopology();
+
         long readLock = lock.readLock();
 
         try {
@@ -1070,11 +1073,11 @@ class MessagingGatewayContext<T> implements HekateSupport {
                 lock.unlockRead(readLock);
             }
 
-            // Since we are here it means that topology was changed during routing.
             if (debug) {
                 log.debug("Retrying routing since topology was changed [balancer={}]", ctx.opts().balancer());
             }
 
+            // Since we are here it means that topology was changed during routing.
             updateTopology();
         }
     }

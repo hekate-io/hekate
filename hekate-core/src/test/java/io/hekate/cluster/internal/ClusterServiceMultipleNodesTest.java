@@ -50,6 +50,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
@@ -268,7 +270,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     }
 
     @Test
-    public void testTopologyFuture() throws Exception {
+    public void testFutureOf() throws Exception {
         HekateTestNode node = createNode();
 
         CompletableFuture<ClusterTopology> beforeJoin = node.cluster().futureOf(topology -> !topology.isEmpty());
@@ -307,6 +309,72 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
         assertTrue(afterRejoin.isDone());
         assertFalse(afterRejoin.isCancelled());
+    }
+
+    @Test
+    public void testAwaitFor() throws Exception {
+        HekateTestNode node = createNode();
+
+        // Not joined.
+        assertFalse(node.cluster().awaitFor(t -> t.size() > 1, 3, TimeUnit.SECONDS));
+
+        node.join();
+
+        // Joined and condition is met.
+        assertTrue(node.cluster().awaitFor(t -> t.size() == 1, 3, TimeUnit.SECONDS));
+
+        CountDownLatch asyncReady = new CountDownLatch(1);
+
+        // Should block.
+        Future<Boolean> future = runAsync(() -> {
+            asyncReady.countDown();
+
+            return node.cluster().awaitFor(t -> false);
+        });
+
+        await(asyncReady);
+
+        // Give some time for waiting to be registered.
+        sleep(100);
+
+        assertFalse(future.isDone());
+
+        node.leave();
+
+        // Should unblock when node goes down.
+        assertFalse(get(future));
+
+        // Not joined.
+        assertFalse(node.cluster().awaitFor(t -> t.size() > 1, 3, TimeUnit.SECONDS));
+
+        node.join();
+
+        // Should block.
+        future = runAsync(() ->
+            node.cluster().awaitFor(t -> t.size() > 1)
+        );
+
+        assertFalse(future.isDone());
+
+        // New node should unblock (triggers condition match).
+        createNode().join();
+
+        // Should unblock.
+        assertTrue(get(future));
+
+        assertTrue(node.cluster().awaitFor(t -> t.size() > 1, 3, TimeUnit.SECONDS));
+        assertTrue(node.cluster().forRemotes().awaitFor(t -> t.size() == 1, 3, TimeUnit.SECONDS));
+
+        // Test thread interruption.
+        try {
+            Thread.currentThread().interrupt();
+
+            // Should not block since current thread is interrupted.
+            assertFalse(node.cluster().awaitFor(t -> false));
+        } finally {
+            // Reset interrupted flag.
+            Thread.interrupted();
+        }
     }
 
     @Test

@@ -22,6 +22,7 @@ import io.hekate.cluster.event.ClusterEventType;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -94,6 +95,43 @@ public interface ClusterView extends ClusterFilterSupport<ClusterView>, ClusterT
      * @return Topology future.
      */
     CompletableFuture<ClusterTopology> futureOf(Predicate<ClusterTopology> predicate);
+
+    /**
+     * Awaits this cluster view to match the specified predicate.
+     *
+     * <p>
+     * This method blocks unless the specified predicate accepts the cluster topology of this view or one of the following happens:
+     * </p>
+     * <ul>
+     * <li>Caller thread gets interrupted</li>
+     * <li>This cluster node is stopped</li>
+     * </ul>
+     *
+     * @param predicate Predicate that gets checked every time when underlying cluster topology is changed.
+     *
+     * @return {@code} if predicate matched with this cluster view; {@code false} in all other cases (thread interruption, node stop, etc).
+     */
+    boolean awaitFor(Predicate<ClusterTopology> predicate);
+
+    /**
+     * Awaits this cluster view to match the specified predicate up to the specified timeout.
+     *
+     * <p>
+     * This method blocks unless the specified predicate accepts the cluster topology of this view or one of the following happens:
+     * </p>
+     * <ul>
+     * <li>Caller thread gets interrupted</li>
+     * <li>This cluster node is stopped</li>
+     * <li>Waiting times out</li>
+     * </ul>
+     *
+     * @param predicate Predicate that gets checked every time when underlying cluster topology is changed.
+     * @param timeout Timeout.
+     * @param timeUnit Time unit.
+     *
+     * @return {@code} if predicate matched with this cluster view; {@code false} in all other cases (thread interruption, node stop, etc).
+     */
+    boolean awaitFor(Predicate<ClusterTopology> predicate, long timeout, TimeUnit timeUnit);
 
     /**
      * Performs the given action for each node of this view.

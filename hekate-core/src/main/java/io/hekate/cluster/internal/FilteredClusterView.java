@@ -36,6 +36,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 class FilteredClusterView implements ClusterView {
@@ -208,6 +209,16 @@ class FilteredClusterView implements ClusterView {
     @Override
     public CompletableFuture<ClusterTopology> futureOf(Predicate<ClusterTopology> predicate) {
         return parent.futureOf(topology -> predicate.test(topology.filterAll(filter)));
+    }
+
+    @Override
+    public boolean awaitFor(Predicate<ClusterTopology> predicate) {
+        return parent.awaitFor(topology -> predicate.test(topology.filterAll(filter)));
+    }
+
+    @Override
+    public boolean awaitFor(Predicate<ClusterTopology> predicate, long timeout, TimeUnit timeUnit) {
+        return parent.awaitFor(topology -> predicate.test(topology.filterAll(filter)));
     }
 
     @Override
