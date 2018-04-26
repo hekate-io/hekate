@@ -16,6 +16,7 @@
 
 package io.hekate.lock;
 
+import io.hekate.cluster.ClusterView;
 import java.util.Optional;
 
 /**
@@ -69,4 +70,11 @@ public interface LockRegion {
      * @throws InterruptedException Signal that current thread was interrupted while awaiting for lock owner information.
      */
     Optional<LockOwnerInfo> ownerOf(String name) throws InterruptedException;
+
+    /**
+     * Returns the cluster view of this region.
+     *
+     * @return Cluster view of this region.
+     */
+    ClusterView cluster();
 }

@@ -21,6 +21,7 @@ import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.cluster.ClusterView;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.lock.DistributedLock;
@@ -267,6 +268,11 @@ class DefaultLockRegion implements LockRegion {
             // Never happens.
             throw new AssertionError("Unexpected error while requesting for lock owner info.", e);
         }
+    }
+
+    @Override
+    public ClusterView cluster() {
+        return lockChannel.cluster();
     }
 
     public LockControllerClient lock(long timeout, DistributedLock lock) {

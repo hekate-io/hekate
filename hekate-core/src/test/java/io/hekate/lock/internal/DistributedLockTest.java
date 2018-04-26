@@ -17,6 +17,8 @@
 package io.hekate.lock.internal;
 
 import io.hekate.HekateTestContext;
+import io.hekate.cluster.ClusterView;
+import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.core.Hekate;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.lock.DistributedLock;
@@ -36,6 +38,7 @@ import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runners.Parameterized.Parameters;
 
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -103,6 +106,37 @@ public class DistributedLockTest extends LockServiceTestBase {
         lockNode = nodes.get(0);
 
         region = lockNode.locks().region(REGION_1);
+    }
+
+    @Test
+    public void testCluster() throws Exception {
+        List<ClusterView> clusters = nodes.stream()
+            .map(n -> n.locks().region(REGION_1).cluster())
+            .collect(toList());
+
+        clusters.forEach(cluster1 ->
+            clusters.forEach(cluster2 ->
+                assertEquals(cluster1.topology(), cluster2.topology())
+            )
+        );
+
+        HekateTestNode newNode = createLockNode().join();
+
+        clusters.forEach(cluster ->
+            assertTrue(cluster.awaitFor(topology -> topology.contains(newNode.localNode())))
+        );
+
+        CountDownLatch allAwareOfLeave = new CountDownLatch(nodes.size());
+
+        clusters.forEach(cluster -> cluster.addListener(evt -> {
+            if (evt.type() == ClusterEventType.CHANGE && evt.asChange().removed().contains(newNode.localNode())) {
+                allAwareOfLeave.countDown();
+            }
+        }));
+
+        newNode.leave();
+
+        await(allAwareOfLeave);
     }
 
     @Test
