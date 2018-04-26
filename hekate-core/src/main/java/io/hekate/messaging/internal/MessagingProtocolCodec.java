@@ -33,6 +33,7 @@ import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
 import io.hekate.messaging.internal.MessagingProtocol.StreamRequest;
 import io.hekate.network.NetworkMessage;
 import io.hekate.util.format.ToString;
+import java.io.EOFException;
 import java.io.IOException;
 import java.util.OptionalInt;
 
@@ -53,13 +54,21 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
     private static final NetworkMessage.Preview<MessagingProtocol.Type> TYPE_PREVIEW = rd -> getType(rd.readByte());
 
     private static final NetworkMessage.PreviewInt REQUEST_ID_PREVIEW = rd -> {
-        rd.skipBytes(FLAG_BYTES);
+        int skipped = rd.skipBytes(FLAG_BYTES);
+
+        if (skipped < FLAG_BYTES) {
+            throw new EOFException("Failed to skip bytes [expected=" + FLAG_BYTES + ", skipped=" + skipped + ']');
+        }
 
         return rd.readVarInt();
     };
 
     private static final NetworkMessage.PreviewInt AFFINITY_PREVIEW = rd -> {
-        rd.skipBytes(FLAG_BYTES);
+        int skipped = rd.skipBytes(FLAG_BYTES);
+
+        if (skipped < FLAG_BYTES) {
+            throw new EOFException("Failed to skip bytes [expected=" + FLAG_BYTES + ", skipped=" + skipped + ']');
+        }
 
         return rd.readInt();
     };

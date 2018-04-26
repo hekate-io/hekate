@@ -16,14 +16,23 @@
   -->
 
 <FindBugsFilter>
-    <!-- Excluded due to https://sourceforge.net/p/findbugs/bugs/1403 -->
+    <!--
+        Excluded because of the following issue:
+            #1403 NP_NONNULL_PARAM_VIOLATION for completedFuture(null)
+            https://sourceforge.net/p/findbugs/bugs/1403
+    -->
     <Match>
         <Bug pattern="NP_NONNULL_PARAM_VIOLATION"/>
     </Match>
 
-    <!-- Excluded due to https://sourceforge.net/p/findbugs/bugs/1473 -->
+    <!--
+        Excluded because of the following issue:
+            #1473 SE_BAD_FIELD reported for Serializable class that implements writeReplace
+            https://sourceforge.net/p/findbugs/bugs/1473
+    -->
     <Match>
         <Bug pattern="SE_BAD_FIELD"/>
+        <Class name="io.hekate.core.internal.HekateNode"/>
     </Match>
 
     <!-- Excluded for performance reasons. -->
