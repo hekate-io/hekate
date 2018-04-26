@@ -93,12 +93,11 @@ public class FilteredClusterViewTest extends HekateNodeTestBase {
 
         ArgumentCaptor<ClusterChangeEvent> evt1 = ArgumentCaptor.forClass(ClusterChangeEvent.class);
         ArgumentCaptor<ClusterChangeEvent> evt2 = ArgumentCaptor.forClass(ClusterChangeEvent.class);
-        ArgumentCaptor<ClusterChangeEvent> evt3 = ArgumentCaptor.forClass(ClusterChangeEvent.class);
         ArgumentCaptor<ClusterChangeEvent> evt4 = ArgumentCaptor.forClass(ClusterChangeEvent.class);
 
         verify(l1).onEvent(evt1.capture());
         verify(l2).onEvent(evt2.capture());
-        verify(l3).onEvent(evt3.capture());
+        verifyNoMoreInteractions(l3);
         verify(l4).onEvent(evt4.capture());
 
         assertThat(evt1.getValue().topology().nodes(),
@@ -112,10 +111,6 @@ public class FilteredClusterViewTest extends HekateNodeTestBase {
         assertEquals(evt2.getValue().added(), singletonList(node4.localNode()));
         assertTrue(evt2.getValue().removed().isEmpty());
 
-        assertTrue(evt3.getValue().topology().isEmpty());
-        assertTrue(evt3.getValue().removed().isEmpty());
-        assertTrue(evt3.getValue().removed().isEmpty());
-
         assertEquals(evt1.getValue().topology(), evt4.getValue().topology());
 
         reset(l1);
@@ -128,7 +123,7 @@ public class FilteredClusterViewTest extends HekateNodeTestBase {
 
         verify(l1).onEvent(evt1.capture());
         verify(l2).onEvent(evt2.capture());
-        verify(l3).onEvent(evt3.capture());
+        verifyNoMoreInteractions(l3);
 
         assertThat(evt1.getValue().topology().nodes(),
             both(hasItems(node2.localNode(), node3.localNode()))
@@ -141,10 +136,6 @@ public class FilteredClusterViewTest extends HekateNodeTestBase {
         assertTrue(evt2.getValue().topology().isEmpty());
         assertEquals(evt2.getValue().removed(), singletonList(node4.localNode()));
         assertTrue(evt2.getValue().added().isEmpty());
-
-        assertTrue(evt3.getValue().topology().isEmpty());
-        assertTrue(evt3.getValue().removed().isEmpty());
-        assertTrue(evt3.getValue().removed().isEmpty());
 
         allRemote.removeListener(l1);
         allRemote.removeListener(l2);

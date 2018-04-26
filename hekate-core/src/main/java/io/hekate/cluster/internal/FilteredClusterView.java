@@ -86,7 +86,9 @@ class FilteredClusterView implements ClusterView {
                         List<ClusterNode> added = filterToImmutable(change.added());
                         List<ClusterNode> removed = filterToImmutable(change.removed());
 
-                        delegate.onEvent(new ClusterChangeEvent(topology, added, removed, event.hekate()));
+                        if (!added.isEmpty() || !removed.isEmpty()) {
+                            delegate.onEvent(new ClusterChangeEvent(topology, added, removed, event.hekate()));
+                        }
 
                         break;
                     }
