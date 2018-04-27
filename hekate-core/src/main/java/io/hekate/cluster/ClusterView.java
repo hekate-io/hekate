@@ -128,6 +128,45 @@ public interface ClusterView extends ClusterFilterSupport<ClusterView>, ClusterT
     boolean awaitFor(Predicate<ClusterTopology> predicate, long timeout, TimeUnit timeUnit);
 
     /**
+     * Awaits for this cluster view to contain at least one node.
+     *
+     * <p>
+     * This method blocks unless the the cluster topology to have at least one node or one of the following happens:
+     * </p>
+     * <ul>
+     * <li>Caller thread gets interrupted</li>
+     * <li>This cluster node is stopped</li>
+     * <li>Waiting times out</li>
+     * </ul>
+     *
+     * @return {@code} if this cluster view has at least one node; {@code false} in all other cases (thread interruption, node stop, etc).
+     */
+    default boolean awaitForNodes() {
+        return awaitFor(topology -> !topology.isEmpty());
+    }
+
+    /**
+     * Awaits for this cluster view to contain at least one node.
+     *
+     * <p>
+     * This method blocks unless the the cluster topology to have at least one node or one of the following happens:
+     * </p>
+     * <ul>
+     * <li>Caller thread gets interrupted</li>
+     * <li>This cluster node is stopped</li>
+     * <li>Waiting times out</li>
+     * </ul>
+     *
+     * @param timeout Timeout.
+     * @param timeUnit Time unit.
+     *
+     * @return {@code} if predicate matched with this cluster view; {@code false} in all other cases (thread interruption, node stop, etc).
+     */
+    default boolean awaitForNodes(long timeout, TimeUnit timeUnit) {
+        return awaitFor(topology -> !topology.isEmpty(), timeout, timeUnit);
+    }
+
+    /**
      * Performs the given action for each node of this view.
      *
      * @param consumer The action to be performed for each node.

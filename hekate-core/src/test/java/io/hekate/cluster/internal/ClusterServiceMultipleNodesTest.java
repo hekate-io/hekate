@@ -378,6 +378,64 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     }
 
     @Test
+    public void testAwaitForNodes() throws Exception {
+        HekateTestNode node = createNode();
+
+        // Not joined.
+        assertFalse(node.cluster().awaitForNodes(3, TimeUnit.SECONDS));
+        assertFalse(node.cluster().awaitForNodes());
+
+        node.join();
+
+        // Joined and condition is met.
+        assertTrue(node.cluster().awaitForNodes(3, TimeUnit.SECONDS));
+        assertTrue(node.cluster().awaitForNodes());
+
+        CountDownLatch asyncReady = new CountDownLatch(1);
+
+        // Should block.
+        Future<Boolean> future = runAsync(() -> {
+            asyncReady.countDown();
+
+            return node.cluster().forRemotes().awaitForNodes();
+        });
+
+        await(asyncReady);
+
+        // Give some time for waiting to be registered.
+        sleep(100);
+
+        assertFalse(future.isDone());
+
+        node.leave();
+
+        // Should unblock when node goes down.
+        assertFalse(get(future));
+
+        // Not joined.
+        assertFalse(node.cluster().awaitForNodes(3, TimeUnit.SECONDS));
+        assertFalse(node.cluster().awaitForNodes());
+
+        node.join();
+
+        // Should block.
+        future = runAsync(() ->
+            node.cluster().forRemotes().awaitForNodes(3, TimeUnit.SECONDS)
+        );
+
+        assertFalse(future.isDone());
+
+        // New node should unblock (triggers condition match).
+        createNode().join();
+
+        // Should unblock.
+        assertTrue(get(future));
+
+        assertTrue(node.cluster().forRemotes().awaitForNodes(3, TimeUnit.SECONDS));
+        assertTrue(node.cluster().forRemotes().awaitForNodes());
+    }
+
+    @Test
     public void testTopologyChangeEvents() throws Exception {
         List<HekateTestNode> nodes = new ArrayList<>();
 
