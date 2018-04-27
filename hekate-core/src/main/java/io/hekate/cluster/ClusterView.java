@@ -91,7 +91,7 @@ public interface ClusterView extends ClusterFilterSupport<ClusterView>, ClusterT
     CompletableFuture<ClusterTopology> futureOf(Predicate<ClusterTopology> predicate);
 
     /**
-     * Awaits this cluster view to match the specified predicate.
+     * Awaits for this cluster view to match the specified predicate.
      *
      * <p>
      * This method blocks unless the specified predicate accepts the cluster topology of this view or one of the following happens:
@@ -108,7 +108,7 @@ public interface ClusterView extends ClusterFilterSupport<ClusterView>, ClusterT
     boolean awaitFor(Predicate<ClusterTopology> predicate);
 
     /**
-     * Awaits this cluster view to match the specified predicate up to the specified timeout.
+     * Awaits for this cluster view to match the specified predicate up to the specified timeout.
      *
      * <p>
      * This method blocks unless the specified predicate accepts the cluster topology of this view or one of the following happens:
