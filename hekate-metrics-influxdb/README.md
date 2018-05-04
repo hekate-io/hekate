@@ -7,6 +7,6 @@ for [Hekate.io](https://github.com/hekate-io/hekate) library.
  <dependency>
      <groupId>io.hekate</groupId>
      <artifactId>hekate-metrics-influxdb</artifactId>
-     <version>2.2.2</version>
+     <version>2.3.0</version>
  </dependency>
  ```
