@@ -145,9 +145,9 @@ Complete reference guide is coming soon.
 
  New Features and Improvements:
  
- - Added ClusterView#awaitForNodes() method - simplifies awaiting for the cluster topology conditions.
- - Added Added ClusterNode#isRemote() method - simplifies lambda-based filtering of the cluster topology.
- - Added LockRegion#cluster() method - provides access to the lock regions's cluster view.
+ - Added ClusterView#awaitForNodes() method - simplifies waiting for the conditions of cluster topology.
+ - Added Added ClusterNode#isRemote() method - simplifies lambda-based filtering of cluster topology.
+ - Added LockRegion#cluster() method - cluster view of a lock region.
 
 ### v.2.2.2 (21-Apr-2018)
 
