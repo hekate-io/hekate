@@ -87,7 +87,7 @@ Complete reference guide is coming soon.
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring-boot</artifactId>
-    <version>2.3.0</version>
+    <version>2.3.1-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -96,7 +96,7 @@ Complete reference guide is coming soon.
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring</artifactId>
-    <version>2.3.0</version>
+    <version>2.3.1-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -105,7 +105,7 @@ Complete reference guide is coming soon.
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-core</artifactId>
-    <version>2.3.0</version>
+    <version>2.3.1-SNAPSHOT</version>
 </dependency>
 ```
 
