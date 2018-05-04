@@ -84,7 +84,7 @@ public final class ClusterFilters {
 
     private static final Comparator<ClusterNode> NATURAL_ORDER = ClusterNode::compareTo;
 
-    private static final ClusterFilter REMOTES = forFilter(node -> !node.isLocal());
+    private static final ClusterFilter REMOTES = forFilter(ClusterNode::isRemote);
 
     private static final ClusterFilter NEXT = new RingFilter(NATURAL_ORDER);
 

@@ -56,8 +56,19 @@ public interface ClusterNode extends Comparable<ClusterNode>, ClusterNodeIdSuppo
      * Returns {@code true} if this is a local node.
      *
      * @return {@code true} if this is a local node.
+     *
+     * @see #isRemote()
      */
     boolean isLocal();
+
+    /**
+     * Returns {@code true} if this is a remote node.
+     *
+     * @return {@code true} if this is a remote node.
+     *
+     * @see #isLocal()
+     */
+    boolean isRemote();
 
     /**
      * Returns the network address of this node.

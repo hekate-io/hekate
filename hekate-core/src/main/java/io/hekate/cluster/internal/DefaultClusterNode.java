@@ -124,6 +124,11 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     }
 
     @Override
+    public boolean isRemote() {
+        return !isLocal();
+    }
+
+    @Override
     public int joinOrder() {
         return joinOrder;
     }
