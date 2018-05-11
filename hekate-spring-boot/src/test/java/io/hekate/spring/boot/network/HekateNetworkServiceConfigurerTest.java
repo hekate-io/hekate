@@ -19,6 +19,7 @@ package io.hekate.spring.boot.network;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkConnectorConfig;
 import io.hekate.network.NetworkService;
+import io.hekate.network.NetworkSslConfig;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
 import io.hekate.spring.boot.HekateTestConfigBase;
 import org.junit.Test;
@@ -98,5 +99,24 @@ public class HekateNetworkServiceConfigurerTest extends HekateAutoConfigurerTest
         assertNotNull(autowire(new TestAutowire()).connector1);
         assertNotNull(autowire(new TestAutowire()).connector2);
         assertNotNull(autowire(new TestAutowire()).networkService);
+    }
+
+    @Test
+    public void testSslConfig() {
+        registerAndRefresh(
+            new String[]{
+                "hekate.network.ssl.enable=true",
+                "hekate.network.ssl.key-store-path=classpath:ssl/hekate-test1.jks",
+                "hekate.network.ssl.key-store-password=hekate-test1"
+            },
+            NetworkTestConfig.class
+        );
+
+        NetworkSslConfig ssl = get(NetworkSslConfig.class);
+
+        assertNotNull(ssl);
+
+        assertEquals("classpath:ssl/hekate-test1.jks", ssl.getKeyStorePath());
+        assertEquals("hekate-test1", ssl.getKeyStorePassword());
     }
 }

@@ -21,6 +21,7 @@ import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkConnectorConfig;
 import io.hekate.network.NetworkService;
 import io.hekate.network.NetworkServiceFactory;
+import io.hekate.network.NetworkSslConfig;
 import io.hekate.spring.bean.network.NetworkConnectorBean;
 import io.hekate.spring.bean.network.NetworkServiceBean;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
@@ -34,6 +35,7 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -56,8 +58,7 @@ import org.springframework.stereotype.Component;
  *
  * <h2>Configuration properties</h2>
  * <p>
- * It is possible to configure {@link NetworkServiceFactory} via application properties prefixed with {@code 'hekate.network'}.
- * For example:
+ * It is possible to configure {@link NetworkServiceFactory} via application properties prefixed with {@code 'hekate.network'}:
  * </p>
  * <ul>
  * <li>{@link NetworkServiceFactory#setHost(String) 'hekate.network.host'}</li>
@@ -75,7 +76,24 @@ import org.springframework.stereotype.Component;
  * <li>{@link NetworkServiceFactory#setTcpBacklog(Integer) 'hekate.network.tcp-backlog'}</li>
  * </ul>
  *
- * <h2>Connectors injections</h2>
+ * <h2>SSL/TLS Configuration</h2>
+ * <p>
+ * SSL/TLS encryption can be enabled by setting the {@code 'hekate.network.ssl.enable'} configuration property to {@code true} and using the
+ * following properties:
+ * </p>
+ * <ul>
+ * <li>{@link NetworkSslConfig#setProvider(NetworkSslConfig.Provider) 'hekate.network.ssl.provider'}</li>
+ * <li>{@link NetworkSslConfig#setKeyStorePath(String) 'hekate.network.ssl.key-store-path'}</li>
+ * <li>{@link NetworkSslConfig#setKeyStorePassword(String) 'hekate.network.ssl.key-store-password'}</li>
+ * <li>{@link NetworkSslConfig#setKeyStoreType(String) 'hekate.network.ssl.key-store-type'}</li>
+ * <li>{@link NetworkSslConfig#setKeyStoreAlgorithm(String) 'hekate.network.ssl.key-store-algorithm'}</li>
+ * <li>{@link NetworkSslConfig#setTrustStorePath(String) 'hekate.network.ssl.trust-store-path'}</li>
+ * <li>{@link NetworkSslConfig#setTrustStorePassword(String) 'hekate.network.ssl.trust-store-password'}</li>
+ * <li>{@link NetworkSslConfig#setTrustStoreType(String) 'hekate.network.ssl.trust-store-type'}</li>
+ * <li>{@link NetworkSslConfig#setTrustStoreAlgorithm(String) 'hekate.network.ssl.trust-store-algorithm'}</li>
+ * </ul>
+ *
+ * <h2>Connectors injection</h2>
  * <p>
  * This auto-configuration provides support for injecting beans of {@link NetworkConnector} type into other beans with the help of {@link
  * InjectConnector} annotation. Please see its documentation for more details.
@@ -124,22 +142,41 @@ public class HekateNetworkServiceConfigurer {
     }
 
     /**
+     * Constructs a {@link NetworkSslConfig}.
+     *
+     * @return SSL configuration.
+     *
+     * @see NetworkServiceFactory#setSsl(NetworkSslConfig)
+     */
+    @Bean
+    @ConditionalOnMissingBean(NetworkSslConfig.class)
+    @ConfigurationProperties(prefix = "hekate.network.ssl")
+    @ConditionalOnProperty(value = "hekate.network.ssl.enable", havingValue = "true")
+    public NetworkSslConfig networkSslConfig() {
+        return new NetworkSslConfig();
+    }
+
+    /**
      * Constructs the {@link NetworkServiceFactory}.
+     *
+     * @param ssl Optional SSL configuration.
      *
      * @return Service factory.
      */
     @Bean
     @ConfigurationProperties(prefix = "hekate.network")
-    public NetworkServiceFactory networkServiceFactory() {
+    public NetworkServiceFactory networkServiceFactory(Optional<NetworkSslConfig> ssl) {
         NetworkServiceFactory factory = new NetworkServiceFactory();
 
         factory.setConnectors(connectors);
+
+        ssl.ifPresent(factory::withSsl);
 
         return factory;
     }
 
     /**
-     * Returns the factory bean that makes it possible to inject {@link NetworkService} directly into other beans instead of accessing it
+     * Returns a factory bean that makes it possible to inject {@link NetworkService} directly into other beans instead of accessing it
      * via {@link Hekate#network()} method.
      *
      * @return Service bean.
