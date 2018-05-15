@@ -132,7 +132,7 @@ public class MulticastSeedNodeProviderTest extends SeedNodeProviderTestBase<Mult
 
     @Test
     public void testThreadInterruptionOnStart() throws Exception {
-        TestProvider provider = createProvider();
+        TestProvider provider = createProvider(cfg -> cfg.withWaitTime(3000));
 
         Thread.currentThread().interrupt();
 
