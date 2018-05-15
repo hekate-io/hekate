@@ -180,6 +180,10 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
                         break;
                     }
                 }
+
+                if (localNode == null) {
+                    localNode = NOT_A_NODE;
+                }
             }
 
             localNodeCache = localNode;
