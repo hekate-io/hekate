@@ -141,11 +141,14 @@ public class MulticastSeedNodeProviderTest extends SeedNodeProviderTestBase<Mult
 
             fail("Error was expected.");
         } catch (HekateException e) {
-            assertTrue(getStacktrace(e), e.isCausedBy(InterruptedException.class));
+            try {
+                assertTrue(getStacktrace(e), e.isCausedBy(InterruptedException.class));
 
-            assertTrue(Thread.currentThread().isInterrupted());
-
-            Thread.interrupted();
+                assertTrue(Thread.currentThread().isInterrupted());
+            } finally {
+                // Reset interrupted flag.
+                Thread.interrupted();
+            }
         }
     }
 
