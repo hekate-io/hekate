@@ -997,6 +997,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
     private MessageRoute<T> route(MessageContext<T> ctx, FailureInfo prevErr) throws HekateException, ClientSelectionRejectedException {
         assert ctx != null : "Message context is null.";
 
+        // Perform routing in a loop to circumvent concurrent cluster topology changes.
         while (true) {
             ClusterTopology topology = ctx.opts().cluster().topology();
 
@@ -1055,9 +1056,18 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
                 if (client == null) {
                     // Post-check that topology was not changed during routing.
+                    // -------------------------------------------------------------
+                    // We are comparing the following topologies:
+                    //  - Latest topology that is known to the cluster
+                    //  - Topology that was used for routing (since it could expire while routing was in progress)
+                    //  - Topology of client connections (since it is updated asynchronously and can lag behind the latest cluster topology)
+                    // In case of any mismatch between those topologies we need to perform another routing attempt.
                     ClusterTopology latestTopology = cluster.topology();
 
-                    if (clientsTopology != null && clientsTopology.version() == latestTopology.version()) {
+                    if (latestTopology.version() == topology.version()
+                        && clientsTopology != null // <-- Can be null if service was still initializing when this method got called.
+                        && clientsTopology.version() == latestTopology.version()) {
+                        // Report failure since topologies are consistent but the selected node is not within the cluster.
                         Throwable cause = prevErr != null ? prevErr.error() : null;
 
                         if (cause == null) {
@@ -1066,6 +1076,8 @@ class MessagingGatewayContext<T> implements HekateSupport {
                             throw new ClientSelectionRejectedException(cause);
                         }
                     }
+
+                    // Retry routing (note we are not exiting the loop)...
                 } else {
                     return new MessageRoute<>(client, topology, ctx, interceptor);
                 }
@@ -1073,11 +1085,11 @@ class MessagingGatewayContext<T> implements HekateSupport {
                 lock.unlockRead(readLock);
             }
 
+            // Since we are here it means that topology was changed during routing.
             if (debug) {
                 log.debug("Retrying routing since topology was changed [balancer={}]", ctx.opts().balancer());
             }
 
-            // Since we are here it means that topology was changed during routing.
             updateTopology();
         }
     }

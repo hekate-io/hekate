@@ -325,9 +325,9 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
 
             leaveLatch.countDown();
 
-            expect(UnknownRouteException.class, leaveCallback::get);
+            leaveCallback.get();
 
-            assertEquals(1, leaveInvocations.get());
+            assertEquals(2, leaveInvocations.get());
         });
     }
 
