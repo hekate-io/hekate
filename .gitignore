@@ -3,4 +3,9 @@ target
 *.ipr
 *.iws
 .idea
+.settings
+.project
+.classpath
+.DS_Store
 my_test.properties
+
