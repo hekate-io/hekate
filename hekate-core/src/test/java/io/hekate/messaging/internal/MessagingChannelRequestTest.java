@@ -235,10 +235,10 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
     @Test
     public void testNoFailuresWithSmallIdleTimeout() throws Exception {
-        TestChannel sender = createChannel(c -> c.setIdleSocketTimeout(1)).join();
+        TestChannel sender = createChannel(c -> c.setIdleSocketTimeout(25)).join();
 
         TestChannel receiver = createChannel(c -> {
-            c.setIdleSocketTimeout(5);
+            c.setIdleSocketTimeout(50);
             c.setReceiver(msg -> msg.reply("ok"));
         }).join();
 
