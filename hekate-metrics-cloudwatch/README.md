@@ -7,6 +7,6 @@ for [Hekate.io](https://github.com/hekate-io/hekate) library.
  <dependency>
      <groupId>io.hekate</groupId>
      <artifactId>hekate-metrics-cloudwatch</artifactId>
-     <version>2.3.1-SNAPSHOT</version>
+     <version>2.3.1</version>
  </dependency>
  ```
