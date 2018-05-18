@@ -80,6 +80,10 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
 For now, the most detailed documentation is provided as part of [javadocs](http://javadoc.io/doc/io.hekate/hekate-all/). 
 Complete reference guide is coming soon.
 
+## Code Examples
+
+Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examples) project.
+
 ## Maven artifacts
 
  * For projects based on **Spring Boot**:
