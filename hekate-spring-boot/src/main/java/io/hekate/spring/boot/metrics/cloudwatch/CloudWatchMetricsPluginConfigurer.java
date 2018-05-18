@@ -23,14 +23,12 @@ import io.hekate.metrics.MetricRegexFilter;
 import io.hekate.metrics.cloudwatch.CloudWatchMetaDataProvider;
 import io.hekate.metrics.cloudwatch.CloudWatchMetricsConfig;
 import io.hekate.metrics.cloudwatch.CloudWatchMetricsPlugin;
-import io.hekate.metrics.influxdb.InfluxDbMetricsPlugin;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
 import io.hekate.spring.boot.HekateConfigurer;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -98,7 +96,6 @@ import org.springframework.util.CollectionUtils;
 @Configuration
 @ConditionalOnHekateEnabled
 @AutoConfigureBefore(HekateConfigurer.class)
-@ConditionalOnClass(InfluxDbMetricsPlugin.class)
 @ConditionalOnProperty(value = "hekate.metrics.cloudwatch.enable", havingValue = "true")
 public class CloudWatchMetricsPluginConfigurer {
     @Component

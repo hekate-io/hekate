@@ -20,10 +20,8 @@ import io.hekate.codec.fst.FstCodecFactory;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
 import io.hekate.spring.boot.HekateConfigurer;
 import java.util.Map;
-import org.nustaq.serialization.FSTConfiguration;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -58,7 +56,6 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @ConditionalOnHekateEnabled
-@ConditionalOnClass(FSTConfiguration.class)
 @AutoConfigureBefore(HekateConfigurer.class)
 @ConditionalOnProperty(name = "hekate.codec", havingValue = "fst")
 public class HekateFstCodecConfigurer {

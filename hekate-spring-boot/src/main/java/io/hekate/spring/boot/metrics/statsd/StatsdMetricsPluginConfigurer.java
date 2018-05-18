@@ -28,7 +28,6 @@ import io.hekate.spring.boot.HekateConfigurer;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -95,7 +94,6 @@ import org.springframework.util.CollectionUtils;
 @Configuration
 @ConditionalOnHekateEnabled
 @AutoConfigureBefore(HekateConfigurer.class)
-@ConditionalOnClass(StatsdMetricsPlugin.class)
 @ConditionalOnProperty(value = "hekate.metrics.statsd.enable", havingValue = "true")
 public class StatsdMetricsPluginConfigurer {
     @Component

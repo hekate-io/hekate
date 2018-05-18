@@ -16,14 +16,12 @@
 
 package io.hekate.spring.boot.codec;
 
-import com.esotericsoftware.kryo.Kryo;
 import io.hekate.codec.kryo.KryoCodecFactory;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
 import io.hekate.spring.boot.HekateConfigurer;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -58,7 +56,6 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @ConditionalOnHekateEnabled
-@ConditionalOnClass(Kryo.class)
 @AutoConfigureBefore(HekateConfigurer.class)
 @ConditionalOnProperty(name = "hekate.codec", havingValue = "kryo")
 public class HekateKryoCodecConfigurer {

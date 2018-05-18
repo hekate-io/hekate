@@ -26,7 +26,6 @@ import io.hekate.spring.boot.ConditionalOnHekateEnabled;
 import java.util.Properties;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -58,7 +57,6 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnHekateEnabled
 @AutoConfigureBefore(HekateClusterServiceConfigurer.class)
 @ConditionalOnMissingBean(SeedNodeProvider.class)
-@ConditionalOnClass(CloudStoreSeedNodeProvider.class)
 @ConditionalOnProperty(value = "hekate.cluster.seed.cloudstore.enable", havingValue = "true")
 public class HekateCloudStoreSeedNodeProviderConfigurer {
     /**
