@@ -291,13 +291,13 @@ public class InfluxDbMetricsPublisherTest extends InfluxDbMetricsTestBase {
 
         assertLatestValue("test", 1);
 
-        influxDb.deleteDatabase(database);
+        dropDatabase();
 
-        expect(ExecutionException.class, "database not found: \\\"" + database + "\\\"", () ->
+        expect(ExecutionException.class, "database not found: \"" + database + "\"", () ->
             get(publisher.publish(single("test", 2)))
         );
 
-        influxDb.createDatabase(database);
+        createDatabase();
 
         get(publisher.publish(single("test", 3)));
     }

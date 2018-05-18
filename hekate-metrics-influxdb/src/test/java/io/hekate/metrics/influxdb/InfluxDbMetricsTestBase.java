@@ -70,18 +70,26 @@ public class InfluxDbMetricsTestBase extends HekateNodeTestBase {
 
         say("Testing with InfluxDB database: " + database);
 
-        influxDb.deleteDatabase(database);
-        influxDb.createDatabase(database);
+        dropDatabase();
+        createDatabase();
     }
 
     @After
     @Override
     public void tearDown() throws Exception {
         try {
-            influxDb.deleteDatabase(database);
+            dropDatabase();
         } finally {
             super.tearDown();
         }
+    }
+
+    protected void createDatabase() {
+        assertFalse(influxDb.query(new Query("CREATE DATABASE \"" + database + "\"", database)).hasError());
+    }
+
+    protected void dropDatabase() {
+        assertFalse(influxDb.query(new Query("DROP DATABASE \"" + database + "\"", database)).hasError());
     }
 
     protected Long getLatestValue(String metric) {

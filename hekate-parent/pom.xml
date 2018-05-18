@@ -72,7 +72,7 @@
         <fst.version>2.57</fst.version>
         <jclouds.version>2.1.0</jclouds.version>
         <aws.sdk.version>1.11.331</aws.sdk.version>
-        <influxdb.version>2.7</influxdb.version>
+        <influxdb.version>2.10</influxdb.version>
 
         <!-- Test dependencies.-->
         <junit.version>4.12</junit.version>
