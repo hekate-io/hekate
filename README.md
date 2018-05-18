@@ -91,7 +91,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring-boot</artifactId>
-    <version>2.3.1-SNAPSHOT</version>
+    <version>2.3.1</version>
 </dependency>
 ```
 
@@ -100,7 +100,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring</artifactId>
-    <version>2.3.1-SNAPSHOT</version>
+    <version>2.3.1</version>
 </dependency>
 ```
 
@@ -109,7 +109,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-core</artifactId>
-    <version>2.3.1-SNAPSHOT</version>
+    <version>2.3.1</version>
 </dependency>
 ```
 
@@ -145,6 +145,23 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
   
 ## Release notes
 
+### v.2.3.1 (18-May-2018)
+
+ New Features and Improvements:
+ 
+ - Added support for SSL/TLS configuration using Spring Boot application properties.
+ - Removed @ConditionalOnClass from Spring Boot auto-configurations in order to simplify early detection of configuration errors.
+
+ Bug fixes:
+ 
+ - Fixed a concurrency issue that could lead to premature failure of message routing logic without applying a failover policy.
+
+ Dependency Upgrades:
+ 
+ - Upgraded to Netty 4.1.25.Final.
+ - Upgraded to AWS SDK 1.11.331.
+ - Upgraded to InfluxDB-Java 2.10.
+
 ### v.2.3.0 (4-May-2018)
 
  New Features and Improvements:
@@ -162,7 +179,6 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
  Dependency Upgrades:
 
  - Upgraded to Netty 4.1.21.Final.
-
 
 ### v.2.2.1 (12-Apr-2018)
 
