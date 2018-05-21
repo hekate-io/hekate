@@ -26,6 +26,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Pattern;
 
@@ -49,12 +53,12 @@ public final class ToString {
             ToStringFormat format = field.getAnnotation(ToStringFormat.class);
 
             if (format == null) {
-                this.formatter = null;
+                this.formatter = tryDefaultFormatter(field.getType());
             } else {
                 Class<? extends ToStringFormat.Formatter> type = format.value();
 
                 try {
-                    ToStringFormat.Formatter candidate = null;
+                    ToStringFormat.Formatter customFormat = null;
 
                     try {
                         for (Constructor<?> c : type.getDeclaredConstructors()) {
@@ -63,18 +67,18 @@ public final class ToString {
                                     c.setAccessible(true);
                                 }
 
-                                candidate = (ToStringFormat.Formatter)c.newInstance();
+                                customFormat = (ToStringFormat.Formatter)c.newInstance();
                             }
                         }
                     } catch (SecurityException | InvocationTargetException e) {
                         // No-op.
                     }
 
-                    if (candidate == null) {
-                        candidate = type.newInstance();
+                    if (customFormat == null) {
+                        customFormat = type.newInstance();
                     }
 
-                    this.formatter = candidate;
+                    this.formatter = customFormat;
                 } catch (InstantiationException | IllegalAccessException e) {
                     throw new IllegalStateException("Failed to instantiate formatter [type=" + type.getName() + ']', e);
                 }
@@ -120,6 +124,44 @@ public final class ToString {
                 return true;
             } else {
                 return false;
+            }
+        }
+
+        private ToStringFormat.Formatter tryDefaultFormatter(Class<?> type) {
+            if (Optional.class.isAssignableFrom(type)) {
+                return val -> val != null ? ((Optional<?>)val).map(String::valueOf).orElse(null) : null;
+            } else if (OptionalInt.class.isAssignableFrom(type)) {
+                return val -> {
+                    if (val != null) {
+                        OptionalInt opt = (OptionalInt)val;
+
+                        return opt.isPresent() ? String.valueOf(opt.getAsInt()) : null;
+                    } else {
+                        return null;
+                    }
+                };
+            } else if (OptionalLong.class.isAssignableFrom(type)) {
+                return val -> {
+                    if (val != null) {
+                        OptionalLong opt = (OptionalLong)val;
+
+                        return opt.isPresent() ? String.valueOf(opt.getAsLong()) : null;
+                    } else {
+                        return null;
+                    }
+                };
+            } else if (OptionalDouble.class.isAssignableFrom(type)) {
+                return val -> {
+                    if (val != null) {
+                        OptionalDouble opt = (OptionalDouble)val;
+
+                        return opt.isPresent() ? String.valueOf(opt.getAsDouble()) : null;
+                    } else {
+                        return null;
+                    }
+                };
+            } else {
+                return null;
             }
         }
 

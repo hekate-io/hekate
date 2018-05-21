@@ -17,6 +17,10 @@
 package io.hekate.util.format;
 
 import io.hekate.HekateTestBase;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -41,11 +45,11 @@ public class ToStringTest extends HekateTestBase {
     }
 
     public static class ClassA {
-        private final String a1;
+        private final String strVal;
 
-        private final int a2;
+        private final int intVal;
 
-        private final int aCamelCase;
+        private final int camelCase;
 
         @ToStringIgnore
         private final String ignore;
@@ -53,27 +57,49 @@ public class ToStringTest extends HekateTestBase {
         @ToStringFormat(TestFormatter.class)
         private final String customFormat;
 
+        private final Optional<String> optStr;
+
+        private final OptionalInt optInt;
+
+        private final OptionalLong optLong;
+
+        private final OptionalDouble optDouble;
+
         @ToStringFormat(TestNullFormatter.class)
         private String alwaysNull = "alwaysNull";
 
-        public ClassA(String a1, int a2, int aCamelCase, String ignore, String customFormat) {
-            this.a1 = a1;
-            this.a2 = a2;
-            this.aCamelCase = aCamelCase;
+        public ClassA(
+            String strVal,
+            int intVal,
+            int camelCase,
+            String ignore,
+            String customFormat,
+            Optional<String> optStr,
+            OptionalInt optInt,
+            OptionalLong optLong,
+            OptionalDouble optDouble
+        ) {
+            this.strVal = strVal;
+            this.intVal = intVal;
+            this.camelCase = camelCase;
             this.ignore = ignore;
             this.customFormat = customFormat;
+            this.optStr = optStr;
+            this.optInt = optInt;
+            this.optLong = optLong;
+            this.optDouble = optDouble;
         }
 
-        public String getF1() {
-            return a1;
+        public String getStrVal() {
+            return strVal;
         }
 
-        public int getF2() {
-            return a2;
+        public int getIntVal() {
+            return intVal;
         }
 
         public int getCamelCase() {
-            return aCamelCase;
+            return camelCase;
         }
 
         public String getIgnore() {
@@ -82,6 +108,22 @@ public class ToStringTest extends HekateTestBase {
 
         public String getCustomFormat() {
             return customFormat;
+        }
+
+        public Optional<String> getOptStr() {
+            return optStr;
+        }
+
+        public OptionalInt getOptInt() {
+            return optInt;
+        }
+
+        public OptionalLong getOptLong() {
+            return optLong;
+        }
+
+        public OptionalDouble getOptDouble() {
+            return optDouble;
         }
 
         public String getAlwaysNull() {
@@ -94,23 +136,35 @@ public class ToStringTest extends HekateTestBase {
     }
 
     public static class ClassB extends ClassA {
-        private final String b1;
+        private final String strVal2;
 
-        private final int b2;
+        private final int intVal2;
 
-        public ClassB(String a1, int a2, int aCamelCase, String ignore, String b1, int b2, String customFormat) {
-            super(a1, a2, aCamelCase, ignore, customFormat);
+        public ClassB(
+            String a1,
+            int a2,
+            int aCamelCase,
+            String ignore,
+            String strVal2,
+            int intVal2,
+            String customFormat,
+            Optional<String> optStr,
+            OptionalInt optInt,
+            OptionalLong optLong,
+            OptionalDouble optDouble
+        ) {
+            super(a1, a2, aCamelCase, ignore, customFormat, optStr, optInt, optLong, optDouble);
 
-            this.b1 = b1;
-            this.b2 = b2;
+            this.strVal2 = strVal2;
+            this.intVal2 = intVal2;
         }
 
-        public String getB1() {
-            return b1;
+        public String getStrVal2() {
+            return strVal2;
         }
 
-        public int getB2() {
-            return b2;
+        public int getIntVal2() {
+            return intVal2;
         }
     }
 
@@ -141,29 +195,218 @@ public class ToStringTest extends HekateTestBase {
 
     @Test
     public void testObject() throws Exception {
-        ClassA objA = new ClassA("AAA", 100, 1, "IGNORE", "ccc");
-        ClassB objB = new ClassB("AAA", 100, 1, "IGNORE", "BBB", 200, "ccc");
+        ClassA objA = new ClassA(
+            "AAA",
+            100,
+            1,
+            "IGNORE",
+            "ccc",
+            Optional.empty(),
+            OptionalInt.empty(),
+            OptionalLong.empty(),
+            OptionalDouble.empty()
+        );
+
+        ClassB objB = new ClassB(
+            "AAA",
+            100,
+            1,
+            "IGNORE",
+            "BBB",
+            200,
+            "ccc",
+            Optional.empty(),
+            OptionalInt.empty(),
+            OptionalLong.empty(),
+            OptionalDouble.empty()
+        );
+
         EmptyClass emptyObj = new EmptyClass();
 
-        assertEquals("ClassA[a1=AAA, a2=100, a-camel-case=1, custom-format=test-ccc]", ToString.format(objA));
-        assertEquals("ClassB[a1=AAA, a2=100, a-camel-case=1, custom-format=test-ccc, b1=BBB, b2=200]", ToString.format(objB));
+        assertEquals(
+            "ClassA["
+                + "str-val=AAA, "
+                + "int-val=100, "
+                + "camel-case=1, "
+                + "custom-format=test-ccc"
+                + "]",
+            ToString.format(objA)
+        );
+
+        assertEquals(
+            "ClassB["
+                + "str-val=AAA, "
+                + "int-val=100, "
+                + "camel-case=1, "
+                + "custom-format=test-ccc, "
+                + "str-val2=BBB, "
+                + "int-val2=200"
+                + "]",
+            ToString.format(objB)
+        );
         assertEquals("EmptyClass", ToString.format(emptyObj));
     }
 
     @Test
     public void testObjectWithAlias() throws Exception {
-        ClassA objA = new ClassA("AAA", 100, 1, "IGNORE", "ccc");
-        ClassB objB = new ClassB("AAA", 100, 1, "IGNORE", "BBB", 200, "ccc");
+        ClassA objA = new ClassA(
+            "AAA",
+            100,
+            1,
+            "IGNORE",
+            "ccc",
+            Optional.empty(),
+            OptionalInt.empty(),
+            OptionalLong.empty(),
+            OptionalDouble.empty()
+        );
+
+        ClassB objB = new ClassB(
+            "AAA",
+            100,
+            1,
+            "IGNORE",
+            "BBB",
+            200,
+            "ccc",
+            Optional.empty(),
+            OptionalInt.empty(),
+            OptionalLong.empty(),
+            OptionalDouble.empty()
+        );
+
         EmptyClass emptyObj = new EmptyClass();
 
-        assertEquals("ClassB[a1=AAA, a2=100, a-camel-case=1, custom-format=test-ccc]", ToString.format(ClassB.class, objA));
-        assertEquals("ClassA[a1=AAA, a2=100, a-camel-case=1, custom-format=test-ccc]", ToString.format(objA));
+        assertEquals(
+            "ClassB["
+                + "str-val=AAA, "
+                + "int-val=100, "
+                + "camel-case=1, "
+                + "custom-format=test-ccc"
+                + "]",
+            ToString.format(ClassB.class, objA)
+        );
 
-        assertEquals("ClassA[a1=AAA, a2=100, a-camel-case=1, custom-format=test-ccc, b1=BBB, b2=200]", ToString.format(ClassA.class, objB));
-        assertEquals("ClassB[a1=AAA, a2=100, a-camel-case=1, custom-format=test-ccc, b1=BBB, b2=200]", ToString.format(objB));
+        assertEquals(
+            "ClassA["
+                + "str-val=AAA, "
+                + "int-val=100, "
+                + "camel-case=1, "
+                + "custom-format=test-ccc"
+                + "]",
+            ToString.format(objA)
+        );
+
+        assertEquals(
+            "ClassA["
+                + "str-val=AAA, "
+                + "int-val=100, "
+                + "camel-case=1, "
+                + "custom-format=test-ccc, "
+                + "str-val2=BBB, "
+                + "int-val2=200"
+                + "]",
+            ToString.format(ClassA.class, objB)
+        );
+
+        assertEquals(
+            "ClassB["
+                + "str-val=AAA, "
+                + "int-val=100, "
+                + "camel-case=1, "
+                + "custom-format=test-ccc, "
+                + "str-val2=BBB, "
+                + "int-val2=200"
+                + "]",
+            ToString.format(objB)
+        );
 
         assertEquals("ClassB", ToString.format(ClassB.class, emptyObj));
         assertEquals("EmptyClass", ToString.format(emptyObj));
+    }
+
+    @Test
+    public void testOptional() throws Exception {
+        ClassA objA = new ClassA(
+            "AAA",
+            100,
+            1,
+            "IGNORE",
+            "ccc",
+            Optional.of("TEST"),
+            OptionalInt.of(1050),
+            OptionalLong.of(100500),
+            OptionalDouble.of(100.500)
+        );
+
+        ClassB objB = new ClassB(
+            "AAA",
+            100,
+            1,
+            "IGNORE",
+            "BBB",
+            200,
+            "ccc",
+            Optional.of("TEST"),
+            OptionalInt.of(1050),
+            OptionalLong.of(100500),
+            OptionalDouble.of(100.500)
+        );
+
+        assertEquals(
+            "ClassA["
+                + "str-val=AAA, "
+                + "int-val=100, "
+                + "camel-case=1, "
+                + "custom-format=test-ccc, "
+                + "opt-str=TEST, "
+                + "opt-int=1050, "
+                + "opt-long=100500, "
+                + "opt-double=100.5"
+                + "]",
+            ToString.format(objA)
+        );
+
+        assertEquals(
+            "ClassB["
+                + "str-val=AAA, "
+                + "int-val=100, "
+                + "camel-case=1, "
+                + "custom-format=test-ccc, "
+                + "opt-str=TEST, "
+                + "opt-int=1050, "
+                + "opt-long=100500, "
+                + "opt-double=100.5, "
+                + "str-val2=BBB, "
+                + "int-val2=200"
+                + "]",
+            ToString.format(objB)
+        );
+    }
+
+    @Test
+    public void testOptionalNull() throws Exception {
+        ClassA objA = new ClassA(
+            "AAA",
+            100,
+            1,
+            "IGNORE",
+            "ccc",
+            null,
+            null,
+            null,
+            null
+        );
+
+        assertEquals(
+            "ClassA["
+                + "str-val=AAA, "
+                + "int-val=100, "
+                + "camel-case=1, "
+                + "custom-format=test-ccc"
+                + "]",
+            ToString.format(objA)
+        );
     }
 
     @Test
@@ -178,13 +421,82 @@ public class ToStringTest extends HekateTestBase {
 
     @Test
     public void testPropertiesOnly() throws Exception {
-        ClassA objA = new ClassA("AAA", 100, 1, "IGNORE", "ccc");
-        ClassB objB = new ClassB("AAA", 100, 1, "IGNORE", "BBB", 200, "ccc");
+        ClassA objA = new ClassA(
+            "AAA",
+            100,
+            1,
+            "IGNORE",
+            "ccc",
+            Optional.empty(),
+            OptionalInt.empty(),
+            OptionalLong.empty(),
+            OptionalDouble.empty()
+        );
+
+        ClassB objB = new ClassB(
+            "AAA",
+            100,
+            1,
+            "IGNORE",
+            "BBB",
+            200,
+            "ccc",
+            Optional.empty(),
+            OptionalInt.empty(),
+            OptionalLong.empty(),
+            OptionalDouble.empty()
+        );
+
         EmptyClass emptyObj = new EmptyClass();
 
-        assertEquals("a1=AAA, a2=100, a-camel-case=1, custom-format=test-ccc", ToString.formatProperties(objA));
-        assertEquals("a1=AAA, a2=100, a-camel-case=1, custom-format=test-ccc, b1=BBB, b2=200", ToString.formatProperties(objB));
+        assertEquals(
+            "str-val=AAA, "
+                + "int-val=100, "
+                + "camel-case=1, "
+                + "custom-format=test-ccc",
+            ToString.formatProperties(objA)
+        );
+
+        assertEquals(
+            "str-val=AAA, "
+                + "int-val=100, "
+                + "camel-case=1, "
+                + "custom-format=test-ccc, "
+                + "str-val2=BBB, "
+                + "int-val2=200",
+            ToString.formatProperties(objB)
+        );
+
         assertEquals("", ToString.formatProperties(emptyObj));
+    }
+
+    @Test
+    public void testFieldOfClassType() {
+        class TestClass {
+            private final Class<TestClass> type1;
+
+            public TestClass(Class<TestClass> type1) {
+                this.type1 = type1;
+            }
+        }
+
+        assertEquals(
+            "type1=" + TestClass.class.getName(),
+            ToString.formatProperties(new TestClass(TestClass.class))
+        );
+    }
+
+    @Test
+    public void testNullValue() {
+        class TestClass {
+            private final Object val;
+
+            public TestClass(Object val) {
+                this.val = val;
+            }
+        }
+
+        assertEquals("", ToString.formatProperties(new TestClass(null)));
     }
 
     @Test
