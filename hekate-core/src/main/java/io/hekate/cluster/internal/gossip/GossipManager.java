@@ -248,9 +248,19 @@ public class GossipManager {
             }
 
             return JoinReject.retryLater(address, msg.from(), msg.toAddress());
-        } else if (status == LEAVING || status == DOWN) {
+        } else if (localGossip.isDownOrRemoved(msg.fromNode().id())) {
             if (DEBUG) {
-                log.debug("Rejected join request since local node is in {} state [request={}]", status, msg);
+                log.debug("Rejected join request since the joining node is known to be in {} state [request={}]", DOWN, msg);
+            }
+
+            return JoinReject.fatal(address, msg.from(), msg.toAddress(), "Node is seen as " + DOWN + " by the cluster.");
+        } else if (leaveScheduled || status == LEAVING || status == DOWN) {
+            if (DEBUG) {
+                if (leaveScheduled) {
+                    log.debug("Rejected join request since local node is scheduled to leave the cluster [request={}]", msg);
+                } else {
+                    log.debug("Rejected join request since local node is in {} state [request={}]", status, msg);
+                }
             }
 
             // Do not reject permanently since another node can be started on the same address once this node is stopped.

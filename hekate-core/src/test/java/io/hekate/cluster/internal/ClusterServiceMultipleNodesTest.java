@@ -1044,13 +1044,13 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
             await(failureLatch);
 
-            coordinator.leave();
+            get(coordinator.leaveAsync());
 
             awaitForTopology(joining);
 
             assertSame(Hekate.State.UP, joining.state());
 
-            joining.leave();
+            get(joining.leaveAsync());
         });
     }
 

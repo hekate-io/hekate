@@ -295,6 +295,33 @@ public class GossipManagerTest extends HekateTestBase {
     }
 
     @Test
+    public void testDoNotProcessJoinRequestIfJoiningNodeFails() throws Exception {
+        GossipManager m = createManager(1);
+
+        m.join(Collections.emptyList());
+
+        ClusterNode newNode = newNode();
+
+        // First attempt to join (should succeed).
+        JoinReply reply = m.processJoinRequest(new JoinRequest(newNode, CLUSTER_ID, m.address().socket()));
+
+        assertTrue(reply.isAccept());
+
+        // Joining node is assumed to be failed.
+        nodeFailures.markFailed(m.id().id(), newNode.id());
+
+        assertTrue(m.checkAliveness());
+
+        assertTrue(m.localGossip().isDownOrRemoved(newNode.id()));
+
+        // First attempt to join (should fail).
+        JoinReply reply2 = m.processJoinRequest(new JoinRequest(newNode, CLUSTER_ID, m.address().socket()));
+
+        assertFalse(reply2.isAccept());
+        assertSame(JoinReject.RejectType.FATAL, reply2.asReject().rejectType());
+    }
+
+    @Test
     public void testDoNotProcessJoinAcceptIfNotMember() throws Exception {
         GossipManager fake = createManager(2);
 
