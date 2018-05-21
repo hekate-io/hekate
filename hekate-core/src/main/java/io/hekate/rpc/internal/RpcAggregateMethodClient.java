@@ -28,7 +28,6 @@ import io.hekate.rpc.RpcMethodInfo;
 import io.hekate.rpc.RpcService;
 import io.hekate.rpc.internal.RpcProtocol.CallRequest;
 import io.hekate.rpc.internal.RpcProtocol.ObjectResponse;
-import io.hekate.util.format.ToString;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -71,11 +70,12 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
                     if (config.remoteErrors() == RpcAggregate.RemoteErrors.WARN) {
                         if (log.isWarnEnabled()) {
                             aggregate.errors().forEach((node, err) ->
-                                log.warn("RPC aggregation failed [remote-node={}, rpc={}, method={}]", node, rpc, method, err)
+                                log.warn("RPC aggregation failed [remote-node={}, type={}, method={}]",
+                                    node, rpc.name(), method.signature(), err)
                             );
                         }
                     } else {
-                        String errMsg = "RPC aggregation failed [" + ToString.formatProperties(aggregate.request()) + ']';
+                        String errMsg = "RPC aggregation failed [type=" + rpc.name() + ", method=" + method.signature() + ']';
 
                         Map<ClusterNode, Object> partialResults = new HashMap<>(aggregate.resultsByNode().size(), 1.0f);
 

@@ -45,10 +45,11 @@ abstract class RpcProtocol {
     static class CallRequest<T> extends RpcProtocol implements RpcRequest {
         private final RpcInterfaceInfo<T> rpcType;
 
-        private final RpcMethodInfo rpcMethod;
-
         private final String rpcTag;
 
+        private final RpcMethodInfo rpcMethod;
+
+        @ToStringIgnore
         private final boolean split;
 
         @ToStringIgnore
