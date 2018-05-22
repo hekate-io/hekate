@@ -154,7 +154,9 @@ public abstract class GossipProtocol {
 
             PERMANENT,
 
-            FATAL
+            FATAL,
+
+            CONFLICT
         }
 
         private final RejectType rejectType;
@@ -182,6 +184,10 @@ public abstract class GossipProtocol {
 
         public static JoinReject fatal(ClusterAddress from, ClusterAddress to, InetSocketAddress rejectedAddress, String reason) {
             return new JoinReject(from, to, rejectedAddress, RejectType.FATAL, reason);
+        }
+
+        public static JoinReject conflict(ClusterAddress from, ClusterAddress to, InetSocketAddress rejectedAddress) {
+            return new JoinReject(from, to, rejectedAddress, RejectType.CONFLICT, null);
         }
 
         public RejectType rejectType() {

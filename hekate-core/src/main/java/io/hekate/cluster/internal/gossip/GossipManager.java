@@ -166,6 +166,11 @@ public class GossipManager {
 
                 return null;
             }
+            case CONFLICT: {
+                listener.onNodeInconsistency(status);
+
+                return null;
+            }
             default: {
                 throw new IllegalArgumentException("Unexpected reject type: " + msg.rejectType());
             }
@@ -248,12 +253,12 @@ public class GossipManager {
             }
 
             return JoinReject.retryLater(address, msg.from(), msg.toAddress());
-        } else if (localGossip.isDownOrRemoved(msg.fromNode().id())) {
+        } else if (localGossip.isDown(msg.fromNode().id())) {
             if (DEBUG) {
-                log.debug("Rejected join request since the joining node is known to be in {} state [request={}]", DOWN, msg);
+                log.debug("Rejected join request since the joining node is in inconsistent state [request={}]", msg);
             }
 
-            return JoinReject.fatal(address, msg.from(), msg.toAddress(), "Node is seen as " + DOWN + " by the cluster.");
+            return JoinReject.conflict(address, msg.from(), msg.toAddress());
         } else if (leaveScheduled || status == LEAVING || status == DOWN) {
             if (DEBUG) {
                 if (leaveScheduled) {

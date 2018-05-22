@@ -312,13 +312,13 @@ public class GossipManagerTest extends HekateTestBase {
 
         assertTrue(m.checkAliveness());
 
-        assertTrue(m.localGossip().isDownOrRemoved(newNode.id()));
+        assertTrue(m.localGossip().isDown(newNode.id()));
 
         // First attempt to join (should fail).
         JoinReply reply2 = m.processJoinRequest(new JoinRequest(newNode, CLUSTER_ID, m.address().socket()));
 
         assertFalse(reply2.isAccept());
-        assertSame(JoinReject.RejectType.FATAL, reply2.asReject().rejectType());
+        assertSame(JoinReject.RejectType.CONFLICT, reply2.asReject().rejectType());
     }
 
     @Test

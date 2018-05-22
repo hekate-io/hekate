@@ -724,7 +724,7 @@ public class GossipTest extends HekateTestBase {
     }
 
     @Test
-    public void testIsDownOrRemoved() throws Exception {
+    public void testIsDown() throws Exception {
         GossipNodeState s1 = newState(GossipNodeStatus.UP);
         GossipNodeState s2 = newState(GossipNodeStatus.UP);
         GossipNodeState s3 = newState(GossipNodeStatus.DOWN);
@@ -734,17 +734,17 @@ public class GossipTest extends HekateTestBase {
             .update(s1.id(), s2)
             .update(s1.id(), s3);
 
-        assertFalse(g.isDownOrRemoved(s1.id()));
-        assertFalse(g.isDownOrRemoved(s2.id()));
-        assertTrue(g.isDownOrRemoved(s3.id()));
+        assertFalse(g.isDown(s1.id()));
+        assertFalse(g.isDown(s2.id()));
+        assertTrue(g.isDown(s3.id()));
 
         g = g.purge(s1.id(), Collections.singleton(s3.id()));
 
         assertFalse(g.members().containsKey(s3.id()));
 
-        assertFalse(g.isDownOrRemoved(s1.id()));
-        assertFalse(g.isDownOrRemoved(s2.id()));
-        assertTrue(g.isDownOrRemoved(s3.id()));
+        assertFalse(g.isDown(s1.id()));
+        assertFalse(g.isDown(s2.id()));
+        assertTrue(g.isDown(s3.id()));
     }
 
     private GossipNodeState newState(GossipNodeStatus status) throws Exception {

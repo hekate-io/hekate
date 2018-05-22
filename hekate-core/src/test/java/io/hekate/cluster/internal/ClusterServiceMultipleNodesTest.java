@@ -1055,6 +1055,52 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     }
 
     @Test
+    public void testJoiningNodeHanged() throws Exception {
+        disableNodeFailurePostCheck();
+
+        repeat(3, i -> {
+            HekateTestNode coordinator = createNode();
+
+            coordinator.setGossipSpy(new GossipSpyAdaptor() {
+                private volatile AssertionError error = TEST_ERROR;
+
+                @Override
+                public void onNodeFailureSuspected(ClusterNode failed, GossipNodeStatus status) {
+                    // Stop responding with an error.
+                    error = null;
+                }
+
+                @Override
+                public Optional<Throwable> onBeforeSend(GossipProtocol msg) {
+                    return Optional.ofNullable(error);
+                }
+            });
+
+            get(coordinator.joinAsync());
+
+            HekateTestNode joining = createNode();
+
+            AtomicInteger inconsistencies = new AtomicInteger();
+
+            joining.setGossipSpy(new GossipSpyAdaptor() {
+                @Override
+                public void onNodeInconsistency(GossipNodeStatus status) {
+                    inconsistencies.incrementAndGet();
+                }
+            });
+
+            get(joining.joinAsync());
+
+            assertEquals(1, inconsistencies.get());
+
+            awaitForTopology(coordinator, joining);
+
+            get(coordinator.leaveAsync());
+            get(joining.leaveAsync());
+        });
+    }
+
+    @Test
     public void testNodeBecomesNonReachable() throws Exception {
         disableNodeFailurePostCheck();
 

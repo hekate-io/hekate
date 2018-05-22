@@ -260,6 +260,11 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
 
                             break;
                         }
+                        case CONFLICT: {
+                            result = JoinReject.conflict(from, to, rejectedAddr);
+
+                            break;
+                        }
                         default: {
                             throw new IllegalArgumentException("Unexpected reject reason type: " + rejectType);
                         }

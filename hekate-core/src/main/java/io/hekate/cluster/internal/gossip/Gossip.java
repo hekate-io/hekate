@@ -117,7 +117,7 @@ public class Gossip extends GossipBase {
         return removed;
     }
 
-    public boolean isDownOrRemoved(ClusterNodeId id) {
+    public boolean isDown(ClusterNodeId id) {
         GossipNodeState member = member(id);
 
         return member != null && member.status() == DOWN || removed.contains(id);
