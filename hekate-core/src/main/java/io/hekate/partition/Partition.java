@@ -25,12 +25,12 @@ import java.util.List;
  * Data partition.
  *
  * <p>
- * This interface provides information about the {@link #primaryNode() primary} and {@link #backupNodes() backup} nodes that were selected
- * by the {@link PartitionMapper partition mapper} based on its cluster topology view.
+ * This interface provides an information about a {@link #primaryNode() primary} node and its {@link #backupNodes() backup} nodes that were
+ * selected by a {@link PartitionMapper partition mapper} based on its cluster topology view.
  * </p>
  *
  * <p>
- * Note that instances of this interface are immutable and will not change once obtained from the {@link PartitionMapper}.
+ * Note that all instances of this interface must be immutable and must not change once obtained from a {@link PartitionMapper}.
  * </p>
  *
  * @see PartitionMapper#map(Object)
@@ -51,36 +51,11 @@ public interface Partition extends Comparable<Partition> {
     ClusterNode primaryNode();
 
     /**
-     * Returns {@code true} if the specified node is primary for this partition (see {@link #primaryNode()}).
-     *
-     * @param node Node.
-     *
-     * @return {@code true} if the specified node is primary for this partition (see {@link #primaryNode()}).
-     */
-    boolean isPrimary(ClusterNode node);
-
-    /**
-     * Returns {@code true} if the specified node is primary for this partition (see {@link #primaryNode()}).
-     *
-     * @param node Node identifier.
-     *
-     * @return {@code true} if the specified node is primary for this partition (see {@link #primaryNode()}).
-     */
-    boolean isPrimary(ClusterNodeId node);
-
-    /**
      * Returns the backup node set of this partition.
      *
      * @return Set of backup nodes or an empty set if there are no backup nodes.
      */
     List<ClusterNode> backupNodes();
-
-    /**
-     * Returns {@code true} if this partition has {@link #backupNodes()}.
-     *
-     * @return {@code true} if this partition has {@link #backupNodes()}.
-     */
-    boolean hasBackupNodes();
 
     /**
      * Returns the set of all nodes that are mapped to this partition (including {@link #primaryNode() primary} and {@link
@@ -91,11 +66,47 @@ public interface Partition extends Comparable<Partition> {
     List<ClusterNode> nodes();
 
     /**
-     * Returns the cluster topology that this partition was mapped to.
+     * Returns the cluster topology that this partition is mapped to.
      *
-     * @return Cluster topology that this partition was mapped to.
+     * @return Cluster topology that this partition is mapped to.
      */
     ClusterTopology topology();
+
+    /**
+     * Returns {@code true} if the specified node is primary for this partition (see {@link #primaryNode()}).
+     *
+     * @param node Node identifier.
+     *
+     * @return {@code true} if the specified node is primary for this partition (see {@link #primaryNode()}).
+     */
+    default boolean isPrimary(ClusterNodeId node) {
+        ClusterNode primary = primaryNode();
+
+        return primary != null && primary.id().equals(node);
+    }
+
+    /**
+     * Returns {@code true} if the specified node is primary for this partition (see {@link #primaryNode()}).
+     *
+     * @param node Node.
+     *
+     * @return {@code true} if the specified node is primary for this partition (see {@link #primaryNode()}).
+     */
+    default boolean isPrimary(ClusterNode node) {
+        ClusterNode primary = primaryNode();
+
+        return primary != null && primary.equals(node);
+
+    }
+
+    /**
+     * Returns {@code true} if this partition has {@link #backupNodes()}.
+     *
+     * @return {@code true} if this partition has {@link #backupNodes()}.
+     */
+    default boolean hasBackupNodes() {
+        return !backupNodes().isEmpty();
+    }
 
     /**
      * Compares this partition with the specified one based on {@link #id()}  value.
@@ -105,5 +116,7 @@ public interface Partition extends Comparable<Partition> {
      * @return Result of {@link #id()} values comparison.
      */
     @Override
-    int compareTo(Partition o);
+    default int compareTo(Partition o) {
+        return Integer.compare(id(), o.id());
+    }
 }

@@ -17,7 +17,6 @@
 package io.hekate.partition;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -74,23 +73,8 @@ class DefaultPartition implements Partition {
     }
 
     @Override
-    public boolean isPrimary(ClusterNode node) {
-        return primary.equals(node);
-    }
-
-    @Override
-    public boolean isPrimary(ClusterNodeId node) {
-        return primary.id().equals(node);
-    }
-
-    @Override
     public List<ClusterNode> backupNodes() {
         return backup;
-    }
-
-    @Override
-    public boolean hasBackupNodes() {
-        return !backup.isEmpty();
     }
 
     @Override
@@ -101,11 +85,6 @@ class DefaultPartition implements Partition {
     @Override
     public ClusterTopology topology() {
         return topology;
-    }
-
-    @Override
-    public int compareTo(Partition o) {
-        return Integer.compare(id, o.id());
     }
 
     @Override
@@ -120,7 +99,7 @@ class DefaultPartition implements Partition {
 
         Partition that = (Partition)o;
 
-        return id == that.id();
+        return compareTo(that) == 0;
     }
 
     @Override
