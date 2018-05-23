@@ -29,20 +29,20 @@ final class RpcUtils {
         // No-op.
     }
 
-    public static String nameProperty(RpcInterfaceInfo rpc) {
+    public static String versionProperty(RpcInterfaceInfo rpc) {
         return rpc.versionedName();
     }
 
-    public static String taggedNameProperty(RpcInterfaceInfo rpc, String tag) {
+    public static String taggedVersionProperty(RpcInterfaceInfo rpc, String tag) {
         return rpc.versionedName() + '#' + tag;
     }
 
     public static String methodProperty(RpcInterfaceInfo rpc, RpcMethodInfo method) {
-        return rpc.versionedName() + ':' + method.signature();
+        return versionProperty(rpc) + ':' + method.signature();
     }
 
     public static String taggedMethodProperty(RpcInterfaceInfo rpc, RpcMethodInfo method, String tag) {
-        return rpc.versionedName() + '#' + tag + ':' + method.signature();
+        return taggedVersionProperty(rpc, tag) + ':' + method.signature();
     }
 
     static void mergeToMap(RpcProtocol from, Map<Object, Object> to) {

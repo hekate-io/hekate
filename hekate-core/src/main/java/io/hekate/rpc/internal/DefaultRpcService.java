@@ -70,9 +70,9 @@ import org.slf4j.LoggerFactory;
 
 import static io.hekate.core.internal.util.StreamUtils.nullSafe;
 import static io.hekate.rpc.internal.RpcUtils.methodProperty;
-import static io.hekate.rpc.internal.RpcUtils.nameProperty;
 import static io.hekate.rpc.internal.RpcUtils.taggedMethodProperty;
-import static io.hekate.rpc.internal.RpcUtils.taggedNameProperty;
+import static io.hekate.rpc.internal.RpcUtils.taggedVersionProperty;
+import static io.hekate.rpc.internal.RpcUtils.versionProperty;
 import static java.util.Collections.singleton;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toList;
@@ -227,7 +227,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
                         throw check.fail("Can't register the same RPC interface multiple times [key=" + key + ']');
                     }
 
-                    ctx.setIntProperty(nameProperty(type), rpc.type().minClientVersion());
+                    ctx.setIntProperty(versionProperty(type), rpc.type().minClientVersion());
 
                     // Register method indexes.
                     rpcMethodsIndex.forEach(e ->
@@ -245,7 +245,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
                             throw check.fail("Can't register the same RPC interface multiple times [key=" + tagKey + ']');
                         }
 
-                        ctx.setIntProperty(taggedNameProperty(type, tag), rpc.type().minClientVersion());
+                        ctx.setIntProperty(taggedVersionProperty(type, tag), rpc.type().minClientVersion());
 
                         // Register method indexes.
                         rpcMethodsIndex.forEach(e ->
@@ -487,18 +487,18 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     }
 
     private ClusterNodeFilter filterFor(RpcInterfaceInfo<?> type, String tag) {
-        String rpcName;
+        String versionProp;
 
         if (tag == null) {
-            rpcName = nameProperty(type);
+            versionProp = versionProperty(type);
         } else {
-            rpcName = taggedNameProperty(type, tag);
+            versionProp = taggedVersionProperty(type, tag);
         }
 
         return node -> {
             ServiceInfo service = node.service(RpcService.class);
 
-            Integer minClientVer = service.intProperty(rpcName);
+            Integer minClientVer = service.intProperty(versionProp);
 
             return minClientVer != null && minClientVer <= type.version();
         };
