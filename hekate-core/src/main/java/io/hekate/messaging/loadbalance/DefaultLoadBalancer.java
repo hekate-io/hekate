@@ -64,8 +64,10 @@ public class DefaultLoadBalancer<T> implements LoadBalancer<T> {
      * @param ctx Load balancer context.
      *
      * @return Selected node.
+     *
+     * @throws LoadBalancerException if failed to perform load balancing.
      */
-    protected ClusterNode nonAffinityRoute(T message, LoadBalancerContext ctx) {
+    protected ClusterNode nonAffinityRoute(T message, LoadBalancerContext ctx) throws LoadBalancerException {
         // Select any random node.
         ClusterNode selected = ctx.random();
 
@@ -106,8 +108,10 @@ public class DefaultLoadBalancer<T> implements LoadBalancer<T> {
      * @param ctx Load balancer context.
      *
      * @return Selected node.
+     *
+     * @throws LoadBalancerException if failed to perform load balancing.
      */
-    protected ClusterNode affinityRoute(T message, LoadBalancerContext ctx) {
+    protected ClusterNode affinityRoute(T message, LoadBalancerContext ctx) throws LoadBalancerException {
         ArgAssert.isTrue(ctx.hasAffinity(), "Can't load balance on non-affinity context.");
 
         // Use partition-based routing.
