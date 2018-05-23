@@ -25,16 +25,16 @@ public final class ArgAssert {
         doCheck(that, null, msg);
     }
 
-    public static <T> T notNull(T obj, String component) {
-        doCheck(obj != null, component, " must be not null.");
+    public static <T> T notNull(T obj, String argName) {
+        doCheck(obj != null, argName, " must be not null.");
 
         return obj;
     }
 
-    public static String notEmpty(String str, String component) {
-        String trimmed = notNull(str, component).trim();
+    public static String notEmpty(String str, String argName) {
+        String trimmed = notNull(str, argName).trim();
 
-        doCheck(!trimmed.isEmpty(), component, " must have non-whitespace characters.");
+        doCheck(!trimmed.isEmpty(), argName, " must have non-whitespace characters.");
 
         return trimmed;
     }
@@ -47,9 +47,17 @@ public final class ArgAssert {
         check(condition, msg);
     }
 
-    private static void doCheck(boolean that, String component, String msg) throws IllegalArgumentException {
+    public static void positive(int val, String argName) {
+        doCheck(val > 0, argName, " must be > 0.");
+    }
+
+    public static void powerOfTwo(int val, String argName) {
+        doCheck(Utils.isPowerOfTwo(val), argName, " must be a power of two.");
+    }
+
+    private static void doCheck(boolean that, String argName, String msg) throws IllegalArgumentException {
         if (!that) {
-            throw new IllegalArgumentException(component == null ? msg : component + msg);
+            throw new IllegalArgumentException(argName == null ? msg : argName + msg);
         }
     }
 }

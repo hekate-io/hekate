@@ -265,8 +265,8 @@ public final class RendezvousHashMapper implements PartitionMapper {
     private volatile PartitionMapperSnapshot snapshot;
 
     private RendezvousHashMapper(int size, int backupSize, ClusterTopologySupport cluster) {
-        ArgAssert.isTrue(size > 0, "Partitions size is less than or equals to zero [size=" + size + ']');
-        ArgAssert.isTrue(Utils.isPowerOfTwo(size), "Partitions size must be a power of two [size=" + size + ']');
+        ArgAssert.positive(size, "size");
+        ArgAssert.powerOfTwo(size, "size");
         ArgAssert.notNull(cluster, "cluster");
 
         this.size = size;

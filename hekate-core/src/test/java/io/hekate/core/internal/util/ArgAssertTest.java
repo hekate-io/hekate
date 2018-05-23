@@ -90,4 +90,34 @@ public class ArgAssertTest extends HekateTestBase {
 
         ArgAssert.isTrue(true, "Success");
     }
+
+    @Test
+    public void testPositive() {
+        expectExactMessage(IAE, "testArg must be > 0.", () ->
+            ArgAssert.positive(-1, "testArg")
+        );
+
+        expectExactMessage(IAE, "testArg must be > 0.", () ->
+            ArgAssert.positive(0, "testArg")
+        );
+
+        ArgAssert.positive(10, "testArg");
+    }
+
+    @Test
+    public void testPowerOfTwo() {
+        expectExactMessage(IAE, "testArg must be a power of two.", () ->
+            ArgAssert.powerOfTwo(13, "testArg")
+        );
+
+        expectExactMessage(IAE, "testArg must be a power of two.", () ->
+            ArgAssert.powerOfTwo(0, "testArg")
+        );
+
+        expectExactMessage(IAE, "testArg must be a power of two.", () ->
+            ArgAssert.powerOfTwo(-2, "testArg")
+        );
+
+        ArgAssert.powerOfTwo(8, "testArg");
+    }
 }
