@@ -124,7 +124,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
                 });
             }
 
-            for(TestChannel channel: channels) {
+            for (TestChannel channel : channels) {
                 channel.leave();
             }
         });

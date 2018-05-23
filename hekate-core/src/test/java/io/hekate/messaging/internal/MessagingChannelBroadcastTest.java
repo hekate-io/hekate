@@ -107,7 +107,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             List<TestChannel> channels = createAndJoinChannels(5, c -> {
                 c.setPartitions(256);
                 c.setBackupNodes(nodesPerPartition - 1);
-                c.setReceiver(msg -> {/* ignore */});
+                c.setReceiver(msg -> { /* ignore */ });
             });
 
             for (TestChannel channel : channels) {
