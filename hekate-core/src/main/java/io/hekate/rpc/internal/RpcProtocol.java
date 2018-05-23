@@ -43,11 +43,13 @@ abstract class RpcProtocol {
     }
 
     static class CallRequest<T> extends RpcProtocol implements RpcRequest {
-        private final RpcInterfaceInfo<T> rpcType;
+        private final String methodIdxKey;
 
-        private final String rpcTag;
+        private final RpcInterfaceInfo<T> type;
 
-        private final RpcMethodInfo rpcMethod;
+        private final String tag;
+
+        private final RpcMethodInfo method;
 
         @ToStringIgnore
         private final boolean split;
@@ -55,44 +57,49 @@ abstract class RpcProtocol {
         @ToStringIgnore
         private final Object[] args;
 
-        public CallRequest(RpcInterfaceInfo<T> rpcType, String rpcTag, RpcMethodInfo rpcMethod, Object[] args) {
-            this(rpcType, rpcTag, rpcMethod, args, false);
+        public CallRequest(String methodIdxKey, RpcInterfaceInfo<T> type, String tag, RpcMethodInfo method, Object[] args) {
+            this(methodIdxKey, type, tag, method, args, false);
         }
 
-        public CallRequest(RpcInterfaceInfo<T> rpcType, String rpcTag, RpcMethodInfo rpcMethod, Object[] args, boolean split) {
-            this.rpcType = rpcType;
-            this.rpcTag = rpcTag;
-            this.rpcMethod = rpcMethod;
+        public CallRequest(String methodIdxKey, RpcInterfaceInfo<T> type, String tag, RpcMethodInfo method, Object[] args, boolean split) {
+            this.methodIdxKey = methodIdxKey;
+            this.type = type;
+            this.tag = tag;
+            this.method = method;
             this.args = args;
             this.split = split;
         }
 
+        public String methodIdxKey() {
+            return methodIdxKey;
+        }
+
         public RpcMethodInfo rpcMethod() {
-            return rpcMethod;
+            return method;
         }
 
         public RpcInterfaceInfo<T> rpcType() {
-            return rpcType;
+            return type;
         }
 
         @Override
         public String rpcTag() {
-            return rpcTag;
+            return tag;
         }
 
         @Override
         public Class<T> rpcInterface() {
-            return rpcType.javaType();
+            return type.javaType();
         }
 
         @Override
         public int rpcVersion() {
-            return rpcType.version();
+            return type.version();
         }
 
         @Override
         public Method method() {
-            return rpcMethod.javaMethod();
+            return method.javaMethod();
         }
 
         @Override

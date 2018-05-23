@@ -109,10 +109,10 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     @ToStringIgnore
     private final List<RpcClientConfig> clientConfigs = new LinkedList<>();
 
-    @ToStringIgnore
-    private final List<RpcMethodHandler> rpcMethodIndex = new ArrayList<>();
-
     private List<RpcServerInfo> servers;
+
+    @ToStringIgnore
+    private RpcMethodHandler[] methodHandlers;
 
     @ToStringIgnore
     private MessagingService messaging;
@@ -182,6 +182,8 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
         Set<RpcTypeKey> uniqueRpcTypes = new HashSet<>();
 
+        List<RpcMethodHandler> allMethodsIndex = new ArrayList<>();
+
         serverConfigs.forEach(cfg -> {
             check.notNull(cfg.getHandler(), "Handler");
 
@@ -205,17 +207,15 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
             rpcs.forEach(rpc -> {
                 RpcInterfaceInfo type = rpc.type();
 
-                List<Map.Entry<RpcMethodHandler, Integer>> methodIdxs = new ArrayList<>();
+                List<Map.Entry<RpcMethodHandler, Integer>> rpcMethodsIndex = new ArrayList<>();
 
                 // Index methods.
                 rpc.methods().forEach(method -> {
-                    int idx = rpcMethodIndex.size();
+                    int idx = allMethodsIndex.size();
 
-                    // No synchronization since this method gets called only once when the node is instantiated
-                    // and before any other thread can access this list.
-                    rpcMethodIndex.add(method);
+                    allMethodsIndex.add(method);
 
-                    methodIdxs.add(new SimpleEntry<>(method, idx));
+                    rpcMethodsIndex.add(new SimpleEntry<>(method, idx));
                 });
 
                 // Register RPC servers so that other nodes would be able to discover which RPCs are provided by this node.
@@ -230,7 +230,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
                     ctx.setIntProperty(nameProperty(type), rpc.type().minClientVersion());
 
                     // Register method indexes.
-                    methodIdxs.forEach(e ->
+                    rpcMethodsIndex.forEach(e ->
                         ctx.setIntProperty(methodProperty(type, e.getKey().method()), e.getValue())
                     );
                 } else {
@@ -248,13 +248,17 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
                         ctx.setIntProperty(taggedNameProperty(type, tag), rpc.type().minClientVersion());
 
                         // Register method indexes.
-                        methodIdxs.forEach(e ->
+                        rpcMethodsIndex.forEach(e ->
                             ctx.setIntProperty(taggedMethodProperty(type, e.getKey().method(), tag), e.getValue())
                         );
                     });
                 }
             });
         });
+
+        if (!allMethodsIndex.isEmpty()) {
+            methodHandlers = allMethodsIndex.toArray(new RpcMethodHandler[allMethodsIndex.size()]);
+        }
 
         this.servers = unmodifiableList(serversInfo);
     }
@@ -277,15 +281,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
                         CallRequest<?> req = (CallRequest<?>)msg;
 
                         // Use the method's index instead of the method signature.
-                        String methodIdxProp;
-
-                        if (req.rpcTag() == null) {
-                            methodIdxProp = RpcUtils.methodProperty(req.rpcType(), req.rpcMethod());
-                        } else {
-                            methodIdxProp = RpcUtils.taggedMethodProperty(req.rpcType(), req.rpcMethod(), req.rpcTag());
-                        }
-
-                        int methodIdx = ctx.receiver().service(RpcService.class).intProperty(methodIdxProp);
+                        int methodIdx = ctx.receiver().service(RpcService.class).intProperty(req.methodIdxKey());
 
                         if (req.isSplit()) {
                             return new CompactSplitCallRequest(methodIdx, req.args());
@@ -298,7 +294,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
                 }
             });
 
-        if (!rpcMethodIndex.isEmpty()) {
+        if (methodHandlers != null) {
             cfg.withReceiver(this::handleMessage);
         }
 
@@ -455,9 +451,9 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
             case COMPACT_SPLIT_CALL_REQUEST: {
                 CompactCallRequest call = (CompactCallRequest)rpcMsg;
 
-                RpcMethodHandler method = rpcMethodIndex.get(call.methodIdx());
+                RpcMethodHandler handler = methodHandlers[call.methodIdx()];
 
-                method.handle(msg);
+                handler.handle(msg);
 
                 break;
             }

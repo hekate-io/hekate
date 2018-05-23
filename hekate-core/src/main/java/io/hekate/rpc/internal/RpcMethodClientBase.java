@@ -31,6 +31,8 @@ abstract class RpcMethodClientBase<T> {
 
     private final RpcMethodInfo method;
 
+    private final String methodIdxKey;
+
     private final MessagingChannel<RpcProtocol> channel;
 
     public RpcMethodClientBase(RpcInterfaceInfo<T> rpc, String tag, RpcMethodInfo method, MessagingChannel<RpcProtocol> channel) {
@@ -38,6 +40,12 @@ abstract class RpcMethodClientBase<T> {
         this.tag = tag;
         this.method = method;
         this.channel = channel;
+
+        if (tag == null) {
+            methodIdxKey = RpcUtils.methodProperty(rpc, method);
+        } else {
+            methodIdxKey = RpcUtils.taggedMethodProperty(rpc, method, tag);
+        }
     }
 
     protected abstract Object doInvoke(MessagingChannel<RpcProtocol> channel, Object[] args)
@@ -82,6 +90,10 @@ abstract class RpcMethodClientBase<T> {
 
     public MessagingChannel<RpcProtocol> channel() {
         return channel;
+    }
+
+    public String methodIdxKey() {
+        return methodIdxKey;
     }
 
     private static void tryThrow(Method meth, Throwable error) throws Exception {

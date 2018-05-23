@@ -46,7 +46,7 @@ class RpcMethodClient<T> extends RpcMethodClientBase<T> {
     @Override
     protected Object doInvoke(MessagingChannel<RpcProtocol> callChannel, Object[] args) throws MessagingFutureException,
         InterruptedException, TimeoutException {
-        CallRequest<T> request = new CallRequest<>(rpc(), tag(), method(), args);
+        CallRequest<T> request = new CallRequest<>(methodIdxKey(), rpc(), tag(), method(), args);
 
         ResponseFuture<RpcProtocol> future = callChannel.request(request);
 
