@@ -25,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import org.junit.Test;
 
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -99,7 +100,38 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testEmptyRouteFuture() throws Exception {
+    public void testAffinity() throws Exception {
+        repeat(2, i -> {
+            int nodesPerPartition = i + 1;
+
+            List<TestChannel> channels = createAndJoinChannels(5, c -> {
+                c.setPartitions(256);
+                c.setBackupNodes(nodesPerPartition - 1);
+                c.setReceiver(msg -> {/* ignore */});
+            });
+
+            for (TestChannel channel : channels) {
+                repeat(100, j -> {
+                    BroadcastResult<String> result = get(channel.get().withAffinity(j).broadcast("test-" + j));
+
+                    assertTrue(result.isSuccess());
+
+                    List<ClusterNode> sentTo = result.nodes();
+                    List<ClusterNode> mappedTo = channel.get().partitions().map(j).nodes();
+
+                    assertEquals(nodesPerPartition, sentTo.size());
+                    assertEquals(mappedTo.stream().sorted().collect(toList()), sentTo.stream().sorted().collect(toList()));
+                });
+            }
+
+            for (TestChannel channel : channels) {
+                channel.leave();
+            }
+        });
+    }
+
+    @Test
+    public void testEmptyTopologyFuture() throws Exception {
         List<TestChannel> channels = new ArrayList<>();
 
         repeat(5, i -> {
@@ -123,7 +155,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testEmptyRouteCallback() throws Exception {
+    public void testEmptyTopologyCallback() throws Exception {
         List<TestChannel> channels = new ArrayList<>();
 
         repeat(5, i -> {
@@ -171,7 +203,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
             assertEquals("test" + i, result.message());
             assertFalse(result.errors().toString(), result.isSuccess());
-            assertEquals(i + 1, result.errors().size());
+            assertEquals(result.errors().toString(), i + 1, result.errors().size());
 
             for (int j = 0; j <= i; j++) {
                 ClusterNode node = channels.get(j).getNode().localNode();

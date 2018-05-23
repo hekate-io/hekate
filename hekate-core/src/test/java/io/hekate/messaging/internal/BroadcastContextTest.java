@@ -22,11 +22,12 @@ import io.hekate.messaging.broadcast.BroadcastCallback;
 import io.hekate.messaging.broadcast.BroadcastResult;
 import io.hekate.util.format.ToString;
 import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
-import static java.util.Collections.singleton;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
@@ -79,15 +80,15 @@ public class BroadcastContextTest extends HekateTestBase {
     public void testNodes() {
         assertEquals(allNodes(), ctx(allNodes(), callbackMock()).nodes());
 
-        assertEquals(singleton(n1), ctx(singleton(n1), callbackMock()).nodes());
+        assertEquals(singletonList(n1), ctx(singletonList(n1), callbackMock()).nodes());
 
         BroadcastContext<String> ctx = ctx(allNodes(), callbackMock());
 
         assertFalse(ctx.forgetNode(n1));
-        assertEquals(toSet(n2, n3), ctx.nodes());
+        assertEquals(asList(n2, n3), ctx.nodes());
 
         assertFalse(ctx.forgetNode(n2));
-        assertEquals(singleton(n3), ctx.nodes());
+        assertEquals(singletonList(n3), ctx.nodes());
 
         assertTrue(ctx.forgetNode(n3));
 
@@ -172,12 +173,12 @@ public class BroadcastContextTest extends HekateTestBase {
         errCtx.complete();
     }
 
-    private BroadcastContext<String> ctx(Set<ClusterNode> nodes, BroadcastCallback<String> callback) {
+    private BroadcastContext<String> ctx(List<ClusterNode> nodes, BroadcastCallback<String> callback) {
         return new BroadcastContext<>(TEST_MESSAGE, nodes, callback);
     }
 
-    private Set<ClusterNode> allNodes() {
-        return toSet(n1, n2, n3);
+    private List<ClusterNode> allNodes() {
+        return asList(n1, n2, n3);
     }
 
     @SuppressWarnings("unchecked")

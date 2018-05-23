@@ -33,6 +33,8 @@ import io.hekate.messaging.unicast.SendFuture;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertNull;
@@ -109,8 +111,8 @@ public class TestChannel {
         return this;
     }
 
-    public TestChannel leave() throws InterruptedException, HekateFutureException {
-        node.leave();
+    public TestChannel leave() throws InterruptedException, ExecutionException, TimeoutException {
+        HekateTestBase.get(node.leaveAsync());
 
         return this;
     }

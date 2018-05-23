@@ -398,7 +398,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
         checkMessageType(msg);
 
-        Set<ClusterNode> nodes = opts.cluster().topology().nodeSet();
+        List<ClusterNode> nodes = nodesForBroadcast(affinityKey, opts);
 
         if (nodes.isEmpty()) {
             callback.onComplete(null, new EmptyBroadcastResult<>(msg));
@@ -444,15 +444,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
         checkMessageType(msg);
 
-        List<ClusterNode> nodes;
-
-        if (affinityKey == null) {
-            // Use the whole topology if affinity key is not specified.
-            nodes = opts.cluster().topology().nodes();
-        } else {
-            // Use only nodes that are mapped to the partition.
-            nodes = opts.partitions().map(affinityKey).nodes();
-        }
+        List<ClusterNode> nodes = nodesForBroadcast(affinityKey, opts);
 
         if (nodes.isEmpty()) {
             callback.onComplete(null, new EmptyAggregateResult<>(msg));
@@ -961,6 +953,20 @@ class MessagingGatewayContext<T> implements HekateSupport {
         }
     }
 
+    private List<ClusterNode> nodesForBroadcast(Object affinityKey, MessagingOpts<T> opts) {
+        List<ClusterNode> nodes;
+
+        if (affinityKey == null) {
+            // Use the whole topology if affinity key is not specified.
+            nodes = opts.cluster().topology().nodes();
+        } else {
+            // Use only those nodes that are mapped to the partition.
+            nodes = opts.partitions().map(affinityKey).nodes();
+        }
+
+        return nodes;
+    }
+
     private void doScheduleTimeout(long timeout, MessageContext<T> ctx, Object callback) {
         if (!ctx.isCompleted()) {
             try {
@@ -999,7 +1005,9 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
         // Perform routing in a loop to circumvent concurrent cluster topology changes.
         while (true) {
-            ClusterTopology topology = ctx.opts().cluster().topology();
+            PartitionMapper mapper = ctx.opts().partitions().snapshot();
+
+            ClusterTopology topology = mapper.topology();
 
             // Fail if topology is empty.
             if (topology.isEmpty()) {
@@ -1024,9 +1032,8 @@ class MessagingGatewayContext<T> implements HekateSupport {
                 selected = node != null ? node.id() : null;
             } else {
                 // Route via load balancer.
-                PartitionMapper partitions = ctx.opts().partitions();
                 Optional<FailureInfo> failure = Optional.ofNullable(prevErr);
-                LoadBalancerContext balancerCtx = new DefaultLoadBalancerContext(ctx, topology, hekate, partitions, failure);
+                LoadBalancerContext balancerCtx = new DefaultLoadBalancerContext(ctx, topology, hekate, mapper, failure);
 
                 // Apply load balancer.
                 selected = ctx.opts().balancer().route(ctx.originalMessage(), balancerCtx);

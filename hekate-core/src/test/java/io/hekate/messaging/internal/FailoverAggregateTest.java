@@ -17,7 +17,6 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNodeId;
-import io.hekate.core.HekateFutureException;
 import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.messaging.broadcast.AggregateResult;
 import java.util.ArrayList;
@@ -25,6 +24,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
@@ -108,7 +109,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
                 if (prevTime != 0) {
                     assertTrue(time - prevTime >= failoverDelay);
                 }
-                
+
                 prevTime = time;
             }
         });
@@ -220,7 +221,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
                             .leave();
 
                         leaveRef.set(leave);
-                    } catch (HekateFutureException | InterruptedException e) {
+                    } catch (ExecutionException | InterruptedException | TimeoutException e) {
                         errRef.compareAndSet(null, e);
                     }
 

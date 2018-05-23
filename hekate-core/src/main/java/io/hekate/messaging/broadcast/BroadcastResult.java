@@ -18,8 +18,8 @@ package io.hekate.messaging.broadcast;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.messaging.MessagingChannel;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Result of {@link MessagingChannel#broadcast(Object) broadcast(...)} operation.
@@ -38,13 +38,13 @@ public interface BroadcastResult<T> {
     T message();
 
     /**
-     * Returns the broadcast operation participants. Returns an empty set if there were no suitable nodes in the cluster to perform the
+     * Returns the broadcast operation participants. Returns an empty list if there were no suitable nodes in the cluster to perform the
      * operation.
      *
-     * @return Cluster nodes that participated in the broadcast operation or an empty set if there were no suitable nodes in the cluster to
+     * @return Cluster nodes that participated in the broadcast operation or an empty list if there were no suitable nodes in the cluster to
      * perform the operation.
      */
-    Set<ClusterNode> nodes();
+    List<ClusterNode> nodes();
 
     /**
      * Returns the map of cluster nodes and errors that happened while trying to communicate with these nodes. Returns an empty map if

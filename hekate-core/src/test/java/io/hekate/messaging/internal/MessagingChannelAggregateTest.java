@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.junit.Test;
 
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -99,6 +100,37 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
     }
 
     @Test
+    public void testAffinity() throws Exception {
+        repeat(2, i -> {
+            int nodesPerPartition = i + 1;
+
+            List<TestChannel> channels = createAndJoinChannels(5, c -> {
+                c.setPartitions(256);
+                c.setBackupNodes(nodesPerPartition - 1);
+                c.setReceiver(msg -> msg.reply(msg.channel().id().toString()));
+            });
+
+            for (TestChannel channel : channels) {
+                repeat(100, j -> {
+                    AggregateResult<String> result = get(channel.get().withAffinity(j).aggregate("test-" + j));
+
+                    assertTrue(result.isSuccess());
+
+                    List<ClusterNode> receivedBy = result.nodes();
+                    List<ClusterNode> mappedTo = channel.get().partitions().map(j).nodes();
+
+                    assertEquals(nodesPerPartition, receivedBy.size());
+                    assertEquals(mappedTo.stream().sorted().collect(toList()), receivedBy.stream().sorted().collect(toList()));
+                });
+            }
+
+            for(TestChannel channel: channels) {
+                channel.leave();
+            }
+        });
+    }
+
+    @Test
     public void testCallback() throws Exception {
         List<TestChannel> channels = new ArrayList<>();
 
@@ -155,7 +187,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testEmptyRouteFuture() throws Exception {
+    public void testEmptyTopologyFuture() throws Exception {
         List<TestChannel> channels = new ArrayList<>();
 
         repeat(5, i -> {
@@ -188,7 +220,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testEmptyRouteCallback() throws Exception {
+    public void testEmptyTopologyCallback() throws Exception {
         List<TestChannel> channels = new ArrayList<>();
 
         repeat(5, i -> {

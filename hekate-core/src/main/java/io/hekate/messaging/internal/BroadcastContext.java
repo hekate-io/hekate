@@ -23,12 +23,12 @@ import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toList;
 
 class BroadcastContext<T> implements BroadcastResult<T> {
     private static final Logger log = LoggerFactory.getLogger(BroadcastContext.class);
@@ -38,14 +38,14 @@ class BroadcastContext<T> implements BroadcastResult<T> {
     @ToStringIgnore
     private final BroadcastCallback<T> callback;
 
-    private Set<ClusterNode> nodes;
+    private List<ClusterNode> nodes;
 
     private Map<ClusterNode, Throwable> errors;
 
     @ToStringIgnore
     private int remaining;
 
-    public BroadcastContext(T message, Set<ClusterNode> nodes, BroadcastCallback<T> callback) {
+    public BroadcastContext(T message, List<ClusterNode> nodes, BroadcastCallback<T> callback) {
         assert message != null : "Message is null.";
         assert nodes != null : "Nodes set is null.";
         assert !nodes.isEmpty() : "Nodes set is empty.";
@@ -64,7 +64,7 @@ class BroadcastContext<T> implements BroadcastResult<T> {
     }
 
     @Override
-    public Set<ClusterNode> nodes() {
+    public List<ClusterNode> nodes() {
         synchronized (this) {
             return nodes;
         }
@@ -79,7 +79,7 @@ class BroadcastContext<T> implements BroadcastResult<T> {
 
     public boolean forgetNode(ClusterNode node) {
         synchronized (this) {
-            nodes = Collections.unmodifiableSet(nodes.stream().filter(n -> !n.equals(node)).collect(toSet()));
+            nodes = Collections.unmodifiableList(nodes.stream().filter(n -> !n.equals(node)).collect(toList()));
 
             remaining--;
 

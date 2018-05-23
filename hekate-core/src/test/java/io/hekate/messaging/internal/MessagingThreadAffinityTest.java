@@ -198,20 +198,25 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
     @Test
     public void testBroadcast() throws Exception {
+        int testNodes = 3;
+
         List<AffinityCollector> collectors = new ArrayList<>();
         List<TestChannel> receivers = new ArrayList<>();
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < testNodes; i++) {
             AffinityCollector collector = new AffinityCollector();
 
-            receivers.add(createChannel(c -> c.setReceiver(msg ->
-                collector.collect(msg.get())
-            )).join());
+            receivers.add(createChannel(c -> {
+                c.setBackupNodes(testNodes - 1);
+                c.setReceiver(msg ->
+                    collector.collect(msg.get())
+                );
+            }).join());
 
             collectors.add(collector);
         }
 
-        TestChannel sender = createChannel().join();
+        TestChannel sender = createChannel(c -> c.withBackupNodes(testNodes - 1)).join();
 
         int partitionSize = 10;
 

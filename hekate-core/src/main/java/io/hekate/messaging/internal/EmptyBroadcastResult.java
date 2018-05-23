@@ -20,8 +20,8 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.messaging.broadcast.BroadcastResult;
 import io.hekate.util.format.ToString;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 class EmptyBroadcastResult<T> implements BroadcastResult<T> {
     private final T message;
@@ -38,8 +38,8 @@ class EmptyBroadcastResult<T> implements BroadcastResult<T> {
     }
 
     @Override
-    public Set<ClusterNode> nodes() {
-        return Collections.emptySet();
+    public List<ClusterNode> nodes() {
+        return Collections.emptyList();
     }
 
     @Override
