@@ -22,6 +22,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 import org.mockito.InOrder;
 
@@ -29,8 +30,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class AsyncUtilsTest extends HekateTestBase {
     @Test
@@ -38,6 +42,10 @@ public class AsyncUtilsTest extends HekateTestBase {
         assertSame(Waiting.NO_WAIT, AsyncUtils.shutdown(null));
 
         ExecutorService pool = mock(ExecutorService.class);
+
+        AtomicInteger waitCalls = new AtomicInteger(3);
+
+        when(pool.awaitTermination(anyLong(), any(TimeUnit.class))).then(call -> waitCalls.decrementAndGet() == 0);
 
         Waiting waiting = AsyncUtils.shutdown(pool);
 
@@ -49,7 +57,11 @@ public class AsyncUtilsTest extends HekateTestBase {
 
         waiting.await();
 
-        order.verify(pool).awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        order.verify(pool).awaitTermination(500, TimeUnit.MILLISECONDS);
+        order.verify(pool).shutdown();
+        order.verify(pool).awaitTermination(500, TimeUnit.MILLISECONDS);
+        order.verify(pool).shutdown();
+        order.verify(pool).awaitTermination(500, TimeUnit.MILLISECONDS);
         order.verifyNoMoreInteractions();
     }
 

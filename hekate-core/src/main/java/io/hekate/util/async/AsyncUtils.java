@@ -87,7 +87,12 @@ public final class AsyncUtils {
         } else {
             executor.shutdown();
 
-            return () -> executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+            return () -> {
+                // TODO: Strange but looks like it helps to fix a weird issue with thread pool termination on Travis-CI.
+                while (!executor.awaitTermination(500, TimeUnit.MILLISECONDS)) {
+                    executor.shutdown();
+                }
+            };
         }
     }
 
