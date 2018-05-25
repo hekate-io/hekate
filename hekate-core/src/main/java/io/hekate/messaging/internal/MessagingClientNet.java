@@ -134,11 +134,13 @@ class MessagingClientNet<T> implements MessagingClient<T> {
     public void disconnectIfIdle() {
         if (trackIdle) {
             if (state == STATE_CONNECTED) {
-                if (!conn.hasPendingRequests()) {
+                if (conn.state() == NetworkClient.State.CONNECTED && !conn.hasPendingRequests()) {
                     synchronized (mux) {
                         // Double check with lock.
-                        if (state == STATE_CONNECTED && !conn.hasPendingRequests()) {
-                            state = STATE_IDLE;
+                        if (state == STATE_CONNECTED) {
+                            if (conn.state() == NetworkClient.State.CONNECTED && !conn.hasPendingRequests()) {
+                                state = STATE_IDLE;
+                            }
                         }
                     }
                 }

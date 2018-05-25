@@ -108,6 +108,10 @@ class MessagingConnectionNetOut<T> extends MessagingConnectionNetBase<T> {
         }
     }
 
+    public NetworkClient.State state() {
+        return net.state();
+    }
+
     @Override
     protected int epoch() {
         // Volatile read.
