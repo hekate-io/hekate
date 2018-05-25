@@ -19,6 +19,7 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkFuture;
+import io.hekate.util.async.Waiting;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.Collections;
@@ -51,13 +52,8 @@ class MessagingClientMem<T> implements MessagingClient<T> {
         }
 
         @Override
-        public void terminate() {
-            delegate.terminate();
-        }
-
-        @Override
-        public void awaitTermination() throws InterruptedException {
-            delegate.awaitTermination();
+        public Waiting terminate() {
+            return delegate.terminate();
         }
 
         @Override

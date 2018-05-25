@@ -18,8 +18,10 @@ package io.hekate.messaging.internal;
 
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Utils;
+import io.hekate.util.async.Waiting;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 class MessagingExecutorAsync implements MessagingExecutor {
     private final MessagingSingleThreadWorker[] affinityWorkers;
@@ -59,21 +61,16 @@ class MessagingExecutorAsync implements MessagingExecutor {
     }
 
     @Override
-    public void terminate() {
+    public Waiting terminate() {
+        List<Waiting> waiting = new ArrayList<>();
+
         for (MessagingSingleThreadWorker worker : affinityWorkers) {
-            worker.execute(worker::shutdown);
+            waiting.add(worker.terminate());
         }
 
-        pooledWorker.shutdown();
-    }
+        waiting.add(pooledWorker.terminate());
 
-    @Override
-    public void awaitTermination() throws InterruptedException {
-        for (MessagingSingleThreadWorker worker : affinityWorkers) {
-            worker.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        }
-
-        pooledWorker.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        return Waiting.awaitAll(waiting);
     }
 
     @Override

@@ -17,6 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.util.async.AsyncUtils;
+import io.hekate.util.async.Waiting;
 import io.hekate.util.format.ToString;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -61,12 +62,8 @@ class MessagingSingleThreadWorker implements MessagingWorker {
         return timer.schedule(() -> execute(task), delay, TimeUnit.MILLISECONDS);
     }
 
-    public void shutdown() {
-        executor.shutdown();
-    }
-
-    public void awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        executor.awaitTermination(timeout, unit);
+    public Waiting terminate() {
+        return AsyncUtils.shutdown(executor);
     }
 
     @Override

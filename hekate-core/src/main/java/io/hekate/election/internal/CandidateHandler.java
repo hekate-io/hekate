@@ -31,13 +31,13 @@ import io.hekate.election.LeaderFuture;
 import io.hekate.lock.AsyncLockCallback;
 import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockOwnerInfo;
+import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
 import io.hekate.util.format.ToString;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -280,9 +280,7 @@ class CandidateHandler implements AsyncLockCallback, JmxSupport<CandidateJmx> {
     }
 
     public Waiting shutdown() {
-        worker.execute(worker::shutdown);
-
-        return () -> worker.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        return AsyncUtils.shutdown(worker);
     }
 
     public LeaderFuture leaderFuture() {

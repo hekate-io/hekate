@@ -536,9 +536,6 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
                 // Terminate async thread pool.
                 waiting.add(async::terminate);
-
-                // Register waiting for async thread pool termination.
-                waiting.add(async::awaitTermination);
             }
         } finally {
             lock.unlockWrite(writeLock);

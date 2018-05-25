@@ -16,9 +16,9 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.util.async.Waiting;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 
 class MessagingExecutorSync implements MessagingExecutor {
     private final MessagingSingleThreadWorker worker;
@@ -43,13 +43,8 @@ class MessagingExecutorSync implements MessagingExecutor {
     }
 
     @Override
-    public void terminate() {
-        worker.execute(worker::shutdown);
-    }
-
-    @Override
-    public void awaitTermination() throws InterruptedException {
-        worker.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+    public Waiting terminate() {
+        return worker.terminate();
     }
 
     @Override

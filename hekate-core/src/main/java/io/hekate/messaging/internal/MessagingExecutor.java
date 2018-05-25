@@ -16,6 +16,8 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.util.async.Waiting;
+
 interface MessagingExecutor {
     boolean isAsync();
 
@@ -23,9 +25,7 @@ interface MessagingExecutor {
 
     MessagingWorker pooledWorker();
 
-    void terminate();
-
-    void awaitTermination() throws InterruptedException;
+    Waiting terminate();
 
     int poolSize();
 }

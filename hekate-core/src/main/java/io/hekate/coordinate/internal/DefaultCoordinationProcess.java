@@ -24,9 +24,9 @@ import io.hekate.core.HekateSupport;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.util.StateGuard;
+import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,9 +122,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
                     });
                 }
 
-                async.execute(async::shutdown);
-
-                waiting = () -> async.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+                waiting = AsyncUtils.shutdown(async);
 
                 future.cancel(false);
             } else {
