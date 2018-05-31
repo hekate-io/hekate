@@ -36,7 +36,7 @@ import java.util.concurrent.TimeoutException;
 import org.junit.After;
 import org.junit.Before;
 
-public class HekateNodeTestBase extends HekateTestBase {
+public abstract class HekateNodeTestBase extends HekateTestBase {
     public interface NodeConfigurer {
         void configure(HekateTestNode.Bootstrap b);
     }

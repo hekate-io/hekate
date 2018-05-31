@@ -31,7 +31,7 @@ import org.junit.Before;
 
 import static org.junit.Assert.assertNotNull;
 
-public class StatsdMetricsTestBase extends HekateNodeTestBase {
+public abstract class StatsdMetricsTestBase extends HekateNodeTestBase {
     interface IoTask {
         void run() throws IOException;
     }
