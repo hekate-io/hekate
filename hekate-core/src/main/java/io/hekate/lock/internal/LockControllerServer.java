@@ -364,13 +364,15 @@ class LockControllerServer {
             while (!queue.isEmpty()) {
                 LockQueueEntry entry = queue.pollFirst();
 
-                entry.cancelTimeout();
+                if (entry != null) {
+                    entry.cancelTimeout();
 
-                if (DEBUG) {
-                    log.debug("Disposed lock queue entry [entry={}]", entry);
+                    if (DEBUG) {
+                        log.debug("Disposed lock queue entry [entry={}]", entry);
+                    }
+
+                    reply(entry.message(), newResponse(LockResponse.Status.RETRY));
                 }
-
-                reply(entry.message(), newResponse(LockResponse.Status.RETRY));
             }
         } finally {
             sync.unlock();

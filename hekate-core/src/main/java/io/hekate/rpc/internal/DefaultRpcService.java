@@ -86,6 +86,8 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
     private static final String CHANNEL_NAME = "hekate.rpc";
 
+    private static final RpcMethodHandler[] EMPTY_HANDLERS = new RpcMethodHandler[0];
+
     private final int workerThreads;
 
     private final int nioThreads;
@@ -257,7 +259,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
         });
 
         if (!allMethodsIndex.isEmpty()) {
-            methodHandlers = allMethodsIndex.toArray(new RpcMethodHandler[allMethodsIndex.size()]);
+            methodHandlers = allMethodsIndex.toArray(EMPTY_HANDLERS);
         }
 
         this.servers = unmodifiableList(serversInfo);

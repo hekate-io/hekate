@@ -27,6 +27,7 @@ import java.util.Base64;
 import java.util.Collection;
 
 public class DefaultClusterHash implements ClusterHash, Serializable {
+
     private static final ThreadLocal<MessageDigest> THREAD_LOCAL_DIGEST = ThreadLocal.withInitial(() -> {
         try {
             return MessageDigest.getInstance("SHA-256");
@@ -37,6 +38,8 @@ public class DefaultClusterHash implements ClusterHash, Serializable {
 
     private static final long serialVersionUID = 1;
 
+    private static final ClusterNode[] EMPTY_NODES = new ClusterNode[0];
+
     private final byte[] bytes;
 
     private int hash;
@@ -44,7 +47,7 @@ public class DefaultClusterHash implements ClusterHash, Serializable {
     public DefaultClusterHash(Collection<ClusterNode> nodes) {
         MessageDigest digest = THREAD_LOCAL_DIGEST.get();
 
-        ClusterNode[] sorted = nodes.toArray(new ClusterNode[nodes.size()]);
+        ClusterNode[] sorted = nodes.toArray(EMPTY_NODES);
 
         Arrays.sort(sorted);
 

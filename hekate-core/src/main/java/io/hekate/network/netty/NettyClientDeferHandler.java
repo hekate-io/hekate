@@ -156,10 +156,12 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
             while (!deferred.isEmpty()) {
                 DeferredMessage msg = deferred.poll();
 
-                try {
-                    msg.promise().tryFailure(deferredError);
-                } finally {
-                    ReferenceCountUtil.release(msg.payload());
+                if (msg != null) {
+                    try {
+                        msg.promise().tryFailure(deferredError);
+                    } finally {
+                        ReferenceCountUtil.release(msg.payload());
+                    }
                 }
             }
 
@@ -183,11 +185,13 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
                 while (!localDeferred.isEmpty()) {
                     DeferredMessage msg = localDeferred.poll();
 
-                    if (debug) {
-                        log.debug("Writing deferred message [to={}, message={}]", id, msg.source());
-                    }
+                    if (msg != null) {
+                        if (debug) {
+                            log.debug("Writing deferred message [to={}, message={}]", id, msg.source());
+                        }
 
-                    ctx.writeAndFlush(msg.payload(), msg.promise());
+                        ctx.writeAndFlush(msg.payload(), msg.promise());
+                    }
                 }
             }
 

@@ -20,5 +20,7 @@ import io.hekate.codec.JavaSerializable;
 import java.net.Socket;
 
 public class NonSerializable implements JavaSerializable {
+    private static final long serialVersionUID = 1L;
+
     public final Socket nonSerializableFiled = new Socket();
 }

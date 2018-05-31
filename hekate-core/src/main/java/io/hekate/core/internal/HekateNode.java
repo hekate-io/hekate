@@ -744,7 +744,7 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
             public CompletableFuture<ClusterJoinEvent> onJoin(int joinOrder, Set<ClusterNode> nodes) {
                 CompletableFuture<ClusterJoinEvent> future = new CompletableFuture<>();
 
-                runOnSysThread(() -> {
+                runOnSysThread(() ->
                     guard.withWriteLock(() -> {
                         if (state.compareAndSet(JOINING, UP)) {
                             localNode.setJoinOrder(joinOrder);
@@ -781,8 +781,8 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
                         } else {
                             future.complete(null);
                         }
-                    });
-                });
+                    })
+                );
 
                 return future;
             }
@@ -791,7 +791,7 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
             public CompletableFuture<ClusterChangeEvent> onTopologyChange(Set<ClusterNode> nodes) {
                 CompletableFuture<ClusterChangeEvent> future = new CompletableFuture<>();
 
-                runOnSysThread(() -> {
+                runOnSysThread(() ->
                     guard.withWriteLock(() -> {
                         if (clusterEvents.isJoinEventFired()) {
                             DefaultClusterTopology lastTopology = topology;
@@ -831,8 +831,8 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
                         } else {
                             future.complete(null);
                         }
-                    });
-                });
+                    })
+                );
 
                 return future;
             }

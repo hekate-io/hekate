@@ -67,6 +67,8 @@ class StatsdMetricsPublisher {
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
+    private static final Metric[] EMPTY_METRICS = new Metric[0];
+
     private static final Pattern UNSAFE_HOST_CHARACTERS = Pattern.compile("[^a-z0-9]", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern UNSAFE_CHARACTERS = Pattern.compile("[^a-z0-9.]", Pattern.CASE_INSENSITIVE);
@@ -136,7 +138,7 @@ class StatsdMetricsPublisher {
                     while (true) {
                         QueueEntry entry = queue.poll(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
 
-                        if (entry == STOP_ENTRY) {
+                        if (entry == null || entry == STOP_ENTRY) {
                             break;
                         }
 
@@ -224,7 +226,7 @@ class StatsdMetricsPublisher {
                         log.debug("Skipped asynchronous metrics publishing since publisher is stopped.");
                     }
                 } else {
-                    QueueEntry entry = new QueueEntry(System.currentTimeMillis(), metrics.toArray(new Metric[metrics.size()]));
+                    QueueEntry entry = new QueueEntry(System.currentTimeMillis(), metrics.toArray(EMPTY_METRICS));
 
                     if (queue.offer(entry)) {
                         if (DEBUG) {

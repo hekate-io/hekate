@@ -20,8 +20,7 @@
     xmlns:tool="http://www.springframework.org/schema/tool"
     xmlns="http://www.hekate.io/spring/hekate-core"
     targetNamespace="http://www.hekate.io/spring/hekate-core"
-    elementFormDefault="qualified"
-    attributeFormDefault="unqualified">
+    elementFormDefault="qualified">
     <xsd:import namespace="http://www.springframework.org/schema/beans"/>
     <xsd:import namespace="http://www.springframework.org/schema/tool"/>
 
@@ -67,7 +66,7 @@
 
     <xsd:complexType name="abstractNodeType" abstract="true">
         <xsd:all minOccurs="0" maxOccurs="1">
-            <xsd:element name="roles" minOccurs="0" maxOccurs="1">
+            <xsd:element name="roles" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.core.HekateBootstrap#setRoles(java.util.List)'.
@@ -79,105 +78,105 @@
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
-            <xsd:element name="properties" type="propertiesType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="properties" type="propertiesType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.core.HekateBootstrap#setProperties(java.util.Map)'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="property-providers" type="nodePropertyProviders" minOccurs="0" maxOccurs="1">
+            <xsd:element name="property-providers" type="nodePropertyProviders" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.core.HekateBootstrap#setPropertyProviders(java.util.List)'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="default-codec" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="default-codec" type="beanOrRefType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.core.HekateBootstrap#setDefaultCodec(io.hekate.codec.CodecFactory)'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="jmx" type="jmxServiceType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="jmx" type="jmxServiceType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         Registers 'io.hekate.core.jmx.JmxServiceFactory.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="network" type="networkServiceType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="network" type="networkServiceType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         Registers 'io.hekate.network.NetworkServiceFactory'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="cluster" type="clusterServiceType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="cluster" type="clusterServiceType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         Registers 'io.hekate.cluster.ClusterServiceFactory'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="messaging" type="messagingServiceType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="messaging" type="messagingServiceType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         Registers 'io.hekate.messaging.MessagingServiceFactory'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="rpc" type="rpcServiceType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="rpc" type="rpcServiceType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         Registers 'io.hekate.rpc.RpcServiceFactory'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="locks" type="lockServiceType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="locks" type="lockServiceType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         Registers 'io.hekate.lock.LockServiceFactory'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="election" type="electionServiceType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="election" type="electionServiceType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         Registers 'io.hekate.election.ElectionServiceFactory.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="coordination" type="coordinationServiceType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="coordination" type="coordinationServiceType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         Registers 'io.hekate.coordinate.CoordinationServiceFactory'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="local-metrics" type="localMetricsServiceType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="local-metrics" type="localMetricsServiceType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         Registers 'io.hekate.metrics.local.LocalMetricsServiceFactory.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="cluster-metrics" type="clusterMetricsServiceType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="cluster-metrics" type="clusterMetricsServiceType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         Registers 'io.hekate.metrics.cluster.ClusterMetricsServiceFactory'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="custom-services" type="customServicesType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="custom-services" type="customServicesType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         Registers custom implementations of 'io.hekate.core.service.Service' interface.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="plugins" type="pluginsType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="plugins" type="pluginsType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         Registers implementations 'io.hekate.core.plugin.Plugin' interface.
@@ -213,7 +212,7 @@
 
     <xsd:complexType name="networkServiceType">
         <xsd:all>
-            <xsd:element name="host-selector" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="host-selector" type="beanOrRefType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.network.NetworkServiceFactory#setHostSelector(io.hekate.network.address.
@@ -221,14 +220,14 @@
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="connectors" minOccurs="0" maxOccurs="1">
+            <xsd:element name="connectors" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.network.NetworkServiceFactory#setConnectors(List)'.
                     </xsd:documentation>
                 </xsd:annotation>
                 <xsd:complexType>
-                    <xsd:sequence minOccurs="1" maxOccurs="unbounded">
+                    <xsd:sequence maxOccurs="unbounded">
                         <xsd:choice>
                             <xsd:element name="connector" type="networkConnectorType" minOccurs="0">
                                 <xsd:annotation>
@@ -242,7 +241,7 @@
                 </xsd:complexType>
             </xsd:element>
         </xsd:all>
-        <xsd:attribute name="id" type="xsd:string" use="optional">
+        <xsd:attribute name="id" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
                     The unique identifier of this service bean.
@@ -355,14 +354,14 @@
 
     <xsd:complexType name="networkConnectorType">
         <xsd:all minOccurs="0">
-            <xsd:element name="server-handler" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="server-handler" type="beanOrRefType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.network.NetworkConnectorConfig#setServerHandler(io.hekate.network.NetworkServerHandler)'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="message-codec" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="message-codec" type="beanOrRefType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.network.NetworkConnectorConfig#setMessageCodec(io.hekate.codec.CodecFactory)'.
@@ -402,35 +401,35 @@
 
     <xsd:complexType name="clusterServiceType">
         <xsd:all>
-            <xsd:element name="seed-node-provider" type="clusterSeedNodeProviderType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="seed-node-provider" type="clusterSeedNodeProviderType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         Registers 'io.hekate.cluster.seed.SeedNodeProvider'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="split-brain-detection" type="clusterSplitBrainDetectionType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="split-brain-detection" type="clusterSplitBrainDetectionType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         Registers 'io.hekate.cluster.split.SplitBrainDetector'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="failure-detection" type="clusterFailureDetectionType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="failure-detection" type="clusterFailureDetectionType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         Registers 'io.hekate.cluster.health.FailureDetector'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="listeners" type="clusterListenersType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="listeners" type="clusterListenersType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.cluster.ClusterServiceFactory#setClusterListeners(java.util.List)'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="acceptors" type="clusterAcceptorsType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="acceptors" type="clusterAcceptorsType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.cluster.ClusterServiceFactory#setAcceptors(java.util.List)'.
@@ -438,7 +437,7 @@
                 </xsd:annotation>
             </xsd:element>
         </xsd:all>
-        <xsd:attribute name="id" type="xsd:string" use="optional">
+        <xsd:attribute name="id" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
                     The unique identifier of this service bean.
@@ -462,7 +461,7 @@
     </xsd:complexType>
 
     <xsd:complexType name="clusterSeedNodeProviderType">
-        <xsd:choice maxOccurs="1" minOccurs="1">
+        <xsd:choice>
             <xsd:element name="multicast" type="clusterMulticastSeedNodeProviderType">
                 <xsd:annotation>
                     <xsd:documentation>
@@ -580,7 +579,7 @@
     </xsd:complexType>
 
     <xsd:complexType name="clusterJdbcSeedNodeProviderType">
-        <xsd:all minOccurs="1" maxOccurs="1">
+        <xsd:all>
             <xsd:element name="datasource" type="beanOrRefType">
                 <xsd:annotation>
                     <xsd:documentation>
@@ -634,15 +633,15 @@
     </xsd:complexType>
 
     <xsd:complexType name="clusterCloudSeedNodeProviderType">
-        <xsd:all minOccurs="0" maxOccurs="1">
-            <xsd:element name="credentials" type="cloudProviderCredentialsType" minOccurs="0" maxOccurs="1">
+        <xsd:all minOccurs="0">
+            <xsd:element name="credentials" type="cloudProviderCredentialsType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.cluster.seed.jclouds.CloudSeedNodeProviderConfig#setRegions(java.util.Set)'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="regions" minOccurs="0" maxOccurs="1">
+            <xsd:element name="regions" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.cluster.seed.jclouds.CloudSeedNodeProviderConfig#setNodeRoles(java.util.Set)'.
@@ -654,7 +653,7 @@
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
-            <xsd:element name="zones" minOccurs="0" maxOccurs="1">
+            <xsd:element name="zones" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.cluster.seed.jclouds.CloudSeedNodeProviderConfig#setZones(java.util.Set)'.
@@ -666,7 +665,7 @@
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
-            <xsd:element name="tags" minOccurs="0" maxOccurs="1">
+            <xsd:element name="tags" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.cluster.seed.jclouds.CloudSeedNodeProviderConfig#setTags(java.util.Map)'.
@@ -695,7 +694,7 @@
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
-            <xsd:element name="properties" type="propertiesType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="properties" type="propertiesType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.cluster.seed.jclouds.CloudSeedNodeProviderConfig#setProperties(java.util.Properties)'.
@@ -720,8 +719,8 @@
     </xsd:complexType>
 
     <xsd:complexType name="clusterCloudStoreSeedNodeProviderType">
-        <xsd:all minOccurs="0" maxOccurs="1">
-            <xsd:element name="credentials" type="cloudProviderCredentialsType" minOccurs="0" maxOccurs="1">
+        <xsd:all minOccurs="0">
+            <xsd:element name="credentials" type="cloudProviderCredentialsType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of
@@ -730,7 +729,7 @@
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="properties" type="propertiesType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="properties" type="propertiesType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of
@@ -763,8 +762,8 @@
     </xsd:complexType>
 
     <xsd:complexType name="cloudProviderCredentialsType">
-        <xsd:choice maxOccurs="1">
-            <xsd:element name="basic" minOccurs="0" maxOccurs="1">
+        <xsd:choice>
+            <xsd:element name="basic" minOccurs="0">
                 <xsd:complexType>
                     <xsd:attribute name="identity" type="xsd:string">
                         <xsd:annotation>
@@ -782,7 +781,7 @@
                     </xsd:attribute>
                 </xsd:complexType>
             </xsd:element>
-            <xsd:element name="custom-supplier" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="custom-supplier" type="beanOrRefType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         Registers a custom implementation of 'io.hekate.cluster.seed.jclouds.CredentialsSupplier' interface.
@@ -810,7 +809,7 @@
     </xsd:complexType>
 
     <xsd:complexType name="clusterSplitBrainDetectionType">
-        <xsd:sequence minOccurs="0" maxOccurs="1">
+        <xsd:sequence minOccurs="0">
             <xsd:element name="group" type="splitBrainDetectorsGroupType">
                 <xsd:annotation>
                     <xsd:documentation>
@@ -941,7 +940,7 @@
 
     <xsd:complexType name="clusterFailureDetectionType">
         <xsd:sequence>
-            <xsd:choice minOccurs="0" maxOccurs="1">
+            <xsd:choice minOccurs="0">
                 <xsd:element name="heartbeat">
                     <xsd:annotation>
                         <xsd:documentation>
@@ -1017,7 +1016,7 @@
                 </xsd:annotation>
             </xsd:element>
         </xsd:sequence>
-        <xsd:attribute name="id" type="xsd:string" use="optional">
+        <xsd:attribute name="id" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
                     The unique identifier of this service bean.
@@ -1028,14 +1027,14 @@
 
     <xsd:complexType name="messagingChannelType">
         <xsd:all minOccurs="0">
-            <xsd:element name="receiver" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="receiver" type="beanOrRefType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.messaging.MessagingChannelConfig#setReceiver(io.hekate.messaging.MessageReceiver)'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="load-balancer" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="load-balancer" type="beanOrRefType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of
@@ -1043,21 +1042,21 @@
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="message-codec" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="message-codec" type="beanOrRefType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.messaging.MessagingChannelConfig#setMessageCodec(io.hekate.codec.CodecFactory)'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="cluster-filter" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="cluster-filter" type="beanOrRefType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.messaging.MessagingChannelConfig#setClusterFilter(io.hekate.cluster.ClusterNodeFilter)'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="failover-policy" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="failover-policy" type="beanOrRefType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of
@@ -1065,7 +1064,7 @@
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="back-pressure" type="messagingBackPressureType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="back-pressure" type="messagingBackPressureType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of
@@ -1141,23 +1140,23 @@
 
     <xsd:complexType name="messagingBackPressureType">
         <xsd:all minOccurs="0">
-            <xsd:element name="outbound" minOccurs="0" maxOccurs="1">
+            <xsd:element name="outbound" minOccurs="0">
                 <xsd:complexType>
-                    <xsd:attribute name="low-watermark" type="xsd:string" use="optional">
+                    <xsd:attribute name="low-watermark" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>
                                 See javadoc of 'io.hekate.messaging.MessagingBackPressureConfig#setInLowWatermark(int)'.
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="high-watermark" type="xsd:string" use="optional">
+                    <xsd:attribute name="high-watermark" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>
                                 See javadoc of 'io.hekate.messaging.MessagingBackPressureConfig#setInHighWatermark(int)'.
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="overflow" type="xsd:string" use="optional">
+                    <xsd:attribute name="overflow" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>
                                 See javadoc of 'io.hekate.messaging.MessagingBackPressureConfig#setOutOverflow(io.hekate.messaging
@@ -1167,16 +1166,16 @@
                     </xsd:attribute>
                 </xsd:complexType>
             </xsd:element>
-            <xsd:element name="inbound" minOccurs="0" maxOccurs="1">
+            <xsd:element name="inbound" minOccurs="0">
                 <xsd:complexType>
-                    <xsd:attribute name="low-watermark" type="xsd:string" use="optional">
+                    <xsd:attribute name="low-watermark" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>
                                 See javadoc of 'io.hekate.messaging.MessagingBackPressureConfig#setOutLowWatermark(int)'.
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="high-watermark" type="xsd:string" use="optional">
+                    <xsd:attribute name="high-watermark" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>
                                 See javadoc of 'io.hekate.messaging.MessagingBackPressureConfig#setOutHighWatermark(int)'.
@@ -1189,8 +1188,8 @@
     </xsd:complexType>
 
     <xsd:complexType name="rpcServiceType">
-        <xsd:sequence minOccurs="1" maxOccurs="1">
-            <xsd:element name="back-pressure" type="messagingBackPressureType" minOccurs="0" maxOccurs="1">
+        <xsd:sequence>
+            <xsd:element name="back-pressure" type="messagingBackPressureType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of
@@ -1199,7 +1198,7 @@
                 </xsd:annotation>
             </xsd:element>
 
-            <xsd:element name="clients" minOccurs="0" maxOccurs="1">
+            <xsd:element name="clients" minOccurs="0">
                 <xsd:complexType>
                     <xsd:sequence>
                         <xsd:element name="client" type="rpcClientType" minOccurs="0" maxOccurs="unbounded">
@@ -1212,7 +1211,7 @@
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
-            <xsd:element name="servers" minOccurs="0" maxOccurs="1">
+            <xsd:element name="servers" minOccurs="0">
                 <xsd:complexType>
                     <xsd:sequence>
                         <xsd:element name="server" type="rpcServerType" minOccurs="0" maxOccurs="unbounded">
@@ -1226,7 +1225,7 @@
                 </xsd:complexType>
             </xsd:element>
         </xsd:sequence>
-        <xsd:attribute name="id" type="xsd:string" use="optional">
+        <xsd:attribute name="id" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
                     The unique identifier of this service bean.
@@ -1258,7 +1257,7 @@
 
     <xsd:complexType name="rpcClientType">
         <xsd:all minOccurs="0">
-            <xsd:element name="load-balancer" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="load-balancer" type="beanOrRefType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of
@@ -1266,7 +1265,7 @@
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="failover-policy" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="failover-policy" type="beanOrRefType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.rpc.RpcClientConfig#setFailoverPolicy(io.hekate.failover.FailoverPolicy)'.
@@ -1274,7 +1273,7 @@
                 </xsd:annotation>
             </xsd:element>
         </xsd:all>
-        <xsd:attribute name="name" type="xsd:string" use="optional">
+        <xsd:attribute name="name" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
                     Sets the bean name for this RPC client.
@@ -1288,7 +1287,7 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
-        <xsd:attribute name="tag" type="xsd:string" use="optional">
+        <xsd:attribute name="tag" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
                     See javadoc of 'io.hekate.rpc.RpcClientConfig#setTag(java.lang.String)'.
@@ -1299,7 +1298,7 @@
 
     <xsd:complexType name="rpcServerType">
         <xsd:all minOccurs="0">
-            <xsd:element name="tags" minOccurs="0" maxOccurs="1">
+            <xsd:element name="tags" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.rpc.RpcServerConfig#setTags(java.util.Set)'.
@@ -1311,7 +1310,7 @@
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
-            <xsd:element name="handler" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="handler" type="beanOrRefType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.rpc.RpcServerConfig#setHandler(java.lang.Object)'.
@@ -1322,7 +1321,7 @@
     </xsd:complexType>
 
     <xsd:complexType name="lockServiceType">
-        <xsd:sequence minOccurs="1" maxOccurs="unbounded">
+        <xsd:sequence maxOccurs="unbounded">
             <xsd:element name="region" type="lockRegionType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
@@ -1331,7 +1330,7 @@
                 </xsd:annotation>
             </xsd:element>
         </xsd:sequence>
-        <xsd:attribute name="id" type="xsd:string" use="optional">
+        <xsd:attribute name="id" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
                     The unique identifier of this service bean.
@@ -1390,7 +1389,7 @@
     </xsd:complexType>
 
     <xsd:complexType name="electionServiceType">
-        <xsd:sequence minOccurs="1" maxOccurs="unbounded">
+        <xsd:sequence maxOccurs="unbounded">
             <xsd:element name="candidate" type="electionCandidateType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
@@ -1399,7 +1398,7 @@
                 </xsd:annotation>
             </xsd:element>
         </xsd:sequence>
-        <xsd:attribute name="id" type="xsd:string" use="optional">
+        <xsd:attribute name="id" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
                     The unique identifier of this service bean.
@@ -1423,7 +1422,7 @@
     </xsd:complexType>
 
     <xsd:complexType name="coordinationServiceType">
-        <xsd:sequence minOccurs="1" maxOccurs="unbounded">
+        <xsd:sequence maxOccurs="unbounded">
             <xsd:element name="process" type="coordinationProcessType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
@@ -1432,7 +1431,7 @@
                 </xsd:annotation>
             </xsd:element>
         </xsd:sequence>
-        <xsd:attribute name="id" type="xsd:string" use="optional">
+        <xsd:attribute name="id" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
                     The unique identifier of this service bean.
@@ -1442,7 +1441,7 @@
     </xsd:complexType>
 
     <xsd:complexType name="coordinationProcessType">
-        <xsd:all maxOccurs="1">
+        <xsd:all>
             <xsd:element name="handler" type="beanOrRefType">
                 <xsd:annotation>
                     <xsd:documentation>
@@ -1469,8 +1468,8 @@
     </xsd:complexType>
 
     <xsd:complexType name="localMetricsServiceType">
-        <xsd:all minOccurs="0" maxOccurs="1">
-            <xsd:element name="counters" minOccurs="0" maxOccurs="1">
+        <xsd:all minOccurs="0">
+            <xsd:element name="counters" minOccurs="0">
                 <xsd:complexType>
                     <xsd:sequence minOccurs="0" maxOccurs="unbounded">
                         <xsd:element name="counter" type="metricCounterType" minOccurs="0" maxOccurs="unbounded">
@@ -1483,7 +1482,7 @@
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
-            <xsd:element name="probes" minOccurs="0" maxOccurs="1">
+            <xsd:element name="probes" minOccurs="0">
                 <xsd:complexType>
                     <xsd:sequence minOccurs="0" maxOccurs="unbounded">
                         <xsd:element name="probe" type="metricProbeType" minOccurs="0" maxOccurs="unbounded">
@@ -1496,7 +1495,7 @@
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
-            <xsd:element name="timers" minOccurs="0" maxOccurs="1">
+            <xsd:element name="timers" minOccurs="0">
                 <xsd:complexType>
                     <xsd:sequence minOccurs="0" maxOccurs="unbounded">
                         <xsd:element name="timer" type="metricTimerType" minOccurs="0" maxOccurs="unbounded">
@@ -1509,7 +1508,7 @@
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
-            <xsd:element name="listeners" minOccurs="0" maxOccurs="1">
+            <xsd:element name="listeners" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.metrics.local.LocalMetricsServiceFactory#setListeners(java.util.List)'.
@@ -1528,7 +1527,7 @@
                 </xsd:complexType>
             </xsd:element>
         </xsd:all>
-        <xsd:attribute name="id" type="xsd:string" use="optional">
+        <xsd:attribute name="id" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
                     The unique identifier of this service bean.
@@ -1614,7 +1613,7 @@
     </xsd:complexType>
 
     <xsd:complexType name="clusterMetricsServiceType">
-        <xsd:sequence minOccurs="0" maxOccurs="1">
+        <xsd:sequence minOccurs="0">
             <xsd:element name="filter" type="beanOrRefType">
                 <xsd:annotation>
                     <xsd:documentation>
@@ -1624,7 +1623,7 @@
                 </xsd:annotation>
             </xsd:element>
         </xsd:sequence>
-        <xsd:attribute name="id" type="xsd:string" use="optional">
+        <xsd:attribute name="id" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
                     The unique identifier of this service bean.
@@ -1649,7 +1648,7 @@
 
     <xsd:complexType name="jmxServiceType">
         <xsd:all>
-            <xsd:element name="server" type="beanOrRefType" minOccurs="0" maxOccurs="1">
+            <xsd:element name="server" type="beanOrRefType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc 'io.hekate.core.jmx.JmxServiceFactory#setServer(javax.management.MBeanServer)'.
@@ -1687,7 +1686,7 @@
     </xsd:complexType>
 
     <xsd:complexType name="beanOrRefType">
-        <xsd:all minOccurs="0" maxOccurs="1">
+        <xsd:all minOccurs="0">
             <xsd:element ref="beans:bean"/>
         </xsd:all>
         <xsd:attribute name="ref" type="xsd:string">

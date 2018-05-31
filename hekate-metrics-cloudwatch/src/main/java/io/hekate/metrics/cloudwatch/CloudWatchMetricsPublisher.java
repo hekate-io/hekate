@@ -52,6 +52,8 @@ class CloudWatchMetricsPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(CloudWatchMetricsPlugin.class);
 
+    private static final Dimension[] EMPTY_DIMENSIONS = new Dimension[0];
+
     private final long interval;
 
     private final String namespace;
@@ -286,6 +288,6 @@ class CloudWatchMetricsPublisher {
             dimensions.add(new Dimension().withName("NodeName").withValue(fromNode));
         }
 
-        return dimensions.toArray(new Dimension[dimensions.size()]);
+        return dimensions.toArray(EMPTY_DIMENSIONS);
     }
 }

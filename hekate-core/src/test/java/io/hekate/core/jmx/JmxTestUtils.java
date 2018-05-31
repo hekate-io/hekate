@@ -27,6 +27,8 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 public final class JmxTestUtils {
+    private static final String[] EMPTY_STRINGS = new String[0];
+
     private JmxTestUtils() {
         // No-op.
     }
@@ -49,7 +51,7 @@ public final class JmxTestUtils {
         assertEquals(node.address().socket().getPort(), jmx.get("port"));
         assertEquals(node.address().id().toString(), jmx.get("id"));
         assertEquals(node.name(), jmx.get("name"));
-        assertArrayEquals(node.roles().toArray(new String[node.roles().size()]), (Object[])jmx.get("roles"));
+        assertArrayEquals(node.roles().toArray(EMPTY_STRINGS), (Object[])jmx.get("roles"));
 
         TabularDataSupport jmxProps = (TabularDataSupport)jmx.get("properties");
 
