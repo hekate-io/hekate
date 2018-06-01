@@ -218,7 +218,7 @@ public class NettyClientFactory<T> implements NetworkConnector<T> {
      *
      * @return {@code true} if {@link StandardSocketOptions#TCP_NODELAY TCP_NODELAY} option must be set.
      */
-    public boolean getTcpNoDelay() {
+    public boolean isTcpNoDelay() {
         return tcpNoDelay;
     }
 

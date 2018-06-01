@@ -150,18 +150,18 @@ public class NettyClientFactoryTest extends HekateTestBase {
 
     @Test
     public void testTcpNoDelay() {
-        assertFalse(factory.getTcpNoDelay());
+        assertFalse(factory.isTcpNoDelay());
 
         factory.setTcpNoDelay(true);
 
-        assertTrue(factory.getTcpNoDelay());
+        assertTrue(factory.isTcpNoDelay());
 
         factory.setTcpNoDelay(false);
 
-        assertFalse(factory.getTcpNoDelay());
+        assertFalse(factory.isTcpNoDelay());
 
         assertSame(factory, factory.withTcpNoDelay(true));
-        assertTrue(factory.getTcpNoDelay());
+        assertTrue(factory.isTcpNoDelay());
     }
 
     @Test

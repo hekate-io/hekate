@@ -392,7 +392,7 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
 
         connectTimeout = factory.getConnectTimeout();
         idleTimeout = factory.getIdleTimeout();
-        tcpNoDelay = factory.getTcpNoDelay();
+        tcpNoDelay = factory.isTcpNoDelay();
         soReceiveBufferSize = factory.getSoReceiveBufferSize();
         soSendBufferSize = factory.getSoSendBufferSize();
         soReuseAddress = factory.getSoReuseAddress();
