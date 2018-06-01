@@ -994,7 +994,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
                 runOnGossipThread(() -> processJoinSendFailure(request, error));
             } else {
-                if (log.isDebugEnabled()) {
+                if (DEBUG) {
                     log.debug("Failed to sent gossip message [error={}, message={}]", error.toString(), msg);
                 }
             }
