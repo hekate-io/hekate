@@ -18,6 +18,7 @@ package io.hekate.util;
 
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
@@ -205,7 +206,7 @@ public class StateGuard {
         assert writeLock.isHeldByCurrentThread() : "Thread must hold write lock.";
 
         if (state == INITIALIZING || state == INITIALIZED) {
-            throw new IllegalStateException(type.getSimpleName() + " is already " + state.name().toLowerCase() + '.');
+            throw new IllegalStateException(type.getSimpleName() + " is already " + state.name().toLowerCase(Locale.US) + '.');
         }
 
         state = INITIALIZING;
@@ -321,7 +322,7 @@ public class StateGuard {
         if (this.state != state) {
             readLock.unlock();
 
-            throw new IllegalStateException(type.getSimpleName() + " is not " + state.name().toLowerCase() + '.');
+            throw new IllegalStateException(type.getSimpleName() + " is not " + state.name().toLowerCase(Locale.US) + '.');
         }
     }
 
@@ -406,7 +407,7 @@ public class StateGuard {
         if (state != INITIALIZED) {
             writeLock.unlock();
 
-            throw new IllegalStateException(type.getSimpleName() + " is not " + INITIALIZED.name().toLowerCase() + '.');
+            throw new IllegalStateException(type.getSimpleName() + " is not " + INITIALIZED.name().toLowerCase(Locale.US) + '.');
         }
     }
 

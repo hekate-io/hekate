@@ -18,6 +18,7 @@ package io.hekate.util;
 
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import java.util.Locale;
 import java.util.concurrent.locks.StampedLock;
 
 import static io.hekate.util.StampedStateGuard.State.INITIALIZED;
@@ -81,7 +82,7 @@ public class StampedStateGuard {
         assert lock.isWriteLocked() : "Thread must hold write lock.";
 
         if (state == INITIALIZING || state == INITIALIZED) {
-            throw new IllegalStateException(type.getSimpleName() + " is already " + state.name().toLowerCase() + '.');
+            throw new IllegalStateException(type.getSimpleName() + " is already " + state.name().toLowerCase(Locale.US) + '.');
         }
 
         state = INITIALIZING;
@@ -113,7 +114,7 @@ public class StampedStateGuard {
         assert lock.isWriteLocked() : "Thread must hold write lock.";
 
         if (state == INITIALIZED) {
-            throw new IllegalStateException(type.getSimpleName() + " is already " + INITIALIZED.name().toLowerCase() + '.');
+            throw new IllegalStateException(type.getSimpleName() + " is already " + INITIALIZED.name().toLowerCase(Locale.US) + '.');
         }
 
         state = INITIALIZED;
@@ -191,7 +192,7 @@ public class StampedStateGuard {
         if (state != INITIALIZED) {
             lock.unlockRead(locked);
 
-            throw new IllegalStateException(type.getSimpleName() + " is not " + INITIALIZED.name().toLowerCase() + '.');
+            throw new IllegalStateException(type.getSimpleName() + " is not " + INITIALIZED.name().toLowerCase(Locale.US) + '.');
         }
 
         return locked;
@@ -233,7 +234,7 @@ public class StampedStateGuard {
         if (state != INITIALIZED) {
             lock.unlockWrite(locked);
 
-            throw new IllegalStateException(type.getSimpleName() + " is not " + INITIALIZED.name().toLowerCase() + '.');
+            throw new IllegalStateException(type.getSimpleName() + " is not " + INITIALIZED.name().toLowerCase(Locale.US) + '.');
         }
 
         return locked;
