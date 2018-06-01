@@ -385,6 +385,8 @@ public class DefaultFailureDetector implements FailureDetector, JmxSupport<Defau
     }
 
     private void updateMonitors() {
+        assert writeLock.isHeldByCurrentThread() : "Thread must hold write lock: " + Thread.currentThread().getName();
+
         Map<ClusterAddress, NodeMonitor> oldMonitors;
 
         if (monitors.isEmpty()) {
@@ -423,6 +425,8 @@ public class DefaultFailureDetector implements FailureDetector, JmxSupport<Defau
     }
 
     private void addMonitors(long limit, Map<ClusterAddress, NodeMonitor> oldMonitors) {
+        assert writeLock.isHeldByCurrentThread() : "Thread must hold write lock: " + Thread.currentThread().getName();
+
         Consumer<ClusterAddress> doAddNewOrKeepOld = node -> {
             NodeMonitor oldMonitor = oldMonitors.get(node);
 
@@ -459,6 +463,8 @@ public class DefaultFailureDetector implements FailureDetector, JmxSupport<Defau
     }
 
     private void removeMonitors(long limit) {
+        assert writeLock.isHeldByCurrentThread() : "Thread must hold write lock: " + Thread.currentThread().getName();
+
         Consumer<ClusterAddress> doRemove = node -> {
             if (DEBUG) {
                 log.debug("Stopped monitoring [node={}]", node);
