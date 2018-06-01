@@ -185,7 +185,7 @@ public class GossipSeedNodesSate {
             .findFirst()
             .ifPresent(s -> {
                 if (log.isWarnEnabled()) {
-                    log.warn("Couldn't contact seed node [address={}, cause={}]", s.address(), "" + cause);
+                    log.warn("Couldn't contact seed node [address={}, cause={}]", s.address(), String.valueOf(cause));
                 }
 
                 s.updateStatus(Status.FAILED);
