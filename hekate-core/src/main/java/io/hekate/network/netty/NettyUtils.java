@@ -20,7 +20,6 @@ import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
 import io.netty.channel.EventLoop;
 import io.netty.util.concurrent.EventExecutorGroup;
-import io.netty.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -48,9 +47,7 @@ public final class NettyUtils {
         if (executor == null) {
             return Waiting.NO_WAIT;
         } else {
-            Future<?> future = executor.shutdownGracefully(GRACEFUL_SHUTDOWN_PERIOD, Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-
-            return future::await;
+            return executor.shutdownGracefully(GRACEFUL_SHUTDOWN_PERIOD, Long.MAX_VALUE, TimeUnit.MILLISECONDS)::await;
         }
     }
 
