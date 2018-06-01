@@ -33,6 +33,7 @@ import java.net.InetSocketAddress;
  * Utilities for data encoding/decoding.
  */
 public final class CodecUtils {
+
     private static final byte DECIMAL_ZERO = 1;
 
     private static final byte DECIMAL_ONE = 2;
@@ -44,6 +45,10 @@ public final class CodecUtils {
     private static final byte DECIMAL_SMALL_SCALED = 5;
 
     private static final byte DECIMAL_BIG = 6;
+
+    private static final int INT_BITS = 31;
+
+    private static final int LONG_BITS = 63;
 
     private CodecUtils() {
         // No-op.
@@ -206,7 +211,7 @@ public final class CodecUtils {
         } else {
             int bits = val.bitLength();
 
-            if (bits <= 63) {
+            if (bits <= LONG_BITS) {
                 out.writeByte(DECIMAL_SMALL_UNSCALED);
 
                 writeVarLong(val.longValue(), out);
@@ -286,7 +291,7 @@ public final class CodecUtils {
 
             int bits = unscaled.bitLength();
 
-            if (bits <= 63) {
+            if (bits <= LONG_BITS) {
                 if (scale == 0) {
                     out.writeByte(DECIMAL_SMALL_UNSCALED);
                 } else {
@@ -368,7 +373,7 @@ public final class CodecUtils {
     // Code borrowed from 'stream-lib' (Apache 2.0 license) - see https://github.com/addthis/stream-lib
     public static void writeVarLong(long value, DataOutput out) throws IOException {
         // Great trick from http://code.google.com/apis/protocolbuffers/docs/encoding.html#types
-        writeVarLongUnsigned(value << 1 ^ value >> 63, out);
+        writeVarLongUnsigned(value << 1 ^ value >> LONG_BITS, out);
     }
 
     /**
@@ -405,7 +410,7 @@ public final class CodecUtils {
     // Code borrowed from 'stream-lib' (Apache 2.0 license) - see https://github.com/addthis/stream-lib
     public static void writeVarInt(int value, DataOutput out) throws IOException {
         // Great trick from http://code.google.com/apis/protocolbuffers/docs/encoding.html#types
-        writeVarIntUnsigned(value << 1 ^ value >> 31, out);
+        writeVarIntUnsigned(value << 1 ^ value >> INT_BITS, out);
     }
 
     /**
@@ -442,11 +447,11 @@ public final class CodecUtils {
     public static long readVarLong(DataInput in) throws IOException {
         long raw = readVarLongUnsigned(in);
         // This undoes the trick in writeVarLong()
-        long temp = (raw << 63 >> 63 ^ raw) >> 1;
+        long temp = (raw << LONG_BITS >> LONG_BITS ^ raw) >> 1;
         // This extra step lets us deal with the largest signed values by treating
         // negative results from read unsigned methods as like unsigned values
         // Must re-flip the top bit if the original read value had it set.
-        return temp ^ raw & 1L << 63;
+        return temp ^ raw & 1L << LONG_BITS;
     }
 
     /**
@@ -469,7 +474,7 @@ public final class CodecUtils {
 
             i += 7;
 
-            if (i > 63) {
+            if (i > LONG_BITS) {
                 throw new StreamCorruptedException("Variable length size is too long");
             }
         }
@@ -490,11 +495,11 @@ public final class CodecUtils {
     public static int readVarInt(DataInput in) throws IOException {
         int raw = readVarIntUnsigned(in);
         // This undoes the trick in writeVarInt()
-        int temp = (raw << 31 >> 31 ^ raw) >> 1;
+        int temp = (raw << INT_BITS >> INT_BITS ^ raw) >> 1;
         // This extra step lets us deal with the largest signed values by treating
         // negative results from read unsigned methods as like unsigned values.
         // Must re-flip the top bit if the original read value had it set.
-        return temp ^ raw & 1 << 31;
+        return temp ^ raw & 1 << INT_BITS;
     }
 
     /**
@@ -517,7 +522,7 @@ public final class CodecUtils {
 
             i += 7;
 
-            if (i > 35) {
+            if (i > INT_BITS) {
                 throw new StreamCorruptedException("Variable length size is too long");
             }
         }
