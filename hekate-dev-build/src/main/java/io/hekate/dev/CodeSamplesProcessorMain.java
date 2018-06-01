@@ -17,14 +17,11 @@
 package io.hekate.dev;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -38,6 +35,8 @@ import static java.util.stream.Collectors.toList;
  * Utility for source code examples inclusion into javadocs.
  */
 public final class CodeSamplesProcessorMain {
+    private static final Charset UTF_8 = Charset.forName("UTF-8");
+
     private static final String NL = System.lineSeparator();
 
     private CodeSamplesProcessorMain() {
@@ -100,11 +99,7 @@ public final class CodeSamplesProcessorMain {
     private static void processFile(File javadocSource, List<File> samplesSrcDirs, StringBuilder buf) throws IOException {
         boolean rewrite = false;
 
-        try (
-            FileInputStream fileIn = new FileInputStream(javadocSource);
-            Reader fileReader = new InputStreamReader(fileIn, "utf-8");
-            BufferedReader reader = new BufferedReader(fileReader)
-        ) {
+        try (BufferedReader reader = Files.newBufferedReader(javadocSource.toPath(), UTF_8)) {
             for (String s = reader.readLine(); s != null; s = reader.readLine()) {
                 int start;
                 int end = -1;
@@ -238,11 +233,7 @@ public final class CodeSamplesProcessorMain {
     }
 
     private static void write(StringBuilder src, File target) throws IOException {
-        try (
-            FileOutputStream fileOut = new FileOutputStream(target);
-            OutputStreamWriter out = new OutputStreamWriter(fileOut, "utf-8")
-        ) {
-
+        try (BufferedWriter out = Files.newBufferedWriter(target.toPath(), UTF_8)) {
             out.append(src);
 
             out.flush();
