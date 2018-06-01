@@ -351,9 +351,6 @@ public class GossipManager {
         assert msg != null : "Message is null.";
         assert msg.to().equals(address) : "Message is addressed to another node [message=" + msg + ']';
 
-        long thisVer = localGossip.version();
-        long otherVer = msg.gossipBase().version();
-
         if (status == DOWN) {
             if (DEBUG) {
                 log.debug("Skipped gossip message since local node is in {} state [message={}]", DOWN, msg);
@@ -363,6 +360,9 @@ public class GossipManager {
         }
 
         // Check gossip state version.
+        long thisVer = localGossip.version();
+        long otherVer = msg.gossipBase().version();
+
         // If versions diverge by more than 1 then we can't track causal history of the gossip state
         // since some DOWN nodes could be completely purged from the gossip state.
         if (Math.abs(thisVer - otherVer) > 1) {
