@@ -90,18 +90,18 @@ class ClusterEventLogger implements ClusterEventListener {
     private String toDetailedString(String eventType, ClusterTopology topology, List<ClusterNode> added, List<ClusterNode> removed) {
         String nl = System.lineSeparator();
 
-        StringBuilder buf = new StringBuilder();
-
-        buf.append(nl);
-
         List<ClusterNode> allNodes = new ArrayList<>(topology.nodes());
 
         if (removed != null) {
             allNodes.addAll(removed);
         }
 
-        buf.append("*** ").append(eventType);
-        buf.append(" [size=").append(topology.size()).append(", version=").append(topology.version()).append("] {").append(nl);
+        StringBuilder buf = new StringBuilder(256)
+            .append(nl)
+            .append("*** ").append(eventType)
+            .append(" [size=").append(topology.size())
+            .append(", version=").append(topology.version())
+            .append("] {").append(nl);
 
         allNodes.stream().sorted(NODES_BY_ADDRESS).forEach(n -> {
             buf.append("      ");
