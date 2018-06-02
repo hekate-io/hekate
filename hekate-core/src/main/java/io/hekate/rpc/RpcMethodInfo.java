@@ -164,10 +164,7 @@ public class RpcMethodInfo {
     }
 
     private static String shortSignature(Method method) {
-        StringBuilder buf = new StringBuilder();
-
-        buf.append(method.getName());
-        buf.append('(');
+        StringBuilder buf = new StringBuilder().append(method.getName()).append('(');
 
         for (Class<?> param : method.getParameterTypes()) {
             if (buf.charAt(buf.length() - 1) != '(') {
