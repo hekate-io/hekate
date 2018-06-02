@@ -229,8 +229,12 @@ public class AddressPattern implements AddressSelector {
     }
 
     private Pattern regex(String pattern) {
-        if (pattern != null && !pattern.trim().isEmpty()) {
-            return Pattern.compile(pattern.trim());
+        if (pattern != null) {
+            pattern = pattern.trim();
+
+            if (!pattern.isEmpty()) {
+                return Pattern.compile(pattern);
+            }
         }
 
         return null;
