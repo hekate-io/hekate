@@ -489,10 +489,10 @@ class DefaultNettyServer implements NettyServer, NettyChannelSupport {
                         }
 
                         if (!startFuture.isDone() && callback != null) {
-                            callback.onStart(DefaultNettyServer.this);
+                            callback.onStart(this);
                         }
 
-                        startFuture.complete(DefaultNettyServer.this);
+                        startFuture.complete(this);
                     }
                 } finally {
                     lock.unlock();

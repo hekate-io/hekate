@@ -587,7 +587,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             }
         }
 
-        deferredMsg.addListener((ChannelFuture result) -> {
+        deferredMsg.addListener(result -> {
             if (metrics != null) {
                 metrics.onMessageDequeue();
             }
@@ -616,7 +616,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             // Notify user callback.
             if (onSend != null) {
                 try {
-                    onSend.onComplete(msg, Optional.ofNullable(result.cause()), NettyServerClient.this);
+                    onSend.onComplete(msg, Optional.ofNullable(result.cause()), this);
                 } catch (Throwable t) {
                     if (log.isErrorEnabled()) {
                         log.error("Failed to notify network message callback [message={}]", msg, t);
