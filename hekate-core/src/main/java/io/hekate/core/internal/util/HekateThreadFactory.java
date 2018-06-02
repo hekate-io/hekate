@@ -36,11 +36,15 @@ public class HekateThreadFactory implements ThreadFactory, ForkJoinWorkerThreadF
     private final String threadName;
 
     public HekateThreadFactory(String threadName) {
-        this(null, threadName);
+        this(threadName, null, true);
     }
 
-    public HekateThreadFactory(String nodeName, String threadName) {
-        this.nodeName = resolveNodeName(nodeName);
+    public HekateThreadFactory(String threadName, String nodeName) {
+        this(threadName, nodeName, true);
+    }
+
+    public HekateThreadFactory(String threadName, String nodeName, boolean inheritNodeName) {
+        this.nodeName = inheritNodeName ? inheritNodeName(nodeName) : null;
         this.threadName = threadName;
     }
 
@@ -58,7 +62,7 @@ public class HekateThreadFactory implements ThreadFactory, ForkJoinWorkerThreadF
         return new HekateForkJoinThread(nodeName, name, pool);
     }
 
-    protected String resolveNodeName(String nodeName) {
+    private String inheritNodeName(String nodeName) {
         if ((nodeName == null || nodeName.isEmpty()) && Thread.currentThread() instanceof HekateNodeNameAwareThread) {
             HekateNodeNameAwareThread parent = (HekateNodeNameAwareThread)Thread.currentThread();
 

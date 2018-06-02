@@ -384,10 +384,10 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
             nodeId = localNodeId;
 
             // Initialize asynchronous task executor.
-            sysWorker = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory(nodeName, "Sys"));
+            sysWorker = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("Sys", nodeName));
 
             // Initialize cluster event manager.
-            clusterEvents.start(new HekateThreadFactory(nodeName, "ClusterEvent"));
+            clusterEvents.start(new HekateThreadFactory("ClusterEvent", nodeName));
 
             notifyOnLifecycleChange();
 

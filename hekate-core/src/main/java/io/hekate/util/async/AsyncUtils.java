@@ -35,12 +35,7 @@ public final class AsyncUtils {
     static final ThreadPoolExecutor FALLBACK_EXECUTOR;
 
     static {
-        HekateThreadFactory factory = new HekateThreadFactory("AsyncFallback") {
-            @Override
-            protected String resolveNodeName(String nodeName) {
-                return null;
-            }
-        };
+        HekateThreadFactory factory = new HekateThreadFactory("AsyncFallback", null, false);
 
         BlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
 
