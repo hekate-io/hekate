@@ -37,9 +37,21 @@ public final class Jvm {
         void exit(int code);
     }
 
-    private static String pid;
+    private static final String PID;
 
     private static volatile ExitHandler exitHandler;
+
+    static {
+        String jvmName = ManagementFactory.getRuntimeMXBean().getName();
+
+        int index = jvmName.indexOf('@');
+
+        if (index < 0) {
+            PID = "";
+        } else {
+            PID = jvmName.substring(0, index);
+        }
+    }
 
     private Jvm() {
         // No-op.
@@ -51,22 +63,7 @@ public final class Jvm {
      * @return PID or an empty string if PID couldn't be resolved.
      */
     public static String pid() {
-        // No synchronization here:
-        // 1) Pid never changes
-        // 1) Extraction is cheap and it is ok if several threads will do it in parallel
-        if (pid == null) {
-            String jvmName = ManagementFactory.getRuntimeMXBean().getName();
-
-            int index = jvmName.indexOf('@');
-
-            if (index < 0) {
-                pid = "";
-            } else {
-                pid = jvmName.substring(0, index);
-            }
-        }
-
-        return pid;
+        return PID;
     }
 
     /**
