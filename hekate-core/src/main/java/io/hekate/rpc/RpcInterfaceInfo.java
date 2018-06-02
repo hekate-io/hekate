@@ -60,7 +60,7 @@ public class RpcInterfaceInfo<T> {
         this.javaType = javaType;
         this.version = version;
         this.minClientVersion = minClientVersion;
-        this.versionedName = name() + ':' + version;
+        this.versionedName = javaType.getName() + ':' + version;
         this.methods = unmodifiableList(StreamUtils.nullSafe(methods).collect(toList()));
     }
 
