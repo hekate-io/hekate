@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -186,7 +187,7 @@ public final class ToString {
         }
 
         private static String formatName(String name) {
-            return FIELD_NAME_PATTERN.matcher(name).replaceAll("$1-$2").toLowerCase();
+            return FIELD_NAME_PATTERN.matcher(name).replaceAll("$1-$2").toLowerCase(Locale.US);
         }
     }
 
