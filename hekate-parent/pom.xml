@@ -380,6 +380,29 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-pmd-plugin</artifactId>
+                        <version>3.9.0</version>
+                        <configuration>
+                            <printFailingErrors>true</printFailingErrors>
+                            <analysisCache>true</analysisCache>
+                            <linkXRef>false</linkXRef>
+                            <rulesets>
+                                <ruleset>${project.parent.basedir}/../pmd/rules.xml</ruleset>
+                            </rulesets>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>check</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
                         <groupId>com.github.spotbugs</groupId>
                         <artifactId>spotbugs-maven-plugin</artifactId>
                         <version>${maven.spotbugs.plugin.version}</version>

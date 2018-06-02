@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2018 The Hekate Project
+  ~
+  ~ The Hekate Project licenses this file to you under the Apache License,
+  ~ version 2.0 (the "License"); you may not use this file except in compliance
+  ~ with the License. You may obtain a copy of the License at:
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  ~ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+  ~ License for the specific language governing permissions and limitations
+  ~ under the License.
+  -->
+
+<ruleset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    name="Android Application Rules"
+    xmlns="http://pmd.sf.net/ruleset/1.0.0"
+    xsi:noNamespaceSchemaLocation="http://pmd.sf.net/ruleset_xml_schema.xsd"
+    xsi:schemaLocation="http://pmd.sf.net/ruleset/1.0.0 http://pmd.sf.net/ruleset_xml_schema.xsd">
+
+    <description>Rules</description>
+
+    <rule ref="category/java/codestyle.xml">
+        <exclude name="LocalVariableCouldBeFinal"/>
+        <exclude name="MethodArgumentCouldBeFinal"/>
+        <exclude name="ShortVariable"/>
+        <exclude name="AvoidPrefixingMethodParameters"/>
+        <exclude name="OnlyOneReturn"/>
+        <exclude name="FieldDeclarationsShouldBeAtStartOfClass"/>
+        <exclude name="LongVariable"/>
+        <exclude name="AtLeastOneConstructor"/>
+        <exclude name="VariableNamingConventions"/>
+        <exclude name="DefaultPackage"/>
+        <exclude name="ShortMethodName"/>
+        <exclude name="CallSuperInConstructor"/>
+        <exclude name="EmptyMethodInAbstractClassShouldBeAbstract"/>
+        <exclude name="TooManyStaticImports"/>
+        <exclude name="AbstractNaming"/>
+        <exclude name="CommentDefaultAccessModifier"/>
+        <exclude name="ShortClassName"/>
+        <exclude name="ConfusingTernary"/>
+    </rule>
+
+    <rule ref="category/java/design.xml">
+        <exclude name="LawOfDemeter"/>
+        <exclude name="NcssCount"/>
+        <exclude name="NPathComplexity"/>
+        <exclude name="CyclomaticComplexity"/>
+        <exclude name="GodClass"/>
+        <exclude name="TooManyMethods"/>
+        <exclude name="DataClass"/>
+        <exclude name="AvoidCatchingGenericException"/>
+        <exclude name="ExcessiveImports"/>
+        <exclude name="ExcessiveClassLength"/>
+        <exclude name="ExcessiveParameterList"/>
+        <exclude name="ExcessiveMethodLength"/>
+        <exclude name="ExcessivePublicCount"/>
+        <exclude name="TooManyFields"/>
+        <exclude name="AvoidDeeplyNestedIfStmts"/>
+        <exclude name="SignatureDeclareThrowsException"/>
+        <exclude name="SwitchDensity"/>
+        <exclude name="CouplingBetweenObjects"/>
+        <exclude name="CollapsibleIfStatements"/>
+        <exclude name="UseUtilityClass"/>
+        <exclude name="AvoidRethrowingException"/>
+        <exclude name="LoosePackageCoupling"/>
+    </rule>
+
+    <rule ref="category/java/documentation.xml/UncommentedEmptyConstructor"/>
+    <rule ref="category/java/documentation.xml/UncommentedEmptyMethodBody"/>
+
+    <rule ref="category/java/errorprone.xml">
+        <exclude name="NullAssignment"/>
+        <exclude name="DataflowAnomalyAnalysis"/>
+        <exclude name="BeanMembersShouldSerialize"/>
+        <exclude name="AvoidFieldNameMatchingMethodName"/>
+        <exclude name="AvoidDuplicateLiterals"/>
+        <exclude name="CompareObjectsWithEquals"/>
+        <exclude name="AvoidCatchingThrowable"/>
+        <exclude name="MissingBreakInSwitch"/>
+        <exclude name="AvoidFieldNameMatchingTypeName"/>
+        <exclude name="UseProperClassLoader"/>
+        <exclude name="LoggerIsNotStaticFinal"/>
+        <exclude name="AvoidLiteralsInIfCondition"/>
+        <exclude name="ConstructorCallsOverridableMethod"/>
+        <!-- TODO: Disabled because of https://github.com/pmd/pmd/issues/253 -->
+        <exclude name="InvalidSlf4jMessageFormat"/>
+    </rule>
+
+    <rule ref="category/java/errorprone.xml/EmptyCatchBlock">
+        <properties>
+            <property name="allowCommentedBlocks">
+                <value>true</value>
+            </property>
+        </properties>
+    </rule>
+
+    <rule ref="category/java/errorprone.xml/AssignmentInOperand">
+        <properties>
+            <property name="allowWhile">
+                <value>true</value>
+            </property>
+            <property name="allowFor">
+                <value>true</value>
+            </property>
+        </properties>
+    </rule>
+
+    <rule ref="category/java/multithreading.xml">
+        <exclude name="AvoidUsingVolatile"/>
+        <exclude name="DoNotUseThreads"/>
+        <exclude name="AvoidSynchronizedAtMethodLevel"/>
+        <exclude name="UseConcurrentHashMap"/>
+    </rule>
+
+    <rule ref="category/java/performance.xml">
+        <exclude name="AvoidInstantiatingObjectsInLoops"/>
+        <exclude name="SimplifyStartsWith"/>
+        <exclude name="AvoidUsingShortType"/>
+        <exclude name="UseStringBufferForStringAppends"/>
+    </rule>
+
+    <rule ref="category/java/security.xml"/>
+
+    <rule ref="category/java/bestpractices.xml">
+        <exclude name="UnusedImports"/>
+        <exclude name="SystemPrintln"/>
+        <exclude name="AccessorMethodGeneration"/>
+        <exclude name="OneDeclarationPerLine"/>
+        <exclude name="AvoidReassigningParameters"/>
+        <exclude name="PreserveStackTrace"/>
+        <exclude name="MethodReturnsInternalArray"/>
+        <exclude name="ArrayIsStoredDirectly"/>
+        <exclude name="AvoidUsingHardCodedIP"/>
+        <exclude name="ForLoopCanBeForeach"/>
+        <exclude name="LooseCoupling"/>
+        <exclude name="AbstractClassWithoutAbstractMethod"/>
+        <exclude name="ReplaceHashtableWithMap"/>
+        <exclude name="UseVarargs"/>
+        <exclude name="JUnit4TestShouldUseTestAnnotation"/>
+        <exclude name="JUnit4TestShouldUseBeforeAnnotation"/>
+        <exclude name="JUnit4TestShouldUseAfterAnnotation"/>
+    </rule>
+
+    <rule ref="category/java/bestpractices.xml/GuardLogStatement">
+        <properties>
+            <property name="logLevels">
+                <value>trace, debug</value>
+            </property>
+            <property name="guardsMethods">
+                <value>TRACE, DEBUG</value>
+            </property>
+        </properties>
+    </rule>
+</ruleset>
