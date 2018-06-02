@@ -60,7 +60,10 @@ import org.jclouds.domain.Credentials;
 public class AwsCredentialsSupplier extends BasicCredentialsSupplier {
     @Override
     public Credentials get() {
-        if (getIdentity() == null || getIdentity().trim().isEmpty() || getCredential() == null || getCredential().trim().isEmpty()) {
+        String identity = getIdentity() != null ? getIdentity().trim() : null;
+        String credential = getCredential() != null ? getCredential().trim() : null;
+
+        if (identity == null || identity.isEmpty() || credential == null || credential.isEmpty()) {
             DefaultAWSCredentialsProviderChain chain = new DefaultAWSCredentialsProviderChain();
 
             AWSCredentials cred = chain.getCredentials();

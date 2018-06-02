@@ -281,8 +281,12 @@ public class CloudSeedNodeProvider implements SeedNodeProvider {
             builder.overrides(properties);
         }
 
-        if (endpoint != null && !endpoint.trim().isEmpty()) {
-            builder.endpoint(endpoint.trim());
+        if (endpoint != null) {
+            String trimmedEndpoint = endpoint.trim();
+
+            if (!trimmedEndpoint.isEmpty()) {
+                builder.endpoint(trimmedEndpoint);
+            }
         }
 
         try (ComputeServiceContext ctx = builder.buildView(ComputeServiceContext.class)) {

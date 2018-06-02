@@ -167,10 +167,10 @@ public class CloudWatchMetricsPlugin implements Plugin {
         AmazonCloudWatchClientBuilder cloudWatchBuilder = AmazonCloudWatchClientBuilder.standard();
 
         // Resolve credentials.
-        String accessKey = cfg.getAccessKey();
-        String secretKey = cfg.getSecretKey();
+        String accessKey = cfg.getAccessKey() != null ? cfg.getAccessKey().trim() : null;
+        String secretKey = cfg.getSecretKey() != null ? cfg.getSecretKey().trim() : null;
 
-        if (accessKey != null && !accessKey.trim().isEmpty() && secretKey != null && !secretKey.trim().isEmpty()) {
+        if (accessKey != null && !accessKey.isEmpty() && secretKey != null && !secretKey.isEmpty()) {
             // Use pre-configured credentials.
             cloudWatchBuilder.withCredentials(
                 new AWSStaticCredentialsProvider(
