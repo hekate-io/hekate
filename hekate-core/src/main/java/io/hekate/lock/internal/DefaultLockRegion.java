@@ -742,12 +742,12 @@ class DefaultLockRegion implements LockRegion {
             }
 
             if (needToWait) {
+                // Await and re-run the loop.
                 initMigration.await();
-
-                continue;
+            } else {
+                // Done waiting.
+                break;
             }
-
-            break;
         }
 
         return true;
