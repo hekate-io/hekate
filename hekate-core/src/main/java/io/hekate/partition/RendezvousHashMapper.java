@@ -52,7 +52,7 @@ public final class RendezvousHashMapper implements PartitionMapper {
 
         private int backupNodes;
 
-        private Builder(ClusterTopologySupport cluster) {
+        Builder(ClusterTopologySupport cluster) {
             this.cluster = cluster;
         }
 
@@ -264,7 +264,7 @@ public final class RendezvousHashMapper implements PartitionMapper {
     @SuppressWarnings("unused") // <-- Updated via AtomicReferenceFieldUpdater.
     private volatile PartitionMapperSnapshot snapshot;
 
-    private RendezvousHashMapper(int size, int backupSize, ClusterTopologySupport cluster) {
+    RendezvousHashMapper(int size, int backupSize, ClusterTopologySupport cluster) {
         ArgAssert.positive(size, "size");
         ArgAssert.powerOfTwo(size, "size");
         ArgAssert.notNull(cluster, "cluster");
