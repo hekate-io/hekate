@@ -20,6 +20,7 @@ import io.hekate.cluster.ClusterFilterSupport;
 import io.hekate.cluster.ClusterView;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverPolicyBuilder;
+import io.hekate.partition.PartitionMapper;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -150,4 +151,27 @@ public interface RpcClientBuilder<T> extends ClusterFilterSupport<RpcClientBuild
      * @return Cluster view of this builder.
      */
     ClusterView cluster();
+
+    /**
+     * Returns the partition mapper that RPC client will use to map {@link RpcAffinityKey affinity keys} to the cluster nodes.
+     *
+     * @return Mapper.
+     *
+     * @see RpcClientConfig#setPartitions(int)
+     * @see RpcClientConfig#setBackupNodes(int)
+     * @see #withPartitions(int, int)
+     */
+    PartitionMapper partitions();
+
+    /**
+     * Returns a new builder that will apply the specified partitions mapping options to all of the clients that it will produce..
+     *
+     * @param partitions Total amount of partitions that should be managed by the RPC client's partition mapper.
+     * @param backupNodes Amount of backup nodes that should be assigned to each partition by the the RPC client's partition mapper.
+     *
+     * @return New builder that will apply the specified partitions mapping options to all of the clients that it will produce..
+     *
+     * @see #partitions()
+     */
+    RpcClientBuilder<T> withPartitions(int partitions, int backupNodes);
 }

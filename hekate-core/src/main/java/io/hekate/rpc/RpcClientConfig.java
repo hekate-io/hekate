@@ -17,6 +17,8 @@
 package io.hekate.rpc;
 
 import io.hekate.failover.FailoverPolicy;
+import io.hekate.partition.Partition;
+import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -56,6 +58,10 @@ public class RpcClientConfig {
     private FailoverPolicy failover;
 
     private RpcLoadBalancer loadBalancer;
+
+    private int partitions = RendezvousHashMapper.DEFAULT_PARTITIONS;
+
+    private int backupNodes;
 
     private long timeout;
 
@@ -196,6 +202,88 @@ public class RpcClientConfig {
      */
     public RpcClientConfig withLoadBalancer(RpcLoadBalancer loadBalancer) {
         setLoadBalancer(loadBalancer);
+
+        return this;
+    }
+
+    /**
+     * Returns the total amount of partitions that should be managed by the RPC client's {@link RpcClientBuilder#partitions() partition
+     * mapper} (see {@link #setPartitions(int)}).
+     *
+     * @return Total amount of partitions.
+     */
+    public int getPartitions() {
+        return partitions;
+    }
+
+    /**
+     * Sets the total amount of partitions that should be managed by the RPC client's
+     * {@link RpcClientBuilder#partitions() partition mapper}.
+     *
+     * <p>
+     * Value of this parameter must be above zero and must be a power of two.
+     * Default value is specified by {@link RendezvousHashMapper#DEFAULT_PARTITIONS}.
+     * </p>
+     *
+     * @param partitions Total amount of partitions that should be managed by the RPC client's partition mapper (value must be a power of
+     * two).
+     */
+    public void setPartitions(int partitions) {
+        this.partitions = partitions;
+    }
+
+    /**
+     * Fluent-style version of {@link #setPartitions(int)}.
+     *
+     * @param partitions Total amount of partitions that should be managed by the RPC client's partition mapper (value must be a power of
+     * two).
+     *
+     * @return This instance.
+     */
+    public RpcClientConfig withPartitions(int partitions) {
+        setPartitions(partitions);
+
+        return this;
+    }
+
+    /**
+     * Returns the amount of backup nodes that should be assigned to each partition by the the RPC client's
+     * {@link RpcClientBuilder#partitions() partition mapper} (see {@link #setBackupNodes(int)}).
+     *
+     * @return Amount of backup nodes.
+     */
+    public int getBackupNodes() {
+        return backupNodes;
+    }
+
+    /**
+     * Sets the amount of backup nodes that should be assigned to each partition by the the RPC client's
+     * {@link RpcClientBuilder#partitions() partition mapper}.
+     *
+     * <p>
+     * If value of this parameter is zero then the RPC client's mapper will not manage {@link Partition#backupNodes() backup nodes}.
+     * If value of this parameter is negative then all available cluster nodes will be used as {@link Partition#backupNodes() backup nodes}.
+     * </p>
+     *
+     * <p>
+     * Default value of this parameter is 0 (i.e. backup nodes management is disabled).
+     * </p>
+     *
+     * @param backupNodes Amount of backup nodes that should be assigned to each partition of the RPC client's partition mapper.
+     */
+    public void setBackupNodes(int backupNodes) {
+        this.backupNodes = backupNodes;
+    }
+
+    /**
+     * Fluent-style version of {@link #setBackupNodes(int)}.
+     *
+     * @param backupNodes Amount of backup nodes that should be assigned to each partition of the RPC client's partition mapper.
+     *
+     * @return This instance.
+     */
+    public RpcClientConfig withBackupNodes(int backupNodes) {
+        setBackupNodes(backupNodes);
 
         return this;
     }

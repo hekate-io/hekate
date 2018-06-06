@@ -18,6 +18,7 @@ package io.hekate.rpc;
 
 import io.hekate.HekateTestBase;
 import io.hekate.failover.FailoverPolicy;
+import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
 import org.junit.Test;
 
@@ -111,6 +112,32 @@ public class RpcClientConfigTest extends HekateTestBase {
         assertSame(cfg, cfg.withTimeout(10002));
 
         assertEquals(10002, cfg.getTimeout());
+    }
+
+    @Test
+    public void testPartitions() {
+        assertEquals(RendezvousHashMapper.DEFAULT_PARTITIONS, cfg.getPartitions());
+
+        cfg.setPartitions(RendezvousHashMapper.DEFAULT_PARTITIONS * 2);
+
+        assertEquals(RendezvousHashMapper.DEFAULT_PARTITIONS * 2, cfg.getPartitions());
+
+        assertSame(cfg, cfg.withPartitions(RendezvousHashMapper.DEFAULT_PARTITIONS / 2));
+
+        assertEquals(RendezvousHashMapper.DEFAULT_PARTITIONS / 2, cfg.getPartitions());
+    }
+
+    @Test
+    public void testBackupNodes() {
+        assertEquals(0, cfg.getBackupNodes());
+
+        cfg.setBackupNodes(10001);
+
+        assertEquals(10001, cfg.getBackupNodes());
+
+        assertSame(cfg, cfg.withBackupNodes(10002));
+
+        assertEquals(10002, cfg.getBackupNodes());
     }
 
     @Test

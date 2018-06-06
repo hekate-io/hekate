@@ -21,6 +21,7 @@ import io.hekate.core.internal.HekateTestNode;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
+import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcClientBuilder;
 import io.hekate.rpc.RpcClientConfig;
@@ -310,6 +311,8 @@ public class RpcServiceTest extends RpcServiceTestBase {
                     .withLoadBalancer(lb)
                     .withTimeout(100500)
                     .withFailover(fp)
+                    .withPartitions(RendezvousHashMapper.DEFAULT_PARTITIONS * 2)
+                    .withBackupNodes(100500)
                 )
             )
         ).join();
@@ -320,6 +323,8 @@ public class RpcServiceTest extends RpcServiceTestBase {
         assertEquals("test-tag", builder.tag());
         assertSame(fp, builder.failover());
         assertEquals(100500, builder.timeout());
+        assertEquals(RendezvousHashMapper.DEFAULT_PARTITIONS * 2, builder.partitions().partitions());
+        assertEquals(100500, builder.partitions().backupNodes());
 
         builder.build().callA();
 

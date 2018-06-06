@@ -22,6 +22,7 @@ import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.partition.PartitionMapper;
 import io.hekate.rpc.RpcClientBuilder;
 import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcLoadBalancer;
@@ -84,6 +85,16 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
     @Override
     public RpcClientBuilder<T> filterAll(ClusterFilter filter) {
         return new DefaultRpcClientBuilder<>(type, tag, channel.filterAll(filter));
+    }
+
+    @Override
+    public PartitionMapper partitions() {
+        return channel.partitions();
+    }
+
+    @Override
+    public RpcClientBuilder<T> withPartitions(int partitions, int backupNodes) {
+        return new DefaultRpcClientBuilder<>(type, tag, channel.withPartitions(partitions, backupNodes));
     }
 
     @Override

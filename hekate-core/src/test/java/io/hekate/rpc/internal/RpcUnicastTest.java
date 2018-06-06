@@ -21,8 +21,10 @@ import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.MessagingRemoteException;
+import io.hekate.partition.PartitionMapper;
 import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcAffinityKey;
+import io.hekate.rpc.RpcClientBuilder;
 import io.hekate.rpc.RpcException;
 import io.hekate.rpc.RpcServerConfig;
 import io.hekate.rpc.RpcServiceFactory;
@@ -239,6 +241,42 @@ public class RpcUnicastTest extends RpcServiceTestBase {
                 proxy.call("2");
 
                 verify(rpc2).call("2");
+            }
+
+            verifyNoMoreInteractions(rpc1, rpc2);
+            reset(rpc1, rpc2);
+        });
+    }
+
+    @Test
+    public void testPartitions() throws Exception {
+        TestAffinityRpc rpc1 = mock(TestAffinityRpc.class);
+        TestAffinityRpc rpc2 = mock(TestAffinityRpc.class);
+
+        ClientAndServers testCtx = prepareClientAndServers(rpc1, rpc2);
+
+        RpcClientBuilder<TestAffinityRpc> builder = testCtx.client().rpc().clientFor(TestAffinityRpc.class);
+
+        PartitionMapper oldMapper = builder.partitions();
+
+        builder = builder.withPartitions(oldMapper.partitions() * 2, oldMapper.backupNodes() + 3);
+
+        PartitionMapper newMapper = builder.partitions();
+
+        assertEquals(oldMapper.partitions() * 2, newMapper.partitions());
+        assertEquals(oldMapper.backupNodes() + 3, newMapper.backupNodes());
+
+        TestAffinityRpc proxy = builder.build();
+
+        repeat(50, i -> {
+            String arg = String.valueOf(i);
+
+            proxy.call(arg);
+
+            if (newMapper.map(arg).primaryNode().equals(testCtx.servers().get(0).localNode())) {
+                verify(rpc1).call(arg);
+            } else {
+                verify(rpc2).call(arg);
             }
 
             verifyNoMoreInteractions(rpc1, rpc2);

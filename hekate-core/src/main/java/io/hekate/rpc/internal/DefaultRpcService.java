@@ -321,7 +321,9 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
             clientConfigs.forEach(cfg -> {
                 RpcTypeKey key = new RpcTypeKey(cfg.getRpcInterface(), cfg.getTag());
 
-                RpcClientBuilder<?> client = createClient(key).withTimeout(cfg.getTimeout(), TimeUnit.MILLISECONDS);
+                RpcClientBuilder<?> client = createClient(key)
+                    .withTimeout(cfg.getTimeout(), TimeUnit.MILLISECONDS)
+                    .withPartitions(cfg.getPartitions(), cfg.getBackupNodes());
 
                 if (cfg.getFailover() != null) {
                     client = client.withFailover(cfg.getFailover());
