@@ -178,6 +178,17 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
+    public MessagingChannel<T> withPartitions(int partitions, int backupNodes) {
+        if (partitions().partitions() == partitions && partitions().backupNodes() == backupNodes) {
+            return this;
+        }
+
+        RendezvousHashMapper newPartitions = RendezvousHashMapper.of(cluster, partitions, backupNodes);
+
+        return new DefaultMessagingChannel<>(gateway, cluster, newPartitions, balancer, failover, timeout, affinityKey);
+    }
+
+    @Override
     public DefaultMessagingChannel<T> withLoadBalancer(LoadBalancer<T> balancer) {
         ArgAssert.notNull(balancer, "balancer");
 

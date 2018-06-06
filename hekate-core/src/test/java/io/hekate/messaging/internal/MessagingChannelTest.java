@@ -38,6 +38,7 @@ import static org.hamcrest.CoreMatchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
@@ -239,7 +240,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testGetAffinity() throws Exception {
+    public void testAffinity() throws Exception {
         MessagingChannel<String> channel = createChannel().join().get();
 
         assertNull(channel.affinity());
@@ -259,7 +260,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testGetFailover() throws Exception {
+    public void testFailover() throws Exception {
         MessagingChannel<String> channel = createChannel().join().get();
 
         assertNull(channel.failover());
@@ -283,7 +284,30 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testGetTimeout() throws Exception {
+    public void testPartitions() throws Exception {
+        MessagingChannel<String> channel1 = createChannel(cfg -> cfg
+            .withPartitions(64)
+            .withBackupNodes(12)
+        ).join().get();
+
+        assertNotNull(channel1.partitions());
+        assertEquals(64, channel1.partitions().partitions());
+        assertEquals(12, channel1.partitions().backupNodes());
+
+        MessagingChannel<String> channel2 = channel1.withPartitions(128, 6);
+
+        assertNotSame(channel1, channel2);
+        assertNotSame(channel1.partitions(), channel2.partitions());
+
+        assertEquals(128, channel2.partitions().partitions());
+        assertEquals(6, channel2.partitions().backupNodes());
+
+        // Should return self if request partitions and backup nodes are the same with the current one.
+        assertSame(channel2, channel2.withPartitions(128, 6));
+    }
+
+    @Test
+    public void testTimeout() throws Exception {
         MessagingChannel<String> channel = createChannel().join().get();
 
         assertEquals(0, channel.timeout());

@@ -290,6 +290,19 @@ public final class RendezvousHashMapper implements PartitionMapper {
     }
 
     /**
+     * Constructs a new mapper.
+     *
+     * @param cluster Cluster topology that should be used for partitions mapping.
+     * @param partitions See {@link Builder#withPartitions(int)}
+     * @param backupNodes See {@link Builder#withBackupNodes(int)}
+     *
+     * @return New mapper.
+     */
+    public static RendezvousHashMapper of(ClusterTopologySupport cluster, int partitions, int backupNodes) {
+        return new RendezvousHashMapper(partitions, backupNodes, cluster);
+    }
+
+    /**
      * Returns a copy of this mapper that will use the specified cluster topology and will inherit all other configuration options from this
      * instance.
      *

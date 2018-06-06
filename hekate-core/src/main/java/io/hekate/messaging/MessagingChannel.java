@@ -257,8 +257,24 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * Returns the partition mapper that this channel uses to map {@link #withAffinity(Object) affinity keys} to the cluster nodes.
      *
      * @return Mapper.
+     *
+     * @see MessagingChannelConfig#setPartitions(int)
+     * @see MessagingChannelConfig#setBackupNodes(int)
+     * @see #withPartitions(int, int)
      */
     PartitionMapper partitions();
+
+    /**
+     * Returns a copy of this channel that will use a {@link PartitionMapper} with the specified options.
+     *
+     * @param partitions Total amount of partitions that should be managed by the channel's partition mapper.
+     * @param backupNodes Amount of backup nodes that should be assigned to each partition by the the channel's partition mapper.
+     *
+     * @return Channel wrapper.
+     *
+     * @see #partitions()
+     */
+    MessagingChannel<T> withPartitions(int partitions, int backupNodes);
 
     /**
      * Returns a copy of this channel that will use the specified failover policy and will inherit all other options from this instance.
