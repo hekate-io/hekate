@@ -26,6 +26,8 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
+import io.hekate.util.format.ToString;
+import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.ExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,20 +39,28 @@ class DefaultCoordinationProcess implements CoordinationProcess {
 
     private final String name;
 
+    @ToStringIgnore
     private final CoordinationHandler handler;
 
+    @ToStringIgnore
     private final ExecutorService async;
 
+    @ToStringIgnore
     private final MessagingChannel<CoordinationProtocol> channel;
 
+    @ToStringIgnore
     private final long failoverDelay;
 
+    @ToStringIgnore
     private final StateGuard guard = new StateGuard(DefaultCoordinationProcess.class);
 
+    @ToStringIgnore
     private final CoordinationFuture future = new CoordinationFuture();
 
+    @ToStringIgnore
     private final HekateSupport hekate;
 
+    @ToStringIgnore
     private DefaultCoordinationContext ctx;
 
     public DefaultCoordinationProcess(String name, HekateSupport hekate, CoordinationHandler handler, ExecutorService async,
@@ -241,5 +251,10 @@ class DefaultCoordinationProcess implements CoordinationProcess {
     @SuppressWarnings("unchecked")
     public <T extends CoordinationHandler> T handler() {
         return (T)handler;
+    }
+
+    @Override
+    public String toString() {
+        return ToString.format(CoordinationProcess.class, this);
     }
 }
