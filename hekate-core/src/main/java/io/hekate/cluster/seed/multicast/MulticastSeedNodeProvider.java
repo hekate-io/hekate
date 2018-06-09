@@ -231,102 +231,98 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
 
         SeedNode thisNode = new SeedNode(address, cluster);
 
-        NetworkInterface nif = selectMulticastInterface(address);
-
         try {
-            synchronized (mux) {
-                if (isRegistered()) {
-                    throw new IllegalStateException("Multicast seed node provider is already registered with another address "
-                        + "[existing=" + localNode + ']');
-                }
+            NetworkInterface nif = selectMulticastInterface(address);
 
-                ByteBuf discoveryMsg = prepareDiscovery(thisNode);
-
-                ByteBuf seedNodeInfoBytes = prepareSeedNodeInfo(thisNode);
-
-                localNode = thisNode;
-
-                seedNodes = new HashSet<>();
-
-                eventLoop = new NioEventLoopGroup(1, new HekateThreadFactory("SeedNodeMulticast"));
-
-                // Prepare common bootstrap options.
-                Bootstrap bootstrap = new Bootstrap();
-
-                bootstrap.option(ChannelOption.SO_REUSEADDR, true);
-                bootstrap.option(ChannelOption.IP_MULTICAST_TTL, ttl);
-                bootstrap.option(ChannelOption.IP_MULTICAST_IF, nif);
-
-                if (loopBackDisabled) {
-                    bootstrap.option(ChannelOption.IP_MULTICAST_LOOP_DISABLED, true);
-
-                    if (DEBUG) {
-                        log.debug("Setting {} option to true", ChannelOption.IP_MULTICAST_LOOP_DISABLED);
-                    }
-                }
-
-                bootstrap.group(eventLoop);
-                bootstrap.channelFactory(() -> new NioDatagramChannel(ipVer));
-
-                // Create a sender channel (not joined to a multicast group).
-                bootstrap.localAddress(0);
-                bootstrap.handler(createSenderHandler(thisNode));
-
-                ChannelFuture senderBind = bootstrap.bind();
-
-                DatagramChannel localSender = (DatagramChannel)senderBind.channel();
-
-                sender = localSender;
-
-                senderBind.get();
-
-                // Create a listener channel and join to a multicast group.
-                bootstrap.localAddress(group.getPort());
-
-                bootstrap.handler(createListenerHandler(thisNode, seedNodeInfoBytes));
-
-                ChannelFuture listenerBind = bootstrap.bind();
-
-                listener = (DatagramChannel)listenerBind.channel();
-
-                listenerBind.get();
-
-                log.info("Joining to a multicast group "
-                    + "[address={}, port={}, interface={}, ttl={}]", AddressUtils.host(group), group.getPort(), nif.getName(), ttl);
-
-                listener.joinGroup(group, nif).get();
-
-                // Create a periodic task for discovery messages sending.
-                discoveryFuture = eventLoop.scheduleWithFixedDelay(() -> {
-                    if (DEBUG) {
-                        log.debug("Sending discovery message [from={}]", thisNode);
+            try {
+                synchronized (mux) {
+                    if (isRegistered()) {
+                        throw new IllegalStateException("Multicast seed node provider is already registered with another address "
+                            + "[existing=" + localNode + ']');
                     }
 
-                    DatagramPacket discovery = new DatagramPacket(discoveryMsg.copy(), group);
+                    ByteBuf discoveryMsg = prepareDiscovery(thisNode);
 
-                    localSender.writeAndFlush(discovery);
-                }, 0, interval, TimeUnit.MILLISECONDS);
+                    ByteBuf seedNodeInfoBytes = prepareSeedNodeInfo(thisNode);
+
+                    localNode = thisNode;
+
+                    seedNodes = new HashSet<>();
+
+                    eventLoop = new NioEventLoopGroup(1, new HekateThreadFactory("SeedNodeMulticast"));
+
+                    // Prepare common bootstrap options.
+                    Bootstrap bootstrap = new Bootstrap();
+
+                    bootstrap.option(ChannelOption.SO_REUSEADDR, true);
+                    bootstrap.option(ChannelOption.IP_MULTICAST_TTL, ttl);
+                    bootstrap.option(ChannelOption.IP_MULTICAST_IF, nif);
+
+                    if (loopBackDisabled) {
+                        bootstrap.option(ChannelOption.IP_MULTICAST_LOOP_DISABLED, true);
+
+                        if (DEBUG) {
+                            log.debug("Setting {} option to true", ChannelOption.IP_MULTICAST_LOOP_DISABLED);
+                        }
+                    }
+
+                    bootstrap.group(eventLoop);
+                    bootstrap.channelFactory(() -> new NioDatagramChannel(ipVer));
+
+                    // Create a sender channel (not joined to a multicast group).
+                    bootstrap.localAddress(0);
+                    bootstrap.handler(createSenderHandler(thisNode));
+
+                    ChannelFuture senderBind = bootstrap.bind();
+
+                    DatagramChannel localSender = (DatagramChannel)senderBind.channel();
+
+                    sender = localSender;
+
+                    senderBind.get();
+
+                    // Create a listener channel and join to a multicast group.
+                    bootstrap.localAddress(group.getPort());
+
+                    bootstrap.handler(createListenerHandler(thisNode, seedNodeInfoBytes));
+
+                    ChannelFuture listenerBind = bootstrap.bind();
+
+                    listener = (DatagramChannel)listenerBind.channel();
+
+                    listenerBind.get();
+
+                    log.info("Joining to a multicast group "
+                        + "[address={}, port={}, interface={}, ttl={}]", AddressUtils.host(group), group.getPort(), nif.getName(), ttl);
+
+                    listener.joinGroup(group, nif).get();
+
+                    // Create a periodic task for discovery messages sending.
+                    discoveryFuture = eventLoop.scheduleWithFixedDelay(() -> {
+                        if (DEBUG) {
+                            log.debug("Sending discovery message [from={}]", thisNode);
+                        }
+
+                        DatagramPacket discovery = new DatagramPacket(discoveryMsg.copy(), group);
+
+                        localSender.writeAndFlush(discovery);
+                    }, 0, interval, TimeUnit.MILLISECONDS);
+                }
+            } catch (ExecutionException e) {
+                cleanup();
+
+                throw new HekateException("Failed to start a multicast seed nodes discovery [node=" + thisNode + ']', e.getCause());
             }
+
+            log.info("Will wait for seed nodes [timeout={}(ms)]", waitTime);
+
+            Thread.sleep(waitTime);
         } catch (InterruptedException e) {
             cleanup();
 
             Thread.currentThread().interrupt();
 
             throw new HekateException("Thread was interrupted while awaiting for multicast discovery [node=" + thisNode + ']', e);
-        } catch (ExecutionException e) {
-            cleanup();
-
-            throw new HekateException("Failed to start a multicast seed nodes discovery [node=" + thisNode + ']', e.getCause());
-        }
-
-        log.info("Will wait for seed nodes [timeout={}(ms)]", waitTime);
-
-        try {
-            Thread.sleep(waitTime);
-        } catch (InterruptedException e) {
-            log.warn("Thread was interrupted while awaiting for seed nodes discovery.");
-
-            Thread.currentThread().interrupt();
         }
 
         log.info("Done waiting for seed nodes.");
