@@ -137,6 +137,8 @@ public class RendezvousHashMapperTest extends HekateNodeTestBase {
                 for (int k = 0; k < values; k++) {
                     Partition partition = mapper.map(k);
 
+                    assertSame(partition, mapper.partition(partition.id()));
+
                     assertEquals(Math.min(i, nodes.size() - 1), partition.backupNodes().size());
                     assertEquals(Math.min(i + 1, nodes.size()), partition.nodes().size());
 

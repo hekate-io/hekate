@@ -139,7 +139,7 @@ public final class RendezvousHashMapper implements PartitionMapper {
         }
     }
 
-    private static class PartitionMapperSnapshot implements PartitionMapper {
+    private static class Snapshot implements PartitionMapper {
         private final int backupSize;
 
         @ToStringIgnore
@@ -151,7 +151,7 @@ public final class RendezvousHashMapper implements PartitionMapper {
         @ToStringIgnore
         private final int maxPid;
 
-        public PartitionMapperSnapshot(int size, int backupSize, ClusterTopology topology) {
+        public Snapshot(int size, int backupSize, ClusterTopology topology) {
             assert size > 0 : "Partitions size is less than or equals to zero [size=" + size + ']';
             assert Utils.isPowerOfTwo(size) : "Partitions size must be a power of two [size=" + size + ']';
             assert topology != null : "Topology is null.";
@@ -175,6 +175,11 @@ public final class RendezvousHashMapper implements PartitionMapper {
 
             int pid = maxPid & hash;
 
+            return partition(pid);
+        }
+
+        @Override
+        public Partition partition(int pid) {
             Partition partition = partitions.get(pid);
 
             if (partition == null) {
@@ -247,9 +252,9 @@ public final class RendezvousHashMapper implements PartitionMapper {
     /** Default value (={@value}) for {@link Builder#withPartitions(int)}. */
     public static final int DEFAULT_PARTITIONS = 256;
 
-    private static final AtomicReferenceFieldUpdater<RendezvousHashMapper, PartitionMapperSnapshot> SNAPSHOT = newUpdater(
+    private static final AtomicReferenceFieldUpdater<RendezvousHashMapper, Snapshot> SNAPSHOT = newUpdater(
         RendezvousHashMapper.class,
-        PartitionMapperSnapshot.class,
+        Snapshot.class,
         "snapshot"
     );
 
@@ -262,7 +267,7 @@ public final class RendezvousHashMapper implements PartitionMapper {
 
     @ToStringIgnore
     @SuppressWarnings("unused") // <-- Updated via AtomicReferenceFieldUpdater.
-    private volatile PartitionMapperSnapshot snapshot;
+    private volatile Snapshot snapshot;
 
     RendezvousHashMapper(int size, int backupSize, ClusterTopologySupport cluster) {
         ArgAssert.positive(size, "size");
@@ -330,6 +335,11 @@ public final class RendezvousHashMapper implements PartitionMapper {
     }
 
     @Override
+    public Partition partition(int id) {
+        return snapshot().partition(id);
+    }
+
+    @Override
     public int backupNodes() {
         return backupSize;
     }
@@ -342,14 +352,14 @@ public final class RendezvousHashMapper implements PartitionMapper {
     @Override
     public PartitionMapper snapshot() {
         while (true) {
-            PartitionMapperSnapshot localSnapshot = this.snapshot;
+            Snapshot localSnapshot = this.snapshot;
 
             ClusterTopology topology = cluster.topology();
 
             if (localSnapshot != null && localSnapshot.topology().version() >= topology.version()) {
                 return localSnapshot;
             } else {
-                PartitionMapperSnapshot newSnapshot = new PartitionMapperSnapshot(size, backupSize, topology);
+                Snapshot newSnapshot = new Snapshot(size, backupSize, topology);
 
                 if (SNAPSHOT.compareAndSet(this, localSnapshot, newSnapshot)) {
                     return newSnapshot;

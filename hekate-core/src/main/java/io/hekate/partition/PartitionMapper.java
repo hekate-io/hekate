@@ -71,6 +71,15 @@ public interface PartitionMapper {
     int partitions();
 
     /**
+     * Returns a partition for the specified {@link Partition#id()}.
+     *
+     * @param id See {@link Partition#id()}.
+     *
+     * @return Partition.
+     */
+    Partition partition(int id);
+
+    /**
      * Returns the amount of backup nodes that should be assigned to each partition.
      *
      * @return Amount of backup nodes that should be assigned to each partition.
