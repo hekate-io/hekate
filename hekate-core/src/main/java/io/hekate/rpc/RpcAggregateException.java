@@ -87,8 +87,7 @@ public class RpcAggregateException extends RpcException {
             .forEach(e -> buf.append(NEW_LINE)
                 .append(PADDING)
                 .append(e.getKey()).append(" -> ")
-                .append(e.getValue())
-            );
+                .append(e.getValue()));
 
         if (errors.size() > MAX_ERRORS_IN_SUMMARY) {
             buf.append(NEW_LINE)
