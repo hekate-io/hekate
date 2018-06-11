@@ -31,11 +31,11 @@ import java.util.Map;
 public class RpcAggregateException extends RpcException {
     private static final long serialVersionUID = 1L;
 
-    private static final int MAX_ERRORS_IN_SUMMARY = 1;
+    private static final int MAX_ERRORS_IN_SUMMARY = 3;
 
     private static final String PADDING = "    ";
 
-    private static final String NEW_LINE = System.lineSeparator() + PADDING;
+    private static final String NEW_LINE = System.lineSeparator() + PADDING + "#";
 
     private final Map<ClusterNode, Throwable> errors;
 
@@ -78,25 +78,25 @@ public class RpcAggregateException extends RpcException {
 
     private static String remoteErrorsSummary(Map<ClusterNode, Throwable> errors) {
         StringBuilder buf = new StringBuilder(NEW_LINE)
-            .append("<!--")
+            .append(" ---")
             .append(NEW_LINE)
-            .append("<remote-errors-summary total-errors=\"")
-            .append(errors.size())
-            .append("\">");
+            .append(" Remote errors summary (total-errors=").append(errors.size()).append("):");
 
         errors.entrySet().stream()
             .limit(MAX_ERRORS_IN_SUMMARY)
             .forEach(e -> buf.append(NEW_LINE)
                 .append(PADDING)
-                .append("<error node=\"").append(e.getKey()).append("\"")
-                .append(" type=\"").append(e.getValue().getClass().getName()).append("\">")
-                .append(e.getValue().getMessage())
-                .append("</error>"));
+                .append(e.getKey()).append(" -> ")
+                .append(e.getValue())
+            );
 
-        buf.append(NEW_LINE)
-            .append("</remote-errors-summary>")
-            .append(NEW_LINE)
-            .append("-->");
+        if (errors.size() > MAX_ERRORS_IN_SUMMARY) {
+            buf.append(NEW_LINE)
+                .append(PADDING)
+                .append('(').append(errors.size() - MAX_ERRORS_IN_SUMMARY).append(" more...)");
+        }
+
+        buf.append(NEW_LINE).append(" ---");
 
         return buf.toString();
     }
