@@ -23,7 +23,7 @@ import io.hekate.metrics.local.CounterMetric;
 import io.hekate.metrics.local.LocalMetricsService;
 import java.util.EnumMap;
 
-public class ClusterMetricsSink {
+class ClusterMetricsSink {
     private final EnumMap<GossipProtocol.Type, CounterMetric> counters;
 
     private final CounterMetric topologySize;
