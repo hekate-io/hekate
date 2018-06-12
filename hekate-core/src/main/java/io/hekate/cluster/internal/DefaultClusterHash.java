@@ -27,7 +27,6 @@ import java.util.Base64;
 import java.util.Collection;
 
 public class DefaultClusterHash implements ClusterHash, Serializable {
-
     private static final ThreadLocal<MessageDigest> THREAD_LOCAL_DIGEST = ThreadLocal.withInitial(() -> {
         try {
             return MessageDigest.getInstance("SHA-256");
