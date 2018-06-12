@@ -188,18 +188,16 @@ class ClusterEventManager implements HekateSupport {
     }
 
     public void addListener(ClusterEventListener listener) {
-        ArgAssert.notNull(listener, "Listener");
-
-        doAddListener(new FilteredListener(listener));
+        addListener(listener, (ClusterEventType[])null);
     }
 
     public void addListener(ClusterEventListener listener, ClusterEventType... eventTypes) {
         ArgAssert.notNull(listener, "Listener");
 
         if (eventTypes == null || eventTypes.length == 0) {
-            addListener(listener);
+            doAddListener(new FilteredListener(listener));
         } else {
-            final EnumSet<ClusterEventType> eventTypesSet = EnumSet.copyOf(Arrays.asList(eventTypes));
+            EnumSet<ClusterEventType> eventTypesSet = EnumSet.copyOf(Arrays.asList(eventTypes));
 
             doAddListener(new FilteredListener(eventTypesSet, listener));
         }
