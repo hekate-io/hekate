@@ -17,7 +17,6 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterFilter;
-import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterView;
 import io.hekate.core.Hekate;
 import io.hekate.core.internal.util.ArgAssert;
@@ -265,16 +264,6 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     @Override
     public long timeout() {
         return timeout;
-    }
-
-    @Override
-    public MessagingOpts<T> forSingleNode(ClusterNode node) {
-        assert node != null : "Node must be not null.";
-
-        ClusterView newCluster = cluster.forNode(node);
-        RendezvousHashMapper newPartitions = partitions.copy(newCluster);
-
-        return new DefaultMessagingChannel<>(gateway, newCluster, newPartitions, null, failover, timeout, affinityKey);
     }
 
     @Override

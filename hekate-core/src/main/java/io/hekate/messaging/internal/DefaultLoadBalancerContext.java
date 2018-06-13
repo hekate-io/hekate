@@ -48,13 +48,24 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
 
     private final Optional<FailureInfo> failure;
 
-    public DefaultLoadBalancerContext(MessageContext<?> ctx, ClusterTopology topology, HekateSupport hekate, PartitionMapper partitions,
-        Optional<FailureInfo> failure) {
+    public DefaultLoadBalancerContext(
+        MessageContext<?> ctx,
+        ClusterTopology topology,
+        HekateSupport hekate,
+        PartitionMapper partitions,
+        Optional<FailureInfo> failure
+    ) {
         this(ctx.affinity(), ctx.affinityKey(), topology, hekate, partitions, failure);
     }
 
-    public DefaultLoadBalancerContext(int affinity, Object affinityKey, ClusterTopology topology, HekateSupport hekate,
-        PartitionMapper partitions, Optional<FailureInfo> failure) {
+    public DefaultLoadBalancerContext(
+        int affinity,
+        Object affinityKey,
+        ClusterTopology topology,
+        HekateSupport hekate,
+        PartitionMapper partitions,
+        Optional<FailureInfo> failure
+    ) {
         this.affinity = affinity;
         this.affinityKey = affinityKey;
         this.topology = topology;

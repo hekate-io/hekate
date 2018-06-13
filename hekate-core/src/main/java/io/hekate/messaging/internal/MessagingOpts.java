@@ -16,7 +16,6 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterView;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.loadbalance.LoadBalancer;
@@ -32,8 +31,6 @@ interface MessagingOpts<T> {
     PartitionMapper partitions();
 
     long timeout();
-
-    MessagingOpts<T> forSingleNode(ClusterNode node);
 
     default boolean hasTimeout() {
         return timeout() > 0;
