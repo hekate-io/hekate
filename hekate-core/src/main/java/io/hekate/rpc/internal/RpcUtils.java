@@ -16,8 +16,11 @@
 
 package io.hekate.rpc.internal;
 
+import io.hekate.cluster.ClusterNodeFilter;
+import io.hekate.core.ServiceInfo;
 import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
+import io.hekate.rpc.RpcService;
 import io.hekate.rpc.internal.RpcProtocol.ObjectResponse;
 import java.util.Collection;
 import java.util.List;
@@ -43,6 +46,24 @@ final class RpcUtils {
 
     public static String taggedMethodProperty(RpcInterfaceInfo rpc, RpcMethodInfo method, String tag) {
         return taggedVersionProperty(rpc, tag) + ':' + method.signature();
+    }
+
+    public static ClusterNodeFilter filterFor(RpcInterfaceInfo<?> type, String tag) {
+        String versionProp;
+
+        if (tag == null) {
+            versionProp = versionProperty(type);
+        } else {
+            versionProp = taggedVersionProperty(type, tag);
+        }
+
+        return node -> {
+            ServiceInfo service = node.service(RpcService.class);
+
+            Integer minClientVer = service.intProperty(versionProp);
+
+            return minClientVer != null && minClientVer <= type.version();
+        };
     }
 
     static void mergeToMap(RpcProtocol from, Map<Object, Object> to) {

@@ -113,6 +113,16 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
     }
 
     @Override
+    public ClusterView cluster() {
+        return channel.cluster();
+    }
+
+    @Override
+    public RpcClientBuilder<T> withCluster(ClusterView cluster) {
+        return new DefaultRpcClientBuilder<>(type, tag, channel.withCluster(cluster.filter(RpcUtils.filterFor(type, tag))));
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public T build() {
         ClassLoader classLoader = type.javaType().getClassLoader();
@@ -150,11 +160,6 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
                 return client.invoke(args);
             }
         });
-    }
-
-    @Override
-    public ClusterView cluster() {
-        return channel.cluster();
     }
 
     @Override

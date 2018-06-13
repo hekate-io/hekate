@@ -83,18 +83,6 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     Class<T> baseType();
 
     /**
-     * Returns the cluster view of this channel.
-     *
-     * <p>
-     * The returned cluster view contains only those nodes that have a {@link MessagingChannelConfig#setReceiver(MessageReceiver) receiver}
-     * and do match the channel's {@link ClusterFilterSupport filtering} criteria.
-     * </p>
-     *
-     * @return Cluster view.
-     */
-    ClusterView cluster();
-
-    /**
      * Returns the size of a thread pool for handling NIO-based socket connections
      * (see {@link MessagingChannelConfig#setNioThreads(int)}).
      *
@@ -351,6 +339,27 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @see MessagingChannelConfig#setLoadBalancer(LoadBalancer)
      */
     MessagingChannel<T> withLoadBalancer(LoadBalancer<T> balancer);
+
+    /**
+     * Returns the cluster view of this channel.
+     *
+     * <p>
+     * The returned cluster view contains only those nodes that have a {@link MessagingChannelConfig#setReceiver(MessageReceiver) receiver}
+     * and do match the channel's {@link ClusterFilterSupport filtering} criteria.
+     * </p>
+     *
+     * @return Cluster view.
+     */
+    ClusterView cluster();
+
+    /**
+     * Returns a copy of this channel that will use the specified cluster view and will inherit all other options from this instance.
+     *
+     * @param cluster Cluster view.
+     *
+     * @return Channel wrapper.
+     */
+    MessagingChannel<T> withCluster(ClusterView cluster);
 
     /**
      * Returns the asynchronous task executor of this channel.

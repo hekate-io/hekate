@@ -1066,11 +1066,11 @@ class MessagingGatewayContext<T> implements HekateSupport {
                     //  - Topology that was used for routing (since it could expire while routing was in progress)
                     //  - Topology of client connections (since it is updated asynchronously and can lag behind the latest cluster topology)
                     // In case of any mismatch between those topologies we need to perform another routing attempt.
-                    ClusterTopology latestTopology = cluster.topology();
+                    ClusterTopology latestTopology = ctx.opts().partitions().topology();
 
                     if (latestTopology.version() == topology.version()
                         && clientsTopology != null // <-- Can be null if service was still initializing when this method got called.
-                        && clientsTopology.version() == latestTopology.version()) {
+                        && clientsTopology.version() >= topology.version()) {
                         // Report failure since topologies are consistent but the selected node is not within the cluster.
                         Throwable cause = prevErr != null ? prevErr.error() : null;
 

@@ -80,6 +80,10 @@ class ChannelMetaData {
         return new HasReceiver(channelName, delegate);
     }
 
+    public static ClusterNodeFilter hasReceiver(String channelName) {
+        return hasReceiver(channelName, null);
+    }
+
     public String type() {
         return type;
     }

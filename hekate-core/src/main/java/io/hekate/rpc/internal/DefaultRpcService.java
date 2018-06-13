@@ -16,12 +16,10 @@
 
 package io.hekate.rpc.internal;
 
-import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterView;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.core.HekateException;
-import io.hekate.core.ServiceInfo;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.jmx.JmxService;
@@ -69,6 +67,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.hekate.core.internal.util.StreamUtils.nullSafe;
+import static io.hekate.rpc.internal.RpcUtils.filterFor;
 import static io.hekate.rpc.internal.RpcUtils.methodProperty;
 import static io.hekate.rpc.internal.RpcUtils.taggedMethodProperty;
 import static io.hekate.rpc.internal.RpcUtils.taggedVersionProperty;
@@ -488,24 +487,6 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
     private MessagingChannel<RpcProtocol> channelForClient(RpcInterfaceInfo<?> type, String tag) {
         return this.channel.filter(filterFor(type, tag));
-    }
-
-    private ClusterNodeFilter filterFor(RpcInterfaceInfo<?> type, String tag) {
-        String versionProp;
-
-        if (tag == null) {
-            versionProp = versionProperty(type);
-        } else {
-            versionProp = taggedVersionProperty(type, tag);
-        }
-
-        return node -> {
-            ServiceInfo service = node.service(RpcService.class);
-
-            Integer minClientVer = service.intProperty(versionProp);
-
-            return minClientVer != null && minClientVer <= type.version();
-        };
     }
 
     @Override

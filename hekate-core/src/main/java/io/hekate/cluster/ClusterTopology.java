@@ -16,6 +16,8 @@
 
 package io.hekate.cluster;
 
+import io.hekate.cluster.internal.DefaultClusterTopology;
+import io.hekate.core.internal.util.ArgAssert;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.Set;
@@ -225,4 +227,27 @@ public interface ClusterTopology extends Iterable<ClusterNode>, ClusterTopologyS
      * @return Copy of this topology that contains only those nodes that match the specified filter.
      */
     ClusterTopology filter(ClusterNodeFilter filter);
+
+    /**
+     * Constructs a new cluster topology.
+     *
+     * @param version See {@link #version()}.
+     * @param nodes See {@link #nodes()}.
+     *
+     * @return New topology.
+     */
+    static ClusterTopology of(long version, Set<ClusterNode> nodes) {
+        ArgAssert.notNull(nodes, "Nodes");
+
+        return DefaultClusterTopology.of(version, nodes);
+    }
+
+    /**
+     * Return an empty cluster topology.
+     *
+     * @return Empty topology that has its {@link #version()} equals to {@code 0} and having an empty list of {@link #nodes()}.
+     */
+    static ClusterTopology empty() {
+        return DefaultClusterTopology.empty();
+    }
 }

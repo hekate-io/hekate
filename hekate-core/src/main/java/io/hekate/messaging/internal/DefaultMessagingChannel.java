@@ -233,6 +233,16 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
+    public MessagingChannel<T> withCluster(ClusterView cluster) {
+        ArgAssert.notNull(cluster, "Cluster");
+
+        ClusterView newCluster = cluster.filter(ChannelMetaData.hasReceiver(gateway.name()));
+        RendezvousHashMapper newPartitions = partitions.copy(newCluster);
+
+        return new DefaultMessagingChannel<>(gateway, newCluster, newPartitions, balancer, failover, timeout, affinityKey);
+    }
+
+    @Override
     public int nioThreads() {
         return gateway.nioThreads();
     }

@@ -153,6 +153,15 @@ public interface RpcClientBuilder<T> extends ClusterFilterSupport<RpcClientBuild
     ClusterView cluster();
 
     /**
+     * Returns a new builder that will use the specified cluster view to all of the clients that it will produce.
+     *
+     * @param cluster Cluster view.
+     *
+     * @return Channel wrapper.
+     */
+    RpcClientBuilder<T> withCluster(ClusterView cluster);
+
+    /**
      * Returns the partition mapper that RPC client will use to map {@link RpcAffinityKey affinity keys} to the cluster nodes.
      *
      * @return Mapper.
@@ -164,7 +173,7 @@ public interface RpcClientBuilder<T> extends ClusterFilterSupport<RpcClientBuild
     PartitionMapper partitions();
 
     /**
-     * Returns a new builder that will apply the specified partitions mapping options to all of the clients that it will produce..
+     * Returns a new builder that will apply the specified partitions mapping options to all of the clients that it will produce.
      *
      * @param partitions Total amount of partitions that should be managed by the RPC client's partition mapper.
      * @param backupNodes Amount of backup nodes that should be assigned to each partition by the the RPC client's partition mapper.

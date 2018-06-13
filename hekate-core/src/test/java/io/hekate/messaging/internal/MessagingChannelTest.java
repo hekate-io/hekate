@@ -16,24 +16,34 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterTopology;
+import io.hekate.cluster.SimpleClusterView;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.internal.MessagingProtocol.Connect;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
+import io.hekate.messaging.loadbalance.EmptyTopologyException;
+import io.hekate.messaging.loadbalance.UnknownRouteException;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkService;
 import io.hekate.test.NetworkClientCallbackMock;
 import java.net.InetSocketAddress;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -320,5 +330,133 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         assertEquals(3000, channel.forRemotes().withTimeout(3, TimeUnit.SECONDS).forRemotes().timeout());
         assertEquals(0, channel.timeout());
+    }
+
+    @Test
+    public void testCustomClusterView() throws Exception {
+        List<TestChannel> channels = createAndJoinChannels(3, c ->
+            c.setReceiver(msg -> msg.reply(msg.get() + "-reply"))
+        );
+
+        MessagingChannel<String> originalSender = channels.get(0).get();
+
+        SimpleClusterView manualCluster = new SimpleClusterView();
+
+        MessagingChannel<String> sender = originalSender.withCluster(manualCluster);
+
+        // Empty cluster with older topology version.
+        // ----------------------------------------------------------------------
+        assertEquals(0, sender.cluster().topology().version());
+        assertTrue(sender.cluster().topology().isEmpty());
+        assertEquals(0, sender.partitions().topology().version());
+        assertTrue(sender.partitions().topology().isEmpty());
+
+        channels.forEach(c ->
+            expectCause(EmptyTopologyException.class, () ->
+                get(sender.forNode(c.getNodeId()).request("test"))
+            )
+        );
+
+        // Empty cluster with the same topology version.
+        // ----------------------------------------------------------------------
+        manualCluster.update(ClusterTopology.of(originalSender.cluster().topology().version(), emptySet()));
+
+        assertEquals(originalSender.cluster().topology().version(), sender.cluster().topology().version());
+        assertTrue(sender.cluster().topology().isEmpty());
+        assertEquals(originalSender.cluster().topology().version(), sender.partitions().topology().version());
+        assertTrue(sender.partitions().topology().isEmpty());
+
+        channels.forEach(c ->
+            expectCause(EmptyTopologyException.class, () ->
+                get(sender.forNode(c.getNodeId()).request("test"))
+            )
+        );
+
+        // Empty cluster with newer topology version.
+        // ----------------------------------------------------------------------
+        manualCluster.update(ClusterTopology.of(originalSender.cluster().topology().version() + 1, emptySet()));
+
+        assertEquals(originalSender.cluster().topology().version() + 1, sender.cluster().topology().version());
+        assertTrue(sender.cluster().topology().isEmpty());
+        assertEquals(originalSender.cluster().topology().version() + 1, sender.partitions().topology().version());
+        assertTrue(sender.partitions().topology().isEmpty());
+
+        channels.forEach(c ->
+            expectCause(EmptyTopologyException.class, () ->
+                get(sender.forNode(c.getNodeId()).request("test"))
+            )
+        );
+
+        // One node in the cluster.
+        // ----------------------------------------------------------------------
+        for (TestChannel c : channels) {
+            manualCluster.update(ClusterTopology.of(manualCluster.topology().version() + 1, singleton(c.getNode().localNode())));
+
+            assertEquals(1, sender.cluster().topology().size());
+            assertTrue(sender.cluster().topology().contains(c.getNodeId()));
+            assertEquals(1, sender.partitions().topology().size());
+            assertTrue(sender.partitions().topology().contains(c.getNodeId()));
+
+            get(sender.forNode(c.getNodeId()).request("test"));
+        }
+
+        // New node should not be visible.
+        // ----------------------------------------------------------------------
+        // Synchronize custom cluster view with live view
+        MessagingChannel<String> sender2 = sender.withCluster(new SimpleClusterView(originalSender.cluster().topology()));
+
+        assertEquals(3, sender2.cluster().topology().size());
+        assertEquals(3, sender2.partitions().topology().size());
+
+        // Join new node.
+        channels.add(createChannel(c ->
+            c.setReceiver(msg -> msg.reply(msg.get() + "-reply"))
+        ).join());
+
+        awaitForChannelsTopology(channels);
+
+        // New node should not be visible.
+        expectCause(EmptyTopologyException.class, () ->
+            get(sender2.forNode(channels.get(channels.size() - 1).getNodeId()).request("test"))
+        );
+
+        // Old nodes should be visible.
+        for (int i = 0; i < channels.size() - 1 /* <- Exclude newly added node */; i++) {
+            get(sender2.forNode(channels.get(i).getNodeId()).request("test"));
+        }
+
+        // Removed node should be still visible.
+        // ----------------------------------------------------------------------
+        // Synchronize custom cluster view with live view
+        MessagingChannel<String> sender3 = sender.withCluster(new SimpleClusterView(originalSender.cluster().topology()));
+
+        assertEquals(4, sender3.cluster().topology().size());
+        assertEquals(4, sender3.partitions().topology().size());
+
+        TestChannel removed = channels.get(channels.size() - 1).leave();
+
+        channels.remove(removed);
+
+        awaitForChannelsTopology(channels);
+
+        assertEquals(4, sender3.cluster().topology().size());
+
+        expectCause(UnknownRouteException.class, () ->
+            get(sender3.forNode(removed.getNodeId()).request("test"))
+        );
+
+        // Non-channel node should be filtered out.
+        // ----------------------------------------------------------------------
+        ClusterNode fakeNode = newNode();
+
+        Set<ClusterNode> fakeNodes = new HashSet<>(originalSender.cluster().topology().nodes());
+        fakeNodes.add(fakeNode);
+
+        ClusterTopology fakeTopology = ClusterTopology.of(originalSender.cluster().topology().version(), fakeNodes);
+
+        MessagingChannel<String> sender4 = sender.withCluster(new SimpleClusterView(fakeTopology));
+
+        assertEquals(3, sender4.cluster().topology().size());
+        assertFalse(sender4.cluster().topology().contains(fakeNode));
     }
 }

@@ -652,6 +652,31 @@ public abstract class HekateTestBase {
         }
     }
 
+    protected <T extends Throwable> T expectCause(Class<T> type, TestTask task) {
+        return expectCause(type, null, task);
+    }
+
+    protected <T extends Throwable> T expectCause(Class<T> type, String messagePart, TestTask task) {
+        try {
+            task.execute();
+
+            throw new AssertionError("Failure of type " + type.getName() + " was expected.");
+        } catch (AssertionError e) {
+            throw e;
+        } catch (Throwable t) {
+            T cause = ErrorUtils.findCause(type, t);
+
+            assertNotNull(ErrorUtils.stackTrace(t), cause);
+
+            if (messagePart != null) {
+                assertNotNull(cause.toString(), cause.getMessage());
+                assertTrue(t.toString(), cause.getMessage().contains(messagePart));
+            }
+
+            return cause;
+        }
+    }
+
     protected <T extends Throwable> T expectExactMessage(Class<T> type, String message, TestTask task) {
         T error = expect(type, task);
 

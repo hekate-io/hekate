@@ -16,11 +16,14 @@
 
 package io.hekate.rpc.internal;
 
+import io.hekate.cluster.ClusterTopology;
+import io.hekate.cluster.SimpleClusterView;
 import io.hekate.codec.CodecException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.MessagingRemoteException;
+import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcAffinityKey;
@@ -41,8 +44,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -168,21 +173,20 @@ public class RpcUnicastTest extends RpcServiceTestBase {
 
         TestAffinityRpc proxy = testCtx.client().rpc().clientFor(TestAffinityRpc.class)
             .withLoadBalancer((call, ctx) -> {
-                    assertSame(TestAffinityRpc.class, call.rpcInterface());
-                    assertEquals(3, call.rpcVersion());
-                    assertEquals("call", call.method().getName());
-                    assertTrue(call.hasArgs());
-                    assertEquals(1, call.args().length);
+                assertSame(TestAffinityRpc.class, call.rpcInterface());
+                assertEquals(3, call.rpcVersion());
+                assertEquals("call", call.method().getName());
+                assertTrue(call.hasArgs());
+                assertEquals(1, call.args().length);
 
-                    if (ctx.affinityKey().equals("1")) {
-                        return server1.cluster().localNode().id();
-                    } else if (ctx.affinityKey().equals("2")) {
-                        return server2.cluster().localNode().id();
-                    } else {
-                        throw new AssertionError("Unexpected affinity key: " + ctx.affinityKey());
-                    }
+                if (ctx.affinityKey().equals("1")) {
+                    return server1.cluster().localNode().id();
+                } else if (ctx.affinityKey().equals("2")) {
+                    return server2.cluster().localNode().id();
+                } else {
+                    throw new AssertionError("Unexpected affinity key: " + ctx.affinityKey());
                 }
-            )
+            })
             .build();
 
         repeat(5, i -> {
@@ -282,6 +286,40 @@ public class RpcUnicastTest extends RpcServiceTestBase {
             verifyNoMoreInteractions(rpc1, rpc2);
             reset(rpc1, rpc2);
         });
+    }
+
+    @Test
+    public void testCustomClusterView() throws Exception {
+        TestRpcA rpc1 = mock(TestRpcA.class);
+        TestRpcA rpc2 = mock(TestRpcA.class);
+
+        ClientAndServers testCtx = prepareClientAndServers(rpc1, rpc2);
+
+        SimpleClusterView customCluster = new SimpleClusterView();
+
+        RpcClientBuilder<TestRpcA> builder = testCtx.client().rpc().clientFor(TestRpcA.class);
+
+        assertNotSame(builder, builder.withCluster(customCluster));
+
+        TestRpcA client = builder.withCluster(customCluster).build();
+
+        expectCause(EmptyTopologyException.class, client::callA);
+
+        verifyNoMoreInteractions(rpc1, rpc2);
+
+        customCluster.update(ClusterTopology.of(1, singleton(testCtx.servers().get(0).localNode())));
+
+        client.callA();
+
+        verify(rpc1).callA();
+        verifyNoMoreInteractions(rpc1, rpc2);
+
+        customCluster.update(ClusterTopology.of(2, singleton(testCtx.servers().get(1).localNode())));
+
+        client.callA();
+
+        verify(rpc2).callA();
+        verifyNoMoreInteractions(rpc1, rpc2);
     }
 
     @Test
