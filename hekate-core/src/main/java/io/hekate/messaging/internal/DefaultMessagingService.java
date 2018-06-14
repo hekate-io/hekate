@@ -79,7 +79,6 @@ import static java.util.stream.Collectors.joining;
 
 public class DefaultMessagingService implements MessagingService, DependentService, ConfigurableService, InitializingService,
     TerminatingService, NetworkConfigProvider, ClusterAcceptor {
-
     private static final Logger log = LoggerFactory.getLogger(DefaultMessagingService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -441,7 +440,6 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             connector,
             cluster.localNode(),
             guardedReceiver,
-            gateway.nioThreads(),
             async,
             channelMetrics,
             gateway.receivePressureGuard(),

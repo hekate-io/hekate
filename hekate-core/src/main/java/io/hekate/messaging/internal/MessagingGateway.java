@@ -61,9 +61,9 @@ class MessagingGateway<T> {
 
     private final int backupNodes;
 
-    private final SendPressureGuard sendPressureGuard;
+    private final SendPressureGuard sendPressure;
 
-    private final ReceivePressureGuard receivePressureGuard;
+    private final ReceivePressureGuard receivePressure;
 
     private final CodecFactory<T> codecFactory;
 
@@ -86,20 +86,15 @@ class MessagingGateway<T> {
     private final Hekate hekate;
 
     @ToStringIgnore
-    private final CodecService codecService;
-
-    @ToStringIgnore
     private volatile MessagingGatewayContext<T> ctx;
 
-    public MessagingGateway(MessagingChannelConfig<T> cfg, Hekate hekate, ClusterService cluster, CodecService codecService) {
+    public MessagingGateway(MessagingChannelConfig<T> cfg, Hekate hekate, ClusterService cluster, CodecService codec) {
         assert cfg != null : "Messaging channel configuration is null.";
         assert hekate != null : "Hekate instance is null.";
         assert cluster != null : "Cluster service is null.";
-        assert codecService != null : "Codec service is null.";
+        assert codec != null : "Codec service is null.";
 
         this.hekate = hekate;
-        this.codecService = codecService;
-
         this.name = Utils.nullOrTrim(cfg.getName());
         this.baseType = cfg.getBaseType();
         this.nioThreads = cfg.getNioThreads();
@@ -111,7 +106,7 @@ class MessagingGateway<T> {
         this.backupNodes = cfg.getBackupNodes();
 
         // Codec.
-        this.codecFactory = optimizeCodecFactory(cfg.getMessageCodec());
+        this.codecFactory = optimizeCodecFactory(cfg.getMessageCodec(), codec);
 
         // Logger.
         this.logCategory = resolveLogCategory(cfg.getLogCategory());
@@ -129,19 +124,19 @@ class MessagingGateway<T> {
             MessagingOverflowPolicy outOverflow = pressureCfg.getOutOverflowPolicy();
 
             if (outOverflow == MessagingOverflowPolicy.IGNORE) {
-                sendPressureGuard = null;
+                sendPressure = null;
             } else {
-                sendPressureGuard = new SendPressureGuard(outLoWatermark, outHiWatermark, outOverflow);
+                sendPressure = new SendPressureGuard(outLoWatermark, outHiWatermark, outOverflow);
             }
 
             if (inHiWatermark <= 0) {
-                receivePressureGuard = null;
+                receivePressure = null;
             } else {
-                receivePressureGuard = new ReceivePressureGuard(inLoWatermark, inHiWatermark);
+                receivePressure = new ReceivePressureGuard(inLoWatermark, inHiWatermark);
             }
         } else {
-            sendPressureGuard = null;
-            receivePressureGuard = null;
+            sendPressure = null;
+            receivePressure = null;
         }
 
         // Apply cluster view filter.
@@ -214,11 +209,11 @@ class MessagingGateway<T> {
     }
 
     public SendPressureGuard sendPressureGuard() {
-        return sendPressureGuard;
+        return sendPressure;
     }
 
     public ReceivePressureGuard receivePressureGuard() {
-        return receivePressureGuard;
+        return receivePressure;
     }
 
     public CodecFactory<T> codecFactory() {
@@ -286,6 +281,7 @@ class MessagingGateway<T> {
     }
 
     public MessagingGatewayContext<T> requireContext() {
+        // Volatile read.
         MessagingGatewayContext<T> ctx = this.ctx;
 
         if (ctx == null) {
@@ -296,12 +292,14 @@ class MessagingGateway<T> {
     }
 
     public MessagingGatewayContext<T> context() {
+        // Volatile read.
         return ctx;
     }
 
     public void init(MessagingGatewayContext<T> ctx) {
         assert ctx != null : "Messaging context is null.";
 
+        // Volatile write.
         this.ctx = ctx;
     }
 
@@ -309,8 +307,8 @@ class MessagingGateway<T> {
         return unguardedReceiver != null;
     }
 
-    private CodecFactory<T> optimizeCodecFactory(CodecFactory<T> factory) {
-        CodecFactory<T> resolved = resolveCodecFactory(factory);
+    private static <T> CodecFactory<T> optimizeCodecFactory(CodecFactory<T> factory, CodecService fallback) {
+        CodecFactory<T> resolved = resolveCodecFactory(factory, fallback);
 
         if (resolved.createCodec().isStateful()) {
             return resolved;
@@ -319,16 +317,15 @@ class MessagingGateway<T> {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private CodecFactory<T> resolveCodecFactory(CodecFactory<T> factory) {
+    private static <T> CodecFactory<T> resolveCodecFactory(CodecFactory<T> factory, CodecService fallback) {
         if (factory == null) {
-            return (CodecFactory<T>)codecService.codecFactory();
+            return fallback.codecFactory();
         } else {
             return factory;
         }
     }
 
-    private String resolveLogCategory(String category) {
+    private static String resolveLogCategory(String category) {
         String name = Utils.nullOrTrim(category);
 
         return name != null ? name : MessagingChannel.class.getName();

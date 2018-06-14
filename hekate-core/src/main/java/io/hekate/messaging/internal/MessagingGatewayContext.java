@@ -39,10 +39,8 @@ import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.AggregateFuture;
-import io.hekate.messaging.broadcast.AggregateResult;
 import io.hekate.messaging.broadcast.BroadcastCallback;
 import io.hekate.messaging.broadcast.BroadcastFuture;
-import io.hekate.messaging.broadcast.BroadcastResult;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import io.hekate.messaging.loadbalance.LoadBalancerException;
@@ -114,74 +112,6 @@ class MessagingGatewayContext<T> implements HekateSupport {
         }
     }
 
-    private static class SendCallbackFuture extends SendFuture implements SendCallback {
-        @Override
-        public void onComplete(Throwable err) {
-            if (err == null) {
-                complete(null);
-            } else {
-                completeExceptionally(err);
-            }
-        }
-    }
-
-    private static class ResponseCallbackFuture<T> extends ResponseFuture<T> implements ResponseCallback<T> {
-        @Override
-        public void onComplete(Throwable err, Response<T> rsp) {
-            if (err == null) {
-                if (!rsp.isPartial()) {
-                    complete(rsp);
-                }
-            } else {
-                completeExceptionally(err);
-            }
-        }
-    }
-
-    private static class StreamCallbackFuture<T> extends StreamFuture<T> implements ResponseCallback<T> {
-        private List<T> result;
-
-        @Override
-        public void onComplete(Throwable err, Response<T> rsp) {
-            if (err == null) {
-                // No need to synchronize since streams are always processed by the same thread.
-                if (result == null) {
-                    result = new ArrayList<>();
-                }
-
-                result.add(rsp.get());
-
-                if (!rsp.isPartial()) {
-                    complete(result);
-                }
-            } else {
-                completeExceptionally(err);
-            }
-        }
-    }
-
-    private static class BroadcastCallbackFuture<T> extends BroadcastFuture<T> implements BroadcastCallback<T> {
-        @Override
-        public void onComplete(Throwable err, BroadcastResult<T> result) {
-            if (err == null) {
-                complete(result);
-            } else {
-                completeExceptionally(err);
-            }
-        }
-    }
-
-    private static class AggregateCallbackFuture<T> extends AggregateFuture<T> implements AggregateCallback<T> {
-        @Override
-        public void onComplete(Throwable err, AggregateResult<T> result) {
-            if (err == null) {
-                complete(result);
-            } else {
-                completeExceptionally(err);
-            }
-        }
-    }
-
     private static final Router<?> UNICAST_ROUTER = (ctx, prevErr, mapper, topology, hekate) -> {
         LoadBalancerContext balancerCtx = new DefaultLoadBalancerContext(ctx, topology, hekate, mapper, prevErr);
 
@@ -223,9 +153,6 @@ class MessagingGatewayContext<T> implements HekateSupport {
     private final boolean checkIdle;
 
     @ToStringIgnore
-    private final Set<MessagingConnectionNetIn<T>> inbound = new HashSet<>();
-
-    @ToStringIgnore
     private final StampedLock lock = new StampedLock();
 
     @ToStringIgnore
@@ -241,13 +168,13 @@ class MessagingGatewayContext<T> implements HekateSupport {
     private final SendPressureGuard sendPressure;
 
     @ToStringIgnore
-    private final int nioThreads;
-
-    @ToStringIgnore
     private final MessageInterceptor<T> interceptor;
 
     @ToStringIgnore
     private final DefaultMessagingChannel<T> channel;
+
+    @ToStringIgnore
+    private final Set<MessagingConnectionNetIn<T>> inbound = new HashSet<>();
 
     @ToStringIgnore
     private final Map<ClusterNodeId, MessagingClient<T>> clients = new HashMap<>();
@@ -265,7 +192,6 @@ class MessagingGatewayContext<T> implements HekateSupport {
         NetworkConnector<MessagingProtocol> net,
         ClusterNode localNode,
         MessageReceiver<T> receiver,
-        int nioThreads,
         MessagingExecutor async,
         MessagingMetrics metrics,
         ReceivePressureGuard receivePressure,
@@ -292,7 +218,6 @@ class MessagingGatewayContext<T> implements HekateSupport {
         this.cluster = channel.cluster();
         this.receiver = receiver;
         this.interceptor = interceptor;
-        this.nioThreads = nioThreads;
         this.async = async;
         this.metrics = metrics;
         this.receivePressure = receivePressure;
@@ -310,14 +235,6 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
     public String name() {
         return name;
-    }
-
-    public int nioThreads() {
-        return nioThreads;
-    }
-
-    public int workerThreads() {
-        return async.poolSize();
     }
 
     public ClusterNode localNode() {
@@ -1264,15 +1181,15 @@ class MessagingGatewayContext<T> implements HekateSupport {
         }
     }
 
-    private void onAsyncDequeue() {
-        if (metrics != null) {
-            metrics.onAsyncEnqueue();
-        }
-    }
-
     private void onAsyncEnqueue() {
         if (metrics != null) {
             metrics.onAsyncDequeue();
+        }
+    }
+
+    private void onAsyncDequeue() {
+        if (metrics != null) {
+            metrics.onAsyncEnqueue();
         }
     }
 
