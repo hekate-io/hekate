@@ -31,7 +31,6 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +39,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static java.util.Collections.unmodifiableList;
 
 class DefaultCoordinationContext implements CoordinationContext {
     private static final Logger log = LoggerFactory.getLogger(DefaultCoordinationContext.class);
@@ -117,7 +118,7 @@ class DefaultCoordinationContext implements CoordinationContext {
             membersById.put(node.id(), member);
         });
 
-        this.members = Collections.unmodifiableList(new ArrayList<>(membersById.values()));
+        this.members = unmodifiableList(new ArrayList<>(membersById.values()));
 
         Optional<CoordinationMember> localMemberOpt = members.stream().filter(m -> m.node().isLocal()).findFirst();
         Optional<CoordinationMember> coordinatorOpt = members.stream().filter(CoordinationMember::isCoordinator).findFirst();
@@ -200,6 +201,8 @@ class DefaultCoordinationContext implements CoordinationContext {
             if (DEBUG) {
                 log.debug("Completed [context={}]", this);
             }
+
+            membersById.values().forEach(DefaultCoordinationMember::dispose);
         }
     }
 
@@ -274,7 +277,7 @@ class DefaultCoordinationContext implements CoordinationContext {
                 log.debug("Cancelled [context={}]", this);
             }
 
-            membersById.values().forEach(DefaultCoordinationMember::cancel);
+            membersById.values().forEach(DefaultCoordinationMember::dispose);
         }
     }
 

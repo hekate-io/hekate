@@ -79,9 +79,11 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
                 int newMax = maxOpt.get() + 1;
 
-                ctx.broadcast("put_" + newMax, putResponses -> {
-                    // No-op.
-                });
+                ctx.broadcast("put_" + newMax, putResponses ->
+                    ctx.broadcast("complete", completeResponses -> {
+                        // No-op.
+                    })
+                );
             });
         }
 
@@ -93,14 +95,16 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
                 request.reply(lastValue);
             } else if ("prepare".equals(command)) {
                 request.reply("ok");
-            } else {
-                lastValue = command.substring("put_".length());
-
+            } else if ("complete".equals(command)) {
                 request.reply("ok");
 
                 ctx.complete();
 
-                complete();
+                onAfterComplete();
+            } else {
+                lastValue = command.substring("put_".length());
+
+                request.reply("ok");
             }
         }
 
@@ -118,7 +122,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
             return lastValue;
         }
 
-        protected void complete() {
+        protected void onAfterComplete() {
             // No-op.
         }
     }
@@ -316,7 +320,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
                 HekateTestNode node = createCoordinationNode(new CoordinatedValueHandler() {
                     @Override
                     public void process(CoordinationRequest request, CoordinationContext ctx) {
-                        if (ThreadLocalRandom.current().nextInt(3) == 0) {
+                        if (!"complete".equals(request.get()) && ThreadLocalRandom.current().nextInt(3) == 0) {
                             throw TEST_ERROR;
                         } else {
                             super.process(request, ctx);
@@ -477,7 +481,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
             }
 
             @Override
-            protected void complete() {
+            protected void onAfterComplete() {
                 stack.decrementAndGet();
             }
         }

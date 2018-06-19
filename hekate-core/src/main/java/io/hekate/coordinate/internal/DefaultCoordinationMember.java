@@ -28,10 +28,9 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.unicast.ReplyDecision;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
-import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -63,12 +62,11 @@ class DefaultCoordinationMember implements CoordinationMember {
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    private final Set<Future<?>> requestFutures = new HashSet<>();
+    private final Set<Future<?>> requestFutures = Collections.newSetFromMap(new IdentityHashMap<>());
 
-    @ToStringIgnore
     private final ClusterNode localNode;
 
-    private volatile boolean cancelled;
+    private volatile boolean disposed;
 
     public DefaultCoordinationMember(
         String processName,
@@ -96,7 +94,7 @@ class DefaultCoordinationMember implements CoordinationMember {
             .withAffinity(processName)
             .withFailover(new FailoverPolicyBuilder()
                 // Retry to death.
-                .withRetryUntil(ctx -> !cancelled)
+                .withRetryUntil(ctx -> !disposed)
                 .withAlwaysRetrySameNode()
                 .withConstantRetryDelay(failoverDelay)
             );
@@ -129,7 +127,7 @@ class DefaultCoordinationMember implements CoordinationMember {
         lock.lock();
 
         try {
-            if (!cancelled) {
+            if (!disposed) {
                 enqueued = true;
 
                 requestFutures.add(future);
@@ -147,7 +145,9 @@ class DefaultCoordinationMember implements CoordinationMember {
             channel.request(req, new ResponseCallback<CoordinationProtocol>() {
                 @Override
                 public ReplyDecision accept(Throwable err, Response<CoordinationProtocol> reply) {
-                    if (err != null || reply.is(CoordinationProtocol.Reject.class)) {
+                    if (future.isDone()) {
+                        return COMPLETE;
+                    } else if (err != null || reply.is(CoordinationProtocol.Reject.class)) {
                         return REJECT;
                     } else {
                         CoordinationProtocol.Response response = reply.get(CoordinationProtocol.Response.class);
@@ -163,7 +163,7 @@ class DefaultCoordinationMember implements CoordinationMember {
                     unregister(future);
 
                     if (DEBUG) {
-                        if (err != null && !cancelled) {
+                        if (err != null && !disposed) {
                             log.debug("Failed to submit coordination request [request={}]", request, err);
                         }
                     }
@@ -174,16 +174,16 @@ class DefaultCoordinationMember implements CoordinationMember {
         }
     }
 
-    public void cancel() {
+    public void dispose() {
         List<Future<?>> toCancel;
 
         lock.lock();
 
         try {
-            if (cancelled) {
+            if (disposed) {
                 toCancel = Collections.emptyList();
             } else {
-                cancelled = true;
+                disposed = true;
 
                 toCancel = new ArrayList<>(requestFutures);
             }
