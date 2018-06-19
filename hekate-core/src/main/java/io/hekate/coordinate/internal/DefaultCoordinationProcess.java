@@ -63,8 +63,14 @@ class DefaultCoordinationProcess implements CoordinationProcess {
     @ToStringIgnore
     private DefaultCoordinationContext ctx;
 
-    public DefaultCoordinationProcess(String name, HekateSupport hekate, CoordinationHandler handler, ExecutorService async,
-        MessagingChannel<CoordinationProtocol> channel, long failoverDelay) {
+    public DefaultCoordinationProcess(
+        String name,
+        HekateSupport hekate,
+        CoordinationHandler handler,
+        ExecutorService async,
+        MessagingChannel<CoordinationProtocol> channel,
+        long failoverDelay
+    ) {
         assert name != null : "Name is null.";
         assert hekate != null : "Hekate is null.";
         assert handler != null : "Protocol is null.";
@@ -209,8 +215,15 @@ class DefaultCoordinationProcess implements CoordinationProcess {
                 }
 
                 if (topologyChanged) {
-                    DefaultCoordinationContext newCtx = new DefaultCoordinationContext(name, hekate, newTopology, channel, async, handler,
-                        failoverDelay, () -> future.complete(this)
+                    DefaultCoordinationContext newCtx = new DefaultCoordinationContext(
+                        name,
+                        hekate,
+                        newTopology,
+                        channel,
+                        async,
+                        handler,
+                        failoverDelay,
+                        () -> future.complete(this)
                     );
 
                     this.ctx = newCtx;

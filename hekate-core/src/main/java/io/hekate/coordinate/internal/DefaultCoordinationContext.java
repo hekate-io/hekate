@@ -76,9 +76,16 @@ class DefaultCoordinationContext implements CoordinationContext {
 
     private volatile Object attachment;
 
-    public DefaultCoordinationContext(String name, HekateSupport hekate, ClusterTopology topology,
-        MessagingChannel<CoordinationProtocol> channel, ExecutorService async, CoordinationHandler handler, long failoverDelay,
-        Runnable onComplete) {
+    public DefaultCoordinationContext(
+        String name,
+        HekateSupport hekate,
+        ClusterTopology topology,
+        MessagingChannel<CoordinationProtocol> channel,
+        ExecutorService async,
+        CoordinationHandler handler,
+        long failoverDelay,
+        Runnable onComplete
+    ) {
         assert hekate != null : "Hekate is null.";
         assert name != null : "Process name is null.";
         assert topology != null : "Topology is null.";
@@ -97,8 +104,15 @@ class DefaultCoordinationContext implements CoordinationContext {
             // First node is the coordinator.
             boolean coordinator = membersById.isEmpty();
 
-            DefaultCoordinationMember member = new DefaultCoordinationMember(name, node, topology, coordinator, channel, async,
-                failoverDelay);
+            DefaultCoordinationMember member = new DefaultCoordinationMember(
+                name,
+                node,
+                topology,
+                coordinator,
+                channel,
+                async,
+                failoverDelay
+            );
 
             membersById.put(node.id(), member);
         });

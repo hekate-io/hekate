@@ -28,6 +28,7 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.unicast.ReplyDecision;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
+import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -64,10 +65,20 @@ class DefaultCoordinationMember implements CoordinationMember {
 
     private final Set<Future<?>> requestFutures = new HashSet<>();
 
+    @ToStringIgnore
+    private final ClusterNode localNode;
+
     private volatile boolean cancelled;
 
-    public DefaultCoordinationMember(String processName, ClusterNode node, ClusterTopology topology, boolean coordinator,
-        MessagingChannel<CoordinationProtocol> channel, ExecutorService async, long failoverDelay) {
+    public DefaultCoordinationMember(
+        String processName,
+        ClusterNode node,
+        ClusterTopology topology,
+        boolean coordinator,
+        MessagingChannel<CoordinationProtocol> channel,
+        ExecutorService async,
+        long failoverDelay
+    ) {
         assert processName != null : "Coordination process name is null.";
         assert node != null : "Node is null.";
         assert topology != null : "Topology is null.";
@@ -75,6 +86,7 @@ class DefaultCoordinationMember implements CoordinationMember {
         assert async != null : "Executor service is null.";
 
         this.processName = processName;
+        this.localNode = topology.localNode();
         this.node = node;
         this.topology = topology;
         this.coordinator = coordinator;
@@ -127,7 +139,7 @@ class DefaultCoordinationMember implements CoordinationMember {
         }
 
         if (enqueued) {
-            ClusterNodeId from = node.id();
+            ClusterNodeId from = localNode.id();
             ClusterHash clusterHash = topology.hash();
 
             CoordinationProtocol.Request req = new CoordinationProtocol.Request(processName, from, clusterHash, request);
