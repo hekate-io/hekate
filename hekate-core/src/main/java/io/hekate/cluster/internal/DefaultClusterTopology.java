@@ -25,7 +25,6 @@ import io.hekate.cluster.ClusterNodeIdSupport;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterTopologySupport;
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.io.Serializable;
 import java.lang.reflect.Proxy;
@@ -510,6 +509,16 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
 
     @Override
     public String toString() {
-        return ToString.format(ClusterTopology.class, this);
+        StringBuilder buf = new StringBuilder(ClusterTopology.class.getSimpleName())
+            .append("[version=").append(version)
+            .append(", size=").append(nodes.size());
+
+        if (!nodes.isEmpty()) {
+            buf.append(", nodes=").append(nodes);
+        }
+
+        buf.append(']');
+
+        return buf.toString();
     }
 }
