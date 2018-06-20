@@ -49,6 +49,9 @@ class DefaultCoordinationContext implements CoordinationContext {
 
     private final CoordinationMember coordinator;
 
+    private final ClusterTopology topology;
+
+    @ToStringIgnore
     private final List<CoordinationMember> members;
 
     @ToStringIgnore
@@ -56,9 +59,6 @@ class DefaultCoordinationContext implements CoordinationContext {
 
     @ToStringIgnore
     private final String name;
-
-    @ToStringIgnore
-    private final ClusterTopology topology;
 
     @ToStringIgnore
     private final CoordinationHandler handler;
