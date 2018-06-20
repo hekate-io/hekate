@@ -51,9 +51,11 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class CoordinationServiceTest extends HekateNodeParamTestBase {
@@ -164,6 +166,21 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
             reset(handler);
         });
+    }
+
+    @Test
+    public void testHandlerInitializationFailure() throws Exception {
+        CoordinationHandler handler = mock(CoordinationHandler.class);
+
+        doThrow(TEST_ERROR).when(handler).initialize();
+
+        HekateTestNode node = createCoordinationNode(handler);
+
+        expectCause(TEST_ERROR.getClass(), node::join);
+
+        verify(handler).initialize();
+        verify(handler).terminate();
+        verifyNoMoreInteractions(handler);
     }
 
     @Test

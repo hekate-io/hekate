@@ -52,6 +52,7 @@ import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingConfigProvider;
 import io.hekate.messaging.MessagingService;
 import io.hekate.util.StateGuard;
+import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -63,6 +64,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.slf4j.Logger;
@@ -206,9 +208,9 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
                 MessagingChannel<CoordinationProtocol> channel = messaging.channel(CHANNEL_NAME, CoordinationProtocol.class);
 
-                processesConfig.forEach(cfg ->
-                    register(cfg, channel)
-                );
+                for (CoordinationProcessConfig cfg : processesConfig) {
+                    initializeProcess(cfg, channel);
+                }
             }
 
             if (DEBUG) {
@@ -292,7 +294,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
         return process(process).future();
     }
 
-    private void register(CoordinationProcessConfig cfg, MessagingChannel<CoordinationProtocol> channel) {
+    private void initializeProcess(CoordinationProcessConfig cfg, MessagingChannel<CoordinationProtocol> channel) throws HekateException {
         assert guard.isWriteLocked() : "Thread must hold write lock.";
 
         if (DEBUG) {
@@ -311,7 +313,11 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
         processes.put(name, process);
 
-        process.initialize();
+        try {
+            AsyncUtils.getUninterruptedly(process.initialize());
+        } catch (ExecutionException e) {
+            throw new HekateException("Failed to initialize coordination handler [process=" + name + ']', e.getCause());
+        }
     }
 
     private void handleMessage(Message<CoordinationProtocol> msg) {

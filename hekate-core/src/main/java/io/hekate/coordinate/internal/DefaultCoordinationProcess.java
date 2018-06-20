@@ -28,6 +28,7 @@ import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,11 +86,11 @@ class DefaultCoordinationProcess implements CoordinationProcess {
         this.failoverDelay = failoverDelay;
     }
 
-    public void initialize() {
-        guard.lockWrite();
-
-        try {
+    public CompletableFuture<?> initialize() {
+        return guard.withWriteLock(() -> {
             guard.becomeInitialized();
+
+            CompletableFuture<?> initFuture = new CompletableFuture<>();
 
             async.execute(() -> {
                 try {
@@ -98,21 +99,19 @@ class DefaultCoordinationProcess implements CoordinationProcess {
                     }
 
                     handler.initialize();
+
+                    initFuture.complete(null);
                 } catch (RuntimeException | Error e) {
-                    log.error("Got an unexpected runtime error during coordination [process={}]", name, e);
+                    initFuture.completeExceptionally(e);
                 }
             });
-        } finally {
-            guard.unlockWrite();
-        }
+
+            return initFuture;
+        });
     }
 
     public Waiting terminate() {
-        Waiting waiting;
-
-        guard.lockWrite();
-
-        try {
+        return guard.withWriteLock(() -> {
             if (guard.becomeTerminated()) {
                 DefaultCoordinationContext localCtx = this.ctx;
 
@@ -125,32 +124,30 @@ class DefaultCoordinationProcess implements CoordinationProcess {
                         } catch (RuntimeException | Error e) {
                             log.error("Got an unexpected runtime error during coordination [process={}]", name, e);
                         }
-
-                        try {
-                            if (DEBUG) {
-                                log.debug("Terminating handler [process={}]", name);
-                            }
-
-                            handler.terminate();
-                        } catch (RuntimeException | Error e) {
-                            log.error("Got an unexpected runtime error during coordination [process={}]", name, e);
-                        }
                     });
+
+                    this.ctx = null;
                 }
 
-                waiting = AsyncUtils.shutdown(async);
+                async.execute(() -> {
+                    try {
+                        if (DEBUG) {
+                            log.debug("Terminating handler [process={}]", name);
+                        }
+
+                        handler.terminate();
+                    } catch (RuntimeException | Error e) {
+                        log.error("Got an unexpected runtime error during coordination handler termination [process={}]", name, e);
+                    }
+                });
 
                 future.cancel(false);
+
+                return AsyncUtils.shutdown(async);
             } else {
-                waiting = Waiting.NO_WAIT;
+                return Waiting.NO_WAIT;
             }
-
-            this.ctx = null;
-        } finally {
-            guard.unlockWrite();
-        }
-
-        return waiting;
+        });
     }
 
     public void processMessage(Message<CoordinationProtocol> msg) {
