@@ -763,12 +763,7 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
                             topology = newTopology;
 
                             if (log.isInfoEnabled()) {
-                                int size = newTopology.size();
-                                long ver = newTopology.version();
-                                String nodesStr = toAddressesString(newTopology);
-
-                                log.info("Joined the cluster ...will synchronize "
-                                    + "[size={}, join-order={}, topology-ver={}, topology={}]", size, joinOrder, ver, nodesStr);
+                                log.info("Joined the cluster ...will synchronize [join-order={}, topology={}]", joinOrder, newTopology);
                             }
 
                             notifyOnLifecycleChange();
@@ -782,7 +777,9 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
                                         // Try to switch from SYNCHRONIZING to UP.
                                         boolean becameUp = guard.withWriteLock(() -> {
                                             if (state.compareAndSet(SYNCHRONIZING, UP)) {
-                                                log.info("{} is UP and running [node={}]", localNode, Hekate.class.getSimpleName());
+                                                if (log.isInfoEnabled()) {
+                                                    log.info("Hekate is UP and running [cluster={}, node={}]", clusterName, localNode);
+                                                }
 
                                                 notifyOnLifecycleChange();
 
@@ -839,12 +836,7 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
                                 List<ClusterNode> added = getDiff(newNodes, oldNodes);
 
                                 if (log.isInfoEnabled()) {
-                                    int size = topology.size();
-                                    long version = topology.version();
-                                    String addresses = toAddressesString(topology);
-
-                                    log.info("Updated cluster topology [size={}, added={}, removed={}, topology-version={}, topology={}]",
-                                        size, added, removed, version, addresses);
+                                    log.info("Updated cluster topology [added={}, removed={}, topology={}]", added, removed, topology);
                                 }
 
                                 ClusterChangeEvent event = new ClusterChangeEvent(newTopology, added, removed, hekate());
@@ -1243,24 +1235,6 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
         }
 
         return removed != null ? unmodifiableList(removed) : emptyList();
-    }
-
-    private String toAddressesString(ClusterTopology topology) {
-        StringBuilder buf = new StringBuilder();
-
-        topology.nodes().forEach(n -> {
-            if (buf.length() > 0) {
-                buf.append(", ");
-            }
-
-            if (!n.name().isEmpty()) {
-                buf.append(n.name()).append('#');
-            }
-
-            buf.append(n.address());
-        });
-
-        return buf.toString();
     }
 
     @Override

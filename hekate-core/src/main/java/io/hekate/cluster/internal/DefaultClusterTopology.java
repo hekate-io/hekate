@@ -510,8 +510,8 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder(ClusterTopology.class.getSimpleName())
-            .append("[version=").append(version)
-            .append(", size=").append(nodes.size());
+            .append("[size=").append(nodes.size())
+            .append(", version=").append(version);
 
         if (!nodes.isEmpty()) {
             buf.append(", nodes=").append(nodes);

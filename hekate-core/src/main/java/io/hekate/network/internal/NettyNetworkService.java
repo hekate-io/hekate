@@ -288,9 +288,9 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
         if (log.isInfoEnabled()) {
             log.info("Selected public address [address={}]", publicIp);
-        }
 
-        log.info("Binding network acceptor [port={}]", initPort);
+            log.info("Binding network acceptor [port={}]", initPort);
+        }
 
         guard.lockWrite();
 
@@ -433,7 +433,9 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
         try {
             if (guard.isInitialized()) {
-                log.info("Started accepting network connections.");
+                if (log.isInfoEnabled()) {
+                    log.info("Started accepting network connections [address={}]", server.address());
+                }
 
                 server.startAccepting();
             }
