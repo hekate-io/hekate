@@ -109,14 +109,15 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
         assertSame(ClusterEventType.JOIN, clusterListener.events.get(0).type());
         assertSame(ClusterEventType.LEAVE, clusterListener.events.get(1).type());
 
-        assertEquals(lifecycleListener.states.toString(), 7, lifecycleListener.states.size());
+        assertEquals(lifecycleListener.states.toString(), 8, lifecycleListener.states.size());
         assertSame(Hekate.State.INITIALIZING, lifecycleListener.states.get(0));
         assertSame(Hekate.State.INITIALIZED, lifecycleListener.states.get(1));
         assertSame(Hekate.State.JOINING, lifecycleListener.states.get(2));
-        assertSame(Hekate.State.UP, lifecycleListener.states.get(3));
-        assertSame(Hekate.State.LEAVING, lifecycleListener.states.get(4));
-        assertSame(Hekate.State.TERMINATING, lifecycleListener.states.get(5));
-        assertSame(Hekate.State.DOWN, lifecycleListener.states.get(6));
+        assertSame(Hekate.State.SYNCHRONIZING, lifecycleListener.states.get(3));
+        assertSame(Hekate.State.UP, lifecycleListener.states.get(4));
+        assertSame(Hekate.State.LEAVING, lifecycleListener.states.get(5));
+        assertSame(Hekate.State.TERMINATING, lifecycleListener.states.get(6));
+        assertSame(Hekate.State.DOWN, lifecycleListener.states.get(7));
     }
 
     @Test
