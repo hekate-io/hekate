@@ -18,10 +18,11 @@ package io.hekate.cluster;
 
 import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
-import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.cluster.internal.FilteredClusterView;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.util.format.ToString;
+import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -33,41 +34,86 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
  * Simple version of the {@link ClusterView} interface.
  *
  * <p>
- * This class represents a simple version of the {@link ClusterView} interface that provides support for manual management of this view's
+ * This class represents a simple version of the {@link ClusterView} interface and provides support for manual management of this view's
  * cluster topology via {@link #update(ClusterTopology)} method. This class can be used for manual testing of cluster-dependent components.
  * </p>
  *
  * <p>
  * <b>Notice:</b>
  * This class doesn't support neither {@link ClusterEventListener}s nor cluster {@link #futureOf(Predicate) futures}.
- * All methods related to that functionality will throw {@link UnsupportedOperationException}s.
+ * All methods related to this functionality throw {@link UnsupportedOperationException}s.
  * </p>
  */
 public class SimpleClusterView implements ClusterView {
+    /** Updater for {@link #topology} field. */
     private static final AtomicReferenceFieldUpdater<SimpleClusterView, ClusterTopology> TOPOLOGY = newUpdater(
         SimpleClusterView.class,
         ClusterTopology.class,
         "topology"
     );
 
+    /** Cluster topology of this view. */
     private volatile ClusterTopology topology;
 
     /**
-     * Constructs a new instance with an empty topology.
-     */
-    public SimpleClusterView() {
-        this(DefaultClusterTopology.empty());
-    }
-
-    /**
-     * Constructs a new instance with the specified topology.
+     * Constructs a new instance.
      *
      * @param topology Topology.
      */
-    public SimpleClusterView(ClusterTopology topology) {
+    protected SimpleClusterView(ClusterTopology topology) {
         ArgAssert.notNull(topology, "Topology");
 
         this.topology = topology;
+    }
+
+    /**
+     * Constructs a new view.
+     *
+     * @param topology Topology.
+     *
+     * @return New cluster view.
+     */
+    public static SimpleClusterView of(ClusterTopology topology) {
+        return new SimpleClusterView(topology);
+    }
+
+    /**
+     * Constructs a new view.
+     *
+     * @param version Topology version (see {@link ClusterTopology#version()}).
+     * @param node Cluster node.
+     *
+     * @return New cluster view.
+     */
+    public static SimpleClusterView of(int version, ClusterNode node) {
+        ArgAssert.notNull(node, "Node");
+
+        return new SimpleClusterView(ClusterTopology.of(version, Collections.singleton(node)));
+    }
+
+    /**
+     * Constructs a new view.
+     *
+     * @param version Topology version (see {@link ClusterTopology#version()}).
+     * @param nodes Cluster nodes.
+     *
+     * @return New cluster view.
+     */
+    public static SimpleClusterView of(int version, Set<ClusterNode> nodes) {
+        ArgAssert.notNull(nodes, "Node collection");
+
+        return new SimpleClusterView(ClusterTopology.of(version, nodes));
+    }
+
+    /**
+     * Constructs a new empty cluster view.
+     *
+     * @return New cluster view.
+     *
+     * @see ClusterTopology#empty()
+     */
+    public static SimpleClusterView empty() {
+        return new SimpleClusterView(ClusterTopology.empty());
     }
 
     /**

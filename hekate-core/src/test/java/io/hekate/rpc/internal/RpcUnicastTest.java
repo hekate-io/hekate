@@ -295,7 +295,7 @@ public class RpcUnicastTest extends RpcServiceTestBase {
 
         ClientAndServers testCtx = prepareClientAndServers(rpc1, rpc2);
 
-        SimpleClusterView customCluster = new SimpleClusterView();
+        SimpleClusterView customCluster = SimpleClusterView.empty();
 
         RpcClientBuilder<TestRpcA> builder = testCtx.client().rpc().clientFor(TestRpcA.class);
 
