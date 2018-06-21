@@ -161,7 +161,7 @@ import java.util.function.Predicate;
  * <h2>Seed nodes discovery</h2>
  * <p>
  * Whenever local node starts joining the cluster it tries to discover nodes that are already running. If none of such nodes could be
- * found then local node assumes that it is the first node in the cluster and switches to {@link State#UP UP} state. If some
+ * found then local node assumes that it is the first node in the cluster and switches to the {@link State#UP UP} state. If some
  * existing nodes could be discovered then local node chooses one of them as a contact node and starts cluster join negotiations
  * with that node.
  * </p>

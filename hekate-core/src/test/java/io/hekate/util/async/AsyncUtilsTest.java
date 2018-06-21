@@ -17,6 +17,9 @@
 package io.hekate.util.async;
 
 import io.hekate.HekateTestBase;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -27,6 +30,7 @@ import org.junit.Test;
 import org.mockito.InOrder;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -118,6 +122,33 @@ public class AsyncUtilsTest extends HekateTestBase {
         future.complete("something");
 
         assertEquals("something", get(testFuture));
+    }
+
+    @Test
+    public void testAllOf() throws Exception {
+        List<CompletableFuture<?>> futures = Arrays.asList(
+            new CompletableFuture<>(),
+            new CompletableFuture<>(),
+            new CompletableFuture<>()
+        );
+
+        CompletableFuture<Void> all = AsyncUtils.allOf(futures);
+
+        futures.get(0).complete(null);
+        assertFalse(all.isDone());
+
+        futures.get(1).complete(null);
+        assertFalse(all.isDone());
+
+        futures.get(2).complete(null);
+        assertTrue(all.isDone());
+    }
+
+    @Test
+    public void testAllOfEmpty() throws Exception {
+        CompletableFuture<Void> empty = AsyncUtils.allOf(Collections.emptyList());
+
+        assertTrue(empty.isDone());
     }
 
     @Test

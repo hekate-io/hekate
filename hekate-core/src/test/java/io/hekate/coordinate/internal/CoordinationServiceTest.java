@@ -25,6 +25,7 @@ import io.hekate.coordinate.CoordinationHandler;
 import io.hekate.coordinate.CoordinationProcessConfig;
 import io.hekate.coordinate.CoordinationRequest;
 import io.hekate.coordinate.CoordinationServiceFactory;
+import io.hekate.core.JoinFuture;
 import io.hekate.core.internal.HekateTestNode;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Exchanger;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -255,6 +257,31 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
         assertTrue(future.isDone());
         assertNotNull(future.getNow(null));
         assertSame(handler, future.getNow(null).handler());
+    }
+
+    @Test
+    public void testAsyncInit() throws Exception {
+        CoordinationHandler handler = mock(CoordinationHandler.class);
+
+        Exchanger<CoordinationContext> ctxRef = new Exchanger<>();
+
+        doAnswer(invocation -> {
+            ctxRef.exchange((CoordinationContext)invocation.getArguments()[0]);
+
+            return null;
+        }).when(handler).coordinate(any());
+
+        HekateTestNode node = createCoordinationNode(handler, false);
+
+        JoinFuture join = node.joinAsync();
+
+        CoordinationContext ctx = ctxRef.exchange(null);
+
+        assertFalse(join.isDone());
+
+        ctx.complete();
+
+        get(join);
     }
 
     @Test
@@ -563,11 +590,16 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
     }
 
     private HekateTestNode createCoordinationNode(CoordinationHandler handler) throws Exception {
+        return createCoordinationNode(handler, true);
+    }
+
+    private HekateTestNode createCoordinationNode(CoordinationHandler handler, boolean asyncInit) throws Exception {
         return createNode(c ->
             c.withService(new CoordinationServiceFactory()
                 .withProcess(new CoordinationProcessConfig()
                     .withName("test")
                     .withHandler(handler)
+                    .withAsyncInit(asyncInit)
                 )
             )
         );

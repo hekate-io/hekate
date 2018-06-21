@@ -17,6 +17,7 @@
 package io.hekate.coordinate;
 
 import io.hekate.codec.CodecFactory;
+import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.util.format.ToString;
 import java.util.List;
@@ -32,6 +33,8 @@ import java.util.List;
  */
 public class CoordinationProcessConfig {
     private String name;
+
+    private boolean asyncInit = true;
 
     private CoordinationHandler handler;
 
@@ -86,6 +89,46 @@ public class CoordinationProcessConfig {
      */
     public CoordinationProcessConfig withName(String name) {
         setName(name);
+
+        return this;
+    }
+
+    /**
+     * Returns the flag that controls the timing of initial coordination (see {@link #setAsyncInit(boolean)}).
+     *
+     * @return {@code true} if {@link Hekate#join()} will be blocked until the initial coordination is complete.
+     */
+    public boolean isAsyncInit() {
+        return asyncInit;
+    }
+
+    /**
+     * Sets the flag that controls the timing of initial coordination.
+     *
+     * <ul>
+     * <li>If set to {@code true} then initial coordination will be performed asynchronously and will not block {@link Hekate#join()}</li>
+     * <li>If set to {@code false} then {@link Hekate#join()} will be blocked until the initial coordination is complete</li>
+     * </ul>
+     *
+     * <p>
+     * Default value of this parameter is {@code true} (i.e. {@link Hekate#join()} will not wait for the initial coordination).
+     * </p>
+     *
+     * @param asyncInit {@code true} to block {@link Hekate#join()} until initial coordination is complete.
+     */
+    public void setAsyncInit(boolean asyncInit) {
+        this.asyncInit = asyncInit;
+    }
+
+    /**
+     * Fluent-style version of {@link #setAsyncInit(boolean)}.
+     *
+     * @param asyncInit {@code true} to block {@link Hekate#join()} until initial coordination is complete.
+     *
+     * @return This instance.
+     */
+    public CoordinationProcessConfig withAsyncInit(boolean asyncInit) {
+        setAsyncInit(asyncInit);
 
         return this;
     }

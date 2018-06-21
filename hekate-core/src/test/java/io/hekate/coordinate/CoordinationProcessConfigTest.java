@@ -21,8 +21,10 @@ import io.hekate.codec.CodecFactory;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 public class CoordinationProcessConfigTest extends HekateTestBase {
@@ -83,5 +85,18 @@ public class CoordinationProcessConfigTest extends HekateTestBase {
         assertSame(cfg, cfg.withMessageCodec(factory));
 
         assertSame(factory, cfg.getMessageCodec());
+    }
+
+    @Test
+    public void testAsyncInit() {
+        assertTrue(cfg.isAsyncInit());
+
+        cfg.setAsyncInit(false);
+
+        assertFalse(cfg.isAsyncInit());
+
+        assertSame(cfg, cfg.withAsyncInit(true));
+
+        assertTrue(cfg.isAsyncInit());
     }
 }

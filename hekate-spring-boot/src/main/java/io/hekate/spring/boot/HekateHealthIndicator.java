@@ -69,6 +69,11 @@ public class HekateHealthIndicator implements HealthIndicator {
 
                 break;
             }
+            case SYNCHRONIZING: {
+                health.status(Hekate.State.SYNCHRONIZING.name());
+
+                break;
+            }
             case UP: {
                 health.status(Hekate.State.UP.name());
 

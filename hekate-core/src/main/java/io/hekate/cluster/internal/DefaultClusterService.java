@@ -1225,6 +1225,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
                 switch (state) {
                     case JOINING:
+                    case SYNCHRONIZING:
                     case UP: {
                         applySplitBrainPolicy();
 

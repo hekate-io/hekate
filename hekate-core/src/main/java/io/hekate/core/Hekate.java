@@ -182,6 +182,8 @@ import java.util.Set;
  *
  * <li>{@link State#JOINING} - node successfully discovered a seed node and started joining the cluster.</li>
  *
+ * <li>{@link State#SYNCHRONIZING} - node successfully joined the cluster and synchronizing with remote nodes.</li>
+ *
  * <li>{@link State#UP} - node successfully joined the cluster and is ready to perform user operations.</li>
  *
  * <li>{@link State#LEAVING} - node started leaving the cluster.</li>
@@ -201,8 +203,13 @@ public interface Hekate extends HekateSupport {
     /**
      * State of the {@link Hekate} instance life cycle.
      * <p>
-     * {@link #DOWN} &rarr; {@link #INITIALIZING} &rarr; {@link #JOINING} &rarr; {@link #UP} &rarr; {@link #LEAVING} &rarr; {@link
-     * #TERMINATING}
+     * {@link #DOWN} &rarr;
+     * {@link #INITIALIZING} &rarr;
+     * {@link #JOINING} &rarr;
+     * {@link #SYNCHRONIZING} &rarr;
+     * {@link #UP} &rarr;
+     * {@link #LEAVING} &rarr;
+     * {@link #TERMINATING}
      * </p>
      *
      * @see Hekate#state()
@@ -220,6 +227,9 @@ public interface Hekate extends HekateSupport {
 
         /** Initiated the cluster joining with one of the {@link SeedNodeProvider seed nodes}. */
         JOINING,
+
+        /** Synchronizing with remote nodes. */
+        SYNCHRONIZING,
 
         /** Up and running. */
         UP,

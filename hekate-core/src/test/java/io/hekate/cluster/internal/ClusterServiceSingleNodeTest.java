@@ -216,7 +216,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
             node.cluster().removeListener(listener);
 
             assertEquals(2, statuses.size());
-            assertSame(State.UP, statuses.get(0));
+            assertSame(State.SYNCHRONIZING, statuses.get(0));
             assertSame(State.LEAVING, statuses.get(1));
         });
     }

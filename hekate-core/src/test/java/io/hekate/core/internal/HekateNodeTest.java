@@ -29,6 +29,10 @@ import io.hekate.core.InitializationFuture;
 import io.hekate.core.JoinFuture;
 import io.hekate.core.LeaveFuture;
 import io.hekate.core.TerminateFuture;
+import io.hekate.core.service.InitializationContext;
+import io.hekate.core.service.InitializingService;
+import io.hekate.core.service.Service;
+import io.hekate.core.service.TerminatingService;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.network.internal.NettyNetworkService;
 import io.hekate.network.internal.NetworkServiceManagerMock;
@@ -37,26 +41,41 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.Test;
 
 import static io.hekate.core.Hekate.State.DOWN;
 import static io.hekate.core.Hekate.State.UP;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 public class HekateNodeTest extends HekateNodeTestBase {
+    private interface TestService extends Service, InitializingService, TerminatingService {
+        // No-op.
+    }
+
     private HekateTestNode node;
+
+    private TestService serviceMock;
 
     @Override
     public void setUp() throws Exception {
         super.setUp();
 
-        node = createNode();
+        serviceMock = mock(TestService.class);
+
+        node = createNode(boot ->
+            boot.withService(() -> serviceMock)
+        );
     }
 
     @Test
@@ -266,8 +285,8 @@ public class HekateNodeTest extends HekateNodeTestBase {
 
             LeaveFuture leave = node.leaveAsync();
 
-            join.get();
-            leave.get();
+            get(join);
+            get(leave);
 
             assertSame(Hekate.State.DOWN, node.state());
         }
@@ -284,8 +303,8 @@ public class HekateNodeTest extends HekateNodeTestBase {
 
             TerminateFuture terminate = node.terminateAsync();
 
-            join.get();
-            terminate.get();
+            get(join);
+            get(terminate);
 
             assertSame(Hekate.State.DOWN, node.state());
         }
@@ -302,8 +321,8 @@ public class HekateNodeTest extends HekateNodeTestBase {
 
             TerminateFuture terminate = node.terminateAsync();
 
-            join.get();
-            terminate.get();
+            get(join);
+            get(terminate);
 
             assertSame(Hekate.State.DOWN, node.state());
         }
@@ -324,7 +343,7 @@ public class HekateNodeTest extends HekateNodeTestBase {
         }
 
         for (JoinFuture future : futures) {
-            future.get();
+            get(future);
         }
 
         node.cluster().removeListener(listener);
@@ -351,7 +370,7 @@ public class HekateNodeTest extends HekateNodeTestBase {
         }
 
         for (LeaveFuture future : futures) {
-            future.get();
+            get(future);
         }
 
         assertEquals(2, events.size());
@@ -483,7 +502,7 @@ public class HekateNodeTest extends HekateNodeTestBase {
                 }
             })));
 
-            assertSame(Hekate.State.DOWN, joinFuture.get().state());
+            assertSame(Hekate.State.DOWN, get(joinFuture).state());
         });
     }
 
@@ -496,7 +515,7 @@ public class HekateNodeTest extends HekateNodeTestBase {
 
             get(get(leaveFuture.thenApply(Hekate::joinAsync)));
 
-            assertSame(Hekate.State.UP, leaveFuture.get().state());
+            assertSame(Hekate.State.UP, get(leaveFuture).state());
 
             node.leave();
         });
@@ -511,9 +530,32 @@ public class HekateNodeTest extends HekateNodeTestBase {
 
             get(get(terminateFuture.thenApply(Hekate::joinAsync)));
 
-            assertSame(Hekate.State.UP, terminateFuture.get().state());
+            assertSame(Hekate.State.UP, get(terminateFuture).state());
 
             node.leave();
         });
+    }
+
+    @Test
+    public void testServiceSyncFuture() throws Exception {
+        CompletableFuture<?> syncFuture = new CompletableFuture<>();
+
+        doAnswer(invocationOnMock -> {
+            InitializationContext ctx = invocationOnMock.getArgument(0);
+
+            ctx.cluster().addSyncFuture(syncFuture);
+
+            return null;
+        }).when(serviceMock).initialize(any(InitializationContext.class));
+
+        JoinFuture join = node.joinAsync();
+
+        node.awaitForStatus(Hekate.State.SYNCHRONIZING);
+
+        assertFalse(join.isDone());
+
+        syncFuture.complete(null);
+
+        get(join);
     }
 }

@@ -26,7 +26,6 @@ import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.coordinate.CoordinationConfigProvider;
 import io.hekate.coordinate.CoordinationFuture;
-import io.hekate.coordinate.CoordinationHandler;
 import io.hekate.coordinate.CoordinationProcess;
 import io.hekate.coordinate.CoordinationProcessConfig;
 import io.hekate.coordinate.CoordinationService;
@@ -209,7 +208,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
                 MessagingChannel<CoordinationProtocol> channel = messaging.channel(CHANNEL_NAME, CoordinationProtocol.class);
 
                 for (CoordinationProcessConfig cfg : processesConfig) {
-                    initializeProcess(cfg, channel);
+                    initializeProcess(cfg, ctx, channel);
                 }
             }
 
@@ -294,7 +293,11 @@ public class DefaultCoordinationService implements CoordinationService, Configur
         return process(process).future();
     }
 
-    private void initializeProcess(CoordinationProcessConfig cfg, MessagingChannel<CoordinationProtocol> channel) throws HekateException {
+    private void initializeProcess(
+        CoordinationProcessConfig cfg,
+        InitializationContext ctx,
+        MessagingChannel<CoordinationProtocol> channel
+    ) throws HekateException {
         assert guard.isWriteLocked() : "Thread must hold write lock.";
 
         if (DEBUG) {
@@ -303,15 +306,17 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
         String name = cfg.getName().trim();
 
-        CoordinationHandler handler = cfg.getHandler();
+        ExecutorService async = Executors.newSingleThreadExecutor(new HekateThreadFactory(
+            CoordinationService.class.getSimpleName() + "-" + name
+        ));
 
-        HekateThreadFactory threadFactory = new HekateThreadFactory(CoordinationService.class.getSimpleName() + "-" + name);
-
-        ExecutorService async = Executors.newSingleThreadExecutor(threadFactory);
-
-        DefaultCoordinationProcess process = new DefaultCoordinationProcess(name, hekate, handler, async, channel, failoverDelay);
+        DefaultCoordinationProcess process = new DefaultCoordinationProcess(name, hekate, cfg.getHandler(), async, channel, failoverDelay);
 
         processes.put(name, process);
+
+        if (!cfg.isAsyncInit()) {
+            ctx.cluster().addSyncFuture(process.future());
+        }
 
         try {
             AsyncUtils.getUninterruptedly(process.initialize());

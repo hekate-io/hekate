@@ -62,7 +62,8 @@ public class HekateLifecycleListenerTest extends HekateNodeTestBase {
             assertSame(Hekate.State.INITIALIZING, state.get(0));
             assertSame(Hekate.State.INITIALIZED, state.get(1));
             assertSame(Hekate.State.JOINING, state.get(2));
-            assertSame(Hekate.State.UP, state.get(3));
+            assertSame(Hekate.State.SYNCHRONIZING, state.get(3));
+            assertSame(Hekate.State.UP, state.get(4));
 
             state.clear();
 
@@ -90,7 +91,8 @@ public class HekateLifecycleListenerTest extends HekateNodeTestBase {
             assertSame(Hekate.State.INITIALIZING, state.get(0));
             assertSame(Hekate.State.INITIALIZED, state.get(1));
             assertSame(Hekate.State.JOINING, state.get(2));
-            assertSame(Hekate.State.UP, state.get(3));
+            assertSame(Hekate.State.SYNCHRONIZING, state.get(3));
+            assertSame(Hekate.State.UP, state.get(4));
 
             state.clear();
 
@@ -137,7 +139,8 @@ public class HekateLifecycleListenerTest extends HekateNodeTestBase {
             assertSame(Hekate.State.INITIALIZING, state.get(0));
             assertSame(Hekate.State.INITIALIZED, state.get(1));
             assertSame(Hekate.State.JOINING, state.get(2));
-            assertSame(Hekate.State.UP, state.get(3));
+            assertSame(Hekate.State.SYNCHRONIZING, state.get(3));
+            assertSame(Hekate.State.UP, state.get(4));
 
             state.clear();
 

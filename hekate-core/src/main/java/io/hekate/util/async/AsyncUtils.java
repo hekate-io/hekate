@@ -18,7 +18,9 @@ package io.hekate.util.async;
 
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.HekateThreadFactory;
+import java.util.Collection;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -32,7 +34,10 @@ import java.util.concurrent.TimeUnit;
  */
 public final class AsyncUtils {
     /** See {@link #fallbackExecutor()}. */
-    static final ThreadPoolExecutor FALLBACK_EXECUTOR;
+    private static final ThreadPoolExecutor FALLBACK_EXECUTOR;
+
+    /** Empty array for {@link Collection#toArray(Object[])}. */
+    private static final CompletableFuture[] EMPTY_FUTURES = new CompletableFuture[0];
 
     static {
         HekateThreadFactory factory = new HekateThreadFactory("AsyncFallback", null, false);
@@ -122,5 +127,18 @@ public final class AsyncUtils {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    /**
+     * Version of {@link CompletableFuture#allOf(CompletableFuture[])} that works with a collection instead of an array.
+     *
+     * @param all Collection of future objects.
+     *
+     * @return Future that is completed when all of the given CompletableFutures complete.
+     *
+     * @see CompletableFuture#allOf(CompletableFuture[])
+     */
+    public static CompletableFuture<Void> allOf(Collection<CompletableFuture<?>> all) {
+        return CompletableFuture.allOf(all.toArray(EMPTY_FUTURES));
     }
 }
