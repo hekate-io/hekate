@@ -81,7 +81,7 @@ class AsyncLockCallbackAdaptor {
         }
     }
 
-    public void onLockRelease(LockControllerClient handleInfo) {
+    public void onLockRelease() {
         try {
             executor.execute(() -> {
                 try {

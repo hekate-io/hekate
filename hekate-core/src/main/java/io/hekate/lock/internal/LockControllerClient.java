@@ -54,8 +54,8 @@ class LockControllerClient {
         TERMINATED
     }
 
-    interface UnlockCallback {
-        void onUnlock(LockControllerClient handle);
+    interface CleanupCallback {
+        void cleanup(LockControllerClient lock);
     }
 
     private static final Logger log = LoggerFactory.getLogger(LockControllerClient.class);
@@ -79,7 +79,7 @@ class LockControllerClient {
     private final ReentrantLock lock = new ReentrantLock();
 
     @ToStringIgnore
-    private final UnlockCallback unlockCallback;
+    private final CleanupCallback cleanupCallback;
 
     @ToStringIgnore
     private final LockFuture lockFuture;
@@ -113,12 +113,12 @@ class LockControllerClient {
         long lockTimeout,
         LockRegionMetrics metrics,
         AsyncLockCallbackAdaptor asyncCallback,
-        UnlockCallback unlockCallback
+        CleanupCallback cleanupCallback
     ) {
         assert localNode != null : "Cluster node is null.";
         assert lock != null : "Lock is null.";
         assert channel != null : "Channel is null.";
-        assert unlockCallback != null : "Unlock callback is null.";
+        assert cleanupCallback != null : "Cleanup callback is null.";
 
         this.key = new LockKey(lock.regionName(), lock.name());
         this.lockId = lockId;
@@ -126,7 +126,7 @@ class LockControllerClient {
         this.threadId = threadId;
         this.lockTimeout = lockTimeout;
         this.metrics = metrics;
-        this.unlockCallback = unlockCallback;
+        this.cleanupCallback = cleanupCallback;
         this.asyncCallback = asyncCallback;
 
         // Make sure that all messages will be routed with the affinity key of this lock.
@@ -217,38 +217,30 @@ class LockControllerClient {
     }
 
     public void becomeTerminated(boolean cancel) {
-        boolean wasLocked;
-
         lock.lock();
 
         try {
-            wasLocked = status == Status.LOCKED;
-
             status = Status.TERMINATED;
+
+            if (!lockFuture.isDone()) {
+                if (cancel) {
+                    lockFuture.cancel(false);
+                } else {
+                    lockFuture.completeExceptionally(new CancellationException("Lock service terminated."));
+                }
+            }
+
+            if (unlockFuture.complete(true)) {
+                if (metrics != null) {
+                    metrics.onUnlock();
+                }
+
+                if (asyncCallback != null) {
+                    asyncCallback.onLockRelease();
+                }
+            }
         } finally {
             lock.unlock();
-        }
-
-        if (!lockFuture.isDone()) {
-            if (cancel) {
-                lockFuture.cancel(false);
-            } else {
-                lockFuture.completeExceptionally(new CancellationException("Lock service terminated."));
-            }
-        }
-
-        if (wasLocked) {
-            if (metrics != null) {
-                metrics.onUnlock();
-            }
-
-            if (asyncCallback != null) {
-                asyncCallback.onLockRelease(this);
-            }
-        }
-
-        if (!unlockFuture.isDone()) {
-            unlockFuture.complete(true);
         }
     }
 
@@ -299,8 +291,6 @@ class LockControllerClient {
     }
 
     private boolean becomeLocked(ClusterHash requestTopology) {
-        boolean complete = false;
-
         lock.lock();
 
         try {
@@ -314,10 +304,14 @@ class LockControllerClient {
 
                     lockOwner = new DefaultLockOwnerInfo(threadId, topology.localNode());
 
-                    complete = true;
-
                     if (metrics != null) {
                         metrics.onLock();
+                    }
+
+                    lockFuture.complete(true);
+
+                    if (asyncCallback != null) {
+                        asyncCallback.onLockAcquire(this);
                     }
 
                     break;
@@ -345,15 +339,6 @@ class LockControllerClient {
             }
         } finally {
             lock.unlock();
-        }
-
-        // Notify out of synchronization block.
-        if (complete) {
-            lockFuture.complete(true);
-
-            if (asyncCallback != null) {
-                asyncCallback.onLockAcquire(this);
-            }
         }
 
         return true;
@@ -396,7 +381,7 @@ class LockControllerClient {
     }
 
     private boolean becomeUnlocked(ClusterHash requestTopology) {
-        Boolean complete = null;
+        boolean cleanup = false;
 
         lock.lock();
 
@@ -409,7 +394,9 @@ class LockControllerClient {
                 case LOCKING: {
                     status = Status.UNLOCKED;
 
-                    complete = false;
+                    cleanup = true;
+
+                    lockFuture.complete(false);
 
                     break;
                 }
@@ -421,10 +408,16 @@ class LockControllerClient {
                 case UNLOCKING: {
                     status = Status.UNLOCKED;
 
-                    complete = true;
+                    cleanup = true;
 
                     if (metrics != null) {
                         metrics.onUnlock();
+                    }
+
+                    unlockFuture.complete(true);
+
+                    if (asyncCallback != null) {
+                        asyncCallback.onLockRelease();
                     }
 
                     break;
@@ -447,19 +440,9 @@ class LockControllerClient {
             lock.unlock();
         }
 
-        // Notify future out of synchronization block.
-        if (complete != null) {
-            unlockCallback.onUnlock(this);
-
-            if (complete) {
-                if (asyncCallback != null) {
-                    asyncCallback.onLockRelease(this);
-                }
-
-                unlockFuture.complete(true);
-            } else {
-                lockFuture.complete(false);
-            }
+        // Cleanup out of synchronization block.
+        if (cleanup) {
+            cleanupCallback.cleanup(this);
         }
 
         return true;

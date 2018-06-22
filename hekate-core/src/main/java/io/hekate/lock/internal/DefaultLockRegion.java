@@ -299,11 +299,11 @@ class DefaultLockRegion implements LockRegion {
                 timeout,
                 metrics,
                 callback,
-                unlocked -> { // On unlock.
+                cleanup -> {
                     lockClients.remove(lockId);
 
                     synchronized (deferredLocks) {
-                        deferredLocks.remove(unlocked);
+                        deferredLocks.remove(cleanup);
                     }
                 });
 

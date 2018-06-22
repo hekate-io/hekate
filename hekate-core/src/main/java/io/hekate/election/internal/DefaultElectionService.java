@@ -74,8 +74,6 @@ public class DefaultElectionService implements ElectionService, DependentService
 
     private JmxService jmx;
 
-    private Hekate hekate;
-
     private LockService locks;
 
     public DefaultElectionService(ElectionServiceFactory factory) {
@@ -90,8 +88,6 @@ public class DefaultElectionService implements ElectionService, DependentService
 
     @Override
     public void resolve(DependencyContext ctx) {
-        hekate = ctx.hekate();
-
         locks = ctx.require(LockService.class);
 
         jmx = ctx.optional(JmxService.class);
@@ -145,8 +141,12 @@ public class DefaultElectionService implements ElectionService, DependentService
             guard.becomeInitialized();
 
             if (!candidatesConfig.isEmpty()) {
-                candidatesConfig.forEach(this::doRegister);
+                // Register handlers.
+                candidatesConfig.forEach(cfg ->
+                    doRegister(cfg, ctx.hekate())
+                );
 
+                // Register JMX for handlers.
                 if (jmx != null) {
                     for (CandidateHandler handler : handlers.values()) {
                         jmx.register(handler, handler.group());
@@ -240,10 +240,11 @@ public class DefaultElectionService implements ElectionService, DependentService
         return handler;
     }
 
-    private void doRegister(CandidateConfig cfg) {
+    private void doRegister(CandidateConfig cfg, Hekate hekate) {
         assert guard.isWriteLocked() : "Thread must hold a write lock.";
         assert guard.isInitialized() : "Service must be initialized.";
         assert cfg != null : "Configuration is null.";
+        assert hekate != null : "Hekate is null.";
 
         if (DEBUG) {
             log.debug("Registering new configuration [config={}]", cfg);
