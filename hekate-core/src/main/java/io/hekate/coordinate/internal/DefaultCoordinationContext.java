@@ -75,6 +75,7 @@ class DefaultCoordinationContext implements CoordinationContext {
     @ToStringIgnore
     private boolean prepared;
 
+    @ToStringIgnore
     private volatile Object attachment;
 
     public DefaultCoordinationContext(
