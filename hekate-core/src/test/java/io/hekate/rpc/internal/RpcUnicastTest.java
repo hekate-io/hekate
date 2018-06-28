@@ -17,7 +17,7 @@
 package io.hekate.rpc.internal;
 
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.SimpleClusterView;
+import io.hekate.cluster.UpdatableClusterView;
 import io.hekate.codec.CodecException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.internal.util.ErrorUtils;
@@ -295,7 +295,7 @@ public class RpcUnicastTest extends RpcServiceTestBase {
 
         ClientAndServers testCtx = prepareClientAndServers(rpc1, rpc2);
 
-        SimpleClusterView customCluster = SimpleClusterView.empty();
+        UpdatableClusterView customCluster = UpdatableClusterView.empty();
 
         RpcClientBuilder<TestRpcA> builder = testCtx.client().rpc().clientFor(TestRpcA.class);
 

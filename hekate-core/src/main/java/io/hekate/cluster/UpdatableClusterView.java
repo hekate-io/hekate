@@ -31,10 +31,10 @@ import java.util.function.Predicate;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 /**
- * Simple version of the {@link ClusterView} interface.
+ * Simple updatable version of the {@link ClusterView} interface.
  *
  * <p>
- * This class represents a simple version of the {@link ClusterView} interface and provides support for manual management of this view's
+ * This class represents an updatable version of the {@link ClusterView} interface and provides support for manual management of this view's
  * cluster topology via {@link #update(ClusterTopology)} method. This class can be used for manual testing of cluster-dependent components.
  * </p>
  *
@@ -44,10 +44,10 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
  * All methods related to this functionality throw {@link UnsupportedOperationException}s.
  * </p>
  */
-public class SimpleClusterView implements ClusterView {
+public class UpdatableClusterView implements ClusterView {
     /** Updater for {@link #topology} field. */
-    private static final AtomicReferenceFieldUpdater<SimpleClusterView, ClusterTopology> TOPOLOGY = newUpdater(
-        SimpleClusterView.class,
+    private static final AtomicReferenceFieldUpdater<UpdatableClusterView, ClusterTopology> TOPOLOGY = newUpdater(
+        UpdatableClusterView.class,
         ClusterTopology.class,
         "topology"
     );
@@ -60,7 +60,7 @@ public class SimpleClusterView implements ClusterView {
      *
      * @param topology Topology.
      */
-    protected SimpleClusterView(ClusterTopology topology) {
+    protected UpdatableClusterView(ClusterTopology topology) {
         ArgAssert.notNull(topology, "Topology");
 
         this.topology = topology;
@@ -73,8 +73,8 @@ public class SimpleClusterView implements ClusterView {
      *
      * @return New cluster view.
      */
-    public static SimpleClusterView of(ClusterTopology topology) {
-        return new SimpleClusterView(topology);
+    public static UpdatableClusterView of(ClusterTopology topology) {
+        return new UpdatableClusterView(topology);
     }
 
     /**
@@ -85,10 +85,10 @@ public class SimpleClusterView implements ClusterView {
      *
      * @return New cluster view.
      */
-    public static SimpleClusterView of(int version, ClusterNode node) {
+    public static UpdatableClusterView of(int version, ClusterNode node) {
         ArgAssert.notNull(node, "Node");
 
-        return new SimpleClusterView(ClusterTopology.of(version, Collections.singleton(node)));
+        return new UpdatableClusterView(ClusterTopology.of(version, Collections.singleton(node)));
     }
 
     /**
@@ -99,10 +99,10 @@ public class SimpleClusterView implements ClusterView {
      *
      * @return New cluster view.
      */
-    public static SimpleClusterView of(int version, Set<ClusterNode> nodes) {
+    public static UpdatableClusterView of(int version, Set<ClusterNode> nodes) {
         ArgAssert.notNull(nodes, "Node collection");
 
-        return new SimpleClusterView(ClusterTopology.of(version, nodes));
+        return new UpdatableClusterView(ClusterTopology.of(version, nodes));
     }
 
     /**
@@ -112,8 +112,8 @@ public class SimpleClusterView implements ClusterView {
      *
      * @see ClusterTopology#empty()
      */
-    public static SimpleClusterView empty() {
-        return new SimpleClusterView(ClusterTopology.empty());
+    public static UpdatableClusterView empty() {
+        return new UpdatableClusterView(ClusterTopology.empty());
     }
 
     /**

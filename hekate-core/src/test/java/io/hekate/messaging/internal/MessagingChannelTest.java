@@ -19,7 +19,7 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.SimpleClusterView;
+import io.hekate.cluster.UpdatableClusterView;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelId;
@@ -340,7 +340,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         MessagingChannel<String> originalSender = channels.get(0).get();
 
-        SimpleClusterView manualCluster = SimpleClusterView.empty();
+        UpdatableClusterView manualCluster = UpdatableClusterView.empty();
 
         MessagingChannel<String> sender = originalSender.withCluster(manualCluster);
 
@@ -403,7 +403,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         // New node should not be visible.
         // ----------------------------------------------------------------------
         // Synchronize custom cluster view with live view
-        MessagingChannel<String> sender2 = sender.withCluster(SimpleClusterView.of(originalSender.cluster().topology()));
+        MessagingChannel<String> sender2 = sender.withCluster(UpdatableClusterView.of(originalSender.cluster().topology()));
 
         assertEquals(3, sender2.cluster().topology().size());
         assertEquals(3, sender2.partitions().topology().size());
@@ -428,7 +428,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         // Removed node should be still visible.
         // ----------------------------------------------------------------------
         // Synchronize custom cluster view with live view
-        MessagingChannel<String> sender3 = sender.withCluster(SimpleClusterView.of(originalSender.cluster().topology()));
+        MessagingChannel<String> sender3 = sender.withCluster(UpdatableClusterView.of(originalSender.cluster().topology()));
 
         assertEquals(4, sender3.cluster().topology().size());
         assertEquals(4, sender3.partitions().topology().size());
@@ -454,7 +454,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         ClusterTopology fakeTopology = ClusterTopology.of(originalSender.cluster().topology().version(), fakeNodes);
 
-        MessagingChannel<String> sender4 = sender.withCluster(SimpleClusterView.of(fakeTopology));
+        MessagingChannel<String> sender4 = sender.withCluster(UpdatableClusterView.of(fakeTopology));
 
         assertEquals(3, sender4.cluster().topology().size());
         assertFalse(sender4.cluster().topology().contains(fakeNode));

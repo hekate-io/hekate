@@ -29,10 +29,10 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-public class SimpleClusterViewTest extends HekateTestBase {
+public class UpdatableClusterViewTest extends HekateTestBase {
     @Test
     public void testEmpty() {
-        SimpleClusterView view = SimpleClusterView.empty();
+        UpdatableClusterView view = UpdatableClusterView.empty();
 
         assertTrue(view.topology().isEmpty());
         assertEquals(0, view.topology().version());
@@ -42,7 +42,7 @@ public class SimpleClusterViewTest extends HekateTestBase {
     public void testOfTopology() throws Exception {
         ClusterTopology topology = ClusterTopology.of(1, toSet(newNode(), newNode()));
 
-        SimpleClusterView view = SimpleClusterView.of(topology);
+        UpdatableClusterView view = UpdatableClusterView.of(topology);
 
         assertSame(topology, view.topology());
     }
@@ -51,7 +51,7 @@ public class SimpleClusterViewTest extends HekateTestBase {
     public void testOfOneNode() throws Exception {
         ClusterNode node = newNode();
 
-        SimpleClusterView view = SimpleClusterView.of(100500, node);
+        UpdatableClusterView view = UpdatableClusterView.of(100500, node);
 
         assertEquals(100500, view.topology().version());
         assertEquals(1, view.topology().size());
@@ -63,7 +63,7 @@ public class SimpleClusterViewTest extends HekateTestBase {
         ClusterNode node1 = newNode();
         ClusterNode node2 = newNode();
 
-        SimpleClusterView view = SimpleClusterView.of(100500, toSet(node1, node2));
+        UpdatableClusterView view = UpdatableClusterView.of(100500, toSet(node1, node2));
 
         assertEquals(100500, view.topology().version());
         assertEquals(2, view.topology().size());
@@ -73,7 +73,7 @@ public class SimpleClusterViewTest extends HekateTestBase {
 
     @Test
     public void testUpdate() throws Exception {
-        SimpleClusterView view = SimpleClusterView.empty();
+        UpdatableClusterView view = UpdatableClusterView.empty();
 
         ClusterTopology t1 = ClusterTopology.of(1, toSet(newNode(), newNode()));
         ClusterTopology t1SameVer = ClusterTopology.of(1, toSet(newNode(), newNode()));
@@ -101,7 +101,7 @@ public class SimpleClusterViewTest extends HekateTestBase {
 
     @Test
     public void testUnsupportedMethods() {
-        SimpleClusterView view = SimpleClusterView.empty();
+        UpdatableClusterView view = UpdatableClusterView.empty();
 
         expect(UnsupportedOperationException.class, () -> view.addListener(mock(ClusterEventListener.class)));
         expect(UnsupportedOperationException.class, () -> view.addListener(mock(ClusterEventListener.class), ClusterEventType.CHANGE));
@@ -118,7 +118,7 @@ public class SimpleClusterViewTest extends HekateTestBase {
 
         ClusterTopology topology = ClusterTopology.of(1, toSet(n1, n2));
 
-        SimpleClusterView view = SimpleClusterView.of(topology);
+        UpdatableClusterView view = UpdatableClusterView.of(topology);
 
         ClusterView filter = view.filter(n -> n != n1);
 
@@ -128,7 +128,7 @@ public class SimpleClusterViewTest extends HekateTestBase {
 
     @Test
     public void testToString() {
-        SimpleClusterView view = SimpleClusterView.empty();
+        UpdatableClusterView view = UpdatableClusterView.empty();
 
         assertEquals(ToString.format(view), view.toString());
     }
