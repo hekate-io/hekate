@@ -120,8 +120,6 @@ public class FailoverSendTest extends FailoverTestBase {
             }).send("test");
 
             get(future);
-
-            assertEquals(attempts, failoverCalls.get());
         });
     }
 
@@ -142,12 +140,6 @@ public class FailoverSendTest extends FailoverTestBase {
             AtomicInteger failoverCalls = new AtomicInteger();
 
             SendFuture future = sender.get().forRemotes().withFailover(ctx -> {
-                try {
-                    get(receiver.getNode().leaveAsync());
-                } catch (Exception e) {
-                    fail(getStacktrace(e));
-                }
-
                 failoverCalls.incrementAndGet();
 
                 return ctx.retry().withDelay(10).withRoutingPolicy(FailoverRoutingPolicy.PREFER_SAME_NODE);
