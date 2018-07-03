@@ -64,6 +64,19 @@ public interface CodecService extends Service {
     void encodeToStream(Object obj, OutputStream out) throws IOException;
 
     /**
+     * Encodes the specified object into the specified stream.
+     *
+     * @param obj Object.
+     * @param out Stream.
+     * @param codec Codec.
+     * @param <T> Object type.
+     *
+     * @throws IOException Signals encoding failure.
+     * @see #decodeFromStream(InputStream)
+     */
+    <T> void encodeToStream(T obj, OutputStream out, Codec<T> codec) throws IOException;
+
+    /**
      * Decodes an object from the specified stream.
      *
      * @param in Stream to read data from.
@@ -75,6 +88,20 @@ public interface CodecService extends Service {
      * @see #encodeToStream(Object, OutputStream)
      */
     <T> T decodeFromStream(InputStream in) throws IOException;
+
+    /**
+     * Decodes an object from the specified stream.
+     *
+     * @param in Stream to read data from.
+     * @param codec Codec.
+     * @param <T> Object type.
+     *
+     * @return Decoded object.
+     *
+     * @throws IOException Signals decoding failure.
+     * @see #encodeToStream(Object, OutputStream)
+     */
+    <T> T decodeFromStream(InputStream in, Codec<T> codec) throws IOException;
 
     /**
      * Encodes the specified object into an array of bytes.
@@ -89,6 +116,20 @@ public interface CodecService extends Service {
     byte[] encodeToByteArray(Object obj) throws IOException;
 
     /**
+     * Encodes the specified object into an array of bytes.
+     *
+     * @param obj Object.
+     * @param codec Codec.
+     * @param <T> Object type.
+     *
+     * @return Bytes.
+     *
+     * @throws IOException Signals encoding failure.
+     * @see #decodeFromByteArray(byte[])
+     */
+    <T> byte[] encodeToByteArray(T obj, Codec<T> codec) throws IOException;
+
+    /**
      * Decodes an object from the specified array of bytes.
      *
      * @param bytes Bytes.
@@ -99,4 +140,17 @@ public interface CodecService extends Service {
      * @throws IOException Signals decoding failure.
      */
     <T> T decodeFromByteArray(byte[] bytes) throws IOException;
+
+    /**
+     * Decodes an object from the specified array of bytes.
+     *
+     * @param bytes Bytes.
+     * @param codec Codec.
+     * @param <T> Object type.
+     *
+     * @return Decoded object.
+     *
+     * @throws IOException Signals decoding failure.
+     */
+    <T> T decodeFromByteArray(byte[] bytes, Codec<T> codec) throws IOException;
 }

@@ -56,17 +56,33 @@ public class CodecServiceTest extends HekateTestBase {
     }
 
     @Test
-    public void test() throws Exception {
-        encodeDecode("some string", Assert::assertEquals);
-        encodeDecode(newNodeId(), Assert::assertEquals);
-        encodeDecode(newAddress(1), Assert::assertEquals);
-        encodeDecode(newNode(), Assert::assertEquals);
-        encodeDecode(Collections.singleton("one"), Assert::assertEquals);
-        encodeDecode(Collections.singletonList("one"), Assert::assertEquals);
-        encodeDecode(Collections.singletonMap("one", "one"), Assert::assertEquals);
-        encodeDecode(Arrays.asList("one", "two", "three"), Assert::assertEquals);
-        encodeDecode(DefaultClusterTopology.of(1, toSet(newNode(), newNode(), newNode())), Assert::assertEquals);
-        encodeDecode(new DefaultClusterHash(Arrays.asList(newNode(), newNode(), newNode())), Assert::assertEquals);
+    public void testDefaultCodec() throws Exception {
+        encodeDecodeWithDefaultCodec("some string", Assert::assertEquals);
+        encodeDecodeWithDefaultCodec(newNodeId(), Assert::assertEquals);
+        encodeDecodeWithDefaultCodec(newAddress(1), Assert::assertEquals);
+        encodeDecodeWithDefaultCodec(newNode(), Assert::assertEquals);
+        encodeDecodeWithDefaultCodec(Collections.singleton("one"), Assert::assertEquals);
+        encodeDecodeWithDefaultCodec(Collections.singletonList("one"), Assert::assertEquals);
+        encodeDecodeWithDefaultCodec(Collections.singletonMap("one", "one"), Assert::assertEquals);
+        encodeDecodeWithDefaultCodec(Arrays.asList("one", "two", "three"), Assert::assertEquals);
+        encodeDecodeWithDefaultCodec(DefaultClusterTopology.of(1, toSet(newNode(), newNode(), newNode())), Assert::assertEquals);
+        encodeDecodeWithDefaultCodec(new DefaultClusterHash(Arrays.asList(newNode(), newNode(), newNode())), Assert::assertEquals);
+    }
+
+    @Test
+    public void testCustomCodec() throws Exception {
+        Codec<Object> codec = new JdkCodecFactory<>().createCodec();
+
+        encodeDecode("some string", codec, Assert::assertEquals);
+        encodeDecode(newNodeId(), codec, Assert::assertEquals);
+        encodeDecode(newAddress(1), codec, Assert::assertEquals);
+        encodeDecode(newNode(), codec, Assert::assertEquals);
+        encodeDecode(Collections.singleton("one"), codec, Assert::assertEquals);
+        encodeDecode(Collections.singletonList("one"), codec, Assert::assertEquals);
+        encodeDecode(Collections.singletonMap("one", "one"), codec, Assert::assertEquals);
+        encodeDecode(Arrays.asList("one", "two", "three"), codec, Assert::assertEquals);
+        encodeDecode(DefaultClusterTopology.of(1, toSet(newNode(), newNode(), newNode())), codec, Assert::assertEquals);
+        encodeDecode(new DefaultClusterHash(Arrays.asList(newNode(), newNode(), newNode())), codec, Assert::assertEquals);
     }
 
     @Test
@@ -74,7 +90,7 @@ public class CodecServiceTest extends HekateTestBase {
         assertEquals(ToString.format(CodecService.class, service), service.toString());
     }
 
-    private <T> void encodeDecode(T before, BiConsumer<T, T> check) throws IOException {
+    private <T> void encodeDecodeWithDefaultCodec(T before, BiConsumer<T, T> check) throws IOException {
         T after = service.decodeFromByteArray(service.encodeToByteArray(before));
 
         check.accept(before, after);
@@ -84,6 +100,20 @@ public class CodecServiceTest extends HekateTestBase {
         service.encodeToStream(before, buf);
 
         after = service.decodeFromStream(new ByteArrayInputStream(buf.toByteArray()));
+
+        check.accept(before, after);
+    }
+
+    private <T> void encodeDecode(T before, Codec<T> codec, BiConsumer<T, T> check) throws IOException {
+        T after = service.decodeFromByteArray(service.encodeToByteArray(before, codec), codec);
+
+        check.accept(before, after);
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+        service.encodeToStream(before, buf, codec);
+
+        after = service.decodeFromStream(new ByteArrayInputStream(buf.toByteArray()), codec);
 
         check.accept(before, after);
     }

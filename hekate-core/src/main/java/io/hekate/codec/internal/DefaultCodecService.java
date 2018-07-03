@@ -16,6 +16,7 @@
 
 package io.hekate.codec.internal;
 
+import io.hekate.codec.Codec;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.codec.StreamDataReader;
@@ -48,16 +49,36 @@ public class DefaultCodecService implements CodecService {
         ArgAssert.notNull(obj, "Object to encode");
         ArgAssert.notNull(out, "Output stream");
 
-        doEncode(obj, out);
+        doEncode(obj, out, codecFactory.createCodec());
     }
 
     @Override
+    public <T> void encodeToStream(T obj, OutputStream out, Codec<T> codec) throws IOException {
+        ArgAssert.notNull(obj, "Object to encode");
+        ArgAssert.notNull(out, "Output stream");
+        ArgAssert.notNull(codec, "Codec");
+
+        doEncode(obj, out, codec);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
     public <T> T decodeFromByteArray(byte[] bytes) throws IOException {
         ArgAssert.notNull(bytes, "Byte array");
 
         ByteArrayInputStream buf = newInputBuffer(bytes);
 
-        return doDecode(buf);
+        return (T)doDecode(buf, codecFactory.createCodec());
+    }
+
+    @Override
+    public <T> T decodeFromByteArray(byte[] bytes, Codec<T> codec) throws IOException {
+        ArgAssert.notNull(bytes, "Byte array");
+        ArgAssert.notNull(codec, "Codec");
+
+        ByteArrayInputStream buf = newInputBuffer(bytes);
+
+        return doDecode(buf, codec);
     }
 
     @Override
@@ -66,25 +87,45 @@ public class DefaultCodecService implements CodecService {
 
         ByteArrayOutputStream buf = newOutputBuffer();
 
-        doEncode(obj, buf);
+        doEncode(obj, buf, codecFactory.createCodec());
 
         return buf.toByteArray();
     }
 
     @Override
+    public <T> byte[] encodeToByteArray(T obj, Codec<T> codec) throws IOException {
+        ArgAssert.notNull(obj, "Object to encode");
+        ArgAssert.notNull(codec, "Codec");
+
+        ByteArrayOutputStream buf = newOutputBuffer();
+
+        doEncode(obj, buf, codec);
+
+        return buf.toByteArray();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
     public <T> T decodeFromStream(InputStream in) throws IOException {
         ArgAssert.notNull(in, "Input stream");
 
-        return doDecode(in);
+        return (T)doDecode(in, codecFactory.createCodec());
     }
 
-    private void doEncode(Object obj, OutputStream out) throws IOException {
-        codecFactory.createCodec().encode(obj, new StreamDataWriter(out));
+    @Override
+    public <T> T decodeFromStream(InputStream in, Codec<T> codec) throws IOException {
+        ArgAssert.notNull(in, "Input stream");
+        ArgAssert.notNull(codec, "Codec");
+
+        return doDecode(in, codec);
     }
 
-    @SuppressWarnings("unchecked")
-    private <T> T doDecode(InputStream in) throws IOException {
-        return (T)codecFactory.createCodec().decode(new StreamDataReader(in));
+    private <T> void doEncode(T obj, OutputStream out, Codec<T> codec) throws IOException {
+        codec.encode(obj, new StreamDataWriter(out));
+    }
+
+    private <T> T doDecode(InputStream in, Codec<T> codec) throws IOException {
+        return codec.decode(new StreamDataReader(in));
     }
 
     private ByteArrayOutputStream newOutputBuffer() {
