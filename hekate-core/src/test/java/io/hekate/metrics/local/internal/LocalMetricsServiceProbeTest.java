@@ -58,7 +58,7 @@ public class LocalMetricsServiceProbeTest extends LocalMetricsServiceTestBase {
         metrics.startUpdates();
 
         awaitForMetric(1000, metrics.metric("p"));
-     }
+    }
 
     @Test
     public void testProbeUpdates() throws Exception {
