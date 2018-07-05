@@ -59,6 +59,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -111,7 +112,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
     private JmxService jmx;
 
     @ToStringIgnore
-    private ScheduledExecutorService worker;
+    private ScheduledExecutorService scheduler;
 
     @ToStringIgnore
     private volatile MetricsSnapshot snapshot = emptySnapshot();
@@ -177,15 +178,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
             }
 
             // Start metrics updates.
-            worker = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("LocalMetrics"));
-
-            worker.scheduleAtFixedRate(() -> {
-                try {
-                    updateMetrics();
-                } catch (RuntimeException | Error e) {
-                    log.error("Got an unexpected runtime error while updating and publishing metrics.", e);
-                }
-            }, refreshInterval, refreshInterval, TimeUnit.MILLISECONDS);
+            startUpdates();
 
             if (DEBUG) {
                 log.debug("Initialized.");
@@ -197,7 +190,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
 
     @Override
     public void terminate() throws HekateException {
-        Waiting waiting = null;
+        Optional<Waiting> waiting = Optional.empty();
 
         guard.lockWrite();
 
@@ -207,11 +200,7 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
                     log.debug("Terminating...");
                 }
 
-                if (worker != null) {
-                    waiting = AsyncUtils.shutdown(worker);
-
-                    worker = null;
-                }
+                waiting = stopUpdates();
 
                 allMetrics.clear();
                 counters.clear();
@@ -225,8 +214,8 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
             guard.unlockWrite();
         }
 
-        if (waiting != null) {
-            waiting.awaitUninterruptedly();
+        if (waiting.isPresent()) {
+            waiting.get().awaitUninterruptedly();
 
             if (DEBUG) {
                 log.debug("Terminated.");
@@ -393,10 +382,41 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
         return new DefaultLocalMetricsServiceJmx(this);
     }
 
+    // Package-level for testing purposes.
+    void startUpdates() {
+        guard.withWriteLock(() -> {
+
+            scheduler = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("LocalMetrics"));
+
+            scheduler.scheduleAtFixedRate(() -> {
+                try {
+                    updateMetrics();
+                } catch (RuntimeException | Error e) {
+                    log.error("Got an unexpected runtime error while updating and publishing metrics.", e);
+                }
+            }, refreshInterval, refreshInterval, TimeUnit.MILLISECONDS);
+        });
+    }
+
+    // Package-level for testing purposes.
+    Optional<Waiting> stopUpdates() {
+        return guard.withWriteLock(() -> {
+            Waiting waiting = null;
+
+            if (scheduler != null) {
+                waiting = AsyncUtils.shutdown(scheduler);
+
+                scheduler = null;
+            }
+
+            return Optional.ofNullable(waiting);
+        });
+    }
+
     private void initializeMetrics() {
-        Map<String, CounterConfig> countersCfg = new HashMap<>();
-        Map<String, ProbeConfig> probesCfg = new HashMap<>();
-        Map<String, TimerConfig> timersCfg = new HashMap<>();
+        Map<String, CounterConfig> counterConfigs = new HashMap<>();
+        Map<String, ProbeConfig> probesConfigs = new HashMap<>();
+        Map<String, TimerConfig> timersConfigs = new HashMap<>();
 
         metricsConfig.forEach(cfg -> {
             if (cfg instanceof CounterConfig) {
@@ -404,10 +424,10 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
 
                 String name = checkCounterConfig(newCfg);
 
-                CounterConfig oldCfg = countersCfg.get(name);
+                CounterConfig oldCfg = counterConfigs.get(name);
 
                 if (oldCfg == null) {
-                    countersCfg.put(name, newCfg);
+                    counterConfigs.put(name, newCfg);
                 } else {
                     oldCfg.setAutoReset(oldCfg.isAutoReset() | newCfg.isAutoReset());
 
@@ -432,10 +452,10 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
 
                 String name = checkProbeConfig(newCfg);
 
-                ProbeConfig oldCfg = probesCfg.get(name);
+                ProbeConfig oldCfg = probesConfigs.get(name);
 
                 if (oldCfg == null) {
-                    probesCfg.put(name, newCfg);
+                    probesConfigs.put(name, newCfg);
                 } else {
                     oldCfg.setInitValue(Math.max(oldCfg.getInitValue(), newCfg.getInitValue()));
                 }
@@ -444,10 +464,10 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
 
                 String name = checkTimerConfig(newCfg);
 
-                TimerConfig oldCfg = timersCfg.get(name);
+                TimerConfig oldCfg = timersConfigs.get(name);
 
                 if (oldCfg == null) {
-                    timersCfg.put(name, newCfg);
+                    timersConfigs.put(name, newCfg);
                 } else {
                     String oldRate = Utils.nullOrTrim(oldCfg.getRateName());
                     String newRate = Utils.nullOrTrim(newCfg.getRateName());
@@ -482,9 +502,9 @@ public class DefaultLocalMetricsService implements LocalMetricsService, Dependen
             }
         });
 
-        countersCfg.forEach(this::doRegisterCounter);
-        probesCfg.forEach(this::doRegisterProbe);
-        timersCfg.forEach(this::doRegisterTimer);
+        counterConfigs.forEach(this::doRegisterCounter);
+        probesConfigs.forEach(this::doRegisterProbe);
+        timersConfigs.forEach(this::doRegisterTimer);
     }
 
     private Metric doRegisterProbe(String name, ProbeConfig cfg) {

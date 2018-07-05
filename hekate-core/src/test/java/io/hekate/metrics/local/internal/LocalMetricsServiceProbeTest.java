@@ -18,6 +18,7 @@ package io.hekate.metrics.local.internal;
 
 import io.hekate.metrics.Metric;
 import io.hekate.metrics.local.ProbeConfig;
+import io.hekate.util.async.Waiting;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -29,6 +30,8 @@ import static org.junit.Assert.assertTrue;
 public class LocalMetricsServiceProbeTest extends LocalMetricsServiceTestBase {
     @Test
     public void testProbeInitValue() throws Exception {
+        metrics.stopUpdates().ifPresent(Waiting::awaitUninterruptedly);
+
         metrics.register(new ProbeConfig("p").withInitValue(1000).withProbe(() -> 0));
 
         assertTrue(metrics.allMetrics().containsKey("p"));
@@ -36,16 +39,26 @@ public class LocalMetricsServiceProbeTest extends LocalMetricsServiceTestBase {
         assertEquals(1000, metrics.metric("p").value());
         assertEquals(1000, metrics.get("p"));
         assertEquals(1000, metrics.get("p", 10));
+
+        metrics.startUpdates();
+
+        awaitForMetric(0, metrics.metric("p"));
     }
 
     @Test
     public void testProbeDefaultValue() throws Exception {
+        metrics.stopUpdates().ifPresent(Waiting::awaitUninterruptedly);
+
         metrics.register(new ProbeConfig("p").withProbe(() -> 1000));
 
         assertTrue(metrics.allMetrics().containsKey("p"));
         assertEquals("p", metrics.metric("p").name());
         assertEquals(0, metrics.metric("p").value());
-    }
+
+        metrics.startUpdates();
+
+        awaitForMetric(1000, metrics.metric("p"));
+     }
 
     @Test
     public void testProbeUpdates() throws Exception {
