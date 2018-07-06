@@ -19,9 +19,6 @@ package io.hekate.codec;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.Service;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 /**
  * <span class="startHere">&laquo; start here</span>Main entry point to data serialization API.
@@ -42,7 +39,7 @@ import java.io.OutputStream;
  * @see Codec
  * @see HekateBootstrap#setDefaultCodec(CodecFactory)
  */
-public interface CodecService extends Service {
+public interface CodecService extends Service, EncoderDecoder<Object> {
     /**
      * Returns an underlying codec factory (see {@link HekateBootstrap#setDefaultCodec(CodecFactory)}).
      *
@@ -53,104 +50,23 @@ public interface CodecService extends Service {
     <T> CodecFactory<T> codecFactory();
 
     /**
-     * Encodes the specified object into the specified stream.
+     * Returns encoder/decoder for the specified type that uses the underlying {@link #codecFactory()} of this service for encoding/decoding
+     * operations.
      *
-     * @param obj Object.
-     * @param out Stream.
+     * @param type Data type.
+     * @param <T> Data type.
      *
-     * @throws IOException Signals encoding failure.
-     * @see #decodeFromStream(InputStream)
+     * @return Encoder/decoder for the specified type.
      */
-    void encodeToStream(Object obj, OutputStream out) throws IOException;
+    <T> EncoderDecoder<T> forType(Class<T> type);
 
     /**
-     * Encodes the specified object into the specified stream.
+     * Returns encoder/decoder for the codec factory.
      *
-     * @param obj Object.
-     * @param out Stream.
-     * @param codec Codec.
-     * @param <T> Object type.
+     * @param codecFactory Codec factory.
+     * @param <T> Data type.
      *
-     * @throws IOException Signals encoding failure.
-     * @see #decodeFromStream(InputStream)
+     * @return Encoder/decoder for the specified factory.
      */
-    <T> void encodeToStream(T obj, OutputStream out, Codec<T> codec) throws IOException;
-
-    /**
-     * Decodes an object from the specified stream.
-     *
-     * @param in Stream to read data from.
-     * @param <T> Object type.
-     *
-     * @return Decoded object.
-     *
-     * @throws IOException Signals decoding failure.
-     * @see #encodeToStream(Object, OutputStream)
-     */
-    <T> T decodeFromStream(InputStream in) throws IOException;
-
-    /**
-     * Decodes an object from the specified stream.
-     *
-     * @param in Stream to read data from.
-     * @param codec Codec.
-     * @param <T> Object type.
-     *
-     * @return Decoded object.
-     *
-     * @throws IOException Signals decoding failure.
-     * @see #encodeToStream(Object, OutputStream)
-     */
-    <T> T decodeFromStream(InputStream in, Codec<T> codec) throws IOException;
-
-    /**
-     * Encodes the specified object into an array of bytes.
-     *
-     * @param obj Object.
-     *
-     * @return Bytes.
-     *
-     * @throws IOException Signals encoding failure.
-     * @see #decodeFromByteArray(byte[])
-     */
-    byte[] encodeToByteArray(Object obj) throws IOException;
-
-    /**
-     * Encodes the specified object into an array of bytes.
-     *
-     * @param obj Object.
-     * @param codec Codec.
-     * @param <T> Object type.
-     *
-     * @return Bytes.
-     *
-     * @throws IOException Signals encoding failure.
-     * @see #decodeFromByteArray(byte[])
-     */
-    <T> byte[] encodeToByteArray(T obj, Codec<T> codec) throws IOException;
-
-    /**
-     * Decodes an object from the specified array of bytes.
-     *
-     * @param bytes Bytes.
-     * @param <T> Object type.
-     *
-     * @return Decoded object.
-     *
-     * @throws IOException Signals decoding failure.
-     */
-    <T> T decodeFromByteArray(byte[] bytes) throws IOException;
-
-    /**
-     * Decodes an object from the specified array of bytes.
-     *
-     * @param bytes Bytes.
-     * @param codec Codec.
-     * @param <T> Object type.
-     *
-     * @return Decoded object.
-     *
-     * @throws IOException Signals decoding failure.
-     */
-    <T> T decodeFromByteArray(byte[] bytes, Codec<T> codec) throws IOException;
+    <T> EncoderDecoder<T> forFactory(CodecFactory<T> codecFactory);
 }

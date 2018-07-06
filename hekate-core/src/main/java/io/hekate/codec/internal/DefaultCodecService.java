@@ -16,26 +16,36 @@
 
 package io.hekate.codec.internal;
 
-import io.hekate.codec.Codec;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
-import io.hekate.codec.StreamDataReader;
-import io.hekate.codec.StreamDataWriter;
+import io.hekate.codec.EncoderDecoder;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.util.format.ToString;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
 public class DefaultCodecService implements CodecService {
+    // TODO: Configurable size of recyclable buffers pool.
+    private static final int MAX_POOL_SIZE = 1024;
+
+    // TODO: Configurable maximum size of recyclable buffer.
+    private static final int MAX_BUFFER_SIZE = 1024 * 1024;
+
     private final CodecFactory<Object> codecFactory;
+
+    private final ByteArrayOutputStreamPool bufferPool;
+
+    private final EncoderDecoder<Object> objEncodec;
 
     public DefaultCodecService(CodecFactory<Object> codecFactory) {
         assert codecFactory != null : "Codec factory is null.";
 
         this.codecFactory = codecFactory;
+
+        bufferPool = new ByteArrayOutputStreamPool(MAX_POOL_SIZE, MAX_BUFFER_SIZE);
+
+        objEncodec = new DefaultEncoderDecoder<>(bufferPool, codecFactory);
     }
 
     @Override
@@ -45,97 +55,36 @@ public class DefaultCodecService implements CodecService {
     }
 
     @Override
-    public void encodeToStream(Object obj, OutputStream out) throws IOException {
-        ArgAssert.notNull(obj, "Object to encode");
-        ArgAssert.notNull(out, "Output stream");
-
-        doEncode(obj, out, codecFactory.createCodec());
-    }
-
-    @Override
-    public <T> void encodeToStream(T obj, OutputStream out, Codec<T> codec) throws IOException {
-        ArgAssert.notNull(obj, "Object to encode");
-        ArgAssert.notNull(out, "Output stream");
-        ArgAssert.notNull(codec, "Codec");
-
-        doEncode(obj, out, codec);
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
-    public <T> T decodeFromByteArray(byte[] bytes) throws IOException {
-        ArgAssert.notNull(bytes, "Byte array");
-
-        ByteArrayInputStream buf = newInputBuffer(bytes);
-
-        return (T)doDecode(buf, codecFactory.createCodec());
+    public <T> EncoderDecoder<T> forType(Class<T> type) {
+        return (EncoderDecoder<T>)this;
     }
 
     @Override
-    public <T> T decodeFromByteArray(byte[] bytes, Codec<T> codec) throws IOException {
-        ArgAssert.notNull(bytes, "Byte array");
-        ArgAssert.notNull(codec, "Codec");
+    public <T> EncoderDecoder<T> forFactory(CodecFactory<T> codecFactory) {
+        ArgAssert.notNull(codecFactory, "Codec factory");
 
-        ByteArrayInputStream buf = newInputBuffer(bytes);
+        return new DefaultEncoderDecoder<>(bufferPool, codecFactory);
+    }
 
-        return doDecode(buf, codec);
+    @Override
+    public void encodeToStream(Object obj, OutputStream out) throws IOException {
+        objEncodec.encodeToStream(obj, out);
+    }
+
+    @Override
+    public Object decodeFromByteArray(byte[] bytes) throws IOException {
+        return objEncodec.decodeFromByteArray(bytes);
     }
 
     @Override
     public byte[] encodeToByteArray(Object obj) throws IOException {
-        ArgAssert.notNull(obj, "Object to encode");
-
-        ByteArrayOutputStream buf = newOutputBuffer();
-
-        doEncode(obj, buf, codecFactory.createCodec());
-
-        return buf.toByteArray();
+        return objEncodec.encodeToByteArray(obj);
     }
 
     @Override
-    public <T> byte[] encodeToByteArray(T obj, Codec<T> codec) throws IOException {
-        ArgAssert.notNull(obj, "Object to encode");
-        ArgAssert.notNull(codec, "Codec");
-
-        ByteArrayOutputStream buf = newOutputBuffer();
-
-        doEncode(obj, buf, codec);
-
-        return buf.toByteArray();
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T> T decodeFromStream(InputStream in) throws IOException {
-        ArgAssert.notNull(in, "Input stream");
-
-        return (T)doDecode(in, codecFactory.createCodec());
-    }
-
-    @Override
-    public <T> T decodeFromStream(InputStream in, Codec<T> codec) throws IOException {
-        ArgAssert.notNull(in, "Input stream");
-        ArgAssert.notNull(codec, "Codec");
-
-        return doDecode(in, codec);
-    }
-
-    private <T> void doEncode(T obj, OutputStream out, Codec<T> codec) throws IOException {
-        codec.encode(obj, new StreamDataWriter(out));
-    }
-
-    private <T> T doDecode(InputStream in, Codec<T> codec) throws IOException {
-        return codec.decode(new StreamDataReader(in));
-    }
-
-    private ByteArrayOutputStream newOutputBuffer() {
-        // TODO: Optimize.
-        return new ByteArrayOutputStream();
-    }
-
-    private ByteArrayInputStream newInputBuffer(byte[] bytes) {
-        // TODO: Optimize.
-        return new ByteArrayInputStream(bytes);
+    public Object decodeFromStream(InputStream in) throws IOException {
+        return objEncodec.decodeFromStream(in);
     }
 
     @Override

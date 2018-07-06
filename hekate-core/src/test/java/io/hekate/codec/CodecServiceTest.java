@@ -17,6 +17,11 @@
 package io.hekate.codec;
 
 import io.hekate.HekateTestBase;
+import io.hekate.cluster.ClusterAddress;
+import io.hekate.cluster.ClusterHash;
+import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.internal.DefaultClusterHash;
 import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.codec.fst.FstCodecFactory;
@@ -29,6 +34,9 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import org.junit.Assert;
 import org.junit.Test;
@@ -37,13 +45,18 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 @RunWith(Parameterized.class)
 public class CodecServiceTest extends HekateTestBase {
     private final CodecService service;
 
+    private final CodecFactory<Object> codecFactory;
+
     public CodecServiceTest(CodecFactory<Object> factory) {
-        service = new DefaultCodecService(factory);
+        codecFactory = factory;
+
+        service = new DefaultCodecService(codecFactory);
     }
 
     @Parameters(name = "{index}:{0}")
@@ -56,33 +69,49 @@ public class CodecServiceTest extends HekateTestBase {
     }
 
     @Test
-    public void testDefaultCodec() throws Exception {
-        encodeDecodeWithDefaultCodec("some string", Assert::assertEquals);
-        encodeDecodeWithDefaultCodec(newNodeId(), Assert::assertEquals);
-        encodeDecodeWithDefaultCodec(newAddress(1), Assert::assertEquals);
-        encodeDecodeWithDefaultCodec(newNode(), Assert::assertEquals);
-        encodeDecodeWithDefaultCodec(Collections.singleton("one"), Assert::assertEquals);
-        encodeDecodeWithDefaultCodec(Collections.singletonList("one"), Assert::assertEquals);
-        encodeDecodeWithDefaultCodec(Collections.singletonMap("one", "one"), Assert::assertEquals);
-        encodeDecodeWithDefaultCodec(Arrays.asList("one", "two", "three"), Assert::assertEquals);
-        encodeDecodeWithDefaultCodec(DefaultClusterTopology.of(1, toSet(newNode(), newNode(), newNode())), Assert::assertEquals);
-        encodeDecodeWithDefaultCodec(new DefaultClusterHash(Arrays.asList(newNode(), newNode(), newNode())), Assert::assertEquals);
+    public void testEncodeDecode() throws Exception {
+        encodeDecode(String.class, "some string", Assert::assertEquals);
+        encodeDecode(ClusterNodeId.class, newNodeId(), Assert::assertEquals);
+        encodeDecode(ClusterAddress.class, newAddress(1), Assert::assertEquals);
+        encodeDecode(ClusterNode.class, newNode(), Assert::assertEquals);
+        encodeDecode(Set.class, Collections.singleton("one"), Assert::assertEquals);
+        encodeDecode(List.class, Collections.singletonList("one"), Assert::assertEquals);
+        encodeDecode(Map.class, Collections.singletonMap("one", "one"), Assert::assertEquals);
+        encodeDecode(List.class, Arrays.asList("one", "two", "three"), Assert::assertEquals);
+        encodeDecode(ClusterTopology.class, DefaultClusterTopology.of(1, toSet(newNode(), newNode(), newNode())), Assert::assertEquals);
+        encodeDecode(ClusterHash.class, new DefaultClusterHash(Arrays.asList(newNode(), newNode(), newNode())), Assert::assertEquals);
     }
 
     @Test
-    public void testCustomCodec() throws Exception {
-        Codec<Object> codec = new JdkCodecFactory<>().createCodec();
+    public void testForFactory() throws IOException {
+        SingletonCodecFactory<String> factory = new SingletonCodecFactory<>(new Codec<String>() {
+            @Override
+            public boolean isStateful() {
+                return false;
+            }
 
-        encodeDecode("some string", codec, Assert::assertEquals);
-        encodeDecode(newNodeId(), codec, Assert::assertEquals);
-        encodeDecode(newAddress(1), codec, Assert::assertEquals);
-        encodeDecode(newNode(), codec, Assert::assertEquals);
-        encodeDecode(Collections.singleton("one"), codec, Assert::assertEquals);
-        encodeDecode(Collections.singletonList("one"), codec, Assert::assertEquals);
-        encodeDecode(Collections.singletonMap("one", "one"), codec, Assert::assertEquals);
-        encodeDecode(Arrays.asList("one", "two", "three"), codec, Assert::assertEquals);
-        encodeDecode(DefaultClusterTopology.of(1, toSet(newNode(), newNode(), newNode())), codec, Assert::assertEquals);
-        encodeDecode(new DefaultClusterHash(Arrays.asList(newNode(), newNode(), newNode())), codec, Assert::assertEquals);
+            @Override
+            public Class<String> baseType() {
+                return String.class;
+            }
+
+            @Override
+            public String decode(DataReader in) throws IOException {
+                return in.readUTF();
+            }
+
+            @Override
+            public void encode(String obj, DataWriter out) throws IOException {
+                out.writeUTF(obj);
+            }
+        });
+
+        encodeDecode(service.forFactory(factory), "some string", Assert::assertEquals);
+    }
+
+    @Test
+    public void testCodecFactory() {
+        assertSame(codecFactory, service.codecFactory());
     }
 
     @Test
@@ -90,30 +119,22 @@ public class CodecServiceTest extends HekateTestBase {
         assertEquals(ToString.format(CodecService.class, service), service.toString());
     }
 
-    private <T> void encodeDecodeWithDefaultCodec(T before, BiConsumer<T, T> check) throws IOException {
-        T after = service.decodeFromByteArray(service.encodeToByteArray(before));
+    private <T> void encodeDecode(Class<T> type, T before, BiConsumer<T, T> check) throws IOException {
+        EncoderDecoder<T> encodec = service.forType(type);
 
-        check.accept(before, after);
-
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-
-        service.encodeToStream(before, buf);
-
-        after = service.decodeFromStream(new ByteArrayInputStream(buf.toByteArray()));
-
-        check.accept(before, after);
+        encodeDecode(encodec, before, check);
     }
 
-    private <T> void encodeDecode(T before, Codec<T> codec, BiConsumer<T, T> check) throws IOException {
-        T after = service.decodeFromByteArray(service.encodeToByteArray(before, codec), codec);
+    private <T> void encodeDecode(EncoderDecoder<T> encodec, T before, BiConsumer<T, T> check) throws IOException {
+        T after = encodec.decodeFromByteArray(encodec.encodeToByteArray(before));
 
         check.accept(before, after);
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
-        service.encodeToStream(before, buf, codec);
+        encodec.encodeToStream(before, buf);
 
-        after = service.decodeFromStream(new ByteArrayInputStream(buf.toByteArray()), codec);
+        after = encodec.decodeFromStream(new ByteArrayInputStream(buf.toByteArray()));
 
         check.accept(before, after);
     }
