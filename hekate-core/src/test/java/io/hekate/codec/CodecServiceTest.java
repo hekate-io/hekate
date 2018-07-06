@@ -126,16 +126,36 @@ public class CodecServiceTest extends HekateTestBase {
     }
 
     private <T> void encodeDecode(EncoderDecoder<T> encodec, T before, BiConsumer<T, T> check) throws IOException {
-        T after = encodec.decodeFromByteArray(encodec.encodeToByteArray(before));
+        encodeDecodeAsStream(encodec, before, check);
 
-        check.accept(before, after);
+        encodeDecodeAsByteArray(encodec, before, check);
 
+        encodeDecodeAsByteArrayWithOffset(encodec, before, check);
+    }
+
+    private <T> void encodeDecodeAsStream(EncoderDecoder<T> encodec, T before, BiConsumer<T, T> check) throws IOException {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
         encodec.encodeToStream(before, buf);
 
-        after = encodec.decodeFromStream(new ByteArrayInputStream(buf.toByteArray()));
+        T after = encodec.decodeFromStream(new ByteArrayInputStream(buf.toByteArray()));
 
         check.accept(before, after);
+    }
+
+    private <T> void encodeDecodeAsByteArray(EncoderDecoder<T> encodec, T before, BiConsumer<T, T> check) throws IOException {
+        check.accept(before, encodec.decodeFromByteArray(encodec.encodeToByteArray(before)));
+    }
+
+    private <T> void encodeDecodeAsByteArrayWithOffset(EncoderDecoder<T> encodec, T before, BiConsumer<T, T> check) throws IOException {
+        byte[] bytes = encodec.encodeToByteArray(before);
+
+        byte[] bytesWithOffset = new byte[bytes.length + 6];
+
+        System.arraycopy(bytes, 0, bytesWithOffset, 3, bytes.length);
+
+        T v = encodec.decodeFromByteArray(bytesWithOffset, 3, bytes.length);
+
+        check.accept(before, v);
     }
 }

@@ -60,6 +60,15 @@ class DefaultEncoderDecoder<T> implements EncoderDecoder<T> {
     }
 
     @Override
+    public T decodeFromByteArray(byte[] bytes, int offset, int size) throws IOException {
+        ArgAssert.notNull(bytes, "Byte array");
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(bytes, offset, size);
+
+        return codecFactory.createCodec().decode(new StreamDataReader(buf));
+    }
+
+    @Override
     public byte[] encodeToByteArray(T obj) throws IOException {
         ArgAssert.notNull(obj, "Object to encode");
 

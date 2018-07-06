@@ -71,4 +71,17 @@ public interface EncoderDecoder<T> {
      * @throws IOException Signals decoding failure.
      */
     T decodeFromByteArray(byte[] bytes) throws IOException;
+
+    /**
+     * Decodes an object from the specified array of bytes.
+     *
+     * @param bytes Bytes.
+     * @param offset Offset of the first byte to read.
+     * @param size Maximum number of bytes to read.
+     *
+     * @return Decoded object.
+     *
+     * @throws IOException Signals decoding failure.
+     */
+    T decodeFromByteArray(byte[] bytes, int offset, int size) throws IOException;
 }

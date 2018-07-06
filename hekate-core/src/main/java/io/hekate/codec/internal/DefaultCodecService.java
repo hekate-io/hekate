@@ -78,6 +78,11 @@ public class DefaultCodecService implements CodecService {
     }
 
     @Override
+    public Object decodeFromByteArray(byte[] bytes, int offset, int size) throws IOException {
+        return objEncodec.decodeFromByteArray(bytes, offset, size);
+    }
+
+    @Override
     public byte[] encodeToByteArray(Object obj) throws IOException {
         return objEncodec.encodeToByteArray(obj);
     }
