@@ -14,33 +14,30 @@
  * under the License.
  */
 
-package io.hekate.messaging.internal;
+package io.hekate.codec;
 
-import io.hekate.codec.Codec;
-import io.hekate.codec.CodecFactory;
-import io.hekate.codec.DataReader;
-import io.hekate.codec.DataWriter;
-import io.hekate.util.format.ToString;
+import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.util.format.ToStringIgnore;
 import java.io.IOException;
 
-class ThreadLocalCodecFactory<T> implements CodecFactory<T> {
+/**
+ * Codec factory that manages a pre-thread cache {@link Codec}s.
+ *
+ * @param <T> Base data type of this factory.
+ */
+public final class ThreadLocalCodecFactory<T> implements CodecFactory<T> {
     private final CodecFactory<T> delegate;
-
-    private final Class<T> baseType;
 
     @ToStringIgnore
     private final ThreadLocal<Codec<T>> cache = new ThreadLocal<>();
 
-    public ThreadLocalCodecFactory(CodecFactory<T> delegate) {
+    @ToStringIgnore
+    private final Codec<T> threadLocalCodec;
+
+    private ThreadLocalCodecFactory(Class<T> baseType, CodecFactory<T> delegate) {
         this.delegate = delegate;
 
-        baseType = delegate.createCodec().baseType();
-    }
-
-    @Override
-    public Codec<T> createCodec() {
-        return new Codec<T>() {
+        this.threadLocalCodec = new Codec<T>() {
             @Override
             public boolean isStateful() {
                 return false;
@@ -84,8 +81,44 @@ class ThreadLocalCodecFactory<T> implements CodecFactory<T> {
         };
     }
 
+    /**
+     * Tries to wrap the specified factory with {@link ThreadLocalCodecFactory}.
+     *
+     * <p>
+     * If the specified factory is {@link Codec#isStateful() stateful} or if it is already an instance of {@link ThreadLocalCodecFactory}
+     * then it will not be wrapped. In such case the value returned by this method will be the same object that was passed in as a
+     * parameter.
+     * </p>
+     *
+     * @param factory Factory to warp.
+     * @param <T> Factory type.
+     *
+     * @return Wrapped instance or the factory instance that was passed in as a parameter
+     * if such factory is {@link Codec#isStateful() stateful} or if it is already an instance of {@link ThreadLocalCodecFactory}.
+     */
+    public static <T> CodecFactory<T> tryWrap(CodecFactory<T> factory) {
+        ArgAssert.notNull(factory, "Codec factory is null.");
+
+        if (factory instanceof ThreadLocalCodecFactory) {
+            return factory;
+        }
+
+        Codec<T> probe = factory.createCodec();
+
+        if (probe.isStateful()) {
+            return factory;
+        } else {
+            return new ThreadLocalCodecFactory<>(probe.baseType(), factory);
+        }
+    }
+
+    @Override
+    public Codec<T> createCodec() {
+        return threadLocalCodec;
+    }
+
     @Override
     public String toString() {
-        return ToString.format(this);
+        return ThreadLocalCodecFactory.class.getSimpleName() + "[delegate=" + delegate + ']';
     }
 }

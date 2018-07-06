@@ -20,6 +20,7 @@ import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterView;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
+import io.hekate.codec.ThreadLocalCodecFactory;
 import io.hekate.core.Hekate;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.messaging.MessageInterceptor;
@@ -308,20 +309,10 @@ class MessagingGateway<T> {
     }
 
     private static <T> CodecFactory<T> optimizeCodecFactory(CodecFactory<T> factory, CodecService fallback) {
-        CodecFactory<T> resolved = resolveCodecFactory(factory, fallback);
-
-        if (resolved.createCodec().isStateful()) {
-            return resolved;
-        } else {
-            return new ThreadLocalCodecFactory<>(resolved);
-        }
-    }
-
-    private static <T> CodecFactory<T> resolveCodecFactory(CodecFactory<T> factory, CodecService fallback) {
         if (factory == null) {
-            return fallback.codecFactory();
+            return ThreadLocalCodecFactory.tryWrap(fallback.codecFactory());
         } else {
-            return factory;
+            return ThreadLocalCodecFactory.tryWrap(factory);
         }
     }
 

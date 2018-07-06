@@ -25,6 +25,7 @@ import io.hekate.rpc.internal.RpcProtocol.ErrorResponse;
 import io.hekate.rpc.internal.RpcProtocol.NullResponse;
 import io.hekate.rpc.internal.RpcProtocol.ObjectResponse;
 import io.hekate.rpc.internal.RpcProtocol.Type;
+import io.hekate.util.format.ToString;
 import java.io.IOException;
 
 class RpcProtocolCodec implements Codec<RpcProtocol> {
@@ -142,6 +143,6 @@ class RpcProtocolCodec implements Codec<RpcProtocol> {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName();
+        return ToString.format(this);
     }
 }

@@ -138,16 +138,24 @@ class KryoCodec implements Codec<Object> {
     public Object decode(DataReader in) throws IOException {
         input.setInputStream(in.asStream());
 
-        return kryo.readClassAndObject(input);
+        try {
+            return kryo.readClassAndObject(input);
+        } finally {
+            input.setInputStream(null);
+        }
     }
 
     @Override
     public void encode(Object obj, DataWriter out) throws IOException {
         output.setOutputStream(out.asStream());
 
-        kryo.writeClassAndObject(output, obj);
+        try {
+            kryo.writeClassAndObject(output, obj);
 
-        output.flush();
+            output.flush();
+        } finally {
+            output.setOutputStream(null);
+        }
     }
 
     private Kryo statelessKryo() {
