@@ -18,16 +18,24 @@ package io.hekate.codec.internal;
 
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
+import io.hekate.codec.DataReader;
+import io.hekate.codec.DataWriter;
+import io.hekate.codec.DecodeFunction;
+import io.hekate.codec.EncodeFunction;
 import io.hekate.codec.EncoderDecoder;
+import io.hekate.codec.StreamDataReader;
+import io.hekate.codec.StreamDataWriter;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.util.format.ToString;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class DefaultCodecService implements CodecService {
+public class DefaultCodecService implements CodecService, EncoderDecoder<Object> {
     // TODO: Configurable size of recyclable buffers pool.
-    private static final int MAX_POOL_SIZE = 1024;
+    private static final int MAX_POOL_SIZE = 64;
 
     // TODO: Configurable maximum size of recyclable buffer.
     private static final int MAX_BUFFER_SIZE = 1024 * 1024;
@@ -68,28 +76,73 @@ public class DefaultCodecService implements CodecService {
     }
 
     @Override
-    public void encodeToStream(Object obj, OutputStream out) throws IOException {
-        objEncodec.encodeToStream(obj, out);
+    public void encode(Object obj, OutputStream out) throws IOException {
+        objEncodec.encode(obj, out);
     }
 
     @Override
-    public Object decodeFromByteArray(byte[] bytes) throws IOException {
-        return objEncodec.decodeFromByteArray(bytes);
+    public void encode(Object obj, DataWriter out) throws IOException {
+        objEncodec.encode(obj, out);
     }
 
     @Override
-    public Object decodeFromByteArray(byte[] bytes, int offset, int size) throws IOException {
-        return objEncodec.decodeFromByteArray(bytes, offset, size);
+    public byte[] encode(Object obj) throws IOException {
+        return objEncodec.encode(obj);
     }
 
     @Override
-    public byte[] encodeToByteArray(Object obj) throws IOException {
-        return objEncodec.encodeToByteArray(obj);
+    public <T> byte[] encode(T obj, EncodeFunction<T> encoder) throws IOException {
+        ArgAssert.notNull(encoder, "Encode function");
+
+        ByteArrayOutputStream buf = bufferPool.acquire();
+
+        try {
+            encoder.encode(obj, new StreamDataWriter(buf));
+
+            return buf.toByteArray();
+        } finally {
+            bufferPool.recycle(buf);
+        }
     }
 
     @Override
-    public Object decodeFromStream(InputStream in) throws IOException {
-        return objEncodec.decodeFromStream(in);
+    public Object decode(InputStream in) throws IOException {
+        return objEncodec.decode(in);
+    }
+
+    @Override
+    public Object decode(DataReader in) throws IOException {
+        return objEncodec.decode(in);
+    }
+
+    @Override
+    public Object decode(byte[] bytes) throws IOException {
+        return objEncodec.decode(bytes);
+    }
+
+    @Override
+    public Object decode(byte[] bytes, int offset, int size) throws IOException {
+        return objEncodec.decode(bytes, offset, size);
+    }
+
+    @Override
+    public <T> T decode(byte[] bytes, DecodeFunction<T> decoder) throws IOException {
+        ArgAssert.notNull(bytes, "Byte array");
+        ArgAssert.notNull(decoder, "Decode function");
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(bytes);
+
+        return decoder.decode(new StreamDataReader(buf));
+    }
+
+    @Override
+    public <T> T decode(byte[] bytes, int offset, int limit, DecodeFunction<T> decoder) throws IOException {
+        ArgAssert.notNull(bytes, "Byte array");
+        ArgAssert.notNull(decoder, "Decode function");
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(bytes, offset, limit);
+
+        return decoder.decode(new StreamDataReader(buf));
     }
 
     @Override

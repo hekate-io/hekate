@@ -30,6 +30,7 @@ import io.hekate.codec.kryo.KryoCodecFactory;
 import io.hekate.util.format.ToString;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -110,6 +111,19 @@ public class CodecServiceTest extends HekateTestBase {
     }
 
     @Test
+    public void testEncodeDecodeFunctions() throws Exception {
+        byte[] bytes = service.encode("test", (obj, out) -> out.writeUTF(obj));
+
+        assertEquals("test", service.decode(bytes, DataInput::readUTF));
+
+        byte[] larger = new byte[bytes.length + 6];
+
+        System.arraycopy(bytes, 0, larger, 3, bytes.length);
+
+        assertEquals("test", service.decode(larger, 3, bytes.length, DataInput::readUTF));
+    }
+
+    @Test
     public void testCodecFactory() {
         assertSame(codecFactory, service.codecFactory());
     }
@@ -136,25 +150,25 @@ public class CodecServiceTest extends HekateTestBase {
     private <T> void encodeDecodeAsStream(EncoderDecoder<T> encodec, T before, BiConsumer<T, T> check) throws IOException {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
-        encodec.encodeToStream(before, buf);
+        encodec.encode(before, buf);
 
-        T after = encodec.decodeFromStream(new ByteArrayInputStream(buf.toByteArray()));
+        T after = encodec.decode(new ByteArrayInputStream(buf.toByteArray()));
 
         check.accept(before, after);
     }
 
     private <T> void encodeDecodeAsByteArray(EncoderDecoder<T> encodec, T before, BiConsumer<T, T> check) throws IOException {
-        check.accept(before, encodec.decodeFromByteArray(encodec.encodeToByteArray(before)));
+        check.accept(before, encodec.decode(encodec.encode(before)));
     }
 
     private <T> void encodeDecodeAsByteArrayWithOffset(EncoderDecoder<T> encodec, T before, BiConsumer<T, T> check) throws IOException {
-        byte[] bytes = encodec.encodeToByteArray(before);
+        byte[] bytes = encodec.encode(before);
 
         byte[] bytesWithOffset = new byte[bytes.length + 6];
 
         System.arraycopy(bytes, 0, bytesWithOffset, 3, bytes.length);
 
-        T v = encodec.decodeFromByteArray(bytesWithOffset, 3, bytes.length);
+        T v = encodec.decode(bytesWithOffset, 3, bytes.length);
 
         check.accept(before, v);
     }

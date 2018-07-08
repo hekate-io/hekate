@@ -16,8 +16,6 @@
 
 package io.hekate.codec;
 
-import java.io.IOException;
-
 /**
  * Data serialization codec.
  *
@@ -33,7 +31,7 @@ import java.io.IOException;
  *
  * @param <T> Base data type that is supported by this codec.
  */
-public interface Codec<T> {
+public interface Codec<T> extends EncodeFunction<T>, DecodeFunction<T> {
     /**
      * Returns {@code true} if this codec maintains an internal state and can't be shared among multiple threads or network connections.
      *
@@ -54,25 +52,4 @@ public interface Codec<T> {
      * @return Base data type that is supported by this codec.
      */
     Class<T> baseType();
-
-    /**
-     * Decodes object from the provided reader.
-     *
-     * @param in Data reader.
-     *
-     * @return Decoded object.
-     *
-     * @throws IOException If object couldn't be decoded.
-     */
-    T decode(DataReader in) throws IOException;
-
-    /**
-     * Encodes object into the provided writer.
-     *
-     * @param obj Object to encode.
-     * @param out Data writer.
-     *
-     * @throws IOException If object couldn't be encoded.
-     */
-    void encode(T obj, DataWriter out) throws IOException;
 }

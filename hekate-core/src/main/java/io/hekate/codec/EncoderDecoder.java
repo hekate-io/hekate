@@ -21,9 +21,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * Interface for components that can perform multi-purpose encoding/decoding operations.
+ * Interface for components that can perform encoding/decoding operations.
  *
  * @param <T> Base type of objects that can be encoded/decoded.
+ *
+ * @see CodecService#forType(Class)
+ * @see CodecService#forFactory(CodecFactory)
  */
 public interface EncoderDecoder<T> {
     /**
@@ -33,21 +36,20 @@ public interface EncoderDecoder<T> {
      * @param out Stream.
      *
      * @throws IOException Signals encoding failure.
-     * @see #decodeFromStream(InputStream)
+     * @see #decode(InputStream)
      */
-    void encodeToStream(T obj, OutputStream out) throws IOException;
+    void encode(T obj, OutputStream out) throws IOException;
 
     /**
-     * Decodes an object from the specified stream.
+     * Encodes the specified object into the specified writer.
      *
-     * @param in Stream to read data from.
+     * @param obj Object.
+     * @param out Writer.
      *
-     * @return Decoded object.
-     *
-     * @throws IOException Signals decoding failure.
-     * @see #encodeToStream(Object, OutputStream)
+     * @throws IOException Signals encoding failure.
+     * @see #decode(DataReader)
      */
-    T decodeFromStream(InputStream in) throws IOException;
+    void encode(T obj, DataWriter out) throws IOException;
 
     /**
      * Encodes the specified object into an array of bytes.
@@ -57,9 +59,33 @@ public interface EncoderDecoder<T> {
      * @return Bytes.
      *
      * @throws IOException Signals encoding failure.
-     * @see #decodeFromByteArray(byte[])
+     * @see #decode(byte[])
      */
-    byte[] encodeToByteArray(T obj) throws IOException;
+    byte[] encode(T obj) throws IOException;
+
+    /**
+     * Decodes an object from the specified stream.
+     *
+     * @param in Stream to read data from.
+     *
+     * @return Decoded object.
+     *
+     * @throws IOException Signals decoding failure.
+     * @see #encode(Object, OutputStream)
+     */
+    T decode(InputStream in) throws IOException;
+
+    /**
+     * Decodes an object from the specified reader.
+     *
+     * @param in Reader.
+     *
+     * @return Decoded object.
+     *
+     * @throws IOException Signals decoding failure.
+     * @see #encode(Object, DataWriter)
+     */
+    T decode(DataReader in) throws IOException;
 
     /**
      * Decodes an object from the specified array of bytes.
@@ -70,18 +96,18 @@ public interface EncoderDecoder<T> {
      *
      * @throws IOException Signals decoding failure.
      */
-    T decodeFromByteArray(byte[] bytes) throws IOException;
+    T decode(byte[] bytes) throws IOException;
 
     /**
      * Decodes an object from the specified array of bytes.
      *
      * @param bytes Bytes.
      * @param offset Offset of the first byte to read.
-     * @param size Maximum number of bytes to read.
+     * @param limit Maximum number of bytes to read.
      *
      * @return Decoded object.
      *
      * @throws IOException Signals decoding failure.
      */
-    T decodeFromByteArray(byte[] bytes, int offset, int size) throws IOException;
+    T decode(byte[] bytes, int offset, int limit) throws IOException;
 }

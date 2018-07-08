@@ -25,16 +25,19 @@ import java.io.OutputStream;
 class ByteBufDataWriter extends OutputStream implements DataWriter {
     private ByteBuf out;
 
+    private int initSize;
+
     public ByteBufDataWriter() {
         // No-op.
     }
 
     public ByteBufDataWriter(ByteBuf out) {
-        this.out = out;
+        setOut(out);
     }
 
     public void setOut(ByteBuf out) {
         this.out = out;
+        this.initSize = out != null ? out.writerIndex() : 0;
     }
 
     public ByteBuf buffer() {
@@ -44,6 +47,11 @@ class ByteBufDataWriter extends OutputStream implements DataWriter {
     @Override
     public OutputStream asStream() {
         return this;
+    }
+
+    @Override
+    public int size() {
+        return out.writerIndex() - initSize;
     }
 
     @Override

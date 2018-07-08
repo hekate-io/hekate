@@ -36,6 +36,13 @@ public interface DataWriter extends DataOutput {
     OutputStream asStream();
 
     /**
+     * Returns the number of bytes written to this writer so far.
+     *
+     * @return Number of bytes written to this writer so far.
+     */
+    int size();
+
+    /**
      * Writes {@link BigDecimal} value. The written value can be read via {@link DataReader#readBigDecimal()}.
      *
      * @param v Value.

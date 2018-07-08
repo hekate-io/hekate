@@ -18,6 +18,8 @@ package io.hekate.codec.internal;
 
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
+import io.hekate.codec.DataReader;
+import io.hekate.codec.DataWriter;
 import io.hekate.codec.EncoderDecoder;
 import io.hekate.codec.StreamDataReader;
 import io.hekate.codec.StreamDataWriter;
@@ -43,33 +45,20 @@ class DefaultEncoderDecoder<T> implements EncoderDecoder<T> {
     }
 
     @Override
-    public void encodeToStream(T obj, OutputStream out) throws IOException {
+    public void encode(T obj, OutputStream out) throws IOException {
+        encode(obj, (DataWriter)new StreamDataWriter(out));
+    }
+
+    @Override
+    public void encode(T obj, DataWriter out) throws IOException {
         ArgAssert.notNull(obj, "Object to encode");
         ArgAssert.notNull(out, "Output stream");
 
-        codecFactory.createCodec().encode(obj, new StreamDataWriter(out));
+        codecFactory.createCodec().encode(obj, out);
     }
 
     @Override
-    public T decodeFromByteArray(byte[] bytes) throws IOException {
-        ArgAssert.notNull(bytes, "Byte array");
-
-        ByteArrayInputStream buf = new ByteArrayInputStream(bytes);
-
-        return codecFactory.createCodec().decode(new StreamDataReader(buf));
-    }
-
-    @Override
-    public T decodeFromByteArray(byte[] bytes, int offset, int size) throws IOException {
-        ArgAssert.notNull(bytes, "Byte array");
-
-        ByteArrayInputStream buf = new ByteArrayInputStream(bytes, offset, size);
-
-        return codecFactory.createCodec().decode(new StreamDataReader(buf));
-    }
-
-    @Override
-    public byte[] encodeToByteArray(T obj) throws IOException {
+    public byte[] encode(T obj) throws IOException {
         ArgAssert.notNull(obj, "Object to encode");
 
         ByteArrayOutputStream buf = bufferPool.acquire();
@@ -84,10 +73,33 @@ class DefaultEncoderDecoder<T> implements EncoderDecoder<T> {
     }
 
     @Override
-    public T decodeFromStream(InputStream in) throws IOException {
+    public T decode(byte[] bytes) throws IOException {
+        ArgAssert.notNull(bytes, "Byte array");
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(bytes);
+
+        return codecFactory.createCodec().decode(new StreamDataReader(buf));
+    }
+
+    @Override
+    public T decode(byte[] bytes, int offset, int limit) throws IOException {
+        ArgAssert.notNull(bytes, "Byte array");
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(bytes, offset, limit);
+
+        return codecFactory.createCodec().decode(new StreamDataReader(buf));
+    }
+
+    @Override
+    public T decode(InputStream in) throws IOException {
+        return decode((DataReader)new StreamDataReader(in));
+    }
+
+    @Override
+    public T decode(DataReader in) throws IOException {
         ArgAssert.notNull(in, "Input stream");
 
-        return codecFactory.createCodec().decode(new StreamDataReader(in));
+        return codecFactory.createCodec().decode(in);
     }
 
     @Override

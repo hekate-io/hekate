@@ -19,6 +19,7 @@ package io.hekate.codec;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.Service;
+import java.io.IOException;
 
 /**
  * <span class="startHere">&laquo; start here</span>Main entry point to data serialization API.
@@ -39,7 +40,7 @@ import io.hekate.core.service.Service;
  * @see Codec
  * @see HekateBootstrap#setDefaultCodec(CodecFactory)
  */
-public interface CodecService extends Service, EncoderDecoder<Object> {
+public interface CodecService extends Service {
     /**
      * Returns an underlying codec factory (see {@link HekateBootstrap#setDefaultCodec(CodecFactory)}).
      *
@@ -69,4 +70,45 @@ public interface CodecService extends Service, EncoderDecoder<Object> {
      * @return Encoder/decoder for the specified factory.
      */
     <T> EncoderDecoder<T> forFactory(CodecFactory<T> codecFactory);
+
+    /**
+     * Encodes the specified object via the specified function and returns a byte array of encoded data.
+     *
+     * @param obj Object to encode (can be {@code null}, in such case the {@code encoder} function's parameter will be {@code null} too).
+     * @param encoder Encoder function.
+     * @param <T> Object type.
+     *
+     * @return Byte array of encoded data.
+     *
+     * @throws IOException If object couldn't be decoded.
+     */
+    <T> byte[] encode(T obj, EncodeFunction<T> encoder) throws IOException;
+
+    /**
+     * Decodes an object from the specified byte array by using the supplied decode function.
+     *
+     * @param bytes Bytes.
+     * @param decoder Decode function.
+     * @param <T> Decoded object type.
+     *
+     * @return Decoded object.
+     *
+     * @throws IOException If object couldn't be decoded.
+     */
+    <T> T decode(byte[] bytes, DecodeFunction<T> decoder) throws IOException;
+
+    /**
+     * Decodes an object from the specified byte array by using the supplied decode function.
+     *
+     * @param bytes Bytes.
+     * @param offset Offset to
+     * @param limit Maximum number of bytes to read.
+     * @param decoder Decode function.
+     * @param <T> Decoded object type.
+     *
+     * @return Decoded object.
+     *
+     * @throws IOException If object couldn't be decoded.
+     */
+    <T> T decode(byte[] bytes, int offset, int limit, DecodeFunction<T> decoder) throws IOException;
 }
