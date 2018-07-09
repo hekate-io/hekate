@@ -40,16 +40,18 @@ class BroadcastCallbackAdaptor implements CoordinationRequestCallback {
 
     @Override
     public void onResponse(Object response, CoordinationMember from) {
-        boolean allReceived;
+        Map<CoordinationMember, Object> responsesCopy = null;
 
         synchronized (responses) {
             responses.put(from, response);
 
-            allReceived = responses.size() == expected;
+            if (responses.size() == expected) {
+                responsesCopy = new HashMap<>(responses);
+            }
         }
 
-        if (allReceived && completed.compareAndSet(false, true)) {
-            callback.onResponses(responses);
+        if (responsesCopy != null && completed.compareAndSet(false, true)) {
+            callback.onResponses(responsesCopy);
         }
     }
 
