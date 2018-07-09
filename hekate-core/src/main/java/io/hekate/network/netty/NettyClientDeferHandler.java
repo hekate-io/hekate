@@ -140,32 +140,36 @@ class NettyClientDeferHandler extends ChannelDuplexHandler {
     }
 
     private void discardDeferred() {
-        if (deferred == null) {
+        Queue<DeferredMessage> localDeferred = this.deferred;
+
+        if (localDeferred == null) {
             if (trace) {
                 log.trace("Skipped discard deferred notification [to={}]", id);
             }
         } else {
-            if (debug) {
-                log.debug("Discarding deferred messages [to={}, size={}]", id, deferred.size());
-            }
+            if (!localDeferred.isEmpty()) {
+                if (debug) {
+                    log.debug("Discarding deferred messages [to={}, size={}]", id, localDeferred.size());
+                }
 
-            if (deferredError == null) {
-                deferredError = new ClosedChannelException();
-            }
+                while (!localDeferred.isEmpty()) {
+                    DeferredMessage msg = localDeferred.poll();
 
-            while (!deferred.isEmpty()) {
-                DeferredMessage msg = deferred.poll();
+                    if (msg != null) {
+                        if (deferredError == null) {
+                            deferredError = new ClosedChannelException();
+                        }
 
-                if (msg != null) {
-                    try {
-                        msg.promise().tryFailure(deferredError);
-                    } finally {
-                        ReferenceCountUtil.release(msg.payload());
+                        try {
+                            msg.promise().tryFailure(deferredError);
+                        } finally {
+                            ReferenceCountUtil.release(msg.payload());
+                        }
                     }
                 }
             }
 
-            deferred = null;
+            this.deferred = null;
         }
     }
 
