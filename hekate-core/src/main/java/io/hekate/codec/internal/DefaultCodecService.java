@@ -35,10 +35,10 @@ import java.io.OutputStream;
 
 public class DefaultCodecService implements CodecService, EncoderDecoder<Object> {
     // TODO: Configurable size of recyclable buffers pool.
-    private static final int MAX_POOL_SIZE = 64;
+    private static final int MAX_POOL_SIZE = Integer.getInteger("io.hekate.codec.maxReusableBufferPoolSize", 128);
 
     // TODO: Configurable maximum size of recyclable buffer.
-    private static final int MAX_BUFFER_SIZE = 1024 * 1024;
+    private static final int MAX_BUFFER_SIZE = Integer.getInteger("io.hekate.codec.maxReusableBufferSize", 1024 * 1024);
 
     private final CodecFactory<Object> codecFactory;
 
@@ -51,9 +51,9 @@ public class DefaultCodecService implements CodecService, EncoderDecoder<Object>
 
         this.codecFactory = codecFactory;
 
-        bufferPool = new ByteArrayOutputStreamPool(MAX_POOL_SIZE, MAX_BUFFER_SIZE);
+        this.bufferPool = new ByteArrayOutputStreamPool(MAX_POOL_SIZE, MAX_BUFFER_SIZE);
 
-        objEncodec = new DefaultEncoderDecoder<>(bufferPool, codecFactory);
+        this.objEncodec = new DefaultEncoderDecoder<>(bufferPool, codecFactory);
     }
 
     @Override

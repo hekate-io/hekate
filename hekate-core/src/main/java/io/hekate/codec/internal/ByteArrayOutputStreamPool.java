@@ -20,7 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.concurrent.ArrayBlockingQueue;
 
 class ByteArrayOutputStreamPool {
-    public static final int INITIAL_BUFFER_SIZE = 512;
+    public static final int INITIAL_BUFFER_SIZE = 1024;
 
     private final ArrayBlockingQueue<ByteArrayOutputStream> pool;
 
