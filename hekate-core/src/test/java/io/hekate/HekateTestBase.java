@@ -175,7 +175,6 @@ public abstract class HekateTestBase {
         KNOWN_THREAD_PREFIXES.add("last-ditch-daemon".toLowerCase());
 
         // Third party libraries that start threads but do not allow to stop them.
-        KNOWN_THREAD_PREFIXES.add("ObjectCleanerThread".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("Okio Watchdog".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("OkHttp ConnectionPool".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("com.google.inject.internal.util.$Finalizer".toLowerCase());
