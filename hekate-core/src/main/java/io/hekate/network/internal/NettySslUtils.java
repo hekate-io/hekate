@@ -21,6 +21,7 @@ import io.hekate.core.resource.ResourceLoadingException;
 import io.hekate.core.resource.ResourceService;
 import io.hekate.network.NetworkSslConfig;
 import io.netty.handler.ssl.OpenSsl;
+import io.netty.handler.ssl.OpenSslX509KeyManagerFactory;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
@@ -86,14 +87,24 @@ final class NettySslUtils {
         }
     }
 
-    private static KeyManagerFactory keyManager(NetworkSslConfig cfg, ResourceService res) throws GeneralSecurityException, IOException,
-        ResourceLoadingException {
+    private static KeyManagerFactory keyManager(
+        NetworkSslConfig cfg,
+        ResourceService res
+    ) throws GeneralSecurityException, IOException, ResourceLoadingException {
         KeyManagerFactory factory;
 
         if (cfg.getKeyStoreAlgorithm() == null || cfg.getKeyStoreAlgorithm().isEmpty()) {
-            factory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            if (provider(cfg) == SslProvider.OPENSSL) {
+                factory = new OpenSslX509KeyManagerFactory();
+            } else {
+                factory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            }
         } else {
-            factory = KeyManagerFactory.getInstance(cfg.getKeyStoreAlgorithm());
+            if (provider(cfg) == SslProvider.OPENSSL) {
+                factory = new OpenSslX509KeyManagerFactory(cfg.getKeyStoreAlgorithm(), null);
+            } else {
+                factory = KeyManagerFactory.getInstance(cfg.getKeyStoreAlgorithm());
+            }
         }
 
         KeyStore store = keyStore(cfg.getKeyStorePath(), cfg.getKeyStorePassword(), cfg.getKeyStoreType(), res);
@@ -103,8 +114,10 @@ final class NettySslUtils {
         return factory;
     }
 
-    private static TrustManagerFactory trustManager(NetworkSslConfig cfg, ResourceService resources) throws GeneralSecurityException,
-        IOException, ResourceLoadingException {
+    private static TrustManagerFactory trustManager(
+        NetworkSslConfig cfg,
+        ResourceService resources
+    ) throws GeneralSecurityException, IOException, ResourceLoadingException {
         if (cfg.getTrustStorePath() == null || cfg.getTrustStorePath().isEmpty()) {
             return InsecureTrustManagerFactory.INSTANCE;
         } else {
@@ -124,8 +137,12 @@ final class NettySslUtils {
         }
     }
 
-    private static KeyStore keyStore(String path, String password, String type, ResourceService resources) throws IOException,
-        GeneralSecurityException, ResourceLoadingException {
+    private static KeyStore keyStore(
+        String path,
+        String password,
+        String type,
+        ResourceService resources
+    ) throws IOException, GeneralSecurityException, ResourceLoadingException {
         assert path != null : "Key store path null.";
         assert password != null : "Key store password is null.";
         assert resources != null : "Resource service is null.";
