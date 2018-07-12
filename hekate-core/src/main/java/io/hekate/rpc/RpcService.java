@@ -92,7 +92,7 @@ import java.util.concurrent.CompletableFuture;
  * asynchronously by the {@link RpcService} without blocking the client thread.
  * </p>
  *
- * <h3>RPC broadcasting and aggregation</h3>
+ * <h3>RPC aggregation and broadcast</h3>
  * <p>
  * RPC service provides support for broadcast/aggregate operations. Each such RPC operations gets submitted to multiple nodes at once and
  * all RPC results from those nodes gets aggregated into a single result object.
@@ -108,6 +108,11 @@ import java.util.concurrent.CompletableFuture;
  * <li>{@link Collection}</li>
  * <li>{@link CompletableFuture}{@code <}{@link List}|{@link Set}|{@link Collection}|{@link Map}{@code >}</li>
  * </ul>
+ *
+ * <p>
+ * If no results are expected to be returned by an RPC method then such method must be annotated with @{@link RpcBroadcast} and must have a
+ * {@code void} return type (or {@link CompletableFuture}{@code <?>} for asynchronous calls).
+ * </p>
  *
  * <h3>Arguments splitting</h3>
  * <p>

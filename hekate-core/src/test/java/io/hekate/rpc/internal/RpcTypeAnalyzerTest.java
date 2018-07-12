@@ -20,6 +20,7 @@ import io.hekate.HekateTestBase;
 import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcAffinityKey;
 import io.hekate.rpc.RpcAggregate;
+import io.hekate.rpc.RpcBroadcast;
 import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
 import io.hekate.rpc.RpcSplit;
@@ -116,6 +117,20 @@ public class RpcTypeAnalyzerTest extends HekateTestBase {
 
         @RpcAggregate
         CompletableFuture<Map<Object, Object>> map();
+    }
+
+    @Rpc
+    @SuppressWarnings("unused")
+    public interface BroadcastType {
+        @RpcBroadcast
+        void call();
+    }
+
+    @Rpc
+    @SuppressWarnings("unused")
+    public interface BroadcastAsyncType {
+        @RpcBroadcast
+        CompletableFuture<?> call();
     }
 
     @Rpc
@@ -297,6 +312,30 @@ public class RpcTypeAnalyzerTest extends HekateTestBase {
             '@' + Rpc.class.getSimpleName() + " version must be greater than or equals to the minimum client version "
                 + "[type=" + InvalidMinClientVersion.class.getName() + ", version=1, min-client-version=3]",
             () -> analyzer.analyzeType(InvalidMinClientVersion.class));
+    }
+
+    @Test
+    public void testBroadcastType() {
+        RpcInterfaceInfo<BroadcastType> type = analyzer.analyzeType(BroadcastType.class);
+
+        RpcMethodInfo call = findMethod("call", type);
+
+        assertTrue(call.broadcast().isPresent());
+
+        assertSame(Void.class, call.realReturnType());
+    }
+
+    @Test
+    public void testBroadcastAsyncType() {
+        RpcInterfaceInfo<BroadcastAsyncType> type = analyzer.analyzeType(BroadcastAsyncType.class);
+
+        RpcMethodInfo call = findMethod("call", type);
+
+        assertTrue(call.broadcast().isPresent());
+
+        assertTrue(call.isAsync());
+
+        assertSame(Void.class, call.realReturnType());
     }
 
     @Test

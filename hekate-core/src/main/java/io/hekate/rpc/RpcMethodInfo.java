@@ -43,6 +43,8 @@ public class RpcMethodInfo {
 
     private final Optional<RpcAggregate> aggregate;
 
+    private final Optional<RpcBroadcast> broadcast;
+
     private final OptionalInt splitArg;
 
     private final OptionalInt affinityArg;
@@ -66,8 +68,19 @@ public class RpcMethodInfo {
         this.affinityArg = findAffinityArg(javaMethod);
         this.splitArg = findSplitArg(javaMethod);
         this.async = isAsyncReturnType(javaMethod);
-        this.realReturnType = findRealReturnType(javaMethod);
         this.aggregate = findAggregate(javaMethod);
+        this.broadcast = findBroadcast(javaMethod);
+
+        if (broadcast.isPresent()) {
+            this.realReturnType = Void.class;
+        } else {
+            this.realReturnType = findRealReturnType(javaMethod);
+        }
+
+        if (broadcast.isPresent() && aggregate.isPresent()) {
+            throw new IllegalArgumentException("@" + RpcAggregate.class.getSimpleName() + " can't be used together with "
+                + "@" + RpcBroadcast.class.getSimpleName() + " [method=" + javaMethod + ']');
+        }
 
         if (splitArg.isPresent()) {
             if (affinityArg.isPresent()) {
@@ -116,6 +129,15 @@ public class RpcMethodInfo {
      */
     public Optional<RpcAggregate> aggregate() {
         return aggregate;
+    }
+
+    /**
+     * Returns the {@link RpcBroadcast} annotation that is declared on this method (if presents).
+     *
+     * @return {@link RpcBroadcast} annotation.
+     */
+    public Optional<RpcBroadcast> broadcast() {
+        return broadcast;
     }
 
     /**
@@ -186,27 +208,32 @@ public class RpcMethodInfo {
     private static Optional<RpcAggregate> findAggregate(Method meth) {
         Optional<RpcAggregate> aggregate = Optional.ofNullable(meth.getAnnotation(RpcAggregate.class));
 
-        Class<?> returnType = findRealReturnType(meth);
+        if (aggregate.isPresent()) {
+            Class<?> returnType = findRealReturnType(meth);
 
-        if (aggregate.isPresent()
-            && !Collection.class.equals(returnType)
-            && !Set.class.equals(returnType)
-            && !List.class.equals(returnType)
-            && !Map.class.equals(returnType)) {
-            // Allowed types info for the error message.
-            String col = Collection.class.getSimpleName();
-            String lst = List.class.getSimpleName();
-            String set = Set.class.getSimpleName();
-            String map = Map.class.getSimpleName();
+            if (!Collection.class.equals(returnType)
+                && !Set.class.equals(returnType)
+                && !List.class.equals(returnType)
+                && !Map.class.equals(returnType)) {
+                // Allowed types info for the error message.
+                String col = Collection.class.getSimpleName();
+                String lst = List.class.getSimpleName();
+                String set = Set.class.getSimpleName();
+                String map = Map.class.getSimpleName();
 
-            String future = CompletableFuture.class.getSimpleName() + "<" + col + "|" + lst + "|" + set + "|" + map + ">";
+                String future = CompletableFuture.class.getSimpleName() + "<" + col + "|" + lst + "|" + set + "|" + map + ">";
 
-            throw new IllegalArgumentException("Method annotated with @" + RpcAggregate.class.getSimpleName() + " has unsupported "
-                + "return type [supported-types={" + col + ", " + lst + ", " + set + ", " + map + ", " + future + "}, "
-                + "method=" + meth + ']');
+                throw new IllegalArgumentException("Method annotated with @" + RpcAggregate.class.getSimpleName() + " has unsupported "
+                    + "return type [supported-types={" + col + ", " + lst + ", " + set + ", " + map + ", " + future + "}, "
+                    + "method=" + meth + ']');
+            }
         }
 
         return aggregate;
+    }
+
+    private static Optional<RpcBroadcast> findBroadcast(Method meth) {
+        return Optional.ofNullable(meth.getAnnotation(RpcBroadcast.class));
     }
 
     private static OptionalInt findSplitArg(Method meth) {

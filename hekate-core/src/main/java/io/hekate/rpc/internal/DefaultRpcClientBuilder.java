@@ -132,12 +132,12 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
         for (RpcMethodInfo method : type.methods()) {
             RpcMethodClientBase<T> client;
 
-            if (method.aggregate().isPresent()) {
-                if (method.splitArg().isPresent()) {
-                    client = new RpcSplitAggregateMethodClient<>(type, tag, method, channel);
-                } else {
-                    client = new RpcAggregateMethodClient<>(type, tag, method, channel);
-                }
+            if (method.splitArg().isPresent()) {
+                client = new RpcSplitAggregateMethodClient<>(type, tag, method, channel);
+            } else if (method.aggregate().isPresent()) {
+                client = new RpcAggregateMethodClient<>(type, tag, method, channel);
+            } else if (method.broadcast().isPresent()) {
+                client = new RpcBroadcastMethodClient<>(type, tag, method, channel);
             } else {
                 client = new RpcMethodClient<>(type, tag, method, channel);
             }
