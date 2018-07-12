@@ -176,6 +176,10 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
             assertSame(result.results(), future.results(3, TimeUnit.SECONDS));
             assertSame(result.results(), future.resultsUninterruptedly());
 
+            assertSame(result.results(), future.results(String.class));
+            assertSame(result.results(), future.results(String.class, 3, TimeUnit.SECONDS));
+            assertSame(result.results(), future.resultsUninterruptedly(String.class));
+
             assertTrue(result.toString(), result.isSuccess());
             assertTrue(result.toString(), result.errors().isEmpty());
             assertEquals(channels.size(), result.nodes().size());

@@ -111,7 +111,12 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
                 String msg2 = "test2-" + from.getNodeId();
 
                 assertEquals(msg1 + "-reply", from.get().forNode(to.getNodeId()).request(msg1).response());
+                assertEquals(msg1 + "-reply", from.get().forNode(to.getNodeId()).request(msg1).response(3, TimeUnit.SECONDS));
                 assertEquals(msg2 + "-reply", from.get().forNode(to.getNodeId()).request(msg2).responseUninterruptedly());
+
+                assertEquals(msg1 + "-reply", from.get().forNode(to.getNodeId()).request(msg1).response(String.class));
+                assertEquals(msg1 + "-reply", from.get().forNode(to.getNodeId()).request(msg1).response(String.class, 3, TimeUnit.SECONDS));
+                assertEquals(msg2 + "-reply", from.get().forNode(to.getNodeId()).request(msg2).responseUninterruptedly(String.class));
 
                 to.assertReceived(msg1);
                 to.assertReceived(msg2);
