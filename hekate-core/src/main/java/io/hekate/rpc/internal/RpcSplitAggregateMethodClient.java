@@ -153,12 +153,12 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
             errorPolicy = err -> {
                 if (policy == RpcAggregate.RemoteErrors.WARN) {
                     if (log.isWarnEnabled()) {
-                        log.warn("RPC aggregation failed [type={}, method={}]", rpc.name(), method.signature(), err);
+                        log.warn("RPC aggregation failed [method={}#{}]", rpc.name(), method.signature(), err);
                     }
 
                     return null;
                 } else {
-                    String errMsg = "RPC aggregation failed [type=" + rpc.name() + ", method=" + method.signature() + "]";
+                    String errMsg = "RPC aggregation failed [method=" + rpc.name() + '#' + method.signature() + ']';
 
                     return new RpcException(errMsg, err);
                 }

@@ -70,12 +70,12 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
                     if (config.remoteErrors() == RpcAggregate.RemoteErrors.WARN) {
                         if (log.isWarnEnabled()) {
                             aggregate.errors().forEach((node, err) ->
-                                log.warn("RPC aggregation failed [remote-node={}, type={}, method={}]",
+                                log.warn("RPC aggregation failed [remote-node={}, method={}#{}]",
                                     node, rpc.name(), method.signature(), err)
                             );
                         }
                     } else {
-                        String errMsg = "RPC aggregation failed [type=" + rpc.name() + ", method=" + method.signature() + ']';
+                        String errMsg = "RPC aggregation failed [method=" + rpc.name() + '#' + method.signature() + ']';
 
                         Map<ClusterNode, Object> partialResults = new HashMap<>(aggregate.resultsByNode().size(), 1.0f);
 

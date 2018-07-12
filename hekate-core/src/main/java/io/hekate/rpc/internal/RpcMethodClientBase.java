@@ -72,7 +72,7 @@ abstract class RpcMethodClientBase<T> {
             tryThrow(method.javaMethod(), e);
 
             // Re-throw as unchecked exception.
-            throw new RpcException("RPC failed [type=" + rpc.name() + ", method=" + method.signature() + ']', e);
+            throw new RpcException("RPC failed [method=" + rpc.name() + '#' + method.signature() + ']', e);
         }
     }
 
