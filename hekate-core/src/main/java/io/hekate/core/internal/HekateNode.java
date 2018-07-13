@@ -762,8 +762,10 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
 
                             topology = newTopology;
 
-                            if (log.isInfoEnabled()) {
-                                log.info("Joined the cluster ...will synchronize [join-order={}, topology={}]", joinOrder, newTopology);
+                            if (!syncFutures.isEmpty()) {
+                                if (log.isInfoEnabled()) {
+                                    log.info("Joined the cluster ...will synchronize [join-order={}, topology={}]", joinOrder, newTopology);
+                                }
                             }
 
                             notifyOnLifecycleChange();
