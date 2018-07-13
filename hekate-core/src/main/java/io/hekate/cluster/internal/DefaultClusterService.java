@@ -1219,8 +1219,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
             @Override
             public void onNodeFailure(ClusterNode failed, GossipNodeStatus status) {
-                if (log.isErrorEnabled()) {
-                    log.error("Removing failed node from cluster [address={}, status={}]", failed, status);
+                if (log.isWarnEnabled()) {
+                    log.warn("Removing failed node from cluster [address={}, status={}]", failed, status);
                 }
 
                 if (gossipSpy != null) {

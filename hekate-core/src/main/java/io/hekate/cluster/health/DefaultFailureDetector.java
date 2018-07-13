@@ -331,8 +331,10 @@ public class DefaultFailureDetector implements FailureDetector, JmxSupport<Defau
 
                     updateMonitors = monitor.onConnectFailure();
 
-                    if (updateMonitors && log.isWarnEnabled()) {
-                        log.error("Node connect failure [node={}]", node);
+                    if (updateMonitors) {
+                        if (log.isWarnEnabled()) {
+                            log.warn("Can't connect to cluster node [node={}]", node);
+                        }
                     }
                 } else {
                     if (DEBUG) {
