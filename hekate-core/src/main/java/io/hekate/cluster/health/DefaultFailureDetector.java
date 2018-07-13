@@ -77,6 +77,8 @@ public class DefaultFailureDetector implements FailureDetector, JmxSupport<Defau
 
         private int lostHeartbeats = -1;
 
+        private boolean connectFailure;
+
         public NodeMonitor(ClusterAddress address, int hbLossThreshold, long hbInterval) {
             this.address = address;
             this.hbLossThreshold = hbLossThreshold;
@@ -96,10 +98,21 @@ public class DefaultFailureDetector implements FailureDetector, JmxSupport<Defau
 
         public synchronized void onHeartbeatReceived() {
             lostHeartbeats = -1;
+            connectFailure = false;
+        }
+
+        public synchronized boolean onConnectFailure() {
+            if (connectFailure) {
+                return false;
+            } else {
+                connectFailure = true;
+
+                return true;
+            }
         }
 
         public synchronized boolean isAlive() {
-            return lostHeartbeats <= hbLossThreshold;
+            return !connectFailure && lostHeartbeats <= hbLossThreshold;
         }
 
         public ClusterAddress address() {
@@ -122,6 +135,8 @@ public class DefaultFailureDetector implements FailureDetector, JmxSupport<Defau
     private final int hbLossThreshold;
 
     private final long hbInterval;
+
+    private final boolean failFast;
 
     @ToStringIgnore
     private final ReentrantReadWriteLock.ReadLock readLock;
@@ -155,17 +170,18 @@ public class DefaultFailureDetector implements FailureDetector, JmxSupport<Defau
      * @param cfg Configuration.
      */
     public DefaultFailureDetector(DefaultFailureDetectorConfig cfg) {
+        ArgAssert.notNull(cfg, "Configuration");
+
         ConfigCheck check = ConfigCheck.get(getClass());
 
-        check.notNull(cfg, "configuration");
+        check.positive(cfg.getHeartbeatLossThreshold(), "heartbeat loss threshold");
+        check.positive(cfg.getHeartbeatInterval(), "heartbeat interval");
+        check.positive(cfg.getFailureDetectionQuorum(), "failure detection quorum");
 
         hbLossThreshold = cfg.getHeartbeatLossThreshold();
         hbInterval = cfg.getHeartbeatInterval();
         failureQuorum = cfg.getFailureDetectionQuorum();
-
-        check.positive(hbLossThreshold, "heartbeat loss threshold");
-        check.positive(hbInterval, "heartbeat interval");
-        check.positive(failureQuorum, "failure detection quorum");
+        failFast = cfg.isFailFast();
 
         ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -292,6 +308,49 @@ public class DefaultFailureDetector implements FailureDetector, JmxSupport<Defau
                 updateMonitors();
             } finally {
                 writeLock.unlock();
+            }
+        }
+    }
+
+    @Override
+    public void onConnectFailure(ClusterAddress node) {
+        ArgAssert.notNull(node, "Node");
+
+        if (failFast) {
+            boolean updateMonitors = false;
+
+            readLock.lock();
+
+            try {
+                NodeMonitor monitor = monitors.get(node);
+
+                if (monitor != null) {
+                    if (DEBUG) {
+                        log.debug("Heartbeat sending failure [from={}]", monitor);
+                    }
+
+                    updateMonitors = monitor.onConnectFailure();
+
+                    if (updateMonitors && log.isWarnEnabled()) {
+                        log.error("Node connect failure [node={}]", node);
+                    }
+                } else {
+                    if (DEBUG) {
+                        log.debug("Ignored heartbeat sending failure from a non-monitored node [from={}]", node);
+                    }
+                }
+            } finally {
+                readLock.unlock();
+            }
+
+            if (updateMonitors) {
+                writeLock.lock();
+
+                try {
+                    updateMonitors();
+                } finally {
+                    writeLock.unlock();
+                }
             }
         }
     }

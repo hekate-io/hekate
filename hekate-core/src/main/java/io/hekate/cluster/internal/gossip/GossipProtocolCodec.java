@@ -90,7 +90,8 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
                 case CONNECT: {
                     Connect connect = (Connect)msg;
 
-                    CodecUtils.writeNodeId(connect.nodeId(), out);
+                    CodecUtils.writeClusterAddress(connect.to(), out);
+                    CodecUtils.writeClusterAddress(connect.from(), out);
 
                     break;
                 }
@@ -188,9 +189,10 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
 
             switch (msgType) {
                 case CONNECT: {
-                    ClusterNodeId nodeId = CodecUtils.readNodeId(in);
+                    ClusterAddress to = CodecUtils.readClusterAddress(in);
+                    ClusterAddress from = CodecUtils.readClusterAddress(in);
 
-                    result = new Connect(nodeId);
+                    result = new Connect(to, from);
 
                     break;
                 }

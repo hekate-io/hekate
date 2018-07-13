@@ -16,9 +16,11 @@
 
 package io.hekate.cluster.internal.gossip;
 
+import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.internal.gossip.GossipProtocol.Connect;
 import io.hekate.cluster.internal.gossip.GossipProtocol.GossipMessage;
+import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkClientCallback;
 import io.hekate.network.NetworkConnector;
@@ -28,7 +30,9 @@ import io.hekate.network.NetworkMessage;
 import io.hekate.network.NetworkServerHandler;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.format.ToString;
+import io.netty.channel.ConnectTimeoutException;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -45,6 +49,8 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
         void onSendSuccess(GossipProtocol msg);
 
         void onSendFailure(GossipProtocol msg, Throwable error);
+
+        void onConnectFailure(ClusterAddress address);
 
         Optional<Throwable> onBeforeSend(GossipProtocol msg);
     }
@@ -110,23 +116,37 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
             @Override
             public void onDisconnect(NetworkClient<GossipProtocol> client, Optional<Throwable> cause) {
-                ClusterNodeId id = client.getContext();
+                ClusterAddress address = client.getContext();
 
-                if (id != null) {
+                if (address != null) {
                     if (DEBUG) {
-                        log.debug("Closed outbound connection [to={}]", id);
+                        log.debug("Closed outbound connection [to={}]", address);
                     }
 
+                    boolean unregistered = false;
+
                     synchronized (mux) {
-                        EndpointHolder latestSender = clients.get(id);
+                        EndpointHolder latestSender = clients.get(address.id());
 
                         // Remove from map only if it contains exactly the same client instance.
                         if (latestSender != null && latestSender.endpoint() == client) {
                             if (DEBUG) {
-                                log.debug("Removing outbound connection from registry [to={}]", id);
+                                log.debug("Removing outbound connection from registry [to={}]", address);
                             }
 
-                            clients.remove(id);
+                            clients.remove(address.id());
+
+                            unregistered = true;
+                        }
+                    }
+
+                    if (unregistered && cause.isPresent()) {
+                        // Notify on connect error only if we were not able to connect to the remote node's process.
+                        // In case of timeout we can't decide on whether the remote process is alive or not (could be paused by GC, etc).
+                        ConnectException connErr = ErrorUtils.findCause(ConnectException.class, cause.get());
+
+                        if (connErr != null && !(connErr instanceof ConnectTimeoutException)) {
+                            callback.onConnectFailure(address);
                         }
                     }
                 }
@@ -160,13 +180,13 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
                     NetworkClient<GossipProtocol> client = net.newClient();
 
-                    client.setContext(nodeId);
+                    client.setContext(msg.to());
 
                     holder = new EndpointHolder(client, true);
 
                     clients.put(nodeId, holder);
 
-                    Connect connectMsg = new Connect(msg.from().id());
+                    Connect connectMsg = new Connect(msg.from(), msg.to());
 
                     client.connect(msg.to().socket(), connectMsg, netClientCallback);
                 }
@@ -236,35 +256,25 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
     @Override
     public void onConnect(GossipProtocol msg, NetworkEndpoint<GossipProtocol> client) {
         if (msg.type() == GossipProtocol.Type.CONNECT) {
-            Connect connect = (Connect)msg;
+            if (DEBUG) {
+                log.debug("Got a new inbound connection [from={}]", msg.from());
+            }
 
-            ClusterNodeId id = connect.nodeId();
+            ClusterNodeId fromId = msg.from().id();
 
-            if (id == null) {
-                if (DEBUG) {
-                    log.debug("Rejecting connection without a cluster node id [message={}, connection={}]", msg, client);
-                }
+            client.setContext(msg.from());
 
-                client.disconnect();
-            } else {
-                if (DEBUG) {
-                    log.debug("Got a new inbound connection [from={}]", id);
-                }
-
-                client.setContext(id);
-
-                synchronized (mux) {
-                    if (clients.containsKey(id)) {
-                        if (DEBUG) {
-                            log.debug("Will not register inbound connection since another connection exists [from={}]", id);
-                        }
-                    } else {
-                        if (DEBUG) {
-                            log.debug("Registering inbound connection [from={}]", id);
-                        }
-
-                        clients.put(id, new EndpointHolder(client, false));
+            synchronized (mux) {
+                if (clients.containsKey(fromId)) {
+                    if (DEBUG) {
+                        log.debug("Will not register inbound connection since another connection exists [from={}]", msg.from());
                     }
+                } else {
+                    if (DEBUG) {
+                        log.debug("Registering inbound connection [from={}]", msg.from());
+                    }
+
+                    clients.put(fromId, new EndpointHolder(client, false));
                 }
             }
         } else {
@@ -287,23 +297,23 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
     @Override
     public void onDisconnect(NetworkEndpoint<GossipProtocol> client) {
-        ClusterNodeId id = client.getContext();
+        ClusterAddress address = client.getContext();
 
-        if (id != null) {
+        if (address != null) {
             if (DEBUG) {
-                log.debug("Closed inbound connection [from={}]", id);
+                log.debug("Closed inbound connection [from={}]", address);
             }
 
             synchronized (mux) {
-                EndpointHolder holder = clients.get(id);
+                EndpointHolder holder = clients.get(address.id());
 
                 // Remove from map only if it contains exactly the same client instance.
                 if (holder != null && holder.endpoint() == client) {
                     if (DEBUG) {
-                        log.debug("Removing inbound connection from registry [from={}]", id);
+                        log.debug("Removing inbound connection from registry [from={}]", address);
                     }
 
-                    clients.remove(id);
+                    clients.remove(address.id());
                 }
             }
         }

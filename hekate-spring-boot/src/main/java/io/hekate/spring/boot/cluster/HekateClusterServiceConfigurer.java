@@ -78,6 +78,7 @@ import org.springframework.context.annotation.Lazy;
  * <li>{@link DefaultFailureDetectorConfig#setHeartbeatInterval(long) 'hekate.cluster.health.heartbeat-interval'}</li>
  * <li>{@link DefaultFailureDetectorConfig#setHeartbeatLossThreshold(int) 'hekate.cluster.health.heartbeat-loss-threshold'}</li>
  * <li>{@link DefaultFailureDetectorConfig#setFailureDetectionQuorum(int) 'hekate.cluster.health.failure-detection-quorum'}</li>
+ * <li>{@link DefaultFailureDetectorConfig#setFailFast(boolean)} 'hekate.cluster.health.fail-fast'}</li>
  * </ul>
  *
  * <h2>Seed node providers</h2>

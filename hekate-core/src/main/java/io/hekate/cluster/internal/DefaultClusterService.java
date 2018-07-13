@@ -360,6 +360,11 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                 }
 
                 @Override
+                public void onConnectFailure(ClusterAddress node) {
+                    processConnectFailure(node);
+                }
+
+                @Override
                 public Optional<Throwable> onBeforeSend(GossipProtocol msg) {
                     return gossipListener.onBeforeSend(msg);
                 }
@@ -999,6 +1004,14 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                 }
             }
         });
+    }
+
+    private void processConnectFailure(ClusterAddress address) {
+        assert address != null : "Node address is null.";
+
+        guard.withReadLockIfInitialized(() ->
+            failureDetector.onConnectFailure(address)
+        );
     }
 
     private void processJoinSendFailure(JoinRequest msg, Throwable cause) {

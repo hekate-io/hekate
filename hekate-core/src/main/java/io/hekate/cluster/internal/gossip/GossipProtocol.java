@@ -18,7 +18,6 @@ package io.hekate.cluster.internal.gossip;
 
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
 
@@ -61,16 +60,8 @@ public abstract class GossipProtocol {
     }
 
     public static class Connect extends GossipMessage {
-        private final ClusterNodeId nodeId;
-
-        public Connect(ClusterNodeId nodeId) {
-            super(null, null);
-
-            this.nodeId = nodeId;
-        }
-
-        public ClusterNodeId nodeId() {
-            return nodeId;
+        public Connect(ClusterAddress from, ClusterAddress to) {
+            super(from, to);
         }
 
         @Override

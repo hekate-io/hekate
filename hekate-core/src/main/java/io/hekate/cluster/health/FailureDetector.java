@@ -139,7 +139,7 @@ public interface FailureDetector {
     Collection<ClusterAddress> heartbeatTick();
 
     /**
-     * Notifies this failure detector when heartbeat request message is received form a remote node. Returns a boolean flag indicating
+     * Notifies this failure detector on heartbeat request message form a remote node. Returns a boolean flag indicating
      * whether a heartbeat reply should be send ({@code true}) or heartbeat replies are not supported ({@code false}).
      *
      * @param from Address of the heartbeat request sender node.
@@ -152,9 +152,16 @@ public interface FailureDetector {
     boolean onHeartbeatRequest(ClusterAddress from);
 
     /**
-     * Notifies this failure detector when heartbeat reply message is received from a remote node.
+     * Notifies this failure detector on heartbeat reply message from a remote node.
      *
      * @param node Address of heartbeat reply sender node.
      */
     void onHeartbeatReply(ClusterAddress node);
+
+    /**
+     * Notifies this failure detector upon failure while trying to connect to a remote node.
+     *
+     * @param node Address of a failed node.
+     */
+    void onConnectFailure(ClusterAddress node);
 }

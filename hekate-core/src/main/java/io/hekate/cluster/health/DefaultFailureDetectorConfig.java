@@ -17,6 +17,7 @@
 package io.hekate.cluster.health;
 
 import io.hekate.util.format.ToString;
+import java.net.ConnectException;
 
 /**
  * Configuration for {@link DefaultFailureDetector}.
@@ -38,6 +39,8 @@ public class DefaultFailureDetectorConfig {
     private int heartbeatLossThreshold = DEFAULT_HEARTBEAT_LOSS_THRESHOLD;
 
     private int failureDetectionQuorum = DEFAULT_FAILURE_DETECTION_QUORUM;
+
+    private boolean failFast = true;
 
     /**
      * Returns the heartbeat sending interval in milliseconds (see {@link #setHeartbeatInterval(long)}).
@@ -145,6 +148,48 @@ public class DefaultFailureDetectorConfig {
      */
     public DefaultFailureDetectorConfig withFailureDetectionQuorum(int failureDetectionQuorum) {
         setFailureDetectionQuorum(failureDetectionQuorum);
+
+        return this;
+    }
+
+    /**
+     * Sets the flag that controls the failure detection behavior in case of network connectivity issues between the cluster nodes (see
+     * {@link #setFailFast(boolean)}.
+     *
+     * @return {@code true} if fast-fail failure detection mode is enabled.
+     */
+    public boolean isFailFast() {
+        return failFast;
+    }
+
+    /**
+     * Sets the flag that controls the failure detection behavior in case of network connectivity issues between the cluster nodes.
+     *
+     * <p>
+     * If this flag is set to {@code true} then cluster node will be immediately treated as failed in case of a {@link ConnectException}
+     * while sending a gossip message to that node. If set to {@code false} then failure detector will wait for all
+     * {@link #setHeartbeatLossThreshold(int)} attempts before treating such node as failed.
+     * </p>
+     *
+     * <p>
+     * Default value of this parameter is {@code true}.
+     * </p>
+     *
+     * @param failFast {@code true} to speed up failure detection.
+     */
+    public void setFailFast(boolean failFast) {
+        this.failFast = failFast;
+    }
+
+    /**
+     * Fluent-style version of {@link #setFailFast(boolean)}.
+     *
+     * @param failFast {@code true} to speed up failure detection.
+     *
+     * @return This instance.
+     */
+    public DefaultFailureDetectorConfig withFailFast(boolean failFast) {
+        setFailFast(failFast);
 
         return this;
     }

@@ -92,4 +92,9 @@ public class FailureDetectorMock implements FailureDetector {
     public void onHeartbeatReply(ClusterAddress node) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void onConnectFailure(ClusterAddress node) {
+        throw new UnsupportedOperationException();
+    }
 }
