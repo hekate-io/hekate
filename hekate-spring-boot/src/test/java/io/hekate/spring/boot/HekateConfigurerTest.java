@@ -29,6 +29,7 @@ import io.hekate.network.NetworkService;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -36,6 +37,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -80,9 +82,16 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
     }
 
     @EnableAutoConfiguration
-    public static class DisableTestConfig {
+    public static class NoAnnotationTestConfig {
         @Autowired(required = false)
         private Hekate node;
+    }
+
+    @EnableHekate
+    @EnableAutoConfiguration
+    public static class DisableTestConfig {
+        @Autowired
+        private Optional<Hekate> node;
     }
 
     @Test
@@ -121,14 +130,26 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
     }
 
     @Test
-    public void testDisabled() {
-        registerAndRefresh(DisableTestConfig.class);
+    public void testNoAnnotation() {
+        registerAndRefresh(NoAnnotationTestConfig.class);
 
         assertTrue(getContext().getBeansOfType(Hekate.class).isEmpty());
         assertTrue(getContext().getBeansOfType(ServiceFactory.class).isEmpty());
         assertTrue(getContext().getBeansOfType(Service.class).isEmpty());
         assertTrue(getContext().getBeansOfType(CodecFactory.class).isEmpty());
 
-        assertNull(get(DisableTestConfig.class).node);
+        assertNull(get(NoAnnotationTestConfig.class).node);
+    }
+
+    @Test
+    public void testDisabled() {
+        registerAndRefresh(new String[]{"hekate.enable=false"}, DisableTestConfig.class);
+
+        assertTrue(getContext().getBeansOfType(Hekate.class).isEmpty());
+        assertTrue(getContext().getBeansOfType(ServiceFactory.class).isEmpty());
+        assertTrue(getContext().getBeansOfType(Service.class).isEmpty());
+        assertTrue(getContext().getBeansOfType(CodecFactory.class).isEmpty());
+
+        assertFalse(get(DisableTestConfig.class).node.isPresent());
     }
 }

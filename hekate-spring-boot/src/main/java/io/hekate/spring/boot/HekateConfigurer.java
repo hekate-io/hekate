@@ -167,6 +167,7 @@ import org.springframework.stereotype.Component;
  */
 @Configuration
 @ConditionalOnMissingBean(Hekate.class)
+@ConditionalOnProperty(name = "hekate.enable", havingValue = "true", matchIfMissing = true)
 public class HekateConfigurer {
     /**
      * Exposes {@link Hekate} node state as a health-check endpoint for Spring Actuator.

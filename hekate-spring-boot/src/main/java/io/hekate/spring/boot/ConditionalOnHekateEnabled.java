@@ -16,7 +16,6 @@
 
 package io.hekate.spring.boot;
 
-import io.hekate.spring.bean.HekateSpringBootstrap;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -34,7 +33,7 @@ import org.springframework.context.annotation.Configuration;
 @Inherited
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@ConditionalOnBean(HekateSpringBootstrap.class)
+@ConditionalOnBean(HekateConfigurer.class)
 public @interface ConditionalOnHekateEnabled {
     // No-op.
 }
