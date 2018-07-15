@@ -192,7 +192,7 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
                     ClusterAddress to = CodecUtils.readClusterAddress(in);
                     ClusterAddress from = CodecUtils.readClusterAddress(in);
 
-                    result = new Connect(to, from);
+                    result = new Connect(from, to);
 
                     break;
                 }
