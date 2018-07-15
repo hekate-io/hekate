@@ -77,7 +77,6 @@
         <!-- Test dependencies.-->
         <junit.version>4.12</junit.version>
         <mockito.version>2.10.0</mockito.version>
-        <jmh.version>1.18</jmh.version>
         <h2.version>1.4.193</h2.version>
         <mysql.version>6.0.6</mysql.version>
         <postgresql.version>42.1.4</postgresql.version>
@@ -307,19 +306,6 @@
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.openjdk.jmh</groupId>
-                <artifactId>jmh-core</artifactId>
-                <version>${jmh.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.openjdk.jmh</groupId>
-                <artifactId>jmh-generator-annprocess</artifactId>
-                <version>${jmh.version}</version>
-                <scope>provided</scope>
             </dependency>
 
             <dependency>
@@ -652,7 +638,7 @@
                     <resourcesArtifacts>
                         <resourceArtifact>
                             <groupId>io.hekate</groupId>
-                            <artifactId>hekate-dev-build</artifactId>
+                            <artifactId>hekate-build-util</artifactId>
                             <version>${project.version}</version>
                         </resourceArtifact>
                     </resourcesArtifacts>
@@ -688,7 +674,7 @@
                     </top>
                     <doctitle>Hekate ${project.version}</doctitle>
                     <windowtitle>Hekate ${project.version}</windowtitle>
-                    <overview>${basedir}/hekate-dev-build/src/main/javadoc/overview.html</overview>
+                    <overview>${basedir}/hekate-build-util/src/main/javadoc/overview.html</overview>
                     <groups>
                         <group>
                             <title>Core API</title>
@@ -761,7 +747,7 @@
                 <dependencies>
                     <dependency>
                         <groupId>io.hekate</groupId>
-                        <artifactId>hekate-dev-build</artifactId>
+                        <artifactId>hekate-build-util</artifactId>
                         <version>${project.version}</version>
                     </dependency>
                 </dependencies>
