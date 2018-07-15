@@ -91,7 +91,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring-boot</artifactId>
-    <version>2.4.0-SNAPSHOT</version>
+    <version>2.4.0</version>
 </dependency>
 ```
 
@@ -100,7 +100,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring</artifactId>
-    <version>2.4.0-SNAPSHOT</version>
+    <version>2.4.0</version>
 </dependency>
 ```
 
@@ -109,7 +109,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-core</artifactId>
-    <version>2.4.0-SNAPSHOT</version>
+    <version>2.4.0</version>
 </dependency>
 ```
 
@@ -144,6 +144,31 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
   - run `./mvnw clean package`
   
 ## Release notes
+
+### v.2.4.0 (15-Jul-2018)
+
+ New Features and Improvements:
+ 
+ - Partitions mapping configuration for RPC clients.
+ - Support for using a custom cluster view in messaging channels and RPC clients.
+ - Added the Hekate.State#SYNCHRONIZING status to support services that require synchronization with remote nodes before switching the node 
+   to the UP state.
+ - Performance optimization of messaging and RPC operations.
+ - Extended API of CodecService with methods encode/decode to/from byte arrays.
+ - Added 'hekate.enable=true/false' in order to support disabling of Hekate integration via Spring Boot configuration properties.
+
+ Bug fixes:
+ 
+ - Node not being able to leave the cluster while accepting a join request from a non-reachable node.
+ - Trigger re-join if a joining node is marked as failed/down by the cluster.
+ - Broadcast operations not taking an affinity key into account during routing.
+ - CoordinationMember not canceling active requests during completion of coordination context.
+ - Fixed NPE whe discarding deferred messages in NettyClient.
+
+ Dependency Upgrades:
+ 
+ - Upgraded to Netty 4.1.26.Final.
+
 
 ### v.2.3.1 (18-May-2018)
 
