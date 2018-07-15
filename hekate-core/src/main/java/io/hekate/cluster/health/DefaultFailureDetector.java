@@ -326,19 +326,13 @@ public class DefaultFailureDetector implements FailureDetector, JmxSupport<Defau
 
                 if (monitor != null) {
                     if (DEBUG) {
-                        log.debug("Heartbeat sending failure [from={}]", monitor);
+                        log.debug("Can't connect to cluster node [node={}]", node);
                     }
 
                     updateMonitors = monitor.onConnectFailure();
-
-                    if (updateMonitors) {
-                        if (log.isWarnEnabled()) {
-                            log.warn("Can't connect to cluster node [node={}]", node);
-                        }
-                    }
                 } else {
                     if (DEBUG) {
-                        log.debug("Ignored heartbeat sending failure from a non-monitored node [from={}]", node);
+                        log.debug("Ignored connection failure to a non-monitored node [node={}]", node);
                     }
                 }
             } finally {
