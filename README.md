@@ -91,7 +91,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring-boot</artifactId>
-    <version>2.4.0</version>
+    <version>2.4.1</version>
 </dependency>
 ```
 
@@ -100,7 +100,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring</artifactId>
-    <version>2.4.0</version>
+    <version>2.4.1</version>
 </dependency>
 ```
 
@@ -109,7 +109,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-core</artifactId>
-    <version>2.4.0</version>
+    <version>2.4.1</version>
 </dependency>
 ```
 
@@ -145,6 +145,17 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
   
 ## Release notes
 
+### v.2.4.1 (15-Jul-2018)
+
+ Bug fixes:
+ 
+ - Fixed a connection leak in the gossip communication manager.
+
+ Dependency Upgrades:
+ 
+ - Upgraded to Netty 4.1.27.Final.
+
+
 ### v.2.4.0 (15-Jul-2018)
 
  New Features and Improvements:
@@ -168,7 +179,6 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
  Dependency Upgrades:
  
  - Upgraded to Netty 4.1.26.Final.
-
 
 ### v.2.3.1 (18-May-2018)
 
