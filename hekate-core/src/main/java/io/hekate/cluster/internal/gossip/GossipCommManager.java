@@ -304,11 +304,9 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
                 }
 
                 // Disconnect endpoints.
-                localCache.stream()
-                    .filter(EndpointHolder::isOutbound)
-                    .forEach(endpoint ->
-                        discFutures.add(endpoint.get().disconnect())
-                    );
+                localCache.forEach(endpoint ->
+                    discFutures.add(endpoint.get().disconnect())
+                );
             }
         }
 

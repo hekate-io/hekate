@@ -1086,7 +1086,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                 AtomicInteger enqueued = new AtomicInteger(msgs.size());
 
                                 msgs.forEach(msg ->
-                                    sendAndDisconnect(msg, () -> {
+                                    send(msg, () -> {
                                         if (enqueued.decrementAndGet() == 0) {
                                             runOnServiceThread(() ->
                                                 ctx.cluster().onLeave()
