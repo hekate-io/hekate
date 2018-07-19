@@ -91,7 +91,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring-boot</artifactId>
-    <version>2.4.1</version>
+    <version>2.5.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -100,7 +100,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring</artifactId>
-    <version>2.4.1</version>
+    <version>2.5.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -109,7 +109,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-core</artifactId>
-    <version>2.4.1</version>
+    <version>2.5.0-SNAPSHOT</version>
 </dependency>
 ```
 
