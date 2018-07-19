@@ -23,7 +23,7 @@ import java.net.InetSocketAddress;
 
 public abstract class GossipProtocol {
     public enum Type {
-        CONNECT,
+        LONG_TERM_CONNECT,
 
         GOSSIP_UPDATE,
 
@@ -59,14 +59,14 @@ public abstract class GossipProtocol {
         }
     }
 
-    public static class Connect extends GossipMessage {
-        public Connect(ClusterAddress from, ClusterAddress to) {
+    public static class LongTermConnect extends GossipMessage {
+        public LongTermConnect(ClusterAddress from, ClusterAddress to) {
             super(from, to);
         }
 
         @Override
         public Type type() {
-            return Type.CONNECT;
+            return Type.LONG_TERM_CONNECT;
         }
     }
 

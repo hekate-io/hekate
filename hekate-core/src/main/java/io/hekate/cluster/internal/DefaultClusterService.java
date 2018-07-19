@@ -31,6 +31,7 @@ import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.health.FailureDetector;
+import io.hekate.cluster.internal.gossip.GossipCommListener;
 import io.hekate.cluster.internal.gossip.GossipCommManager;
 import io.hekate.cluster.internal.gossip.GossipListener;
 import io.hekate.cluster.internal.gossip.GossipManager;
@@ -115,10 +116,11 @@ import static java.util.stream.Collectors.toSet;
 
 public class DefaultClusterService implements ClusterService, ClusterServiceManager, DependentService, ConfigurableService,
     InitializingService, TerminatingService, NetworkConfigProvider, JmxSupport<ClusterServiceJmx> {
-
     private static final Logger log = LoggerFactory.getLogger(DefaultClusterService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
+
+    private static final String PROTOCOL_ID = "hekate.cluster";
 
     private final long gossipInterval;
 
@@ -199,7 +201,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     private volatile GossipCommManager commMgr;
 
     @ToStringIgnore
-    private volatile ClusterNode node;
+    private volatile ClusterNode localNode;
 
     public DefaultClusterService(ClusterServiceFactory factory, StateGuard guard, GossipListener gossipSpy) {
         ConfigCheck check = ConfigCheck.get(ClusterServiceFactory.class);
@@ -270,7 +272,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     public Collection<NetworkConnectorConfig<?>> configureNetwork() {
         NetworkConnectorConfig<GossipProtocol> netCfg = new NetworkConnectorConfig<>();
 
-        netCfg.setProtocol(GossipProtocolCodec.PROTOCOL_ID);
+        netCfg.setProtocol(PROTOCOL_ID);
         netCfg.setMessageCodec(() -> new GossipProtocolCodec(localNodeIdRef));
         netCfg.setLogCategory(GossipCommManager.class.getName());
 
@@ -317,7 +319,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             guard.becomeInitialized();
 
             ctx = initCtx;
-            node = initCtx.localNode();
+            localNode = initCtx.localNode();
             localNodeIdRef.set(initCtx.localNode().id());
 
             // Register cluster listeners.
@@ -338,12 +340,12 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             GossipListener gossipListener = createGossipListener();
 
             // Prepare gossip manager.
-            gossipMgr = new GossipManager(initCtx.clusterName(), node, failureDetector, speedUpGossipSize, gossipListener);
+            gossipMgr = new GossipManager(initCtx.clusterName(), localNode, failureDetector, speedUpGossipSize, gossipListener);
 
             // Prepare gossip communication manager.
-            NetworkConnector<GossipProtocol> connector = net.connector(GossipProtocolCodec.PROTOCOL_ID);
+            NetworkConnector<GossipProtocol> connector = net.connector(PROTOCOL_ID);
 
-            commMgr = new GossipCommManager(connector, new GossipCommManager.Callback() {
+            commMgr = new GossipCommManager(connector, localNode.address(), new GossipCommListener() {
                 @Override
                 public void onReceive(GossipProtocol msg) {
                     process(msg);
@@ -414,7 +416,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                             try {
                                 // Check that there were no concurrent leave/terminate events.
                                 if (guard.isInitialized()) {
-                                    address = node.address();
+                                    address = localNode.address();
                                     localSeedNodeMgr = seedNodeMgr;
                                 } else {
                                     // Stop since there was a concurrent leave/terminate event.
@@ -425,12 +427,9 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                             }
 
                             try {
-                                // Start components.
-                                // Note that we are doing it in unlocked context in order to prevent thread blocking.
-
                                 // Check if node is not in a split-brain mode before trying to join.
                                 if (splitBrainDetector != null) {
-                                    boolean valid = splitBrainDetector.isValid(node);
+                                    boolean valid = splitBrainDetector.isValid(localNode);
 
                                     if (!valid) {
                                         // Try to schedule a new join attempt.
@@ -535,7 +534,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                 if (seedNodeMgr != null) {
                     waiting.add(seedNodeMgr.stopCleaning());
 
-                    InetSocketAddress localAddress = node.socket();
+                    InetSocketAddress localAddress = localNode.socket();
 
                     SeedNodeManager localSeedNodeMgr = seedNodeMgr;
 
@@ -557,7 +556,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
                 localNodeIdRef.set(null);
 
-                node = null;
+                localNode = null;
                 commMgr = null;
                 gossipMgr = null;
                 acceptMgr = null;
@@ -592,34 +591,26 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     public void addListener(ClusterEventListener listener, ClusterEventType... eventTypes) {
         ArgAssert.notNull(listener, "Listener");
 
-        guard.lockRead();
-
-        try {
+        guard.withReadLock(() -> {
             if (guard.isInitialized()) {
                 requireContext().cluster().addListener(listener);
             } else {
                 deferredListeners.add(new DeferredClusterListener(listener, eventTypes));
             }
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     @Override
     public void removeListener(ClusterEventListener listener) {
         ArgAssert.notNull(listener, "Listener");
 
-        guard.lockRead();
-
-        try {
+        guard.withReadLock(() -> {
             if (guard.isInitialized()) {
                 requireContext().cluster().removeListener(listener);
             }
 
             deferredListeners.remove(new DeferredClusterListener(listener, null));
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     @Override
@@ -707,7 +698,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     @Override
     public ClusterNode localNode() {
-        ClusterNode node = this.node;
+        ClusterNode node = this.localNode;
 
         if (node == null) {
             throw new IllegalStateException(ClusterService.class.getSimpleName() + " is not initialized.");
@@ -760,10 +751,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                     }
 
                     heartbeatTask = scheduleOn(gossipThread, DefaultClusterService.this::heartbeat, hbInterval);
-                } else {
-                    if (DEBUG) {
-                        log.debug("Will not register a periodic heartbeat task [interval={}]", hbInterval);
-                    }
                 }
 
                 if (DEBUG) {
@@ -785,26 +772,18 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             try {
                 List<InetSocketAddress> nodes = seedNodeMgr.getSeedNodes();
 
-                // Schedule join task to run on a gossiper thread.
-                runOnGossipThread(() -> {
-                    guard.lockRead();
+                // Schedule join task to run on the gossip thread.
+                runOnGossipThread(() ->
+                    guard.withReadLockIfInitialized(() -> {
+                        JoinRequest msg = gossipMgr.join(nodes);
 
-                    try {
-                        if (guard.isInitialized()) {
-                            JoinRequest msg = gossipMgr.join(nodes);
-
-                            if (msg != null && log.isInfoEnabled()) {
-                                log.info("Sending cluster join request [seed-node={}].", msg.toAddress());
-                            }
-
-                            sendAndDisconnect(msg);
+                        if (msg != null && log.isInfoEnabled()) {
+                            log.info("Sending cluster join request [seed-node={}].", msg.toAddress());
                         }
-                    } catch (RuntimeException | Error t) {
-                        log.error("Got runtime error while joining cluster.", t);
-                    } finally {
-                        guard.unlockRead();
-                    }
-                });
+
+                        sendAndDisconnect(msg);
+                    })
+                );
             } catch (HekateException e) {
                 log.error("Failed to obtain seed nodes ...will wait for {} ms before trying another attempt.", gossipInterval, e);
             }
@@ -829,162 +808,141 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     }
 
     private void gossip() {
-        try {
-            guard.withReadLockIfInitialized(() ->
-                gossipMgr.batchGossip(GossipPolicy.RANDOM_PREFER_UNSEEN).forEach(this::send)
-            );
-        } catch (RuntimeException | Error t) {
-            log.error("Got runtime error while processing a gossip tick.", t);
-        }
+        guard.withReadLockIfInitialized(() ->
+            gossipMgr.batchGossip(GossipPolicy.RANDOM_PREFER_UNSEEN).forEach(this::send)
+        );
     }
 
     private void heartbeat() {
-        try {
-            guard.withReadLockIfInitialized(() -> {
-                // Check nodes aliveness.
-                boolean failureDetected = gossipMgr.checkAliveness();
+        guard.withReadLockIfInitialized(() -> {
+            // Check nodes aliveness.
+            boolean failureDetected = gossipMgr.checkAliveness();
 
-                // Send heartbeats first (even if new failures were detected).
-                Collection<ClusterAddress> targets = failureDetector.heartbeatTick();
+            // Send heartbeats first (even if new failures were detected).
+            Collection<ClusterAddress> targets = failureDetector.heartbeatTick();
 
-                if (targets != null) {
-                    targets.stream().map(to -> new HeartbeatRequest(node.address(), to)).forEach(this::send);
-                }
+            if (targets != null) {
+                targets.stream()
+                    .map(to -> new HeartbeatRequest(localNode.address(), to))
+                    .forEach(this::send);
+            }
 
-                // Send gossip messages if new failures were detected.
-                if (failureDetected) {
-                    gossip();
-                }
-            });
-        } catch (RuntimeException | Error t) {
-            log.error("Got runtime error while processing heartbeats tick.", t);
-        }
+            // Send gossip messages if new failures were detected.
+            if (failureDetected) {
+                gossip();
+            }
+        });
     }
 
     private void process(GossipProtocol msg) {
         assert msg != null : "Message is null.";
 
         guard.withReadLockIfInitialized(() -> {
-            if (guard.isInitialized()) {
-                if (metricsSink != null) {
-                    metricsSink.onGossipMessage(msg.type());
-                }
+            if (metricsSink != null) {
+                metricsSink.onGossipMessage(msg.type());
+            }
 
-                if (msg instanceof GossipMessage) {
-                    GossipMessage gossipMsg = (GossipMessage)msg;
+            if (msg instanceof GossipMessage) {
+                GossipMessage gossipMsg = (GossipMessage)msg;
 
-                    if (!node.address().equals(gossipMsg.to())) {
-                        if (DEBUG) {
-                            log.debug("Ignored message since it is not addressed to the local node [message={}, node={}]", msg, node);
-                        }
-
-                        return;
+                if (!localNode.address().equals(gossipMsg.to())) {
+                    if (DEBUG) {
+                        log.debug("Ignored message since it is not addressed to the local node [message={}, node={}]", msg, localNode);
                     }
+
+                    return;
                 }
+            }
 
-                GossipProtocol.Type type = msg.type();
+            GossipProtocol.Type type = msg.type();
 
-                if (type == GossipProtocol.Type.HEARTBEAT_REQUEST) {
-                    boolean reply = failureDetector.onHeartbeatRequest(msg.from());
+            if (type == GossipProtocol.Type.HEARTBEAT_REQUEST) {
+                boolean reply = failureDetector.onHeartbeatRequest(msg.from());
 
-                    if (reply) {
-                        send(new HeartbeatReply(node.address(), msg.from()));
-                    }
-                } else if (type == GossipProtocol.Type.HEARTBEAT_REPLY) {
-                    failureDetector.onHeartbeatReply(msg.from());
-                } else {
-                    runOnGossipThread(() -> doProcess(msg));
+                if (reply) {
+                    send(new HeartbeatReply(localNode.address(), msg.from()));
                 }
+            } else if (type == GossipProtocol.Type.HEARTBEAT_REPLY) {
+                failureDetector.onHeartbeatReply(msg.from());
             } else {
-                if (DEBUG) {
-                    log.debug("Ignored message since service is not started [message={}]", msg);
-                }
+                runOnGossipThread(() ->
+                    doProcess(msg)
+                );
             }
         });
     }
 
     private void doProcess(GossipProtocol msg) {
-        guard.withReadLock(() -> {
-            try {
-                if (guard.isInitialized()) {
-                    switch (msg.type()) {
-                        case GOSSIP_UPDATE:
-                        case GOSSIP_UPDATE_DIGEST: {
-                            UpdateBase update = (UpdateBase)msg;
+        guard.withReadLockIfInitialized(() -> {
+            switch (msg.type()) {
+                case GOSSIP_UPDATE:
+                case GOSSIP_UPDATE_DIGEST: {
+                    UpdateBase update = (UpdateBase)msg;
 
-                            GossipMessage reply = gossipMgr.processUpdate(update);
+                    GossipMessage reply = gossipMgr.processUpdate(update);
 
-                            send(reply);
+                    send(reply);
 
-                            break;
-                        }
-                        case JOIN_REQUEST: {
-                            JoinRequest request = (JoinRequest)msg;
+                    break;
+                }
+                case JOIN_REQUEST: {
+                    JoinRequest request = (JoinRequest)msg;
 
-                            // Check that the join request can be accepted.
-                            JoinReject reject = gossipMgr.acceptJoinRequest(request);
+                    // Check that the join request can be accepted.
+                    JoinReject reject = gossipMgr.acceptJoinRequest(request);
 
-                            if (reject == null) {
-                                // Asynchronously validate and process the join request so that it won't not block the gossiping thread.
-                                acceptMgr.check(request.fromNode(), ctx.hekate()).thenAcceptAsync(rejectReason -> {
-                                    try {
-                                        guard.withReadLockIfInitialized(() -> {
-                                            JoinReply reply;
+                    if (reject == null) {
+                        // Asynchronously validate and process the join request so that it won't block the gossiping thread.
+                        acceptMgr.check(request.fromNode(), ctx.hekate()).thenAcceptAsync(rejectReason -> {
+                            try {
+                                guard.withReadLockIfInitialized(() -> {
+                                    JoinReply reply;
 
-                                            if (rejectReason.isPresent()) {
-                                                reply = gossipMgr.reject(request, rejectReason.get());
+                                    if (rejectReason.isPresent()) {
+                                        reply = gossipMgr.reject(request, rejectReason.get());
 
-                                            } else {
-                                                reply = gossipMgr.processJoinRequest(request);
-                                            }
-
-                                            send(reply);
-                                        });
-                                    } catch (RuntimeException | Error e) {
-                                        log.error("Got an unexpected error while processing a node join request [request={}]", request, e);
+                                    } else {
+                                        reply = gossipMgr.processJoinRequest(request);
                                     }
 
-                                }, gossipThread);
-                            } else {
-                                // Immediate reject.
-                                send(reject);
+                                    send(reply);
+                                });
+                            } catch (RuntimeException | Error e) {
+                                fatalError(e);
                             }
-
-                            break;
-                        }
-                        case JOIN_ACCEPT: {
-                            JoinAccept accept = (JoinAccept)msg;
-
-                            GossipMessage reply = gossipMgr.processJoinAccept(accept);
-
-                            send(reply);
-
-                            break;
-                        }
-                        case JOIN_REJECT: {
-                            JoinReject reject = (JoinReject)msg;
-
-                            // Try to select another node to join.
-                            JoinRequest newRequest = gossipMgr.processJoinReject(reject);
-
-                            sendAndDisconnect(newRequest);
-
-                            break;
-                        }
-                        case HEARTBEAT_REQUEST:
-                        case HEARTBEAT_REPLY:
-                        case CONNECT:
-                        default: {
-                            throw new IllegalArgumentException("Unexpected message type: " + msg);
-                        }
+                        }, gossipThread);
+                    } else {
+                        // Immediate reject.
+                        send(reject);
                     }
-                } else {
-                    if (DEBUG) {
-                        log.debug("Ignored message since service is not started [message={}]", msg);
-                    }
+
+                    break;
                 }
-            } catch (RuntimeException | Error e) {
-                log.error("Got runtime error while processing gossip message [message={}]", msg, e);
+                case JOIN_ACCEPT: {
+                    JoinAccept accept = (JoinAccept)msg;
+
+                    GossipMessage reply = gossipMgr.processJoinAccept(accept);
+
+                    send(reply);
+
+                    break;
+                }
+                case JOIN_REJECT: {
+                    JoinReject reject = (JoinReject)msg;
+
+                    // Try to select another node to join.
+                    JoinRequest newRequest = gossipMgr.processJoinReject(reject);
+
+                    sendAndDisconnect(newRequest);
+
+                    break;
+                }
+                case HEARTBEAT_REQUEST:
+                case HEARTBEAT_REPLY:
+                case LONG_TERM_CONNECT:
+                default: {
+                    throw new IllegalArgumentException("Unexpected message type: " + msg);
+                }
             }
         });
     }
@@ -997,7 +955,9 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             if (msg.type() == GossipProtocol.Type.JOIN_REQUEST) {
                 JoinRequest request = (JoinRequest)msg;
 
-                runOnGossipThread(() -> processJoinSendFailure(request, error));
+                runOnGossipThread(() ->
+                    processJoinSendFailure(request, error)
+                );
             } else {
                 if (DEBUG) {
                     log.debug("Failed to sent gossip message [error={}, message={}]", error.toString(), msg);
@@ -1064,17 +1024,11 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
                         joinTask.cancel(false);
 
-                        runOnServiceThread(() -> {
-                            guard.lockRead();
-
-                            try {
-                                if (guard.isInitialized()) {
-                                    seedNodeMgr.suspendDiscovery();
-                                }
-                            } finally {
-                                guard.unlockRead();
-                            }
-                        });
+                        runOnServiceThread(() ->
+                            guard.withReadLockIfInitialized(() ->
+                                seedNodeMgr.suspendDiscovery()
+                            )
+                        );
 
                         break;
                     }
@@ -1083,12 +1037,10 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
                         ctx.cluster().onJoin(order, newTopology).thenAcceptAsync(event -> {
                             if (event != null) {
-                                guard.lockRead();
-
                                 try {
-                                    ClusterTopology topology = event.topology();
+                                    guard.withReadLockIfInitialized(() -> {
+                                        ClusterTopology topology = event.topology();
 
-                                    if (guard.isInitialized()) {
                                         if (metricsSink != null) {
                                             metricsSink.onTopologyChange(topology);
                                         }
@@ -1096,11 +1048,9 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                         if (isCoordinator(topology)) {
                                             startSeedNodeCleaner();
                                         }
-                                    }
+                                    });
                                 } catch (RuntimeException | Error e) {
-                                    log.error("Got an unexpected runtime error.", e);
-                                } finally {
-                                    guard.unlockRead();
+                                    fatalError(e);
                                 }
                             }
                         }, gossipThread);
@@ -1127,23 +1077,23 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                 heartbeatTask.cancel(false);
                             }
 
-                            Collection<UpdateBase> gossips = gossipMgr.batchGossip(GossipPolicy.ON_DOWN);
+                            Collection<UpdateBase> msgs = gossipMgr.batchGossip(GossipPolicy.ON_DOWN);
 
-                            if (gossips.isEmpty()) {
+                            if (msgs.isEmpty()) {
                                 ctx.cluster().onLeave();
                             } else {
                                 // Send final gossip updates and notify context on leave once sending is done.
-                                // ---------------------------------------------------------------------------------------------------------
-                                // Note: we are sending each update on a dedicated connection in order to make sure that receiver side will
-                                //       not drop this message from its receive buffer if it detects connection failure while performing
-                                //       a write operation (in such case connection gets closed and all unread buffered data is lost too).
-                                AtomicInteger enqueued = new AtomicInteger(gossips.size());
+                                AtomicInteger enqueued = new AtomicInteger(msgs.size());
 
-                                gossips.forEach(msg -> sendAndDisconnect(msg, () -> {
-                                    if (enqueued.decrementAndGet() == 0) {
-                                        runOnServiceThread(() -> ctx.cluster().onLeave());
-                                    }
-                                }));
+                                msgs.forEach(msg ->
+                                    sendAndDisconnect(msg, () -> {
+                                        if (enqueued.decrementAndGet() == 0) {
+                                            runOnServiceThread(() ->
+                                                ctx.cluster().onLeave()
+                                            );
+                                        }
+                                    })
+                                );
                             }
                         }
 
@@ -1178,10 +1128,10 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                 }
 
                                 if (!event.removed().isEmpty()) {
-                                    checkSplitBrain(node);
+                                    checkSplitBrain(localNode);
                                 }
                             } catch (RuntimeException | Error e) {
-                                log.error("Got an unexpected runtime error.", e);
+                                fatalError(e);
                             }
                         });
                     }
@@ -1294,16 +1244,10 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
                             applySplitBrainPolicy();
                         }
-                    } catch (RuntimeException | Error e) {
-                        ctx.terminate(e);
                     } finally {
                         splitBrainDetectorActive.compareAndSet(true, false);
                     }
                 });
-            } else {
-                if (DEBUG) {
-                    log.debug("Skipped split-brain checking since it is already in progress.");
-                }
             }
         }
     }
@@ -1349,9 +1293,9 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         send(msg, null);
     }
 
-    private void send(GossipMessage msg, Runnable callback) {
+    private void send(GossipMessage msg, Runnable onComplete) {
         if (msg != null) {
-            commMgr.send(msg, callback);
+            commMgr.send(msg, onComplete);
         }
     }
 
@@ -1366,15 +1310,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     }
 
     private boolean isCoordinator(ClusterTopology topology) {
-        return topology.first().equals(node);
-    }
-
-    private void runOnGossipThread(Runnable task) {
-        gossipThread.execute(task);
-    }
-
-    private void runOnServiceThread(Runnable task) {
-        serviceThread.execute(task);
+        return topology.first().equals(localNode);
     }
 
     private InitializationContext requireContext() {
@@ -1399,12 +1335,48 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         }
     }
 
-    private static ScheduledFuture<?> scheduleOn(ScheduledExecutorService executor, Runnable task, long intervalMs) {
+    private void runOnGossipThread(Runnable task) {
+        gossipThread.execute(() -> {
+            try {
+                task.run();
+            } catch (RuntimeException | Error e) {
+                fatalError(e);
+            }
+        });
+    }
+
+    private void runOnServiceThread(Runnable task) {
+        serviceThread.execute(() -> {
+            try {
+                task.run();
+            } catch (RuntimeException | Error e) {
+                fatalError(e);
+            }
+        });
+    }
+
+    private ScheduledFuture<?> scheduleOn(ScheduledExecutorService executor, Runnable task, long intervalMs) {
         return scheduleOn(executor, task, intervalMs, intervalMs);
     }
 
-    private static ScheduledFuture<?> scheduleOn(ScheduledExecutorService executor, Runnable task, long delay, long intervalMs) {
-        return executor.scheduleWithFixedDelay(task, delay, intervalMs, TimeUnit.MILLISECONDS);
+    private ScheduledFuture<?> scheduleOn(ScheduledExecutorService executor, Runnable task, long delay, long intervalMs) {
+        return executor.scheduleWithFixedDelay(() -> {
+            try {
+                task.run();
+            } catch (RuntimeException | Error e) {
+                fatalError(e);
+            }
+        }, delay, intervalMs, TimeUnit.MILLISECONDS);
+    }
+
+    private void fatalError(Throwable e) {
+        log.error("Got an unexpected runtime error.", e);
+
+        InitializationContext localCtx = this.ctx;
+
+        if (localCtx != null) {
+            localCtx.terminate(e);
+        }
     }
 
     @Override

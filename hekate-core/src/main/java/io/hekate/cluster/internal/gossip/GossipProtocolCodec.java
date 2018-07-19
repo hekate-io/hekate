@@ -22,12 +22,12 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterNodeRuntime;
 import io.hekate.cluster.internal.DefaultClusterNode;
 import io.hekate.cluster.internal.DefaultClusterNodeRuntime;
-import io.hekate.cluster.internal.gossip.GossipProtocol.Connect;
 import io.hekate.cluster.internal.gossip.GossipProtocol.HeartbeatReply;
 import io.hekate.cluster.internal.gossip.GossipProtocol.HeartbeatRequest;
 import io.hekate.cluster.internal.gossip.GossipProtocol.JoinAccept;
 import io.hekate.cluster.internal.gossip.GossipProtocol.JoinReject;
 import io.hekate.cluster.internal.gossip.GossipProtocol.JoinRequest;
+import io.hekate.cluster.internal.gossip.GossipProtocol.LongTermConnect;
 import io.hekate.cluster.internal.gossip.GossipProtocol.Update;
 import io.hekate.cluster.internal.gossip.GossipProtocol.UpdateDigest;
 import io.hekate.codec.Codec;
@@ -47,9 +47,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class GossipProtocolCodec implements Codec<GossipProtocol> {
-    public static final String PROTOCOL_ID = "hekate.cluster";
-
-    private static final GossipProtocol.Type[] TYPES = GossipProtocol.Type.values();
+    private static final GossipProtocol.Type[] MESSAGE_TYPES = GossipProtocol.Type.values();
 
     private static final GossipNodeStatus[] NODE_STATUSES = GossipNodeStatus.values();
 
@@ -87,8 +85,8 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
             out.writeByte(msgType.ordinal());
 
             switch (msgType) {
-                case CONNECT: {
-                    Connect connect = (Connect)msg;
+                case LONG_TERM_CONNECT: {
+                    LongTermConnect connect = (LongTermConnect)msg;
 
                     CodecUtils.writeClusterAddress(connect.to(), out);
                     CodecUtils.writeClusterAddress(connect.from(), out);
@@ -183,16 +181,16 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
     @Override
     public GossipProtocol decode(DataReader in) throws IOException {
         try {
-            GossipProtocol.Type msgType = TYPES[in.readByte()];
+            GossipProtocol.Type msgType = MESSAGE_TYPES[in.readByte()];
 
             GossipProtocol result;
 
             switch (msgType) {
-                case CONNECT: {
+                case LONG_TERM_CONNECT: {
                     ClusterAddress to = CodecUtils.readClusterAddress(in);
                     ClusterAddress from = CodecUtils.readClusterAddress(in);
 
-                    result = new Connect(from, to);
+                    result = new LongTermConnect(from, to);
 
                     break;
                 }

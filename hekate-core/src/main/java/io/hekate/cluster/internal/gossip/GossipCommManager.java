@@ -18,8 +18,8 @@ package io.hekate.cluster.internal.gossip;
 
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNodeId;
-import io.hekate.cluster.internal.gossip.GossipProtocol.Connect;
 import io.hekate.cluster.internal.gossip.GossipProtocol.GossipMessage;
+import io.hekate.cluster.internal.gossip.GossipProtocol.LongTermConnect;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkClientCallback;
@@ -43,29 +43,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
-    public interface Callback {
-        void onReceive(GossipProtocol msg);
-
-        void onSendSuccess(GossipProtocol msg);
-
-        void onSendFailure(GossipProtocol msg, Throwable error);
-
-        void onConnectFailure(ClusterAddress address);
-
-        Optional<Throwable> onBeforeSend(GossipProtocol msg);
-    }
-
     private static class EndpointHolder {
-        private final boolean outbound;
-
         private final NetworkEndpoint<GossipProtocol> endpoint;
+
+        private final boolean outbound;
 
         public EndpointHolder(NetworkEndpoint<GossipProtocol> endpoint, boolean outbound) {
             this.endpoint = endpoint;
             this.outbound = outbound;
         }
 
-        public NetworkEndpoint<GossipProtocol> endpoint() {
+        public NetworkEndpoint<GossipProtocol> get() {
             return endpoint;
         }
 
@@ -85,68 +73,68 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
     private static final boolean TRACE = log.isDebugEnabled();
 
+    private final ClusterAddress localAddress;
+
+    private final NetworkConnector<GossipProtocol> connector;
+
+    private final GossipCommListener listener;
+
     private final Object mux = new Object();
 
-    private final Map<ClusterNodeId, EndpointHolder> clients = new HashMap<>();
+    private final Map<ClusterNodeId, EndpointHolder> cache = new HashMap<>();
 
-    private final Callback callback;
+    private final NetworkClientCallback<GossipProtocol> outboundCallback;
 
-    private final NetworkConnector<GossipProtocol> net;
+    public GossipCommManager(NetworkConnector<GossipProtocol> connector, ClusterAddress localAddress, GossipCommListener listener) {
+        assert connector != null : "Network connector is null.";
+        assert localAddress != null : "Local node address is null.";
+        assert listener != null : "Gossip communication listener is null.";
 
-    private final NetworkClientCallback<GossipProtocol> netClientCallback;
+        this.localAddress = localAddress;
+        this.connector = connector;
+        this.listener = listener;
 
-    public GossipCommManager(NetworkConnector<GossipProtocol> net, Callback callback) {
-        assert net != null : "Network connector is null.";
-        assert callback != null : "Callback is null.";
-
-        this.net = net;
-        this.callback = callback;
-
-        this.netClientCallback = new NetworkClientCallback<GossipProtocol>() {
+        this.outboundCallback = new NetworkClientCallback<GossipProtocol>() {
             @Override
-            public void onMessage(NetworkMessage<GossipProtocol> packet, NetworkClient<GossipProtocol> client) throws IOException {
-                GossipProtocol msg = packet.decode();
+            public void onMessage(NetworkMessage<GossipProtocol> msg, NetworkClient<GossipProtocol> from) throws IOException {
+                GossipProtocol gossip = msg.decode();
 
                 if (TRACE) {
-                    log.trace("Received message via outbound connection [message={}]", msg);
+                    log.trace("Received message via outbound connection [message={}]", gossip);
                 }
 
-                callback.onReceive(msg);
+                listener.onReceive(gossip);
             }
 
             @Override
-            public void onDisconnect(NetworkClient<GossipProtocol> client, Optional<Throwable> cause) {
-                ClusterAddress address = client.getContext();
+            public void onDisconnect(NetworkClient<GossipProtocol> from, Optional<Throwable> cause) {
+                ClusterAddress addr = from.getContext();
 
-                if (address != null) {
+                if (addr != null) {
                     if (DEBUG) {
-                        log.debug("Closed outbound connection [to={}]", address);
+                        log.debug("Closed outbound connection [to={}]", addr);
                     }
 
-                    boolean unregistered = false;
-
                     synchronized (mux) {
-                        EndpointHolder latestSender = clients.get(address.id());
+                        EndpointHolder endpoint = cache.get(addr.id());
 
                         // Remove from map only if it contains exactly the same client instance.
-                        if (latestSender != null && latestSender.endpoint() == client) {
+                        if (endpoint != null && endpoint.get() == from) {
                             if (DEBUG) {
-                                log.debug("Removing outbound connection from registry [to={}]", address);
+                                log.debug("Removing outbound connection from registry [to={}]", addr);
                             }
 
-                            clients.remove(address.id());
-
-                            unregistered = true;
+                            cache.remove(addr.id());
                         }
                     }
 
-                    if (unregistered && cause.isPresent()) {
+                    if (cause.isPresent()) {
                         // Notify on connect error only if we were not able to connect to the remote node's process.
                         // In case of timeout we can't decide on whether the remote process is alive or not (could be paused by GC, etc).
                         ConnectException connErr = ErrorUtils.findCause(ConnectException.class, cause.get());
 
                         if (connErr != null && !(connErr instanceof ConnectTimeoutException)) {
-                            callback.onConnectFailure(address);
+                            listener.onConnectFailure(addr);
                         }
                     }
                 }
@@ -155,7 +143,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
     }
 
     public void send(GossipMessage msg, Runnable onComplete) {
-        Optional<Throwable> callbackErr = callback.onBeforeSend(msg);
+        Optional<Throwable> callbackErr = listener.onBeforeSend(msg);
 
         if (callbackErr.isPresent()) {
             Throwable err = callbackErr.get();
@@ -164,47 +152,23 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
                 log.trace("Failed to send a message [reason={}, message={}]", err, msg);
             }
 
-            callback.onSendFailure(msg, err);
+            listener.onSendFailure(msg, err);
         } else {
-            EndpointHolder holder;
-
-            synchronized (mux) {
-                ClusterNodeId nodeId = msg.to().id();
-
-                holder = clients.get(nodeId);
-
-                if (holder == null) {
-                    if (DEBUG) {
-                        log.debug("Created a new outbound connection [to={}]", msg.to());
-                    }
-
-                    NetworkClient<GossipProtocol> client = net.newClient();
-
-                    client.setContext(msg.to());
-
-                    holder = new EndpointHolder(client, true);
-
-                    clients.put(nodeId, holder);
-
-                    Connect connectMsg = new Connect(msg.from(), msg.to());
-
-                    client.connect(msg.to().socket(), connectMsg, netClientCallback);
-                }
-            }
+            EndpointHolder endpoint = ensureConnected(msg.to());
 
             if (TRACE) {
-                log.trace("Sending message [outboundConnection={}, message={}]", holder.isOutbound(), msg);
+                log.trace("Sending message [message={}]", msg);
             }
 
-            holder.endpoint().send(msg, (sent, err, endpoint) -> {
+            endpoint.get().send(msg, (sent, err, net) -> {
                 if (err.isPresent()) {
                     if (TRACE) {
                         log.trace("Failed to send a message [reason={}, message={}]", err.get(), sent);
                     }
 
-                    callback.onSendFailure(sent, err.get());
+                    listener.onSendFailure(sent, err.get());
                 } else {
-                    callback.onSendSuccess(sent);
+                    listener.onSendSuccess(sent);
                 }
 
                 if (onComplete != null) {
@@ -215,12 +179,12 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
     }
 
     public void sendAndDisconnect(GossipProtocol msg, Runnable onComplete) {
-        Optional<Throwable> callbackErr = callback.onBeforeSend(msg);
+        Optional<Throwable> callbackErr = listener.onBeforeSend(msg);
 
         if (callbackErr.isPresent()) {
-            callback.onSendFailure(msg, callbackErr.get());
+            listener.onSendFailure(msg, callbackErr.get());
         } else {
-            NetworkClient<GossipProtocol> sendOnceClient = net.newClient();
+            NetworkClient<GossipProtocol> sendOnceClient = connector.newClient();
 
             sendOnceClient.connect(msg.toAddress(), msg, new NetworkClientCallback<GossipProtocol>() {
                 @Override
@@ -232,7 +196,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
                 public void onConnect(NetworkClient<GossipProtocol> client) {
                     client.disconnect();
 
-                    callback.onSendSuccess(msg);
+                    listener.onSendSuccess(msg);
 
                     if (onComplete != null) {
                         onComplete.run();
@@ -242,7 +206,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
                 @Override
                 public void onDisconnect(NetworkClient<GossipProtocol> client, Optional<Throwable> cause) {
                     cause.ifPresent(err -> {
-                        callback.onSendFailure(msg, err);
+                        listener.onSendFailure(msg, err);
 
                         if (onComplete != null) {
                             onComplete.run();
@@ -255,7 +219,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
     @Override
     public void onConnect(GossipProtocol msg, NetworkEndpoint<GossipProtocol> client) {
-        if (msg.type() == GossipProtocol.Type.CONNECT) {
+        if (msg instanceof GossipMessage) {
             if (DEBUG) {
                 log.debug("Got a new inbound connection [from={}]", msg.from());
             }
@@ -265,7 +229,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
             client.setContext(msg.from());
 
             synchronized (mux) {
-                if (clients.containsKey(fromId)) {
+                if (cache.containsKey(fromId)) {
                     if (DEBUG) {
                         log.debug("Will not register inbound connection since another connection exists [from={}]", msg.from());
                     }
@@ -274,13 +238,17 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
                         log.debug("Registering inbound connection [from={}]", msg.from());
                     }
 
-                    clients.put(fromId, new EndpointHolder(client, false));
+                    cache.put(fromId, new EndpointHolder(client, false));
                 }
+            }
+
+            if (msg.type() != GossipProtocol.Type.LONG_TERM_CONNECT) {
+                listener.onReceive(msg);
             }
         } else {
             client.disconnect();
 
-            callback.onReceive(msg);
+            listener.onReceive(msg);
         }
     }
 
@@ -292,61 +260,60 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
             log.trace("Received message via inbound connection [message={}]", msg);
         }
 
-        callback.onReceive(msg);
+        listener.onReceive(msg);
     }
 
     @Override
-    public void onDisconnect(NetworkEndpoint<GossipProtocol> client) {
-        ClusterAddress address = client.getContext();
+    public void onDisconnect(NetworkEndpoint<GossipProtocol> from) {
+        ClusterAddress addr = from.getContext();
 
-        if (address != null) {
+        if (addr != null) {
             if (DEBUG) {
-                log.debug("Closed inbound connection [from={}]", address);
+                log.debug("Closed inbound connection [from={}]", addr);
             }
 
             synchronized (mux) {
-                EndpointHolder holder = clients.get(address.id());
+                EndpointHolder endpoint = cache.get(addr.id());
 
                 // Remove from map only if it contains exactly the same client instance.
-                if (holder != null && holder.endpoint() == client) {
+                if (endpoint != null && endpoint.get() == from) {
                     if (DEBUG) {
-                        log.debug("Removing inbound connection from registry [from={}]", address);
+                        log.debug("Removing inbound connection from registry [from={}]", addr);
                     }
 
-                    clients.remove(address.id());
+                    cache.remove(addr.id());
                 }
             }
         }
     }
 
     public void stop() {
-        List<NetworkFuture<GossipProtocol>> clientsFuture;
+        List<NetworkFuture<GossipProtocol>> discFutures;
 
         synchronized (mux) {
-            clientsFuture = new ArrayList<>();
+            discFutures = new ArrayList<>();
 
-            // Need to create a local clients list to prevent concurrent modification errors
-            // since each client removes itself from this map.
-            List<EndpointHolder> localClients = new ArrayList<>(clients.values());
+            // Make a copy in order to prevent concurrent modification errors.
+            List<EndpointHolder> localCache = new ArrayList<>(cache.values());
 
-            clients.clear();
+            cache.clear();
 
-            if (!localClients.isEmpty()) {
+            if (!localCache.isEmpty()) {
                 if (DEBUG) {
-                    log.debug("Closing connections  [size={}]", localClients.size());
+                    log.debug("Closing connections  [size={}]", localCache.size());
                 }
 
-                // Disconnect clients.
-                localClients.stream()
+                // Disconnect endpoints.
+                localCache.stream()
                     .filter(EndpointHolder::isOutbound)
-                    .forEach(c ->
-                        clientsFuture.add(c.endpoint().disconnect())
+                    .forEach(endpoint ->
+                        discFutures.add(endpoint.get().disconnect())
                     );
             }
         }
 
         // Await for clients termination.
-        for (NetworkFuture<GossipProtocol> future : clientsFuture) {
+        for (NetworkFuture<GossipProtocol> future : discFutures) {
             try {
                 AsyncUtils.getUninterruptedly(future);
             } catch (ExecutionException e) {
@@ -354,12 +321,38 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
                 if (cause instanceof IOException) {
                     if (DEBUG) {
-                        log.debug("Failed to close network connection due to an I/O error [cause={}]", e.toString());
+                        log.debug("Failed to close network connection due to an I/O error [cause={}]", cause.toString());
                     }
                 } else {
                     log.warn("Failed to close network connection.", cause);
                 }
             }
         }
+    }
+
+    private EndpointHolder ensureConnected(ClusterAddress to) {
+        EndpointHolder endpoint;
+
+        synchronized (mux) {
+            endpoint = cache.get(to.id());
+
+            if (endpoint == null) {
+                if (DEBUG) {
+                    log.debug("Created a new outbound connection [to={}]", to);
+                }
+
+                NetworkClient<GossipProtocol> client = connector.newClient();
+
+                client.setContext(to);
+
+                endpoint = new EndpointHolder(client, true);
+
+                cache.put(to.id(), endpoint);
+
+                client.connect(to.socket(), new LongTermConnect(localAddress, to), outboundCallback);
+            }
+        }
+
+        return endpoint;
     }
 }
