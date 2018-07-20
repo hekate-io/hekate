@@ -1,7 +1,13 @@
+branches:
+  except:
+  - /experimental-.*/
+
 language: java
+
 jdk:
   - oraclejdk8
   - openjdk8
+
 env:
   # NIO + No SSL
   - NIO_ENABLED=true   EPOLL_ENABLED=false  NO_SSL_ENABLED=true   SSL_JDK_ENABLED=false  SSL_OPENSSL_ENABLED=false
@@ -25,22 +31,26 @@ cache:
   directories:
     - $HOME/.m2
 
+install: true
+
 before_install:
   - 'chmod +x mvnw'
   - 'docker-compose up -d'
 
-install: true
+stages:
+  - build
+  - test
 
-script:
-  - 'rm -rf $HOME/.m2/repository/io/hekate'
-  - './mvnw -B clean install'
+jobs:
+  include:
+    - stage: build
+      script:
+        - 'rm -rf $HOME/.m2/repository/io/hekate'
+        - './mvnw clean install -B -DskipTests=true'
 
-after_success:
-  - 'bash <(curl -s https://codecov.io/bash)'
+script: './mvnw test -pl \!hekate-all -B'
 
-branches:
-  except:
-  - /experimental-.*/
+after_success: 'bash <(curl -s https://codecov.io/bash)'
 
 notifications:
   slack: hekate-io:tSiGS0Suj7vrmJN0tlTXw9xn
