@@ -770,38 +770,45 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
 
                             notifyOnLifecycleChange();
 
-                            ClusterJoinEvent joinEvent = new ClusterJoinEvent(newTopology, hekate());
+                            // Double check state as it could be changed by the lifecycle listeners.
+                            if (state.get() == SYNCHRONIZING) {
+                                ClusterJoinEvent joinEvent = new ClusterJoinEvent(newTopology, hekate());
 
-                            // Notify join future only after the initial join event has been processed by all listeners.
-                            clusterEvents.fireAsync(joinEvent).thenRun(() ->
-                                AsyncUtils.allOf(syncFutures).whenCompleteAsync((ignore, err) -> {
-                                    if (err == null) {
-                                        // Try to switch from SYNCHRONIZING to UP.
-                                        boolean becameUp = guard.withWriteLock(() -> {
-                                            if (state.compareAndSet(SYNCHRONIZING, UP)) {
-                                                if (log.isInfoEnabled()) {
-                                                    log.info("Hekate is UP and running [cluster={}, node={}]", clusterName, localNode);
+                                // Notify join future only after the initial join event has been processed by all listeners.
+                                clusterEvents.fireAsync(joinEvent).thenRun(() ->
+                                    AsyncUtils.allOf(syncFutures).whenCompleteAsync((ignore, err) -> {
+                                        if (err == null) {
+                                            try {
+                                                // Try to switch from SYNCHRONIZING to UP.
+                                                boolean becameUp = guard.withWriteLock(() -> {
+                                                    if (state.compareAndSet(SYNCHRONIZING, UP)) {
+                                                        log.info("Hekate is UP and running [cluster={}, node={}]", clusterName, localNode);
+
+                                                        notifyOnLifecycleChange();
+
+                                                        return true;
+                                                    } else {
+                                                        return false;
+                                                    }
+                                                });
+
+                                                // Complete outside of locked context.
+                                                if (becameUp) {
+                                                    joinFuture.complete(hekate());
                                                 }
-
-                                                notifyOnLifecycleChange();
-
-                                                return true;
-                                            } else {
-                                                return false;
+                                            } catch (RuntimeException | Error e) {
+                                                err = e;
                                             }
-                                        });
-
-                                        // Complete outside of locked context.
-                                        if (becameUp) {
-                                            joinFuture.complete(hekate());
                                         }
-                                    } else {
-                                        doTerminateAsync(ClusterLeaveReason.TERMINATE, err);
-                                    }
-                                }, sysWorker)
-                            );
 
-                            future.complete(joinEvent);
+                                        if (err != null) {
+                                            doTerminateAsync(ClusterLeaveReason.TERMINATE, err);
+                                        }
+                                    }, sysWorker)
+                                );
+
+                                future.complete(joinEvent);
+                            }
                         } else {
                             future.complete(null);
                         }
