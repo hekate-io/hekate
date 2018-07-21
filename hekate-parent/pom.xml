@@ -419,7 +419,7 @@
                         </dependencies>
                         <configuration>
                             <configLocation>${project.parent.basedir}/../checkstyle/checkstyle.xml</configLocation>
-                            <suppressionsLocation>${project.parent.basedir}/../checkstyle/suppression.xml</suppressionsLocation>
+                            <propertyExpansion>config_loc=${project.parent.basedir}/../checkstyle</propertyExpansion>
                             <encoding>UTF-8</encoding>
                             <consoleOutput>true</consoleOutput>
                             <failsOnError>true</failsOnError>
