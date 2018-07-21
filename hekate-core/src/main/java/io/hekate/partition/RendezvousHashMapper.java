@@ -183,9 +183,10 @@ public final class RendezvousHashMapper implements PartitionMapper {
             Partition partition = partitions.get(pid);
 
             if (partition == null) {
-                if (topology.isEmpty()) {
-                    partition = new DefaultPartition(pid, null, emptyList(), topology);
-                } else {
+                int topologySize = topology.size();
+
+                if (topologySize > 1) {
+                    // Find primary node.
                     PartitionHash[] hashes = topology.stream()
                         .map(node -> new PartitionHash(node, pid))
                         .sorted(PartitionHash.COMPARATOR)
@@ -195,21 +196,32 @@ public final class RendezvousHashMapper implements PartitionMapper {
 
                     List<ClusterNode> backup;
 
+                    // Find backup nodes.
                     if (backupSize > 0) {
                         int maxNodes = Math.min(backupSize, hashes.length - 1);
 
-                        backup = new ArrayList<>(maxNodes);
+                        if (maxNodes > 0) {
+                            backup = new ArrayList<>(maxNodes);
 
-                        for (int j = 1; j < maxNodes + 1; j++) {
-                            backup.add(hashes[j].node());
+                            for (int j = 1; j < maxNodes + 1; j++) {
+                                backup.add(hashes[j].node());
+                            }
+
+                            backup = unmodifiableList(backup);
+                        } else {
+                            backup = emptyList();
                         }
-
-                        backup = unmodifiableList(backup);
                     } else {
                         backup = emptyList();
                     }
 
                     partition = new DefaultPartition(pid, primary, backup, topology);
+                } else if (topologySize == 1) {
+                    // Single node topology.
+                    partition = new DefaultPartition(pid, topology.first(), emptyList(), topology);
+                } else {
+                    // Empty topology.
+                    partition = new DefaultPartition(pid, null, emptyList(), topology);
                 }
 
                 partitions.compareAndSet(pid, null, partition);

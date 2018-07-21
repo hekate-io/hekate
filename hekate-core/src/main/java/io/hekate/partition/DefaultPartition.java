@@ -21,8 +21,11 @@ import io.hekate.cluster.ClusterTopology;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableList;
 
 class DefaultPartition implements Partition {
     private final int id;
@@ -49,14 +52,16 @@ class DefaultPartition implements Partition {
         List<ClusterNode> nodes;
 
         if (primary == null) {
-            nodes = Collections.emptyList();
+            nodes = emptyList();
+        } else if (backup.isEmpty()) {
+            nodes = singletonList(primary);
         } else {
             nodes = new ArrayList<>(backup.size() + 1);
 
             nodes.add(primary);
             nodes.addAll(backup);
 
-            nodes = Collections.unmodifiableList(nodes);
+            nodes = unmodifiableList(nodes);
         }
 
         this.nodes = nodes;
