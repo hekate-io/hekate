@@ -29,6 +29,7 @@ import io.hekate.util.async.Waiting;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,24 +111,20 @@ class DefaultCoordinationProcess implements CoordinationProcess {
         });
     }
 
+    public Waiting preTerminate() {
+        return guard.withWriteLock(() -> {
+            if (guard.becomeTerminating()) {
+                return cancelCurrentContext();
+            } else {
+                return Waiting.NO_WAIT;
+            }
+        });
+    }
+
     public Waiting terminate() {
         return guard.withWriteLock(() -> {
             if (guard.becomeTerminated()) {
-                DefaultCoordinationContext localCtx = this.ctx;
-
-                if (localCtx != null) {
-                    localCtx.cancel();
-
-                    async.execute(() -> {
-                        try {
-                            localCtx.postCancel();
-                        } catch (RuntimeException | Error e) {
-                            log.error("Got an unexpected runtime error during coordination [process={}]", name, e);
-                        }
-                    });
-
-                    this.ctx = null;
-                }
+                cancelCurrentContext();
 
                 async.execute(() -> {
                     try {
@@ -153,9 +150,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
     public void processMessage(Message<CoordinationProtocol> msg) {
         assert msg != null : "Message is null.";
 
-        guard.lockRead();
-
-        try {
+        guard.withReadLock(() -> {
             DefaultCoordinationContext localCtx = this.ctx;
 
             if (guard.isInitialized() && localCtx != null) {
@@ -175,76 +170,60 @@ class DefaultCoordinationProcess implements CoordinationProcess {
 
                 msg.reply(CoordinationProtocol.Reject.INSTANCE);
             }
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     public void processTopologyChange(ClusterTopology newTopology) {
         assert newTopology != null : "New topology is null.";
 
-        guard.lockWrite();
+        guard.withWriteLockIfInitialized(() -> {
+            if (DEBUG) {
+                log.debug("Processing topology change [topology={}]", newTopology);
+            }
 
-        try {
-            if (guard.isInitialized()) {
-                if (DEBUG) {
-                    log.debug("Processing topology change [topology={}]", newTopology);
-                }
+            boolean topologyChanged = true;
 
-                boolean topologyChanged = true;
+            DefaultCoordinationContext oldCtx = this.ctx;
 
-                DefaultCoordinationContext oldCtx = this.ctx;
-
-                if (oldCtx != null) {
-                    if (oldCtx.topology().equals(newTopology)) {
-                        topologyChanged = false;
-                    } else {
-                        oldCtx.cancel();
-
-                        async.execute(() -> {
-                            try {
-                                oldCtx.postCancel();
-                            } catch (RuntimeException | Error e) {
-                                log.error("Got an unexpected runtime error during coordination [process={}]", name, e);
-                            }
-                        });
-                    }
-                }
-
-                if (topologyChanged) {
-                    DefaultCoordinationContext newCtx = new DefaultCoordinationContext(
-                        name,
-                        hekate,
-                        newTopology,
-                        channel,
-                        async,
-                        handler,
-                        failoverDelay,
-                        () -> future.complete(this)
-                    );
-
-                    this.ctx = newCtx;
-
-                    if (DEBUG) {
-                        log.debug("Created new context [context={}]", newCtx);
-                    }
-
-                    async.execute(() -> {
-                        try {
-                            newCtx.coordinate();
-                        } catch (RuntimeException | Error e) {
-                            log.error("Got an unexpected runtime error during coordination [process={}]", name, e);
-                        }
-                    });
+            if (oldCtx != null) {
+                if (oldCtx.topology().equals(newTopology)) {
+                    topologyChanged = false;
                 } else {
-                    if (DEBUG) {
-                        log.debug("Topology not changed [process={}]", name);
-                    }
+                    cancelCurrentContext();
                 }
             }
-        } finally {
-            guard.unlockWrite();
-        }
+
+            if (topologyChanged) {
+                DefaultCoordinationContext newCtx = new DefaultCoordinationContext(
+                    name,
+                    hekate,
+                    newTopology,
+                    channel,
+                    async,
+                    handler,
+                    failoverDelay,
+                    () -> future.complete(this)
+                );
+
+                this.ctx = newCtx;
+
+                if (DEBUG) {
+                    log.debug("Created new context [context={}]", newCtx);
+                }
+
+                async.execute(() -> {
+                    try {
+                        newCtx.coordinate();
+                    } catch (RuntimeException | Error e) {
+                        log.error("Got an unexpected runtime error during coordination [process={}]", name, e);
+                    }
+                });
+            } else {
+                if (DEBUG) {
+                    log.debug("Topology not changed [process={}]", name);
+                }
+            }
+        });
     }
 
     @Override
@@ -261,6 +240,34 @@ class DefaultCoordinationProcess implements CoordinationProcess {
     @SuppressWarnings("unchecked")
     public <T extends CoordinationHandler> T handler() {
         return (T)handler;
+    }
+
+    private Waiting cancelCurrentContext() {
+        assert guard.isWriteLocked() : "Must hold a write lock.";
+
+        DefaultCoordinationContext localCtx = this.ctx;
+
+        if (localCtx != null) {
+            this.ctx = null;
+
+            localCtx.cancel();
+
+            CountDownLatch done = new CountDownLatch(1);
+
+            async.execute(() -> {
+                try {
+                    localCtx.postCancel();
+                } catch (RuntimeException | Error e) {
+                    log.error("Got an unexpected runtime error during coordination [process={}]", name, e);
+                } finally {
+                    done.countDown();
+                }
+            });
+
+            return done::await;
+        } else {
+            return Waiting.NO_WAIT;
+        }
     }
 
     @Override

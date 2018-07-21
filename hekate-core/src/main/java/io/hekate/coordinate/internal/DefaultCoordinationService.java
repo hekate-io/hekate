@@ -221,6 +221,26 @@ public class DefaultCoordinationService implements CoordinationService, Configur
     }
 
     @Override
+    public void preTerminate() throws HekateException {
+        Waiting waiting = guard.withWriteLock(() -> {
+            if (guard.becomeTerminating()) {
+                if (DEBUG) {
+                    log.debug("Pre-terminating.");
+                }
+
+                return Waiting.awaitAll(processes.values().stream()
+                    .map(DefaultCoordinationProcess::terminate)
+                    .collect(toList())
+                );
+            } else {
+                return Waiting.NO_WAIT;
+            }
+        });
+
+        waiting.awaitUninterruptedly();
+    }
+
+    @Override
     public void terminate() throws HekateException {
         Waiting waiting = null;
 
@@ -229,10 +249,13 @@ public class DefaultCoordinationService implements CoordinationService, Configur
         try {
             if (guard.becomeTerminated()) {
                 if (DEBUG) {
-                    log.debug("Terminating...");
+                    log.debug("Terminating.");
                 }
 
-                waiting = Waiting.awaitAll(processes.values().stream().map(DefaultCoordinationProcess::terminate).collect(toList()));
+                waiting = Waiting.awaitAll(processes.values().stream()
+                    .map(DefaultCoordinationProcess::terminate)
+                    .collect(toList())
+                );
 
                 processes.clear();
             }
