@@ -483,6 +483,13 @@
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
+            <xsd:element name="zookeeper" type="clusterZooKeeperSeedNodeProviderType">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.cluster.seed.zookeeper.ZooKeeperSeedNodeProvider.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
             <xsd:element name="shared-folder" type="clusterSharedFolderSeedNodeProviderType">
                 <xsd:annotation>
                     <xsd:documentation>
@@ -627,6 +634,44 @@
             <xsd:annotation>
                 <xsd:documentation>
                     See javadoc of 'io.hekate.cluster.seed.jdbc.JdbcSeedNodeProviderConfig#setClusterColumn(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="clusterZooKeeperSeedNodeProviderType">
+        <xsd:attribute name="connection-string" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.zookeeper.ZooKeeperSeedNodeProviderConfig#setConnectionString(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="connect-timeout-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.zookeeper.ZooKeeperSeedNodeProviderConfig#setConnectTimeout(int)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="session-timeout-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.zookeeper.ZooKeeperSeedNodeProviderConfig#setSessionTimeout(int)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="cleanup-interval-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.zookeeper.ZooKeeperSeedNodeProviderConfig#setCleanupInterval(int)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="base-path" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.zookeeper.ZooKeeperSeedNodeProviderConfig#setBasePath(java.lang.String)'.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>

@@ -55,8 +55,8 @@ public final class AddressUtils {
     /** Prefix for the file name of {@link #toFileName(InetSocketAddress)}. */
     public static final String FILE_PREFIX = "node_";
 
-    /** Separator for the address's components of {@link #toFileName(InetSocketAddress)}. */
-    public static final String FILE_SEPARATOR = "_";
+    /** Separator of host and port components for {@link #toFileName(InetSocketAddress)}. */
+    public static final String PORT_SEPARATOR = "_";
 
     private static final AtomicReference<NetCacheEntry> NET_CACHE = new AtomicReference<>();
 
@@ -143,9 +143,11 @@ public final class AddressUtils {
      * @param address Address.
      *
      * @return File name.
+     *
+     * @see #fromFileName(String, Logger)
      */
     public static String toFileName(InetSocketAddress address) {
-        return FILE_PREFIX + address.getAddress().getHostAddress() + FILE_SEPARATOR + address.getPort();
+        return FILE_PREFIX + address.getAddress().getHostAddress() + PORT_SEPARATOR + address.getPort();
     }
 
     /**
@@ -160,7 +162,7 @@ public final class AddressUtils {
      */
     public static InetSocketAddress fromFileName(String name, Logger log) {
         if (name.startsWith(FILE_PREFIX) && name.length() > FILE_PREFIX.length()) {
-            String[] tokens = name.substring(FILE_PREFIX.length()).split(FILE_SEPARATOR);
+            String[] tokens = name.substring(FILE_PREFIX.length()).split(PORT_SEPARATOR);
 
             if (tokens.length == 2) {
                 InetAddress host = null;

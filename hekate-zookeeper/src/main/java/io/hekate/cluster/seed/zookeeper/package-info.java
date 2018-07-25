@@ -15,6 +15,6 @@
  */
 
 /**
- * JClouds-based seed node provider.
+ * ZooKeeper-based seed node provider.
  */
-package io.hekate.cluster.seed.jclouds;
+package io.hekate.cluster.seed.zookeeper;

@@ -45,6 +45,13 @@
         </dependency>
 
         <dependency>
+            <artifactId>hekate-zookeeper</artifactId>
+            <groupId>${project.groupId}</groupId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
             <artifactId>hekate-jclouds-aws</artifactId>
             <groupId>${project.groupId}</groupId>
             <version>${project.version}</version>
@@ -149,6 +156,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-test-autoconfigure</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-test</artifactId>
             <scope>test</scope>
         </dependency>
 

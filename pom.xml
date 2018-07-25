@@ -34,6 +34,7 @@
         <module>hekate-core</module>
         <module>hekate-spring</module>
         <module>hekate-spring-boot</module>
+        <module>hekate-zookeeper</module>
         <module>hekate-jclouds-core</module>
         <module>hekate-jclouds-aws</module>
         <module>hekate-metrics-influxdb</module>

@@ -188,7 +188,7 @@ public class XsdSingleNodeTest extends HekateTestBase {
     }
 
     @Override
-    protected void assertAllThreadsStopped() throws InterruptedException {
+    protected void checkGhostThreads() throws InterruptedException {
         // Do not check threads since Spring context gets terminated after all tests have been run.
     }
 

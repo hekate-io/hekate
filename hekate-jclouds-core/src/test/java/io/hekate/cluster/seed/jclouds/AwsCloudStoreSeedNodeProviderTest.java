@@ -18,24 +18,13 @@ package io.hekate.cluster.seed.jclouds;
 
 import io.hekate.HekateTestProps;
 import io.hekate.cluster.seed.PersistentSeedNodeProviderTestBase;
-import io.hekate.util.format.ToString;
 import org.junit.Assume;
 import org.junit.BeforeClass;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class AwsCloudStoreSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase<CloudStoreSeedNodeProvider> {
     @BeforeClass
     public static void mayBeDisableTest() {
         Assume.assumeTrue(HekateTestProps.is("AWS_TEST_ENABLED"));
-    }
-
-    @Test
-    public void testToString() throws Exception {
-        CloudStoreSeedNodeProvider provider = createProvider();
-
-        assertEquals(ToString.format(provider), provider.toString());
     }
 
     @Override

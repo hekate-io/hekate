@@ -139,13 +139,13 @@ public abstract class HekateTestBase {
     /** State of nested {@link #repeat(int, IterationTask)}. */
     private static final ThreadLocal<String> REPEAT_STATE = new ThreadLocal<>();
 
-    /** Cache to prevent reentrancy in {@link #assertAllThreadsStopped()}. */
-    private static final Set<String> FAILED_THREAD_NAMES_CACHE = new HashSet<>();
+    /** Cache to prevent reentrancy in {@link #checkGhostThreads()}. */
+    private static final Set<String> GHOST_THREAD_NAMES_CACHE = new HashSet<>();
 
     /** Cache for {@link #selectLocalAddress()}. */
     private static final AtomicReference<InetAddress> LOCAL_ADDRESS_CACHE = new AtomicReference<>();
 
-    /** Prefixes for {@link Thread#getName() thread names} that should NOT be checked by {@link #assertAllThreadsStopped()}. */
+    /** Prefixes for {@link Thread#getName() thread names} that should NOT be checked by {@link #checkGhostThreads()}. */
     private static final List<String> KNOWN_THREAD_PREFIXES = new ArrayList<>();
 
     /** Name of the currently running test case. */
@@ -254,6 +254,9 @@ public abstract class HekateTestBase {
     /** Executor for {@link #runAsync(Callable)}. */
     private volatile ExecutorService async;
 
+    /** See {@link #ignoreGhostThreads()}. */
+    private boolean ignoreGhostThreads;
+
     public static void busyWait(String comment, Callable<Boolean> condition) throws Exception {
         for (int i = 0; i < BUSY_WAIT_LOOPS; i++) {
             if (condition.call()) {
@@ -306,7 +309,7 @@ public abstract class HekateTestBase {
             async = null;
         }
 
-        assertAllThreadsStopped();
+        checkGhostThreads();
     }
 
     protected static ClusterNodeId newNodeId() {
@@ -381,8 +384,12 @@ public abstract class HekateTestBase {
         return buf.toString();
     }
 
-    protected void assertAllThreadsStopped() throws InterruptedException {
-        Set<String> failedThreads = new HashSet<>();
+    protected void ignoreGhostThreads() {
+        ignoreGhostThreads = true;
+    }
+
+    protected void checkGhostThreads() throws InterruptedException {
+        Set<String> ghostThreads = new HashSet<>();
 
         int attempts = 3;
 
@@ -395,36 +402,38 @@ public abstract class HekateTestBase {
                 if (t != null && t.getThreadState() != Thread.State.TERMINATED) {
                     String name = t.getThreadName();
 
-                    if (!FAILED_THREAD_NAMES_CACHE.contains(name)) {
+                    if (!GHOST_THREAD_NAMES_CACHE.contains(name)) {
                         String nameLower = name.toLowerCase();
 
                         if (KNOWN_THREAD_PREFIXES.stream().noneMatch(nameLower::startsWith)) {
-                            failedThreads.add(name);
+                            ghostThreads.add(name);
                         }
                     }
                 }
             }
 
-            if (failedThreads.isEmpty()) {
+            if (ghostThreads.isEmpty()) {
                 break;
             }
 
             if (i < attempts - 1) {
-                failedThreads.clear();
+                ghostThreads.clear();
 
                 Thread.sleep(BUSY_WAIT_INTERVAL);
             }
         }
 
-        if (!failedThreads.isEmpty()) {
-            FAILED_THREAD_NAMES_CACHE.addAll(failedThreads);
+        if (!ghostThreads.isEmpty()) {
+            GHOST_THREAD_NAMES_CACHE.addAll(ghostThreads);
         }
 
-        if (!failedThreads.isEmpty()) {
-            System.out.println(threadDump());
-        }
+        if (!ignoreGhostThreads) {
+            if (!ghostThreads.isEmpty()) {
+                System.out.println(threadDump());
+            }
 
-        assertTrue(failedThreads.toString(), failedThreads.isEmpty());
+            assertTrue(ghostThreads.toString(), ghostThreads.isEmpty());
+        }
     }
 
     protected void runParallel(int threads, int iterations, ParallelTask task) throws Exception {

@@ -345,8 +345,7 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider, JmxSupport<JdbcSe
                 throw e;
             }
         } catch (SQLException e) {
-            throw new HekateException("Failed to register seed node within a database "
-                + "[cluster=" + cluster + ", node=" + node + ']', e);
+            throw new HekateException("Failed to register seed node [cluster=" + cluster + ", node=" + node + ']', e);
         }
     }
 

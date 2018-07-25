@@ -17,19 +17,19 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
         - Multicast
         - JDBC
         - Shared File System
-        - Clouds (based on [Apache JClouds](http://jclouds.apache.org))
+        - Clouds (based on [Apache JClouds](https://jclouds.apache.org))
             - Amazon EC2/S3
             - Azure Blob Storage
             - Google Cloud Storage
             - etc
-        - [ZooKeeper](https://zookeeper.apache.org) (_planned_) 
+        - [ZooKeeper](https://zookeeper.apache.org)
         - [Etcd](https://github.com/coreos/etcd) (_planned_)
     - Cluster Event Listeners    
     - User-defined Properties and Roles of Cluster Nodes
     - Cluster Views and Node Filtering API
     
 - **Messaging**
-    - Synchronous and Asynchronous ([Netty](http://netty.io)-based) APIs
+    - Synchronous and Asynchronous APIs (backed by [Netty](https://netty.io))
     - Cluster-aware Load Balancing and Routing
     - SSL/TLS Encryption of Network Communications (optional)
     - Back Pressure Policies
@@ -68,9 +68,9 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
                 
 - **Spring Framework/Boot Support (optional)**
     - Spring-compliant Beans
-    - [Spring XML Schema](http://docs.spring.io/spring/docs/current/spring-framework-reference/html/xsd-configuration.html) 
+    - [Spring XML Schema](https://docs.spring.io/spring/docs/4.3.x/spring-framework-reference/html/xsd-configuration.html) 
       to Simplify Configuration
-    - [Spring Boot](https://projects.spring.io/spring-boot) Auto-configurations and @Annotations
+    - [Spring Boot](https://spring.io/projects/spring-boot) Auto-configurations and @Annotations
 
 - **Raft-based Replicated State Machines (_planned_)**
 
@@ -114,9 +114,10 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 ```
 
  * Other artifacts:
-    - [hekate-jclouds-core](hekate-jclouds-core/) - Integration with the [Apache JClouds](http://jclouds.apache.org) 
+    - [hekate-jclouds-core](hekate-jclouds-core/) - Integration with the [Apache JClouds](https://jclouds.apache.org) 
       for cloud environments.
     - [hekate-jclouds-aws](hekate-jclouds-aws/) - Extended integration with the [Amazon EC2](https://aws.amazon.com) cloud.
+    - [hekate-zookeeper](hekate-zookeeper/) - Integration with the [Apache ZooKeeper](https://zookeeper.apache.org) 
     - [hekate-metrics-influxdb](hekate-metrics-influxdb/) - Metrics publishing to the [InfluxDB](https://www.influxdata.com) 
       (time-series data storage).
     - [hekate-metrics-statsd](hekate-metrics-statsd/) - Metrics publishing to the [StatsD](https://github.com/etsy/statsd) 

@@ -17,6 +17,7 @@
 package io.hekate.cluster.seed;
 
 import io.hekate.HekateNodeTestBase;
+import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -101,5 +102,12 @@ public abstract class SeedNodeProviderTestBase<T extends SeedNodeProvider> exten
                 }
             }
         });
+    }
+
+    @Test
+    public void testToString() throws Exception {
+        SeedNodeProvider provider = createProvider();
+
+        assertEquals(ToString.format(provider), provider.toString());
     }
 }

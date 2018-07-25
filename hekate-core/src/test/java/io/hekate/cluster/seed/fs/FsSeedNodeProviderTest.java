@@ -24,7 +24,7 @@ import java.net.InetSocketAddress;
 import org.junit.Test;
 
 import static io.hekate.core.internal.util.AddressUtils.FILE_PREFIX;
-import static io.hekate.core.internal.util.AddressUtils.FILE_SEPARATOR;
+import static io.hekate.core.internal.util.AddressUtils.PORT_SEPARATOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -74,7 +74,7 @@ public class FsSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase<F
         invalid.delete();
 
         // Invalid host.
-        invalid = new File(provider.clusterDir(CLUSTER_1), FILE_PREFIX + "invalid#host" + FILE_SEPARATOR + "12134");
+        invalid = new File(provider.clusterDir(CLUSTER_1), FILE_PREFIX + "invalid#host" + PORT_SEPARATOR + "12134");
 
         invalid.createNewFile();
 
@@ -84,7 +84,7 @@ public class FsSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase<F
         invalid.delete();
 
         // Invalid port.
-        invalid = new File(provider.clusterDir(CLUSTER_1), FILE_PREFIX + AddressUtils.host(addr) + FILE_SEPARATOR + "invalid_port");
+        invalid = new File(provider.clusterDir(CLUSTER_1), FILE_PREFIX + AddressUtils.host(addr) + PORT_SEPARATOR + "invalid_port");
 
         invalid.createNewFile();
 

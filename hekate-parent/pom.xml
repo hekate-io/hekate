@@ -70,6 +70,7 @@
         <kryo.version>4.0.2</kryo.version>
         <kryo.serializers.version>0.42</kryo.serializers.version>
         <fst.version>2.57</fst.version>
+        <zookeeper.curator.version>2.12.0</zookeeper.curator.version>
         <jclouds.version>2.1.0</jclouds.version>
         <aws.sdk.version>1.11.331</aws.sdk.version>
         <influxdb.version>2.10</influxdb.version>
@@ -295,6 +296,19 @@
                 <version>${postgresql.version}</version>
             </dependency>
 
+            <!-- ZooKeeper. -->
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-framework</artifactId>
+                <version>${zookeeper.curator.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-test</artifactId>
+                <version>${zookeeper.curator.version}</version>
+            </dependency>
+
             <!-- Testing. -->
             <dependency>
                 <groupId>junit</groupId>
@@ -326,6 +340,18 @@
                 <groupId>org.objenesis</groupId>
                 <artifactId>objenesis</artifactId>
                 <version>2.5.1</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>3.21.0-GA</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>18.0</version>
             </dependency>
 
             <dependency>

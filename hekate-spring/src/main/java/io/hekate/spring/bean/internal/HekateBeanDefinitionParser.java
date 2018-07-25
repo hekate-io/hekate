@@ -33,6 +33,8 @@ import io.hekate.cluster.seed.jdbc.JdbcSeedNodeProvider;
 import io.hekate.cluster.seed.jdbc.JdbcSeedNodeProviderConfig;
 import io.hekate.cluster.seed.multicast.MulticastSeedNodeProvider;
 import io.hekate.cluster.seed.multicast.MulticastSeedNodeProviderConfig;
+import io.hekate.cluster.seed.zookeeper.ZooKeeperSeedNodeProvider;
+import io.hekate.cluster.seed.zookeeper.ZooKeeperSeedNodeProviderConfig;
 import io.hekate.cluster.split.AddressReachabilityDetector;
 import io.hekate.cluster.split.HostReachabilityDetector;
 import io.hekate.cluster.split.SplitBrainDetectorGroup;
@@ -273,6 +275,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             Element sharedFsEl = getChildElementByTagName(providerEl, "shared-folder");
             Element cloudEl = getChildElementByTagName(providerEl, "cloud");
             Element cloudStoreEl = getChildElementByTagName(providerEl, "cloud-store");
+            Element zooKeeperEl = getChildElementByTagName(providerEl, "zookeeper");
 
             if (multicastEl != null) {
                 BeanDefinitionBuilder cfg = newBean(MulticastSeedNodeProviderConfig.class, multicastEl);
@@ -331,6 +334,20 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 setProperty(cfg, sharedFsEl, "cleanupInterval", "cleanup-interval-ms");
 
                 BeanDefinitionBuilder provider = newBean(FsSeedNodeProvider.class, sharedFsEl);
+
+                provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
+
+                cluster.addPropertyValue("seedNodeProvider", registerInnerBean(provider, ctx));
+            } else if (zooKeeperEl != null) {
+                BeanDefinitionBuilder cfg = newBean(ZooKeeperSeedNodeProviderConfig.class, zooKeeperEl);
+
+                setProperty(cfg, zooKeeperEl, "connectionString", "connection-string");
+                setProperty(cfg, zooKeeperEl, "connectTimeout", "connect-timeout-ms");
+                setProperty(cfg, zooKeeperEl, "sessionTimeout", "session-timeout-ms");
+                setProperty(cfg, zooKeeperEl, "basePath", "base-path");
+                setProperty(cfg, zooKeeperEl, "cleanupInterval", "cleanup-interval-ms");
+
+                BeanDefinitionBuilder provider = newBean(ZooKeeperSeedNodeProvider.class, zooKeeperEl);
 
                 provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
 

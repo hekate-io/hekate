@@ -10,6 +10,7 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   io.hekate.spring.boot.cluster.HekateJdbcSeedNodeProviderConfigurer,\
   io.hekate.spring.boot.cluster.HekateCloudSeedNodeProviderConfigurer,\
   io.hekate.spring.boot.cluster.HekateCloudStoreSeedNodeProviderConfigurer,\
+  io.hekate.spring.boot.cluster.HekateZooKeeperSeedNodeProviderConfigurer,\
   io.hekate.spring.boot.cluster.HekateStaticSeedNodeProviderConfigurer,\
   io.hekate.spring.boot.messaging.HekateMessagingServiceConfigurer,\
   io.hekate.spring.boot.rpc.HekateRpcServiceConfigurer,\
