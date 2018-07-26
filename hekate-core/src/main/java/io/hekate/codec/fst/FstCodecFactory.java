@@ -34,12 +34,35 @@ import org.nustaq.serialization.simpleapi.OnHeapCoder;
  *
  * <h2>Module dependency</h2>
  * <p>
- * FST integration requires
- * <a href="https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22de.ruedigermoeller%22%20a%3A%22fst%22" target="_blank">
- * 'de.ruedigermoeller:fst'
- * </a>
- * to be on the project's classpath.
+ * FST integration is provided by the 'hekate-codec-fst' module and can be imported into the project dependency management system as in the
+ * example below:
  * </p>
+ * <div class="tabs">
+ * <ul>
+ * <li><a href="#maven">Maven</a></li>
+ * <li><a href="#gradle">Gradle</a></li>
+ * <li><a href="#ivy">Ivy</a></li>
+ * </ul>
+ * <div id="maven">
+ * <pre>{@code
+ * <dependency>
+ *   <groupId>io.hekate</groupId>
+ *   <artifactId>hekate-codec-fst</artifactId>
+ *   <version>REPLACE_VERSION</version>
+ * </dependency>
+ * }</pre>
+ * </div>
+ * <div id="gradle">
+ * <pre>{@code
+ * compile group: 'io.hekate', name: 'hekate-codec-fst', version: 'REPLACE_VERSION'
+ * }</pre>
+ * </div>
+ * <div id="ivy">
+ * <pre>{@code
+ * <dependency org="io.hekate" name="hekate-codec-fst" rev="REPLACE_VERSION"/>
+ * }</pre>
+ * </div>
+ * </div>
  *
  * <h2>Configuration</h2>
  * <p>

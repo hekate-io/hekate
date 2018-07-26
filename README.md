@@ -114,14 +114,21 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 ```
 
  * Other artifacts:
-    - [hekate-jclouds-core](hekate-jclouds-core/) - Integration with the [Apache JClouds](https://jclouds.apache.org) 
-      for cloud environments.
-    - [hekate-jclouds-aws](hekate-jclouds-aws/) - Extended integration with the [Amazon EC2](https://aws.amazon.com) cloud.
-    - [hekate-zookeeper](hekate-zookeeper/) - Integration with the [Apache ZooKeeper](https://zookeeper.apache.org) 
-    - [hekate-metrics-influxdb](hekate-metrics-influxdb/) - Metrics publishing to the [InfluxDB](https://www.influxdata.com) 
-      (time-series data storage).
-    - [hekate-metrics-statsd](hekate-metrics-statsd/) - Metrics publishing to the [StatsD](https://github.com/etsy/statsd) 
-      (statistics aggregation daemon). 
+    - **Cluster Bootstrapping** (seed node discovery)
+        - [hekate-jclouds-core](hekate-jclouds-core/) - Integration with the [Apache JClouds](https://jclouds.apache.org) 
+          for cloud environments.
+        - [hekate-jclouds-aws](hekate-jclouds-aws/) - Extended integration with the [Amazon EC2](https://aws.amazon.com) cloud.
+        - [hekate-zookeeper](hekate-zookeeper/) - Integration with the [Apache ZooKeeper](https://zookeeper.apache.org) 
+    - **Serialization Codecs**
+        - [hekate-codec-kryo](hekate-codec-kryo/README.md) - Integration with [Kryo](https://github.com/EsotericSoftware/kryo) for data 
+          serialization.
+        - [hekate-codec-fst](hekate-codec-fst/README.md) - Integration with [FST](https://github.com/RuedigerMoeller/fast-serialization) for 
+          data serialization.
+    - **Metrics**
+        - [hekate-metrics-influxdb](hekate-metrics-influxdb/) - Metrics publishing to the [InfluxDB](https://www.influxdata.com) 
+          (time-series data storage).
+        - [hekate-metrics-statsd](hekate-metrics-statsd/) - Metrics publishing to the [StatsD](https://github.com/etsy/statsd) 
+          (statistics aggregation daemon). 
 
 ## How to build
 
