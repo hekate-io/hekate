@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.jclouds.ContextBuilder;
 import org.jclouds.compute.ComputeService;
 import org.jclouds.compute.ComputeServiceContext;
@@ -141,11 +140,11 @@ public class CloudSeedNodeProvider implements SeedNodeProvider {
         Properties properties = new Properties();
 
         if (!regions.isEmpty()) {
-            properties.setProperty(LocationConstants.PROPERTY_REGIONS, regions.stream().collect(Collectors.joining(",")));
+            properties.setProperty(LocationConstants.PROPERTY_REGIONS, String.join(",", regions));
         }
 
         if (!zones.isEmpty()) {
-            properties.setProperty(LocationConstants.PROPERTY_ZONES, zones.stream().collect(Collectors.joining(",")));
+            properties.setProperty(LocationConstants.PROPERTY_ZONES, String.join(",", zones));
         }
 
         if (cfg.getProperties() != null) {

@@ -21,6 +21,7 @@ import io.hekate.metrics.Metric;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
@@ -81,7 +82,7 @@ public abstract class StatsdMetricsTestBase extends HekateNodeTestBase {
                 while (!udp.isClosed()) {
                     udp.receive(packet);
 
-                    received.add(new String(packet.getData(), "utf-8").trim());
+                    received.add(new String(packet.getData(), StandardCharsets.UTF_8).trim());
 
                     Arrays.fill(bytes, (byte)0);
                 }

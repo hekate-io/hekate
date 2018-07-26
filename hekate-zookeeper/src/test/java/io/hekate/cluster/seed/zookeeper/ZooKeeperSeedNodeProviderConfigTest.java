@@ -25,7 +25,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
 public class ZooKeeperSeedNodeProviderConfigTest extends HekateTestBase {
-    private ZooKeeperSeedNodeProviderConfig cfg = new ZooKeeperSeedNodeProviderConfig();
+    private final ZooKeeperSeedNodeProviderConfig cfg = new ZooKeeperSeedNodeProviderConfig();
 
     @Test
     public void testConnectString() {
