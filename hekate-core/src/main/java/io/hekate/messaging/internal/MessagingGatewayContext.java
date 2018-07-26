@@ -97,7 +97,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
     private interface Router<T> {
         ClusterNodeId route(
             MessageContext<T> ctx,
-            Optional<FailureInfo> prevErr,
+            Optional<FailureInfo> prevFailure,
             PartitionMapper mapper,
             ClusterTopology topology,
             HekateSupport hekate
@@ -112,8 +112,8 @@ class MessagingGatewayContext<T> implements HekateSupport {
         }
     }
 
-    private static final Router<?> UNICAST_ROUTER = (ctx, prevErr, mapper, topology, hekate) -> {
-        LoadBalancerContext balancerCtx = new DefaultLoadBalancerContext(ctx, topology, hekate, mapper, prevErr);
+    private static final Router<?> UNICAST_ROUTER = (ctx, prevFailure, mapper, topology, hekate) -> {
+        LoadBalancerContext balancerCtx = new DefaultLoadBalancerContext(ctx, topology, hekate, mapper, prevFailure);
 
         return ctx.opts().balancer().route(ctx.originalMessage(), balancerCtx);
     };
@@ -317,7 +317,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
             for (ClusterNode node : nodes) {
                 // Always route to the same node.
-                Router<T> router = (ctx, prevErr, mapper, topology, hekate) -> node.id();
+                Router<T> router = (ctx, prevFailure, mapper, topology, hekate) -> node.id();
 
                 sendWithRouter(router, affinityKey, msg, opts, err -> {
                     boolean completed;
@@ -366,7 +366,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
             for (ClusterNode node : nodes) {
                 // Always route to the same node.
-                Router<T> router = (ctx, prevErr, mapper, topology, hekate) -> node.id();
+                Router<T> router = (ctx, prevFailure, mapper, topology, hekate) -> node.id();
 
                 requestWithRouter(router, affinityKey, msg, opts, (err, reply) -> {
                     boolean completed;
@@ -522,11 +522,11 @@ class MessagingGatewayContext<T> implements HekateSupport {
         }
     }
 
-    private void routeAndSend(MessageContext<T> ctx, Router<T> router, SendCallback callback, Optional<FailureInfo> prevErr) {
+    private void routeAndSend(MessageContext<T> ctx, Router<T> router, SendCallback callback, Optional<FailureInfo> prevFailure) {
         MessageRoute<T> route = null;
 
         try {
-            route = route(ctx, router, prevErr);
+            route = route(ctx, router, prevFailure);
         } catch (HekateException e) {
             notifyOnErrorAsync(ctx, callback, e);
         } catch (RuntimeException | Error e) {
@@ -540,11 +540,11 @@ class MessagingGatewayContext<T> implements HekateSupport {
         }
 
         if (route != null) {
-            doSend(route, router, callback, prevErr);
+            doSend(route, router, callback, prevFailure);
         }
     }
 
-    private void doSend(MessageRoute<T> route, Router<T> router, SendCallback callback, Optional<FailureInfo> prevErr) {
+    private void doSend(MessageRoute<T> route, Router<T> router, SendCallback callback, Optional<FailureInfo> prevFailure) {
         MessageContext<T> ctx = route.ctx();
 
         // Decorate callback with failover, error handling logic, etc.
@@ -597,11 +597,11 @@ class MessagingGatewayContext<T> implements HekateSupport {
                     }
                 };
 
-                applyFailoverAsync(ctx, err, route.client().node(), onFailover, prevErr);
+                applyFailoverAsync(ctx, err, route.client().node(), onFailover, prevFailure);
             }
         };
 
-        route.client().send(route, retryCallback, prevErr != null);
+        route.client().send(route, retryCallback, prevFailure.isPresent());
     }
 
     private void requestWithRouter(Router<T> router, Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
@@ -634,12 +634,12 @@ class MessagingGatewayContext<T> implements HekateSupport {
         MessageContext<T> ctx,
         Router<T> router,
         ResponseCallback<T> callback,
-        Optional<FailureInfo> prevErr
+        Optional<FailureInfo> prevFailure
     ) {
         MessageRoute<T> route = null;
 
         try {
-            route = route(ctx, router, prevErr);
+            route = route(ctx, router, prevFailure);
         } catch (HekateException e) {
             notifyOnErrorAsync(ctx, callback, e);
         } catch (RuntimeException | Error e) {
@@ -653,7 +653,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
         }
 
         if (route != null) {
-            doRequest(route, router, callback, prevErr);
+            doRequest(route, router, callback, prevFailure);
         }
     }
 
@@ -661,7 +661,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
         MessageRoute<T> route,
         Router<T> router,
         ResponseCallback<T> callback,
-        Optional<FailureInfo> prevErr
+        Optional<FailureInfo> prevFailure
     ) {
         // Decorate callback with failover, error handling logic, etc.
         final MessageContext<T> ctx = route.ctx();
@@ -764,14 +764,17 @@ class MessagingGatewayContext<T> implements HekateSupport {
                 };
 
                 // Apply failover.
-                applyFailoverAsync(ctx, err, route.client().node(), onFailover, prevErr);
+                applyFailoverAsync(ctx, err, route.client().node(), onFailover, prevFailure);
             }
         };
 
+        // If this is a failover-attempt then this is a retransmit.
+        boolean isRetransmit = prevFailure.isPresent();
+
         if (ctx.isStream()) {
-            route.client().stream(route, internalCallback, prevErr != null);
+            route.client().stream(route, internalCallback, isRetransmit);
         } else {
-            route.client().request(route, internalCallback, prevErr != null);
+            route.client().request(route, internalCallback, isRetransmit);
         }
     }
 
@@ -959,7 +962,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
     private MessageRoute<T> route(
         MessageContext<T> ctx,
         Router<T> router,
-        Optional<FailureInfo> prevErr
+        Optional<FailureInfo> prevFailure
     ) throws HekateException, ClientSelectionRejectedException {
         assert ctx != null : "Message context is null.";
 
@@ -971,19 +974,19 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
             // Fail if topology is empty.
             if (topology.isEmpty()) {
-                if (prevErr.isPresent()) {
-                    throw new ClientSelectionRejectedException(prevErr.get().error());
+                if (prevFailure.isPresent()) {
+                    throw new ClientSelectionRejectedException(prevFailure.get().error());
                 } else {
                     throw new EmptyTopologyException("No suitable receivers [channel=" + name + ']');
                 }
             }
 
-            ClusterNodeId routed = router.route(ctx, prevErr, mapper, topology, hekate);
+            ClusterNodeId routed = router.route(ctx, prevFailure, mapper, topology, hekate);
 
             // Check if routing was successful.
             if (routed == null) {
-                if (prevErr.isPresent()) {
-                    throw new ClientSelectionRejectedException(prevErr.get().error());
+                if (prevFailure.isPresent()) {
+                    throw new ClientSelectionRejectedException(prevFailure.get().error());
                 } else {
                     throw new UnknownRouteException("Load balancer failed to select a target node.");
                 }
@@ -1014,8 +1017,8 @@ class MessagingGatewayContext<T> implements HekateSupport {
                         && clientsTopology != null // <-- Can be null if service was still initializing when this method got called.
                         && clientsTopology.version() >= topology.version()) {
                         // Report failure since topologies are consistent but the selected node is not within the cluster.
-                        if (prevErr.isPresent()) {
-                            throw new ClientSelectionRejectedException(prevErr.get().error());
+                        if (prevFailure.isPresent()) {
+                            throw new ClientSelectionRejectedException(prevFailure.get().error());
                         } else {
                             throw new UnknownRouteException("Node is not within the channel topology [id=" + routed + ']');
                         }
@@ -1043,14 +1046,14 @@ class MessagingGatewayContext<T> implements HekateSupport {
         Throwable cause,
         ClusterNode failed,
         FailoverCallback callback,
-        Optional<FailureInfo> prevErr
+        Optional<FailureInfo> prevFailure
     ) {
         onAsyncEnqueue();
 
         ctx.worker().execute(() -> {
             onAsyncDequeue();
 
-            applyFailover(ctx, cause, failed, callback, prevErr);
+            applyFailover(ctx, cause, failed, callback, prevFailure);
         });
     }
 
@@ -1059,7 +1062,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
         Throwable cause,
         ClusterNode failed,
         FailoverCallback callback,
-        Optional<FailureInfo> prevErr
+        Optional<FailureInfo> prevFailure
     ) {
         assert ctx != null : "Message context is null.";
         assert cause != null : "Cause is null.";
@@ -1078,7 +1081,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
         FailoverPolicy policy = ctx.opts().failover();
 
         if (policy != null && isRecoverable(cause)) {
-            DefaultFailoverContext failoverCtx = newFailoverContext(cause, failed, prevErr);
+            DefaultFailoverContext failoverCtx = newFailoverContext(cause, failed, prevFailure);
 
             // Apply failover policy.
             try {
@@ -1128,13 +1131,13 @@ class MessagingGatewayContext<T> implements HekateSupport {
         }
     }
 
-    private DefaultFailoverContext newFailoverContext(Throwable cause, ClusterNode failed, Optional<FailureInfo> prevErr) {
+    private DefaultFailoverContext newFailoverContext(Throwable cause, ClusterNode failed, Optional<FailureInfo> prevFailure) {
         int attempt;
         FailoverRoutingPolicy prevRouting;
         Set<ClusterNode> failedNodes;
 
-        if (prevErr.isPresent()) {
-            FailureInfo failure = prevErr.get();
+        if (prevFailure.isPresent()) {
+            FailureInfo failure = prevFailure.get();
 
             attempt = failure.attempt() + 1;
             prevRouting = failure.routing();
