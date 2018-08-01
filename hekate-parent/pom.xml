@@ -84,7 +84,7 @@
 
         <!-- Maven plugins.-->
         <maven.compiler.plugin.version>3.0</maven.compiler.plugin.version>
-        <maven.javadoc.plugin.version>2.10.3</maven.javadoc.plugin.version>
+        <maven.javadoc.plugin.version>3.0.1</maven.javadoc.plugin.version>
         <maven.jar.plugin.version>3.0.2</maven.jar.plugin.version>
         <maven.exec.plugin.version>1.4.0</maven.exec.plugin.version>
         <maven.flatten.plugin.version>1.0.0</maven.flatten.plugin.version>
@@ -669,6 +669,7 @@
                         </resourceArtifact>
                     </resourcesArtifacts>
                     <author>false</author>
+                    <detectOfflineLinks>false</detectOfflineLinks>
                     <links>
                         <link>https://download.oracle.com/javase/8/docs/api/</link>
                         <link>https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/</link>
