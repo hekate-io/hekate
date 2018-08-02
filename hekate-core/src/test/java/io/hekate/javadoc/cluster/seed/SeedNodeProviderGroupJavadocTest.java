@@ -87,6 +87,6 @@ public class SeedNodeProviderGroupJavadocTest extends HekateTestBase {
             .join();
         // End:configuration
 
-        say(hekate);
+        hekate.leave();
     }
 }
