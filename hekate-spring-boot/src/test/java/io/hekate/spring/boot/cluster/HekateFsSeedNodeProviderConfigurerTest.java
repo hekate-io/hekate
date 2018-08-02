@@ -18,6 +18,7 @@ package io.hekate.spring.boot.cluster;
 
 import io.hekate.cluster.internal.DefaultClusterService;
 import io.hekate.cluster.seed.SeedNodeProvider;
+import io.hekate.cluster.seed.SeedNodeProviderGroup;
 import io.hekate.cluster.seed.fs.FsSeedNodeProvider;
 import io.hekate.spring.boot.EnableHekate;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
@@ -31,6 +32,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class HekateFsSeedNodeProviderConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableHekate
@@ -65,7 +67,13 @@ public class HekateFsSeedNodeProviderConfigurerTest extends HekateAutoConfigurer
             "hekate.cluster.seed.filesystem.work-dir=" + tempDir.getAbsolutePath()
         }, FsEnabledConfig.class);
 
-        FsSeedNodeProvider provider = (FsSeedNodeProvider)getNode().get(DefaultClusterService.class).seedNodeProvider();
+        SeedNodeProviderGroup group = (SeedNodeProviderGroup)getNode().get(DefaultClusterService.class).seedNodeProvider();
+
+        assertEquals(1, group.allProviders().size());
+        assertTrue(group.allProviders().get(0) instanceof FsSeedNodeProvider);
+        assertEquals(group.allProviders(), group.liveProviders());
+
+        FsSeedNodeProvider provider = (FsSeedNodeProvider)group.allProviders().get(0);
 
         assertEquals(tempDir.getCanonicalPath(), provider.getWorkDir().getCanonicalPath());
     }

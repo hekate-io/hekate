@@ -18,6 +18,7 @@ package io.hekate.spring.boot.cluster;
 
 import io.hekate.cluster.internal.DefaultClusterService;
 import io.hekate.cluster.seed.SeedNodeProvider;
+import io.hekate.cluster.seed.SeedNodeProviderGroup;
 import io.hekate.cluster.seed.jdbc.JdbcSeedNodeProvider;
 import io.hekate.cluster.seed.jdbc.JdbcSeedNodeProviderConfig;
 import io.hekate.cluster.seed.jdbc.JdbcSeedNodeProviderTest;
@@ -33,6 +34,7 @@ import org.junit.Test;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -76,9 +78,11 @@ public class HekateJdbcSeedNodeProviderConfigurerTest extends HekateAutoConfigur
             "hekate.cluster.seed.jdbc.enable=true"
         }, JdbcEnabledConfig.class);
 
-        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();
+        SeedNodeProviderGroup group = (SeedNodeProviderGroup)getNode().get(DefaultClusterService.class).seedNodeProvider();
 
-        assertTrue(provider instanceof JdbcSeedNodeProvider);
+        assertEquals(1, group.allProviders().size());
+        assertTrue(group.allProviders().get(0) instanceof JdbcSeedNodeProvider);
+        assertEquals(group.allProviders(), group.liveProviders());
     }
 
     @Test

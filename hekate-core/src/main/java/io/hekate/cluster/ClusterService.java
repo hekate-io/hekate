@@ -22,6 +22,7 @@ import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.health.DefaultFailureDetector;
 import io.hekate.cluster.health.FailureDetector;
 import io.hekate.cluster.seed.SeedNodeProvider;
+import io.hekate.cluster.seed.SeedNodeProviderGroup;
 import io.hekate.cluster.seed.StaticSeedNodeProvider;
 import io.hekate.cluster.seed.fs.FsSeedNodeProvider;
 import io.hekate.cluster.seed.jdbc.JdbcSeedNodeProvider;
@@ -180,6 +181,7 @@ import java.util.function.Predicate;
  * <li>{@link JdbcSeedNodeProvider} - uses a shared RDBMS table as a central repository of running nodes</li>
  * <li>{@link FsSeedNodeProvider} - uses a shared file system folder as a central repository of running nodes</li>
  * <li>{@link StaticSeedNodeProvider} - uses a pre-configured list of network addresses</li>
+ * <li>{@link SeedNodeProviderGroup} - groups multiple providers to act as a single provider</li>
  * </ul>
  *
  * <p>Please see the documentation of {@link SeedNodeProvider} for more details on providing custom implementations of this interface.</p>

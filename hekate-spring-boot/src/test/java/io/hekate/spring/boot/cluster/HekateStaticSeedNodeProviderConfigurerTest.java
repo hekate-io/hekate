@@ -18,6 +18,7 @@ package io.hekate.spring.boot.cluster;
 
 import io.hekate.cluster.internal.DefaultClusterService;
 import io.hekate.cluster.seed.SeedNodeProvider;
+import io.hekate.cluster.seed.SeedNodeProviderGroup;
 import io.hekate.cluster.seed.StaticSeedNodeProvider;
 import io.hekate.spring.boot.EnableHekate;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
@@ -48,7 +49,13 @@ public class HekateStaticSeedNodeProviderConfigurerTest extends HekateAutoConfig
             "hekate.cluster.seed.static.addresses=localhost:10012,localhost:10013"
         }, EnabledConfig.class);
 
-        StaticSeedNodeProvider provider = (StaticSeedNodeProvider)getNode().get(DefaultClusterService.class).seedNodeProvider();
+        SeedNodeProviderGroup group = (SeedNodeProviderGroup)getNode().get(DefaultClusterService.class).seedNodeProvider();
+
+        assertEquals(1, group.allProviders().size());
+        assertTrue(group.allProviders().get(0) instanceof StaticSeedNodeProvider);
+        assertEquals(group.allProviders(), group.liveProviders());
+
+        StaticSeedNodeProvider provider = (StaticSeedNodeProvider)group.allProviders().get(0);
 
         say("Addresses: " + provider.getAddresses());
 

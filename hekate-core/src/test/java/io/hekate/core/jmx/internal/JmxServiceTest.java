@@ -26,7 +26,10 @@ import io.hekate.core.jmx.JmxServiceException;
 import io.hekate.core.jmx.JmxServiceFactory;
 import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
 import java.util.Hashtable;
+import java.util.List;
+import java.util.Optional;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.MXBean;
 import javax.management.MalformedObjectNameException;
@@ -166,6 +169,54 @@ public class JmxServiceTest extends HekateNodeTestBase {
             assertFalse(jmx.server().isRegistered(name3));
 
             reset(bean1, bean2, bean3);
+        });
+    }
+
+    @Test
+    public void testCollection() throws Exception {
+        TestMxBeanA bean1 = mock(TestMxBeanA.class);
+        TestMxBeanB bean2 = mock(TestMxBeanB.class);
+
+        repeat(3, i -> {
+            when(bean1.getTestValue()).thenReturn("test-1");
+            when(bean2.getTestValue()).thenReturn("test-2");
+
+            if (node.state() == Hekate.State.DOWN) {
+                node.join();
+            }
+
+            JmxService jmx = node.get(JmxService.class);
+
+            List<Object> beans = Arrays.asList(
+                bean1,
+                bean2,
+                null // Null should be filtered out during registration.
+            );
+
+            Optional<ObjectName> noName = jmx.register(beans);
+
+            assertFalse(noName.isPresent());
+
+            ObjectName name1 = jmx.nameFor(TestMxBeanA.class);
+            ObjectName name2 = jmx.nameFor(TestMxBeanB.class);
+
+            assertTrue(jmx.names().contains(name1));
+            assertTrue(jmx.names().contains(name2));
+
+            assertEquals("test-1", jmxAttribute(name1, "TestValue", node));
+            assertEquals("test-2", jmxAttribute(name2, "TestValue", node));
+
+            verify(bean1).getTestValue();
+            verify(bean2).getTestValue();
+
+            verifyNoMoreInteractions(bean1, bean2);
+
+            node.leave();
+
+            assertFalse(jmx.server().isRegistered(name1));
+            assertFalse(jmx.server().isRegistered(name2));
+
+            reset(bean1, bean2);
         });
     }
 

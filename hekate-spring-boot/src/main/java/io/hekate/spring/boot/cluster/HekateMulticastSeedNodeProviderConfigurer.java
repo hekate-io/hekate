@@ -16,7 +16,6 @@
 
 package io.hekate.spring.boot.cluster;
 
-import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.cluster.seed.multicast.MulticastSeedNodeProvider;
 import io.hekate.cluster.seed.multicast.MulticastSeedNodeProviderConfig;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
@@ -53,7 +52,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnHekateEnabled
 @AutoConfigureBefore(HekateClusterServiceConfigurer.class)
-@ConditionalOnMissingBean(SeedNodeProvider.class)
 @ConditionalOnProperty(value = "hekate.cluster.seed.multicast.enable", havingValue = "true")
 public class HekateMulticastSeedNodeProviderConfigurer {
     /**

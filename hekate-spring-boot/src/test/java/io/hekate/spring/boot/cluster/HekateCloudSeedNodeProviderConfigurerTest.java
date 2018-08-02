@@ -19,6 +19,7 @@ package io.hekate.spring.boot.cluster;
 import io.hekate.HekateTestProps;
 import io.hekate.cluster.internal.DefaultClusterService;
 import io.hekate.cluster.seed.SeedNodeProvider;
+import io.hekate.cluster.seed.SeedNodeProviderGroup;
 import io.hekate.cluster.seed.jclouds.CloudSeedNodeProvider;
 import io.hekate.cluster.seed.jclouds.CloudSeedNodeProviderConfig;
 import io.hekate.spring.boot.EnableHekate;
@@ -71,9 +72,11 @@ public class HekateCloudSeedNodeProviderConfigurerTest extends HekateAutoConfigu
             "hekate.cluster.seed.cloud.properties.test.property=test.value",
         }, CloudEnabledConfig.class);
 
-        SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();
+        SeedNodeProviderGroup group = (SeedNodeProviderGroup)getNode().get(DefaultClusterService.class).seedNodeProvider();
 
-        assertTrue(provider instanceof CloudSeedNodeProvider);
+        assertEquals(1, group.allProviders().size());
+        assertTrue(group.allProviders().get(0) instanceof CloudSeedNodeProvider);
+        assertEquals(group.allProviders(), group.liveProviders());
 
         CloudSeedNodeProviderConfig cfg = get(CloudSeedNodeProviderConfig.class);
 

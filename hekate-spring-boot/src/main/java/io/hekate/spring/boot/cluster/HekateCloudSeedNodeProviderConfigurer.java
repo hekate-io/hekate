@@ -16,7 +16,6 @@
 
 package io.hekate.spring.boot.cluster;
 
-import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.cluster.seed.jclouds.BasicCredentialsSupplier;
 import io.hekate.cluster.seed.jclouds.CloudSeedNodeProvider;
 import io.hekate.cluster.seed.jclouds.CloudSeedNodeProviderConfig;
@@ -61,7 +60,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnHekateEnabled
 @AutoConfigureBefore(HekateClusterServiceConfigurer.class)
-@ConditionalOnMissingBean(SeedNodeProvider.class)
 @ConditionalOnProperty(value = "hekate.cluster.seed.cloud.enable", havingValue = "true")
 public class HekateCloudSeedNodeProviderConfigurer {
     /**

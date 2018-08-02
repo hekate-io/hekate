@@ -19,6 +19,8 @@ package io.hekate.spring.bean.internal;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.health.DefaultFailureDetector;
 import io.hekate.cluster.health.DefaultFailureDetectorConfig;
+import io.hekate.cluster.seed.SeedNodeProviderGroup;
+import io.hekate.cluster.seed.SeedNodeProviderGroupConfig;
 import io.hekate.cluster.seed.StaticSeedNodeProvider;
 import io.hekate.cluster.seed.StaticSeedNodeProviderConfig;
 import io.hekate.cluster.seed.fs.FsSeedNodeProvider;
@@ -99,6 +101,7 @@ import org.w3c.dom.Element;
 
 import static java.util.stream.Collectors.toSet;
 import static org.springframework.util.xml.DomUtils.getChildElementByTagName;
+import static org.springframework.util.xml.DomUtils.getChildElements;
 import static org.springframework.util.xml.DomUtils.getChildElementsByTagName;
 import static org.springframework.util.xml.DomUtils.getTextValue;
 
@@ -243,7 +246,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             setProperty(cluster, clusterEl, "gossipInterval", "gossip-interval-ms");
             setProperty(cluster, clusterEl, "speedUpGossipSize", "gossip-speedup-size");
 
-            parseClusterSeedNodeProvider(cluster, clusterEl, ctx);
+            parseSeedNodeProvider(cluster, clusterEl, ctx);
 
             parseClusterFailureDetection(cluster, clusterEl, ctx);
 
@@ -265,178 +268,247 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         }
     }
 
-    private void parseClusterSeedNodeProvider(BeanDefinitionBuilder cluster, Element clusterEl, ParserContext ctx) {
+    private void parseSeedNodeProvider(BeanDefinitionBuilder cluster, Element clusterEl, ParserContext ctx) {
         Element providerEl = getChildElementByTagName(clusterEl, "seed-node-provider");
 
         if (providerEl != null) {
-            Element multicastEl = getChildElementByTagName(providerEl, "multicast");
-            Element staticEl = getChildElementByTagName(providerEl, "static");
-            Element jdbcEl = getChildElementByTagName(providerEl, "jdbc");
-            Element sharedFsEl = getChildElementByTagName(providerEl, "shared-folder");
-            Element cloudEl = getChildElementByTagName(providerEl, "cloud");
-            Element cloudStoreEl = getChildElementByTagName(providerEl, "cloud-store");
-            Element zooKeeperEl = getChildElementByTagName(providerEl, "zookeeper");
+            getChildElements(providerEl).stream().findFirst().ifPresent(el -> {
+                RuntimeBeanReference provider = parseSeedNodeProviderChild(el, ctx);
 
-            if (multicastEl != null) {
-                BeanDefinitionBuilder cfg = newBean(MulticastSeedNodeProviderConfig.class, multicastEl);
+                cluster.addPropertyValue("seedNodeProvider", provider);
+            });
+        }
+    }
 
-                setProperty(cfg, multicastEl, "group", "group");
-                setProperty(cfg, multicastEl, "port", "port");
-                setProperty(cfg, multicastEl, "ttl", "ttl");
-                setProperty(cfg, multicastEl, "interval", "interval-ms");
-                setProperty(cfg, multicastEl, "waitTime", "wait-time-ms");
-                setProperty(cfg, multicastEl, "loopBackDisabled", "loopback-disabled");
+    private RuntimeBeanReference parseSeedNodeProviderChild(Element el, ParserContext ctx) {
+        switch (el.getLocalName()) {
+            case "group": {
+                return parseSeedNodeProviderGroup(el, ctx);
+            }
+            case "multicast": {
+                return parseMulticastSeedNodeProvider(el, ctx);
+            }
+            case "static": {
+                return parseStaticSeedNodeProvider(el, ctx);
+            }
+            case "jdbc": {
+                return parseJdbcSeedNodeprovider(el, ctx);
+            }
+            case "shared-folder": {
+                return parseFsSeedNodeProvider(el, ctx);
+            }
+            case "cloud": {
+                return parseCloudSeedNodeProvider(el, ctx);
+            }
+            case "cloud-store": {
+                return parseCloudStoreSeedNodeProvider(el, ctx);
+            }
+            case "zookeeper": {
+                return parseZooKeeperSeedNodeProvider(el, ctx);
+            }
+            case "custom-provider": {
+                return parseRefOrBean(el, ctx).orElseGet(() -> {
+                    ctx.getReaderContext().error("Malformed seed node provider element <" + el.getLocalName() + '>', el);
 
-                BeanDefinitionBuilder provider = newBean(MulticastSeedNodeProvider.class, multicastEl);
-
-                provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
-
-                cluster.addPropertyValue("seedNodeProvider", registerInnerBean(provider, ctx));
-            } else if (staticEl != null) {
-                BeanDefinitionBuilder cfg = newBean(StaticSeedNodeProviderConfig.class, staticEl);
-
-                List<String> addresses = new ArrayList<>();
-
-                getChildElementsByTagName(staticEl, "address").forEach(addrEl ->
-                    addresses.add(getTextValue(addrEl))
-                );
-
-                if (!addresses.isEmpty()) {
-                    cfg.addPropertyValue("addresses", addresses);
-                }
-
-                BeanDefinitionBuilder provider = newBean(StaticSeedNodeProvider.class, staticEl);
-
-                provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
-
-                cluster.addPropertyValue("seedNodeProvider", registerInnerBean(provider, ctx));
-            } else if (jdbcEl != null) {
-                BeanDefinitionBuilder cfg = newBean(JdbcSeedNodeProviderConfig.class, jdbcEl);
-
-                setProperty(cfg, jdbcEl, "queryTimeout", "query-timeout-sec");
-                setProperty(cfg, jdbcEl, "cleanupInterval", "cleanup-interval-ms");
-                setProperty(cfg, jdbcEl, "table", "table");
-                setProperty(cfg, jdbcEl, "hostColumn", "host-column");
-                setProperty(cfg, jdbcEl, "portColumn", "port-column");
-                setProperty(cfg, jdbcEl, "clusterColumn", "cluster-column");
-
-                setBeanOrRef(cfg, jdbcEl, "dataSource", "datasource", ctx);
-
-                BeanDefinitionBuilder provider = newBean(JdbcSeedNodeProvider.class, jdbcEl);
-
-                provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
-
-                cluster.addPropertyValue("seedNodeProvider", registerInnerBean(provider, ctx));
-            } else if (sharedFsEl != null) {
-                BeanDefinitionBuilder cfg = newBean(FsSeedNodeProviderConfig.class, sharedFsEl);
-
-                setProperty(cfg, sharedFsEl, "workDir", "work-dir");
-                setProperty(cfg, sharedFsEl, "cleanupInterval", "cleanup-interval-ms");
-
-                BeanDefinitionBuilder provider = newBean(FsSeedNodeProvider.class, sharedFsEl);
-
-                provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
-
-                cluster.addPropertyValue("seedNodeProvider", registerInnerBean(provider, ctx));
-            } else if (zooKeeperEl != null) {
-                BeanDefinitionBuilder cfg = newBean(ZooKeeperSeedNodeProviderConfig.class, zooKeeperEl);
-
-                setProperty(cfg, zooKeeperEl, "connectionString", "connection-string");
-                setProperty(cfg, zooKeeperEl, "connectTimeout", "connect-timeout-ms");
-                setProperty(cfg, zooKeeperEl, "sessionTimeout", "session-timeout-ms");
-                setProperty(cfg, zooKeeperEl, "basePath", "base-path");
-                setProperty(cfg, zooKeeperEl, "cleanupInterval", "cleanup-interval-ms");
-
-                BeanDefinitionBuilder provider = newBean(ZooKeeperSeedNodeProvider.class, zooKeeperEl);
-
-                provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
-
-                cluster.addPropertyValue("seedNodeProvider", registerInnerBean(provider, ctx));
-            } else if (cloudEl != null) {
-                BeanDefinitionBuilder cfg = newBean(CloudSeedNodeProviderConfig.class, cloudStoreEl);
-
-                setProperty(cfg, cloudEl, "provider", "provider");
-                setProperty(cfg, cloudEl, "endpoint", "endpoint");
-
-                parseProperties(cloudEl).ifPresent(props ->
-                    cfg.addPropertyValue("properties", props)
-                );
-
-                parseCloudProviderCredentials(cloudEl, ctx).ifPresent(credRef ->
-                    cfg.addPropertyValue("credentials", credRef)
-                );
-
-                // Regions.
-                ManagedSet<String> regions = new ManagedSet<>();
-
-                regions.addAll(subElements(cloudEl, "regions", "region").stream()
-                    .map(regionEl -> getTextValue(regionEl).trim())
-                    .filter(region -> !region.isEmpty())
-                    .collect(toSet())
-                );
-
-                if (!regions.isEmpty()) {
-                    cfg.addPropertyValue("regions", regions);
-                }
-
-                // Zones.
-                ManagedSet<String> zones = new ManagedSet<>();
-
-                zones.addAll(subElements(cloudEl, "zones", "zone").stream()
-                    .map(zoneEl -> getTextValue(zoneEl).trim())
-                    .filter(zone -> !zone.isEmpty())
-                    .collect(toSet())
-                );
-
-                if (!zones.isEmpty()) {
-                    cfg.addPropertyValue("zones", zones);
-                }
-
-                // Tags.
-                ManagedMap<String, String> tags = new ManagedMap<>();
-
-                subElements(cloudEl, "tags", "tag").forEach(tagEl -> {
-                    String name = tagEl.getAttribute("name").trim();
-                    String value = tagEl.getAttribute("value").trim();
-
-                    if (!name.isEmpty() && !value.isEmpty()) {
-                        tags.put(name, value);
-                    }
+                    return null;
                 });
+            }
+            default: {
+                ctx.getReaderContext().error("Unsupported seed node provider element <" + el.getLocalName() + '>', el);
 
-                if (!tags.isEmpty()) {
-                    cfg.addPropertyValue("tags", tags);
-                }
-
-                BeanDefinitionBuilder provider = newBean(CloudSeedNodeProvider.class, cloudEl);
-
-                provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
-
-                cluster.addPropertyValue("seedNodeProvider", registerInnerBean(provider, ctx));
-            } else if (cloudStoreEl != null) {
-                BeanDefinitionBuilder cfg = newBean(CloudStoreSeedNodeProviderConfig.class, cloudStoreEl);
-
-                setProperty(cfg, cloudStoreEl, "provider", "provider");
-                setProperty(cfg, cloudStoreEl, "container", "container");
-                setProperty(cfg, cloudStoreEl, "cleanupInterval", "cleanup-interval-ms");
-
-                parseProperties(cloudStoreEl).ifPresent(props ->
-                    cfg.addPropertyValue("properties", props)
-                );
-
-                parseCloudProviderCredentials(cloudStoreEl, ctx).ifPresent(credRef ->
-                    cfg.addPropertyValue("credentials", credRef)
-                );
-
-                BeanDefinitionBuilder provider = newBean(CloudStoreSeedNodeProvider.class, cloudStoreEl);
-
-                provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
-
-                cluster.addPropertyValue("seedNodeProvider", registerInnerBean(provider, ctx));
-            } else {
-                setBeanOrRef(cluster, providerEl, "seedNodeProvider", "custom-provider", ctx);
+                return null;
             }
         }
+    }
+
+    private RuntimeBeanReference parseZooKeeperSeedNodeProvider(Element el, ParserContext ctx) {
+        BeanDefinitionBuilder cfg = newBean(ZooKeeperSeedNodeProviderConfig.class, el);
+
+        setProperty(cfg, el, "connectionString", "connection-string");
+        setProperty(cfg, el, "connectTimeout", "connect-timeout-ms");
+        setProperty(cfg, el, "sessionTimeout", "session-timeout-ms");
+        setProperty(cfg, el, "basePath", "base-path");
+        setProperty(cfg, el, "cleanupInterval", "cleanup-interval-ms");
+
+        BeanDefinitionBuilder provider = newBean(ZooKeeperSeedNodeProvider.class, el);
+
+        provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
+
+        return registerInnerBean(provider, ctx);
+    }
+
+    private RuntimeBeanReference parseCloudStoreSeedNodeProvider(Element el, ParserContext ctx) {
+        BeanDefinitionBuilder cfg = newBean(CloudStoreSeedNodeProviderConfig.class, el);
+
+        setProperty(cfg, el, "provider", "provider");
+        setProperty(cfg, el, "container", "container");
+        setProperty(cfg, el, "cleanupInterval", "cleanup-interval-ms");
+
+        parseProperties(el).ifPresent(props ->
+            cfg.addPropertyValue("properties", props)
+        );
+
+        parseCloudProviderCredentials(el, ctx).ifPresent(credRef ->
+            cfg.addPropertyValue("credentials", credRef)
+        );
+
+        BeanDefinitionBuilder provider = newBean(CloudStoreSeedNodeProvider.class, el);
+
+        provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
+
+        return registerInnerBean(provider, ctx);
+    }
+
+    private RuntimeBeanReference parseCloudSeedNodeProvider(Element el, ParserContext ctx) {
+        BeanDefinitionBuilder cfg = newBean(CloudSeedNodeProviderConfig.class, el);
+
+        setProperty(cfg, el, "provider", "provider");
+        setProperty(cfg, el, "endpoint", "endpoint");
+
+        parseProperties(el).ifPresent(props ->
+            cfg.addPropertyValue("properties", props)
+        );
+
+        parseCloudProviderCredentials(el, ctx).ifPresent(credRef ->
+            cfg.addPropertyValue("credentials", credRef)
+        );
+
+        // Regions.
+        ManagedSet<String> regions = new ManagedSet<>();
+
+        regions.addAll(subElements(el, "regions", "region").stream()
+            .map(regionEl -> getTextValue(regionEl).trim())
+            .filter(region -> !region.isEmpty())
+            .collect(toSet())
+        );
+
+        if (!regions.isEmpty()) {
+            cfg.addPropertyValue("regions", regions);
+        }
+
+        // Zones.
+        ManagedSet<String> zones = new ManagedSet<>();
+
+        zones.addAll(subElements(el, "zones", "zone").stream()
+            .map(zoneEl -> getTextValue(zoneEl).trim())
+            .filter(zone -> !zone.isEmpty())
+            .collect(toSet())
+        );
+
+        if (!zones.isEmpty()) {
+            cfg.addPropertyValue("zones", zones);
+        }
+
+        // Tags.
+        ManagedMap<String, String> tags = new ManagedMap<>();
+
+        subElements(el, "tags", "tag").forEach(tagEl -> {
+            String name = tagEl.getAttribute("name").trim();
+            String value = tagEl.getAttribute("value").trim();
+
+            if (!name.isEmpty() && !value.isEmpty()) {
+                tags.put(name, value);
+            }
+        });
+
+        if (!tags.isEmpty()) {
+            cfg.addPropertyValue("tags", tags);
+        }
+
+        BeanDefinitionBuilder provider = newBean(CloudSeedNodeProvider.class, el);
+
+        provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
+
+        return registerInnerBean(provider, ctx);
+    }
+
+    private RuntimeBeanReference parseFsSeedNodeProvider(Element el, ParserContext ctx) {
+        BeanDefinitionBuilder cfg = newBean(FsSeedNodeProviderConfig.class, el);
+
+        setProperty(cfg, el, "workDir", "work-dir");
+        setProperty(cfg, el, "cleanupInterval", "cleanup-interval-ms");
+
+        BeanDefinitionBuilder provider = newBean(FsSeedNodeProvider.class, el);
+
+        provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
+
+        return registerInnerBean(provider, ctx);
+    }
+
+    private RuntimeBeanReference parseJdbcSeedNodeprovider(Element el, ParserContext ctx) {
+        BeanDefinitionBuilder cfg = newBean(JdbcSeedNodeProviderConfig.class, el);
+
+        setProperty(cfg, el, "queryTimeout", "query-timeout-sec");
+        setProperty(cfg, el, "cleanupInterval", "cleanup-interval-ms");
+        setProperty(cfg, el, "table", "table");
+        setProperty(cfg, el, "hostColumn", "host-column");
+        setProperty(cfg, el, "portColumn", "port-column");
+        setProperty(cfg, el, "clusterColumn", "cluster-column");
+
+        setBeanOrRef(cfg, el, "dataSource", "datasource", ctx);
+
+        BeanDefinitionBuilder provider = newBean(JdbcSeedNodeProvider.class, el);
+
+        provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
+
+        return registerInnerBean(provider, ctx);
+    }
+
+    private RuntimeBeanReference parseStaticSeedNodeProvider(Element el, ParserContext ctx) {
+        BeanDefinitionBuilder cfg = newBean(StaticSeedNodeProviderConfig.class, el);
+
+        List<String> addresses = new ArrayList<>();
+
+        getChildElementsByTagName(el, "address").forEach(addrEl ->
+            addresses.add(getTextValue(addrEl))
+        );
+
+        if (!addresses.isEmpty()) {
+            cfg.addPropertyValue("addresses", addresses);
+        }
+
+        BeanDefinitionBuilder provider = newBean(StaticSeedNodeProvider.class, el);
+
+        provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
+
+        return registerInnerBean(provider, ctx);
+    }
+
+    private RuntimeBeanReference parseMulticastSeedNodeProvider(Element el, ParserContext ctx) {
+        BeanDefinitionBuilder cfg = newBean(MulticastSeedNodeProviderConfig.class, el);
+
+        setProperty(cfg, el, "group", "group");
+        setProperty(cfg, el, "port", "port");
+        setProperty(cfg, el, "ttl", "ttl");
+        setProperty(cfg, el, "interval", "interval-ms");
+        setProperty(cfg, el, "waitTime", "wait-time-ms");
+        setProperty(cfg, el, "loopBackDisabled", "loopback-disabled");
+
+        BeanDefinitionBuilder provider = newBean(MulticastSeedNodeProvider.class, el);
+
+        provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
+
+        return registerInnerBean(provider, ctx);
+    }
+
+    private RuntimeBeanReference parseSeedNodeProviderGroup(Element el, ParserContext ctx) {
+        BeanDefinitionBuilder cfg = newBean(SeedNodeProviderGroupConfig.class, el);
+
+        ManagedList<RuntimeBeanReference> providers = new ManagedList<>();
+
+        getChildElements(el).forEach(childEl ->
+            providers.add(parseSeedNodeProviderChild(childEl, ctx))
+        );
+
+        setProperty(cfg, el, "policy", "policy");
+
+        cfg.addPropertyValue("providers", providers);
+
+        BeanDefinitionBuilder provider = newBean(SeedNodeProviderGroup.class, el);
+
+        provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
+
+        return registerInnerBean(provider, ctx);
     }
 
     private Optional<RuntimeBeanReference> parseCloudProviderCredentials(Element cloudEl, ParserContext ctx) {

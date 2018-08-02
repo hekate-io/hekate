@@ -16,7 +16,6 @@
 
 package io.hekate.spring.boot.cluster;
 
-import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.cluster.seed.jdbc.JdbcSeedNodeProvider;
 import io.hekate.cluster.seed.jdbc.JdbcSeedNodeProviderConfig;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
@@ -62,7 +61,6 @@ import org.springframework.context.annotation.Primary;
 @Configuration
 @ConditionalOnHekateEnabled
 @AutoConfigureBefore(HekateClusterServiceConfigurer.class)
-@ConditionalOnMissingBean(SeedNodeProvider.class)
 @ConditionalOnProperty(value = "hekate.cluster.seed.jdbc.enable", havingValue = "true")
 public class HekateJdbcSeedNodeProviderConfigurer {
     /**

@@ -16,7 +16,6 @@
 
 package io.hekate.spring.boot.cluster;
 
-import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.cluster.seed.zookeeper.ZooKeeperSeedNodeProvider;
 import io.hekate.cluster.seed.zookeeper.ZooKeeperSeedNodeProviderConfig;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
@@ -51,7 +50,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnHekateEnabled
 @AutoConfigureBefore(HekateClusterServiceConfigurer.class)
-@ConditionalOnMissingBean(SeedNodeProvider.class)
 @ConditionalOnProperty(value = "hekate.cluster.seed.zookeeper.enable", havingValue = "true")
 public class HekateZooKeeperSeedNodeProviderConfigurer {
     /**

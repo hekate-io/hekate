@@ -401,7 +401,7 @@
 
     <xsd:complexType name="clusterServiceType">
         <xsd:all>
-            <xsd:element name="seed-node-provider" type="clusterSeedNodeProviderType" minOccurs="0">
+            <xsd:element name="seed-node-provider" type="clusterSeedNodeProviderOrGroup" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
                         Registers 'io.hekate.cluster.seed.SeedNodeProvider'.
@@ -454,14 +454,48 @@
         <xsd:attribute name="gossip-speedup-size" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
-                    See javadoc of 'io.hekate.cluster.ClusterServiceFactory#setSpeedUpGossipSize(int).
+                    See javadoc of 'io.hekate.cluster.ClusterServiceFactory#setSpeedUpGossipSize(int)'.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
     </xsd:complexType>
 
-    <xsd:complexType name="clusterSeedNodeProviderType">
+    <xsd:complexType name="clusterSeedNodeProviderOrGroup">
         <xsd:choice>
+            <xsd:group ref="clusterSeedNodeProviderGroup"/>
+        </xsd:choice>
+        <xsd:attribute name="ref" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    Reference to a bean of 'io.hekate.cluster.seed.SeedNodeProvider' type.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="clusterSeedNodeProviderGroupType">
+        <xsd:sequence maxOccurs="unbounded">
+            <xsd:group ref="clusterSeedNodeProviderGroup"/>
+        </xsd:sequence>
+        <xsd:attribute name="policy" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of
+                    'io.hekate.cluster.seed.SeedNodeProviderGroupConfig#setPolicy(io.hekate.cluster.seed.SeedNodeProviderGroupPolicy).
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:group name="clusterSeedNodeProviderGroup">
+        <xsd:choice>
+            <xsd:element name="group" type="clusterSeedNodeProviderGroupType">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.cluster.seed.SeedNodeProviderGroup.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
             <xsd:element name="multicast" type="clusterMulticastSeedNodeProviderType">
                 <xsd:annotation>
                     <xsd:documentation>
@@ -519,14 +553,7 @@
                 </xsd:annotation>
             </xsd:element>
         </xsd:choice>
-        <xsd:attribute name="ref" type="xsd:string">
-            <xsd:annotation>
-                <xsd:documentation>
-                    Reference to a bean of 'io.hekate.cluster.seed.SeedNodeProvider' type.
-                </xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
-    </xsd:complexType>
+    </xsd:group>
 
     <xsd:complexType name="clusterMulticastSeedNodeProviderType">
         <xsd:attribute name="group" type="xsd:string">

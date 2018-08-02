@@ -24,6 +24,9 @@ import io.hekate.cluster.health.DefaultFailureDetector;
 import io.hekate.cluster.health.DefaultFailureDetectorConfig;
 import io.hekate.cluster.health.FailureDetector;
 import io.hekate.cluster.seed.SeedNodeProvider;
+import io.hekate.cluster.seed.SeedNodeProviderGroup;
+import io.hekate.cluster.seed.SeedNodeProviderGroupConfig;
+import io.hekate.cluster.seed.SeedNodeProviderGroupPolicy;
 import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.cluster.split.SplitBrainDetector;
 import io.hekate.core.Hekate;
@@ -83,12 +86,19 @@ import org.springframework.context.annotation.Lazy;
  *
  * <h2>Seed node providers</h2>
  * <p>
+ * This auto-configuration registers all beans of the {@link SeedNodeProvider} type that can be found in the application context.
+ * All such providers will be registered as a single {@link SeedNodeProviderGroup}. Rrror handling policy of that group can be specified
+ * via the {@link SeedNodeProviderGroupConfig#setPolicy(SeedNodeProviderGroupPolicy) 'hekate.cluster.seed.policy'} property.
+ * </p>
+ *
+ * <p>
  * For auto-configuration of {@link SeedNodeProvider}s please see the documentation of the following classes:
  * </p>
  * <ul>
  * <li>{@link HekateMulticastSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateFsSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateJdbcSeedNodeProviderConfigurer}</li>
+ * <li>{@link HekateZooKeeperSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateCloudStoreSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateCloudSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateStaticSeedNodeProviderConfigurer}</li>
@@ -102,7 +112,7 @@ import org.springframework.context.annotation.Lazy;
 @AutoConfigureBefore(HekateConfigurer.class)
 @ConditionalOnMissingBean(ClusterServiceFactory.class)
 public class HekateClusterServiceConfigurer {
-    private final Optional<SeedNodeProvider> seedNodeProvider;
+    private final Optional<List<SeedNodeProvider>> seedNodeProviders;
 
     private final Optional<List<ClusterEventListener>> listeners;
 
@@ -113,14 +123,18 @@ public class HekateClusterServiceConfigurer {
     /**
      * Constructs new instance.
      *
-     * @param seedNodeProvider {@link SeedNodeProvider} that was found in the application context.
+     * @param seedNodeProviders {@link SeedNodeProvider}s that were found in the application context.
      * @param listeners All {@link ClusterEventListener}s that were found in the application context.
      * @param acceptors All {@link ClusterAcceptor}s that were found in the application context.
      * @param splitBrainDetector {@link SplitBrainDetector} that was found in the application context.
      */
-    public HekateClusterServiceConfigurer(Optional<SeedNodeProvider> seedNodeProvider, Optional<List<ClusterEventListener>> listeners,
-        Optional<List<ClusterAcceptor>> acceptors, Optional<SplitBrainDetector> splitBrainDetector) {
-        this.seedNodeProvider = seedNodeProvider;
+    public HekateClusterServiceConfigurer(
+        Optional<List<SeedNodeProvider>> seedNodeProviders,
+        Optional<List<ClusterEventListener>> listeners,
+        Optional<List<ClusterAcceptor>> acceptors,
+        Optional<SplitBrainDetector> splitBrainDetector
+    ) {
+        this.seedNodeProviders = seedNodeProviders;
         this.listeners = listeners;
         this.acceptors = acceptors;
         this.splitBrainDetector = splitBrainDetector;
@@ -154,6 +168,17 @@ public class HekateClusterServiceConfigurer {
     }
 
     /**
+     * Constructs a group configuration of all {@link SeedNodeProvider}s that were found in the application context.
+     *
+     * @return Configuration of seed node provider group
+     */
+    @Bean
+    @ConfigurationProperties(prefix = "hekate.cluster.seed")
+    public SeedNodeProviderGroupConfig seedNodeProviderGroupConfig() {
+        return new SeedNodeProviderGroupConfig().withProviders(seedNodeProviders.orElse(null));
+    }
+
+    /**
      * Constructs the {@link ClusterServiceFactory}.
      *
      * @param failureDetector Failure detector.
@@ -170,7 +195,12 @@ public class HekateClusterServiceConfigurer {
         listeners.ifPresent(factory::setClusterListeners);
         splitBrainDetector.ifPresent(factory::setSplitBrainDetector);
         acceptors.ifPresent(factory::setAcceptors);
-        seedNodeProvider.ifPresent(factory::setSeedNodeProvider);
+
+        SeedNodeProviderGroupConfig seedGroupCfg = seedNodeProviderGroupConfig();
+
+        if (seedGroupCfg.hasProviders()) {
+            factory.setSeedNodeProvider(new SeedNodeProviderGroup(seedGroupCfg));
+        }
 
         return factory;
     }

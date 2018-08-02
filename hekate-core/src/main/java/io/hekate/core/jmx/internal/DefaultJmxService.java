@@ -31,6 +31,7 @@ import io.hekate.util.StateGuard;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -182,61 +183,72 @@ public class DefaultJmxService implements JmxService, InitializingService, Termi
             realMxBean = mxBean;
         }
 
-        guard.lockWriteWithStateCheck();
-
-        try {
-
-            // Collect all JMX interfaces.
-            List<Class<?>> faces = Stream.of(realMxBean.getClass().getInterfaces())
-                .filter(it -> it.isAnnotationPresent(MXBean.class))
-                .collect(toList());
-
-            // Make sure that only one JMX interface is declared by the JMX object.
-            if (faces.size() > 1) {
-                String errMsg = String.format("JMX object implements more than one @%s-annotated interfaces [object=%s, interfaces=%s]",
-                    MXBean.class.getSimpleName(), realMxBean, faces);
-
-                throw new JmxServiceException(errMsg);
+        if (realMxBean instanceof Collection) {
+            // Register all JMX objects from the supplied collection.
+            for (Object nested : (Collection)realMxBean) {
+                if (nested != null) {
+                    register(nested, nameAttribute);
+                }
             }
 
-            if (faces.isEmpty()) {
-                // Nothing to register.
-                return Optional.empty();
-            } else {
-                // Register JMX bean.
-                Class<?> face = faces.get(0);
-                ObjectName name = nameFor(face, nameAttribute);
+            return Optional.empty();
+        } else {
+            // Register JMX object.
+            guard.lockWriteWithStateCheck();
 
-                if (DEBUG) {
-                    log.debug("Registering JMX bean [name={}]", name);
+            try {
+                // Collect all JMX interfaces.
+                List<Class<?>> faces = Stream.of(realMxBean.getClass().getInterfaces())
+                    .filter(it -> it.isAnnotationPresent(MXBean.class))
+                    .collect(toList());
+
+                // Make sure that only one JMX interface is declared by the JMX object.
+                if (faces.size() > 1) {
+                    String errMsg = String.format("JMX object implements more than one @%s-annotated interfaces [object=%s, interfaces=%s]",
+                        MXBean.class.getSimpleName(), realMxBean, faces);
+
+                    throw new JmxServiceException(errMsg);
                 }
 
-                JmxBeanHandler jmxHandler;
+                if (faces.isEmpty()) {
+                    // Nothing to register.
+                    return Optional.empty();
+                } else {
+                    // Register JMX bean.
+                    Class<?> face = faces.get(0);
+                    ObjectName name = nameFor(face, nameAttribute);
 
-                try {
-                    jmxHandler = new JmxBeanHandler(realMxBean, face, true);
-                } catch (IllegalArgumentException err) {
-                    // MXBean introspection failure.
-                    String errMsg = String.format("Failed to register JMX bean [name=%s, type=%s]", name, face);
+                    if (DEBUG) {
+                        log.debug("Registering JMX bean [name={}]", name);
+                    }
 
-                    throw new JmxServiceException(errMsg, err.getCause() != null ? err.getCause() : err);
+                    JmxBeanHandler jmxHandler;
+
+                    try {
+                        jmxHandler = new JmxBeanHandler(realMxBean, face, true);
+                    } catch (IllegalArgumentException err) {
+                        // MXBean introspection failure.
+                        String errMsg = String.format("Failed to register JMX bean [name=%s, type=%s]", name, face);
+
+                        throw new JmxServiceException(errMsg, err.getCause() != null ? err.getCause() : err);
+                    }
+
+                    try {
+                        server.registerMBean(jmxHandler, name);
+                    } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException err) {
+                        String errMsg = String.format("Failed to register JMX bean [name=%s, type=%s]", name, face);
+
+                        throw new JmxServiceException(errMsg, err);
+                    }
+
+                    // Remember the name so that we could unregister this bean during the termination of this service.
+                    names.add(name);
+
+                    return Optional.of(name);
                 }
-
-                try {
-                    server.registerMBean(jmxHandler, name);
-                } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException err) {
-                    String errMsg = String.format("Failed to register JMX bean [name=%s, type=%s]", name, face);
-
-                    throw new JmxServiceException(errMsg, err);
-                }
-
-                // Remember the name so that we could unregister this bean during the termination of this service.
-                names.add(name);
-
-                return Optional.of(name);
+            } finally {
+                guard.unlockWrite();
             }
-        } finally {
-            guard.unlockWrite();
         }
     }
 

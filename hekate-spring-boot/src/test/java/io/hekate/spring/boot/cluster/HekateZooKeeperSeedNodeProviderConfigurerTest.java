@@ -18,6 +18,7 @@ package io.hekate.spring.boot.cluster;
 
 import io.hekate.cluster.internal.DefaultClusterService;
 import io.hekate.cluster.seed.SeedNodeProvider;
+import io.hekate.cluster.seed.SeedNodeProviderGroup;
 import io.hekate.cluster.seed.zookeeper.ZooKeeperSeedNodeProvider;
 import io.hekate.spring.boot.EnableHekate;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
@@ -30,6 +31,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class HekateZooKeeperSeedNodeProviderConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableHekate
@@ -69,7 +71,13 @@ public class HekateZooKeeperSeedNodeProviderConfigurerTest extends HekateAutoCon
             "hekate.cluster.seed.zookeeper.session-timeout=500"
         }, ZooKeeperEnabledConfig.class);
 
-        ZooKeeperSeedNodeProvider provider = (ZooKeeperSeedNodeProvider)getNode().get(DefaultClusterService.class).seedNodeProvider();
+        SeedNodeProviderGroup group = (SeedNodeProviderGroup)getNode().get(DefaultClusterService.class).seedNodeProvider();
+
+        assertEquals(1, group.allProviders().size());
+        assertTrue(group.allProviders().get(0) instanceof ZooKeeperSeedNodeProvider);
+        assertEquals(group.allProviders(), group.liveProviders());
+
+        ZooKeeperSeedNodeProvider provider = (ZooKeeperSeedNodeProvider)group.allProviders().get(0);
 
         assertEquals(zooKeeper.getConnectString(), provider.connectionString());
         assertEquals("/hekate-test/", provider.basePath());

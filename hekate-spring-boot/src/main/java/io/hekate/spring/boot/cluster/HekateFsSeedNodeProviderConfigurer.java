@@ -16,7 +16,6 @@
 
 package io.hekate.spring.boot.cluster;
 
-import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.cluster.seed.fs.FsSeedNodeProvider;
 import io.hekate.cluster.seed.fs.FsSeedNodeProviderConfig;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
@@ -50,7 +49,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnHekateEnabled
 @AutoConfigureBefore(HekateClusterServiceConfigurer.class)
-@ConditionalOnMissingBean(SeedNodeProvider.class)
 @ConditionalOnProperty(value = "hekate.cluster.seed.filesystem.enable", havingValue = "true")
 public class HekateFsSeedNodeProviderConfigurer {
     /**

@@ -24,13 +24,23 @@ import io.hekate.cluster.health.DefaultFailureDetector;
 import io.hekate.cluster.health.DefaultFailureDetectorConfig;
 import io.hekate.cluster.health.FailureDetector;
 import io.hekate.cluster.internal.DefaultClusterService;
+import io.hekate.cluster.seed.SeedNodeProviderGroup;
+import io.hekate.cluster.seed.SeedNodeProviderGroupPolicy;
+import io.hekate.cluster.seed.StaticSeedNodeProvider;
+import io.hekate.cluster.seed.fs.FsSeedNodeProvider;
+import io.hekate.cluster.seed.multicast.MulticastSeedNodeProvider;
 import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.cluster.split.SplitBrainDetector;
 import io.hekate.core.Hekate;
+import io.hekate.spring.boot.EnableHekate;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
 import io.hekate.spring.boot.HekateTestConfigBase;
+import io.hekate.test.TestUtils;
+import java.io.File;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -42,6 +52,12 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTestBase {
+    @EnableHekate
+    @EnableAutoConfiguration
+    public static class DefaultTestConfig {
+        // No-op.
+    }
+
     @EnableAutoConfiguration
     public static class ClusterListenerTestConfig extends HekateTestConfigBase {
         private final AtomicInteger fired = new AtomicInteger();
@@ -107,6 +123,20 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
         }
     }
 
+    private File tempDir;
+
+    @Before
+    public void setUp() throws Exception {
+        tempDir = Files.createTempDirectory("hekate_fs_seed").toFile();
+    }
+
+    @Override
+    public void tearDown() throws Exception {
+        TestUtils.deleteDir(tempDir);
+
+        super.tearDown();
+    }
+
     @Test
     public void testClusterListener() {
         registerAndRefresh(ClusterListenerTestConfig.class);
@@ -152,5 +182,34 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
         assertNotNull(detector);
         assertSame(SplitBrainTestConfig.TestDetector.class, detector.getClass());
         assertSame(SplitBrainAction.REJOIN, getNode().get(DefaultClusterService.class).splitBrainAction());
+    }
+
+    @Test
+    public void testSeedNodeProviderGroup() {
+        registerAndRefresh(new String[]{
+            // Policy.
+            "hekate.cluster.seed.policy=IGNORE_PARTIAL_ERRORS",
+            // Static.
+            "hekate.cluster.seed.static.enable=true",
+            "hekate.cluster.seed.static.addresses=localhost:10012,localhost:10013",
+            // Multicast.
+            "hekate.cluster.seed.multicast.enable=true",
+            "hekate.cluster.seed.multicast.interval=10",
+            "hekate.cluster.seed.multicast.waitTime=20",
+            // File system.
+            "hekate.cluster.seed.filesystem.enable=true",
+            "hekate.cluster.seed.filesystem.work-dir=" + tempDir.getAbsolutePath()
+        }, DefaultTestConfig.class);
+
+        SeedNodeProviderGroup group = (SeedNodeProviderGroup)getNode().get(DefaultClusterService.class).seedNodeProvider();
+
+        assertSame(SeedNodeProviderGroupPolicy.IGNORE_PARTIAL_ERRORS, group.policy());
+        assertEquals(3, group.allProviders().size());
+
+        assertTrue(group.findProvider(StaticSeedNodeProvider.class).isPresent());
+        assertTrue(group.findProvider(MulticastSeedNodeProvider.class).isPresent());
+        assertTrue(group.findProvider(FsSeedNodeProvider.class).isPresent());
+
+        assertEquals(group.allProviders(), group.liveProviders());
     }
 }
