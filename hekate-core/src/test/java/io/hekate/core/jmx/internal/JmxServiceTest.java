@@ -120,11 +120,17 @@ public class JmxServiceTest extends HekateNodeTestBase {
         assertEquals(ErrorUtils.stackTrace(err2), NotCompliantMBeanException.class, err2.getCause().getClass());
 
         // Duplicated object name.
-        jmx.server().registerMBean(mock(TestMxBeanA.class), jmx.nameFor(TestMxBeanA.class));
+        ObjectName dupName = jmx.nameFor(TestMxBeanA.class);
 
-        JmxServiceException err3 = expect(JmxServiceException.class, () -> jmx.register(mock(TestMxBeanA.class)));
+        try {
+            jmx.server().registerMBean(mock(TestMxBeanA.class), dupName);
 
-        assertEquals(ErrorUtils.stackTrace(err3), InstanceAlreadyExistsException.class, err3.getCause().getClass());
+            JmxServiceException err3 = expect(JmxServiceException.class, () -> jmx.register(mock(TestMxBeanA.class)));
+
+            assertEquals(ErrorUtils.stackTrace(err3), InstanceAlreadyExistsException.class, err3.getCause().getClass());
+        } finally {
+            jmx.server().unregisterMBean(dupName);
+        }
     }
 
     @Test
