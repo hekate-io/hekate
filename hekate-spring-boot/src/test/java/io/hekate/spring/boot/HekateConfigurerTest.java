@@ -96,12 +96,25 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
 
     @Test
     public void testDefault() {
-        registerAndRefresh(DefaultTestConfig.class);
+        registerAndRefresh(new String[]{
+            "hekate.node-name=test-node",
+            "hekate.cluster-name=test-cluster",
+            "hekate.roles=role1,role2",
+            "hekate.properties.prop1=test1",
+            "hekate.properties[long.prop2]=test2"
+        }, DefaultTestConfig.class);
 
         Hekate node = getNode();
 
         assertNotNull(node);
         assertSame(Hekate.State.UP, node.state());
+
+        assertEquals("test-node", node.localNode().name());
+        assertEquals("test-cluster", node.cluster().clusterName());
+        assertEquals(toSet("role1", "role2"), node.localNode().roles());
+        assertEquals(2, node.localNode().properties().size());
+        assertEquals("test1", node.localNode().property("prop1"));
+        assertEquals("test2", node.localNode().property("long.prop2"));
 
         DefaultTestConfig app = get(DefaultTestConfig.class);
 
