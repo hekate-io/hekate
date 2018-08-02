@@ -31,7 +31,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public abstract class HekateAutoConfigurerTestBase extends HekateTestBase {
-
     public static final String[] EMPTY_ARGS = new String[0];
 
     private final List<ConfigurableApplicationContext> allCtx = new ArrayList<>();
