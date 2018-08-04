@@ -157,7 +157,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 
  New Features and Improvements:
  
- - ZooKeeper-based seed node provider
+ - ZooKeeper-based seed node discovery
  (see [ZooKeeperSeedNodeProvider](https://static.javadoc.io/io.hekate/hekate-all/2.5.0/index.html?io/hekate/cluster/seed/zookeeper/ZooKeeperSeedNodeProvider.html)). 
  - Support for multiple seed node providers 
  (see [SeedNodeProviderGroup](https://static.javadoc.io/io.hekate/hekate-all/2.5.0/index.html?io/hekate/cluster/seed/SeedNodeProviderGroup.html)). 
