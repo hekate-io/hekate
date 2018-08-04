@@ -265,7 +265,7 @@ public class ZooKeeperSeedNodeProvider implements SeedNodeProvider {
             connectionString,
             sessionTimeout,
             connectTimeout,
-            new RetryOneTime(1)
+            new RetryOneTime(0)
         )) {
             client.start();
 
