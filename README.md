@@ -1,9 +1,10 @@
 # Hekate.io
 
-Java Library for Cluster Communications and Computing.
+Java Library for Cluster Discovery and Communications
 
 [![Build Status](https://travis-ci.org/hekate-io/hekate.svg?branch=master)](https://travis-ci.org/hekate-io/hekate)
 [![codecov](https://codecov.io/gh/hekate-io/hekate/branch/master/graph/badge.svg)](https://codecov.io/gh/hekate-io/hekate)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.hekate/hekate-all/badge.svg)](https://search.maven.org/#search|ga|1|io.hekate)
 [![Javadocs](http://javadoc.io/badge/io.hekate/hekate-all.svg)](http://javadoc.io/doc/io.hekate/hekate-all)
 
 ## License
@@ -15,7 +16,7 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
     - Gossip-based Decentralized Cluster Membership
     - Pluggable Bootstrapping (aka Seed Node Discovery)
         - Multicast
-        - JDBC
+        - Shared Database (JDBC-based)
         - Shared File System
         - Clouds (based on [Apache JClouds](https://jclouds.apache.org))
             - Amazon EC2/S3
