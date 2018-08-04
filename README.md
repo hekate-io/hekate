@@ -151,186 +151,30 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
   - run `docker-compose up -d` to prepare Docker-based testing infrastructure
   - run `./mvnw clean package`
   
-## Release notes
+## Release History
 
-### v.2.5.0 (4-Aug-2018)
+ - v.2.5.0 (4-Aug-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.5.0)]
 
- New Features and Improvements:
- 
- - ZooKeeper-based seed node discovery
- (see [ZooKeeperSeedNodeProvider](https://static.javadoc.io/io.hekate/hekate-all/2.5.0/index.html?io/hekate/cluster/seed/zookeeper/ZooKeeperSeedNodeProvider.html)). 
- - Support for multiple seed node providers 
- (see [SeedNodeProviderGroup](https://static.javadoc.io/io.hekate/hekate-all/2.5.0/index.html?io/hekate/cluster/seed/SeedNodeProviderGroup.html)). 
- - `hekate-codec-kryo` and `hekate-codec-fst` modules have been restored to simplify importing of Kryo and FST dependencies.
+ - v.2.4.1 (15-Jul-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.4.1)]
 
- Bug fixes:
- 
- - Fix invalid behavior of `Message#isRetransmit()` that always returned true even if message had not been sent yet.
+ - v.2.4.0 (15-Jul-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.4.0)]
 
- Dependency Upgrades:
- 
- - Upgraded to Netty 4.1.28.Final
- - Upgraded to Slf4j 1.7.25
- - Upgraded to Spring Framework 4.3.18.RELEASE
- - Upgraded to Spring Boot 1.5.15.RELEASE
- - Upgraded to AWS SDK 1.11.380
- - Upgraded to InfluxDB-Java 2.12
+ - v.2.3.1 (18-May-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.3.1)]
 
-### v.2.4.1 (15-Jul-2018)
+ - v.2.3.0 (4-May-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.3.0)]
 
- Bug fixes:
- 
- - Fixed a connection leak in the gossip communication manager.
+ - v.2.2.2 (21-Apr-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.2.2)]
 
- Dependency Upgrades:
- 
- - Upgraded to Netty 4.1.27.Final.
+ - v.2.2.1 (12-Apr-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.2.1)]
 
+ - v.2.2.0 (11-Apr-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.2.0)]
 
-### v.2.4.0 (15-Jul-2018)
+ - v.2.1.0 (22-Feb-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.1.0)]
 
- New Features and Improvements:
- 
- - Partitions mapping configuration for RPC clients.
- - Support for using a custom cluster view in messaging channels and RPC clients.
- - Added the Hekate.State#SYNCHRONIZING status to support services that require synchronization with remote nodes before switching the node 
-   to the UP state.
- - Performance optimization of messaging and RPC operations.
- - Extended API of CodecService with methods encode/decode to/from byte arrays.
- - Added 'hekate.enable=true/false' in order to support disabling of Hekate integration via Spring Boot configuration properties.
+ - v.2.0.0 (2-Jan-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.0.0)]
 
- Bug fixes:
- 
- - Node not being able to leave the cluster while accepting a join request from a non-reachable node.
- - Trigger re-join if a joining node is marked as failed/down by the cluster.
- - Broadcast operations not taking an affinity key into account during routing.
- - CoordinationMember not canceling active requests during completion of coordination context.
- - Fixed NPE whe discarding deferred messages in NettyClient.
+ - v.1.0.2 (23-Sep-2017) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.1.0.2)]
 
- Dependency Upgrades:
- 
- - Upgraded to Netty 4.1.26.Final.
+ - v.1.0.1 (01-Jul-2017) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.1.0.1)]
 
-### v.2.3.1 (18-May-2018)
-
- New Features and Improvements:
- 
- - Added support for SSL/TLS configuration using Spring Boot application properties.
- - Removed @ConditionalOnClass from Spring Boot auto-configurations in order to simplify early detection of configuration errors.
-
- Bug fixes:
- 
- - Fixed a concurrency issue that could lead to premature failure of message routing logic without applying a failover policy.
-
- Dependency Upgrades:
- 
- - Upgraded to Netty 4.1.25.Final.
- - Upgraded to AWS SDK 1.11.331.
- - Upgraded to InfluxDB-Java 2.10.
-
-### v.2.3.0 (4-May-2018)
-
- New Features and Improvements:
- 
- - Added ClusterView#awaitForNodes() method - simplifies waiting for the conditions of cluster topology.
- - Added Added ClusterNode#isRemote() method - simplifies lambda-based filtering of cluster topology.
- - Added LockRegion#cluster() method - cluster view of a lock region.
-
-### v.2.2.2 (21-Apr-2018)
-
- Bug fixes:
- 
- - Fixed a memory leak when trying to write to a closed network channel.
-
- Dependency Upgrades:
-
- - Upgraded to Netty 4.1.21.Final.
-
-### v.2.2.1 (12-Apr-2018)
-
- Bug fixes:
- 
- - Fixed deadlock during MulticastSeedNodeProvider termination.
-
-### v.2.2.0 (11-Apr-2018)
-
- New Features and Improvements:
- 
- - Metrics publishing to Amazon CloudWatch (see [CloudWatchMetricsPlugin](https://static.javadoc.io/io.hekate/hekate-all/2.3.0/index.html?io/hekate/metrics/cloudwatch/CloudWatchMetricsPlugin.html)).
- - Better logging of seed node discovery events.
-
- Dependency Upgrades:
- 
- - Upgraded to Kryo 4.0.2.
- - Upgraded to Spring Framework 4.3.16.RELEASE.
- - Upgraded to Spring Boot 1.5.12.RELEASE.
- - Upgraded to Apache JClouds 2.1.0.
- - Upgraded to AWS SDK 1.11.294.
-
-### v.2.1.0 (22-Feb-2018)
-
- New features and improvements:
- 
- - JMX support by main services and components.
- - JDBC-based Split-brain detection 
-   (see [JdbcConnectivityDetector](https://static.javadoc.io/io.hekate/hekate-all/2.3.0/index.html?io/hekate/cluster/split/JdbcConnectivityDetector.html)).
- - Added a configuration option for JVM termination in case a node considers itself in Split-brain state
-   (see [SplitBrainAction](https://static.javadoc.io/io.hekate/hekate-all/2.3.0/index.html?io/hekate/cluster/split/SplitBrainAction.html)).
- - Optimized timeouts processing in the messaging service (expired messages are ignored when received).
- - Added [TimerMetric](https://static.javadoc.io/io.hekate/hekate-all/2.3.0/index.html?io/hekate/metrics/local/TimerMetric.html).
-
- Dependency upgrades:
- 
- - Upgraded to Netty 4.1.21.Final.
- - Upgraded to FST 2.57. 
-
-### v.2.0.0 (2-Jan-2018)
-
- New features and improvements:
- 
- - Remote Procedure Call (RPC) service for Java objects 
-   (see [RpcService](https://static.javadoc.io/io.hekate/hekate-all/2.3.0/index.html?io/hekate/rpc/RpcService.html)).
- - Added 'deferredJoin' property to Spring bootstrap in order to control the timing of joining the cluster. 
- - Moved load balancing APIs to the `io.hekate.messaging.loadbalance` package.
- - Moved Netty-based implementation of networking APIs to public packages.
- - Merged Kryo and FST codecs into the `hekate-core` module (dropped `hekate-kryo` and `hekate-fst` modules).
- - Dropped Task Service (replaced by the RPC service). 
- 
- Dependency upgrades:
- 
- - Upgraded to Netty 4.1.19.Final.
- - Upgraded to Spring Framework 4.3.13.RELEASE. 
- - Upgraded to Spring Boot 1.5.9.RELEASE. 
- - Upgraded to AWS SDK 1.11.213.
- - Upgraded to FST 2.52. 
- - Upgraded to InfluxDB-Java 2.7. 
-
-### v.1.0.2 (23-Sep-2017)
-
- New features and improvements:
- 
- - Implemented support for intercepting and transforming inbound/outbound messages 
-   (see [MessageInterceptor](https://static.javadoc.io/io.hekate/hekate-all/2.3.0/index.html?io/hekate/messaging/MessageInterceptor.html)).
-   
- Dependency upgrades:
- 
- - Upgraded to Netty 4.1.15.Final.
- - Upgraded to Kryo 4.0.1.
- - Upgraded to Apache jClouds 2.0.2.
-
-### v.1.0.1 (01-Jul-2017)
-
- New features and improvements:
-
- - Fixed invalid links in javadocs.
- - Fixed invalid URL in `<scm>` section of pom.xml files.  
- 
- Dependency upgrades:
- 
- - Upgraded to Spring Boot 1.5.4.RELEASE.
- - Upgraded to AWS Java SDK 1.11.158.
- - Upgraded to Spring Framework 4.3.9.RELEASE.
-
-### v.1.0.0 (30-Jun-2017)
-
- - Initial version.  
+ - v.1.0.0 (30-Jun-2017) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.1.0.0)]
