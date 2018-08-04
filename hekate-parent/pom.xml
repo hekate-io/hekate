@@ -61,21 +61,21 @@
         <java.target>1.8</java.target>
 
         <!-- Production dependencies.-->
-        <slf4j.version>1.7.21</slf4j.version>
+        <slf4j.version>1.7.25</slf4j.version>
         <netty.version>4.1.28.Final</netty.version>
         <netty.tcnative.version>2.0.12.Final</netty.tcnative.version>
-        <spring.version>4.3.16.RELEASE</spring.version>
-        <spring.boot.version>1.5.12.RELEASE</spring.boot.version>
-        <logback.version>1.2.1</logback.version>
+        <spring.version>4.3.18.RELEASE</spring.version>
+        <spring.boot.version>1.5.15.RELEASE</spring.boot.version>
         <kryo.version>4.0.2</kryo.version>
         <kryo.serializers.version>0.42</kryo.serializers.version>
         <fst.version>2.57</fst.version>
         <zookeeper.curator.version>2.12.0</zookeeper.curator.version>
         <jclouds.version>2.1.0</jclouds.version>
-        <aws.sdk.version>1.11.331</aws.sdk.version>
-        <influxdb.version>2.10</influxdb.version>
+        <aws.sdk.version>1.11.380</aws.sdk.version>
+        <influxdb.version>2.12</influxdb.version>
 
         <!-- Test dependencies.-->
+        <logback.version>1.2.3</logback.version>
         <junit.version>4.12</junit.version>
         <mockito.version>2.10.0</mockito.version>
         <h2.version>1.4.193</h2.version>

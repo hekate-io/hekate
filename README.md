@@ -170,6 +170,11 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
  Dependency Upgrades:
  
  - Upgraded to Netty 4.1.28.Final.
+ - Upgraded to Slf4j 1.7.25
+ - Upgraded to Spring Framework 4.3.18.RELEASE
+ - Upgraded to Spring Boot 1.5.15.RELEASE
+ - Upgraded to AWS SDK 1.11.380
+ - Upgraded to InfluxDB-Java 2.12
 
 
 ## Release notes
