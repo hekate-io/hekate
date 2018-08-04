@@ -61,14 +61,6 @@ Framework, which can be obtained at:
   * HOMEPAGE:
     * http://projects.spring.io/spring-framework/
 
-This product optionally depends on 'Apache Commons CLI', library for parsing
-command line options passed to programs, which can be obtained at:
-
-  * LICENSE:
-    * license/commons-cli.license.txt (Apache License 2.0)
-  * HOMEPAGE:
-    * http://commons.apache.org/proper/commons-cli/
-
 This product optionally depends on 'Logback', the reliable, generic,
 fast and flexible logging library for Java, which can be obtained at:
 
@@ -107,7 +99,7 @@ multi-cloud toolkit for the Java platform, which can be obtained at:
   * LICENSE:
     * license/jclouds.license.txt (Apache License 2.0)
   * HOMEPAGE:
-    * https://github.com/jclouds/jclouds
+    * https://jclouds.apache.org
 
 This product optionally depends on 'influxdb-java', an open source
 client for InfluxDB time-series database, which can be obtained at:
@@ -116,6 +108,14 @@ client for InfluxDB time-series database, which can be obtained at:
     * license/influxdb-java.license.txt (MIT License)
   * HOMEPAGE:
     * https://github.com/influxdata/influxdb-java
+
+This product optionally depends on 'Apache Curator', a Java/JVM client library
+for Apache ZooKeeper, which can be obtained at:
+
+  * LICENSE:
+    * license/curator.license.txt (Apache License 2.0)
+  * HOMEPAGE:
+    * http://curator.apache.org
 
 This product optionally depends on 'Highlight.js' (for documentation formatting),
 syntax highlighter written in JavaScript, which can be obtained at:
