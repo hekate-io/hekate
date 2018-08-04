@@ -91,7 +91,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring-boot</artifactId>
-    <version>2.5.0-SNAPSHOT</version>
+    <version>2.5.0</version>
 </dependency>
 ```
 
@@ -100,7 +100,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring</artifactId>
-    <version>2.5.0-SNAPSHOT</version>
+    <version>2.5.0</version>
 </dependency>
 ```
 
@@ -109,7 +109,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-core</artifactId>
-    <version>2.5.0-SNAPSHOT</version>
+    <version>2.5.0</version>
 </dependency>
 ```
 
@@ -151,6 +151,27 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
   - run `docker-compose up -d` to prepare Docker-based testing infrastructure
   - run `./mvnw clean package`
   
+## Release notes
+
+### v.2.5.0 (4-Aug-2018)
+
+ New Features and Improvements:
+ 
+ - ZooKeeper-based seed node provider
+ (see [ZooKeeperSeedNodeProvider](https://static.javadoc.io/io.hekate/hekate-all/2.5.0/index.html?io/hekate/cluster/seed/zookeeper/ZooKeeperSeedNodeProvider.html)). 
+ - Support for multiple seed node providers 
+ (see [SeedNodeProviderGroup](https://static.javadoc.io/io.hekate/hekate-all/2.5.0/index.html?io/hekate/cluster/seed/SeedNodeProviderGroup.html)). 
+ - `hekate-codec-kryo` and `hekate-codec-fst` modules have been restored to simplify importing of Kryo and FST dependencies.
+
+ Bug fixes:
+ 
+ - Fix invalid behavior of `Message#isRetransmit()` that always returned true even if message had not been sent yet.
+
+ Dependency Upgrades:
+ 
+ - Upgraded to Netty 4.1.28.Final.
+
+
 ## Release notes
 
 ### v.2.4.1 (15-Jul-2018)
