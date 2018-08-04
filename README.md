@@ -1,6 +1,6 @@
 # Hekate.io
 
-Java Library for Cluster Communications and Computing.
+Java Library for Cluster Discovery and Communications
 
 [![Build Status](https://travis-ci.org/hekate-io/hekate.svg?branch=master)](https://travis-ci.org/hekate-io/hekate)
 [![codecov](https://codecov.io/gh/hekate-io/hekate/branch/master/graph/badge.svg)](https://codecov.io/gh/hekate-io/hekate)
