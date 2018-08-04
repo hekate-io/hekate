@@ -176,9 +176,6 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
  - Upgraded to AWS SDK 1.11.380
  - Upgraded to InfluxDB-Java 2.12
 
-
-## Release notes
-
 ### v.2.4.1 (15-Jul-2018)
 
  Bug fixes:
