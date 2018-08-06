@@ -25,8 +25,6 @@ import io.hekate.cluster.split.SplitBrainDetector;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.coordinate.CoordinationService;
-import io.hekate.core.inject.InjectionService;
-import io.hekate.core.jmx.JmxService;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.election.ElectionService;
@@ -46,38 +44,52 @@ import java.util.Set;
  *
  * <h2>Overview</h2>
  * <p>
- * Hekate is a Java library for cluster communications and computing. It provides a number of services for building a cluster of
- * interconnected processes, messaging and execution of distributed tasks. This interface is the main entry point for accessing the
- * following services:
+ * Hekate is a Java Library for cluster discovery and communications. It provides a number of services for building a cluster of
+ * interconnected processes with messaging capabilities. This interface is the main entry point for accessing the following services:
  * </p>
  *
  * <ul>
- * <li><b>{@link ClusterService}</b> - manages dynamic information about the cluster members and provides support for application to get
- * notified upon cluster membership changes</li>
- * <li><b>{@link MessagingService}</b> - provides high-level API for asynchronous messaging among the cluster nodes with built-in failover
- * and load balancing</li>
- * <li><b>{@link LockService}</b> - provides support for distributed locks</li>
- * <li><b>{@link ElectionService}</b> - provides support for cluster-wide leader election (aka cluster singleton)</li>
- * <li><b>{@link CoordinationService}</b> - provides support for implementing distributed coordination protocols</li>
- * <li><b>{@link LocalMetricsService}</b> -  provides support for managing user-defined metrics</li>
- * <li><b>{@link ClusterMetricsService}</b> - provides access to metrics of remote cluster nodes</li>
- * <li><b>{@link NetworkService}</b> - provides configuration options and low level API for network communications</li>
- * <li><b>{@link CodecService}</b> - provides abstraction layer of data serialization API</li>
- * <li><b>{@link InjectionService}</b> - provides support for dependency injection</li>
- * <li><b>{@link JmxService}</b> - provides JXM support</li>
+ * <li>
+ * <b>{@link ClusterService Cluster}</b> - manages dynamic information about the cluster members and provides support for application
+ * to get notified upon cluster membership changes
+ * </li>
+ * <li>
+ * <b>{@link MessagingService Messaging}</b> - provides high-level API for asynchronous messaging among the cluster nodes with built-in
+ * failover and load balancing
+ * </li>
+ * <li>
+ * <b>{@link RpcService Remote Procedure Calls (RPC)}</b> - provides support for remote calls of Java objects
+ * </li>
+ * <li>
+ * <b>{@link LockService Distributed Locks}</b> - provides support for distributed locks
+ * </li>
+ * <li>
+ * <b>{@link ElectionService Leader Election}</b> - provides support for cluster-wide leader election (aka cluster singleton)
+ * </li>
+ * <li>
+ * <b>{@link CoordinationService Distributed Coordination}</b> - provides support for implementing distributed coordination protocols
+ * </li>
+ * <li>
+ * <b>{@link NetworkService Networking}</b> - provides configuration options and low level API for network communications
+ * </li>
+ * <li>
+ * <b>{@link LocalMetricsService Metrics}</b> -  provides support for managing user-defined metrics
+ * </li>
+ * <li>
+ * <b>{@link CodecService Data Encoding/Decoding}</b> - provides abstraction layer of data serialization API
+ * </li>
  * </ul>
  *
- * <h2>Instantiation</h2>
+ * <h2>Bootstrapping</h2>
  * <p>
- * Instances of this interface can be constructed by calling the {@link HekateBootstrap#join()} method (or its {@link
+ * Instances of {@link Hekate} interface can be constructed by calling the {@link HekateBootstrap#join()} method (or its {@link
  * HekateBootstrap#joinAsync() asynchronous equivalent}). This method creates a new {@link Hekate} instance and joins it to the cluster.
  * It is possible to create and run multiple {@link Hekate} instances within a single JVM. Each such instance is an independent cluster
- * node
- * with its own set of resources (threads, sockets, etc).
+ * node with its own set of resources (threads, sockets, etc).
  * </p>
  *
  * <p>
- * If the application runs on top of the <a href="http://projects.spring.io/spring-framework" target="_blank">Spring Framework</a>, then
+ * If application runs on top of the <a href="http://projects.spring.io/spring-framework" target="_blank">Spring Framework</a>, then
  * you can use the Spring Framework integration provided by the
  * <a href="{@docRoot}/io/hekate/spring/bean/HekateSpringBootstrap.html">HekateSpringBootstrap</a> class (please see its documentation for
  * more details).
@@ -153,20 +165,17 @@ import java.util.Set;
  * <a name="lifecycle"></a>
  * <h2>Lifecycle</h2>
  * <p>
- * The lifecycle of each {@link Hekate} instance is controlled in the following methods:
+ * The lifecycle of each {@link Hekate} instance is controlled by the following methods:
  * </p>
  * <ul>
- * <li>{@link #initialize()} - initializes this instance and all of services.</li>
- *
- * <li>{@link #join()} - initializes this instance (if not {@link #initializeAsync() initialized} yet) and joins the cluster.</li>
- *
+ * <li>{@link #initialize()} - initializes this instance and all of services</li>
+ * <li>{@link #join()} - initializes this instance (if not {@link #initializeAsync() initialized} yet) and joins the cluster</li>
  * <li>{@link #leave()} - leaves the cluster and then {@link #terminate() terminates} this instance. This is the recommended way to
- * shutdown gracefully.</li>
- *
+ * shutdown gracefully</li>
  * <li>{@link #terminate()} - terminates this instance, bypassing the cluster leave protocol (i.e. remote nodes will notice that this node
  * left the cluster only based on their failure detection settings). In general, it is recommended to use {@link #leave() graceful}
  * shutdown and use this method for abnormal termination (f.e. in case of unrecoverable error) or for testing purposes to emulate failures
- * of cluster nodes.</li>
+ * of cluster nodes</li>
  * </ul>
  *
  * <p>
@@ -175,26 +184,19 @@ import java.util.Set;
  *
  * <ul>
  * <li>{@link State#DOWN} - initial state</li>
- *
- * <li>{@link State#INITIALIZING} - node is initializing its services.</li>
- *
- * <li>{@link State#INITIALIZED} - node is initialized and is ready to start joining the cluster.</li>
- *
- * <li>{@link State#JOINING} - node successfully discovered a seed node and started joining the cluster.</li>
- *
- * <li>{@link State#SYNCHRONIZING} - node successfully joined the cluster and synchronizing with remote nodes.</li>
- *
- * <li>{@link State#UP} - node successfully joined the cluster and is ready to perform user operations.</li>
- *
+ * <li>{@link State#INITIALIZING} - node is initializing its services</li>
+ * <li>{@link State#INITIALIZED} - node is initialized and is ready to start joining the cluster</li>
+ * <li>{@link State#JOINING} - node successfully discovered a seed node and started joining the cluster</li>
+ * <li>{@link State#SYNCHRONIZING} - node successfully joined the cluster and synchronizing with remote nodes</li>
+ * <li>{@link State#UP} - node successfully joined the cluster and is ready to perform user operations</li>
  * <li>{@link State#LEAVING} - node started leaving the cluster.</li>
- *
  * <li>{@link State#TERMINATING} - node left the cluster and started terminating all of its services. Once this stage is completed then
  * node will go back to the {@link State#DOWN} state.</li>
  * </ul>
  *
  * <p>
- * Current state of the {@link Hekate} instance can be inspected via {@link Hekate#state()} method. State changes can be monitored by
- * registering a listener via {@link #addListener(LifecycleListener)} method.
+ * Current state of a {@link Hekate} instance can be inspected via the {@link Hekate#state()} method. State changes can be monitored by
+ * registering a listener via the {@link #addListener(LifecycleListener)} method.
  * </p>
  *
  * @see HekateBootstrap
