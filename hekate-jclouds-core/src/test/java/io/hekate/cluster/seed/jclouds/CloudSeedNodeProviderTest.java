@@ -19,9 +19,9 @@ package io.hekate.cluster.seed.jclouds;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Module;
 import io.hekate.HekateTestBase;
-import io.hekate.HekateTestProps;
 import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,6 +44,9 @@ import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import static org.jclouds.ContextBuilder.newBuilder;
 import static org.jclouds.compute.options.TemplateOptions.Builder.userMetadata;
@@ -51,32 +54,46 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
-public class AwsCloudSeedNodeProviderTest extends HekateTestBase {
-    public static final String REGION = HekateTestProps.get("AWS_TEST_REGION");
+@RunWith(Parameterized.class)
+public class CloudSeedNodeProviderTest extends HekateTestBase {
+    private final CloudTestContext testCtx;
 
-    public static final String ACCESS_KEY = HekateTestProps.get("AWS_TEST_ACCESS_KEY");
+    public CloudSeedNodeProviderTest(CloudTestContext testCtx) {
+        this.testCtx = testCtx;
+    }
 
-    public static final String SECRET_KEY = HekateTestProps.get("AWS_TEST_SECRET_KEY");
+    @Parameters(name = "{index}: {0}")
+    public static Collection<CloudTestContext> getCloudTestContexts() {
+        return CloudTestContext.allContexts();
+    }
 
     @BeforeClass
     public static void setUpClass() throws RunNodesException {
-        Assume.assumeTrue(HekateTestProps.is("AWS_TEST_ENABLED"));
+        // Disable if there are no cloud providers that are configured for tests.
+        Assume.assumeFalse(getCloudTestContexts().isEmpty());
 
-        Properties props = new Properties();
+        Collection<CloudTestContext> contexts = getCloudTestContexts();
 
-        props.setProperty(LocationConstants.PROPERTY_REGIONS, REGION);
+        for (CloudTestContext ctx : contexts) {
+            sayHeader("Setting up '" + ctx.computeProvider() + "' instances.");
 
-        ContextBuilder builder = newBuilder("aws-ec2").credentials(
-            ACCESS_KEY,
-            SECRET_KEY
-        ).overrides(props);
+            Properties props = new Properties();
 
-        ComputeService compute = builder.modules(ImmutableSet.<Module>of(new SLF4JLoggingModule()))
-            .buildView(ComputeServiceContext.class)
-            .getComputeService();
+            props.setProperty(LocationConstants.PROPERTY_REGIONS, ctx.region());
 
-        for (int i = 0; i < 4; i++) {
-            ensureNodeExists(i, compute);
+            ContextBuilder builder = newBuilder(ctx.computeProvider()).credentials(
+                ctx.identity(),
+                ctx.credential()
+            ).overrides(props);
+
+            try (ComputeServiceContext computeCtx = builder
+                .modules(ImmutableSet.<Module>of(new SLF4JLoggingModule()))
+                .buildView(ComputeServiceContext.class)
+            ) {
+                for (int i = 0; i < 4; i++) {
+                    ensureNodeExists(i, ctx.region(), computeCtx.getComputeService());
+                }
+            }
         }
     }
 
@@ -130,7 +147,7 @@ public class AwsCloudSeedNodeProviderTest extends HekateTestBase {
     public void testMixedRegions() throws Exception {
         CloudSeedNodeProvider provider = provider(cfg -> {
             cfg.withRegion(selectUnusedRegion());
-            cfg.withRegion(REGION);
+            cfg.withRegion(testCtx.region());
         });
 
         assertEquals(4, provider.findSeedNodes("").size());
@@ -161,12 +178,12 @@ public class AwsCloudSeedNodeProviderTest extends HekateTestBase {
 
     private CloudSeedNodeProvider provider(Consumer<CloudSeedNodeProviderConfig> configurer) throws Exception {
         CloudSeedNodeProviderConfig cfg = new CloudSeedNodeProviderConfig()
-            .withProvider("aws-ec2")
-            .withRegion(REGION)
+            .withProvider(testCtx.computeProvider())
+            .withRegion(testCtx.region())
             .withTag("Test", "true")
             .withCredentials(new BasicCredentialsSupplier()
-                .withIdentity(ACCESS_KEY)
-                .withCredential(SECRET_KEY)
+                .withIdentity(testCtx.identity())
+                .withCredential(testCtx.credential())
             );
 
         if (configurer != null) {
@@ -187,25 +204,13 @@ public class AwsCloudSeedNodeProviderTest extends HekateTestBase {
     }
 
     private String selectUnusedRegion() {
-        return Stream.of(
-            "us-east-1",
-            "us-east-2",
-            "us-west-1",
-            "us-west-2",
-            "ca-central-1",
-            "eu-west-1",
-            "eu-central-1",
-            "eu-west-2",
-            "ap-northeast-1",
-            "ap-northeast-2",
-            "ap-southeast-1",
-            "ap-southeast-2",
-            "ap-south-1",
-            "sa-east-1"
-        ).filter(r -> !r.equals(REGION)).findFirst().orElseThrow(AssertionError::new);
+        return Stream.of(testCtx.allRegions())
+            .filter(r -> !r.equals(testCtx.region()))
+            .findFirst()
+            .orElseThrow(AssertionError::new);
     }
 
-    private static void ensureNodeExists(int idx, ComputeService compute) throws RunNodesException {
+    private static void ensureNodeExists(int idx, String region, ComputeService compute) throws RunNodesException {
         Map<String, String> tags = new HashMap<>();
 
         String name = "HekateUnitTest-" + idx;
@@ -246,9 +251,9 @@ public class AwsCloudSeedNodeProviderTest extends HekateTestBase {
 
         if (create) {
             Template template = compute.templateBuilder()
-                .locationId(HekateTestProps.get("AWS_TEST_REGION"))
+                .locationId(region)
                 .smallest()
-                .osFamily(OsFamily.AMZN_LINUX)
+                .osFamily(OsFamily.DEBIAN)
                 .options(userMetadata(tags))
                 .build();
 

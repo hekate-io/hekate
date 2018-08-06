@@ -16,25 +16,41 @@
 
 package io.hekate.cluster.seed.jclouds;
 
-import io.hekate.HekateTestProps;
 import io.hekate.cluster.seed.PersistentSeedNodeProviderTestBase;
+import java.util.Collection;
 import org.junit.Assume;
 import org.junit.BeforeClass;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
-public class AwsCloudStoreSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase<CloudStoreSeedNodeProvider> {
+@RunWith(Parameterized.class)
+public class CloudStoreSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase<CloudStoreSeedNodeProvider> {
+    private final CloudTestContext testCtx;
+
+    public CloudStoreSeedNodeProviderTest(CloudTestContext testCtx) {
+        this.testCtx = testCtx;
+    }
+
+    @Parameters(name = "{index}: {0}")
+    public static Collection<CloudTestContext> getCloudTestContexts() {
+        return CloudTestContext.allContexts();
+    }
+
     @BeforeClass
     public static void mayBeDisableTest() {
-        Assume.assumeTrue(HekateTestProps.is("AWS_TEST_ENABLED"));
+        // Disable if there are no cloud providers that are configured for tests.
+        Assume.assumeFalse(getCloudTestContexts().isEmpty());
     }
 
     @Override
     protected CloudStoreSeedNodeProvider createProvider() throws Exception {
         CloudStoreSeedNodeProviderConfig cfg = new CloudStoreSeedNodeProviderConfig()
-            .withProvider("aws-s3")
-            .withContainer(HekateTestProps.get("AWS_TEST_BUCKET"))
+            .withProvider(testCtx.storeProvider())
+            .withContainer(testCtx.storeBucket())
             .withCredentials(new BasicCredentialsSupplier()
-                .withIdentity(HekateTestProps.get("AWS_TEST_ACCESS_KEY"))
-                .withCredential(HekateTestProps.get("AWS_TEST_SECRET_KEY"))
+                .withIdentity(testCtx.identity())
+                .withCredential(testCtx.credential())
             )
             .withCleanupInterval(100);
 
