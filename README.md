@@ -19,9 +19,9 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
         - Shared Database (JDBC-based)
         - Shared File System
         - Clouds (based on [Apache JClouds](https://jclouds.apache.org))
-            - Amazon EC2/S3
+            - Amazon EC2 and S3
+            - Google Cloud Storage and Compute Engine
             - Azure Blob Storage
-            - Google Cloud Storage
             - etc
         - [ZooKeeper](https://zookeeper.apache.org)
         - [Etcd](https://github.com/coreos/etcd) (_planned_)
