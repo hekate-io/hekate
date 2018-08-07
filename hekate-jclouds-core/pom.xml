@@ -110,5 +110,17 @@
             <artifactId>aws-s3</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.jclouds.provider</groupId>
+            <artifactId>google-compute-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.jclouds.provider</groupId>
+            <artifactId>google-cloud-storage</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

@@ -30,6 +30,8 @@ public class CloudTestContext {
 
     private final String region;
 
+    private final String autoCreateRegion;
+
     private final String storeBucket;
 
     @ToStringIgnore
@@ -45,6 +47,7 @@ public class CloudTestContext {
         String computeProvider,
         String storeProvider,
         String region,
+        String autoCreateRegion,
         String storeBucket,
         String identity,
         String credential,
@@ -53,6 +56,7 @@ public class CloudTestContext {
         this.computeProvider = computeProvider;
         this.storeProvider = storeProvider;
         this.region = region;
+        this.autoCreateRegion = autoCreateRegion;
         this.storeBucket = storeBucket;
         this.identity = identity;
         this.credential = credential;
@@ -67,6 +71,7 @@ public class CloudTestContext {
                 "aws-ec2",
                 "aws-s3",
                 HekateTestProps.get("AWS_TEST_REGION"),
+                HekateTestProps.get("AWS_TEST_REGION"),
                 HekateTestProps.get("AWS_TEST_BUCKET"),
                 HekateTestProps.get("AWS_TEST_ACCESS_KEY"),
                 HekateTestProps.get("AWS_TEST_SECRET_KEY"),
@@ -75,6 +80,24 @@ public class CloudTestContext {
                     "us-east-2",
                     "us-west-1",
                     "us-west-2"
+                }
+            ));
+        }
+
+        if (HekateTestProps.is("GOOGLE_TEST_ENABLED")) {
+            contexts.add(new CloudTestContext(
+                "google-compute-engine",
+                "google-cloud-storage",
+                HekateTestProps.get("GOOGLE_TEST_REGION"),
+                HekateTestProps.get("GOOGLE_TEST_REGION") + "-a", // <-- Zone (region-name-a)
+                HekateTestProps.get("GOOGLE_TEST_BUCKET"),
+                HekateTestProps.get("GOOGLE_TEST_EMAIL"),
+                HekateTestProps.get("GOOGLE_TEST_PRIVATE_KEY"),
+                new String[]{
+                    "europe-north1",
+                    "europe-west1",
+                    "europe-west2",
+                    "europe-west3"
                 }
             ));
         }
@@ -92,6 +115,10 @@ public class CloudTestContext {
 
     public String region() {
         return region;
+    }
+
+    public String autoCreateRegion() {
+        return autoCreateRegion;
     }
 
     public String storeBucket() {

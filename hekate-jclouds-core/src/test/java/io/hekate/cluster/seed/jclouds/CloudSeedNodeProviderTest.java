@@ -79,7 +79,7 @@ public class CloudSeedNodeProviderTest extends HekateTestBase {
 
             Properties props = new Properties();
 
-            props.setProperty(LocationConstants.PROPERTY_REGIONS, ctx.region());
+            props.setProperty(LocationConstants.PROPERTY_REGIONS, ctx.autoCreateRegion());
 
             ContextBuilder builder = newBuilder(ctx.computeProvider()).credentials(
                 ctx.identity(),
@@ -91,7 +91,7 @@ public class CloudSeedNodeProviderTest extends HekateTestBase {
                 .buildView(ComputeServiceContext.class)
             ) {
                 for (int i = 0; i < 4; i++) {
-                    ensureNodeExists(i, ctx.region(), computeCtx.getComputeService());
+                    ensureNodeExists(i, ctx.autoCreateRegion(), computeCtx.getComputeService());
                 }
             }
         }

@@ -257,6 +257,18 @@
                 <version>${jclouds.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.apache.jclouds.provider</groupId>
+                <artifactId>google-compute-engine</artifactId>
+                <version>${jclouds.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.jclouds.provider</groupId>
+                <artifactId>google-cloud-storage</artifactId>
+                <version>${jclouds.version}</version>
+            </dependency>
+
             <!-- Amazon Java SDK. -->
             <dependency>
                 <groupId>com.amazonaws</groupId>

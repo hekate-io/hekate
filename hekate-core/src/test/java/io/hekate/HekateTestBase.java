@@ -179,6 +179,7 @@ public abstract class HekateTestBase {
         KNOWN_THREAD_PREFIXES.add("OkHttp ConnectionPool".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("com.google.inject.internal.util.$Finalizer".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("Keep-Alive-Timer".toLowerCase());
+        KNOWN_THREAD_PREFIXES.add("Keep-Alive-SocketCleaner".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("H2 Close".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("Abandoned connection cleanup thread".toLowerCase());
     }
