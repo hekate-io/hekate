@@ -21,7 +21,7 @@ import io.hekate.util.format.ToStringIgnore;
 import java.io.IOException;
 
 /**
- * Codec factory that manages a pre-thread cache {@link Codec}s.
+ * Codec factory that manages a per-thread cache {@link Codec}s.
  *
  * @param <T> Base data type of this factory.
  */
