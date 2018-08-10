@@ -17,28 +17,35 @@
 package io.hekate.codec.internal;
 
 import java.io.ByteArrayOutputStream;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.ArrayList;
 
 class ByteArrayOutputStreamPool {
-    public static final int INITIAL_BUFFER_SIZE = 1024;
+    /** Initial size of a pooled {@link ByteArrayOutputStream}. */
+    private static final int INITIAL_BUFFER_SIZE = 512;
 
-    private final ArrayBlockingQueue<ByteArrayOutputStream> pool;
+    /** Thread-local pool of {@link ByteArrayOutputStream}s. */
+    // Non-static because of every instance can have its own {@link #maxBufferSize}).
+    private final ThreadLocal<ArrayList<ByteArrayOutputStream>> threadLocalPool = ThreadLocal.withInitial(() ->
+        new ArrayList<>(1)
+    );
 
+    /** If {@link ByteArrayOutputStream#size()} is greater than this size then it will NOT be reused. */
     private final int maxBufferSize;
 
-    public ByteArrayOutputStreamPool(int maxPoolSize, int maxBufferSize) {
-        this.pool = new ArrayBlockingQueue<>(maxPoolSize);
-
+    public ByteArrayOutputStreamPool(int maxBufferSize) {
         this.maxBufferSize = maxBufferSize;
     }
 
     public ByteArrayOutputStream acquire() {
-        ByteArrayOutputStream buf = pool.poll();
+        ByteArrayOutputStream buf;
 
-        if (buf == null) {
+        ArrayList<ByteArrayOutputStream> buffers = threadLocalPool.get();
+
+        if (buffers.isEmpty()) {
             buf = new ByteArrayOutputStream(INITIAL_BUFFER_SIZE);
         } else {
-            buf.reset();
+            // Remove from the tail (for ArrayList it is a cheap operation).
+            buf = buffers.remove(buffers.size() - 1);
         }
 
         return buf;
@@ -46,7 +53,11 @@ class ByteArrayOutputStreamPool {
 
     public boolean recycle(ByteArrayOutputStream buf) {
         if (buf.size() <= maxBufferSize) {
-            return pool.offer(buf);
+            // Clear the buffer.
+            buf.reset();
+
+            // Add the buffer back to the pool.
+            return threadLocalPool.get().add(buf);
         } else {
             return false;
         }
