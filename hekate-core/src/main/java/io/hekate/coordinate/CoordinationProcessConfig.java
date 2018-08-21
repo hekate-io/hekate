@@ -32,12 +32,16 @@ import java.util.List;
  * @see CoordinationService
  */
 public class CoordinationProcessConfig {
+    /** See {@link #setName(String)}. */
     private String name;
 
+    /** See {@link #setAsyncInit(boolean)}. */
     private boolean asyncInit = true;
 
+    /** See {@link #setHandler(CoordinationHandler)}. */
     private CoordinationHandler handler;
 
+    /** See {@link #setMessageCodec(CodecFactory)}. */
     private CodecFactory<Object> messageCodec;
 
     /**

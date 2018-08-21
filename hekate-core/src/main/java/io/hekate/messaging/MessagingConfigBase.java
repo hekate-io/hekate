@@ -27,10 +27,13 @@ import java.util.function.Consumer;
  * @param <T> Syb-class type.
  */
 public abstract class MessagingConfigBase<T extends MessagingConfigBase<T>> {
+    /** See {@link #setNioThreads(int)}. */
     private int nioThreads;
 
+    /** See {@link #setIdleSocketTimeout(long)}. */
     private long idleSocketTimeout;
-
+    
+    /** See {@link #setBackPressure(MessagingBackPressureConfig)}. */
     private MessagingBackPressureConfig backPressure = new MessagingBackPressureConfig();
 
     /**

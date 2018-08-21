@@ -24,12 +24,16 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 class BroadcastCallbackAdaptor implements CoordinationRequestCallback {
+    /** Expected number of responses. */
     private final int expected;
 
+    /** Responses received so far. */
     private final Map<CoordinationMember, Object> responses;
 
+    /** Received all responses or got cancelled. */
     private final AtomicBoolean completed = new AtomicBoolean();
 
+    /** Callback to notify when completed. */
     private final CoordinationBroadcastCallback callback;
 
     public BroadcastCallbackAdaptor(int expectedResponses, CoordinationBroadcastCallback callback) {

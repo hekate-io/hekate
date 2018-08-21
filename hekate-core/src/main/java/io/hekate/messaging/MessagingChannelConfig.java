@@ -52,30 +52,43 @@ import java.util.concurrent.TimeUnit;
  * @see MessagingServiceFactory#setChannels(List)
  */
 public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChannelConfig<T>> {
+    /** See {@link #MessagingChannelConfig(Class)}. */
     private final Class<T> baseType;
 
+    /** See {@link #setName(String)}. */
     private String name;
 
+    /** See {@link #setWorkerThreads(int)}. */
     private int workerThreads;
 
+    /** See {@link #setPartitions(int)}. */
     private int partitions = RendezvousHashMapper.DEFAULT_PARTITIONS;
 
+    /** See {@link #setBackupNodes(int)}. */
     private int backupNodes;
 
+    /** See {@link #setMessageCodec(CodecFactory)}. */
     private CodecFactory<T> messageCodec;
 
+    /** See {@link #setClusterFilter(ClusterNodeFilter)}. */
     private ClusterNodeFilter clusterFilter;
 
+    /** See {@link #setReceiver(MessageReceiver)}. */
     private MessageReceiver<T> receiver;
 
+    /** See {@link #setFailoverPolicy(FailoverPolicy)}. */
     private FailoverPolicy failoverPolicy;
 
+    /** See {@link #setLoadBalancer(LoadBalancer)}. */
     private LoadBalancer<T> loadBalancer;
 
+    /** See {@link #setInterceptor(MessageInterceptor)}. */
     private MessageInterceptor<T> interceptor;
 
+    /** See {@link #setMessagingTimeout(long)}. */
     private long messagingTimeout;
 
+    /** See {@link #setLogCategory(String)}. */
     private String logCategory;
 
     /**

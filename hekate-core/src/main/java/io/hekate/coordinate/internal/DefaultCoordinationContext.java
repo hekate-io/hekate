@@ -23,6 +23,7 @@ import io.hekate.coordinate.CoordinationBroadcastCallback;
 import io.hekate.coordinate.CoordinationContext;
 import io.hekate.coordinate.CoordinationHandler;
 import io.hekate.coordinate.CoordinationMember;
+import io.hekate.coordinate.CoordinationProcessConfig;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateSupport;
 import io.hekate.core.internal.util.ArgAssert;
@@ -47,34 +48,45 @@ class DefaultCoordinationContext implements CoordinationContext {
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
+    /** Coordinator node. */
     private final CoordinationMember coordinator;
 
+    /** Topology of this coordination. */
     private final ClusterTopology topology;
 
+    /** All members of this coordination. */
     @ToStringIgnore
     private final List<CoordinationMember> members;
 
+    /** Container of this coordination. */
     @ToStringIgnore
     private final HekateSupport hekate;
 
+    /** Coordination process name (see {@link CoordinationProcessConfig#setName(String)}). */
     @ToStringIgnore
     private final String name;
 
+    /** Coordination handler (see {@link CoordinationProcessConfig#setHandler(CoordinationHandler)}). */
     @ToStringIgnore
     private final CoordinationHandler handler;
 
+    /** Local node. */
     @ToStringIgnore
     private final CoordinationMember localMember;
 
+    /** All members by their cluster IDs. */
     @ToStringIgnore
     private final Map<ClusterNodeId, DefaultCoordinationMember> membersById;
 
+    /** Future of this coordination. */
     @ToStringIgnore
     private final CompletableFuture<Void> future = new CompletableFuture<>();
 
+    /** Is this context prepared (see {@link #ensurePrepared()}). */
     @ToStringIgnore
     private boolean prepared;
 
+    /** See {@link #setAttachment(Object)}. */
     @ToStringIgnore
     private volatile Object attachment;
 

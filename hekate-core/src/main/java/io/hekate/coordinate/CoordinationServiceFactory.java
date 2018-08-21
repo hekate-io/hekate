@@ -44,12 +44,16 @@ public class CoordinationServiceFactory implements ServiceFactory<CoordinationSe
     /** Default value in milliseconds (={@value}) for {@link #setRetryInterval(long)}. */
     public static final int DEFAULT_RETRY_INTERVAL = 50;
 
+    /** See {@link #setNioThreads(int)}. */
     private int nioThreads;
 
+    /** See {@link #setRetryInterval(long)}. */
     private long retryInterval = DEFAULT_RETRY_INTERVAL;
 
+    /** See {@link #setProcesses(List)}. */
     private List<CoordinationProcessConfig> processes;
 
+    /** See {@link #setConfigProviders(List)}. */
     private List<CoordinationConfigProvider> configProviders;
 
     /**
