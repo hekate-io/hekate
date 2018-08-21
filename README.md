@@ -23,6 +23,7 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
             - Google Cloud Storage and Compute Engine
             - Azure Blob Storage
             - etc
+        - [Kubernetes](https://kubernetes.io)    
         - [ZooKeeper](https://zookeeper.apache.org)
         - [Etcd](https://github.com/coreos/etcd) (_planned_)
     - Cluster Event Listeners    
@@ -119,6 +120,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
         - [hekate-jclouds-core](hekate-jclouds-core/) - Integration with the [Apache JClouds](https://jclouds.apache.org) 
           for cloud environments.
         - [hekate-jclouds-aws](hekate-jclouds-aws/) - Extended integration with the [Amazon EC2](https://aws.amazon.com) cloud.
+        - [hekate-kubernetes](hekate-kubernetes/) - Integration with the [Kubernetes](https://kubernetes.io) 
         - [hekate-zookeeper](hekate-zookeeper/) - Integration with the [Apache ZooKeeper](https://zookeeper.apache.org) 
     - **Serialization Codecs**
         - [hekate-codec-kryo](hekate-codec-kryo/README.md) - Integration with [Kryo](https://github.com/EsotericSoftware/kryo) for data 

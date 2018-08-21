@@ -178,8 +178,8 @@ public final class CodeSamplesProcessorMain {
 
         boolean sectionFound = section == null;
 
-        Pattern start = Pattern.compile("\\s*((//)|(<!--)).*Start:\\s*" + section + ".*");
-        Pattern end = Pattern.compile("\\s*((//)|(<!--)).*End:\\s*" + section + ".*");
+        Pattern start = Pattern.compile("\\s*((//)|(<!--)|(#)).*Start:\\s*" + section + ".*");
+        Pattern end = Pattern.compile("\\s*((//)|(<!--)|(#)).*End:\\s*" + section + ".*");
 
         for (String line : Files.readAllLines(Paths.get(src.getAbsolutePath()))) {
             if (sectionFound) {

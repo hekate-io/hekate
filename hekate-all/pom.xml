@@ -73,6 +73,13 @@
 
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>hekate-kubernetes</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>hekate-jclouds-core</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>

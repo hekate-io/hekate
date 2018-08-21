@@ -14,37 +14,7 @@
  * under the License.
  */
 
-.startHere {
-    display: none;
-    float: left;
-    border: 1px dotted #999999;
-    padding: 3px 3px 3px 3px;
-    margin-right: 4px;
-    background-color: #ffffcc;
-    font-family: verdana, sans-serif;
-    font-size: 9px;
-    font-weight: bold;
-    vertical-align: middle;
-    border-bottom-left-radius: 9px;
-    border-top-left-radius: 9px;
-}
-
-td.colLast > div > span.startHere {
-    display: block;
-}
-
-a {
-    font-weight: bold;
-}
-
-a.ui-tabs-anchor {
-    font-weight: normal !important;
-}
-
-.hljs {
-    background-color: #efefef;
-}
-
-.hljs-bullet {
-    background-color: #efefef;
-}
+/**
+ * Kubernetes-based seed node provider.
+ */
+package io.hekate.cluster.seed.kubernetes;

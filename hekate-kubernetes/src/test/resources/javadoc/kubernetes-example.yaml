@@ -1,0 +1,45 @@
+# Start: role_example
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: read-pods
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - list
+  - get
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hekate
+roleRef:
+  kind: Role
+  name: read-pods
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: default # Notice! This overrides permissions of 'default' Service Account.
+# End: role_example
+
+# Start: pod_example
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-hekate-app
+spec:
+  containers:
+  - image: my-hekate-app:v1
+    name: my-hekate-app
+    ports:
+    - name: hekate   # <--- This (Hekate cluster port)
+      containerPort: 10012
+    - name: http     # ...some other ports...
+      containerPort: 8080
+# End: pod_example
