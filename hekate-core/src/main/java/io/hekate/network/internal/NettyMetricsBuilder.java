@@ -23,7 +23,7 @@ import io.hekate.network.netty.NettyMetricsFactory;
 import io.hekate.network.netty.NettyMetricsSink;
 
 class NettyMetricsBuilder {
-    private static final String METRIC_CONNECTIONS = "connections";
+    private static final String METRIC_CONNECTIONS_TOTAL = "connections.total";
 
     private static final String METRIC_CONNECTIONS_ACTIVE = "connections.active";
 
@@ -64,7 +64,7 @@ class NettyMetricsBuilder {
         CounterMetric globalMsgQueue = counter(METRIC_MSG_QUEUE, false, false);
 
         // Overall connections.
-        CounterMetric globalConns = counter(METRIC_CONNECTIONS, false, true);
+        CounterMetric globalConns = counter(METRIC_CONNECTIONS_TOTAL, false, false);
         CounterMetric globalConnsAct = counter(METRIC_CONNECTIONS_ACTIVE, false, false);
 
         return protocol -> {
@@ -78,7 +78,7 @@ class NettyMetricsBuilder {
             CounterMetric msgReceived = counter(METRIC_MSG_IN, protocol, true, true);
 
             // Connections.
-            CounterMetric conns = counter(METRIC_CONNECTIONS, protocol, true, true);
+            CounterMetric conns = counter(METRIC_CONNECTIONS_TOTAL, protocol, false, false);
             CounterMetric connsAct = counter(METRIC_CONNECTIONS_ACTIVE, protocol, false, false);
 
             return new NettyMetricsSink() {
