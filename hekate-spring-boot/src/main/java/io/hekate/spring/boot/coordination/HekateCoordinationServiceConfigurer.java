@@ -56,6 +56,7 @@ import org.springframework.context.annotation.Lazy;
  * <ul>
  * <li>{@link CoordinationServiceFactory#setNioThreads(int) 'hekate.coordination.nio-threads'}</li>
  * <li>{@link CoordinationServiceFactory#setRetryInterval(long) 'hekate.coordination.retry-interval'}</li>
+ * <li>{@link CoordinationServiceFactory#setIdleSocketTimeout(long)} 'hekate.coordination.idle-socket-timeout'}</li>
  * </ul>
  *
  * @see CoordinationService

@@ -108,6 +108,18 @@ public class CoordinationServiceFactoryTest extends HekateTestBase {
     }
 
     @Test
+    public void testIdleSocketTimeout() throws Exception {
+        assertEquals(CoordinationServiceFactory.DEFAULT_IDLE_SOCKET_TIMEOUT, factory.getIdleSocketTimeout());
+
+        factory.setIdleSocketTimeout(10000);
+
+        assertEquals(10000, factory.getIdleSocketTimeout());
+
+        assertSame(factory, factory.withIdleSocketTimeout(1000));
+        assertEquals(1000, factory.getIdleSocketTimeout());
+    }
+
+    @Test
     public void testCreateService() {
         assertNotNull(factory.createService());
     }

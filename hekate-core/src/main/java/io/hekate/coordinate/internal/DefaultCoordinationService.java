@@ -85,6 +85,8 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
     private final int nioThreads;
 
+    private final long idleSocketTimeout;
+
     @ToStringIgnore
     private final StateGuard guard = new StateGuard(CoordinationService.class);
 
@@ -115,6 +117,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
         this.nioThreads = factory.getNioThreads();
         this.failoverDelay = factory.getRetryInterval();
+        this.idleSocketTimeout = factory.getIdleSocketTimeout();
 
         StreamUtils.nullSafe(factory.getProcesses()).forEach(processesConfig::add);
     }
@@ -185,6 +188,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
                 .withName(CHANNEL_NAME)
                 .withClusterFilter(HAS_SERVICE_FILTER)
                 .withNioThreads(nioThreads)
+                .withIdleSocketTimeout(idleSocketTimeout)
                 .withLogCategory(DefaultCoordinationService.class.getName())
                 .withMessageCodec(() -> new CoordinationProtocolCodec(processCodecs))
                 .withReceiver(this::handleMessage)

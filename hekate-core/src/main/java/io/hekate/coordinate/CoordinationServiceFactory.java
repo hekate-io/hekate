@@ -44,6 +44,9 @@ public class CoordinationServiceFactory implements ServiceFactory<CoordinationSe
     /** Default value in milliseconds (={@value}) for {@link #setRetryInterval(long)}. */
     public static final int DEFAULT_RETRY_INTERVAL = 50;
 
+    /** Default value in milliseconds (={@value}) for {@link #setIdleSocketTimeout(long)}. */
+    public static final long DEFAULT_IDLE_SOCKET_TIMEOUT = 60_000;
+
     /** See {@link #setNioThreads(int)}. */
     private int nioThreads;
 
@@ -55,6 +58,9 @@ public class CoordinationServiceFactory implements ServiceFactory<CoordinationSe
 
     /** See {@link #setConfigProviders(List)}. */
     private List<CoordinationConfigProvider> configProviders;
+
+    /** See {@link #setIdleSocketTimeout(long)}. */
+    private long idleSocketTimeout = DEFAULT_IDLE_SOCKET_TIMEOUT;
 
     /**
      * Returns the size of a thread pool for handling NIO-based socket connections.
@@ -214,6 +220,52 @@ public class CoordinationServiceFactory implements ServiceFactory<CoordinationSe
         }
 
         configProviders.add(configProvider);
+
+        return this;
+    }
+
+    /**
+     * Returns the idle socket timeout in milliseconds (see {@link #setIdleSocketTimeout(long)}).
+     *
+     * @return Idle socket timeout in milliseconds.
+     */
+    public long getIdleSocketTimeout() {
+        return idleSocketTimeout;
+    }
+
+    /**
+     * Sets idle socket timeout in milliseconds.
+     *
+     * <p>
+     * If there were no communication with some remote node for the duration of this time interval then all sockets connections with such
+     * node will be closed in order to save system resource. Connections will be automatically reestablish on the next attempt to send a
+     * message to that node.
+     * </p>
+     *
+     * <p>
+     * If value of this parameter is less than or equals to zero then connections will not be closed while remote node stays
+     * alive.
+     * </p>
+     *
+     * <p>
+     * Default value of this parameter is {@value #DEFAULT_IDLE_SOCKET_TIMEOUT}.
+     * </p>
+     *
+     * @param idleSocketTimeout Timeout in milliseconds.
+     */
+    public void setIdleSocketTimeout(long idleSocketTimeout) {
+        this.idleSocketTimeout = idleSocketTimeout;
+    }
+
+    /**
+     * Fluent-style version of {@link #setIdleSocketTimeout(long)}.
+     *
+     * @param idleTimeout Timeout in milliseconds.
+     *
+     * @return This instance.
+     */
+    public CoordinationServiceFactory withIdleSocketTimeout(long idleTimeout) {
+        setIdleSocketTimeout(idleTimeout);
 
         return this;
     }

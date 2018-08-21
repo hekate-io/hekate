@@ -984,6 +984,10 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         if (coordinationEl != null) {
             BeanDefinitionBuilder coordination = newBean(CoordinationServiceFactory.class, coordinationEl);
 
+            setProperty(coordination, coordinationEl, "nioThreads", "nio-threads");
+            setProperty(coordination, coordinationEl, "retryInterval", "retry-interval-ms");
+            setProperty(coordination, coordinationEl, "idleSocketTimeout", "idle-socket-timeout-ms");
+
             ManagedList<RuntimeBeanReference> processes = new ManagedList<>();
 
             getChildElementsByTagName(coordinationEl, "process").forEach(processEl -> {
