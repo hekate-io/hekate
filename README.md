@@ -156,6 +156,8 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
   
 ## Release History
 
+ - v.2.6.0 (22-Aug-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.6.0)]
+
  - v.2.5.0 (4-Aug-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.5.0)]
 
  - v.2.4.1 (15-Jul-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.4.1)]
