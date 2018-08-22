@@ -4,7 +4,7 @@ Java Library for Cluster Discovery and Communications
 
 [![Build Status](https://travis-ci.org/hekate-io/hekate.svg?branch=master)](https://travis-ci.org/hekate-io/hekate)
 [![codecov](https://codecov.io/gh/hekate-io/hekate/branch/master/graph/badge.svg)](https://codecov.io/gh/hekate-io/hekate)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.hekate/hekate-all/badge.svg)](https://search.maven.org/#search|ga|1|io.hekate)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.hekate/hekate-all/badge.svg)](https://search.maven.org/search?q=io.hekate)
 [![Javadocs](http://javadoc.io/badge/io.hekate/hekate-all.svg)](http://javadoc.io/doc/io.hekate/hekate-all)
 
 ## License
