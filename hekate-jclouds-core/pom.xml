@@ -21,7 +21,7 @@
     <name>Hekate jClouds Core</name>
     <artifactId>hekate-jclouds-core</artifactId>
     <packaging>jar</packaging>
-    <url>${project.http.url}</url>
+    <url>${hekate.http.url}</url>
 
     <parent>
         <groupId>io.hekate</groupId>

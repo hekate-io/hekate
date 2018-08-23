@@ -21,7 +21,7 @@
     <name>Hekate jClouds AWS</name>
     <artifactId>hekate-jclouds-aws</artifactId>
     <packaging>jar</packaging>
-    <url>${project.http.url}</url>
+    <url>${hekate.http.url}</url>
 
     <parent>
         <groupId>io.hekate</groupId>

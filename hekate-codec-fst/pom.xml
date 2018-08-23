@@ -21,7 +21,7 @@
     <name>Hekate FST Codec</name>
     <artifactId>hekate-codec-fst</artifactId>
     <packaging>jar</packaging>
-    <url>${project.http.url}</url>
+    <url>${hekate.http.url}</url>
 
     <parent>
         <groupId>io.hekate</groupId>

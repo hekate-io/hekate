@@ -21,7 +21,7 @@
     <name>Hekate All-in-One</name>
     <artifactId>hekate-all</artifactId>
     <packaging>jar</packaging>
-    <url>${project.http.url}</url>
+    <url>${hekate.http.url}</url>
 
     <parent>
         <groupId>io.hekate</groupId>
