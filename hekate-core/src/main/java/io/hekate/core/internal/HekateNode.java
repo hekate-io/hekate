@@ -62,14 +62,14 @@ import io.hekate.core.service.internal.ServiceManager;
 import io.hekate.election.ElectionService;
 import io.hekate.lock.LockService;
 import io.hekate.messaging.MessagingService;
-import io.hekate.metrics.cluster.ClusterMetricsService;
-import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.NetworkServerFailure;
 import io.hekate.network.NetworkService;
 import io.hekate.rpc.RpcService;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.format.ToString;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
@@ -161,10 +161,6 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
     private final ElectionService election;
 
     private final CoordinationService coordination;
-
-    private final LocalMetricsService localMetrics;
-
-    private final ClusterMetricsService clusterMetrics;
 
     private final CodecService codec;
 
@@ -259,8 +255,11 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
         // Cluster event manager.
         clusterEvents = new ClusterEventManager(this);
 
+        // Metrics.
+        MeterRegistry metrics = boot.getMetrics() == null ? new SimpleMeterRegistry() : boot.getMetrics();
+
         // Service manager.
-        services = createServiceManager(boot.getDefaultCodec(), boot.getServices());
+        services = createServiceManager(boot.getDefaultCodec(), boot.getServices(), metrics);
 
         // Instantiate services.
         services.instantiate();
@@ -281,8 +280,6 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
         election = services.findService(ElectionService.class);
         coordination = services.findService(CoordinationService.class);
         rpc = services.findService(RpcService.class);
-        localMetrics = services.findService(LocalMetricsService.class);
-        clusterMetrics = services.findService(ClusterMetricsService.class);
     }
 
     @Override
@@ -324,16 +321,6 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
     @Override
     public CoordinationService coordination() {
         return coordination;
-    }
-
-    @Override
-    public LocalMetricsService localMetrics() {
-        return localMetrics;
-    }
-
-    @Override
-    public ClusterMetricsService clusterMetrics() {
-        return clusterMetrics;
     }
 
     @Override
@@ -1200,26 +1187,27 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
         });
     }
 
-    private ServiceManager createServiceManager(CodecFactory<Object> codec, List<ServiceFactory<? extends Service>> services) {
+    private ServiceManager createServiceManager(
+        CodecFactory<Object> codec,
+        List<ServiceFactory<? extends Service>> services, MeterRegistry metrics
+    ) {
         // Wrap codec factory.
         CodecFactory<Object> defaultCodec = HekateCodecHelper.wrap(codec, this);
 
         // Prepare built-in services.
-        List<Service> builtIn = singletonList(new DefaultCodecService(defaultCodec));
+        List<Service> builtInServices = singletonList(new DefaultCodecService(defaultCodec));
 
         // Prepare core services.
-        List<Class<? extends Service>> core = new ArrayList<>();
+        List<Class<? extends Service>> coreServices = new ArrayList<>();
 
-        core.add(ResourceService.class);
-        core.add(NetworkService.class);
-        core.add(ClusterService.class);
-        core.add(MessagingService.class);
-        core.add(RpcService.class);
-        core.add(LocalMetricsService.class);
-        core.add(ClusterMetricsService.class);
-        core.add(LockService.class);
-        core.add(ElectionService.class);
-        core.add(CoordinationService.class);
+        coreServices.add(ResourceService.class);
+        coreServices.add(NetworkService.class);
+        coreServices.add(ClusterService.class);
+        coreServices.add(MessagingService.class);
+        coreServices.add(RpcService.class);
+        coreServices.add(LockService.class);
+        coreServices.add(ElectionService.class);
+        coreServices.add(CoordinationService.class);
 
         // Prepare custom services.
         List<ServiceFactory<? extends Service>> factories = new ArrayList<>();
@@ -1227,7 +1215,15 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
         // Filter out null values.
         nullSafe(services).forEach(factories::add);
 
-        return new ServiceManager(nodeName, clusterName, this, builtIn, core, factories);
+        return new ServiceManager(
+            nodeName,
+            clusterName,
+            this,
+            builtInServices,
+            coreServices,
+            factories,
+            metrics
+        );
     }
 
     private List<ClusterNode> getDiff(Set<ClusterNode> oldNodes, Set<ClusterNode> newNodes) {

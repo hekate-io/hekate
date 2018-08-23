@@ -1185,21 +1185,15 @@ class MessagingGatewayContext<T> implements HekateSupport {
     }
 
     private void onAsyncEnqueue() {
-        if (metrics != null) {
-            metrics.onAsyncDequeue();
-        }
+        metrics.onAsyncDequeue();
     }
 
     private void onAsyncDequeue() {
-        if (metrics != null) {
-            metrics.onAsyncEnqueue();
-        }
+        metrics.onAsyncEnqueue();
     }
 
     private void onRetry() {
-        if (metrics != null) {
-            metrics.onRetry();
-        }
+        metrics.onRetry();
     }
 
     private void notifyOnErrorAsync(MessageContext<T> ctx, Object callback, Throwable err) {

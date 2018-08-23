@@ -48,7 +48,6 @@ import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.MessagingOverflowPolicy;
 import io.hekate.messaging.MessagingService;
 import io.hekate.messaging.MessagingServiceFactory;
-import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.NetworkConfigProvider;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkConnectorConfig;
@@ -59,6 +58,7 @@ import io.hekate.network.NetworkService;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -101,7 +101,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     private ClusterService cluster;
 
-    private LocalMetricsService metrics;
+    private MeterRegistry metrics;
 
     private JmxService jmx;
 
@@ -117,12 +117,12 @@ public class DefaultMessagingService implements MessagingService, DependentServi
     @Override
     public void resolve(DependencyContext ctx) {
         hekate = ctx.hekate();
+        metrics = ctx.metrics();
 
         net = ctx.require(NetworkService.class);
         cluster = ctx.require(ClusterService.class);
         codec = ctx.require(CodecService.class);
 
-        metrics = ctx.optional(LocalMetricsService.class);
         jmx = ctx.optional(JmxService.class);
     }
 
@@ -402,7 +402,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         }
 
         // Prepare metrics.
-        MessagingMetrics channelMetrics = metrics != null ? new MessagingMetrics(name, metrics) : null;
+        MessagingMetrics channelMetrics = new MessagingMetrics(name, metrics);
 
         // Make sure that receiver is guarded with lock.
         MessageReceiver<T> guardedReceiver = applyGuard(gateway.unguardedReceiver());

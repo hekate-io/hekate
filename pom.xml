@@ -25,7 +25,7 @@
     <parent>
         <groupId>io.hekate</groupId>
         <artifactId>hekate-parent</artifactId>
-        <version>2.6.0</version>
+        <version>3.0.0-SNAPSHOT</version>
         <relativePath>hekate-parent</relativePath>
     </parent>
 
@@ -40,9 +40,6 @@
         <module>hekate-kubernetes</module>
         <module>hekate-jclouds-core</module>
         <module>hekate-jclouds-aws</module>
-        <module>hekate-metrics-influxdb</module>
-        <module>hekate-metrics-statsd</module>
-        <module>hekate-metrics-cloudwatch</module>
         <module>hekate-all</module>
     </modules>
 

@@ -16,34 +16,33 @@
 
 package io.hekate.lock.internal;
 
-import io.hekate.metrics.local.CounterConfig;
-import io.hekate.metrics.local.CounterMetric;
-import io.hekate.metrics.local.LocalMetricsService;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import java.util.concurrent.atomic.LongAdder;
 
 class LockRegionMetrics {
-    private final CounterMetric locks;
+    private final LongAdder locksActive = new LongAdder();
 
-    private final CounterMetric locksActive;
+    private final Counter locks;
 
-    public LockRegionMetrics(String name, LocalMetricsService service) {
+    public LockRegionMetrics(String name, MeterRegistry metrics) {
         assert name != null : "Name is null.";
-        assert service != null : "Metrics service is null.";
+        assert metrics != null : "Meter registry is null.";
 
-        String prefix = name + ".locks";
+        locks = Counter.builder("hekate.lock.count")
+            .tag("region", name)
+            .register(metrics);
 
-        locksActive = service.register(new CounterConfig(prefix + ".active"));
-
-        locks = service.register(new CounterConfig()
-            .withName(prefix + ".interim")
-            .withTotalName(prefix + ".total")
-            .withAutoReset(true)
-        );
+        Gauge.builder("hekate.lock.active", locksActive, LongAdder::doubleValue)
+            .tag("region", name)
+            .register(metrics);
     }
 
     public void onLock() {
-        locksActive.increment();
-
         locks.increment();
+
+        locksActive.increment();
     }
 
     public void onUnlock() {

@@ -17,10 +17,5 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   io.hekate.spring.boot.rpc.HekateRpcServiceConfigurer,\
   io.hekate.spring.boot.coordination.HekateCoordinationServiceConfigurer,\
   io.hekate.spring.boot.election.HekateElectionServiceConfigurer,\
-  io.hekate.spring.boot.lock.HekateLockServiceConfigurer,\
-  io.hekate.spring.boot.metrics.cluster.HekateClusterMetricsServiceConfigurer,\
-  io.hekate.spring.boot.metrics.local.HekateLocalMetricsServiceConfigurer,\
-  io.hekate.spring.boot.metrics.local.HekateLocalMetricsPublisherConfigurer,\
-  io.hekate.spring.boot.metrics.influxdb.InfluxDbMetricsPluginConfigurer,\
-  io.hekate.spring.boot.metrics.cloudwatch.CloudWatchMetricsPluginConfigurer,\
-  io.hekate.spring.boot.metrics.statsd.StatsdMetricsPluginConfigurer
+  io.hekate.spring.boot.lock.HekateLockServiceConfigurer
+

@@ -50,11 +50,6 @@ import io.hekate.lock.LockServiceFactory;
 import io.hekate.messaging.MessagingBackPressureConfig;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingServiceFactory;
-import io.hekate.metrics.cluster.ClusterMetricsServiceFactory;
-import io.hekate.metrics.local.CounterConfig;
-import io.hekate.metrics.local.LocalMetricsServiceFactory;
-import io.hekate.metrics.local.ProbeConfig;
-import io.hekate.metrics.local.TimerConfig;
 import io.hekate.network.NetworkConnectorConfig;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.rpc.RpcClientConfig;
@@ -70,11 +65,6 @@ import io.hekate.spring.bean.lock.LockRegionBean;
 import io.hekate.spring.bean.lock.LockServiceBean;
 import io.hekate.spring.bean.messaging.MessagingChannelBean;
 import io.hekate.spring.bean.messaging.MessagingServiceBean;
-import io.hekate.spring.bean.metrics.ClusterMetricsServiceBean;
-import io.hekate.spring.bean.metrics.CounterMetricBean;
-import io.hekate.spring.bean.metrics.LocalMetricsServiceBean;
-import io.hekate.spring.bean.metrics.MetricBean;
-import io.hekate.spring.bean.metrics.TimerMetricBean;
 import io.hekate.spring.bean.network.NetworkConnectorBean;
 import io.hekate.spring.bean.network.NetworkServiceBean;
 import io.hekate.spring.bean.rpc.RpcClientBean;
@@ -167,8 +157,6 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         parseLockService(rootEl, ctx).ifPresent(services::add);
         parseCoordinationService(rootEl, ctx).ifPresent(services::add);
         parseElectionService(rootEl, ctx).ifPresent(services::add);
-        parseLocalMetricsService(rootEl, ctx).ifPresent(services::add);
-        parseClusterMetricsService(rootEl, ctx).ifPresent(services::add);
 
         subElements(rootEl, "custom-services", "service").forEach(serviceEl ->
             parseRefOrBean(serviceEl, ctx).ifPresent(services::add)
@@ -1048,125 +1036,6 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             }
 
             return Optional.of(registerInnerBean(leader, ctx));
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    private Optional<RuntimeBeanReference> parseLocalMetricsService(Element rootEl, ParserContext ctx) {
-        Element metricsEl = getChildElementByTagName(rootEl, "local-metrics");
-
-        if (metricsEl != null) {
-            BeanDefinitionBuilder metrics = newBean(LocalMetricsServiceFactory.class, metricsEl);
-
-            ManagedList<RuntimeBeanReference> allMetrics = new ManagedList<>();
-            ManagedList<RuntimeBeanReference> listeners = new ManagedList<>();
-
-            subElements(metricsEl, "counters", "counter").forEach(counterEl -> {
-                BeanDefinitionBuilder counter = newBean(CounterConfig.class, counterEl);
-
-                setProperty(counter, counterEl, "name", "name");
-                setProperty(counter, counterEl, "totalName", "total-name");
-                setProperty(counter, counterEl, "autoReset", "auto-reset");
-
-                allMetrics.add(registerInnerBean(counter, ctx));
-
-                String name = counterEl.getAttribute("name");
-
-                if (!name.isEmpty()) {
-                    BeanDefinitionBuilder counterBean = newLazyBean(CounterMetricBean.class, metricsEl);
-
-                    setProperty(counterBean, counterEl, "name", "name");
-
-                    deferredBaseBeans.put(counterBean, name);
-                }
-            });
-
-            subElements(metricsEl, "probes", "probe").forEach(probeEl -> {
-                BeanDefinitionBuilder probe = newBean(ProbeConfig.class, probeEl);
-
-                setProperty(probe, probeEl, "name", "name");
-                setProperty(probe, probeEl, "initValue", "init-value");
-
-                parseRefOrBean(probeEl, ctx).ifPresent(bean ->
-                    probe.addPropertyValue("probe", bean)
-                );
-
-                allMetrics.add(registerInnerBean(probe, ctx));
-
-                String name = probeEl.getAttribute("name");
-
-                if (!name.isEmpty()) {
-                    BeanDefinitionBuilder probeBean = newLazyBean(MetricBean.class, metricsEl);
-
-                    setProperty(probeBean, probeEl, "name", "name");
-
-                    deferredBaseBeans.put(probeBean, name);
-                }
-            });
-
-            subElements(metricsEl, "timers", "timer").forEach(timerEl -> {
-                BeanDefinitionBuilder timer = newBean(TimerConfig.class, timerEl);
-
-                setProperty(timer, timerEl, "name", "name");
-                setProperty(timer, timerEl, "rateName", "rate-name");
-                setProperty(timer, timerEl, "timeUnit", "unit");
-
-                allMetrics.add(registerInnerBean(timer, ctx));
-
-                String name = timerEl.getAttribute("name");
-
-                if (!name.isEmpty()) {
-                    BeanDefinitionBuilder timerBean = newLazyBean(TimerMetricBean.class, metricsEl);
-
-                    setProperty(timerBean, timerEl, "name", "name");
-
-                    deferredBaseBeans.put(timerBean, name);
-                }
-            });
-
-            subElements(metricsEl, "listeners", "listener").forEach(listenerEl ->
-                parseRefOrBean(listenerEl, ctx).ifPresent(listeners::add)
-            );
-
-            if (!allMetrics.isEmpty()) {
-                metrics.addPropertyValue("metrics", allMetrics);
-            }
-
-            if (!listeners.isEmpty()) {
-                metrics.addPropertyValue("listeners", listeners);
-            }
-
-            String id = metricsEl.getAttribute("id");
-
-            if (!id.isEmpty()) {
-                deferredBaseBeans.put(newLazyBean(LocalMetricsServiceBean.class, metricsEl), id);
-            }
-
-            return Optional.of(registerInnerBean(metrics, ctx));
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    private Optional<RuntimeBeanReference> parseClusterMetricsService(Element rootEl, ParserContext ctx) {
-        Element metricsEl = getChildElementByTagName(rootEl, "cluster-metrics");
-
-        if (metricsEl != null) {
-            BeanDefinitionBuilder metrics = newBean(ClusterMetricsServiceFactory.class, metricsEl);
-
-            setProperty(metrics, metricsEl, "enabled", "enabled");
-            setProperty(metrics, metricsEl, "replicationInterval", "replication-interval-ms");
-
-            setBeanOrRef(metrics, metricsEl, "replicationFilter", "filter", ctx);
-
-            String id = metricsEl.getAttribute("id");
-
-            if (!id.isEmpty()) {
-                deferredBaseBeans.put(newLazyBean(ClusterMetricsServiceBean.class, metricsEl), id);
-            }
-
-            return Optional.of(registerInnerBean(metrics, ctx));
         } else {
             return Optional.empty();
         }

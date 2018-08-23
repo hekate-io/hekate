@@ -40,11 +40,6 @@ import io.hekate.lock.LockRegion;
 import io.hekate.lock.LockService;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingService;
-import io.hekate.metrics.Metric;
-import io.hekate.metrics.cluster.ClusterMetricsService;
-import io.hekate.metrics.local.CounterMetric;
-import io.hekate.metrics.local.LocalMetricsService;
-import io.hekate.metrics.local.TimerMetric;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkService;
 import io.hekate.rpc.RpcClientBuilder;
@@ -52,7 +47,6 @@ import io.hekate.rpc.RpcServerInfo;
 import io.hekate.rpc.RpcService;
 import io.hekate.util.format.ToString;
 import java.lang.management.ManagementFactory;
-import java.util.concurrent.TimeUnit;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -99,14 +93,6 @@ public class XsdSingleNodeTest extends HekateTestBase {
     private SomeRpcService rpcClient;
 
     @Autowired
-    @Qualifier("metrics")
-    private LocalMetricsService metrics;
-
-    @Autowired
-    @Qualifier("clusterMetrics")
-    private ClusterMetricsService clusterMetrics;
-
-    @Autowired
     @Qualifier("coordination")
     private CoordinationService coordination;
 
@@ -134,18 +120,6 @@ public class XsdSingleNodeTest extends HekateTestBase {
     @Qualifier("someLock1")
     private DistributedLock lock;
 
-    @Autowired
-    @Qualifier("counter1")
-    private CounterMetric counter;
-
-    @Autowired
-    @Qualifier("probe1")
-    private Metric probe;
-
-    @Autowired
-    @Qualifier("timer1")
-    private TimerMetric timer;
-
     @Test
     public void test() {
         assertNotNull(bootstrap);
@@ -155,8 +129,6 @@ public class XsdSingleNodeTest extends HekateTestBase {
         assertNotNull(messaging);
         assertNotNull(rpc);
         assertNotNull(rpcClient);
-        assertNotNull(metrics);
-        assertNotNull(clusterMetrics);
         assertNotNull(coordination);
         assertNotNull(election);
         assertNotNull(network);
@@ -164,13 +136,6 @@ public class XsdSingleNodeTest extends HekateTestBase {
         assertNotNull(messagingChannel);
         assertNotNull(lockRegion);
         assertNotNull(lock);
-        assertNotNull(counter);
-        assertNotNull(probe);
-
-        assertNotNull(timer);
-        assertSame(TimeUnit.SECONDS, timer.timeUnit());
-        assertTrue(timer.hasRate());
-        assertEquals("timer1.rate", timer.rate().name());
 
         verifyJmx();
 

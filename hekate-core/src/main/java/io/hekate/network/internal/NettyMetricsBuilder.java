@@ -16,31 +16,18 @@
 
 package io.hekate.network.internal;
 
-import io.hekate.metrics.local.CounterConfig;
-import io.hekate.metrics.local.CounterMetric;
-import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.netty.NettyMetricsFactory;
 import io.hekate.network.netty.NettyMetricsSink;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import java.util.concurrent.atomic.LongAdder;
 
 class NettyMetricsBuilder {
-    private static final String METRIC_CONNECTIONS_TOTAL = "connections.total";
+    private final MeterRegistry metrics;
 
-    private static final String METRIC_CONNECTIONS_ACTIVE = "connections.active";
-
-    private static final String METRIC_MSG_QUEUE = "messages.queue";
-
-    private static final String METRIC_MSG_OUT = "messages.out";
-
-    private static final String METRIC_MSG_IN = "messages.in";
-
-    private static final String METRIC_BYTES_IN = "bytes.in";
-
-    private static final String METRIC_BYTES_OUT = "bytes.out";
-
-    private final LocalMetricsService metrics;
-
-    public NettyMetricsBuilder(LocalMetricsService metrics) {
-        assert metrics != null : "Metrics service is null.";
+    public NettyMetricsBuilder(MeterRegistry metrics) {
+        assert metrics != null : "Metrics registry is null.";
 
         this.metrics = metrics;
     }
@@ -54,122 +41,85 @@ class NettyMetricsBuilder {
     }
 
     private NettyMetricsFactory doCreateFactory() {
-        // Overall bytes.
-        CounterMetric globalBytesSent = counter(METRIC_BYTES_OUT, true, true);
-        CounterMetric globalBytesReceived = counter(METRIC_BYTES_IN, true, true);
-
-        // Overall messages.
-        CounterMetric globalMsgSent = counter(METRIC_MSG_OUT, true, true);
-        CounterMetric globalMsgReceived = counter(METRIC_MSG_IN, true, true);
-        CounterMetric globalMsgQueue = counter(METRIC_MSG_QUEUE, false, false);
-
-        // Overall connections.
-        CounterMetric globalConns = counter(METRIC_CONNECTIONS_TOTAL, false, false);
-        CounterMetric globalConnsAct = counter(METRIC_CONNECTIONS_ACTIVE, false, false);
-
         return protocol -> {
             // Bytes.
-            CounterMetric bytesSent = counter(METRIC_BYTES_OUT, protocol, true, true);
-            CounterMetric bytesReceived = counter(METRIC_BYTES_IN, protocol, true, true);
+            Counter bytesSent = Counter.builder("hekate.network.bytes.out")
+                .tag("protocol", protocol)
+                .register(metrics);
+
+            Counter bytesReceived = Counter.builder("hekate.network.bytes.in")
+                .tag("protocol", protocol)
+                .register(metrics);
 
             // Messages.
-            CounterMetric msgQueue = counter(METRIC_MSG_QUEUE, protocol, false, false);
-            CounterMetric msgSent = counter(METRIC_MSG_OUT, protocol, true, true);
-            CounterMetric msgReceived = counter(METRIC_MSG_IN, protocol, true, true);
+            Counter msgSent = Counter.builder("hekate.network.message.out")
+                .tag("protocol", protocol)
+                .register(metrics);
+
+            Counter msgReceived = Counter.builder("hekate.network.message.in")
+                .tag("protocol", protocol)
+                .register(metrics);
+
+            LongAdder msgQueue = new LongAdder();
+
+            Gauge.builder("hekate.network.message.queue", msgQueue, LongAdder::doubleValue)
+                .tag("protocol", protocol)
+                .register(metrics);
 
             // Connections.
-            CounterMetric conns = counter(METRIC_CONNECTIONS_TOTAL, protocol, false, false);
-            CounterMetric connsAct = counter(METRIC_CONNECTIONS_ACTIVE, protocol, false, false);
+            Counter conns = Counter.builder("hekate.network.connection.count")
+                .tag("protocol", protocol)
+                .register(metrics);
+
+            LongAdder connsAct = new LongAdder();
+
+            Gauge.builder("hekate.network.connection.active", connsAct, LongAdder::doubleValue)
+                .tag("protocol", protocol)
+                .register(metrics);
 
             return new NettyMetricsSink() {
                 @Override
                 public void onBytesSent(long bytes) {
-                    bytesSent.add(bytes);
-
-                    globalBytesSent.add(bytes);
+                    bytesSent.increment(bytes);
                 }
 
                 @Override
                 public void onBytesReceived(long bytes) {
-                    bytesReceived.add(bytes);
-
-                    globalBytesReceived.add(bytes);
+                    bytesReceived.increment(bytes);
                 }
 
                 @Override
                 public void onMessageSent() {
                     msgSent.increment();
-
-                    globalMsgSent.increment();
                 }
 
                 @Override
                 public void onMessageReceived() {
                     msgReceived.increment();
-
-                    globalMsgReceived.increment();
                 }
 
                 @Override
                 public void onMessageEnqueue() {
                     msgQueue.increment();
-
-                    globalMsgQueue.increment();
                 }
 
                 @Override
                 public void onMessageDequeue() {
                     msgQueue.decrement();
-
-                    globalMsgQueue.decrement();
                 }
 
                 @Override
                 public void onConnect() {
                     connsAct.increment();
-                    globalConnsAct.increment();
 
                     conns.increment();
-                    globalConns.increment();
                 }
 
                 @Override
                 public void onDisconnect() {
                     connsAct.decrement();
-                    globalConnsAct.decrement();
                 }
             };
         };
-    }
-
-    private CounterMetric counter(String name, boolean autoReset, boolean withTotal) {
-        return counter(name, null, autoReset, withTotal);
-    }
-
-    private CounterMetric counter(String name, String protocol, boolean autoReset, boolean withTotal) {
-        String counterName = "";
-
-        if (protocol != null) {
-            counterName += protocol + '.';
-        } else {
-            counterName += "hekate.";
-        }
-
-        counterName += "network.";
-
-        counterName += name;
-
-        CounterConfig cfg = new CounterConfig(counterName);
-
-        cfg.setAutoReset(autoReset);
-
-        if (withTotal) {
-            cfg.setName(counterName + ".interim");
-            cfg.setTotalName(counterName + ".total");
-        } else {
-            cfg.setName(counterName);
-        }
-
-        return metrics.register(cfg);
     }
 }

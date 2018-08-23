@@ -39,7 +39,6 @@ import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.NetworkBindCallback;
 import io.hekate.core.service.NetworkServiceManager;
 import io.hekate.core.service.TerminatingService;
-import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkClientCallback;
 import io.hekate.network.NetworkConfigProvider;
@@ -60,7 +59,6 @@ import io.hekate.network.PingCallback;
 import io.hekate.network.PingResult;
 import io.hekate.network.address.AddressSelector;
 import io.hekate.network.netty.NettyClientFactory;
-import io.hekate.network.netty.NettyMetricsSink;
 import io.hekate.network.netty.NettyServer;
 import io.hekate.network.netty.NettyServerFactory;
 import io.hekate.network.netty.NettyServerHandlerConfig;
@@ -251,11 +249,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
         jmx = ctx.optional(JmxService.class);
 
-        LocalMetricsService metricsService = ctx.optional(LocalMetricsService.class);
-
-        if (metricsService != null) {
-            metrics = new NettyMetricsBuilder(metricsService);
-        }
+        metrics = new NettyMetricsBuilder(ctx.metrics());
     }
 
     @Override
@@ -392,9 +386,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
             }
 
             // Enable server metrics gathering.
-            if (metrics != null) {
-                server.setMetrics(metrics.createServerFactory());
-            }
+            server.setMetrics(metrics.createServerFactory());
 
             // Register connectors.
             connectorConfigs.forEach(cfg -> {
@@ -693,11 +685,13 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         // Prepare factory.
         NettyClientFactory<T> factory = createClientFactory();
 
+        // Connector-specific properties.
         factory.setProtocol(protocol);
         factory.setCodecFactory(codecFactory);
         factory.setIdleTimeout(cfg.getIdleSocketTimeout());
         factory.setLoggerCategory(cfg.getLogCategory());
 
+        // Common properties.
         factory.setConnectTimeout(connectTimeout);
         factory.setSoReceiveBufferSize(soReceiveBufferSize);
         factory.setSoSendBufferSize(soSendBufferSize);
@@ -705,13 +699,11 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         factory.setTcpNoDelay(tcpNoDelay);
         factory.setSsl(clientSsl);
 
+        // Event loop.
         factory.setEventLoop(eventLoop);
 
-        if (metrics != null) {
-            NettyMetricsSink metricsSink = metrics.createClientFactory().createSink(protocol);
-
-            factory.setMetrics(metricsSink);
-        }
+        // Metrics.
+        factory.setMetrics(metrics.createClientFactory().createSink(protocol));
 
         // Prepare server handler (if configured).
         NettyServerHandlerConfig<T> handlerCfg = null;

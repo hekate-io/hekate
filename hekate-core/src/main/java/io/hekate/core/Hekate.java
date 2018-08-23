@@ -30,8 +30,6 @@ import io.hekate.core.service.ServiceFactory;
 import io.hekate.election.ElectionService;
 import io.hekate.lock.LockService;
 import io.hekate.messaging.MessagingService;
-import io.hekate.metrics.cluster.ClusterMetricsService;
-import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.NetworkService;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.rpc.RpcService;
@@ -71,9 +69,6 @@ import java.util.Set;
  * </li>
  * <li>
  * <b>{@link NetworkService Networking}</b> - provides configuration options and low level API for network communications
- * </li>
- * <li>
- * <b>{@link LocalMetricsService Metrics}</b> -  provides support for managing user-defined metrics
  * </li>
  * <li>
  * <b>{@link CodecService Data Encoding/Decoding}</b> - provides abstraction layer of data serialization API
@@ -299,20 +294,6 @@ public interface Hekate extends HekateSupport {
      * @return Service.
      */
     CoordinationService coordination();
-
-    /**
-     * Returns the {@link LocalMetricsService}.
-     *
-     * @return Service.
-     */
-    LocalMetricsService localMetrics();
-
-    /**
-     * Returns the {@link ClusterMetricsService}.
-     *
-     * @return Service.
-     */
-    ClusterMetricsService clusterMetrics();
 
     /**
      * Returns the {@link NetworkService}.

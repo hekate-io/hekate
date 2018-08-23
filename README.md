@@ -58,21 +58,15 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
     - Synchronous and Asynchronous Reentrant Locks
     - Decentralized Lock Management
     - Configurable Lock Groups (aka Lock Regions)
-
-- **Distributed Metrics**
-    - Custom Metrics (User-defined Counters and Probes)
-    - Cluster-wide (Nodes can See Metrics of Other Nodes)
-    - Metrics-based Load Balancing (_planned_)
-    - Recording and Analysis
-        - [StatsD](https://github.com/etsy/statsd)
-        - [InfluxDB](https://www.influxdata.com/time-series-platform/influxdb/)
-        - [CloudWatch](https://aws.amazon.com/cloudwatch/) 
                 
-- **Spring Framework/Boot Support (optional)**
+- **Spring Boot/Framework Support (optional)**
+    - [Spring Boot](https://spring.io/projects/spring-boot) Auto-configurations and @Annotations
     - Spring-compliant Beans
     - [Spring XML Schema](https://docs.spring.io/spring/docs/4.3.x/spring-framework-reference/html/xsd-configuration.html) 
       to Simplify Configuration
-    - [Spring Boot](https://spring.io/projects/spring-boot) Auto-configurations and @Annotations
+
+- **Metrics**
+    - Internal metrics recording and publishing via [Micrometer.io](https://micrometer.io/): 
 
 - **Raft-based Replicated State Machines (_planned_)**
 
@@ -93,7 +87,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring-boot</artifactId>
-    <version>2.6.0</version>
+    <version>3.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -102,7 +96,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring</artifactId>
-    <version>2.6.0</version>
+    <version>3.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -111,7 +105,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-core</artifactId>
-    <version>2.6.0</version>
+    <version>3.0.0-SNAPSHOT</version>
 </dependency>
 ```
 

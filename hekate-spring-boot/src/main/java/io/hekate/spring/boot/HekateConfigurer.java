@@ -32,18 +32,12 @@ import io.hekate.spring.boot.coordination.HekateCoordinationServiceConfigurer;
 import io.hekate.spring.boot.election.HekateElectionServiceConfigurer;
 import io.hekate.spring.boot.lock.HekateLockServiceConfigurer;
 import io.hekate.spring.boot.messaging.HekateMessagingServiceConfigurer;
-import io.hekate.spring.boot.metrics.cluster.HekateClusterMetricsServiceConfigurer;
-import io.hekate.spring.boot.metrics.local.HekateLocalMetricsServiceConfigurer;
 import io.hekate.spring.boot.network.HekateNetworkServiceConfigurer;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.actuate.autoconfigure.ConditionalOnEnabledHealthIndicator;
-import org.springframework.boot.actuate.autoconfigure.EndpointAutoConfiguration;
-import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -127,8 +121,6 @@ import org.springframework.stereotype.Component;
  * <li>{@link HekateClusterServiceConfigurer}</li>
  * <li>{@link HekateMessagingServiceConfigurer}</li>
  * <li>{@link HekateNetworkServiceConfigurer}</li>
- * <li>{@link HekateLocalMetricsServiceConfigurer}</li>
- * <li>{@link HekateClusterMetricsServiceConfigurer}</li>
  * <li>{@link HekateLockServiceConfigurer}</li>
  * <li>{@link HekateCoordinationServiceConfigurer}</li>
  * <li>{@link HekateElectionServiceConfigurer}</li>
@@ -162,27 +154,11 @@ import org.springframework.stereotype.Component;
  * method in order to start joining the cluster. Alternative value of this property is {@code 'app-ready'} which will fall back to the
  * default behavior.
  * </p>
- *
- * @see HekateHealthIndicator
  */
 @Configuration
 @ConditionalOnMissingBean(Hekate.class)
 @ConditionalOnProperty(name = "hekate.enable", havingValue = "true", matchIfMissing = true)
 public class HekateConfigurer {
-    /**
-     * Exposes {@link Hekate} node state as a health-check endpoint for Spring Actuator.
-     */
-    @Configuration
-    @AutoConfigureBefore(EndpointAutoConfiguration.class)
-    @ConditionalOnClass(HealthIndicator.class)
-    @ConditionalOnEnabledHealthIndicator("hekate")
-    static class HekateHealthIndicatorConfigurer {
-        @Bean
-        public HekateHealthIndicator hekateHealthIndicator(Hekate node) {
-            return new HekateHealthIndicator(node);
-        }
-    }
-
     /**
      * Handler for {@link HekateSpringBootstrap#setDeferredJoin(boolean) deferred join}.
      *
@@ -229,6 +205,8 @@ public class HekateConfigurer {
 
     private final List<LifecycleListener> listeners;
 
+    private final MeterRegistry metrics;
+
     /**
      * Constructs new instance with autowired dependencies.
      *
@@ -236,6 +214,7 @@ public class HekateConfigurer {
      * @param services All {@link ServiceFactory}s found in the application context.
      * @param plugins All {@link Plugin}s found in the application context.
      * @param listeners All {@link LifecycleListener}s found in the application context.
+     * @param metrics Metrics registry.
      * @param codec Default codec factory.
      */
     public HekateConfigurer(
@@ -243,6 +222,7 @@ public class HekateConfigurer {
         Optional<List<ServiceFactory<?>>> services,
         Optional<List<Plugin>> plugins,
         Optional<List<LifecycleListener>> listeners,
+        Optional<MeterRegistry> metrics,
         @Qualifier("default") Optional<CodecFactory<Object>> codec
     ) {
         this.services = services.orElse(null);
@@ -250,6 +230,7 @@ public class HekateConfigurer {
         this.propertyProviders = propertyProviders.orElse(null);
         this.listeners = listeners.orElse(null);
         this.codec = codec.orElse(null);
+        this.metrics = metrics.orElse(null);
     }
 
     /**
@@ -270,17 +251,18 @@ public class HekateConfigurer {
     @Bean
     @ConfigurationProperties(prefix = "hekate")
     public HekateSpringBootstrap hekate() {
-        HekateSpringBootstrap factory = new HekateSpringBootstrap();
+        HekateSpringBootstrap boot = new HekateSpringBootstrap();
 
-        factory.setServices(services);
-        factory.setPlugins(plugins);
-        factory.setPropertyProviders(propertyProviders);
-        factory.setLifecycleListeners(listeners);
+        boot.setServices(services);
+        boot.setPlugins(plugins);
+        boot.setPropertyProviders(propertyProviders);
+        boot.setLifecycleListeners(listeners);
+        boot.setMetrics(metrics);
 
         if (codec != null) {
-            factory.setDefaultCodec(codec);
+            boot.setDefaultCodec(codec);
         }
 
-        return factory;
+        return boot;
     }
 }
