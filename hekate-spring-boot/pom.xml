@@ -21,7 +21,7 @@
     <name>Hekate Spring Boot</name>
     <artifactId>hekate-spring-boot</artifactId>
     <packaging>jar</packaging>
-    <url>${project.http.url}</url>
+    <url>${hekate.http.url}</url>
 
     <parent>
         <groupId>io.hekate</groupId>

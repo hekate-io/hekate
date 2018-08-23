@@ -21,7 +21,7 @@
     <name>Hekate Core</name>
     <artifactId>hekate-core</artifactId>
     <packaging>jar</packaging>
-    <url>${project.http.url}</url>
+    <url>${hekate.http.url}</url>
 
     <parent>
         <groupId>io.hekate</groupId>
@@ -48,6 +48,11 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport-native-epoll</artifactId>
         </dependency>
 
         <dependency>
@@ -118,13 +123,6 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-transport-native-epoll</artifactId>
-            <classifier>linux-x86_64</classifier>
             <scope>test</scope>
         </dependency>
 

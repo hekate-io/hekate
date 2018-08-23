@@ -1111,9 +1111,11 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             } else if (beanEl != null) {
                 BeanDefinitionHolder holder = ctx.getDelegate().parseBeanDefinitionElement(beanEl);
 
-                ctx.registerBeanComponent(new BeanComponentDefinition(holder.getBeanDefinition(), holder.getBeanName()));
+                if (holder != null) {
+                    ctx.registerBeanComponent(new BeanComponentDefinition(holder.getBeanDefinition(), holder.getBeanName()));
 
-                return Optional.of(new RuntimeBeanReference(holder.getBeanName()));
+                    return Optional.of(new RuntimeBeanReference(holder.getBeanName()));
+                }
             }
         }
 
