@@ -43,7 +43,7 @@ class RequestRegistry<T> {
 
             // Do not overwrite very very very old requests.
             if (requests.putIfAbsent(id, req) == null) {
-                onRequestRegister();
+                metrics.onPendingRequestAdded();
 
                 if (route.ctx().opts().hasTimeout()) {
                     // Unregister if messaging operation gets timed out.
@@ -72,7 +72,7 @@ class RequestRegistry<T> {
             }
         }
 
-        onRequestUnregister(removed.size());
+        metrics.onPendingRequestsRemoved(removed.size());
 
         return removed;
     }
@@ -85,23 +85,11 @@ class RequestRegistry<T> {
         RequestHandle<T> req = requests.remove(id);
 
         if (req != null) {
-            onRequestUnregister(1);
+            metrics.onPendingRequestsRemoved(1);
 
             return true;
         }
 
         return false;
-    }
-
-    private void onRequestRegister() {
-        if (metrics != null) {
-            metrics.onPendingRequestAdded();
-        }
-    }
-
-    private void onRequestUnregister(int amount) {
-        if (metrics != null) {
-            metrics.onPendingRequestsRemoved(amount);
-        }
     }
 }

@@ -26,7 +26,7 @@
     <parent>
         <groupId>io.hekate</groupId>
         <artifactId>hekate-parent</artifactId>
-        <version>2.6.0</version>
+        <version>3.0.0-SNAPSHOT</version>
         <relativePath>../hekate-parent</relativePath>
     </parent>
 
@@ -78,28 +78,7 @@
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
-
-        <dependency>
-            <artifactId>hekate-metrics-influxdb</artifactId>
-            <groupId>${project.groupId}</groupId>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <artifactId>hekate-metrics-statsd</artifactId>
-            <groupId>${project.groupId}</groupId>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <artifactId>hekate-metrics-cloudwatch</artifactId>
-            <groupId>${project.groupId}</groupId>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
-
+        
         <dependency>
             <groupId>de.ruedigermoeller</groupId>
             <artifactId>fst</artifactId>

@@ -118,6 +118,7 @@ class LockControllerClient {
         assert localNode != null : "Cluster node is null.";
         assert lock != null : "Lock is null.";
         assert channel != null : "Channel is null.";
+        assert metrics != null : "Metrics are null.";
         assert cleanupCallback != null : "Cleanup callback is null.";
 
         this.key = new LockKey(lock.regionName(), lock.name());
@@ -231,9 +232,7 @@ class LockControllerClient {
             }
 
             if (unlockFuture.complete(true)) {
-                if (metrics != null) {
-                    metrics.onUnlock();
-                }
+                metrics.onUnlock();
 
                 if (asyncCallback != null) {
                     asyncCallback.onLockRelease();
@@ -304,9 +303,7 @@ class LockControllerClient {
 
                     lockOwner = new DefaultLockOwnerInfo(threadId, topology.localNode());
 
-                    if (metrics != null) {
-                        metrics.onLock();
-                    }
+                    metrics.onLock();
 
                     lockFuture.complete(true);
 
@@ -408,11 +405,9 @@ class LockControllerClient {
                 case UNLOCKING: {
                     status = Status.UNLOCKED;
 
-                    cleanup = true;
+                    metrics.onUnlock();
 
-                    if (metrics != null) {
-                        metrics.onUnlock();
-                    }
+                    cleanup = true;
 
                     unlockFuture.complete(true);
 

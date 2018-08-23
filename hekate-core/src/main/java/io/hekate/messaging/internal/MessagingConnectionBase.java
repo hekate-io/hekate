@@ -521,15 +521,11 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
     }
 
     protected void onAsyncEnqueue() {
-        if (metrics != null) {
-            metrics.onAsyncEnqueue();
-        }
+        metrics.onAsyncEnqueue();
     }
 
     protected void onAsyncDequeue() {
-        if (metrics != null) {
-            metrics.onAsyncDequeue();
-        }
+        metrics.onAsyncDequeue();
     }
 
     private void receiveRequestSync(RequestBase<T> msg, MessagingWorker worker) {

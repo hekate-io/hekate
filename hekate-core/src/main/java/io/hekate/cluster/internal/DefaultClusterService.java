@@ -69,7 +69,6 @@ import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.TerminatingService;
-import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.network.NetworkConfigProvider;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkConnectorConfig;
@@ -82,6 +81,7 @@ import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -168,7 +168,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     private NetworkService net;
 
     @ToStringIgnore
-    private LocalMetricsService metrics;
+    private MeterRegistry metrics;
 
     @ToStringIgnore
     private ClusterMetricsSink metricsSink;
@@ -254,10 +254,10 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     @Override
     public void resolve(DependencyContext ctx) {
         clusterName = ctx.clusterName();
+        metrics = ctx.metrics();
 
         net = ctx.require(NetworkService.class);
 
-        metrics = ctx.optional(LocalMetricsService.class);
         jmx = ctx.optional(JmxService.class);
     }
 

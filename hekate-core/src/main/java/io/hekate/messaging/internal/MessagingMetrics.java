@@ -16,56 +16,65 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.metrics.local.CounterConfig;
-import io.hekate.metrics.local.CounterMetric;
-import io.hekate.metrics.local.LocalMetricsService;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import java.util.concurrent.atomic.LongAdder;
 
 class MessagingMetrics {
-    private final CounterMetric requests;
+    private final LongAdder reqAct = new LongAdder();
 
-    private final CounterMetric retry;
+    private final Counter reqCount;
 
-    private final CounterMetric tasks;
+    private final LongAdder taskAct = new LongAdder();
 
-    private final CounterMetric tasksActive;
+    private final Counter taskCount;
 
-    public MessagingMetrics(String channelName, LocalMetricsService metrics) {
+    private final Counter retry;
+
+    public MessagingMetrics(String channelName, MeterRegistry metrics) {
         assert channelName != null : "Channel name is null.";
-        assert metrics != null : "Metrics service is null.";
+        assert metrics != null : "Meter registry is null.";
 
-        requests = metrics.register(new CounterConfig(channelName + ".messaging.requests.active"));
+        taskCount = Counter.builder("hekate.message.task.count")
+            .tag("channel", channelName)
+            .register(metrics);
 
-        tasksActive = metrics.register(new CounterConfig(channelName + ".messaging.tasks.active"));
+        Gauge.builder("hekate.message.task.active", reqAct, LongAdder::doubleValue)
+            .tag("channel", channelName)
+            .register(metrics);
 
-        tasks = metrics.register(new CounterConfig()
-            .withName(channelName + ".messaging.tasks.interim")
-            .withTotalName(channelName + ".messaging.tasks.total")
-            .withAutoReset(true)
-        );
+        retry = Counter.builder("hekate.message.retry")
+            .tag("channel", channelName)
+            .register(metrics);
 
-        retry = metrics.register(new CounterConfig()
-            .withName(channelName + ".messaging.retry.interim")
-            .withTotalName(channelName + ".messaging.retry.total")
-            .withAutoReset(true)
-        );
+        reqCount = Counter.builder("hekate.message.count")
+            .tag("channel", channelName)
+            .register(metrics);
+
+        Gauge.builder("hekate.message.request.pending", reqAct, LongAdder::doubleValue)
+            .tag("channel", channelName)
+            .register(metrics);
     }
 
     public void onPendingRequestsRemoved(int i) {
-        requests.subtract(i);
+        reqAct.add(-i);
     }
 
     public void onPendingRequestAdded() {
-        requests.increment();
+        reqCount.increment();
+
+        reqAct.add(1);
     }
 
     public void onAsyncEnqueue() {
-        tasksActive.increment();
+        taskCount.increment();
 
-        tasks.increment();
+        taskAct.increment();
     }
 
     public void onAsyncDequeue() {
-        tasksActive.decrement();
+        taskAct.decrement();
     }
 
     public void onRetry() {

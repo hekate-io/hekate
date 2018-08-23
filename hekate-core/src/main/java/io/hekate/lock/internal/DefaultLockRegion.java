@@ -41,10 +41,10 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.unicast.ReplyDecision;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
-import io.hekate.metrics.local.LocalMetricsService;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -154,7 +154,7 @@ class DefaultLockRegion implements LockRegion {
         ClusterNodeId localNode,
         ScheduledExecutorService scheduler,
         long retryInterval,
-        LocalMetricsService metricsService,
+        MeterRegistry metrics,
         MessagingChannel<LockProtocol> channel
     ) {
         assert regionName != null : "Region name is null.";
@@ -188,11 +188,7 @@ class DefaultLockRegion implements LockRegion {
             );
 
         // Configure metrics.
-        if (metricsService == null) {
-            metrics = null;
-        } else {
-            metrics = new LockRegionMetrics(regionName, metricsService);
-        }
+        this.metrics = new LockRegionMetrics(regionName, metrics);
     }
 
     @Override

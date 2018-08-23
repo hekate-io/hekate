@@ -18,35 +18,37 @@ package io.hekate.cluster.internal;
 
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.internal.gossip.GossipProtocol;
-import io.hekate.metrics.local.CounterConfig;
-import io.hekate.metrics.local.CounterMetric;
-import io.hekate.metrics.local.LocalMetricsService;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.EnumMap;
+import java.util.Locale;
+import java.util.concurrent.atomic.AtomicLong;
 
 class ClusterMetricsSink {
-    private final EnumMap<GossipProtocol.Type, CounterMetric> counters;
+    private final AtomicLong topologySize = new AtomicLong();
 
-    private final CounterMetric topologySize;
+    private final AtomicLong topologyVersion = new AtomicLong();
 
-    private final CounterMetric topologyVersion;
+    private final EnumMap<GossipProtocol.Type, Counter> counters;
 
-    public ClusterMetricsSink(LocalMetricsService service) {
+    public ClusterMetricsSink(MeterRegistry metrics) {
         counters = new EnumMap<>(GossipProtocol.Type.class);
 
-        topologySize = service.register(new CounterConfig("hekate.cluster.topology.size"));
-        topologyVersion = service.register(new CounterConfig("hekate.cluster.topology.version"));
+        Gauge.builder("hekate.cluster.topology_size", topologySize, AtomicLong::get).register(metrics);
+        Gauge.builder("hekate.cluster.topology_version", topologyVersion, AtomicLong::get).register(metrics);
 
-        register(GossipProtocol.Type.GOSSIP_UPDATE, "hekate.cluster.gossip.update", service);
-        register(GossipProtocol.Type.GOSSIP_UPDATE_DIGEST, "hekate.cluster.gossip.digest", service);
-        register(GossipProtocol.Type.JOIN_REQUEST, "hekate.cluster.gossip.join-request", service);
-        register(GossipProtocol.Type.JOIN_ACCEPT, "hekate.cluster.gossip.join-accept", service);
-        register(GossipProtocol.Type.JOIN_REJECT, "hekate.cluster.gossip.join-reject", service);
-        register(GossipProtocol.Type.HEARTBEAT_REQUEST, "hekate.cluster.gossip.hb-request", service);
-        register(GossipProtocol.Type.HEARTBEAT_REPLY, "hekate.cluster.gossip.hb-response", service);
+        register(GossipProtocol.Type.GOSSIP_UPDATE, metrics);
+        register(GossipProtocol.Type.GOSSIP_UPDATE_DIGEST, metrics);
+        register(GossipProtocol.Type.JOIN_REQUEST, metrics);
+        register(GossipProtocol.Type.JOIN_ACCEPT, metrics);
+        register(GossipProtocol.Type.JOIN_REJECT, metrics);
+        register(GossipProtocol.Type.HEARTBEAT_REQUEST, metrics);
+        register(GossipProtocol.Type.HEARTBEAT_REPLY, metrics);
     }
 
     public void onGossipMessage(GossipProtocol.Type type) {
-        CounterMetric counter = counters.get(type);
+        Counter counter = counters.get(type);
 
         if (counter != null) {
             counter.increment();
@@ -54,15 +56,14 @@ class ClusterMetricsSink {
     }
 
     public void onTopologyChange(ClusterTopology topology) {
-        long sizeDiff = topology.size() - topologySize.value();
-        long verDiff = topology.version() - topologyVersion.value();
-
-        topologySize.add(sizeDiff);
-        topologyVersion.add(verDiff);
+        topologySize.set(topology.size());
+        topologyVersion.set(topology.version());
     }
 
-    private void register(GossipProtocol.Type type, String name, LocalMetricsService service) {
-        CounterMetric counter = service.register(new CounterConfig(name).withAutoReset(true));
+    private void register(GossipProtocol.Type type, MeterRegistry metrics) {
+        Counter counter = Counter.builder("hekate.cluster.gossip_messages")
+            .tag("type", type.name().toLowerCase(Locale.ENGLISH))
+            .register(metrics);
 
         counters.put(type, counter);
     }

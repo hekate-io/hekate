@@ -30,6 +30,7 @@ import io.hekate.core.plugin.Plugin;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.util.format.ToString;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -86,6 +87,8 @@ public class HekateBootstrap {
     private CodecFactory<Object> defaultCodec = new AutoSelectCodecFactory<>();
 
     private List<Plugin> plugins;
+
+    private MeterRegistry metrics;
 
     private List<Hekate.LifecycleListener> lifecycleListeners;
 
@@ -521,6 +524,37 @@ public class HekateBootstrap {
      */
     public HekateBootstrap withDefaultCodec(CodecFactory<Object> defaultCodec) {
         setDefaultCodec(defaultCodec);
+
+        return this;
+    }
+
+    /**
+     * Returns the metrics registry.
+     *
+     * @return Metrics registry.
+     */
+    public MeterRegistry getMetrics() {
+        return metrics;
+    }
+
+    /**
+     * Sets the metrics registry.
+     *
+     * @param metrics Metrics registry.
+     */
+    public void setMetrics(MeterRegistry metrics) {
+        this.metrics = metrics;
+    }
+
+    /**
+     * Fluent-style version of {@link #setMetrics(MeterRegistry)}.
+     *
+     * @param metrics Metrics registry.
+     *
+     * @return This instance.
+     */
+    public HekateBootstrap withMetrics(MeterRegistry metrics) {
+        setMetrics(metrics);
 
         return this;
     }

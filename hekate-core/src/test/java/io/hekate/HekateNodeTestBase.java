@@ -23,7 +23,6 @@ import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.JdkCodecFactory;
 import io.hekate.core.internal.HekateTestNode;
-import io.hekate.metrics.cluster.ClusterMetricsServiceFactory;
 import io.hekate.network.netty.NetworkServiceFactoryForTest;
 import io.hekate.test.SeedNodeProviderMock;
 import java.net.InetSocketAddress;
@@ -129,10 +128,6 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
 
             ctx.ssl().ifPresent(net::setSsl);
         });
-
-        boot.withService(ClusterMetricsServiceFactory.class, metrics ->
-            metrics.setEnabled(false)
-        );
 
         if (configurer != null) {
             configurer.configure(boot);
