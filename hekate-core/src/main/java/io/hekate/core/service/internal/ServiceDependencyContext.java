@@ -23,7 +23,6 @@ import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceDependencyException;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
-import io.micrometer.core.instrument.MeterRegistry;
 import java.util.HashSet;
 import java.util.Set;
 import org.slf4j.Logger;
@@ -79,11 +78,6 @@ class ServiceDependencyContext implements DependencyContext {
         }
 
         return null;
-    }
-
-    @Override
-    public MeterRegistry metrics() {
-        return manager.metrics();
     }
 
     @Override

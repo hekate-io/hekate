@@ -18,7 +18,6 @@ package io.hekate.core.service;
 
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
-import io.micrometer.core.instrument.MeterRegistry;
 
 /**
  * Context for {@link DependentService}.
@@ -76,11 +75,4 @@ public interface DependencyContext {
      * @return Service or {@code null} if the is no such service.
      */
     <T extends Service> T optional(Class<T> service);
-
-    /**
-     * Returns metrics registry.
-     *
-     * @return Metrics registry.
-     */
-    MeterRegistry metrics();
 }

@@ -194,7 +194,7 @@ public abstract class PersistentSeedNodeProviderTestBase<T extends SeedNodeProvi
 
             node.join();
 
-            assertTrue(controlProvider.findSeedNodes(CLUSTER_1).contains(node.getSocketAddress()));
+            assertTrue(controlProvider.findSeedNodes(CLUSTER_1).contains(node.localNode().socket()));
 
             InetSocketAddress fake1 = newSocketAddress();
             InetSocketAddress fake2 = newSocketAddress();
@@ -210,9 +210,9 @@ public abstract class PersistentSeedNodeProviderTestBase<T extends SeedNodeProvi
                 awaitForSeedNodeStatus(false, fake3, CLUSTER_1, controlProvider);
             });
 
-            controlProvider.unregisterRemote(CLUSTER_1, node.getSocketAddress());
+            controlProvider.unregisterRemote(CLUSTER_1, node.localNode().socket());
 
-            awaitForSeedNodeStatus(true, node.getSocketAddress(), CLUSTER_1, controlProvider);
+            awaitForSeedNodeStatus(true, node.localNode().socket(), CLUSTER_1, controlProvider);
         });
     }
 

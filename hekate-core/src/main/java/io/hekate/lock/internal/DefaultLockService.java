@@ -59,7 +59,6 @@ import io.hekate.messaging.MessagingService;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
-import io.micrometer.core.instrument.MeterRegistry;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -101,8 +100,6 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
     private MessagingService messaging;
 
-    private MeterRegistry metrics;
-
     public DefaultLockService(LockServiceFactory factory) {
         assert factory != null : "Factory is null.";
 
@@ -124,7 +121,6 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
     @Override
     public void resolve(DependencyContext ctx) {
-        metrics = ctx.metrics();
         messaging = ctx.require(MessagingService.class);
         cluster = ctx.require(ClusterService.class).filter(HAS_SERVICE_FILTER);
     }
@@ -228,7 +224,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                         node.id(),
                         scheduler,
                         retryInterval,
-                        metrics,
+                        ctx.metrics(),
                         channel.filter(new LockRegionNodeFilter(name))
                     );
 

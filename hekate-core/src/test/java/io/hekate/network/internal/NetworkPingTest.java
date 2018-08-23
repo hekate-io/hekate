@@ -85,7 +85,7 @@ public class NetworkPingTest extends HekateNodeTestBase {
 
                 callbacks.add(callback);
 
-                source.network().ping(target.getSocketAddress(), callback);
+                source.network().ping(target.localNode().socket(), callback);
             }
 
             for (TestPingCallback callback : callbacks) {

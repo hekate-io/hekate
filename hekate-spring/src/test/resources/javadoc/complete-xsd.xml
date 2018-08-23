@@ -93,21 +93,6 @@
                 <s:bean class="foo.bar.SomeCandidate"/>
             </candidate>
         </election>
-
-        <!-- Local metrics service. -->
-        <local-metrics refresh-interval-ms="1000">
-            <counters>
-                <counter name="counter1"/>
-            </counters>
-            <probes>
-                <probe name="probe1" init-value="1">
-                    <s:bean class="foo.bar.SomeProbe"/>
-                </probe>
-            </probes>
-        </local-metrics>
-
-        <!-- Cluster metrics service. -->
-        <cluster-metrics replication-interval-ms="1000"/>
     </node>
 </s:beans>
     <!--End:example-->

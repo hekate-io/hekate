@@ -93,7 +93,7 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
 
         InetSocketAddress address = newSocketAddress();
 
-        HekateTestNode.Bootstrap boot = new HekateTestNode.Bootstrap(address);
+        HekateTestNode.Bootstrap boot = new HekateTestNode.Bootstrap();
 
         boot.setClusterName("test");
         boot.setNodeName("node-" + address.getPort() + '-' + allNodes.size());

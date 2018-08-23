@@ -18,6 +18,7 @@ package io.hekate.core.service;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.Hekate;
+import io.micrometer.core.instrument.MeterRegistry;
 
 /**
  * Context for {@link InitializingService}.
@@ -74,4 +75,11 @@ public interface InitializationContext {
      * @param e Cause of termination.
      */
     void terminate(Throwable e);
+
+    /**
+     * Returns metrics registry.
+     *
+     * @return Metrics registry.
+     */
+    MeterRegistry metrics();
 }

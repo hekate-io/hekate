@@ -58,14 +58,6 @@ public class NetworkServiceManagerMock implements NetworkServiceManager, Network
         return future;
     }
 
-    public void start() throws HekateException {
-        delegate.start();
-    }
-
-    public void stop() {
-        delegate.stop();
-    }
-
     public void fireServerFailure(Throwable error) {
         assertNotNull(server);
 

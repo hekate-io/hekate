@@ -38,6 +38,7 @@ import io.hekate.network.internal.NettyNetworkService;
 import io.hekate.network.internal.NetworkServiceManagerMock;
 import io.hekate.test.HekateTestError;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
@@ -112,10 +113,10 @@ public class HekateNodeTest extends HekateNodeTestBase {
         repeat(50, i -> {
             if (i == 0) {
                 expect(IllegalStateException.class, node::localNode);
-                expect(IllegalStateException.class, node::getTopology);
+                expect(IllegalStateException.class, node::topology);
             } else {
                 assertNotNull(node.localNode());
-                assertNotNull(node.getTopology());
+                assertNotNull(node.topology());
             }
 
             assertSame(Hekate.State.DOWN, node.state());
@@ -124,9 +125,9 @@ public class HekateNodeTest extends HekateNodeTestBase {
 
             assertNotNull(node.localNode());
             assertSame(Hekate.State.UP, node.state());
-            assertNotNull(node.getTopology());
-            assertEquals(1, node.getTopology().nodes().size());
-            assertTrue(node.getTopology().contains(node.localNode()));
+            assertNotNull(node.topology());
+            assertEquals(1, node.topology().nodes().size());
+            assertTrue(node.topology().contains(node.localNode()));
 
             node.leave();
         });
@@ -137,10 +138,10 @@ public class HekateNodeTest extends HekateNodeTestBase {
         repeat(50, i -> {
             if (i == 0) {
                 expect(IllegalStateException.class, node::localNode);
-                expect(IllegalStateException.class, node::getTopology);
+                expect(IllegalStateException.class, node::topology);
             } else {
                 assertNotNull(node.localNode());
-                assertNotNull(node.getTopology());
+                assertNotNull(node.topology());
             }
 
             assertSame(Hekate.State.DOWN, node.state());
@@ -152,17 +153,17 @@ public class HekateNodeTest extends HekateNodeTestBase {
             assertNotNull(localNode);
             assertEquals(0, localNode.joinOrder());
             assertSame(Hekate.State.INITIALIZED, node.state());
-            assertNotNull(node.getTopology());
-            assertTrue(node.getTopology().isEmpty());
+            assertNotNull(node.topology());
+            assertTrue(node.topology().isEmpty());
 
             node.join();
 
             assertNotNull(node.localNode());
             assertSame(Hekate.State.UP, node.state());
             assertEquals(1, localNode.joinOrder());
-            assertNotNull(node.getTopology());
-            assertEquals(1, node.getTopology().nodes().size());
-            assertTrue(node.getTopology().contains(node.localNode()));
+            assertNotNull(node.topology());
+            assertEquals(1, node.topology().nodes().size());
+            assertTrue(node.topology().contains(node.localNode()));
 
             node.leave();
         });
@@ -173,10 +174,10 @@ public class HekateNodeTest extends HekateNodeTestBase {
         repeat(50, i -> {
             if (i == 0) {
                 expect(IllegalStateException.class, node::localNode);
-                expect(IllegalStateException.class, node::getTopology);
+                expect(IllegalStateException.class, node::topology);
             } else {
                 assertNotNull(node.localNode());
-                assertNotNull(node.getTopology());
+                assertNotNull(node.topology());
             }
 
             assertSame(Hekate.State.DOWN, node.state());
@@ -185,8 +186,8 @@ public class HekateNodeTest extends HekateNodeTestBase {
 
             assertNotNull(node.localNode());
             assertSame(Hekate.State.INITIALIZED, node.state());
-            assertNotNull(node.getTopology());
-            assertTrue(node.getTopology().isEmpty());
+            assertNotNull(node.topology());
+            assertTrue(node.topology().isEmpty());
 
             node.leave();
         });
@@ -197,10 +198,10 @@ public class HekateNodeTest extends HekateNodeTestBase {
         repeat(50, i -> {
             if (i == 0) {
                 expect(IllegalStateException.class, node::localNode);
-                expect(IllegalStateException.class, node::getTopology);
+                expect(IllegalStateException.class, node::topology);
             } else {
                 assertNotNull(node.localNode());
-                assertNotNull(node.getTopology());
+                assertNotNull(node.topology());
             }
 
             assertSame(Hekate.State.DOWN, node.state());
@@ -210,9 +211,9 @@ public class HekateNodeTest extends HekateNodeTestBase {
             assertNotNull(node.localNode());
             assertEquals(1, node.localNode().joinOrder());
             assertSame(Hekate.State.UP, node.state());
-            assertNotNull(node.getTopology());
-            assertEquals(1, node.getTopology().nodes().size());
-            assertTrue(node.getTopology().contains(node.localNode()));
+            assertNotNull(node.topology());
+            assertEquals(1, node.topology().nodes().size());
+            assertTrue(node.topology().contains(node.localNode()));
 
             node.terminate();
         });
@@ -223,10 +224,10 @@ public class HekateNodeTest extends HekateNodeTestBase {
         repeat(50, i -> {
             if (i == 0) {
                 expect(IllegalStateException.class, node::localNode);
-                expect(IllegalStateException.class, node::getTopology);
+                expect(IllegalStateException.class, node::topology);
             } else {
                 assertNotNull(node.localNode());
-                assertNotNull(node.getTopology());
+                assertNotNull(node.topology());
             }
 
             assertSame(Hekate.State.DOWN, node.state());
@@ -236,8 +237,8 @@ public class HekateNodeTest extends HekateNodeTestBase {
             assertNotNull(node.localNode());
             assertEquals(0, node.localNode().joinOrder());
             assertSame(Hekate.State.INITIALIZED, node.state());
-            assertNotNull(node.getTopology());
-            assertTrue(node.getTopology().isEmpty());
+            assertNotNull(node.topology());
+            assertTrue(node.topology().isEmpty());
 
             node.terminate();
         });
@@ -248,10 +249,10 @@ public class HekateNodeTest extends HekateNodeTestBase {
         repeat(50, i -> {
             if (i == 0) {
                 expect(IllegalStateException.class, node::localNode);
-                expect(IllegalStateException.class, node::getTopology);
+                expect(IllegalStateException.class, node::topology);
             } else {
                 assertNotNull(node.localNode());
-                assertNotNull(node.getTopology());
+                assertNotNull(node.topology());
             }
 
             assertSame(Hekate.State.DOWN, node.state());
@@ -260,14 +261,14 @@ public class HekateNodeTest extends HekateNodeTestBase {
 
             LeaveFuture leave;
 
-            node.getClusterGuard().lockWrite();
+            node.clusterGuard().lockWrite();
 
             try {
                 leave = node.leaveAsync();
 
                 expect(IllegalStateException.class, node::joinAsync);
             } finally {
-                node.getClusterGuard().unlockWrite();
+                node.clusterGuard().unlockWrite();
             }
 
             assertNotNull(get(leave));
@@ -380,15 +381,18 @@ public class HekateNodeTest extends HekateNodeTestBase {
 
     @Test
     public void testNetworkServiceStartupFailure() throws Exception {
-        node = createNode(boot ->
-            boot.withService(NetworkServiceFactory.class, net -> {
-                net.setPortRange(0);
-                net.setTcpReuseAddress(false);
-            })
-        );
-
         try (ServerSocket sock = new ServerSocket()) {
-            sock.bind(node.getSocketAddress());
+            InetSocketAddress address = newSocketAddress();
+
+            sock.bind(address);
+
+            node = createNode(boot ->
+                boot.withService(NetworkServiceFactory.class, net -> {
+                    net.setPort(address.getPort());
+                    net.setPortRange(0);
+                    net.setTcpReuseAddress(false);
+                })
+            );
 
             repeat(5, i -> {
                 try {

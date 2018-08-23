@@ -136,27 +136,6 @@
                         </list>
                     </property>
                 </bean>
-                <!-- Local metrics service. -->
-                <bean class="io.hekate.metrics.local.LocalMetricsServiceFactory">
-                    <property name="metrics">
-                        <list>
-                            <bean class="io.hekate.metrics.local.CounterConfig">
-                                <property name="name" value="counter1"/>
-                            </bean>
-                            <bean class="io.hekate.metrics.local.ProbeConfig">
-                                <property name="name" value="probe1"/>
-                                <property name="initValue" value="1"/>
-                                <property name="probe">
-                                    <bean class="foo.bar.SomeProbe"/>
-                                </property>
-                            </bean>
-                        </list>
-                    </property>
-                </bean>
-                <!-- Cluster metrics service. -->
-                <bean class="io.hekate.metrics.cluster.ClusterMetricsServiceFactory">
-                    <property name="replicationInterval" value="1000"/>
-                </bean>
             </list>
         </property>
     </bean>

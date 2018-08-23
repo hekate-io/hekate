@@ -65,7 +65,7 @@ public class NetworkServiceNodeTest extends HekateNodeParamTestBase {
 
             NetworkClient<String> client = sender.network().<String>connector("test").newClient();
 
-            get(client.connect(receiver.getSocketAddress(), (message, self) ->
+            get(client.connect(receiver.localNode().socket(), (message, self) ->
                 response.complete(message.decode())
             ));
 

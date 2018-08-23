@@ -101,8 +101,6 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     private ClusterService cluster;
 
-    private MeterRegistry metrics;
-
     private JmxService jmx;
 
     // Volatile since accessed out of the guarded context.
@@ -117,7 +115,6 @@ public class DefaultMessagingService implements MessagingService, DependentServi
     @Override
     public void resolve(DependencyContext ctx) {
         hekate = ctx.hekate();
-        metrics = ctx.metrics();
 
         net = ctx.require(NetworkService.class);
         cluster = ctx.require(ClusterService.class);
@@ -215,7 +212,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                 timer = newTimer();
 
                 for (MessagingGateway<?> gateway : gateways.values()) {
-                    initializeGateway(gateway);
+                    initializeGateway(gateway, ctx.metrics());
                 }
 
                 cluster.addListener(this::updateTopology, ClusterEventType.JOIN, ClusterEventType.CHANGE);
@@ -376,7 +373,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         gateways.put(gateway.name(), gateway);
     }
 
-    private <T> void initializeGateway(MessagingGateway<T> gateway) throws HekateException {
+    private <T> void initializeGateway(MessagingGateway<T> gateway, MeterRegistry metrics) throws HekateException {
         assert gateway != null : "Channel gateway is null.";
         assert guard.isWriteLocked() : "Thread must hold a write lock.";
 
@@ -507,7 +504,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                     MessagingProtocol.Connect connect = (MessagingProtocol.Connect)message;
 
                     // Reject connections if their target node doesn't match with the local node.
-                    // This can happen in rare cases if node is restarted on the same address and remote nodes
+                    // This can happen in rare cases if node is restarted on the same port and remote nodes
                     // haven't detected the cluster topology change yet.
                     if (!connect.to().equals(nodeId)) {
                         // Channel rejected connection.

@@ -183,7 +183,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             awaitForTopology(nodes);
 
             nodes.forEach(n -> {
-                List<ClusterEvent> events = n.getEvents();
+                List<ClusterEvent> events = n.events();
 
                 assertEquals(events.toString(), 3, events.size());
 
@@ -226,13 +226,13 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             for (HekateTestNode oldNode : nodes) {
                 int ver = 0;
 
-                for (ClusterEvent event : oldNode.getEvents()) {
+                for (ClusterEvent event : oldNode.events()) {
                     assertTrue(ver < event.topology().version());
 
                     ver++;
                 }
 
-                assertEquals(oldNode.getTopology().nodes(), nodes.stream().map(Hekate::localNode).sorted().collect(toList()));
+                assertEquals(oldNode.topology().nodes(), nodes.stream().map(Hekate::localNode).sorted().collect(toList()));
             }
         }
 
@@ -250,22 +250,22 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             for (HekateTestNode oldNode : nodes) {
                 int ver = 0;
 
-                for (ClusterEvent event : oldNode.getEvents()) {
+                for (ClusterEvent event : oldNode.events()) {
                     assertTrue(ver < event.topology().version());
 
                     ver++;
                 }
 
-                assertEquals(oldNode.getTopology().nodes(), nodes.stream().map(Hekate::localNode).sorted().collect(toList()));
+                assertEquals(oldNode.topology().nodes(), nodes.stream().map(Hekate::localNode).sorted().collect(toList()));
             }
         }
 
         for (HekateTestNode node : stopped) {
-            assertSame(ClusterEventType.JOIN, node.getEvents().get(0).type());
-            assertSame(ClusterEventType.LEAVE, node.getLastEvent().type());
+            assertSame(ClusterEventType.JOIN, node.events().get(0).type());
+            assertSame(ClusterEventType.LEAVE, node.lastEvent().type());
 
-            assertEquals(1, node.getEvents().stream().filter(e -> e.type() == ClusterEventType.JOIN).count());
-            assertEquals(1, node.getEvents().stream().filter(e -> e.type() == ClusterEventType.LEAVE).count());
+            assertEquals(1, node.events().stream().filter(e -> e.type() == ClusterEventType.JOIN).count());
+            assertEquals(1, node.events().stream().filter(e -> e.type() == ClusterEventType.LEAVE).count());
         }
     }
 
@@ -451,7 +451,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             nodes.forEach(n -> n.awaitForTopology(nodes));
 
             nodes.stream().filter(n -> !n.localNode().equals(added.localNode())).forEach(n -> {
-                List<ClusterEvent> events = n.getEvents(ClusterEventType.CHANGE);
+                List<ClusterEvent> events = n.events(ClusterEventType.CHANGE);
 
                 assertEquals(1, events.size());
 
@@ -475,7 +475,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
             removed.leave();
 
-            List<ClusterEvent> leaveEvents = removed.getEvents(ClusterEventType.LEAVE);
+            List<ClusterEvent> leaveEvents = removed.events(ClusterEventType.LEAVE);
 
             assertEquals(1, leaveEvents.size());
             assertEquals(0, leaveEvents.get(0).asLeave().added().size());
@@ -484,7 +484,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             nodes.forEach(n -> n.awaitForTopology(nodes));
 
             nodes.forEach(n -> {
-                List<ClusterEvent> events = n.getEvents(ClusterEventType.CHANGE);
+                List<ClusterEvent> events = n.events(ClusterEventType.CHANGE);
 
                 assertEquals(1, events.size());
 
@@ -810,8 +810,8 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
                 assertEquals(expectedOrder.get(), node.localNode().joinOrder());
 
                 nodes.forEach(n -> {
-                    assertEquals(nodes.getFirst().localNode(), n.getTopology().oldest());
-                    assertEquals(nodes.getLast().localNode(), n.getTopology().youngest());
+                    assertEquals(nodes.getFirst().localNode(), n.topology().oldest());
+                    assertEquals(nodes.getLast().localNode(), n.topology().youngest());
                 });
             });
 
@@ -846,8 +846,8 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
                 assertEquals(joinOrderDetails, expectedOrder.get(), node.localNode().joinOrder());
 
                 nodes.forEach(n -> {
-                    assertEquals(nodes.getFirst().localNode(), n.getTopology().oldest());
-                    assertEquals(nodes.getLast().localNode(), n.getTopology().youngest());
+                    assertEquals(nodes.getFirst().localNode(), n.topology().oldest());
+                    assertEquals(nodes.getLast().localNode(), n.topology().youngest());
                 });
             });
 
@@ -877,7 +877,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
             assertTrue(node.localNode().hasService(DummyService.class));
 
-            for (ClusterNode clusterNode : node.getTopology().remoteNodes()) {
+            for (ClusterNode clusterNode : node.topology().remoteNodes()) {
                 assertTrue(clusterNode.hasService(DummyService.class));
             }
         }

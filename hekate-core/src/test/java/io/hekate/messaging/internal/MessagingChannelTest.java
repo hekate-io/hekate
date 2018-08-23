@@ -91,7 +91,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
             // Try connect to a node by using an invalid node ID.
             ClusterNodeId invalidNodeId = newNodeId();
 
-            InetSocketAddress socketAddress = channel.getNode().getSocketAddress();
+            InetSocketAddress socketAddress = channel.getNode().localNode().socket();
 
             NetworkClientCallbackMock<MessagingProtocol> callback = new NetworkClientCallbackMock<>();
 

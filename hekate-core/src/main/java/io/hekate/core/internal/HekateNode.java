@@ -166,6 +166,8 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
 
     private final RpcService rpc;
 
+    private final MeterRegistry metrics;
+
     private boolean preTerminated;
 
     private InitializationFuture initFuture = new InitializationFuture();
@@ -256,10 +258,10 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
         clusterEvents = new ClusterEventManager(this);
 
         // Metrics.
-        MeterRegistry metrics = boot.getMetrics() == null ? new SimpleMeterRegistry() : boot.getMetrics();
+        metrics = boot.getMetrics() == null ? new SimpleMeterRegistry() : boot.getMetrics();
 
         // Service manager.
-        services = createServiceManager(boot.getDefaultCodec(), boot.getServices(), metrics);
+        services = createServiceManager(boot.getDefaultCodec(), boot.getServices());
 
         // Instantiate services.
         services.instantiate();
@@ -944,6 +946,11 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
             }
 
             @Override
+            public MeterRegistry metrics() {
+                return metrics;
+            }
+
+            @Override
             public String toString() {
                 return ToString.format(InitializationContext.class, this);
             }
@@ -1187,10 +1194,7 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
         });
     }
 
-    private ServiceManager createServiceManager(
-        CodecFactory<Object> codec,
-        List<ServiceFactory<? extends Service>> services, MeterRegistry metrics
-    ) {
+    private ServiceManager createServiceManager(CodecFactory<Object> codec, List<ServiceFactory<? extends Service>> services) {
         // Wrap codec factory.
         CodecFactory<Object> defaultCodec = HekateCodecHelper.wrap(codec, this);
 
@@ -1221,8 +1225,7 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
             this,
             builtInServices,
             coreServices,
-            factories,
-            metrics
+            factories
         );
     }
 

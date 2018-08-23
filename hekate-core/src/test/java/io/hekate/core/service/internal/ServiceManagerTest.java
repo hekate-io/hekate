@@ -32,7 +32,6 @@ import io.hekate.core.service.ServiceFactory;
 import io.hekate.core.service.TerminatingService;
 import io.hekate.test.HekateTestError;
 import io.hekate.test.HekateTestException;
-import io.micrometer.core.instrument.Metrics;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -747,8 +746,7 @@ public class ServiceManagerTest extends HekateTestBase {
             mock(Hekate.class),
             services,
             emptyList(),
-            factories,
-            Metrics.globalRegistry
+            factories
         );
 
         manager.instantiate();

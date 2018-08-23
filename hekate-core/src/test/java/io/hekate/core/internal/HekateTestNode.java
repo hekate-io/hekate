@@ -29,7 +29,6 @@ import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateFutureException;
 import io.hekate.util.StateGuard;
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -45,11 +44,7 @@ import static org.junit.Assert.fail;
 
 public class HekateTestNode extends HekateNode {
     public static class Bootstrap extends HekateBootstrap {
-        private final InetSocketAddress address;
-
-        public Bootstrap(InetSocketAddress address) {
-            this.address = address;
-
+        public Bootstrap() {
             withService(new ClusterServiceFactoryMock());
         }
 
@@ -57,13 +52,11 @@ public class HekateTestNode extends HekateNode {
         public HekateTestNode create() {
             ClusterServiceFactoryMock cluster = service(ClusterServiceFactoryMock.class).get();
 
-            return new HekateTestNode(address, this, cluster);
+            return new HekateTestNode(this, cluster);
         }
     }
 
     private final List<ClusterEvent> events = new CopyOnWriteArrayList<>();
-
-    private final InetSocketAddress socketAddress;
 
     private final StateGuard clusterGuard;
 
@@ -71,10 +64,9 @@ public class HekateTestNode extends HekateNode {
 
     private ClusterEventListener listener;
 
-    public HekateTestNode(InetSocketAddress socketAddress, HekateBootstrap cfg, ClusterServiceFactoryMock cluster) {
+    public HekateTestNode(HekateBootstrap cfg, ClusterServiceFactoryMock cluster) {
         super(cfg);
 
-        this.socketAddress = socketAddress;
         this.gossipSpy = cluster.getGossipSpy();
         this.clusterGuard = cluster.getServiceGuard();
     }
@@ -83,12 +75,8 @@ public class HekateTestNode extends HekateNode {
         assertFalse(gossipSpy.isHasNodeFailures());
     }
 
-    public StateGuard getClusterGuard() {
+    public StateGuard clusterGuard() {
         return clusterGuard;
-    }
-
-    public InetSocketAddress getSocketAddress() {
-        return socketAddress;
     }
 
     public void setGossipSpy(GossipListener gossipSpy) {
@@ -111,16 +99,16 @@ public class HekateTestNode extends HekateNode {
         }
     }
 
-    public List<ClusterEvent> getEvents() {
+    public List<ClusterEvent> events() {
         return new ArrayList<>(events);
     }
 
-    public List<ClusterEvent> getEvents(ClusterEventType type) {
+    public List<ClusterEvent> events(ClusterEventType type) {
         return events.stream().filter(e -> e.type() == type).collect(toList());
     }
 
-    public ClusterEvent getLastEvent() {
-        List<ClusterEvent> localEvents = getEvents();
+    public ClusterEvent lastEvent() {
+        List<ClusterEvent> localEvents = events();
 
         return localEvents.isEmpty() ? null : localEvents.get(localEvents.size() - 1);
     }
@@ -168,7 +156,7 @@ public class HekateTestNode extends HekateNode {
         return this;
     }
 
-    public ClusterTopology getTopology() {
+    public ClusterTopology topology() {
         return cluster().topology();
     }
 
