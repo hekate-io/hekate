@@ -187,9 +187,6 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     private JmxService jmx;
 
     @ToStringIgnore
-    private NettyMetricsBuilder metrics;
-
-    @ToStringIgnore
     private EventLoopGroup acceptorLoop;
 
     @ToStringIgnore
@@ -248,8 +245,6 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         resources = ctx.require(ResourceService.class);
 
         jmx = ctx.optional(JmxService.class);
-
-        metrics = new NettyMetricsBuilder(ctx.metrics());
     }
 
     @Override
@@ -386,11 +381,13 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
             }
 
             // Enable server metrics gathering.
+            NettyMetricsBuilder metrics = new NettyMetricsBuilder(ctx.metrics());
+
             server.setMetrics(metrics.createServerFactory());
 
             // Register connectors.
             connectorConfigs.forEach(cfg -> {
-                ConnectorRegistration<?> reg = register(cfg);
+                ConnectorRegistration<?> reg = register(cfg, metrics);
 
                 if (reg.serverHandler() != null) {
                     server.addHandler(reg.serverHandler());
@@ -618,21 +615,6 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         return new NettyClientFactory<>();
     }
 
-    // Package level for testing purposes.
-    void start() throws HekateException {
-        // Safe to use null since we don't use this parameter in any of those method.
-        preInitialize(null);
-        initialize(null);
-        postInitialize(null);
-    }
-
-    // Package level for testing purposes.
-    void stop() {
-        preTerminate();
-        terminate();
-        postTerminate();
-    }
-
     private InetAddress ipOnly(InetAddress address) throws HekateException {
         if (address == null) {
             return null;
@@ -645,7 +627,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         }
     }
 
-    private <T> ConnectorRegistration<T> register(NetworkConnectorConfig<T> cfg) {
+    private <T> ConnectorRegistration<T> register(NetworkConnectorConfig<T> cfg, NettyMetricsBuilder metrics) {
         assert cfg != null : "Connector configuration is null.";
 
         // Sanity checks.

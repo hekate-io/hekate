@@ -81,7 +81,6 @@ import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
-import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -168,9 +167,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     private NetworkService net;
 
     @ToStringIgnore
-    private MeterRegistry metrics;
-
-    @ToStringIgnore
     private ClusterMetricsSink metricsSink;
 
     @ToStringIgnore
@@ -254,7 +250,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     @Override
     public void resolve(DependencyContext ctx) {
         clusterName = ctx.clusterName();
-        metrics = ctx.metrics();
 
         net = ctx.require(NetworkService.class);
 
@@ -372,10 +367,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                 }
             });
 
-            // Prepare metrics sink (optional).
-            if (metrics != null) {
-                metricsSink = new ClusterMetricsSink(metrics);
-            }
+            // Prepare metrics sink.
+            metricsSink = new ClusterMetricsSink(ctx.metrics());
 
             // Register JMX beans (optional).
             if (jmx != null) {
@@ -838,9 +831,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         assert msg != null : "Message is null.";
 
         guard.withReadLockIfInitialized(() -> {
-            if (metricsSink != null) {
-                metricsSink.onGossipMessage(msg.type());
-            }
+            metricsSink.onGossipMessage(msg.type());
 
             if (msg instanceof GossipMessage) {
                 GossipMessage gossipMsg = (GossipMessage)msg;
@@ -1041,9 +1032,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                     guard.withReadLockIfInitialized(() -> {
                                         ClusterTopology topology = event.topology();
 
-                                        if (metricsSink != null) {
-                                            metricsSink.onTopologyChange(topology);
-                                        }
+                                        metricsSink.onTopologyChange(topology);
 
                                         if (isCoordinator(topology)) {
                                             startSeedNodeCleaner();
@@ -1117,9 +1106,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                             try {
                                 ClusterTopology topology = event.topology();
 
-                                if (metricsSink != null) {
-                                    metricsSink.onTopologyChange(topology);
-                                }
+                                metricsSink.onTopologyChange(topology);
 
                                 if (isCoordinator(topology)) {
                                     startSeedNodeCleaner();

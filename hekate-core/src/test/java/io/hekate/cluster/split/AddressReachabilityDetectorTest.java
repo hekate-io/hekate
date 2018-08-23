@@ -18,6 +18,7 @@ package io.hekate.cluster.split;
 
 import io.hekate.HekateNodeTestBase;
 import io.hekate.core.internal.HekateTestNode;
+import java.net.InetSocketAddress;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
@@ -28,11 +29,13 @@ public class AddressReachabilityDetectorTest extends HekateNodeTestBase {
     public void testValid() throws Exception {
         HekateTestNode node = createNode().join();
 
-        AddressReachabilityDetector detector = new AddressReachabilityDetector(node.getSocketAddress(), 2000);
+        InetSocketAddress address = node.localNode().socket();
+
+        AddressReachabilityDetector detector = new AddressReachabilityDetector(address, 2000);
 
         assertTrue(detector.isValid(node.localNode()));
 
-        detector = new AddressReachabilityDetector(node.getSocketAddress().getHostString() + ':' + node.getSocketAddress().getPort());
+        detector = new AddressReachabilityDetector(address.getHostString() + ':' + address.getPort());
 
         assertTrue(detector.isValid(node.localNode()));
     }

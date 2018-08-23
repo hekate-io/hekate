@@ -243,42 +243,6 @@
             </candidate>
         </election>
 
-        <local-metrics id="metrics" refresh-interval-ms="1000">
-            <counters>
-                <counter name="counter1" auto-reset="true" total-name="c1.total"/>
-                <counter name="counter2" auto-reset="true" total-name="c2.total"/>
-            </counters>
-
-            <probes>
-                <probe name="probe1" init-value="1">
-                    <s:bean class="foo.bar.SomeProbe"/>
-                </probe>
-                <probe name="probe2" init-value="1">
-                    <s:bean class="foo.bar.SomeProbe"/>
-                </probe>
-            </probes>
-
-            <timers>
-                <timer name="timer1" unit="SECONDS" rate-name="timer1.rate"/>
-                <timer name="timer2" rate-name="timer2.rate"/>
-            </timers>
-
-            <listeners>
-                <listener>
-                    <s:bean class="foo.bar.SomeMetricsListener"/>
-                </listener>
-                <listener>
-                    <s:bean class="foo.bar.SomeMetricsListener"/>
-                </listener>
-            </listeners>
-        </local-metrics>
-
-        <cluster-metrics id="clusterMetrics" replication-interval-ms="1000">
-            <filter>
-                <s:bean class="foo.bar.SomeMetricFilter"/>
-            </filter>
-        </cluster-metrics>
-
         <custom-services>
             <service>
                 <s:bean class="foo.bar.SomeServiceFactory"/>

@@ -102,14 +102,14 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
 
                 ClusterNodeId oldHangedId = hanged.localNode().id();
 
-                hanged.getClusterGuard().lockWrite();
+                hanged.clusterGuard().lockWrite();
 
                 try {
                     say("Locked: " + hangedNode);
 
                     await(failureLatch);
                 } finally {
-                    hanged.getClusterGuard().unlockWrite();
+                    hanged.clusterGuard().unlockWrite();
                 }
 
                 say("Unlocked: " + hangedNode);
@@ -123,7 +123,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
 
                 awaitForTopology(nodes);
 
-                List<ClusterEvent> events = hanged.getEvents();
+                List<ClusterEvent> events = hanged.events();
 
                 assertEquals(events.toString(), 2, events.size());
                 assertSame(ClusterEventType.JOIN, events.get(0).type());
@@ -190,14 +190,14 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
 
                 hanged.startRecording();
 
-                hanged.getClusterGuard().lockWrite();
+                hanged.clusterGuard().lockWrite();
 
                 try {
                     say("Locked: " + hangedNode);
 
                     await(bothSuspected);
                 } finally {
-                    hanged.getClusterGuard().unlockWrite();
+                    hanged.clusterGuard().unlockWrite();
                 }
 
                 say("Unlocked: " + hangedNode);
@@ -208,7 +208,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
 
                 assertNull(unexpectedError.get());
 
-                List<ClusterEvent> events = hanged.getEvents();
+                List<ClusterEvent> events = hanged.events();
 
                 assertEquals(events.toString(), 1, events.size());
                 assertSame(ClusterEventType.JOIN, events.get(0).type());
@@ -267,14 +267,14 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                     }
                 });
 
-                hanged.getClusterGuard().lockWrite();
+                hanged.clusterGuard().lockWrite();
 
                 try {
                     say("Locked: " + node);
 
                     alive.forEach(n -> n.awaitForTopology(alive));
                 } finally {
-                    hanged.getClusterGuard().unlockWrite();
+                    hanged.clusterGuard().unlockWrite();
                 }
 
                 say("Unlocked: " + node);
@@ -290,7 +290,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                 assertSame(DOWN, hanged.state());
                 assertNull(asyncError.get());
 
-                List<ClusterEvent> events = hanged.getEvents();
+                List<ClusterEvent> events = hanged.events();
 
                 assertEquals(events.toString(), 2, events.size());
                 assertSame(ClusterEventType.JOIN, events.get(0).type());
@@ -347,14 +347,14 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                     }
                 });
 
-                hanged.getClusterGuard().lockWrite();
+                hanged.clusterGuard().lockWrite();
 
                 try {
                     say("Locked: " + node);
 
                     alive.forEach(n -> n.awaitForTopology(alive));
                 } finally {
-                    hanged.getClusterGuard().unlockWrite();
+                    hanged.clusterGuard().unlockWrite();
                 }
 
                 say("Unlocked: " + node);
@@ -370,7 +370,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                 assertSame(DOWN, hanged.state());
                 assertNull(asyncError.get());
 
-                List<ClusterEvent> events = hanged.getEvents();
+                List<ClusterEvent> events = hanged.events();
 
                 assertEquals(events.toString(), 2, events.size());
                 assertSame(ClusterEventType.JOIN, events.get(0).type());
@@ -411,7 +411,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
 
                 hanged.startRecording();
 
-                hanged.getClusterGuard().lockWrite();
+                hanged.clusterGuard().lockWrite();
 
                 try {
                     say("Locked: " + hanged);
@@ -422,7 +422,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
 
                     alive.forEach(n -> n.awaitForTopology(alive));
                 } finally {
-                    hanged.getClusterGuard().unlockWrite();
+                    hanged.clusterGuard().unlockWrite();
                 }
 
                 say("Unlocked: " + hanged);
@@ -431,7 +431,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
 
                 assertSame(DOWN, hanged.state());
 
-                List<ClusterEvent> events = hanged.getEvents();
+                List<ClusterEvent> events = hanged.events();
 
                 assertEquals(events.toString(), 2, events.size());
                 assertSame(ClusterEventType.JOIN, events.get(0).type());
@@ -486,14 +486,14 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                 }
             });
 
-            hanged.getClusterGuard().lockWrite();
+            hanged.clusterGuard().lockWrite();
 
             try {
                 say("Locked: " + hangedNode);
 
                 await(failureDetected);
             } finally {
-                hanged.getClusterGuard().unlockWrite();
+                hanged.clusterGuard().unlockWrite();
             }
 
             say("Unlocked: " + hangedNode);
@@ -504,7 +504,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
 
             assertTrue(inconsistencyDetected.get());
 
-            List<ClusterEvent> events = hanged.getEvents();
+            List<ClusterEvent> events = hanged.events();
 
             assertEquals(events.toString(), 2, events.size());
             assertSame(ClusterEventType.JOIN, events.get(0).type());
@@ -522,7 +522,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
 
     private void awaitForNodeChange(ClusterNodeId id, HekateTestNode node) throws Exception {
         busyWait("node change from " + id, () -> {
-            assertTrue(node.getClusterGuard().tryLockRead(3, TimeUnit.SECONDS));
+            assertTrue(node.clusterGuard().tryLockRead(3, TimeUnit.SECONDS));
 
             try {
                 return node.state() != DOWN
@@ -531,7 +531,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                     && node.state() != TERMINATING
                     && !node.localNode().id().equals(id);
             } finally {
-                node.getClusterGuard().unlockRead();
+                node.clusterGuard().unlockRead();
             }
         });
     }
