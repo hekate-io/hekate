@@ -17,12 +17,6 @@
 #
 version: '2'
 services:
-  influxdb:
-    container_name: hekate-test-influxdb
-    image: "influxdb:1.5.2-alpine"
-    ports:
-      - "8083:8083"
-      - "8086:8086"
   mysql:
     container_name: hekate-test-mysql
     image: "mysql:5.7.20"
