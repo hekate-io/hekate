@@ -46,9 +46,9 @@ abstract class MessagingProtocol {
 
         AFFINITY_REQUEST,
 
-        STREAM,
+        SUBSCRIBE,
 
-        AFFINITY_STREAM,
+        AFFINITY_SUBSCRIBE,
 
         RESPONSE_CHUNK,
 
@@ -106,7 +106,7 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public boolean isStream() {
+        public boolean isSubscription() {
             return false;
         }
 
@@ -378,7 +378,7 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public boolean isStream() {
+        public boolean isSubscription() {
             return false;
         }
 
@@ -407,26 +407,26 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class StreamRequest<T> extends RequestBase<T> {
-        public StreamRequest(int requestId, boolean retransmit, long timeout, T payload) {
+    static class SubscribeRequest<T> extends RequestBase<T> {
+        public SubscribeRequest(int requestId, boolean retransmit, long timeout, T payload) {
             super(requestId, retransmit, timeout, payload);
         }
 
         @Override
-        public boolean isStream() {
+        public boolean isSubscription() {
             return true;
         }
 
         @Override
         public Type type() {
-            return Type.STREAM;
+            return Type.SUBSCRIBE;
         }
     }
 
-    static class AffinityStreamRequest<T> extends StreamRequest<T> {
+    static class AffinitySubscribeRequest<T> extends SubscribeRequest<T> {
         private final int affinity;
 
-        public AffinityStreamRequest(int affinity, int requestId, boolean retransmit, long timeout, T payload) {
+        public AffinitySubscribeRequest(int affinity, int requestId, boolean retransmit, long timeout, T payload) {
             super(requestId, retransmit, timeout, payload);
 
             this.affinity = affinity;
@@ -438,7 +438,7 @@ abstract class MessagingProtocol {
 
         @Override
         public Type type() {
-            return Type.AFFINITY_STREAM;
+            return Type.AFFINITY_SUBSCRIBE;
         }
     }
 

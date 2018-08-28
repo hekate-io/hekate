@@ -27,6 +27,6 @@ import java.util.List;
  *
  * @see MessagingChannel#request(Object)
  */
-public class StreamFuture<T> extends MessagingFuture<List<T>> {
+public class SubscribeFuture<T> extends MessagingFuture<List<T>> {
     // No-op.
 }

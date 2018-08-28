@@ -516,8 +516,8 @@ class LockControllerClient {
             // Send single request if we don't need to subscribe for updates.
             channel.request(lockReq, callback);
         } else {
-            // Open a stream if we need to receive lock owner updates.
-            channel.stream(lockReq, callback);
+            // Send subscription request if we need to receive lock owner updates.
+            channel.subscribe(lockReq, callback);
         }
     }
 

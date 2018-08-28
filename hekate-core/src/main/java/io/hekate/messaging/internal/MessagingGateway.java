@@ -40,7 +40,7 @@ import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.messaging.unicast.SendFuture;
-import io.hekate.messaging.unicast.StreamFuture;
+import io.hekate.messaging.unicast.SubscribeFuture;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.Executor;
@@ -249,12 +249,12 @@ class MessagingGateway<T> {
         requireContext().request(affinityKey, msg, opts, callback);
     }
 
-    public StreamFuture<T> stream(Object affinityKey, T msg, MessagingOpts<T> opts) {
-        return requireContext().stream(affinityKey, msg, opts);
+    public SubscribeFuture<T> subscribe(Object affinityKey, T msg, MessagingOpts<T> opts) {
+        return requireContext().subscribe(affinityKey, msg, opts);
     }
 
-    public void stream(Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
-        requireContext().stream(affinityKey, msg, opts, callback);
+    public void subscribe(Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
+        requireContext().subscribe(affinityKey, msg, opts, callback);
     }
 
     public BroadcastFuture<T> broadcast(Object affinityKey, T msg, MessagingOpts<T> opts) {

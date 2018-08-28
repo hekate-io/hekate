@@ -18,11 +18,11 @@ package io.hekate.messaging.internal;
 
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseCallback;
-import io.hekate.messaging.unicast.StreamFuture;
+import io.hekate.messaging.unicast.SubscribeFuture;
 import java.util.ArrayList;
 import java.util.List;
 
-class StreamCallbackFuture<T> extends StreamFuture<T> implements ResponseCallback<T> {
+class SubscribeCallbackFuture<T> extends SubscribeFuture<T> implements ResponseCallback<T> {
     private List<T> result;
 
     @Override

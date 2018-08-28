@@ -33,7 +33,7 @@ import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.messaging.unicast.SendFuture;
-import io.hekate.messaging.unicast.StreamFuture;
+import io.hekate.messaging.unicast.SubscribeFuture;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
@@ -102,18 +102,18 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
-    public void stream(T request, ResponseCallback<T> callback) {
+    public void subscribe(T request, ResponseCallback<T> callback) {
         ArgAssert.notNull(request, "Message");
         ArgAssert.notNull(callback, "Callback");
 
-        gateway.stream(affinityKey, request, this, callback);
+        gateway.subscribe(affinityKey, request, this, callback);
     }
 
     @Override
-    public StreamFuture<T> stream(T request) {
+    public SubscribeFuture<T> subscribe(T request) {
         ArgAssert.notNull(request, "Message");
 
-        return gateway.stream(affinityKey, request, this);
+        return gateway.subscribe(affinityKey, request, this);
     }
 
     @Override

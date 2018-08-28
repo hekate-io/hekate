@@ -20,7 +20,7 @@ import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.unicast.ResponseFuture;
-import io.hekate.messaging.unicast.StreamFuture;
+import io.hekate.messaging.unicast.SubscribeFuture;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Exchanger;
@@ -171,7 +171,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
             try {
                 MessagingFutureException e = expect(MessagingFutureException.class, () ->
-                    get(sender.get().forRemotes().stream("must-fail-" + i))
+                    get(sender.get().forRemotes().subscribe("must-fail-" + i))
                 );
 
                 assertTrue(getStacktrace(e), e.isCausedBy(MessageTimeoutException.class));
@@ -202,7 +202,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
         assertEquals(150, sender.get().timeout());
 
         repeat(3, i -> {
-            StreamFuture<String> future = sender.get().forRemotes().stream("must-fail-" + i);
+            SubscribeFuture<String> future = sender.get().forRemotes().subscribe("must-fail-" + i);
 
             Message<String> request = msgRef.exchange(null);
 

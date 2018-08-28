@@ -53,7 +53,7 @@ import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.messaging.unicast.SendFuture;
-import io.hekate.messaging.unicast.StreamFuture;
+import io.hekate.messaging.unicast.SubscribeFuture;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkFuture;
 import io.hekate.partition.PartitionMapper;
@@ -273,15 +273,15 @@ class MessagingGatewayContext<T> implements HekateSupport {
         requestWithRouter(unicastRouter(), affinityKey, msg, opts, callback);
     }
 
-    public StreamFuture<T> stream(Object affinityKey, T msg, MessagingOpts<T> opts) {
-        StreamCallbackFuture<T> future = new StreamCallbackFuture<>();
+    public SubscribeFuture<T> subscribe(Object affinityKey, T msg, MessagingOpts<T> opts) {
+        SubscribeCallbackFuture<T> future = new SubscribeCallbackFuture<>();
 
-        stream(affinityKey, msg, opts, future);
+        subscribe(affinityKey, msg, opts, future);
 
         return future;
     }
 
-    public void stream(Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
+    public void subscribe(Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
         assert msg != null : "Request message must be not null.";
         assert opts != null : "Messaging options must be not null.";
         assert callback != null : "Callback must be not null.";
@@ -772,7 +772,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
         boolean isRetransmit = prevFailure.isPresent();
 
         if (ctx.isStream()) {
-            route.client().stream(route, internalCallback, isRetransmit);
+            route.client().subscribe(route, internalCallback, isRetransmit);
         } else {
             route.client().request(route, internalCallback, isRetransmit);
         }

@@ -103,40 +103,41 @@ public interface Message<T> extends MessageBase<T> {
     void reply(T response, SendCallback callback) throws UnsupportedOperationException, IllegalStateException;
 
     /**
-     * Asynchronously sends a partial reply in response to a {@link MessagingChannel#stream(Object, ResponseCallback) stream
-     * request}.
+     * Asynchronously sends a partial reply in response to a
+     * {@link MessagingChannel#subscribe(Object, ResponseCallback) subscription request}.
      *
      * <p>
      * This method provides support for streaming messages from the recipient back to the sender.
-     * For example, the sender can subscribe to a topic using the {@link MessagingChannel#stream(Object, ResponseCallback)} method,
+     * For example, the sender can subscribe to a topic using the {@link MessagingChannel#subscribe(Object, ResponseCallback)} method,
      * and then the recipient of such a request can start to continuously stream updates back to the sender. The subscriber will receive
-     * these updates via the {@link ResponseCallback#onComplete(Throwable, Response)} method. After the streaming is complete, the final
+     * those updates via the {@link ResponseCallback#onComplete(Throwable, Response)} method. After the streaming is complete, the final
      * response must be sent using the {@link #reply(Object)} method.
      * </p>
      *
      * <p>
      * <b>Note:</b> This method can only be called for messages that were sent using the
-     * {@link MessagingChannel#stream(Object, ResponseCallback)} method (or its overloaded versions). If the message was sent by some
+     * {@link MessagingChannel#subscribe(Object, ResponseCallback)} method (or its overloaded versions). If the message was sent by some
      * other method, then all attempts to call this method will throw {@link UnsupportedOperationException}.
      * </p>
      *
      * <p>
-     * The verification of whether a particular message supports partial replies can be performed using the {@link #isStream()} method.
+     * The verification of whether a particular message supports partial replies can be performed using the {@link #isSubscription()}
+     * method.
      * </p>
      *
      * @param response Response.
      *
-     * @throws UnsupportedOperationException If message doesn't support partial responses (see {@link #isStream()}).
+     * @throws UnsupportedOperationException If message doesn't support partial responses (see {@link #isSubscription()}).
      */
     void partialReply(T response) throws UnsupportedOperationException;
 
     /**
-     * Asynchronously sends a partial reply in response to a {@link MessagingChannel#stream(Object, ResponseCallback) stream
-     * request}.
+     * Asynchronously sends a partial reply in response to a
+     * {@link MessagingChannel#subscribe(Object, ResponseCallback) subscription request}.
      *
      * <p>
      * This method provides support for streaming messages from the recipient back to the sender.
-     * For example, the sender can subscribe to a topic using the {@link MessagingChannel#stream(Object, ResponseCallback)} method,
+     * For example, the sender can subscribe to a topic using the {@link MessagingChannel#subscribe(Object, ResponseCallback)} method,
      * and then the recipient of such a request can start to continuously stream updates back to the sender. The subscriber will receive
      * these updates via the {@link ResponseCallback#onComplete(Throwable, Response)} method. After the streaming is complete, the final
      * response must be sent using the {@link #reply(Object)} method.
@@ -144,18 +145,19 @@ public interface Message<T> extends MessageBase<T> {
      *
      * <p>
      * <b>Note:</b> This method can only be called for messages that were sent using the
-     * {@link MessagingChannel#stream(Object, ResponseCallback)} method (or its overloaded versions). If the message was sent by some
+     * {@link MessagingChannel#subscribe(Object, ResponseCallback)} method (or its overloaded versions). If the message was sent by some
      * other method, then all attempts to call this method will throw {@link UnsupportedOperationException}.
      * </p>
      *
      * <p>
-     * The verification of whether a particular message supports partial replies can be performed using the {@link #isStream()} method.
+     * The verification of whether a particular message supports partial replies can be performed using the {@link #isSubscription()}
+     * method.
      * </p>
      *
      * @param response Response.
      * @param callback Callback for tracking completion of an operation.
      *
-     * @throws UnsupportedOperationException If message doesn't support partial responses (see {@link #isStream()}).
+     * @throws UnsupportedOperationException If message doesn't support partial responses (see {@link #isSubscription()}).
      */
     void partialReply(T response, SendCallback callback) throws UnsupportedOperationException;
 
@@ -168,12 +170,12 @@ public interface Message<T> extends MessageBase<T> {
     boolean isRetransmit();
 
     /**
-     * Returns {@code true} if this message represents a {@link MessagingChannel#stream(Object, ResponseCallback) stream request} and
-     * supports {@link #partialReply(Object, SendCallback) partial responses}.
+     * Returns {@code true} if this message represents a {@link MessagingChannel#subscribe(Object, ResponseCallback) subscription request}
+     * and supports {@link #partialReply(Object, SendCallback) partial responses}.
      *
-     * @return {@code true} if this message represents a {@link MessagingChannel#stream(Object, ResponseCallback) stream request}.
+     * @return {@code true} if this message represents a {@link MessagingChannel#subscribe(Object, ResponseCallback) subscription request}.
      */
-    boolean isStream();
+    boolean isSubscription();
 
     /**
      * Returns {@code true} if this message represents a request and can be {@link #reply(Object) replied}.

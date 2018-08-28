@@ -54,11 +54,12 @@ public interface Response<T> extends MessageBase<T> {
 
     /**
      * Returns {@code true} if this message represents a partial response that was produced by the {@link Message#partialReply(Object,
-     * SendCallback)} method. This flag can be used to check if there is more data on the messaging stream or if this is the final response.
+     * SendCallback)} method. This flag can be used to check if there is more data on the messaging stream or if this is the final response
+     * (see {@link Message#reply(Object)}).
      *
-     * @return {@code true} if this message is a partial response.
+     * @return {@code true} if this message is a partial response; {@code false} if this message is a final response.
      *
-     * @see MessagingChannel#stream(Object, ResponseCallback)
+     * @see MessagingChannel#subscribe(Object, ResponseCallback)
      */
     boolean isPartial();
 

@@ -19,13 +19,13 @@ package io.hekate.messaging.internal;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
-import io.hekate.messaging.internal.MessagingProtocol.AffinityStreamRequest;
+import io.hekate.messaging.internal.MessagingProtocol.AffinitySubscribeRequest;
 import io.hekate.messaging.internal.MessagingProtocol.ErrorResponse;
 import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.internal.MessagingProtocol.Request;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
-import io.hekate.messaging.internal.MessagingProtocol.StreamRequest;
+import io.hekate.messaging.internal.MessagingProtocol.SubscribeRequest;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkFuture;
 
@@ -92,17 +92,17 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void stream(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
+    public void subscribe(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
         MessageContext<T> ctx = route.ctx();
 
         RequestHandle<T> req = registerRequest(route, callback);
 
-        StreamRequest<T> msg;
+        SubscribeRequest<T> msg;
 
         if (ctx.hasAffinity()) {
-            msg = new AffinityStreamRequest<>(ctx.affinity(), req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
+            msg = new AffinitySubscribeRequest<>(ctx.affinity(), req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
         } else {
-            msg = new StreamRequest<>(req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
+            msg = new SubscribeRequest<>(req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
         }
 
         long receivedAtMillis = msg.hasTimeout() ? System.nanoTime() : 0;

@@ -77,7 +77,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
 
     public abstract void request(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit);
 
-    public abstract void stream(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit);
+    public abstract void subscribe(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit);
 
     public abstract void replyChunk(MessagingWorker worker, int requestId, T chunk, SendCallback callback);
 
@@ -208,7 +208,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
 
                     break;
                 }
-                case STREAM: {
+                case SUBSCRIBE: {
                     if (receiver == null) {
                         if (log.isErrorEnabled()) {
                             log.error("Received an unexpected message [message={}, from={}]", netMsg, from);
@@ -233,7 +233,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
 
                     break;
                 }
-                case AFFINITY_STREAM: {
+                case AFFINITY_SUBSCRIBE: {
                     if (receiver == null) {
                         if (log.isErrorEnabled()) {
                             log.error("Received an unexpected message [message={}, from={}]", netMsg, from);

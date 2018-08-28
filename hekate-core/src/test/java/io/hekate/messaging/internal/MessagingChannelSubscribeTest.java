@@ -20,7 +20,7 @@ import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.unicast.SendCallback;
-import io.hekate.messaging.unicast.StreamFuture;
+import io.hekate.messaging.unicast.SubscribeFuture;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,8 +39,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class MessagingChannelStreamTest extends MessagingServiceTestBase {
-    public MessagingChannelStreamTest(MessagingTestContext ctx) {
+public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
+    public MessagingChannelSubscribeTest(MessagingTestContext ctx) {
         super(ctx);
     }
 
@@ -65,7 +65,7 @@ public class MessagingChannelStreamTest extends MessagingServiceTestBase {
         awaitForChannelsTopology(sender, receiver);
 
         repeat(5, i -> {
-            StreamFuture<String> future = sender.get().forNode(receiver.getNodeId()).stream("request");
+            SubscribeFuture<String> future = sender.get().forNode(receiver.getNodeId()).subscribe("request");
 
             List<String> expected = Arrays.asList("response0", "response1", "response2", "final");
 
@@ -100,7 +100,7 @@ public class MessagingChannelStreamTest extends MessagingServiceTestBase {
 
             List<String> senderMessages = Collections.synchronizedList(new ArrayList<>());
 
-            sender.get().forNode(receiver.getNodeId()).stream("request", (err, reply) -> {
+            sender.get().forNode(receiver.getNodeId()).subscribe("request", (err, reply) -> {
                 if (err == null) {
                     try {
                         senderMessages.add(reply.get());
@@ -139,7 +139,7 @@ public class MessagingChannelStreamTest extends MessagingServiceTestBase {
 
         TestChannel receiver = createChannel(c -> c.setReceiver(msg -> {
             assertTrue(msg.mustReply());
-            assertTrue(msg.isStream());
+            assertTrue(msg.isSubscription());
 
             assertNotNull(replyCallbackRef.get());
 
@@ -147,7 +147,7 @@ public class MessagingChannelStreamTest extends MessagingServiceTestBase {
                 msg.partialReply("response" + i, replyCallbackRef.get());
 
                 assertTrue(msg.mustReply());
-                assertTrue(msg.isStream());
+                assertTrue(msg.isSubscription());
             }
 
             msg.reply("final", lastReplyCallbackRef.get());
@@ -171,7 +171,7 @@ public class MessagingChannelStreamTest extends MessagingServiceTestBase {
 
             List<String> senderMessages = Collections.synchronizedList(new ArrayList<>());
 
-            sender.get().forNode(receiver.getNodeId()).stream("request", (err, reply) -> {
+            sender.get().forNode(receiver.getNodeId()).subscribe("request", (err, reply) -> {
                 if (err == null) {
                     try {
                         senderMessages.add(reply.get());
@@ -222,7 +222,7 @@ public class MessagingChannelStreamTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        sender.get().forNode(receiver.getNodeId()).stream("test");
+        sender.get().forNode(receiver.getNodeId()).subscribe("test");
 
         Message<String> msg = messageExchanger.exchange(null, 3, TimeUnit.SECONDS);
 

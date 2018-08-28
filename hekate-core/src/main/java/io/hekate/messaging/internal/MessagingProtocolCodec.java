@@ -23,14 +23,14 @@ import io.hekate.codec.DataWriter;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
-import io.hekate.messaging.internal.MessagingProtocol.AffinityStreamRequest;
+import io.hekate.messaging.internal.MessagingProtocol.AffinitySubscribeRequest;
 import io.hekate.messaging.internal.MessagingProtocol.Connect;
 import io.hekate.messaging.internal.MessagingProtocol.ErrorResponse;
 import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.internal.MessagingProtocol.Request;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
-import io.hekate.messaging.internal.MessagingProtocol.StreamRequest;
+import io.hekate.messaging.internal.MessagingProtocol.SubscribeRequest;
 import io.hekate.network.NetworkMessage;
 import io.hekate.util.format.ToString;
 import java.io.EOFException;
@@ -158,7 +158,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 return new Request<>(requestId, retransmit, timeout, payload);
             }
-            case AFFINITY_STREAM: {
+            case AFFINITY_SUBSCRIBE: {
                 boolean retransmit = isRetransmit(flags);
                 int affinity = in.readInt();
                 int requestId = in.readVarInt();
@@ -166,16 +166,16 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 T payload = decodeAffinityRequestPayload(requestId, affinity, in);
 
-                return new AffinityStreamRequest<>(affinity, requestId, retransmit, timeout, payload);
+                return new AffinitySubscribeRequest<>(affinity, requestId, retransmit, timeout, payload);
             }
-            case STREAM: {
+            case SUBSCRIBE: {
                 boolean retransmit = isRetransmit(flags);
                 int requestId = in.readVarInt();
                 long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
 
                 T payload = decodeRequestPayload(requestId, in);
 
-                return new StreamRequest<>(requestId, retransmit, timeout, payload);
+                return new SubscribeRequest<>(requestId, retransmit, timeout, payload);
             }
             case RESPONSE_CHUNK: {
                 int requestId = in.readVarInt();
@@ -290,8 +290,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 break;
             }
-            case AFFINITY_STREAM: {
-                AffinityStreamRequest<T> request = msg.cast();
+            case AFFINITY_SUBSCRIBE: {
+                AffinitySubscribeRequest<T> request = msg.cast();
 
                 flags = appendTimeout(flags, request.hasTimeout());
 
@@ -307,8 +307,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 break;
             }
-            case STREAM: {
-                StreamRequest<T> request = msg.cast();
+            case SUBSCRIBE: {
+                SubscribeRequest<T> request = msg.cast();
 
                 flags = appendTimeout(flags, request.hasTimeout());
 

@@ -161,7 +161,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
                     case "broadcast": {
                         assertFalse(msg.mustReply());
                         assertFalse(msg.isRequest());
-                        assertFalse(msg.isStream());
+                        assertFalse(msg.isSubscription());
 
                         assertResponseUnsupported(msg);
 
@@ -171,13 +171,13 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
                     case "aggregate": {
                         assertTrue(msg.mustReply());
                         assertTrue(msg.isRequest());
-                        assertFalse(msg.isStream());
+                        assertFalse(msg.isSubscription());
 
                         msg.reply("ok");
 
                         assertFalse(msg.mustReply());
                         assertTrue(msg.isRequest());
-                        assertFalse(msg.isStream());
+                        assertFalse(msg.isSubscription());
 
                         assertResponded(msg);
 
@@ -186,21 +186,21 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
                     case "stream-request": {
                         assertTrue(msg.mustReply());
                         assertTrue(msg.isRequest());
-                        assertTrue(msg.isStream());
+                        assertTrue(msg.isSubscription());
 
                         for (int i = 0; i < 5; i++) {
                             msg.partialReply("ok");
 
                             assertTrue(msg.mustReply());
                             assertTrue(msg.isRequest());
-                            assertTrue(msg.isStream());
+                            assertTrue(msg.isSubscription());
                         }
 
                         msg.reply("ok");
 
                         assertFalse(msg.mustReply());
                         assertTrue(msg.isRequest());
-                        assertTrue(msg.isStream());
+                        assertTrue(msg.isSubscription());
 
                         assertResponded(msg);
 
@@ -233,7 +233,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
             throw new AssertionError(e);
         });
 
-        sender.get().forRemotes().stream("stream-request");
+        sender.get().forRemotes().subscribe("stream-request");
         Optional.ofNullable(errRef.exchange(null)).ifPresent(e -> {
             throw new AssertionError(e);
         });

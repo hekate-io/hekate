@@ -96,10 +96,10 @@ class MessagingClientNet<T> implements MessagingClient<T> {
     }
 
     @Override
-    public void stream(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
+    public void subscribe(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
         ensureConnected();
 
-        conn.stream(route, callback, retransmit);
+        conn.subscribe(route, callback, retransmit);
     }
 
     @Override

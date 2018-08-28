@@ -26,8 +26,8 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertNull;
 
-public class BackPressureStreamTest extends BackPressureParametrizedTestBase {
-    public BackPressureStreamTest(BackPressureTestContext ctx) {
+public class BackPressureSubscribeTest extends BackPressureParametrizedTestBase {
+    public BackPressureSubscribeTest(BackPressureTestContext ctx) {
         super(ctx);
     }
 
@@ -53,7 +53,7 @@ public class BackPressureStreamTest extends BackPressureParametrizedTestBase {
         busyWait("requests received", () -> requests.size() == futureResponses.size());
 
         // Send trigger message.
-        sender.get().forRemotes().stream("init");
+        sender.get().forRemotes().subscribe("init");
 
         // Await for trigger message to be received.
         busyWait("trigger received", () -> receivedRef.get() != null);

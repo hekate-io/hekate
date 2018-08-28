@@ -89,8 +89,8 @@ class MessagingClientMem<T> implements MessagingClient<T> {
     }
 
     @Override
-    public void stream(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
-        conn.stream(route, callback, retransmit);
+    public void subscribe(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
+        conn.subscribe(route, callback, retransmit);
     }
 
     @Override

@@ -230,7 +230,7 @@ class LockControllerServer {
 
                             replaced = true;
 
-                            if (msg.isStream()) {
+                            if (msg.isSubscription()) {
                                 replyPartial(newEntry.message(), newResponse(LockResponse.Status.LOCK_INFO));
                             }
 
@@ -257,7 +257,7 @@ class LockControllerServer {
                             log.debug("Added lock request to the locking queue [new={}, queue={}]", entry, queue);
                         }
 
-                        if (msg.isStream()) {
+                        if (msg.isSubscription()) {
                             replyPartial(entry.message(), newResponse(LockResponse.Status.LOCK_INFO));
                         }
                     } else {
@@ -296,7 +296,7 @@ class LockControllerServer {
                             log.debug("Added lock request with timeout to the locking queue [new={}, queue={}]", entry, queue);
                         }
 
-                        if (entry.message().isStream()) {
+                        if (entry.message().isSubscription()) {
                             replyPartial(entry.message(), newResponse(LockResponse.Status.LOCK_INFO));
                         }
                     }
@@ -454,7 +454,7 @@ class LockControllerServer {
         reply(entry.message(), newResponse(LockResponse.Status.OK));
 
         queue.stream()
-            .filter(e -> e.message().isStream())
+            .filter(e -> e.message().isSubscription())
             .forEach(other -> {
                 if (DEBUG) {
                     log.debug("Notifying queue entry on lock owner change [queue-entry={}]", other);
