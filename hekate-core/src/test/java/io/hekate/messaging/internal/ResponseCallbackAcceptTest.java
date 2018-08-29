@@ -92,7 +92,7 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
             public ReplyDecision accept(Throwable err, Response<String> reply) {
-                assertEquals(receiver.getNodeId(), reply.from());
+                assertEquals(receiver.getNodeId(), reply.from().id());
 
                 accepts.incrementAndGet();
 
@@ -116,7 +116,7 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
             public ReplyDecision accept(Throwable err, Response<String> reply) {
-                assertEquals(receiver.getNodeId(), reply.from());
+                assertEquals(receiver.getNodeId(), reply.from().id());
 
                 if (err != null) {
                     return ReplyDecision.COMPLETE;
@@ -142,7 +142,7 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
             public ReplyDecision accept(Throwable err, Response<String> reply) {
-                assertEquals(receiver.getNodeId(), reply.from());
+                assertEquals(receiver.getNodeId(), reply.from().id());
 
                 if (err != null) {
                     return ReplyDecision.COMPLETE;
@@ -171,7 +171,7 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
             public ReplyDecision accept(Throwable err, Response<String> reply) {
-                assertEquals(receiver.getNodeId(), reply.from());
+                assertEquals(receiver.getNodeId(), reply.from().id());
 
                 if (err != null) {
                     return ReplyDecision.COMPLETE;
@@ -211,7 +211,7 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
             @Override
             public ReplyDecision accept(Throwable err, Response<String> reply) {
                 if (err == null) {
-                    assertEquals(receiver.getNodeId(), reply.from());
+                    assertEquals(receiver.getNodeId(), reply.from().id());
                 }
 
                 accepts.incrementAndGet();
@@ -241,7 +241,7 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
             @Override
             public ReplyDecision accept(Throwable err, Response<String> reply) {
                 if (err == null) {
-                    assertEquals(receiver.getNodeId(), reply.from());
+                    assertEquals(receiver.getNodeId(), reply.from().id());
                 }
 
                 accepts.incrementAndGet();
@@ -268,7 +268,7 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
             public ReplyDecision accept(Throwable err, Response<String> reply) {
-                assertEquals(receiver.getNodeId(), reply.from());
+                assertEquals(receiver.getNodeId(), reply.from().id());
 
                 if (err != null) {
                     return ReplyDecision.COMPLETE;

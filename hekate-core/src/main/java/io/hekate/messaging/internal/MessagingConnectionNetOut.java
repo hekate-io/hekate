@@ -16,9 +16,6 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.cluster.ClusterAddress;
-import io.hekate.cluster.ClusterNodeId;
-import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.internal.MessagingProtocol.Connect;
@@ -42,13 +39,7 @@ class MessagingConnectionNetOut<T> extends MessagingConnectionNetBase<T> {
         "connectEpoch"
     );
 
-    private final ClusterAddress address;
-
     private final NetworkClient<MessagingProtocol> net;
-
-    private final MessagingChannelId channelId;
-
-    private final ClusterNodeId localNodeId;
 
     private final DisconnectCallback callback;
 
@@ -57,30 +48,36 @@ class MessagingConnectionNetOut<T> extends MessagingConnectionNetBase<T> {
     @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
     private volatile int connectEpoch;
 
-    public MessagingConnectionNetOut(ClusterAddress address, NetworkClient<MessagingProtocol> net, MessagingGatewayContext<T> ctx,
-        MessagingEndpoint<T> endpoint, Object mux, DisconnectCallback callback) {
+    public MessagingConnectionNetOut(
+        NetworkClient<MessagingProtocol> net,
+        MessagingGatewayContext<T> ctx,
+        MessagingEndpoint<T> endpoint,
+        Object mux,
+        DisconnectCallback callback
+    ) {
         super(net, ctx, endpoint);
 
-        assert address != null : "Address is null.";
+        assert endpoint != null : "Endpoint is null.";
         assert mux != null : "Mutex must be not null.";
         assert callback != null : "Disconnect callback is null.";
 
-        this.channelId = ctx.id();
-        this.localNodeId = ctx.localNode().id();
-        this.address = address;
         this.net = net;
         this.mux = mux;
         this.callback = callback;
     }
 
     public NetworkFuture<MessagingProtocol> connect() {
-        Connect payload = new Connect(address.id(), localNodeId, channelId);
+        Connect payload = new Connect(
+            remoteAddress().id(),
+            gateway().localNode().address(),
+            gateway().channelId()
+        );
 
         synchronized (mux) {
             // Update the connection's epoch.
             int localEpoch = EPOCH_UPDATER.incrementAndGet(this);
 
-            return net.connect(address.socket(), payload, new NetworkClientCallback<MessagingProtocol>() {
+            return net.connect(remoteAddress().socket(), payload, new NetworkClientCallback<MessagingProtocol>() {
                 @Override
                 public void onMessage(NetworkMessage<MessagingProtocol> message, NetworkClient<MessagingProtocol> from) {
                     receive(message, from);
@@ -119,7 +116,7 @@ class MessagingConnectionNetOut<T> extends MessagingConnectionNetBase<T> {
     }
 
     private MessagingException wrapError(Optional<Throwable> cause) {
-        String msg = "Messaging operation failed [address=" + address + ']';
+        String msg = "Messaging operation failed [node=" + remoteAddress() + ']';
 
         return new MessagingException(msg, cause.orElseGet(ClosedChannelException::new));
     }

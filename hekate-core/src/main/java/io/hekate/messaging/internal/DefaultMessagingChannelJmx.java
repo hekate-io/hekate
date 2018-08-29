@@ -29,7 +29,7 @@ class DefaultMessagingChannelJmx implements MessagingChannelJmx {
 
     @Override
     public String getId() {
-        return gateway.id().toString();
+        return gateway.channelId().toString();
     }
 
     @Override

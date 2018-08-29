@@ -16,8 +16,8 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.messaging.MessageInterceptor;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingEndpoint;
@@ -33,7 +33,6 @@ import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkMessage;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
@@ -109,7 +108,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
             switch (msgType) {
                 case NOTIFICATION: {
                     if (receiver == null) {
-                        log.error("Received an unexpected message [message={}]", netMsg);
+                        log.error("Received an unexpected notification [from={}, message={}]", remoteAddress(), netMsg);
                     } else {
                         if (async.isAsync()) {
                             long receivedAtNanos = receivedAtNanos(netMsg);
@@ -122,7 +121,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                                 onReceiveAsyncDequeue();
 
                                 receiveNotificationAsync(m.cast(), receivedAtNanos);
-                            }, error -> handleReceiveError(error, netMsg, from));
+                            }, error -> handleReceiveError(error, netMsg));
                         } else {
                             receiveNotificationSync(netMsg.decode().cast());
                         }
@@ -133,7 +132,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                 case AFFINITY_NOTIFICATION: {
                     if (receiver == null) {
                         if (log.isErrorEnabled()) {
-                            log.error("Received an unexpected message [message={}, from={}]", netMsg, from);
+                            log.error("Received an unexpected notification [from={}, message={}]", remoteAddress(), netMsg);
                         }
                     } else {
                         if (async.isAsync()) {
@@ -148,7 +147,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                                 onReceiveAsyncDequeue();
 
                                 receiveNotificationAsync(m.cast(), receivedAtNanos);
-                            }, error -> handleReceiveError(error, netMsg, from));
+                            }, error -> handleReceiveError(error, netMsg));
                         } else {
                             receiveNotificationSync(netMsg.decode().cast());
                         }
@@ -159,7 +158,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                 case REQUEST: {
                     if (receiver == null) {
                         if (log.isErrorEnabled()) {
-                            log.error("Received an unexpected message [message={}, from={}]", netMsg, from);
+                            log.error("Received an unexpected request [from={}, message={}]", remoteAddress(), netMsg);
                         }
                     } else {
                         MessagingWorker worker = async.pooledWorker();
@@ -173,7 +172,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                                 onReceiveAsyncDequeue();
 
                                 receiveRequestAsync(m.cast(), worker, receivedAtNanos);
-                            }, error -> handleReceiveError(error, netMsg, from));
+                            }, error -> handleReceiveError(error, netMsg));
                         } else {
                             receiveRequestSync(netMsg.decode().cast(), worker);
                         }
@@ -184,7 +183,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                 case AFFINITY_REQUEST: {
                     if (receiver == null) {
                         if (log.isErrorEnabled()) {
-                            log.error("Received an unexpected message [message={}, from={}]", netMsg, from);
+                            log.error("Received an unexpected request [from={}, message={}]", remoteAddress(), netMsg);
                         }
                     } else {
                         int affinity = MessagingProtocolCodec.previewAffinity(netMsg);
@@ -200,7 +199,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                                 onReceiveAsyncDequeue();
 
                                 receiveRequestAsync(m.cast(), worker, receivedAtNanos);
-                            }, error -> handleReceiveError(error, netMsg, from));
+                            }, error -> handleReceiveError(error, netMsg));
                         } else {
                             receiveRequestSync(netMsg.decode().cast(), worker);
                         }
@@ -211,7 +210,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                 case SUBSCRIBE: {
                     if (receiver == null) {
                         if (log.isErrorEnabled()) {
-                            log.error("Received an unexpected message [message={}, from={}]", netMsg, from);
+                            log.error("Received an unexpected subscription [from={}, message={}]", remoteAddress(), netMsg);
                         }
                     } else {
                         MessagingWorker worker = async.pooledWorker();
@@ -225,7 +224,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                                 onReceiveAsyncDequeue();
 
                                 receiveRequestAsync(m.cast(), worker, receivedAtNanos);
-                            }, error -> handleReceiveError(error, netMsg, from));
+                            }, error -> handleReceiveError(error, netMsg));
                         } else {
                             receiveRequestSync(netMsg.decode().cast(), worker);
                         }
@@ -236,7 +235,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                 case AFFINITY_SUBSCRIBE: {
                     if (receiver == null) {
                         if (log.isErrorEnabled()) {
-                            log.error("Received an unexpected message [message={}, from={}]", netMsg, from);
+                            log.error("Received an unexpected subscription [from={}, message={}]", remoteAddress(), netMsg);
                         }
                     } else {
                         int affinity = MessagingProtocolCodec.previewAffinity(netMsg);
@@ -252,7 +251,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                                 onReceiveAsyncDequeue();
 
                                 receiveRequestAsync(m.cast(), worker, receivedAtNanos);
-                            }, error -> handleReceiveError(error, netMsg, from));
+                            }, error -> handleReceiveError(error, netMsg));
                         } else {
                             receiveRequestSync(netMsg.decode().cast(), worker);
                         }
@@ -275,7 +274,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                                 onReceiveAsyncDequeue();
 
                                 doReceiveResponse(handle, m.cast());
-                            }, error -> handleReceiveError(error, netMsg, from));
+                            }, error -> handleReceiveError(error, netMsg));
                         } else {
                             doReceiveResponse(handle, netMsg.decode().cast());
                         }
@@ -298,7 +297,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                                 onReceiveAsyncDequeue();
 
                                 doReceiveResponseChunk(handle, m.cast());
-                            }, error -> handleReceiveError(error, netMsg, from));
+                            }, error -> handleReceiveError(error, netMsg));
                         } else {
                             doReceiveResponseChunk(handle, netMsg.decode().cast());
                         }
@@ -321,7 +320,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                                 onReceiveAsyncDequeue();
 
                                 doReceiveError(handle, m.cast());
-                            }, error -> handleReceiveError(error, netMsg, from));
+                            }, error -> handleReceiveError(error, netMsg));
                         } else {
                             doReceiveError(handle, netMsg.decode().cast());
                         }
@@ -335,7 +334,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                 }
             }
         } catch (Throwable t) {
-            handleReceiveError(t, netMsg, from);
+            handleReceiveError(t, netMsg);
         }
     }
 
@@ -455,8 +454,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                 receiver.receive(msg);
             } catch (RuntimeException | Error e) {
                 if (log.isErrorEnabled()) {
-                    log.error("Got an unexpected runtime error during request processing "
-                        + "[from-node-id={}, message={}]", msg.from(), msg, e);
+                    log.error("Got an unexpected runtime error during request processing [from={}, message={}]", msg.from(), msg, e);
                 }
 
                 replyError(worker, msg.requestId(), e);
@@ -472,8 +470,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                 receiver.receive(msg);
             } catch (RuntimeException | Error e) {
                 if (log.isErrorEnabled()) {
-                    log.error("Got an unexpected runtime error during notification processing "
-                        + "[from-node-id={}, message={}]", msg.from(), msg, e);
+                    log.error("Got an unexpected runtime error during notification processing [from={}, message={}]", msg.from(), msg, e);
                 }
             }
         }
@@ -487,8 +484,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                 request.callback().onComplete(request, null, msg);
             } catch (RuntimeException | Error e) {
                 if (log.isErrorEnabled()) {
-                    log.error("Got an unexpected runtime error during response processing "
-                        + "[from-node-id={}, message={}]", msg.from(), msg, e);
+                    log.error("Got an unexpected runtime error during response processing [from={}, message={}]", msg.from(), msg, e);
                 }
             }
         }
@@ -502,8 +498,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                 request.callback().onComplete(request, null, msg);
             } catch (RuntimeException | Error e) {
                 if (log.isErrorEnabled()) {
-                    log.error("Got an unexpected runtime error during response chunk processing "
-                        + "[from-node-id={}, message={}]", msg.from(), msg, e);
+                    log.error("Got an unexpected runtime error during response chunk processing [from={}, message={}]", msg.from(), msg, e);
                 }
 
                 if (request.unregister()) {
@@ -515,7 +510,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
 
     protected void doReceiveError(RequestHandle<T> handle, ErrorResponse response) {
         MessagingRemoteException error = new MessagingRemoteException("Request processing failed on remote node "
-            + "[remote-node-id=" + endpoint.remoteNodeId() + "]", response.stackTrace());
+            + "[node=" + remoteAddress() + "]", response.stackTrace());
 
         notifyOnRequestFailure(handle, error);
     }
@@ -526,6 +521,10 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
 
     protected void onAsyncDequeue() {
         metrics.onAsyncDequeue();
+    }
+
+    protected ClusterAddress remoteAddress() {
+        return endpoint().remoteAddress();
     }
 
     private void receiveRequestSync(RequestBase<T> msg, MessagingWorker worker) {
@@ -544,9 +543,8 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
         return receivedAtNanos > 0 && System.nanoTime() - receivedAtNanos >= TimeUnit.MILLISECONDS.toNanos(msg.timeout());
     }
 
-    private void handleReceiveError(Throwable error, NetworkMessage<MessagingProtocol> msg, NetworkEndpoint<MessagingProtocol> from) {
-        ClusterNodeId fromId = endpoint.remoteNodeId();
-        InetSocketAddress fromAddr = from.remoteAddress();
+    private void handleReceiveError(Throwable error, NetworkMessage<MessagingProtocol> msg) {
+        ClusterAddress from = endpoint.remoteAddress();
 
         if (error instanceof RequestPayloadDecodeException) {
             RequestPayloadDecodeException e = (RequestPayloadDecodeException)error;
@@ -554,7 +552,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
             Throwable cause = e.getCause();
 
             if (log.isErrorEnabled()) {
-                log.error("Failed to decode request message [from-node-id={}, from-address={}]", fromId, fromAddr, cause);
+                log.error("Failed to decode request message [from={}]", from, cause);
             }
 
             MessagingWorker worker;
@@ -572,7 +570,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
             Throwable cause = e.getCause();
 
             if (log.isErrorEnabled()) {
-                log.error("Failed to decode response message [from-node-id={}, from-address={}]", fromId, fromAddr, cause);
+                log.error("Failed to decode response message [from={}]", from, cause);
             }
 
             RequestHandle<T> handle = requests.get(e.requestId());
@@ -581,9 +579,9 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                 notifyOnRequestFailure(handle, cause);
             }
         } else if (error instanceof NotificationPayloadDecodeException) {
-            log.error("Failed to decode notification message [from-node-id={}, from-address={}]", fromId, fromAddr, error);
+            log.error("Failed to decode notification message [from={}]", from, error);
         } else {
-            log.error("Got error during message processing [from-node-id={}, from-address={}, message={}]", fromId, fromAddr, msg, error);
+            log.error("Got error during message processing [from={}, message={}]", from, msg, error);
 
             disconnectOnError(error);
         }
@@ -620,7 +618,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
             if (error instanceof MessagingException) {
                 msgError = (MessagingException)error;
             } else {
-                msgError = new MessagingException("Message send failure [remote-node-id=" + endpoint.remoteNodeId() + ']', error);
+                msgError = new MessagingException("Message send failure [node=" + remoteAddress() + ']', error);
             }
 
             callback.onComplete(msgError);
@@ -638,7 +636,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
             if (error instanceof MessagingException) {
                 msgError = (MessagingException)error;
             } else {
-                msgError = new MessagingException("Messaging request failure [remote-node-id=" + endpoint.remoteNodeId() + ']', error);
+                msgError = new MessagingException("Messaging request failure [node=" + remoteAddress() + ']', error);
             }
 
             handle.callback().onComplete(handle, msgError, null);

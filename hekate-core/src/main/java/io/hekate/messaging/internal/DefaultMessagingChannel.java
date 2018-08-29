@@ -148,7 +148,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
 
     @Override
     public MessagingChannelId id() {
-        return gateway.id();
+        return gateway.channelId();
     }
 
     @Override

@@ -69,11 +69,11 @@ class MessagingClientNet<T> implements MessagingClient<T> {
         this.node = remoteNode;
         this.trackIdle = trackIdle;
 
-        NetworkClient<MessagingProtocol> netClient = net.newClient();
+        NetworkClient<MessagingProtocol> client = net.newClient();
 
-        DefaultMessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(remoteNode.id(), ctx.channel());
+        DefaultMessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(remoteNode.address(), ctx.channel());
 
-        this.conn = new MessagingConnectionNetOut<>(remoteNode.address(), netClient, ctx, endpoint, mux, () -> {
+        this.conn = new MessagingConnectionNetOut<>(client, ctx, endpoint, mux, () -> {
             // On internal disconnect:
             synchronized (mux) {
                 if (state != STATE_CLOSED) {

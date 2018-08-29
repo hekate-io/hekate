@@ -273,8 +273,8 @@ class MessagingGateway<T> {
         requireContext().aggregate(affinityKey, msg, opts, callback);
     }
 
-    public MessagingChannelId id() {
-        return requireContext().id();
+    public MessagingChannelId channelId() {
+        return requireContext().channelId();
     }
 
     public Executor executor() {

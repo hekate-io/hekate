@@ -229,7 +229,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
         this.onBeforeClose = onBeforeClose;
     }
 
-    public MessagingChannelId id() {
+    public MessagingChannelId channelId() {
         return id;
     }
 

@@ -16,6 +16,7 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.codec.Codec;
 import io.hekate.codec.DataReader;
@@ -37,7 +38,9 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.util.OptionalInt;
 
+import static io.hekate.codec.CodecUtils.readClusterAddress;
 import static io.hekate.codec.CodecUtils.readNodeId;
+import static io.hekate.codec.CodecUtils.writeClusterAddress;
 import static io.hekate.codec.CodecUtils.writeNodeId;
 
 class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
@@ -116,7 +119,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
         switch (type) {
             case CONNECT: {
                 ClusterNodeId to = readNodeId(in);
-                ClusterNodeId from = readNodeId(in);
+                ClusterAddress from = readClusterAddress(in);
 
                 MessagingChannelId sourceId = decodeSourceId(in);
 
@@ -219,7 +222,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 out.writeByte(flags);
 
                 writeNodeId(connect.to(), out);
-                writeNodeId(connect.from(), out);
+                writeClusterAddress(connect.from(), out);
 
                 encodeSourceId(connect.channelId(), out);
 

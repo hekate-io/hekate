@@ -97,7 +97,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
             MessagingChannelId sourceId = new MessagingChannelId();
 
-            fakeClient.connect(socketAddress, new Connect(invalidNodeId, newNodeId(), sourceId), callback);
+            fakeClient.connect(socketAddress, new Connect(invalidNodeId, newAddress(1), sourceId), callback);
 
             fakeClient.send(new Notification<>(false, 0, "fail1"));
             fakeClient.send(new Notification<>(false, 0, "fail2"));

@@ -16,29 +16,29 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterAddress;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.util.format.ToString;
 
 class DefaultMessagingEndpoint<T> implements MessagingEndpoint<T> {
-    private final ClusterNodeId remoteNodeId;
+    private final ClusterAddress address;
 
     private final MessagingChannel<T> channel;
 
     private volatile Object userContext;
 
-    public DefaultMessagingEndpoint(ClusterNodeId remoteNodeId, MessagingChannel<T> channel) {
-        assert remoteNodeId != null : "Remote node ID is null.";
+    public DefaultMessagingEndpoint(ClusterAddress address, MessagingChannel<T> channel) {
+        assert address != null : "Remote address is null.";
         assert channel != null : "Channel is null.";
 
-        this.remoteNodeId = remoteNodeId;
+        this.address = address;
         this.channel = channel;
     }
 
     @Override
-    public ClusterNodeId remoteNodeId() {
-        return remoteNodeId;
+    public ClusterAddress remoteAddress() {
+        return address;
     }
 
     @Override

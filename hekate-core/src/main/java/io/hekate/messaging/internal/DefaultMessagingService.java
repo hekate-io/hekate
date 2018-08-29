@@ -17,6 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterAcceptor;
+import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterService;
@@ -532,7 +533,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                         return;
                     }
 
-                    ClusterNodeId from = connect.from();
+                    ClusterAddress from = connect.from();
 
                     MessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(from, ctx.channel());
 

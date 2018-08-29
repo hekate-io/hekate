@@ -16,6 +16,7 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.codec.CodecException;
@@ -60,11 +61,11 @@ abstract class MessagingProtocol {
     static class Connect extends MessagingProtocol {
         private final ClusterNodeId to;
 
-        private final ClusterNodeId from;
+        private final ClusterAddress from;
 
         private final MessagingChannelId channelId;
 
-        public Connect(ClusterNodeId to, ClusterNodeId from, MessagingChannelId channelId) {
+        public Connect(ClusterNodeId to, ClusterAddress from, MessagingChannelId channelId) {
             super(false);
 
             this.to = to;
@@ -76,7 +77,7 @@ abstract class MessagingProtocol {
             return to;
         }
 
-        public ClusterNodeId from() {
+        public ClusterAddress from() {
             return from;
         }
 

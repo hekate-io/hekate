@@ -16,8 +16,8 @@
 
 package io.hekate.messaging;
 
+import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeId;
 
 /**
  * Base interface for messages.
@@ -76,7 +76,7 @@ public interface MessageBase<T> {
      *
      * @see ClusterNode#id()
      */
-    default ClusterNodeId from() {
-        return endpoint().remoteNodeId();
+    default ClusterAddress from() {
+        return endpoint().remoteAddress();
     }
 }
