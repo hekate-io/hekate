@@ -25,6 +25,7 @@ import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
 import io.hekate.messaging.internal.MessagingProtocol.AffinitySubscribeRequest;
+import io.hekate.messaging.internal.MessagingProtocol.AffinityVoidRequest;
 import io.hekate.messaging.internal.MessagingProtocol.Connect;
 import io.hekate.messaging.internal.MessagingProtocol.ErrorResponse;
 import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
@@ -32,6 +33,8 @@ import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.internal.MessagingProtocol.Request;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
 import io.hekate.messaging.internal.MessagingProtocol.SubscribeRequest;
+import io.hekate.messaging.internal.MessagingProtocol.VoidRequest;
+import io.hekate.messaging.internal.MessagingProtocol.VoidResponse;
 import io.hekate.network.NetworkMessage;
 import io.hekate.util.format.ToString;
 import java.io.EOFException;
@@ -48,11 +51,11 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
     private static final int FLAG_BYTES = 1;
 
-    private static final int MASK_TYPE = 15; // 00001111
+    private static final int MASK_TYPE = 0b0000_1111;
 
-    private static final int MASK_RETRANSMIT = 128; // 10000000
+    private static final int MASK_RETRANSMIT = 0b1000_0000;
 
-    private static final int MASK_HAS_TIMEOUT = 64; // 01000000
+    private static final int MASK_HAS_TIMEOUT = 0b0100_0000;
 
     private static final NetworkMessage.Preview<MessagingProtocol.Type> TYPE_PREVIEW = rd -> getType(rd.readByte());
 
@@ -161,6 +164,25 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 return new Request<>(requestId, retransmit, timeout, payload);
             }
+            case AFFINITY_VOID_REQUEST: {
+                boolean retransmit = isRetransmit(flags);
+                int affinity = in.readInt();
+                int requestId = in.readVarInt();
+                long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
+
+                T payload = decodeAffinityRequestPayload(requestId, affinity, in);
+
+                return new AffinityVoidRequest<>(affinity, requestId, retransmit, timeout, payload);
+            }
+            case VOID_REQUEST: {
+                boolean retransmit = isRetransmit(flags);
+                int requestId = in.readVarInt();
+                long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
+
+                T payload = decodeRequestPayload(requestId, in);
+
+                return new VoidRequest<>(requestId, retransmit, timeout, payload);
+            }
             case AFFINITY_SUBSCRIBE: {
                 boolean retransmit = isRetransmit(flags);
                 int affinity = in.readInt();
@@ -193,6 +215,11 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 T payload = decodeResponsePayload(requestId, in);
 
                 return new FinalResponse<>(requestId, payload);
+            }
+            case VOID_RESPONSE: {
+                int requestId = in.readVarInt();
+
+                return new VoidResponse(requestId);
             }
             case ERROR_RESPONSE: {
                 int requestId = in.readVarInt();
@@ -293,6 +320,40 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 break;
             }
+            case AFFINITY_VOID_REQUEST: {
+                AffinityVoidRequest<T> request = msg.cast();
+
+                flags = appendTimeout(flags, request.hasTimeout());
+
+                out.writeByte(flags);
+
+                out.writeInt(request.affinity());
+                out.writeVarInt(request.requestId());
+
+                if (request.hasTimeout()) {
+                    out.writeVarLong(request.timeout());
+                }
+
+                delegate.encode(request.get(), out);
+
+                break;
+            }
+            case VOID_REQUEST: {
+                VoidRequest<T> request = msg.cast();
+
+                flags = appendTimeout(flags, request.hasTimeout());
+
+                out.writeByte(flags);
+                out.writeVarInt(request.requestId());
+
+                if (request.hasTimeout()) {
+                    out.writeVarLong(request.timeout());
+                }
+
+                delegate.encode(request.get(), out);
+
+                break;
+            }
             case AFFINITY_SUBSCRIBE: {
                 AffinitySubscribeRequest<T> request = msg.cast();
 
@@ -343,6 +404,14 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 out.writeVarInt(response.requestId());
 
                 delegate.encode(response.get(), out);
+
+                break;
+            }
+            case VOID_RESPONSE: {
+                VoidResponse response = msg.cast();
+
+                out.writeByte(flags);
+                out.writeVarInt(response.requestId());
 
                 break;
             }

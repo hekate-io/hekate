@@ -65,10 +65,8 @@ class NettyMessage extends InputStream implements DataReader, NetworkMessage<Obj
                     throw new CodecException("Failed to decode message: codec returned null [codec=" + codec + ']');
                 }
 
-                if (buf.isReadable()) {
-                    throw new CodecException("Failed to decode message: codec didn't read all bytes from message buffer "
-                        + "[remaining=" + buf.readableBytes() + ", message=" + decoded + ", codec=" + codec + ']');
-                }
+                // Mark buffer as fully consumed.
+                skipRemainingBytes();
 
                 if (log != null && log.isDebugEnabled()) {
                     log.debug("Message decoded [message={}]", decoded);

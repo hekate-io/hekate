@@ -42,6 +42,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T> {
+    private static final boolean DEFAULT_CONFIRM_RECEIVE = true;
+
     private final MessagingGateway<T> gateway;
 
     @ToStringIgnore
@@ -57,8 +59,29 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
 
     private final long timeout;
 
-    public DefaultMessagingChannel(MessagingGateway<T> gateway, ClusterView cluster, RendezvousHashMapper partitions,
-        LoadBalancer<T> balancer, FailoverPolicy failover, long timeout, Object affinityKey) {
+    private final boolean confirmReceive;
+
+    public DefaultMessagingChannel(
+        MessagingGateway<T> gateway,
+        ClusterView cluster,
+        RendezvousHashMapper partitions,
+        LoadBalancer<T> balancer,
+        FailoverPolicy failover,
+        long timeout
+    ) {
+        this(gateway, cluster, partitions, balancer, failover, timeout, DEFAULT_CONFIRM_RECEIVE, null);
+    }
+
+    private DefaultMessagingChannel(
+        MessagingGateway<T> gateway,
+        ClusterView cluster,
+        RendezvousHashMapper partitions,
+        LoadBalancer<T> balancer,
+        FailoverPolicy failover,
+        long timeout,
+        boolean confirmReceive,
+        Object affinityKey
+    ) {
         assert gateway != null : "Gateway is null.";
         assert cluster != null : "Cluster view is null.";
         assert partitions != null : "Partition mapper is null.";
@@ -69,6 +92,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
         this.balancer = balancer;
         this.failover = failover;
         this.timeout = timeout;
+        this.confirmReceive = confirmReceive;
         this.affinityKey = affinityKey;
     }
 
@@ -163,7 +187,16 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
 
     @Override
     public DefaultMessagingChannel<T> withAffinity(Object affinityKey) {
-        return new DefaultMessagingChannel<>(gateway, cluster, partitions, balancer, failover, timeout, affinityKey);
+        return new DefaultMessagingChannel<>(
+            gateway,
+            cluster,
+            partitions,
+            balancer,
+            failover,
+            timeout,
+            confirmReceive,
+            affinityKey
+        );
     }
 
     @Override
@@ -177,21 +210,39 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
-    public MessagingChannel<T> withPartitions(int partitions, int backupNodes) {
+    public DefaultMessagingChannel<T> withPartitions(int partitions, int backupNodes) {
         if (partitions().partitions() == partitions && partitions().backupNodes() == backupNodes) {
             return this;
         }
 
         RendezvousHashMapper newPartitions = RendezvousHashMapper.of(cluster, partitions, backupNodes);
 
-        return new DefaultMessagingChannel<>(gateway, cluster, newPartitions, balancer, failover, timeout, affinityKey);
+        return new DefaultMessagingChannel<>(
+            gateway,
+            cluster,
+            newPartitions,
+            balancer,
+            failover,
+            timeout,
+            confirmReceive,
+            affinityKey
+        );
     }
 
     @Override
     public DefaultMessagingChannel<T> withLoadBalancer(LoadBalancer<T> balancer) {
         ArgAssert.notNull(balancer, "balancer");
 
-        return new DefaultMessagingChannel<>(gateway, cluster, partitions, balancer, failover, timeout, affinityKey);
+        return new DefaultMessagingChannel<>(
+            gateway,
+            cluster,
+            partitions,
+            balancer,
+            failover,
+            timeout,
+            confirmReceive,
+            affinityKey
+        );
     }
 
     @Override
@@ -201,7 +252,16 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
 
     @Override
     public DefaultMessagingChannel<T> withFailover(FailoverPolicy policy) {
-        return new DefaultMessagingChannel<>(gateway, cluster, partitions, balancer, policy, timeout, affinityKey);
+        return new DefaultMessagingChannel<>(
+            gateway,
+            cluster,
+            partitions,
+            balancer,
+            policy,
+            timeout,
+            confirmReceive,
+            affinityKey
+        );
     }
 
     @Override
@@ -213,7 +273,16 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     public DefaultMessagingChannel<T> withTimeout(long timeout, TimeUnit unit) {
         ArgAssert.notNull(unit, "Time unit");
 
-        return new DefaultMessagingChannel<>(gateway, cluster, partitions, balancer, failover, unit.toMillis(timeout), affinityKey);
+        return new DefaultMessagingChannel<>(
+            gateway,
+            cluster,
+            partitions,
+            balancer,
+            failover,
+            unit.toMillis(timeout),
+            confirmReceive,
+            affinityKey
+        );
     }
 
     @Override
@@ -223,7 +292,16 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
         ClusterView newCluster = cluster.filterAll(filter);
         RendezvousHashMapper newPartitions = partitions.copy(newCluster);
 
-        return new DefaultMessagingChannel<>(gateway, newCluster, newPartitions, balancer, failover, timeout, affinityKey);
+        return new DefaultMessagingChannel<>(
+            gateway,
+            newCluster,
+            newPartitions,
+            balancer,
+            failover,
+            timeout,
+            confirmReceive,
+            affinityKey
+        );
     }
 
     @Override
@@ -232,13 +310,41 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     }
 
     @Override
-    public MessagingChannel<T> withCluster(ClusterView cluster) {
+    public DefaultMessagingChannel<T> withCluster(ClusterView cluster) {
         ArgAssert.notNull(cluster, "Cluster");
 
         ClusterView newCluster = cluster.filter(ChannelMetaData.hasReceiver(gateway.name()));
         RendezvousHashMapper newPartitions = partitions.copy(newCluster);
 
-        return new DefaultMessagingChannel<>(gateway, newCluster, newPartitions, balancer, failover, timeout, affinityKey);
+        return new DefaultMessagingChannel<>(
+            gateway,
+            newCluster,
+            newPartitions,
+            balancer,
+            failover,
+            timeout,
+            confirmReceive,
+            affinityKey
+        );
+    }
+
+    @Override
+    public DefaultMessagingChannel<T> withConfirmReceive(boolean confirmReceive) {
+        return new DefaultMessagingChannel<>(
+            gateway,
+            cluster,
+            partitions,
+            balancer,
+            failover,
+            timeout,
+            confirmReceive,
+            affinityKey
+        );
+    }
+
+    @Override
+    public boolean isConfirmReceive() {
+        return confirmReceive;
     }
 
     @Override

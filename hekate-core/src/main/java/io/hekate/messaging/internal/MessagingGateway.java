@@ -163,10 +163,8 @@ class MessagingGateway<T> {
             mapper,
             loadBalancer,
             cfg.getFailoverPolicy(),
-            cfg.getMessagingTimeout(),
-            null
+            cfg.getMessagingTimeout()
         );
-
     }
 
     public String name() {

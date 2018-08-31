@@ -67,7 +67,7 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
             public ReplyDecision accept(Throwable err, Response<String> reply) {
-                assertEquals(receiver.getNodeId(), reply.endpoint().remoteNodeId());
+                assertEquals(receiver.nodeId(), reply.endpoint().remoteNodeId());
 
                 if (err != null) {
                     return ReplyDecision.COMPLETE;
@@ -79,7 +79,7 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
             }
         };
 
-        sender.request(receiver.getNodeId(), "test", callback);
+        sender.get().forNode(receiver.nodeId()).request("test", callback);
 
         assertEquals("test-reply", callback.get().get());
         assertEquals(1, accepts.get());
@@ -92,7 +92,7 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
             public ReplyDecision accept(Throwable err, Response<String> reply) {
-                assertEquals(receiver.getNodeId(), reply.from().id());
+                assertEquals(receiver.nodeId(), reply.from().id());
 
                 accepts.incrementAndGet();
 
@@ -102,7 +102,7 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         sender.get()
             .withFailover(FailoverContext::retry)
-            .forNode(receiver.getNodeId())
+            .forNode(receiver.nodeId())
             .request("test", callback);
 
         assertEquals("test-reply", callback.get().get());
@@ -116,7 +116,7 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
             public ReplyDecision accept(Throwable err, Response<String> reply) {
-                assertEquals(receiver.getNodeId(), reply.from().id());
+                assertEquals(receiver.nodeId(), reply.from().id());
 
                 if (err != null) {
                     return ReplyDecision.COMPLETE;
@@ -128,11 +128,11 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
             }
         };
 
-        sender.request(receiver.getNodeId(), "test", callback);
+        sender.get().forNode(receiver.nodeId()).request("test", callback);
 
         assertEquals("test-reply", callback.get().get());
         assertEquals(1, accepts.get());
-        assertEquals(1, receiver.getReceived().size());
+        assertEquals(1, receiver.received().size());
     }
 
     @Test
@@ -142,7 +142,7 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
             public ReplyDecision accept(Throwable err, Response<String> reply) {
-                assertEquals(receiver.getNodeId(), reply.from().id());
+                assertEquals(receiver.nodeId(), reply.from().id());
 
                 if (err != null) {
                     return ReplyDecision.COMPLETE;
@@ -156,12 +156,12 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         sender.get()
             .withFailover(FailoverContext::retry)
-            .forNode(receiver.getNodeId())
+            .forNode(receiver.nodeId())
             .request("test", callback);
 
         assertEquals("test-reply", callback.get().get());
         assertEquals(3, accepts.get());
-        assertEquals(3, receiver.getReceived().size());
+        assertEquals(3, receiver.received().size());
     }
 
     @Test
@@ -171,7 +171,7 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
             public ReplyDecision accept(Throwable err, Response<String> reply) {
-                assertEquals(receiver.getNodeId(), reply.from().id());
+                assertEquals(receiver.nodeId(), reply.from().id());
 
                 if (err != null) {
                     return ReplyDecision.COMPLETE;
@@ -185,7 +185,7 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         sender.get()
             .withFailover(FailoverContext::fail)
-            .forNode(receiver.getNodeId())
+            .forNode(receiver.nodeId())
             .request("test", callback);
 
         try {
@@ -198,7 +198,7 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
         }
 
         assertEquals(1, accepts.get());
-        assertEquals(1, receiver.getReceived().size());
+        assertEquals(1, receiver.received().size());
     }
 
     @Test
@@ -211,7 +211,7 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
             @Override
             public ReplyDecision accept(Throwable err, Response<String> reply) {
                 if (err == null) {
-                    assertEquals(receiver.getNodeId(), reply.from().id());
+                    assertEquals(receiver.nodeId(), reply.from().id());
                 }
 
                 accepts.incrementAndGet();
@@ -222,13 +222,13 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         sender.get()
             .withFailover(FailoverContext::retry)
-            .forNode(receiver.getNodeId())
+            .forNode(receiver.nodeId())
             .request("test", callback);
 
         callback.get();
 
         assertEquals(2, accepts.get());
-        assertEquals(2, receiver.getReceived().size());
+        assertEquals(2, receiver.received().size());
     }
 
     @Test
@@ -241,7 +241,7 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
             @Override
             public ReplyDecision accept(Throwable err, Response<String> reply) {
                 if (err == null) {
-                    assertEquals(receiver.getNodeId(), reply.from().id());
+                    assertEquals(receiver.nodeId(), reply.from().id());
                 }
 
                 accepts.incrementAndGet();
@@ -252,13 +252,13 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         sender.get()
             .withFailover(FailoverContext::retry)
-            .forNode(receiver.getNodeId())
+            .forNode(receiver.nodeId())
             .request("test", callback);
 
         callback.get();
 
         assertEquals(2, accepts.get());
-        assertEquals(2, receiver.getReceived().size());
+        assertEquals(2, receiver.received().size());
     }
 
     @Test
@@ -268,7 +268,7 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
         ResponseCallbackMock callback = new ResponseCallbackMock("test") {
             @Override
             public ReplyDecision accept(Throwable err, Response<String> reply) {
-                assertEquals(receiver.getNodeId(), reply.from().id());
+                assertEquals(receiver.nodeId(), reply.from().id());
 
                 if (err != null) {
                     return ReplyDecision.COMPLETE;
@@ -284,12 +284,12 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         sender.get()
             .withFailover(FailoverContext::retry)
-            .forNode(receiver.getNodeId())
+            .forNode(receiver.nodeId())
             .request("test", callback);
 
         callback.get();
 
         assertEquals(3, accepts.get());
-        assertEquals(3, receiver.getReceived().size());
+        assertEquals(3, receiver.received().size());
     }
 }

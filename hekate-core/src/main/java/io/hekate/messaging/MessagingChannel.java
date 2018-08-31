@@ -105,6 +105,11 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * required then consider using the {@link #request(Object)} method.
      * </p>
      *
+     * <p>
+     * By default, this operation will wait for the message to be processed on the receiver side. It is possible to disable this behavior
+     * via {@link #withConfirmReceive(boolean)} method.
+     * </p>
+     *
      * @param message Message to be sent.
      *
      * @return Future object that can be used to inspect the operation result.
@@ -117,6 +122,11 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * <p>
      * This method doesn't assume any response to be received from the destination node. If request-response type of communication is
      * required then consider using the {@link #request(Object, ResponseCallback)} method.
+     * </p>
+     *
+     * <p>
+     * By default, this operation will wait for the message to be processed on the receiver side. It is possible to disable this behavior
+     * via {@link #withConfirmReceive(boolean)} method.
      * </p>
      *
      * @param message Message to be sent.
@@ -177,6 +187,11 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     /**
      * Asynchronously broadcasts the specified message and returns a future object that can be used to inspect the operation result.
      *
+     * <p>
+     * By default, this operation will wait for the message to be processed on all receivers. It is possible to disable this behavior
+     * via {@link #withConfirmReceive(boolean)} method.
+     * </p>
+     *
      * @param message Message to broadcast.
      *
      * @return Future object that can be used to inspect the broadcast operation result.
@@ -185,6 +200,11 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
 
     /**
      * Asynchronously broadcasts the specified message and notifies the specified callback upon the operation completion.
+     *
+     * <p>
+     * By default, this operation will wait for the message to be processed on all receivers. It is possible to disable this behavior
+     * via {@link #withConfirmReceive(boolean)} method.
+     * </p>
      *
      * @param message Message to broadcast.
      * @param callback Callback that should be notified upon the broadcast operation completion.
@@ -360,6 +380,39 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @return Channel wrapper.
      */
     MessagingChannel<T> withCluster(ClusterView cluster);
+
+    /**
+     * Returns a copy of this channel that will use the specified confirmation mode and will inherit all other options from this instance.
+     *
+     * <p>
+     * If this option is set to {@code true} then receiver of {@link #send(Object)} and {@link #broadcast(Object)} operation will send
+     * back a confirmation to indicate that message was successfully {@link MessageReceiver#receive(Message) received}. In such case the
+     * operation's callback/future will be notified only when such confirmation is received (or if operation fails).
+     * </p>
+     *
+     * <p>
+     * If this option is set to {@code false} then operation will be assumed to be successful once the message gets flushed to the network
+     * buffer without any additional confirmations from the receiver side.
+     * </p>
+     *
+     * <p>
+     * Default value of this option is {@code true} (i.e. confirmations are enabled by default).
+     * </p>
+     *
+     * @param confirmReceive Confirmation mode.
+     *
+     * @return Channel wrapper.
+     */
+    MessagingChannel<T> withConfirmReceive(boolean confirmReceive);
+
+    /**
+     * Returns the confirmation mode of this channel.
+     *
+     * @return Confirmation mode of this channel.
+     *
+     * @see #withConfirmReceive(boolean)
+     */
+    boolean isConfirmReceive();
 
     /**
      * Returns the asynchronous task executor of this channel.

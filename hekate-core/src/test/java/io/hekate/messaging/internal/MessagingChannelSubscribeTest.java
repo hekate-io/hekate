@@ -65,7 +65,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
         awaitForChannelsTopology(sender, receiver);
 
         repeat(5, i -> {
-            SubscribeFuture<String> future = sender.get().forNode(receiver.getNodeId()).subscribe("request");
+            SubscribeFuture<String> future = sender.get().forNode(receiver.nodeId()).subscribe("request");
 
             List<String> expected = Arrays.asList("response0", "response1", "response2", "final");
 
@@ -100,7 +100,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
 
             List<String> senderMessages = Collections.synchronizedList(new ArrayList<>());
 
-            sender.get().forNode(receiver.getNodeId()).subscribe("request", (err, reply) -> {
+            sender.get().forNode(receiver.nodeId()).subscribe("request", (err, reply) -> {
                 if (err == null) {
                     try {
                         senderMessages.add(reply.get());
@@ -171,7 +171,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
 
             List<String> senderMessages = Collections.synchronizedList(new ArrayList<>());
 
-            sender.get().forNode(receiver.getNodeId()).subscribe("request", (err, reply) -> {
+            sender.get().forNode(receiver.nodeId()).subscribe("request", (err, reply) -> {
                 if (err == null) {
                     try {
                         senderMessages.add(reply.get());
@@ -222,7 +222,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        sender.get().forNode(receiver.getNodeId()).subscribe("test");
+        sender.get().forNode(receiver.nodeId()).subscribe("test");
 
         Message<String> msg = messageExchanger.exchange(null, 3, TimeUnit.SECONDS);
 

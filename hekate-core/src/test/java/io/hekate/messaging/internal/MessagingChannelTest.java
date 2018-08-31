@@ -69,11 +69,13 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         assertNotNull(channel.id());
         assertEquals(TEST_CHANNEL_NAME, channel.name());
         assertNotNull(channel.cluster());
-        assertThat(channel.cluster().topology().nodes(), hasItem(testChannel.getNode().localNode()));
+        assertThat(channel.cluster().topology().nodes(), hasItem(testChannel.node().localNode()));
         assertEquals(nioThreads, channel.nioThreads());
         assertEquals(workerThreads, channel.workerThreads());
         assertNotNull(channel.executor());
         assertEquals(100500, channel.timeout());
+        assertFalse(testChannel.get().withConfirmReceive(false).isConfirmReceive());
+        assertTrue(testChannel.get().withConfirmReceive(true).isConfirmReceive());
     }
 
     @Test
@@ -81,7 +83,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         TestChannel channel = createChannel().join();
 
         // Create a fake TCP client via node's TCP service.
-        NetworkService net = channel.getNode().network();
+        NetworkService net = channel.node().network();
 
         NetworkConnector<MessagingProtocol> fakeConnector = net.connector(TEST_CHANNEL_NAME);
 
@@ -91,7 +93,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
             // Try connect to a node by using an invalid node ID.
             ClusterNodeId invalidNodeId = newNodeId();
 
-            InetSocketAddress socketAddress = channel.getNode().localNode().socket();
+            InetSocketAddress socketAddress = channel.node().localNode().socket();
 
             NetworkClientCallbackMock<MessagingProtocol> callback = new NetworkClientCallbackMock<>();
 
@@ -105,7 +107,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
             // Check that client was disconnected and no messages were received by the server.
             callback.awaitForDisconnects(1);
-            assertTrue(channel.getReceived().isEmpty());
+            assertTrue(channel.received().isEmpty());
 
             fakeClient.disconnect();
         });
@@ -121,7 +123,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
             try {
                 MessagingEndpoint<String> endpoint = msg.endpoint();
 
-                assertEquals(sender.getNodeId(), endpoint.remoteNodeId());
+                assertEquals(sender.nodeId(), endpoint.remoteNodeId());
 
                 endpoint.setContext("test");
                 assertEquals("test", endpoint.getContext());
@@ -143,7 +145,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        sender.get().forNode(receiver.getNodeId()).request("request").get();
+        sender.get().forNode(receiver.nodeId()).request("request").get();
 
         if (errorRef.get() != null) {
             throw errorRef.get();
@@ -353,7 +355,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         channels.forEach(c ->
             expectCause(EmptyTopologyException.class, () ->
-                get(sender.forNode(c.getNodeId()).request("test"))
+                get(sender.forNode(c.nodeId()).request("test"))
             )
         );
 
@@ -368,7 +370,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         channels.forEach(c ->
             expectCause(EmptyTopologyException.class, () ->
-                get(sender.forNode(c.getNodeId()).request("test"))
+                get(sender.forNode(c.nodeId()).request("test"))
             )
         );
 
@@ -383,21 +385,21 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         channels.forEach(c ->
             expectCause(EmptyTopologyException.class, () ->
-                get(sender.forNode(c.getNodeId()).request("test"))
+                get(sender.forNode(c.nodeId()).request("test"))
             )
         );
 
         // One node in the cluster.
         // ----------------------------------------------------------------------
         for (TestChannel c : channels) {
-            manualCluster.update(ClusterTopology.of(manualCluster.topology().version() + 1, singleton(c.getNode().localNode())));
+            manualCluster.update(ClusterTopology.of(manualCluster.topology().version() + 1, singleton(c.node().localNode())));
 
             assertEquals(1, sender.cluster().topology().size());
-            assertTrue(sender.cluster().topology().contains(c.getNodeId()));
+            assertTrue(sender.cluster().topology().contains(c.nodeId()));
             assertEquals(1, sender.partitions().topology().size());
-            assertTrue(sender.partitions().topology().contains(c.getNodeId()));
+            assertTrue(sender.partitions().topology().contains(c.nodeId()));
 
-            get(sender.forNode(c.getNodeId()).request("test"));
+            get(sender.forNode(c.nodeId()).request("test"));
         }
 
         // New node should not be visible.
@@ -417,12 +419,12 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         // New node should not be visible.
         expectCause(EmptyTopologyException.class, () ->
-            get(sender2.forNode(channels.get(channels.size() - 1).getNodeId()).request("test"))
+            get(sender2.forNode(channels.get(channels.size() - 1).nodeId()).request("test"))
         );
 
         // Old nodes should be visible.
         for (int i = 0; i < channels.size() - 1 /* <- Exclude newly added node */; i++) {
-            get(sender2.forNode(channels.get(i).getNodeId()).request("test"));
+            get(sender2.forNode(channels.get(i).nodeId()).request("test"));
         }
 
         // Removed node should be still visible.
@@ -442,7 +444,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         assertEquals(4, sender3.cluster().topology().size());
 
         expectCause(UnknownRouteException.class, () ->
-            get(sender3.forNode(removed.getNodeId()).request("test"))
+            get(sender3.forNode(removed.nodeId()).request("test"))
         );
 
         // Non-channel node should be filtered out.

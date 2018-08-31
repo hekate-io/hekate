@@ -47,6 +47,10 @@ abstract class MessagingProtocol {
 
         AFFINITY_REQUEST,
 
+        VOID_REQUEST,
+
+        AFFINITY_VOID_REQUEST,
+
         SUBSCRIBE,
 
         AFFINITY_SUBSCRIBE,
@@ -54,6 +58,8 @@ abstract class MessagingProtocol {
         RESPONSE_CHUNK,
 
         FINAL_RESPONSE,
+
+        VOID_RESPONSE,
 
         ERROR_RESPONSE
     }
@@ -235,8 +241,6 @@ abstract class MessagingProtocol {
     }
 
     abstract static class RequestBase<T> extends MessagingProtocol implements Message<T>, NetworkSendCallback<MessagingProtocol> {
-        private static final AtomicIntegerFieldUpdater<RequestBase> MUST_REPLY = newUpdater(RequestBase.class, "mustReply");
-
         private final int requestId;
 
         private final long timeout;
@@ -249,9 +253,6 @@ abstract class MessagingProtocol {
 
         private RequestHandle<T> handle;
 
-        @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
-        private volatile int mustReply;
-
         public RequestBase(int requestId, boolean retransmit, long timeout, T payload) {
             super(retransmit);
 
@@ -259,6 +260,8 @@ abstract class MessagingProtocol {
             this.timeout = timeout;
             this.payload = payload;
         }
+
+        public abstract boolean isVoid();
 
         public void prepareReceive(MessagingWorker worker, MessagingConnectionBase<T> conn) {
             this.worker = worker;
@@ -293,11 +296,6 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public boolean isRequest() {
-            return true;
-        }
-
-        @Override
         public boolean is(Class<? extends T> type) {
             return type.isInstance(payload);
         }
@@ -310,6 +308,43 @@ abstract class MessagingProtocol {
         @Override
         public <P extends T> P get(Class<P> type) {
             return type.cast(payload);
+        }
+
+        @Override
+        public MessagingEndpoint<T> endpoint() {
+            return conn.endpoint();
+        }
+
+        protected MessagingWorker worker() {
+            return worker;
+        }
+
+        protected MessagingConnectionBase<T> connection() {
+            return conn;
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "[payload=" + payload + ']';
+        }
+    }
+
+    abstract static class RequestWithResponseBase<T> extends RequestBase<T> {
+        private static final AtomicIntegerFieldUpdater<RequestWithResponseBase> MUST_REPLY = newUpdater(
+            RequestWithResponseBase.class,
+            "mustReply"
+        );
+
+        @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
+        private volatile int mustReply;
+
+        public RequestWithResponseBase(int requestId, boolean retransmit, long timeout, T payload) {
+            super(requestId, retransmit, timeout, payload);
+        }
+
+        @Override
+        public boolean isRequest() {
+            return true;
         }
 
         @Override
@@ -326,51 +361,31 @@ abstract class MessagingProtocol {
         public void reply(T response, SendCallback callback) {
             responded();
 
-            T transformed = conn.prepareReply(response);
+            T transformed = connection().prepareReply(response);
 
-            conn.replyFinal(worker, requestId, transformed, callback);
-        }
-
-        @Override
-        public void partialReply(T response) {
-            partialReply(response, null);
-        }
-
-        @Override
-        public void partialReply(T response, SendCallback callback) {
-            checkNotResponded();
-
-            T transformed = conn.prepareReply(response);
-
-            conn.replyChunk(worker, requestId, transformed, callback);
-        }
-
-        @Override
-        public MessagingEndpoint<T> endpoint() {
-            return conn.endpoint();
-        }
-
-        protected void checkNotResponded() {
-            if (!mustReply()) {
-                throw new IllegalStateException("Message already responded.");
-            }
+            connection().replyFinal(worker(), requestId(), transformed, callback);
         }
 
         private void responded() {
             if (!MUST_REPLY.compareAndSet(this, 0, 1)) {
-                throw new IllegalStateException("Message already responded [message=" + payload + ']');
+                throw new IllegalStateException("Message already responded [message=" + get() + ']');
             }
-        }
-
-        @Override
-        public String toString() {
-            return getClass().getSimpleName() + "[payload=" + payload + ']';
         }
     }
 
-    static class Request<T> extends RequestBase<T> {
+    static class Request<T> extends RequestWithResponseBase<T> {
         public Request(int requestId, boolean retransmit, long timeout, T payload) {
             super(requestId, retransmit, timeout, payload);
+        }
+
+        @Override
+        public boolean isVoid() {
+            return false;
+        }
+
+        @Override
+        public void partialReply(T response) throws UnsupportedOperationException {
+            throw new UnsupportedOperationException("Partial replies are not supported by this message.");
         }
 
         @Override
@@ -408,9 +423,14 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class SubscribeRequest<T> extends RequestBase<T> {
+    static class SubscribeRequest<T> extends RequestWithResponseBase<T> {
         public SubscribeRequest(int requestId, boolean retransmit, long timeout, T payload) {
             super(requestId, retransmit, timeout, payload);
+        }
+
+        @Override
+        public boolean isVoid() {
+            return false;
         }
 
         @Override
@@ -419,8 +439,28 @@ abstract class MessagingProtocol {
         }
 
         @Override
+        public void partialReply(T response) {
+            partialReply(response, null);
+        }
+
+        @Override
+        public void partialReply(T response, SendCallback callback) {
+            checkNotResponded();
+
+            T transformed = connection().prepareReply(response);
+
+            connection().replyChunk(worker(), requestId(), transformed, callback);
+        }
+
+        @Override
         public Type type() {
             return Type.SUBSCRIBE;
+        }
+
+        private void checkNotResponded() {
+            if (!mustReply()) {
+                throw new IllegalStateException("Message already responded.");
+            }
         }
     }
 
@@ -440,6 +480,76 @@ abstract class MessagingProtocol {
         @Override
         public Type type() {
             return Type.AFFINITY_SUBSCRIBE;
+        }
+    }
+
+    static class VoidRequest<T> extends RequestBase<T> {
+        public VoidRequest(int requestId, boolean retransmit, long timeout, T payload) {
+            super(requestId, retransmit, timeout, payload);
+        }
+
+        @Override
+        public boolean isVoid() {
+            return true;
+        }
+
+        @Override
+        public boolean isSubscription() {
+            return false;
+        }
+
+        @Override
+        public boolean isRequest() {
+            return false;
+        }
+
+        @Override
+        public boolean mustReply() {
+            return false;
+        }
+
+        @Override
+        public void reply(T response) throws UnsupportedOperationException, IllegalStateException {
+            throw new UnsupportedOperationException("Reply is not supported by this message.");
+        }
+
+        @Override
+        public void reply(T response, SendCallback callback) throws UnsupportedOperationException, IllegalStateException {
+            throw new UnsupportedOperationException("Reply is not supported by this message.");
+        }
+
+        @Override
+        public void partialReply(T response) throws UnsupportedOperationException {
+            throw new UnsupportedOperationException("Reply is not supported by this message.");
+        }
+
+        @Override
+        public void partialReply(T response, SendCallback callback) throws UnsupportedOperationException {
+            throw new UnsupportedOperationException("Reply is not supported by this message.");
+        }
+
+        @Override
+        public Type type() {
+            return Type.VOID_REQUEST;
+        }
+    }
+
+    static class AffinityVoidRequest<T> extends VoidRequest<T> {
+        private final int affinity;
+
+        public AffinityVoidRequest(int affinity, int requestId, boolean retransmit, long timeout, T payload) {
+            super(requestId, retransmit, timeout, payload);
+
+            this.affinity = affinity;
+        }
+
+        public int affinity() {
+            return affinity;
+        }
+
+        @Override
+        public Type type() {
+            return Type.AFFINITY_VOID_REQUEST;
         }
     }
 
@@ -679,6 +789,25 @@ abstract class MessagingProtocol {
         }
     }
 
+    static class VoidResponse extends MessagingProtocol {
+        private final int requestId;
+
+        public VoidResponse(int requestId) {
+            super(false);
+
+            this.requestId = requestId;
+        }
+
+        public int requestId() {
+            return requestId;
+        }
+
+        @Override
+        public Type type() {
+            return Type.VOID_RESPONSE;
+        }
+    }
+
     static class ErrorResponse extends MessagingProtocol {
         private final int requestId;
 
@@ -721,5 +850,10 @@ abstract class MessagingProtocol {
     @SuppressWarnings("unchecked")
     public <T extends MessagingProtocol> T cast() {
         return (T)this;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName();
     }
 }

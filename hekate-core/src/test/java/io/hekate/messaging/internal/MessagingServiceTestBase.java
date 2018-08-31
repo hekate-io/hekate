@@ -133,7 +133,7 @@ public abstract class MessagingServiceTestBase extends HekateNodeParamTestBase {
 
         TestChannel channel = new TestChannel(cfg.getReceiver());
 
-        cfg.setReceiver(channel.getReceiver());
+        cfg.setReceiver(channel.receiver());
 
         HekateTestNode node = createNode(c -> {
             c.withRole(TEST_NODE_ROLE);

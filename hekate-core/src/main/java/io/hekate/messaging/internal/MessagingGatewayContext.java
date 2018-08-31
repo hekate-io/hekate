@@ -288,7 +288,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
         checkMessageType(msg);
 
-        MessageContext<T> ctx = newContext(affinityKey, msg, opts, true);
+        MessageContext<T> ctx = newContext(MessageContext.Type.SUBSCRIBE, affinityKey, msg, opts);
 
         requestAsync(msg, ctx, unicastRouter(), callback);
     }
@@ -507,18 +507,24 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
         checkMessageType(msg);
 
-        MessageContext<T> ctx = newContext(affinityKey, msg, opts);
+        if (callback != null && opts.isConfirmReceive()) {
+            MessageContext<T> ctx = newContext(MessageContext.Type.VOID_REQUEST, affinityKey, msg, opts);
 
-        try {
-            long timeout = backPressureAcquire(ctx.opts().timeout(), msg);
+            requestAsync(msg, ctx, router, (err, rsp) -> callback.onComplete(err));
+        } else {
+            MessageContext<T> ctx = newContext(MessageContext.Type.NOTIFY, affinityKey, msg, opts);
 
-            if (timeout > 0) {
-                doScheduleTimeout(timeout, ctx, callback);
+            try {
+                long timeout = backPressureAcquire(ctx.opts().timeout(), msg);
+
+                if (timeout > 0) {
+                    doScheduleTimeout(timeout, ctx, callback);
+                }
+
+                routeAndSend(ctx, router, callback, Optional.empty());
+            } catch (InterruptedException | MessageQueueOverflowException | MessageQueueTimeoutException e) {
+                notifyOnErrorAsync(ctx, callback, e);
             }
-
-            routeAndSend(ctx, router, callback, Optional.empty());
-        } catch (InterruptedException | MessageQueueOverflowException | MessageQueueTimeoutException e) {
-            notifyOnErrorAsync(ctx, callback, e);
         }
     }
 
@@ -611,7 +617,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
         checkMessageType(msg);
 
-        MessageContext<T> ctx = newContext(affinityKey, msg, opts);
+        MessageContext<T> ctx = newContext(MessageContext.Type.REQUEST, affinityKey, msg, opts);
 
         requestAsync(msg, ctx, router, callback);
     }
@@ -671,7 +677,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
             // Check if reply is an application-level error message.
             if (err == null) {
-                err = tryConvertToError(reply.get(), route.receiver());
+                err = tryConvertToError(reply, route.receiver());
             }
 
             // Resolve effective reply.
@@ -688,7 +694,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
             if (decision == ReplyDecision.COMPLETE || decision == ReplyDecision.DEFAULT && err == null || failover == null) {
                 // Check if this is the final response or an error (ignore chunks).
-                if (err != null || !reply.isPartial()) {
+                if (err != null || isFinalOrVoidResponse(reply)) {
                     /////////////////////////////////////////////////////////////
                     // Final response or error.
                     /////////////////////////////////////////////////////////////
@@ -771,11 +777,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
         // If this is a failover-attempt then this is a retransmit.
         boolean isRetransmit = prevFailure.isPresent();
 
-        if (ctx.isStream()) {
-            route.client().subscribe(route, internalCallback, isRetransmit);
-        } else {
-            route.client().request(route, internalCallback, isRetransmit);
-        }
+        route.client().request(route, internalCallback, isRetransmit);
     }
 
     boolean register(MessagingConnectionNetIn<T> conn) {
@@ -899,6 +901,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
     }
 
     // This method is for testing purposes only.
+
     MessagingClient<T> clientOf(ClusterNodeId nodeId) throws MessagingException {
         // Ensure that we are using the latest topology.
         updateTopology();
@@ -1231,38 +1234,39 @@ class MessagingGatewayContext<T> implements HekateSupport {
         }
     }
 
-    private MessageContext<T> newContext(Object affinityKey, T msg, MessagingOpts<T> opts) {
-        return newContext(affinityKey, msg, opts, false);
-    }
-
-    private MessageContext<T> newContext(Object affinityKey, T msg, MessagingOpts<T> opts, boolean stream) {
+    private MessageContext<T> newContext(MessageContext.Type type, Object affinityKey, T msg, MessagingOpts<T> opts) {
         int affinity = affinity(affinityKey);
 
         MessagingWorker worker;
 
-        if (affinityKey != null || stream /* <- Stream operations should always be processed by the same thread. */) {
+        if (affinityKey != null
+            || type == MessageContext.Type.SUBSCRIBE /* <- Subscription operations should always be processed by the same thread. */) {
             worker = async.workerFor(affinity);
         } else {
             worker = async.pooledWorker();
         }
 
-        return new MessageContext<>(msg, affinity, affinityKey, worker, opts, stream);
+        return new MessageContext<>(msg, affinity, affinityKey, worker, opts, type);
     }
 
     private MessagingChannelClosedException channelClosedError(Throwable cause) {
         return new MessagingChannelClosedException("Channel closed [channel=" + name + ']', cause);
     }
 
-    private Throwable tryConvertToError(T replyMsg, ClusterNode fromNode) {
+    private Throwable tryConvertToError(Response<T> reply, ClusterNode fromNode) {
         Throwable err = null;
 
-        // Check if message should be converted to an error.
-        if (replyMsg instanceof FailureResponse) {
-            err = ((FailureResponse)replyMsg).asError(fromNode);
+        if (reply != null) {
+            T replyMsg = reply.get();
 
-            if (err == null) {
-                err = new IllegalArgumentException(FailureResponse.class.getSimpleName() + " message returned null error "
-                    + "[message=" + replyMsg + ']');
+            // Check if message should be converted to an error.
+            if (replyMsg instanceof FailureResponse) {
+                err = ((FailureResponse)replyMsg).asError(fromNode);
+
+                if (err == null) {
+                    err = new IllegalArgumentException(FailureResponse.class.getSimpleName() + " message returned null error "
+                        + "[message=" + replyMsg + ']');
+                }
             }
         }
 
@@ -1289,6 +1293,10 @@ class MessagingGatewayContext<T> implements HekateSupport {
     @SuppressWarnings("unchecked")
     private static <T> Router<T> unicastRouter() {
         return (Router<T>)UNICAST_ROUTER;
+    }
+
+    private static boolean isFinalOrVoidResponse(Response<?> reply) {
+        return reply == null || !reply.isPartial();
     }
 
     @Override

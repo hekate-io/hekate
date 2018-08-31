@@ -20,12 +20,15 @@ import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
 import io.hekate.messaging.internal.MessagingProtocol.AffinitySubscribeRequest;
+import io.hekate.messaging.internal.MessagingProtocol.AffinityVoidRequest;
 import io.hekate.messaging.internal.MessagingProtocol.ErrorResponse;
 import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.internal.MessagingProtocol.Request;
+import io.hekate.messaging.internal.MessagingProtocol.RequestBase;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
 import io.hekate.messaging.internal.MessagingProtocol.SubscribeRequest;
+import io.hekate.messaging.internal.MessagingProtocol.VoidRequest;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkFuture;
 
@@ -40,7 +43,7 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void sendNotification(MessageRoute<T> route, SendCallback callback, boolean retransmit) {
+    public void send(MessageRoute<T> route, SendCallback callback, boolean retransmit) {
         MessageContext<T> ctx = route.ctx();
 
         Notification<T> msg;
@@ -72,37 +75,24 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
 
         RequestHandle<T> req = registerRequest(route, callback);
 
-        Request<T> msg;
+        RequestBase<T> msg;
 
         if (ctx.hasAffinity()) {
-            msg = new AffinityRequest<>(ctx.affinity(), req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
+            if (ctx.type() == MessageContext.Type.VOID_REQUEST) {
+                msg = new AffinityVoidRequest<>(ctx.affinity(), req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
+            } else if (ctx.type() == MessageContext.Type.SUBSCRIBE) {
+                msg = new AffinitySubscribeRequest<>(ctx.affinity(), req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
+            } else {
+                msg = new AffinityRequest<>(ctx.affinity(), req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
+            }
         } else {
-            msg = new Request<>(req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
-        }
-
-        long receivedAtMillis = msg.hasTimeout() ? System.nanoTime() : 0;
-
-        onAsyncEnqueue();
-
-        ctx.worker().execute(() -> {
-            onAsyncDequeue();
-
-            receiveRequestAsync(msg, ctx.worker(), receivedAtMillis);
-        });
-    }
-
-    @Override
-    public void subscribe(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
-        MessageContext<T> ctx = route.ctx();
-
-        RequestHandle<T> req = registerRequest(route, callback);
-
-        SubscribeRequest<T> msg;
-
-        if (ctx.hasAffinity()) {
-            msg = new AffinitySubscribeRequest<>(ctx.affinity(), req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
-        } else {
-            msg = new SubscribeRequest<>(req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
+            if (ctx.type() == MessageContext.Type.VOID_REQUEST) {
+                msg = new VoidRequest<>(req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
+            } else if (ctx.type() == MessageContext.Type.SUBSCRIBE) {
+                msg = new SubscribeRequest<>(req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
+            } else {
+                msg = new Request<>(req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
+            }
         }
 
         long receivedAtMillis = msg.hasTimeout() ? System.nanoTime() : 0;
@@ -153,7 +143,22 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
             worker.execute(() -> {
                 onAsyncDequeue();
 
-                doReceiveResponse(handle, msg);
+                doReceiveFinalResponse(handle, msg);
+            });
+        }
+    }
+
+    @Override
+    public void replyVoid(MessagingWorker worker, int requestId) {
+        RequestHandle<T> handle = requests().get(requestId);
+
+        if (handle != null) {
+            onAsyncEnqueue();
+
+            worker.execute(() -> {
+                onAsyncDequeue();
+
+                doReceiveVoidResponse(handle);
             });
         }
     }

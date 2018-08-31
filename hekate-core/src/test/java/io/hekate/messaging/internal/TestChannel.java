@@ -23,13 +23,8 @@ import io.hekate.core.HekateFutureException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.messaging.unicast.Response;
-import io.hekate.messaging.unicast.ResponseCallback;
-import io.hekate.messaging.unicast.ResponseFuture;
-import io.hekate.messaging.unicast.SendCallback;
-import io.hekate.messaging.unicast.SendFuture;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -76,7 +71,13 @@ public class TestChannel {
             if (event.type() == ClusterEventType.JOIN) {
                 nodeId = node.localNode().id();
 
-                channel = node.get(DefaultMessagingService.class).channel(MessagingServiceTestBase.TEST_CHANNEL_NAME, String.class);
+                channel = node.get(DefaultMessagingService.class)
+                    .channel(MessagingServiceTestBase.TEST_CHANNEL_NAME, String.class)
+                    // Disable confirmation mode for historical reasons.
+                    // -----------------------------------------------------------------
+                    // In older versions there were no confirmations and all tests that are related to send/broadcast
+                    // functionality assumed that each operation get completed right after flushing data to a socket.
+                    .withConfirmReceive(false);
             }
         });
     }
@@ -89,19 +90,19 @@ public class TestChannel {
         return channel.withLoadBalancer(balancer);
     }
 
-    public ClusterNodeId getNodeId() {
+    public ClusterNodeId nodeId() {
         return nodeId;
     }
 
-    public MessageReceiver<String> getReceiver() {
+    public MessageReceiver<String> receiver() {
         return receiver;
     }
 
-    public HekateTestNode getNode() {
+    public HekateTestNode node() {
         return node;
     }
 
-    public MessagingGatewayContext<String> getImpl() {
+    public MessagingGatewayContext<String> impl() {
         return channel.context();
     }
 
@@ -115,34 +116,6 @@ public class TestChannel {
         HekateTestBase.get(node.leaveAsync());
 
         return this;
-    }
-
-    public MessagingChannelId getId() {
-        return channel.id();
-    }
-
-    public int getNioThreadPoolSize() {
-        return channel.nioThreads();
-    }
-
-    public int getWorkerThreads() {
-        return channel.workerThreads();
-    }
-
-    public SendFuture send(ClusterNodeId nodeId, String msg) {
-        return channel.forNode(nodeId).send(msg);
-    }
-
-    public void send(ClusterNodeId nodeId, String msg, SendCallback callback) {
-        channel.forNode(nodeId).send(msg, callback);
-    }
-
-    public ResponseFuture<String> request(ClusterNodeId nodeId, String msg) {
-        return channel.forNode(nodeId).request(msg);
-    }
-
-    public void request(ClusterNodeId nodeId, String msg, ResponseCallback<String> callback) {
-        channel.forNode(nodeId).request(msg, callback);
     }
 
     public Response<String> requestWithSyncCallback(ClusterNodeId nodeId, String msg) throws Exception {
@@ -162,7 +135,7 @@ public class TestChannel {
     public void sendWithSyncCallback(ClusterNodeId nodeId, String msg) throws Exception {
         SendCallbackMock callback = new SendCallbackMock();
 
-        send(nodeId, msg, callback);
+        channel.forNode(nodeId).send(msg, callback);
 
         callback.get();
     }
@@ -185,7 +158,7 @@ public class TestChannel {
         );
     }
 
-    public List<String> getReceived() {
+    public List<String> received() {
         return new ArrayList<>(received);
     }
 
@@ -196,7 +169,7 @@ public class TestChannel {
     }
 
     public void awaitForTopology(List<TestChannel> channels) {
-        node.awaitForTopology(channel.cluster(), channels.stream().map(c -> c.getNode().localNode()).collect(toList()));
+        node.awaitForTopology(channel.cluster(), channels.stream().map(c -> c.node().localNode()).collect(toList()));
     }
 
     public void checkReceiverError() {

@@ -32,6 +32,8 @@ interface MessagingOpts<T> {
 
     long timeout();
 
+    boolean isConfirmReceive();
+
     default boolean hasTimeout() {
         return timeout() > 0;
     }

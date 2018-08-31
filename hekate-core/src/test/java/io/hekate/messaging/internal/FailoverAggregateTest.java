@@ -92,7 +92,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
 
         Map<ClusterNodeId, List<Long>> times = new HashMap<>();
 
-        channels.forEach(c -> times.put(c.getNodeId(), Collections.synchronizedList(new ArrayList<>())));
+        channels.forEach(c -> times.put(c.nodeId(), Collections.synchronizedList(new ArrayList<>())));
 
         AggregateResult<String> result = get(sender.get().withFailover(ctx -> {
             times.get(ctx.failedNode().id()).add(currentTimeMillis());
@@ -215,7 +215,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
                 AggregateResult<String> result = get(sender.get().forRemotes().withFailover(context -> {
                     try {
                         TestChannel leave = channels.stream()
-                            .filter(c -> c.getNodeId().equals(context.failedNode().id()))
+                            .filter(c -> c.nodeId().equals(context.failedNode().id()))
                             .findFirst()
                             .orElseThrow(AssertionError::new)
                             .leave();
@@ -237,7 +237,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
                 assertEquals(result.toString(), 1, result.errors().size());
                 assertEquals(result.toString(), channels.size() - 2, result.results().size());
 
-                Throwable expected = result.errors().get(leaveRef.get().getNode().localNode());
+                Throwable expected = result.errors().get(leaveRef.get().node().localNode());
 
                 assertNotNull(result.toString(), expected);
 

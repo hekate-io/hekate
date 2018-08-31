@@ -148,8 +148,8 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             assertTrue(result.toString(), result.errors().isEmpty());
             assertTrue(result.toString(), result.nodes().isEmpty());
             assertEquals("test" + i, result.message());
-            assertNull(result.errorOf(channel.getNode().localNode()));
-            assertFalse(result.isSuccess(channel.getNode().localNode()));
+            assertNull(result.errorOf(channel.node().localNode()));
+            assertFalse(result.isSuccess(channel.node().localNode()));
             assertTrue(result.toString().startsWith(BroadcastResult.class.getSimpleName()));
         });
     }
@@ -190,7 +190,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
         repeat(channels.size() - 1, i -> {
             TestChannel target = channels.get(i);
 
-            MessagingClientNet<String> client = (MessagingClientNet<String>)source.getImpl().clientOf(target.getNodeId());
+            MessagingClientNet<String> client = (MessagingClientNet<String>)source.impl().clientOf(target.nodeId());
 
             // Induce failure by closing existing network connections.
             client.close();
@@ -206,7 +206,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             assertEquals(result.errors().toString(), i + 1, result.errors().size());
 
             for (int j = 0; j <= i; j++) {
-                ClusterNode node = channels.get(j).getNode().localNode();
+                ClusterNode node = channels.get(j).node().localNode();
 
                 assertNotNull(result.errors().get(node));
             }
@@ -225,7 +225,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
         repeat(channels.size() - 1, i -> {
             TestChannel target = channels.get(i);
 
-            MessagingClientNet<String> client = (MessagingClientNet<String>)source.getImpl().clientOf(target.getNodeId());
+            MessagingClientNet<String> client = (MessagingClientNet<String>)source.impl().clientOf(target.nodeId());
 
             // Induce failure by closing existing network connections.
             client.close();
@@ -237,7 +237,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             assertEquals(i + 1, result.errors().size());
 
             for (int j = 0; j <= i; j++) {
-                ClusterNode node = channels.get(j).getNode().localNode();
+                ClusterNode node = channels.get(j).node().localNode();
 
                 assertNotNull(result.errors().get(node));
                 assertSame(result.errors().get(node), result.errorOf(node));
@@ -288,9 +288,9 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
             for (TestChannel c : channels) {
                 if (c == joined) {
-                    assertFalse(joinResult.nodes().contains(joined.getNode().localNode()));
+                    assertFalse(joinResult.nodes().contains(joined.node().localNode()));
                 } else {
-                    assertTrue(joinResult.nodes().contains(c.getNode().localNode()));
+                    assertTrue(joinResult.nodes().contains(c.node().localNode()));
 
                     c.awaitForMessage("test-join" + i);
                 }
@@ -319,7 +319,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
             TestChannel left = channels.remove(channels.size() - 1);
 
-            ClusterNode leftNode = left.getNode().localNode();
+            ClusterNode leftNode = left.node().localNode();
 
             left.leave();
 

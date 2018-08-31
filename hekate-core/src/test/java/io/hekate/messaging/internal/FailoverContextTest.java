@@ -51,7 +51,7 @@ public class FailoverContextTest extends FailoverTestBase {
 
             assertEquals(i, ctx.attempt());
             assertSame(MessagingRemoteException.class, ctx.error().getClass());
-            assertEquals(receiver.getNode().localNode(), ctx.failedNode());
+            assertEquals(receiver.node().localNode(), ctx.failedNode());
         }
     }
 }

@@ -109,7 +109,7 @@ public class FailoverSendTest extends FailoverTestBase {
 
             SendFuture future = sender.get().forRemotes().withFailover(ctx -> {
                 try {
-                    get(receiver.getNode().leaveAsync());
+                    get(receiver.node().leaveAsync());
                 } catch (Exception e) {
                     fail(getStacktrace(e));
                 }
@@ -183,7 +183,7 @@ public class FailoverSendTest extends FailoverTestBase {
 
         try {
             SendFuture future = toRemote.withFailover(ctx -> {
-                sender.getNode().leaveAsync();
+                sender.node().leaveAsync();
 
                 return ctx.retry().withDelay(50);
             }).send("test");

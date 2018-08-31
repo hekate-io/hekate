@@ -26,6 +26,16 @@ import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 class MessageContext<T> {
+    enum Type {
+        REQUEST,
+
+        SUBSCRIBE,
+
+        VOID_REQUEST,
+
+        NOTIFY
+    }
+
     interface TimeoutListener {
         void onTimeout();
     }
@@ -53,7 +63,7 @@ class MessageContext<T> {
 
     private final Object affinityKey;
 
-    private final boolean stream;
+    private final Type type;
 
     private final T message;
 
@@ -73,17 +83,18 @@ class MessageContext<T> {
     @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
     private volatile int state;
 
-    public MessageContext(T message, int affinity, Object affinityKey, MessagingWorker worker, MessagingOpts<T> opts, boolean stream) {
+    public MessageContext(T message, int affinity, Object affinityKey, MessagingWorker worker, MessagingOpts<T> opts, Type type) {
         assert message != null : "Message is null.";
         assert worker != null : "Worker is null.";
         assert opts != null : "Messaging options are null.";
+        assert type != null : "Context type is null.";
 
         this.message = message;
         this.worker = worker;
         this.opts = opts;
         this.affinityKey = affinityKey;
         this.affinity = affinity;
-        this.stream = stream;
+        this.type = type;
     }
 
     public boolean hasAffinity() {
@@ -98,8 +109,8 @@ class MessageContext<T> {
         return affinityKey;
     }
 
-    public boolean isStream() {
-        return stream;
+    public Type type() {
+        return type;
     }
 
     public T originalMessage() {

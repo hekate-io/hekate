@@ -72,15 +72,15 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
 
     public abstract NetworkFuture<MessagingProtocol> disconnect();
 
-    public abstract void sendNotification(MessageRoute<T> route, SendCallback callback, boolean retransmit);
+    public abstract void send(MessageRoute<T> route, SendCallback callback, boolean retransmit);
 
     public abstract void request(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit);
-
-    public abstract void subscribe(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit);
 
     public abstract void replyChunk(MessagingWorker worker, int requestId, T chunk, SendCallback callback);
 
     public abstract void replyFinal(MessagingWorker worker, int requestId, T response, SendCallback callback);
+
+    public abstract void replyVoid(MessagingWorker worker, int requestId);
 
     public abstract void replyError(MessagingWorker worker, int requestId, Throwable cause);
 
@@ -155,7 +155,8 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
 
                     break;
                 }
-                case REQUEST: {
+                case REQUEST:
+                case VOID_REQUEST: {
                     if (receiver == null) {
                         if (log.isErrorEnabled()) {
                             log.error("Received an unexpected request [from={}, message={}]", remoteAddress(), netMsg);
@@ -180,7 +181,8 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
 
                     break;
                 }
-                case AFFINITY_REQUEST: {
+                case AFFINITY_REQUEST:
+                case AFFINITY_VOID_REQUEST: {
                     if (receiver == null) {
                         if (log.isErrorEnabled()) {
                             log.error("Received an unexpected request [from={}, message={}]", remoteAddress(), netMsg);
@@ -273,10 +275,10 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                             netMsg.handleAsync(worker, m -> {
                                 onReceiveAsyncDequeue();
 
-                                doReceiveResponse(handle, m.cast());
+                                doReceiveFinalResponse(handle, m.cast());
                             }, error -> handleReceiveError(error, netMsg));
                         } else {
-                            doReceiveResponse(handle, netMsg.decode().cast());
+                            doReceiveFinalResponse(handle, netMsg.decode().cast());
                         }
                     }
 
@@ -300,6 +302,29 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                             }, error -> handleReceiveError(error, netMsg));
                         } else {
                             doReceiveResponseChunk(handle, netMsg.decode().cast());
+                        }
+                    }
+
+                    break;
+                }
+                case VOID_RESPONSE: {
+                    int requestId = MessagingProtocolCodec.previewRequestId(netMsg);
+
+                    RequestHandle<T> handle = requests.get(requestId);
+
+                    if (handle != null) {
+                        if (async.isAsync()) {
+                            MessagingWorker worker = handle.worker();
+
+                            onReceiveAsyncEnqueue(from);
+
+                            netMsg.handleAsync(worker, m -> {
+                                onReceiveAsyncDequeue();
+
+                                doReceiveVoidResponse(handle);
+                            }, error -> handleReceiveError(error, netMsg));
+                        } else {
+                            doReceiveVoidResponse(handle);
                         }
                     }
 
@@ -452,6 +477,10 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                 msg.prepareReceive(worker, this);
 
                 receiver.receive(msg);
+
+                if (msg.isVoid()) {
+                    replyVoid(worker, msg.requestId());
+                }
             } catch (RuntimeException | Error e) {
                 if (log.isErrorEnabled()) {
                     log.error("Got an unexpected runtime error during request processing [from={}, message={}]", msg.from(), msg, e);
@@ -476,7 +505,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
         }
     }
 
-    protected void doReceiveResponse(RequestHandle<T> request, FinalResponse<T> msg) {
+    protected void doReceiveFinalResponse(RequestHandle<T> request, FinalResponse<T> msg) {
         if (request.isRegistered()) {
             try {
                 msg.prepareReceive(this, request.route());
@@ -485,6 +514,19 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
             } catch (RuntimeException | Error e) {
                 if (log.isErrorEnabled()) {
                     log.error("Got an unexpected runtime error during response processing [from={}, message={}]", msg.from(), msg, e);
+                }
+            }
+        }
+    }
+
+    protected void doReceiveVoidResponse(RequestHandle<T> request) {
+        if (request.isRegistered()) {
+            try {
+                request.callback().onComplete(request, null, null);
+            } catch (RuntimeException | Error e) {
+                if (log.isErrorEnabled()) {
+                    log.error("Got an unexpected runtime error during acknowledgement processing [from={}, message={}]",
+                        remoteAddress(), request.context().originalMessage(), e);
                 }
             }
         }

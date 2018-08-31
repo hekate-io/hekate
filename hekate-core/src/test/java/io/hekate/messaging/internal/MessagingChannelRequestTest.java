@@ -88,9 +88,9 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         for (TestChannel from : channels) {
             for (TestChannel to : channels) {
-                String msg = "test-" + from.getNodeId();
+                String msg = "test-" + from.nodeId();
 
-                assertEquals(msg + "-reply", from.requestWithSyncCallback(to.getNodeId(), msg).get());
+                assertEquals(msg + "-reply", from.requestWithSyncCallback(to.nodeId(), msg).get());
 
                 to.assertReceived(msg);
             }
@@ -107,16 +107,16 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         for (TestChannel from : channels) {
             for (TestChannel to : channels) {
-                String msg1 = "test1-" + from.getNodeId();
-                String msg2 = "test2-" + from.getNodeId();
+                String msg1 = "test1-" + from.nodeId();
+                String msg2 = "test2-" + from.nodeId();
 
-                assertEquals(msg1 + "-reply", from.get().forNode(to.getNodeId()).request(msg1).response());
-                assertEquals(msg1 + "-reply", from.get().forNode(to.getNodeId()).request(msg1).response(3, TimeUnit.SECONDS));
-                assertEquals(msg2 + "-reply", from.get().forNode(to.getNodeId()).request(msg2).responseUninterruptedly());
+                assertEquals(msg1 + "-reply", from.get().forNode(to.nodeId()).request(msg1).response());
+                assertEquals(msg1 + "-reply", from.get().forNode(to.nodeId()).request(msg1).response(3, TimeUnit.SECONDS));
+                assertEquals(msg2 + "-reply", from.get().forNode(to.nodeId()).request(msg2).responseUninterruptedly());
 
-                assertEquals(msg1 + "-reply", from.get().forNode(to.getNodeId()).request(msg1).response(String.class));
-                assertEquals(msg1 + "-reply", from.get().forNode(to.getNodeId()).request(msg1).response(String.class, 3, TimeUnit.SECONDS));
-                assertEquals(msg2 + "-reply", from.get().forNode(to.getNodeId()).request(msg2).responseUninterruptedly(String.class));
+                assertEquals(msg1 + "-reply", from.get().forNode(to.nodeId()).request(msg1).response(String.class));
+                assertEquals(msg1 + "-reply", from.get().forNode(to.nodeId()).request(msg1).response(String.class, 3, TimeUnit.SECONDS));
+                assertEquals(msg2 + "-reply", from.get().forNode(to.nodeId()).request(msg2).responseUninterruptedly(String.class));
 
                 to.assertReceived(msg1);
                 to.assertReceived(msg2);
@@ -145,7 +145,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         repeat(5, i -> {
             replyCallbackRef.set(new SendCallbackMock());
 
-            Response<String> msg = sender.requestWithSyncCallback(receiver.getNodeId(), "request");
+            Response<String> msg = sender.requestWithSyncCallback(receiver.nodeId(), "request");
 
             replyCallbackRef.get().get();
 
@@ -167,11 +167,11 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         try {
             for (TestChannel from : channels) {
                 for (TestChannel to : channels) {
-                    String msg = "test-" + from.getNodeId();
+                    String msg = "test-" + from.nodeId();
 
                     Thread.currentThread().interrupt();
 
-                    String response = from.get().forNode(to.getNodeId()).request(msg).responseUninterruptedly();
+                    String response = from.get().forNode(to.nodeId()).request(msg).responseUninterruptedly();
 
                     assertTrue(Thread.currentThread().isInterrupted());
                     assertEquals(msg + "-reply", response);
@@ -196,7 +196,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         TestChannel channel = createChannel().join();
 
         try {
-            channel.request(newNodeId(), "failed").get();
+            channel.get().forNode(newNodeId()).request("failed").get();
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
@@ -218,12 +218,12 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
             awaitForChannelsTopology(sender, receiver);
 
-            MessagingClient<String> client = sender.getImpl().clientOf(receiver.getNodeId());
+            MessagingClient<String> client = sender.impl().clientOf(receiver.nodeId());
 
             repeat(5, i -> {
                 assertFalse(client.isConnected());
 
-                sender.request(receiver.getNodeId(), "test" + i).get();
+                sender.get().forNode(receiver.nodeId()).request("test" + i).get();
 
                 busyWait("disconnect idle", () -> !client.isConnected());
 
@@ -231,7 +231,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             });
 
             receiver.awaitForMessage("test4");
-            assertEquals(5, receiver.getReceived().size());
+            assertEquals(5, receiver.received().size());
 
             sender.leave();
             receiver.leave();
@@ -250,7 +250,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         awaitForChannelsTopology(sender, receiver);
 
         runParallel(4, 1000, s ->
-            sender.request(receiver.getNodeId(), "test").get()
+            sender.get().forNode(receiver.nodeId()).request("test").get()
         );
 
         sender.leave();
@@ -283,7 +283,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
             awaitForChannelsTopology(receiver, sender);
 
-            MessagingClient<String> client = sender.getImpl().clientOf(receiver.getNodeId());
+            MessagingClient<String> client = sender.impl().clientOf(receiver.nodeId());
 
             repeat(5, i -> {
                 assertFalse(client.isConnected());
@@ -296,7 +296,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
                 try {
                     // Send message.
-                    sender.request(receiver.getNodeId(), request, callback);
+                    sender.get().forNode(receiver.nodeId()).request(request, callback);
 
                     // Await for timeout.
                     sleep((long)(idleTimeout * 3));
@@ -315,7 +315,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             });
 
             receiver.awaitForMessage("test4");
-            assertEquals(5, receiver.getReceived().size());
+            assertEquals(5, receiver.received().size());
 
             sender.leave();
             receiver.leave();
@@ -336,7 +336,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             String msg = "request" + i;
 
             try {
-                sender.requestWithSyncCallback(receiver.getNodeId(), msg);
+                sender.requestWithSyncCallback(receiver.nodeId(), msg);
 
                 fail("Error was expected.");
             } catch (MessagingRemoteException e) {
@@ -354,7 +354,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        MessagingClient<String> client = sender.getImpl().clientOf(receiver.getNodeId());
+        MessagingClient<String> client = sender.impl().clientOf(receiver.nodeId());
 
         List<NetworkFuture<MessagingProtocol>> closeFuture = client.close();
 
@@ -364,7 +364,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         repeat(5, i -> {
             try {
-                sender.requestWithSyncCallback(receiver.getNodeId(), "request" + i);
+                sender.requestWithSyncCallback(receiver.nodeId(), "request" + i);
 
                 fail("Error was expected.");
             } catch (MessagingException e) {
@@ -387,13 +387,13 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        MessagingClient<String> client = sender.getImpl().clientOf(receiver.getNodeId());
+        MessagingClient<String> client = sender.impl().clientOf(receiver.nodeId());
 
         clientRef.set(client);
 
         repeat(5, i -> {
             try {
-                sender.requestWithSyncCallback(receiver.getNodeId(), "request" + i);
+                sender.requestWithSyncCallback(receiver.nodeId(), "request" + i);
 
                 fail("Error was expected.");
             } catch (MessagingException e) {
@@ -420,7 +420,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        sender.request(receiver.getNodeId(), "test");
+        sender.get().forNode(receiver.nodeId()).request("test");
 
         Message<String> msg = messageExchanger.exchange(null, 3, TimeUnit.SECONDS);
 
@@ -464,18 +464,18 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
             Future<Void> future = runAsync(() -> {
                 while (!stopped.get()) {
-                    sender.requestWithSyncCallback(receiver.getNodeId(), "request");
+                    sender.requestWithSyncCallback(receiver.nodeId(), "request");
                 }
 
                 // Last attempt to make sure that we really tried to send a message after channel was closed.
-                sender.requestWithSyncCallback(receiver.getNodeId(), "request");
+                sender.requestWithSyncCallback(receiver.nodeId(), "request");
 
                 return null;
             });
 
             await(receivedLatch);
 
-            sender.getImpl().close().await();
+            sender.impl().close().await();
 
             stopped.set(true);
 
@@ -523,18 +523,18 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
             Future<Void> future = runAsync(() -> {
                 while (!stopped.get()) {
-                    sender.requestWithSyncCallback(receiver.getNodeId(), "request");
+                    sender.requestWithSyncCallback(receiver.nodeId(), "request");
                 }
 
                 // Last attempt to make sure that we really tried to send a message after channel was closed.
-                sender.requestWithSyncCallback(receiver.getNodeId(), "request");
+                sender.requestWithSyncCallback(receiver.nodeId(), "request");
 
                 return null;
             });
 
             await(receivedLatch);
 
-            receiver.getImpl().close().await();
+            receiver.impl().close().await();
 
             stopped.set(true);
 
@@ -568,12 +568,12 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
                 await(closeLatch);
 
-                return receiver.getNodeId();
+                return receiver.nodeId();
             }).request("test"));
 
             await(routeLatch);
 
-            Waiting close = sender.getImpl().close();
+            Waiting close = sender.impl().close();
 
             closeLatch.countDown();
 
@@ -695,9 +695,9 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         ResponseCallbackMock toSelfCallback = new ResponseCallbackMock("to-self");
         ResponseCallbackMock toRemoteCallback = new ResponseCallbackMock("to-remote");
 
-        channel.getNode().cluster().addListener(event -> {
+        channel.node().cluster().addListener(event -> {
             try {
-                MessagingChannel<String> send = channel.getNode().messaging().channel(TEST_CHANNEL_NAME, String.class);
+                MessagingChannel<String> send = channel.node().messaging().channel(TEST_CHANNEL_NAME, String.class);
 
                 if (event.type() == ClusterEventType.JOIN) {
                     get(send.request("to-self"));
@@ -755,7 +755,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             }
         });
 
-        assertEquals("success-reply", sender.request(receiver.getNodeId(), "success").response());
+        assertEquals("success-reply", sender.get().forNode(receiver.nodeId()).request("success").response());
     }
 
     @Test
@@ -781,7 +781,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             }
         });
 
-        assertEquals("success-reply", sender.request(receiver.getNodeId(), "success").response());
+        assertEquals("success-reply", sender.get().forNode(receiver.nodeId()).request("success").response());
     }
 
     @Test
@@ -809,7 +809,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             }
         });
 
-        assertEquals("success-reply", sender.request(receiver.getNodeId(), "success").response());
+        assertEquals("success-reply", sender.get().forNode(receiver.nodeId()).request("success").response());
     }
 
     @Test
@@ -834,9 +834,9 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             get(channel1.get().request("test" + i));
         }
 
-        List<String> received1 = received.get(channel1.getNode().localNode());
-        List<String> received2 = received.get(channel2.getNode().localNode());
-        List<String> received3 = received.get(channel3.getNode().localNode());
+        List<String> received1 = received.get(channel1.node().localNode());
+        List<String> received2 = received.get(channel2.node().localNode());
+        List<String> received3 = received.get(channel3.node().localNode());
 
         assertNotNull(received1);
         assertNotNull(received2);
@@ -895,14 +895,14 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         ).join();
 
         try {
-            get(channel.request(channel.getNodeId(), "test"));
+            get(channel.get().forNode(channel.nodeId()).request("test"));
         } catch (MessagingFutureException e) {
             assertTrue(e.getCause().toString(), e.getCause() instanceof LoadBalancerException);
             assertEquals("No suitable receivers [channel=test-channel]", e.getCause().getMessage());
         }
 
         try {
-            channel.requestWithSyncCallback(channel.getNodeId(), "test");
+            channel.requestWithSyncCallback(channel.nodeId(), "test");
         } catch (LoadBalancerException e) {
             assertEquals("No suitable receivers [channel=test-channel]", e.getMessage());
         }
@@ -914,19 +914,19 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         channel.join();
 
-        get(channel.send(channel.getNodeId(), "test"));
+        get(channel.get().forNode(channel.nodeId()).send("test"));
 
         channel.leave();
 
         try {
-            get(channel.request(channel.getNodeId(), "test"));
+            get(channel.get().forNode(channel.nodeId()).request("test"));
         } catch (MessagingFutureException e) {
             assertTrue(e.getCause().toString(), e.getCause() instanceof MessagingChannelClosedException);
             assertEquals("Channel closed [channel=test-channel]", e.getCause().getMessage());
         }
 
         try {
-            channel.requestWithSyncCallback(channel.getNodeId(), "test");
+            channel.requestWithSyncCallback(channel.nodeId(), "test");
         } catch (MessagingChannelClosedException e) {
             assertEquals("Channel closed [channel=test-channel]", e.getMessage());
         }
@@ -942,7 +942,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        sender.request(receiver.getNodeId(), "test");
+        sender.get().forNode(receiver.nodeId()).request("test");
 
         Message<String> request = get(requestFuture);
 
@@ -979,11 +979,11 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         for (TestChannel from : channels) {
             for (TestChannel to : channels) {
-                String msg1 = "test1-" + from.getNodeId();
-                String msg2 = "test2-" + from.getNodeId();
+                String msg1 = "test1-" + from.nodeId();
+                String msg2 = "test2-" + from.nodeId();
 
-                assertEquals(msg1 + "-###-@@@-reply-$$$-@@@", from.get().forNode(to.getNodeId()).request(msg1).response());
-                assertEquals(msg2 + "-###-@@@-reply-$$$-@@@", from.get().forNode(to.getNodeId()).request(msg2).responseUninterruptedly());
+                assertEquals(msg1 + "-###-@@@-reply-$$$-@@@", from.get().forNode(to.nodeId()).request(msg1).response());
+                assertEquals(msg2 + "-###-@@@-reply-$$$-@@@", from.get().forNode(to.nodeId()).request(msg2).responseUninterruptedly());
 
                 to.assertReceived(msg1 + "-###-@@@");
                 to.assertReceived(msg2 + "-###-@@@");

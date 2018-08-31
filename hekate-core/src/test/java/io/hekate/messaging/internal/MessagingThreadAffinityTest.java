@@ -108,7 +108,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
                 MessagingChannel<String> channel = sender.get()
-                    .forNode(receiver.getNodeId())
+                    .forNode(receiver.nodeId())
                     .withAffinity(j);
 
                 channel.send(AffinityCollector.messageForCallback(j, i), new SendCallbackMock());
@@ -144,7 +144,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
                 MessagingChannel<String> channel = sender.get()
-                    .forNode(receiver.getNodeId())
+                    .forNode(receiver.nodeId())
                     .withAffinity(j);
 
                 @SuppressWarnings("unchecked")
@@ -188,7 +188,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
         awaitForChannelsTopology(sender, receiver);
 
         repeat(5, i -> {
-            get(sender.get().forNode(receiver.getNodeId()).withAffinity(i).request("request"));
+            get(sender.get().forNode(receiver.nodeId()).withAffinity(i).request("request"));
 
             callbackRef.get().get();
 

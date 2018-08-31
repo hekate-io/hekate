@@ -50,7 +50,7 @@ public class FailoverRequestTest extends FailoverTestBase {
 
         try {
             toRemote.withFailover(ctx -> {
-                sender.getNode().leaveAsync();
+                sender.node().leaveAsync();
 
                 return ctx.retry().withDelay(50);
             }).request("test").response(3, TimeUnit.SECONDS);
@@ -72,9 +72,9 @@ public class FailoverRequestTest extends FailoverTestBase {
             FailoverContext ctx = contexts.get(i);
 
             if (i % 2 == 0) {
-                assertEquals(receiver.getNodeId(), ctx.failedNode().id());
+                assertEquals(receiver.nodeId(), ctx.failedNode().id());
             } else {
-                assertEquals(sender.getNodeId(), ctx.failedNode().id());
+                assertEquals(sender.nodeId(), ctx.failedNode().id());
             }
         }
     }
@@ -85,7 +85,7 @@ public class FailoverRequestTest extends FailoverTestBase {
 
         List<FailoverContext> contexts = testWithRoutingPolicy(policy, details -> {
             if (details.isFirstAttempt()) {
-                receiver.getNode().leaveAsync().join();
+                receiver.node().leaveAsync().join();
 
                 sender.awaitForTopology(Collections.singletonList(sender));
             }
@@ -95,9 +95,9 @@ public class FailoverRequestTest extends FailoverTestBase {
             FailoverContext ctx = contexts.get(i);
 
             if (i == 0) {
-                assertEquals(receiver.getNodeId(), ctx.failedNode().id());
+                assertEquals(receiver.nodeId(), ctx.failedNode().id());
             } else {
-                assertEquals(sender.getNodeId(), ctx.failedNode().id());
+                assertEquals(sender.nodeId(), ctx.failedNode().id());
             }
         }
     }
@@ -108,7 +108,7 @@ public class FailoverRequestTest extends FailoverTestBase {
 
         List<FailoverContext> contexts = testWithRoutingPolicy(policy, details -> { /* No-op.*/ });
 
-        contexts.forEach(ctx -> assertEquals(receiver.getNodeId(), ctx.failedNode().id()));
+        contexts.forEach(ctx -> assertEquals(receiver.nodeId(), ctx.failedNode().id()));
     }
 
     @Test
@@ -179,7 +179,7 @@ public class FailoverRequestTest extends FailoverTestBase {
                 lastTried.set(sender);
             }
 
-            return lastTried.get().getNodeId();
+            return lastTried.get().nodeId();
         }).withFailover(ctx -> {
             contexts.add(ctx);
 
