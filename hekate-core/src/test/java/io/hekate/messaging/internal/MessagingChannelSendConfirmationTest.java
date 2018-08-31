@@ -29,7 +29,6 @@ import io.hekate.messaging.MessagingRemoteException;
 import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.unicast.SendFuture;
-import io.hekate.network.NetworkFuture;
 import io.hekate.test.HekateTestError;
 import io.hekate.test.NonDeserializable;
 import io.hekate.test.NonSerializable;
@@ -40,6 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -269,11 +269,7 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
 
         MessagingClient<String> client = sender.impl().clientOf(receiver.nodeId());
 
-        List<NetworkFuture<MessagingProtocol>> closeFuture = client.close();
-
-        for (NetworkFuture<MessagingProtocol> future : closeFuture) {
-            future.get();
-        }
+        client.close().forEach(CompletableFuture::join);
 
         repeat(5, i -> {
             try {
@@ -294,7 +290,7 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
 
         TestChannel receiver = createChannel(c ->
             c.withReceiver(msg ->
-                clientRef.get().close()
+                clientRef.get().close().forEach(CompletableFuture::join)
             )
         ).join();
 
