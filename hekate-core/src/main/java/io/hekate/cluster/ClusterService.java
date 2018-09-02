@@ -18,7 +18,6 @@ package io.hekate.cluster;
 
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventListener;
-import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.health.DefaultFailureDetector;
 import io.hekate.cluster.health.FailureDetector;
 import io.hekate.cluster.seed.SeedNodeProvider;
@@ -39,8 +38,6 @@ import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.DefaultServiceFactory;
 import io.hekate.core.service.Service;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Predicate;
 
 /**
  * <span class="startHere">&laquo; start here</span>Main entry point to clustering API.
@@ -306,19 +303,4 @@ public interface ClusterService extends Service, ClusterView {
      * @return Local cluster node.
      */
     ClusterNode localNode();
-
-    @Override
-    ClusterTopology topology();
-
-    @Override
-    void addListener(ClusterEventListener listener);
-
-    @Override
-    void addListener(ClusterEventListener listener, ClusterEventType... eventTypes);
-
-    @Override
-    void removeListener(ClusterEventListener listener);
-
-    @Override
-    CompletableFuture<ClusterTopology> futureOf(Predicate<ClusterTopology> predicate);
 }
