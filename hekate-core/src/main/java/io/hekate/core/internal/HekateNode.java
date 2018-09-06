@@ -32,7 +32,6 @@ import io.hekate.cluster.internal.DefaultClusterNodeRuntime;
 import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
-import io.hekate.codec.JavaSerializable;
 import io.hekate.codec.internal.DefaultCodecService;
 import io.hekate.coordinate.CoordinationService;
 import io.hekate.core.Hekate;
@@ -70,8 +69,6 @@ import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.format.ToString;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import java.io.ObjectStreamException;
-import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -105,17 +102,7 @@ import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toSet;
 
-class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
-    static class SerializationHandle implements Serializable {
-        static final SerializationHandle INSTANCE = new SerializationHandle();
-
-        private static final long serialVersionUID = 1;
-
-        protected Object readResolve() {
-            return HekateCodecHelper.threadLocal();
-        }
-    }
-
+class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     private static final Logger log = LoggerFactory.getLogger(HekateNode.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -563,10 +550,6 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
     @Override
     public HekateJmx jmx() {
         return new HekateNodeJmx(this);
-    }
-
-    protected Object writeReplace() throws ObjectStreamException {
-        return SerializationHandle.INSTANCE;
     }
 
     private void selectAddressAndBind(ClusterNodeId localNodeId) {
@@ -1195,11 +1178,8 @@ class HekateNode implements Hekate, JavaSerializable, JmxSupport<HekateJmx> {
     }
 
     private ServiceManager createServiceManager(CodecFactory<Object> codec, List<ServiceFactory<? extends Service>> services) {
-        // Wrap codec factory.
-        CodecFactory<Object> defaultCodec = HekateCodecHelper.wrap(codec, this);
-
         // Prepare built-in services.
-        List<Service> builtInServices = singletonList(new DefaultCodecService(defaultCodec));
+        List<Service> builtInServices = singletonList(new DefaultCodecService(codec));
 
         // Prepare core services.
         List<Class<? extends Service>> coreServices = new ArrayList<>();
