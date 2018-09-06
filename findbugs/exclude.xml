@@ -27,12 +27,12 @@
 
     <!--
         Excluded because of the following issue:
-            #1473 SE_BAD_FIELD reported for Serializable class that implements writeReplace
-            https://sourceforge.net/p/findbugs/bugs/1473
+            #493 Try-with-resources and java9 shows bugs
+            https://github.com/spotbugs/spotbugs/issues/493
     -->
     <Match>
-        <Bug pattern="SE_BAD_FIELD"/>
-        <Class name="io.hekate.core.internal.HekateNode"/>
+        <Bug pattern="OBL_UNSATISFIED_OBLIGATION"/>
+        <Class name="io.hekate.cluster.seed.jdbc.JdbcSeedNodeProvider"/>
     </Match>
 
     <!-- Excluded for performance reasons. -->
