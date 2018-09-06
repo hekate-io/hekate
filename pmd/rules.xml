@@ -41,7 +41,9 @@
         <exclude name="AbstractNaming"/>
         <exclude name="CommentDefaultAccessModifier"/>
         <exclude name="ShortClassName"/>
+        <exclude name="ClassNamingConventions"/>
         <exclude name="ConfusingTernary"/>
+        <exclude name="IdenticalCatchBranches"/>
     </rule>
 
     <rule ref="category/java/design.xml">
