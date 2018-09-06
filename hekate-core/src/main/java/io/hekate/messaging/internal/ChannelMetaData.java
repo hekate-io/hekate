@@ -92,6 +92,7 @@ class ChannelMetaData {
         return receiving;
     }
 
+    @Override
     public String toString() {
         return String.valueOf(receiving) + ':' + type;
     }
