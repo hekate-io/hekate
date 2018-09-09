@@ -59,6 +59,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.source>1.8</java.source>
         <java.target>1.8</java.target>
+        
         <!-- Production dependencies.-->
         <netty.tcnative.version>2.0.12.Final</netty.tcnative.version>
         <kryo.version>4.0.2</kryo.version>
