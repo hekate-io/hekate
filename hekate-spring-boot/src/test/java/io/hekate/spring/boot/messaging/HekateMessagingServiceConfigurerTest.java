@@ -16,11 +16,13 @@
 
 package io.hekate.spring.boot.messaging;
 
+import io.hekate.core.Hekate;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingService;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
 import io.hekate.spring.boot.HekateTestConfigBase;
+import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -30,6 +32,7 @@ import org.springframework.stereotype.Component;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTestBase {
     static class TypeA<T> {
@@ -152,6 +155,21 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
         }
     }
 
+    @EnableAutoConfiguration
+    public static class CustomizeChannelConfig extends HekateTestConfigBase {
+        @Bean
+        public MessagingChannel<String> testChannel(Hekate hekate) {
+            return hekate.messaging().channel("test", String.class)
+                .forRemotes()
+                .withTimeout(100500, TimeUnit.MILLISECONDS);
+        }
+
+        @Bean
+        public MessagingChannelConfig<String> testChannelConfig() {
+            return MessagingChannelConfig.of(String.class).withName("test");
+        }
+    }
+
     @Test
     public void testChannels() {
         registerAndRefresh(MessagingTestConfig.class);
@@ -205,5 +223,15 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
 
         assertEquals("test2", get(MessagingTypeSafetyTestConfig.InnerComponent.class).channel4.name());
         assertEquals(TypeA.class, get(MessagingTypeSafetyTestConfig.InnerComponent.class).channel4.baseType());
+    }
+
+    @Test
+    public void testCustomizeChannel() {
+        registerAndRefresh(CustomizeChannelConfig.class);
+
+        MessagingChannel<?> channel = get("testChannel", MessagingChannel.class);
+
+        assertTrue(channel.cluster().topology().isEmpty());
+        assertEquals(100500, channel.timeout());
     }
 }
