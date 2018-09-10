@@ -308,7 +308,7 @@ class MessagingGateway<T> {
 
     private static <T> CodecFactory<T> optimizeCodecFactory(CodecFactory<T> factory, CodecService fallback) {
         if (factory == null) {
-            return ThreadLocalCodecFactory.tryWrap(fallback.codecFactory());
+            return fallback.codecFactory();
         } else {
             return ThreadLocalCodecFactory.tryWrap(factory);
         }

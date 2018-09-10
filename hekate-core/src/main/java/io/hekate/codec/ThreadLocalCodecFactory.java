@@ -112,6 +112,29 @@ public final class ThreadLocalCodecFactory<T> implements CodecFactory<T> {
         }
     }
 
+    /**
+     * Tries to unwrap the specified factory.
+     *
+     * <p>
+     * If the specified factory is an instance of {@link ThreadLocalCodecFactory} then a factory that is wrapped by that
+     * {@link ThreadLocalCodecFactory} is returned; otherwise the method's parameter is returned as is.
+     * </p>
+     *
+     * @param factory Factory to unwrap.
+     * @param <T> Factory data type.
+     *
+     * @return Unwrapped codec factory if the specified parameter is of {@link ThreadLocalCodecFactory} type; otherwise returns the method's
+     * parameter as is.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> CodecFactory<T> tryUnwrap(CodecFactory<T> factory) {
+        if (factory instanceof ThreadLocalCodecFactory) {
+            return ((ThreadLocalCodecFactory)factory).delegate;
+        }
+
+        return factory;
+    }
+
     @Override
     public Codec<T> createCodec() {
         return threadLocalCodec;

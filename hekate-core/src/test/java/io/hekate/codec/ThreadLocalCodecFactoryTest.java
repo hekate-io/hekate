@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -93,6 +94,19 @@ public class ThreadLocalCodecFactoryTest extends HekateTestBase {
         CodecFactory<Object> wrap = ThreadLocalCodecFactory.tryWrap(factoryMock);
 
         assertSame(factoryMock, wrap);
+    }
+
+    @Test
+    public void testUnwrap() {
+        JdkCodecFactory<Object> factory = new JdkCodecFactory<>();
+
+        CodecFactory<Object> wrapped = ThreadLocalCodecFactory.tryWrap(factory);
+
+        assertTrue(wrapped instanceof ThreadLocalCodecFactory);
+
+        assertSame(factory, ThreadLocalCodecFactory.tryUnwrap(wrapped));
+
+        assertNull(ThreadLocalCodecFactory.tryUnwrap(null));
     }
 
     @Test

@@ -25,6 +25,7 @@ import io.hekate.codec.EncodeFunction;
 import io.hekate.codec.EncoderDecoder;
 import io.hekate.codec.StreamDataReader;
 import io.hekate.codec.StreamDataWriter;
+import io.hekate.codec.ThreadLocalCodecFactory;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.util.format.ToString;
 import java.io.ByteArrayInputStream;
@@ -46,11 +47,11 @@ public class DefaultCodecService implements CodecService, EncoderDecoder<Object>
     public DefaultCodecService(CodecFactory<Object> codecFactory) {
         assert codecFactory != null : "Codec factory is null.";
 
-        this.codecFactory = codecFactory;
+        CodecFactory<Object> threadLocalCodecFactory = ThreadLocalCodecFactory.tryWrap(codecFactory);
 
+        this.codecFactory = threadLocalCodecFactory;
         this.bufferPool = new ByteArrayOutputStreamPool(MAX_REUSABLE_BUFFER_SIZE);
-
-        this.objEncodec = new DefaultEncoderDecoder<>(bufferPool, codecFactory);
+        this.objEncodec = new DefaultEncoderDecoder<>(bufferPool, threadLocalCodecFactory);
     }
 
     @Override

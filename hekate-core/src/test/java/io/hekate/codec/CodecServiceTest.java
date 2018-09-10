@@ -125,7 +125,7 @@ public class CodecServiceTest extends HekateTestBase {
 
     @Test
     public void testCodecFactory() {
-        assertSame(codecFactory, service.codecFactory());
+        assertSame(codecFactory, ThreadLocalCodecFactory.tryUnwrap(service.codecFactory()));
     }
 
     @Test
