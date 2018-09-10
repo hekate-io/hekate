@@ -38,7 +38,7 @@ public class RejectedReplyException extends HekateException {
      * failure).
      */
     public RejectedReplyException(String message, Object reply, Throwable cause) {
-        super(message, cause);
+        super(message, cause, false, false);
 
         this.reply = Optional.ofNullable(reply);
     }

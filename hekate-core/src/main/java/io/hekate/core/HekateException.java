@@ -25,7 +25,7 @@ public class HekateException extends Exception {
     private static final long serialVersionUID = 1;
 
     /**
-     * Constructs new instance with the specified error message.
+     * Constructs a new instance.
      *
      * @param message Error message.
      */
@@ -34,13 +34,25 @@ public class HekateException extends Exception {
     }
 
     /**
-     * Constructs new instance with the specified error message and cause.
+     * Constructs a new instance.
      *
      * @param message Error message.
      * @param cause Cause.
      */
     public HekateException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    /**
+     * Constructs a new instance.
+     *
+     * @param message Error message.
+     * @param cause Cause.
+     * @param enableSuppression Enabled/disabled suppression.
+     * @param writableStackTrace Whether or not the stack trace should be writable.
+     */
+    public HekateException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
     }
 
     /**
