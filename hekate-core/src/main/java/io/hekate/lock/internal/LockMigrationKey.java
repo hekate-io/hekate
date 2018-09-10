@@ -20,12 +20,9 @@ import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.util.format.ToString;
-import java.io.Serializable;
 import java.util.Objects;
 
-class LockMigrationKey implements Serializable {
-    private static final long serialVersionUID = 1;
-
+class LockMigrationKey {
     private final ClusterNodeId coordinator;
 
     private final ClusterHash topology;

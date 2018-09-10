@@ -28,8 +28,6 @@ import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toSet;
 
 public class GossipNodeState extends GossipNodeInfoBase implements Comparable<GossipNodeState> {
-    private static final long serialVersionUID = 1;
-
     private final ClusterNode node;
 
     private final GossipNodeStatus status;

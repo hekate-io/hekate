@@ -20,7 +20,6 @@ import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateSupport;
-import java.io.Serializable;
 
 /**
  * Abstract base class for {@link ClusterEvent} implementations.
@@ -28,9 +27,7 @@ import java.io.Serializable;
  * @see ClusterEventListener
  * @see ClusterService
  */
-public abstract class ClusterEventBase implements ClusterEvent, Serializable {
-    private static final long serialVersionUID = 1;
-
+public abstract class ClusterEventBase implements ClusterEvent {
     private final HekateSupport hekate;
 
     private final ClusterTopology topology;

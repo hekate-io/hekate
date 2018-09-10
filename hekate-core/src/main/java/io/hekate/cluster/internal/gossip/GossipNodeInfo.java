@@ -20,8 +20,6 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.util.format.ToString;
 
 public class GossipNodeInfo extends GossipNodeInfoBase {
-    private static final long serialVersionUID = 1;
-
     private final ClusterNodeId id;
 
     private final GossipNodeStatus status;

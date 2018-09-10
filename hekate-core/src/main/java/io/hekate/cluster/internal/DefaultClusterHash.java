@@ -41,7 +41,7 @@ public class DefaultClusterHash implements ClusterHash, Serializable {
 
     private final byte[] bytes;
 
-    private int hash;
+    private transient int hash;
 
     public DefaultClusterHash(Collection<ClusterNode> nodes) {
         MessageDigest digest = THREAD_LOCAL_DIGEST.get();

@@ -37,8 +37,6 @@ import java.util.List;
  * @see ClusterEventListener
  */
 public class ClusterChangeEvent extends ClusterEventBase {
-    private static final long serialVersionUID = 1;
-
     private final List<ClusterNode> added;
 
     private final List<ClusterNode> removed;

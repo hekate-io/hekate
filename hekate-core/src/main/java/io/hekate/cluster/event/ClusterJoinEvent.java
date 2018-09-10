@@ -31,8 +31,6 @@ import io.hekate.core.HekateSupport;
  * @see ClusterEventListener
  */
 public class ClusterJoinEvent extends ClusterEventBase {
-    private static final long serialVersionUID = 1;
-
     /**
      * Constructs a new instance.
      *

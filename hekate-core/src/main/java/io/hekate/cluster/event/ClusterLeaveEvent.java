@@ -37,8 +37,6 @@ import java.util.List;
  * @see ClusterEventListener
  */
 public class ClusterLeaveEvent extends ClusterEventBase {
-    private static final long serialVersionUID = 1;
-
     private final ClusterLeaveReason reason;
 
     private final List<ClusterNode> added;
