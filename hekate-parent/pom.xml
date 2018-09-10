@@ -522,8 +522,6 @@
                         -Xmx512m
                         -XX:+UseG1GC
                         -XX:MaxGCPauseMillis=50
-                        -XX:+PrintGC
-                        -XX:+PrintGCDateStamps
                         -XX:+CrashOnOutOfMemoryError
                     </argLine>
                     <trimStackTrace>false</trimStackTrace>
