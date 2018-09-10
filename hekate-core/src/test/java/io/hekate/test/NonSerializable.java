@@ -16,11 +16,22 @@
 
 package io.hekate.test;
 
-import io.hekate.codec.JavaSerializable;
-import java.net.Socket;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
-public class NonSerializable implements JavaSerializable {
-    private static final long serialVersionUID = 1L;
+public class NonSerializable implements Externalizable {
+    private static final long serialVersionUID = -7704818799969186671L;
 
-    public final Socket nonSerializableFiled = new Socket();
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+        throw new NotSerializableException(HekateTestError.MESSAGE);
+    }
+
+    @Override
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        throw new NotSerializableException(HekateTestError.MESSAGE);
+    }
 }

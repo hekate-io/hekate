@@ -148,11 +148,11 @@ public abstract class CodecTestBase<T extends CodecFactory<Object>> extends Heka
         this.factory = factory;
     }
 
-    public static Map<Integer, Class<?>> getKnownTestTypes() {
-        Map<Integer, Class<?>> types = new HashMap<>();
+    public static List<Class<?>> getKnownTestTypes() {
+        List<Class<?>> types = new ArrayList<>();
 
-        types.put(types.size() + 1, ObjA.class);
-        types.put(types.size() + 1, ObjB.class);
+        types.add(ObjA.class);
+        types.add(ObjB.class);
 
         return types;
     }

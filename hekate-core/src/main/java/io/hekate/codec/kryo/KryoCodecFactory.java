@@ -29,7 +29,9 @@ import io.hekate.codec.DataWriter;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.objenesis.strategy.InstantiatorStrategy;
 import org.objenesis.strategy.StdInstantiatorStrategy;
@@ -82,18 +84,28 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
  * @see HekateBootstrap#setDefaultCodec(CodecFactory)
  */
 public class KryoCodecFactory<T> implements CodecFactory<T> {
-    private Map<Integer, Class<?>> knownTypes;
+    /** See {@link #setKnownTypes(List)}. */
+    private List<Class<?>> knownTypes;
 
+    /** See {@link #setRegistrationRequired(boolean)}. */
+    private boolean registrationRequired;
+
+    /** See {@link #setSerializers(Map)}. */
     private Map<Class<?>, Serializer<?>> serializers;
 
+    /** See {@link #setDefaultSerializers(Map)}. */
     private Map<Class<?>, Serializer<?>> defaultSerializers;
 
+    /** See {@link #setUnsafeIo(boolean)}. */
     private boolean unsafeIo = true;
 
+    /** See {@link #setReferences(Boolean)}. */
     private Boolean references;
 
+    /** See {@link #setCacheUnknownTypes(boolean)}. */
     private boolean cacheUnknownTypes;
 
+    /** See {@link #setInstantiatorStrategy(InstantiatorStrategy)}. */
     @ToStringIgnore
     private InstantiatorStrategy instantiatorStrategy = new DefaultInstantiatorStrategy(new StdInstantiatorStrategy());
 
@@ -104,54 +116,100 @@ public class KryoCodecFactory<T> implements CodecFactory<T> {
     }
 
     /**
-     * Returns the map of known java types and their IDs (see {@link #setKnownTypes(Map)}).
+     * Returns the list of known java types (see {@link #setKnownTypes(List)}).
      *
-     * @return Map of known types and their codes.
+     * @return List of known types.
      */
-    public Map<Integer, Class<?>> getKnownTypes() {
+    public List<Class<?>> getKnownTypes() {
         return knownTypes;
     }
 
     /**
-     * Sets the map of known java types and their IDs. Such types will be registered via {@link Kryo#register(Class, int)}.
+     * Sets the list of known Java types. Such types will be registered via {@link Kryo#register(Class)}.
      *
-     * @param knownTypes Map of known java types and their IDs.
+     * <p>
+     * <b>Notice:</b>
+     * Exactly the same list of types should be registered on all cluster nodes. Otherwise Kryo will not be able deserialize data.
+     * Fore more details please see {@link Kryo#register(Class)}.
+     * </p>
+     *
+     * @param knownTypes List of known Java types.
      */
-    public void setKnownTypes(Map<Integer, Class<?>> knownTypes) {
+    public void setKnownTypes(List<Class<?>> knownTypes) {
         this.knownTypes = knownTypes;
     }
 
     /**
-     * Fluent-style version of {@link #setKnownTypes(Map)}.
+     * Fluent-style version of {@link #setKnownTypes(List)}.
      *
-     * @param id Type ID.
      * @param type Type.
      *
      * @return This instance.
      */
-    public KryoCodecFactory<T> withKnownType(int id, Class<?> type) {
+    public KryoCodecFactory<T> withKnownType(Class<?> type) {
         if (knownTypes == null) {
-            knownTypes = new HashMap<>();
+            knownTypes = new ArrayList<>();
         }
 
-        knownTypes.put(id, type);
+        knownTypes.add(type);
 
         return this;
     }
 
     /**
-     * Fluent-style version of {@link #setKnownTypes(Map)}.
+     * Fluent-style version of {@link #setKnownTypes(List)}.
      *
-     * @param types Map of known java types and their IDs.
+     * @param types List of known Java types.
      *
      * @return This instance.
      */
-    public KryoCodecFactory<T> withKnownTypes(Map<Integer, Class<?>> types) {
+    public KryoCodecFactory<T> withKnownTypes(List<Class<?>> types) {
         if (knownTypes == null) {
-            knownTypes = new HashMap<>();
+            knownTypes = new ArrayList<>();
         }
 
-        knownTypes.putAll(types);
+        knownTypes.addAll(types);
+
+        return this;
+    }
+
+    /**
+     * Returns the flag indicating if registration is required for all serializable classes (see {@link #setRegistrationRequired(boolean)}).
+     *
+     * @return Flag indicating if registration is required for all serializable classes.
+     */
+    public boolean isRegistrationRequired() {
+        return registrationRequired;
+    }
+
+    /**
+     * Sets the flag indicating that all serializable classes must be registered via {@link #setKnownTypes(List)}.
+     *
+     * <p>
+     * In order to get the best performance of data serialization it is recommended to register all serializable classes in advance.
+     * If this flag is set to {@code true} then Kryo will throw an error when trying to serialize a class that is not {@link
+     * #setKnownTypes(List) registered}. However sometimes it is not feasible to do so, in such case this flag should be set {@code false}.
+     * </p>
+     *
+     * <p>
+     * Default value of this parameter is {@code false} (i.e. registration is not required).
+     * </p>
+     *
+     * @param registrationRequired {@code true} if all serializable classes should be {@link #setKnownTypes(List) registered} in advance.
+     */
+    public void setRegistrationRequired(boolean registrationRequired) {
+        this.registrationRequired = registrationRequired;
+    }
+
+    /**
+     * Fluent-style version of {@link #setRegistrationRequired(boolean)}.
+     *
+     * @param registrationRequired {@code true} if all serializable classes should be {@link #setKnownTypes(List) registered} in advance.
+     *
+     * @return This instance.
+     */
+    public KryoCodecFactory<T> withRegistrationRequired(boolean registrationRequired) {
+        setRegistrationRequired(registrationRequired);
 
         return this;
     }
@@ -344,7 +402,7 @@ public class KryoCodecFactory<T> implements CodecFactory<T> {
      * Sets the flag that controls the behavior of unmapped classes caching.
      *
      * <p>
-     * If set to {@code true} then mapping of unknown classes (that were not explicitly registered via {@link #withKnownType(int, Class)})
+     * If set to {@code true} then mapping of unknown classes (that were not explicitly registered via {@link #withKnownType(Class)})
      * to their generated identifiers will be preserved across multiple calls of {@link Codec#encode(Object, DataWriter) encode}/{@link
      * Codec#decode(DataReader) decode} methods when called on the same {@link Codec} instance. If set to {@code false} then such
      * mapping will be reset (see {@link ClassResolver#reset()}) after each {@link Codec#encode(Object, DataWriter) encode}/{@link

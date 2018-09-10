@@ -18,15 +18,19 @@ package io.hekate.codec.fst;
 
 import io.hekate.codec.Codec;
 import io.hekate.codec.CodecFactory;
+import io.hekate.codec.HekateSerializableClasses;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.util.format.ToString;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.simpleapi.DefaultCoder;
 import org.nustaq.serialization.simpleapi.FSTCoder;
 import org.nustaq.serialization.simpleapi.OnHeapCoder;
+
+import static java.util.Comparator.comparing;
 
 /**
  * <span class="startHere">&laquo; start here</span><a href="http://ruedigermoeller.github.io/fast-serialization/" target="_blank">FST</a>
@@ -80,37 +84,35 @@ public class FstCodecFactory<T> implements CodecFactory<T> {
 
     private Boolean sharedReferences;
 
-    private Map<Integer, Class<?>> knownTypes;
+    private List<Class<?>> knownTypes;
 
     @Override
     public Codec<T> createCodec() {
-        Class<?>[] preRegister;
-
-        if (knownTypes == null || knownTypes.isEmpty()) {
-            preRegister = null;
-        } else {
-            preRegister = new TreeMap<>(knownTypes).values().toArray(new Class[knownTypes.size()]);
-        }
-
-        FSTConfiguration cfg;
+        FSTConfiguration fst;
 
         if (useUnsafe) {
-            cfg = FSTConfiguration.createUnsafeBinaryConfiguration();
+            fst = FSTConfiguration.createUnsafeBinaryConfiguration();
         } else {
-            cfg = FSTConfiguration.createDefaultConfiguration();
+            fst = FSTConfiguration.createDefaultConfiguration();
         }
 
-        if (preRegister != null) {
-            for (Class<?> type : preRegister) {
-                cfg.registerClass(type);
-            }
+        // Register Hekate-internal classes
+        HekateSerializableClasses.get().forEach(fst::registerClass);
+
+        // Register custom classes
+        if (knownTypes != null && !knownTypes.isEmpty()) {
+            SortedSet<Class<?>> sortedTypes = new TreeSet<>(comparing(Class::getName));
+
+            sortedTypes.addAll(knownTypes);
+
+            sortedTypes.forEach(fst::registerClass);
         }
 
         if (sharedReferences != null) {
-            cfg.setShareReferences(sharedReferences);
+            fst.setShareReferences(sharedReferences);
         }
 
-        return newCodec(cfg);
+        return newCodec(fst);
     }
 
     /**
@@ -185,55 +187,59 @@ public class FstCodecFactory<T> implements CodecFactory<T> {
     }
 
     /**
-     * Returns the map of known java types and their IDs (see {@link #setKnownTypes(Map)}).
+     * Returns the list of known Java types (see {@link #setKnownTypes(List)}).
      *
-     * @return Map of known types and their codes.
+     * @return List of known Java types.
      */
-    public Map<Integer, Class<?>> getKnownTypes() {
+    public List<Class<?>> getKnownTypes() {
         return knownTypes;
     }
 
     /**
-     * Sets the map of known java types and their IDs. Such types will be registered via {@link FSTConfiguration#registerClass(Class[])}
-     * in the ascending order of their IDs.
+     * Sets the list of known Java types.
      *
-     * @param knownTypes Map of known java types and their IDs.
+     * <p>
+     * <b>Notice:</b>
+     * Exactly the same list of types should be registered on all cluster nodes. Otherwise FST will not be able deserialize data.
+     * Fore more details please see {@link FSTConfiguration#registerClass(Class[])}.
+     * </p>
+     *
+     * @param knownTypes List of known Java types.
      */
-    public void setKnownTypes(Map<Integer, Class<?>> knownTypes) {
+    public void setKnownTypes(List<Class<?>> knownTypes) {
         this.knownTypes = knownTypes;
     }
 
     /**
-     * Fluent-style version of {@link #setKnownTypes(Map)}.
+     * Fluent-style version of {@link #setKnownTypes(List)}.
      *
-     * @param id Type ID.
      * @param type Type.
      *
      * @return This instance.
      */
-    public FstCodecFactory<T> withKnownType(int id, Class<?> type) {
+    public FstCodecFactory<T> withKnownType(Class<?> type) {
         if (knownTypes == null) {
-            knownTypes = new HashMap<>();
+            knownTypes = new ArrayList<>();
         }
 
-        knownTypes.put(id, type);
+        knownTypes.add(type);
 
         return this;
     }
 
     /**
-     * Fluent-style version of {@link #setKnownTypes(Map)}.
+     * Fluent-style version of {@link #setKnownTypes(List)}.
      *
-     * @param types Map of known java types and their IDs.
+     * @param types List of known Java types.
      *
      * @return This instance.
      */
-    public FstCodecFactory<T> withKnownTypes(Map<Integer, Class<?>> types) {
+    public FstCodecFactory<T> withKnownTypes(List<Class<?>> types) {
         if (knownTypes == null) {
-            knownTypes = new HashMap<>();
+            knownTypes = new ArrayList<>();
         }
 
-        knownTypes.putAll(types);
+        knownTypes.addAll(types);
 
         return this;
     }

@@ -17,6 +17,7 @@
 package io.hekate.spring.boot.codec;
 
 import io.hekate.cluster.internal.DefaultClusterNode;
+import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.codec.AutoSelectCodecFactory;
 import io.hekate.codec.JdkCodecFactory;
 import io.hekate.codec.fst.FstCodecFactory;
@@ -28,6 +29,7 @@ import org.junit.Test;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class HekateCodecConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableAutoConfiguration
@@ -46,24 +48,26 @@ public class HekateCodecConfigurerTest extends HekateAutoConfigurerTestBase {
     public void testKryo() throws Exception {
         registerAndRefresh(new String[]{
             "hekate.codec=kryo",
-            "hekate.codec.kryo.knownTypes.100500=" + DefaultClusterNode.class.getName()
+            "hekate.codec.kryo.knownTypes=" + DefaultClusterNode.class.getName() + ", " + DefaultClusterTopology.class.getName(),
         }, TestConfig.class);
 
         KryoCodecFactory<Object> codec = (KryoCodecFactory<Object>)get(HekateBootstrap.class).getDefaultCodec();
 
-        assertEquals(DefaultClusterNode.class, codec.getKnownTypes().get(100500));
+        assertTrue(codec.getKnownTypes().contains(DefaultClusterNode.class));
+        assertTrue(codec.getKnownTypes().contains(DefaultClusterTopology.class));
     }
 
     @Test
     public void testFst() throws Exception {
         registerAndRefresh(new String[]{
             "hekate.codec=fst",
-            "hekate.codec.fst.knownTypes.100500=" + DefaultClusterNode.class.getName(),
+            "hekate.codec.fst.knownTypes=" + DefaultClusterNode.class.getName() + ", " + DefaultClusterTopology.class.getName(),
         }, TestConfig.class);
 
         FstCodecFactory<Object> codec = (FstCodecFactory<Object>)get(HekateBootstrap.class).getDefaultCodec();
 
-        assertEquals(DefaultClusterNode.class, codec.getKnownTypes().get(100500));
+        assertTrue(codec.getKnownTypes().contains(DefaultClusterNode.class));
+        assertTrue(codec.getKnownTypes().contains(DefaultClusterTopology.class));
     }
 
     @Test

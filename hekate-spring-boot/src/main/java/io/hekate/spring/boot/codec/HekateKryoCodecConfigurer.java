@@ -19,7 +19,7 @@ package io.hekate.spring.boot.codec;
 import io.hekate.codec.kryo.KryoCodecFactory;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
 import io.hekate.spring.boot.HekateConfigurer;
-import java.util.Map;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -49,7 +49,8 @@ import org.springframework.context.annotation.Configuration;
  * The following properties can be used to customize the auto-configured {@link KryoCodecFactory} instance:
  * </p>
  * <ul>
- * <li>{@link KryoCodecFactory#setKnownTypes(Map) 'hekate.codec.kryo.known-types'}</li>
+ * <li>{@link KryoCodecFactory#setKnownTypes(List) 'hekate.codec.kryo.known-types'}</li>
+ * <li>{@link KryoCodecFactory#setRegistrationRequired(boolean) 'hekate.codec.kryo.registration-required'}</li>
  * <li>{@link KryoCodecFactory#setUnsafeIo(boolean) 'hekate.codec.kryo.unsafe-io'}</li>
  * <li>{@link KryoCodecFactory#setReferences(Boolean) 'hekate.codec.kryo.references'}</li>
  * </ul>

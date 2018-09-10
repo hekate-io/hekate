@@ -37,7 +37,6 @@ import io.hekate.test.NonSerializableTestException;
 import io.hekate.test.SerializableTestException;
 import java.io.InvalidObjectException;
 import java.io.NotSerializableException;
-import java.net.Socket;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -490,7 +489,7 @@ public class RpcUnicastTest extends RpcServiceTestBase {
 
             assertTrue(stackTrace, ErrorUtils.isCausedBy(CodecException.class, err));
             assertTrue(stackTrace, stackTrace.contains(NotSerializableException.class.getName()));
-            assertTrue(stackTrace, stackTrace.contains(Socket.class.getName()));
+            assertTrue(stackTrace, stackTrace.contains(HekateTestError.MESSAGE));
 
             verifyNoMoreInteractions(rpc);
             reset(rpc);
@@ -514,7 +513,7 @@ public class RpcUnicastTest extends RpcServiceTestBase {
 
             assertTrue(stackTrace, ErrorUtils.isCausedBy(MessagingRemoteException.class, err));
             assertTrue(stackTrace, stackTrace.contains(NotSerializableException.class.getName()));
-            assertTrue(stackTrace, stackTrace.contains(Socket.class.getName()));
+            assertTrue(stackTrace, stackTrace.contains(HekateTestError.MESSAGE));
 
             verify(rpc).callB();
             verifyNoMoreInteractions(rpc);

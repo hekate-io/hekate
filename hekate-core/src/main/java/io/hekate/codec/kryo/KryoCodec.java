@@ -28,11 +28,23 @@ import com.esotericsoftware.kryo.util.MapReferenceResolver;
 import io.hekate.codec.Codec;
 import io.hekate.codec.DataReader;
 import io.hekate.codec.DataWriter;
-import io.hekate.codec.JavaSerializable;
+import io.hekate.codec.HekateSerializableClasses;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import java.io.Externalizable;
 import java.io.IOException;
 import java.lang.invoke.SerializedLambda;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+
+import static java.util.Comparator.comparing;
 
 class KryoCodec implements Codec<Object> {
     private static class NonResettableClassResolver extends DefaultClassResolver {
@@ -80,6 +92,8 @@ class KryoCodec implements Codec<Object> {
             kryo = statelessKryo();
         }
 
+        kryo.setRegistrationRequired(factory.isRegistrationRequired());
+
         if (factory.getReferences() != null) {
             kryo.setReferences(factory.getReferences());
         }
@@ -88,25 +102,44 @@ class KryoCodec implements Codec<Object> {
             kryo.setInstantiatorStrategy(factory.getInstantiatorStrategy());
         }
 
+        // Register Hekate-internal classes
+        HekateSerializableClasses.get().forEach(kryo::register);
+
+        // Register JDK classes.
+        kryo.register(Object.class);
+        kryo.register(Object[].class);
+        kryo.register(ArrayList.class);
+        kryo.register(LinkedList.class);
+        kryo.register(HashSet.class);
+        kryo.register(TreeSet.class);
+        kryo.register(LinkedHashSet.class);
+        kryo.register(HashMap.class);
+        kryo.register(TreeMap.class);
+        kryo.register(LinkedHashMap.class);
+
+        // Register custom classes.
+        if (factory.getKnownTypes() != null && !factory.getKnownTypes().isEmpty()) {
+            SortedSet<Class<?>> sortedTypes = new TreeSet<>(comparing(Class::getName));
+
+            sortedTypes.addAll(factory.getKnownTypes());
+
+            sortedTypes.forEach(kryo::register);
+        }
+
         // Try to register extended serializers for the JDK classes that are not supported by Kryo out of the box.
         if (KRYO_SERIALIZERS_SUPPORTED) {
             JavaKaffeeSerializersRegistrar.tryRegister(kryo);
         }
 
         // Enforce JDK default serialization (required for writeReplace/readResolve/etc).
-        kryo.addDefaultSerializer(JavaSerializable.class, new JavaSerializer());
         kryo.addDefaultSerializer(Throwable.class, new JavaSerializer());
+        kryo.addDefaultSerializer(Externalizable.class, new JavaSerializer());
 
         // Enable serialization of Java Lambdas.
         kryo.register(SerializedLambda.class);
         kryo.register(ClosureSerializer.Closure.class, new ClosureSerializer());
 
-        if (factory.getKnownTypes() != null && !factory.getKnownTypes().isEmpty()) {
-            factory.getKnownTypes().forEach((code, type) ->
-                kryo.register(type, code)
-            );
-        }
-
+        // Register custom serializers.
         if (factory.getSerializers() != null && !factory.getSerializers().isEmpty()) {
             factory.getSerializers().forEach(kryo::register);
         }

@@ -49,4 +49,6 @@
     <logger name="io.hekate.election" level="${LOG_LEVEL:-trace}"/>
 
     <logger name="io.hekate.coordinate" level="${LOG_LEVEL:-trace}"/>
+
+    <logger name="io.hekate.rpc" level="${LOG_LEVEL:-trace}"/>
 </configuration>

@@ -19,7 +19,7 @@ package io.hekate.spring.boot.codec;
 import io.hekate.codec.fst.FstCodecFactory;
 import io.hekate.spring.boot.ConditionalOnHekateEnabled;
 import io.hekate.spring.boot.HekateConfigurer;
-import java.util.Map;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -49,7 +49,7 @@ import org.springframework.context.annotation.Configuration;
  * The following properties can be used to customize the auto-configured {@link FstCodecFactory} instance:
  * </p>
  * <ul>
- * <li>{@link FstCodecFactory#setKnownTypes(Map) 'hekate.codec.fst.known-types'}</li>
+ * <li>{@link FstCodecFactory#setKnownTypes(List) 'hekate.codec.fst.known-types'}</li>
  * <li>{@link FstCodecFactory#setUseUnsafe(boolean) 'hekate.codec.fst.use-unsafe'}</li>
  * <li>{@link FstCodecFactory#setSharedReferences(Boolean) 'hekate.codec.fst.shared-references'}</li>
  * </ul>

@@ -36,23 +36,23 @@ public class FstCodecFactoryTest extends HekateTestBase {
     public void testKnownTypes() {
         assertNull(factory.getKnownTypes());
 
-        factory.setKnownTypes(Collections.singletonMap(1, ObjA.class));
+        factory.setKnownTypes(Collections.singletonList(ObjA.class));
 
-        assertEquals(ObjA.class, factory.getKnownTypes().get(1));
+        assertEquals(ObjA.class, factory.getKnownTypes().get(0));
 
         factory.setKnownTypes(null);
 
         assertNull(factory.getKnownTypes());
 
-        assertSame(factory, factory.withKnownType(2, ObjB.class));
+        assertSame(factory, factory.withKnownType(ObjB.class));
 
-        assertEquals(ObjB.class, factory.getKnownTypes().get(2));
+        assertEquals(ObjB.class, factory.getKnownTypes().get(0));
 
-        factory.getKnownTypes().remove(1);
+        factory.getKnownTypes().remove(0);
 
-        assertFalse(factory.getKnownTypes().containsKey(1));
+        assertFalse(factory.getKnownTypes().contains(ObjB.class));
 
-        assertSame(factory, factory.withKnownTypes(Collections.singletonMap(1, ObjA.class)));
+        assertSame(factory, factory.withKnownTypes(Collections.singletonList(ObjA.class)));
 
         assertNotNull(factory.createCodec());
     }

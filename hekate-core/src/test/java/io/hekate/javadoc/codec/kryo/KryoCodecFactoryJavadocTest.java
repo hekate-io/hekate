@@ -39,8 +39,8 @@ public class KryoCodecFactoryJavadocTest extends HekateTestBase {
             .withReferences(true)
             .withUnsafeIo(true)
             // Register known types.
-            .withKnownType(10001, MyClass1.class)
-            .withKnownType(10002, MyClass2.class);
+            .withKnownType(MyClass1.class)
+            .withKnownType(MyClass2.class);
 
         // Register Kryo codec factory and start a new node.
         Hekate node = new HekateBootstrap()
