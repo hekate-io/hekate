@@ -53,7 +53,7 @@ public class NetworkServiceJavadocTest extends HekateNodeTestBase {
 
             System.out.println("Message from client: " + msg);
 
-            AtomicInteger counter = from.getContext();
+            AtomicInteger counter = (AtomicInteger)from.getContext();
 
             // Send reply.
             from.send(msg + " processed (total=" + counter.incrementAndGet() + ')');

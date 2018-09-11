@@ -42,9 +42,8 @@ class DefaultMessagingEndpoint<T> implements MessagingEndpoint<T> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <C> C getContext() {
-        return (C)userContext;
+    public Object getContext() {
+        return userContext;
     }
 
     @Override

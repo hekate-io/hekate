@@ -147,9 +147,8 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <C> C getContext() {
-        return (C)userContext;
+    public Object getContext() {
+        return userContext;
     }
 
     @Override

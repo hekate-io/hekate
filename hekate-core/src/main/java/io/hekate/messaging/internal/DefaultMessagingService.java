@@ -552,7 +552,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
                 @Override
                 public void onMessage(NetworkMessage<MessagingProtocol> msg, NetworkEndpoint<MessagingProtocol> from) throws IOException {
-                    MessagingConnectionNetIn<T> conn = from.getContext();
+                    MessagingConnectionNetIn<?> conn = (MessagingConnectionNetIn<?>)from.getContext();
 
                     if (conn != null) {
                         conn.receive(msg, from);
@@ -561,7 +561,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
                 @Override
                 public void onDisconnect(NetworkEndpoint<MessagingProtocol> client) {
-                    MessagingConnectionNetIn<T> clientCtx = client.getContext();
+                    MessagingConnectionNetIn<?> clientCtx = (MessagingConnectionNetIn<?>)client.getContext();
 
                     if (clientCtx != null) {
                         clientCtx.onDisconnect();

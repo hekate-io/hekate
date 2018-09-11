@@ -64,7 +64,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -419,7 +418,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
                 }
 
                 // Close all clients.
-                List<NetworkFuture<MessagingProtocol>> disconnects = new LinkedList<>();
+                List<NetworkFuture<MessagingProtocol>> disconnects = new ArrayList<>();
 
                 for (MessagingClient<T> client : clients.values()) {
                     disconnects.addAll(client.close());
@@ -438,12 +437,12 @@ class MessagingGatewayContext<T> implements HekateSupport {
                     inbound.clear();
                 }
 
-                disconnects.addAll(localInbound.stream()
+                localInbound.stream()
                     .map(MessagingConnectionNetIn::disconnect)
                     .filter(Objects::nonNull)
-                    .collect(toList()));
+                    .forEach(disconnects::add);
 
-                waiting = new LinkedList<>();
+                waiting = new ArrayList<>();
 
                 // Collect disconnect futures to waiting list.
                 disconnects.stream()
@@ -692,7 +691,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
             FailoverPolicy failover = ctx.opts().failover();
 
-            if (decision == ReplyDecision.COMPLETE || decision == ReplyDecision.DEFAULT && err == null || failover == null) {
+            if ((decision == ReplyDecision.COMPLETE) || (decision == ReplyDecision.DEFAULT && err == null) || (failover == null)) {
                 // Check if this is the final response or an error (ignore chunks).
                 if (err != null || isFinalOrVoidResponse(reply)) {
                     /////////////////////////////////////////////////////////////
@@ -939,7 +938,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
                         doNotifyOnError(callback, new MessageTimeoutException("Messaging operation timed out [message=" + msg + ']'));
                     } else {
-                        // Try reschedule next timeout (for streams).
+                        // Try reschedule next timeout (for subscriptions).
                         doScheduleTimeout(timeout, ctx, callback);
                     }
                 });

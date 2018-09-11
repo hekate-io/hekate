@@ -58,11 +58,9 @@ public interface NetworkEndpoint<T> {
     /**
      * Returns the custom user context object that was set via {@link #setContext(Object)}.
      *
-     * @param <C> Type of context object.
-     *
      * @return Context object.
      */
-    <C> C getContext();
+    Object getContext();
 
     /**
      * Sets the custom user context object that should be associated with this endpoint.

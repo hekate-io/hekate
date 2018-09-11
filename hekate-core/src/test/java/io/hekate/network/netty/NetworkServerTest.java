@@ -41,7 +41,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -320,7 +319,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
         server.start(newServerAddress(), listener).get();
 
-        List<NetworkClientCallbackMock<String>> callbacks = new LinkedList<>();
+        List<NetworkClientCallbackMock<String>> callbacks = new ArrayList<>();
 
         for (int i = 0; i < 3; i++) {
             NetworkClient<String> client = createClient();
@@ -390,7 +389,7 @@ public class NetworkServerTest extends NetworkTestBase {
         server.addHandler(createHandler("test-context", new NetworkServerHandler<String>() {
             @Override
             public void onConnect(String msg, NetworkEndpoint<String> client) {
-                List<String> events = new LinkedList<>();
+                List<String> events = new ArrayList<>();
 
                 contexts.put(msg, events);
 
@@ -401,7 +400,8 @@ public class NetworkServerTest extends NetworkTestBase {
 
             @Override
             public void onDisconnect(NetworkEndpoint<String> client) {
-                List<String> events = client.getContext();
+                @SuppressWarnings("unchecked")
+                List<String> events = (List<String>)client.getContext();
 
                 events.add("disconnect");
 
@@ -410,7 +410,8 @@ public class NetworkServerTest extends NetworkTestBase {
 
             @Override
             public void onFailure(NetworkEndpoint<String> client, Throwable cause) {
-                List<String> events = client.getContext();
+                @SuppressWarnings("unchecked")
+                List<String> events = (List<String>)client.getContext();
 
                 events.add(cause.getMessage());
             }
@@ -420,7 +421,8 @@ public class NetworkServerTest extends NetworkTestBase {
                 if (msg.decode().equals("fail")) {
                     throw TEST_ERROR;
                 } else {
-                    List<String> events = from.getContext();
+                    @SuppressWarnings("unchecked")
+                    List<String> events = (List<String>)from.getContext();
 
                     events.add(msg.decode());
                 }

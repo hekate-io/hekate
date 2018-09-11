@@ -108,7 +108,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
             @Override
             public void onDisconnect(NetworkClient<GossipProtocol> from, Optional<Throwable> cause) {
-                ClusterAddress addr = from.getContext();
+                ClusterAddress addr = (ClusterAddress)from.getContext();
 
                 if (addr != null) {
                     if (DEBUG) {
@@ -265,7 +265,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
     @Override
     public void onDisconnect(NetworkEndpoint<GossipProtocol> from) {
-        ClusterAddress addr = from.getContext();
+        ClusterAddress addr = (ClusterAddress)from.getContext();
 
         if (addr != null) {
             if (DEBUG) {

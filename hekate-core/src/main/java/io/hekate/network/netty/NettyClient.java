@@ -426,9 +426,8 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <C> C getContext() {
-        return (C)userCtx;
+    public Object getContext() {
+        return userCtx;
     }
 
     @Override
