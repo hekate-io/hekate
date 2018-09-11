@@ -53,9 +53,13 @@ class DefaultCoordinationRequest implements CoordinationRequest {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> T get() {
-        return (T)request.request();
+    public Object get() {
+        return request.request();
+    }
+
+    @Override
+    public <T> T get(Class<T> type) {
+        return type.cast(request.request());
     }
 
     @Override

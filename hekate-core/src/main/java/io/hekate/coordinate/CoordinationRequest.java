@@ -38,11 +38,19 @@ public interface CoordinationRequest {
     /**
      * Returns the request message.
      *
+     * @return Request message.
+     */
+    Object get();
+
+    /**
+     * Returns the request message.
+     *
+     * @param type Message type.
      * @param <T> Message type.
      *
      * @return Request message.
      */
-    <T> T get();
+    <T> T get(Class<T> type);
 
     /**
      * Sends the response.

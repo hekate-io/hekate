@@ -93,7 +93,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
         @Override
         public void process(CoordinationRequest request, CoordinationContext ctx) {
-            String command = request.get();
+            String command = (String)request.get();
 
             if ("get".equals(command)) {
                 request.reply(lastValue);

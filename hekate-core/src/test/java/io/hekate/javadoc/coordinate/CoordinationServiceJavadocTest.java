@@ -31,6 +31,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import org.junit.Test;
 
+import static org.junit.Assert.assertNotNull;
+
 public class CoordinationServiceJavadocTest extends HekateNodeTestBase {
     // Start:handler
     public static class ExampleHandler implements CoordinationHandler {
@@ -66,7 +68,7 @@ public class CoordinationServiceJavadocTest extends HekateNodeTestBase {
 
         @Override
         public void process(CoordinationRequest request, CoordinationContext ctx) {
-            String msg = request.get();
+            String msg = request.get(String.class);
 
             switch (msg) {
                 case "lock": {
@@ -136,6 +138,8 @@ public class CoordinationServiceJavadocTest extends HekateNodeTestBase {
         // Start:access
         CoordinationService coordination = hekate.coordination();
         // End:access
+
+        assertNotNull(coordination);
 
         // Start:future
         // Get coordination process (or wait up to 3 seconds for initial coordination to be completed).
