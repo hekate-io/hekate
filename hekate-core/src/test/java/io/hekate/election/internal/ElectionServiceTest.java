@@ -324,7 +324,7 @@ public class ElectionServiceTest extends HekateNodeParamTestBase {
     }
 
     private CandidateMock getCandidate(HekateTestNode node) {
-        return node.getAttribute(CandidateMock.class.getName());
+        return (CandidateMock)node.getAttribute(CandidateMock.class.getName());
     }
 
     private HekateTestNode createElectionNode() throws Exception {

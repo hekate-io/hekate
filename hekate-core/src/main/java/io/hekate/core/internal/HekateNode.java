@@ -491,21 +491,19 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <A> A setAttribute(String name, Object value) {
+    public Object setAttribute(String name, Object value) {
         ArgAssert.notNull(name, "Attribute name");
 
         if (value == null) {
-            return (A)attributes.remove(name);
+            return attributes.remove(name);
         } else {
-            return (A)attributes.put(name, value);
+            return attributes.put(name, value);
         }
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <A> A getAttribute(String name) {
-        return (A)attributes.get(name);
+    public Object getAttribute(String name) {
+        return attributes.get(name);
     }
 
     @Override

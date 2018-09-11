@@ -372,21 +372,19 @@ public interface Hekate extends HekateSupport {
      *
      * @param name Attribute name.
      * @param value Attribute value (if {@code null} then attribute of that name will be removed).
-     * @param <A> Attribute type.
      *
      * @return Old attribute value or {@code null}.
      */
-    <A> A setAttribute(String name, Object value);
+    Object setAttribute(String name, Object value);
 
     /**
      * Returns an attribute that was set via {@link #setAttribute(String, Object)} method.
      *
      * @param name Attribute name.
-     * @param <A> Attribute type.
      *
      * @return Attribute value or {@code null} if there is no such attribute.
      */
-    <A> A getAttribute(String name);
+    Object getAttribute(String name);
 
     /**
      * Asynchronously initializes this instance without joining to the cluster.
