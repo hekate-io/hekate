@@ -47,7 +47,7 @@ class LockMigrationKey {
         return id;
     }
 
-    public boolean isSameCoordinator(ClusterNodeId nodeId) {
+    public boolean isCoordinatedBy(ClusterNodeId nodeId) {
         return coordinator.equals(nodeId);
     }
 

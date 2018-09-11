@@ -509,7 +509,7 @@ class DefaultLockRegion implements LockRegion {
                 }
 
                 replyMigrationRetry(msg);
-            } else if (key.isSameCoordinator(localNode)) {
+            } else if (key.isCoordinatedBy(localNode)) {
                 replyMigrationOk(msg);
 
                 if (key.equals(migrationKey) && key.isSameTopology(latestMapping)) {
@@ -575,9 +575,9 @@ class DefaultLockRegion implements LockRegion {
             } else {
                 replyMigrationOk(msg);
 
-                if (migrationKey == null || !migrationKey.equals(key)
+                if (migrationKey == null
                     // Process only if new key is from the different coordinator or if new key is later than the local one.
-                    && (!migrationKey.isSameCoordinator(key.coordinator()) || migrationKey.id() < key.id())) {
+                    || (!migrationKey.equals(key) && (!migrationKey.isCoordinatedBy(key.coordinator()) || migrationKey.id() < key.id()))) {
                     if (DEBUG) {
                         log.debug("Processing migration prepare request [status={}, request={}]", status, request);
                     }
@@ -634,7 +634,7 @@ class DefaultLockRegion implements LockRegion {
         try {
             if (status == Status.TERMINATED) {
                 replyMigrationRetry(msg);
-            } else if (key.isSameCoordinator(localNode)) {
+            } else if (key.isCoordinatedBy(localNode)) {
                 replyMigrationOk(msg);
             } else {
                 if (key.isSameTopology(latestMapping)) {

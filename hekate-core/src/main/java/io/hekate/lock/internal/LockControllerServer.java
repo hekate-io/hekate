@@ -25,10 +25,9 @@ import io.hekate.lock.internal.LockProtocol.UnlockResponse;
 import io.hekate.messaging.Message;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import java.util.ArrayDeque;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -119,20 +118,20 @@ class LockControllerServer {
 
     private static final boolean TRACE = log.isTraceEnabled();
 
+    private final String name;
+
+    private final ArrayDeque<LockQueueEntry> queue = new ArrayDeque<>();
+
     @ToStringIgnore
     private final ReentrantLock sync = new ReentrantLock();
 
     @ToStringIgnore
     private final ScheduledExecutorService scheduler;
 
-    private final String name;
-
-    private final LinkedList<LockQueueEntry> queue = new LinkedList<>();
-
-    private LockHolder lockedBy;
-
     @ToStringIgnore
     private int busy;
+
+    private LockHolder lockedBy;
 
     public LockControllerServer(String name, ScheduledExecutorService scheduler) {
         assert scheduler != null : "Scheduler is null.";
@@ -212,7 +211,7 @@ class LockControllerServer {
                 boolean replaced = false;
 
                 if (!queue.isEmpty()) {
-                    for (ListIterator<LockQueueEntry> it = queue.listIterator(); it.hasNext(); ) {
+                    for (Iterator<LockQueueEntry> it = queue.iterator(); it.hasNext(); ) {
                         LockQueueEntry oldEntry = it.next();
 
                         LockRequest oldRequest = oldEntry.request();
@@ -220,15 +219,19 @@ class LockControllerServer {
                         if (oldRequest.isSameLock(request)) {
                             LockQueueEntry newEntry = new LockQueueEntry(request, msg, oldEntry.timeoutFuture());
 
-                            it.set(newEntry);
+                            // Remove old entry from the queue and add new entry to end of the queue.
+                            // Note that it breaks the order of locking queue, but it is ok since we don't have 'fair' locking guarantees.
+                            it.remove();
+
+                            queue.addLast(newEntry);
+
+                            replaced = true;
 
                             if (DEBUG) {
                                 log.debug("Replaced lock request in the queue [old={}, new={}, queue={}]", oldEntry, newEntry, queue);
                             }
 
                             reply(oldEntry.message(), newResponse(LockResponse.Status.REPLACED));
-
-                            replaced = true;
 
                             if (msg.isSubscription()) {
                                 replyPartial(newEntry.message(), newResponse(LockResponse.Status.LOCK_INFO));
