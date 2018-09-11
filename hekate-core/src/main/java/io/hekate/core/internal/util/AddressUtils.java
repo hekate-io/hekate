@@ -162,7 +162,7 @@ public final class AddressUtils {
      */
     public static InetSocketAddress fromFileName(String name, Logger log) {
         if (name.startsWith(FILE_PREFIX) && name.length() > FILE_PREFIX.length()) {
-            String[] tokens = name.substring(FILE_PREFIX.length()).split(PORT_SEPARATOR);
+            String[] tokens = name.substring(FILE_PREFIX.length()).split(PORT_SEPARATOR, 2);
 
             if (tokens.length == 2) {
                 InetAddress host = null;

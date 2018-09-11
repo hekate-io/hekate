@@ -31,6 +31,7 @@ import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.util.format.ToString;
 import io.micrometer.core.instrument.MeterRegistry;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -406,7 +407,7 @@ public class HekateBootstrap {
      * Returns an existing service factory of the specified type or creates and registers a new one.
      *
      * <p>
-     * Note that the specified type must be instantiable via {@link Class#newInstance()}.
+     * Note that the specified type must have a public no-arg constructor.
      * </p>
      *
      * @param factoryType Service factory type.
@@ -423,8 +424,8 @@ public class HekateBootstrap {
             T factory;
 
             try {
-                factory = factoryType.newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
+                factory = factoryType.getConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                 throw new HekateConfigurationException("Failed to instantiate service factory [type=" + factoryType + ']', e);
             }
 

@@ -16,14 +16,14 @@
 
 package io.hekate.core.service.internal;
 
+import java.util.ArrayList;
 import java.util.IdentityHashMap;
-import java.util.LinkedList;
 import java.util.List;
 
 class ServiceInitOrder {
     private final IdentityHashMap<ServiceHandler, Void> registerOnce = new IdentityHashMap<>();
 
-    private final List<ServiceHandler> order = new LinkedList<>();
+    private final List<ServiceHandler> order = new ArrayList<>();
 
     public void register(ServiceHandler handler) {
         if (!registerOnce.containsKey(handler)) {

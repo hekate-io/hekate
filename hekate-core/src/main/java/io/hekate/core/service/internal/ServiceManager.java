@@ -24,6 +24,7 @@ import io.hekate.core.service.DefaultServiceFactory;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -330,7 +331,7 @@ public class ServiceManager {
             }
 
             try {
-                ServiceFactory<?> factory = factoryType.newInstance();
+                ServiceFactory<?> factory = factoryType.getConstructor().newInstance();
 
                 Service service = factory.createService();
 
@@ -341,7 +342,7 @@ public class ServiceManager {
                 }
 
                 handler = registerService(service);
-            } catch (InstantiationException | IllegalAccessException e) {
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                 throw new HekateConfigurationException("Failed to instantiate service with default factory "
                     + "[service=" + type.getName() + ", factory=" + factoryType.getName() + ']', e);
             }
