@@ -17,6 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.Message;
+import io.hekate.messaging.MessageInterceptor;
 import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.unicast.ResponseFuture;
@@ -153,7 +154,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testStream() throws Exception {
+    public void testSubscribe() throws Exception {
         AtomicReference<CountDownLatch> hangLatchRef = new AtomicReference<>();
 
         createChannel(c -> c.withReceiver(msg -> {
@@ -186,7 +187,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testStreamNoTimeout() throws Exception {
+    public void testSubscribeNoTimeout() throws Exception {
         Exchanger<Message<String>> msgRef = new Exchanger<>();
 
         createChannel(c -> c.withReceiver(msg -> {
@@ -220,15 +221,30 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
     @Test
     public void testSend() throws Exception {
-        createChannel().join();
+        createChannel(c -> c.withReceiver(msg -> {
+            // No-op.
+        })).join();
 
-        TestChannel sender = createChannel(c -> c.withMessagingTimeout(1)).join();
+        TestChannel sender = createChannel(c -> {
+                c.withMessagingTimeout(1);
+                c.withInterceptor(new MessageInterceptor<String>() {
+                    @Override
+                    public String interceptOutbound(String msg, OutboundContext ctx) {
+                        sleep(30);
+
+                        return null;
+                    }
+                });
+            }
+        ).join();
 
         assertEquals(1, sender.get().timeout());
 
-        repeat(5, i -> {
+        repeat(3, i -> {
             try {
                 get(sender.get().forRemotes().send("must-fail-" + i));
+
+                fail("Error was expected.");
             } catch (MessagingFutureException e) {
                 assertTrue(getStacktrace(e), e.isCausedBy(MessageTimeoutException.class));
                 assertEquals("Messaging operation timed out [message=must-fail-" + i + ']',
@@ -240,15 +256,26 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
     @Test
     public void testSendNoTimeout() throws Exception {
         createChannel(c -> c.withReceiver(msg -> {
-            msg.reply("done");
+            // No-op.
         })).join();
 
-        TestChannel sender = createChannel(c -> c.withMessagingTimeout(1000)).join();
+        TestChannel sender = createChannel(c -> {
+                c.withMessagingTimeout(1000);
+                c.withInterceptor(new MessageInterceptor<String>() {
+                    @Override
+                    public String interceptOutbound(String msg, OutboundContext ctx) {
+                        sleep(30);
+
+                        return null;
+                    }
+                });
+            }
+        ).join();
 
         assertEquals(1000, sender.get().timeout());
 
-        repeat(5, i ->
-            get(sender.get().forRemotes().request("request-" + i))
+        repeat(3, i ->
+            get(sender.get().forRemotes().send("request-" + i))
         );
     }
 }

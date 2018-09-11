@@ -56,9 +56,9 @@ public class MulticastSeedNodeProviderJmxTest extends HekateNodeTestBase {
 
         ObjectName name = node.get(JmxService.class).nameFor(MulticastSeedNodeProviderJmx.class);
 
-        assertEquals('/' + cfg.getGroup() + ':' + cfg.getPort(), jmxAttribute(name, "Group", node));
-        assertEquals(987, (long)jmxAttribute(name, "WaitTime", node));
-        assertEquals(123, (int)jmxAttribute(name, "Ttl", node));
-        assertEquals(321, (long)jmxAttribute(name, "Interval", node));
+        assertEquals('/' + cfg.getGroup() + ':' + cfg.getPort(), jmxAttribute(name, "Group", String.class, node));
+        assertEquals(987, (long)jmxAttribute(name, "WaitTime", Long.class, node));
+        assertEquals(123, (int)jmxAttribute(name, "Ttl", Integer.class, node));
+        assertEquals(321, (long)jmxAttribute(name, "Interval", Long.class, node));
     }
 }

@@ -48,10 +48,10 @@ public class NetworkConnectorJmxTest extends HekateNodeTestBase {
 
         ObjectName name = node.get(JmxService.class).nameFor(NetworkConnectorJmx.class, "test.jmx");
 
-        assertEquals("test.jmx", jmxAttribute(name, "Protocol", node));
-        assertEquals(100500, (long)jmxAttribute(name, "IdleSocketTimeout", node));
-        assertEquals("io.hekate.test.jmx", jmxAttribute(name, "LogCategory", node));
-        assertEquals(3, (int)jmxAttribute(name, "NioThreads", node));
-        assertTrue(jmxAttribute(name, "Server", node));
+        assertEquals("test.jmx", jmxAttribute(name, "Protocol", String.class, node));
+        assertEquals(100500, (long)jmxAttribute(name, "IdleSocketTimeout", Long.class, node));
+        assertEquals("io.hekate.test.jmx", jmxAttribute(name, "LogCategory", String.class, node));
+        assertEquals(3, (int)jmxAttribute(name, "NioThreads", Integer.class, node));
+        assertTrue(jmxAttribute(name, "Server", Boolean.class, node));
     }
 }

@@ -52,15 +52,15 @@ public class NetworkServiceJmxTest extends HekateNodeParamTestBase {
 
         ObjectName name = node.get(JmxService.class).nameFor(NetworkServiceJmx.class);
 
-        assertEquals(100500, (int)jmxAttribute(name, "ConnectTimeout", node));
-        assertEquals(100501, (int)jmxAttribute(name, "HeartbeatInterval", node));
-        assertEquals(100502, (int)jmxAttribute(name, "HeartbeatLossThreshold", node));
-        assertEquals(2, (int)jmxAttribute(name, "NioThreads", node));
-        assertEquals(context().transport().name(), jmxAttribute(name, "Transport", node));
-        assertEquals(context().ssl().isPresent(), jmxAttribute(name, "Ssl", node));
-        assertTrue(jmxAttribute(name, "TcpNoDelay", node));
-        assertTrue(jmxAttribute(name, "TcpReuseAddress", node));
-        assertEquals(1024, (int)jmxAttribute(name, "TcpReceiveBufferSize", node));
-        assertEquals(2048, (int)jmxAttribute(name, "TcpSendBufferSize", node));
+        assertEquals(100500, (int)jmxAttribute(name, "ConnectTimeout", Integer.class, node));
+        assertEquals(100501, (int)jmxAttribute(name, "HeartbeatInterval", Integer.class, node));
+        assertEquals(100502, (int)jmxAttribute(name, "HeartbeatLossThreshold", Integer.class, node));
+        assertEquals(2, (int)jmxAttribute(name, "NioThreads", Integer.class, node));
+        assertEquals(context().transport().name(), jmxAttribute(name, "Transport", String.class, node));
+        assertEquals(context().ssl().isPresent(), jmxAttribute(name, "Ssl", Boolean.class, node));
+        assertTrue(jmxAttribute(name, "TcpNoDelay", Boolean.class, node));
+        assertTrue(jmxAttribute(name, "TcpReuseAddress", Boolean.class, node));
+        assertEquals(1024, (int)jmxAttribute(name, "TcpReceiveBufferSize", Integer.class, node));
+        assertEquals(2048, (int)jmxAttribute(name, "TcpSendBufferSize", Integer.class, node));
     }
 }

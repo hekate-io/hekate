@@ -40,10 +40,11 @@ import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.service.Service;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.test.HekateTestError;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -791,7 +792,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
     @Test
     public void testJoinOrderRemoveYoungest() throws Exception {
-        LinkedList<HekateTestNode> nodes = new LinkedList<>();
+        Deque<HekateTestNode> nodes = new ArrayDeque<>();
 
         AtomicInteger expectedOrder = new AtomicInteger();
 
@@ -822,7 +823,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
     @Test
     public void testJoinOrderRemoveOldest() throws Exception {
-        LinkedList<HekateTestNode> nodes = new LinkedList<>();
+        Deque<HekateTestNode> nodes = new ArrayDeque<>();
 
         AtomicInteger expectedOrder = new AtomicInteger();
 

@@ -33,9 +33,8 @@ public final class JmxTestUtils {
         // No-op.
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> T jmxAttribute(ObjectName name, String attr, HekateTestNode node) throws Exception {
-        return (T)node.get(JmxService.class).server().getAttribute(name, attr);
+    public static <T> T jmxAttribute(ObjectName name, String attr, Class<T> attrType, HekateTestNode node) throws Exception {
+        return attrType.cast(node.get(JmxService.class).server().getAttribute(name, attr));
     }
 
     public static void verifyJmxTopology(ClusterTopology top, CompositeData[] jmxTop) {

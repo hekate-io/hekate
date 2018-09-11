@@ -50,7 +50,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
         }
 
         public void collect(String msg) {
-            String[] tokens = msg.split(":");
+            String[] tokens = msg.split(":", 3);
             Integer key = Integer.parseInt(tokens[0]);
             Integer value = Integer.parseInt(tokens[1]);
             String type = tokens[2];

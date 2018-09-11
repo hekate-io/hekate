@@ -25,6 +25,7 @@ import io.hekate.core.jmx.JmxTestUtils;
 import java.util.ArrayList;
 import java.util.List;
 import javax.management.ObjectName;
+import javax.management.openmbean.CompositeData;
 import org.junit.Test;
 
 import static io.hekate.core.jmx.JmxTestUtils.jmxAttribute;
@@ -63,14 +64,14 @@ public class CandidateJmxTest extends HekateNodeTestBase {
             ObjectName name1 = node.get(JmxService.class).nameFor(CandidateJmx.class, "test-group-1");
             ObjectName name2 = node.get(JmxService.class).nameFor(CandidateJmx.class, "test-group-2");
 
-            assertEquals("test-group-1", jmxAttribute(name1, "group", node));
-            assertEquals("test-group-2", jmxAttribute(name2, "group", node));
+            assertEquals("test-group-1", jmxAttribute(name1, "group", String.class, node));
+            assertEquals("test-group-2", jmxAttribute(name2, "group", String.class, node));
 
-            assertEquals(node.localNode().equals(leader1), jmxAttribute(name1, "leader", node));
-            assertEquals(node.localNode().equals(leader2), jmxAttribute(name2, "leader", node));
+            assertEquals(node.localNode().equals(leader1), jmxAttribute(name1, "leader", Boolean.class, node));
+            assertEquals(node.localNode().equals(leader2), jmxAttribute(name2, "leader", Boolean.class, node));
 
-            JmxTestUtils.verifyJmxNode(leader1, jmxAttribute(name1, "leaderNode", node));
-            JmxTestUtils.verifyJmxNode(leader2, jmxAttribute(name2, "leaderNode", node));
+            JmxTestUtils.verifyJmxNode(leader1, jmxAttribute(name1, "leaderNode", CompositeData.class, node));
+            JmxTestUtils.verifyJmxNode(leader2, jmxAttribute(name2, "leaderNode", CompositeData.class, node));
         }
     }
 }

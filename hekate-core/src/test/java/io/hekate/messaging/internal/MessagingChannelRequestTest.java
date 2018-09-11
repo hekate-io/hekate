@@ -413,7 +413,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
                 try {
                     messageExchanger.exchange(msg);
                 } catch (InterruptedException e) {
-                    fail("Thread was unexpectedly interrupted.");
+                    throw new AssertionError("Thread was unexpectedly interrupted.", e);
                 }
             })
         ).join();
@@ -432,7 +432,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             try {
                 errExchanger.exchange(err);
             } catch (InterruptedException e) {
-                fail("Thread was unexpectedly interrupted .");
+                throw new AssertionError("Thread was unexpectedly interrupted.", e);
             }
         });
 
@@ -749,6 +749,8 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
             try {
                 future.response();
+
+                fail("Error was expected.");
             } catch (MessagingFutureException e) {
                 assertTrue(e.isCausedBy(LoadBalancerException.class));
                 assertEquals(HekateTestError.MESSAGE, e.getCause().getMessage());
@@ -775,6 +777,8 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
             try {
                 future.response();
+
+                fail("Error was expected.");
             } catch (MessagingFutureException e) {
                 assertTrue(e.isCausedBy(LoadBalancerException.class));
                 assertEquals("Load balancer failed to select a target node.", e.getCause().getMessage());
@@ -803,6 +807,8 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
             try {
                 future.response();
+
+                fail("Error was expected.");
             } catch (MessagingFutureException e) {
                 assertTrue(e.isCausedBy(UnknownRouteException.class));
                 assertEquals("Node is not within the channel topology [id=" + invalidNodeId + ']', e.getCause().getMessage());
@@ -896,6 +902,8 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         try {
             get(channel.get().forNode(channel.nodeId()).request("test"));
+
+            fail("Error was expected.");
         } catch (MessagingFutureException e) {
             assertTrue(e.getCause().toString(), e.getCause() instanceof LoadBalancerException);
             assertEquals("No suitable receivers [channel=test-channel]", e.getCause().getMessage());
@@ -903,6 +911,8 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         try {
             channel.requestWithSyncCallback(channel.nodeId(), "test");
+
+            fail("Error was expected.");
         } catch (LoadBalancerException e) {
             assertEquals("No suitable receivers [channel=test-channel]", e.getMessage());
         }
@@ -920,6 +930,8 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         try {
             get(channel.get().forNode(channel.nodeId()).request("test"));
+
+            fail("Error was expected.");
         } catch (MessagingFutureException e) {
             assertTrue(e.getCause().toString(), e.getCause() instanceof MessagingChannelClosedException);
             assertEquals("Channel closed [channel=test-channel]", e.getCause().getMessage());
@@ -927,6 +939,8 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         try {
             channel.requestWithSyncCallback(channel.nodeId(), "test");
+
+            fail("Error was expected.");
         } catch (MessagingChannelClosedException e) {
             assertEquals("Channel closed [channel=test-channel]", e.getMessage());
         }

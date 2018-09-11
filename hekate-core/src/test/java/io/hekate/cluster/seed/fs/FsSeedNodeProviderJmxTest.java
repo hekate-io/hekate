@@ -64,7 +64,7 @@ public class FsSeedNodeProviderJmxTest extends HekateNodeTestBase {
 
         ObjectName name = node.get(JmxService.class).nameFor(FsSeedNodeProviderJmx.class);
 
-        assertEquals(tempDir.getCanonicalPath(), jmxAttribute(name, "WorkDir", node));
-        assertEquals(100, (long)jmxAttribute(name, "CleanupInterval", node));
+        assertEquals(tempDir.getCanonicalPath(), jmxAttribute(name, "WorkDir", String.class, node));
+        assertEquals(100, (long)jmxAttribute(name, "CleanupInterval", Long.class, node));
     }
 }

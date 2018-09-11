@@ -37,7 +37,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
     public MessagingChannelSubscribeTest(MessagingTestContext ctx) {
@@ -215,7 +214,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
                 try {
                     messageExchanger.exchange(msg);
                 } catch (InterruptedException e) {
-                    fail("Thread was unexpectedly interrupted.");
+                    throw new AssertionError("Thread was unexpectedly interrupted.", e);
                 }
             })
         ).join();
@@ -235,7 +234,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
                 try {
                     errExchanger.exchange(err);
                 } catch (InterruptedException e) {
-                    fail("Thread was unexpectedly interrupted .");
+                    throw new AssertionError("Thread was unexpectedly interrupted .", e);
                 }
             });
 
@@ -249,7 +248,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
             try {
                 errExchanger.exchange(err);
             } catch (InterruptedException e) {
-                fail("Thread was unexpectedly interrupted .");
+                throw new AssertionError("Thread was unexpectedly interrupted .", e);
             }
         });
 

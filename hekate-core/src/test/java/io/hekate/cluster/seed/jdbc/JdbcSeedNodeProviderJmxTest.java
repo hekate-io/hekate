@@ -80,11 +80,11 @@ public class JdbcSeedNodeProviderJmxTest extends HekateNodeTestBase {
 
         ObjectName name = node.get(JmxService.class).nameFor(JdbcSeedNodeProviderJmx.class);
 
-        assertEquals(cfg.getDataSource().toString(), jmxAttribute(name, "DataSourceInfo", node));
-        assertEquals(100, (long)jmxAttribute(name, "CleanupInterval", node));
-        assertEquals(1000, (int)jmxAttribute(name, "QueryTimeout", node));
-        assertTrue(((String)jmxAttribute(name, "InsertSql", node)).contains("INSERT"));
-        assertTrue(((String)jmxAttribute(name, "DeleteSql", node)).contains("DELETE"));
-        assertTrue(((String)jmxAttribute(name, "SelectSql", node)).contains("SELECT"));
+        assertEquals(cfg.getDataSource().toString(), jmxAttribute(name, "DataSourceInfo", String.class, node));
+        assertEquals(100, (long)jmxAttribute(name, "CleanupInterval", Long.class, node));
+        assertEquals(1000, (int)jmxAttribute(name, "QueryTimeout", Integer.class, node));
+        assertTrue(((String)jmxAttribute(name, "InsertSql", String.class, node)).contains("INSERT"));
+        assertTrue(((String)jmxAttribute(name, "DeleteSql", String.class, node)).contains("DELETE"));
+        assertTrue(((String)jmxAttribute(name, "SelectSql", String.class, node)).contains("SELECT"));
     }
 }

@@ -158,9 +158,9 @@ public class JmxServiceTest extends HekateNodeTestBase {
             assertTrue(jmx.names().contains(name2));
             assertTrue(jmx.names().contains(name3));
 
-            assertEquals("test-1", jmxAttribute(name1, "TestValue", node));
-            assertEquals("test-2", jmxAttribute(name2, "TestValue", node));
-            assertEquals("test-3", jmxAttribute(name3, "TestValue", node));
+            assertEquals("test-1", jmxAttribute(name1, "TestValue", String.class, node));
+            assertEquals("test-2", jmxAttribute(name2, "TestValue", String.class, node));
+            assertEquals("test-3", jmxAttribute(name3, "TestValue", String.class, node));
 
             verify(bean1).getTestValue();
             verify(bean2).getTestValue();
@@ -209,8 +209,8 @@ public class JmxServiceTest extends HekateNodeTestBase {
             assertTrue(jmx.names().contains(name1));
             assertTrue(jmx.names().contains(name2));
 
-            assertEquals("test-1", jmxAttribute(name1, "TestValue", node));
-            assertEquals("test-2", jmxAttribute(name2, "TestValue", node));
+            assertEquals("test-1", jmxAttribute(name1, "TestValue", String.class, node));
+            assertEquals("test-2", jmxAttribute(name2, "TestValue", String.class, node));
 
             verify(bean1).getTestValue();
             verify(bean2).getTestValue();

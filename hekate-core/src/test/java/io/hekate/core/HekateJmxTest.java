@@ -38,15 +38,15 @@ public class HekateJmxTest extends HekateNodeTestBase {
 
         ObjectName name = node.get(JmxService.class).nameFor(HekateJmx.class);
 
-        Assert.assertEquals(HekateVersion.fullVersion(), jmxAttribute(name, "Version", node));
-        assertEquals(node.cluster().clusterName(), jmxAttribute(name, "ClusterName", node));
-        assertEquals(node.localNode().name(), jmxAttribute(name, "NodeName", node));
-        assertEquals(node.localNode().id().toString(), jmxAttribute(name, "NodeId", node));
-        assertEquals(node.localNode().address().socket().getHostString(), jmxAttribute(name, "Host", node));
-        assertEquals((Integer)node.localNode().address().socket().getPort(), jmxAttribute(name, "Port", node));
-        assertEquals(node.localNode().address().socket().toString(), jmxAttribute(name, "SocketAddress", node));
-        Assert.assertEquals(Hekate.State.UP.name(), jmxAttribute(name, "State", node));
-        assertTrue((Long)jmxAttribute(name, "UpTimeMillis", node) > 0);
-        assertTrue(jmxAttribute(name, "UpTime", node).toString().startsWith("PT"));
+        Assert.assertEquals(HekateVersion.fullVersion(), jmxAttribute(name, "Version", String.class, node));
+        assertEquals(node.cluster().clusterName(), jmxAttribute(name, "ClusterName", String.class, node));
+        assertEquals(node.localNode().name(), jmxAttribute(name, "NodeName", String.class, node));
+        assertEquals(node.localNode().id().toString(), jmxAttribute(name, "NodeId", String.class, node));
+        assertEquals(node.localNode().address().socket().getHostString(), jmxAttribute(name, "Host", String.class, node));
+        assertEquals((Integer)node.localNode().address().socket().getPort(), jmxAttribute(name, "Port", Integer.class, node));
+        assertEquals(node.localNode().address().socket().toString(), jmxAttribute(name, "SocketAddress", String.class, node));
+        Assert.assertEquals(Hekate.State.UP.name(), jmxAttribute(name, "State", String.class, node));
+        assertTrue(jmxAttribute(name, "UpTimeMillis", Long.class, node) > 0);
+        assertTrue(jmxAttribute(name, "UpTime", String.class, node).startsWith("PT"));
     }
 }

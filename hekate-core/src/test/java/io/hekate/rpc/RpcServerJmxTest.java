@@ -22,6 +22,7 @@ import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxServiceFactory;
 import javax.management.ObjectName;
+import javax.management.openmbean.CompositeData;
 import org.junit.Test;
 
 import static io.hekate.core.jmx.JmxTestUtils.jmxAttribute;
@@ -100,13 +101,13 @@ public class RpcServerJmxTest extends HekateNodeTestBase {
             name = node.get(JmxService.class).nameFor(RpcServerJmx.class, rpcFace.name() + '#' + tag);
         }
 
-        assertEquals(server.rpc().getClass().getName(), jmxAttribute(name, "HandlerType", node));
-        assertTrue((int)jmxAttribute(name, "InterfaceVersion", node) > 0);
-        assertTrue((int)jmxAttribute(name, "InterfaceMinClientVersion", node) > 0);
+        assertEquals(server.rpc().getClass().getName(), jmxAttribute(name, "HandlerType", String.class, node));
+        assertTrue((int)jmxAttribute(name, "InterfaceVersion", Integer.class, node) > 0);
+        assertTrue((int)jmxAttribute(name, "InterfaceMinClientVersion", Integer.class, node) > 0);
 
         ClusterTopology topology = node.rpc().clusterOf(rpcFace.javaType(), tag).topology();
 
         assertEquals(1, topology.size());
-        verifyJmxTopology(topology, jmxAttribute(name, "Topology", node));
+        verifyJmxTopology(topology, jmxAttribute(name, "Topology", CompositeData[].class, node));
     }
 }

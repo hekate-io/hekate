@@ -38,17 +38,17 @@ public class DefaultFailureDetectorJmxTest extends HekateNodeTestBase {
         ObjectName name1 = node1.get(JmxService.class).nameFor(DefaultFailureDetectorJmx.class);
         ObjectName name2 = node2.get(JmxService.class).nameFor(DefaultFailureDetectorJmx.class);
 
-        assertTrue((long)jmxAttribute(name1, "HeartbeatInterval", node1) > 0);
-        assertTrue((long)jmxAttribute(name2, "HeartbeatInterval", node2) > 0);
+        assertTrue(jmxAttribute(name1, "HeartbeatInterval", Long.class, node1) > 0);
+        assertTrue(jmxAttribute(name2, "HeartbeatInterval", Long.class, node2) > 0);
 
-        assertTrue((int)jmxAttribute(name1, "HeartbeatLossThreshold", node1) > 0);
-        assertTrue((int)jmxAttribute(name2, "HeartbeatLossThreshold", node2) > 0);
+        assertTrue(jmxAttribute(name1, "HeartbeatLossThreshold", Integer.class, node1) > 0);
+        assertTrue(jmxAttribute(name2, "HeartbeatLossThreshold", Integer.class, node2) > 0);
 
-        assertTrue((int)jmxAttribute(name1, "FailureDetectionQuorum", node1) > 0);
-        assertTrue((int)jmxAttribute(name2, "FailureDetectionQuorum", node2) > 0);
+        assertTrue(jmxAttribute(name1, "FailureDetectionQuorum", Integer.class, node1) > 0);
+        assertTrue(jmxAttribute(name2, "FailureDetectionQuorum", Integer.class, node2) > 0);
 
-        String[] monitored1 = jmxAttribute(name1, "MonitoredAddresses", node1);
-        String[] monitored2 = jmxAttribute(name2, "MonitoredAddresses", node2);
+        String[] monitored1 = jmxAttribute(name1, "MonitoredAddresses", String[].class, node1);
+        String[] monitored2 = jmxAttribute(name2, "MonitoredAddresses", String[].class, node2);
 
         assertEquals(toSet(node2.localNode().address().toString()), toSet(monitored1));
         assertEquals(toSet(node1.localNode().address().toString()), toSet(monitored2));
