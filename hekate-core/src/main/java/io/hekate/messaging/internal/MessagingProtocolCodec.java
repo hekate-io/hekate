@@ -474,7 +474,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
     }
 
     private static int appendType(int flags, MessagingProtocol.Type type) {
-        return (byte)(flags | type.ordinal() & MASK_TYPE);
+        return (byte)(flags | (type.ordinal() & MASK_TYPE));
     }
 
     private static MessagingProtocol.Type getType(byte flags) {

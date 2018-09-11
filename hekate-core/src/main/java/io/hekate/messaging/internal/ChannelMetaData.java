@@ -64,7 +64,7 @@ class ChannelMetaData {
             return null;
         }
 
-        String[] tokens = str.split(":");
+        String[] tokens = str.split(":", 2);
 
         boolean receiving = Boolean.valueOf(tokens[0]);
         String type = tokens[1];

@@ -30,7 +30,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public abstract class XsdTestBase extends HekateTestBase {
@@ -56,20 +55,22 @@ public abstract class XsdTestBase extends HekateTestBase {
         try {
             get(node1.cluster().futureOf(top -> top.size() == 2));
         } catch (TimeoutException e) {
-            fail("Failed to await for topology ["
+            throw new AssertionError("Failed to await for topology ["
                 + "node-1-topology=" + node1.cluster().topology()
                 + ", node-2-topology=" + node2.cluster().topology()
-                + ']'
+                + ']',
+                e
             );
         }
 
         try {
             get(node2.cluster().futureOf(top -> top.size() == 2));
         } catch (TimeoutException e) {
-            fail("Failed to await for topology ["
+            throw new AssertionError("Failed to await for topology ["
                 + "node-1-topology=" + node1.cluster().topology()
                 + ", node-2-topology=" + node2.cluster().topology()
-                + ']'
+                + ']',
+                e
             );
         }
 

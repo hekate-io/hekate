@@ -26,7 +26,7 @@ class NotificationPayloadDecodeException extends CodecException {
     }
 
     @Override
-    public Throwable fillInStackTrace() {
+    public synchronized Throwable fillInStackTrace() {
         return this;
     }
 }

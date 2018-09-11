@@ -31,6 +31,7 @@ import io.hekate.core.HekateFutureException;
 import io.hekate.util.StateGuard;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -40,7 +41,6 @@ import java.util.concurrent.TimeoutException;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
 
 public class HekateTestNode extends HekateNode {
     public static class Bootstrap extends HekateBootstrap {
@@ -125,7 +125,7 @@ public class HekateTestNode extends HekateNode {
         doAwaitForTopology(Arrays.stream(nodes).map(Hekate::localNode).collect(toList()));
     }
 
-    public void awaitForTopology(List<? extends Hekate> nodes) {
+    public void awaitForTopology(Collection<? extends Hekate> nodes) {
         doAwaitForTopology(nodes.stream().map(Hekate::localNode).collect(toList()));
     }
 
@@ -141,11 +141,11 @@ public class HekateTestNode extends HekateNode {
         try {
             future.get(15, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            fail("Thread was interrupted while awaiting for cluster topology:" + nodes);
+            throw new AssertionError("Thread was interrupted while awaiting for cluster topology:" + nodes, e);
         } catch (ExecutionException e) {
             throw new AssertionError("Failed to await for cluster topology: " + nodes, e.getCause());
         } catch (TimeoutException e) {
-            fail("Failed to await for cluster topology: " + nodes);
+            throw new AssertionError("Failed to await for cluster topology: " + nodes, e);
         }
     }
 

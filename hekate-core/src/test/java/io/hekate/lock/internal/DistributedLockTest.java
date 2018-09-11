@@ -867,7 +867,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                         assertEquals(lockNode.localNode(), fromLock.node());
                         assertEquals(threadId, fromLock.threadId());
                     } catch (InterruptedException e) {
-                        fail("Thread was unexpectedly interrupted.");
+                        throw new AssertionError("Thread was unexpectedly interrupted.", e);
                     }
                 });
 

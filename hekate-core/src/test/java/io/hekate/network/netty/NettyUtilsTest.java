@@ -53,7 +53,7 @@ public class NettyUtilsTest extends HekateTestBase {
 
         NettyUtils.shutdown(mock);
 
-        verify(mock.shutdownGracefully(eq(NettyUtils.GRACEFUL_SHUTDOWN_PERIOD), eq(Long.MAX_VALUE), same(TimeUnit.MILLISECONDS)));
+        verify(mock).shutdownGracefully(eq(NettyUtils.GRACEFUL_SHUTDOWN_PERIOD), eq(Long.MAX_VALUE), same(TimeUnit.MILLISECONDS));
     }
 
     @Test

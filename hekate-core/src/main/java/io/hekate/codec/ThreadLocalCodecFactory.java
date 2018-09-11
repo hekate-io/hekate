@@ -21,7 +21,7 @@ import io.hekate.util.format.ToStringIgnore;
 import java.io.IOException;
 
 /**
- * Codec factory that manages a per-thread cache {@link Codec}s.
+ * Codec factory that manages a per-thread cache of {@link Codec}s.
  *
  * @param <T> Base data type of this factory.
  */
@@ -29,6 +29,7 @@ public final class ThreadLocalCodecFactory<T> implements CodecFactory<T> {
     private final CodecFactory<T> delegate;
 
     @ToStringIgnore
+    // Notice! Non-static because of we need to store a thread-local cache per each factory.
     private final ThreadLocal<Codec<T>> cache = new ThreadLocal<>();
 
     @ToStringIgnore

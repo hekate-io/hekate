@@ -23,7 +23,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -76,11 +75,11 @@ public final class ToString {
                     }
 
                     if (customFormat == null) {
-                        customFormat = type.newInstance();
+                        customFormat = type.getConstructor().newInstance();
                     }
 
                     this.formatter = customFormat;
-                } catch (InstantiationException | IllegalAccessException e) {
+                } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                     throw new IllegalStateException("Failed to instantiate formatter [type=" + type.getName() + ']', e);
                 }
             }
@@ -203,7 +202,7 @@ public final class ToString {
 
             int approxSize = 0;
 
-            LinkedList<FieldFormat> fields = new LinkedList<>();
+            List<FieldFormat> fields = new ArrayList<>();
 
             do {
                 Field[] declaredFields = type.getDeclaredFields();

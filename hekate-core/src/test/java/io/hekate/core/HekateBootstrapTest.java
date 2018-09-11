@@ -25,7 +25,6 @@ import io.hekate.core.service.ServiceFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -223,7 +222,7 @@ public class HekateBootstrapTest extends HekateTestBase {
 
     @Test
     public void testJoinWithDefaults() throws Exception {
-        List<Hekate> nodes = new LinkedList<>();
+        List<Hekate> nodes = new ArrayList<>();
 
         try {
             repeat(3, i -> {
@@ -252,10 +251,10 @@ public class HekateBootstrapTest extends HekateTestBase {
 
     @Test
     public void testJoinWithDefaultsAsync() throws Exception {
-        List<LeaveFuture> leave = new LinkedList<>();
+        List<LeaveFuture> leave = new ArrayList<>();
 
         try {
-            List<JoinFuture> joins = new LinkedList<>();
+            List<JoinFuture> joins = new ArrayList<>();
 
             repeat(3, i -> {
                 HekateBootstrap boot = new HekateBootstrap();

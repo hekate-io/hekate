@@ -221,7 +221,7 @@ public abstract class PersistentSeedNodeProviderTestBase<T extends SeedNodeProvi
         busyWait("address being " + (available ? "registered" : "unregistered") + " [address=" + node + ']', () -> {
             List<InetSocketAddress> nodes = provider.findSeedNodes(cluster);
 
-            return available && nodes.contains(node) || !available && !nodes.contains(node);
+            return (available && nodes.contains(node)) || (!available && !nodes.contains(node));
         });
     }
 }

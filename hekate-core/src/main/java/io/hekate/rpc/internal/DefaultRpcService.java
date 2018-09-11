@@ -57,7 +57,6 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -96,7 +95,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     private final MessagingBackPressureConfig backPressure;
 
     @ToStringIgnore
-    private final List<RpcServerConfig> serverConfigs = new LinkedList<>();
+    private final List<RpcServerConfig> serverConfigs = new ArrayList<>();
 
     @ToStringIgnore
     private final StateGuard guard = new StateGuard(RpcService.class);
@@ -108,7 +107,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     private final Map<RpcTypeKey, RpcClientBuilder<?>> clients = new ConcurrentHashMap<>();
 
     @ToStringIgnore
-    private final List<RpcClientConfig> clientConfigs = new LinkedList<>();
+    private final List<RpcClientConfig> clientConfigs = new ArrayList<>();
 
     private List<RpcServerInfo> servers;
 

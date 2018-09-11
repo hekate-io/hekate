@@ -21,7 +21,7 @@ import io.hekate.network.NetworkServer;
 import io.hekate.network.NetworkServerFactoryBase;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.ssl.SslContext;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -107,7 +107,7 @@ public class NettyServerFactory extends NetworkServerFactoryBase {
      */
     public NettyServerFactory withHandler(NettyServerHandlerConfig<?> handler) {
         if (handlers == null) {
-            handlers = new LinkedList<>();
+            handlers = new ArrayList<>();
         }
 
         handlers.add(handler);

@@ -85,7 +85,7 @@ public class ZooKeeperSeedNodeProvider implements SeedNodeProvider {
         ConfigCheck check = ConfigCheck.get(ZooKeeperSeedNodeProviderConfig.class);
 
         check.notEmpty(cfg.getConnectionString(), "connection string");
-        check.notEmpty(cfg.getBasePath(), "path");
+        check.notEmpty(cfg.getBasePath(), "base path");
         check.positive(cfg.getConnectTimeout(), "connect timeout");
         check.positive(cfg.getSessionTimeout(), "session timeout");
 
@@ -243,7 +243,7 @@ public class ZooKeeperSeedNodeProvider implements SeedNodeProvider {
     private void createDirs(CuratorFramework client, String dir) throws Exception {
         StringBuilder path = new StringBuilder();
 
-        for (String name : dir.split("/")) {
+        for (String name : dir.split("/", -1)) {
             if (!name.isEmpty()) {
                 path.append('/').append(name);
 

@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import org.junit.Test;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
@@ -230,7 +231,7 @@ public abstract class CodecTestBase<T extends CodecFactory<Object>> extends Heka
         Codec<Object> decoder = factory.createCodec();
 
         repeat(3, i -> {
-            ObjA objA1 = new ObjA(1, new String(new byte[1024 * 256]));
+            ObjA objA1 = new ObjA(1, new String(new byte[1024 * 256], UTF_8));
             ObjA objA2 = new ObjA(2, "test2");
             ObjA objA3 = new ObjA(3, "test3");
 
@@ -264,7 +265,7 @@ public abstract class CodecTestBase<T extends CodecFactory<Object>> extends Heka
     }
 
     @SuppressWarnings("unchecked")
-    protected <V> V encodeDecode(Codec<Object> encoder, Codec<Object> decoder, Object msg) throws Exception {
+    protected <V> V encodeDecode(Codec<Object> encoder, Codec<Object> decoder, V msg) throws Exception {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
 
         StreamDataWriter out = new StreamDataWriter(bout);

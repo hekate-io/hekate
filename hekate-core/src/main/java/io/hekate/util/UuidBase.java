@@ -128,9 +128,9 @@ public abstract class UuidBase<T extends UuidBase<T>> implements Serializable, C
     }
 
     private static String digits(long val, int digits) {
-        long hi = 1L << digits * 4;
+        long hi = 1L << (digits * 4);
 
-        return Long.toHexString(hi | val & hi - 1).substring(1);
+        return Long.toHexString(hi | (val & hi - 1)).substring(1);
     }
 
     @Override

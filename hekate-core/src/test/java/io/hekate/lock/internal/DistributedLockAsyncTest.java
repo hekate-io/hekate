@@ -24,7 +24,6 @@ import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockOwnerInfo;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -383,7 +382,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
     @Test
     public void testLockOwnerChange() throws Throwable {
         List<ExecutorService> workers = new ArrayList<>();
-        List<TestLockCallback> nodeCallbacks = new LinkedList<>();
+        List<TestLockCallback> nodeCallbacks = new ArrayList<>();
 
         for (int i = 0; i < 10; i++) {
             ExecutorService worker = Executors.newSingleThreadExecutor(new HekateThreadFactory("lock-test-" + i));

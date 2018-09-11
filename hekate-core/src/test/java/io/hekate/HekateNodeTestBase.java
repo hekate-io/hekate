@@ -28,6 +28,7 @@ import io.hekate.test.SeedNodeProviderMock;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -148,7 +149,7 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
         awaitForTopology(Arrays.asList(nodes));
     }
 
-    protected void awaitForTopology(List<HekateTestNode> nodes) {
+    protected void awaitForTopology(Collection<HekateTestNode> nodes) {
         nodes.forEach(n -> n.awaitForTopology(nodes));
     }
 
