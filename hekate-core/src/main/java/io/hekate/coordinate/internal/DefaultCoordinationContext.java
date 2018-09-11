@@ -220,9 +220,8 @@ class DefaultCoordinationContext implements CoordinationContext {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> T getAttachment() {
-        return (T)attachment;
+    public Object getAttachment() {
+        return attachment;
     }
 
     @Override

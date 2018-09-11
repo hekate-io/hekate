@@ -123,11 +123,9 @@ public interface CoordinationContext extends HekateSupport {
     /**
      * Returns a user-defined object that is attached to this context (see {@link #setAttachment(Object)}).
      *
-     * @param <T> Attachment type.
-     *
      * @return Attachment.
      */
-    <T> T getAttachment();
+    Object getAttachment();
 
     /**
      * Sets the user-defined object that should be attached to this context.
