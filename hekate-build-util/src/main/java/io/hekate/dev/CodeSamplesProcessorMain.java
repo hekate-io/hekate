@@ -25,7 +25,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -125,7 +124,7 @@ public final class CodeSamplesProcessorMain {
                         path = path.substring(0, splitIdx).trim();
                     }
 
-                    if (path.isEmpty() || section != null && section.isEmpty()) {
+                    if (path.isEmpty() || (section != null && section.isEmpty())) {
                         throw new IllegalStateException("Failed to parse 'source' directive: " + s);
                     }
 
@@ -172,7 +171,7 @@ public final class CodeSamplesProcessorMain {
     }
 
     private static void writeSourceCode(File src, String section, StringBuilder out, File requester) throws IOException {
-        List<String> sectionLines = new LinkedList<>();
+        List<String> sectionLines = new ArrayList<>(256);
 
         Integer minOffset = null;
 
@@ -246,7 +245,7 @@ public final class CodeSamplesProcessorMain {
     }
 
     private static List<File> getSampleSources(String samplesSourcePath) {
-        String[] tokens = samplesSourcePath.split(";");
+        String[] tokens = samplesSourcePath.split(";", 0);
 
         List<File> files = new ArrayList<>();
 

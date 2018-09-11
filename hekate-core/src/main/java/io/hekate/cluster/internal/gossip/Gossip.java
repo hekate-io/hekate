@@ -120,7 +120,7 @@ public class Gossip extends GossipBase {
     public boolean isDown(ClusterNodeId id) {
         GossipNodeState member = member(id);
 
-        return member != null && member.status() == DOWN || removed.contains(id);
+        return (member != null && member.status() == DOWN) || removed.contains(id);
     }
 
     public Gossip merge(ClusterNodeId nodeId, Gossip other) {

@@ -389,7 +389,7 @@ public final class CodecUtils {
     // Code borrowed from 'stream-lib' (Apache 2.0 license) - see https://github.com/addthis/stream-lib
     public static void writeVarLongUnsigned(long value, DataOutput out) throws IOException {
         while ((value & 0xFFFFFFFFFFFFFF80L) != 0L) {
-            out.writeByte((int)value & 0x7F | 0x80);
+            out.writeByte(((int)value & 0x7F) | 0x80);
 
             value >>>= 7;
         }
@@ -426,7 +426,7 @@ public final class CodecUtils {
     // Code borrowed from 'stream-lib' (Apache 2.0 license) - see https://github.com/addthis/stream-lib
     public static void writeVarIntUnsigned(int value, DataOutput out) throws IOException {
         while ((value & 0xFFFFFF80) != 0L) {
-            out.writeByte(value & 0x7F | 0x80);
+            out.writeByte((value & 0x7F) | 0x80);
 
             value >>>= 7;
         }
@@ -451,7 +451,7 @@ public final class CodecUtils {
         // This extra step lets us deal with the largest signed values by treating
         // negative results from read unsigned methods as like unsigned values
         // Must re-flip the top bit if the original read value had it set.
-        return temp ^ raw & 1L << LONG_BITS;
+        return temp ^ (raw & 1L << LONG_BITS);
     }
 
     /**
@@ -499,7 +499,7 @@ public final class CodecUtils {
         // This extra step lets us deal with the largest signed values by treating
         // negative results from read unsigned methods as like unsigned values.
         // Must re-flip the top bit if the original read value had it set.
-        return temp ^ raw & 1 << INT_BITS;
+        return temp ^ (raw & 1 << INT_BITS);
     }
 
     /**

@@ -87,7 +87,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -152,7 +151,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     private final List<ClusterEventListener> listeners;
 
     @ToStringIgnore
-    private final List<DeferredClusterListener> deferredListeners = synchronizedList(new LinkedList<>());
+    private final List<DeferredClusterListener> deferredListeners = synchronizedList(new ArrayList<>());
 
     @ToStringIgnore
     private ClusterAcceptManager acceptMgr;

@@ -123,8 +123,7 @@ public abstract class GossipBase {
                 ComparisonResult nodeResult = n1.compare(n2);
 
                 if (nodeResult != SAME) {
-                    if (result == BEFORE && nodeResult == AFTER
-                        || result == AFTER && nodeResult == BEFORE) {
+                    if ((result == BEFORE && nodeResult == AFTER) || (result == AFTER && nodeResult == BEFORE)) {
                         result = CONCURRENT;
                     } else {
                         result = nodeResult;

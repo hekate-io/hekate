@@ -31,7 +31,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -118,7 +118,7 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider, JmxSupport<JdbcSe
             st.setString(1, cluster);
 
             try (ResultSet rs = st.executeQuery()) {
-                List<InetSocketAddress> result = new LinkedList<>();
+                List<InetSocketAddress> result = new ArrayList<>();
 
                 while (rs.next()) {
                     String host = rs.getString(1);
