@@ -237,9 +237,8 @@ class DefaultCoordinationProcess implements CoordinationProcess {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T extends CoordinationHandler> T handler() {
-        return (T)handler;
+    public CoordinationHandler handler() {
+        return handler;
     }
 
     private Waiting cancelCurrentContext() {

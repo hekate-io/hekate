@@ -538,8 +538,13 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
         HekateTestNode n2 = createCoordinationNode(h2);
         HekateTestNode n3 = createCoordinationNode(h3);
 
-        assertEquals("1", n1.join().coordination().futureOf("test").get().<BlockingHandler>handler().getLastValue());
-        assertEquals("2", n2.join().coordination().futureOf("test").get().<BlockingHandler>handler().getLastValue());
+        get(n1.join().coordination().futureOf("test"));
+
+        assertEquals("1", h1.getLastValue());
+
+        get(n2.join().coordination().futureOf("test"));
+
+        assertEquals("2", h2.getLastValue());
 
         n3.join(); // <-- Coordination should block.
 
@@ -582,7 +587,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
     private void awaitForCoordinatedValue(String expected, List<HekateTestNode> nodes) throws Exception {
         busyWait("value coordination", () ->
             nodes.stream().allMatch(n -> {
-                CoordinatedValueHandler handler = n.coordination().process("test").handler();
+                CoordinatedValueHandler handler = (CoordinatedValueHandler)n.coordination().process("test").handler();
 
                 return handler.getLastValue().equals(expected);
             })

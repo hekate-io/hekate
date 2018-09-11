@@ -40,9 +40,7 @@ public interface CoordinationProcess {
     /**
      * Returns the handler of this process (see {@link CoordinationProcessConfig#setHandler(CoordinationHandler)}).
      *
-     * @param <T> Handler type.
-     *
      * @return Handler.
      */
-    <T extends CoordinationHandler> T handler();
+    CoordinationHandler handler();
 }
