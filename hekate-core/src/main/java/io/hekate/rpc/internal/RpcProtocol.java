@@ -42,7 +42,7 @@ abstract class RpcProtocol {
         ERROR_RESPONSE,
     }
 
-    static class CallRequest<T> extends RpcProtocol implements RpcRequest {
+    static class RpcCall<T> extends RpcProtocol implements RpcRequest {
         private final String methodIdxKey;
 
         private final RpcInterfaceInfo<T> type;
@@ -57,11 +57,11 @@ abstract class RpcProtocol {
         @ToStringIgnore
         private final Object[] args;
 
-        public CallRequest(String methodIdxKey, RpcInterfaceInfo<T> type, String tag, RpcMethodInfo method, Object[] args) {
+        public RpcCall(String methodIdxKey, RpcInterfaceInfo<T> type, String tag, RpcMethodInfo method, Object[] args) {
             this(methodIdxKey, type, tag, method, args, false);
         }
 
-        public CallRequest(String methodIdxKey, RpcInterfaceInfo<T> type, String tag, RpcMethodInfo method, Object[] args, boolean split) {
+        public RpcCall(String methodIdxKey, RpcInterfaceInfo<T> type, String tag, RpcMethodInfo method, Object[] args, boolean split) {
             this.methodIdxKey = methodIdxKey;
             this.type = type;
             this.tag = tag;
@@ -123,13 +123,13 @@ abstract class RpcProtocol {
         }
     }
 
-    static class CompactCallRequest extends RpcProtocol {
+    static class RpcCompactCall extends RpcProtocol {
         private final int methodIdx;
 
         @ToStringIgnore
         private final Object[] args;
 
-        public CompactCallRequest(int methodIdx, Object[] args) {
+        public RpcCompactCall(int methodIdx, Object[] args) {
             this.methodIdx = methodIdx;
             this.args = args;
         }
@@ -148,8 +148,8 @@ abstract class RpcProtocol {
         }
     }
 
-    static class CompactSplitCallRequest extends CompactCallRequest {
-        public CompactSplitCallRequest(int methodIdx, Object[] args) {
+    static class RpcCompactSplitCall extends RpcCompactCall {
+        public RpcCompactSplitCall(int methodIdx, Object[] args) {
             super(methodIdx, args);
         }
 
@@ -159,15 +159,15 @@ abstract class RpcProtocol {
         }
     }
 
-    static class ObjectResponse extends RpcProtocol {
-        private final Object object;
+    static class RpcCallResult extends RpcProtocol {
+        private final Object result;
 
-        public ObjectResponse(Object object) {
-            this.object = object;
+        public RpcCallResult(Object result) {
+            this.result = result;
         }
 
-        public Object object() {
-            return object;
+        public Object result() {
+            return result;
         }
 
         @Override
@@ -176,10 +176,10 @@ abstract class RpcProtocol {
         }
     }
 
-    static final class NullResponse extends RpcProtocol {
-        static final NullResponse INSTANCE = new NullResponse();
+    static final class RpcCallNullResult extends RpcProtocol {
+        static final RpcCallNullResult INSTANCE = new RpcCallNullResult();
 
-        private NullResponse() {
+        private RpcCallNullResult() {
             // No-op.
         }
 
@@ -189,10 +189,10 @@ abstract class RpcProtocol {
         }
     }
 
-    static class ErrorResponse extends RpcProtocol implements FailureResponse {
+    static class RpcCallError extends RpcProtocol implements FailureResponse {
         private final Throwable cause;
 
-        public ErrorResponse(Throwable cause) {
+        public RpcCallError(Throwable cause) {
             this.cause = cause;
         }
 

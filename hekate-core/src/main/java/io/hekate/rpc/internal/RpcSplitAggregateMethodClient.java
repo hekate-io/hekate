@@ -27,7 +27,7 @@ import io.hekate.rpc.RpcException;
 import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
 import io.hekate.rpc.RpcService;
-import io.hekate.rpc.internal.RpcProtocol.CallRequest;
+import io.hekate.rpc.internal.RpcProtocol.RpcCall;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -196,7 +196,7 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
                 Object[] partArgs = substituteArgs(args, part);
 
                 // Submit RPC request.
-                CallRequest<T> call = new CallRequest<>(methodIdxKey(), rpc(), tag(), method(), partArgs, true /* <- Split. */);
+                RpcCall<T> call = new RpcCall<>(methodIdxKey(), rpc(), tag(), method(), partArgs, true /* <- Split. */);
 
                 roundRobin.request(call, aggregateFuture /* <-- Future is a callback. */);
             }

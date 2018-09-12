@@ -47,9 +47,9 @@ import io.hekate.rpc.RpcServerConfigProvider;
 import io.hekate.rpc.RpcServerInfo;
 import io.hekate.rpc.RpcService;
 import io.hekate.rpc.RpcServiceFactory;
-import io.hekate.rpc.internal.RpcProtocol.CallRequest;
-import io.hekate.rpc.internal.RpcProtocol.CompactCallRequest;
-import io.hekate.rpc.internal.RpcProtocol.CompactSplitCallRequest;
+import io.hekate.rpc.internal.RpcProtocol.RpcCall;
+import io.hekate.rpc.internal.RpcProtocol.RpcCompactCall;
+import io.hekate.rpc.internal.RpcProtocol.RpcCompactSplitCall;
 import io.hekate.util.StateGuard;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -277,16 +277,16 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
                 @Override
                 public RpcProtocol interceptOutbound(RpcProtocol msg, OutboundContext ctx) {
                     // Convert method calls to compact representations.
-                    if (msg instanceof CallRequest) {
-                        CallRequest<?> req = (CallRequest<?>)msg;
+                    if (msg instanceof RpcCall) {
+                        RpcCall<?> req = (RpcCall<?>)msg;
 
                         // Use the method's index instead of the method signature.
                         int methodIdx = ctx.receiver().service(RpcService.class).intProperty(req.methodIdxKey());
 
                         if (req.isSplit()) {
-                            return new CompactSplitCallRequest(methodIdx, req.args());
+                            return new RpcCompactSplitCall(methodIdx, req.args());
                         } else {
-                            return new CompactCallRequest(methodIdx, req.args());
+                            return new RpcCompactCall(methodIdx, req.args());
                         }
                     }
 
@@ -451,7 +451,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
         switch (rpcMsg.type()) {
             case COMPACT_CALL_REQUEST:
             case COMPACT_SPLIT_CALL_REQUEST: {
-                CompactCallRequest call = (CompactCallRequest)rpcMsg;
+                RpcCompactCall call = (RpcCompactCall)rpcMsg;
 
                 RpcMethodHandler handler = methodHandlers[call.methodIdx()];
 

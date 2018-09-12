@@ -25,7 +25,7 @@ import io.hekate.rpc.RpcBroadcast;
 import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
 import io.hekate.rpc.RpcService;
-import io.hekate.rpc.internal.RpcProtocol.CallRequest;
+import io.hekate.rpc.internal.RpcProtocol.RpcCall;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -87,7 +87,7 @@ class RpcBroadcastMethodClient<T> extends RpcMethodClientBase<T> {
     @Override
     protected Object doInvoke(MessagingChannel<RpcProtocol> channel, Object[] args) throws MessagingFutureException,
         InterruptedException, TimeoutException {
-        CallRequest<T> request = new CallRequest<>(methodIdxKey(), rpc(), tag(), method(), args);
+        RpcCall<T> request = new RpcCall<>(methodIdxKey(), rpc(), tag(), method(), args);
 
         AggregateFuture<RpcProtocol> future = channel.aggregate(request);
 

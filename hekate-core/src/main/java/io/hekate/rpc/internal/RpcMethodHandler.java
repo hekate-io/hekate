@@ -20,10 +20,10 @@ import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
-import io.hekate.rpc.internal.RpcProtocol.CompactCallRequest;
-import io.hekate.rpc.internal.RpcProtocol.ErrorResponse;
-import io.hekate.rpc.internal.RpcProtocol.NullResponse;
-import io.hekate.rpc.internal.RpcProtocol.ObjectResponse;
+import io.hekate.rpc.internal.RpcProtocol.RpcCompactCall;
+import io.hekate.rpc.internal.RpcProtocol.RpcCallError;
+import io.hekate.rpc.internal.RpcProtocol.RpcCallNullResult;
+import io.hekate.rpc.internal.RpcProtocol.RpcCallResult;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -64,19 +64,19 @@ class RpcMethodHandler {
 
     public void handle(Message<RpcProtocol> msg) {
         // Enforces type check.
-        CompactCallRequest call = msg.get(CompactCallRequest.class);
+        RpcCompactCall call = msg.get(RpcCompactCall.class);
 
         doHandle(call.args(), msg.endpoint(), (err, result) -> {
             if (err == null) {
                 if (result == null) {
                     // Null result (works for void method too).
-                    msg.reply(NullResponse.INSTANCE);
+                    msg.reply(RpcCallNullResult.INSTANCE);
                 } else {
                     // Non-null result.
-                    msg.reply(new ObjectResponse(result));
+                    msg.reply(new RpcCallResult(result));
                 }
             } else {
-                msg.reply(new ErrorResponse(err));
+                msg.reply(new RpcCallError(err));
             }
         });
     }

@@ -26,8 +26,8 @@ import io.hekate.rpc.RpcAggregateException;
 import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
 import io.hekate.rpc.RpcService;
-import io.hekate.rpc.internal.RpcProtocol.CallRequest;
-import io.hekate.rpc.internal.RpcProtocol.ObjectResponse;
+import io.hekate.rpc.internal.RpcProtocol.RpcCall;
+import io.hekate.rpc.internal.RpcProtocol.RpcCallResult;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -79,8 +79,8 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
                         Map<ClusterNode, Object> partialResults = new HashMap<>(aggregate.resultsByNode().size(), 1.0f);
 
                         aggregate.resultsByNode().forEach((node, response) -> {
-                            if (response instanceof ObjectResponse) {
-                                partialResults.put(node, ((ObjectResponse)response).object());
+                            if (response instanceof RpcCallResult) {
+                                partialResults.put(node, ((RpcCallResult)response).result());
                             } else {
                                 partialResults.put(node, null);
                             }
@@ -143,7 +143,7 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
     @Override
     protected Object doInvoke(MessagingChannel<RpcProtocol> channel, Object[] args) throws MessagingFutureException,
         InterruptedException, TimeoutException {
-        CallRequest<T> request = new CallRequest<>(methodIdxKey(), rpc(), tag(), method(), args);
+        RpcCall<T> request = new RpcCall<>(methodIdxKey(), rpc(), tag(), method(), args);
 
         AggregateFuture<RpcProtocol> future = channel.aggregate(request);
 

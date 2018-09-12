@@ -19,11 +19,11 @@ package io.hekate.rpc.internal;
 import io.hekate.codec.Codec;
 import io.hekate.codec.DataReader;
 import io.hekate.codec.DataWriter;
-import io.hekate.rpc.internal.RpcProtocol.CompactCallRequest;
-import io.hekate.rpc.internal.RpcProtocol.CompactSplitCallRequest;
-import io.hekate.rpc.internal.RpcProtocol.ErrorResponse;
-import io.hekate.rpc.internal.RpcProtocol.NullResponse;
-import io.hekate.rpc.internal.RpcProtocol.ObjectResponse;
+import io.hekate.rpc.internal.RpcProtocol.RpcCompactCall;
+import io.hekate.rpc.internal.RpcProtocol.RpcCompactSplitCall;
+import io.hekate.rpc.internal.RpcProtocol.RpcCallError;
+import io.hekate.rpc.internal.RpcProtocol.RpcCallNullResult;
+import io.hekate.rpc.internal.RpcProtocol.RpcCallResult;
 import io.hekate.rpc.internal.RpcProtocol.Type;
 import io.hekate.util.format.ToString;
 import java.io.IOException;
@@ -57,7 +57,7 @@ class RpcProtocolCodec implements Codec<RpcProtocol> {
 
         switch (type) {
             case COMPACT_CALL_REQUEST: {
-                CompactCallRequest request = (CompactCallRequest)msg;
+                RpcCompactCall request = (RpcCompactCall)msg;
 
                 out.writeVarInt(request.methodIdx());
 
@@ -66,7 +66,7 @@ class RpcProtocolCodec implements Codec<RpcProtocol> {
                 break;
             }
             case COMPACT_SPLIT_CALL_REQUEST: {
-                CompactSplitCallRequest request = (CompactSplitCallRequest)msg;
+                RpcCompactSplitCall request = (RpcCompactSplitCall)msg;
 
                 out.writeVarInt(request.methodIdx());
 
@@ -75,9 +75,9 @@ class RpcProtocolCodec implements Codec<RpcProtocol> {
                 break;
             }
             case OBJECT_RESPONSE: {
-                ObjectResponse response = (ObjectResponse)msg;
+                RpcCallResult response = (RpcCallResult)msg;
 
-                delegate.encode(response.object(), out);
+                delegate.encode(response.result(), out);
 
                 break;
             }
@@ -87,7 +87,7 @@ class RpcProtocolCodec implements Codec<RpcProtocol> {
                 break;
             }
             case ERROR_RESPONSE: {
-                ErrorResponse response = (ErrorResponse)msg;
+                RpcCallError response = (RpcCallError)msg;
 
                 delegate.encode(response.cause(), out);
 
@@ -111,27 +111,27 @@ class RpcProtocolCodec implements Codec<RpcProtocol> {
 
                 Object[] args = (Object[])delegate.decode(in);
 
-                return new CompactCallRequest(methodIdx, args);
+                return new RpcCompactCall(methodIdx, args);
             }
             case COMPACT_SPLIT_CALL_REQUEST: {
                 int methodIdx = in.readVarInt();
 
                 Object[] args = (Object[])delegate.decode(in);
 
-                return new CompactSplitCallRequest(methodIdx, args);
+                return new RpcCompactSplitCall(methodIdx, args);
             }
             case OBJECT_RESPONSE: {
                 Object obj = delegate.decode(in);
 
-                return new ObjectResponse(obj);
+                return new RpcCallResult(obj);
             }
             case NULL_RESPONSE: {
-                return NullResponse.INSTANCE;
+                return RpcCallNullResult.INSTANCE;
             }
             case ERROR_RESPONSE: {
                 Throwable cause = (Throwable)delegate.decode(in);
 
-                return new ErrorResponse(cause);
+                return new RpcCallError(cause);
             }
             case CALL_REQUEST:
             case SPLIT_CALL_REQUEST:

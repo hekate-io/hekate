@@ -21,7 +21,7 @@ import io.hekate.core.ServiceInfo;
 import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
 import io.hekate.rpc.RpcService;
-import io.hekate.rpc.internal.RpcProtocol.ObjectResponse;
+import io.hekate.rpc.internal.RpcProtocol.RpcCallResult;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -67,27 +67,27 @@ final class RpcUtils {
     }
 
     static void mergeToMap(RpcProtocol from, Map<Object, Object> to) {
-        if (from instanceof ObjectResponse) {
+        if (from instanceof RpcCallResult) {
             @SuppressWarnings("unchecked")
-            Map<Object, Object> part = (Map<Object, Object>)((ObjectResponse)from).object();
+            Map<Object, Object> part = (Map<Object, Object>)((RpcCallResult)from).result();
 
             to.putAll(part);
         }
     }
 
     static void mergeToSet(RpcProtocol from, Set<Object> to) {
-        if (from instanceof ObjectResponse) {
+        if (from instanceof RpcCallResult) {
             @SuppressWarnings("unchecked")
-            Collection<Object> part = (Collection<Object>)((ObjectResponse)from).object();
+            Collection<Object> part = (Collection<Object>)((RpcCallResult)from).result();
 
             to.addAll(part);
         }
     }
 
     static void mergeToList(RpcProtocol from, List<Object> to) {
-        if (from instanceof ObjectResponse) {
+        if (from instanceof RpcCallResult) {
             @SuppressWarnings("unchecked")
-            Collection<Object> part = (Collection<Object>)((ObjectResponse)from).object();
+            Collection<Object> part = (Collection<Object>)((RpcCallResult)from).result();
 
             to.addAll(part);
         }

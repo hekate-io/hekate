@@ -22,8 +22,8 @@ import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
-import io.hekate.rpc.internal.RpcProtocol.CallRequest;
-import io.hekate.rpc.internal.RpcProtocol.ObjectResponse;
+import io.hekate.rpc.internal.RpcProtocol.RpcCall;
+import io.hekate.rpc.internal.RpcProtocol.RpcCallResult;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
@@ -32,8 +32,8 @@ class RpcMethodClient<T> extends RpcMethodClientBase<T> {
     private static final Function<Response<RpcProtocol>, Object> RESPONSE_CONVERTER = response -> {
         RpcProtocol result = response.get();
 
-        if (result instanceof ObjectResponse) {
-            return ((ObjectResponse)result).object();
+        if (result instanceof RpcCallResult) {
+            return ((RpcCallResult)result).result();
         } else {
             return null;
         }
@@ -46,7 +46,7 @@ class RpcMethodClient<T> extends RpcMethodClientBase<T> {
     @Override
     protected Object doInvoke(MessagingChannel<RpcProtocol> callChannel, Object[] args) throws MessagingFutureException,
         InterruptedException, TimeoutException {
-        CallRequest<T> request = new CallRequest<>(methodIdxKey(), rpc(), tag(), method(), args);
+        RpcCall<T> request = new RpcCall<>(methodIdxKey(), rpc(), tag(), method(), args);
 
         ResponseFuture<RpcProtocol> future = callChannel.request(request);
 
