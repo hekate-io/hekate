@@ -33,6 +33,6 @@ public class MessageTimeoutException extends MessagingException {
      * @param message Error message.
      */
     public MessageTimeoutException(String message) {
-        super(message);
+        super(message, null, true, false);
     }
 }

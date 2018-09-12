@@ -44,4 +44,16 @@ public class MessagingException extends HekateException {
     public MessagingException(String message, Throwable cause) {
         super(message, cause);
     }
+
+    /**
+     * Constructs a new instance.
+     *
+     * @param message Error message.
+     * @param cause Cause.
+     * @param enableSuppression Enabled/disabled suppression.
+     * @param writableStackTrace Whether or not the stack trace should be writable.
+     */
+    protected MessagingException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
 }
