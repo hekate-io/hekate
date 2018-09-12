@@ -33,9 +33,9 @@ class RpcInterface<T> {
         this.methods = unmodifiableList(type.methods().stream()
             .map(method -> {
                 if (method.aggregate().isPresent() && method.splitArg().isPresent()) {
-                    return new RpcSplitAggregateMethodHandler(method, target);
+                    return new RpcSplitAggregateMethodHandler(type, method, target);
                 } else {
-                    return new RpcMethodHandler(method, target);
+                    return new RpcMethodHandler(type, method, target);
                 }
             })
             .collect(toList())

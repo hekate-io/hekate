@@ -18,6 +18,7 @@ package io.hekate.rpc.internal;
 
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingEndpoint;
+import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
 import io.hekate.rpc.internal.RpcProtocol.CompactCallRequest;
 import io.hekate.rpc.internal.RpcProtocol.ErrorResponse;
@@ -37,20 +38,28 @@ class RpcMethodHandler {
 
     private final RpcMethodInfo method;
 
-    public RpcMethodHandler(RpcMethodInfo method, Object target) {
+    private final RpcInterfaceInfo<?> rpc;
+
+    public RpcMethodHandler(RpcInterfaceInfo<?> rpc, RpcMethodInfo method, Object target) {
+        assert rpc != null : "RPC interface info is null.";
         assert method != null : "Method info is null.";
         assert target != null : "Target is null.";
 
+        this.rpc = rpc;
         this.method = method;
         this.target = target;
     }
 
-    public Object target() {
-        return target;
+    public RpcInterfaceInfo<?> rpc() {
+        return rpc;
     }
 
     public RpcMethodInfo method() {
         return method;
+    }
+
+    public Object target() {
+        return target;
     }
 
     public void handle(Message<RpcProtocol> msg) {
@@ -113,13 +122,13 @@ class RpcMethodHandler {
             Throwable cause = e.getCause();
 
             if (log.isErrorEnabled()) {
-                log.error("RPC failure [from-node-id={}, method={}, target={}]", from.remoteNodeId(), method, target, cause);
+                log.error("RPC failure [from={}, method={}#{}]", from.remoteAddress(), rpc.name(), method.signature(), cause);
             }
 
             callback.accept(cause, null);
         } catch (Throwable t) {
             if (log.isErrorEnabled()) {
-                log.error("RPC failure [from-node-id={}, method={}, target={}]", from.remoteNodeId(), method, target, t);
+                log.error("RPC failure [from={}, method={}#{}]", from.remoteAddress(), rpc.name(), method.signature(), t);
             }
 
             // Return error as is.

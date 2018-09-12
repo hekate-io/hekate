@@ -33,11 +33,7 @@ public class MessagingRemoteException extends MessagingException {
      * @param remoteStackTrace Stack trace of a remote failure (see {@link #remoteStackTrace()}).
      */
     public MessagingRemoteException(String message, String remoteStackTrace) {
-        super(message + System.lineSeparator()
-            + "[--- Remote stack trace start ---]" + System.lineSeparator()
-            + remoteStackTrace
-            + "[--- Remote stack trace end ---]"
-        );
+        super(format(message, remoteStackTrace), null, true, false);
 
         this.remoteStackTrace = remoteStackTrace;
     }
@@ -49,5 +45,12 @@ public class MessagingRemoteException extends MessagingException {
      */
     public String remoteStackTrace() {
         return remoteStackTrace;
+    }
+
+    private static String format(String message, String remoteStackTrace) {
+        return message + System.lineSeparator()
+            + "[--- Remote stack trace start ---]" + System.lineSeparator()
+            + remoteStackTrace
+            + "[--- Remote stack trace end ---]";
     }
 }

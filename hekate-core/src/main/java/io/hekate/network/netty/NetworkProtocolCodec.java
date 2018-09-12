@@ -309,7 +309,7 @@ class NetworkProtocolCodec {
         } catch (CodecException e) {
             throw e;
         } catch (Throwable t) {
-            throw new CodecException("Failed to encode message [message=" + msg + ", codec=" + codec + ']', t);
+            throw new CodecException("Failed to encode message [message=" + msg + ']', t);
         }
     }
 

@@ -18,6 +18,7 @@ package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNode;
+import io.hekate.codec.CodecException;
 import io.hekate.messaging.MessageInterceptor;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingEndpoint;
@@ -380,6 +381,10 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
     }
 
     public void notifyOnSendFailure(MessagingWorker worker, T payload, Throwable error, SendCallback callback) {
+        if (error instanceof CodecException && log.isErrorEnabled()) {
+            log.error("Failed to send message [to={}, message={}]", remoteAddress(), payload, error);
+        }
+
         if (callback != null) {
             if (async.isAsync()) {
                 onAsyncEnqueue();

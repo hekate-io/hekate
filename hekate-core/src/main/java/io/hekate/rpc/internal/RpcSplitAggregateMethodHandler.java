@@ -17,6 +17,7 @@
 package io.hekate.rpc.internal;
 
 import io.hekate.messaging.MessagingEndpoint;
+import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,8 +41,8 @@ class RpcSplitAggregateMethodHandler extends RpcMethodHandler {
 
     private final Function<List<Object>, Object> aggregator;
 
-    public RpcSplitAggregateMethodHandler(RpcMethodInfo method, Object target) {
-        super(method, target);
+    public RpcSplitAggregateMethodHandler(RpcInterfaceInfo<?> rpc, RpcMethodInfo method, Object target) {
+        super(rpc, method, target);
 
         assert method.aggregate().isPresent() : "Not an aggregate method [method=" + method + ']';
         assert method.splitArg().isPresent() : "Split argument index is not defined.";
@@ -179,7 +180,9 @@ class RpcSplitAggregateMethodHandler extends RpcMethodHandler {
                     try {
                         super.doHandle(partArgs, from, aggregateCallback);
                     } catch (RuntimeException | Error e) {
-                        log.error("Got an unexpected runtime error during RPC processing [method={}]", method(), e);
+                        if (log.isErrorEnabled()) {
+                            log.error("RPC failure [from={}, method={}#{}]", from.remoteAddress(), rpc().name(), method().signature(), e);
+                        }
                     }
                 });
             }
