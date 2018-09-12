@@ -718,7 +718,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
                     // Accept chunk.
                     callback.onComplete(null, reply);
                 }
-            } else {
+            } else if (!ctx.isCompleted()) {
                 /////////////////////////////////////////////////////////////
                 // Apply failover.
                 /////////////////////////////////////////////////////////////
