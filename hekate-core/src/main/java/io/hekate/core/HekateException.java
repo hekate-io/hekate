@@ -51,7 +51,7 @@ public class HekateException extends Exception {
      * @param enableSuppression Enabled/disabled suppression.
      * @param writableStackTrace Whether or not the stack trace should be writable.
      */
-    public HekateException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+    protected HekateException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
 
