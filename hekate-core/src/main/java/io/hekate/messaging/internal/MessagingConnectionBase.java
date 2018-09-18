@@ -17,18 +17,20 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterAddress;
-import io.hekate.cluster.ClusterNode;
 import io.hekate.codec.CodecException;
-import io.hekate.messaging.MessageInterceptor;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.MessagingRemoteException;
+import io.hekate.messaging.intercept.ResponseContext;
+import io.hekate.messaging.intercept.ServerReceiveContext;
 import io.hekate.messaging.internal.MessagingProtocol.ErrorResponse;
 import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.internal.MessagingProtocol.RequestBase;
+import io.hekate.messaging.internal.MessagingProtocol.RequestForResponseBase;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
+import io.hekate.messaging.internal.MessagingProtocol.SubscribeRequest;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkFuture;
@@ -38,7 +40,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 
-abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundContext, MessageInterceptor.ReplyContext {
+abstract class MessagingConnectionBase<T> {
     private final Logger log;
 
     private final MessagingGatewayContext<T> ctx;
@@ -73,26 +75,21 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
 
     public abstract NetworkFuture<MessagingProtocol> disconnect();
 
-    public abstract void send(MessageRoute<T> route, SendCallback callback, boolean retransmit);
+    public abstract void send(MessageAttempt<T> attempt, SendCallback callback);
 
-    public abstract void request(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit);
+    public abstract void request(MessageAttempt<T> attempt, InternalRequestCallback<T> callback);
 
-    public abstract void replyChunk(MessagingWorker worker, int requestId, T chunk, SendCallback callback);
+    public abstract void replyChunk(MessagingWorker worker, T chunk, SubscribeRequest<T> request, SendCallback callback);
 
-    public abstract void replyFinal(MessagingWorker worker, int requestId, T response, SendCallback callback);
+    public abstract void replyFinal(MessagingWorker worker, T response, RequestForResponseBase<T> request, SendCallback callback);
 
-    public abstract void replyVoid(MessagingWorker worker, int requestId);
+    public abstract void replyVoid(MessagingWorker worker, RequestBase<T> request);
 
     public abstract void replyError(MessagingWorker worker, int requestId, Throwable cause);
 
     protected abstract void disconnectOnError(Throwable t);
 
     protected abstract int epoch();
-
-    @Override
-    public ClusterNode localNode() {
-        return ctx.localNode();
-    }
 
     public MessagingGatewayContext<T> gateway() {
         return ctx;
@@ -448,32 +445,16 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
         }
     }
 
-    public T prepareInbound(T msg) {
-        MessageInterceptor<T> interceptor = ctx.interceptor();
-
-        if (interceptor != null) {
-            T transformed = interceptor.interceptInbound(msg, this);
-
-            return transformed != null ? transformed : msg;
-        }
-
-        return msg;
+    public T interceptServerReceive(T msg, ServerReceiveContext<T> inCtx) {
+        return ctx.intercept().serverReceive(msg, inCtx);
     }
 
-    public T prepareReply(T msg) {
-        MessageInterceptor<T> interceptor = ctx.interceptor();
-
-        if (interceptor != null) {
-            T transformed = interceptor.interceptReply(msg, this);
-
-            return transformed != null ? transformed : msg;
-        }
-
-        return msg;
+    public T interceptServerSend(T msg, ResponseContext<T> rspCtx, ServerReceiveContext<T> rcvCtx) {
+        return ctx.intercept().serverSend(msg, rspCtx, rcvCtx);
     }
 
-    protected RequestHandle<T> registerRequest(MessageRoute<T> route, InternalRequestCallback<T> callback) {
-        return requests.register(epoch(), route, callback);
+    protected RequestHandle<T> registerRequest(MessageAttempt<T> attempt, InternalRequestCallback<T> callback) {
+        return requests.register(epoch(), attempt, callback);
     }
 
     protected void receiveRequestAsync(RequestBase<T> msg, MessagingWorker worker, long receivedAtNanos) {
@@ -484,7 +465,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
                 receiver.receive(msg);
 
                 if (msg.isVoid()) {
-                    replyVoid(worker, msg.requestId());
+                    replyVoid(worker, msg);
                 }
             } catch (RuntimeException | Error e) {
                 if (log.isErrorEnabled()) {
@@ -513,7 +494,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
     protected void doReceiveFinalResponse(RequestHandle<T> request, FinalResponse<T> msg) {
         if (request.isRegistered()) {
             try {
-                msg.prepareReceive(this, request.route());
+                msg.prepareReceive(this, request.attempt());
 
                 request.callback().onComplete(request, null, msg);
             } catch (RuntimeException | Error e) {
@@ -540,7 +521,7 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
     protected void doReceiveResponseChunk(RequestHandle<T> request, ResponseChunk<T> msg) {
         if (request.isRegistered()) {
             try {
-                msg.prepareReceive(this, request.route());
+                msg.prepareReceive(this, request.attempt());
 
                 request.callback().onComplete(request, null, msg);
             } catch (RuntimeException | Error e) {
@@ -685,6 +666,8 @@ abstract class MessagingConnectionBase<T> implements MessageInterceptor.InboundC
             } else {
                 msgError = new MessagingException("Messaging request failure [node=" + remoteAddress() + ']', error);
             }
+
+            handle.attempt().interceptReceiveError(msgError);
 
             handle.callback().onComplete(handle, msgError, null);
         } catch (RuntimeException | Error e) {

@@ -21,6 +21,7 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.codec.Codec;
 import io.hekate.codec.DataReader;
 import io.hekate.codec.DataWriter;
+import io.hekate.messaging.MessageMetaData;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
@@ -39,6 +40,7 @@ import io.hekate.network.NetworkMessage;
 import io.hekate.util.format.ToString;
 import java.io.EOFException;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.OptionalInt;
 
 import static io.hekate.codec.CodecUtils.readClusterAddress;
@@ -56,6 +58,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
     private static final int MASK_RETRANSMIT = 0b1000_0000;
 
     private static final int MASK_HAS_TIMEOUT = 0b0100_0000;
+
+    private static final int MASK_HAS_METADATA = 0b0010_0000;
 
     private static final NetworkMessage.Preview<MessagingProtocol.Type> TYPE_PREVIEW = rd -> getType(rd.readByte());
 
@@ -114,133 +118,13 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
     }
 
     @Override
-    public MessagingProtocol decode(DataReader in) throws IOException {
-        byte flags = in.readByte();
-
-        MessagingProtocol.Type type = getType(flags);
-
-        switch (type) {
-            case CONNECT: {
-                ClusterNodeId to = readNodeId(in);
-                ClusterAddress from = readClusterAddress(in);
-
-                MessagingChannelId sourceId = decodeSourceId(in);
-
-                return new Connect(to, from, sourceId);
-            }
-            case AFFINITY_NOTIFICATION: {
-                boolean retransmit = isRetransmit(flags);
-                int affinity = in.readInt();
-                long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
-
-                T payload = decodeNotificationPayload(in);
-
-                return new AffinityNotification<>(affinity, retransmit, timeout, payload);
-            }
-            case NOTIFICATION: {
-                boolean retransmit = isRetransmit(flags);
-                long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
-
-                T payload = decodeNotificationPayload(in);
-
-                return new Notification<>(retransmit, timeout, payload);
-            }
-            case AFFINITY_REQUEST: {
-                boolean retransmit = isRetransmit(flags);
-                int affinity = in.readInt();
-                int requestId = in.readVarInt();
-                long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
-
-                T payload = decodeAffinityRequestPayload(requestId, affinity, in);
-
-                return new AffinityRequest<>(affinity, requestId, retransmit, timeout, payload);
-            }
-            case REQUEST: {
-                boolean retransmit = isRetransmit(flags);
-                int requestId = in.readVarInt();
-                long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
-
-                T payload = decodeRequestPayload(requestId, in);
-
-                return new Request<>(requestId, retransmit, timeout, payload);
-            }
-            case AFFINITY_VOID_REQUEST: {
-                boolean retransmit = isRetransmit(flags);
-                int affinity = in.readInt();
-                int requestId = in.readVarInt();
-                long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
-
-                T payload = decodeAffinityRequestPayload(requestId, affinity, in);
-
-                return new AffinityVoidRequest<>(affinity, requestId, retransmit, timeout, payload);
-            }
-            case VOID_REQUEST: {
-                boolean retransmit = isRetransmit(flags);
-                int requestId = in.readVarInt();
-                long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
-
-                T payload = decodeRequestPayload(requestId, in);
-
-                return new VoidRequest<>(requestId, retransmit, timeout, payload);
-            }
-            case AFFINITY_SUBSCRIBE: {
-                boolean retransmit = isRetransmit(flags);
-                int affinity = in.readInt();
-                int requestId = in.readVarInt();
-                long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
-
-                T payload = decodeAffinityRequestPayload(requestId, affinity, in);
-
-                return new AffinitySubscribeRequest<>(affinity, requestId, retransmit, timeout, payload);
-            }
-            case SUBSCRIBE: {
-                boolean retransmit = isRetransmit(flags);
-                int requestId = in.readVarInt();
-                long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
-
-                T payload = decodeRequestPayload(requestId, in);
-
-                return new SubscribeRequest<>(requestId, retransmit, timeout, payload);
-            }
-            case RESPONSE_CHUNK: {
-                int requestId = in.readVarInt();
-
-                T payload = decodeResponsePayload(requestId, in);
-
-                return new ResponseChunk<>(requestId, payload);
-            }
-            case FINAL_RESPONSE: {
-                int requestId = in.readVarInt();
-
-                T payload = decodeResponsePayload(requestId, in);
-
-                return new FinalResponse<>(requestId, payload);
-            }
-            case VOID_RESPONSE: {
-                int requestId = in.readVarInt();
-
-                return new VoidResponse(requestId);
-            }
-            case ERROR_RESPONSE: {
-                int requestId = in.readVarInt();
-                String stackTrace = in.readUTF();
-
-                return new ErrorResponse(requestId, stackTrace);
-            }
-            default: {
-                throw new IllegalArgumentException("Unexpected message type: " + type);
-            }
-        }
-    }
-
-    @Override
     public void encode(MessagingProtocol msg, DataWriter out) throws IOException {
-        MessagingProtocol.Type type = msg.type();
+        MessagingProtocol.Type type = msg.messageType();
 
         int flags = 0;
 
         flags = appendType(flags, type);
-        flags = appendRetransmit(flags, msg.isRetransmit());
+        flags = appendIsRetransmit(flags, msg.isRetransmit());
 
         switch (type) {
             case CONNECT: {
@@ -258,13 +142,18 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case AFFINITY_NOTIFICATION: {
                 AffinityNotification<T> notification = msg.cast();
 
-                flags = appendTimeout(flags, notification.hasTimeout());
+                flags = appendHasTimeout(flags, notification.hasTimeout());
+                flags = appendHasMetaData(flags, notification.metaData().isPresent());
 
                 out.writeByte(flags);
                 out.writeInt(notification.affinity());
 
                 if (notification.hasTimeout()) {
                     out.writeVarLong(notification.timeout());
+                }
+
+                if (notification.metaData().isPresent()) {
+                    encodeMetaData(notification.metaData().get(), out);
                 }
 
                 delegate.encode(notification.get(), out);
@@ -274,12 +163,17 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case NOTIFICATION: {
                 Notification<T> notification = msg.cast();
 
-                flags = appendTimeout(flags, notification.hasTimeout());
+                flags = appendHasTimeout(flags, notification.hasTimeout());
+                flags = appendHasMetaData(flags, notification.metaData().isPresent());
 
                 out.writeByte(flags);
 
                 if (notification.hasTimeout()) {
                     out.writeVarLong(notification.timeout());
+                }
+
+                if (notification.metaData().isPresent()) {
+                    encodeMetaData(notification.metaData().get(), out);
                 }
 
                 delegate.encode(notification.get(), out);
@@ -289,7 +183,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case AFFINITY_REQUEST: {
                 AffinityRequest<T> request = msg.cast();
 
-                flags = appendTimeout(flags, request.hasTimeout());
+                flags = appendHasTimeout(flags, request.hasTimeout());
+                flags = appendHasMetaData(flags, request.metaData().isPresent());
 
                 out.writeByte(flags);
 
@@ -298,6 +193,10 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 if (request.hasTimeout()) {
                     out.writeVarLong(request.timeout());
+                }
+
+                if (request.metaData().isPresent()) {
+                    encodeMetaData(request.metaData().get(), out);
                 }
 
                 delegate.encode(request.get(), out);
@@ -307,13 +206,18 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case REQUEST: {
                 Request<T> request = msg.cast();
 
-                flags = appendTimeout(flags, request.hasTimeout());
+                flags = appendHasTimeout(flags, request.hasTimeout());
+                flags = appendHasMetaData(flags, request.metaData().isPresent());
 
                 out.writeByte(flags);
                 out.writeVarInt(request.requestId());
 
                 if (request.hasTimeout()) {
                     out.writeVarLong(request.timeout());
+                }
+
+                if (request.metaData().isPresent()) {
+                    encodeMetaData(request.metaData().get(), out);
                 }
 
                 delegate.encode(request.get(), out);
@@ -323,7 +227,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case AFFINITY_VOID_REQUEST: {
                 AffinityVoidRequest<T> request = msg.cast();
 
-                flags = appendTimeout(flags, request.hasTimeout());
+                flags = appendHasTimeout(flags, request.hasTimeout());
+                flags = appendHasMetaData(flags, request.metaData().isPresent());
 
                 out.writeByte(flags);
 
@@ -332,6 +237,10 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 if (request.hasTimeout()) {
                     out.writeVarLong(request.timeout());
+                }
+
+                if (request.metaData().isPresent()) {
+                    encodeMetaData(request.metaData().get(), out);
                 }
 
                 delegate.encode(request.get(), out);
@@ -341,13 +250,18 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case VOID_REQUEST: {
                 VoidRequest<T> request = msg.cast();
 
-                flags = appendTimeout(flags, request.hasTimeout());
+                flags = appendHasTimeout(flags, request.hasTimeout());
+                flags = appendHasMetaData(flags, request.metaData().isPresent());
 
                 out.writeByte(flags);
                 out.writeVarInt(request.requestId());
 
                 if (request.hasTimeout()) {
                     out.writeVarLong(request.timeout());
+                }
+
+                if (request.metaData().isPresent()) {
+                    encodeMetaData(request.metaData().get(), out);
                 }
 
                 delegate.encode(request.get(), out);
@@ -357,7 +271,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case AFFINITY_SUBSCRIBE: {
                 AffinitySubscribeRequest<T> request = msg.cast();
 
-                flags = appendTimeout(flags, request.hasTimeout());
+                flags = appendHasTimeout(flags, request.hasTimeout());
+                flags = appendHasMetaData(flags, request.metaData().isPresent());
 
                 out.writeByte(flags);
                 out.writeInt(request.affinity());
@@ -367,6 +282,10 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     out.writeVarLong(request.timeout());
                 }
 
+                if (request.metaData().isPresent()) {
+                    encodeMetaData(request.metaData().get(), out);
+                }
+
                 delegate.encode(request.get(), out);
 
                 break;
@@ -374,13 +293,18 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case SUBSCRIBE: {
                 SubscribeRequest<T> request = msg.cast();
 
-                flags = appendTimeout(flags, request.hasTimeout());
+                flags = appendHasTimeout(flags, request.hasTimeout());
+                flags = appendHasMetaData(flags, request.metaData().isPresent());
 
                 out.writeByte(flags);
                 out.writeVarInt(request.requestId());
 
                 if (request.hasTimeout()) {
                     out.writeVarLong(request.timeout());
+                }
+
+                if (request.metaData().isPresent()) {
+                    encodeMetaData(request.metaData().get(), out);
                 }
 
                 delegate.encode(request.get(), out);
@@ -427,6 +351,142 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 throw new IllegalArgumentException("Unexpected message type: " + type);
             }
         }
+    }
+
+    @Override
+    public MessagingProtocol decode(DataReader in) throws IOException {
+        byte flags = in.readByte();
+
+        MessagingProtocol.Type type = getType(flags);
+
+        switch (type) {
+            case CONNECT: {
+                ClusterNodeId to = readNodeId(in);
+                ClusterAddress from = readClusterAddress(in);
+
+                MessagingChannelId sourceId = decodeSourceId(in);
+
+                return new Connect(to, from, sourceId);
+            }
+            case AFFINITY_NOTIFICATION: {
+                boolean retransmit = isRetransmit(flags);
+                int affinity = in.readInt();
+                long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
+                Optional<MessageMetaData> metaData = hasMetaData(flags) ? decodeMetaData(in) : Optional.empty();
+
+                T payload = decodeNotificationPayload(in);
+
+                return new AffinityNotification<>(affinity, retransmit, timeout, payload, metaData);
+            }
+            case NOTIFICATION: {
+                boolean retransmit = isRetransmit(flags);
+                long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
+                Optional<MessageMetaData> metaData = hasMetaData(flags) ? decodeMetaData(in) : Optional.empty();
+
+                T payload = decodeNotificationPayload(in);
+
+                return new Notification<>(retransmit, timeout, payload, metaData);
+            }
+            case AFFINITY_REQUEST: {
+                boolean retransmit = isRetransmit(flags);
+                int affinity = in.readInt();
+                int requestId = in.readVarInt();
+                long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
+                Optional<MessageMetaData> metaData = hasMetaData(flags) ? decodeMetaData(in) : Optional.empty();
+
+                T payload = decodeAffinityRequestPayload(requestId, affinity, in);
+
+                return new AffinityRequest<>(affinity, requestId, retransmit, timeout, payload, metaData);
+            }
+            case REQUEST: {
+                boolean retransmit = isRetransmit(flags);
+                int requestId = in.readVarInt();
+                long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
+                Optional<MessageMetaData> metaData = hasMetaData(flags) ? decodeMetaData(in) : Optional.empty();
+
+                T payload = decodeRequestPayload(requestId, in);
+
+                return new Request<>(requestId, retransmit, timeout, payload, metaData);
+            }
+            case AFFINITY_VOID_REQUEST: {
+                boolean retransmit = isRetransmit(flags);
+                int affinity = in.readInt();
+                int requestId = in.readVarInt();
+                long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
+                Optional<MessageMetaData> metaData = hasMetaData(flags) ? decodeMetaData(in) : Optional.empty();
+
+                T payload = decodeAffinityRequestPayload(requestId, affinity, in);
+
+                return new AffinityVoidRequest<>(affinity, requestId, retransmit, timeout, payload, metaData);
+            }
+            case VOID_REQUEST: {
+                boolean retransmit = isRetransmit(flags);
+                int requestId = in.readVarInt();
+                long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
+                Optional<MessageMetaData> metaData = hasMetaData(flags) ? decodeMetaData(in) : Optional.empty();
+
+                T payload = decodeRequestPayload(requestId, in);
+
+                return new VoidRequest<>(requestId, retransmit, timeout, payload, metaData);
+            }
+            case AFFINITY_SUBSCRIBE: {
+                boolean retransmit = isRetransmit(flags);
+                int affinity = in.readInt();
+                int requestId = in.readVarInt();
+                long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
+                Optional<MessageMetaData> metaData = hasMetaData(flags) ? decodeMetaData(in) : Optional.empty();
+
+                T payload = decodeAffinityRequestPayload(requestId, affinity, in);
+
+                return new AffinitySubscribeRequest<>(affinity, requestId, retransmit, timeout, payload, metaData);
+            }
+            case SUBSCRIBE: {
+                boolean retransmit = isRetransmit(flags);
+                int requestId = in.readVarInt();
+                long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
+                Optional<MessageMetaData> metaData = hasMetaData(flags) ? decodeMetaData(in) : Optional.empty();
+
+                T payload = decodeRequestPayload(requestId, in);
+
+                return new SubscribeRequest<>(requestId, retransmit, timeout, payload, metaData);
+            }
+            case RESPONSE_CHUNK: {
+                int requestId = in.readVarInt();
+
+                T payload = decodeResponsePayload(requestId, in);
+
+                return new ResponseChunk<>(requestId, payload);
+            }
+            case FINAL_RESPONSE: {
+                int requestId = in.readVarInt();
+
+                T payload = decodeResponsePayload(requestId, in);
+
+                return new FinalResponse<>(requestId, payload);
+            }
+            case VOID_RESPONSE: {
+                int requestId = in.readVarInt();
+
+                return new VoidResponse(requestId);
+            }
+            case ERROR_RESPONSE: {
+                int requestId = in.readVarInt();
+                String stackTrace = in.readUTF();
+
+                return new ErrorResponse(requestId, stackTrace);
+            }
+            default: {
+                throw new IllegalArgumentException("Unexpected message type: " + type);
+            }
+        }
+    }
+
+    private void encodeMetaData(MessageMetaData metaData, DataWriter out) throws IOException {
+        metaData.writeTo(out);
+    }
+
+    private Optional<MessageMetaData> decodeMetaData(DataReader in) throws IOException {
+        return Optional.of(MessageMetaData.readFrom(in));
     }
 
     private void encodeSourceId(MessagingChannelId id, DataWriter out) throws IOException {
@@ -481,14 +541,6 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
         return TYPES_CACHE[flags & MASK_TYPE];
     }
 
-    private static int appendRetransmit(int flags, boolean retransmit) {
-        if (retransmit) {
-            return flags | MASK_RETRANSMIT;
-        } else {
-            return flags;
-        }
-    }
-
     private static boolean isRetransmit(byte flags) {
         return (flags & MASK_RETRANSMIT) != 0;
     }
@@ -497,9 +549,29 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
         return (flags & MASK_HAS_TIMEOUT) != 0;
     }
 
-    private static int appendTimeout(int flags, boolean hasTimeout) {
+    private static boolean hasMetaData(byte flags) {
+        return (flags & MASK_HAS_METADATA) != 0;
+    }
+
+    private static int appendIsRetransmit(int flags, boolean retransmit) {
+        if (retransmit) {
+            return flags | MASK_RETRANSMIT;
+        } else {
+            return flags;
+        }
+    }
+
+    private static int appendHasTimeout(int flags, boolean hasTimeout) {
         if (hasTimeout) {
             return flags | MASK_HAS_TIMEOUT;
+        } else {
+            return flags;
+        }
+    }
+
+    private static int appendHasMetaData(int flags, boolean hasMetaData) {
+        if (hasMetaData) {
+            return flags | MASK_HAS_METADATA;
         } else {
             return flags;
         }

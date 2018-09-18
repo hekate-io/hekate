@@ -29,7 +29,7 @@ class RequestHandle<T> {
 
     private final int epoch;
 
-    private final MessageRoute<T> route;
+    private final MessageAttempt<T> attempt;
 
     @ToStringIgnore
     private final InternalRequestCallback<T> callback;
@@ -44,13 +44,13 @@ class RequestHandle<T> {
     public RequestHandle(
         Integer id,
         RequestRegistry<T> registry,
-        MessageRoute<T> route,
+        MessageAttempt<T> attempt,
         int epoch,
         InternalRequestCallback<T> callback
     ) {
         this.id = id;
         this.registry = registry;
-        this.route = route;
+        this.attempt = attempt;
         this.epoch = epoch;
         this.callback = callback;
     }
@@ -60,11 +60,11 @@ class RequestHandle<T> {
     }
 
     public MessagingWorker worker() {
-        return route.ctx().worker();
+        return attempt.ctx().worker();
     }
 
     public T message() {
-        return route.ctx().originalMessage();
+        return attempt.ctx().originalMessage();
     }
 
     public int epoch() {
@@ -76,11 +76,11 @@ class RequestHandle<T> {
     }
 
     public MessageContext<T> context() {
-        return route.ctx();
+        return attempt.ctx();
     }
 
-    public MessageRoute<T> route() {
-        return route;
+    public MessageAttempt<T> attempt() {
+        return attempt;
     }
 
     public boolean isRegistered() {

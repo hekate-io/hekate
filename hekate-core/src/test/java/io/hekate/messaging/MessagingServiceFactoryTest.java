@@ -17,6 +17,7 @@
 package io.hekate.messaging;
 
 import io.hekate.HekateTestBase;
+import io.hekate.messaging.intercept.MessageInterceptor;
 import java.util.Arrays;
 import java.util.Collections;
 import org.junit.Test;
@@ -26,6 +27,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 public class MessagingServiceFactoryTest extends HekateTestBase {
     private final MessagingServiceFactory cfg = new MessagingServiceFactory();
@@ -75,6 +77,29 @@ public class MessagingServiceFactoryTest extends HekateTestBase {
 
         assertEquals(1, cfg.getConfigProviders().size());
         assertTrue(cfg.getConfigProviders().contains(p1));
+    }
+
+    @Test
+    public void testGlobalInterceptors() {
+        MessageInterceptor<?> p1 = mock(MessageInterceptor.class);
+        MessageInterceptor<?> p2 = mock(MessageInterceptor.class);
+
+        assertNull(cfg.getGlobalInterceptors());
+
+        cfg.setGlobalInterceptors(Arrays.asList(p1, p2));
+
+        assertEquals(2, cfg.getGlobalInterceptors().size());
+        assertTrue(cfg.getGlobalInterceptors().contains(p1));
+        assertTrue(cfg.getGlobalInterceptors().contains(p2));
+
+        cfg.setGlobalInterceptors(null);
+
+        assertNull(cfg.getGlobalInterceptors());
+
+        assertSame(cfg, cfg.withGlobalInterceptor(p1));
+
+        assertEquals(1, cfg.getGlobalInterceptors().size());
+        assertTrue(cfg.getGlobalInterceptors().contains(p1));
     }
 
     @Test

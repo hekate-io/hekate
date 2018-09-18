@@ -31,12 +31,13 @@ import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.TerminatingService;
 import io.hekate.messaging.Message;
-import io.hekate.messaging.MessageInterceptor;
 import io.hekate.messaging.MessagingBackPressureConfig;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingConfigProvider;
 import io.hekate.messaging.MessagingService;
+import io.hekate.messaging.intercept.ClientSendContext;
+import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcClientBuilder;
 import io.hekate.rpc.RpcClientConfig;
@@ -275,7 +276,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
             .withMessageCodec(new RpcProtocolCodecFactory(codec))
             .withInterceptor(new MessageInterceptor<RpcProtocol>() {
                 @Override
-                public RpcProtocol interceptOutbound(RpcProtocol msg, OutboundContext ctx) {
+                public RpcProtocol interceptClientSend(RpcProtocol msg, ClientSendContext<RpcProtocol> ctx) {
                     // Convert method calls to compact representations.
                     if (msg instanceof RpcCall) {
                         RpcCall<?> req = (RpcCall<?>)msg;
@@ -288,9 +289,9 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
                         } else {
                             return new RpcCompactCall(methodIdx, req.args());
                         }
+                    } else {
+                        return msg;
                     }
-
-                    return msg;
                 }
             });
 

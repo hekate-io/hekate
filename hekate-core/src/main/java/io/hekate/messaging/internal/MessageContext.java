@@ -16,8 +16,7 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.util.format.ToString;
-import io.hekate.util.format.ToStringIgnore;
+import io.hekate.messaging.intercept.RequestType;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -26,16 +25,6 @@ import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 class MessageContext<T> {
-    enum Type {
-        REQUEST,
-
-        SUBSCRIBE,
-
-        VOID_REQUEST,
-
-        NOTIFY
-    }
-
     interface TimeoutListener {
         void onTimeout();
     }
@@ -63,38 +52,40 @@ class MessageContext<T> {
 
     private final Object affinityKey;
 
-    private final Type type;
+    private final RequestType type;
 
     private final T message;
 
-    @ToStringIgnore
     private final MessagingWorker worker;
 
-    @ToStringIgnore
     private final MessagingOpts<T> opts;
 
-    @ToStringIgnore
+    private final InterceptorManager<T> interceptor;
+
     private volatile TimeoutListener timeoutListener;
 
-    @ToStringIgnore
     @SuppressWarnings("unused") // <-- Updated via AtomicReferenceFieldUpdater.
     private volatile Future<?> timeoutFuture;
 
     @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
     private volatile int state;
 
-    public MessageContext(T message, int affinity, Object affinityKey, MessagingWorker worker, MessagingOpts<T> opts, Type type) {
-        assert message != null : "Message is null.";
-        assert worker != null : "Worker is null.";
-        assert opts != null : "Messaging options are null.";
-        assert type != null : "Context type is null.";
-
+    public MessageContext(
+        T message,
+        int affinity,
+        Object affinityKey,
+        MessagingWorker worker,
+        MessagingOpts<T> opts,
+        RequestType type,
+        InterceptorManager<T> interceptor
+    ) {
         this.message = message;
         this.worker = worker;
         this.opts = opts;
         this.affinityKey = affinityKey;
         this.affinity = affinity;
         this.type = type;
+        this.interceptor = interceptor;
     }
 
     public boolean hasAffinity() {
@@ -109,7 +100,7 @@ class MessageContext<T> {
         return affinityKey;
     }
 
-    public Type type() {
+    public RequestType type() {
         return type;
     }
 
@@ -123,6 +114,10 @@ class MessageContext<T> {
 
     public MessagingOpts<T> opts() {
         return opts;
+    }
+
+    public InterceptorManager<T> intercept() {
+        return interceptor;
     }
 
     public boolean isCompleted() {
@@ -173,9 +168,8 @@ class MessageContext<T> {
     public void setTimeoutFuture(Future<?> timeoutFuture) {
         // 1) Try to set as initial timeout future.
         if (!TIMEOUT_FUTURE.compareAndSet(this, null, timeoutFuture)) {
-            // 2) This is a refreshed future -> Try to refresh with state checks.
+            // 2) This is a refreshed future for streams -> Try to refresh with state checks.
             if (STATE.compareAndSet(this, STATE_RECEIVED, STATE_PENDING)) {
-                // Refreshed timeout future for streams.
                 this.timeoutFuture = timeoutFuture;
 
                 // Double-check that we didn't switch to COMPLETED state while updating the future field.
@@ -218,10 +212,5 @@ class MessageContext<T> {
                 }
             }
         }
-    }
-
-    @Override
-    public String toString() {
-        return ToString.format(this);
     }
 }

@@ -23,7 +23,6 @@ import io.hekate.codec.CodecException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.Message;
-import io.hekate.messaging.MessageInterceptor;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelClosedException;
@@ -966,43 +965,6 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         assertNotNull(err);
         assertTrue(err.toString(), err.getCause() instanceof ClosedChannelException);
-    }
-
-    @Test
-    public void testInterceptor() throws Exception {
-        List<TestChannel> channels = createAndJoinChannels(3, c -> {
-            c.setReceiver(msg -> msg.reply(msg.get() + "-reply"));
-
-            c.setInterceptor(new MessageInterceptor<String>() {
-                @Override
-                public String interceptOutbound(String msg, OutboundContext ctx) {
-                    return msg + "-###";
-                }
-
-                @Override
-                public String interceptInbound(String msg, InboundContext ctx) {
-                    return msg + "-@@@";
-                }
-
-                @Override
-                public String interceptReply(String msg, ReplyContext ctx) {
-                    return msg + "-$$$";
-                }
-            });
-        });
-
-        for (TestChannel from : channels) {
-            for (TestChannel to : channels) {
-                String msg1 = "test1-" + from.nodeId();
-                String msg2 = "test2-" + from.nodeId();
-
-                assertEquals(msg1 + "-###-@@@-reply-$$$-@@@", from.get().forNode(to.nodeId()).request(msg1).response());
-                assertEquals(msg2 + "-###-@@@-reply-$$$-@@@", from.get().forNode(to.nodeId()).request(msg2).responseUninterruptedly());
-
-                to.assertReceived(msg1 + "-###-@@@");
-                to.assertReceived(msg2 + "-###-@@@");
-            }
-        }
     }
 
     @Test

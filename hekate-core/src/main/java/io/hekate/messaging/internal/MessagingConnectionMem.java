@@ -17,18 +17,13 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.core.internal.util.ErrorUtils;
-import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
-import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
-import io.hekate.messaging.internal.MessagingProtocol.AffinitySubscribeRequest;
-import io.hekate.messaging.internal.MessagingProtocol.AffinityVoidRequest;
 import io.hekate.messaging.internal.MessagingProtocol.ErrorResponse;
 import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
-import io.hekate.messaging.internal.MessagingProtocol.Request;
 import io.hekate.messaging.internal.MessagingProtocol.RequestBase;
+import io.hekate.messaging.internal.MessagingProtocol.RequestForResponseBase;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
 import io.hekate.messaging.internal.MessagingProtocol.SubscribeRequest;
-import io.hekate.messaging.internal.MessagingProtocol.VoidRequest;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkFuture;
 
@@ -43,16 +38,8 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void send(MessageRoute<T> route, SendCallback callback, boolean retransmit) {
-        MessageContext<T> ctx = route.ctx();
-
-        Notification<T> msg;
-
-        if (ctx.hasAffinity()) {
-            msg = new AffinityNotification<>(ctx.affinity(), retransmit, ctx.opts().timeout(), route.preparePayload());
-        } else {
-            msg = new Notification<>(retransmit, ctx.opts().timeout(), route.preparePayload());
-        }
+    public void send(MessageAttempt<T> attempt, SendCallback callback) {
+        Notification<T> msg = attempt.prepareNotification();
 
         if (callback != null) {
             callback.onComplete(null);
@@ -62,7 +49,7 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
 
         onAsyncEnqueue();
 
-        ctx.worker().execute(() -> {
+        attempt.ctx().worker().execute(() -> {
             onAsyncDequeue();
 
             receiveNotificationAsync(msg, receivedAtMillis);
@@ -70,48 +57,30 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void request(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
-        MessageContext<T> ctx = route.ctx();
+    public void request(MessageAttempt<T> attempt, InternalRequestCallback<T> callback) {
+        RequestHandle<T> req = registerRequest(attempt, callback);
 
-        RequestHandle<T> req = registerRequest(route, callback);
-
-        RequestBase<T> msg;
-
-        if (ctx.hasAffinity()) {
-            if (ctx.type() == MessageContext.Type.VOID_REQUEST) {
-                msg = new AffinityVoidRequest<>(ctx.affinity(), req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
-            } else if (ctx.type() == MessageContext.Type.SUBSCRIBE) {
-                msg = new AffinitySubscribeRequest<>(ctx.affinity(), req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
-            } else {
-                msg = new AffinityRequest<>(ctx.affinity(), req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
-            }
-        } else {
-            if (ctx.type() == MessageContext.Type.VOID_REQUEST) {
-                msg = new VoidRequest<>(req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
-            } else if (ctx.type() == MessageContext.Type.SUBSCRIBE) {
-                msg = new SubscribeRequest<>(req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
-            } else {
-                msg = new Request<>(req.id(), retransmit, ctx.opts().timeout(), route.preparePayload());
-            }
-        }
+        RequestBase<T> msg = attempt.prepareRequest(req.id());
 
         long receivedAtMillis = msg.hasTimeout() ? System.nanoTime() : 0;
 
         onAsyncEnqueue();
 
-        ctx.worker().execute(() -> {
+        attempt.ctx().worker().execute(() -> {
             onAsyncDequeue();
 
-            receiveRequestAsync(msg, ctx.worker(), receivedAtMillis);
+            receiveRequestAsync(msg, attempt.ctx().worker(), receivedAtMillis);
         });
     }
 
     @Override
-    public void replyChunk(MessagingWorker worker, int requestId, T chunk, SendCallback callback) {
-        RequestHandle<T> handle = requests().get(requestId);
+    public void replyChunk(MessagingWorker worker, T chunk, SubscribeRequest<T> request, SendCallback callback) {
+        RequestHandle<T> handle = requests().get(request.requestId());
 
         if (handle != null) {
-            ResponseChunk<T> msg = new ResponseChunk<>(requestId, chunk);
+            ResponseChunk<T> msg = new ResponseChunk<>(request.requestId(), chunk);
+
+            msg.prepareSend(worker, this, null /* <- no back pressure for in-memory */, request, callback);
 
             if (callback != null) {
                 callback.onComplete(null);
@@ -128,11 +97,13 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void replyFinal(MessagingWorker worker, int requestId, T response, SendCallback callback) {
-        RequestHandle<T> handle = requests().get(requestId);
+    public void replyFinal(MessagingWorker worker, T response, RequestForResponseBase<T> request, SendCallback callback) {
+        RequestHandle<T> handle = requests().get(request.requestId());
 
         if (handle != null) {
-            FinalResponse<T> msg = new FinalResponse<>(requestId, response);
+            FinalResponse<T> msg = new FinalResponse<>(request.requestId(), response);
+
+            msg.prepareSend(worker, this, null /* <- no back pressure for in-memory */, request, callback);
 
             if (callback != null) {
                 callback.onComplete(null);
@@ -149,8 +120,8 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
     }
 
     @Override
-    public void replyVoid(MessagingWorker worker, int requestId) {
-        RequestHandle<T> handle = requests().get(requestId);
+    public void replyVoid(MessagingWorker worker, RequestBase<T> request) {
+        RequestHandle<T> handle = requests().get(request.requestId());
 
         if (handle != null) {
             onAsyncEnqueue();

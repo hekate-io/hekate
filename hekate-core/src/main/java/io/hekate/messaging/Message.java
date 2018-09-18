@@ -99,6 +99,7 @@ public interface Message<T> extends MessageBase<T> {
      *
      * @throws UnsupportedOperationException If message doesn't support responses.
      * @throws IllegalStateException If message had already been responded (see {@link #mustReply()}).
+     * @see #partialReply(Object, SendCallback)
      */
     void reply(T response, SendCallback callback) throws UnsupportedOperationException, IllegalStateException;
 
@@ -128,6 +129,7 @@ public interface Message<T> extends MessageBase<T> {
      * @param response Response.
      *
      * @throws UnsupportedOperationException If message doesn't support partial responses (see {@link #isSubscription()}).
+     * @see #reply(Object, SendCallback)
      */
     void partialReply(T response) throws UnsupportedOperationException;
 
@@ -178,9 +180,9 @@ public interface Message<T> extends MessageBase<T> {
     boolean isSubscription();
 
     /**
-     * Returns {@code true} if this message represents a request and can be {@link #reply(Object) replied}.
+     * Returns {@code true} if this message represents a request/subscription and can be {@link #reply(Object) replied}.
      *
-     * @return {@code true} if this message represents a request and can be {@link #reply(Object) replied}.
+     * @return {@code true} if this message represents a request/subscription and can be {@link #reply(Object) replied}.
      */
     boolean isRequest();
 }

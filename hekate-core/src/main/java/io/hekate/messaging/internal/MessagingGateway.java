@@ -22,8 +22,8 @@ import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.codec.ThreadLocalCodecFactory;
 import io.hekate.core.Hekate;
+import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.internal.util.Utils;
-import io.hekate.messaging.MessageInterceptor;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingBackPressureConfig;
 import io.hekate.messaging.MessagingChannel;
@@ -34,6 +34,7 @@ import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.AggregateFuture;
 import io.hekate.messaging.broadcast.BroadcastCallback;
 import io.hekate.messaging.broadcast.BroadcastFuture;
+import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.messaging.unicast.ResponseCallback;
@@ -43,9 +44,13 @@ import io.hekate.messaging.unicast.SendFuture;
 import io.hekate.messaging.unicast.SubscribeFuture;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToStringIgnore;
+import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static java.util.stream.Collectors.toList;
 
 class MessagingGateway<T> {
     private final String name;
@@ -72,7 +77,7 @@ class MessagingGateway<T> {
     private final MessageReceiver<T> unguardedReceiver;
 
     @ToStringIgnore
-    private final MessageInterceptor<T> interceptor;
+    private final InterceptorManager<T> interceptor;
 
     @ToStringIgnore
     private final DefaultMessagingChannel<T> rootChannel;
@@ -89,7 +94,13 @@ class MessagingGateway<T> {
     @ToStringIgnore
     private volatile MessagingGatewayContext<T> ctx;
 
-    public MessagingGateway(MessagingChannelConfig<T> cfg, Hekate hekate, ClusterService cluster, CodecService codec) {
+    public MessagingGateway(
+        MessagingChannelConfig<T> cfg,
+        Hekate hekate,
+        ClusterService cluster,
+        CodecService codec,
+        List<MessageInterceptor<?>> interceptors
+    ) {
         assert cfg != null : "Messaging channel configuration is null.";
         assert hekate != null : "Hekate instance is null.";
         assert cluster != null : "Cluster service is null.";
@@ -102,9 +113,16 @@ class MessagingGateway<T> {
         this.workerThreads = cfg.getWorkerThreads();
         this.idleTimeout = cfg.getIdleSocketTimeout();
         this.unguardedReceiver = cfg.getReceiver();
-        this.interceptor = cfg.getInterceptor();
         this.partitions = cfg.getPartitions();
         this.backupNodes = cfg.getBackupNodes();
+
+        // Interceptors.
+        this.interceptor = new InterceptorManager<>(
+            Stream.concat(
+                StreamUtils.nullSafe(interceptors),
+                StreamUtils.nullSafe(cfg.getInterceptors())
+            ).collect(toList())
+        );
 
         // Codec.
         this.codecFactory = optimizeCodecFactory(cfg.getMessageCodec(), codec);
@@ -203,7 +221,7 @@ class MessagingGateway<T> {
         return unguardedReceiver;
     }
 
-    public MessageInterceptor<T> interceptor() {
+    public InterceptorManager<T> interceptor() {
         return interceptor;
     }
 

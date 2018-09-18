@@ -23,10 +23,12 @@ import io.hekate.codec.CodecFactory;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.failover.FailoverPolicy;
+import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.partition.Partition;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -82,8 +84,8 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
     /** See {@link #setLoadBalancer(LoadBalancer)}. */
     private LoadBalancer<T> loadBalancer;
 
-    /** See {@link #setInterceptor(MessageInterceptor)}. */
-    private MessageInterceptor<T> interceptor;
+    /** See {@link #setInterceptors(List)}. */
+    private List<MessageInterceptor<T>> interceptors;
 
     /** See {@link #setMessagingTimeout(long)}. */
     private long messagingTimeout;
@@ -523,36 +525,40 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
     }
 
     /**
-     * Returns the message interceptor that should be used by the channel (see {@link #setInterceptor(MessageInterceptor)}).
+     * Returns a list of message interceptors that should be used by the channel (see {@link #setInterceptors(List)}).
      *
-     * @return Message interceptor.
+     * @return Message interceptors.
      */
-    public MessageInterceptor<T> getInterceptor() {
-        return interceptor;
+    public List<MessageInterceptor<T>> getInterceptors() {
+        return interceptors;
     }
 
     /**
-     * Sets the message interceptor that should be used by the channel.
+     * Sets the list of message interceptors that should be used by the channel.
      *
      * <p>
-     * Interceptors can be registered to the messaging channel in order to apply track message flow or apply transformations to messages.
+     * Interceptors can be registered to the messaging channel in order to track message flow or to apply transformations to messages.
      * </p>
      *
-     * @param interceptor Message interceptor.
+     * @param interceptors Message interceptors.
      */
-    public void setInterceptor(MessageInterceptor<T> interceptor) {
-        this.interceptor = interceptor;
+    public void setInterceptors(List<MessageInterceptor<T>> interceptors) {
+        this.interceptors = interceptors;
     }
 
     /**
-     * Fluent-style version of {@link #setInterceptor(MessageInterceptor)}.
+     * Fluent-style version of {@link #setInterceptors(List)}.
      *
      * @param interceptor Message interceptor.
      *
      * @return This instance.
      */
     public MessagingChannelConfig<T> withInterceptor(MessageInterceptor<T> interceptor) {
-        setInterceptor(interceptor);
+        if (getInterceptors() == null) {
+            setInterceptors(new ArrayList<>());
+        }
+
+        getInterceptors().add(interceptor);
 
         return this;
     }

@@ -17,6 +17,7 @@
 package io.hekate.messaging;
 
 import io.hekate.core.service.ServiceFactory;
+import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.internal.DefaultMessagingService;
 import io.hekate.util.format.ToString;
 import java.util.ArrayList;
@@ -27,6 +28,8 @@ import java.util.List;
  */
 public class MessagingServiceFactory implements ServiceFactory<MessagingService> {
     private List<MessagingChannelConfig<?>> channels;
+
+    private List<MessageInterceptor<?>> globalInterceptors;
 
     private List<MessagingConfigProvider> configProviders;
 
@@ -98,6 +101,43 @@ public class MessagingServiceFactory implements ServiceFactory<MessagingService>
         }
 
         configProviders.add(configProvider);
+
+        return this;
+    }
+
+    /**
+     * Returns the list of message interceptors that should be applied to all channels (see {@link #setGlobalInterceptors(List)}).
+     *
+     * @return List of global message interceptors.
+     */
+    public List<MessageInterceptor<?>> getGlobalInterceptors() {
+        return globalInterceptors;
+    }
+
+    /**
+     * Sets the list of message interceptors that should be applied to all channels.
+     *
+     * @param globalInterceptors List of global message interceptors.
+     *
+     * @see MessagingChannelConfig#setInterceptors(List)
+     */
+    public void setGlobalInterceptors(List<MessageInterceptor<?>> globalInterceptors) {
+        this.globalInterceptors = globalInterceptors;
+    }
+
+    /**
+     * Fluent-style version of {@link #setGlobalInterceptors(List)}.
+     *
+     * @param globalInterceptor Message interceptor.
+     *
+     * @return This instance.
+     */
+    public MessagingServiceFactory withGlobalInterceptor(MessageInterceptor<?> globalInterceptor) {
+        if (getGlobalInterceptors() == null) {
+            setGlobalInterceptors(new ArrayList<>());
+        }
+
+        getGlobalInterceptors().add(globalInterceptor);
 
         return this;
     }

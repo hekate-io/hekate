@@ -89,17 +89,17 @@ class MessagingClientNet<T> implements MessagingClient<T> {
     }
 
     @Override
-    public void send(MessageRoute<T> route, SendCallback callback, boolean retransmit) {
+    public void send(MessageAttempt<T> attempt, SendCallback callback) {
         ensureConnected();
 
-        conn.send(route, callback, retransmit);
+        conn.send(attempt, callback);
     }
 
     @Override
-    public void request(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
+    public void request(MessageAttempt<T> attempt, InternalRequestCallback<T> callback) {
         ensureConnected();
 
-        conn.request(route, callback, retransmit);
+        conn.request(attempt, callback);
     }
 
     @Override

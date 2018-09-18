@@ -29,7 +29,6 @@ import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.failover.FailureInfo;
 import io.hekate.failover.FailureResolution;
 import io.hekate.failover.internal.DefaultFailoverContext;
-import io.hekate.messaging.MessageInterceptor;
 import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessageQueueTimeoutException;
 import io.hekate.messaging.MessageReceiver;
@@ -41,6 +40,7 @@ import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.AggregateFuture;
 import io.hekate.messaging.broadcast.BroadcastCallback;
 import io.hekate.messaging.broadcast.BroadcastFuture;
+import io.hekate.messaging.intercept.RequestType;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import io.hekate.messaging.loadbalance.LoadBalancerException;
@@ -167,7 +167,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
     private final SendPressureGuard sendPressure;
 
     @ToStringIgnore
-    private final MessageInterceptor<T> interceptor;
+    private final InterceptorManager<T> interceptor;
 
     @ToStringIgnore
     private final DefaultMessagingChannel<T> channel;
@@ -195,7 +195,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
         MessagingMetrics metrics,
         ReceivePressureGuard receivePressure,
         SendPressureGuard sendPressure,
-        MessageInterceptor<T> interceptor,
+        InterceptorManager<T> interceptor,
         Logger log,
         boolean checkIdle,
         DefaultMessagingChannel<T> channel,
@@ -206,6 +206,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
         assert net != null : "Network connector is null.";
         assert localNode != null : "Local cluster node is null.";
         assert async != null : "Executor is null.";
+        assert metrics != null : "Metrics are null.";
         assert channel != null : "Default channel is null.";
 
         this.id = new MessagingChannelId();
@@ -240,7 +241,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
         return localNode;
     }
 
-    public MessageInterceptor<T> interceptor() {
+    public InterceptorManager<T> intercept() {
         return interceptor;
     }
 
@@ -281,13 +282,9 @@ class MessagingGatewayContext<T> implements HekateSupport {
     }
 
     public void subscribe(Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
-        assert msg != null : "Request message must be not null.";
-        assert opts != null : "Messaging options must be not null.";
-        assert callback != null : "Callback must be not null.";
-
         checkMessageType(msg);
 
-        MessageContext<T> ctx = newContext(MessageContext.Type.SUBSCRIBE, affinityKey, msg, opts);
+        MessageContext<T> ctx = newContext(RequestType.SUBSCRIBE, affinityKey, msg, opts);
 
         requestAsync(msg, ctx, unicastRouter(), callback);
     }
@@ -301,10 +298,6 @@ class MessagingGatewayContext<T> implements HekateSupport {
     }
 
     public void broadcast(Object affinityKey, T msg, MessagingOpts<T> opts, BroadcastCallback<T> callback) {
-        assert msg != null : "Message must be not null.";
-        assert opts != null : "Messaging options must be not null.";
-        assert callback != null : "Callback must be not null.";
-
         checkMessageType(msg);
 
         List<ClusterNode> nodes = nodesForBroadcast(affinityKey, opts);
@@ -350,10 +343,6 @@ class MessagingGatewayContext<T> implements HekateSupport {
     }
 
     public void aggregate(Object affinityKey, T msg, MessagingOpts<T> opts, AggregateCallback<T> callback) {
-        assert msg != null : "Message must be not null.";
-        assert opts != null : "Messaging options must be not null.";
-        assert callback != null : "Callback must be not null.";
-
         checkMessageType(msg);
 
         List<ClusterNode> nodes = nodesForBroadcast(affinityKey, opts);
@@ -501,17 +490,14 @@ class MessagingGatewayContext<T> implements HekateSupport {
     }
 
     private void sendWithRouter(Router<T> router, Object affinityKey, T msg, MessagingOpts<T> opts, SendCallback callback) {
-        assert msg != null : "Message must be not null.";
-        assert opts != null : "Messaging options must be not null.";
-
         checkMessageType(msg);
 
         if (callback != null && opts.isConfirmReceive()) {
-            MessageContext<T> ctx = newContext(MessageContext.Type.VOID_REQUEST, affinityKey, msg, opts);
+            MessageContext<T> ctx = newContext(RequestType.SEND_WITH_ACK, affinityKey, msg, opts);
 
             requestAsync(msg, ctx, router, (err, rsp) -> callback.onComplete(err));
         } else {
-            MessageContext<T> ctx = newContext(MessageContext.Type.NOTIFY, affinityKey, msg, opts);
+            MessageContext<T> ctx = newContext(RequestType.SEND_NO_ACK, affinityKey, msg, opts);
 
             try {
                 long timeout = backPressureAcquire(ctx.opts().timeout(), msg);
@@ -528,10 +514,10 @@ class MessagingGatewayContext<T> implements HekateSupport {
     }
 
     private void routeAndSend(MessageContext<T> ctx, Router<T> router, SendCallback callback, Optional<FailureInfo> prevFailure) {
-        MessageRoute<T> route = null;
+        MessageAttempt<T> attempt = null;
 
         try {
-            route = route(ctx, router, prevFailure);
+            attempt = route(ctx, router, prevFailure);
         } catch (HekateException e) {
             notifyOnErrorAsync(ctx, callback, e);
         } catch (RuntimeException | Error e) {
@@ -544,17 +530,17 @@ class MessagingGatewayContext<T> implements HekateSupport {
             notifyOnErrorAsync(ctx, callback, e.getCause());
         }
 
-        if (route != null) {
-            doSend(route, router, callback, prevFailure);
+        if (attempt != null) {
+            doSend(attempt, router, callback);
         }
     }
 
-    private void doSend(MessageRoute<T> route, Router<T> router, SendCallback callback, Optional<FailureInfo> prevFailure) {
-        MessageContext<T> ctx = route.ctx();
+    private void doSend(MessageAttempt<T> attempt, Router<T> router, SendCallback callback) {
+        MessageContext<T> ctx = attempt.ctx();
 
         // Decorate callback with failover, error handling logic, etc.
         SendCallback retryCallback = err -> {
-            route.client().touch();
+            attempt.client().touch();
 
             if (err == null || ctx.opts().failover() == null) {
                 // Complete operation.
@@ -572,13 +558,13 @@ class MessagingGatewayContext<T> implements HekateSupport {
                     public void retry(FailoverRoutingPolicy routing, Optional<FailureInfo> failure) {
                         switch (routing) {
                             case RETRY_SAME_NODE: {
-                                doSend(route, router, callback, failure);
+                                doSend(attempt.newAttempt(failure), router, callback);
 
                                 break;
                             }
                             case PREFER_SAME_NODE: {
-                                if (isKnownNode(route.client().node())) {
-                                    doSend(route, router, callback, failure);
+                                if (isKnownNode(attempt.client().node())) {
+                                    doSend(attempt.newAttempt(failure), router, callback);
                                 } else {
                                     routeAndSend(ctx, router, callback, failure);
                                 }
@@ -602,21 +588,17 @@ class MessagingGatewayContext<T> implements HekateSupport {
                     }
                 };
 
-                applyFailoverAsync(ctx, err, route.client().node(), onFailover, prevFailure);
+                applyFailoverAsync(attempt, err, onFailover);
             }
         };
 
-        route.client().send(route, retryCallback, prevFailure.isPresent());
+        attempt.client().send(attempt, retryCallback);
     }
 
     private void requestWithRouter(Router<T> router, Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
-        assert msg != null : "Request message must be not null.";
-        assert opts != null : "Messaging options must be not null.";
-        assert callback != null : "Callback must be not null.";
-
         checkMessageType(msg);
 
-        MessageContext<T> ctx = newContext(MessageContext.Type.REQUEST, affinityKey, msg, opts);
+        MessageContext<T> ctx = newContext(RequestType.REQUEST, affinityKey, msg, opts);
 
         requestAsync(msg, ctx, router, callback);
     }
@@ -635,16 +617,11 @@ class MessagingGatewayContext<T> implements HekateSupport {
         }
     }
 
-    private void routeAndRequest(
-        MessageContext<T> ctx,
-        Router<T> router,
-        ResponseCallback<T> callback,
-        Optional<FailureInfo> prevFailure
-    ) {
-        MessageRoute<T> route = null;
+    private void routeAndRequest(MessageContext<T> ctx, Router<T> router, ResponseCallback<T> callback, Optional<FailureInfo> prevFailure) {
+        MessageAttempt<T> attempt = null;
 
         try {
-            route = route(ctx, router, prevFailure);
+            attempt = route(ctx, router, prevFailure);
         } catch (HekateException e) {
             notifyOnErrorAsync(ctx, callback, e);
         } catch (RuntimeException | Error e) {
@@ -657,26 +634,21 @@ class MessagingGatewayContext<T> implements HekateSupport {
             notifyOnErrorAsync(ctx, callback, e.getCause());
         }
 
-        if (route != null) {
-            doRequest(route, router, callback, prevFailure);
+        if (attempt != null) {
+            doRequest(attempt, router, callback);
         }
     }
 
-    private void doRequest(
-        MessageRoute<T> route,
-        Router<T> router,
-        ResponseCallback<T> callback,
-        Optional<FailureInfo> prevFailure
-    ) {
+    private void doRequest(MessageAttempt<T> attempt, Router<T> router, ResponseCallback<T> callback) {
         // Decorate callback with failover, error handling logic, etc.
-        final MessageContext<T> ctx = route.ctx();
+        final MessageContext<T> ctx = attempt.ctx();
 
         InternalRequestCallback<T> internalCallback = (request, err, reply) -> {
-            route.client().touch();
+            attempt.client().touch();
 
             // Check if reply is an application-level error message.
             if (err == null) {
-                err = tryConvertToError(reply, route.receiver());
+                err = tryConvertToError(reply, attempt.receiver());
             }
 
             // Resolve effective reply.
@@ -738,13 +710,13 @@ class MessagingGatewayContext<T> implements HekateSupport {
                     public void retry(FailoverRoutingPolicy routing, Optional<FailureInfo> failure) {
                         switch (routing) {
                             case RETRY_SAME_NODE: {
-                                doRequest(route, router, callback, failure);
+                                doRequest(attempt.newAttempt(failure), router, callback);
 
                                 break;
                             }
                             case PREFER_SAME_NODE: {
-                                if (isKnownNode(route.client().node())) {
-                                    doRequest(route, router, callback, failure);
+                                if (isKnownNode(attempt.client().node())) {
+                                    doRequest(attempt.newAttempt(failure), router, callback);
                                 } else {
                                     routeAndRequest(ctx, router, callback, failure);
                                 }
@@ -769,14 +741,11 @@ class MessagingGatewayContext<T> implements HekateSupport {
                 };
 
                 // Apply failover.
-                applyFailoverAsync(ctx, err, route.client().node(), onFailover, prevFailure);
+                applyFailoverAsync(attempt, err, onFailover);
             }
         };
 
-        // If this is a failover-attempt then this is a retransmit.
-        boolean isRetransmit = prevFailure.isPresent();
-
-        route.client().request(route, internalCallback, isRetransmit);
+        attempt.client().request(attempt, internalCallback);
     }
 
     boolean register(MessagingConnectionNetIn<T> conn) {
@@ -961,13 +930,11 @@ class MessagingGatewayContext<T> implements HekateSupport {
         }
     }
 
-    private MessageRoute<T> route(
+    private MessageAttempt<T> route(
         MessageContext<T> ctx,
         Router<T> router,
         Optional<FailureInfo> prevFailure
     ) throws HekateException, ClientSelectionRejectedException {
-        assert ctx != null : "Message context is null.";
-
         // Perform routing in a loop to circumvent concurrent cluster topology changes.
         while (true) {
             PartitionMapper mapper = ctx.opts().partitions().snapshot();
@@ -1028,7 +995,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
                     // Retry routing (note we are not exiting the loop)...
                 } else {
-                    return new MessageRoute<>(client, topology, ctx, interceptor);
+                    return new MessageAttempt<>(client, topology, ctx, prevFailure);
                 }
             } finally {
                 lock.unlockRead(readLock);
@@ -1043,36 +1010,19 @@ class MessagingGatewayContext<T> implements HekateSupport {
         }
     }
 
-    private void applyFailoverAsync(
-        MessageContext<T> ctx,
-        Throwable cause,
-        ClusterNode failed,
-        FailoverCallback callback,
-        Optional<FailureInfo> prevFailure
-    ) {
+    private void applyFailoverAsync(MessageAttempt<T> attempt, Throwable cause, FailoverCallback callback) {
         onAsyncEnqueue();
 
-        ctx.worker().execute(() -> {
+        attempt.ctx().worker().execute(() -> {
             onAsyncDequeue();
 
-            applyFailover(ctx, cause, failed, callback, prevFailure);
+            applyFailover(attempt, cause, callback);
         });
     }
 
-    private void applyFailover(
-        MessageContext<T> ctx,
-        Throwable cause,
-        ClusterNode failed,
-        FailoverCallback callback,
-        Optional<FailureInfo> prevFailure
-    ) {
-        assert ctx != null : "Message context is null.";
-        assert cause != null : "Cause is null.";
-        assert failed != null : "Failed node is null.";
-        assert callback != null : "Failover callback is null";
-
+    private void applyFailover(MessageAttempt<T> attempt, Throwable cause, FailoverCallback callback) {
         // Do nothing if operation is already completed.
-        if (ctx.isCompleted()) {
+        if (attempt.ctx().isCompleted()) {
             return;
         }
 
@@ -1080,10 +1030,12 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
         Throwable finalCause = cause;
 
-        FailoverPolicy policy = ctx.opts().failover();
+        FailoverPolicy policy = attempt.ctx().opts().failover();
 
         if (policy != null && isRecoverable(cause)) {
-            DefaultFailoverContext failoverCtx = newFailoverContext(cause, failed, prevFailure);
+            ClusterNode failedNode = attempt.client().node();
+
+            DefaultFailoverContext failoverCtx = newFailoverContext(cause, failedNode, attempt.failure());
 
             // Apply failover policy.
             try {
@@ -1099,10 +1051,10 @@ class MessagingGatewayContext<T> implements HekateSupport {
                         FailoverRoutingPolicy routing = resolution.routing();
 
                         // Apply failover only if re-routing was requested or if the target node is still within the cluster topology.
-                        if (routing != RETRY_SAME_NODE || clients.containsKey(failed.id())) {
+                        if (routing != RETRY_SAME_NODE || clients.containsKey(failedNode.id())) {
                             onRetry();
 
-                            MessagingWorker worker = ctx.worker();
+                            MessagingWorker worker = attempt.ctx().worker();
 
                             // Schedule timeout task to apply failover actions after the failover delay.
                             onAsyncEnqueue();
@@ -1233,19 +1185,19 @@ class MessagingGatewayContext<T> implements HekateSupport {
         }
     }
 
-    private MessageContext<T> newContext(MessageContext.Type type, Object affinityKey, T msg, MessagingOpts<T> opts) {
+    private MessageContext<T> newContext(RequestType type, Object affinityKey, T msg, MessagingOpts<T> opts) {
         int affinity = affinity(affinityKey);
 
         MessagingWorker worker;
 
         if (affinityKey != null
-            || type == MessageContext.Type.SUBSCRIBE /* <- Subscription operations should always be processed by the same thread. */) {
+            || type == RequestType.SUBSCRIBE /* <- Subscription operations should always be processed by the same thread. */) {
             worker = async.workerFor(affinity);
         } else {
             worker = async.pooledWorker();
         }
 
-        return new MessageContext<>(msg, affinity, affinityKey, worker, opts, type);
+        return new MessageContext<>(msg, affinity, affinityKey, worker, opts, type, interceptor);
     }
 
     private MessagingChannelClosedException channelClosedError(Throwable cause) {

@@ -20,7 +20,6 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.codec.CodecException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.internal.util.ErrorUtils;
-import io.hekate.messaging.MessageInterceptor;
 import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingException;
@@ -453,45 +452,6 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
             fail("Error was expected.");
         } catch (MessagingChannelClosedException e) {
             assertEquals("Channel closed [channel=test-channel]", e.getMessage());
-        }
-    }
-
-    @Test
-    public void testInterceptor() throws Exception {
-        List<TestChannel> channels = createAndJoinChannels(3, c ->
-            c.setInterceptor(new MessageInterceptor<String>() {
-                @Override
-                public String interceptOutbound(String msg, OutboundContext ctx) {
-                    return msg + "-###";
-                }
-
-                @Override
-                public String interceptInbound(String msg, InboundContext ctx) {
-                    return msg + "-@@@";
-                }
-
-                @Override
-                public String interceptReply(String msg, ReplyContext ctx) {
-                    throw new UnsupportedOperationException("Unexpected reply.");
-                }
-            })
-        );
-
-        for (TestChannel from : channels) {
-            for (TestChannel to : channels) {
-                String msg1 = "test1-" + from.nodeId();
-                String msg2 = "test2-" + from.nodeId();
-
-                from.get().forNode(to.nodeId()).send(msg1).get();
-                from.get().forNode(to.nodeId()).send(msg2).getUninterruptedly();
-            }
-        }
-
-        for (TestChannel to : channels) {
-            for (TestChannel from : channels) {
-                to.awaitForMessage("test1-" + from.nodeId() + "-###-@@@");
-                to.awaitForMessage("test2-" + from.nodeId() + "-###-@@@");
-            }
         }
     }
 

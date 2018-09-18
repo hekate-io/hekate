@@ -35,19 +35,19 @@ class RequestRegistry<T> {
         this.metrics = metrics;
     }
 
-    public RequestHandle<T> register(int epoch, MessageRoute<T> route, InternalRequestCallback<T> callback) {
+    public RequestHandle<T> register(int epoch, MessageAttempt<T> attempt, InternalRequestCallback<T> callback) {
         while (true) {
             Integer id = idGen.incrementAndGet();
 
-            RequestHandle<T> req = new RequestHandle<>(id, this, route, epoch, callback);
+            RequestHandle<T> req = new RequestHandle<>(id, this, attempt, epoch, callback);
 
             // Do not overwrite very very very old requests.
             if (requests.putIfAbsent(id, req) == null) {
                 metrics.onPendingRequestAdded();
 
-                if (route.ctx().opts().hasTimeout()) {
+                if (attempt.ctx().opts().hasTimeout()) {
                     // Unregister if messaging operation gets timed out.
-                    route.ctx().setTimeoutListener(() ->
+                    attempt.ctx().setTimeoutListener(() ->
                         unregister(id)
                     );
                 }

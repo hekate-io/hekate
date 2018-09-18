@@ -21,9 +21,14 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.codec.CodecException;
 import io.hekate.messaging.Message;
+import io.hekate.messaging.MessageMetaData;
 import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
+import io.hekate.messaging.intercept.RequestType;
+import io.hekate.messaging.intercept.ResponseContext;
+import io.hekate.messaging.intercept.ResponseType;
+import io.hekate.messaging.intercept.ServerReceiveContext;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkEndpoint;
@@ -92,7 +97,7 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public Type type() {
+        public Type messageType() {
             return Type.CONNECT;
         }
 
@@ -102,8 +107,8 @@ abstract class MessagingProtocol {
         }
     }
 
-    abstract static class NoReplyMessage<T> extends MessagingProtocol implements Message<T> {
-        public NoReplyMessage(boolean retransmit) {
+    abstract static class NoReplyMessageBase<T> extends MessagingProtocol implements Message<T> {
+        public NoReplyMessageBase(boolean retransmit) {
             super(retransmit);
         }
 
@@ -143,8 +148,10 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class Notification<T> extends NoReplyMessage<T> implements NetworkSendCallback<MessagingProtocol> {
+    static class Notification<T> extends NoReplyMessageBase<T> implements ServerReceiveContext<T>, NetworkSendCallback<MessagingProtocol> {
         private final long timeout;
+
+        private final Optional<MessageMetaData> metaData;
 
         private T payload;
 
@@ -154,10 +161,11 @@ abstract class MessagingProtocol {
 
         private SendCallback callback;
 
-        public Notification(boolean retransmit, long timeout, T payload) {
+        public Notification(boolean retransmit, long timeout, T payload, Optional<MessageMetaData> metaData) {
             super(retransmit);
 
             this.timeout = timeout;
+            this.metaData = metaData;
             this.payload = payload;
         }
 
@@ -179,7 +187,7 @@ abstract class MessagingProtocol {
         public void prepareReceive(MessagingConnectionBase<T> conn) {
             this.conn = conn;
 
-            this.payload = conn.prepareInbound(this.payload);
+            this.payload = conn.interceptServerReceive(this.payload, this);
         }
 
         public long timeout() {
@@ -206,12 +214,27 @@ abstract class MessagingProtocol {
         }
 
         @Override
+        public T message() {
+            return get();
+        }
+
+        @Override
         public MessagingEndpoint<T> endpoint() {
             return conn.endpoint();
         }
 
         @Override
-        public Type type() {
+        public Optional<MessageMetaData> metaData() {
+            return metaData;
+        }
+
+        @Override
+        public RequestType type() {
+            return RequestType.SEND_NO_ACK;
+        }
+
+        @Override
+        public Type messageType() {
             return Type.NOTIFICATION;
         }
 
@@ -224,8 +247,8 @@ abstract class MessagingProtocol {
     static class AffinityNotification<T> extends Notification<T> {
         private final int affinity;
 
-        public AffinityNotification(int affinity, boolean retransmit, long timeout, T payload) {
-            super(retransmit, timeout, payload);
+        public AffinityNotification(int affinity, boolean retransmit, long timeout, T payload, Optional<MessageMetaData> metaData) {
+            super(retransmit, timeout, payload, metaData);
 
             this.affinity = affinity;
         }
@@ -235,15 +258,18 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public Type type() {
+        public Type messageType() {
             return Type.AFFINITY_NOTIFICATION;
         }
     }
 
-    abstract static class RequestBase<T> extends MessagingProtocol implements Message<T>, NetworkSendCallback<MessagingProtocol> {
+    abstract static class RequestBase<T> extends MessagingProtocol implements Message<T>, ServerReceiveContext<T>,
+        NetworkSendCallback<MessagingProtocol> {
         private final int requestId;
 
         private final long timeout;
+
+        private final Optional<MessageMetaData> metaData;
 
         private T payload;
 
@@ -253,12 +279,13 @@ abstract class MessagingProtocol {
 
         private RequestHandle<T> handle;
 
-        public RequestBase(int requestId, boolean retransmit, long timeout, T payload) {
+        public RequestBase(int requestId, boolean retransmit, long timeout, T payload, Optional<MessageMetaData> metaData) {
             super(retransmit);
 
             this.requestId = requestId;
             this.timeout = timeout;
             this.payload = payload;
+            this.metaData = metaData;
         }
 
         public abstract boolean isVoid();
@@ -267,7 +294,7 @@ abstract class MessagingProtocol {
             this.worker = worker;
             this.conn = conn;
 
-            this.payload = conn.prepareInbound(this.payload);
+            this.payload = conn.interceptServerReceive(this.payload, this);
         }
 
         public void prepareSend(RequestHandle<T> handle, MessagingConnectionBase<T> conn) {
@@ -296,6 +323,11 @@ abstract class MessagingProtocol {
         }
 
         @Override
+        public Optional<MessageMetaData> metaData() {
+            return metaData;
+        }
+
+        @Override
         public boolean is(Class<? extends T> type) {
             return type.isInstance(payload);
         }
@@ -315,6 +347,11 @@ abstract class MessagingProtocol {
             return conn.endpoint();
         }
 
+        @Override
+        public T message() {
+            return get();
+        }
+
         protected MessagingWorker worker() {
             return worker;
         }
@@ -329,17 +366,17 @@ abstract class MessagingProtocol {
         }
     }
 
-    abstract static class RequestWithResponseBase<T> extends RequestBase<T> {
-        private static final AtomicIntegerFieldUpdater<RequestWithResponseBase> MUST_REPLY = newUpdater(
-            RequestWithResponseBase.class,
+    abstract static class RequestForResponseBase<T> extends RequestBase<T> {
+        private static final AtomicIntegerFieldUpdater<RequestForResponseBase> MUST_REPLY = newUpdater(
+            RequestForResponseBase.class,
             "mustReply"
         );
 
         @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
         private volatile int mustReply;
 
-        public RequestWithResponseBase(int requestId, boolean retransmit, long timeout, T payload) {
-            super(requestId, retransmit, timeout, payload);
+        public RequestForResponseBase(int requestId, boolean retransmit, long timeout, T payload, Optional<MessageMetaData> metaData) {
+            super(requestId, retransmit, timeout, payload, metaData);
         }
 
         @Override
@@ -361,9 +398,7 @@ abstract class MessagingProtocol {
         public void reply(T response, SendCallback callback) {
             responded();
 
-            T transformed = connection().prepareReply(response);
-
-            connection().replyFinal(worker(), requestId(), transformed, callback);
+            connection().replyFinal(worker(), response, this, callback);
         }
 
         private void responded() {
@@ -373,9 +408,9 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class Request<T> extends RequestWithResponseBase<T> {
-        public Request(int requestId, boolean retransmit, long timeout, T payload) {
-            super(requestId, retransmit, timeout, payload);
+    static class Request<T> extends RequestForResponseBase<T> {
+        public Request(int requestId, boolean retransmit, long timeout, T payload, Optional<MessageMetaData> metaData) {
+            super(requestId, retransmit, timeout, payload, metaData);
         }
 
         @Override
@@ -399,7 +434,12 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public Type type() {
+        public RequestType type() {
+            return RequestType.REQUEST;
+        }
+
+        @Override
+        public Type messageType() {
             return Type.REQUEST;
         }
     }
@@ -407,8 +447,15 @@ abstract class MessagingProtocol {
     static class AffinityRequest<T> extends Request<T> {
         private final int affinity;
 
-        public AffinityRequest(int affinity, int requestId, boolean retransmit, long timeout, T payload) {
-            super(requestId, retransmit, timeout, payload);
+        public AffinityRequest(
+            int affinity,
+            int requestId,
+            boolean retransmit,
+            long timeout,
+            T payload,
+            Optional<MessageMetaData> metaData
+        ) {
+            super(requestId, retransmit, timeout, payload, metaData);
 
             this.affinity = affinity;
         }
@@ -418,14 +465,14 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public Type type() {
+        public Type messageType() {
             return Type.AFFINITY_REQUEST;
         }
     }
 
-    static class SubscribeRequest<T> extends RequestWithResponseBase<T> {
-        public SubscribeRequest(int requestId, boolean retransmit, long timeout, T payload) {
-            super(requestId, retransmit, timeout, payload);
+    static class SubscribeRequest<T> extends RequestForResponseBase<T> {
+        public SubscribeRequest(int requestId, boolean retransmit, long timeout, T payload, Optional<MessageMetaData> metaData) {
+            super(requestId, retransmit, timeout, payload, metaData);
         }
 
         @Override
@@ -447,13 +494,16 @@ abstract class MessagingProtocol {
         public void partialReply(T response, SendCallback callback) {
             checkNotResponded();
 
-            T transformed = connection().prepareReply(response);
-
-            connection().replyChunk(worker(), requestId(), transformed, callback);
+            connection().replyChunk(worker(), response, this, callback);
         }
 
         @Override
-        public Type type() {
+        public RequestType type() {
+            return RequestType.SUBSCRIBE;
+        }
+
+        @Override
+        public Type messageType() {
             return Type.SUBSCRIBE;
         }
 
@@ -467,8 +517,15 @@ abstract class MessagingProtocol {
     static class AffinitySubscribeRequest<T> extends SubscribeRequest<T> {
         private final int affinity;
 
-        public AffinitySubscribeRequest(int affinity, int requestId, boolean retransmit, long timeout, T payload) {
-            super(requestId, retransmit, timeout, payload);
+        public AffinitySubscribeRequest(
+            int affinity,
+            int requestId,
+            boolean retransmit,
+            long timeout,
+            T payload,
+            Optional<MessageMetaData> metaData
+        ) {
+            super(requestId, retransmit, timeout, payload, metaData);
 
             this.affinity = affinity;
         }
@@ -478,14 +535,14 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public Type type() {
+        public Type messageType() {
             return Type.AFFINITY_SUBSCRIBE;
         }
     }
 
     static class VoidRequest<T> extends RequestBase<T> {
-        public VoidRequest(int requestId, boolean retransmit, long timeout, T payload) {
-            super(requestId, retransmit, timeout, payload);
+        public VoidRequest(int requestId, boolean retransmit, long timeout, T payload, Optional<MessageMetaData> metaData) {
+            super(requestId, retransmit, timeout, payload, metaData);
         }
 
         @Override
@@ -529,7 +586,12 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public Type type() {
+        public RequestType type() {
+            return RequestType.SEND_WITH_ACK;
+        }
+
+        @Override
+        public Type messageType() {
             return Type.VOID_REQUEST;
         }
     }
@@ -537,8 +599,15 @@ abstract class MessagingProtocol {
     static class AffinityVoidRequest<T> extends VoidRequest<T> {
         private final int affinity;
 
-        public AffinityVoidRequest(int affinity, int requestId, boolean retransmit, long timeout, T payload) {
-            super(requestId, retransmit, timeout, payload);
+        public AffinityVoidRequest(
+            int affinity,
+            int requestId,
+            boolean retransmit,
+            long timeout,
+            T payload,
+            Optional<MessageMetaData> metaData
+        ) {
+            super(requestId, retransmit, timeout, payload, metaData);
 
             this.affinity = affinity;
         }
@@ -548,12 +617,13 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public Type type() {
+        public Type messageType() {
             return Type.AFFINITY_VOID_REQUEST;
         }
     }
 
-    static class ResponseChunk<T> extends NoReplyMessage<T> implements Response<T>, NetworkSendCallback<MessagingProtocol> {
+    static class ResponseChunk<T> extends NoReplyMessageBase<T> implements Response<T>, ResponseContext<T>,
+        NetworkSendCallback<MessagingProtocol> {
         private final int requestId;
 
         private T payload;
@@ -562,7 +632,7 @@ abstract class MessagingProtocol {
 
         private MessagingConnectionBase<T> conn;
 
-        private MessageRoute<T> route;
+        private MessageAttempt<T> attempt;
 
         private SendPressureGuard backPressure;
 
@@ -575,11 +645,17 @@ abstract class MessagingProtocol {
             this.payload = payload;
         }
 
-        public boolean prepareSend(MessagingWorker worker, MessagingConnectionNetBase<T> conn, SendCallback callback) {
+        public boolean prepareSend(
+            MessagingWorker worker,
+            MessagingConnectionBase<T> conn,
+            SendPressureGuard pressureGuard,
+            ServerReceiveContext<T> rcvCtx,
+            SendCallback callback
+        ) {
             this.worker = worker;
             this.conn = conn;
             this.callback = callback;
-            this.backPressure = conn.pressureGuard();
+            this.backPressure = pressureGuard;
 
             // Apply back pressure when sending from server back to client.
             if (backPressure != null) {
@@ -593,6 +669,8 @@ abstract class MessagingProtocol {
                     return false;
                 }
             }
+
+            payload = conn.interceptServerSend(payload, this, rcvCtx);
 
             return true;
         }
@@ -610,11 +688,11 @@ abstract class MessagingProtocol {
             }
         }
 
-        public void prepareReceive(MessagingConnectionBase<T> conn, MessageRoute<T> route) {
+        public void prepareReceive(MessagingConnectionBase<T> conn, MessageAttempt<T> attempt) {
             this.conn = conn;
-            this.route = route;
+            this.attempt = attempt;
 
-            this.payload = conn.prepareInbound(this.payload);
+            this.payload = attempt.interceptReceive(this);
         }
 
         public int requestId() {
@@ -643,7 +721,7 @@ abstract class MessagingProtocol {
 
         @Override
         public ClusterTopology topology() {
-            return route.topology();
+            return attempt.topology();
         }
 
         @Override
@@ -652,13 +730,8 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public Type type() {
-            return Type.RESPONSE_CHUNK;
-        }
-
-        @Override
         public T request() {
-            return route.ctx().originalMessage();
+            return attempt.ctx().originalMessage();
         }
 
         @Override
@@ -667,12 +740,28 @@ abstract class MessagingProtocol {
         }
 
         @Override
+        public T message() {
+            return get();
+        }
+
+        @Override
+        public ResponseType type() {
+            return ResponseType.RESPONSE_CHUNK;
+        }
+
+        @Override
+        public Type messageType() {
+            return Type.RESPONSE_CHUNK;
+        }
+
+        @Override
         public String toString() {
             return getClass().getSimpleName() + "[payload=" + payload + ']';
         }
     }
 
-    static class FinalResponse<T> extends MessagingProtocol implements Response<T>, NetworkSendCallback<MessagingProtocol> {
+    static class FinalResponse<T> extends MessagingProtocol implements Response<T>, ResponseContext<T>,
+        NetworkSendCallback<MessagingProtocol> {
         private final int requestId;
 
         private T payload;
@@ -681,7 +770,7 @@ abstract class MessagingProtocol {
 
         private MessagingConnectionBase<T> conn;
 
-        private MessageRoute<T> route;
+        private MessageAttempt<T> attempts;
 
         private SendPressureGuard backPressure;
 
@@ -694,11 +783,17 @@ abstract class MessagingProtocol {
             this.payload = payload;
         }
 
-        public void prepareSend(MessagingWorker worker, MessagingConnectionNetBase<T> conn, SendCallback callback) {
+        public void prepareSend(
+            MessagingWorker worker,
+            MessagingConnectionBase<T> conn,
+            SendPressureGuard pressureGuard,
+            ServerReceiveContext<T> rcvCtx,
+            SendCallback callback
+        ) {
             this.worker = worker;
             this.conn = conn;
             this.callback = callback;
-            this.backPressure = conn.pressureGuard();
+            this.backPressure = pressureGuard;
 
             // Apply back pressure when sending from server back to client.
             if (backPressure != null) {
@@ -706,6 +801,8 @@ abstract class MessagingProtocol {
                 // since we don't want this operation to fail/block but still want it to be counted by the back pressure guard.
                 backPressure.onEnqueueIgnorePolicy();
             }
+
+            payload = conn.interceptServerSend(payload, this, rcvCtx);
         }
 
         @Override
@@ -727,11 +824,11 @@ abstract class MessagingProtocol {
             }
         }
 
-        public void prepareReceive(MessagingConnectionBase<T> conn, MessageRoute<T> route) {
+        public void prepareReceive(MessagingConnectionBase<T> conn, MessageAttempt<T> attempt) {
             this.conn = conn;
-            this.route = route;
+            this.attempts = attempt;
 
-            this.payload = conn.prepareInbound(this.payload);
+            this.payload = attempt.interceptReceive(this);
         }
 
         public int requestId() {
@@ -760,7 +857,7 @@ abstract class MessagingProtocol {
 
         @Override
         public ClusterTopology topology() {
-            return route.topology();
+            return attempts.topology();
         }
 
         @Override
@@ -769,18 +866,28 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public Type type() {
-            return Type.FINAL_RESPONSE;
-        }
-
-        @Override
         public T request() {
-            return route.ctx().originalMessage();
+            return attempts.ctx().originalMessage();
         }
 
         @Override
         public <P extends T> P request(Class<P> type) {
             return type.cast(request());
+        }
+
+        @Override
+        public T message() {
+            return get();
+        }
+
+        @Override
+        public ResponseType type() {
+            return ResponseType.FINAL_RESPONSE;
+        }
+
+        @Override
+        public Type messageType() {
+            return Type.FINAL_RESPONSE;
         }
 
         @Override
@@ -803,7 +910,7 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public Type type() {
+        public Type messageType() {
             return Type.VOID_RESPONSE;
         }
     }
@@ -830,7 +937,7 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public Type type() {
+        public Type messageType() {
             return Type.ERROR_RESPONSE;
         }
     }
@@ -841,7 +948,7 @@ abstract class MessagingProtocol {
         this.retransmit = retransmit;
     }
 
-    public abstract Type type();
+    public abstract Type messageType();
 
     public boolean isRetransmit() {
         return retransmit;

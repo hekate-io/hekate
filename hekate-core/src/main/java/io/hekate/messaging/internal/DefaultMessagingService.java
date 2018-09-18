@@ -49,6 +49,7 @@ import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.MessagingOverflowPolicy;
 import io.hekate.messaging.MessagingService;
 import io.hekate.messaging.MessagingServiceFactory;
+import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.network.NetworkConfigProvider;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkConnectorConfig;
@@ -72,11 +73,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 public class DefaultMessagingService implements MessagingService, DependentService, ConfigurableService, InitializingService,
     TerminatingService, NetworkConfigProvider, ClusterAcceptor {
@@ -126,11 +127,13 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     @Override
     public void configure(ConfigurationContext ctx) {
+        List<MessageInterceptor<?>> interceptors = StreamUtils.nullSafe(factory.getGlobalInterceptors()).collect(toList());
+
         // Collect channel configurations.
-        StreamUtils.nullSafe(factory.getChannels()).forEach(this::registerProxy);
+        StreamUtils.nullSafe(factory.getChannels()).forEach(cfg -> registerProxy(cfg, interceptors));
 
         StreamUtils.nullSafe(factory.getConfigProviders()).forEach(provider ->
-            StreamUtils.nullSafe(provider.configureMessaging()).forEach(this::registerProxy)
+            StreamUtils.nullSafe(provider.configureMessaging()).forEach(cfg -> registerProxy(cfg, interceptors))
         );
 
         Collection<MessagingConfigProvider> providers = ctx.findComponents(MessagingConfigProvider.class);
@@ -138,7 +141,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         StreamUtils.nullSafe(providers).forEach(provider -> {
             Collection<MessagingChannelConfig<?>> regions = provider.configureMessaging();
 
-            StreamUtils.nullSafe(regions).forEach(this::registerProxy);
+            StreamUtils.nullSafe(regions).forEach(cfg -> registerProxy(cfg, interceptors));
         });
 
         // Register channel meta-data as a service property.
@@ -255,7 +258,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                     .map(MessagingGateway::context)
                     .filter(Objects::nonNull)
                     .map(MessagingGatewayContext::close)
-                    .collect(Collectors.toList());
+                    .collect(toList());
 
                 // Shutdown timer.
                 if (timer != null) {
@@ -327,7 +330,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         return gateways.containsKey(channelName);
     }
 
-    private <T> void registerProxy(MessagingChannelConfig<T> cfg) {
+    private <T> void registerProxy(MessagingChannelConfig<T> cfg, List<MessageInterceptor<?>> interceptors) {
         ConfigCheck check = ConfigCheck.get(MessagingChannelConfig.class);
 
         // Validate configuration.
@@ -360,7 +363,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             }
         }
 
-        MessagingGateway<T> gateway = new MessagingGateway<>(cfg, hekate, cluster, codec);
+        MessagingGateway<T> gateway = new MessagingGateway<>(cfg, hekate, cluster, codec, interceptors);
 
         // Check uniqueness of the channel name.
         check.unique(gateway.name(), gateways.keySet(), "name");

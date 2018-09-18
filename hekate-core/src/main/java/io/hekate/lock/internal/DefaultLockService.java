@@ -51,11 +51,12 @@ import io.hekate.lock.internal.LockProtocol.MigrationResponse;
 import io.hekate.lock.internal.LockProtocol.UnlockRequest;
 import io.hekate.lock.internal.LockProtocol.UnlockResponse;
 import io.hekate.messaging.Message;
-import io.hekate.messaging.MessageInterceptor;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingConfigProvider;
 import io.hekate.messaging.MessagingService;
+import io.hekate.messaging.intercept.ClientSendContext;
+import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
@@ -173,7 +174,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                 .withBackupNodes(0)
                 .withInterceptor(new MessageInterceptor<LockProtocol>() {
                     @Override
-                    public LockProtocol interceptOutbound(LockProtocol msg, OutboundContext ctx) {
+                    public LockProtocol interceptClientSend(LockProtocol msg, ClientSendContext<LockProtocol> ctx) {
                         if (msg instanceof LockRequestBase) {
                             LockRequestBase req = (LockRequestBase)msg;
 
@@ -181,6 +182,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                             // to detect routing collisions (in case of cluster topology changes) on the receiving side.
                             return req.withTopology(ctx.topology().hash());
                         } else {
+                            // Do not modify the original message.
                             return msg;
                         }
                     }

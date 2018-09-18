@@ -20,8 +20,10 @@ import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.codec.CodecFactory;
 import io.hekate.failover.FailoverPolicy;
+import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.partition.RendezvousHashMapper;
+import java.util.Collections;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -214,23 +216,23 @@ public class MessagingChannelConfigTest extends HekateTestBase {
     }
 
     @Test
-    public void testInterceptor() {
+    public void testInterceptors() {
         @SuppressWarnings("unchecked")
         MessageInterceptor<Object> interceptor = mock(MessageInterceptor.class);
 
-        assertNull(cfg.getInterceptor());
+        assertNull(cfg.getInterceptors());
 
-        cfg.setInterceptor(interceptor);
+        cfg.setInterceptors(Collections.singletonList(interceptor));
 
-        assertSame(interceptor, cfg.getInterceptor());
+        assertEquals(1, cfg.getInterceptors().size());
 
-        cfg.setInterceptor(null);
+        cfg.setInterceptors(null);
 
-        assertNull(cfg.getInterceptor());
+        assertNull(cfg.getInterceptors());
 
         assertSame(cfg, cfg.withInterceptor(interceptor));
 
-        assertSame(interceptor, cfg.getInterceptor());
+        assertSame(interceptor, cfg.getInterceptors().get(0));
     }
 
     @Test

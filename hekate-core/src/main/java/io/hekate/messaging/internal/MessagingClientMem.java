@@ -84,13 +84,13 @@ class MessagingClientMem<T> implements MessagingClient<T> {
     }
 
     @Override
-    public void send(MessageRoute<T> route, SendCallback callback, boolean retransmit) {
-        conn.send(route, callback, retransmit);
+    public void send(MessageAttempt<T> attempt, SendCallback callback) {
+        conn.send(attempt, callback);
     }
 
     @Override
-    public void request(MessageRoute<T> route, InternalRequestCallback<T> callback, boolean retransmit) {
-        conn.request(route, callback, retransmit);
+    public void request(MessageAttempt<T> attempt, InternalRequestCallback<T> callback) {
+        conn.request(attempt, callback);
     }
 
     @Override

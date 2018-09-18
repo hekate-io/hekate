@@ -14,25 +14,7 @@
  * under the License.
  */
 
-package io.hekate.messaging.internal;
-
-import io.hekate.cluster.ClusterNode;
-import io.hekate.messaging.unicast.SendCallback;
-import io.hekate.network.NetworkFuture;
-import java.util.List;
-
-interface MessagingClient<T> {
-    ClusterNode node();
-
-    void send(MessageAttempt<T> attempt, SendCallback callback);
-
-    void request(MessageAttempt<T> attempt, InternalRequestCallback<T> callback);
-
-    void disconnectIfIdle();
-
-    void touch();
-
-    List<NetworkFuture<MessagingProtocol>> close();
-
-    boolean isConnected();
-}
+/**
+ * Message interception API.
+ */
+package io.hekate.messaging.intercept;
