@@ -445,11 +445,11 @@ abstract class MessagingConnectionBase<T> {
         }
     }
 
-    public T interceptServerReceive(T msg, ServerReceiveContext<T> inCtx) {
+    public T interceptServerReceive(T msg, ServerReceiveContext inCtx) {
         return ctx.intercept().serverReceive(msg, inCtx);
     }
 
-    public T interceptServerSend(T msg, ResponseContext<T> rspCtx, ServerReceiveContext<T> rcvCtx) {
+    public T interceptServerSend(T msg, ResponseContext rspCtx, ServerReceiveContext rcvCtx) {
         return ctx.intercept().serverSend(msg, rspCtx, rcvCtx);
     }
 
@@ -508,6 +508,8 @@ abstract class MessagingConnectionBase<T> {
     protected void doReceiveVoidResponse(RequestHandle<T> request) {
         if (request.isRegistered()) {
             try {
+                request.attempt().interceptReceiveVoid();
+
                 request.callback().onComplete(request, null, null);
             } catch (RuntimeException | Error e) {
                 if (log.isErrorEnabled()) {

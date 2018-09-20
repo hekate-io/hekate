@@ -467,7 +467,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case VOID_RESPONSE: {
                 int requestId = in.readVarInt();
 
-                return new VoidResponse(requestId);
+                return new MessagingProtocol.VoidResponse(requestId);
             }
             case ERROR_RESPONSE: {
                 int requestId = in.readVarInt();

@@ -7,7 +7,7 @@ import io.hekate.messaging.unicast.SendCallback;
 /**
  * Type of an outbound message.
  */
-public enum RequestType {
+public enum OutboundType {
     /** Message is submitted via {@link MessagingChannel#request(Object, ResponseCallback)}. */
     REQUEST,
 

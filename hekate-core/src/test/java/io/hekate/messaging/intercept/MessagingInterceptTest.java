@@ -9,7 +9,6 @@ import org.junit.Test;
 import org.mockito.ArgumentMatchers;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,55 +26,64 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
             c.withReceiver(msg -> msg.reply(msg.get() + "-reply"));
             c.withInterceptor(new MessageInterceptor<String>() {
                 @Override
-                public String interceptClientSend(String msg, ClientSendContext<String> sndCtx) {
-                    assertSame(RequestType.REQUEST, sndCtx.type());
+                public String interceptClientSend(String msg, ClientSendContext sndCtx) {
+                    assertSame(OutboundType.REQUEST, sndCtx.type());
                     assertNotNull(sndCtx.receiver());
+                    assertNotNull(sndCtx.channelName());
                     assertNotNull(sndCtx.topology());
-                    assertEquals(msg, sndCtx.message());
 
                     // Store attribute to verify later.
-                    sndCtx.setAttribute("test-attr", msg);
+                    sndCtx.setAttribute("test-attr", "test-val");
 
                     return msg + "-CS-" + sndCtx.hasAffinity() + "-" + sndCtx.affinityKey();
                 }
 
                 @Override
-                public String interceptClientReceive(String rsp, ResponseContext<String> rspCtx, ClientSendContext<String> sndCtx) {
+                public String interceptClientReceive(String rsp, ResponseContext rspCtx, ClientSendContext sndCtx) {
                     assertNotNull(rsp);
-                    assertEquals(rsp, rspCtx.message());
-                    assertSame(ResponseType.FINAL_RESPONSE, rspCtx.type());
+                    assertSame(InboundType.FINAL_RESPONSE, rspCtx.type());
 
-                    assertSame(RequestType.REQUEST, sndCtx.type());
+                    assertSame(OutboundType.REQUEST, sndCtx.type());
                     assertNotNull(sndCtx.receiver());
+                    assertNotNull(sndCtx.channelName());
                     assertNotNull(sndCtx.topology());
-                    assertNotNull(sndCtx.message());
 
                     // Verify attribute.
-                    assertEquals(sndCtx.message(), sndCtx.getAttribute("test-attr"));
+                    assertEquals("test-val", sndCtx.getAttribute("test-attr"));
 
                     return rsp + "-CR";
                 }
 
                 @Override
-                public String interceptServerReceive(String msg, ServerReceiveContext<String> rcvCtx) {
-                    assertSame(RequestType.REQUEST, rcvCtx.type());
-                    assertNotNull(rcvCtx.endpoint());
-                    assertEquals(msg, rcvCtx.message());
+                public String interceptServerReceive(String msg, ServerReceiveContext rcvCtx) {
+                    assertSame(OutboundType.REQUEST, rcvCtx.type());
+                    assertNotNull(rcvCtx.from());
+                    assertNotNull(rcvCtx.channelName());
+
+                    // Store attribute to verify later.
+                    rcvCtx.setAttribute("test-attr", "test-val");
 
                     return msg + "-SR";
                 }
 
                 @Override
-                public String interceptServerSend(String rsp, ResponseContext<String> rspCtx, ServerReceiveContext<String> rcvCtx) {
+                public String interceptServerSend(String rsp, ResponseContext rspCtx, ServerReceiveContext rcvCtx) {
                     assertNotNull(rsp);
-                    assertEquals(rsp, rspCtx.message());
-                    assertSame(ResponseType.FINAL_RESPONSE, rspCtx.type());
+                    assertSame(InboundType.FINAL_RESPONSE, rspCtx.type());
+                    assertNotNull(rcvCtx.channelName());
 
-                    assertSame(RequestType.REQUEST, rcvCtx.type());
-                    assertNotNull(rcvCtx.endpoint());
-                    assertNotEquals(rsp, rcvCtx.message());
+                    assertSame(OutboundType.REQUEST, rcvCtx.type());
+                    assertNotNull(rcvCtx.from());
+
+                    // Verify attribute.
+                    assertEquals("test-val", rcvCtx.getAttribute("test-attr"));
 
                     return rsp + "-SS";
+                }
+
+                @Override
+                public void interceptClientReceiveVoid(ClientSendContext sndCtx) {
+                    throw new UnsupportedOperationException("Unexpected method call.");
                 }
             });
         });
@@ -134,36 +142,41 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
         List<TestChannel> channels = createAndJoinChannels(3, c ->
             c.withInterceptor(new MessageInterceptor<String>() {
                 @Override
-                public String interceptClientSend(String msg, ClientSendContext<String> sndCtx) {
-                    assertSame(RequestType.SEND_NO_ACK, sndCtx.type());
+                public String interceptClientSend(String msg, ClientSendContext sndCtx) {
+                    assertSame(OutboundType.SEND_NO_ACK, sndCtx.type());
                     assertNotNull(sndCtx.receiver());
                     assertNotNull(sndCtx.topology());
-                    assertEquals(msg, sndCtx.message());
+                    assertNotNull(sndCtx.channelName());
 
                     return msg + "-CS";
                 }
 
                 @Override
-                public String interceptServerReceive(String msg, ServerReceiveContext<String> rcvCtx) {
-                    assertSame(RequestType.SEND_NO_ACK, rcvCtx.type());
-                    assertNotNull(rcvCtx.endpoint());
-                    assertEquals(msg, rcvCtx.message());
+                public String interceptServerReceive(String msg, ServerReceiveContext rcvCtx) {
+                    assertSame(OutboundType.SEND_NO_ACK, rcvCtx.type());
+                    assertNotNull(rcvCtx.from());
+                    assertNotNull(rcvCtx.channelName());
 
                     return msg + "-SR";
                 }
 
                 @Override
-                public String interceptClientReceive(String rsp, ResponseContext<String> rspCtx, ClientSendContext<String> sndCtx) {
+                public void interceptClientReceiveVoid(ClientSendContext sndCtx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
 
                 @Override
-                public void interceptClientReceiveError(Throwable err, ClientSendContext<String> sndCtx) {
+                public String interceptClientReceive(String rsp, ResponseContext rspCtx, ClientSendContext sndCtx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
 
                 @Override
-                public String interceptServerSend(String rsp, ResponseContext<String> rspCtx, ServerReceiveContext<String> rcvCtx) {
+                public void interceptClientReceiveError(Throwable err, ClientSendContext sndCtx) {
+                    throw new UnsupportedOperationException("Unexpected method call.");
+                }
+
+                @Override
+                public String interceptServerSend(String rsp, ResponseContext rspCtx, ServerReceiveContext rcvCtx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
             })
@@ -192,36 +205,44 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
         List<TestChannel> channels = createAndJoinChannels(3, c ->
             c.withInterceptor(new MessageInterceptor<String>() {
                 @Override
-                public String interceptClientSend(String msg, ClientSendContext<String> sndCtx) {
-                    assertSame(RequestType.SEND_WITH_ACK, sndCtx.type());
+                public String interceptClientSend(String msg, ClientSendContext sndCtx) {
+                    assertSame(OutboundType.SEND_WITH_ACK, sndCtx.type());
                     assertNotNull(sndCtx.receiver());
                     assertNotNull(sndCtx.topology());
-                    assertEquals(msg, sndCtx.message());
+                    assertNotNull(sndCtx.channelName());
 
                     return msg + "-CS";
                 }
 
                 @Override
-                public String interceptServerReceive(String msg, ServerReceiveContext<String> rcvCtx) {
-                    assertSame(RequestType.SEND_WITH_ACK, rcvCtx.type());
-                    assertNotNull(rcvCtx.endpoint());
-                    assertEquals(msg, rcvCtx.message());
+                public void interceptClientReceiveVoid(ClientSendContext sndCtx) {
+                    assertSame(OutboundType.SEND_WITH_ACK, sndCtx.type());
+                    assertNotNull(sndCtx.receiver());
+                    assertNotNull(sndCtx.topology());
+                    assertNotNull(sndCtx.channelName());
+                }
+
+                @Override
+                public String interceptServerReceive(String msg, ServerReceiveContext rcvCtx) {
+                    assertSame(OutboundType.SEND_WITH_ACK, rcvCtx.type());
+                    assertNotNull(rcvCtx.channelName());
+                    assertNotNull(rcvCtx.from());
 
                     return msg + "-SR";
                 }
 
                 @Override
-                public void interceptClientReceiveError(Throwable err, ClientSendContext<String> sndCtx) {
+                public void interceptClientReceiveError(Throwable err, ClientSendContext sndCtx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
 
                 @Override
-                public String interceptClientReceive(String rsp, ResponseContext<String> rspCtx, ClientSendContext<String> sndCtx) {
+                public String interceptClientReceive(String rsp, ResponseContext rspCtx, ClientSendContext sndCtx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
 
                 @Override
-                public String interceptServerSend(String rsp, ResponseContext<String> rspCtx, ServerReceiveContext<String> rcvCtx) {
+                public String interceptServerSend(String rsp, ResponseContext rspCtx, ServerReceiveContext rcvCtx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
             })
@@ -280,64 +301,70 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
             });
             c.withInterceptor(new MessageInterceptor<String>() {
                 @Override
-                public String interceptClientSend(String msg, ClientSendContext<String> sndCtx) {
-                    assertSame(RequestType.SUBSCRIBE, sndCtx.type());
+                public String interceptClientSend(String msg, ClientSendContext sndCtx) {
+                    assertSame(OutboundType.SUBSCRIBE, sndCtx.type());
                     assertNotNull(sndCtx.receiver());
                     assertNotNull(sndCtx.topology());
-                    assertEquals(msg, sndCtx.message());
 
                     // Store attribute to verify later.
-                    sndCtx.setAttribute("test-attr", msg);
+                    sndCtx.setAttribute("test-attr", "test-val");
 
                     return msg + "-CS-" + sndCtx.hasAffinity() + "-" + sndCtx.affinityKey();
                 }
 
                 @Override
-                public String interceptClientReceive(String rsp, ResponseContext<String> rspCtx, ClientSendContext<String> sndCtx) {
+                public String interceptClientReceive(String rsp, ResponseContext rspCtx, ClientSendContext sndCtx) {
                     assertNotNull(rsp);
-                    assertEquals(rsp, rspCtx.message());
 
                     if (rsp.contains("-part")) {
-                        assertSame(ResponseType.RESPONSE_CHUNK, rspCtx.type());
+                        assertSame(InboundType.RESPONSE_CHUNK, rspCtx.type());
                     } else {
-                        assertSame(ResponseType.FINAL_RESPONSE, rspCtx.type());
+                        assertSame(InboundType.FINAL_RESPONSE, rspCtx.type());
                     }
 
-                    assertSame(RequestType.SUBSCRIBE, sndCtx.type());
+                    assertSame(OutboundType.SUBSCRIBE, sndCtx.type());
                     assertNotNull(sndCtx.receiver());
                     assertNotNull(sndCtx.topology());
-                    assertNotEquals(rsp, sndCtx.message());
 
                     // Verify attribute.
-                    assertEquals(sndCtx.message(), sndCtx.getAttribute("test-attr"));
+                    assertEquals("test-val", sndCtx.getAttribute("test-attr"));
 
                     return rsp + "-CR";
                 }
 
                 @Override
-                public String interceptServerReceive(String msg, ServerReceiveContext<String> rcvCtx) {
-                    assertSame(RequestType.SUBSCRIBE, rcvCtx.type());
-                    assertNotNull(rcvCtx.endpoint());
-                    assertEquals(msg, rcvCtx.message());
+                public String interceptServerReceive(String msg, ServerReceiveContext rcvCtx) {
+                    assertSame(OutboundType.SUBSCRIBE, rcvCtx.type());
+                    assertNotNull(rcvCtx.from());
+
+                    // Store attribute to verify later.
+                    rcvCtx.setAttribute("test-attr", "test-val");
 
                     return msg + "-SR";
                 }
 
                 @Override
-                public String interceptServerSend(String rsp, ResponseContext<String> rspCtx, ServerReceiveContext<String> rcvCtx) {
+                public String interceptServerSend(String rsp, ResponseContext rspCtx, ServerReceiveContext rcvCtx) {
                     assertNotNull(rsp);
-                    assertEquals(rsp, rspCtx.message());
 
                     if (rsp.contains("-part")) {
-                        assertSame(ResponseType.RESPONSE_CHUNK, rspCtx.type());
+                        assertSame(InboundType.RESPONSE_CHUNK, rspCtx.type());
                     } else {
-                        assertSame(ResponseType.FINAL_RESPONSE, rspCtx.type());
+                        assertSame(InboundType.FINAL_RESPONSE, rspCtx.type());
                     }
 
-                    assertNotNull(rcvCtx.endpoint());
-                    assertSame(RequestType.SUBSCRIBE, rcvCtx.type());
+                    assertNotNull(rcvCtx.from());
+                    assertSame(OutboundType.SUBSCRIBE, rcvCtx.type());
+
+                    // Verify attribute.
+                    assertEquals("test-val", rcvCtx.getAttribute("test-attr"));
 
                     return rsp + "-SS";
+                }
+
+                @Override
+                public void interceptClientReceiveVoid(ClientSendContext sndCtx) {
+                    throw new UnsupportedOperationException("Unexpected method call.");
                 }
             });
         });

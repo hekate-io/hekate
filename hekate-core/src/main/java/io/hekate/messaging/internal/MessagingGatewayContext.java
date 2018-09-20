@@ -40,7 +40,7 @@ import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.AggregateFuture;
 import io.hekate.messaging.broadcast.BroadcastCallback;
 import io.hekate.messaging.broadcast.BroadcastFuture;
-import io.hekate.messaging.intercept.RequestType;
+import io.hekate.messaging.intercept.OutboundType;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import io.hekate.messaging.loadbalance.LoadBalancerException;
@@ -284,7 +284,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
     public void subscribe(Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
         checkMessageType(msg);
 
-        MessageContext<T> ctx = newContext(RequestType.SUBSCRIBE, affinityKey, msg, opts);
+        MessageContext<T> ctx = newContext(OutboundType.SUBSCRIBE, affinityKey, msg, opts);
 
         requestAsync(msg, ctx, unicastRouter(), callback);
     }
@@ -493,11 +493,11 @@ class MessagingGatewayContext<T> implements HekateSupport {
         checkMessageType(msg);
 
         if (callback != null && opts.isConfirmReceive()) {
-            MessageContext<T> ctx = newContext(RequestType.SEND_WITH_ACK, affinityKey, msg, opts);
+            MessageContext<T> ctx = newContext(OutboundType.SEND_WITH_ACK, affinityKey, msg, opts);
 
             requestAsync(msg, ctx, router, (err, rsp) -> callback.onComplete(err));
         } else {
-            MessageContext<T> ctx = newContext(RequestType.SEND_NO_ACK, affinityKey, msg, opts);
+            MessageContext<T> ctx = newContext(OutboundType.SEND_NO_ACK, affinityKey, msg, opts);
 
             try {
                 long timeout = backPressureAcquire(ctx.opts().timeout(), msg);
@@ -598,7 +598,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
     private void requestWithRouter(Router<T> router, Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
         checkMessageType(msg);
 
-        MessageContext<T> ctx = newContext(RequestType.REQUEST, affinityKey, msg, opts);
+        MessageContext<T> ctx = newContext(OutboundType.REQUEST, affinityKey, msg, opts);
 
         requestAsync(msg, ctx, router, callback);
     }
@@ -1185,13 +1185,13 @@ class MessagingGatewayContext<T> implements HekateSupport {
         }
     }
 
-    private MessageContext<T> newContext(RequestType type, Object affinityKey, T msg, MessagingOpts<T> opts) {
+    private MessageContext<T> newContext(OutboundType type, Object affinityKey, T msg, MessagingOpts<T> opts) {
         int affinity = affinity(affinityKey);
 
         MessagingWorker worker;
 
         if (affinityKey != null
-            || type == RequestType.SUBSCRIBE /* <- Subscription operations should always be processed by the same thread. */) {
+            || type == OutboundType.SUBSCRIBE /* <- Subscription operations should always be processed by the same thread. */) {
             worker = async.workerFor(affinity);
         } else {
             worker = async.pooledWorker();

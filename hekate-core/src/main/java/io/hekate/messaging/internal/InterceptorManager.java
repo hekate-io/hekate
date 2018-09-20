@@ -26,7 +26,7 @@ class InterceptorManager<T> {
         }
     }
 
-    public T clientSend(T msg, ClientSendContext<T> ctx) {
+    public T clientSend(T msg, ClientSendContext ctx) {
         if (interceptors != null) {
             for (MessageInterceptor<T> interceptor : interceptors) {
                 T transformed = interceptor.interceptClientSend(msg, ctx);
@@ -42,7 +42,7 @@ class InterceptorManager<T> {
         return msg;
     }
 
-    public T clientReceive(T msg, ResponseContext<T> rsp, ClientSendContext<T> ctx) {
+    public T clientReceive(T msg, ResponseContext rsp, ClientSendContext ctx) {
         if (interceptors != null) {
             for (MessageInterceptor<T> interceptor : interceptors) {
                 T transformed = interceptor.interceptClientReceive(msg, rsp, ctx);
@@ -58,7 +58,7 @@ class InterceptorManager<T> {
         return msg;
     }
 
-    public void clientReceiveError(Throwable err, ClientSendContext<T> ctx) {
+    public void clientReceiveError(Throwable err, ClientSendContext ctx) {
         if (interceptors != null) {
             for (MessageInterceptor<T> interceptor : interceptors) {
                 interceptor.interceptClientReceiveError(err, ctx);
@@ -66,7 +66,15 @@ class InterceptorManager<T> {
         }
     }
 
-    public T serverReceive(T msg, ServerReceiveContext<T> ctx) {
+    public void clientReceiveVoid(ClientSendContext ctx) {
+        if (interceptors != null) {
+            for (MessageInterceptor<T> interceptor : interceptors) {
+                interceptor.interceptClientReceiveVoid(ctx);
+            }
+        }
+    }
+
+    public T serverReceive(T msg, ServerReceiveContext ctx) {
         if (interceptors != null) {
             for (MessageInterceptor<T> interceptor : interceptors) {
                 T transformed = interceptor.interceptServerReceive(msg, ctx);
@@ -82,7 +90,7 @@ class InterceptorManager<T> {
         return msg;
     }
 
-    public T serverSend(T msg, ResponseContext<T> rspCtx, ServerReceiveContext<T> rcvCtx) {
+    public T serverSend(T msg, ResponseContext rspCtx, ServerReceiveContext rcvCtx) {
         if (interceptors != null) {
             for (MessageInterceptor<T> interceptor : interceptors) {
                 T transformed = interceptor.interceptServerSend(msg, rspCtx, rcvCtx);

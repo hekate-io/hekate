@@ -6,7 +6,7 @@ import io.hekate.messaging.unicast.SendCallback;
 /**
  * Type of an inbound message.
  */
-public enum ResponseType {
+public enum InboundType {
     /** Chunk of a bigger response (see {@link Message#partialReply(Object, SendCallback)}). */
     RESPONSE_CHUNK,
 

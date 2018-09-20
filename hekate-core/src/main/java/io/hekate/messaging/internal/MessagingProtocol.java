@@ -25,9 +25,9 @@ import io.hekate.messaging.MessageMetaData;
 import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
-import io.hekate.messaging.intercept.RequestType;
+import io.hekate.messaging.intercept.InboundType;
+import io.hekate.messaging.intercept.OutboundType;
 import io.hekate.messaging.intercept.ResponseContext;
-import io.hekate.messaging.intercept.ResponseType;
 import io.hekate.messaging.intercept.ServerReceiveContext;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.SendCallback;
@@ -35,6 +35,8 @@ import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkSendCallback;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
@@ -148,7 +150,7 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class Notification<T> extends NoReplyMessageBase<T> implements ServerReceiveContext<T>, NetworkSendCallback<MessagingProtocol> {
+    static class Notification<T> extends NoReplyMessageBase<T> implements ServerReceiveContext, NetworkSendCallback<MessagingProtocol> {
         private final long timeout;
 
         private final Optional<MessageMetaData> metaData;
@@ -160,6 +162,8 @@ abstract class MessagingProtocol {
         private MessagingConnectionBase<T> conn;
 
         private SendCallback callback;
+
+        private Map<String, Object> attributes;
 
         public Notification(boolean retransmit, long timeout, T payload, Optional<MessageMetaData> metaData) {
             super(retransmit);
@@ -214,13 +218,13 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public T message() {
-            return get();
+        public MessagingEndpoint<T> endpoint() {
+            return conn.endpoint();
         }
 
         @Override
-        public MessagingEndpoint<T> endpoint() {
-            return conn.endpoint();
+        public ClusterAddress from() {
+            return conn.remoteAddress();
         }
 
         @Override
@@ -229,8 +233,27 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public RequestType type() {
-            return RequestType.SEND_NO_ACK;
+        public Object setAttribute(String name, Object value) {
+            if (attributes == null) {
+                attributes = new HashMap<>();
+            }
+
+            return attributes.put(name, value);
+        }
+
+        @Override
+        public Object getAttribute(String name) {
+            return attributes != null ? attributes.get(name) : null;
+        }
+
+        @Override
+        public OutboundType type() {
+            return OutboundType.SEND_NO_ACK;
+        }
+
+        @Override
+        public String channelName() {
+            return conn.endpoint().channel().name();
         }
 
         @Override
@@ -263,7 +286,7 @@ abstract class MessagingProtocol {
         }
     }
 
-    abstract static class RequestBase<T> extends MessagingProtocol implements Message<T>, ServerReceiveContext<T>,
+    abstract static class RequestBase<T> extends MessagingProtocol implements Message<T>, ServerReceiveContext,
         NetworkSendCallback<MessagingProtocol> {
         private final int requestId;
 
@@ -278,6 +301,8 @@ abstract class MessagingProtocol {
         private MessagingConnectionBase<T> conn;
 
         private RequestHandle<T> handle;
+
+        private Map<String, Object> attributes;
 
         public RequestBase(int requestId, boolean retransmit, long timeout, T payload, Optional<MessageMetaData> metaData) {
             super(retransmit);
@@ -348,8 +373,27 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public T message() {
-            return get();
+        public ClusterAddress from() {
+            return conn.remoteAddress();
+        }
+
+        @Override
+        public Object setAttribute(String name, Object value) {
+            if (attributes == null) {
+                attributes = new HashMap<>();
+            }
+
+            return attributes.put(name, value);
+        }
+
+        @Override
+        public Object getAttribute(String name) {
+            return attributes != null ? attributes.get(name) : null;
+        }
+
+        @Override
+        public String channelName() {
+            return conn.endpoint().channel().name();
         }
 
         protected MessagingWorker worker() {
@@ -434,8 +478,8 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public RequestType type() {
-            return RequestType.REQUEST;
+        public OutboundType type() {
+            return OutboundType.REQUEST;
         }
 
         @Override
@@ -498,8 +542,8 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public RequestType type() {
-            return RequestType.SUBSCRIBE;
+        public OutboundType type() {
+            return OutboundType.SUBSCRIBE;
         }
 
         @Override
@@ -586,8 +630,8 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public RequestType type() {
-            return RequestType.SEND_WITH_ACK;
+        public OutboundType type() {
+            return OutboundType.SEND_WITH_ACK;
         }
 
         @Override
@@ -622,7 +666,7 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class ResponseChunk<T> extends NoReplyMessageBase<T> implements Response<T>, ResponseContext<T>,
+    static class ResponseChunk<T> extends NoReplyMessageBase<T> implements Response<T>, ResponseContext,
         NetworkSendCallback<MessagingProtocol> {
         private final int requestId;
 
@@ -649,7 +693,7 @@ abstract class MessagingProtocol {
             MessagingWorker worker,
             MessagingConnectionBase<T> conn,
             SendPressureGuard pressureGuard,
-            ServerReceiveContext<T> rcvCtx,
+            ServerReceiveContext rcvCtx,
             SendCallback callback
         ) {
             this.worker = worker;
@@ -692,7 +736,7 @@ abstract class MessagingProtocol {
             this.conn = conn;
             this.attempt = attempt;
 
-            this.payload = attempt.interceptReceive(this);
+            this.payload = attempt.interceptReceive(payload, this);
         }
 
         public int requestId() {
@@ -740,13 +784,8 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public T message() {
-            return get();
-        }
-
-        @Override
-        public ResponseType type() {
-            return ResponseType.RESPONSE_CHUNK;
+        public InboundType type() {
+            return InboundType.RESPONSE_CHUNK;
         }
 
         @Override
@@ -760,7 +799,7 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class FinalResponse<T> extends MessagingProtocol implements Response<T>, ResponseContext<T>,
+    static class FinalResponse<T> extends MessagingProtocol implements Response<T>, ResponseContext,
         NetworkSendCallback<MessagingProtocol> {
         private final int requestId;
 
@@ -787,7 +826,7 @@ abstract class MessagingProtocol {
             MessagingWorker worker,
             MessagingConnectionBase<T> conn,
             SendPressureGuard pressureGuard,
-            ServerReceiveContext<T> rcvCtx,
+            ServerReceiveContext rcvCtx,
             SendCallback callback
         ) {
             this.worker = worker;
@@ -828,7 +867,7 @@ abstract class MessagingProtocol {
             this.conn = conn;
             this.attempts = attempt;
 
-            this.payload = attempt.interceptReceive(this);
+            this.payload = attempt.interceptReceive(payload, this);
         }
 
         public int requestId() {
@@ -876,13 +915,8 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public T message() {
-            return get();
-        }
-
-        @Override
-        public ResponseType type() {
-            return ResponseType.FINAL_RESPONSE;
+        public InboundType type() {
+            return InboundType.FINAL_RESPONSE;
         }
 
         @Override

@@ -62,7 +62,7 @@ public interface MessageInterceptor<T> {
      *
      * @see #interceptClientReceive(Object, ResponseContext, ClientSendContext)
      */
-    default T interceptClientSend(T msg, ClientSendContext<T> sndCtx) {
+    default T interceptClientSend(T msg, ClientSendContext sndCtx) {
         return null;
     }
 
@@ -70,8 +70,9 @@ public interface MessageInterceptor<T> {
      * Intercepts a response from a server.
      *
      * <p>
-     * This method gets called by the {@link MessagingChannel} when it receives a response from a server. Implementations of
-     * this method can decide to transform the message into another message based on some criteria of the {@link ClientSendContext}.
+     * This method gets called by the {@link MessagingChannel} when it receives a response from a server for a message of
+     * {@link OutboundType#REQUEST} or {@link OutboundType#SUBSCRIBE} type. Implementations of this method can decide to transform the
+     * message into another message based on some criteria of the {@link ClientSendContext}.
      * </p>
      *
      * @param rsp Response.
@@ -83,8 +84,22 @@ public interface MessageInterceptor<T> {
      *
      * @see #interceptClientSend(Object, ClientSendContext)
      */
-    default T interceptClientReceive(T rsp, ResponseContext<T> rspCtx, ClientSendContext<T> sndCtx) {
+    default T interceptClientReceive(T rsp, ResponseContext rspCtx, ClientSendContext sndCtx) {
         return null;
+    }
+
+    /**
+     * Intercepts a void response from a server.
+     *
+     * <p>
+     * This method gets called by the {@link MessagingChannel} when it receives an acknowledgement from a server for a message of
+     * {@link OutboundType#SEND_WITH_ACK} type.
+     * </p>
+     *
+     * @param sndCtx Context of a sent message (same object as in {@link #interceptClientSend(Object, ClientSendContext)}).
+     */
+    default void interceptClientReceiveVoid(ClientSendContext sndCtx) {
+        // No-op.
     }
 
     /**
@@ -93,7 +108,7 @@ public interface MessageInterceptor<T> {
      * @param err Error
      * @param sndCtx Context of a message (same object as in {@link #interceptClientSend(Object, ClientSendContext)}).
      */
-    default void interceptClientReceiveError(Throwable err, ClientSendContext<T> sndCtx) {
+    default void interceptClientReceiveError(Throwable err, ClientSendContext sndCtx) {
         // No-op.
     }
 
@@ -113,7 +128,7 @@ public interface MessageInterceptor<T> {
      *
      * @see #interceptServerSend(Object, ResponseContext, ServerReceiveContext)
      */
-    default T interceptServerReceive(T msg, ServerReceiveContext<T> rcvCtx) {
+    default T interceptServerReceive(T msg, ServerReceiveContext rcvCtx) {
         return null;
     }
 
@@ -134,7 +149,7 @@ public interface MessageInterceptor<T> {
      *
      * @see #interceptServerReceive(Object, ServerReceiveContext)
      */
-    default T interceptServerSend(T rsp, ResponseContext<T> rspCtx, ServerReceiveContext<T> rcvCtx) {
+    default T interceptServerSend(T rsp, ResponseContext rspCtx, ServerReceiveContext rcvCtx) {
         return null;
     }
 }

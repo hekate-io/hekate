@@ -22,6 +22,8 @@ import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.partition.PartitionMapper;
 
 interface MessagingOpts<T> {
+    String name();
+
     LoadBalancer<T> balancer();
 
     ClusterView cluster();

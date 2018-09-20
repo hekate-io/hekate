@@ -276,7 +276,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
             .withMessageCodec(new RpcProtocolCodecFactory(codec))
             .withInterceptor(new MessageInterceptor<RpcProtocol>() {
                 @Override
-                public RpcProtocol interceptClientSend(RpcProtocol msg, ClientSendContext<RpcProtocol> ctx) {
+                public RpcProtocol interceptClientSend(RpcProtocol msg, ClientSendContext ctx) {
                     // Convert method calls to compact representations.
                     if (msg instanceof RpcCall) {
                         RpcCall<?> req = (RpcCall<?>)msg;

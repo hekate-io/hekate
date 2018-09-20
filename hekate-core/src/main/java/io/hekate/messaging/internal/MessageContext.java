@@ -16,7 +16,7 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.messaging.intercept.RequestType;
+import io.hekate.messaging.intercept.OutboundType;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -52,7 +52,7 @@ class MessageContext<T> {
 
     private final Object affinityKey;
 
-    private final RequestType type;
+    private final OutboundType type;
 
     private final T message;
 
@@ -76,7 +76,7 @@ class MessageContext<T> {
         Object affinityKey,
         MessagingWorker worker,
         MessagingOpts<T> opts,
-        RequestType type,
+        OutboundType type,
         InterceptorManager<T> interceptor
     ) {
         this.message = message;
@@ -100,7 +100,7 @@ class MessageContext<T> {
         return affinityKey;
     }
 
-    public RequestType type() {
+    public OutboundType type() {
         return type;
     }
 
