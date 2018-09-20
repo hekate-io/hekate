@@ -23,9 +23,11 @@ import io.hekate.rpc.RpcMethodInfo;
 import io.hekate.rpc.RpcRequest;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import io.hekate.util.trace.TraceInfo;
+import io.hekate.util.trace.Traceable;
 import java.lang.reflect.Method;
 
-abstract class RpcProtocol {
+abstract class RpcProtocol implements Traceable {
     enum Type {
         CALL_REQUEST,
 
@@ -74,14 +76,6 @@ abstract class RpcProtocol {
             return methodIdxKey;
         }
 
-        public RpcMethodInfo rpcMethod() {
-            return method;
-        }
-
-        public RpcInterfaceInfo<T> rpcType() {
-            return type;
-        }
-
         @Override
         public String rpcTag() {
             return tag;
@@ -121,6 +115,14 @@ abstract class RpcProtocol {
         public Type type() {
             return Type.CALL_REQUEST;
         }
+
+        @Override
+        public TraceInfo traceInfo() {
+            return TraceInfo.of(rpcInterface().getName() + '/' + method().getName())
+                .withTag("tag", tag)
+                .withTag("split", split)
+                .withTag("args", args == null ? 0 : args.length);
+        }
     }
 
     static class RpcCompactCall extends RpcProtocol {
@@ -145,6 +147,12 @@ abstract class RpcProtocol {
         @Override
         public Type type() {
             return Type.COMPACT_CALL_REQUEST;
+        }
+
+        @Override
+        public TraceInfo traceInfo() {
+            return TraceInfo.of("compact-call/" + methodIdx)
+                .withTag("args", args == null ? null : args.length);
         }
     }
 
@@ -174,6 +182,11 @@ abstract class RpcProtocol {
         public Type type() {
             return Type.OBJECT_RESPONSE;
         }
+
+        @Override
+        public TraceInfo traceInfo() {
+            return TraceInfo.of("object-result");
+        }
     }
 
     static final class RpcCallNullResult extends RpcProtocol {
@@ -186,6 +199,11 @@ abstract class RpcProtocol {
         @Override
         public Type type() {
             return Type.NULL_RESPONSE;
+        }
+
+        @Override
+        public TraceInfo traceInfo() {
+            return TraceInfo.of("null-result");
         }
     }
 
@@ -208,6 +226,12 @@ abstract class RpcProtocol {
         @Override
         public Throwable asError(ClusterNode fromNode) {
             return cause;
+        }
+
+        @Override
+        public TraceInfo traceInfo() {
+            return TraceInfo.of("error")
+                .withTag("error", cause);
         }
     }
 

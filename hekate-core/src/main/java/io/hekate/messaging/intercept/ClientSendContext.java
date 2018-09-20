@@ -10,10 +10,9 @@ import io.hekate.messaging.loadbalance.LoadBalancer;
 import java.util.Optional;
 
 /**
- * Outbound message context.
+ * Client's outbound message context.
  *
- * @see MessageInterceptor#interceptClientSend(Object, ClientSendContext)
- * @see MessageInterceptor#interceptClientReceive(Object, ResponseContext, ClientSendContext)
+ * @see MessageInterceptor
  */
 public interface ClientSendContext {
     /**

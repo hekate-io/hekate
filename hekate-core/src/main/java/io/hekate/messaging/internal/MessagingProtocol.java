@@ -25,9 +25,10 @@ import io.hekate.messaging.MessageMetaData;
 import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
+import io.hekate.messaging.intercept.ClientReceiveContext;
 import io.hekate.messaging.intercept.InboundType;
 import io.hekate.messaging.intercept.OutboundType;
-import io.hekate.messaging.intercept.ResponseContext;
+import io.hekate.messaging.intercept.ServerSendContext;
 import io.hekate.messaging.intercept.ServerReceiveContext;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.SendCallback;
@@ -153,7 +154,7 @@ abstract class MessagingProtocol {
     static class Notification<T> extends NoReplyMessageBase<T> implements ServerReceiveContext, NetworkSendCallback<MessagingProtocol> {
         private final long timeout;
 
-        private final Optional<MessageMetaData> metaData;
+        private final MessageMetaData metaData;
 
         private T payload;
 
@@ -165,7 +166,7 @@ abstract class MessagingProtocol {
 
         private Map<String, Object> attributes;
 
-        public Notification(boolean retransmit, long timeout, T payload, Optional<MessageMetaData> metaData) {
+        public Notification(boolean retransmit, long timeout, T payload, MessageMetaData metaData) {
             super(retransmit);
 
             this.timeout = timeout;
@@ -227,9 +228,17 @@ abstract class MessagingProtocol {
             return conn.remoteAddress();
         }
 
-        @Override
-        public Optional<MessageMetaData> metaData() {
+        public boolean hasMetaData() {
+            return metaData != null;
+        }
+
+        public MessageMetaData metaData() {
             return metaData;
+        }
+
+        @Override
+        public Optional<MessageMetaData> readMetaData() {
+            return Optional.ofNullable(metaData);
         }
 
         @Override
@@ -270,7 +279,7 @@ abstract class MessagingProtocol {
     static class AffinityNotification<T> extends Notification<T> {
         private final int affinity;
 
-        public AffinityNotification(int affinity, boolean retransmit, long timeout, T payload, Optional<MessageMetaData> metaData) {
+        public AffinityNotification(int affinity, boolean retransmit, long timeout, T payload, MessageMetaData metaData) {
             super(retransmit, timeout, payload, metaData);
 
             this.affinity = affinity;
@@ -292,7 +301,7 @@ abstract class MessagingProtocol {
 
         private final long timeout;
 
-        private final Optional<MessageMetaData> metaData;
+        private final MessageMetaData metaData;
 
         private T payload;
 
@@ -304,7 +313,7 @@ abstract class MessagingProtocol {
 
         private Map<String, Object> attributes;
 
-        public RequestBase(int requestId, boolean retransmit, long timeout, T payload, Optional<MessageMetaData> metaData) {
+        public RequestBase(int requestId, boolean retransmit, long timeout, T payload, MessageMetaData metaData) {
             super(retransmit);
 
             this.requestId = requestId;
@@ -347,9 +356,17 @@ abstract class MessagingProtocol {
             return timeout > 0;
         }
 
-        @Override
-        public Optional<MessageMetaData> metaData() {
+        public boolean hasMetaData() {
+            return metaData != null;
+        }
+
+        public MessageMetaData metaData() {
             return metaData;
+        }
+
+        @Override
+        public Optional<MessageMetaData> readMetaData() {
+            return Optional.ofNullable(metaData);
         }
 
         @Override
@@ -419,7 +436,7 @@ abstract class MessagingProtocol {
         @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
         private volatile int mustReply;
 
-        public RequestForResponseBase(int requestId, boolean retransmit, long timeout, T payload, Optional<MessageMetaData> metaData) {
+        public RequestForResponseBase(int requestId, boolean retransmit, long timeout, T payload, MessageMetaData metaData) {
             super(requestId, retransmit, timeout, payload, metaData);
         }
 
@@ -453,7 +470,7 @@ abstract class MessagingProtocol {
     }
 
     static class Request<T> extends RequestForResponseBase<T> {
-        public Request(int requestId, boolean retransmit, long timeout, T payload, Optional<MessageMetaData> metaData) {
+        public Request(int requestId, boolean retransmit, long timeout, T payload, MessageMetaData metaData) {
             super(requestId, retransmit, timeout, payload, metaData);
         }
 
@@ -491,14 +508,7 @@ abstract class MessagingProtocol {
     static class AffinityRequest<T> extends Request<T> {
         private final int affinity;
 
-        public AffinityRequest(
-            int affinity,
-            int requestId,
-            boolean retransmit,
-            long timeout,
-            T payload,
-            Optional<MessageMetaData> metaData
-        ) {
+        public AffinityRequest(int affinity, int requestId, boolean retransmit, long timeout, T payload, MessageMetaData metaData) {
             super(requestId, retransmit, timeout, payload, metaData);
 
             this.affinity = affinity;
@@ -515,7 +525,7 @@ abstract class MessagingProtocol {
     }
 
     static class SubscribeRequest<T> extends RequestForResponseBase<T> {
-        public SubscribeRequest(int requestId, boolean retransmit, long timeout, T payload, Optional<MessageMetaData> metaData) {
+        public SubscribeRequest(int requestId, boolean retransmit, long timeout, T payload, MessageMetaData metaData) {
             super(requestId, retransmit, timeout, payload, metaData);
         }
 
@@ -567,7 +577,7 @@ abstract class MessagingProtocol {
             boolean retransmit,
             long timeout,
             T payload,
-            Optional<MessageMetaData> metaData
+            MessageMetaData metaData
         ) {
             super(requestId, retransmit, timeout, payload, metaData);
 
@@ -585,7 +595,7 @@ abstract class MessagingProtocol {
     }
 
     static class VoidRequest<T> extends RequestBase<T> {
-        public VoidRequest(int requestId, boolean retransmit, long timeout, T payload, Optional<MessageMetaData> metaData) {
+        public VoidRequest(int requestId, boolean retransmit, long timeout, T payload, MessageMetaData metaData) {
             super(requestId, retransmit, timeout, payload, metaData);
         }
 
@@ -643,14 +653,7 @@ abstract class MessagingProtocol {
     static class AffinityVoidRequest<T> extends VoidRequest<T> {
         private final int affinity;
 
-        public AffinityVoidRequest(
-            int affinity,
-            int requestId,
-            boolean retransmit,
-            long timeout,
-            T payload,
-            Optional<MessageMetaData> metaData
-        ) {
+        public AffinityVoidRequest(int affinity, int requestId, boolean retransmit, long timeout, T payload, MessageMetaData metaData) {
             super(requestId, retransmit, timeout, payload, metaData);
 
             this.affinity = affinity;
@@ -666,11 +669,13 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class ResponseChunk<T> extends NoReplyMessageBase<T> implements Response<T>, ResponseContext,
+    static class ResponseChunk<T> extends NoReplyMessageBase<T> implements Response<T>, ServerSendContext, ClientReceiveContext,
         NetworkSendCallback<MessagingProtocol> {
         private final int requestId;
 
         private T payload;
+
+        private MessageMetaData metaData;
 
         private MessagingWorker worker;
 
@@ -683,10 +688,15 @@ abstract class MessagingProtocol {
         private SendCallback callback;
 
         public ResponseChunk(int requestId, T payload) {
+            this(requestId, payload, null);
+        }
+
+        public ResponseChunk(int requestId, T payload, MessageMetaData metaData) {
             super(false);
 
             this.requestId = requestId;
             this.payload = payload;
+            this.metaData = metaData;
         }
 
         public boolean prepareSend(
@@ -789,6 +799,24 @@ abstract class MessagingProtocol {
         }
 
         @Override
+        public Optional<MessageMetaData> readMetaData() {
+            return Optional.ofNullable(metaData);
+        }
+
+        public boolean hasMetaData() {
+            return metaData != null;
+        }
+
+        @Override
+        public MessageMetaData metaData() {
+            if (metaData == null) {
+                metaData = new MessageMetaData();
+            }
+
+            return metaData;
+        }
+
+        @Override
         public Type messageType() {
             return Type.RESPONSE_CHUNK;
         }
@@ -799,11 +827,13 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class FinalResponse<T> extends MessagingProtocol implements Response<T>, ResponseContext,
+    static class FinalResponse<T> extends MessagingProtocol implements Response<T>, ServerSendContext, ClientReceiveContext,
         NetworkSendCallback<MessagingProtocol> {
         private final int requestId;
 
         private T payload;
+
+        private MessageMetaData metaData;
 
         private MessagingWorker worker;
 
@@ -816,10 +846,15 @@ abstract class MessagingProtocol {
         private SendCallback callback;
 
         public FinalResponse(int requestId, T payload) {
+            this(requestId, payload, null);
+        }
+
+        public FinalResponse(int requestId, T payload, MessageMetaData metaData) {
             super(false);
 
             this.requestId = requestId;
             this.payload = payload;
+            this.metaData = metaData;
         }
 
         public void prepareSend(
@@ -917,6 +952,24 @@ abstract class MessagingProtocol {
         @Override
         public InboundType type() {
             return InboundType.FINAL_RESPONSE;
+        }
+
+        @Override
+        public Optional<MessageMetaData> readMetaData() {
+            return Optional.ofNullable(metaData);
+        }
+
+        public boolean hasMetaData() {
+            return metaData != null;
+        }
+
+        @Override
+        public MessageMetaData metaData() {
+            if (metaData == null) {
+                metaData = new MessageMetaData();
+            }
+
+            return metaData;
         }
 
         @Override

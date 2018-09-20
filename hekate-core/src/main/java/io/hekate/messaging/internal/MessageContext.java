@@ -17,6 +17,8 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.intercept.OutboundType;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -61,6 +63,8 @@ class MessageContext<T> {
     private final MessagingOpts<T> opts;
 
     private final InterceptorManager<T> interceptor;
+
+    private Map<String, Object> attributes;
 
     private volatile TimeoutListener timeoutListener;
 
@@ -178,6 +182,18 @@ class MessageContext<T> {
                 }
             }
         }
+    }
+
+    public Object setAttribute(String name, Object value) {
+        if (attributes == null) {
+            attributes = new HashMap<>();
+        }
+
+        return attributes.put(name, value);
+    }
+
+    public Object getAttribute(String name) {
+        return attributes != null ? attributes.get(name) : null;
     }
 
     private boolean doComplete(int expectedState) {

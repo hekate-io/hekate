@@ -174,7 +174,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                 .withBackupNodes(0)
                 .withInterceptor(new MessageInterceptor<LockProtocol>() {
                     @Override
-                    public LockProtocol interceptClientSend(LockProtocol msg, ClientSendContext ctx) {
+                    public LockProtocol beforeClientSend(LockProtocol msg, ClientSendContext ctx) {
                         if (msg instanceof LockRequestBase) {
                             LockRequestBase req = (LockRequestBase)msg;
 

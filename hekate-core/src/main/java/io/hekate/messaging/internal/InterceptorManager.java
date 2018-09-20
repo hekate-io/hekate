@@ -1,9 +1,10 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.core.internal.util.StreamUtils;
+import io.hekate.messaging.intercept.ClientReceiveContext;
 import io.hekate.messaging.intercept.ClientSendContext;
 import io.hekate.messaging.intercept.MessageInterceptor;
-import io.hekate.messaging.intercept.ResponseContext;
+import io.hekate.messaging.intercept.ServerSendContext;
 import io.hekate.messaging.intercept.ServerReceiveContext;
 import java.util.Collection;
 import java.util.List;
@@ -29,7 +30,7 @@ class InterceptorManager<T> {
     public T clientSend(T msg, ClientSendContext ctx) {
         if (interceptors != null) {
             for (MessageInterceptor<T> interceptor : interceptors) {
-                T transformed = interceptor.interceptClientSend(msg, ctx);
+                T transformed = interceptor.beforeClientSend(msg, ctx);
 
                 if (transformed != null) {
                     msg = transformed;
@@ -42,10 +43,10 @@ class InterceptorManager<T> {
         return msg;
     }
 
-    public T clientReceive(T msg, ResponseContext rsp, ClientSendContext ctx) {
+    public T clientReceive(T msg, ClientReceiveContext rsp, ClientSendContext ctx) {
         if (interceptors != null) {
             for (MessageInterceptor<T> interceptor : interceptors) {
-                T transformed = interceptor.interceptClientReceive(msg, rsp, ctx);
+                T transformed = interceptor.beforeClientReceiveResponse(msg, rsp, ctx);
 
                 if (transformed != null) {
                     msg = transformed;
@@ -61,7 +62,7 @@ class InterceptorManager<T> {
     public void clientReceiveError(Throwable err, ClientSendContext ctx) {
         if (interceptors != null) {
             for (MessageInterceptor<T> interceptor : interceptors) {
-                interceptor.interceptClientReceiveError(err, ctx);
+                interceptor.onClientReceiveError(err, ctx);
             }
         }
     }
@@ -69,7 +70,7 @@ class InterceptorManager<T> {
     public void clientReceiveVoid(ClientSendContext ctx) {
         if (interceptors != null) {
             for (MessageInterceptor<T> interceptor : interceptors) {
-                interceptor.interceptClientReceiveVoid(ctx);
+                interceptor.onClientReceiveConfirmation(ctx);
             }
         }
     }
@@ -77,7 +78,7 @@ class InterceptorManager<T> {
     public T serverReceive(T msg, ServerReceiveContext ctx) {
         if (interceptors != null) {
             for (MessageInterceptor<T> interceptor : interceptors) {
-                T transformed = interceptor.interceptServerReceive(msg, ctx);
+                T transformed = interceptor.beforeServerReceive(msg, ctx);
 
                 if (transformed != null) {
                     msg = transformed;
@@ -90,10 +91,18 @@ class InterceptorManager<T> {
         return msg;
     }
 
-    public T serverSend(T msg, ResponseContext rspCtx, ServerReceiveContext rcvCtx) {
+    public void serverReceiveComplete(ServerReceiveContext rcvCtx) {
         if (interceptors != null) {
             for (MessageInterceptor<T> interceptor : interceptors) {
-                T transformed = interceptor.interceptServerSend(msg, rspCtx, rcvCtx);
+                interceptor.onServerReceiveComplete(rcvCtx);
+            }
+        }
+    }
+
+    public T serverSend(T msg, ServerSendContext rspCtx, ServerReceiveContext rcvCtx) {
+        if (interceptors != null) {
+            for (MessageInterceptor<T> interceptor : interceptors) {
+                T transformed = interceptor.beforeServerSend(msg, rspCtx, rcvCtx);
 
                 if (transformed != null) {
                     msg = transformed;

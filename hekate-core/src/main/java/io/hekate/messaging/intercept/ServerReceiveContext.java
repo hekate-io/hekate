@@ -6,10 +6,9 @@ import io.hekate.messaging.MessagingChannel;
 import java.util.Optional;
 
 /**
- * Inbound message context.
+ * Server's inbound message context.
  *
- * @see MessageInterceptor#interceptServerReceive(Object, ServerReceiveContext)
- * @see MessageInterceptor#interceptServerSend(Object, ResponseContext, ServerReceiveContext)
+ * @see MessageInterceptor
  */
 public interface ServerReceiveContext {
     /**
@@ -34,11 +33,11 @@ public interface ServerReceiveContext {
     ClusterAddress from();
 
     /**
-     * Returns the message's meta-data.
+     * Reads the message's meta-data.
      *
      * @return Message's meta-data.
      */
-    Optional<MessageMetaData> metaData();
+    Optional<MessageMetaData> readMetaData();
 
     /**
      * Sets an attribute of this context.

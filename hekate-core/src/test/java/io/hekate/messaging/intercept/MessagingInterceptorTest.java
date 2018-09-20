@@ -15,8 +15,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-public class MessagingInterceptTest extends MessagingServiceTestBase {
-    public MessagingInterceptTest(MessagingTestContext ctx) {
+public class MessagingInterceptorTest extends MessagingServiceTestBase {
+    public MessagingInterceptorTest(MessagingTestContext ctx) {
         super(ctx);
     }
 
@@ -26,7 +26,7 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
             c.withReceiver(msg -> msg.reply(msg.get() + "-reply"));
             c.withInterceptor(new MessageInterceptor<String>() {
                 @Override
-                public String interceptClientSend(String msg, ClientSendContext sndCtx) {
+                public String beforeClientSend(String msg, ClientSendContext sndCtx) {
                     assertSame(OutboundType.REQUEST, sndCtx.type());
                     assertNotNull(sndCtx.receiver());
                     assertNotNull(sndCtx.channelName());
@@ -39,9 +39,9 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
                 }
 
                 @Override
-                public String interceptClientReceive(String rsp, ResponseContext rspCtx, ClientSendContext sndCtx) {
+                public String beforeClientReceiveResponse(String rsp, ClientReceiveContext rcvCtx, ClientSendContext sndCtx) {
                     assertNotNull(rsp);
-                    assertSame(InboundType.FINAL_RESPONSE, rspCtx.type());
+                    assertSame(InboundType.FINAL_RESPONSE, rcvCtx.type());
 
                     assertSame(OutboundType.REQUEST, sndCtx.type());
                     assertNotNull(sndCtx.receiver());
@@ -55,7 +55,7 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
                 }
 
                 @Override
-                public String interceptServerReceive(String msg, ServerReceiveContext rcvCtx) {
+                public String beforeServerReceive(String msg, ServerReceiveContext rcvCtx) {
                     assertSame(OutboundType.REQUEST, rcvCtx.type());
                     assertNotNull(rcvCtx.from());
                     assertNotNull(rcvCtx.channelName());
@@ -67,9 +67,9 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
                 }
 
                 @Override
-                public String interceptServerSend(String rsp, ResponseContext rspCtx, ServerReceiveContext rcvCtx) {
+                public String beforeServerSend(String rsp, ServerSendContext sndCtx, ServerReceiveContext rcvCtx) {
                     assertNotNull(rsp);
-                    assertSame(InboundType.FINAL_RESPONSE, rspCtx.type());
+                    assertSame(InboundType.FINAL_RESPONSE, sndCtx.type());
                     assertNotNull(rcvCtx.channelName());
 
                     assertSame(OutboundType.REQUEST, rcvCtx.type());
@@ -82,7 +82,7 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
                 }
 
                 @Override
-                public void interceptClientReceiveVoid(ClientSendContext sndCtx) {
+                public void onClientReceiveConfirmation(ClientSendContext sndCtx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
             });
@@ -132,7 +132,7 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
                     get(channel.request("msg"))
                 );
 
-                verify(interceptor).interceptClientReceiveError(ArgumentMatchers.same(err.getCause()), any());
+                verify(interceptor).onClientReceiveError(ArgumentMatchers.same(err.getCause()), any());
             }
         }
     }
@@ -142,7 +142,7 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
         List<TestChannel> channels = createAndJoinChannels(3, c ->
             c.withInterceptor(new MessageInterceptor<String>() {
                 @Override
-                public String interceptClientSend(String msg, ClientSendContext sndCtx) {
+                public String beforeClientSend(String msg, ClientSendContext sndCtx) {
                     assertSame(OutboundType.SEND_NO_ACK, sndCtx.type());
                     assertNotNull(sndCtx.receiver());
                     assertNotNull(sndCtx.topology());
@@ -152,7 +152,7 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
                 }
 
                 @Override
-                public String interceptServerReceive(String msg, ServerReceiveContext rcvCtx) {
+                public String beforeServerReceive(String msg, ServerReceiveContext rcvCtx) {
                     assertSame(OutboundType.SEND_NO_ACK, rcvCtx.type());
                     assertNotNull(rcvCtx.from());
                     assertNotNull(rcvCtx.channelName());
@@ -161,22 +161,22 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
                 }
 
                 @Override
-                public void interceptClientReceiveVoid(ClientSendContext sndCtx) {
+                public void onClientReceiveConfirmation(ClientSendContext sndCtx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
 
                 @Override
-                public String interceptClientReceive(String rsp, ResponseContext rspCtx, ClientSendContext sndCtx) {
+                public String beforeClientReceiveResponse(String rsp, ClientReceiveContext rcvCtx, ClientSendContext sndCtx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
 
                 @Override
-                public void interceptClientReceiveError(Throwable err, ClientSendContext sndCtx) {
+                public void onClientReceiveError(Throwable err, ClientSendContext sndCtx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
 
                 @Override
-                public String interceptServerSend(String rsp, ResponseContext rspCtx, ServerReceiveContext rcvCtx) {
+                public String beforeServerSend(String rsp, ServerSendContext sndCtx, ServerReceiveContext rcvCtx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
             })
@@ -205,7 +205,7 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
         List<TestChannel> channels = createAndJoinChannels(3, c ->
             c.withInterceptor(new MessageInterceptor<String>() {
                 @Override
-                public String interceptClientSend(String msg, ClientSendContext sndCtx) {
+                public String beforeClientSend(String msg, ClientSendContext sndCtx) {
                     assertSame(OutboundType.SEND_WITH_ACK, sndCtx.type());
                     assertNotNull(sndCtx.receiver());
                     assertNotNull(sndCtx.topology());
@@ -215,7 +215,7 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
                 }
 
                 @Override
-                public void interceptClientReceiveVoid(ClientSendContext sndCtx) {
+                public void onClientReceiveConfirmation(ClientSendContext sndCtx) {
                     assertSame(OutboundType.SEND_WITH_ACK, sndCtx.type());
                     assertNotNull(sndCtx.receiver());
                     assertNotNull(sndCtx.topology());
@@ -223,7 +223,7 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
                 }
 
                 @Override
-                public String interceptServerReceive(String msg, ServerReceiveContext rcvCtx) {
+                public String beforeServerReceive(String msg, ServerReceiveContext rcvCtx) {
                     assertSame(OutboundType.SEND_WITH_ACK, rcvCtx.type());
                     assertNotNull(rcvCtx.channelName());
                     assertNotNull(rcvCtx.from());
@@ -232,17 +232,17 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
                 }
 
                 @Override
-                public void interceptClientReceiveError(Throwable err, ClientSendContext sndCtx) {
+                public void onClientReceiveError(Throwable err, ClientSendContext sndCtx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
 
                 @Override
-                public String interceptClientReceive(String rsp, ResponseContext rspCtx, ClientSendContext sndCtx) {
+                public String beforeClientReceiveResponse(String rsp, ClientReceiveContext rcvCtx, ClientSendContext sndCtx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
 
                 @Override
-                public String interceptServerSend(String rsp, ResponseContext rspCtx, ServerReceiveContext rcvCtx) {
+                public String beforeServerSend(String rsp, ServerSendContext sndCtx, ServerReceiveContext rcvCtx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
             })
@@ -286,7 +286,7 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
                     get(channel.send("msg"))
                 );
 
-                verify(interceptor).interceptClientReceiveError(ArgumentMatchers.same(err.getCause()), any());
+                verify(interceptor).onClientReceiveError(ArgumentMatchers.same(err.getCause()), any());
             }
         }
     }
@@ -301,7 +301,7 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
             });
             c.withInterceptor(new MessageInterceptor<String>() {
                 @Override
-                public String interceptClientSend(String msg, ClientSendContext sndCtx) {
+                public String beforeClientSend(String msg, ClientSendContext sndCtx) {
                     assertSame(OutboundType.SUBSCRIBE, sndCtx.type());
                     assertNotNull(sndCtx.receiver());
                     assertNotNull(sndCtx.topology());
@@ -313,13 +313,13 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
                 }
 
                 @Override
-                public String interceptClientReceive(String rsp, ResponseContext rspCtx, ClientSendContext sndCtx) {
+                public String beforeClientReceiveResponse(String rsp, ClientReceiveContext rcvCtx, ClientSendContext sndCtx) {
                     assertNotNull(rsp);
 
                     if (rsp.contains("-part")) {
-                        assertSame(InboundType.RESPONSE_CHUNK, rspCtx.type());
+                        assertSame(InboundType.RESPONSE_CHUNK, rcvCtx.type());
                     } else {
-                        assertSame(InboundType.FINAL_RESPONSE, rspCtx.type());
+                        assertSame(InboundType.FINAL_RESPONSE, rcvCtx.type());
                     }
 
                     assertSame(OutboundType.SUBSCRIBE, sndCtx.type());
@@ -333,7 +333,7 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
                 }
 
                 @Override
-                public String interceptServerReceive(String msg, ServerReceiveContext rcvCtx) {
+                public String beforeServerReceive(String msg, ServerReceiveContext rcvCtx) {
                     assertSame(OutboundType.SUBSCRIBE, rcvCtx.type());
                     assertNotNull(rcvCtx.from());
 
@@ -344,13 +344,13 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
                 }
 
                 @Override
-                public String interceptServerSend(String rsp, ResponseContext rspCtx, ServerReceiveContext rcvCtx) {
+                public String beforeServerSend(String rsp, ServerSendContext sndCtx, ServerReceiveContext rcvCtx) {
                     assertNotNull(rsp);
 
                     if (rsp.contains("-part")) {
-                        assertSame(InboundType.RESPONSE_CHUNK, rspCtx.type());
+                        assertSame(InboundType.RESPONSE_CHUNK, sndCtx.type());
                     } else {
-                        assertSame(InboundType.FINAL_RESPONSE, rspCtx.type());
+                        assertSame(InboundType.FINAL_RESPONSE, sndCtx.type());
                     }
 
                     assertNotNull(rcvCtx.from());
@@ -363,7 +363,7 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
                 }
 
                 @Override
-                public void interceptClientReceiveVoid(ClientSendContext sndCtx) {
+                public void onClientReceiveConfirmation(ClientSendContext sndCtx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
             });
@@ -416,7 +416,7 @@ public class MessagingInterceptTest extends MessagingServiceTestBase {
                     get(channel.subscribe("msg"))
                 );
 
-                verify(interceptor).interceptClientReceiveError(ArgumentMatchers.same(err.getCause()), any());
+                verify(interceptor).onClientReceiveError(ArgumentMatchers.same(err.getCause()), any());
             }
         }
     }

@@ -16,6 +16,7 @@
 
 package io.hekate.cluster;
 
+import io.hekate.core.internal.util.ArgAssert;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 
@@ -43,8 +44,8 @@ public class ClusterAddress implements Comparable<ClusterAddress>, Serializable 
      * @param id Unique identifier of {@link ClusterNode}.
      */
     public ClusterAddress(InetSocketAddress socket, ClusterNodeId id) {
-        assert socket != null : "Address is null.";
-        assert id != null : "ID is null.";
+        ArgAssert.notNull(socket, "Socket address");
+        ArgAssert.notNull(id, "ID");
 
         this.socket = socket;
         this.id = id;
@@ -66,6 +67,24 @@ public class ClusterAddress implements Comparable<ClusterAddress>, Serializable 
      */
     public InetSocketAddress socket() {
         return socket;
+    }
+
+    /**
+     * Returns the host address.
+     *
+     * @return Host address.
+     */
+    public String host() {
+        return socket.getAddress().getHostAddress();
+    }
+
+    /**
+     * Returns the port number.
+     *
+     * @return Port number.
+     */
+    public int port() {
+        return socket.getPort();
     }
 
     /**

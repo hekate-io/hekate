@@ -22,7 +22,7 @@ import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.MessagingRemoteException;
-import io.hekate.messaging.intercept.ResponseContext;
+import io.hekate.messaging.intercept.ServerSendContext;
 import io.hekate.messaging.intercept.ServerReceiveContext;
 import io.hekate.messaging.internal.MessagingProtocol.ErrorResponse;
 import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
@@ -449,7 +449,7 @@ abstract class MessagingConnectionBase<T> {
         return ctx.intercept().serverReceive(msg, inCtx);
     }
 
-    public T interceptServerSend(T msg, ResponseContext rspCtx, ServerReceiveContext rcvCtx) {
+    public T interceptServerSend(T msg, ServerSendContext rspCtx, ServerReceiveContext rcvCtx) {
         return ctx.intercept().serverSend(msg, rspCtx, rcvCtx);
     }
 
@@ -462,7 +462,11 @@ abstract class MessagingConnectionBase<T> {
             try {
                 msg.prepareReceive(worker, this);
 
-                receiver.receive(msg);
+                try {
+                    receiver.receive(msg);
+                } finally {
+                    ctx.intercept().serverReceiveComplete(msg);
+                }
 
                 if (msg.isVoid()) {
                     replyVoid(worker, msg);
@@ -482,7 +486,11 @@ abstract class MessagingConnectionBase<T> {
             try {
                 msg.prepareReceive(this);
 
-                receiver.receive(msg);
+                try {
+                    receiver.receive(msg);
+                } finally {
+                    ctx.intercept().serverReceiveComplete(msg);
+                }
             } catch (RuntimeException | Error e) {
                 if (log.isErrorEnabled()) {
                     log.error("Got an unexpected runtime error during notification processing [from={}, message={}]", msg.from(), msg, e);

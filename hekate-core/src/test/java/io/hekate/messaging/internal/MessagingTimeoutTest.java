@@ -230,7 +230,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
                 c.withMessagingTimeout(1);
                 c.withInterceptor(new MessageInterceptor<String>() {
                     @Override
-                    public String interceptClientSend(String msg, ClientSendContext sndCtx) {
+                    public String beforeClientSend(String msg, ClientSendContext sndCtx) {
                         sleep(30);
 
                         return null;
@@ -264,7 +264,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
                 c.withMessagingTimeout(1000);
                 c.withInterceptor(new MessageInterceptor<String>() {
                     @Override
-                    public String interceptClientSend(String msg, ClientSendContext sndCtx) {
+                    public String beforeClientSend(String msg, ClientSendContext sndCtx) {
                         sleep(30);
 
                         return null;

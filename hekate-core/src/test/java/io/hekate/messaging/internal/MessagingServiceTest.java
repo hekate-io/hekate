@@ -176,7 +176,7 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
             boot -> boot.withService(MessagingServiceFactory.class, msg ->
                 msg.withGlobalInterceptor(new MessageInterceptor<Object>() {
                     @Override
-                    public Object interceptServerReceive(Object msg, ServerReceiveContext rcvCtx) {
+                    public Object beforeServerReceive(Object msg, ServerReceiveContext rcvCtx) {
                         return msg + "-intercepted";
                     }
                 })

@@ -46,8 +46,8 @@ public final class JmxTestUtils {
     }
 
     public static void verifyJmxNode(ClusterNode node, CompositeData jmx) {
-        assertEquals(node.address().socket().getHostString(), jmx.get("host"));
-        assertEquals(node.address().socket().getPort(), jmx.get("port"));
+        assertEquals(node.address().host(), jmx.get("host"));
+        assertEquals(node.address().port(), jmx.get("port"));
         assertEquals(node.address().id().toString(), jmx.get("id"));
         assertEquals(node.name(), jmx.get("name"));
         assertArrayEquals(node.roles().toArray(EMPTY_STRINGS), (Object[])jmx.get("roles"));
