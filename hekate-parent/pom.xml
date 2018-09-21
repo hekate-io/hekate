@@ -59,13 +59,13 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.source>1.8</java.source>
         <java.target>1.8</java.target>
-        
+
         <!-- Production dependencies.-->
         <netty.tcnative.version>2.0.12.Final</netty.tcnative.version>
         <kryo.version>4.0.2</kryo.version>
         <kryo.serializers.version>0.42</kryo.serializers.version>
         <fst.version>2.57</fst.version>
-        <spring.boot.version>2.0.4.RELEASE</spring.boot.version>
+        <spring.boot.version>2.0.5.RELEASE</spring.boot.version>
         <zookeeper.curator.version>2.12.0</zookeeper.curator.version>
         <kubernetes.client.version>4.0.3</kubernetes.client.version>
         <jclouds.version>2.1.1</jclouds.version>
