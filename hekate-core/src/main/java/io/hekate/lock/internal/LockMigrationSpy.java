@@ -20,7 +20,7 @@ import io.hekate.lock.internal.LockProtocol.MigrationApplyRequest;
 import io.hekate.lock.internal.LockProtocol.MigrationPrepareRequest;
 import io.hekate.partition.PartitionMapper;
 
-interface LockMigrationCallback {
+interface LockMigrationSpy {
     default void onAfterPrepareSent(MigrationPrepareRequest request) {
         // No-op.
     }

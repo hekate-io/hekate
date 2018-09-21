@@ -128,14 +128,14 @@ public class LockMigrationTest extends LockServiceTestBase {
     public void testCoordinatorLeaveOnPrepareSent() throws Exception {
         CountDownLatch leaveLatch = new CountDownLatch(1);
 
-        setCallback(coordinator, new LockMigrationCallback() {
+        setSpy(coordinator, new LockMigrationSpy() {
             @Override
             public void onAfterPrepareSent(MigrationPrepareRequest request) {
                 leaveAsync(coordinator, leaveLatch);
             }
         });
 
-        setCallback(nextAfterCoordinator, new LockMigrationCallback() {
+        setSpy(nextAfterCoordinator, new LockMigrationSpy() {
             @Override
             public void onPrepareReceived(MigrationPrepareRequest request) {
                 await(leaveLatch);
@@ -149,14 +149,14 @@ public class LockMigrationTest extends LockServiceTestBase {
     public void testCoordinatorLeaveOnPrepareReceived() throws Exception {
         CountDownLatch leaveLatch = new CountDownLatch(1);
 
-        setCallback(coordinator, new LockMigrationCallback() {
+        setSpy(coordinator, new LockMigrationSpy() {
             @Override
             public void onPrepareReceived(MigrationPrepareRequest request) {
                 leaveAsync(coordinator, leaveLatch);
             }
         });
 
-        setCallback(nextAfterCoordinator, new LockMigrationCallback() {
+        setSpy(nextAfterCoordinator, new LockMigrationSpy() {
             @Override
             public void onApplyReceived(MigrationApplyRequest request) {
                 await(leaveLatch);
@@ -170,14 +170,14 @@ public class LockMigrationTest extends LockServiceTestBase {
     public void testCoordinatorLeaveOnApplySent() throws Exception {
         CountDownLatch leaveLatch = new CountDownLatch(1);
 
-        setCallback(coordinator, new LockMigrationCallback() {
+        setSpy(coordinator, new LockMigrationSpy() {
             @Override
             public void onAfterApplySent(MigrationApplyRequest request) {
                 leaveAsync(coordinator, leaveLatch);
             }
         });
 
-        setCallback(nextAfterCoordinator, new LockMigrationCallback() {
+        setSpy(nextAfterCoordinator, new LockMigrationSpy() {
             @Override
             public void onApplyReceived(MigrationApplyRequest request) {
                 await(leaveLatch);
@@ -191,14 +191,14 @@ public class LockMigrationTest extends LockServiceTestBase {
     public void testNodeLeaveOnPrepare() throws Exception {
         CountDownLatch leaveLatch = new CountDownLatch(1);
 
-        setCallback(nextAfterCoordinator, new LockMigrationCallback() {
+        setSpy(nextAfterCoordinator, new LockMigrationSpy() {
             @Override
             public void onPrepareReceived(MigrationPrepareRequest request) {
                 leaveAsync(nextAfterCoordinator, leaveLatch);
             }
         });
 
-        setCallback(nextAfterNext, new LockMigrationCallback() {
+        setSpy(nextAfterNext, new LockMigrationSpy() {
             @Override
             public void onPrepareReceived(MigrationPrepareRequest request) {
                 await(leaveLatch);
@@ -212,14 +212,14 @@ public class LockMigrationTest extends LockServiceTestBase {
     public void testNodeLeaveOnApply() throws Exception {
         CountDownLatch leaveLatch = new CountDownLatch(1);
 
-        setCallback(nextAfterCoordinator, new LockMigrationCallback() {
+        setSpy(nextAfterCoordinator, new LockMigrationSpy() {
             @Override
             public void onApplyReceived(MigrationApplyRequest request) {
                 leaveAsync(nextAfterCoordinator, leaveLatch);
             }
         });
 
-        setCallback(nextAfterNext, new LockMigrationCallback() {
+        setSpy(nextAfterNext, new LockMigrationSpy() {
             @Override
             public void onApplyReceived(MigrationApplyRequest request) {
                 await(leaveLatch);
@@ -235,7 +235,7 @@ public class LockMigrationTest extends LockServiceTestBase {
 
         AtomicBoolean joinOnce = new AtomicBoolean();
 
-        setCallback(nextAfterCoordinator, new LockMigrationCallback() {
+        setSpy(nextAfterCoordinator, new LockMigrationSpy() {
             @Override
             public void onPrepareReceived(MigrationPrepareRequest request) {
                 if (joinOnce.compareAndSet(false, true)) {
@@ -244,7 +244,7 @@ public class LockMigrationTest extends LockServiceTestBase {
             }
         });
 
-        setCallback(nextAfterNext, new LockMigrationCallback() {
+        setSpy(nextAfterNext, new LockMigrationSpy() {
             @Override
             public void onPrepareReceived(MigrationPrepareRequest request) {
                 await(joinLatch);
@@ -260,7 +260,7 @@ public class LockMigrationTest extends LockServiceTestBase {
 
         AtomicBoolean joinOnce = new AtomicBoolean();
 
-        setCallback(nextAfterCoordinator, new LockMigrationCallback() {
+        setSpy(nextAfterCoordinator, new LockMigrationSpy() {
             @Override
             public void onApplyReceived(MigrationApplyRequest request) {
                 if (joinOnce.compareAndSet(false, true)) {
@@ -269,7 +269,7 @@ public class LockMigrationTest extends LockServiceTestBase {
             }
         });
 
-        setCallback(nextAfterNext, new LockMigrationCallback() {
+        setSpy(nextAfterNext, new LockMigrationSpy() {
             @Override
             public void onApplyReceived(MigrationApplyRequest request) {
                 await(joinLatch);
@@ -283,7 +283,7 @@ public class LockMigrationTest extends LockServiceTestBase {
     public void testNoMigrationWhenNonLockServiceNodeJoins() throws Exception {
         AtomicBoolean migrated = new AtomicBoolean();
 
-        setCallback(nextAfterCoordinator, new LockMigrationCallback() {
+        setSpy(nextAfterCoordinator, new LockMigrationSpy() {
             @Override
             public void onAfterPrepareSent(MigrationPrepareRequest request) {
                 migrated.set(true);
@@ -303,7 +303,7 @@ public class LockMigrationTest extends LockServiceTestBase {
     public void testNoMigrationWhenOtherRegionNodeJoins() throws Exception {
         AtomicBoolean migrated = new AtomicBoolean();
 
-        setCallback(nextAfterCoordinator, new LockMigrationCallback() {
+        setSpy(nextAfterCoordinator, new LockMigrationSpy() {
             @Override
             public void onAfterPrepareSent(MigrationPrepareRequest request) {
                 migrated.set(true);
@@ -450,8 +450,8 @@ public class LockMigrationTest extends LockServiceTestBase {
         assertTrue(busy);
     }
 
-    private void setCallback(HekateTestNode node, LockMigrationCallback callback) {
-        node.get(DefaultLockService.class).region(REGION_1).setMigrationCallback(callback);
+    private void setSpy(HekateTestNode node, LockMigrationSpy spy) {
+        node.get(DefaultLockService.class).region(REGION_1).setMigrationSpy(spy);
     }
 
     private boolean checkBusy(DistributedLock lock) {

@@ -104,7 +104,7 @@ class DefaultLockRegion implements LockRegion {
     private final MessagingChannel<LockProtocol> lockChannel;
 
     @ToStringIgnore
-    private final MessagingChannel<LockProtocol> migrationChannel;
+    private final MessagingChannel<LockProtocol> migrationRing;
 
     @ToStringIgnore
     private final AtomicLong lockIdGen = new AtomicLong();
@@ -147,7 +147,7 @@ class DefaultLockRegion implements LockRegion {
     private volatile PartitionMapper latestMapping;
 
     @ToStringIgnore
-    private LockMigrationCallback migrationCallback;
+    private LockMigrationSpy migrationSpy;
 
     public DefaultLockRegion(
         String regionName,
@@ -179,7 +179,7 @@ class DefaultLockRegion implements LockRegion {
         );
 
         // Configure messaging channel for locks migration.
-        migrationChannel = channel.withAffinity(regionName)
+        migrationRing = channel.withAffinity(regionName)
             .filterAll(ClusterFilters.forNextInJoinOrder()) // <-- use ring-based communications.
             .withFailover(new FailoverPolicyBuilder()
                 .withAlwaysReRoute()
@@ -517,8 +517,8 @@ class DefaultLockRegion implements LockRegion {
                         log.debug("Coordinator received migration prepare request [request={}]", request);
                     }
 
-                    if (migrationCallback != null) {
-                        migrationCallback.onPrepareReceived(request);
+                    if (migrationSpy != null) {
+                        migrationSpy.onPrepareReceived(request);
                     }
 
                     Map<ClusterNodeId, ClusterHash> topologies = request.topologies();
@@ -540,8 +540,8 @@ class DefaultLockRegion implements LockRegion {
 
                         sendToNextNode(prepare);
 
-                        if (migrationCallback != null) {
-                            migrationCallback.onAfterPrepareSent(prepare);
+                        if (migrationSpy != null) {
+                            migrationSpy.onAfterPrepareSent(prepare);
                         }
                     } else {
                         if (DEBUG) {
@@ -556,8 +556,8 @@ class DefaultLockRegion implements LockRegion {
 
                             sendToNextNode(apply);
 
-                            if (migrationCallback != null) {
-                                migrationCallback.onAfterApplySent(apply);
+                            if (migrationSpy != null) {
+                                migrationSpy.onAfterApplySent(apply);
                             }
                         }
                     }
@@ -582,8 +582,8 @@ class DefaultLockRegion implements LockRegion {
                         log.debug("Processing migration prepare request [status={}, request={}]", status, request);
                     }
 
-                    if (migrationCallback != null) {
-                        migrationCallback.onPrepareReceived(request);
+                    if (migrationSpy != null) {
+                        migrationSpy.onPrepareReceived(request);
                     }
 
                     status = Status.MIGRATING;
@@ -610,8 +610,8 @@ class DefaultLockRegion implements LockRegion {
 
                     sendToNextNode(nextPrepare);
 
-                    if (migrationCallback != null) {
-                        migrationCallback.onAfterPrepareSent(nextPrepare);
+                    if (migrationSpy != null) {
+                        migrationSpy.onAfterPrepareSent(nextPrepare);
                     }
                 } else {
                     if (DEBUG) {
@@ -641,8 +641,8 @@ class DefaultLockRegion implements LockRegion {
                     replyMigrationOk(msg);
 
                     if (migrationKey != null && migrationKey.equals(key)) {
-                        if (migrationCallback != null) {
-                            migrationCallback.onApplyReceived(request);
+                        if (migrationSpy != null) {
+                            migrationSpy.onApplyReceived(request);
                         }
 
                         List<LockMigrationInfo> locks = applyMigration(request.locks());
@@ -651,8 +651,8 @@ class DefaultLockRegion implements LockRegion {
 
                         sendToNextNode(apply);
 
-                        if (migrationCallback != null) {
-                            migrationCallback.onAfterApplySent(apply);
+                        if (migrationSpy != null) {
+                            migrationSpy.onAfterApplySent(apply);
                         }
                     }
                 } else {
@@ -674,10 +674,10 @@ class DefaultLockRegion implements LockRegion {
                 ClusterHash newClusterHash = newPartitions.topology().hash();
 
                 if (latestMapping == null || !latestMapping.topology().hash().equals(newClusterHash)) {
-                    this.latestMapping = newPartitions;
+                    latestMapping = newPartitions;
 
-                    if (migrationCallback != null) {
-                        migrationCallback.onTopologyChange(newPartitions);
+                    if (migrationSpy != null) {
+                        migrationSpy.onTopologyChange(newPartitions);
                     }
 
                     if (isMigrationCoordinator(newPartitions.topology())) {
@@ -696,14 +696,16 @@ class DefaultLockRegion implements LockRegion {
         try {
             lockServers.values().forEach(LockControllerServer::dispose);
 
+            lockClients.values().forEach(lock ->
+                lock.becomeTerminated(false)
+            );
+
+            deferredLocks.forEach(lock ->
+                lock.becomeTerminated(false)
+            );
+
             lockServers.clear();
-
-            lockClients.values().forEach(lock -> lock.becomeTerminated(false));
-
             lockClients.clear();
-
-            deferredLocks.forEach(lock -> lock.becomeTerminated(false));
-
             deferredLocks.clear();
 
             initMigration.countDown();
@@ -791,8 +793,8 @@ class DefaultLockRegion implements LockRegion {
     }
 
     // Package level for testing purposes.
-    void setMigrationCallback(LockMigrationCallback migrationCallback) {
-        this.migrationCallback = migrationCallback;
+    void setMigrationSpy(LockMigrationSpy migrationSpy) {
+        this.migrationSpy = migrationSpy;
     }
 
     private void startMigration() {
@@ -817,8 +819,8 @@ class DefaultLockRegion implements LockRegion {
 
         sendToNextNode(prepare);
 
-        if (migrationCallback != null) {
-            migrationCallback.onAfterPrepareSent(prepare);
+        if (migrationSpy != null) {
+            migrationSpy.onAfterPrepareSent(prepare);
         }
     }
 
@@ -915,17 +917,17 @@ class DefaultLockRegion implements LockRegion {
 
         // Migrate new locks to the local node.
         locks.forEach(lock -> {
-            String name = lock.name();
+            String lockName = lock.name();
 
-            LockKey key = new LockKey(regionName, name);
+            LockKey key = new LockKey(regionName, lockName);
 
             if (activeMapping.map(key).isPrimary(localNode)) {
-                LockControllerServer server = lockServers.get(name);
+                LockControllerServer server = lockServers.get(lockName);
 
                 if (server == null) {
-                    server = new LockControllerServer(name, scheduler);
+                    server = new LockControllerServer(lockName, scheduler);
 
-                    lockServers.put(name, server);
+                    lockServers.put(lockName, server);
 
                     if (DEBUG) {
                         log.debug("Registering new lock server [key={}]", key);
@@ -938,10 +940,14 @@ class DefaultLockRegion implements LockRegion {
             }
         });
 
-        Set<ClusterNodeId> liveNodes = activeMapping.topology().stream().map(ClusterNode::id).collect(toSet());
+        Set<ClusterNodeId> liveNodes = activeMapping.topology().stream()
+            .map(ClusterNode::id)
+            .collect(toSet());
 
         // Update managed locks with the latest topology so that they could release locks of failed nodes.
-        lockServers.values().forEach(lock -> lock.update(liveNodes));
+        lockServers.values().forEach(lock ->
+            lock.update(liveNodes)
+        );
 
         // Update mapping of locally held locks.
         lockClients.values().forEach(lock ->
@@ -954,9 +960,9 @@ class DefaultLockRegion implements LockRegion {
                 log.debug("Registering deferred lock [lock={}]", lock);
             }
 
-            lock.update(activeMapping);
-
             lockClients.put(lock.lockId(), lock);
+
+            lock.update(activeMapping);
 
             lock.becomeLocking();
         });
@@ -970,7 +976,7 @@ class DefaultLockRegion implements LockRegion {
     }
 
     private void sendToNextNode(MigrationRequest request) {
-        migrationChannel.request(request, new ResponseCallback<LockProtocol>() {
+        migrationRing.request(request, new ResponseCallback<LockProtocol>() {
             @Override
             public ReplyDecision accept(Throwable err, Response<LockProtocol> reply) {
                 if (err == null) {
