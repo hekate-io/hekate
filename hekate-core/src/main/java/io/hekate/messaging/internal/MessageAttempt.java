@@ -21,9 +21,9 @@ import io.hekate.cluster.ClusterTopology;
 import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.MessageMetaData;
 import io.hekate.messaging.MessagingException;
+import io.hekate.messaging.intercept.ClientReceiveContext;
 import io.hekate.messaging.intercept.ClientSendContext;
-import io.hekate.messaging.intercept.RequestType;
-import io.hekate.messaging.intercept.ResponseContext;
+import io.hekate.messaging.intercept.OutboundType;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityNotification;
 import io.hekate.messaging.internal.MessagingProtocol.AffinityRequest;
 import io.hekate.messaging.internal.MessagingProtocol.AffinitySubscribeRequest;
@@ -33,11 +33,9 @@ import io.hekate.messaging.internal.MessagingProtocol.Request;
 import io.hekate.messaging.internal.MessagingProtocol.RequestBase;
 import io.hekate.messaging.internal.MessagingProtocol.SubscribeRequest;
 import io.hekate.messaging.internal.MessagingProtocol.VoidRequest;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
-class MessageAttempt<T> implements ClientSendContext<T> {
+class MessageAttempt<T> implements ClientSendContext {
     private final MessagingClient<T> client;
 
     private final ClusterTopology topology;
@@ -45,8 +43,6 @@ class MessageAttempt<T> implements ClientSendContext<T> {
     private final MessageContext<T> ctx;
 
     private final Optional<FailureInfo> failure;
-
-    private Map<String, Object> attributes;
 
     private MessageMetaData metaData;
 
@@ -91,13 +87,13 @@ class MessageAttempt<T> implements ClientSendContext<T> {
     }
 
     @Override
-    public RequestType type() {
+    public OutboundType type() {
         return ctx.type();
     }
 
     @Override
-    public T message() {
-        return ctx.originalMessage();
+    public String channelName() {
+        return ctx.opts().name();
     }
 
     @Override
@@ -111,16 +107,12 @@ class MessageAttempt<T> implements ClientSendContext<T> {
 
     @Override
     public Object setAttribute(String name, Object value) {
-        if (attributes == null) {
-            attributes = new HashMap<>();
-        }
-
-        return attributes.put(name, value);
+        return ctx.setAttribute(name, value);
     }
 
     @Override
     public Object getAttribute(String name) {
-        return attributes != null ? attributes.get(name) : null;
+        return ctx.getAttribute(name);
     }
 
     @Override
@@ -142,7 +134,7 @@ class MessageAttempt<T> implements ClientSendContext<T> {
 
         T payload = interceptSend();
 
-        Optional<MessageMetaData> metaData = hasMetaData() ? Optional.of(metaData()) : Optional.empty();
+        MessageMetaData metaData = hasMetaData() ? metaData() : null;
 
         boolean isRetransmit = failure.isPresent();
 
@@ -169,14 +161,14 @@ class MessageAttempt<T> implements ClientSendContext<T> {
     public RequestBase<T> prepareRequest(int requestId) {
         T payload = interceptSend();
 
-        Optional<MessageMetaData> metaData = hasMetaData() ? Optional.of(metaData()) : Optional.empty();
+        MessageMetaData metaData = hasMetaData() ? metaData() : null;
 
         boolean isRetransmit = failure.isPresent();
 
         RequestBase<T> msg;
 
         if (ctx.hasAffinity()) {
-            if (ctx.type() == RequestType.SEND_WITH_ACK) {
+            if (ctx.type() == OutboundType.SEND_WITH_ACK) {
                 msg = new AffinityVoidRequest<>(
                     ctx.affinity(),
                     requestId,
@@ -185,7 +177,7 @@ class MessageAttempt<T> implements ClientSendContext<T> {
                     payload,
                     metaData
                 );
-            } else if (ctx.type() == RequestType.SUBSCRIBE) {
+            } else if (ctx.type() == OutboundType.SUBSCRIBE) {
                 msg = new AffinitySubscribeRequest<>(
                     ctx.affinity(),
                     requestId,
@@ -205,7 +197,7 @@ class MessageAttempt<T> implements ClientSendContext<T> {
                 );
             }
         } else {
-            if (ctx.type() == RequestType.SEND_WITH_ACK) {
+            if (ctx.type() == OutboundType.SEND_WITH_ACK) {
                 msg = new VoidRequest<>(
                     requestId,
                     isRetransmit,
@@ -213,7 +205,7 @@ class MessageAttempt<T> implements ClientSendContext<T> {
                     payload,
                     metaData
                 );
-            } else if (ctx.type() == RequestType.SUBSCRIBE) {
+            } else if (ctx.type() == OutboundType.SUBSCRIBE) {
                 msg = new SubscribeRequest<>(
                     requestId,
                     isRetransmit,
@@ -235,15 +227,19 @@ class MessageAttempt<T> implements ClientSendContext<T> {
         return msg;
     }
 
+    public T interceptReceive(T payload, ClientReceiveContext rsp) {
+        return ctx.intercept().clientReceive(payload, rsp, this);
+    }
+
     public void interceptReceiveError(MessagingException err) {
         ctx.intercept().clientReceiveError(err, this);
     }
 
-    public T interceptReceive(ResponseContext<T> rsp) {
-        return ctx.intercept().clientReceive(rsp.message(), rsp, this);
+    public void interceptReceiveVoid() {
+        ctx.intercept().clientReceiveVoid(this);
     }
 
     private T interceptSend() {
-        return ctx.intercept().clientSend(message(), this);
+        return ctx.intercept().clientSend(ctx.originalMessage(), this);
     }
 }

@@ -10,27 +10,24 @@ import io.hekate.messaging.loadbalance.LoadBalancer;
 import java.util.Optional;
 
 /**
- * Outbound message context.
+ * Client's outbound message context.
  *
- * @param <T> Message type.
- *
- * @see MessageInterceptor#interceptClientSend(Object, ClientSendContext)
- * @see MessageInterceptor#interceptClientReceive(Object, ResponseContext, ClientSendContext)
+ * @see MessageInterceptor
  */
-public interface ClientSendContext<T> {
+public interface ClientSendContext {
     /**
      * Returns the type of this message.
      *
      * @return Type of this message.
      */
-    RequestType type();
+    OutboundType type();
 
     /**
-     * Returns the original (untransformed) message.
+     * Returns the channel name (see {@link MessagingChannel#name()}).
      *
-     * @return Message.
+     * @return Channel name.
      */
-    T message();
+    String channelName();
 
     /**
      * Returns the message's meta-data.
@@ -43,7 +40,7 @@ public interface ClientSendContext<T> {
      * Sets an attribute of this context.
      *
      * <p>
-     * Attributes are local to this context and do not get transferred to the receiver.
+     * Attributes are local to this context object and do not get transferred to a remote peer.
      * </p>
      *
      * @param name Name.

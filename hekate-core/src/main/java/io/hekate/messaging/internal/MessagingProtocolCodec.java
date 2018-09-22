@@ -40,7 +40,6 @@ import io.hekate.network.NetworkMessage;
 import io.hekate.util.format.ToString;
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.Optional;
 import java.util.OptionalInt;
 
 import static io.hekate.codec.CodecUtils.readClusterAddress;
@@ -143,7 +142,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 AffinityNotification<T> notification = msg.cast();
 
                 flags = appendHasTimeout(flags, notification.hasTimeout());
-                flags = appendHasMetaData(flags, notification.metaData().isPresent());
+                flags = appendHasMetaData(flags, notification.hasMetaData());
 
                 out.writeByte(flags);
                 out.writeInt(notification.affinity());
@@ -152,8 +151,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     out.writeVarLong(notification.timeout());
                 }
 
-                if (notification.metaData().isPresent()) {
-                    encodeMetaData(notification.metaData().get(), out);
+                if (notification.hasMetaData()) {
+                    encodeMetaData(notification.metaData(), out);
                 }
 
                 delegate.encode(notification.get(), out);
@@ -164,7 +163,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 Notification<T> notification = msg.cast();
 
                 flags = appendHasTimeout(flags, notification.hasTimeout());
-                flags = appendHasMetaData(flags, notification.metaData().isPresent());
+                flags = appendHasMetaData(flags, notification.hasMetaData());
 
                 out.writeByte(flags);
 
@@ -172,8 +171,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     out.writeVarLong(notification.timeout());
                 }
 
-                if (notification.metaData().isPresent()) {
-                    encodeMetaData(notification.metaData().get(), out);
+                if (notification.hasMetaData()) {
+                    encodeMetaData(notification.metaData(), out);
                 }
 
                 delegate.encode(notification.get(), out);
@@ -184,7 +183,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 AffinityRequest<T> request = msg.cast();
 
                 flags = appendHasTimeout(flags, request.hasTimeout());
-                flags = appendHasMetaData(flags, request.metaData().isPresent());
+                flags = appendHasMetaData(flags, request.hasMetaData());
 
                 out.writeByte(flags);
 
@@ -195,8 +194,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     out.writeVarLong(request.timeout());
                 }
 
-                if (request.metaData().isPresent()) {
-                    encodeMetaData(request.metaData().get(), out);
+                if (request.hasMetaData()) {
+                    encodeMetaData(request.metaData(), out);
                 }
 
                 delegate.encode(request.get(), out);
@@ -207,7 +206,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 Request<T> request = msg.cast();
 
                 flags = appendHasTimeout(flags, request.hasTimeout());
-                flags = appendHasMetaData(flags, request.metaData().isPresent());
+                flags = appendHasMetaData(flags, request.hasMetaData());
 
                 out.writeByte(flags);
                 out.writeVarInt(request.requestId());
@@ -216,8 +215,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     out.writeVarLong(request.timeout());
                 }
 
-                if (request.metaData().isPresent()) {
-                    encodeMetaData(request.metaData().get(), out);
+                if (request.hasMetaData()) {
+                    encodeMetaData(request.metaData(), out);
                 }
 
                 delegate.encode(request.get(), out);
@@ -228,7 +227,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 AffinityVoidRequest<T> request = msg.cast();
 
                 flags = appendHasTimeout(flags, request.hasTimeout());
-                flags = appendHasMetaData(flags, request.metaData().isPresent());
+                flags = appendHasMetaData(flags, request.hasMetaData());
 
                 out.writeByte(flags);
 
@@ -239,8 +238,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     out.writeVarLong(request.timeout());
                 }
 
-                if (request.metaData().isPresent()) {
-                    encodeMetaData(request.metaData().get(), out);
+                if (request.hasMetaData()) {
+                    encodeMetaData(request.metaData(), out);
                 }
 
                 delegate.encode(request.get(), out);
@@ -251,7 +250,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 VoidRequest<T> request = msg.cast();
 
                 flags = appendHasTimeout(flags, request.hasTimeout());
-                flags = appendHasMetaData(flags, request.metaData().isPresent());
+                flags = appendHasMetaData(flags, request.hasMetaData());
 
                 out.writeByte(flags);
                 out.writeVarInt(request.requestId());
@@ -260,8 +259,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     out.writeVarLong(request.timeout());
                 }
 
-                if (request.metaData().isPresent()) {
-                    encodeMetaData(request.metaData().get(), out);
+                if (request.hasMetaData()) {
+                    encodeMetaData(request.metaData(), out);
                 }
 
                 delegate.encode(request.get(), out);
@@ -272,7 +271,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 AffinitySubscribeRequest<T> request = msg.cast();
 
                 flags = appendHasTimeout(flags, request.hasTimeout());
-                flags = appendHasMetaData(flags, request.metaData().isPresent());
+                flags = appendHasMetaData(flags, request.hasMetaData());
 
                 out.writeByte(flags);
                 out.writeInt(request.affinity());
@@ -282,8 +281,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     out.writeVarLong(request.timeout());
                 }
 
-                if (request.metaData().isPresent()) {
-                    encodeMetaData(request.metaData().get(), out);
+                if (request.hasMetaData()) {
+                    encodeMetaData(request.metaData(), out);
                 }
 
                 delegate.encode(request.get(), out);
@@ -294,7 +293,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 SubscribeRequest<T> request = msg.cast();
 
                 flags = appendHasTimeout(flags, request.hasTimeout());
-                flags = appendHasMetaData(flags, request.metaData().isPresent());
+                flags = appendHasMetaData(flags, request.hasMetaData());
 
                 out.writeByte(flags);
                 out.writeVarInt(request.requestId());
@@ -303,8 +302,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     out.writeVarLong(request.timeout());
                 }
 
-                if (request.metaData().isPresent()) {
-                    encodeMetaData(request.metaData().get(), out);
+                if (request.hasMetaData()) {
+                    encodeMetaData(request.metaData(), out);
                 }
 
                 delegate.encode(request.get(), out);
@@ -314,8 +313,14 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case RESPONSE_CHUNK: {
                 ResponseChunk<T> response = msg.cast();
 
+                flags = appendHasMetaData(flags, response.hasMetaData());
+
                 out.writeByte(flags);
                 out.writeVarInt(response.requestId());
+
+                if (response.hasMetaData()) {
+                    encodeMetaData(response.metaData(), out);
+                }
 
                 delegate.encode(response.get(), out);
 
@@ -324,8 +329,14 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case FINAL_RESPONSE: {
                 FinalResponse<T> response = msg.cast();
 
+                flags = appendHasMetaData(flags, response.hasMetaData());
+
                 out.writeByte(flags);
                 out.writeVarInt(response.requestId());
+
+                if (response.hasMetaData()) {
+                    encodeMetaData(response.metaData(), out);
+                }
 
                 delegate.encode(response.get(), out);
 
@@ -372,7 +383,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 boolean retransmit = isRetransmit(flags);
                 int affinity = in.readInt();
                 long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
-                Optional<MessageMetaData> metaData = hasMetaData(flags) ? decodeMetaData(in) : Optional.empty();
+                MessageMetaData metaData = hasMetaData(flags) ? decodeMetaData(in) : null;
 
                 T payload = decodeNotificationPayload(in);
 
@@ -381,7 +392,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case NOTIFICATION: {
                 boolean retransmit = isRetransmit(flags);
                 long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
-                Optional<MessageMetaData> metaData = hasMetaData(flags) ? decodeMetaData(in) : Optional.empty();
+                MessageMetaData metaData = hasMetaData(flags) ? decodeMetaData(in) : null;
 
                 T payload = decodeNotificationPayload(in);
 
@@ -392,7 +403,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 int affinity = in.readInt();
                 int requestId = in.readVarInt();
                 long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
-                Optional<MessageMetaData> metaData = hasMetaData(flags) ? decodeMetaData(in) : Optional.empty();
+                MessageMetaData metaData = hasMetaData(flags) ? decodeMetaData(in) : null;
 
                 T payload = decodeAffinityRequestPayload(requestId, affinity, in);
 
@@ -402,7 +413,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 boolean retransmit = isRetransmit(flags);
                 int requestId = in.readVarInt();
                 long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
-                Optional<MessageMetaData> metaData = hasMetaData(flags) ? decodeMetaData(in) : Optional.empty();
+                MessageMetaData metaData = hasMetaData(flags) ? decodeMetaData(in) : null;
 
                 T payload = decodeRequestPayload(requestId, in);
 
@@ -413,7 +424,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 int affinity = in.readInt();
                 int requestId = in.readVarInt();
                 long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
-                Optional<MessageMetaData> metaData = hasMetaData(flags) ? decodeMetaData(in) : Optional.empty();
+                MessageMetaData metaData = hasMetaData(flags) ? decodeMetaData(in) : null;
 
                 T payload = decodeAffinityRequestPayload(requestId, affinity, in);
 
@@ -423,7 +434,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 boolean retransmit = isRetransmit(flags);
                 int requestId = in.readVarInt();
                 long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
-                Optional<MessageMetaData> metaData = hasMetaData(flags) ? decodeMetaData(in) : Optional.empty();
+                MessageMetaData metaData = hasMetaData(flags) ? decodeMetaData(in) : null;
 
                 T payload = decodeRequestPayload(requestId, in);
 
@@ -434,7 +445,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 int affinity = in.readInt();
                 int requestId = in.readVarInt();
                 long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
-                Optional<MessageMetaData> metaData = hasMetaData(flags) ? decodeMetaData(in) : Optional.empty();
+                MessageMetaData metaData = hasMetaData(flags) ? decodeMetaData(in) : null;
 
                 T payload = decodeAffinityRequestPayload(requestId, affinity, in);
 
@@ -444,7 +455,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 boolean retransmit = isRetransmit(flags);
                 int requestId = in.readVarInt();
                 long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
-                Optional<MessageMetaData> metaData = hasMetaData(flags) ? decodeMetaData(in) : Optional.empty();
+                MessageMetaData metaData = hasMetaData(flags) ? decodeMetaData(in) : null;
 
                 T payload = decodeRequestPayload(requestId, in);
 
@@ -453,21 +464,25 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
             case RESPONSE_CHUNK: {
                 int requestId = in.readVarInt();
 
+                MessageMetaData metaData = hasMetaData(flags) ? decodeMetaData(in) : null;
+
                 T payload = decodeResponsePayload(requestId, in);
 
-                return new ResponseChunk<>(requestId, payload);
+                return new ResponseChunk<>(requestId, payload, metaData);
             }
             case FINAL_RESPONSE: {
                 int requestId = in.readVarInt();
 
+                MessageMetaData metaData = hasMetaData(flags) ? decodeMetaData(in) : null;
+
                 T payload = decodeResponsePayload(requestId, in);
 
-                return new FinalResponse<>(requestId, payload);
+                return new FinalResponse<>(requestId, payload, metaData);
             }
             case VOID_RESPONSE: {
                 int requestId = in.readVarInt();
 
-                return new VoidResponse(requestId);
+                return new MessagingProtocol.VoidResponse(requestId);
             }
             case ERROR_RESPONSE: {
                 int requestId = in.readVarInt();
@@ -485,8 +500,8 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
         metaData.writeTo(out);
     }
 
-    private Optional<MessageMetaData> decodeMetaData(DataReader in) throws IOException {
-        return Optional.of(MessageMetaData.readFrom(in));
+    private MessageMetaData decodeMetaData(DataReader in) throws IOException {
+        return MessageMetaData.readFrom(in);
     }
 
     private void encodeSourceId(MessagingChannelId id, DataWriter out) throws IOException {

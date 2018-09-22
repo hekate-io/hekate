@@ -42,8 +42,8 @@ public class HekateJmxTest extends HekateNodeTestBase {
         assertEquals(node.cluster().clusterName(), jmxAttribute(name, "ClusterName", String.class, node));
         assertEquals(node.localNode().name(), jmxAttribute(name, "NodeName", String.class, node));
         assertEquals(node.localNode().id().toString(), jmxAttribute(name, "NodeId", String.class, node));
-        assertEquals(node.localNode().address().socket().getHostString(), jmxAttribute(name, "Host", String.class, node));
-        assertEquals((Integer)node.localNode().address().socket().getPort(), jmxAttribute(name, "Port", Integer.class, node));
+        assertEquals(node.localNode().address().host(), jmxAttribute(name, "Host", String.class, node));
+        assertEquals((Integer)node.localNode().address().port(), jmxAttribute(name, "Port", Integer.class, node));
         assertEquals(node.localNode().address().socket().toString(), jmxAttribute(name, "SocketAddress", String.class, node));
         Assert.assertEquals(Hekate.State.UP.name(), jmxAttribute(name, "State", String.class, node));
         assertTrue(jmxAttribute(name, "UpTimeMillis", Long.class, node) > 0);

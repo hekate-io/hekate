@@ -20,10 +20,12 @@ import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import io.hekate.util.trace.TraceInfo;
+import io.hekate.util.trace.Traceable;
 import java.util.List;
 import java.util.Map;
 
-abstract class LockProtocol {
+abstract class LockProtocol implements Traceable {
     enum Type {
         LOCK_REQUEST,
 
@@ -90,6 +92,13 @@ abstract class LockProtocol {
         public Type type() {
             return Type.OWNER_REQUEST;
         }
+
+        @Override
+        public TraceInfo traceInfo() {
+            return TraceInfo.of(region() + "/get-lock-owner")
+                .withTag("lock-region", region())
+                .withTag("lock-name", lockName());
+        }
     }
 
     static class LockOwnerResponse extends LockProtocol {
@@ -105,8 +114,7 @@ abstract class LockProtocol {
 
         private final LockOwnerResponse.Status status;
 
-        public LockOwnerResponse(long threadId, ClusterNodeId owner,
-            LockOwnerResponse.Status status) {
+        public LockOwnerResponse(long threadId, ClusterNodeId owner, LockOwnerResponse.Status status) {
             this.threadId = threadId;
             this.owner = owner;
             this.status = status;
@@ -122,6 +130,12 @@ abstract class LockProtocol {
 
         public LockOwnerResponse.Status status() {
             return status;
+        }
+
+        @Override
+        public TraceInfo traceInfo() {
+            return TraceInfo.of(status.name())
+                .withTag("owner", owner);
         }
 
         @Override
@@ -180,6 +194,13 @@ abstract class LockProtocol {
         public LockRequestBase withTopology(ClusterHash topology) {
             return new LockRequest(lockId, region(), lockName(), node, timeout, topology, threadId);
         }
+
+        @Override
+        public TraceInfo traceInfo() {
+            return TraceInfo.of(region() + "/lock")
+                .withTag("lock-region", region())
+                .withTag("lock-name", lockName());
+        }
     }
 
     static class LockResponse extends LockProtocol {
@@ -219,6 +240,11 @@ abstract class LockProtocol {
 
         public long ownerThreadId() {
             return ownerThreadId;
+        }
+
+        @Override
+        public TraceInfo traceInfo() {
+            return TraceInfo.of(status.name());
         }
 
         @Override
@@ -268,6 +294,13 @@ abstract class LockProtocol {
         public LockRequestBase withTopology(ClusterHash topology) {
             return new UnlockRequest(lockId, region(), lockName(), node, topology);
         }
+
+        @Override
+        public TraceInfo traceInfo() {
+            return TraceInfo.of(region() + "/unlock")
+                .withTag("lock-region", region())
+                .withTag("lock-name", lockName());
+        }
     }
 
     static class UnlockResponse extends LockProtocol {
@@ -285,6 +318,11 @@ abstract class LockProtocol {
 
         public UnlockResponse.Status status() {
             return status;
+        }
+
+        @Override
+        public TraceInfo traceInfo() {
+            return TraceInfo.of(status.name());
         }
 
         @Override
@@ -320,8 +358,13 @@ abstract class LockProtocol {
         @ToStringIgnore
         private final List<LockMigrationInfo> locks;
 
-        public MigrationPrepareRequest(String region, LockMigrationKey key, boolean firstPass,
-            Map<ClusterNodeId, ClusterHash> topologies, List<LockMigrationInfo> locks) {
+        public MigrationPrepareRequest(
+            String region,
+            LockMigrationKey key,
+            boolean firstPass,
+            Map<ClusterNodeId, ClusterHash> topologies,
+            List<LockMigrationInfo> locks
+        ) {
             super(region, key);
 
             this.firstPass = firstPass;
@@ -339,6 +382,14 @@ abstract class LockProtocol {
 
         public Map<ClusterNodeId, ClusterHash> topologies() {
             return topologies;
+        }
+
+        @Override
+        public TraceInfo traceInfo() {
+            return TraceInfo.of(region() + "/migration/prepare")
+                .withTag("lock-region", region())
+                .withTag("locks", locks.size())
+                .withTag("first-pass", firstPass);
         }
 
         @Override
@@ -362,6 +413,13 @@ abstract class LockProtocol {
         }
 
         @Override
+        public TraceInfo traceInfo() {
+            return TraceInfo.of(region() + "/migration/apply")
+                .withTag("lock-region", region())
+                .withTag("locks", locks.size());
+        }
+
+        @Override
         public Type type() {
             return Type.MIGRATION_APPLY;
         }
@@ -382,6 +440,11 @@ abstract class LockProtocol {
 
         public MigrationResponse.Status status() {
             return status;
+        }
+
+        @Override
+        public TraceInfo traceInfo() {
+            return TraceInfo.of(status.name());
         }
 
         @Override

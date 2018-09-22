@@ -19,7 +19,7 @@ package io.hekate.messaging.internal;
 import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingServiceFactory;
-import io.hekate.messaging.intercept.MessageInterceptor;
+import io.hekate.messaging.intercept.ServerMessageInterceptor;
 import io.hekate.messaging.intercept.ServerReceiveContext;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.unicast.SendCallback;
@@ -174,9 +174,9 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
         createChannel(
             c -> c.withReceiver(msg -> msg.reply(msg.get() + "-OK")),
             boot -> boot.withService(MessagingServiceFactory.class, msg ->
-                msg.withGlobalInterceptor(new MessageInterceptor<Object>() {
+                msg.withGlobalInterceptor(new ServerMessageInterceptor<Object>() {
                     @Override
-                    public Object interceptServerReceive(Object msg, ServerReceiveContext<Object> rcvCtx) {
+                    public Object beforeServerReceive(Object msg, ServerReceiveContext rcvCtx) {
                         return msg + "-intercepted";
                     }
                 })

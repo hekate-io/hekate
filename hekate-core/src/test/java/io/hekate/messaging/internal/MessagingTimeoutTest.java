@@ -19,8 +19,8 @@ package io.hekate.messaging.internal;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingFutureException;
+import io.hekate.messaging.intercept.ClientMessageInterceptor;
 import io.hekate.messaging.intercept.ClientSendContext;
-import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.messaging.unicast.SubscribeFuture;
 import java.util.List;
@@ -228,9 +228,9 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel(c -> {
                 c.withMessagingTimeout(1);
-                c.withInterceptor(new MessageInterceptor<String>() {
+                c.withInterceptor(new ClientMessageInterceptor<String>() {
                     @Override
-                    public String interceptClientSend(String msg, ClientSendContext<String> sndCtx) {
+                    public String beforeClientSend(String msg, ClientSendContext sndCtx) {
                         sleep(30);
 
                         return null;
@@ -262,9 +262,9 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel(c -> {
                 c.withMessagingTimeout(1000);
-                c.withInterceptor(new MessageInterceptor<String>() {
+                c.withInterceptor(new ClientMessageInterceptor<String>() {
                     @Override
-                    public String interceptClientSend(String msg, ClientSendContext<String> sndCtx) {
+                    public String beforeClientSend(String msg, ClientSendContext sndCtx) {
                         sleep(30);
 
                         return null;

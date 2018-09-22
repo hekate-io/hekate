@@ -101,9 +101,9 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
             fakeClient.connect(socketAddress, new Connect(invalidNodeId, newAddress(1), sourceId), callback);
 
-            fakeClient.send(new Notification<>(false, 0, "fail1", Optional.empty()));
-            fakeClient.send(new Notification<>(false, 0, "fail2", Optional.empty()));
-            fakeClient.send(new Notification<>(false, 0, "fail3", Optional.empty()));
+            fakeClient.send(new Notification<>(false, 0, "fail1", null));
+            fakeClient.send(new Notification<>(false, 0, "fail2", null));
+            fakeClient.send(new Notification<>(false, 0, "fail3", null));
 
             // Check that client was disconnected and no messages were received by the server.
             callback.awaitForDisconnects(1);

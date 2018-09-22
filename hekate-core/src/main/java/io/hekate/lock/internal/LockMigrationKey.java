@@ -25,11 +25,11 @@ import java.util.Objects;
 class LockMigrationKey {
     private final ClusterNodeId coordinator;
 
-    private final ClusterHash topology;
-
     private final long id;
 
-    public LockMigrationKey(ClusterNodeId coordinator, ClusterHash topology, long id) {
+    private final ClusterHash topology;
+
+    public LockMigrationKey(ClusterNodeId coordinator, long id, ClusterHash topology) {
         this.coordinator = coordinator;
         this.topology = topology;
         this.id = id;

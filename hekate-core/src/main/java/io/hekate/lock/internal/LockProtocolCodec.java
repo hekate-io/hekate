@@ -303,7 +303,7 @@ class LockProtocolCodec implements Codec<LockProtocol> {
 
         long id = in.readVarLong();
 
-        return new LockMigrationKey(coordinator, topology, id);
+        return new LockMigrationKey(coordinator, id, topology);
     }
 
     private void encodeTopologies(Map<ClusterNodeId, ClusterHash> topologies, DataWriter out) throws IOException {

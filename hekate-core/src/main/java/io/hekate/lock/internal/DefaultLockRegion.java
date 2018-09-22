@@ -531,7 +531,7 @@ class DefaultLockRegion implements LockRegion {
 
                         // Need to generate new migration key.
                         // Otherwise nodes can ignore second-pass message since they've already seen the previous key.
-                        migrationKey = new LockMigrationKey(localNode, latestMapping.topology().hash(), keyIdGen.incrementAndGet());
+                        migrationKey = new LockMigrationKey(localNode, keyIdGen.incrementAndGet(), latestMapping.topology().hash());
 
                         List<LockMigrationInfo> migration = prepareMigration(topologies, emptyList());
 
@@ -802,7 +802,7 @@ class DefaultLockRegion implements LockRegion {
 
         ClusterTopology topology = latestMapping.topology();
 
-        migrationKey = new LockMigrationKey(localNode, topology.hash(), keyIdGen.incrementAndGet());
+        migrationKey = new LockMigrationKey(localNode, keyIdGen.incrementAndGet(), topology.hash());
 
         if (DEBUG) {
             log.debug("Starting locks migration "

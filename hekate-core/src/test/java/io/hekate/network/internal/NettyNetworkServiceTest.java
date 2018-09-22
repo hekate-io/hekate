@@ -130,7 +130,7 @@ public class NettyNetworkServiceTest extends HekateNodeParamTestBase {
                 })
             ).join();
 
-            assertEquals(20100 + i, node.localNode().address().socket().getPort());
+            assertEquals(20100 + i, node.localNode().address().port());
         });
 
         say("Will fail.");

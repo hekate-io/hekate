@@ -14,29 +14,7 @@
  * under the License.
  */
 
-package io.hekate.messaging.internal;
-
-import io.hekate.cluster.ClusterView;
-import io.hekate.failover.FailoverPolicy;
-import io.hekate.messaging.loadbalance.LoadBalancer;
-import io.hekate.partition.PartitionMapper;
-
-interface MessagingOpts<T> {
-    String name();
-
-    LoadBalancer<T> balancer();
-
-    ClusterView cluster();
-
-    FailoverPolicy failover();
-
-    PartitionMapper partitions();
-
-    long timeout();
-
-    boolean isConfirmReceive();
-
-    default boolean hasTimeout() {
-        return timeout() > 0;
-    }
-}
+/**
+ * Utilities for tracing.
+ */
+package io.hekate.util.trace;
