@@ -140,20 +140,28 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
 
                 // No affinity.
                 assertEquals(msg1 + "-CS-false-null-SR-reply-SS-CR", channel.request(msg1).response());
-                assertEquals(msg1 + "-CS-false-null-SR", lastServerReceiveComplete.getAndSet(null));
+                busyWait("receive complete", () ->
+                    (msg1 + "-CS-false-null-SR").equals(lastServerReceiveComplete.getAndSet(null))
+                );
 
                 assertEquals(msg2 + "-CS-false-null-SR-reply-SS-CR", channel.request(msg2).responseUninterruptedly());
-                assertEquals(msg2 + "-CS-false-null-SR", lastServerReceiveComplete.getAndSet(null));
+                busyWait("receive complete", () ->
+                    (msg2 + "-CS-false-null-SR").equals(lastServerReceiveComplete.getAndSet(null))
+                );
 
                 to.assertReceived(msg1 + "-CS-false-null-SR");
                 to.assertReceived(msg2 + "-CS-false-null-SR");
 
                 // With affinity.
                 assertEquals(msg1 + "-CS-true-1-SR-reply-SS-CR", channel.withAffinity(1).request(msg1).response());
-                assertEquals(msg1 + "-CS-true-1-SR", lastServerReceiveComplete.getAndSet(null));
+                busyWait("receive complete", () ->
+                    (msg1 + "-CS-true-1-SR").equals(lastServerReceiveComplete.getAndSet(null))
+                );
 
                 assertEquals(msg2 + "-CS-true-1-SR-reply-SS-CR", channel.withAffinity(1).request(msg2).responseUninterruptedly());
-                assertEquals(msg2 + "-CS-true-1-SR", lastServerReceiveComplete.getAndSet(null));
+                busyWait("receive complete", () ->
+                    (msg2 + "-CS-true-1-SR").equals(lastServerReceiveComplete.getAndSet(null))
+                );
 
                 to.assertReceived(msg1 + "-CS-true-1-SR");
                 to.assertReceived(msg2 + "-CS-true-1-SR");
@@ -306,7 +314,9 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 // No affinity.
                 List<String> replies = get(channel.subscribe(msg));
 
-                assertEquals(msg + "-CS-false-null-SR", lastServerReceiveComplete.getAndSet(null));
+                busyWait("receive complete", () ->
+                    (msg + "-CS-false-null-SR").equals(lastServerReceiveComplete.getAndSet(null))
+                );
 
                 assertEquals(msg + "-CS-false-null-SR-reply-part-SS-CR", replies.get(0));
                 assertEquals(msg + "-CS-false-null-SR-reply-part-SS-CR", replies.get(1));
@@ -317,7 +327,9 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 // With affinity.
                 List<String> affinityReplies = get(channel.withAffinity(1).subscribe(msg));
 
-                assertEquals(msg + "-CS-true-1-SR", lastServerReceiveComplete.getAndSet(null));
+                busyWait("receive complete", () ->
+                    (msg + "-CS-true-1-SR").equals(lastServerReceiveComplete.getAndSet(null))
+                );
 
                 assertEquals(msg + "-CS-true-1-SR-reply-part-SS-CR", affinityReplies.get(0));
                 assertEquals(msg + "-CS-true-1-SR-reply-part-SS-CR", affinityReplies.get(1));
@@ -428,13 +440,13 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
 
                 from.get().forNode(to.nodeId()).send(msg1).get();
 
-                busyWait("message 1", () ->
+                busyWait("receive complete", () ->
                     (msg1 + "-CS-SR").equals(lastServerReceiveComplete.getAndSet(null))
                 );
 
                 from.get().forNode(to.nodeId()).send(msg2).getUninterruptedly();
 
-                busyWait("message 2", () ->
+                busyWait("receive complete", () ->
                     (msg2 + "-CS-SR").equals(lastServerReceiveComplete.getAndSet(null))
                 );
             }
@@ -526,16 +538,20 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
 
         for (TestChannel from : channels) {
             for (TestChannel to : channels) {
-                String ack1 = "test1-" + from.nodeId();
-                String ack2 = "test2-" + from.nodeId();
+                String msg1 = "test1-" + from.nodeId();
+                String msg2 = "test2-" + from.nodeId();
 
-                from.get().forNode(to.nodeId()).withConfirmReceive(true).send(ack1).get();
+                from.get().forNode(to.nodeId()).withConfirmReceive(true).send(msg1).get();
 
-                assertEquals(ack1 + "-CS-SR", lastServerReceiveComplete.getAndSet(null));
+                busyWait("receive complete", () ->
+                    (msg1 + "-CS-SR").equals(lastServerReceiveComplete.getAndSet(null))
+                );
 
-                from.get().forNode(to.nodeId()).withConfirmReceive(true).send(ack2).getUninterruptedly();
+                from.get().forNode(to.nodeId()).withConfirmReceive(true).send(msg2).getUninterruptedly();
 
-                assertEquals(ack2 + "-CS-SR", lastServerReceiveComplete.getAndSet(null));
+                busyWait("receive complete", () ->
+                    (msg2 + "-CS-SR").equals(lastServerReceiveComplete.getAndSet(null))
+                );
             }
         }
 
