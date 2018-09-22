@@ -28,8 +28,8 @@ import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.intercept.ClientReceiveContext;
 import io.hekate.messaging.intercept.InboundType;
 import io.hekate.messaging.intercept.OutboundType;
-import io.hekate.messaging.intercept.ServerSendContext;
 import io.hekate.messaging.intercept.ServerReceiveContext;
+import io.hekate.messaging.intercept.ServerSendContext;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.network.NetworkEndpoint;
@@ -803,6 +803,7 @@ abstract class MessagingProtocol {
             return Optional.ofNullable(metaData);
         }
 
+        @Override
         public boolean hasMetaData() {
             return metaData != null;
         }
@@ -959,6 +960,7 @@ abstract class MessagingProtocol {
             return Optional.ofNullable(metaData);
         }
 
+        @Override
         public boolean hasMetaData() {
             return metaData != null;
         }

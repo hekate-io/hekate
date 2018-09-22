@@ -37,9 +37,7 @@ class MessagingSingleThreadWorker implements MessagingWorker {
 
         this.timer = timer;
 
-        LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
-
-        executor = new ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, queue, factory);
+        this.executor = new ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), factory);
     }
 
     @Override
@@ -60,6 +58,16 @@ class MessagingSingleThreadWorker implements MessagingWorker {
     @Override
     public Future<?> executeDeferred(long delay, Runnable task) {
         return timer.schedule(() -> execute(task), delay, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public int activeTasks() {
+        return executor.getQueue().size();
+    }
+
+    @Override
+    public long completedTasks() {
+        return executor.getCompletedTaskCount();
     }
 
     public Waiting terminate() {

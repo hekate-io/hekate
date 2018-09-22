@@ -67,6 +67,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import org.junit.After;
 import org.junit.Rule;
@@ -260,6 +261,14 @@ public abstract class HekateTestBase {
     private boolean ignoreGhostThreads;
 
     public static void busyWait(String comment, Callable<Boolean> condition) throws Exception {
+        for (int i = 0; i < BUSY_WAIT_LOOPS; i++) {
+            if (condition.call()) {
+                return;
+            }
+
+            LockSupport.parkNanos(i + 1);
+        }
+
         for (int i = 0; i < BUSY_WAIT_LOOPS; i++) {
             if (condition.call()) {
                 return;

@@ -20,23 +20,27 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.IntSupplier;
+import java.util.function.LongSupplier;
 
 class MessagingMetrics {
     private final LongAdder reqAct = new LongAdder();
 
     private final Counter reqCount;
 
-    private final LongAdder taskAct = new LongAdder();
-
-    private final Counter taskCount;
-
     private final Counter retry;
 
-    public MessagingMetrics(String channelName, MeterRegistry metrics) {
+    public MessagingMetrics(String channelName, IntSupplier activeTaskSource, LongSupplier completedTaskSource, MeterRegistry metrics) {
         assert channelName != null : "Channel name is null.";
+        assert activeTaskSource != null : "Active task source is null.";
+        assert completedTaskSource != null : "Completed task source is null.";
         assert metrics != null : "Meter registry is null.";
 
-        taskCount = Counter.builder("hekate.message.task.count")
+        Gauge.builder("hekate.message.task.count", completedTaskSource, LongSupplier::getAsLong)
+            .tag("channel", channelName)
+            .register(metrics);
+
+        Gauge.builder("hekate.message.task.active", activeTaskSource, IntSupplier::getAsInt)
             .tag("channel", channelName)
             .register(metrics);
 
@@ -65,16 +69,6 @@ class MessagingMetrics {
         reqCount.increment();
 
         reqAct.add(1);
-    }
-
-    public void onAsyncEnqueue() {
-        taskCount.increment();
-
-        taskAct.increment();
-    }
-
-    public void onAsyncDequeue() {
-        taskAct.decrement();
     }
 
     public void onRetry() {

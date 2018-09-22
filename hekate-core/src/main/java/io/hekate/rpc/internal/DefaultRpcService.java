@@ -36,8 +36,8 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingConfigProvider;
 import io.hekate.messaging.MessagingService;
+import io.hekate.messaging.intercept.ClientMessageInterceptor;
 import io.hekate.messaging.intercept.ClientSendContext;
-import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcClientBuilder;
 import io.hekate.rpc.RpcClientConfig;
@@ -274,7 +274,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
             .withBackPressure(backPressure)
             .withLogCategory(RpcService.class.getName())
             .withMessageCodec(new RpcProtocolCodecFactory(codec))
-            .withInterceptor(new MessageInterceptor<RpcProtocol>() {
+            .withInterceptor(new ClientMessageInterceptor<RpcProtocol>() {
                 @Override
                 public RpcProtocol beforeClientSend(RpcProtocol msg, ClientSendContext ctx) {
                     // Convert method calls to compact representations.

@@ -47,13 +47,9 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
 
         long receivedAtMillis = msg.hasTimeout() ? System.nanoTime() : 0;
 
-        onAsyncEnqueue();
-
-        attempt.ctx().worker().execute(() -> {
-            onAsyncDequeue();
-
-            receiveNotificationAsync(msg, receivedAtMillis);
-        });
+        attempt.ctx().worker().execute(() ->
+            receiveNotificationAsync(msg, receivedAtMillis)
+        );
     }
 
     @Override
@@ -64,13 +60,9 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
 
         long receivedAtMillis = msg.hasTimeout() ? System.nanoTime() : 0;
 
-        onAsyncEnqueue();
-
-        attempt.ctx().worker().execute(() -> {
-            onAsyncDequeue();
-
-            receiveRequestAsync(msg, attempt.ctx().worker(), receivedAtMillis);
-        });
+        attempt.ctx().worker().execute(() ->
+            receiveRequestAsync(msg, attempt.ctx().worker(), receivedAtMillis)
+        );
     }
 
     @Override
@@ -86,13 +78,9 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
                 callback.onComplete(null);
             }
 
-            onAsyncEnqueue();
-
-            worker.execute(() -> {
-                onAsyncDequeue();
-
-                doReceiveResponseChunk(handle, msg);
-            });
+            worker.execute(() ->
+                doReceiveResponseChunk(handle, msg)
+            );
         }
     }
 
@@ -109,13 +97,9 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
                 callback.onComplete(null);
             }
 
-            onAsyncEnqueue();
-
-            worker.execute(() -> {
-                onAsyncDequeue();
-
-                doReceiveFinalResponse(handle, msg);
-            });
+            worker.execute(() ->
+                doReceiveFinalResponse(handle, msg)
+            );
         }
     }
 
@@ -124,13 +108,9 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
         RequestHandle<T> handle = requests().get(request.requestId());
 
         if (handle != null) {
-            onAsyncEnqueue();
-
-            worker.execute(() -> {
-                onAsyncDequeue();
-
-                doReceiveVoidResponse(handle);
-            });
+            worker.execute(() ->
+                doReceiveVoidResponse(handle)
+            );
         }
     }
 
@@ -139,13 +119,9 @@ class MessagingConnectionMem<T> extends MessagingConnectionBase<T> {
         RequestHandle<T> handle = requests().get(requestId);
 
         if (handle != null) {
-            onAsyncEnqueue();
-
-            worker.execute(() -> {
-                onAsyncDequeue();
-
-                doReceiveError(handle, new ErrorResponse(requestId, ErrorUtils.stackTrace(cause)));
-            });
+            worker.execute(() ->
+                doReceiveError(handle, new ErrorResponse(requestId, ErrorUtils.stackTrace(cause)))
+            );
         }
     }
 

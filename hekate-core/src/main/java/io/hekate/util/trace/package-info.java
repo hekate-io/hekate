@@ -14,22 +14,7 @@
  * under the License.
  */
 
-package io.hekate.messaging.internal;
-
-import io.hekate.util.async.Waiting;
-
-interface MessagingExecutor {
-    boolean isAsync();
-
-    MessagingWorker workerFor(int affinity);
-
-    MessagingWorker pooledWorker();
-
-    Waiting terminate();
-
-    int poolSize();
-
-    int activeTasks();
-
-    long completedTasks();
-}
+/**
+ * Utilities for tracing.
+ */
+package io.hekate.util.trace;

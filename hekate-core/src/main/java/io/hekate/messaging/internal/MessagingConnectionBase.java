@@ -22,8 +22,8 @@ import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingEndpoint;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.MessagingRemoteException;
-import io.hekate.messaging.intercept.ServerSendContext;
 import io.hekate.messaging.intercept.ServerReceiveContext;
+import io.hekate.messaging.intercept.ServerSendContext;
 import io.hekate.messaging.internal.MessagingProtocol.ErrorResponse;
 import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
@@ -49,8 +49,6 @@ abstract class MessagingConnectionBase<T> {
 
     private final MessagingExecutor async;
 
-    private final MessagingMetrics metrics;
-
     private final ReceivePressureGuard pressureGuard;
 
     private final MessagingEndpoint<T> endpoint;
@@ -67,10 +65,9 @@ abstract class MessagingConnectionBase<T> {
         this.endpoint = endpoint;
         this.log = ctx.log();
         this.receiver = ctx.receiver();
-        this.metrics = ctx.metrics();
         this.pressureGuard = ctx.receiveGuard();
 
-        this.requests = new RequestRegistry<>(metrics);
+        this.requests = new RequestRegistry<>(ctx.metrics());
     }
 
     public abstract NetworkFuture<MessagingProtocol> disconnect();
@@ -364,13 +361,9 @@ abstract class MessagingConnectionBase<T> {
     public void notifyOnSendSuccess(MessagingWorker worker, T payload, SendCallback callback) {
         if (callback != null) {
             if (async.isAsync()) {
-                onAsyncEnqueue();
-
-                worker.execute(() -> {
-                    onAsyncDequeue();
-
-                    doNotifyOnSendSuccess(payload, callback);
-                });
+                worker.execute(() ->
+                    doNotifyOnSendSuccess(payload, callback)
+                );
             } else {
                 doNotifyOnSendSuccess(payload, callback);
             }
@@ -384,13 +377,9 @@ abstract class MessagingConnectionBase<T> {
 
         if (callback != null) {
             if (async.isAsync()) {
-                onAsyncEnqueue();
-
-                worker.execute(() -> {
-                    onAsyncDequeue();
-
-                    doNotifyOnSendFailure(payload, error, callback);
-                });
+                worker.execute(() ->
+                    doNotifyOnSendFailure(payload, error, callback)
+                );
             } else {
                 doNotifyOnSendFailure(payload, error, callback);
             }
@@ -400,13 +389,9 @@ abstract class MessagingConnectionBase<T> {
     public void notifyOnRequestFailure(RequestHandle<T> handle, Throwable err) {
         if (handle.unregister()) {
             if (async.isAsync()) {
-                onAsyncEnqueue();
-
-                handle.worker().execute(() -> {
-                    onAsyncDequeue();
-
-                    doNotifyOnRequestFailure(handle, err);
-                });
+                handle.worker().execute(() ->
+                    doNotifyOnRequestFailure(handle, err)
+                );
             } else {
                 doNotifyOnRequestFailure(handle, err);
             }
@@ -432,13 +417,9 @@ abstract class MessagingConnectionBase<T> {
             MessagingWorker worker = handle.worker();
 
             if (async.isAsync()) {
-                onAsyncEnqueue();
-
-                worker.execute(() -> {
-                    onAsyncDequeue();
-
-                    doDiscardRequest(cause, handle);
-                });
+                worker.execute(() ->
+                    doDiscardRequest(cause, handle)
+                );
             } else {
                 doDiscardRequest(cause, handle);
             }
@@ -465,7 +446,7 @@ abstract class MessagingConnectionBase<T> {
                 try {
                     receiver.receive(msg);
                 } finally {
-                    ctx.intercept().serverReceiveComplete(msg);
+                    ctx.intercept().serverReceiveComplete(msg.get(), msg);
                 }
 
                 if (msg.isVoid()) {
@@ -489,7 +470,7 @@ abstract class MessagingConnectionBase<T> {
                 try {
                     receiver.receive(msg);
                 } finally {
-                    ctx.intercept().serverReceiveComplete(msg);
+                    ctx.intercept().serverReceiveComplete(msg.get(), msg);
                 }
             } catch (RuntimeException | Error e) {
                 if (log.isErrorEnabled()) {
@@ -551,14 +532,6 @@ abstract class MessagingConnectionBase<T> {
             + "[node=" + remoteAddress() + "]", response.stackTrace());
 
         notifyOnRequestFailure(handle, error);
-    }
-
-    protected void onAsyncEnqueue() {
-        metrics.onAsyncEnqueue();
-    }
-
-    protected void onAsyncDequeue() {
-        metrics.onAsyncDequeue();
     }
 
     protected ClusterAddress remoteAddress() {
@@ -626,8 +599,6 @@ abstract class MessagingConnectionBase<T> {
     }
 
     private void onReceiveAsyncEnqueue(NetworkEndpoint<MessagingProtocol> from) {
-        onAsyncEnqueue();
-
         if (pressureGuard != null) {
             pressureGuard.onEnqueue(from);
         }
@@ -637,8 +608,6 @@ abstract class MessagingConnectionBase<T> {
         if (pressureGuard != null) {
             pressureGuard.onDequeue();
         }
-
-        onAsyncDequeue();
     }
 
     private void doNotifyOnSendSuccess(T payload, SendCallback callback) {
