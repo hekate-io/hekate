@@ -9,9 +9,9 @@ import brave.propagation.TraceContext.Injector;
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.messaging.MessageMetaData;
 import io.hekate.messaging.MessageMetaData.MetaDataCodec;
+import io.hekate.messaging.intercept.AllMessageInterceptor;
 import io.hekate.messaging.intercept.ClientReceiveContext;
 import io.hekate.messaging.intercept.ClientSendContext;
-import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.intercept.ServerReceiveContext;
 import io.hekate.messaging.intercept.ServerSendContext;
 import io.hekate.util.format.ToString;
@@ -25,7 +25,7 @@ import static brave.Span.Kind.SERVER;
 import static io.hekate.messaging.intercept.OutboundType.SEND_NO_ACK;
 import static io.hekate.messaging.intercept.OutboundType.SEND_WITH_ACK;
 
-class ZipkinMessageInterceptor implements MessageInterceptor<Object> {
+class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
     private static final String SPAN_ATTRIBUTE = "zipkin-span";
 
     private static final String SCOPE_ATTRIBUTE = "zipkin-scope";
@@ -210,7 +210,7 @@ class ZipkinMessageInterceptor implements MessageInterceptor<Object> {
     }
 
     @Override
-    public void onServerReceiveComplete(ServerReceiveContext rcvCtx) {
+    public void onServerReceiveComplete(Object msg, ServerReceiveContext rcvCtx) {
         // Cleanup scope.
         Tracer.SpanInScope scope = (Tracer.SpanInScope)rcvCtx.getAttribute(SCOPE_ATTRIBUTE);
 
