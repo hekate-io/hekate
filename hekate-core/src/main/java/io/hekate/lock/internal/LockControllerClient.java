@@ -172,14 +172,16 @@ class LockControllerClient {
     }
 
     public void update(PartitionMapper mapping) {
-        lock.lock();
+        if (mapping != null) {
+            lock.lock();
 
-        try {
-            this.topology = mapping.topology();
+            try {
+                this.topology = mapping.topology();
 
-            this.manager = mapping.map(key).primaryNode().id();
-        } finally {
-            lock.unlock();
+                this.manager = mapping.map(key).primaryNode().id();
+            } finally {
+                lock.unlock();
+            }
         }
     }
 
@@ -195,7 +197,7 @@ class LockControllerClient {
         }
     }
 
-    public void becomeLocking() {
+    public void becomeLocking(PartitionMapper mapping) {
         lock.lock();
 
         try {
@@ -203,14 +205,18 @@ class LockControllerClient {
 
             status = Status.LOCKING;
 
+            update(mapping);
+
             remoteLock();
         } finally {
             lock.unlock();
         }
     }
 
-    public void becomeUnlocking() {
+    public LockFuture becomeUnlocking() {
         doBecomeUnlocking(false);
+
+        return unlockFuture;
     }
 
     public void becomeUnlockingIfNotLocked() {
@@ -293,7 +299,7 @@ class LockControllerClient {
         lock.lock();
 
         try {
-            if (!requestTopology.equals(topology.hash())) {
+            if (topology == null || !requestTopology.equals(topology.hash())) {
                 return false;
             }
 
@@ -346,7 +352,7 @@ class LockControllerClient {
             lock.lock();
 
             try {
-                if (!requestTopology.equals(topology.hash())) {
+                if (topology == null || !requestTopology.equals(topology.hash())) {
                     return false;
                 }
 
@@ -383,7 +389,7 @@ class LockControllerClient {
         lock.lock();
 
         try {
-            if (requestTopology != null && !requestTopology.equals(topology.hash())) {
+            if (topology == null || (requestTopology != null && !requestTopology.equals(topology.hash()))) {
                 return false;
             }
 
