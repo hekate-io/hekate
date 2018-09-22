@@ -16,6 +16,7 @@
 
 package io.hekate.election.internal;
 
+import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
@@ -31,7 +32,6 @@ import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.TerminatingService;
-import io.hekate.election.Candidate;
 import io.hekate.election.CandidateConfig;
 import io.hekate.election.CandidateConfigProvider;
 import io.hekate.election.ElectionService;
@@ -152,6 +152,13 @@ public class DefaultElectionService implements ElectionService, DependentService
                         jmx.register(handler, handler.group());
                     }
                 }
+
+                // Initialize handlers after joining the cluster.
+                ctx.cluster().addListener(event ->
+                    guard.withReadLockIfInitialized(() -> {
+                        handlers.values().forEach(CandidateHandler::initialize);
+                    }), ClusterEventType.JOIN
+                );
             }
         } finally {
             guard.unlockWrite();
@@ -235,7 +242,9 @@ public class DefaultElectionService implements ElectionService, DependentService
             guard.unlockRead();
         }
 
-        ArgAssert.check(handler != null, "Unknown group [name=" + group + ']');
+        if (handler == null) {
+            throw new IllegalArgumentException("Unknown group [name=" + group + ']');
+        }
 
         return handler;
     }
@@ -252,17 +261,20 @@ public class DefaultElectionService implements ElectionService, DependentService
 
         String group = cfg.getGroup().trim();
 
-        Candidate candidate = cfg.getCandidate();
-
         DistributedLock lock = locks.region(LOCK_REGION).get(group);
 
         ExecutorService worker = Executors.newSingleThreadExecutor(new HekateThreadFactory("Election" + '-' + group));
 
-        CandidateHandler handler = new CandidateHandler(group, candidate, worker, lock, hekate.localNode(), hekate);
+        CandidateHandler handler = new CandidateHandler(
+            group,
+            cfg.getCandidate(),
+            worker,
+            lock,
+            hekate.localNode(),
+            hekate
+        );
 
         handlers.put(group, handler);
-
-        handler.initialize();
     }
 
     @Override

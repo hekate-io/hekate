@@ -25,6 +25,14 @@ class LockFuture extends CompletableFuture<Boolean> {
         this.handle = handle;
     }
 
+    public static LockFuture completedFuture(boolean result) {
+        LockFuture future = new LockFuture(null);
+
+        future.complete(result);
+
+        return future;
+    }
+
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         if (super.cancel(mayInterruptIfRunning)) {

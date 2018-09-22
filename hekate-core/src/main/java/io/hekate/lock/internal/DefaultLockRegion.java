@@ -48,7 +48,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -126,9 +125,6 @@ class DefaultLockRegion implements LockRegion {
 
     @ToStringIgnore
     private final Object lockServersMux = new Object();
-
-    @ToStringIgnore
-    private final Set<LockControllerClient> deferredLocks = new LinkedHashSet<>();
 
     @ToStringIgnore
     private final CountDownLatch initMigration = new CountDownLatch(1);
@@ -211,7 +207,7 @@ class DefaultLockRegion implements LockRegion {
             return Optional.empty();
         }
 
-        CompletableFuture<Optional<LockOwnerInfo>> future = new CompletableFuture<>();
+        CompletableFuture<Optional<LockOwnerInfo>> resultFuture = new CompletableFuture<>();
 
         LockOwnerRequest request = new LockOwnerRequest(regionName, lockName);
 
@@ -225,7 +221,7 @@ class DefaultLockRegion implements LockRegion {
                         ClusterNodeId ownerId = lockReply.owner();
 
                         if (ownerId == null) {
-                            future.complete(Optional.empty());
+                            resultFuture.complete(Optional.empty());
                         } else {
                             ClusterTopology topology = lockChannel.cluster().topology();
 
@@ -236,28 +232,28 @@ class DefaultLockRegion implements LockRegion {
                             if (ownerNode != null) {
                                 DefaultLockOwnerInfo info = new DefaultLockOwnerInfo(lockReply.threadId(), ownerNode);
 
-                                future.complete(Optional.of(info));
+                                resultFuture.complete(Optional.of(info));
                             }
                         }
                     }
                 }
 
-                return future.isDone() ? COMPLETE : REJECT;
+                return resultFuture.isDone() ? COMPLETE : REJECT;
             }
 
             @Override
             public void onComplete(Throwable err, Response<LockProtocol> rsp) {
                 // All attempts failed which means that manager is terminated.
                 if (err != null) {
-                    future.complete(Optional.empty());
+                    resultFuture.complete(Optional.empty());
                 }
             }
         });
 
         try {
-            return future.get();
+            return resultFuture.get();
         } catch (InterruptedException e) {
-            future.cancel(false);
+            resultFuture.cancel(false);
 
             throw e;
         } catch (ExecutionException e) {
@@ -295,13 +291,8 @@ class DefaultLockRegion implements LockRegion {
                 timeout,
                 metrics,
                 callback,
-                cleanup -> {
-                    lockClients.remove(lockId);
-
-                    synchronized (deferredLocks) {
-                        deferredLocks.remove(cleanup);
-                    }
-                });
+                cleanup -> lockClients.remove(lockId)
+            );
 
             if (status == Status.TERMINATED) {
                 if (DEBUG) {
@@ -318,25 +309,13 @@ class DefaultLockRegion implements LockRegion {
 
                 lockClient.unlockFuture().complete(true);
             } else {
-                if (activeMapping == null) {
-                    if (DEBUG) {
-                        log.debug("Deferred lock acquisition since initial migration is not completed yet [lock={}]", lockClient);
-                    }
-
-                    synchronized (deferredLocks) {
-                        deferredLocks.add(lockClient);
-                    }
-                } else {
-                    if (DEBUG) {
-                        log.debug("Locking [lock={}]", lockClient);
-                    }
-
-                    lockClient.update(activeMapping);
-
-                    lockClients.put(lockId, lockClient);
-
-                    lockClient.becomeLocking();
+                if (DEBUG) {
+                    log.debug("Locking [lock={}]", lockClient);
                 }
+
+                lockClients.put(lockId, lockClient);
+
+                lockClient.becomeLocking(activeMapping);
             }
 
             return lockClient;
@@ -354,55 +333,19 @@ class DefaultLockRegion implements LockRegion {
                     log.debug("Rejected unlocking since region is in {} state [region={}, lock-id={}]", regionName, status, lockId);
                 }
 
-                LockFuture future = new LockFuture(null);
-
-                future.complete(true);
-
-                return future;
+                return LockFuture.completedFuture(true);
             } else {
-                if (activeMapping == null) {
-                    LockControllerClient deferred = null;
+                LockControllerClient client = lockClients.get(lockId);
 
-                    synchronized (deferredLocks) {
-                        for (Iterator<LockControllerClient> it = deferredLocks.iterator(); it.hasNext(); ) {
-                            LockControllerClient client = it.next();
-
-                            if (client.lockId() == lockId) {
-                                if (DEBUG) {
-                                    log.debug("Cancelling deferred lock [lock={}]", client);
-                                }
-
-                                it.remove();
-
-                                deferred = client;
-
-                                break;
-                            }
-                        }
-                    }
-
-                    if (deferred == null) {
-                        throw new IllegalArgumentException("Unknown lock [id=" + lockId + ']');
-                    }
-
-                    deferred.becomeTerminated(true);
-
-                    return deferred.unlockFuture();
-                } else {
-                    LockControllerClient client = lockClients.get(lockId);
-
-                    if (client == null) {
-                        throw new IllegalArgumentException("Unknown lock [id=" + lockId + ']');
-                    }
-
-                    if (DEBUG) {
-                        log.debug("Unlocking [lock={}]", client);
-                    }
-
-                    client.becomeUnlocking();
-
-                    return client.unlockFuture();
+                if (client == null) {
+                    throw new IllegalArgumentException("Unknown lock [id=" + lockId + ']');
                 }
+
+                if (DEBUG) {
+                    log.debug("Unlocking [lock={}]", client);
+                }
+
+                return client.becomeUnlocking();
             }
         } finally {
             readLock.unlock();
@@ -418,9 +361,9 @@ class DefaultLockRegion implements LockRegion {
             if (status == Status.MIGRATING || status == Status.TERMINATED || !request.topology().equals(activeTopology())) {
                 reply(msg, new LockResponse(LockResponse.Status.RETRY, null, 0));
             } else {
-                String name = request.lockName();
+                String lockName = request.lockName();
 
-                LockControllerServer server = checkoutServer(name);
+                LockControllerServer server = checkoutServer(lockName);
 
                 boolean hasLock;
 
@@ -431,7 +374,7 @@ class DefaultLockRegion implements LockRegion {
                 }
 
                 if (!hasLock) {
-                    tryUnregisterServer(name, server);
+                    tryUnregisterServer(lockName, server);
                 }
             }
         } finally {
@@ -448,9 +391,9 @@ class DefaultLockRegion implements LockRegion {
             if (status == Status.MIGRATING || status == Status.TERMINATED || !request.topology().equals(activeTopology())) {
                 reply(msg, new UnlockResponse(UnlockResponse.Status.RETRY));
             } else {
-                String name = request.lockName();
+                String lockName = request.lockName();
 
-                LockControllerServer server = lockServers.get(name);
+                LockControllerServer server = lockServers.get(lockName);
 
                 if (server == null) {
                     if (DEBUG) {
@@ -462,7 +405,7 @@ class DefaultLockRegion implements LockRegion {
                     boolean isLocked = server.processUnlock(msg);
 
                     if (!isLocked) {
-                        tryUnregisterServer(name, server);
+                        tryUnregisterServer(lockName, server);
                     }
                 }
             }
@@ -480,9 +423,9 @@ class DefaultLockRegion implements LockRegion {
             if (status == Status.MIGRATING || status == Status.TERMINATED || !request.topology().equals(activeTopology())) {
                 reply(msg, new LockOwnerResponse(0, null, LockOwnerResponse.Status.RETRY));
             } else {
-                String name = request.lockName();
+                String lockName = request.lockName();
 
-                LockControllerServer server = lockServers.get(name);
+                LockControllerServer server = lockServers.get(lockName);
 
                 if (server == null) {
                     reply(msg, new LockOwnerResponse(0, null, LockOwnerResponse.Status.OK));
@@ -535,8 +478,13 @@ class DefaultLockRegion implements LockRegion {
 
                         List<LockMigrationInfo> migration = prepareMigration(topologies, emptyList());
 
-                        MigrationPrepareRequest prepare = new MigrationPrepareRequest(regionName, migrationKey, false, topologies,
-                            migration);
+                        MigrationPrepareRequest prepare = new MigrationPrepareRequest(
+                            regionName,
+                            migrationKey,
+                            false, // <- First pass.
+                            topologies,
+                            migration
+                        );
 
                         sendToNextNode(prepare);
 
@@ -700,13 +648,8 @@ class DefaultLockRegion implements LockRegion {
                 lock.becomeTerminated(false)
             );
 
-            deferredLocks.forEach(lock ->
-                lock.becomeTerminated(false)
-            );
-
             lockServers.clear();
             lockClients.clear();
-            deferredLocks.clear();
 
             initMigration.countDown();
 
@@ -815,7 +758,13 @@ class DefaultLockRegion implements LockRegion {
 
         List<LockMigrationInfo> migratingLocks = emptyList();
 
-        MigrationPrepareRequest prepare = new MigrationPrepareRequest(regionName, migrationKey, true, topologies, migratingLocks);
+        MigrationPrepareRequest prepare = new MigrationPrepareRequest(
+            regionName,
+            migrationKey,
+            true, // <-- First pass.
+            topologies,
+            migratingLocks
+        );
 
         sendToNextNode(prepare);
 
@@ -953,21 +902,6 @@ class DefaultLockRegion implements LockRegion {
         lockClients.values().forEach(lock ->
             lock.update(activeMapping)
         );
-
-        // Process deferred locks that were waiting for initial lock topology.
-        deferredLocks.forEach(lock -> {
-            if (DEBUG) {
-                log.debug("Registering deferred lock [lock={}]", lock);
-            }
-
-            lockClients.put(lock.lockId(), lock);
-
-            lock.update(activeMapping);
-
-            lock.becomeLocking();
-        });
-
-        deferredLocks.clear();
 
         // Notify all threads that are waiting for initial migration.
         initMigration.countDown();
