@@ -1011,13 +1011,9 @@ class MessagingGatewayContext<T> implements HekateSupport {
     }
 
     private void applyFailoverAsync(MessageAttempt<T> attempt, Throwable cause, FailoverCallback callback) {
-        onAsyncEnqueue();
-
-        attempt.ctx().worker().execute(() -> {
-            onAsyncDequeue();
-
-            applyFailover(attempt, cause, callback);
-        });
+        attempt.ctx().worker().execute(() ->
+            applyFailover(attempt, cause, callback)
+        );
     }
 
     private void applyFailover(MessageAttempt<T> attempt, Throwable cause, FailoverCallback callback) {
@@ -1057,11 +1053,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
                             MessagingWorker worker = attempt.ctx().worker();
 
                             // Schedule timeout task to apply failover actions after the failover delay.
-                            onAsyncEnqueue();
-
                             worker.executeDeferred(resolution.delay(), () -> {
-                                onAsyncDequeue();
-
                                 try {
                                     callback.retry(routing, Optional.of(failoverCtx.withRouting(routing)));
                                 } catch (RuntimeException | Error e) {
@@ -1138,24 +1130,12 @@ class MessagingGatewayContext<T> implements HekateSupport {
         }
     }
 
-    private void onAsyncEnqueue() {
-        metrics.onAsyncDequeue();
-    }
-
-    private void onAsyncDequeue() {
-        metrics.onAsyncEnqueue();
-    }
-
     private void onRetry() {
         metrics.onRetry();
     }
 
     private void notifyOnErrorAsync(MessageContext<T> ctx, Object callback, Throwable err) {
-        onAsyncEnqueue();
-
         ctx.worker().execute(() -> {
-            onAsyncDequeue();
-
             if (ctx.complete()) {
                 doNotifyOnError(callback, err);
             }

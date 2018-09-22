@@ -51,4 +51,14 @@ class MessagingExecutorSync implements MessagingExecutor {
     public int poolSize() {
         return 0;
     }
+
+    @Override
+    public int activeTasks() {
+        return worker.activeTasks();
+    }
+
+    @Override
+    public long completedTasks() {
+        return worker.completedTasks();
+    }
 }

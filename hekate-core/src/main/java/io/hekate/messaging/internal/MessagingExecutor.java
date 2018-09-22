@@ -28,4 +28,8 @@ interface MessagingExecutor {
     Waiting terminate();
 
     int poolSize();
+
+    int activeTasks();
+
+    long completedTasks();
 }

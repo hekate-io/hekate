@@ -24,4 +24,8 @@ interface MessagingWorker extends Executor {
     void execute(Runnable command);
 
     Future<?> executeDeferred(long delay, Runnable task);
+
+    int activeTasks();
+
+    long completedTasks();
 }

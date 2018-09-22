@@ -77,4 +77,26 @@ class MessagingExecutorAsync implements MessagingExecutor {
     public int poolSize() {
         return size;
     }
+
+    @Override
+    public int activeTasks() {
+        int size = 0;
+
+        for (MessagingSingleThreadWorker worker : affinityWorkers) {
+            size += worker.activeTasks();
+        }
+
+        return size + pooledWorker.activeTasks();
+    }
+
+    @Override
+    public long completedTasks() {
+        int size = 0;
+
+        for (MessagingSingleThreadWorker worker : affinityWorkers) {
+            size += worker.completedTasks();
+        }
+
+        return size + pooledWorker.completedTasks();
+    }
 }

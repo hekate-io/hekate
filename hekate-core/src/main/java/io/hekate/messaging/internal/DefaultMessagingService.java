@@ -403,7 +403,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         }
 
         // Prepare metrics.
-        MessagingMetrics channelMetrics = new MessagingMetrics(name, metrics);
+        MessagingMetrics channelMetrics = new MessagingMetrics(name, async::activeTasks, async::completedTasks, metrics);
 
         // Make sure that receiver is guarded with lock.
         MessageReceiver<T> guardedReceiver = applyGuard(gateway.unguardedReceiver());

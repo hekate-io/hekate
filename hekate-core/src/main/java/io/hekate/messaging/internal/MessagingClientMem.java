@@ -60,6 +60,16 @@ class MessagingClientMem<T> implements MessagingClient<T> {
         public int poolSize() {
             return delegate.poolSize();
         }
+
+        @Override
+        public int activeTasks() {
+            return delegate.activeTasks();
+        }
+
+        @Override
+        public long completedTasks() {
+            return delegate.completedTasks();
+        }
     }
 
     private final ClusterNode node;

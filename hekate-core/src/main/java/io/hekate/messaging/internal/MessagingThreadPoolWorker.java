@@ -20,7 +20,6 @@ import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
 import io.hekate.util.format.ToString;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
@@ -29,7 +28,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 class MessagingThreadPoolWorker implements MessagingWorker {
-    private final ExecutorService executor;
+    private final ThreadPoolExecutor executor;
 
     private final ScheduledExecutorService timer;
 
@@ -40,9 +39,7 @@ class MessagingThreadPoolWorker implements MessagingWorker {
 
         this.timer = timer;
 
-        LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
-
-        executor = new ThreadPoolExecutor(parallelism, parallelism, 0, TimeUnit.NANOSECONDS, queue, factory);
+        this.executor = new ThreadPoolExecutor(parallelism, parallelism, 0, TimeUnit.NANOSECONDS, new LinkedBlockingQueue<>(), factory);
     }
 
     @Override
@@ -63,6 +60,16 @@ class MessagingThreadPoolWorker implements MessagingWorker {
     @Override
     public Future<?> executeDeferred(long delay, Runnable task) {
         return timer.schedule(() -> execute(task), delay, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public int activeTasks() {
+        return executor.getQueue().size();
+    }
+
+    @Override
+    public long completedTasks() {
+        return executor.getCompletedTaskCount();
     }
 
     public Waiting terminate() {
