@@ -50,16 +50,18 @@ public class TestChannel {
 
     public TestChannel(MessageReceiver<String> receiverDelegate) {
         receiver = msg -> {
-            received.add(msg.get());
+            try {
+                if (receiverDelegate != null) {
+                    try {
+                        receiverDelegate.receive(msg);
+                    } catch (RuntimeException | Error e) {
+                        receiverError = e;
 
-            if (receiverDelegate != null) {
-                try {
-                    receiverDelegate.receive(msg);
-                } catch (RuntimeException | Error e) {
-                    receiverError = e;
-
-                    throw e;
+                        throw e;
+                    }
                 }
+            } finally {
+                received.add(msg.get());
             }
         };
     }
