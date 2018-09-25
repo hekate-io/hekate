@@ -333,9 +333,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
         String name = cfg.getName().trim();
 
-        ExecutorService async = Executors.newSingleThreadExecutor(new HekateThreadFactory(
-            CoordinationService.class.getSimpleName() + "-" + name
-        ));
+        ExecutorService async = Executors.newSingleThreadExecutor(new HekateThreadFactory("Coordination-" + name));
 
         DefaultCoordinationProcess process = new DefaultCoordinationProcess(name, hekate, cfg.getHandler(), async, channel, failoverDelay);
 
