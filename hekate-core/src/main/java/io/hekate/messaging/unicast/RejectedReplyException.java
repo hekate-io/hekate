@@ -54,6 +54,6 @@ public class RejectedReplyException extends HekateException {
 
     @Override
     public String getMessage() {
-        return super.getMessage() + " [reply=" + reply + ']';
+        return super.getMessage() + " [reply=" + reply.orElse(null) + ']';
     }
 }
