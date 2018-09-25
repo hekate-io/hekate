@@ -146,8 +146,16 @@ class DefaultCoordinationMember implements CoordinationMember {
                 @Override
                 public ReplyDecision accept(Throwable err, Response<CoordinationProtocol> reply) {
                     if (future.isDone()) {
+                        if (DEBUG) {
+                            log.debug("Skipped response since request future is already completed [from={}, response={}]", from, reply);
+                        }
+
                         return COMPLETE;
                     } else if (err != null || reply.is(CoordinationProtocol.Reject.class)) {
+                        if (DEBUG) {
+                            log.debug("Got a reject [from={}, request={}]", from, req);
+                        }
+
                         return REJECT;
                     } else {
                         CoordinationProtocol.Response response = reply.get(CoordinationProtocol.Response.class);
