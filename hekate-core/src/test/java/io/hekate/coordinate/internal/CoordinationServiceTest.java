@@ -25,6 +25,7 @@ import io.hekate.coordinate.CoordinationHandler;
 import io.hekate.coordinate.CoordinationProcessConfig;
 import io.hekate.coordinate.CoordinationRequest;
 import io.hekate.coordinate.CoordinationServiceFactory;
+import io.hekate.core.Hekate;
 import io.hekate.core.JoinFuture;
 import io.hekate.core.internal.HekateTestNode;
 import java.util.ArrayList;
@@ -93,22 +94,33 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
         @Override
         public void process(CoordinationRequest request, CoordinationContext ctx) {
-            String command = (String)request.get();
+            String cmd = (String)request.get();
 
-            if ("get".equals(command)) {
-                request.reply(lastValue);
-            } else if ("prepare".equals(command)) {
-                request.reply("ok");
-            } else if ("complete".equals(command)) {
-                request.reply("ok");
+            switch (cmd) {
+                case "get": {
+                    request.reply(lastValue);
 
-                ctx.complete();
+                    break;
+                }
+                case "prepare": {
+                    request.reply("ok");
 
-                onAfterComplete();
-            } else {
-                lastValue = command.substring("put_".length());
+                    break;
+                }
+                case "complete": {
+                    request.reply("ok");
 
-                request.reply("ok");
+                    ctx.complete();
+
+                    onAfterComplete();
+
+                    break;
+                }
+                default: {
+                    lastValue = cmd.substring("put_".length());
+
+                    request.reply("ok");
+                }
             }
         }
 
@@ -131,8 +143,71 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
         }
     }
 
+    private static final CoordinationHandler SIMPLE_HANDLER = new CoordinationHandler() {
+        @Override
+        public void prepare(CoordinationContext ctx) {
+            // No-op.
+        }
+
+        @Override
+        public void coordinate(CoordinationContext ctx) {
+            ctx.broadcast("test", responses ->
+                ctx.complete()
+            );
+        }
+
+        @Override
+        public void process(CoordinationRequest request, CoordinationContext ctx) {
+            request.reply("ok");
+
+            if (!ctx.isCoordinator()) {
+                ctx.complete();
+            }
+        }
+    };
+
     public CoordinationServiceTest(HekateTestContext params) {
         super(params);
+    }
+
+    @Test
+    public void testConcurrentCoordination() throws Exception {
+        repeat(3, i -> {
+            List<HekateTestNode> asyncJoins = new ArrayList<>();
+
+            repeat(i + 2, j ->
+                asyncJoins.add(createCoordinationNode(SIMPLE_HANDLER).join())
+            );
+
+            for (HekateTestNode node : asyncJoins) {
+                get(node.coordination().process("test").future());
+            }
+
+            for (HekateTestNode node : asyncJoins) {
+                node.leave();
+            }
+        });
+    }
+
+    @Test
+    public void testConcurrentCoordinationWithAsyncJoin() throws Exception {
+        repeat(5, i -> {
+            List<JoinFuture> asyncJoins = new ArrayList<>();
+
+            repeat(5, j ->
+                asyncJoins.add(createCoordinationNode(SIMPLE_HANDLER).joinAsync())
+            );
+
+            for (JoinFuture join : asyncJoins) {
+                Hekate node = get(join);
+
+                get(node.coordination().process("test").future());
+            }
+
+            for (JoinFuture joined : asyncJoins) {
+                joined.get().leave();
+            }
+        });
     }
 
     @Test
@@ -399,7 +474,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
     @Test
     public void testCoordinatorLeave() throws Exception {
-        repeat(30, i ->
+        repeat(5, i ->
             doTestCoordinatorLeave(coordinator ->
                 coordinator.leaveAsync()
             )
@@ -410,7 +485,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
     public void testCoordinatorTerminate() throws Exception {
         this.disableNodeFailurePostCheck();
 
-        repeat(3, i ->
+        repeat(5, i ->
             doTestCoordinatorLeave(coordinator ->
                 coordinator.terminateAsync()
             )
