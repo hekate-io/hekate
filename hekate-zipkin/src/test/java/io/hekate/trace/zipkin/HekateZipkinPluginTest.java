@@ -1,5 +1,11 @@
+package io.hekate.trace.zipkin;
+
 import brave.Tracer;
 import brave.Tracing;
+import io.hekate.coordinate.CoordinationContext;
+import io.hekate.coordinate.CoordinationHandler;
+import io.hekate.coordinate.CoordinationRequest;
+import io.hekate.coordinate.CoordinationServiceFactory;
 import io.hekate.election.Candidate;
 import io.hekate.election.ElectionServiceFactory;
 import io.hekate.lock.DistributedLock;
@@ -10,15 +16,16 @@ import io.hekate.messaging.internal.TestChannel;
 import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcServerConfig;
 import io.hekate.rpc.RpcServiceFactory;
-import io.hekate.trace.zipkin.HekateZipkinPlugin;
 import java.util.List;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.LoggerFactory;
 import zipkin2.Span;
 import zipkin2.reporter.AsyncReporter;
 import zipkin2.reporter.okhttp3.OkHttpSender;
 
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 public class HekateZipkinPluginTest extends MessagingServiceTestBase {
@@ -195,6 +202,43 @@ public class HekateZipkinPluginTest extends MessagingServiceTestBase {
 
         channels.forEach(c ->
             c.node().election().leader("test-group").join()
+        );
+    }
+
+    @Test
+    public void testCoordination() throws Exception {
+        List<TestChannel> channels = createAndJoinChannels(3, null,
+            boot -> {
+                // boot.withPlugin(new HekateZipkinPlugin(tracing));
+                boot.withService(CoordinationServiceFactory.class, coordination ->
+                    coordination.withProcess("test-coordination")
+                        .withHandler(new CoordinationHandler() {
+                            @Override
+                            public void prepare(CoordinationContext ctx) {
+                                // No-op.
+                            }
+
+                            @Override
+                            public void coordinate(CoordinationContext ctx) {
+                                ctx.broadcast("test", responses ->
+                                    ctx.complete()
+                                );
+                            }
+
+                            @Override
+                            public void process(CoordinationRequest request, CoordinationContext ctx) {
+                                request.reply("ok");
+
+                                if (!ctx.isCoordinator()) {
+                                    ctx.complete();
+                                }
+                            }
+                        })
+                );
+            });
+
+        channels.forEach(c ->
+            c.node().coordination().process("test-coordination").future().join()
         );
     }
 
