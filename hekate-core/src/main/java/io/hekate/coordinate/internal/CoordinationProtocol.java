@@ -19,8 +19,10 @@ package io.hekate.coordinate.internal;
 import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.util.format.ToString;
+import io.hekate.util.trace.TraceInfo;
+import io.hekate.util.trace.Traceable;
 
-abstract class CoordinationProtocol {
+abstract class CoordinationProtocol implements Traceable {
     enum Type {
         REQUEST,
 
@@ -65,6 +67,12 @@ abstract class CoordinationProtocol {
         public Type type() {
             return Type.REQUEST;
         }
+
+        @Override
+        public TraceInfo traceInfo() {
+            return TraceInfo.of("/" + processName + "/" + request.getClass().getSimpleName())
+                .withTag("topology-hash", topology);
+        }
     }
 
     static class Response extends CoordinationProtocol {
@@ -89,6 +97,11 @@ abstract class CoordinationProtocol {
         public Type type() {
             return Type.RESPONSE;
         }
+
+        @Override
+        public TraceInfo traceInfo() {
+            return TraceInfo.of("ok");
+        }
     }
 
     static final class Reject extends CoordinationProtocol {
@@ -101,6 +114,11 @@ abstract class CoordinationProtocol {
         @Override
         public Type type() {
             return Type.REJECT;
+        }
+
+        @Override
+        public TraceInfo traceInfo() {
+            return TraceInfo.of("reject");
         }
     }
 
