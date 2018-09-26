@@ -151,7 +151,13 @@ class DefaultCoordinationMember implements CoordinationMember {
                         }
 
                         return COMPLETE;
-                    } else if (err != null || reply.is(CoordinationProtocol.Reject.class)) {
+                    } else if (err != null) {
+                        if (DEBUG) {
+                            log.debug("Got an error [from={}, error={}, request={}]", from, err.toString(), req);
+                        }
+
+                        return REJECT;
+                    } else if (reply.is(CoordinationProtocol.Reject.class)) {
                         if (DEBUG) {
                             log.debug("Got a reject [from={}, request={}]", from, req);
                         }
