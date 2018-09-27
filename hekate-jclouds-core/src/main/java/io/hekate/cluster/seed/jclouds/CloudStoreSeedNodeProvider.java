@@ -100,7 +100,7 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider {
         this.credentials = cfg.getCredentials();
         this.cleanupInterval = cfg.getCleanupInterval();
 
-        Properties properties = new Properties();
+        Properties properties = cfg.buildBaseProperties();
 
         if (cfg.getProperties() != null) {
             cfg.getProperties().forEach(properties::put);

@@ -16,7 +16,6 @@
 
 package io.hekate.cluster.seed.jclouds;
 
-import io.hekate.HekateTestBase;
 import io.hekate.util.format.ToString;
 import java.util.Properties;
 import org.junit.Test;
@@ -26,7 +25,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-public class CloudStoreSeedNodeProviderConfigTest extends HekateTestBase {
+public class CloudStoreSeedNodeProviderConfigTest extends CloudPropertiesBaseTestBase {
     private final CloudStoreSeedNodeProviderConfig cfg = new CloudStoreSeedNodeProviderConfig();
 
     @Test
@@ -118,5 +117,10 @@ public class CloudStoreSeedNodeProviderConfigTest extends HekateTestBase {
     @Test
     public void testToString() {
         assertEquals(ToString.format(cfg), cfg.toString());
+    }
+
+    @Override
+    protected CloudPropertiesBase createConfig() {
+        return cfg;
     }
 }

@@ -137,7 +137,7 @@ public class CloudSeedNodeProvider implements SeedNodeProvider {
         this.regions = StreamUtils.nullSafe(cfg.getRegions()).collect(toSet());
         this.zones = StreamUtils.nullSafe(cfg.getZones()).collect(toSet());
 
-        Properties properties = new Properties();
+        Properties properties = cfg.buildBaseProperties();
 
         if (!regions.isEmpty()) {
             properties.setProperty(LocationConstants.PROPERTY_REGIONS, String.join(",", regions));

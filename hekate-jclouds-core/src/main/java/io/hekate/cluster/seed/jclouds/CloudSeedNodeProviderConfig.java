@@ -31,19 +31,26 @@ import org.jclouds.compute.ComputeService;
  *
  * @see CloudSeedNodeProvider
  */
-public class CloudSeedNodeProviderConfig {
+public class CloudSeedNodeProviderConfig extends CloudPropertiesBase<CloudSeedNodeProviderConfig> {
+    /** See {@link #setProvider(String)}. */
     private String provider;
 
+    /** See {@link #setEndpoint(String)}. */
     private String endpoint;
 
+    /** See {@link #setRegions(Set)}. */
     private Set<String> regions;
 
+    /** See {@link #setZones(Set)}. */
     private Set<String> zones;
 
+    /** See {@link #setTags(Map)}. */
     private Map<String, String> tags;
 
+    /** See {@link #setProperties(Properties)}. */
     private Properties properties;
 
+    /** See {@link #setCredentials(CredentialsSupplier)}. */
     @ToStringIgnore
     private CredentialsSupplier credentials;
 

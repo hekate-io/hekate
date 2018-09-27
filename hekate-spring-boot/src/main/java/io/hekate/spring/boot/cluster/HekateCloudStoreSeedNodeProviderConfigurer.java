@@ -47,6 +47,8 @@ import org.springframework.context.annotation.Configuration;
  * <li>{@link CloudStoreSeedNodeProviderConfig#setContainer(String) 'hekate.cluster.seed.cloudstore.container'}</li>
  * <li>{@link CloudStoreSeedNodeProviderConfig#setCredentials(CredentialsSupplier) 'hekate.cluster.seed.cloudstore.identity'}</li>
  * <li>{@link CloudStoreSeedNodeProviderConfig#setCredentials(CredentialsSupplier) 'hekate.cluster.seed.cloudstore.credential'}</li>
+ * <li>{@link CloudStoreSeedNodeProviderConfig#setConnectTimeout(Integer)} 'hekate.cluster.seed.cloudstore.connect-timeout'}</li>
+ * <li>{@link CloudStoreSeedNodeProviderConfig#setSoTimeout(Integer)} 'hekate.cluster.seed.cloudstore.so-timeout'}</li>
  * <li>{@link CloudStoreSeedNodeProviderConfig#setProperties(Properties) 'hekate.cluster.seed.cloudstore.properties'}</li>
  * </ul>
  *

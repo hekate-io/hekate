@@ -27,18 +27,23 @@ import org.jclouds.blobstore.BlobStore;
  *
  * @see CloudStoreSeedNodeProvider
  */
-public class CloudStoreSeedNodeProviderConfig {
+public class CloudStoreSeedNodeProviderConfig extends CloudPropertiesBase<CloudStoreSeedNodeProviderConfig> {
     /** Default value (={@value}) for {@link #setCleanupInterval(long)}. */
     public static final long DEFAULT_CLEANUP_INTERVAL = 60000;
 
+    /** See {@link #setProvider(String)}. */
     private String provider;
 
+    /** See {@link #setProperties(Properties)}. */
     private Properties properties;
 
+    /** See {@link #setCleanupInterval(long)}. */
     private long cleanupInterval = DEFAULT_CLEANUP_INTERVAL;
 
+    /** See {@link #setContainer(String)}. */
     private String container;
 
+    /** See {@link #setCredentials(CredentialsSupplier)}. */
     @ToStringIgnore
     private CredentialsSupplier credentials;
 

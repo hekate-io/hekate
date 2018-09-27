@@ -52,6 +52,8 @@ import org.springframework.context.annotation.Configuration;
  * <li>{@link CloudSeedNodeProviderConfig#setRegions(Set) 'hekate.cluster.seed.cloud.regions'}</li>
  * <li>{@link CloudSeedNodeProviderConfig#setZones(Set) 'hekate.cluster.seed.cloud.zones'}</li>
  * <li>{@link CloudSeedNodeProviderConfig#setTags(Map) 'hekate.cluster.seed.cloud.tags'}</li>
+ * <li>{@link CloudSeedNodeProviderConfig#setConnectTimeout(Integer)} 'hekate.cluster.seed.cloud.connect-timeout'}</li>
+ * <li>{@link CloudSeedNodeProviderConfig#setSoTimeout(Integer)} 'hekate.cluster.seed.cloud.so-timeout'}</li>
  * <li>{@link CloudSeedNodeProviderConfig#setProperties(Properties) 'hekate.cluster.seed.cloud.properties'}</li>
  * </ul>
  *
