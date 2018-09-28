@@ -48,6 +48,8 @@ public class CloudStoreSeedNodeProviderTest extends PersistentSeedNodeProviderTe
         CloudStoreSeedNodeProviderConfig cfg = new CloudStoreSeedNodeProviderConfig()
             .withProvider(testCtx.storeProvider())
             .withContainer(testCtx.storeBucket())
+            .withConnectTimeout(3000)
+            .withSoTimeout(3000)
             .withCredentials(new BasicCredentialsSupplier()
                 .withIdentity(testCtx.identity())
                 .withCredential(testCtx.credential())

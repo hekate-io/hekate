@@ -180,6 +180,8 @@ public class CloudSeedNodeProviderTest extends HekateTestBase {
         CloudSeedNodeProviderConfig cfg = new CloudSeedNodeProviderConfig()
             .withProvider(testCtx.computeProvider())
             .withRegion(testCtx.region())
+            .withConnectTimeout(3000)
+            .withSoTimeout(3000)
             .withTag("Test", "true")
             .withCredentials(new BasicCredentialsSupplier()
                 .withIdentity(testCtx.identity())
