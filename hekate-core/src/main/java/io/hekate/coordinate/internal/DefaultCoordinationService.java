@@ -353,7 +353,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
     private void handleMessage(Message<CoordinationProtocol> msg) {
         DefaultCoordinationProcess process = null;
 
-        CoordinationProtocol.Request request = msg.get(CoordinationProtocol.Request.class);
+        CoordinationProtocol.RequestBase request = msg.get(CoordinationProtocol.RequestBase.class);
 
         guard.lockRead();
 

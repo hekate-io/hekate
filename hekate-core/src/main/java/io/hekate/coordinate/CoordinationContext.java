@@ -23,7 +23,7 @@ import io.hekate.core.HekateSupport;
 import java.util.List;
 
 /**
- * Context for {@link CoordinationHandler}.
+ * Coordination context for {@link CoordinationHandler}.
  */
 public interface CoordinationContext extends HekateSupport {
     /**
@@ -48,8 +48,8 @@ public interface CoordinationContext extends HekateSupport {
     ClusterTopology topology();
 
     /**
-     * Returns {@code true} if this coordination process is finished (either {@link #complete() successfully} or by {@link
-     * CoordinationHandler#cancel(CoordinationContext)} cancellation).
+     * Returns {@code true} if this coordination process is finished (either {@link CoordinatorContext#complete() successfully}
+     * or by {@link CoordinationHandler#cancel(CoordinationContext)} cancellation).
      *
      * @return {@code true} if this coordination process is finished.
      */
@@ -114,11 +114,6 @@ public interface CoordinationContext extends HekateSupport {
      * @see CoordinationHandler#process(CoordinationRequest, CoordinationContext)
      */
     void broadcast(Object request, CoordinationBroadcastCallback callback);
-
-    /**
-     * Completes this coordination process.
-     */
-    void complete();
 
     /**
      * Returns a user-defined object that is attached to this context (see {@link #setAttachment(Object)}).

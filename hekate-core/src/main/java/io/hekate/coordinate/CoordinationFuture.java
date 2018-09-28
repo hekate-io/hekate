@@ -32,7 +32,7 @@ public class CoordinationFuture extends HekateFuture<CoordinationProcess, Coordi
         try {
             return super.get();
         } catch (ExecutionException e) {
-            throw new CoordinationException(e.getMessage(), e);
+            throw new CoordinationException(e.getMessage(), e.getCause());
         }
     }
 
@@ -41,7 +41,7 @@ public class CoordinationFuture extends HekateFuture<CoordinationProcess, Coordi
         try {
             return super.get(timeout, unit);
         } catch (ExecutionException e) {
-            throw new CoordinationException(e.getMessage(), e);
+            throw new CoordinationException(e.getMessage(), e.getCause());
         }
     }
 
@@ -50,7 +50,7 @@ public class CoordinationFuture extends HekateFuture<CoordinationProcess, Coordi
         try {
             return super.getUninterruptedly();
         } catch (ExecutionException e) {
-            throw new CoordinationException(e.getMessage(), e);
+            throw new CoordinationException(e.getMessage(), e.getCause());
         }
     }
 

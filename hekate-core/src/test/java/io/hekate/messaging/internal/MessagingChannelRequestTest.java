@@ -1011,7 +1011,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
                 get(sender.messaging().channel("test").forRemotes().request("OK"))
             );
 
-            assertSame(err.toString(), MessagingRemoteException.class, err.getCause().getClass());
+            assertSame(ErrorUtils.stackTrace(err), MessagingRemoteException.class, err.getCause().getClass());
             assertTrue(ErrorUtils.stackTrace(err).contains(NotSerializableException.class.getName() + ": " + Socket.class.getName()));
         });
     }

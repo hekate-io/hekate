@@ -24,6 +24,7 @@ import io.hekate.coordinate.CoordinationContext;
 import io.hekate.coordinate.CoordinationHandler;
 import io.hekate.coordinate.CoordinationMember;
 import io.hekate.coordinate.CoordinationProcessConfig;
+import io.hekate.coordinate.CoordinatorContext;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateSupport;
 import io.hekate.core.internal.util.ArgAssert;
@@ -38,12 +39,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableList;
 
-class DefaultCoordinationContext implements CoordinationContext {
+class DefaultCoordinationContext implements CoordinatorContext {
     private static final Logger log = LoggerFactory.getLogger(DefaultCoordinationContext.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -210,12 +213,14 @@ class DefaultCoordinationContext implements CoordinationContext {
 
     @Override
     public void complete() {
-        if (future.complete(null)) {
-            if (DEBUG) {
-                log.debug("Completed [context={}]", this);
-            }
-
-            membersById.values().forEach(DefaultCoordinationMember::dispose);
+        if (!future.isDone()) {
+            // Broadcast 'complete' message to remote members.
+            broadcastCompleteToRemotes(ignore -> {
+                if (!future.isDone()) {
+                    // Complete this context once we've got confirmations from all remote members.
+                    doComplete();
+                }
+            });
         }
     }
 
@@ -229,16 +234,24 @@ class DefaultCoordinationContext implements CoordinationContext {
         this.attachment = attachment;
     }
 
-    public void coordinate() {
+    public void tryCoordinate() {
         if (!future.isDone()) {
             if (isCoordinator()) {
-                ensurePrepared();
-
                 if (DEBUG) {
-                    log.debug("Coordinating [context={}]", this);
+                    log.debug("Preparing to coordinate [context={}]", this);
                 }
 
-                handler.coordinate(this);
+                // Broadcast 'prepare' message to all members.
+                broadcastPrepare(ignore -> {
+                    // Coordinate once we've got 'prepare' confirmations from all members.
+                    if (!future.isDone()) {
+                        if (DEBUG) {
+                            log.debug("Coordinating [context={}]", this);
+                        }
+
+                        handler.coordinate(this);
+                    }
+                });
             } else {
                 if (DEBUG) {
                     log.debug("Local node is not a coordinator [context={}]", this);
@@ -248,38 +261,69 @@ class DefaultCoordinationContext implements CoordinationContext {
     }
 
     public void processMessage(Message<CoordinationProtocol> msg) {
-        CoordinationProtocol.Request request = msg.get(CoordinationProtocol.Request.class);
+        CoordinationProtocol.RequestBase request = msg.get(CoordinationProtocol.RequestBase.class);
 
         boolean reject = false;
 
-        if (future.isDone()) {
-            reject = true;
-
-            if (DEBUG) {
-                log.debug("Rejected coordination request (context cancelled) [message={}, context={}]", request, this);
-            }
-        } else if (!topology.hash().equals(request.topology())) {
+        if (!topology.hash().equals(request.topology())) {
             reject = true;
 
             if (DEBUG) {
                 log.debug("Rejected coordination request (topology mismatch) [message={}, context={}]", request, this);
+            }
+        } else if (future.isDone()) {
+            // Never reject 'prepare' and 'complete' requests even if local coordination is completed.
+            // Such requests could be resubmitted because of network failures and we should always try to send back a confirmation.
+            reject = request.type() != CoordinationProtocol.Type.PREPARE && request.type() != CoordinationProtocol.Type.COMPLETE;
+
+            if (DEBUG) {
+                log.debug("Rejected coordination request (context cancelled) [message={}, context={}]", request, this);
             }
         }
 
         if (reject) {
             msg.reply(CoordinationProtocol.Reject.INSTANCE);
         } else {
-            if (!isCoordinator()) {
-                ensurePrepared();
+            switch (request.type()) {
+                case PREPARE: {
+                    if (DEBUG) {
+                        log.debug("Processing prepare request [message={}, context={}]", request, this);
+                    }
+
+                    ensurePrepared();
+
+                    msg.reply(CoordinationProtocol.Confirm.INSTANCE);
+
+                    break;
+                }
+                case REQUEST: {
+                    if (DEBUG) {
+                        log.debug("Processing coordination request [message={}, context={}]", request, this);
+                    }
+
+                    DefaultCoordinationMember member = membersById.get(request.from());
+
+                    handler.process(new DefaultCoordinationRequest(name, member, msg), this);
+
+                    break;
+                }
+                case COMPLETE:
+                    if (DEBUG) {
+                        log.debug("Processing complete request [message={}, context={}]", request, this);
+                    }
+
+                    doComplete();
+
+                    msg.reply(CoordinationProtocol.Confirm.INSTANCE);
+
+                    break;
+                case RESPONSE:
+                case CONFIRM:
+                case REJECT:
+                default: {
+                    throw new IllegalArgumentException("Unexpected request type: " + request);
+                }
             }
-
-            if (DEBUG) {
-                log.debug("Processing coordination request [message={}, context={}]", request, this);
-            }
-
-            DefaultCoordinationMember member = membersById.get(request.from());
-
-            handler.process(new DefaultCoordinationRequest(name, member, msg), this);
         }
     }
 
@@ -308,8 +352,42 @@ class DefaultCoordinationContext implements CoordinationContext {
         return hekate.hekate();
     }
 
-    public boolean isPrepared() {
-        return prepared;
+    private void doComplete() {
+        if (future.complete(null)) {
+            if (DEBUG) {
+                log.debug("Completed [context={}]", this);
+            }
+
+            try {
+                handler.complete(this);
+            } finally {
+                membersById.values().forEach(DefaultCoordinationMember::dispose);
+            }
+        }
+    }
+
+    private void broadcastPrepare(CoordinationBroadcastCallback callback) {
+        BroadcastCallbackAdaptor callbackAdaptor = new BroadcastCallbackAdaptor(membersById.size(), callback);
+
+        membersById.forEach((id, member) ->
+            member.sendPrepare(callbackAdaptor)
+        );
+    }
+
+    private void broadcastCompleteToRemotes(CoordinationBroadcastCallback callback) {
+        List<DefaultCoordinationMember> remotes = membersById.values().stream()
+            .filter(it -> !it.node().equals(localMember.node()))
+            .collect(Collectors.toList());
+
+        if (remotes.isEmpty()) {
+            callback.onResponses(emptyMap());
+        } else {
+            BroadcastCallbackAdaptor callbackAdaptor = new BroadcastCallbackAdaptor(remotes.size(), callback);
+
+            remotes.forEach(member ->
+                member.sendComplete(callbackAdaptor)
+            );
+        }
     }
 
     private void ensurePrepared() {

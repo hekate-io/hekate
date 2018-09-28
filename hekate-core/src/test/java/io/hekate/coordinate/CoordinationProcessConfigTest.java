@@ -18,6 +18,7 @@ package io.hekate.coordinate;
 
 import io.hekate.HekateTestBase;
 import io.hekate.codec.CodecFactory;
+import io.hekate.util.format.ToString;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -98,5 +99,10 @@ public class CoordinationProcessConfigTest extends HekateTestBase {
         assertSame(cfg, cfg.withAsyncInit(true));
 
         assertTrue(cfg.isAsyncInit());
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals(ToString.format(cfg), cfg.toString());
     }
 }

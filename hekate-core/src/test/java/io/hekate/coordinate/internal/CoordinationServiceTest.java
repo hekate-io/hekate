@@ -25,6 +25,7 @@ import io.hekate.coordinate.CoordinationHandler;
 import io.hekate.coordinate.CoordinationProcessConfig;
 import io.hekate.coordinate.CoordinationRequest;
 import io.hekate.coordinate.CoordinationServiceFactory;
+import io.hekate.coordinate.CoordinatorContext;
 import io.hekate.core.Hekate;
 import io.hekate.core.JoinFuture;
 import io.hekate.core.internal.HekateTestNode;
@@ -73,7 +74,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
         }
 
         @Override
-        public void coordinate(CoordinationContext ctx) {
+        public void coordinate(CoordinatorContext ctx) {
             ctx.broadcast("get", getResponses -> {
                 Optional<Integer> maxOpt = getResponses.values().stream()
                     .map(String.class::cast)
@@ -86,7 +87,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
                 ctx.broadcast("put_" + newMax, putResponses ->
                     ctx.broadcast("complete", completeResponses -> {
-                        // No-op.
+                        ctx.complete();
                     })
                 );
             });
@@ -109,10 +110,6 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
                 }
                 case "complete": {
                     request.reply("ok");
-
-                    ctx.complete();
-
-                    onAfterComplete();
 
                     break;
                 }
@@ -137,10 +134,6 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
         public String getLastValue() {
             return lastValue;
         }
-
-        protected void onAfterComplete() {
-            // No-op.
-        }
     }
 
     private static final CoordinationHandler SIMPLE_HANDLER = new CoordinationHandler() {
@@ -150,7 +143,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
         }
 
         @Override
-        public void coordinate(CoordinationContext ctx) {
+        public void coordinate(CoordinatorContext ctx) {
             ctx.broadcast("test", responses ->
                 ctx.complete()
             );
@@ -159,10 +152,6 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
         @Override
         public void process(CoordinationRequest request, CoordinationContext ctx) {
             request.reply("ok");
-
-            if (!ctx.isCoordinator()) {
-                ctx.complete();
-            }
         }
     };
 
@@ -218,7 +207,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
         repeat(3, i -> {
             doAnswer(invocation -> {
-                ((CoordinationContext)invocation.getArguments()[0]).complete();
+                ((CoordinatorContext)invocation.getArguments()[0]).complete();
 
                 return null;
             }).when(handler).coordinate(any());
@@ -232,6 +221,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
             order.verify(handler).initialize();
             order.verify(handler).prepare(any());
             order.verify(handler).coordinate(any());
+            order.verify(handler).complete(any());
 
             verifyNoMoreInteractions(handler);
 
@@ -310,7 +300,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
             endLatch.await(3, TimeUnit.SECONDS);
 
-            ((CoordinationContext)invocation.getArguments()[0]).complete();
+            ((CoordinatorContext)invocation.getArguments()[0]).complete();
 
             return null;
         }).when(handler).coordinate(any());
@@ -338,10 +328,10 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
     public void testAsyncInit() throws Exception {
         CoordinationHandler handler = mock(CoordinationHandler.class);
 
-        Exchanger<CoordinationContext> ctxRef = new Exchanger<>();
+        Exchanger<CoordinatorContext> ctxRef = new Exchanger<>();
 
         doAnswer(invocation -> {
-            ctxRef.exchange((CoordinationContext)invocation.getArguments()[0]);
+            ctxRef.exchange((CoordinatorContext)invocation.getArguments()[0]);
 
             return null;
         }).when(handler).coordinate(any());
@@ -350,7 +340,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
         JoinFuture join = node.joinAsync();
 
-        CoordinationContext ctx = ctxRef.exchange(null);
+        CoordinatorContext ctx = ctxRef.exchange(null);
 
         assertFalse(join.isDone());
 
@@ -501,7 +491,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
         class BlockingHandler extends CoordinatedValueHandler {
             @Override
-            public void coordinate(CoordinationContext ctx) {
+            public void coordinate(CoordinatorContext ctx) {
                 if (ctx.size() == 2 && blockLatch.getCount() > 0) {
                     blockLatch.countDown();
 
@@ -543,7 +533,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
         // Expect 2 but not 3 since one coordination should be interrupted by a concurrent join.
         awaitForCoordinatedValue("2", Arrays.asList(n1, n2, n3));
 
-        assertEquals(1, aborts.get());
+        assertEquals(2, aborts.get());
     }
 
     private void doTestCoordinatorLeave(Function<HekateTestNode, Future<?>> stopAction) throws Exception {
@@ -557,7 +547,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
             private final AtomicInteger stack = new AtomicInteger();
 
             @Override
-            public void coordinate(CoordinationContext ctx) {
+            public void coordinate(CoordinatorContext ctx) {
                 if (ctx.size() == 3 && coordinatorReady.getCount() > 0) {
                     coordinatorRef.set(ctx.coordinator().node());
 
@@ -600,7 +590,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
             }
 
             @Override
-            protected void onAfterComplete() {
+            public void complete(CoordinationContext ctx) {
                 stack.decrementAndGet();
             }
         }

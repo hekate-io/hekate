@@ -81,15 +81,14 @@ import java.util.List;
  *
  * <p>
  * When {@link CoordinationService} start a new coordination process, it selects one of cluster nodes to be the coordinator and calls its
- * {@link CoordinationHandler#coordinate(CoordinationContext)} method together with a coordination context object. This object provides
+ * {@link CoordinationHandler#coordinate(CoordinatorContext)} method together with a coordination context object. This object provides
  * information about the coordination participants and provides methods for sending/receiving coordination requests to/from them.
  * All other nodes besides the coordinator will stay idle and will wait for requests from the coordinator.
  * </p>
  *
  * <p>
  * Once coordination is completed and each of coordination participants reaches its final state (according to an application logic) then
- * <b>each</b> member must explicitly notify the {@link CoordinationService} upon completion by calling the {@link
- * CoordinationContext#complete()} method.
+ * coordinator must explicitly notify the {@link CoordinationService} by calling the {@link CoordinatorContext#complete()} method.
  * </p>
  *
  * <h2>Messaging</h2>

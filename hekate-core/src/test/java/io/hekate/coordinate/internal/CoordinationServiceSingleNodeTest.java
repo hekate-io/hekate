@@ -17,11 +17,11 @@
 package io.hekate.coordinate.internal;
 
 import io.hekate.HekateNodeTestBase;
-import io.hekate.coordinate.CoordinationContext;
 import io.hekate.coordinate.CoordinationHandler;
 import io.hekate.coordinate.CoordinationProcess;
 import io.hekate.coordinate.CoordinationProcessConfig;
 import io.hekate.coordinate.CoordinationServiceFactory;
+import io.hekate.coordinate.CoordinatorContext;
 import io.hekate.core.internal.HekateTestNode;
 import org.junit.Test;
 
@@ -52,7 +52,7 @@ public class CoordinationServiceSingleNodeTest extends HekateNodeTestBase {
         CoordinationHandler handler = mock(CoordinationHandler.class);
 
         doAnswer(invocation -> {
-            ((CoordinationContext)invocation.getArguments()[0]).complete();
+            ((CoordinatorContext)invocation.getArguments()[0]).complete();
 
             return null;
         }).when(handler).coordinate(any());

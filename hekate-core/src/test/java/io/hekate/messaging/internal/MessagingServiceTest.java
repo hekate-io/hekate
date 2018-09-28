@@ -107,6 +107,19 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
     }
 
     @Test
+    public void testRejoinSingleNode() throws Exception {
+        TestChannel sender = createChannel(c -> c.withReceiver(msg -> msg.reply("ok")));
+
+        repeat(3, i -> {
+            sender.join();
+
+            get(sender.get().request("test" + i));
+
+            sender.leave();
+        });
+    }
+
+    @Test
     public void testAddRemoveNodes() throws Exception {
         List<TestChannel> channels = new ArrayList<>();
 

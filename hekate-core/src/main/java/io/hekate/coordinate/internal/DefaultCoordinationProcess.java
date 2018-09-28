@@ -111,16 +111,6 @@ class DefaultCoordinationProcess implements CoordinationProcess {
         });
     }
 
-    public Waiting preTerminate() {
-        return guard.withWriteLock(() -> {
-            if (guard.becomeTerminating()) {
-                return cancelCurrentContext();
-            } else {
-                return Waiting.NO_WAIT;
-            }
-        });
-    }
-
     public Waiting terminate() {
         return guard.withWriteLock(() -> {
             if (guard.becomeTerminated()) {
@@ -213,7 +203,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
 
                 async.execute(() -> {
                     try {
-                        newCtx.coordinate();
+                        newCtx.tryCoordinate();
                     } catch (RuntimeException | Error e) {
                         log.error("Got an unexpected runtime error during coordination [process={}]", name, e);
                     }
