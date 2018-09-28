@@ -869,7 +869,6 @@ class MessagingGatewayContext<T> implements HekateSupport {
     }
 
     // This method is for testing purposes only.
-
     MessagingClient<T> clientOf(ClusterNodeId nodeId) throws MessagingException {
         // Ensure that we are using the latest topology.
         updateTopology();

@@ -33,7 +33,6 @@ import java.util.function.Consumer;
  * @see AggregateResult
  */
 public class AggregateFuture<T> extends MessagingFuture<AggregateResult<T>> {
-
     /**
      * Uninterruptedly awaits for the asynchronous aggregation to complete and returns the {@link AggregateResult#results()} result}.
      *
