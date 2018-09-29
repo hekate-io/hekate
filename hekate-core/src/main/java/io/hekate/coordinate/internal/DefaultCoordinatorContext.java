@@ -46,8 +46,8 @@ import org.slf4j.LoggerFactory;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableList;
 
-class DefaultCoordinationContext implements CoordinatorContext {
-    private static final Logger log = LoggerFactory.getLogger(DefaultCoordinationContext.class);
+class DefaultCoordinatorContext implements CoordinatorContext {
+    private static final Logger log = LoggerFactory.getLogger(DefaultCoordinatorContext.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
@@ -93,7 +93,7 @@ class DefaultCoordinationContext implements CoordinatorContext {
     @ToStringIgnore
     private volatile Object attachment;
 
-    public DefaultCoordinationContext(
+    public DefaultCoordinatorContext(
         String name,
         HekateSupport hekate,
         ClusterTopology topology,

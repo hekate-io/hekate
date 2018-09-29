@@ -63,7 +63,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
     private final HekateSupport hekate;
 
     @ToStringIgnore
-    private DefaultCoordinationContext ctx;
+    private DefaultCoordinatorContext ctx;
 
     public DefaultCoordinationProcess(
         String name,
@@ -141,7 +141,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
         assert msg != null : "Message is null.";
 
         guard.withReadLock(() -> {
-            DefaultCoordinationContext localCtx = this.ctx;
+            DefaultCoordinatorContext localCtx = this.ctx;
 
             if (guard.isInitialized() && localCtx != null) {
                 async.execute(() -> {
@@ -173,7 +173,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
 
             boolean topologyChanged = true;
 
-            DefaultCoordinationContext oldCtx = this.ctx;
+            DefaultCoordinatorContext oldCtx = this.ctx;
 
             if (oldCtx != null) {
                 if (oldCtx.topology().equals(newTopology)) {
@@ -184,7 +184,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
             }
 
             if (topologyChanged) {
-                DefaultCoordinationContext newCtx = new DefaultCoordinationContext(
+                DefaultCoordinatorContext newCtx = new DefaultCoordinatorContext(
                     name,
                     hekate,
                     newTopology,
@@ -234,7 +234,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
     private Waiting cancelCurrentContext() {
         assert guard.isWriteLocked() : "Must hold a write lock.";
 
-        DefaultCoordinationContext localCtx = this.ctx;
+        DefaultCoordinatorContext localCtx = this.ctx;
 
         if (localCtx != null) {
             this.ctx = null;
