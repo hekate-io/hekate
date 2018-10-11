@@ -10,13 +10,14 @@ import io.hekate.cluster.ClusterAddress;
 import io.hekate.messaging.MessageMetaData;
 import io.hekate.messaging.MessageMetaData.MetaDataCodec;
 import io.hekate.messaging.intercept.AllMessageInterceptor;
+import io.hekate.messaging.intercept.ClientOutboundContext;
 import io.hekate.messaging.intercept.ClientReceiveContext;
 import io.hekate.messaging.intercept.ClientSendContext;
+import io.hekate.messaging.intercept.ServerInboundContext;
 import io.hekate.messaging.intercept.ServerReceiveContext;
 import io.hekate.messaging.intercept.ServerSendContext;
 import io.hekate.util.format.ToString;
 import io.hekate.util.trace.TraceInfo;
-import java.util.Optional;
 
 import static brave.Span.Kind.CLIENT;
 import static brave.Span.Kind.CONSUMER;
@@ -32,9 +33,9 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
 
     private final Tracer tracer;
 
-    private final Injector<ClientSendContext> injector;
+    private final Injector<ClientSendContext<Object>> injector;
 
-    private final Extractor<ServerReceiveContext> extractor;
+    private final Extractor<ServerReceiveContext<?>> extractor;
 
     public ZipkinMessageInterceptor(Tracing tracing) {
         tracer = tracing.tracer();
@@ -45,56 +46,50 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
         );
 
         // Client-side meta-data injector.
-        this.injector = propagation.injector((sndCtx, key, value) ->
-            sndCtx.metaData().set(key, value)
+        this.injector = propagation.injector((ctx, key, value) ->
+            ctx.metaData().set(key, value)
         );
 
         // Server-side meta-data extractor.
-        this.extractor = propagation.extractor((rcvCtx, key) -> {
-            Optional<MessageMetaData> metaData = rcvCtx.readMetaData();
-
-            if (metaData.isPresent()) {
-                return metaData.get().get(key);
-            } else {
-                return null;
-            }
-        });
+        this.extractor = propagation.extractor((ctx, key) ->
+            ctx.readMetaData().map(it -> it.get(key)).orElse(null)
+        );
     }
 
     @Override
-    public Object beforeClientSend(Object msg, ClientSendContext sndCtx) {
+    public void interceptClientSend(ClientSendContext<Object> ctx) {
         // Try to get a previous span in case if this is a failover attempt.
-        Span prevAttempt = (Span)sndCtx.getAttribute(SPAN_ATTRIBUTE);
+        Span prevAttempt = (Span)ctx.getAttribute(SPAN_ATTRIBUTE);
 
         Span span = tryJoinOrStartNew(prevAttempt);
 
         if (!span.isNoop()) {
-            recordRemoteAddress(sndCtx.receiver().address(), span);
+            recordRemoteAddress(ctx.receiver().address(), span);
 
-            switch (sndCtx.type()) {
+            switch (ctx.type()) {
                 case REQUEST: {
-                    annotate("request", span, msg, sndCtx.channelName());
+                    annotate("request", span, ctx.get(), ctx.channelName());
 
-                    sndCtx.setAttribute(SPAN_ATTRIBUTE, span.kind(CLIENT).start());
+                    ctx.setAttribute(SPAN_ATTRIBUTE, span.kind(CLIENT).start());
 
                     break;
                 }
                 case SUBSCRIBE: {
-                    annotate("subscribe", span, msg, sndCtx.channelName());
+                    annotate("subscribe", span, ctx.get(), ctx.channelName());
 
-                    sndCtx.setAttribute(SPAN_ATTRIBUTE, span.kind(CLIENT).start());
+                    ctx.setAttribute(SPAN_ATTRIBUTE, span.kind(CLIENT).start());
 
                     break;
                 }
                 case SEND_WITH_ACK: {
-                    annotate("send-with-ack", span, msg, sndCtx.channelName());
+                    annotate("send-with-ack", span, ctx.get(), ctx.channelName());
 
-                    sndCtx.setAttribute(SPAN_ATTRIBUTE, span.kind(CLIENT).start());
+                    ctx.setAttribute(SPAN_ATTRIBUTE, span.kind(CLIENT).start());
 
                     break;
                 }
                 case SEND_NO_ACK: {
-                    annotate("send-no-ack", span, msg, sndCtx.channelName());
+                    annotate("send-no-ack", span, ctx.get(), ctx.channelName());
 
                     // Immediately finish as we don't expected any feedback from the server.
                     span.kind(PRODUCER).start().flush();
@@ -102,27 +97,25 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
                     break;
                 }
                 default: {
-                    throw new IllegalArgumentException("Unexpected type: " + sndCtx.type());
+                    throw new IllegalArgumentException("Unexpected type: " + ctx.type());
                 }
             }
         }
 
         // Inject the span into the message's meta-data.
-        injector.inject(span.context(), sndCtx);
-
-        return null;
+        injector.inject(span.context(), ctx);
     }
 
     @Override
-    public Object beforeClientReceiveResponse(Object rsp, ClientReceiveContext rcvCtx, ClientSendContext sndCtx) {
-        Span span = (Span)sndCtx.getAttribute(SPAN_ATTRIBUTE);
+    public void interceptClientReceiveResponse(ClientReceiveContext ctx) {
+        Span span = (Span)ctx.outboundContext().getAttribute(SPAN_ATTRIBUTE);
 
         if (span != null) {
-            switch (rcvCtx.type()) {
+            switch (ctx.type()) {
                 case RESPONSE_CHUNK: {
                     Span chunkSpan = tracer.newChild(span.context());
 
-                    annotate("receive-chunk", chunkSpan, rsp, null)
+                    annotate("receive-chunk", chunkSpan, ctx.get(), null)
                         .kind(CONSUMER)
                         .start()
                         .flush();
@@ -135,17 +128,15 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
                     break;
                 }
                 default: {
-                    throw new IllegalArgumentException("Unexpected type: " + rcvCtx.type());
+                    throw new IllegalArgumentException("Unexpected type: " + ctx.type());
                 }
             }
         }
-
-        return null;
     }
 
     @Override
-    public void onClientReceiveConfirmation(ClientSendContext sndCtx) {
-        Span span = (Span)sndCtx.getAttribute(SPAN_ATTRIBUTE);
+    public void interceptClientReceiveConfirmation(ClientOutboundContext ctx) {
+        Span span = (Span)ctx.getAttribute(SPAN_ATTRIBUTE);
 
         if (span != null) {
             span.finish();
@@ -153,8 +144,8 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
     }
 
     @Override
-    public void onClientReceiveError(Throwable err, ClientSendContext sndCtx) {
-        Span span = (Span)sndCtx.getAttribute(SPAN_ATTRIBUTE);
+    public void interceptClientReceiveError(ClientOutboundContext ctx, Throwable err) {
+        Span span = (Span)ctx.getAttribute(SPAN_ATTRIBUTE);
 
         if (span != null) {
             span.error(err).finish();
@@ -162,28 +153,28 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
     }
 
     @Override
-    public Object beforeServerReceive(Object msg, ServerReceiveContext rcvCtx) {
+    public void interceptServerReceive(ServerReceiveContext ctx) {
         // Extract from the message's meta-data.
-        Span span = tracer.nextSpan(extractor.extract(rcvCtx));
+        Span span = tracer.nextSpan(extractor.extract(ctx));
 
         // Put span into the scope.
-        rcvCtx.setAttribute(SCOPE_ATTRIBUTE, tracer.withSpanInScope(span));
+        ctx.setAttribute(SCOPE_ATTRIBUTE, tracer.withSpanInScope(span));
 
         if (!span.isNoop()) {
-            recordRemoteAddress(rcvCtx.from(), span);
+            recordRemoteAddress(ctx.from(), span);
 
-            switch (rcvCtx.type()) {
+            switch (ctx.type()) {
                 case SEND_WITH_ACK: {
                     span.kind(SERVER);
 
-                    annotate("receive", span, msg, rcvCtx.channelName());
+                    annotate("receive", span, ctx.get(), ctx.channelName());
 
                     break;
                 }
                 case SEND_NO_ACK: {
                     span.kind(CONSUMER);
 
-                    annotate("receive", span, msg, rcvCtx.channelName());
+                    annotate("receive", span, ctx.get(), ctx.channelName());
 
                     break;
                 }
@@ -196,46 +187,44 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
                     break;
                 }
                 default: {
-                    throw new IllegalArgumentException("Unexpected type: " + rcvCtx.type());
+                    throw new IllegalArgumentException("Unexpected type: " + ctx.type());
                 }
             }
 
             span.start();
 
             // Store span in the context.
-            rcvCtx.setAttribute(SPAN_ATTRIBUTE, span);
+            ctx.setAttribute(SPAN_ATTRIBUTE, span);
         }
-
-        return null;
     }
 
     @Override
-    public void onServerReceiveComplete(Object msg, ServerReceiveContext rcvCtx) {
+    public void interceptServerReceiveComplete(ServerInboundContext ctx) {
         // Cleanup scope.
-        Tracer.SpanInScope scope = (Tracer.SpanInScope)rcvCtx.getAttribute(SCOPE_ATTRIBUTE);
+        Tracer.SpanInScope scope = (Tracer.SpanInScope)ctx.getAttribute(SCOPE_ATTRIBUTE);
 
         if (scope != null) {
             scope.close();
         }
 
         // Finish the span if it represents a send operation.
-        Span span = (Span)rcvCtx.getAttribute(SPAN_ATTRIBUTE);
+        Span span = (Span)ctx.getAttribute(SPAN_ATTRIBUTE);
 
-        if (span != null && (rcvCtx.type() == SEND_NO_ACK || rcvCtx.type() == SEND_WITH_ACK)) {
+        if (span != null && (ctx.type() == SEND_NO_ACK || ctx.type() == SEND_WITH_ACK)) {
             span.finish();
         }
     }
 
     @Override
-    public Object beforeServerSend(Object rsp, ServerSendContext sndCtx, ServerReceiveContext rcvCtx) {
-        Span span = (Span)rcvCtx.getAttribute(SPAN_ATTRIBUTE);
+    public void interceptServerSend(ServerSendContext ctx) {
+        Span span = (Span)ctx.inboundContext().getAttribute(SPAN_ATTRIBUTE);
 
         if (span != null) {
-            switch (sndCtx.type()) {
+            switch (ctx.type()) {
                 case RESPONSE_CHUNK: {
                     Span chunkSpan = tracer.newChild(span.context());
 
-                    annotate("reply-chunk", chunkSpan, rsp, null)
+                    annotate("reply-chunk", chunkSpan, ctx.get(), null)
                         .kind(PRODUCER)
                         .start()
                         .flush();
@@ -243,19 +232,17 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
                     break;
                 }
                 case FINAL_RESPONSE: {
-                    annotate("reply", span, rsp, null);
+                    annotate("reply", span, ctx.get(), null);
 
                     span.finish();
 
                     break;
                 }
                 default: {
-                    throw new IllegalArgumentException("Unexpected type: " + rcvCtx.type());
+                    throw new IllegalArgumentException("Unexpected type: " + ctx.type());
                 }
             }
         }
-
-        return null;
     }
 
     private Span tryJoinOrStartNew(Span prevAttempt) {

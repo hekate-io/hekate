@@ -6,6 +6,7 @@ import io.hekate.coordinate.CoordinationContext;
 import io.hekate.coordinate.CoordinationHandler;
 import io.hekate.coordinate.CoordinationRequest;
 import io.hekate.coordinate.CoordinationServiceFactory;
+import io.hekate.coordinate.CoordinatorContext;
 import io.hekate.election.Candidate;
 import io.hekate.election.ElectionServiceFactory;
 import io.hekate.lock.DistributedLock;
@@ -17,15 +18,14 @@ import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcServerConfig;
 import io.hekate.rpc.RpcServiceFactory;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.slf4j.LoggerFactory;
 import zipkin2.Span;
 import zipkin2.reporter.AsyncReporter;
 import zipkin2.reporter.okhttp3.OkHttpSender;
 
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 public class HekateZipkinPluginTest extends MessagingServiceTestBase {
@@ -124,25 +124,25 @@ public class HekateZipkinPluginTest extends MessagingServiceTestBase {
             boot -> boot.withPlugin(new HekateZipkinPlugin(tracing))
         );
 
-        trace("Request", () -> {
-            get(channels.get(0).get().forRemotes().request("request"));
-        });
+        trace("Request", () ->
+            get(channels.get(0).get().forRemotes().request("request"))
+        );
 
-        trace("Send no ack", () -> {
-            get(channels.get(0).get().forRemotes().send("send"));
-        });
+        trace("Send no ack", () ->
+            get(channels.get(0).get().forRemotes().send("send"))
+        );
 
-        trace("Send with ack", () -> {
-            get(channels.get(0).get().withConfirmReceive(true).forRemotes().send("send"));
-        });
+        trace("Send with ack", () ->
+            get(channels.get(0).get().forRemotes().newSend("send").withConfirmReceive(true).submit())
+        );
 
-        trace("subscribe", () -> {
-            get(channels.get(0).get().forRemotes().subscribe("subscribe"));
-        });
+        trace("subscribe", () ->
+            channels.get(0).get().forRemotes().newSubscribe("subscribe").collectAll(3, TimeUnit.SECONDS)
+        );
 
-        trace("aggregate", () -> {
-            get(channels.get(0).get().forRemotes().aggregate("aggregate"));
-        });
+        trace("aggregate", () ->
+            get(channels.get(0).get().forRemotes().aggregate("aggregate"))
+        );
     }
 
     @Test
@@ -162,9 +162,9 @@ public class HekateZipkinPluginTest extends MessagingServiceTestBase {
                 lock.lock();
 
                 try {
-                    trace("some work", () -> {
-                        sleep(5);
-                    });
+                    trace("some work", () ->
+                        sleep(5)
+                    );
                 } finally {
                     lock.unlock();
                 }
@@ -219,7 +219,7 @@ public class HekateZipkinPluginTest extends MessagingServiceTestBase {
                             }
 
                             @Override
-                            public void coordinate(CoordinationContext ctx) {
+                            public void coordinate(CoordinatorContext ctx) {
                                 ctx.broadcast("test", responses ->
                                     ctx.complete()
                                 );
@@ -228,10 +228,6 @@ public class HekateZipkinPluginTest extends MessagingServiceTestBase {
                             @Override
                             public void process(CoordinationRequest request, CoordinationContext ctx) {
                                 request.reply("ok");
-
-                                if (!ctx.isCoordinator()) {
-                                    ctx.complete();
-                                }
                             }
                         })
                 );
