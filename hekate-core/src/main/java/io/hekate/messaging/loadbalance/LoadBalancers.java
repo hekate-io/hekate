@@ -114,7 +114,7 @@ public final class LoadBalancers {
      * @return Load balancer.
      */
     @SuppressWarnings("unchecked")
-    public static <T> LoadBalancer<T> roundRobin() {
+    public static <T> LoadBalancer<T> newRoundRobin() {
         return (LoadBalancer<T>)new RoundRobin<>();
     }
 }

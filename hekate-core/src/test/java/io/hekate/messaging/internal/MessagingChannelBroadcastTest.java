@@ -50,34 +50,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testCallback() throws Exception {
-        List<TestChannel> channels = new ArrayList<>();
-
-        repeat(5, i -> {
-            TestChannel channel = createChannel().join();
-
-            channels.add(channel);
-
-            awaitForChannelsTopology(channels);
-
-            BroadcastTestCallback callback = new BroadcastTestCallback();
-
-            channel.get().broadcast("test" + i, callback);
-
-            BroadcastResult<String> result = callback.get();
-
-            assertTrue(result.errors().toString(), result.isSuccess());
-            assertTrue(result.errors().isEmpty());
-            assertEquals(channels.size(), result.nodes().size());
-
-            for (TestChannel c : channels) {
-                c.awaitForMessage("test" + i);
-            }
-        });
-    }
-
-    @Test
-    public void testFuture() throws Exception {
+    public void testBroadcast() throws Exception {
         List<TestChannel> channels = new ArrayList<>();
 
         repeat(5, i -> {
@@ -112,7 +85,11 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
             for (TestChannel channel : channels) {
                 repeat(100, j -> {
-                    BroadcastResult<String> result = get(channel.get().withAffinity(j).broadcast("test-" + j));
+                    BroadcastResult<String> result = get(channel.get()
+                        .newBroadcast("test-" + j)
+                        .withAffinity(j)
+                        .submit()
+                    );
 
                     assertTrue(result.isSuccess());
 
@@ -131,7 +108,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testEmptyTopologyFuture() throws Exception {
+    public void testEmptyTopology() throws Exception {
         List<TestChannel> channels = new ArrayList<>();
 
         repeat(5, i -> {
@@ -155,31 +132,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testEmptyTopologyCallback() throws Exception {
-        List<TestChannel> channels = new ArrayList<>();
-
-        repeat(5, i -> {
-            TestChannel channel = createChannel().join();
-
-            channels.add(channel);
-
-            awaitForChannelsTopology(channels);
-
-            // Empty targets.
-            BroadcastTestCallback callback = new BroadcastTestCallback();
-
-            channel.get().forRole("no-such-role").broadcast("test" + i, callback);
-
-            BroadcastResult<String> result = get(callback);
-
-            assertTrue(result.errors().toString(), result.isSuccess());
-            assertTrue(result.errors().isEmpty());
-            assertTrue(result.nodes().isEmpty());
-        });
-    }
-
-    @Test
-    public void testPartialFailureCallback() throws Exception {
+    public void testPartialFailure() throws Exception {
         List<TestChannel> channels = createAndJoinChannels(5);
 
         TestChannel source = channels.get(channels.size() - 1);
@@ -190,42 +143,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
         repeat(channels.size() - 1, i -> {
             TestChannel target = channels.get(i);
 
-            MessagingClientNet<String> client = (MessagingClientNet<String>)source.impl().clientOf(target.nodeId());
-
-            // Induce failure by closing existing network connections.
-            client.close();
-
-            BroadcastTestCallback callback = new BroadcastTestCallback();
-
-            source.get().broadcast("test" + i, callback);
-
-            BroadcastResult<String> result = get(callback);
-
-            assertEquals("test" + i, result.message());
-            assertFalse(result.errors().toString(), result.isSuccess());
-            assertEquals(result.errors().toString(), i + 1, result.errors().size());
-
-            for (int j = 0; j <= i; j++) {
-                ClusterNode node = channels.get(j).node().localNode();
-
-                assertNotNull(result.errors().get(node));
-            }
-        });
-    }
-
-    @Test
-    public void testPartialFailureFuture() throws Exception {
-        List<TestChannel> channels = createAndJoinChannels(5);
-
-        TestChannel source = channels.get(channels.size() - 1);
-
-        // Initialize connection to all nodes.
-        get(source.get().broadcast("test"));
-
-        repeat(channels.size() - 1, i -> {
-            TestChannel target = channels.get(i);
-
-            MessagingClientNet<String> client = (MessagingClientNet<String>)source.impl().clientOf(target.nodeId());
+            MessagingClient<String> client = source.impl().clientOf(target.nodeId());
 
             // Induce failure by closing existing network connections.
             client.close();
@@ -267,7 +185,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
                     await(joinLatch);
 
                     return nodes;
-                }).broadcast("test-join" + i, joinCallback);
+                }).newBroadcast("test-join" + i).submit(joinCallback);
 
                 return null;
             });
@@ -310,7 +228,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
                     await(leaveLatch);
 
                     return nodes;
-                }).broadcast("test-join" + i, leaveCallback);
+                }).newBroadcast("test-join" + i).submit(leaveCallback);
 
                 return null;
             });

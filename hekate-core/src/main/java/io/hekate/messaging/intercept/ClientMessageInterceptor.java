@@ -1,7 +1,9 @@
 package io.hekate.messaging.intercept;
 
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.messaging.broadcast.Broadcast;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.unicast.Send;
 
 /**
  * Client-side message interceptor.
@@ -12,26 +14,20 @@ import io.hekate.messaging.loadbalance.LoadBalancer;
  *
  * @param <T> Base type fo messages that can be handled by this interceptor.
  */
-public interface ClientMessageInterceptor<T> extends MessageInterceptor<T> {
+public interface ClientMessageInterceptor<T> extends MessageInterceptor {
     /**
      * Intercepts a message right before sending it to a server.
      *
      * <p>
-     * This method gets called by the {@link MessagingChannel} after the target server had been selected by the {@link LoadBalancer} for the
-     * specified outbound message. Implementations of this method can decide to transform the message into another message based on some
-     * criteria of the {@link ClientSendContext}.
+     * This method gets called by the {@link MessagingChannel} after the target server had been selected by the {@link LoadBalancer} for
+     * the specified outbound message. Implementations of this method can {@link ClientSendContext#overrideMessage(Object) override}
+     * the message with another message based on some criteria of the {@link ClientSendContext}.
      * </p>
      *
-     * @param msg Message.
-     * @param sndCtx Context.
-     *
-     * @return Transformed message or the original message if transformation is not required. Returning {@code null} will be interpreted as
-     * if no transformation had been applied and the original message should be send to the target node.
-     *
-     * @see #beforeClientReceiveResponse(Object, ClientReceiveContext, ClientSendContext)
+     * @param ctx Context.
      */
-    default T beforeClientSend(T msg, ClientSendContext sndCtx) {
-        return null;
+    default void interceptClientSend(ClientSendContext<T> ctx) {
+        // No-op.
     }
 
     /**
@@ -39,21 +35,15 @@ public interface ClientMessageInterceptor<T> extends MessageInterceptor<T> {
      *
      * <p>
      * This method gets called by the {@link MessagingChannel} when it receives a response from a server for a message of
-     * {@link OutboundType#REQUEST} or {@link OutboundType#SUBSCRIBE} type. Implementations of this method can decide to transform the
-     * message into another message based on some criteria of the {@link ClientSendContext}.
+     * {@link OutboundType#REQUEST} or {@link OutboundType#SUBSCRIBE} type.
+     * Implementations of this method can {@link ClientSendContext#overrideMessage(Object) override} the message with another message based
+     * on some criteria of the {@link ClientReceiveContext}.
      * </p>
      *
-     * @param rsp Response.
-     * @param rcvCtx Response context.
-     * @param sndCtx Context of a sent message (same object as in {@link #beforeClientSend(Object, ClientSendContext)}).
-     *
-     * @return Transformed message or the original message if transformation is not required. Returning {@code null} will be interpreted as
-     * if no transformation had been applied and the original message should be send to the target node.
-     *
-     * @see #beforeClientSend(Object, ClientSendContext)
+     * @param ctx Response context.
      */
-    default T beforeClientReceiveResponse(T rsp, ClientReceiveContext rcvCtx, ClientSendContext sndCtx) {
-        return null;
+    default void interceptClientReceiveResponse(ClientReceiveContext<T> ctx) {
+        // No-op.
     }
 
     /**
@@ -64,21 +54,22 @@ public interface ClientMessageInterceptor<T> extends MessageInterceptor<T> {
      * {@link OutboundType#SEND_WITH_ACK} type.
      * </p>
      *
-     * @param sndCtx Context of a sent message (same object as in {@link #beforeClientSend(Object, ClientSendContext)}).
+     * @param ctx Context of a sent message (same object as in {@link #interceptClientSend(ClientSendContext)}).
      *
-     * @see MessagingChannel#withConfirmReceive(boolean)
+     * @see Send#withConfirmReceive(boolean)
+     * @see Broadcast#withConfirmReceive(boolean)
      */
-    default void onClientReceiveConfirmation(ClientSendContext sndCtx) {
+    default void interceptClientReceiveConfirmation(ClientOutboundContext<T> ctx) {
         // No-op.
     }
 
     /**
      * Notifies on a failure to receive a response from server.
      *
+     * @param ctx Context of a message (same object as in {@link #interceptClientSend(ClientSendContext)}).
      * @param err Error
-     * @param sndCtx Context of a message (same object as in {@link #beforeClientSend(Object, ClientSendContext)}).
      */
-    default void onClientReceiveError(Throwable err, ClientSendContext sndCtx) {
+    default void interceptClientReceiveError(ClientOutboundContext<T> ctx, Throwable err) {
         // No-op.
     }
 }

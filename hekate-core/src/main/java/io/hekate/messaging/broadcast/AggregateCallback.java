@@ -16,34 +16,12 @@
 
 package io.hekate.messaging.broadcast;
 
-import io.hekate.cluster.ClusterNode;
-import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.unicast.Response;
-
 /**
- * Callback for {@link MessagingChannel#aggregate(Object, AggregateCallback) aggregate(...)} operation.
- *
- * <p>
- * This interface can be used with the {@link MessagingChannel#aggregate(Object, AggregateCallback)} method and will be notified as
- * follows:
- * </p>
- * <ul>
- * <li>channel submits request to each of the target nodes in parallel</li>
- * <li>for each failed submission the {@link #onReplyFailure(Object, ClusterNode, Throwable)} method gets notified</li>
- * <li>for each successfully received response the {@link #onReplySuccess(Response, ClusterNode)} method gets notified</li>
- * <li>for each response receiving failure the {@link #onReplyFailure(Object, ClusterNode, Throwable)} method gets notified</li>
- * <li>when all results are collected (either successful or failed) the {@link #onComplete(Throwable, AggregateResult)} method gets
- * called with an error parameter being {@code null} and an {@link AggregateResult} object containing all successful and partially failed
- * results.</li>
- * </ul>
- *
- * <p>
- * <b>Note:</b> Implementations of this interface must be thread safe since its methods can be notified in parallel by multiple threads.
- * </p>
+ * Callback for a {@link Aggregate} operation.
  *
  * @param <T> Base type of a messages.
  *
- * @see MessagingChannel#aggregate(Object, AggregateCallback)
+ * @see Aggregate#submit()
  * @see AggregateResult
  */
 @FunctionalInterface
@@ -61,37 +39,4 @@ public interface AggregateCallback<T> {
      * @param result Aggregation result ({@code null} if operation failed).
      */
     void onComplete(Throwable err, AggregateResult<T> result);
-
-    /**
-     * Called after a reply was received from a cluster node.
-     *
-     * <p>
-     * Note that this method gets called while aggregation is still in progress. Final aggregation results are provided by the {@link
-     * #onComplete(Throwable, AggregateResult)} method. See the description of {@link AggregateCallback} interface for the complete
-     * sequence of callback methods notification.
-     * </p>
-     *
-     * @param rsp Response from the cluster node.
-     * @param node Cluster node that sent the reply.
-     */
-    default void onReplySuccess(Response<T> rsp, ClusterNode node) {
-        // No-op.
-    }
-
-    /**
-     * Called in case of a cluster node communication failure.
-     *
-     * <p>
-     * Note that this method gets called while aggregation is still in progress. Final aggregation results are provided by the {@link
-     * #onComplete(Throwable, AggregateResult)} method. See the description of {@link AggregateCallback} interface for the complete
-     * sequence of callback methods notification.
-     * </p>
-     *
-     * @param request Original request.
-     * @param node Failed cluster node.
-     * @param cause Error cause.
-     */
-    default void onReplyFailure(T request, ClusterNode node, Throwable cause) {
-        // No-op.
-    }
 }

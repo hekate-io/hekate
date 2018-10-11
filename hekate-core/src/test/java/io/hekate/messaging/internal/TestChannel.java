@@ -71,13 +71,7 @@ public class TestChannel {
             if (event.type() == ClusterEventType.JOIN) {
                 nodeId = node.localNode().id();
 
-                channel = node.get(DefaultMessagingService.class)
-                    .channel(MessagingServiceTestBase.TEST_CHANNEL_NAME, String.class)
-                    // Disable confirmation mode for historical reasons.
-                    // -----------------------------------------------------------------
-                    // In older versions there were no confirmations and all tests that are related to send/broadcast
-                    // functionality assumed that each operation get completed right after flushing data to a socket.
-                    .withConfirmReceive(false);
+                channel = node.get(DefaultMessagingService.class).channel(MessagingServiceTestBase.TEST_CHANNEL_NAME, String.class);
             }
         });
     }
@@ -119,9 +113,9 @@ public class TestChannel {
     }
 
     public Response<String> requestWithSyncCallback(ClusterNodeId nodeId, String msg) throws Exception {
-        ResponseCallbackMock callback = new ResponseCallbackMock(msg);
+        RequestCallbackMock callback = new RequestCallbackMock(msg);
 
-        channel.forNode(nodeId).request(msg, callback);
+        channel.forNode(nodeId).newRequest(msg).submit(callback);
 
         try {
             return callback.get();
@@ -130,14 +124,6 @@ public class TestChannel {
         } catch (Throwable e) {
             throw new Exception(e);
         }
-    }
-
-    public void sendWithSyncCallback(ClusterNodeId nodeId, String msg) throws Exception {
-        SendCallbackMock callback = new SendCallbackMock();
-
-        channel.forNode(nodeId).send(msg, callback);
-
-        callback.get();
     }
 
     public void assertReceived(String expected) {

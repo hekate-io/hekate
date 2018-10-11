@@ -53,6 +53,7 @@ abstract class LockProtocol implements Traceable {
 
         private final String lockName;
 
+        @ToStringIgnore
         private final ClusterHash topology;
 
         public LockRequestBase(String region, String lockName, ClusterHash topology) {
@@ -211,13 +212,11 @@ abstract class LockProtocol implements Traceable {
 
             RETRY,
 
-            TIMEOUT,
+            LOCK_TIMEOUT,
 
-            REPLACED,
+            LOCK_BUSY,
 
-            BUSY,
-
-            LOCK_INFO
+            LOCK_OWNER_CHANGE
         }
 
         private final LockResponse.Status status;

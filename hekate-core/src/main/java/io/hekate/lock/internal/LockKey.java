@@ -16,7 +16,6 @@
 
 package io.hekate.lock.internal;
 
-import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 
 class LockKey {
@@ -68,6 +67,6 @@ class LockKey {
 
     @Override
     public String toString() {
-        return ToString.format(this);
+        return region + ':' + name;
     }
 }

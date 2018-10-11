@@ -19,21 +19,20 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.codec.CodecException;
+import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageMetaData;
-import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
+import io.hekate.messaging.intercept.ClientOutboundContext;
 import io.hekate.messaging.intercept.ClientReceiveContext;
 import io.hekate.messaging.intercept.InboundType;
 import io.hekate.messaging.intercept.OutboundType;
+import io.hekate.messaging.intercept.ServerInboundContext;
 import io.hekate.messaging.intercept.ServerReceiveContext;
 import io.hekate.messaging.intercept.ServerSendContext;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.SendCallback;
-import io.hekate.network.NetworkEndpoint;
-import io.hekate.network.NetworkSendCallback;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.HashMap;
@@ -80,8 +79,6 @@ abstract class MessagingProtocol {
         private final MessagingChannelId channelId;
 
         public Connect(ClusterNodeId to, ClusterAddress from, MessagingChannelId channelId) {
-            super(false);
-
             this.to = to;
             this.from = from;
             this.channelId = channelId;
@@ -103,16 +100,125 @@ abstract class MessagingProtocol {
         public Type messageType() {
             return Type.CONNECT;
         }
-
-        @Override
-        public String toString() {
-            return ToString.format(this);
-        }
     }
 
-    abstract static class NoReplyMessageBase<T> extends MessagingProtocol implements Message<T> {
-        public NoReplyMessageBase(boolean retransmit) {
-            super(retransmit);
+    static class Notification<T> extends MessagingProtocol implements Message<T>, ServerReceiveContext<T> {
+        private final long timeout;
+
+        @ToStringIgnore
+        private final boolean retransmit;
+
+        @ToStringIgnore
+        private final MessageMetaData metaData;
+
+        private T payload;
+
+        @ToStringIgnore
+        private MessagingConnection<T> conn;
+
+        @ToStringIgnore
+        private Map<String, Object> attributes;
+
+        public Notification(boolean retransmit, long timeout, T payload, MessageMetaData metaData) {
+            this.retransmit = retransmit;
+            this.timeout = timeout;
+            this.metaData = metaData;
+            this.payload = payload;
+        }
+
+        public void prepareSend(MessagingConnection<T> conn) {
+            this.conn = conn;
+        }
+
+        public void prepareReceive(MessagingConnection<T> conn) {
+            this.conn = conn;
+        }
+
+        public long timeout() {
+            return timeout;
+        }
+
+        public boolean hasTimeout() {
+            return timeout > 0;
+        }
+
+        @Override
+        public boolean is(Class<? extends T> type) {
+            return type.isInstance(payload);
+        }
+
+        @Override
+        public T get() {
+            return payload;
+        }
+
+        @Override
+        public <P extends T> P get(Class<P> type) {
+            return type.cast(payload);
+        }
+
+        @Override
+        public boolean isRetransmit() {
+            return retransmit;
+        }
+
+        @Override
+        public MessagingEndpoint<T> endpoint() {
+            return conn.endpoint();
+        }
+
+        @Override
+        public ClusterAddress from() {
+            return conn.remoteAddress();
+        }
+
+        public boolean hasMetaData() {
+            return metaData != null;
+        }
+
+        public MessageMetaData metaData() {
+            return metaData;
+        }
+
+        @Override
+        public Optional<MessageMetaData> readMetaData() {
+            return Optional.ofNullable(metaData);
+        }
+
+        @Override
+        public void overrideMessage(T msg) {
+            ArgAssert.notNull(msg, "Message");
+
+            this.payload = msg;
+        }
+
+        @Override
+        public Object setAttribute(String name, Object value) {
+            if (attributes == null) {
+                attributes = new HashMap<>();
+            }
+
+            return attributes.put(name, value);
+        }
+
+        @Override
+        public Object getAttribute(String name) {
+            return attributes != null ? attributes.get(name) : null;
+        }
+
+        @Override
+        public OutboundType type() {
+            return OutboundType.SEND_NO_ACK;
+        }
+
+        @Override
+        public String channelName() {
+            return conn.endpoint().channel().name();
+        }
+
+        @Override
+        public Type messageType() {
+            return Type.NOTIFICATION;
         }
 
         @Override
@@ -151,131 +257,6 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class Notification<T> extends NoReplyMessageBase<T> implements ServerReceiveContext, NetworkSendCallback<MessagingProtocol> {
-        private final long timeout;
-
-        private final MessageMetaData metaData;
-
-        private T payload;
-
-        private MessagingWorker worker;
-
-        private MessagingConnectionBase<T> conn;
-
-        private SendCallback callback;
-
-        private Map<String, Object> attributes;
-
-        public Notification(boolean retransmit, long timeout, T payload, MessageMetaData metaData) {
-            super(retransmit);
-
-            this.timeout = timeout;
-            this.metaData = metaData;
-            this.payload = payload;
-        }
-
-        public void prepareSend(MessagingWorker worker, MessagingConnectionBase<T> conn, SendCallback callback) {
-            this.worker = worker;
-            this.conn = conn;
-            this.callback = callback;
-        }
-
-        @Override
-        public void onComplete(MessagingProtocol message, Optional<Throwable> error, NetworkEndpoint<MessagingProtocol> endpoint) {
-            if (error.isPresent()) {
-                conn.notifyOnSendFailure(worker, payload, error.get(), callback);
-            } else {
-                conn.notifyOnSendSuccess(worker, payload, callback);
-            }
-        }
-
-        public void prepareReceive(MessagingConnectionBase<T> conn) {
-            this.conn = conn;
-
-            this.payload = conn.interceptServerReceive(this.payload, this);
-        }
-
-        public long timeout() {
-            return timeout;
-        }
-
-        public boolean hasTimeout() {
-            return timeout > 0;
-        }
-
-        @Override
-        public boolean is(Class<? extends T> type) {
-            return type.isInstance(payload);
-        }
-
-        @Override
-        public T get() {
-            return payload;
-        }
-
-        @Override
-        public <P extends T> P get(Class<P> type) {
-            return type.cast(payload);
-        }
-
-        @Override
-        public MessagingEndpoint<T> endpoint() {
-            return conn.endpoint();
-        }
-
-        @Override
-        public ClusterAddress from() {
-            return conn.remoteAddress();
-        }
-
-        public boolean hasMetaData() {
-            return metaData != null;
-        }
-
-        public MessageMetaData metaData() {
-            return metaData;
-        }
-
-        @Override
-        public Optional<MessageMetaData> readMetaData() {
-            return Optional.ofNullable(metaData);
-        }
-
-        @Override
-        public Object setAttribute(String name, Object value) {
-            if (attributes == null) {
-                attributes = new HashMap<>();
-            }
-
-            return attributes.put(name, value);
-        }
-
-        @Override
-        public Object getAttribute(String name) {
-            return attributes != null ? attributes.get(name) : null;
-        }
-
-        @Override
-        public OutboundType type() {
-            return OutboundType.SEND_NO_ACK;
-        }
-
-        @Override
-        public String channelName() {
-            return conn.endpoint().channel().name();
-        }
-
-        @Override
-        public Type messageType() {
-            return Type.NOTIFICATION;
-        }
-
-        @Override
-        public String toString() {
-            return getClass().getSimpleName() + "[payload=" + payload + ']';
-        }
-    }
-
     static class AffinityNotification<T> extends Notification<T> {
         private final int affinity;
 
@@ -295,28 +276,33 @@ abstract class MessagingProtocol {
         }
     }
 
-    abstract static class RequestBase<T> extends MessagingProtocol implements Message<T>, ServerReceiveContext,
-        NetworkSendCallback<MessagingProtocol> {
+    abstract static class RequestBase<T> extends MessagingProtocol implements Message<T>, ServerReceiveContext<T> {
         private final int requestId;
+
+        private final boolean retransmit;
 
         private final long timeout;
 
+        @ToStringIgnore
         private final MessageMetaData metaData;
 
         private T payload;
 
+        @ToStringIgnore
         private MessagingWorker worker;
 
-        private MessagingConnectionBase<T> conn;
+        @ToStringIgnore
+        private MessagingConnection<T> conn;
 
-        private RequestHandle<T> handle;
+        @ToStringIgnore
+        private MessagingConnectionIn<T> connIn;
 
+        @ToStringIgnore
         private Map<String, Object> attributes;
 
         public RequestBase(int requestId, boolean retransmit, long timeout, T payload, MessageMetaData metaData) {
-            super(retransmit);
-
             this.requestId = requestId;
+            this.retransmit = retransmit;
             this.timeout = timeout;
             this.payload = payload;
             this.metaData = metaData;
@@ -324,24 +310,15 @@ abstract class MessagingProtocol {
 
         public abstract boolean isVoid();
 
-        public void prepareReceive(MessagingWorker worker, MessagingConnectionBase<T> conn) {
+        public void prepareSend(MessagingWorker worker, MessagingConnection<T> conn) {
+            this.conn = conn;
+            this.worker = worker;
+        }
+
+        public void prepareReceive(MessagingWorker worker, MessagingConnectionIn<T> conn) {
             this.worker = worker;
             this.conn = conn;
-
-            this.payload = conn.interceptServerReceive(this.payload, this);
-        }
-
-        public void prepareSend(RequestHandle<T> handle, MessagingConnectionBase<T> conn) {
-            this.worker = handle.worker();
-            this.conn = conn;
-            this.handle = handle;
-        }
-
-        @Override
-        public void onComplete(MessagingProtocol message, Optional<Throwable> error, NetworkEndpoint<MessagingProtocol> endpoint) {
-            if (error.isPresent()) {
-                conn.notifyOnRequestFailure(handle, error.get());
-            }
+            this.connIn = conn;
         }
 
         public int requestId() {
@@ -365,6 +342,13 @@ abstract class MessagingProtocol {
         }
 
         @Override
+        public void overrideMessage(T msg) {
+            ArgAssert.notNull(msg, "Message");
+
+            this.payload = msg;
+        }
+
+        @Override
         public Optional<MessageMetaData> readMetaData() {
             return Optional.ofNullable(metaData);
         }
@@ -372,6 +356,11 @@ abstract class MessagingProtocol {
         @Override
         public boolean is(Class<? extends T> type) {
             return type.isInstance(payload);
+        }
+
+        @Override
+        public boolean isRetransmit() {
+            return retransmit;
         }
 
         @Override
@@ -417,13 +406,8 @@ abstract class MessagingProtocol {
             return worker;
         }
 
-        protected MessagingConnectionBase<T> connection() {
-            return conn;
-        }
-
-        @Override
-        public String toString() {
-            return getClass().getSimpleName() + "[payload=" + payload + ']';
+        protected MessagingConnectionIn<T> connection() {
+            return connIn;
         }
     }
 
@@ -433,6 +417,7 @@ abstract class MessagingProtocol {
             "mustReply"
         );
 
+        @ToStringIgnore
         @SuppressWarnings("unused") // <-- Updated via AtomicIntegerFieldUpdater.
         private volatile int mustReply;
 
@@ -669,84 +654,41 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class ResponseChunk<T> extends NoReplyMessageBase<T> implements Response<T>, ServerSendContext, ClientReceiveContext,
-        NetworkSendCallback<MessagingProtocol> {
+    static class ResponseChunk<T> extends MessagingProtocol implements Response<T>, ServerSendContext<T>, ClientReceiveContext<T> {
         private final int requestId;
 
         private T payload;
 
+        @ToStringIgnore
         private MessageMetaData metaData;
 
-        private MessagingWorker worker;
+        @ToStringIgnore
+        private MessagingConnection<T> conn;
 
-        private MessagingConnectionBase<T> conn;
+        @ToStringIgnore
+        private ClientOutboundContext<T> clientCtx;
 
-        private MessageAttempt<T> attempt;
-
-        private SendPressureGuard backPressure;
-
-        private SendCallback callback;
+        @ToStringIgnore
+        private ServerInboundContext<T> serverCtx;
 
         public ResponseChunk(int requestId, T payload) {
             this(requestId, payload, null);
         }
 
         public ResponseChunk(int requestId, T payload, MessageMetaData metaData) {
-            super(false);
-
             this.requestId = requestId;
             this.payload = payload;
             this.metaData = metaData;
         }
 
-        public boolean prepareSend(
-            MessagingWorker worker,
-            MessagingConnectionBase<T> conn,
-            SendPressureGuard pressureGuard,
-            ServerReceiveContext rcvCtx,
-            SendCallback callback
-        ) {
-            this.worker = worker;
+        public void prepareSend(MessagingConnection<T> conn, ServerReceiveContext<T> serverCtx) {
             this.conn = conn;
-            this.callback = callback;
-            this.backPressure = pressureGuard;
-
-            // Apply back pressure when sending from server back to client.
-            if (backPressure != null) {
-                try {
-                    backPressure.onEnqueue();
-                } catch (InterruptedException | MessageQueueOverflowException e) {
-                    backPressure.onDequeue();
-
-                    conn.notifyOnSendFailure(worker, payload, e, callback);
-
-                    return false;
-                }
-            }
-
-            payload = conn.interceptServerSend(payload, this, rcvCtx);
-
-            return true;
+            this.serverCtx = serverCtx;
         }
 
-        @Override
-        public void onComplete(MessagingProtocol message, Optional<Throwable> error, NetworkEndpoint<MessagingProtocol> endpoint) {
-            if (backPressure != null) {
-                backPressure.onDequeue();
-            }
-
-            if (error.isPresent()) {
-                conn.notifyOnSendFailure(worker, payload, error.get(), callback);
-            } else {
-                conn.notifyOnSendSuccess(worker, payload, callback);
-            }
-        }
-
-        public void prepareReceive(MessagingConnectionBase<T> conn, MessageAttempt<T> attempt) {
+        public void prepareReceive(MessagingConnection<T> conn, ClientOutboundContext<T> attempt) {
             this.conn = conn;
-            this.attempt = attempt;
-
-            this.payload = attempt.interceptReceive(payload, this);
+            this.clientCtx = attempt;
         }
 
         public int requestId() {
@@ -769,13 +711,30 @@ abstract class MessagingProtocol {
         }
 
         @Override
+        public ServerInboundContext<T> inboundContext() {
+            return serverCtx;
+        }
+
+        @Override
+        public void overrideMessage(T msg) {
+            ArgAssert.notNull(msg, "Message");
+
+            this.payload = msg;
+        }
+
+        @Override
+        public ClientOutboundContext<T> outboundContext() {
+            return clientCtx;
+        }
+
+        @Override
         public boolean isPartial() {
             return true;
         }
 
         @Override
         public ClusterTopology topology() {
-            return attempt.topology();
+            return clientCtx.topology();
         }
 
         @Override
@@ -785,7 +744,7 @@ abstract class MessagingProtocol {
 
         @Override
         public T request() {
-            return attempt.ctx().originalMessage();
+            return clientCtx.get();
         }
 
         @Override
@@ -821,108 +780,15 @@ abstract class MessagingProtocol {
         public Type messageType() {
             return Type.RESPONSE_CHUNK;
         }
-
-        @Override
-        public String toString() {
-            return getClass().getSimpleName() + "[payload=" + payload + ']';
-        }
     }
 
-    static class FinalResponse<T> extends MessagingProtocol implements Response<T>, ServerSendContext, ClientReceiveContext,
-        NetworkSendCallback<MessagingProtocol> {
-        private final int requestId;
-
-        private T payload;
-
-        private MessageMetaData metaData;
-
-        private MessagingWorker worker;
-
-        private MessagingConnectionBase<T> conn;
-
-        private MessageAttempt<T> attempts;
-
-        private SendPressureGuard backPressure;
-
-        private SendCallback callback;
-
+    static class FinalResponse<T> extends ResponseChunk<T> {
         public FinalResponse(int requestId, T payload) {
-            this(requestId, payload, null);
+            super(requestId, payload);
         }
 
         public FinalResponse(int requestId, T payload, MessageMetaData metaData) {
-            super(false);
-
-            this.requestId = requestId;
-            this.payload = payload;
-            this.metaData = metaData;
-        }
-
-        public void prepareSend(
-            MessagingWorker worker,
-            MessagingConnectionBase<T> conn,
-            SendPressureGuard pressureGuard,
-            ServerReceiveContext rcvCtx,
-            SendCallback callback
-        ) {
-            this.worker = worker;
-            this.conn = conn;
-            this.callback = callback;
-            this.backPressure = pressureGuard;
-
-            // Apply back pressure when sending from server back to client.
-            if (backPressure != null) {
-                // Note we are using IGNORE policy for back pressure
-                // since we don't want this operation to fail/block but still want it to be counted by the back pressure guard.
-                backPressure.onEnqueueIgnorePolicy();
-            }
-
-            payload = conn.interceptServerSend(payload, this, rcvCtx);
-        }
-
-        @Override
-        public void onComplete(MessagingProtocol message, Optional<Throwable> error, NetworkEndpoint<MessagingProtocol> endpoint) {
-            if (backPressure != null) {
-                backPressure.onDequeue();
-            }
-
-            if (error.isPresent()) {
-                Throwable cause = error.get();
-
-                if (cause instanceof CodecException) {
-                    conn.replyError(worker, requestId, cause);
-                }
-
-                conn.notifyOnSendFailure(worker, payload, cause, callback);
-            } else {
-                conn.notifyOnSendSuccess(worker, payload, callback);
-            }
-        }
-
-        public void prepareReceive(MessagingConnectionBase<T> conn, MessageAttempt<T> attempt) {
-            this.conn = conn;
-            this.attempts = attempt;
-
-            this.payload = attempt.interceptReceive(payload, this);
-        }
-
-        public int requestId() {
-            return requestId;
-        }
-
-        @Override
-        public T get() {
-            return payload;
-        }
-
-        @Override
-        public <P extends T> P get(Class<P> type) {
-            return type.cast(payload);
-        }
-
-        @Override
-        public boolean is(Class<? extends T> type) {
-            return type.isInstance(payload);
+            super(requestId, payload, metaData);
         }
 
         @Override
@@ -931,57 +797,13 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public ClusterTopology topology() {
-            return attempts.topology();
-        }
-
-        @Override
-        public MessagingEndpoint<T> endpoint() {
-            return conn.endpoint();
-        }
-
-        @Override
-        public T request() {
-            return attempts.ctx().originalMessage();
-        }
-
-        @Override
-        public <P extends T> P request(Class<P> type) {
-            return type.cast(request());
-        }
-
-        @Override
         public InboundType type() {
             return InboundType.FINAL_RESPONSE;
         }
 
         @Override
-        public Optional<MessageMetaData> readMetaData() {
-            return Optional.ofNullable(metaData);
-        }
-
-        @Override
-        public boolean hasMetaData() {
-            return metaData != null;
-        }
-
-        @Override
-        public MessageMetaData metaData() {
-            if (metaData == null) {
-                metaData = new MessageMetaData();
-            }
-
-            return metaData;
-        }
-
-        @Override
         public Type messageType() {
             return Type.FINAL_RESPONSE;
-        }
-
-        @Override
-        public String toString() {
-            return getClass().getSimpleName() + "[payload=" + payload + ']';
         }
     }
 
@@ -989,8 +811,6 @@ abstract class MessagingProtocol {
         private final int requestId;
 
         public VoidResponse(int requestId) {
-            super(false);
-
             this.requestId = requestId;
         }
 
@@ -1011,8 +831,6 @@ abstract class MessagingProtocol {
         private final String stackTrace;
 
         public ErrorResponse(int requestId, String stackTrace) {
-            super(false);
-
             this.requestId = requestId;
             this.stackTrace = stackTrace;
         }
@@ -1031,17 +849,7 @@ abstract class MessagingProtocol {
         }
     }
 
-    private final boolean retransmit;
-
-    public MessagingProtocol(boolean retransmit) {
-        this.retransmit = retransmit;
-    }
-
     public abstract Type messageType();
-
-    public boolean isRetransmit() {
-        return retransmit;
-    }
 
     @SuppressWarnings("unchecked")
     public <T extends MessagingProtocol> T cast() {
@@ -1050,6 +858,6 @@ abstract class MessagingProtocol {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName();
+        return ToString.format(this);
     }
 }

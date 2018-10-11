@@ -20,9 +20,9 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFuture;
 
 /**
- * Asynchronous result of {@link MessagingChannel#send(Object) send(...)} operation.
+ * Asynchronous result of {@link Send} operation.
  *
- * @see MessagingChannel#send(Object)
+ * @see MessagingChannel#newSend(Object)
  */
 public class SendFuture extends MessagingFuture<Void> {
     // No-op.

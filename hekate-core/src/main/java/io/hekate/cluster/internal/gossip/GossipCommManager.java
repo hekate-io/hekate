@@ -160,15 +160,15 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
                 log.trace("Sending message [message={}]", msg);
             }
 
-            endpoint.get().send(msg, (sent, err, net) -> {
-                if (err.isPresent()) {
+            endpoint.get().send(msg, (sent, err) -> {
+                if (err == null) {
+                    listener.onSendSuccess(sent);
+                } else {
                     if (TRACE) {
-                        log.trace("Failed to send a message [reason={}, message={}]", err.get(), sent);
+                        log.trace("Failed to send a message [reason={}, message={}]", err, sent);
                     }
 
-                    listener.onSendFailure(sent, err.get());
-                } else {
-                    listener.onSendSuccess(sent);
+                    listener.onSendFailure(sent, err);
                 }
 
                 if (onComplete != null) {

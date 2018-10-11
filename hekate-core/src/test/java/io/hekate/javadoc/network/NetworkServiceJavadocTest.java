@@ -155,12 +155,12 @@ public class NetworkServiceJavadocTest extends HekateNodeTestBase {
         // Start:client_send_example
         // Send some messages.
         for (int i = 0; i < 10; i++) {
-            client.send("Example message", (msg, error, to) -> {
+            client.send("Example message", (msg, err) -> {
                 // Check error.
-                if (error.isPresent()) {
-                    System.err.println("Failed to send: " + error.get());
-                } else {
+                if (err == null) {
                     System.out.println("Successfully sent: " + msg);
+                } else {
+                    System.err.println("Failed to send: " + err);
                 }
             });
         }

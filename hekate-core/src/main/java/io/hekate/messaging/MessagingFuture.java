@@ -46,15 +46,6 @@ public class MessagingFuture<T> extends HekateFuture<T, MessagingFuture<T>> {
     }
 
     @Override
-    public T getUninterruptedly() throws MessagingFutureException {
-        try {
-            return super.getUninterruptedly();
-        } catch (ExecutionException e) {
-            throw new MessagingFutureException("Messaging operation failed (see cause for details).", e.getCause());
-        }
-    }
-
-    @Override
     protected MessagingFuture<T> newInstance() {
         return new MessagingFuture<>();
     }

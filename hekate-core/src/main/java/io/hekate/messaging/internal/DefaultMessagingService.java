@@ -59,6 +59,7 @@ import io.hekate.network.NetworkServerHandler;
 import io.hekate.network.NetworkService;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
+import io.hekate.util.async.ExtendedScheduledExecutor;
 import io.hekate.util.async.Waiting;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
@@ -69,9 +70,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,9 +91,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     private final Map<String, MessagingGateway<?>> gateways = new HashMap<>();
 
-    private Hekate hekate;
-
-    private ScheduledExecutorService timer;
+    private ExtendedScheduledExecutor timer;
 
     private CodecService codec;
 
@@ -116,8 +112,6 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     @Override
     public void resolve(DependencyContext ctx) {
-        hekate = ctx.hekate();
-
         net = ctx.require(NetworkService.class);
         cluster = ctx.require(ClusterService.class);
         codec = ctx.require(CodecService.class);
@@ -127,7 +121,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     @Override
     public void configure(ConfigurationContext ctx) {
-        List<MessageInterceptor<?>> interceptors = StreamUtils.nullSafe(factory.getGlobalInterceptors()).collect(toList());
+        List<MessageInterceptor> interceptors = StreamUtils.nullSafe(factory.getGlobalInterceptors()).collect(toList());
 
         // Collect channel configurations.
         StreamUtils.nullSafe(factory.getChannels()).forEach(cfg -> registerProxy(cfg, interceptors));
@@ -146,12 +140,12 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
         // Register channel meta-data as a service property.
         gateways.values().forEach(proxy -> {
-            ChannelMetaData meta = new ChannelMetaData(
+            MessagingMetaData meta = new MessagingMetaData(
                 proxy.hasReceiver(),
                 proxy.baseType().getName()
             );
 
-            ctx.setStringProperty(ChannelMetaData.propertyName(proxy.name()), meta.toString());
+            ctx.setStringProperty(MessagingMetaData.propertyName(proxy.name()), meta.toString());
         });
     }
 
@@ -164,8 +158,8 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             for (MessagingGateway<?> gateway : gateways.values()) {
                 String channel = gateway.name();
 
-                ChannelMetaData locMeta = ChannelMetaData.parse(locService.stringProperty(ChannelMetaData.propertyName(channel)));
-                ChannelMetaData remMeta = ChannelMetaData.parse(remService.stringProperty(ChannelMetaData.propertyName(channel)));
+                MessagingMetaData locMeta = MessagingMetaData.parse(locService.stringProperty(MessagingMetaData.propertyName(channel)));
+                MessagingMetaData remMeta = MessagingMetaData.parse(remService.stringProperty(MessagingMetaData.propertyName(channel)));
 
                 if (remMeta != null) {
                     if (!locMeta.type().equals(remMeta.type())) {
@@ -330,7 +324,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         return gateways.containsKey(channelName);
     }
 
-    private <T> void registerProxy(MessagingChannelConfig<T> cfg, List<MessageInterceptor<?>> interceptors) {
+    private <T> void registerProxy(MessagingChannelConfig<T> cfg, List<MessageInterceptor> interceptors) {
         ConfigCheck check = ConfigCheck.get(MessagingChannelConfig.class);
 
         // Validate configuration.
@@ -363,7 +357,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             }
         }
 
-        MessagingGateway<T> gateway = new MessagingGateway<>(cfg, hekate, cluster, codec, interceptors);
+        MessagingGateway<T> gateway = new MessagingGateway<>(cfg, cluster, codec, interceptors);
 
         // Check uniqueness of the channel name.
         check.unique(gateway.name(), gateways.keySet(), "name");
@@ -385,87 +379,62 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             log.debug("Creating a new messaging gateway [context={}]", gateway);
         }
 
-        String name = gateway.name();
-
-        NetworkConnector<MessagingProtocol> connector = net.connector(name);
+        // Prepare network connector.
+        NetworkConnector<MessagingProtocol> connector = net.connector(gateway.name());
 
         // Prepare thread pool for asynchronous messages processing.
-        int workerThreads = gateway.workerThreads();
-
-        HekateThreadFactory asyncFactory = new HekateThreadFactory(MESSAGING_THREAD_PREFIX + '-' + name);
-
         MessagingExecutor async;
 
-        if (workerThreads > 0) {
-            async = new MessagingExecutorAsync(asyncFactory, workerThreads, timer);
+        if (gateway.workerThreads() > 0) {
+            async = new MessagingExecutorAsync(gateway.workerThreads(), newThreadFactory(gateway.name()));
         } else {
-            async = new MessagingExecutorSync(asyncFactory, timer);
+            async = new MessagingExecutorSync(newThreadFactory(gateway.name()));
         }
 
         // Prepare metrics.
-        MessagingMetrics channelMetrics = new MessagingMetrics(name, async::activeTasks, async::completedTasks, metrics);
+        MessagingMetrics channelMetrics = new MessagingMetrics(gateway.name(), async::activeTasks, async::completedTasks, metrics);
 
         // Make sure that receiver is guarded with lock.
         MessageReceiver<T> guardedReceiver = applyGuard(gateway.unguardedReceiver());
 
-        // Schedule idle connections checking (if required).
-        long idleSocketTimeout = gateway.idleSocketTimeout();
-
-        ScheduledFuture<?> checkIdle;
-
-        if (idleSocketTimeout > 0) {
-            if (DEBUG) {
-                log.debug("Scheduling new task for idle channel handling [check-interval={}]", idleSocketTimeout);
-            }
-
-            checkIdle = timer.scheduleWithFixedDelay(() -> {
-                try {
-                    MessagingGatewayContext<T> ctx = gateway.context();
-
-                    if (ctx != null) {
-                        ctx.checkIdleConnections();
-                    }
-                } catch (RuntimeException | Error e) {
-                    log.error("Got an unexpected error while checking for idle connections [channel={}]", name, e);
-                }
-            }, idleSocketTimeout, idleSocketTimeout, TimeUnit.MILLISECONDS);
-        } else {
-            checkIdle = null;
-        }
-
         // Create context.
         MessagingGatewayContext<T> ctx = new MessagingGatewayContext<>(
-            name,
-            hekate,
+            gateway.name(),
             gateway.baseType(),
             connector,
             cluster.localNode(),
             guardedReceiver,
             async,
+            timer,
             channelMetrics,
             gateway.receivePressureGuard(),
             gateway.sendPressureGuard(),
-            gateway.interceptor(),
+            gateway.interceptors(),
             gateway.log(),
-            checkIdle != null, /* <-- Check for idle connections.*/
-            gateway.rootChannel(),
-            // Before close callback.
-            () -> {
-                if (DEBUG) {
-                    log.debug("Closing channel [name={}]", name);
-                }
-
-                // Cancel idle connections checking.
-                if (checkIdle != null && !checkIdle.isCancelled()) {
-                    if (DEBUG) {
-                        log.debug("Canceling idle channel handling task [channel={}]", name);
-                    }
-
-                    checkIdle.cancel(false);
-                }
-            }
+            gateway.idleSocketTimeout() > 0, /* <-- Check for idle connections.*/
+            gateway.rootChannel()
         );
 
+        // Schedule idle connections checking (if required).
+        long idleTimeout = gateway.idleSocketTimeout();
+
+        if (idleTimeout > 0) {
+            if (DEBUG) {
+                log.debug("Scheduling new task for idle channel handling [check-interval={}]", idleTimeout);
+            }
+
+            timer.repeatWithFixedDelay(() -> {
+                try {
+                    ctx.checkIdleConnections();
+                } catch (RuntimeException | Error e) {
+                    log.error("Got an unexpected error while checking for idle connections [channel={}]", gateway.name(), e);
+                }
+
+                return !ctx.isClosed();
+            }, idleTimeout, idleTimeout, TimeUnit.MILLISECONDS);
+        }
+
+        // Initialize the gateway with a new context.
         gateway.init(ctx);
 
         // Register to JMX (optional).
@@ -540,7 +509,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
                     MessagingEndpoint<T> endpoint = new DefaultMessagingEndpoint<>(from, ctx.channel());
 
-                    MessagingConnectionNetIn<T> conn = new MessagingConnectionNetIn<>(client, endpoint, ctx);
+                    MessagingConnectionIn<T> conn = new MessagingConnectionIn<>(client, endpoint, ctx);
 
                     // Try to register connection within the gateway.
                     if (ctx.register(conn)) {
@@ -555,7 +524,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
                 @Override
                 public void onMessage(NetworkMessage<MessagingProtocol> msg, NetworkEndpoint<MessagingProtocol> from) throws IOException {
-                    MessagingConnectionNetIn<?> conn = (MessagingConnectionNetIn<?>)from.getContext();
+                    MessagingConnectionIn<?> conn = (MessagingConnectionIn<?>)from.getContext();
 
                     if (conn != null) {
                         conn.receive(msg, from);
@@ -564,7 +533,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
                 @Override
                 public void onDisconnect(NetworkEndpoint<MessagingProtocol> client) {
-                    MessagingConnectionNetIn<?> clientCtx = (MessagingConnectionNetIn<?>)client.getContext();
+                    MessagingConnectionIn<?> clientCtx = (MessagingConnectionIn<?>)client.getContext();
 
                     if (clientCtx != null) {
                         clientCtx.onDisconnect();
@@ -584,7 +553,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         try {
             if (guard.isInitialized()) {
                 gateways.values().forEach(proxy ->
-                    proxy.context().updateTopology()
+                    proxy.context().checkTopologyChanges()
                 );
             }
         } finally {
@@ -592,14 +561,16 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         }
     }
 
-    private ScheduledExecutorService newTimer() {
-        HekateThreadFactory timerFactory = new HekateThreadFactory(MESSAGING_THREAD_PREFIX + "Timer");
-
-        ScheduledThreadPoolExecutor timer = new ScheduledThreadPoolExecutor(1, timerFactory);
+    private static ExtendedScheduledExecutor newTimer() {
+        ExtendedScheduledExecutor timer = new ExtendedScheduledExecutor(1, newThreadFactory("Timer"));
 
         timer.setRemoveOnCancelPolicy(true);
 
         return timer;
+    }
+
+    private static HekateThreadFactory newThreadFactory(String suffix) {
+        return new HekateThreadFactory(MESSAGING_THREAD_PREFIX + '-' + suffix);
     }
 
     @Override

@@ -631,7 +631,14 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                 node = localNode;
 
                 // Prepare initial (empty) topology.
-                topology = DefaultClusterTopology.empty();
+                DefaultClusterTopology oldTopology = this.topology;
+
+                if (oldTopology == null) {
+                    topology = DefaultClusterTopology.empty();
+                } else {
+                    // Inherit topology version in case of rejoin.
+                    topology = oldTopology.update(emptySet());
+                }
 
                 if (log.isInfoEnabled()) {
                     log.info("Initialized local node info [node={}]", localNode.toDetailedString());

@@ -29,7 +29,7 @@ import java.util.List;
 public class MessagingServiceFactory implements ServiceFactory<MessagingService> {
     private List<MessagingChannelConfig<?>> channels;
 
-    private List<MessageInterceptor<?>> globalInterceptors;
+    private List<MessageInterceptor> globalInterceptors;
 
     private List<MessagingConfigProvider> configProviders;
 
@@ -110,7 +110,7 @@ public class MessagingServiceFactory implements ServiceFactory<MessagingService>
      *
      * @return List of global message interceptors.
      */
-    public List<MessageInterceptor<?>> getGlobalInterceptors() {
+    public List<MessageInterceptor> getGlobalInterceptors() {
         return globalInterceptors;
     }
 
@@ -121,7 +121,7 @@ public class MessagingServiceFactory implements ServiceFactory<MessagingService>
      *
      * @see MessagingChannelConfig#setInterceptors(List)
      */
-    public void setGlobalInterceptors(List<MessageInterceptor<?>> globalInterceptors) {
+    public void setGlobalInterceptors(List<MessageInterceptor> globalInterceptors) {
         this.globalInterceptors = globalInterceptors;
     }
 
@@ -132,7 +132,7 @@ public class MessagingServiceFactory implements ServiceFactory<MessagingService>
      *
      * @return This instance.
      */
-    public MessagingServiceFactory withGlobalInterceptor(MessageInterceptor<?> globalInterceptor) {
+    public MessagingServiceFactory withGlobalInterceptor(MessageInterceptor globalInterceptor) {
         if (getGlobalInterceptors() == null) {
             setGlobalInterceptors(new ArrayList<>());
         }

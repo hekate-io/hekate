@@ -17,67 +17,16 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.util.async.AsyncUtils;
-import io.hekate.util.async.Waiting;
-import io.hekate.util.format.ToString;
-import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-class MessagingThreadPoolWorker implements MessagingWorker {
-    private final ThreadPoolExecutor executor;
-
-    private final ScheduledExecutorService timer;
-
-    public MessagingThreadPoolWorker(int parallelism, HekateThreadFactory factory, ScheduledExecutorService timer) {
-        assert parallelism > 0 : "Parallelism must be above zero [parallelism=" + parallelism + ']';
-        assert factory != null : "Thread Factory is null.";
-        assert timer != null : "Timer is null.";
-
-        this.timer = timer;
-
-        this.executor = new ThreadPoolExecutor(parallelism, parallelism, 0, TimeUnit.NANOSECONDS, new LinkedBlockingQueue<>(), factory);
+class MessagingThreadPoolWorker extends MessagingWorkerBase {
+    public MessagingThreadPoolWorker(int parallelism, HekateThreadFactory factory) {
+        super(newPooledExecutor(parallelism, factory));
     }
 
-    @Override
-    public void execute(Runnable task) {
-        boolean fallback = false;
-
-        try {
-            executor.execute(task);
-        } catch (RejectedExecutionException e) {
-            fallback = true;
-        }
-
-        if (fallback) {
-            AsyncUtils.fallbackExecutor().execute(task);
-        }
-    }
-
-    @Override
-    public Future<?> executeDeferred(long delay, Runnable task) {
-        return timer.schedule(() -> execute(task), delay, TimeUnit.MILLISECONDS);
-    }
-
-    @Override
-    public int activeTasks() {
-        return executor.getQueue().size();
-    }
-
-    @Override
-    public long completedTasks() {
-        return executor.getCompletedTaskCount();
-    }
-
-    public Waiting terminate() {
-        return AsyncUtils.shutdown(executor);
-    }
-
-    @Override
-    public String toString() {
-        return ToString.format(this);
+    private static ThreadPoolExecutor newPooledExecutor(int parallelism, HekateThreadFactory factory) {
+        return new ThreadPoolExecutor(parallelism, parallelism, 0, TimeUnit.NANOSECONDS, new LinkedBlockingQueue<>(), factory);
     }
 }

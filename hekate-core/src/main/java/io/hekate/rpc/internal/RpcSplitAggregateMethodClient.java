@@ -167,12 +167,11 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
     }
 
     @Override
-    protected Object doInvoke(MessagingChannel<RpcProtocol> channel, Object[] args) throws MessagingFutureException,
-        InterruptedException, TimeoutException {
+    protected Object doInvoke(Object affinity, Object[] args) throws MessagingFutureException, InterruptedException, TimeoutException {
         // RPC messaging future.
         MessagingFuture<Object> future;
 
-        int clusterSize = channel.cluster().topology().size();
+        int clusterSize = channel().cluster().topology().size();
 
         // Check that RPC topology is not empty.
         if (clusterSize == 0) {
@@ -185,31 +184,31 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
             // Split argument into parts.
             Object[] parts = split(args, clusterSize);
 
-            RpcSplitAggregateFuture aggregateFuture = new RpcSplitAggregateFuture(parts.length, errorPolicy, aggregator);
+            RpcSplitAggregateFuture aggrFuture = new RpcSplitAggregateFuture(parts.length, errorPolicy, aggregator);
 
             // Use Round Robin load balancing to distribute parts among the cluster nodes.
-            MessagingChannel<RpcProtocol> roundRobin = channel.withLoadBalancer(LoadBalancers.roundRobin());
+            MessagingChannel<RpcProtocol> roundRobin = channel().withLoadBalancer(LoadBalancers.newRoundRobin());
 
             // Process each part as a separate RPC request with a shared callback.
             for (Object part : parts) {
-                // Substitute the original argument with the part that should be submitted to the remote node.
+                // Substitute original arguments with the part that should be submitted to the remote node.
                 Object[] partArgs = substituteArgs(args, part);
 
                 // Submit RPC request.
                 RpcCall<T> call = new RpcCall<>(methodIdxKey(), rpc(), tag(), method(), partArgs, true /* <- Split. */);
 
-                roundRobin.request(call, aggregateFuture /* <-- Future is a callback. */);
+                roundRobin.newRequest(call).submit(aggrFuture /* <-- Future is a callback. */);
             }
 
-            future = aggregateFuture;
+            future = aggrFuture;
         }
 
         // Return results.
         if (method().isAsync()) {
             return future;
         } else {
-            if (channel.timeout() > 0) {
-                return future.get(channel.timeout(), TimeUnit.MILLISECONDS);
+            if (channel().timeout() > 0) {
+                return future.get(channel().timeout(), TimeUnit.MILLISECONDS);
             } else {
                 return future.get();
             }

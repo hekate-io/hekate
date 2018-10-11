@@ -20,7 +20,6 @@ import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.internal.DefaultClusterTopology;
-import io.hekate.core.HekateSupport;
 import io.hekate.failover.FailoverContext;
 import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.failover.internal.DefaultFailoverContext;
@@ -36,7 +35,6 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.Mockito.mock;
 
 public class DefaultLoadBalancerTest extends HekateTestBase {
     private ClusterNode n1;
@@ -51,13 +49,9 @@ public class DefaultLoadBalancerTest extends HekateTestBase {
 
     private RendezvousHashMapper mapper;
 
-    private HekateSupport hekate;
-
     @Before
     public void setUp() throws Exception {
         balancer = new DefaultLoadBalancer<>();
-
-        hekate = mock(HekateSupport.class);
 
         n1 = newNode();
         n2 = newNode();
@@ -73,7 +67,7 @@ public class DefaultLoadBalancerTest extends HekateTestBase {
         Set<ClusterNodeId> allRoutes = new HashSet<>();
 
         for (int i = 0; i < 100; i++) {
-            DefaultLoadBalancerContext ctx = new DefaultLoadBalancerContext(i, null, topology, hekate, mapper, Optional.empty());
+            DefaultLoadBalancerContext ctx = new DefaultLoadBalancerContext(i, null, topology, mapper, Optional.empty());
 
             ClusterNodeId route = balancer.route(i, ctx);
 
@@ -91,7 +85,7 @@ public class DefaultLoadBalancerTest extends HekateTestBase {
 
         for (int i = 0; i < 100; i++) {
 
-            DefaultLoadBalancerContext ctx = new DefaultLoadBalancerContext(i, null, topology, hekate, mapper, Optional.of(failure));
+            DefaultLoadBalancerContext ctx = new DefaultLoadBalancerContext(i, null, topology, mapper, Optional.of(failure));
 
             ClusterNodeId route = balancer.route(i, ctx);
 
@@ -105,7 +99,7 @@ public class DefaultLoadBalancerTest extends HekateTestBase {
         Set<ClusterNodeId> allRoutes = new HashSet<>();
 
         for (int i = 0; i < 100; i++) {
-            DefaultLoadBalancerContext ctx = new DefaultLoadBalancerContext(i, i, topology, hekate, mapper, Optional.empty());
+            DefaultLoadBalancerContext ctx = new DefaultLoadBalancerContext(i, i, topology, mapper, Optional.empty());
 
             ClusterNodeId route = balancer.route(i, ctx);
 
@@ -124,7 +118,7 @@ public class DefaultLoadBalancerTest extends HekateTestBase {
         FailoverContext failure = new DefaultFailoverContext(2, new Exception(), n1, toSet(n1, n2), FailoverRoutingPolicy.RE_ROUTE);
 
         for (int i = 0; i < 100; i++) {
-            DefaultLoadBalancerContext ctx = new DefaultLoadBalancerContext(i, i, topology, hekate, backupMapper, Optional.of(failure));
+            DefaultLoadBalancerContext ctx = new DefaultLoadBalancerContext(i, i, topology, backupMapper, Optional.of(failure));
 
             ClusterNodeId route = balancer.route(i, ctx);
 
@@ -140,7 +134,7 @@ public class DefaultLoadBalancerTest extends HekateTestBase {
         FailoverContext failure = new DefaultFailoverContext(2, new Exception(), n1, toSet(n1, n2), FailoverRoutingPolicy.RE_ROUTE);
 
         for (int i = 0; i < 100; i++) {
-            DefaultLoadBalancerContext ctx = new DefaultLoadBalancerContext(i, i, topology, hekate, mapper, Optional.of(failure));
+            DefaultLoadBalancerContext ctx = new DefaultLoadBalancerContext(i, i, topology, mapper, Optional.of(failure));
 
             ClusterNodeId route = balancer.route(i, ctx);
 

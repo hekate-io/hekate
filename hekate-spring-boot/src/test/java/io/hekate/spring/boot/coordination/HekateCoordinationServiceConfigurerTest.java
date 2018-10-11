@@ -21,6 +21,7 @@ import io.hekate.coordinate.CoordinationHandler;
 import io.hekate.coordinate.CoordinationProcessConfig;
 import io.hekate.coordinate.CoordinationRequest;
 import io.hekate.coordinate.CoordinationService;
+import io.hekate.coordinate.CoordinatorContext;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
 import io.hekate.spring.boot.HekateTestConfigBase;
 import org.junit.Test;
@@ -41,12 +42,12 @@ public class HekateCoordinationServiceConfigurerTest extends HekateAutoConfigure
             return new CoordinationProcessConfig().withName("test.process").withHandler(new CoordinationHandler() {
                 @Override
                 public void prepare(CoordinationContext ctx) {
-                    ctx.complete();
+                    // No-op.
                 }
 
                 @Override
-                public void coordinate(CoordinationContext ctx) {
-                    // No-op.
+                public void coordinate(CoordinatorContext ctx) {
+                    ctx.complete();
                 }
 
                 @Override

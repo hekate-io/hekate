@@ -46,15 +46,6 @@ public class InitializationFuture extends HekateFuture<Hekate, InitializationFut
     }
 
     @Override
-    public Hekate getUninterruptedly() throws HekateFutureException {
-        try {
-            return super.getUninterruptedly();
-        } catch (ExecutionException e) {
-            throw new HekateFutureException(e.getCause().getMessage(), e.getCause());
-        }
-    }
-
-    @Override
     protected InitializationFuture newInstance() {
         return new InitializationFuture();
     }

@@ -18,8 +18,8 @@ package io.hekate.rpc.internal;
 
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFutureException;
+import io.hekate.messaging.unicast.RequestFuture;
 import io.hekate.messaging.unicast.Response;
-import io.hekate.messaging.unicast.ResponseFuture;
 import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
 import io.hekate.rpc.internal.RpcProtocol.RpcCall;
@@ -44,19 +44,20 @@ class RpcMethodClient<T> extends RpcMethodClientBase<T> {
     }
 
     @Override
-    protected Object doInvoke(MessagingChannel<RpcProtocol> callChannel, Object[] args) throws MessagingFutureException,
-        InterruptedException, TimeoutException {
-        RpcCall<T> request = new RpcCall<>(methodIdxKey(), rpc(), tag(), method(), args);
+    protected Object doInvoke(Object affinity, Object[] args) throws MessagingFutureException, InterruptedException, TimeoutException {
+        RpcCall<T> call = new RpcCall<>(methodIdxKey(), rpc(), tag(), method(), args);
 
-        ResponseFuture<RpcProtocol> future = callChannel.request(request);
+        RequestFuture<RpcProtocol> future = channel().newRequest(call)
+            .withAffinity(affinity)
+            .submit();
 
         if (method().isAsync()) {
             return future.thenApply(RESPONSE_CONVERTER);
         } else {
             Response<RpcProtocol> response;
 
-            if (callChannel.timeout() > 0) {
-                response = future.get(callChannel.timeout(), TimeUnit.MILLISECONDS);
+            if (channel().timeout() > 0) {
+                response = future.get(channel().timeout(), TimeUnit.MILLISECONDS);
             } else {
                 response = future.get();
             }

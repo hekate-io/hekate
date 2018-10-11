@@ -189,7 +189,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
                 .withClusterFilter(HAS_SERVICE_FILTER)
                 .withNioThreads(nioThreads)
                 .withIdleSocketTimeout(idleSocketTimeout)
-                .withLogCategory(DefaultCoordinationService.class.getName())
+                .withLogCategory(CoordinationProtocol.class.getName())
                 .withMessageCodec(() -> new CoordinationProtocolCodec(processCodecs))
                 .withReceiver(this::handleMessage)
         );
@@ -333,9 +333,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
         String name = cfg.getName().trim();
 
-        ExecutorService async = Executors.newSingleThreadExecutor(new HekateThreadFactory(
-            CoordinationService.class.getSimpleName() + "-" + name
-        ));
+        ExecutorService async = Executors.newSingleThreadExecutor(new HekateThreadFactory("Coordination-" + name));
 
         DefaultCoordinationProcess process = new DefaultCoordinationProcess(name, hekate, cfg.getHandler(), async, channel, failoverDelay);
 
@@ -355,7 +353,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
     private void handleMessage(Message<CoordinationProtocol> msg) {
         DefaultCoordinationProcess process = null;
 
-        CoordinationProtocol.Request request = msg.get(CoordinationProtocol.Request.class);
+        CoordinationProtocol.RequestBase request = msg.get(CoordinationProtocol.RequestBase.class);
 
         guard.lockRead();
 

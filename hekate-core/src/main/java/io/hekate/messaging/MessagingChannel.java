@@ -18,22 +18,23 @@ package io.hekate.messaging;
 
 import io.hekate.cluster.ClusterFilterSupport;
 import io.hekate.cluster.ClusterView;
-import io.hekate.core.HekateSupport;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverPolicyBuilder;
-import io.hekate.messaging.broadcast.AggregateCallback;
+import io.hekate.messaging.broadcast.Aggregate;
 import io.hekate.messaging.broadcast.AggregateFuture;
-import io.hekate.messaging.broadcast.BroadcastCallback;
+import io.hekate.messaging.broadcast.Broadcast;
 import io.hekate.messaging.broadcast.BroadcastFuture;
+import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.unicast.Request;
+import io.hekate.messaging.unicast.RequestCallback;
+import io.hekate.messaging.unicast.RequestFuture;
 import io.hekate.messaging.unicast.Response;
-import io.hekate.messaging.unicast.ResponseCallback;
-import io.hekate.messaging.unicast.ResponseFuture;
-import io.hekate.messaging.unicast.SendCallback;
+import io.hekate.messaging.unicast.Send;
 import io.hekate.messaging.unicast.SendFuture;
+import io.hekate.messaging.unicast.Subscribe;
 import io.hekate.messaging.unicast.SubscribeFuture;
 import io.hekate.partition.PartitionMapper;
-import io.hekate.partition.RendezvousHashMapper;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
@@ -41,11 +42,11 @@ import java.util.concurrent.TimeUnit;
  * Messaging channel.
  *
  * <p>
- * This interface represents a messaging channel and provides API for sending messages to remote nodes.
+ * This interface represents a channel for exchanging messages with remote nodes.
  * </p>
  *
  * <p>
- * Instances of this interface can be obtained via {@link MessagingService#channel(String)} method.
+ * Instances of this interface can be obtained via the {@link MessagingService#channel(String, Class)} method.
  * </p>
  *
  * <p>
@@ -54,9 +55,79 @@ import java.util.concurrent.TimeUnit;
  *
  * @param <T> Base type fo messages that can be handled by channels.
  *
- * @see MessagingService#channel(String)
+ * @see MessagingService#channel(String, Class)
  */
-public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChannel<T>>, HekateSupport {
+public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChannel<T>> {
+    /**
+     * Creates a new {@link Send} operation.
+     *
+     * <p>
+     * Send operation doesn't assume any response to be received from the destination node. If request-response type of communication is
+     * required then consider using the {@link #newRequest(Object)} method.
+     * </p>
+     *
+     * <p>
+     * By default, this operation will not wait for the message to be processed on the receiver side. It is possible to change this behavior
+     * via {@link Send#withConfirmReceive(boolean)} method.
+     * </p>
+     *
+     * @param message Message to be sent.
+     *
+     * @return New operation.
+     *
+     * @see Send#submit()
+     */
+    Send<T> newSend(T message);
+
+    /**
+     * Creates a new {@link Request} operation.
+     *
+     * @param request Request.
+     *
+     * @return New operation.
+     *
+     * @see Request#submit()
+     */
+    Request<T> newRequest(T request);
+
+    /**
+     * Creates a new {@link Subscribe} operation.
+     *
+     * @param request Subscription request.
+     *
+     * @return New operation.
+     *
+     * @see Subscribe#submit(RequestCallback)
+     */
+    Subscribe<T> newSubscribe(T request);
+
+    /**
+     * Creates a new {@link Broadcast} operation.
+     *
+     * <p>
+     * By default, this operation will not wait for the message to be processed on the receiver side. It is possible to change this behavior
+     * via {@link Send#withConfirmReceive(boolean)} method.
+     * </p>
+     *
+     * @param request Message to broadcast.
+     *
+     * @return New operation.
+     *
+     * @see Broadcast#submit()
+     */
+    Broadcast<T> newBroadcast(T request);
+
+    /**
+     * Creates a new {@link Aggregate} operation.
+     *
+     * @param request Aggregation request.
+     *
+     * @return New operation.
+     *
+     * @see Aggregate#submit()
+     */
+    Aggregate<T> newAggregate(T request);
+
     /**
      * Returns the universally unique identifier of this channel.
      *
@@ -98,171 +169,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     int workerThreads();
 
     /**
-     * Asynchronously sends a one way message and returns a future object that can be used to inspect the operation result.
-     *
-     * <p>
-     * This method doesn't assume any response to be received from the destination node. If request-response type of communication is
-     * required then consider using the {@link #request(Object)} method.
-     * </p>
-     *
-     * <p>
-     * By default, this operation will wait for the message to be processed on the receiver side. It is possible to disable this behavior
-     * via {@link #withConfirmReceive(boolean)} method.
-     * </p>
-     *
-     * @param message Message to be sent.
-     *
-     * @return Future object that can be used to inspect the operation result.
-     */
-    SendFuture send(T message);
-
-    /**
-     * Asynchronously sends a one way message and notifies the specified callback when the operation gets completed.
-     *
-     * <p>
-     * This method doesn't assume any response to be received from the destination node. If request-response type of communication is
-     * required then consider using the {@link #request(Object, ResponseCallback)} method.
-     * </p>
-     *
-     * <p>
-     * By default, this operation will wait for the message to be processed on the receiver side. It is possible to disable this behavior
-     * via {@link #withConfirmReceive(boolean)} method.
-     * </p>
-     *
-     * @param message Message to be sent.
-     * @param callback Callback.
-     */
-    void send(T message, SendCallback callback);
-
-    /**
-     * Asynchronously sends a request message and returns a future object that will be completed after receiving the response.
-     *
-     * @param request Request message.
-     *
-     * @return Future object that can be used to obtain the response.
-     */
-    ResponseFuture<T> request(T request);
-
-    /**
-     * Asynchronously sends a request message and notifies the specified callback after receiving the response..
-     *
-     * @param request Request message.
-     * @param callback Callback.
-     */
-    void request(T request, ResponseCallback<T> callback);
-
-    /**
-     * Opens a stream for receiving continuous responses.
-     *
-     * <p>
-     * This method asynchronously sends a request message, opens a stream for receiving {@link Message#partialReply(Object) partial replies}
-     * and returns a future object that will be completed after receiving <b>all</b> responses.
-     * </p>
-     *
-     * <p>
-     * <b>Notice:</b> this method performs in-memory buffering of all received messages until the last
-     * (non-{@link Response#isPartial() partial} response is received.
-     * </p>
-     *
-     * @param request Request.
-     *
-     * @return Future object that can be used to obtain all of the received responses.
-     */
-    SubscribeFuture<T> subscribe(T request);
-
-    /**
-     * Opens a stream for receiving continuous responses.
-     *
-     * <p>
-     * This method asynchronously sends a request message and opens a stream for receiving {@link Message#partialReply(Object) partial
-     * replies}. For each such reply the {@link ResponseCallback#onComplete(Throwable, Response)} method will be called until the last
-     * (non-{@link Response#isPartial() partial}) response is received.
-     * </p>
-     *
-     * @param request Request.
-     * @param callback Callback.
-     */
-    void subscribe(T request, ResponseCallback<T> callback);
-
-    /**
-     * Asynchronously broadcasts the specified message and returns a future object that can be used to inspect the operation result.
-     *
-     * <p>
-     * By default, this operation will wait for the message to be processed on all receivers. It is possible to disable this behavior
-     * via {@link #withConfirmReceive(boolean)} method.
-     * </p>
-     *
-     * @param message Message to broadcast.
-     *
-     * @return Future object that can be used to inspect the broadcast operation result.
-     */
-    BroadcastFuture<T> broadcast(T message);
-
-    /**
-     * Asynchronously broadcasts the specified message and notifies the specified callback upon the operation completion.
-     *
-     * <p>
-     * By default, this operation will wait for the message to be processed on all receivers. It is possible to disable this behavior
-     * via {@link #withConfirmReceive(boolean)} method.
-     * </p>
-     *
-     * @param message Message to broadcast.
-     * @param callback Callback that should be notified upon the broadcast operation completion.
-     */
-    void broadcast(T message, BroadcastCallback<T> callback);
-
-    /**
-     * Asynchronously sends the query message and aggregates responses from all the nodes that received this message. This method returns a
-     * future object that can be used to inspect the aggregation results.
-     *
-     * @param message Query message that should be sent.
-     *
-     * @return Future object that can be used to inspect the aggregation results.
-     *
-     * @see #aggregate(Object, AggregateCallback)
-     */
-    AggregateFuture<T> aggregate(T message);
-
-    /**
-     * Asynchronously sends the query message, aggregates responses from all nodes that received this message and notifies the
-     * specified callback on operation progress and aggregation results.
-     *
-     * @param message Query message that should be sent.
-     * @param callback Callback that should be notified on operation progress and aggregation results.
-     *
-     * @see #aggregate(Object)
-     */
-    void aggregate(T message, AggregateCallback<T> callback);
-
-    /**
-     * Returns a copy of this channel that will apply the specified affinity key to all messaging operations.
-     *
-     * <p>
-     * Specifying the affinity key ensures that all messages submitted with the same key will always be transmitted over the same network
-     * connection and will always be processed by the same thread.
-     * </p>
-     *
-     * <p>
-     * {@link #withLoadBalancer(LoadBalancer) Load balancer} can also make use of the affinity key to perform consistent routing of
-     * messages among the cluster node. For example, the default load balancer makes sure that all messages, having the same key, are always
-     * routed to the same node (unless the cluster topology doesn't change).
-     * </p>
-     *
-     * @param affinityKey Affinity key (if {@code null} then affinity key will be cleared).
-     *
-     * @return Channel wrapper.
-     */
-    MessagingChannel<T> withAffinity(Object affinityKey);
-
-    /**
-     * Returns the affinity key that was set via {@link #withAffinity(Object)}.
-     *
-     * @return Affinity key or {@code null}, if no affinity is specified.
-     */
-    Object affinity();
-
-    /**
-     * Returns the partition mapper that this channel uses to map {@link #withAffinity(Object) affinity keys} to the cluster nodes.
+     * Returns the partition mapper of this channel.
      *
      * @return Mapper.
      *
@@ -347,9 +254,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * Returns a copy of this channel that will use the specified load balancer and will inherit all other options from this instance.
      *
      * <p>
-     * If not specified or set to {@code null} then the default load balancer will be used. Default load balancer uses
-     * {@link RendezvousHashMapper} to route messages if {@link #withAffinity(Object) affinit key} is specified or uses random distribution
-     * of messages among the cluster nodes if {@link #withAffinity(Object) affinity key} is not specified.
+     * If not specified or set to {@code null} then {@link DefaultLoadBalancer} will be used.
      * </p>
      *
      * @param balancer Load balancer.
@@ -382,39 +287,6 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     MessagingChannel<T> withCluster(ClusterView cluster);
 
     /**
-     * Returns a copy of this channel that will use the specified confirmation mode and will inherit all other options from this instance.
-     *
-     * <p>
-     * If this option is set to {@code true} then receiver of {@link #send(Object)} and {@link #broadcast(Object)} operation will send
-     * back a confirmation to indicate that message was successfully {@link MessageReceiver#receive(Message) received}. In such case the
-     * operation's callback/future will be notified only when such confirmation is received (or if operation fails).
-     * </p>
-     *
-     * <p>
-     * If this option is set to {@code false} then operation will be assumed to be successful once the message gets flushed to the network
-     * buffer without any additional confirmations from the receiver side.
-     * </p>
-     *
-     * <p>
-     * Default value of this option is {@code true} (i.e. confirmations are enabled by default).
-     * </p>
-     *
-     * @param confirmReceive Confirmation mode.
-     *
-     * @return Channel wrapper.
-     */
-    MessagingChannel<T> withConfirmReceive(boolean confirmReceive);
-
-    /**
-     * Returns the confirmation mode of this channel.
-     *
-     * @return Confirmation mode of this channel.
-     *
-     * @see #withConfirmReceive(boolean)
-     */
-    boolean isConfirmReceive();
-
-    /**
      * Returns the asynchronous task executor of this channel.
      *
      * @return Asynchronous task executor of this channel.
@@ -422,4 +294,72 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @see MessagingChannelConfig#setWorkerThreads(int)
      */
     Executor executor();
+
+    /**
+     * Asynchronously sends a one way message and returns a future object that can be used to inspect the operation result.
+     *
+     * <p>
+     * This method doesn't assume any response to be received from the destination node. If request-response type of communication is
+     * required then consider using the {@link #request(Object)} method.
+     * </p>
+     *
+     * @param message Message to be sent.
+     *
+     * @return Future object that can be used to inspect the operation result.
+     */
+    default SendFuture send(T message) {
+        return newSend(message).submit();
+    }
+
+    /**
+     * Asynchronously broadcasts the specified message and returns a future object that can be used to inspect the operation result.
+     *
+     * @param message Message to broadcast.
+     *
+     * @return Future object that can be used to inspect the broadcast operation result.
+     */
+    default BroadcastFuture<T> broadcast(T message) {
+        return newBroadcast(message).submit();
+    }
+
+    /**
+     * Asynchronously sends the query message and aggregates responses from all the nodes that received this message. This method returns a
+     * future object that can be used to inspect the aggregation results.
+     *
+     * @param message Query message that should be sent.
+     *
+     * @return Future object that can be used to inspect the aggregation results.
+     */
+    default AggregateFuture<T> aggregate(T message) {
+        return newAggregate(message).submit();
+    }
+
+    /**
+     * Asynchronously sends a request message and returns a future object that will be completed after receiving the response.
+     *
+     * @param request Request message.
+     *
+     * @return Future object that can be used to obtain the response.
+     */
+    default RequestFuture<T> request(T request) {
+        return newRequest(request).submit();
+    }
+
+    /**
+     * Opens a stream for receiving continuous responses.
+     *
+     * <p>
+     * This method asynchronously sends a request message and opens a stream for receiving {@link Message#partialReply(Object) partial
+     * replies}. For each such reply the {@link RequestCallback#onComplete(Throwable, Response)} method will be called until the last
+     * (non-{@link Response#isPartial() partial}) response is received.
+     * </p>
+     *
+     * @param request Request.
+     * @param callback Callback.
+     *
+     * @return Future object that gets completed when the final chunk of a response stream is received.
+     */
+    default SubscribeFuture<T> subscribe(T request, RequestCallback<T> callback) {
+        return newSubscribe(request).submit(callback);
+    }
 }

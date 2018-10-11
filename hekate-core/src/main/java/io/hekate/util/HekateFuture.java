@@ -16,11 +16,8 @@
 
 package io.hekate.util;
 
-import io.hekate.util.async.AsyncUtils;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Base class for asynchronous operation results.
@@ -47,23 +44,6 @@ public abstract class HekateFuture<T, F extends HekateFuture<T, F>> extends Comp
      */
     public boolean isSuccess() {
         return isDone() && !isCompletedExceptionally();
-    }
-
-    /**
-     * Uninterruptedly waits for this future to complete, and then returns its result.
-     *
-     * <p>
-     * <b>Note:</b> if thread gets interrupted while awaiting for operation to complete then such interruption will be ignored and thread's
-     * {@link Thread#isInterrupted() interrupted} flag will be set to {@code true} after operation completion.
-     * </p>
-     *
-     * @return Result value.
-     *
-     * @throws CancellationException If this future was cancelled.
-     * @throws ExecutionException If this future completed exceptionally.
-     */
-    public T getUninterruptedly() throws ExecutionException {
-        return AsyncUtils.getUninterruptedly(this);
     }
 
     /**

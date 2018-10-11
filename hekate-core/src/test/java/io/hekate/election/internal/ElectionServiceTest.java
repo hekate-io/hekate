@@ -76,7 +76,7 @@ public class ElectionServiceTest extends HekateNodeParamTestBase {
     public void testYieldLeadershipSingleNode() throws Exception {
         HekateTestNode node = createElectionNode().join();
 
-        CandidateMock candidate = getCandidate(node);
+        CandidateMock candidate = candidateOf(node);
 
         for (int i = 0; i < 3; i++) {
             assertEquals(node.localNode(), get(node.election().leader(GROUP)));
@@ -106,8 +106,8 @@ public class ElectionServiceTest extends HekateNodeParamTestBase {
             assertEquals(node1.localNode(), get(node1.election().leader(GROUP)));
             assertEquals(node1.localNode(), get(node2.election().leader(GROUP)));
 
-            CandidateMock candidate1 = getCandidate(node1);
-            CandidateMock candidate2 = getCandidate(node2);
+            CandidateMock candidate1 = candidateOf(node1);
+            CandidateMock candidate2 = candidateOf(node2);
 
             // Yield leadership.
             candidate1.yieldLeadership();
@@ -146,8 +146,8 @@ public class ElectionServiceTest extends HekateNodeParamTestBase {
             assertEquals(node1.localNode(), get(node1.election().leader(GROUP)));
             assertEquals(node1.localNode(), get(node2.election().leader(GROUP)));
 
-            CandidateMock candidate1 = getCandidate(node1);
-            CandidateMock candidate2 = getCandidate(node2);
+            CandidateMock candidate1 = candidateOf(node1);
+            CandidateMock candidate2 = candidateOf(node2);
 
             // Yield leadership.
             candidate1.yieldLeadership();
@@ -184,7 +184,7 @@ public class ElectionServiceTest extends HekateNodeParamTestBase {
             // Verify leader.
             assertEquals(leader.localNode(), get(follower.election().leader(GROUP)));
 
-            CandidateMock followerCandidate = getCandidate(follower);
+            CandidateMock followerCandidate = candidateOf(follower);
 
             ClusterNode oldLeader = leader.localNode();
 
@@ -232,15 +232,17 @@ public class ElectionServiceTest extends HekateNodeParamTestBase {
 
                 assertTrue(nodes.stream().anyMatch(n -> n.localNode().equals(leader)));
 
-                CandidateMock candidate = getCandidate(node);
+                CandidateMock candidate = candidateOf(node);
 
                 if (leader.equals(node.localNode())) {
                     assertTrue(candidate.isLeader());
                 } else {
                     assertTrue(candidate.isFollower());
-                    assertEquals(leader, candidate.getLastLeader());
+                    assertEquals(leader, candidate.lastLeader());
                 }
             }
+
+            assertEquals(leaders.toString(), 1, leaders.size());
 
             // Stop leader.
             HekateTestNode oldLeader = nodes.stream()
@@ -252,7 +254,7 @@ public class ElectionServiceTest extends HekateNodeParamTestBase {
 
             nodes.remove(oldLeader);
 
-            CandidateMock oldLeaderCandidate = getCandidate(oldLeader);
+            CandidateMock oldLeaderCandidate = candidateOf(oldLeader);
 
             say("Stopping leader " + oldLeader.localNode());
 
@@ -263,7 +265,7 @@ public class ElectionServiceTest extends HekateNodeParamTestBase {
             for (HekateTestNode node : nodes) {
                 say("Checking " + node.localNode());
 
-                getCandidate(node).awaitForLeaderChange(oldLeaderNode);
+                candidateOf(node).awaitForLeaderChange(oldLeaderNode);
             }
         });
     }
@@ -323,7 +325,7 @@ public class ElectionServiceTest extends HekateNodeParamTestBase {
         });
     }
 
-    private CandidateMock getCandidate(HekateTestNode node) {
+    private CandidateMock candidateOf(HekateTestNode node) {
         return (CandidateMock)node.getAttribute(CandidateMock.class.getName());
     }
 

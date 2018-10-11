@@ -74,8 +74,6 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         assertEquals(workerThreads, channel.workerThreads());
         assertNotNull(channel.executor());
         assertEquals(100500, channel.timeout());
-        assertFalse(testChannel.get().withConfirmReceive(false).isConfirmReceive());
-        assertTrue(testChannel.get().withConfirmReceive(true).isConfirmReceive());
     }
 
     @Test
@@ -131,7 +129,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
                 endpoint.setContext(null);
                 assertNull(endpoint.getContext());
 
-                assertTrue(endpoint.toString(), endpoint.toString().startsWith(MessagingEndpoint.class.getSimpleName()));
+                assertEquals(endpoint.remoteAddress().toString(), endpoint.toString());
             } catch (AssertionError e) {
                 errorRef.compareAndSet(null, e);
             }
@@ -235,7 +233,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
             throw new AssertionError(e);
         });
 
-        sender.get().forRemotes().subscribe("stream-request");
+        sender.get().forRemotes().subscribe("stream-request", (err, rsp) -> { /* Ignore. */ });
         Optional.ofNullable(errRef.exchange(null)).ifPresent(e -> {
             throw new AssertionError(e);
         });
@@ -249,26 +247,6 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         Optional.ofNullable(errRef.exchange(null)).ifPresent(e -> {
             throw new AssertionError(e);
         });
-    }
-
-    @Test
-    public void testAffinity() throws Exception {
-        MessagingChannel<String> channel = createChannel().join().get();
-
-        assertNull(channel.affinity());
-        assertNull(channel.forRemotes().affinity());
-
-        assertEquals("affinity1", channel.withAffinity("affinity1").affinity());
-        assertNull(channel.affinity());
-        assertNull(channel.forRemotes().affinity());
-
-        assertEquals("affinity2", channel.forRemotes().withAffinity("affinity2").affinity());
-        assertNull(channel.affinity());
-        assertNull(channel.forRemotes().affinity());
-
-        assertEquals("affinity3", channel.forRemotes().withAffinity("affinity3").forRemotes().affinity());
-        assertNull(channel.affinity());
-        assertNull(channel.forRemotes().affinity());
     }
 
     @Test

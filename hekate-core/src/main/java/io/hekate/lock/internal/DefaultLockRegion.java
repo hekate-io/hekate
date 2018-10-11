@@ -38,9 +38,6 @@ import io.hekate.lock.internal.LockProtocol.UnlockRequest;
 import io.hekate.lock.internal.LockProtocol.UnlockResponse;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.unicast.ReplyDecision;
-import io.hekate.messaging.unicast.Response;
-import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -65,7 +62,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.hekate.messaging.unicast.ReplyDecision.COMPLETE;
+import static io.hekate.messaging.unicast.ReplyDecision.ACCEPT;
 import static io.hekate.messaging.unicast.ReplyDecision.REJECT;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -175,8 +172,7 @@ class DefaultLockRegion implements LockRegion {
         );
 
         // Configure messaging channel for locks migration.
-        migrationRing = channel.withAffinity(regionName)
-            .filterAll(ClusterFilters.forNextInJoinOrder()) // <-- use ring-based communications.
+        migrationRing = channel.filterAll(ClusterFilters.forNextInJoinOrder()) // <-- use ring-based communications.
             .withFailover(new FailoverPolicyBuilder()
                 .withAlwaysReRoute()
                 .withConstantRetryDelay(retryInterval)
@@ -211,11 +207,11 @@ class DefaultLockRegion implements LockRegion {
 
         LockOwnerRequest request = new LockOwnerRequest(regionName, lockName);
 
-        lockChannel.withAffinity(new LockKey(regionName, lockName)).request(request, new ResponseCallback<LockProtocol>() {
-            @Override
-            public ReplyDecision accept(Throwable err, Response<LockProtocol> reply) {
+        lockChannel.newRequest(request)
+            .withAffinity(new LockKey(regionName, lockName))
+            .until((err, rsp) -> {
                 if (err == null) {
-                    LockOwnerResponse lockReply = reply.get(LockOwnerResponse.class);
+                    LockOwnerResponse lockReply = rsp.get(LockOwnerResponse.class);
 
                     if (lockReply.status() == LockOwnerResponse.Status.OK) {
                         ClusterNodeId ownerId = lockReply.owner();
@@ -238,17 +234,14 @@ class DefaultLockRegion implements LockRegion {
                     }
                 }
 
-                return resultFuture.isDone() ? COMPLETE : REJECT;
-            }
-
-            @Override
-            public void onComplete(Throwable err, Response<LockProtocol> rsp) {
+                return resultFuture.isDone() ? ACCEPT : REJECT;
+            })
+            .submit((err, rsp) -> {
                 // All attempts failed which means that manager is terminated.
                 if (err != null) {
                     resultFuture.complete(Optional.empty());
                 }
-            }
-        });
+            });
 
         try {
             return resultFuture.get();
@@ -281,7 +274,7 @@ class DefaultLockRegion implements LockRegion {
 
             long lockId = lockIdGen.incrementAndGet();
 
-            // Create lock controller.
+            // Create lock client.
             LockControllerClient lockClient = new LockControllerClient(
                 lockId,
                 localNode,
@@ -290,8 +283,7 @@ class DefaultLockRegion implements LockRegion {
                 lockChannel,
                 timeout,
                 metrics,
-                callback,
-                cleanup -> lockClients.remove(lockId)
+                callback
             );
 
             if (status == Status.TERMINATED) {
@@ -299,12 +291,10 @@ class DefaultLockRegion implements LockRegion {
                     log.debug("Rejected locking since region is in {} state [lock={}]", status, lock);
                 }
 
-                LockFuture lockFuture = lockClient.lockFuture();
-
                 if (timeout == TIMEOUT_IMMEDIATE) {
-                    lockFuture.complete(false);
+                    lockClient.lockFuture().complete(false);
                 } else {
-                    lockFuture.completeExceptionally(new CancellationException("Lock service terminated."));
+                    lockClient.lockFuture().completeExceptionally(new CancellationException("Lock service terminated."));
                 }
 
                 lockClient.unlockFuture().complete(true);
@@ -315,6 +305,12 @@ class DefaultLockRegion implements LockRegion {
 
                 lockClients.put(lockId, lockClient);
 
+                // Remove from the map once this lock gets released or terminated.
+                lockClient.unlockFuture().whenComplete((rslt, err) ->
+                    lockClients.remove(lockId)
+                );
+
+                // Start locking.
                 lockClient.becomeLocking(activeMapping);
             }
 
@@ -430,7 +426,7 @@ class DefaultLockRegion implements LockRegion {
                 if (server == null) {
                     reply(msg, new LockOwnerResponse(0, null, LockOwnerResponse.Status.OK));
                 } else {
-                    server.processOwnerQuery(msg);
+                    server.processLockOwnerQuery(msg);
                 }
             }
         } finally {
@@ -644,9 +640,7 @@ class DefaultLockRegion implements LockRegion {
         try {
             lockServers.values().forEach(LockControllerServer::dispose);
 
-            lockClients.values().forEach(lock ->
-                lock.becomeTerminated(false)
-            );
+            lockClients.values().forEach(LockControllerClient::becomeTerminated);
 
             lockServers.clear();
             lockClients.clear();
@@ -910,9 +904,9 @@ class DefaultLockRegion implements LockRegion {
     }
 
     private void sendToNextNode(MigrationRequest request) {
-        migrationRing.request(request, new ResponseCallback<LockProtocol>() {
-            @Override
-            public ReplyDecision accept(Throwable err, Response<LockProtocol> reply) {
+        migrationRing.newRequest(request)
+            .withAffinity(regionName)
+            .until((err, reply) -> {
                 if (err == null) {
                     MigrationResponse response = reply.get(MigrationResponse.class);
 
@@ -922,10 +916,10 @@ class DefaultLockRegion implements LockRegion {
 
                     switch (response.status()) {
                         case OK: {
-                            return COMPLETE;
+                            return ACCEPT;
                         }
                         case RETRY: {
-                            return isValid(request) ? REJECT : COMPLETE;
+                            return isValid(request) ? REJECT : ACCEPT;
                         }
                         default: {
                             throw new IllegalArgumentException("Unexpected status type: " + response.status());
@@ -936,17 +930,14 @@ class DefaultLockRegion implements LockRegion {
                         log.debug("Got migration request failure [cause={}, request={}]", err.toString(), request);
                     }
 
-                    return isValid(request) ? REJECT : COMPLETE;
+                    return isValid(request) ? REJECT : ACCEPT;
                 }
-            }
-
-            @Override
-            public void onComplete(Throwable err, Response<LockProtocol> rsp) {
+            })
+            .submit((err, rsp) -> {
                 if (err != null && isValid(request)) {
                     log.error("Failed to submit migration request [request={}]", request, err);
                 }
-            }
-        });
+            });
     }
 
     private boolean isValid(MigrationRequest request) {

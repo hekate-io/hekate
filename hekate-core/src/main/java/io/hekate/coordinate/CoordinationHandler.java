@@ -21,8 +21,7 @@ package io.hekate.coordinate;
  *
  * <p>
  * Implementations of this interface are responsible for coordination logic within the {@link CoordinationService} and can be registered
- * via
- * {@link CoordinationProcessConfig#setHandler(CoordinationHandler)} method.
+ * via {@link CoordinationProcessConfig#setHandler(CoordinationHandler)} method.
  * </p>
  *
  * <p>
@@ -31,11 +30,13 @@ package io.hekate.coordinate;
  * <ul>
  * <li>{@link #initialize()} - gets called during the {@link CoordinationService} initialization</li>
  * <li>{@link #prepare(CoordinationContext)} - gets called once per coordination round in order to prepare this handler</li>
- * <li>{@link #coordinate(CoordinationContext)} - gets called only on the coordinator node in order start coordination</li>
+ * <li>{@link #coordinate(CoordinatorContext)} - gets called only on the coordinator node in order start coordination. Once coordination is
+ * done the {@link CoordinatorContext#complete()} method must be called</li>
  * <li>{@link #process(CoordinationRequest, CoordinationContext)} gets called when a new request is received either from a coordinator or
  * from some other member</li>
+ * <li>{@link #complete(CoordinationContext)} - gets called if was completed successfully</li>
  * <li>{@link #cancel(CoordinationContext)} - gets called if concurrent cluster topology change was detected and current coordination
- * process should be cancelled</li>
+ * process is cancelled</li>
  * <li>{@link #terminate()} - gets called during the {@link CoordinationService} termination</li>
  * </ul>
  *
@@ -60,13 +61,14 @@ public interface CoordinationHandler {
      * Gets called when local node is selected to be the coordinator.
      *
      * <p>
-     * Implementations of this method should start executing coordination logic by communicating with other {@link
-     * CoordinationContext#members() coordination memebers}.
+     * Implementations of this method should start executing coordination logic by communicating with other
+     * {@link CoordinationContext#members() coordination memebers}. Once coordination is completed the {@link CoordinatorContext#complete()}
+     * method must be called.
      * </p>
      *
      * @param ctx Coordination context.
      */
-    void coordinate(CoordinationContext ctx);
+    void coordinate(CoordinatorContext ctx);
 
     /**
      * Gets called when a new request is received from a {@link CoordinationRequest#from() coordination member}.
@@ -74,7 +76,7 @@ public interface CoordinationHandler {
      * <p>
      * <b>Important!!!</b> Each request must be explicitly replied via {@link CoordinationRequest#reply(Object)} method. Not replying to
      * requests can lead to memory leaks since each coordination member keeps an in-memory structure to track sent requests and releases
-     * this memory only when requests get replied.
+     * this memory only when request gets a reply.
      * </p>
      *
      * @param request Request.
@@ -83,7 +85,7 @@ public interface CoordinationHandler {
     void process(CoordinationRequest request, CoordinationContext ctx);
 
     /**
-     * Gets called if current coordination process should be cancelled.
+     * Gets called if current coordination process gets cancelled.
      *
      * <p>
      * Default implementation of this method is empty.
@@ -92,6 +94,19 @@ public interface CoordinationHandler {
      * @param ctx Coordination context.
      */
     default void cancel(CoordinationContext ctx) {
+        // No-op.
+    }
+
+    /**
+     * Gets called when coordination process gets completed successfully.
+     *
+     * <p>
+     * Default implementation of this method is empty.
+     * </p>
+     *
+     * @param ctx Coordination context.
+     */
+    default void complete(CoordinationContext ctx) {
         // No-op.
     }
 

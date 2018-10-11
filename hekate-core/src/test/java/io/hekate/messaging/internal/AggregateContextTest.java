@@ -18,10 +18,11 @@ package io.hekate.messaging.internal;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.messaging.broadcast.AggregateCallback;
+import io.hekate.messaging.broadcast.AggregateFuture;
 import io.hekate.messaging.broadcast.AggregateResult;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.util.format.ToString;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -34,11 +35,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 public class AggregateContextTest extends HekateTestBase {
@@ -59,14 +56,14 @@ public class AggregateContextTest extends HekateTestBase {
 
     @Test
     public void testToString() {
-        AggregateContext<String> ctx = ctx(allNodes(), callbackMock());
+        AggregateContext<String> ctx = ctx(allNodes());
 
         assertEquals(ToString.format(AggregateResult.class, ctx), ctx.toString());
     }
 
     @Test
     public void testInitialState() {
-        AggregateContext<String> ctx = ctx(allNodes(), callbackMock());
+        AggregateContext<String> ctx = ctx(allNodes());
 
         synchronized (ctx) {
             assertFalse(ctx.isReady());
@@ -78,18 +75,18 @@ public class AggregateContextTest extends HekateTestBase {
 
     @Test
     public void testRequest() {
-        AggregateContext<String> ctx = ctx(allNodes(), callbackMock());
+        AggregateContext<String> ctx = ctx(allNodes());
 
         assertEquals(TEST_REQUEST, ctx.request());
     }
 
     @Test
     public void testNodes() {
-        assertEquals(allNodes(), ctx(allNodes(), callbackMock()).nodes());
+        assertEquals(allNodes(), ctx(allNodes()).nodes());
 
-        assertEquals(singletonList(n1), ctx(singletonList(n1), callbackMock()).nodes());
+        assertEquals(singletonList(n1), ctx(singletonList(n1)).nodes());
 
-        AggregateContext<String> ctx = ctx(allNodes(), callbackMock());
+        AggregateContext<String> ctx = ctx(allNodes());
 
         assertFalse(ctx.forgetNode(n1));
         assertEquals(Arrays.asList(n2, n3), ctx.nodes());
@@ -104,17 +101,7 @@ public class AggregateContextTest extends HekateTestBase {
 
     @Test
     public void testOnReplySuccess() {
-        AggregateContext<String> ctx = ctx(allNodes(), new AggregateCallback<String>() {
-            @Override
-            public void onComplete(Throwable err, AggregateResult<String> result) {
-                // No-op.
-            }
-
-            @Override
-            public void onReplySuccess(Response<String> rsp, ClusterNode node) {
-                throw TEST_ERROR;
-            }
-        });
+        AggregateContext<String> ctx = ctx(allNodes());
 
         assertFalse(ctx.onReplySuccess(n1, responseMock("r1")));
         assertFalse(ctx.onReplySuccess(n2, responseMock("r2")));
@@ -147,17 +134,7 @@ public class AggregateContextTest extends HekateTestBase {
 
     @Test
     public void testOnReplyFailure() {
-        AggregateContext<String> ctx = ctx(allNodes(), new AggregateCallback<String>() {
-            @Override
-            public void onComplete(Throwable err, AggregateResult<String> result) {
-                // No-op.
-            }
-
-            @Override
-            public void onReplyFailure(String request, ClusterNode node, Throwable cause) {
-                throw TEST_ERROR;
-            }
-        });
+        AggregateContext<String> ctx = ctx(allNodes());
 
         Exception err1 = new Exception();
         Exception err2 = new Exception();
@@ -180,34 +157,30 @@ public class AggregateContextTest extends HekateTestBase {
     }
 
     @Test
-    public void testComplete() {
-        AggregateCallback<String> callback = callbackMock();
-
-        AggregateContext<String> ctx = ctx(allNodes(), callback);
+    public void testComplete() throws Exception {
+        AggregateContext<String> ctx = ctx(allNodes());
 
         ctx.complete();
 
-        verify(callback).onComplete(isNull(), any());
-        verifyNoMoreInteractions(callback);
+        assertTrue(ctx.future().get().isSuccess());
+        assertFalse(ctx.future().get().nodes().isEmpty());
+        assertTrue(ctx.future().get().errors().isEmpty());
 
-        AggregateContext<String> errCtx = ctx(allNodes(), (err, result) -> {
+        AggregateContext<String> errCtx = ctx(allNodes());
+
+        errCtx.future().whenComplete((rslt, err) -> {
             throw TEST_ERROR;
         });
 
         errCtx.complete();
     }
 
-    private AggregateContext<String> ctx(List<ClusterNode> nodes, AggregateCallback<String> callback) {
-        return new AggregateContext<>(TEST_REQUEST, nodes, callback);
+    private AggregateContext<String> ctx(List<ClusterNode> nodes) {
+        return new AggregateContext<>(TEST_REQUEST, new ArrayList<>(nodes), new AggregateFuture<>());
     }
 
     private List<ClusterNode> allNodes() {
         return Arrays.asList(n1, n2, n3);
-    }
-
-    @SuppressWarnings("unchecked")
-    private AggregateCallback<String> callbackMock() {
-        return mock(AggregateCallback.class);
     }
 
     @SuppressWarnings("unchecked")

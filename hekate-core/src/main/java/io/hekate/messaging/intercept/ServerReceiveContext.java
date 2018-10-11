@@ -1,43 +1,29 @@
 package io.hekate.messaging.intercept;
 
-import io.hekate.cluster.ClusterAddress;
 import io.hekate.messaging.MessageMetaData;
-import io.hekate.messaging.MessagingChannel;
 import java.util.Optional;
 
 /**
- * Server's inbound message context.
+ * Server's receive context.
  *
- * @see MessageInterceptor
+ * @param <T> Message type.
+ *
+ * @see ServerMessageInterceptor#interceptServerReceive(ServerReceiveContext)
  */
-public interface ServerReceiveContext {
-    /**
-     * Type of a send operation.
-     *
-     * @return Type of a send operation.
-     */
-    OutboundType type();
-
-    /**
-     * Returns the channel name (see {@link MessagingChannel#name()}).
-     *
-     * @return Channel name.
-     */
-    String channelName();
-
-    /**
-     * Address of a remote node.
-     *
-     * @return Address of a remote node.
-     */
-    ClusterAddress from();
-
+public interface ServerReceiveContext<T> extends ServerInboundContext<T> {
     /**
      * Reads the message's meta-data.
      *
      * @return Message's meta-data.
      */
     Optional<MessageMetaData> readMetaData();
+
+    /**
+     * Overrides the received message with the specified one.
+     *
+     * @param msg New message that should replace the received one.
+     */
+    void overrideMessage(T msg);
 
     /**
      * Sets an attribute of this context.
@@ -55,14 +41,4 @@ public interface ServerReceiveContext {
      */
     Object setAttribute(String name, Object value);
 
-    /**
-     * Returns the attribute for the specified name.
-     *
-     * @param name Name.
-     *
-     * @return Value or {@code null} if there is no such attribute.
-     *
-     * @see #setAttribute(String, Object)
-     */
-    Object getAttribute(String name);
 }

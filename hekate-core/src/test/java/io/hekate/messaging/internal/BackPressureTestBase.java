@@ -22,7 +22,7 @@ import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingOverflowPolicy;
-import io.hekate.messaging.unicast.ResponseFuture;
+import io.hekate.messaging.unicast.RequestFuture;
 import io.hekate.util.format.ToString;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,7 +77,7 @@ public abstract class BackPressureTestBase extends MessagingServiceTestBase {
     protected boolean isBackPressureEnabled(MessagingChannel<String> channel) {
         // Check that message can't be sent when high watermark reached.
         try {
-            get(channel.request("fail-on-back-pressure"));
+            get(channel.newRequest("fail-on-back-pressure").submit());
 
             return false;
         } catch (TimeoutException | InterruptedException e) {
@@ -108,12 +108,12 @@ public abstract class BackPressureTestBase extends MessagingServiceTestBase {
         assertTrue(err.toString(), ErrorUtils.isCausedBy(MessageQueueOverflowException.class, err));
     }
 
-    protected List<ResponseFuture<String>> requestUpToHighWatermark(MessagingChannel<String> channel) {
-        List<ResponseFuture<String>> responses = new ArrayList<>();
+    protected List<RequestFuture<String>> requestUpToHighWatermark(MessagingChannel<String> channel) {
+        List<RequestFuture<String>> responses = new ArrayList<>();
 
         // Request up to high watermark in order to enable back pressure.
         for (int i = 0; i < highWatermark; i++) {
-            responses.add(channel.forRemotes().request("request-" + i));
+            responses.add(channel.forRemotes().newRequest("request-" + i).submit());
         }
 
         return responses;

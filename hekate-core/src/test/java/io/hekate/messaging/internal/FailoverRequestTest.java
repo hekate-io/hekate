@@ -53,7 +53,7 @@ public class FailoverRequestTest extends FailoverTestBase {
                 sender.node().leaveAsync();
 
                 return ctx.retry().withDelay(50);
-            }).request("test").response(3, TimeUnit.SECONDS);
+            }).request("test").result();
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
@@ -148,13 +148,14 @@ public class FailoverRequestTest extends FailoverTestBase {
         ClusterNodeId unknown = newNodeId();
 
         try {
-            sender.get().forNode(unknown)
+            get(sender.get().forNode(unknown)
                 .withFailover(context -> {
                     failoverCalls.incrementAndGet();
 
                     return context.retry().withReRoute();
                 })
-                .request("error").response(3, TimeUnit.SECONDS);
+                .request("error")
+            );
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
@@ -186,7 +187,7 @@ public class FailoverRequestTest extends FailoverTestBase {
             onFailover.accept(ctx);
 
             return ctx.retry().withRoutingPolicy(policy);
-        }).request("test").response(3, TimeUnit.SECONDS);
+        }).request("test").result();
 
         assertEquals(5, contexts.size());
         assertEquals("test-" + RETRANSMIT_SUFFIX, response);
@@ -206,7 +207,7 @@ public class FailoverRequestTest extends FailoverTestBase {
                 failoverCalls.incrementAndGet();
 
                 return context.retry();
-            }).request("test").response(3, TimeUnit.SECONDS);
+            }).request("test").result();
 
             assertNotNull(response);
             assertEquals("test-" + RETRANSMIT_SUFFIX, response);
@@ -228,7 +229,7 @@ public class FailoverRequestTest extends FailoverTestBase {
             times.add(time);
 
             return context.retry().withDelay(failoverDelay);
-        }).request("test").response(3, TimeUnit.SECONDS);
+        }).request("test").result();
 
         assertNotNull(response);
 
@@ -255,11 +256,11 @@ public class FailoverRequestTest extends FailoverTestBase {
             AtomicInteger failoverCalls = new AtomicInteger();
 
             try {
-                channel.withFailover(context -> {
+                get(channel.withFailover(context -> {
                     failoverCalls.incrementAndGet();
 
                     return context.attempt() < attempts ? context.retry() : context.fail();
-                }).request("test").response(3, TimeUnit.SECONDS);
+                }).request("test"));
 
                 fail("Error was expected.");
             } catch (MessagingFutureException e) {

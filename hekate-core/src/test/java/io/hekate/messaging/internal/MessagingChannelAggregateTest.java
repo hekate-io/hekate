@@ -19,20 +19,14 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.MessageReceiver;
-import io.hekate.messaging.broadcast.AggregateCallback;
 import io.hekate.messaging.broadcast.AggregateFuture;
 import io.hekate.messaging.broadcast.AggregateResult;
-import io.hekate.messaging.unicast.Response;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import org.junit.Test;
 
@@ -45,36 +39,6 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
-    private static class AggregateTestCallback extends CompletableFuture<AggregateResult<String>> implements AggregateCallback<String> {
-        private final ConcurrentMap<ClusterNode, List<String>> replies = new ConcurrentHashMap<>();
-
-        @Override
-        public void onReplySuccess(Response<String> rsp, ClusterNode node) {
-            List<String> nodeReplies = replies.get(node);
-
-            if (nodeReplies == null) {
-                nodeReplies = Collections.synchronizedList(new ArrayList<>());
-
-                List<String> existing = replies.putIfAbsent(node, nodeReplies);
-
-                if (existing != null) {
-                    nodeReplies = existing;
-                }
-            }
-
-            nodeReplies.add(rsp.get());
-        }
-
-        @Override
-        public void onComplete(Throwable err, AggregateResult<String> result) {
-            if (err == null) {
-                complete(result);
-            } else {
-                completeExceptionally(err);
-            }
-        }
-    }
-
     public MessagingChannelAggregateTest(MessagingTestContext ctx) {
         super(ctx);
     }
@@ -112,7 +76,11 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
 
             for (TestChannel channel : channels) {
                 repeat(100, j -> {
-                    AggregateResult<String> result = get(channel.get().withAffinity(j).aggregate("test-" + j));
+                    AggregateResult<String> result = get(channel.get()
+                        .newAggregate("test-" + j)
+                        .withAffinity(j)
+                        .submit()
+                    );
 
                     assertTrue(result.isSuccess());
 
@@ -127,33 +95,6 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
             for (TestChannel channel : channels) {
                 channel.leave();
             }
-        });
-    }
-
-    @Test
-    public void testCallback() throws Exception {
-        List<TestChannel> channels = new ArrayList<>();
-
-        repeat(5, i -> {
-            TestChannel channel = createChannel(c -> c.setReceiver(msg -> msg.reply(msg.get() + "-reply"))).join();
-
-            channels.add(channel);
-
-            awaitForChannelsTopology(channels);
-
-            AggregateTestCallback callback = new AggregateTestCallback();
-
-            channel.get().aggregate("test" + i, callback);
-
-            AggregateResult<String> result = callback.get();
-
-            assertTrue(result.errors().toString(), result.isSuccess());
-            assertTrue(result.errors().isEmpty());
-            assertEquals(channels.size(), result.nodes().size());
-            assertEquals(channels.size(), result.results().size());
-            assertEquals(new HashSet<>(result.results()), result.stream().collect(Collectors.toSet()));
-
-            result.results().forEach(r -> assertEquals("test" + i + "-reply", r));
         });
     }
 
@@ -173,12 +114,8 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
             AggregateResult<String> result = get(future);
 
             assertSame(result.results(), future.results());
-            assertSame(result.results(), future.results(3, TimeUnit.SECONDS));
-            assertSame(result.results(), future.resultsUninterruptedly());
 
             assertSame(result.results(), future.results(String.class));
-            assertSame(result.results(), future.results(String.class, 3, TimeUnit.SECONDS));
-            assertSame(result.results(), future.resultsUninterruptedly(String.class));
 
             assertTrue(result.toString(), result.isSuccess());
             assertTrue(result.toString(), result.errors().isEmpty());
@@ -207,8 +144,6 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
             AggregateResult<String> result = get(future);
 
             assertSame(result.results(), future.results());
-            assertSame(result.results(), future.results(3, TimeUnit.SECONDS));
-            assertSame(result.results(), future.resultsUninterruptedly());
 
             assertTrue(result.errors().toString(), result.isSuccess());
             assertTrue(result.errors().isEmpty());
@@ -220,70 +155,6 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
             assertNull(result.resultOf(channel.node().localNode()));
             assertTrue(result.isSuccess(channel.node().localNode()));
             assertTrue(result.toString().startsWith(AggregateResult.class.getSimpleName()));
-        });
-    }
-
-    @Test
-    public void testEmptyTopologyCallback() throws Exception {
-        List<TestChannel> channels = new ArrayList<>();
-
-        repeat(5, i -> {
-            TestChannel channel = createChannel(c -> c.setReceiver(msg -> msg.reply(msg.get() + "-reply"))).join();
-
-            channels.add(channel);
-
-            awaitForChannelsTopology(channels);
-
-            // Empty targets.
-            AggregateTestCallback callback = new AggregateTestCallback();
-
-            channel.get().forRole("no-such-role").aggregate("test" + i, callback);
-
-            AggregateResult<String> result = get(callback);
-
-            assertTrue(result.errors().toString(), result.isSuccess());
-            assertTrue(result.errors().isEmpty());
-            assertTrue(result.nodes().isEmpty());
-            assertTrue(result.results().isEmpty());
-        });
-    }
-
-    @Test
-    public void testPartialFailureCallback() throws Exception {
-        MessageReceiver<String> receiver = msg -> msg.reply(msg.get() + "-reply");
-
-        List<TestChannel> channels = createAndJoinChannels(5, c -> c.setReceiver(receiver));
-
-        repeat(channels.size() - 1, i -> {
-            channels.get(i).impl().close().await();
-
-            TestChannel channel = channels.get(channels.size() - 1);
-
-            AggregateTestCallback callback = new AggregateTestCallback();
-
-            channel.get().aggregate("test" + i, callback);
-
-            AggregateResult<String> result = get(callback);
-
-            assertEquals("test" + i, result.request());
-            assertFalse(result.isSuccess());
-            assertEquals(result.errors().toString(), i + 1, result.errors().size());
-
-            for (int j = 0; j <= i; j++) {
-                ClusterNode node = channels.get(j).node().localNode();
-
-                assertNotNull(result.errors().get(node));
-                assertSame(result.errors().get(node), result.errorOf(node));
-                assertFalse(result.isSuccess(node));
-            }
-
-            for (int j = i + 1; j < channels.size(); j++) {
-                ClusterNode node = channels.get(j).node().localNode();
-
-                assertNull(result.errors().get(node));
-                assertEquals("test" + i + "-reply", result.resultsByNode().get(node));
-                assertEquals("test" + i + "-reply", result.resultOf(node));
-            }
         });
     }
 
@@ -333,19 +204,15 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
             CountDownLatch joinFilterCallLatch = new CountDownLatch(1);
             CountDownLatch joinLatch = new CountDownLatch(1);
 
-            AggregateTestCallback joinCallback = new AggregateTestCallback();
-
-            runAsync(() -> {
+            Future<AggregateFuture<String>> joinAggregateFuture = runAsync(() ->
                 channel.get().filterAll(nodes -> {
                     joinFilterCallLatch.countDown();
 
                     await(joinLatch);
 
                     return nodes;
-                }).aggregate("test-join" + i, joinCallback);
-
-                return null;
-            });
+                }).aggregate("test-join" + i)
+            );
 
             await(joinFilterCallLatch);
 
@@ -357,7 +224,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
 
             joinLatch.countDown();
 
-            AggregateResult<String> joinResult = get(joinCallback);
+            AggregateResult<String> joinResult = get(get(joinAggregateFuture));
 
             assertTrue(joinResult.isSuccess());
 
@@ -376,19 +243,15 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
             CountDownLatch leaveFilterCallLatch = new CountDownLatch(1);
             CountDownLatch leaveLatch = new CountDownLatch(1);
 
-            AggregateTestCallback leaveCallback = new AggregateTestCallback();
-
-            runAsync(() -> {
+            Future<AggregateFuture<String>> leaveAggregateFuture = runAsync(() ->
                 channel.get().filterAll(nodes -> {
                     leaveFilterCallLatch.countDown();
 
                     await(leaveLatch);
 
                     return nodes;
-                }).aggregate("test-join" + i, leaveCallback);
-
-                return null;
-            });
+                }).aggregate("test-join" + i)
+            );
 
             await(leaveFilterCallLatch);
 
@@ -402,7 +265,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
 
             leaveLatch.countDown();
 
-            AggregateResult<String> leaveResult = get(leaveCallback);
+            AggregateResult<String> leaveResult = get(get(leaveAggregateFuture));
 
             assertTrue(leaveResult.errors().toString(), leaveResult.isSuccess());
 
@@ -427,11 +290,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
         awaitForTopology(allNodes);
 
         for (TestChannel channel : channels) {
-            AggregateTestCallback callback = new AggregateTestCallback();
-
-            channel.get().aggregate("test", callback);
-
-            AggregateResult<String> result = get(callback);
+            AggregateResult<String> result = get(channel.get().aggregate("test"));
 
             assertEquals("test", result.request());
             assertTrue(result.isSuccess());

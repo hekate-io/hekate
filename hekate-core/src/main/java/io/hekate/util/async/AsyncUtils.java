@@ -28,6 +28,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Set of utility methods for asynchronous tasks processing.
@@ -38,6 +39,34 @@ public final class AsyncUtils {
 
     /** Empty array for {@link Collection#toArray(Object[])}. */
     private static final CompletableFuture[] EMPTY_FUTURES = new CompletableFuture[0];
+
+    /** See {@link #cancelledFuture()}. */
+    private static final Future<Object> CANCELLED_FUTURE = new Future<Object>() {
+        @Override
+        public boolean isCancelled() {
+            return true;
+        }
+
+        @Override
+        public boolean isDone() {
+            return true;
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return false;
+        }
+
+        @Override
+        public Object get() throws InterruptedException, ExecutionException {
+            return null;
+        }
+
+        @Override
+        public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            return null;
+        }
+    };
 
     static {
         HekateThreadFactory factory = new HekateThreadFactory("AsyncFallback", null, false);
@@ -140,5 +169,14 @@ public final class AsyncUtils {
      */
     public static CompletableFuture<Void> allOf(Collection<CompletableFuture<?>> all) {
         return CompletableFuture.allOf(all.toArray(EMPTY_FUTURES));
+    }
+
+    /**
+     * Returns a cancelled {@link Future}.
+     *
+     * @return Future.
+     */
+    public static Future<?> cancelledFuture() {
+        return CANCELLED_FUTURE;
     }
 }

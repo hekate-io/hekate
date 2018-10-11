@@ -19,22 +19,21 @@ package foo.bar;
 import io.hekate.coordinate.CoordinationContext;
 import io.hekate.coordinate.CoordinationHandler;
 import io.hekate.coordinate.CoordinationRequest;
+import io.hekate.coordinate.CoordinatorContext;
 
 public class SomeCoordinationHandler implements CoordinationHandler {
     @Override
     public void prepare(CoordinationContext ctx) {
-        ctx.complete();
+        // No-op.
     }
 
     @Override
-    public void coordinate(CoordinationContext ctx) {
+    public void coordinate(CoordinatorContext ctx) {
         ctx.complete();
     }
 
     @Override
     public void process(CoordinationRequest request, CoordinationContext ctx) {
         request.reply(request.get());
-
-        ctx.complete();
     }
 }

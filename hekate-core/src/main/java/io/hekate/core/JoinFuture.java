@@ -46,15 +46,6 @@ public class JoinFuture extends HekateFuture<Hekate, JoinFuture> {
     }
 
     @Override
-    public Hekate getUninterruptedly() throws HekateFutureException {
-        try {
-            return super.getUninterruptedly();
-        } catch (ExecutionException e) {
-            throw new HekateFutureException(e.getCause().getMessage(), e.getCause());
-        }
-    }
-
-    @Override
     protected JoinFuture newInstance() {
         return new JoinFuture();
     }

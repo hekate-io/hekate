@@ -19,27 +19,27 @@ package io.hekate.messaging.unicast;
 import io.hekate.failover.FailoverPolicy;
 
 /**
- * Result of {@link ResponseCallback} acceptance check.
+ * Result of {@link RequestCallback} acceptance check.
  *
- * @see ResponseCallback#accept(Throwable, Response)
+ * @see RequestCondition#accept(Throwable, Response)
  */
 public enum ReplyDecision {
     /**
-     * Signals that operation result was accepted and {@link ResponseCallback#onComplete(Throwable, Response)} method should be called. Note
+     * Signals that operation result was accepted and {@link RequestCallback#onComplete(Throwable, Response)} method should be called. Note
      * that {@link FailoverPolicy} will not be applied in such case even if operation ended up with an error.
      */
-    COMPLETE,
+    ACCEPT,
 
     /**
      * Signals that operation should fail with a {@link RejectedReplyException} and a {@link FailoverPolicy} should be applied. If failover
-     * policy is not configured for the channel then {@link ResponseCallback#onComplete(Throwable, Response)} will be called with {@link
+     * policy is not configured for the channel then {@link RequestCallback#onComplete(Throwable, Response)} will be called with {@link
      * RejectedReplyException} as {@code err} parameter and {@code reply} parameter being {@code null}.
      */
     REJECT,
 
     /**
      * Signals that the default handling logic should be applied, i.e. if operation failed with an error then {@link FailoverPolicy} should
-     * be applied (if configured for the channel) or {@link ResponseCallback#onComplete(Throwable, Response)} should be called otherwise.
+     * be applied (if configured for the channel) or {@link RequestCallback#onComplete(Throwable, Response)} should be called otherwise.
      */
     DEFAULT
 }

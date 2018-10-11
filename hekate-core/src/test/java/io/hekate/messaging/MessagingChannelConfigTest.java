@@ -217,8 +217,7 @@ public class MessagingChannelConfigTest extends HekateTestBase {
 
     @Test
     public void testInterceptors() {
-        @SuppressWarnings("unchecked")
-        MessageInterceptor<Object> interceptor = mock(MessageInterceptor.class);
+        MessageInterceptor interceptor = mock(MessageInterceptor.class);
 
         assertNull(cfg.getInterceptors());
 

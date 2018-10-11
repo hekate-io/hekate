@@ -48,21 +48,21 @@ abstract class RpcMethodClientBase<T> {
         }
     }
 
-    protected abstract Object doInvoke(MessagingChannel<RpcProtocol> channel, Object[] args)
-        throws MessagingFutureException, InterruptedException, TimeoutException;
+    protected abstract Object doInvoke(Object affinity, Object[] args) throws MessagingFutureException, InterruptedException,
+        TimeoutException;
 
     public Object invoke(Object[] args) throws Exception {
-        MessagingChannel<RpcProtocol> callChannel;
+        Object affinity;
 
         if (method.affinityArg().isPresent()) {
-            callChannel = this.channel.withAffinity(args[method.affinityArg().getAsInt()]);
+            affinity = args[method.affinityArg().getAsInt()];
         } else {
-            callChannel = this.channel;
+            affinity = null;
         }
 
         try {
             try {
-                return doInvoke(callChannel, args);
+                return doInvoke(affinity, args);
             } catch (MessagingFutureException e) {
                 // Unwrap asynchronous messaging error.
                 throw e.getCause();

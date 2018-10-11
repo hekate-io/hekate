@@ -164,12 +164,11 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
         // Validate client configurations.
         clientConfigs.forEach(cfg -> {
-                ConfigCheck check = ConfigCheck.get(RpcClientConfig.class);
+            ConfigCheck check = ConfigCheck.get(RpcClientConfig.class);
 
-                check.notNull(cfg.getRpcInterface(), "RPC interface");
-                check.validSysName(cfg.getTag(), "tag");
-            }
-        );
+            check.notNull(cfg.getRpcInterface(), "RPC interface");
+            check.validSysName(cfg.getTag(), "tag");
+        });
 
         // Collect server configurations from providers.
         nullSafe(ctx.findComponents(RpcServerConfigProvider.class)).forEach(provider ->
@@ -276,21 +275,19 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
             .withMessageCodec(new RpcProtocolCodecFactory(codec))
             .withInterceptor(new ClientMessageInterceptor<RpcProtocol>() {
                 @Override
-                public RpcProtocol beforeClientSend(RpcProtocol msg, ClientSendContext ctx) {
+                public void interceptClientSend(ClientSendContext<RpcProtocol> ctx) {
                     // Convert method calls to compact representations.
-                    if (msg instanceof RpcCall) {
-                        RpcCall<?> req = (RpcCall<?>)msg;
+                    if (ctx.get() instanceof RpcCall) {
+                        RpcCall<?> req = (RpcCall<?>)ctx.get();
 
                         // Use the method's index instead of the method signature.
                         int methodIdx = ctx.receiver().service(RpcService.class).intProperty(req.methodIdxKey());
 
                         if (req.isSplit()) {
-                            return new RpcCompactSplitCall(methodIdx, req.args());
+                            ctx.overrideMessage(new RpcCompactSplitCall(methodIdx, req.args()));
                         } else {
-                            return new RpcCompactCall(methodIdx, req.args());
+                            ctx.overrideMessage(new RpcCompactCall(methodIdx, req.args()));
                         }
-                    } else {
-                        return msg;
                     }
                 }
             });

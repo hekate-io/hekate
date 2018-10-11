@@ -17,28 +17,20 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.codec.CodecException;
-import java.util.OptionalInt;
 
 class RequestPayloadDecodeException extends CodecException {
     private static final long serialVersionUID = 1L;
 
     private final int requestId;
 
-    private final OptionalInt affinity;
-
-    public RequestPayloadDecodeException(int requestId, OptionalInt affinity, Throwable cause) {
-        super("Failed to decode request [request-id=" + requestId + ']', cause);
+    public RequestPayloadDecodeException(int requestId, Throwable cause) {
+        super("Failed to decode request.", cause);
 
         this.requestId = requestId;
-        this.affinity = affinity;
     }
 
     public int requestId() {
         return requestId;
-    }
-
-    public OptionalInt affinity() {
-        return affinity;
     }
 
     @Override

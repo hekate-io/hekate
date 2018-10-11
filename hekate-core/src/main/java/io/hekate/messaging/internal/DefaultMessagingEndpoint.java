@@ -19,7 +19,6 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingEndpoint;
-import io.hekate.util.format.ToString;
 
 class DefaultMessagingEndpoint<T> implements MessagingEndpoint<T> {
     private final ClusterAddress address;
@@ -58,6 +57,6 @@ class DefaultMessagingEndpoint<T> implements MessagingEndpoint<T> {
 
     @Override
     public String toString() {
-        return ToString.format(MessagingEndpoint.class, this);
+        return address.toString();
     }
 }

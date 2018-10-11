@@ -46,15 +46,6 @@ public class LeaveFuture extends HekateFuture<Hekate, LeaveFuture> {
     }
 
     @Override
-    public Hekate getUninterruptedly() throws HekateFutureException {
-        try {
-            return super.getUninterruptedly();
-        } catch (ExecutionException e) {
-            throw new HekateFutureException(e.getCause().getMessage(), e.getCause());
-        }
-    }
-
-    @Override
     protected LeaveFuture newInstance() {
         return new LeaveFuture();
     }

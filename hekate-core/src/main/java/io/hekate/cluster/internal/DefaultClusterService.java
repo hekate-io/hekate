@@ -268,7 +268,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
         netCfg.setProtocol(PROTOCOL_ID);
         netCfg.setMessageCodec(() -> new GossipProtocolCodec(localNodeIdRef));
-        netCfg.setLogCategory(GossipCommManager.class.getName());
+        netCfg.setLogCategory(GossipProtocol.class.getName());
 
         // Use a dedicated NIO thread for cluster communications.
         netCfg.setNioThreads(1);

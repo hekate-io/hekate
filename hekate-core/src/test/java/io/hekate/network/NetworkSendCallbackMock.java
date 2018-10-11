@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -45,11 +44,11 @@ public class NetworkSendCallbackMock<T> implements NetworkSendCallback<T> {
     private final List<Failure<T>> failedMessages = new CopyOnWriteArrayList<>();
 
     @Override
-    public void onComplete(T msg, Optional<Throwable> error, NetworkEndpoint<T> endpoint) {
-        if (error.isPresent()) {
-            failedMessages.add(new Failure<>(msg, error.get()));
-        } else {
+    public void onComplete(T msg, Throwable error) {
+        if (error == null) {
             sentMessages.add(msg);
+        } else {
+            failedMessages.add(new Failure<>(msg, error));
         }
     }
 

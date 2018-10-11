@@ -25,9 +25,6 @@ import io.hekate.coordinate.CoordinationRequestCallback;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.unicast.ReplyDecision;
-import io.hekate.messaging.unicast.Response;
-import io.hekate.messaging.unicast.ResponseCallback;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -40,7 +37,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.hekate.messaging.unicast.ReplyDecision.COMPLETE;
+import static io.hekate.messaging.unicast.ReplyDecision.ACCEPT;
 import static io.hekate.messaging.unicast.ReplyDecision.REJECT;
 
 class DefaultCoordinationMember implements CoordinationMember {
@@ -91,14 +88,12 @@ class DefaultCoordinationMember implements CoordinationMember {
         this.async = async;
 
         this.channel = channel.forNode(node)
-            .withAffinity(processName)
             .withFailover(new FailoverPolicyBuilder()
                 // Retry to death.
                 .withRetryUntil(ctx -> !disposed)
                 .withAlwaysRetrySameNode()
                 .withConstantRetryDelay(failoverDelay)
             );
-
     }
 
     @Override
@@ -116,62 +111,24 @@ class DefaultCoordinationMember implements CoordinationMember {
         ArgAssert.notNull(request, "Request");
         ArgAssert.notNull(callback, "Callback");
 
-        if (DEBUG) {
-            log.debug("Sending coordination request [to={}, message={}]", node, request);
-        }
+        ClusterNodeId from = localNode.id();
+        ClusterHash clusterHash = topology.hash();
 
-        CompletableFuture<Object> future = newRequestFuture(request, callback);
+        doRequest(new CoordinationProtocol.Request(processName, from, clusterHash, request), callback);
+    }
 
-        boolean enqueued = false;
+    public void sendPrepare(CoordinationRequestCallback callback) {
+        ClusterNodeId from = localNode.id();
+        ClusterHash clusterHash = topology.hash();
 
-        lock.lock();
+        doRequest(new CoordinationProtocol.Prepare(processName, from, clusterHash), callback);
+    }
 
-        try {
-            if (!disposed) {
-                enqueued = true;
+    public void sendComplete(CoordinationRequestCallback callback) {
+        ClusterNodeId from = localNode.id();
+        ClusterHash clusterHash = topology.hash();
 
-                requestFutures.add(future);
-            }
-        } finally {
-            lock.unlock();
-        }
-
-        if (enqueued) {
-            ClusterNodeId from = localNode.id();
-            ClusterHash clusterHash = topology.hash();
-
-            CoordinationProtocol.Request req = new CoordinationProtocol.Request(processName, from, clusterHash, request);
-
-            channel.request(req, new ResponseCallback<CoordinationProtocol>() {
-                @Override
-                public ReplyDecision accept(Throwable err, Response<CoordinationProtocol> reply) {
-                    if (future.isDone()) {
-                        return COMPLETE;
-                    } else if (err != null || reply.is(CoordinationProtocol.Reject.class)) {
-                        return REJECT;
-                    } else {
-                        CoordinationProtocol.Response response = reply.get(CoordinationProtocol.Response.class);
-
-                        future.complete(response.response());
-
-                        return COMPLETE;
-                    }
-                }
-
-                @Override
-                public void onComplete(Throwable err, Response<CoordinationProtocol> rsp) {
-                    unregister(future);
-
-                    if (DEBUG) {
-                        if (err != null && !disposed) {
-                            log.debug("Failed to submit coordination request [request={}]", request, err);
-                        }
-                    }
-                }
-            });
-        } else {
-            future.cancel(false);
-        }
+        doRequest(new CoordinationProtocol.Complete(processName, from, clusterHash), callback);
     }
 
     public void dispose() {
@@ -196,7 +153,84 @@ class DefaultCoordinationMember implements CoordinationMember {
         }
     }
 
-    private CompletableFuture<Object> newRequestFuture(Object request, CoordinationRequestCallback callback) {
+    private void doRequest(CoordinationProtocol.RequestBase request, CoordinationRequestCallback callback) {
+        if (DEBUG) {
+            log.debug("Sending coordination request [to={}, message={}]", node, request);
+        }
+
+        CompletableFuture<Object> future = newRequestFuture(request, callback);
+
+        boolean enqueued = false;
+
+        lock.lock();
+
+        try {
+            if (!disposed) {
+                enqueued = true;
+
+                requestFutures.add(future);
+            }
+        } finally {
+            lock.unlock();
+        }
+
+        if (enqueued) {
+            channel.newRequest(request)
+                .withAffinity(processName)
+                .until((err, rsp) -> {
+                    if (future.isDone()) {
+                        if (DEBUG) {
+                            log.debug("Skipped response [from={}, response={}]", node, rsp);
+                        }
+
+                        return ACCEPT;
+                    } else if (err != null) {
+                        if (DEBUG) {
+                            log.debug("Got an error [from={}, error={}, request={}]", node, err.toString(), request);
+                        }
+
+                        return REJECT;
+                    } else if (rsp.is(CoordinationProtocol.Reject.class)) {
+                        if (DEBUG) {
+                            log.debug("Got a reject [from={}, request={}]", node, request);
+                        }
+
+                        return REJECT;
+                    } else {
+                        if (rsp.is(CoordinationProtocol.Confirm.class)) {
+                            if (DEBUG) {
+                                log.debug("Got a confirmation [from={}, request={}]", node, request);
+                            }
+
+                            future.complete(null);
+                        } else {
+                            CoordinationProtocol.Response response = rsp.get(CoordinationProtocol.Response.class);
+
+                            if (DEBUG) {
+                                log.debug("Got a response [from={}, response={}]", node, response.response());
+                            }
+
+                            future.complete(response.response());
+                        }
+
+                        return ACCEPT;
+                    }
+                })
+                .submit((err, rsp) -> {
+                    unregister(future);
+
+                    if (DEBUG) {
+                        if (err != null && !disposed) {
+                            log.debug("Failed to submit coordination request [request={}]", request, err);
+                        }
+                    }
+                });
+        } else {
+            future.cancel(false);
+        }
+    }
+
+    private CompletableFuture<Object> newRequestFuture(CoordinationProtocol.RequestBase request, CoordinationRequestCallback callback) {
         CompletableFuture<Object> future = new CompletableFuture<>();
 
         future.whenCompleteAsync((response, error) -> {

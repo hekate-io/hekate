@@ -24,6 +24,7 @@ import io.hekate.coordinate.CoordinationProcessConfig;
 import io.hekate.coordinate.CoordinationRequest;
 import io.hekate.coordinate.CoordinationService;
 import io.hekate.coordinate.CoordinationServiceFactory;
+import io.hekate.coordinate.CoordinatorContext;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.internal.HekateTestNode;
@@ -48,7 +49,7 @@ public class CoordinationServiceJavadocTest extends HekateNodeTestBase {
         }
 
         @Override
-        public void coordinate(CoordinationContext ctx) {
+        public void coordinate(CoordinatorContext ctx) {
             System.out.println("Coordinating " + ctx.members());
 
             // Ask all members to acquire their local locks.
@@ -61,6 +62,8 @@ public class CoordinationServiceJavadocTest extends HekateNodeTestBase {
                     ctx.broadcast("unlock", unlockResponses -> {
                         // All locks released. Coordination completed.
                         System.out.println("Done coordinating.");
+
+                        ctx.complete();
                     });
                 });
             });
@@ -89,11 +92,6 @@ public class CoordinationServiceJavadocTest extends HekateNodeTestBase {
                     if (dataLock.isHeldByCurrentThread()) {
                         dataLock.unlock();
                     }
-
-                    System.out.println("Coordination completed.");
-
-                    // Notify on coordination process completion.
-                    ctx.complete();
 
                     break;
                 }

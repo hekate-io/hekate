@@ -18,7 +18,7 @@ package io.hekate.messaging.internal;
 
 import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.unicast.ResponseFuture;
+import io.hekate.messaging.unicast.RequestFuture;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -61,7 +61,7 @@ public class RequestOrderTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        MessagingChannel<String> out = sender.get()
+        MessagingChannel<String> channel = sender.get()
             .forRemotes()
             .withFailover(new FailoverPolicyBuilder()
                 .withRetryUntil(failover -> true)
@@ -70,10 +70,13 @@ public class RequestOrderTest extends MessagingServiceTestBase {
                 .withMaxAttempts(10)
             );
 
-        List<ResponseFuture<String>> tasks = new ArrayList<>();
+        List<RequestFuture<String>> tasks = new ArrayList<>();
 
         for (int i = 0; i < 100; i++) {
-            tasks.add(out.withAffinity(1).request(String.valueOf(i)));
+            tasks.add(channel.newRequest(String.valueOf(i))
+                .withAffinity(1)
+                .submit()
+            );
         }
 
         tasks.forEach(CompletableFuture::join);

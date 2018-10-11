@@ -23,11 +23,11 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 
 /**
- * Response of {@link MessagingChannel#request(Object, ResponseCallback) request(...)} operation.
+ * Response of a {@link Request} operation.
  *
  * @param <T> Payload type.
  *
- * @see ResponseCallback#onComplete(Throwable, Response)
+ * @see MessagingChannel#newRequest(Object)
  */
 public interface Response<T> extends MessageBase<T> {
     /**
@@ -59,7 +59,7 @@ public interface Response<T> extends MessageBase<T> {
      *
      * @return {@code true} if this message is a partial response; {@code false} if this message is a final response.
      *
-     * @see MessagingChannel#subscribe(Object, ResponseCallback)
+     * @see MessagingChannel#subscribe(Object, RequestCallback)
      */
     boolean isPartial();
 

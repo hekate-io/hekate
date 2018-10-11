@@ -90,32 +90,17 @@ class NettyMessage extends InputStream implements DataReader, NetworkMessage<Obj
     }
 
     @Override
-    public void handleAsync(Executor worker, Consumer<Object> handler, Consumer<Throwable> onError) {
+    public void handleAsync(Executor worker, Consumer<NetworkMessage<Object>> handler) {
         ArgAssert.notNull(worker, "Worker");
         ArgAssert.notNull(handler, "Handler");
-        ArgAssert.notNull(onError, "Error consumer");
 
         buf.retain();
 
         worker.execute(() -> {
             try {
-                Object msg;
-
-                try {
-                    msg = decode();
-                } finally {
-                    buf.release();
-                }
-
-                handler.accept(msg);
-            } catch (Throwable t) {
-                try {
-                    onError.accept(t);
-                } catch (RuntimeException | Error e) {
-                    if (log != null && log.isErrorEnabled()) {
-                        log.error("Got an unexpected runtime error while notifying callback on another error [cause={}]", t.toString(), e);
-                    }
-                }
+                handler.accept(this);
+            } finally {
+                buf.release();
             }
         });
     }

@@ -67,10 +67,6 @@ class CandidateMock implements Candidate {
         return followerContext != null;
     }
 
-    public ClusterNode getLastLeader() {
-        return leadersHistory.isEmpty() ? null : leadersHistory.get(leadersHistory.size() - 1);
-    }
-
     public void yieldLeadership() {
         LeaderContext localCtx = this.leaderContext;
 
@@ -88,10 +84,14 @@ class CandidateMock implements Candidate {
 
     public void awaitForLeaderChange(ClusterNode oldLeader) throws Exception {
         HekateTestBase.busyWait("leader change", () -> {
-            ClusterNode lastLeader = getLastLeader();
+            ClusterNode lastLeader = lastLeader();
 
             return lastLeader != null && !lastLeader.equals(oldLeader);
         });
+    }
+
+    public ClusterNode lastLeader() {
+        return leadersHistory.isEmpty() ? null : leadersHistory.get(leadersHistory.size() - 1);
     }
 
     public void awaitTermination() {

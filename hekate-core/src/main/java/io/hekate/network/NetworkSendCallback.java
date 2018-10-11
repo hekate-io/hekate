@@ -16,8 +16,6 @@
 
 package io.hekate.network;
 
-import java.util.Optional;
-
 /**
  * Callback for getting results of an asynchronous messages sending operation in {@link NetworkEndpoint}.
  *
@@ -36,8 +34,7 @@ public interface NetworkSendCallback<T> {
      * error.
      *
      * @param msg Submitted message.
-     * @param error Error if happened.
-     * @param endpoint Endpoint that was used to submit message.
+     * @param error Error if happened or {@code null} if operation was successful.
      */
-    void onComplete(T msg, Optional<Throwable> error, NetworkEndpoint<T> endpoint);
+    void onComplete(T msg, Throwable error);
 }

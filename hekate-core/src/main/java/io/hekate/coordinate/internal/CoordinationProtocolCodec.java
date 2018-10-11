@@ -55,6 +55,18 @@ class CoordinationProtocolCodec implements Codec<CoordinationProtocol> {
         out.writeByte(type.ordinal());
 
         switch (type) {
+            case PREPARE: {
+                CoordinationProtocol.Prepare request = (CoordinationProtocol.Prepare)msg;
+
+                String process = request.processName();
+
+                out.writeUTF(process);
+
+                CodecUtils.writeNodeId(request.from(), out);
+                CodecUtils.writeTopologyHash(request.topology(), out);
+
+                break;
+            }
             case REQUEST: {
                 CoordinationProtocol.Request request = (CoordinationProtocol.Request)msg;
 
@@ -80,8 +92,21 @@ class CoordinationProtocolCodec implements Codec<CoordinationProtocol> {
 
                 break;
             }
+            case CONFIRM:
             case REJECT: {
                 // No-op.
+
+                break;
+            }
+            case COMPLETE: {
+                CoordinationProtocol.Complete request = (CoordinationProtocol.Complete)msg;
+
+                String process = request.processName();
+
+                out.writeUTF(process);
+
+                CodecUtils.writeNodeId(request.from(), out);
+                CodecUtils.writeTopologyHash(request.topology(), out);
 
                 break;
             }
@@ -96,6 +121,14 @@ class CoordinationProtocolCodec implements Codec<CoordinationProtocol> {
         CoordinationProtocol.Type type = TYPES_CACHE[in.readByte()];
 
         switch (type) {
+            case PREPARE: {
+                String process = in.readUTF();
+
+                ClusterNodeId from = CodecUtils.readNodeId(in);
+                ClusterHash hash = CodecUtils.readTopologyHash(in);
+
+                return new CoordinationProtocol.Prepare(process, from, hash);
+            }
             case REQUEST: {
                 String process = in.readUTF();
 
@@ -115,6 +148,17 @@ class CoordinationProtocolCodec implements Codec<CoordinationProtocol> {
             }
             case REJECT: {
                 return CoordinationProtocol.Reject.INSTANCE;
+            }
+            case CONFIRM: {
+                return CoordinationProtocol.Confirm.INSTANCE;
+            }
+            case COMPLETE: {
+                String process = in.readUTF();
+
+                ClusterNodeId from = CodecUtils.readNodeId(in);
+                ClusterHash hash = CodecUtils.readTopologyHash(in);
+
+                return new CoordinationProtocol.Complete(process, from, hash);
             }
             default: {
                 throw new IllegalArgumentException("Unexpected message type: " + type);

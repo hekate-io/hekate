@@ -33,21 +33,19 @@ import java.util.List;
  * </p>
  *
  * <pre>{@code
- *          Client Node                                             Server Node
- *      (ClientMessageInterceptor)                            (ServerMessageInterceptor)
- * +----------------------------------+       request       +---------------------------+
- * | beforeClientSend(...)            + ------------------> + beforeServerReceive(...)  |
- * +----------------------------------+                     +-------------+-------------+
- *                                                                 process request
- * +----------------------------------+       response      +-------------v-------------+
- * | beforeClientReceiveResponse(...) + <------------------ + beforeServerSend(...)     |
- * +----------------------------------+                     +---------------------------+
+ *              Client Node                                             Server Node
+ *       (ClientMessageInterceptor)                               (ServerMessageInterceptor)
+ * +-------------------------------------+       request       +-----------------------------+
+ * | interceptClientSend(...)            + ------------------> + interceptServerReceive(...) |
+ * +-------------------------------------+                     +-------------+---------------+
+ *                                                                    process request
+ * +-------------------------------------+       response      +-------------v---------------+
+ * | interceptClientReceiveResponse(...) + <------------------ + interceptServerSend(...)    |
+ * +-------------------------------------+                     +-----------------------------+
  * }</pre>
- *
- * @param <T> Base type fo messages that can be handled by this interceptor.
  *
  * @see MessagingChannelConfig#setInterceptors(List)
  */
-public interface MessageInterceptor<T> {
+public interface MessageInterceptor {
     // No-op.
 }

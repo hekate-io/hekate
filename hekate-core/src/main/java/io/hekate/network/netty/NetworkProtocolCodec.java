@@ -242,20 +242,16 @@ class NetworkProtocolCodec {
     }
 
     static ByteBuf preEncode(Object msg, Codec<Object> codec, ByteBufAllocator allocator) throws CodecException {
-        ByteBuf buf = null;
+        ByteBuf buf = allocator.buffer();
 
         try {
-            buf = allocator.buffer();
-
             ByteBufDataWriter writer = new ByteBufDataWriter(buf);
 
             doEncode(msg, writer, codec);
 
             return buf;
         } catch (CodecException e) {
-            if (buf != null) {
-                buf.release();
-            }
+            buf.release();
 
             throw e;
         }
@@ -266,17 +262,15 @@ class NetworkProtocolCodec {
     }
 
     private static void doEncode(Object msg, ByteBufDataWriter out, Codec<Object> codec) throws CodecException {
+        ByteBuf buf = out.buffer();
+
         try {
-            ByteBuf outBuf = out.buffer();
-
             // Header indexes.
-            int headStartIdx = outBuf.writerIndex();
-
-            // Header end index.
+            int headStartIdx = buf.writerIndex();
             int headEndIdx = headStartIdx + HEADER_LENGTH;
 
             // Placeholder for the header.
-            outBuf.ensureWritable(HEADER_LENGTH).writerIndex(headEndIdx);
+            buf.ensureWritable(HEADER_LENGTH).writerIndex(headEndIdx);
 
             boolean internalMsg;
 
@@ -295,7 +289,7 @@ class NetworkProtocolCodec {
             }
 
             // Calculate real message length.
-            int len = outBuf.writerIndex() - headStartIdx;
+            int len = buf.writerIndex() - headStartIdx;
 
             // Magic length value:
             //   negative - for protocol messages
@@ -305,7 +299,7 @@ class NetworkProtocolCodec {
             }
 
             // Update length header.
-            outBuf.setInt(headStartIdx, len);
+            buf.setInt(headStartIdx, len);
         } catch (CodecException e) {
             throw e;
         } catch (Throwable t) {

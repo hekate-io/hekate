@@ -18,15 +18,14 @@ package io.hekate.messaging.unicast;
 
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFuture;
-import java.util.List;
 
 /**
- * Asynchronous result of {@link MessagingChannel#request(Object) request(...)} operation.
+ * Asynchronous result of {@link Subscribe} operation.
  *
  * @param <T> Base type of request message.
  *
- * @see MessagingChannel#request(Object)
+ * @see MessagingChannel#newSubscribe(Object)
  */
-public class SubscribeFuture<T> extends MessagingFuture<List<T>> {
+public class SubscribeFuture<T> extends MessagingFuture<Response<T>> {
     // No-op.
 }

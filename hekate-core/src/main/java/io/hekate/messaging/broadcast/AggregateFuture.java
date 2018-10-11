@@ -20,12 +20,10 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFuture;
 import io.hekate.messaging.MessagingFutureException;
 import java.util.Collection;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 /**
- * Asynchronous result of {@link MessagingChannel#aggregate(Object) aggregate(...)} operation.
+ * Asynchronous result of {@link Aggregate} operation.
  *
  * @param <T> Base type of aggregation results.
  *
@@ -33,34 +31,6 @@ import java.util.function.Consumer;
  * @see AggregateResult
  */
 public class AggregateFuture<T> extends MessagingFuture<AggregateResult<T>> {
-
-    /**
-     * Uninterruptedly awaits for the asynchronous aggregation to complete and returns the {@link AggregateResult#results()} result}.
-     *
-     * @return Aggregation result.
-     *
-     * @throws MessagingFutureException Signals that aggregation failed.
-     */
-    public Collection<T> resultsUninterruptedly() throws MessagingFutureException {
-        return getUninterruptedly().results();
-    }
-
-    /**
-     * Uninterruptedly awaits for the asynchronous aggregation to complete and returns the {@link AggregateResult#results()} result}.
-     *
-     * @param type Result type.
-     * @param <V> Result type.
-     *
-     * @return Aggregation result.
-     *
-     * @throws MessagingFutureException Signals that aggregation failed.
-     */
-    public <V extends T> Collection<V> resultsUninterruptedly(Class<V> type) throws MessagingFutureException {
-        Collection<T> results = getUninterruptedly().results();
-
-        return cast(type, results);
-    }
-
     /**
      * Awaits for the asynchronous aggregation to complete and returns the {@link AggregateResult#results()} result}.
      *
@@ -71,22 +41,6 @@ public class AggregateFuture<T> extends MessagingFuture<AggregateResult<T>> {
      */
     public Collection<T> results() throws InterruptedException, MessagingFutureException {
         return get().results();
-    }
-
-    /**
-     * Awaits for the asynchronous aggregation to complete within the timeout and returns the {@link AggregateResult#results()} result}.
-     *
-     * @param timeout Time to wait for operation result.
-     * @param unit Time unit of the timeout argument
-     *
-     * @return Aggregation result.
-     *
-     * @throws MessagingFutureException Signals that aggregation failed.
-     * @throws InterruptedException Signals that the thread was interrupted while waiting for aggregation to complete.
-     * @throws TimeoutException Signals that timeout happened.
-     */
-    public Collection<T> results(long timeout, TimeUnit unit) throws InterruptedException, MessagingFutureException, TimeoutException {
-        return get(timeout, unit).results();
     }
 
     /**
@@ -102,27 +56,6 @@ public class AggregateFuture<T> extends MessagingFuture<AggregateResult<T>> {
      */
     public <V extends T> Collection<V> results(Class<V> type) throws InterruptedException, MessagingFutureException {
         Collection<T> results = get().results();
-
-        return cast(type, results);
-    }
-
-    /**
-     * Awaits for the asynchronous aggregation to complete within the timeout and returns the {@link AggregateResult#results()} result}.
-     *
-     * @param type Result type.
-     * @param timeout Time to wait for operation result.
-     * @param unit Time unit of the timeout argument
-     * @param <V> Result type.
-     *
-     * @return Aggregation result.
-     *
-     * @throws MessagingFutureException Signals that aggregation failed.
-     * @throws InterruptedException Signals that the thread was interrupted while waiting for aggregation to complete.
-     * @throws TimeoutException Signals that timeout happened.
-     */
-    public <V extends T> Collection<V> results(Class<V> type, long timeout, TimeUnit unit)
-        throws InterruptedException, MessagingFutureException, TimeoutException {
-        Collection<T> results = get(timeout, unit).results();
 
         return cast(type, results);
     }

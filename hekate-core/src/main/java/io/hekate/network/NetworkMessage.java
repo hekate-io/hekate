@@ -33,8 +33,7 @@ import java.util.function.Consumer;
  * </p>
  *
  * <p>
- * Asynchronous {@link #decode() decoding} and handling of this message can be performed by calling {@link #handleAsync(Executor, Consumer,
- * Consumer) handleAsync(...)} method.
+ * Asynchronous handling of this message can be performed by calling {@link #handleAsync(Executor, Consumer) handleAsync(...)} method.
  * </p>
  *
  * @param <T> Message data type.
@@ -134,18 +133,16 @@ public interface NetworkMessage<T> {
      *
      * @throws IOException Message decoding failure.
      * @see NetworkConnectorConfig#setMessageCodec(CodecFactory)
-     * @see #handleAsync(Executor, Consumer, Consumer)
      */
     T decode() throws IOException;
 
     /**
-     * Asynchronously {@link #decode() decodes} and processes this message on a thread of the specified executor.
+     * Asynchronously this message on a thread of the specified executor.
      *
      * @param worker Executor.
-     * @param handler Handler that will be invoked if message {@link #decode() decoding} was successful.
-     * @param onError Handler that will be invoked if message {@link #decode() decoding} failed.
+     * @param handler Handler.
      */
-    void handleAsync(Executor worker, Consumer<T> handler, Consumer<Throwable> onError);
+    void handleAsync(Executor worker, Consumer<NetworkMessage<T>> handler);
 
     /**
      * Applies the specified preview function to this message. Such function can be used to inspect the content of this message

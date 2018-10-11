@@ -20,7 +20,7 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFuture;
 
 /**
- * Asynchronous result of {@link MessagingChannel#broadcast(Object) broadcast(...)} operation.
+ * Asynchronous result of {@link Broadcast} operation.
  *
  * @param <T> Base type of a broadcast message.
  *

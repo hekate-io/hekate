@@ -615,7 +615,9 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             // Notify user callback.
             if (onSend != null) {
                 try {
-                    onSend.onComplete(msg, Optional.ofNullable(result.cause()), this);
+                    Throwable mayBeError = NettyErrorUtils.unwrap(result.cause());
+
+                    onSend.onComplete(msg, mayBeError);
                 } catch (Throwable t) {
                     if (log.isErrorEnabled()) {
                         log.error("Failed to notify network message callback [message={}]", msg, t);
@@ -683,7 +685,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
 
     private void notifyOnError(Object msg, NetworkSendCallback<Object> onSend, Throwable error) {
         try {
-            onSend.onComplete(msg, Optional.of(error), this);
+            onSend.onComplete(msg, error);
         } catch (RuntimeException | Error e) {
             log.error("Failed to notify callback on network operation failure "
                 + "[protocol={}, from={}, message={}]", protocol, address(), msg, e);
