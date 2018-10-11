@@ -22,8 +22,6 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.core.Hekate;
-import io.hekate.core.HekateSupport;
 import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import io.hekate.partition.PartitionMapper;
@@ -44,25 +42,12 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
 
     private final ClusterTopology topology;
 
-    private final HekateSupport hekate;
-
     private final Optional<FailureInfo> failure;
-
-    public DefaultLoadBalancerContext(
-        MessageContext<?> ctx,
-        ClusterTopology topology,
-        HekateSupport hekate,
-        PartitionMapper partitions,
-        Optional<FailureInfo> failure
-    ) {
-        this(ctx.affinity(), ctx.affinityKey(), topology, hekate, partitions, failure);
-    }
 
     public DefaultLoadBalancerContext(
         int affinity,
         Object affinityKey,
         ClusterTopology topology,
-        HekateSupport hekate,
         PartitionMapper partitions,
         Optional<FailureInfo> failure
     ) {
@@ -70,7 +55,6 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
         this.affinityKey = affinityKey;
         this.topology = topology;
         this.partitions = partitions;
-        this.hekate = hekate;
         this.failure = failure;
     }
 
@@ -202,7 +186,7 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
             return this;
         }
 
-        return new DefaultLoadBalancerContext(affinity, affinityKey, filtered, hekate, partitions, failure);
+        return new DefaultLoadBalancerContext(affinity, affinityKey, filtered, partitions, failure);
     }
 
     @Override
@@ -213,17 +197,12 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
             return this;
         }
 
-        return new DefaultLoadBalancerContext(affinity, affinityKey, filtered, hekate, partitions, failure);
+        return new DefaultLoadBalancerContext(affinity, affinityKey, filtered, partitions, failure);
     }
 
     @Override
     public Iterator<ClusterNode> iterator() {
         return topology.iterator();
-    }
-
-    @Override
-    public Hekate hekate() {
-        return hekate.hekate();
     }
 
     @Override

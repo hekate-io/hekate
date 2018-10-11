@@ -17,13 +17,12 @@
 package io.hekate.messaging.internal;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
 
 interface MessagingWorker extends Executor {
+    boolean isAsync();
+
     @Override
     void execute(Runnable command);
-
-    Future<?> executeDeferred(long delay, Runnable task);
 
     int activeTasks();
 

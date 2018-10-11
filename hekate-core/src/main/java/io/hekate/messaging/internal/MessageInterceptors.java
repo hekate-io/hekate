@@ -5,18 +5,19 @@ import io.hekate.messaging.intercept.ClientMessageInterceptor;
 import io.hekate.messaging.intercept.ClientReceiveContext;
 import io.hekate.messaging.intercept.ClientSendContext;
 import io.hekate.messaging.intercept.MessageInterceptor;
+import io.hekate.messaging.intercept.ServerInboundContext;
 import io.hekate.messaging.intercept.ServerMessageInterceptor;
 import io.hekate.messaging.intercept.ServerReceiveContext;
 import io.hekate.messaging.intercept.ServerSendContext;
 import java.util.Collection;
 
-class InterceptorManager<T> {
+class MessageInterceptors<T> {
     private final ClientMessageInterceptor<T>[] clients;
 
     private final ServerMessageInterceptor<T>[] servers;
 
     @SuppressWarnings("unchecked")
-    public InterceptorManager(Collection<MessageInterceptor<?>> interceptors) {
+    public MessageInterceptors(Collection<MessageInterceptor> interceptors) {
         this.clients = StreamUtils.nullSafe(interceptors)
             .filter(it -> it instanceof ClientMessageInterceptor)
             .toArray(ClientMessageInterceptor[]::new);
@@ -26,69 +27,45 @@ class InterceptorManager<T> {
             .toArray(ServerMessageInterceptor[]::new);
     }
 
-    public T clientSend(T msg, ClientSendContext ctx) {
+    public void clientSend(ClientSendContext<T> ctx) {
         for (ClientMessageInterceptor<T> interceptor : clients) {
-            T transformed = interceptor.beforeClientSend(msg, ctx);
-
-            if (transformed != null) {
-                msg = transformed;
-            }
-        }
-
-        return msg;
-    }
-
-    public T clientReceive(T msg, ClientReceiveContext rsp, ClientSendContext ctx) {
-        for (ClientMessageInterceptor<T> interceptor : clients) {
-            T transformed = interceptor.beforeClientReceiveResponse(msg, rsp, ctx);
-
-            if (transformed != null) {
-                msg = transformed;
-            }
-        }
-
-        return msg;
-    }
-
-    public void clientReceiveError(Throwable err, ClientSendContext ctx) {
-        for (ClientMessageInterceptor<T> interceptor : clients) {
-            interceptor.onClientReceiveError(err, ctx);
+            interceptor.interceptClientSend(ctx);
         }
     }
 
-    public void clientReceiveVoid(ClientSendContext ctx) {
+    public void clientReceive(ClientReceiveContext<T> ctx) {
         for (ClientMessageInterceptor<T> interceptor : clients) {
-            interceptor.onClientReceiveConfirmation(ctx);
+            interceptor.interceptClientReceiveResponse(ctx);
         }
     }
 
-    public T serverReceive(T msg, ServerReceiveContext ctx) {
+    public void clientReceiveError(Throwable err, ClientSendContext<T> ctx) {
+        for (ClientMessageInterceptor<T> interceptor : clients) {
+            interceptor.interceptClientReceiveError(ctx, err);
+        }
+    }
+
+    public void clientReceiveConfirmation(ClientSendContext<T> ctx) {
+        for (ClientMessageInterceptor<T> interceptor : clients) {
+            interceptor.interceptClientReceiveConfirmation(ctx);
+        }
+    }
+
+    public void serverReceive(ServerReceiveContext<T> ctx) {
         for (ServerMessageInterceptor<T> interceptor : servers) {
-            T transformed = interceptor.beforeServerReceive(msg, ctx);
-
-            if (transformed != null) {
-                msg = transformed;
-            }
-        }
-
-        return msg;
-    }
-
-    public void serverReceiveComplete(T msg, ServerReceiveContext rcvCtx) {
-        for (ServerMessageInterceptor<T> interceptor : servers) {
-            interceptor.onServerReceiveComplete(msg, rcvCtx);
+            interceptor.interceptServerReceive(ctx);
         }
     }
 
-    public T serverSend(T msg, ServerSendContext rspCtx, ServerReceiveContext rcvCtx) {
+    public void serverReceiveComplete(ServerInboundContext<T> ctx) {
         for (ServerMessageInterceptor<T> interceptor : servers) {
-            T transformed = interceptor.beforeServerSend(msg, rspCtx, rcvCtx);
-
-            if (transformed != null) {
-                msg = transformed;
-            }
+            interceptor.interceptServerReceiveComplete(ctx);
         }
+    }
 
-        return msg;
+    public void serverSend(ServerSendContext<T> ctx) {
+        for (ServerMessageInterceptor<T> interceptor : servers) {
+            interceptor.interceptServerSend(ctx);
+        }
     }
 }

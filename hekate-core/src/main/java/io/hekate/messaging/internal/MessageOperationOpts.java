@@ -21,7 +21,7 @@ import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.partition.PartitionMapper;
 
-interface MessagingOpts<T> {
+interface MessageOperationOpts<T> {
     String name();
 
     LoadBalancer<T> balancer();
@@ -33,8 +33,6 @@ interface MessagingOpts<T> {
     PartitionMapper partitions();
 
     long timeout();
-
-    boolean isConfirmReceive();
 
     default boolean hasTimeout() {
         return timeout() > 0;

@@ -17,14 +17,18 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.util.async.Waiting;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 
 class MessagingExecutorSync implements MessagingExecutor {
     private final MessagingSingleThreadWorker worker;
 
-    public MessagingExecutorSync(ThreadFactory threadFactory, ScheduledExecutorService timer) {
-        worker = new MessagingSingleThreadWorker(threadFactory, timer);
+    public MessagingExecutorSync(ThreadFactory threadFactory) {
+        worker = new MessagingSingleThreadWorker(threadFactory) {
+            @Override
+            public boolean isAsync() {
+                return false;
+            }
+        };
     }
 
     @Override
@@ -38,18 +42,8 @@ class MessagingExecutorSync implements MessagingExecutor {
     }
 
     @Override
-    public boolean isAsync() {
-        return false;
-    }
-
-    @Override
     public Waiting terminate() {
         return worker.terminate();
-    }
-
-    @Override
-    public int poolSize() {
-        return 0;
     }
 
     @Override

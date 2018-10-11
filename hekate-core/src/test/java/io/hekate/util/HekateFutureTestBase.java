@@ -51,8 +51,6 @@ public abstract class HekateFutureTestBase<V, F extends HekateFuture<V, F>, E ex
 
         assertSame(val, fut.get());
         assertTrue(fut.isSuccess());
-
-        assertSame(val, fut.getUninterruptedly());
     }
 
     @Test
@@ -81,24 +79,6 @@ public abstract class HekateFutureTestBase<V, F extends HekateFuture<V, F>, E ex
 
         try {
             fut.get(1, TimeUnit.MILLISECONDS);
-
-            fail("Error was expected.");
-        } catch (Exception err) {
-            assertFalse(fut.isSuccess());
-
-            assertEquals(errorType(), err.getClass());
-            assertSame(TEST_ERROR, err.getCause());
-        }
-    }
-
-    @Test
-    public void testGetUninterruptedlyError() throws Exception {
-        F fut = createFuture();
-
-        fut.completeExceptionally(TEST_ERROR);
-
-        try {
-            fut.getUninterruptedly();
 
             fail("Error was expected.");
         } catch (Exception err) {

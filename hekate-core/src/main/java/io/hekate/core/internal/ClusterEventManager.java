@@ -124,7 +124,7 @@ class ClusterEventManager implements HekateSupport {
         this.hekate = hekate;
     }
 
-    public CompletableFuture<?> fireAsync(ClusterEvent event) {
+    public CompletableFuture<Void> fireAsync(ClusterEvent event) {
         return guard.withWriteLock(() -> {
             if (DEBUG) {
                 log.debug("Scheduled cluster event for asynchronous processing [event={}]", event);
@@ -136,7 +136,7 @@ class ClusterEventManager implements HekateSupport {
                 joinEventFired = false;
             }
 
-            CompletableFuture<?> future = new CompletableFuture<>();
+            CompletableFuture<Void> future = new CompletableFuture<>();
 
             worker.execute(() -> {
                 insideWorker.set(true);
@@ -170,7 +170,7 @@ class ClusterEventManager implements HekateSupport {
         });
     }
 
-    public CompletableFuture<?> ensureLeaveEventFired(ClusterLeaveReason reason, ClusterTopology topology) {
+    public CompletableFuture<Void> ensureLeaveEventFired(ClusterLeaveReason reason, ClusterTopology topology) {
         return guard.withWriteLock(() -> {
             // If join event had been fired then we need to fire leave event too.
             if (joinEventFired) {

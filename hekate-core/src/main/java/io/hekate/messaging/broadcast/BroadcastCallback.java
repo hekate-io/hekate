@@ -16,33 +16,12 @@
 
 package io.hekate.messaging.broadcast;
 
-import io.hekate.cluster.ClusterNode;
-import io.hekate.messaging.MessagingChannel;
-
 /**
- * Callback for {@link MessagingChannel#broadcast(Object, BroadcastCallback) broadcast(...)} operation.
- *
- * <p>
- * This interface can be used with the {@link MessagingChannel#broadcast(Object, BroadcastCallback)} method and will be notified as
- * follows:
- * </p>
- * <ul>
- * <li>channel submits message to each of the target nodes in parallel</li>
- * <li>for each successful submission the {@link #onSendSuccess(Object, ClusterNode)} method gets notified</li>
- * <li>for each failed submission the {@link #onSendFailure(Object, ClusterNode, Throwable)} method gets notified</li>
- * <li>when message gets submitted to all nodes (either successfully or with a failure) then {@link #onComplete(Throwable,
- * BroadcastResult)} method gets called with an error parameter being {@code null} and {@link BroadcastResult} containing information
- * about
- * partial failures.</li>
- * </ul>
- *
- * <p>
- * <b>Note:</b> Implementations of this interface must be thread safe since its methods can be notified in parallel by multiple threads.
- * </p>
+ * Callback for a {@link Broadcast} operation.
  *
  * @param <T> Base type of a messages.
  *
- * @see MessagingChannel#broadcast(Object, BroadcastCallback)
+ * @see Broadcast#submit(BroadcastCallback)
  * @see BroadcastResult
  */
 @FunctionalInterface
@@ -60,37 +39,4 @@ public interface BroadcastCallback<T> {
      * @param result Broadcast operation result ({@code null} if operation failed).
      */
     void onComplete(Throwable err, BroadcastResult<T> result);
-
-    /**
-     * Called when message was successfully submitted to the cluster node.
-     *
-     * <p>
-     * Note that this method gets called while broadcast is still in progress. Final broadcast results are provided by the {@link
-     * #onComplete(Throwable, BroadcastResult)} method. See the description of {@link BroadcastCallback} interface for the complete
-     * sequence of callback methods notification.
-     * </p>
-     *
-     * @param message Message.
-     * @param node Cluster node.
-     */
-    default void onSendSuccess(T message, ClusterNode node) {
-        // No-op.
-    }
-
-    /**
-     * Called in case of a cluster node communication failure.
-     *
-     * <p>
-     * Note that this method gets called while broadcast is still in progress. Final broadcast results are provided by the {@link
-     * #onComplete(Throwable, BroadcastResult)} method. See the description of {@link BroadcastCallback} interface for the complete
-     * sequence of callback methods notification.
-     * </p>
-     *
-     * @param message Message.
-     * @param node Failed cluster node.
-     * @param error Error cause.
-     */
-    default void onSendFailure(T message, ClusterNode node, Throwable error) {
-        // No-op.
-    }
 }

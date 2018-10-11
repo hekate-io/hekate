@@ -5,15 +5,38 @@ import io.hekate.messaging.MessageMetaData;
 /**
  * Server's outbound message context.
  *
- * @see MessageInterceptor
+ * @param <T> Message type.
+ *
+ * @see ServerMessageInterceptor#interceptServerSend(ServerSendContext)
  */
-public interface ServerSendContext {
+public interface ServerSendContext<T> {
     /**
      * Type of this response.
      *
      * @return Type of this response.
      */
     InboundType type();
+
+    /**
+     * Returns the outbound message.
+     *
+     * @return Outbound message.
+     */
+    T get();
+
+    /**
+     * Returns the inbound context.
+     *
+     * @return Inbound context.
+     */
+    ServerInboundContext<T> inboundContext();
+
+    /**
+     * Overrides the message to be sent with the specified one.
+     *
+     * @param msg New message that should be sent instead of the original one.
+     */
+    void overrideMessage(T msg);
 
     /**
      * Returns {@code true} if this message has meta-data.

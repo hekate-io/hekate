@@ -46,15 +46,6 @@ public class CoordinationFuture extends HekateFuture<CoordinationProcess, Coordi
     }
 
     @Override
-    public CoordinationProcess getUninterruptedly() throws CoordinationException {
-        try {
-            return super.getUninterruptedly();
-        } catch (ExecutionException e) {
-            throw new CoordinationException(e.getMessage(), e.getCause());
-        }
-    }
-
-    @Override
     protected CoordinationFuture newInstance() {
         return new CoordinationFuture();
     }

@@ -17,45 +17,39 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.messaging.broadcast.BroadcastCallback;
+import io.hekate.messaging.broadcast.BroadcastFuture;
 import io.hekate.messaging.broadcast.BroadcastResult;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static java.util.stream.Collectors.toList;
 
 class BroadcastContext<T> implements BroadcastResult<T> {
-    private static final Logger log = LoggerFactory.getLogger(BroadcastContext.class);
-
     private final T message;
 
-    @ToStringIgnore
-    private final BroadcastCallback<T> callback;
+    private final List<ClusterNode> nodes;
 
-    private List<ClusterNode> nodes;
+    @ToStringIgnore
+    private final BroadcastFuture<T> future;
 
     private Map<ClusterNode, Throwable> errors;
 
     @ToStringIgnore
     private int remaining;
 
-    public BroadcastContext(T message, List<ClusterNode> nodes, BroadcastCallback<T> callback) {
+    public BroadcastContext(T message, List<ClusterNode> nodes, BroadcastFuture<T> future) {
         assert message != null : "Message is null.";
         assert nodes != null : "Nodes set is null.";
         assert !nodes.isEmpty() : "Nodes set is empty.";
-        assert callback != null : "Callback is null.";
+        assert future != null : "Future is null.";
 
         this.message = message;
-        this.nodes = nodes;
-        this.callback = callback;
-
-        remaining = nodes.size();
+        this.nodes = new ArrayList<>(nodes); // Copy since node list can be modified.
+        this.remaining = nodes.size();
+        this.future = future;
     }
 
     @Override
@@ -79,37 +73,27 @@ class BroadcastContext<T> implements BroadcastResult<T> {
 
     public boolean forgetNode(ClusterNode node) {
         synchronized (this) {
-            nodes = Collections.unmodifiableList(nodes.stream().filter(n -> !n.equals(node)).collect(toList()));
+            if (nodes.remove(node)) {
+                remaining--;
+            }
 
+            return remaining == 0;
+        }
+    }
+
+    public BroadcastFuture<T> future() {
+        return future;
+    }
+
+    boolean onSendSuccess() {
+        synchronized (this) {
             remaining--;
 
             return remaining == 0;
         }
     }
 
-    boolean onSendSuccess(ClusterNode node) {
-        boolean ready = false;
-
-        synchronized (this) {
-            remaining--;
-
-            if (remaining == 0) {
-                ready = true;
-            }
-        }
-
-        try {
-            callback.onSendSuccess(message, node);
-        } catch (RuntimeException | Error e) {
-            log.error("Got an unexpected runtime error while notifying a broadcast callback.", e);
-        }
-
-        return ready;
-    }
-
     boolean onSendFailure(ClusterNode node, Throwable error) {
-        boolean ready = false;
-
         synchronized (this) {
             if (errors == null) {
                 errors = new HashMap<>(remaining, 1.0f);
@@ -119,26 +103,12 @@ class BroadcastContext<T> implements BroadcastResult<T> {
 
             remaining--;
 
-            if (remaining == 0) {
-                ready = true;
-            }
+            return remaining == 0;
         }
-
-        try {
-            callback.onSendFailure(message, node, error);
-        } catch (RuntimeException | Error e) {
-            log.error("Got an unexpected runtime error while notifying a broadcast callback.", e);
-        }
-
-        return ready;
     }
 
     void complete() {
-        try {
-            callback.onComplete(null, this);
-        } catch (RuntimeException | Error e) {
-            log.error("Got an unexpected runtime error while notifying a broadcast callback.", e);
-        }
+        future.complete(this);
     }
 
     @Override

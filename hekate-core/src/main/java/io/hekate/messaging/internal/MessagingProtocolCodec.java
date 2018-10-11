@@ -40,7 +40,6 @@ import io.hekate.network.NetworkMessage;
 import io.hekate.util.format.ToString;
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.OptionalInt;
 
 import static io.hekate.codec.CodecUtils.readClusterAddress;
 import static io.hekate.codec.CodecUtils.readNodeId;
@@ -123,7 +122,6 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
         int flags = 0;
 
         flags = appendType(flags, type);
-        flags = appendIsRetransmit(flags, msg.isRetransmit());
 
         switch (type) {
             case CONNECT: {
@@ -142,6 +140,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 AffinityNotification<T> notification = msg.cast();
 
                 flags = appendHasTimeout(flags, notification.hasTimeout());
+                flags = appendIsRetransmit(flags, notification.isRetransmit());
                 flags = appendHasMetaData(flags, notification.hasMetaData());
 
                 out.writeByte(flags);
@@ -163,6 +162,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 Notification<T> notification = msg.cast();
 
                 flags = appendHasTimeout(flags, notification.hasTimeout());
+                flags = appendIsRetransmit(flags, notification.isRetransmit());
                 flags = appendHasMetaData(flags, notification.hasMetaData());
 
                 out.writeByte(flags);
@@ -183,6 +183,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 AffinityRequest<T> request = msg.cast();
 
                 flags = appendHasTimeout(flags, request.hasTimeout());
+                flags = appendIsRetransmit(flags, request.isRetransmit());
                 flags = appendHasMetaData(flags, request.hasMetaData());
 
                 out.writeByte(flags);
@@ -206,6 +207,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 Request<T> request = msg.cast();
 
                 flags = appendHasTimeout(flags, request.hasTimeout());
+                flags = appendIsRetransmit(flags, request.isRetransmit());
                 flags = appendHasMetaData(flags, request.hasMetaData());
 
                 out.writeByte(flags);
@@ -227,6 +229,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 AffinityVoidRequest<T> request = msg.cast();
 
                 flags = appendHasTimeout(flags, request.hasTimeout());
+                flags = appendIsRetransmit(flags, request.isRetransmit());
                 flags = appendHasMetaData(flags, request.hasMetaData());
 
                 out.writeByte(flags);
@@ -250,6 +253,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 VoidRequest<T> request = msg.cast();
 
                 flags = appendHasTimeout(flags, request.hasTimeout());
+                flags = appendIsRetransmit(flags, request.isRetransmit());
                 flags = appendHasMetaData(flags, request.hasMetaData());
 
                 out.writeByte(flags);
@@ -271,6 +275,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 AffinitySubscribeRequest<T> request = msg.cast();
 
                 flags = appendHasTimeout(flags, request.hasTimeout());
+                flags = appendIsRetransmit(flags, request.isRetransmit());
                 flags = appendHasMetaData(flags, request.hasMetaData());
 
                 out.writeByte(flags);
@@ -293,6 +298,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 SubscribeRequest<T> request = msg.cast();
 
                 flags = appendHasTimeout(flags, request.hasTimeout());
+                flags = appendIsRetransmit(flags, request.isRetransmit());
                 flags = appendHasMetaData(flags, request.hasMetaData());
 
                 out.writeByte(flags);
@@ -405,7 +411,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
                 MessageMetaData metaData = hasMetaData(flags) ? decodeMetaData(in) : null;
 
-                T payload = decodeAffinityRequestPayload(requestId, affinity, in);
+                T payload = decodeRequestPayload(requestId, in);
 
                 return new AffinityRequest<>(affinity, requestId, retransmit, timeout, payload, metaData);
             }
@@ -426,7 +432,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
                 MessageMetaData metaData = hasMetaData(flags) ? decodeMetaData(in) : null;
 
-                T payload = decodeAffinityRequestPayload(requestId, affinity, in);
+                T payload = decodeRequestPayload(requestId, in);
 
                 return new AffinityVoidRequest<>(affinity, requestId, retransmit, timeout, payload, metaData);
             }
@@ -447,7 +453,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 long timeout = hasTimeout(flags) ? in.readVarLong() : 0;
                 MessageMetaData metaData = hasMetaData(flags) ? decodeMetaData(in) : null;
 
-                T payload = decodeAffinityRequestPayload(requestId, affinity, in);
+                T payload = decodeRequestPayload(requestId, in);
 
                 return new AffinitySubscribeRequest<>(affinity, requestId, retransmit, timeout, payload, metaData);
             }
@@ -516,19 +522,11 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
         return new MessagingChannelId(hiBits, loBits);
     }
 
-    private T decodeAffinityRequestPayload(int requestId, int affinity, DataReader in) throws RequestPayloadDecodeException {
-        try {
-            return delegate.decode(in);
-        } catch (Throwable t) {
-            throw new RequestPayloadDecodeException(requestId, OptionalInt.of(affinity), t);
-        }
-    }
-
     private T decodeRequestPayload(int requestId, DataReader in) throws RequestPayloadDecodeException {
         try {
             return delegate.decode(in);
         } catch (Throwable t) {
-            throw new RequestPayloadDecodeException(requestId, OptionalInt.empty(), t);
+            throw new RequestPayloadDecodeException(requestId, t);
         }
     }
 

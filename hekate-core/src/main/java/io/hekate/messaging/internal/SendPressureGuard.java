@@ -93,23 +93,13 @@ class SendPressureGuard {
             try {
                 // Double check queue size before applying policy.
                 if (queueSize.get() > hiMark) {
-                    switch (policy) {
-                        case BLOCK: {
-                            return block(timeout, msg);
-                        }
-                        case BLOCK_UNINTERRUPTEDLY: {
-                            return blockUninterruptedly(timeout, msg);
-                        }
-                        case FAIL: {
-                            throw new MessageQueueOverflowException("Send queue overflow "
-                                + "[queue-size=" + queueSize + ", low-watermark=" + loMark + ", high-watermark=" + hiMark + ']');
-                        }
-                        case IGNORE:
-                        default: {
-                            throw new IllegalArgumentException("Unexpected overflow policy: " + policy);
-                        }
-                    }
+                    return applyPolicy(timeout, msg);
                 }
+            } catch (InterruptedException | MessageQueueOverflowException | MessageQueueTimeoutException e) {
+                // Dequeue on error.
+                onDequeue();
+
+                throw e;
             } finally {
                 lock.unlock();
             }
@@ -121,7 +111,7 @@ class SendPressureGuard {
     public void onDequeue() {
         int size = queueSize.decrementAndGet();
 
-        if (size > 0 && size - blockedSize.get() == loMark) { // <-- Strict equality so that only a single thread will notify others.
+        if ((size > 0) && (size - blockedSize.get() == loMark)) { // <-- Strict equality so that only a single thread will notify others.
             lock.lock();
 
             try {
@@ -146,6 +136,26 @@ class SendPressureGuard {
 
     public int queueSize() {
         return queueSize.get();
+    }
+
+    private long applyPolicy(long timeout, Object msg) throws InterruptedException, MessageQueueTimeoutException,
+        MessageQueueOverflowException {
+        switch (policy) {
+            case BLOCK: {
+                return block(timeout, msg);
+            }
+            case BLOCK_UNINTERRUPTEDLY: {
+                return blockUninterruptedly(timeout, msg);
+            }
+            case FAIL: {
+                throw new MessageQueueOverflowException("Send queue overflow "
+                    + "[queue-size=" + queueSize + ", low-watermark=" + loMark + ", high-watermark=" + hiMark + ']');
+            }
+            case IGNORE:
+            default: {
+                throw new IllegalArgumentException("Unexpected overflow policy: " + policy);
+            }
+        }
     }
 
     private long block(long timeout, Object msg) throws InterruptedException, MessageQueueTimeoutException {

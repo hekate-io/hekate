@@ -25,9 +25,6 @@ import io.hekate.coordinate.CoordinationRequestCallback;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.unicast.ReplyDecision;
-import io.hekate.messaging.unicast.Response;
-import io.hekate.messaging.unicast.ResponseCallback;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -40,7 +37,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.hekate.messaging.unicast.ReplyDecision.COMPLETE;
+import static io.hekate.messaging.unicast.ReplyDecision.ACCEPT;
 import static io.hekate.messaging.unicast.ReplyDecision.REJECT;
 
 class DefaultCoordinationMember implements CoordinationMember {
@@ -91,7 +88,6 @@ class DefaultCoordinationMember implements CoordinationMember {
         this.async = async;
 
         this.channel = channel.forNode(node)
-            .withAffinity(processName)
             .withFailover(new FailoverPolicyBuilder()
                 // Retry to death.
                 .withRetryUntil(ctx -> !disposed)
@@ -179,36 +175,36 @@ class DefaultCoordinationMember implements CoordinationMember {
         }
 
         if (enqueued) {
-            channel.request(request, new ResponseCallback<CoordinationProtocol>() {
-                @Override
-                public ReplyDecision accept(Throwable err, Response<CoordinationProtocol> reply) {
+            channel.newRequest(request)
+                .withAffinity(processName)
+                .until((err, rsp) -> {
                     if (future.isDone()) {
                         if (DEBUG) {
-                            log.debug("Skipped response [from={}, response={}]", node, reply);
+                            log.debug("Skipped response [from={}, response={}]", node, rsp);
                         }
 
-                        return COMPLETE;
+                        return ACCEPT;
                     } else if (err != null) {
                         if (DEBUG) {
                             log.debug("Got an error [from={}, error={}, request={}]", node, err.toString(), request);
                         }
 
                         return REJECT;
-                    } else if (reply.is(CoordinationProtocol.Reject.class)) {
+                    } else if (rsp.is(CoordinationProtocol.Reject.class)) {
                         if (DEBUG) {
                             log.debug("Got a reject [from={}, request={}]", node, request);
                         }
 
                         return REJECT;
                     } else {
-                        if (reply.is(CoordinationProtocol.Confirm.class)) {
+                        if (rsp.is(CoordinationProtocol.Confirm.class)) {
                             if (DEBUG) {
                                 log.debug("Got a confirmation [from={}, request={}]", node, request);
                             }
 
                             future.complete(null);
                         } else {
-                            CoordinationProtocol.Response response = reply.get(CoordinationProtocol.Response.class);
+                            CoordinationProtocol.Response response = rsp.get(CoordinationProtocol.Response.class);
 
                             if (DEBUG) {
                                 log.debug("Got a response [from={}, response={}]", node, response.response());
@@ -217,12 +213,10 @@ class DefaultCoordinationMember implements CoordinationMember {
                             future.complete(response.response());
                         }
 
-                        return COMPLETE;
+                        return ACCEPT;
                     }
-                }
-
-                @Override
-                public void onComplete(Throwable err, Response<CoordinationProtocol> rsp) {
+                })
+                .submit((err, rsp) -> {
                     unregister(future);
 
                     if (DEBUG) {
@@ -230,8 +224,7 @@ class DefaultCoordinationMember implements CoordinationMember {
                             log.debug("Failed to submit coordination request [request={}]", request, err);
                         }
                     }
-                }
-            });
+                });
         } else {
             future.cancel(false);
         }

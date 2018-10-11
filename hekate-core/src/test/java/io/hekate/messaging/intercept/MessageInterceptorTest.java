@@ -7,6 +7,7 @@ import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.internal.MessagingServiceTestBase;
 import io.hekate.messaging.internal.TestChannel;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
@@ -35,97 +36,95 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
             c.withReceiver(msg -> msg.reply(msg.get() + "-reply"));
             c.withInterceptor(new AllMessageInterceptor<String>() {
                 @Override
-                public String beforeClientSend(String msg, ClientSendContext sndCtx) {
-                    assertSame(OutboundType.REQUEST, sndCtx.type());
-                    assertNotNull(sndCtx.receiver());
-                    assertNotNull(sndCtx.channelName());
-                    assertNotNull(sndCtx.topology());
-                    assertFalse(sndCtx.hasMetaData());
+                public void interceptClientSend(ClientSendContext<String> ctx) {
+                    assertNotNull(ctx.get());
+                    assertSame(OutboundType.REQUEST, ctx.type());
+                    assertNotNull(ctx.receiver());
+                    assertNotNull(ctx.channelName());
+                    assertNotNull(ctx.topology());
+                    assertFalse(ctx.hasMetaData());
 
                     // Store attribute to verify later.
-                    sndCtx.setAttribute("test-attr", "test-val");
+                    ctx.setAttribute("test-attr", "test-val");
 
                     // Store meta-data to verify on the server side.
-                    sndCtx.metaData().set(TEST_KEY, "client-meta-val");
-                    assertTrue(sndCtx.hasMetaData());
+                    ctx.metaData().set(TEST_KEY, "client-meta-val");
+                    assertTrue(ctx.hasMetaData());
 
-                    return msg + "-CS-" + sndCtx.hasAffinity() + "-" + sndCtx.affinityKey();
+                    ctx.overrideMessage(ctx.get() + "-CS-" + ctx.hasAffinity() + "-" + ctx.affinityKey());
                 }
 
                 @Override
-                public String beforeClientReceiveResponse(String rsp, ClientReceiveContext rcvCtx, ClientSendContext sndCtx) {
-                    assertNotNull(rsp);
-                    assertSame(InboundType.FINAL_RESPONSE, rcvCtx.type());
+                public void interceptClientReceiveResponse(ClientReceiveContext<String> ctx) {
+                    assertNotNull(ctx.get());
+                    assertSame(InboundType.FINAL_RESPONSE, ctx.type());
 
-                    assertSame(OutboundType.REQUEST, sndCtx.type());
-                    assertNotNull(sndCtx.receiver());
-                    assertNotNull(sndCtx.channelName());
-                    assertNotNull(sndCtx.topology());
+                    assertSame(OutboundType.REQUEST, ctx.outboundContext().type());
+                    assertNotNull(ctx.outboundContext().receiver());
+                    assertNotNull(ctx.outboundContext().channelName());
+                    assertNotNull(ctx.outboundContext().topology());
 
                     // Verify attribute.
-                    assertEquals("test-val", sndCtx.getAttribute("test-attr"));
+                    assertEquals("test-val", ctx.outboundContext().getAttribute("test-attr"));
 
                     // Verify meta-data.
-                    assertTrue(rcvCtx.readMetaData().isPresent());
-                    assertEquals("server-meta-val", rcvCtx.readMetaData().get().get(TEST_KEY));
+                    assertTrue(ctx.readMetaData().isPresent());
+                    assertEquals("server-meta-val", ctx.readMetaData().get().get(TEST_KEY));
 
-                    return rsp + "-CR";
+                    ctx.overrideMessage(ctx.get() + "-CR");
                 }
 
                 @Override
-                public String beforeServerReceive(String msg, ServerReceiveContext rcvCtx) {
-                    assertSame(OutboundType.REQUEST, rcvCtx.type());
-                    assertNotNull(rcvCtx.from());
-                    assertNotNull(rcvCtx.channelName());
+                public void interceptServerReceive(ServerReceiveContext<String> ctx) {
+                    assertNotNull(ctx.get());
+                    assertSame(OutboundType.REQUEST, ctx.type());
+                    assertNotNull(ctx.from());
+                    assertNotNull(ctx.channelName());
 
                     // Store attribute to verify later.
-                    rcvCtx.setAttribute("test-attr", "test-val");
+                    ctx.setAttribute("test-attr", "test-val");
 
                     // Verify meta-data.
-                    assertTrue(rcvCtx.readMetaData().isPresent());
-                    assertEquals("client-meta-val", rcvCtx.readMetaData().get().get(TEST_KEY));
+                    assertTrue(ctx.readMetaData().isPresent());
+                    assertEquals("client-meta-val", ctx.readMetaData().get().get(TEST_KEY));
 
-                    return msg + "-SR";
+                    ctx.overrideMessage(ctx.get() + "-SR");
                 }
 
                 @Override
-                public void onServerReceiveComplete(String msg, ServerReceiveContext rcvCtx) {
-                    assertSame(OutboundType.REQUEST, rcvCtx.type());
-                    assertNotNull(rcvCtx.from());
-                    assertNotNull(rcvCtx.channelName());
+                public void interceptServerReceiveComplete(ServerInboundContext<String> ctx) {
+                    assertSame(OutboundType.REQUEST, ctx.type());
+                    assertNotNull(ctx.from());
+                    assertNotNull(ctx.channelName());
 
                     // Verify attribute.
-                    assertEquals("test-val", rcvCtx.getAttribute("test-attr"));
+                    assertEquals("test-val", ctx.getAttribute("test-attr"));
 
-                    // Verify meta-data.
-                    assertTrue(rcvCtx.readMetaData().isPresent());
-                    assertEquals("client-meta-val", rcvCtx.readMetaData().get().get(TEST_KEY));
-
-                    lastServerReceiveComplete.compareAndSet(null, msg);
+                    lastServerReceiveComplete.compareAndSet(null, ctx.get());
                 }
 
                 @Override
-                public String beforeServerSend(String rsp, ServerSendContext sndCtx, ServerReceiveContext rcvCtx) {
-                    assertNotNull(rsp);
-                    assertSame(InboundType.FINAL_RESPONSE, sndCtx.type());
-                    assertFalse(sndCtx.hasMetaData());
+                public void interceptServerSend(ServerSendContext<String> ctx) {
+                    assertNotNull(ctx.get());
+                    assertSame(InboundType.FINAL_RESPONSE, ctx.type());
+                    assertFalse(ctx.hasMetaData());
 
-                    assertNotNull(rcvCtx.channelName());
-                    assertSame(OutboundType.REQUEST, rcvCtx.type());
-                    assertNotNull(rcvCtx.from());
+                    assertNotNull(ctx.inboundContext().channelName());
+                    assertSame(OutboundType.REQUEST, ctx.inboundContext().type());
+                    assertNotNull(ctx.inboundContext().from());
 
                     // Verify attribute.
-                    assertEquals("test-val", rcvCtx.getAttribute("test-attr"));
+                    assertEquals("test-val", ctx.inboundContext().getAttribute("test-attr"));
 
                     // Store meta-data to verify on the client side.
-                    sndCtx.metaData().set(TEST_KEY, "server-meta-val");
-                    assertTrue(sndCtx.hasMetaData());
+                    ctx.metaData().set(TEST_KEY, "server-meta-val");
+                    assertTrue(ctx.hasMetaData());
 
-                    return rsp + "-SS";
+                    ctx.overrideMessage(ctx.get() + "-SS");
                 }
 
                 @Override
-                public void onClientReceiveConfirmation(ClientSendContext sndCtx) {
+                public void interceptClientReceiveConfirmation(ClientOutboundContext<String> ctx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
             });
@@ -133,38 +132,30 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
 
         for (TestChannel from : channels) {
             for (TestChannel to : channels) {
-                String msg1 = "test1-" + from.nodeId();
-                String msg2 = "test2-" + from.nodeId();
+                String msg = "test-" + from.nodeId();
 
                 MessagingChannel<String> channel = from.get().forNode(to.nodeId());
 
                 // No affinity.
-                assertEquals(msg1 + "-CS-false-null-SR-reply-SS-CR", channel.request(msg1).response());
+                assertEquals(msg + "-CS-false-null-SR-reply-SS-CR", channel.request(msg).result());
                 busyWait("receive complete", () ->
-                    (msg1 + "-CS-false-null-SR").equals(lastServerReceiveComplete.getAndSet(null))
+                    (msg + "-CS-false-null-SR").equals(lastServerReceiveComplete.getAndSet(null))
                 );
 
-                assertEquals(msg2 + "-CS-false-null-SR-reply-SS-CR", channel.request(msg2).responseUninterruptedly());
-                busyWait("receive complete", () ->
-                    (msg2 + "-CS-false-null-SR").equals(lastServerReceiveComplete.getAndSet(null))
-                );
-
-                to.assertReceived(msg1 + "-CS-false-null-SR");
-                to.assertReceived(msg2 + "-CS-false-null-SR");
+                to.assertReceived(msg + "-CS-false-null-SR");
 
                 // With affinity.
-                assertEquals(msg1 + "-CS-true-1-SR-reply-SS-CR", channel.withAffinity(1).request(msg1).response());
-                busyWait("receive complete", () ->
-                    (msg1 + "-CS-true-1-SR").equals(lastServerReceiveComplete.getAndSet(null))
+                assertEquals(msg + "-CS-true-1-SR-reply-SS-CR", channel.newRequest(msg)
+                    .withAffinity(1)
+                    .submit()
+                    .result()
                 );
 
-                assertEquals(msg2 + "-CS-true-1-SR-reply-SS-CR", channel.withAffinity(1).request(msg2).responseUninterruptedly());
                 busyWait("receive complete", () ->
-                    (msg2 + "-CS-true-1-SR").equals(lastServerReceiveComplete.getAndSet(null))
+                    (msg + "-CS-true-1-SR").equals(lastServerReceiveComplete.getAndSet(null))
                 );
 
-                to.assertReceived(msg1 + "-CS-true-1-SR");
-                to.assertReceived(msg2 + "-CS-true-1-SR");
+                to.assertReceived(msg + "-CS-true-1-SR");
             }
         }
     }
@@ -189,7 +180,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                     get(channel.request("msg"))
                 );
 
-                verify(interceptor).onClientReceiveError(ArgumentMatchers.same(err.getCause()), any());
+                verify(interceptor).interceptClientReceiveError(any(), ArgumentMatchers.same(err.getCause()));
             }
         }
     }
@@ -206,100 +197,99 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
             });
             c.withInterceptor(new AllMessageInterceptor<String>() {
                 @Override
-                public String beforeClientSend(String msg, ClientSendContext sndCtx) {
-                    assertSame(OutboundType.SUBSCRIBE, sndCtx.type());
-                    assertNotNull(sndCtx.receiver());
-                    assertNotNull(sndCtx.topology());
+                public void interceptClientSend(ClientSendContext<String> ctx) {
+                    assertNotNull(ctx.get());
+                    assertSame(OutboundType.SUBSCRIBE, ctx.type());
+                    assertNotNull(ctx.receiver());
+                    assertNotNull(ctx.topology());
 
                     // Store attribute to verify later.
-                    sndCtx.setAttribute("test-attr", "test-val");
+                    ctx.setAttribute("test-attr", "test-val");
 
                     // Store meta-data to verify on the server side.
-                    sndCtx.metaData().set(TEST_KEY, "client-meta-val");
-                    assertTrue(sndCtx.hasMetaData());
+                    ctx.metaData().set(TEST_KEY, "client-meta-val");
+                    assertTrue(ctx.hasMetaData());
 
-                    return msg + "-CS-" + sndCtx.hasAffinity() + "-" + sndCtx.affinityKey();
+                    ctx.overrideMessage(ctx.get() + "-CS-" + ctx.hasAffinity() + "-" + ctx.affinityKey());
                 }
 
                 @Override
-                public String beforeClientReceiveResponse(String rsp, ClientReceiveContext rcvCtx, ClientSendContext sndCtx) {
-                    assertNotNull(rsp);
+                public void interceptClientReceiveResponse(ClientReceiveContext<String> ctx) {
+                    assertNotNull(ctx.get());
 
-                    if (rsp.contains("-part")) {
-                        assertSame(InboundType.RESPONSE_CHUNK, rcvCtx.type());
+                    if (ctx.get().contains("-part")) {
+                        assertSame(InboundType.RESPONSE_CHUNK, ctx.type());
                     } else {
-                        assertSame(InboundType.FINAL_RESPONSE, rcvCtx.type());
+                        assertSame(InboundType.FINAL_RESPONSE, ctx.type());
                     }
 
-                    assertSame(OutboundType.SUBSCRIBE, sndCtx.type());
-                    assertNotNull(sndCtx.receiver());
-                    assertNotNull(sndCtx.topology());
+                    assertSame(OutboundType.SUBSCRIBE, ctx.outboundContext().type());
+                    assertNotNull(ctx.outboundContext().receiver());
+                    assertNotNull(ctx.outboundContext().topology());
 
                     // Verify attribute.
-                    assertEquals("test-val", sndCtx.getAttribute("test-attr"));
+                    assertEquals("test-val", ctx.outboundContext().getAttribute("test-attr"));
 
                     // Verify meta-data.
-                    assertTrue(rcvCtx.readMetaData().isPresent());
-                    assertEquals("server-meta-val" + rcvCtx.type(), rcvCtx.readMetaData().get().get(TEST_KEY));
+                    assertTrue(ctx.readMetaData().isPresent());
+                    assertEquals("server-meta-val" + ctx.type(), ctx.readMetaData().get().get(TEST_KEY));
 
-                    return rsp + "-CR";
+                    ctx.overrideMessage(ctx.get() + "-CR");
                 }
 
                 @Override
-                public String beforeServerReceive(String msg, ServerReceiveContext rcvCtx) {
-                    assertSame(OutboundType.SUBSCRIBE, rcvCtx.type());
-                    assertNotNull(rcvCtx.from());
+                public void interceptServerReceive(ServerReceiveContext<String> ctx) {
+                    assertNotNull(ctx.get());
+                    assertSame(OutboundType.SUBSCRIBE, ctx.type());
+                    assertNotNull(ctx.from());
 
                     // Store attribute to verify later.
-                    rcvCtx.setAttribute("test-attr", "test-val");
+                    ctx.setAttribute("test-attr", "test-val");
 
                     // Verify meta-data.
-                    assertTrue(rcvCtx.readMetaData().isPresent());
-                    assertEquals("client-meta-val", rcvCtx.readMetaData().get().get(TEST_KEY));
+                    assertTrue(ctx.readMetaData().isPresent());
+                    assertEquals("client-meta-val", ctx.readMetaData().get().get(TEST_KEY));
 
-                    return msg + "-SR";
+                    ctx.overrideMessage(ctx.get() + "-SR");
                 }
 
                 @Override
-                public void onServerReceiveComplete(String msg, ServerReceiveContext rcvCtx) {
-                    assertSame(OutboundType.SUBSCRIBE, rcvCtx.type());
-                    assertNotNull(rcvCtx.from());
+                public void interceptServerReceiveComplete(ServerInboundContext<String> ctx) {
+                    assertNotNull(ctx.get());
+                    assertSame(OutboundType.SUBSCRIBE, ctx.type());
+                    assertNotNull(ctx.from());
 
-                    lastServerReceiveComplete.compareAndSet(null, msg);
+                    lastServerReceiveComplete.compareAndSet(null, ctx.get());
 
                     // Verify attribute.
-                    assertEquals("test-val", rcvCtx.getAttribute("test-attr"));
-
-                    // Verify meta-data.
-                    assertTrue(rcvCtx.readMetaData().isPresent());
-                    assertEquals("client-meta-val", rcvCtx.readMetaData().get().get(TEST_KEY));
+                    assertEquals("test-val", ctx.getAttribute("test-attr"));
                 }
 
                 @Override
-                public String beforeServerSend(String rsp, ServerSendContext sndCtx, ServerReceiveContext rcvCtx) {
-                    assertNotNull(rsp);
+                public void interceptServerSend(ServerSendContext<String> ctx) {
+                    assertNotNull(ctx.get());
 
-                    if (rsp.contains("-part")) {
-                        assertSame(InboundType.RESPONSE_CHUNK, sndCtx.type());
+                    if (ctx.get().contains("-part")) {
+                        assertSame(InboundType.RESPONSE_CHUNK, ctx.type());
                     } else {
-                        assertSame(InboundType.FINAL_RESPONSE, sndCtx.type());
+                        assertSame(InboundType.FINAL_RESPONSE, ctx.type());
                     }
 
-                    assertNotNull(rcvCtx.from());
-                    assertSame(OutboundType.SUBSCRIBE, rcvCtx.type());
+                    assertNotNull(ctx.inboundContext().from());
+                    assertSame(OutboundType.SUBSCRIBE, ctx.inboundContext().type());
 
                     // Verify attribute.
-                    assertEquals("test-val", rcvCtx.getAttribute("test-attr"));
+                    assertEquals("test-val", ctx.inboundContext().getAttribute("test-attr"));
 
                     // Store meta-data to verify on the client side.
-                    sndCtx.metaData().set(TEST_KEY, "server-meta-val" + sndCtx.type());
-                    assertTrue(sndCtx.hasMetaData());
+                    ctx.metaData().set(TEST_KEY, "server-meta-val" + ctx.type());
+                    assertTrue(ctx.hasMetaData());
 
-                    return rsp + "-SS";
+                    ctx.overrideMessage(ctx.get() + "-SS");
                 }
 
                 @Override
-                public void onClientReceiveConfirmation(ClientSendContext sndCtx) {
+                public void interceptClientReceiveConfirmation(ClientOutboundContext<String> ctx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
             });
@@ -312,7 +302,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 String msg = "test1-" + from.nodeId();
 
                 // No affinity.
-                List<String> replies = get(channel.subscribe(msg));
+                List<String> replies = channel.newSubscribe(msg).collectAll(3, TimeUnit.SECONDS);
 
                 busyWait("receive complete", () ->
                     (msg + "-CS-false-null-SR").equals(lastServerReceiveComplete.getAndSet(null))
@@ -325,7 +315,9 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 to.assertReceived(msg + "-CS-false-null-SR");
 
                 // With affinity.
-                List<String> affinityReplies = get(channel.withAffinity(1).subscribe(msg));
+                List<String> affinityReplies = channel.newSubscribe(msg)
+                    .withAffinity(1)
+                    .collectAll(3, TimeUnit.SECONDS);
 
                 busyWait("receive complete", () ->
                     (msg + "-CS-true-1-SR").equals(lastServerReceiveComplete.getAndSet(null))
@@ -357,10 +349,10 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 MessagingChannel<String> channel = from.get().forNode(to.nodeId());
 
                 MessagingFutureException err = expect(MessagingFutureException.class, () ->
-                    get(channel.subscribe("msg"))
+                    channel.newSubscribe("msg").collectAll(3, TimeUnit.SECONDS)
                 );
 
-                verify(interceptor).onClientReceiveError(ArgumentMatchers.same(err.getCause()), any());
+                verify(interceptor).interceptClientReceiveError(any(), ArgumentMatchers.same(err.getCause()));
             }
         }
     }
@@ -372,62 +364,61 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
         List<TestChannel> channels = createAndJoinChannels(3, c ->
             c.withInterceptor(new AllMessageInterceptor<String>() {
                 @Override
-                public String beforeClientSend(String msg, ClientSendContext sndCtx) {
-                    assertSame(OutboundType.SEND_NO_ACK, sndCtx.type());
-                    assertNotNull(sndCtx.receiver());
-                    assertNotNull(sndCtx.topology());
-                    assertNotNull(sndCtx.channelName());
+                public void interceptClientSend(ClientSendContext<String> ctx) {
+                    assertNotNull(ctx.get());
+                    assertSame(OutboundType.SEND_NO_ACK, ctx.type());
+                    assertNotNull(ctx.receiver());
+                    assertNotNull(ctx.topology());
+                    assertNotNull(ctx.channelName());
 
                     // Store meta-data to very on the server side.
-                    sndCtx.metaData().set(TEST_KEY, "client-meta-val");
-                    assertTrue(sndCtx.hasMetaData());
+                    ctx.metaData().set(TEST_KEY, "client-meta-val");
+                    assertTrue(ctx.hasMetaData());
 
-                    return msg + "-CS";
+                    ctx.overrideMessage(ctx.get() + "-CS");
                 }
 
                 @Override
-                public String beforeServerReceive(String msg, ServerReceiveContext rcvCtx) {
-                    assertSame(OutboundType.SEND_NO_ACK, rcvCtx.type());
-                    assertNotNull(rcvCtx.from());
-                    assertNotNull(rcvCtx.channelName());
+                public void interceptServerReceive(ServerReceiveContext<String> ctx) {
+                    assertNotNull(ctx.get());
+                    assertSame(OutboundType.SEND_NO_ACK, ctx.type());
+                    assertNotNull(ctx.from());
+                    assertNotNull(ctx.channelName());
 
                     // Verify meta-data.
-                    assertTrue(rcvCtx.readMetaData().isPresent());
-                    assertEquals("client-meta-val", rcvCtx.readMetaData().get().get(TEST_KEY));
+                    assertTrue(ctx.readMetaData().isPresent());
+                    assertEquals("client-meta-val", ctx.readMetaData().get().get(TEST_KEY));
 
-                    return msg + "-SR";
+                    ctx.overrideMessage(ctx.get() + "-SR");
                 }
 
                 @Override
-                public void onServerReceiveComplete(String msg, ServerReceiveContext rcvCtx) {
-                    assertSame(OutboundType.SEND_NO_ACK, rcvCtx.type());
-                    assertNotNull(rcvCtx.from());
-                    assertNotNull(rcvCtx.channelName());
+                public void interceptServerReceiveComplete(ServerInboundContext<String> ctx) {
+                    assertNotNull(ctx.get());
+                    assertSame(OutboundType.SEND_NO_ACK, ctx.type());
+                    assertNotNull(ctx.from());
+                    assertNotNull(ctx.channelName());
 
-                    // Verify meta-data.
-                    assertTrue(rcvCtx.readMetaData().isPresent());
-                    assertEquals("client-meta-val", rcvCtx.readMetaData().get().get(TEST_KEY));
-
-                    lastServerReceiveComplete.compareAndSet(null, msg);
+                    lastServerReceiveComplete.compareAndSet(null, ctx.get());
                 }
 
                 @Override
-                public void onClientReceiveConfirmation(ClientSendContext sndCtx) {
+                public void interceptClientReceiveConfirmation(ClientOutboundContext<String> ctx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
 
                 @Override
-                public String beforeClientReceiveResponse(String rsp, ClientReceiveContext rcvCtx, ClientSendContext sndCtx) {
+                public void interceptClientReceiveResponse(ClientReceiveContext<String> ctx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
 
                 @Override
-                public void onClientReceiveError(Throwable err, ClientSendContext sndCtx) {
+                public void interceptClientReceiveError(ClientOutboundContext<String> ctx, Throwable err) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
 
                 @Override
-                public String beforeServerSend(String rsp, ServerSendContext sndCtx, ServerReceiveContext rcvCtx) {
+                public void interceptServerSend(ServerSendContext<String> ctx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
             })
@@ -435,27 +426,22 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
 
         for (TestChannel from : channels) {
             for (TestChannel to : channels) {
-                String msg1 = "test1-" + from.nodeId();
-                String msg2 = "test2-" + from.nodeId();
+                String msg = "test-" + from.nodeId();
 
-                from.get().forNode(to.nodeId()).send(msg1).get();
-
-                busyWait("receive complete", () ->
-                    (msg1 + "-CS-SR").equals(lastServerReceiveComplete.getAndSet(null))
-                );
-
-                from.get().forNode(to.nodeId()).send(msg2).getUninterruptedly();
+                from.get().forNode(to.nodeId())
+                    .newSend(msg)
+                    .submit()
+                    .get();
 
                 busyWait("receive complete", () ->
-                    (msg2 + "-CS-SR").equals(lastServerReceiveComplete.getAndSet(null))
+                    (msg + "-CS-SR").equals(lastServerReceiveComplete.getAndSet(null))
                 );
             }
         }
 
         for (TestChannel to : channels) {
             for (TestChannel from : channels) {
-                to.awaitForMessage("test1-" + from.nodeId() + "-CS-SR");
-                to.awaitForMessage("test2-" + from.nodeId() + "-CS-SR");
+                to.awaitForMessage("test-" + from.nodeId() + "-CS-SR");
             }
         }
     }
@@ -467,70 +453,70 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
         List<TestChannel> channels = createAndJoinChannels(3, c ->
             c.withInterceptor(new AllMessageInterceptor<String>() {
                 @Override
-                public String beforeClientSend(String msg, ClientSendContext sndCtx) {
-                    assertSame(OutboundType.SEND_WITH_ACK, sndCtx.type());
-                    assertNotNull(sndCtx.receiver());
-                    assertNotNull(sndCtx.topology());
-                    assertNotNull(sndCtx.channelName());
-                    assertFalse(sndCtx.hasMetaData());
+                public void interceptClientSend(ClientSendContext<String> ctx) {
+                    assertNotNull(ctx.get());
+                    assertSame(OutboundType.SEND_WITH_ACK, ctx.type());
+                    assertNotNull(ctx.receiver());
+                    assertNotNull(ctx.topology());
+                    assertNotNull(ctx.channelName());
+                    assertFalse(ctx.hasMetaData());
 
                     // Store attribute to verify later.
-                    sndCtx.setAttribute("test-attr", "test-val");
+                    ctx.setAttribute("test-attr", "test-val");
 
                     // Store meta-data to very on the server side.
-                    sndCtx.metaData().set(TEST_KEY, "client-meta-val");
-                    assertTrue(sndCtx.hasMetaData());
+                    ctx.metaData().set(TEST_KEY, "client-meta-val");
+                    assertTrue(ctx.hasMetaData());
 
-                    return msg + "-CS";
+                    ctx.overrideMessage(ctx.get() + "-CS");
                 }
 
                 @Override
-                public void onClientReceiveConfirmation(ClientSendContext sndCtx) {
-                    assertSame(OutboundType.SEND_WITH_ACK, sndCtx.type());
-                    assertNotNull(sndCtx.receiver());
-                    assertNotNull(sndCtx.topology());
-                    assertNotNull(sndCtx.channelName());
-                    assertEquals("test-val", sndCtx.getAttribute("test-attr"));
+                public void interceptClientReceiveConfirmation(ClientOutboundContext<String> ctx) {
+                    assertNotNull(ctx.get());
+                    assertSame(OutboundType.SEND_WITH_ACK, ctx.type());
+                    assertNotNull(ctx.receiver());
+                    assertNotNull(ctx.topology());
+                    assertNotNull(ctx.channelName());
+                    assertEquals("test-val", ctx.getAttribute("test-attr"));
                 }
 
                 @Override
-                public String beforeServerReceive(String msg, ServerReceiveContext rcvCtx) {
-                    assertSame(OutboundType.SEND_WITH_ACK, rcvCtx.type());
-                    assertNotNull(rcvCtx.channelName());
-                    assertNotNull(rcvCtx.from());
+                public void interceptServerReceive(ServerReceiveContext<String> ctx) {
+                    assertNotNull(ctx.get());
+                    assertSame(OutboundType.SEND_WITH_ACK, ctx.type());
+                    assertNotNull(ctx.channelName());
+                    assertNotNull(ctx.from());
 
                     // Verify meta-data.
-                    assertTrue(rcvCtx.readMetaData().isPresent());
-                    assertEquals("client-meta-val", rcvCtx.readMetaData().get().get(TEST_KEY));
+                    assertTrue(ctx.readMetaData().isPresent());
+                    assertEquals("client-meta-val", ctx.readMetaData().get().get(TEST_KEY));
 
-                    return msg + "-SR";
+                    ctx.overrideMessage(ctx.get() + "-SR");
                 }
 
                 @Override
-                public void onServerReceiveComplete(String msg, ServerReceiveContext rcvCtx) {
-                    assertSame(OutboundType.SEND_WITH_ACK, rcvCtx.type());
-                    assertNotNull(rcvCtx.channelName());
-                    assertNotNull(rcvCtx.from());
+                public void interceptServerReceiveComplete(ServerInboundContext<String> ctx) {
+                    assertNotNull(ctx.get());
+                    assertSame(OutboundType.SEND_WITH_ACK, ctx.type());
+                    assertNotNull(ctx.channelName());
+                    assertNotNull(ctx.from());
 
-                    // Verify meta-data.
-                    assertTrue(rcvCtx.readMetaData().isPresent());
-                    assertEquals("client-meta-val", rcvCtx.readMetaData().get().get(TEST_KEY));
-
-                    lastServerReceiveComplete.compareAndSet(null, msg);
+                    lastServerReceiveComplete.compareAndSet(null, ctx.get());
                 }
 
                 @Override
-                public void onClientReceiveError(Throwable err, ClientSendContext sndCtx) {
+                public void interceptClientReceiveError(ClientOutboundContext<String> ctx, Throwable err) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
 
                 @Override
-                public String beforeClientReceiveResponse(String rsp, ClientReceiveContext rcvCtx, ClientSendContext sndCtx) {
+                public void interceptClientReceiveResponse(ClientReceiveContext<String> ctx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
 
                 @Override
-                public String beforeServerSend(String rsp, ServerSendContext sndCtx, ServerReceiveContext rcvCtx) {
+                public void interceptServerSend(ServerSendContext<String> ctx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
             })
@@ -538,27 +524,23 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
 
         for (TestChannel from : channels) {
             for (TestChannel to : channels) {
-                String msg1 = "test1-" + from.nodeId();
-                String msg2 = "test2-" + from.nodeId();
+                String msg = "test-" + from.nodeId();
 
-                from.get().forNode(to.nodeId()).withConfirmReceive(true).send(msg1).get();
-
-                busyWait("receive complete", () ->
-                    (msg1 + "-CS-SR").equals(lastServerReceiveComplete.getAndSet(null))
-                );
-
-                from.get().forNode(to.nodeId()).withConfirmReceive(true).send(msg2).getUninterruptedly();
+                from.get().forNode(to.nodeId())
+                    .newSend(msg)
+                    .withConfirmReceive(true)
+                    .submit()
+                    .get();
 
                 busyWait("receive complete", () ->
-                    (msg2 + "-CS-SR").equals(lastServerReceiveComplete.getAndSet(null))
+                    (msg + "-CS-SR").equals(lastServerReceiveComplete.getAndSet(null))
                 );
             }
         }
 
         for (TestChannel to : channels) {
             for (TestChannel from : channels) {
-                to.awaitForMessage("test1-" + from.nodeId() + "-CS-SR");
-                to.awaitForMessage("test2-" + from.nodeId() + "-CS-SR");
+                to.awaitForMessage("test-" + from.nodeId() + "-CS-SR");
             }
         }
     }
@@ -577,13 +559,13 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
 
         for (TestChannel from : channels) {
             for (TestChannel to : channels) {
-                MessagingChannel<String> channel = from.get().forNode(to.nodeId()).withConfirmReceive(true);
+                MessagingChannel<String> channel = from.get().forNode(to.nodeId());
 
                 MessagingFutureException err = expect(MessagingFutureException.class, () ->
-                    get(channel.send("msg"))
+                    get(channel.newSend("msg").withConfirmReceive(true).submit())
                 );
 
-                verify(interceptor).onClientReceiveError(ArgumentMatchers.same(err.getCause()), any());
+                verify(interceptor).interceptClientReceiveError(any(), ArgumentMatchers.same(err.getCause()));
             }
         }
     }

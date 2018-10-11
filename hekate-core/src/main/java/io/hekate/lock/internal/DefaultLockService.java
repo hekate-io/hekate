@@ -167,23 +167,20 @@ public class DefaultLockService implements LockService, InitializingService, Dep
         return Collections.singleton(
             MessagingChannelConfig.of(LockProtocol.class)
                 .withName(CHANNEL_NAME)
-                .withLogCategory(getClass().getName())
+                .withLogCategory(LockProtocol.class.getName())
                 .withNioThreads(nioThreads)
                 .withWorkerThreads(workerThreads)
                 .withMessageCodec(new SingletonCodecFactory<>(new LockProtocolCodec()))
                 .withBackupNodes(0)
                 .withInterceptor(new ClientMessageInterceptor<LockProtocol>() {
                     @Override
-                    public LockProtocol beforeClientSend(LockProtocol msg, ClientSendContext ctx) {
-                        if (msg instanceof LockRequestBase) {
-                            LockRequestBase req = (LockRequestBase)msg;
+                    public void interceptClientSend(ClientSendContext<LockProtocol> ctx) {
+                        if (ctx.get() instanceof LockRequestBase) {
+                            LockRequestBase req = (LockRequestBase)ctx.get();
 
                             // Store routed topology within the lock request so that it would be possible
                             // to detect routing collisions (in case of cluster topology changes) on the receiving side.
-                            return req.withTopology(ctx.topology().hash());
-                        } else {
-                            // Do not modify the original message.
-                            return msg;
+                            ctx.overrideMessage(req.withTopology(ctx.topology().hash()));
                         }
                     }
                 })

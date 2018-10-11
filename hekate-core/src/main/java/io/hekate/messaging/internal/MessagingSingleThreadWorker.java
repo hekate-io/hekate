@@ -16,66 +16,17 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.util.async.AsyncUtils;
-import io.hekate.util.async.Waiting;
-import io.hekate.util.format.ToString;
-import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-class MessagingSingleThreadWorker implements MessagingWorker {
-    private final ThreadPoolExecutor executor;
-
-    private final ScheduledExecutorService timer;
-
-    public MessagingSingleThreadWorker(ThreadFactory factory, ScheduledExecutorService timer) {
-        assert timer != null : "Timer is null.";
-
-        this.timer = timer;
-
-        this.executor = new ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), factory);
+class MessagingSingleThreadWorker extends MessagingWorkerBase {
+    public MessagingSingleThreadWorker(ThreadFactory factory) {
+        super(newSingleThreadExecutor(factory));
     }
 
-    @Override
-    public void execute(Runnable task) {
-        boolean fallback = false;
-
-        try {
-            executor.execute(task);
-        } catch (RejectedExecutionException e) {
-            fallback = true;
-        }
-
-        if (fallback) {
-            AsyncUtils.fallbackExecutor().execute(task);
-        }
-    }
-
-    @Override
-    public Future<?> executeDeferred(long delay, Runnable task) {
-        return timer.schedule(() -> execute(task), delay, TimeUnit.MILLISECONDS);
-    }
-
-    @Override
-    public int activeTasks() {
-        return executor.getQueue().size();
-    }
-
-    @Override
-    public long completedTasks() {
-        return executor.getCompletedTaskCount();
-    }
-
-    public Waiting terminate() {
-        return AsyncUtils.shutdown(executor);
-    }
-
-    @Override
-    public String toString() {
-        return ToString.format(this);
+    private static ThreadPoolExecutor newSingleThreadExecutor(ThreadFactory factory) {
+        return new ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), factory);
     }
 }

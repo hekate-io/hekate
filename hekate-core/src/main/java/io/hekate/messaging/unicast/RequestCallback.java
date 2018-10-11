@@ -16,17 +16,15 @@
 
 package io.hekate.messaging.unicast;
 
-import io.hekate.messaging.MessagingChannel;
-
 /**
- * Callback for {@link MessagingChannel#request(Object, ResponseCallback) request(...)} operation.
+ * Callback for a {@link Request} operation.
  *
  * @param <T> Base type of request message.
  *
- * @see MessagingChannel#request(Object, ResponseCallback)
+ * @see Request#submit(RequestCallback)
  */
 @FunctionalInterface
-public interface ResponseCallback<T> {
+public interface RequestCallback<T> {
     /**
      * Called when a request operation gets completed either successfully or with an error.
      *
@@ -40,25 +38,4 @@ public interface ResponseCallback<T> {
      * @param rsp Response ({@code null} if operation failed).
      */
     void onComplete(Throwable err, Response<T> rsp);
-
-    /**
-     * Called upon a request operation completion (either successfully or with an error) in order decide on whether the operation outcome
-     * can be accepted by this callback.
-     *
-     * <p>
-     * For more details about possible decisions please see the documentation of {@link ReplyDecision} enum values.
-     * </p>
-     *
-     * <p>
-     * Default implementation of this method always returns {@link ReplyDecision#DEFAULT}.
-     * </p>
-     *
-     * @param err Error ({@code null} if operation was successful).
-     * @param reply Response ({@code null} if operation failed).
-     *
-     * @return Decision.
-     */
-    default ReplyDecision accept(Throwable err, Response<T> reply) {
-        return ReplyDecision.DEFAULT;
-    }
 }

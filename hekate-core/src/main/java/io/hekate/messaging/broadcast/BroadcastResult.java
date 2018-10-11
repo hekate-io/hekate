@@ -22,12 +22,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Result of {@link MessagingChannel#broadcast(Object) broadcast(...)} operation.
+ * Result of a {@link Broadcast} operation.
  *
  * @param <T> Base type of broadcast message.
  *
- * @see MessagingChannel#broadcast(Object)
- * @see MessagingChannel#broadcast(Object, BroadcastCallback)
+ * @see MessagingChannel#newBroadcast(Object)
  */
 public interface BroadcastResult<T> {
     /**

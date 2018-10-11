@@ -32,6 +32,7 @@ import org.mockito.InOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -149,6 +150,19 @@ public class AsyncUtilsTest extends HekateTestBase {
         CompletableFuture<Void> empty = AsyncUtils.allOf(Collections.emptyList());
 
         assertTrue(empty.isDone());
+    }
+
+    @Test
+    public void testCancelledFuture() throws Exception {
+        Future<?> f = AsyncUtils.cancelledFuture();
+
+        assertTrue(f.isDone());
+        assertTrue(f.isCancelled());
+
+        assertFalse(f.cancel(true));
+        assertFalse(f.cancel(false));
+        assertNull(f.get());
+        assertNull(f.get(1, TimeUnit.SECONDS));
     }
 
     @Test

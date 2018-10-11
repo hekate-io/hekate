@@ -130,7 +130,7 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
 
             for (TestChannel from : channels) {
                 for (TestChannel to : channels) {
-                    from.get().forNode(to.nodeId()).send("test-" + from.nodeId());
+                    from.get().forNode(to.nodeId()).newSend("test-" + from.nodeId()).submit();
                 }
             }
 
@@ -158,7 +158,7 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
 
             for (TestChannel from : channels) {
                 for (TestChannel to : channels) {
-                    from.get().forNode(to.nodeId()).send("test-" + from.nodeId());
+                    from.get().forNode(to.nodeId()).newSend("test-" + from.nodeId()).submit();
                 }
             }
 
@@ -174,7 +174,7 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
                 for (TestChannel to : removed) {
                     ExpectedSendFailure sendFailure = new ExpectedSendFailure();
 
-                    from.get().forNode(to.nodeId()).send("failed", sendFailure);
+                    from.get().forNode(to.nodeId()).newSend("failed").submit(sendFailure);
 
                     sendFailure.awaitAndCheck(EmptyTopologyException.class);
                 }
@@ -189,8 +189,8 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
             boot -> boot.withService(MessagingServiceFactory.class, msg ->
                 msg.withGlobalInterceptor(new ServerMessageInterceptor<Object>() {
                     @Override
-                    public Object beforeServerReceive(Object msg, ServerReceiveContext rcvCtx) {
-                        return msg + "-intercepted";
+                    public void interceptServerReceive(ServerReceiveContext<Object> ctx) {
+                        ctx.overrideMessage(ctx.get() + "-intercepted");
                     }
                 })
             )

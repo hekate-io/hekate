@@ -60,25 +60,14 @@ public class BackPressureAggregateTest extends BackPressureTestBase {
         List<Message<String>> requests2 = new CopyOnWriteArrayList<>();
 
         createChannel(c -> useBackPressure(c)
-            .withReceiver(msg -> {
-                if (!"init".equals(msg.get())) {
-                    requests1.add(msg);
-                }
-            })
+            .withReceiver(requests1::add)
         ).join();
 
         createChannel(c -> useBackPressure(c)
-            .withReceiver(msg -> {
-                if (!"init".equals(msg.get())) {
-                    requests2.add(msg);
-                }
-            })
+            .withReceiver(requests2::add)
         ).join();
 
         MessagingChannel<String> sender = createChannel(this::useBackPressure).join().get().forRemotes();
-
-        // Ensure that connection to each node is established.
-        get(sender.broadcast("init"));
 
         // Request (aggregate) up to high watermark in order to trigger back pressure.
         List<AggregateFuture<?>> futureResponses = new ArrayList<>();
@@ -111,10 +100,76 @@ public class BackPressureAggregateTest extends BackPressureTestBase {
         );
 
         // Check that new request can be processed.
-        get(sender.broadcast("last"));
+        AggregateFuture<String> last = sender.aggregate("last");
+
+        busyWait("last request received", () -> requests1.size() == futureResponses.size() + 1);
+        busyWait("last request received", () -> requests2.size() == futureResponses.size() + 1);
 
         requests1.stream().filter(Message::mustReply).forEach(r -> r.reply("ok"));
         requests2.stream().filter(Message::mustReply).forEach(r -> r.reply("ok"));
+
+        assertTrue(get(last).isSuccess());
+
+        for (Future<?> future : futureResponses) {
+            get(future);
+        }
+    }
+
+    @Test
+    public void testFailure() throws Exception {
+        List<Message<String>> requests1 = new CopyOnWriteArrayList<>();
+        List<Message<String>> requests2 = new CopyOnWriteArrayList<>();
+
+        createChannel(c -> useBackPressure(c)
+            .withReceiver(requests1::add)
+        ).join();
+
+        TestChannel receiver2 = createChannel(c -> useBackPressure(c)
+            .withReceiver(requests2::add)
+        ).join();
+
+        MessagingChannel<String> sender = createChannel(this::useBackPressure).join().get().forRemotes();
+
+        // Request (aggregate) up to high watermark in order to trigger back pressure.
+        List<AggregateFuture<?>> futureResponses = new ArrayList<>();
+
+        for (int i = 0; i < highWatermark / RECEIVERS; i++) {
+            futureResponses.add(sender.aggregate("request-" + i));
+        }
+
+        // Check that message can't be sent when high watermark reached.
+        assertBackPressureEnabled(sender);
+
+        busyWait("requests received", () -> requests1.size() == futureResponses.size());
+        busyWait("requests received", () -> requests2.size() == futureResponses.size());
+
+        // Go down to low watermark on first node.
+        for (int i = 0; i < getLowWatermarkBounds(); i++) {
+            String request = "request-" + i;
+
+            requests1.stream()
+                .filter(r -> r.get().equals(request))
+                .findFirst()
+                .ifPresent(r ->
+                    r.reply("ok")
+                );
+        }
+
+        // Stop second receiver so that all pending requests would partially fail.
+        receiver2.leave();
+
+        busyWait("responses received", () ->
+            futureResponses.stream().filter(CompletableFuture::isDone).count() == getLowWatermarkBounds()
+        );
+
+        // Check that new request can be processed.
+        AggregateFuture<String> last = sender.aggregate("last");
+
+        busyWait("last request received", () -> requests1.size() == futureResponses.size() + 1);
+
+        requests1.stream().filter(Message::mustReply).forEach(r -> r.reply("ok"));
+
+        assertTrue(get(last).isSuccess());
 
         for (Future<?> future : futureResponses) {
             get(future);
@@ -155,69 +210,6 @@ public class BackPressureAggregateTest extends BackPressureTestBase {
 
             assertTrue(result.isSuccess());
             assertEquals(2, result.resultsByNode().size());
-        }
-    }
-
-    @Test
-    public void testFailure() throws Exception {
-        List<Message<String>> requests1 = new CopyOnWriteArrayList<>();
-        List<Message<String>> requests2 = new CopyOnWriteArrayList<>();
-
-        createChannel(c -> useBackPressure(c)
-            .withReceiver(msg -> {
-                if (!"init".equals(msg.get())) {
-                    requests1.add(msg);
-                }
-            })
-        ).join();
-
-        TestChannel receiver2 = createChannel(c -> useBackPressure(c)
-            .withReceiver(msg -> {
-                if (!"init".equals(msg.get())) {
-                    requests2.add(msg);
-                }
-            })
-        ).join();
-
-        MessagingChannel<String> sender = createChannel(this::useBackPressure).join().get().forRemotes();
-
-        // Ensure that connection to each node is established.
-        get(sender.broadcast("init"));
-
-        // Request (aggregate) up to high watermark in order to trigger back pressure.
-        List<AggregateFuture<?>> futureResponses = new ArrayList<>();
-
-        for (int i = 0; i < highWatermark / RECEIVERS; i++) {
-            futureResponses.add(sender.aggregate("request-" + i));
-        }
-
-        busyWait("requests received", () -> requests1.size() == futureResponses.size());
-        busyWait("requests received", () -> requests2.size() == futureResponses.size());
-
-        // Check that message can't be sent when high watermark reached.
-        assertBackPressureEnabled(sender);
-
-        // Go down to low watermark on first node.
-        for (int i = 0; i < getLowWatermarkBounds(); i++) {
-            String request = "request-" + i;
-
-            requests1.stream().filter(r -> r.get().equals(request)).findFirst().ifPresent(r -> r.reply("ok"));
-        }
-
-        // Stop second receiver so that all pending requests would partially fail.
-        receiver2.leave();
-
-        busyWait("responses received", () ->
-            futureResponses.stream().filter(CompletableFuture::isDone).count() == getLowWatermarkBounds()
-        );
-
-        // Check that new request can be processed.
-        get(sender.broadcast("last"));
-
-        requests1.stream().filter(Message::mustReply).forEach(r -> r.reply("ok"));
-
-        for (Future<?> future : futureResponses) {
-            get(future);
         }
     }
 }

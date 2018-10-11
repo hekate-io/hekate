@@ -19,7 +19,6 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterTopologyTestBase;
 import io.hekate.cluster.internal.DefaultClusterTopology;
-import io.hekate.core.HekateSupport;
 import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import io.hekate.partition.PartitionMapper;
@@ -60,8 +59,7 @@ public class DefaultLoadBalancerContextTest extends ClusterTopologyTestBase {
         DefaultClusterTopology topology = DefaultClusterTopology.of(ver, nodes);
         Optional<FailureInfo> optFailure = Optional.ofNullable(failure);
         PartitionMapper partitions = mock(PartitionMapper.class);
-        HekateSupport hekate = mock(HekateSupport.class);
 
-        return new DefaultLoadBalancerContext(affinity, affinityKey, topology, hekate, partitions, optFailure);
+        return new DefaultLoadBalancerContext(affinity, affinityKey, topology, partitions, optFailure);
     }
 }

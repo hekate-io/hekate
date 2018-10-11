@@ -74,15 +74,15 @@ class LockControllerServer {
     }
 
     private static class LockQueueEntry {
-        private final LockRequest request;
+        private final Message<LockProtocol> message;
 
         @ToStringIgnore
-        private final Message<LockProtocol> message;
+        private final LockRequest request;
 
         @ToStringIgnore
         private final ScheduledFuture<?> timeoutFuture;
 
-        public LockQueueEntry(LockRequest request, Message<LockProtocol> message, ScheduledFuture<?> timeoutFuture) {
+        public LockQueueEntry(Message<LockProtocol> message, LockRequest request, ScheduledFuture<?> timeoutFuture) {
             this.message = message;
             this.request = request;
             this.timeoutFuture = timeoutFuture;
@@ -108,7 +108,7 @@ class LockControllerServer {
 
         @Override
         public String toString() {
-            return ToString.format(this);
+            return "QueueEntry[from=" + message.endpoint() + ", request=" + message + ']';
         }
     }
 
@@ -131,9 +131,10 @@ class LockControllerServer {
     @ToStringIgnore
     private int busy;
 
-    private LockHolder lockedBy;
+    private LockHolder lockedOwner;
 
     public LockControllerServer(String name, ScheduledExecutorService scheduler) {
+        assert name != null : "Name is null.";
         assert scheduler != null : "Scheduler is null.";
 
         this.scheduler = scheduler;
@@ -164,7 +165,7 @@ class LockControllerServer {
         sync.lock();
 
         try {
-            return busy == 0 && lockedBy == null;
+            return busy == 0 && lockedOwner == null;
         } finally {
             sync.unlock();
         }
@@ -174,14 +175,14 @@ class LockControllerServer {
         sync.lock();
 
         try {
-            if (lockedBy == null) {
-                lockedBy = new LockHolder(lock.node(), lock.lockId(), lock.threadId());
+            if (lockedOwner == null) {
+                lockedOwner = new LockHolder(lock.node(), lock.lockId(), lock.threadId());
 
                 if (DEBUG) {
-                    log.debug("Migrated lock [lock={}]", lockedBy);
+                    log.debug("Migrated lock [lock={}]", lockedOwner);
                 }
-            } else if (!lockedBy.isSameLock(lock)) {
-                throw new IllegalStateException("Attempt to supersede lock during migration [name=" + name + ", existing=" + lockedBy
+            } else if (!lockedOwner.isSameLock(lock)) {
+                throw new IllegalStateException("Attempt to supersede lock during migration [name=" + name + ", existing=" + lockedOwner
                     + ", migrating=" + lock + ']');
             }
         } finally {
@@ -192,121 +193,35 @@ class LockControllerServer {
     public boolean processLock(Message<LockProtocol> msg) {
         assert msg != null : "Message is null.";
 
+        if (DEBUG) {
+            log.debug("Got lock request [from={}, request={}]", msg.endpoint(), msg);
+        }
+
         LockRequest request = msg.get(LockRequest.class);
 
         sync.lock();
 
         try {
-            if (lockedBy == null) {
-                LockQueueEntry newEntry = new LockQueueEntry(request, msg, null);
+            if (lockedOwner == null) {
+                LockQueueEntry newEntry = new LockQueueEntry(msg, request, null);
 
                 acquireLock(newEntry);
-            } else if (lockedBy.isSameLock(request)) {
+            } else if (lockedOwner.isSameLock(request)) {
                 if (DEBUG) {
-                    log.debug("Requester is already the lock owner [lock={}]", lockedBy);
+                    log.debug("Requester is already the lock owner [lock={}]", lockedOwner);
                 }
 
                 reply(msg, newResponse(LockResponse.Status.OK));
+            } else if (tryReplaceInLockQueue(request, msg)) {
+                // Successfully replaced an existing queue entry.
+                if (msg.isSubscription()) {
+                    replyPartial(msg, newResponse(LockResponse.Status.LOCK_OWNER_CHANGE));
+                }
             } else {
-                boolean replaced = false;
-
-                if (!queue.isEmpty()) {
-                    for (Iterator<LockQueueEntry> it = queue.iterator(); it.hasNext(); ) {
-                        LockQueueEntry oldEntry = it.next();
-
-                        LockRequest oldRequest = oldEntry.request();
-
-                        if (oldRequest.isSameLock(request)) {
-                            LockQueueEntry newEntry = new LockQueueEntry(request, msg, oldEntry.timeoutFuture());
-
-                            // Remove old entry from the queue and add new entry to end of the queue.
-                            // Note that it breaks the order of locking queue, but it is ok since we don't have 'fair' locking guarantees.
-                            it.remove();
-
-                            queue.addLast(newEntry);
-
-                            replaced = true;
-
-                            if (DEBUG) {
-                                log.debug("Replaced lock request in the queue [old={}, new={}, queue={}]", oldEntry, newEntry, queue);
-                            }
-
-                            reply(oldEntry.message(), newResponse(LockResponse.Status.REPLACED));
-
-                            if (msg.isSubscription()) {
-                                replyPartial(newEntry.message(), newResponse(LockResponse.Status.LOCK_INFO));
-                            }
-
-                            break;
-                        }
-                    }
-                }
-
-                if (!replaced) {
-                    if (request.timeout() == DefaultLockRegion.TIMEOUT_IMMEDIATE) {
-                        if (DEBUG) {
-                            log.debug("Rejecting lock request with immediate timeout [request={}]", request);
-                        }
-
-                        // Immediately expire.
-                        reply(msg, newResponse(LockResponse.Status.BUSY));
-                    } else if (request.timeout() == DefaultLockRegion.TIMEOUT_UNBOUND) {
-                        // Enqueue without any timeouts.
-                        LockQueueEntry entry = new LockQueueEntry(request, msg, null);
-
-                        queue.add(entry);
-
-                        if (DEBUG) {
-                            log.debug("Added lock request to the locking queue [new={}, queue={}]", entry, queue);
-                        }
-
-                        if (msg.isSubscription()) {
-                            replyPartial(entry.message(), newResponse(LockResponse.Status.LOCK_INFO));
-                        }
-                    } else {
-                        // Register timeout handler.
-                        ScheduledFuture<?> future = scheduler.schedule(() -> {
-                            sync.lock();
-
-                            try {
-                                for (Iterator<LockQueueEntry> it = queue.iterator(); it.hasNext(); ) {
-                                    LockQueueEntry entry = it.next();
-
-                                    LockRequest entryRequest = entry.request();
-
-                                    if (request.isSameLock(entryRequest) && entry.timeoutFuture() != null) {
-                                        if (entry.message().mustReply()) {
-                                            reply(entry.message(), newResponse(LockResponse.Status.TIMEOUT));
-                                        }
-
-                                        it.remove();
-
-                                        break;
-                                    }
-                                }
-                            } catch (RuntimeException | Error e) {
-                                log.error("Got an unexpected runtime error while processing lock timeout [request={}]", request, e);
-                            } finally {
-                                sync.unlock();
-                            }
-                        }, request.timeout(), TimeUnit.NANOSECONDS);
-
-                        LockQueueEntry entry = new LockQueueEntry(request, msg, future);
-
-                        queue.add(entry);
-
-                        if (DEBUG) {
-                            log.debug("Added lock request with timeout to the locking queue [new={}, queue={}]", entry, queue);
-                        }
-
-                        if (entry.message().isSubscription()) {
-                            replyPartial(entry.message(), newResponse(LockResponse.Status.LOCK_INFO));
-                        }
-                    }
-                }
+                addToLockQueue(msg, request);
             }
 
-            return lockedBy != null;
+            return lockedOwner != null;
         } finally {
             sync.unlock();
         }
@@ -315,18 +230,22 @@ class LockControllerServer {
     public boolean processUnlock(Message<LockProtocol> msg) {
         assert msg != null : "Message is null.";
 
+        if (DEBUG) {
+            log.debug("Got unlock request [from={}, request={}]", msg.endpoint(), msg);
+        }
+
         UnlockRequest request = msg.get(UnlockRequest.class);
 
         sync.lock();
 
         try {
-            if (lockedBy != null) {
-                if (lockedBy.isSameLock(request)) {
+            if (lockedOwner != null) {
+                if (lockedOwner.isSameLock(request)) {
                     if (DEBUG) {
-                        log.debug("Unlocked [request={}, queue={}]", request, queue);
+                        log.debug("Unlocked [request={}]", msg);
                     }
 
-                    lockedBy = null;
+                    lockedOwner = null;
 
                     processQueue();
                 } else if (!queue.isEmpty()) {
@@ -339,10 +258,8 @@ class LockControllerServer {
                             oldEntry.cancelTimeout();
 
                             if (DEBUG) {
-                                log.debug("Removed from lock queue [entry={}, queue={}]", oldEntry, queue);
+                                log.debug("Removed from lock queue [entry={}]", oldEntry);
                             }
-
-                            reply(oldEntry.message(), newResponse(LockResponse.Status.REPLACED));
 
                             break;
                         }
@@ -352,7 +269,7 @@ class LockControllerServer {
 
             reply(msg, new UnlockResponse(UnlockResponse.Status.OK));
 
-            return lockedBy != null;
+            return lockedOwner != null;
         } finally {
             sync.unlock();
         }
@@ -362,7 +279,11 @@ class LockControllerServer {
         sync.lock();
 
         try {
-            lockedBy = null;
+            if (DEBUG) {
+                log.debug("Disposing [owner={}, queue-size={}]", lockedOwner, queue.size());
+            }
+
+            lockedOwner = null;
 
             while (!queue.isEmpty()) {
                 LockQueueEntry entry = queue.pollFirst();
@@ -386,28 +307,30 @@ class LockControllerServer {
         sync.lock();
 
         try {
-            if (TRACE) {
-                log.trace("Updating live nodes [nodes={}]", liveNodes);
-            }
+            if (!queue.isEmpty()) {
+                if (TRACE) {
+                    log.trace("Updating live nodes [nodes={}]", liveNodes);
+                }
 
-            for (Iterator<LockQueueEntry> it = queue.iterator(); it.hasNext(); ) {
-                LockQueueEntry entry = it.next();
+                for (Iterator<LockQueueEntry> it = queue.iterator(); it.hasNext(); ) {
+                    LockQueueEntry entry = it.next();
 
-                LockRequest request = entry.request();
+                    LockRequest request = entry.request();
 
-                if (!liveNodes.contains(request.node())) {
-                    entry.cancelTimeout();
+                    if (!liveNodes.contains(request.node())) {
+                        entry.cancelTimeout();
 
-                    it.remove();
+                        it.remove();
 
-                    if (DEBUG) {
-                        log.debug("Removed lock queue entry of a dead node [entry={}]", entry);
+                        if (DEBUG) {
+                            log.debug("Removed lock queue entry of a dead node [entry={}]", entry);
+                        }
                     }
                 }
             }
 
-            if (lockedBy != null && !liveNodes.contains(lockedBy.node())) {
-                lockedBy = null;
+            if (lockedOwner != null && !liveNodes.contains(lockedOwner.node())) {
+                lockedOwner = null;
 
                 processQueue();
             }
@@ -416,17 +339,107 @@ class LockControllerServer {
         }
     }
 
-    public void processOwnerQuery(Message<LockProtocol> msg) {
+    public void processLockOwnerQuery(Message<LockProtocol> msg) {
         sync.lock();
 
         try {
-            if (lockedBy == null) {
+            if (lockedOwner == null) {
                 reply(msg, new LockOwnerResponse(0, null, LockOwnerResponse.Status.OK));
             } else {
-                reply(msg, new LockOwnerResponse(lockedBy.threadId(), lockedBy.node(), LockOwnerResponse.Status.OK));
+                reply(msg, new LockOwnerResponse(lockedOwner.threadId(), lockedOwner.node(), LockOwnerResponse.Status.OK));
             }
         } finally {
             sync.unlock();
+        }
+    }
+
+    private boolean tryReplaceInLockQueue(LockRequest req, Message<LockProtocol> msg) {
+        assert sync.isHeldByCurrentThread() : "Thread must hold lock.";
+
+        if (!queue.isEmpty()) {
+            for (Iterator<LockQueueEntry> it = queue.iterator(); it.hasNext(); ) {
+                LockQueueEntry oldEntry = it.next();
+
+                LockRequest oldRequest = oldEntry.request();
+
+                if (oldRequest.isSameLock(req)) {
+                    // Remove old entry from the queue.
+                    it.remove();
+
+                    LockQueueEntry newEntry = new LockQueueEntry(msg, req, oldEntry.timeoutFuture());
+
+                    // Add new entry to end of the queue.
+                    // Note that it breaks the order of locking queue,
+                    // but it is ok since we don't have 'fair' locking guarantees anyway.
+                    queue.addLast(newEntry);
+
+                    if (DEBUG) {
+                        log.debug("Replaced lock queue entry [old={}, new={}]", oldEntry, newEntry);
+                    }
+
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private void addToLockQueue(Message<LockProtocol> msg, LockRequest request) {
+        assert sync.isHeldByCurrentThread() : "Thread must hold lock.";
+
+        if (request.timeout() == DefaultLockRegion.TIMEOUT_IMMEDIATE) {
+            if (DEBUG) {
+                log.debug("Rejecting lock request with immediate timeout [request={}]", request);
+            }
+
+            // Immediately expire.
+            reply(msg, newResponse(LockResponse.Status.LOCK_BUSY));
+        } else {
+            LockQueueEntry newEntry;
+
+            if (request.timeout() == DefaultLockRegion.TIMEOUT_UNBOUND) {
+                // Timeout not specified.
+                newEntry = new LockQueueEntry(msg, request, null);
+            } else {
+                // Register timeout handler.
+                ScheduledFuture<?> timeoutFuture = scheduler.schedule(() -> {
+                    sync.lock();
+
+                    try {
+                        for (Iterator<LockQueueEntry> it = queue.iterator(); it.hasNext(); ) {
+                            LockQueueEntry entry = it.next();
+
+                            if (request.isSameLock(entry.request()) && entry.timeoutFuture() != null) {
+                                if (entry.message().mustReply()) {
+                                    reply(entry.message(), newResponse(LockResponse.Status.LOCK_TIMEOUT));
+                                }
+
+                                it.remove();
+
+                                break;
+                            }
+                        }
+                    } catch (RuntimeException | Error e) {
+                        log.error("Got an unexpected runtime error while processing lock timeout [request={}]", request, e);
+                    } finally {
+                        sync.unlock();
+                    }
+                }, request.timeout(), TimeUnit.NANOSECONDS);
+
+                newEntry = new LockQueueEntry(msg, request, timeoutFuture);
+            }
+
+            queue.add(newEntry);
+
+            if (DEBUG) {
+                log.debug("Added lock request to the queue [entry={}]", newEntry);
+            }
+
+            // Notify about the current lock owner.
+            if (newEntry.message().isSubscription()) {
+                replyPartial(newEntry.message(), newResponse(LockResponse.Status.LOCK_OWNER_CHANGE));
+            }
         }
     }
 
@@ -442,16 +455,16 @@ class LockControllerServer {
     }
 
     private void acquireLock(LockQueueEntry entry) {
-        assert lockedBy == null : "Lock is already held " + lockedBy;
+        assert lockedOwner == null : "Lock is already held " + lockedOwner;
 
         entry.cancelTimeout();
 
         LockRequest request = entry.request();
 
-        lockedBy = new LockHolder(request.node(), request.lockId(), request.threadId());
+        lockedOwner = new LockHolder(request.node(), request.lockId(), request.threadId());
 
         if (DEBUG) {
-            log.debug("Locked [new-owner={}, queue={}]", lockedBy, queue);
+            log.debug("Locked [new-owner={}]", entry);
         }
 
         reply(entry.message(), newResponse(LockResponse.Status.OK));
@@ -460,14 +473,16 @@ class LockControllerServer {
             .filter(e -> e.message().isSubscription())
             .forEach(other -> {
                 if (DEBUG) {
-                    log.debug("Notifying queue entry on lock owner change [queue-entry={}]", other);
+                    log.debug("Notifying queue entry on lock owner change [entry={}]", other);
                 }
 
-                replyPartial(other.message(), newResponse(LockResponse.Status.LOCK_INFO));
+                replyPartial(other.message(), newResponse(LockResponse.Status.LOCK_OWNER_CHANGE));
             });
     }
 
     private void processQueue() {
+        assert sync.isHeldByCurrentThread() : "Thread must hold lock.";
+
         LockQueueEntry entry = queue.pollFirst();
 
         if (entry != null) {
@@ -479,11 +494,12 @@ class LockControllerServer {
         msg.reply(reply, err -> {
             if (err == null) {
                 if (DEBUG) {
-                    log.debug("Successfully sent lock response [response={}, request={}]", reply, msg.get());
+                    log.debug("Sent lock response [to={}, response={}, request={}]", msg.endpoint(), reply, msg);
                 }
             } else {
                 if (DEBUG) {
-                    log.debug("Failed to send lock response [cause={}, response={}, request={}]", err.toString(), reply, msg.get());
+                    log.debug("Failed to send lock response [to={}, cause={}, response={}, request={}]",
+                        msg.endpoint(), err.toString(), reply, msg);
                 }
             }
         });
@@ -493,11 +509,12 @@ class LockControllerServer {
         msg.partialReply(reply, err -> {
             if (err == null) {
                 if (DEBUG) {
-                    log.debug("Successfully sent partial lock response [response={}, request={}]", reply, msg.get());
+                    log.debug("Sent partial lock response [to={}, response={}, request={}]", msg.endpoint(), reply, msg);
                 }
             } else {
                 if (DEBUG) {
-                    log.debug("Failed to send partial lock response [cause={}, response={}, request={}]", err.toString(), reply, msg.get());
+                    log.debug("Failed to send partial lock response [to={}, cause={}, response={}, request={}]",
+                        msg.endpoint(), err.toString(), reply, msg);
                 }
             }
         });
@@ -506,10 +523,10 @@ class LockControllerServer {
     private LockResponse newResponse(LockResponse.Status status) {
         assert sync.isHeldByCurrentThread() : "Thread must hold lock.";
 
-        if (lockedBy == null) {
+        if (lockedOwner == null) {
             return new LockResponse(status, null, 0);
         } else {
-            return new LockResponse(status, lockedBy.node(), lockedBy.threadId());
+            return new LockResponse(status, lockedOwner.node(), lockedOwner.threadId());
         }
     }
 

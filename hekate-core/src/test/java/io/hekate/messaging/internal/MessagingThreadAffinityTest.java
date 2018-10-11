@@ -18,9 +18,6 @@ package io.hekate.messaging.internal;
 
 import io.hekate.HekateTestBase;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.broadcast.AggregateCallback;
-import io.hekate.messaging.broadcast.BroadcastCallback;
-import io.hekate.messaging.unicast.ResponseCallback;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,48 +32,28 @@ import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
-import static org.mockito.Mockito.mock;
 
 public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
     private static class AffinityCollector {
-        private final Map<Integer, List<Entry<Integer, Thread>>> callbackBuf = new ConcurrentHashMap<>();
+        private final Map<Integer, List<Entry<Integer, Thread>>> buffer = new ConcurrentHashMap<>();
 
-        private final Map<Integer, List<Entry<Integer, Thread>>> futureBuf = new ConcurrentHashMap<>();
-
-        public static String messageForFuture(int partition, int msg) {
-            return partition + ":" + msg + ":future";
-        }
-
-        public static String messageForCallback(int partition, int msg) {
-            return partition + ":" + msg + ":callback";
+        public static String affinityMessage(int partition, int msg) {
+            return partition + ":" + msg;
         }
 
         public void collect(String msg) {
-            String[] tokens = msg.split(":", 3);
+            String[] tokens = msg.split(":", 2);
 
             Integer key = Integer.parseInt(tokens[0]);
             Integer value = Integer.parseInt(tokens[1]);
-            String type = tokens[2];
 
-            Map<Integer, List<Entry<Integer, Thread>>> buf;
-
-            if ("future".equals(type)) {
-                buf = futureBuf;
-            } else {
-                buf = callbackBuf;
-            }
-
-            List<Entry<Integer, Thread>> partition = buf.computeIfAbsent(key, ignore -> synchronizedList(new ArrayList<>()));
+            List<Entry<Integer, Thread>> partition = buffer.computeIfAbsent(key, ignore -> synchronizedList(new ArrayList<>()));
 
             partition.add(new SimpleEntry<>(value, Thread.currentThread()));
         }
 
-        public Map<Integer, List<Entry<Integer, Thread>>> getCallbackBuffer() {
-            return callbackBuf;
-        }
-
-        public Map<Integer, List<Entry<Integer, Thread>>> getFutureBuffer() {
-            return futureBuf;
+        public Map<Integer, List<Entry<Integer, Thread>>> buffer() {
+            return buffer;
         }
 
         private void awaitForMessages(Map<Integer, List<Entry<Integer, Thread>>> buf, int partitions, int messages) throws Exception {
@@ -114,25 +91,21 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
-                MessagingChannel<String> channel = sender.get()
-                    .forNode(receiver.nodeId())
-                    .withAffinity(j);
+                MessagingChannel<String> channel = sender.get().forNode(receiver.nodeId());
 
-                channel.send(AffinityCollector.messageForCallback(j, i), new SendCallbackMock());
-                channel.send(AffinityCollector.messageForFuture(j, i));
+                channel.newSend(AffinityCollector.affinityMessage(j, i))
+                    .withAffinity(j)
+                    .submit();
             }
         }
 
-        collector.awaitForMessages(collector.getCallbackBuffer(), partitionSize, partitionSize);
-        collector.awaitForMessages(collector.getFutureBuffer(), partitionSize, partitionSize);
+        collector.awaitForMessages(collector.buffer(), partitionSize, partitionSize);
 
         for (int i = 0; i < partitionSize; i++) {
-            receiver.awaitForMessage(AffinityCollector.messageForCallback(i, partitionSize - 1));
-            receiver.awaitForMessage(AffinityCollector.messageForFuture(i, partitionSize - 1));
+            receiver.awaitForMessage(AffinityCollector.affinityMessage(i, partitionSize - 1));
         }
 
-        verifyAffinity(collector.getCallbackBuffer(), partitionSize);
-        verifyAffinity(collector.getFutureBuffer(), partitionSize);
+        verifyAffinity(collector.buffer(), partitionSize);
     }
 
     @Test
@@ -153,28 +126,21 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
-                MessagingChannel<String> channel = sender.get()
-                    .forNode(receiver.nodeId())
-                    .withAffinity(j);
+                MessagingChannel<String> channel = sender.get().forNode(receiver.nodeId());
 
-                @SuppressWarnings("unchecked")
-                ResponseCallback<String> callback = mock(ResponseCallback.class);
-
-                channel.request(AffinityCollector.messageForCallback(j, i), callback);
-                channel.request(AffinityCollector.messageForFuture(j, i));
+                channel.newRequest(AffinityCollector.affinityMessage(j, i))
+                    .withAffinity(j)
+                    .submit();
             }
         }
 
-        collector.awaitForMessages(collector.getCallbackBuffer(), partitionSize, partitionSize);
-        collector.awaitForMessages(collector.getFutureBuffer(), partitionSize, partitionSize);
+        collector.awaitForMessages(collector.buffer(), partitionSize, partitionSize);
 
         for (int i = 0; i < partitionSize; i++) {
-            receiver.awaitForMessage(AffinityCollector.messageForCallback(i, partitionSize - 1));
-            receiver.awaitForMessage(AffinityCollector.messageForFuture(i, partitionSize - 1));
+            receiver.awaitForMessage(AffinityCollector.affinityMessage(i, partitionSize - 1));
         }
 
-        verifyAffinity(collector.getCallbackBuffer(), partitionSize);
-        verifyAffinity(collector.getFutureBuffer(), partitionSize);
+        verifyAffinity(collector.buffer(), partitionSize);
     }
 
     @Test
@@ -201,7 +167,12 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
         awaitForChannelsTopology(sender, receiver);
 
         repeat(5, i -> {
-            get(sender.get().forNode(receiver.nodeId()).withAffinity(i).request("request"));
+            get(sender.get()
+                .forNode(receiver.nodeId())
+                .newRequest("request")
+                .withAffinity(i)
+                .submit()
+            );
 
             callbackRef.get().get();
 
@@ -235,30 +206,23 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
-                MessagingChannel<String> channel = sender.get()
-                    .forRemotes()
-                    .withAffinity(j);
+                MessagingChannel<String> channel = sender.get().forRemotes();
 
-                @SuppressWarnings("unchecked")
-                BroadcastCallback<String> callback = mock(BroadcastCallback.class);
-
-                channel.broadcast(AffinityCollector.messageForCallback(j, i), callback);
-                channel.broadcast(AffinityCollector.messageForFuture(j, i));
+                channel.newBroadcast(AffinityCollector.affinityMessage(j, i))
+                    .withAffinity(j)
+                    .submit();
             }
         }
 
         for (AffinityCollector collector : collectors) {
-            collector.awaitForMessages(collector.getCallbackBuffer(), partitionSize, partitionSize);
-            collector.awaitForMessages(collector.getFutureBuffer(), partitionSize, partitionSize);
+            collector.awaitForMessages(collector.buffer(), partitionSize, partitionSize);
 
-            verifyAffinity(collector.getCallbackBuffer(), partitionSize);
-            verifyAffinity(collector.getFutureBuffer(), partitionSize);
+            verifyAffinity(collector.buffer(), partitionSize);
         }
 
         for (TestChannel receiver : receivers) {
             for (int i = 0; i < partitionSize; i++) {
-                receiver.awaitForMessage(AffinityCollector.messageForCallback(i, partitionSize - 1));
-                receiver.awaitForMessage(AffinityCollector.messageForFuture(i, partitionSize - 1));
+                receiver.awaitForMessage(AffinityCollector.affinityMessage(i, partitionSize - 1));
             }
         }
     }
@@ -292,30 +256,23 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
-                MessagingChannel<String> channel = sender.get()
-                    .forRemotes()
-                    .withAffinity(j);
+                MessagingChannel<String> channel = sender.get().forRemotes();
 
-                @SuppressWarnings("unchecked")
-                AggregateCallback<String> callback = mock(AggregateCallback.class);
-
-                channel.aggregate(AffinityCollector.messageForCallback(j, i), callback);
-                channel.aggregate(AffinityCollector.messageForFuture(j, i));
+                channel.newAggregate(AffinityCollector.affinityMessage(j, i))
+                    .withAffinity(j)
+                    .submit();
             }
         }
 
         for (AffinityCollector collector : collectors) {
-            collector.awaitForMessages(collector.getCallbackBuffer(), partitionSize, partitionSize);
-            collector.awaitForMessages(collector.getFutureBuffer(), partitionSize, partitionSize);
+            collector.awaitForMessages(collector.buffer(), partitionSize, partitionSize);
 
-            verifyAffinity(collector.getCallbackBuffer(), partitionSize);
-            verifyAffinity(collector.getFutureBuffer(), partitionSize);
+            verifyAffinity(collector.buffer(), partitionSize);
         }
 
         for (TestChannel receiver : receivers) {
             for (int i = 0; i < partitionSize; i++) {
-                receiver.awaitForMessage(AffinityCollector.messageForCallback(i, partitionSize - 1));
-                receiver.awaitForMessage(AffinityCollector.messageForFuture(i, partitionSize - 1));
+                receiver.awaitForMessage(AffinityCollector.affinityMessage(i, partitionSize - 1));
             }
         }
     }

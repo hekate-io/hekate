@@ -1,8 +1,8 @@
 package io.hekate.messaging.intercept;
 
-import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.unicast.ResponseCallback;
-import io.hekate.messaging.unicast.SendCallback;
+import io.hekate.messaging.unicast.Request;
+import io.hekate.messaging.unicast.Send;
+import io.hekate.messaging.unicast.Subscribe;
 
 /**
  * Type of an outbound message.
@@ -10,21 +10,19 @@ import io.hekate.messaging.unicast.SendCallback;
  * @see MessageInterceptor
  */
 public enum OutboundType {
-    /** Message is submitted via {@link MessagingChannel#request(Object, ResponseCallback)}. */
+    /** Message is submitted as a {@link Request} operation. */
     REQUEST,
 
-    /** Message is submitted via  {@link MessagingChannel#subscribe(Object, ResponseCallback)}. */
+    /** Message is submitted as a {@link Subscribe} operation. */
     SUBSCRIBE,
 
     /**
-     * Message is submitted via {@link MessagingChannel#send(Object, SendCallback)} and {@link MessagingChannel#withConfirmReceive(boolean)}
-     * set to {@code true}.
+     * Message is submitted as a {@link Send} operation with {@link Send#withConfirmReceive(boolean)} set to {@code true}.
      */
     SEND_WITH_ACK,
 
     /**
-     * Message is submitted via {@link MessagingChannel#send(Object, SendCallback)} and {@link MessagingChannel#withConfirmReceive(boolean)}
-     * set to {@code false}.
+     * Message is submitted as a {@link Send} operation with {@link Send#withConfirmReceive(boolean)} set to {@code false}.
      */
     SEND_NO_ACK
 }

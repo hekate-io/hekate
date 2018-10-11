@@ -21,7 +21,6 @@ import io.hekate.cluster.ClusterView;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.codec.ThreadLocalCodecFactory;
-import io.hekate.core.Hekate;
 import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.messaging.MessageReceiver;
@@ -30,18 +29,9 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingOverflowPolicy;
-import io.hekate.messaging.broadcast.AggregateCallback;
-import io.hekate.messaging.broadcast.AggregateFuture;
-import io.hekate.messaging.broadcast.BroadcastCallback;
-import io.hekate.messaging.broadcast.BroadcastFuture;
 import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancer;
-import io.hekate.messaging.unicast.ResponseCallback;
-import io.hekate.messaging.unicast.ResponseFuture;
-import io.hekate.messaging.unicast.SendCallback;
-import io.hekate.messaging.unicast.SendFuture;
-import io.hekate.messaging.unicast.SubscribeFuture;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.List;
@@ -77,7 +67,7 @@ class MessagingGateway<T> {
     private final MessageReceiver<T> unguardedReceiver;
 
     @ToStringIgnore
-    private final InterceptorManager<T> interceptor;
+    private final MessageInterceptors<T> interceptors;
 
     @ToStringIgnore
     private final DefaultMessagingChannel<T> rootChannel;
@@ -89,24 +79,18 @@ class MessagingGateway<T> {
     private final String logCategory;
 
     @ToStringIgnore
-    private final Hekate hekate;
-
-    @ToStringIgnore
     private volatile MessagingGatewayContext<T> ctx;
 
     public MessagingGateway(
         MessagingChannelConfig<T> cfg,
-        Hekate hekate,
         ClusterService cluster,
         CodecService codec,
-        List<MessageInterceptor<?>> interceptors
+        List<MessageInterceptor> interceptors
     ) {
         assert cfg != null : "Messaging channel configuration is null.";
-        assert hekate != null : "Hekate instance is null.";
         assert cluster != null : "Cluster service is null.";
         assert codec != null : "Codec service is null.";
 
-        this.hekate = hekate;
         this.name = Utils.nullOrTrim(cfg.getName());
         this.baseType = cfg.getBaseType();
         this.nioThreads = cfg.getNioThreads();
@@ -117,7 +101,7 @@ class MessagingGateway<T> {
         this.backupNodes = cfg.getBackupNodes();
 
         // Interceptors.
-        this.interceptor = new InterceptorManager<>(
+        this.interceptors = new MessageInterceptors<>(
             Stream.concat(
                 StreamUtils.nullSafe(interceptors),
                 StreamUtils.nullSafe(cfg.getInterceptors())
@@ -159,7 +143,7 @@ class MessagingGateway<T> {
         }
 
         // Apply cluster view filter.
-        ClusterView clusterView = cluster.filter(ChannelMetaData.hasReceiver(name, cfg.getClusterFilter()));
+        ClusterView clusterView = cluster.filter(MessagingMetaData.hasReceiver(name, cfg.getClusterFilter()));
 
         // Fallback to the default load balancer if none is specified.
         LoadBalancer<T> loadBalancer = cfg.getLoadBalancer();
@@ -183,6 +167,13 @@ class MessagingGateway<T> {
             cfg.getFailoverPolicy(),
             cfg.getMessagingTimeout()
         );
+    }
+
+    public void init(MessagingGatewayContext<T> ctx) {
+        assert ctx != null : "Messaging context is null.";
+
+        // Volatile write.
+        this.ctx = ctx;
     }
 
     public String name() {
@@ -221,8 +212,8 @@ class MessagingGateway<T> {
         return unguardedReceiver;
     }
 
-    public InterceptorManager<T> interceptor() {
-        return interceptor;
+    public MessageInterceptors<T> interceptors() {
+        return interceptors;
     }
 
     public SendPressureGuard sendPressureGuard() {
@@ -245,56 +236,16 @@ class MessagingGateway<T> {
         return logCategory;
     }
 
-    public Hekate hekate() {
-        return hekate;
-    }
-
-    public SendFuture send(Object affinityKey, T msg, MessagingOpts<T> opts) {
-        return requireContext().send(affinityKey, msg, opts);
-    }
-
-    public void send(Object affinityKey, T msg, MessagingOpts<T> opts, SendCallback callback) {
-        requireContext().send(affinityKey, msg, opts, callback);
-    }
-
-    public ResponseFuture<T> request(Object affinityKey, T msg, MessagingOpts<T> opts) {
-        return requireContext().request(affinityKey, msg, opts);
-    }
-
-    public void request(Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
-        requireContext().request(affinityKey, msg, opts, callback);
-    }
-
-    public SubscribeFuture<T> subscribe(Object affinityKey, T msg, MessagingOpts<T> opts) {
-        return requireContext().subscribe(affinityKey, msg, opts);
-    }
-
-    public void subscribe(Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
-        requireContext().subscribe(affinityKey, msg, opts, callback);
-    }
-
-    public BroadcastFuture<T> broadcast(Object affinityKey, T msg, MessagingOpts<T> opts) {
-        return requireContext().broadcast(affinityKey, msg, opts);
-    }
-
-    public void broadcast(Object affinityKey, T msg, MessagingOpts<T> opts, BroadcastCallback<T> callback) {
-        requireContext().broadcast(affinityKey, msg, opts, callback);
-    }
-
-    public AggregateFuture<T> aggregate(Object affinityKey, T msg, MessagingOpts<T> opts) {
-        return requireContext().aggregate(affinityKey, msg, opts);
-    }
-
-    public void aggregate(Object affinityKey, T msg, MessagingOpts<T> opts, AggregateCallback<T> callback) {
-        requireContext().aggregate(affinityKey, msg, opts, callback);
-    }
-
     public MessagingChannelId channelId() {
         return requireContext().channelId();
     }
 
     public Executor executor() {
         return requireContext().executor();
+    }
+
+    public MessagingExecutor async() {
+        return requireContext().async();
     }
 
     public MessagingGatewayContext<T> requireContext() {
@@ -311,13 +262,6 @@ class MessagingGateway<T> {
     public MessagingGatewayContext<T> context() {
         // Volatile read.
         return ctx;
-    }
-
-    public void init(MessagingGatewayContext<T> ctx) {
-        assert ctx != null : "Messaging context is null.";
-
-        // Volatile write.
-        this.ctx = ctx;
     }
 
     public boolean hasReceiver() {

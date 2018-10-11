@@ -56,7 +56,7 @@ public class LoadBalancersTest extends HekateTestBase {
 
     @Test
     public void testRoundRobin() throws Exception {
-        LoadBalancer<Object> lb = LoadBalancers.roundRobin();
+        LoadBalancer<Object> lb = LoadBalancers.newRoundRobin();
 
         int idx = 0;
 
@@ -78,9 +78,9 @@ public class LoadBalancersTest extends HekateTestBase {
         assertEquals("RoundRobin", lb.toString());
 
         // Check that always returns a new instance.
-        assertNotSame(lb, LoadBalancers.roundRobin());
-        assertNotSame(lb, LoadBalancers.roundRobin());
-        assertNotSame(lb, LoadBalancers.roundRobin());
+        assertNotSame(lb, LoadBalancers.newRoundRobin());
+        assertNotSame(lb, LoadBalancers.newRoundRobin());
+        assertNotSame(lb, LoadBalancers.newRoundRobin());
 
         runParallel(4, 1000, i ->
             assertNotNull(lb.route(i, ctx))

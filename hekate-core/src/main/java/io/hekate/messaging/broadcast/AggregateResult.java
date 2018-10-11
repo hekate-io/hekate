@@ -27,12 +27,11 @@ import java.util.stream.Stream;
 import static java.util.Collections.emptyList;
 
 /**
- * Result of {@link MessagingChannel#aggregate(Object) aggregate(...)} operation.
+ * Result of a {@link Aggregate} operation.
  *
  * @param <T> Base type of aggregation results.
  *
- * @see MessagingChannel#aggregate(Object)
- * @see MessagingChannel#aggregate(Object, AggregateCallback)
+ * @see MessagingChannel#newAggregate(Object)
  */
 public interface AggregateResult<T> extends Iterable<T> {
     /**

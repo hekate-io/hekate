@@ -81,8 +81,8 @@ public class MessagingServiceFactoryTest extends HekateTestBase {
 
     @Test
     public void testGlobalInterceptors() {
-        MessageInterceptor<?> p1 = mock(MessageInterceptor.class);
-        MessageInterceptor<?> p2 = mock(MessageInterceptor.class);
+        MessageInterceptor p1 = mock(MessageInterceptor.class);
+        MessageInterceptor p2 = mock(MessageInterceptor.class);
 
         assertNull(cfg.getGlobalInterceptors());
 

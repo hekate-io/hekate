@@ -17,19 +17,19 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.HekateTestBase;
+import io.hekate.messaging.unicast.RequestCallback;
 import io.hekate.messaging.unicast.Response;
-import io.hekate.messaging.unicast.ResponseCallback;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 
-public class ResponseCallbackMock implements ResponseCallback<String> {
+public class RequestCallbackMock implements RequestCallback<String> {
     private final String expectedRequest;
 
     private final CompletableFuture<Response<String>> latch = new CompletableFuture<>();
 
-    public ResponseCallbackMock(String expectedRequest) {
+    public RequestCallbackMock(String expectedRequest) {
         this.expectedRequest = expectedRequest;
     }
 

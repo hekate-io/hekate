@@ -835,7 +835,7 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
             if (onSend != null) {
                 Throwable mayBeError = NettyErrorUtils.unwrap(result.cause());
 
-                onSend.onComplete(msg, Optional.ofNullable(mayBeError), this);
+                onSend.onComplete(msg, mayBeError);
             }
         });
 
@@ -876,7 +876,7 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
 
     private void notifyOnError(T msg, NetworkSendCallback<T> onSend, Throwable error) {
         try {
-            onSend.onComplete(msg, Optional.of(error), this);
+            onSend.onComplete(msg, error);
         } catch (RuntimeException | Error e) {
             log.error("Failed to notify callback on network operation failure [to={}, message={}]", id(), msg, e);
         }

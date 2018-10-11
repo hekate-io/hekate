@@ -21,9 +21,7 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
 import io.hekate.codec.CodecException;
-import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
-import io.hekate.core.HekateSupport;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.failover.FailureInfo;
@@ -36,32 +34,20 @@ import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingException;
-import io.hekate.messaging.broadcast.AggregateCallback;
-import io.hekate.messaging.broadcast.AggregateFuture;
-import io.hekate.messaging.broadcast.BroadcastCallback;
-import io.hekate.messaging.broadcast.BroadcastFuture;
-import io.hekate.messaging.intercept.OutboundType;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
-import io.hekate.messaging.loadbalance.LoadBalancerContext;
-import io.hekate.messaging.loadbalance.LoadBalancerException;
 import io.hekate.messaging.loadbalance.UnknownRouteException;
 import io.hekate.messaging.unicast.FailureResponse;
 import io.hekate.messaging.unicast.RejectedReplyException;
 import io.hekate.messaging.unicast.ReplyDecision;
 import io.hekate.messaging.unicast.Response;
-import io.hekate.messaging.unicast.ResponseCallback;
-import io.hekate.messaging.unicast.ResponseFuture;
-import io.hekate.messaging.unicast.SendCallback;
-import io.hekate.messaging.unicast.SendFuture;
-import io.hekate.messaging.unicast.SubscribeFuture;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkFuture;
 import io.hekate.partition.PartitionMapper;
+import io.hekate.util.async.ExtendedScheduledExecutor;
 import io.hekate.util.async.Waiting;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -72,35 +58,21 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.StampedLock;
 import org.slf4j.Logger;
 
 import static io.hekate.failover.FailoverRoutingPolicy.RETRY_SAME_NODE;
 import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toList;
 
-class MessagingGatewayContext<T> implements HekateSupport {
-    interface CloseCallback {
-        void onBeforeClose();
-    }
-
+class MessagingGatewayContext<T> {
     private interface FailoverCallback {
         void retry(FailoverRoutingPolicy routingPolicy, Optional<FailureInfo> newFailure);
 
         void fail(Throwable cause);
-    }
-
-    @FunctionalInterface
-    private interface Router<T> {
-        ClusterNodeId route(
-            MessageContext<T> ctx,
-            Optional<FailureInfo> prevFailure,
-            PartitionMapper mapper,
-            ClusterTopology topology,
-            HekateSupport hekate
-        ) throws LoadBalancerException;
     }
 
     private static class ClientSelectionRejectedException extends Exception {
@@ -110,12 +82,6 @@ class MessagingGatewayContext<T> implements HekateSupport {
             super(null, cause, false, false);
         }
     }
-
-    private static final Router<?> UNICAST_ROUTER = (ctx, prevFailure, mapper, topology, hekate) -> {
-        LoadBalancerContext balancerCtx = new DefaultLoadBalancerContext(ctx, topology, hekate, mapper, prevFailure);
-
-        return ctx.opts().balancer().route(ctx.originalMessage(), balancerCtx);
-    };
 
     private final String name;
 
@@ -134,9 +100,6 @@ class MessagingGatewayContext<T> implements HekateSupport {
     private final ClusterNode localNode;
 
     @ToStringIgnore
-    private final HekateSupport hekate;
-
-    @ToStringIgnore
     private final NetworkConnector<MessagingProtocol> net;
 
     @ToStringIgnore
@@ -144,9 +107,6 @@ class MessagingGatewayContext<T> implements HekateSupport {
 
     @ToStringIgnore
     private final MessageReceiver<T> receiver;
-
-    @ToStringIgnore
-    private final CloseCallback onBeforeClose;
 
     @ToStringIgnore
     private final boolean checkIdle;
@@ -167,39 +127,41 @@ class MessagingGatewayContext<T> implements HekateSupport {
     private final SendPressureGuard sendPressure;
 
     @ToStringIgnore
-    private final InterceptorManager<T> interceptor;
+    private final MessageInterceptors<T> interceptors;
 
     @ToStringIgnore
     private final DefaultMessagingChannel<T> channel;
 
     @ToStringIgnore
-    private final Set<MessagingConnectionNetIn<T>> inbound = new HashSet<>();
+    private final Set<MessagingConnectionIn<T>> inbound = new HashSet<>();
 
     @ToStringIgnore
     private final Map<ClusterNodeId, MessagingClient<T>> clients = new HashMap<>();
 
     @ToStringIgnore
+    private final ExtendedScheduledExecutor timer;
+
+    @ToStringIgnore
     private ClusterTopology clientsTopology;
 
     @ToStringIgnore
-    private boolean closed;
+    private volatile boolean closed;
 
     public MessagingGatewayContext(
         String name,
-        HekateSupport hekate,
         Class<T> baseType,
         NetworkConnector<MessagingProtocol> net,
         ClusterNode localNode,
         MessageReceiver<T> receiver,
         MessagingExecutor async,
+        ExtendedScheduledExecutor timer,
         MessagingMetrics metrics,
         ReceivePressureGuard receivePressure,
         SendPressureGuard sendPressure,
-        InterceptorManager<T> interceptor,
+        MessageInterceptors<T> interceptors,
         Logger log,
         boolean checkIdle,
-        DefaultMessagingChannel<T> channel,
-        CloseCallback onBeforeClose
+        DefaultMessagingChannel<T> channel
     ) {
         assert name != null : "Name is null.";
         assert baseType != null : "Base type is null.";
@@ -212,13 +174,13 @@ class MessagingGatewayContext<T> implements HekateSupport {
         this.id = new MessagingChannelId();
         this.name = name;
         this.baseType = baseType;
-        this.hekate = hekate;
         this.net = net;
         this.localNode = localNode;
         this.cluster = channel.cluster();
         this.receiver = receiver;
-        this.interceptor = interceptor;
+        this.interceptors = interceptors;
         this.async = async;
+        this.timer = timer;
         this.metrics = metrics;
         this.receivePressure = receivePressure;
         this.sendPressure = sendPressure;
@@ -226,7 +188,6 @@ class MessagingGatewayContext<T> implements HekateSupport {
         this.log = log;
         this.debug = log.isDebugEnabled();
         this.channel = channel;
-        this.onBeforeClose = onBeforeClose;
     }
 
     public MessagingChannelId channelId() {
@@ -241,150 +202,49 @@ class MessagingGatewayContext<T> implements HekateSupport {
         return localNode;
     }
 
-    public InterceptorManager<T> intercept() {
-        return interceptor;
+    public MessageInterceptors<T> interceptors() {
+        return interceptors;
     }
 
     public Logger log() {
         return log;
     }
 
-    public SendFuture send(Object affinityKey, T msg, MessagingOpts<T> opts) {
-        SendCallbackFuture future = new SendCallbackFuture();
-
-        send(affinityKey, msg, opts, future);
-
-        return future;
+    public MessageReceiver<T> receiver() {
+        return receiver;
     }
 
-    public void send(Object affinityKey, T msg, MessagingOpts<T> opts, SendCallback callback) {
-        sendWithRouter(unicastRouter(), affinityKey, msg, opts, callback);
+    public Executor executor() {
+        return async.pooledWorker();
     }
 
-    public ResponseFuture<T> request(Object affinityKey, T msg, MessagingOpts<T> opts) {
-        ResponseCallbackFuture<T> future = new ResponseCallbackFuture<>();
-
-        request(affinityKey, msg, opts, future);
-
-        return future;
+    public ClusterView cluster() {
+        return cluster;
     }
 
-    public void request(Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
-        requestWithRouter(unicastRouter(), affinityKey, msg, opts, callback);
-    }
+    public void submit(MessageOperation<T> op) {
+        checkMessageType(op.message());
 
-    public SubscribeFuture<T> subscribe(Object affinityKey, T msg, MessagingOpts<T> opts) {
-        SubscribeCallbackFuture<T> future = new SubscribeCallbackFuture<>();
+        try {
+            long remainingTimeout = applyBackPressure(op);
 
-        subscribe(affinityKey, msg, opts, future);
-
-        return future;
-    }
-
-    public void subscribe(Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
-        checkMessageType(msg);
-
-        MessageContext<T> ctx = newContext(OutboundType.SUBSCRIBE, affinityKey, msg, opts);
-
-        requestAsync(msg, ctx, unicastRouter(), callback);
-    }
-
-    public BroadcastFuture<T> broadcast(Object affinityKey, T msg, MessagingOpts<T> opts) {
-        BroadcastCallbackFuture<T> future = new BroadcastCallbackFuture<>();
-
-        broadcast(affinityKey, msg, opts, future);
-
-        return future;
-    }
-
-    public void broadcast(Object affinityKey, T msg, MessagingOpts<T> opts, BroadcastCallback<T> callback) {
-        checkMessageType(msg);
-
-        List<ClusterNode> nodes = nodesForBroadcast(affinityKey, opts);
-
-        if (nodes.isEmpty()) {
-            callback.onComplete(null, new EmptyBroadcastResult<>(msg));
-        } else {
-            BroadcastContext<T> broadcast = new BroadcastContext<>(msg, nodes, callback);
-
-            for (ClusterNode node : nodes) {
-                // Always route to the same node.
-                Router<T> router = (ctx, prevFailure, mapper, topology, hekate) -> node.id();
-
-                sendWithRouter(router, affinityKey, msg, opts, err -> {
-                    boolean completed;
-
-                    if (err == null) {
-                        completed = broadcast.onSendSuccess(node);
-                    } else if (err instanceof UnknownRouteException) {
-                        // Special case for unknown routes.
-                        //-----------------------------------------------
-                        // Can happen in some rare cases if node leaves the cluster at the same time with this operation.
-                        // We exclude such nodes from the operation's results as if it had left the cluster right before we even tried.
-                        completed = broadcast.forgetNode(node);
-                    } else {
-                        completed = broadcast.onSendFailure(node, err);
-                    }
-
-                    if (completed) {
-                        broadcast.complete();
-                    }
-                });
+            if (op.opts().hasTimeout()) {
+                scheduleTimeout(op, remainingTimeout);
             }
+
+            routeAndSubmit(op, Optional.empty());
+        } catch (RejectedExecutionException e) {
+            notifyOnErrorAsync(op, channelClosedError(null));
+        } catch (InterruptedException | MessageQueueOverflowException | MessageQueueTimeoutException e) {
+            notifyOnErrorAsync(op, e);
         }
     }
 
-    public AggregateFuture<T> aggregate(Object affinityKey, T msg, MessagingOpts<T> opts) {
-        AggregateCallbackFuture<T> future = new AggregateCallbackFuture<>();
-
-        aggregate(affinityKey, msg, opts, future);
-
-        return future;
-    }
-
-    public void aggregate(Object affinityKey, T msg, MessagingOpts<T> opts, AggregateCallback<T> callback) {
-        checkMessageType(msg);
-
-        List<ClusterNode> nodes = nodesForBroadcast(affinityKey, opts);
-
-        if (nodes.isEmpty()) {
-            callback.onComplete(null, new EmptyAggregateResult<>(msg));
-        } else {
-            AggregateContext<T> aggregate = new AggregateContext<>(msg, nodes, callback);
-
-            for (ClusterNode node : nodes) {
-                // Always route to the same node.
-                Router<T> router = (ctx, prevFailure, mapper, topology, hekate) -> node.id();
-
-                requestWithRouter(router, affinityKey, msg, opts, (err, reply) -> {
-                    boolean completed;
-
-                    if (err == null) {
-                        completed = aggregate.onReplySuccess(node, reply);
-                    } else if (err instanceof UnknownRouteException) {
-                        // Special case for unknown routes.
-                        //-----------------------------------------------
-                        // It may happen that in some rare cases some node leaves the cluster at the same time with this operation.
-                        // We exclude such a node from the results of the operation, as if there was no such node at all.
-                        completed = aggregate.forgetNode(node);
-                    } else {
-                        completed = aggregate.onReplyFailure(node, err);
-                    }
-
-                    if (completed) {
-                        aggregate.complete();
-                    }
-                });
-            }
-        }
+    public boolean isClosed() {
+        return closed;
     }
 
     public Waiting close() {
-        // Notify on close callback.
-        if (onBeforeClose != null) {
-            onBeforeClose.onBeforeClose();
-        }
-
         List<Waiting> waiting;
 
         long writeLock = lock.writeLock();
@@ -417,7 +277,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
                 clients.clear();
 
                 // Close all inbound connections.
-                List<MessagingConnectionNetIn<T>> localInbound;
+                List<MessagingConnectionIn<T>> localInbound;
 
                 synchronized (inbound) {
                     // Create a local copy of inbound connections since they are removing themselves from the list during disconnect.
@@ -427,7 +287,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
                 }
 
                 localInbound.stream()
-                    .map(MessagingConnectionNetIn::disconnect)
+                    .map(MessagingConnectionIn::disconnect)
                     .filter(Objects::nonNull)
                     .forEach(disconnects::add);
 
@@ -448,25 +308,313 @@ class MessagingGatewayContext<T> implements HekateSupport {
         return Waiting.awaitAll(waiting);
     }
 
-    public MessageReceiver<T> receiver() {
-        return receiver;
+    private void routeAndSubmit(MessageOperation<T> op, Optional<FailureInfo> prevFailure) {
+        MessageOperationAttempt<T> attempt = null;
+
+        try {
+            attempt = route(op, prevFailure);
+        } catch (ClientSelectionRejectedException e) {
+            notifyOnErrorAsync(op, e.getCause());
+        } catch (HekateException e) {
+            notifyOnErrorAsync(op, e);
+        } catch (RuntimeException | Error e) {
+            if (log.isErrorEnabled()) {
+                log.error("Got an unexpected runtime error during message routing.", e);
+            }
+
+            notifyOnErrorAsync(op, e);
+        }
+
+        if (attempt != null) {
+            attempt.submit();
+        }
     }
 
-    public Executor executor() {
-        return async.pooledWorker();
+    private MessageOperationAttempt<T> route(MessageOperation<T> op, Optional<FailureInfo> prevFailure) throws HekateException,
+        ClientSelectionRejectedException {
+        // Perform routing in a loop to circumvent concurrent cluster topology changes.
+        while (true) {
+            PartitionMapper mapperSnapshot = op.opts().partitions().snapshot();
+
+            ClusterTopology topology = mapperSnapshot.topology();
+
+            // Fail if topology is empty.
+            if (topology.isEmpty()) {
+                if (prevFailure.isPresent()) {
+                    throw new ClientSelectionRejectedException(prevFailure.get().error());
+                } else {
+                    throw new EmptyTopologyException("No suitable receivers [channel=" + name + ']');
+                }
+            }
+
+            ClusterNodeId routed = op.route(mapperSnapshot, prevFailure);
+
+            // Check if routing was successful.
+            if (routed == null) {
+                if (prevFailure.isPresent()) {
+                    throw new ClientSelectionRejectedException(prevFailure.get().error());
+                } else {
+                    throw new UnknownRouteException("Load balancer failed to select a target node.");
+                }
+            }
+
+            // Enter lock (prevents channel state changes).
+            long readLock = lock.readLock();
+
+            try {
+                // Make sure that channel is not closed.
+                if (closed) {
+                    throw channelClosedError(null);
+                }
+
+                MessagingClient<T> client = clients.get(routed);
+
+                if (client == null) {
+                    // Post-check that topology was not changed during routing.
+                    // -------------------------------------------------------------
+                    // We are comparing the following topologies:
+                    //  - Latest topology that is known to the cluster
+                    //  - Topology that was used for routing (since it could expire while routing was in progress)
+                    //  - Topology of client connections (since it is updated asynchronously and can lag behind the latest cluster topology)
+                    // In case of any mismatch between those topologies we need to perform another routing attempt.
+                    ClusterTopology latestTopology = op.opts().partitions().topology();
+
+                    if (latestTopology.version() == topology.version()
+                        && clientsTopology != null // <-- Can be null if service was still initializing when this method got called.
+                        && clientsTopology.version() >= topology.version()) {
+                        // Report failure since topologies are consistent but the selected node is not within the cluster.
+                        if (prevFailure.isPresent()) {
+                            throw new ClientSelectionRejectedException(prevFailure.get().error());
+                        } else {
+                            throw new UnknownRouteException("Node is not within the channel topology [id=" + routed + ']');
+                        }
+                    }
+
+                    // Retry routing (note we are not exiting the loop)...
+                } else {
+                    // Successful routing.
+                    return createAttempt(op, prevFailure, topology, client);
+                }
+            } finally {
+                lock.unlockRead(readLock);
+            }
+
+            // Since we are here it means that topology was changed during routing.
+            if (debug) {
+                log.debug("Retrying routing since topology was changed [balancer={}]", op.opts().balancer());
+            }
+
+            checkTopologyChanges();
+        }
     }
 
-    @Override
-    public Hekate hekate() {
-        return hekate.hekate();
+    private MessageOperationAttempt<T> createAttempt(
+        MessageOperation<T> operation,
+        Optional<FailureInfo> prevFailure,
+        ClusterTopology topology,
+        MessagingClient<T> client
+    ) {
+        MessageOperationCallback<T> callback = (attempt, reply, err) -> {
+            // Signal that network connection is not idle.
+            attempt.client().touch();
+
+            // Do not process completed operations.
+            if (operation.isDone()) {
+                return false;
+            }
+
+            // Check if reply is an application-level error message.
+            if (err == null) {
+                err = tryConvertToError(reply, attempt.receiver());
+            }
+
+            // Resolve effective reply.
+            Response<T> effectiveReply = err == null ? reply : null;
+
+            // Check if this is an acceptable response.
+            ReplyDecision decision = operation.accept(err, effectiveReply);
+
+            if (decision == null) {
+                decision = ReplyDecision.DEFAULT;
+            }
+
+            boolean completed = false;
+
+            if (shouldComplete(operation, decision, err)) {
+                /////////////////////////////////////////////////////////////
+                // Complete the operation.
+                /////////////////////////////////////////////////////////////
+                // Note that it is up to the operation to decide on whether it is really completed or not.
+                completed = operation.complete(err, effectiveReply);
+            } else if (!operation.isDone()) {
+                /////////////////////////////////////////////////////////////
+                // Apply failover.
+                /////////////////////////////////////////////////////////////
+                // Complete the current attempt (successful failover actions will result in a new attempt).
+                completed = true;
+
+                if (decision == ReplyDecision.REJECT) {
+                    Object rejected = effectiveReply != null ? effectiveReply.get() : null;
+
+                    err = new RejectedReplyException("Response was rejected by the request callback", rejected, err);
+                }
+
+                // Failover callback.
+                FailoverCallback onFailover = new FailoverCallback() {
+                    @Override
+                    public void retry(FailoverRoutingPolicy routing, Optional<FailureInfo> failure) {
+                        switch (routing) {
+                            case RETRY_SAME_NODE: {
+                                attempt.nextAttempt(failure).submit();
+
+                                break;
+                            }
+                            case PREFER_SAME_NODE: {
+                                if (isKnownNode(attempt.receiver())) {
+                                    attempt.nextAttempt(failure).submit();
+                                } else {
+                                    routeAndSubmit(operation, failure);
+                                }
+
+                                break;
+                            }
+                            case RE_ROUTE: {
+                                routeAndSubmit(operation, failure);
+
+                                break;
+                            }
+                            default: {
+                                throw new IllegalArgumentException("Unexpected routing policy: " + routing);
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void fail(Throwable cause) {
+                        notifyOnErrorAsync(operation, cause);
+                    }
+                };
+
+                // Apply failover.
+                applyFailoverAsync(attempt, err, onFailover);
+            }
+
+            return completed;
+        };
+
+        return new MessageOperationAttempt<>(client, topology, operation, prevFailure, callback);
     }
 
-    public Class<T> baseType() {
-        return baseType;
+    private void applyFailoverAsync(MessageOperationAttempt<T> attempt, Throwable cause, FailoverCallback callback) {
+        attempt.operation().worker().execute(() ->
+            applyFailover(attempt, cause, callback)
+        );
     }
 
-    public ClusterView cluster() {
-        return cluster;
+    private void applyFailover(MessageOperationAttempt<T> attempt, Throwable cause, FailoverCallback callback) {
+        // Do nothing if operation is already completed.
+        if (attempt.operation().isDone()) {
+            return;
+        }
+
+        boolean applied = false;
+
+        Throwable finalCause = cause;
+
+        FailoverPolicy policy = attempt.operation().opts().failover();
+
+        if (policy != null && isRecoverable(cause)) {
+            ClusterNode failedNode = attempt.receiver();
+
+            DefaultFailoverContext failoverCtx = newFailoverContext(cause, failedNode, attempt.prevFailure());
+
+            // Apply failover policy.
+            try {
+                FailureResolution resolution = policy.apply(failoverCtx);
+
+                // Enter lock (prevents channel state changes).
+                long readLock = lock.readLock();
+
+                try {
+                    if (closed) {
+                        finalCause = channelClosedError(cause);
+                    } else if (resolution != null && resolution.isRetry()) {
+                        FailoverRoutingPolicy routing = resolution.routing();
+
+                        // Apply failover only if re-routing was requested or if the target node is still within the cluster topology.
+                        if (routing != RETRY_SAME_NODE || clients.containsKey(failedNode.id())) {
+                            metrics.onRetry();
+
+                            // Schedule timeout task to apply failover actions after the failover delay.
+                            long delay = resolution.delay();
+
+                            timer.schedule(() -> {
+                                // Execute callback on the worker thread.
+                                attempt.operation().worker().execute(() -> {
+                                    try {
+                                        callback.retry(routing, Optional.of(failoverCtx.withRouting(routing)));
+                                    } catch (RuntimeException | Error e) {
+                                        log.error("Got an unexpected error during failover task processing.", e);
+                                    }
+                                });
+                            }, delay, TimeUnit.MILLISECONDS);
+
+                            applied = true;
+                        }
+                    }
+                } finally {
+                    lock.unlockRead(readLock);
+                }
+            } catch (RuntimeException | Error e) {
+                log.error("Got an unexpected error while applying failover policy.", e);
+            }
+        }
+
+        if (!applied) {
+            callback.fail(finalCause);
+        }
+    }
+
+    private long applyBackPressure(MessageOperation<T> op) throws MessageQueueOverflowException, InterruptedException,
+        MessageQueueTimeoutException {
+
+        if (sendPressure != null) {
+            long remainingTime = sendPressure.onEnqueue(op.opts().timeout(), op.message());
+
+            op.registerSendPressure(sendPressure);
+
+            return remainingTime;
+        }
+
+        return op.opts().timeout();
+    }
+
+    private void scheduleTimeout(MessageOperation<T> op, long initTimeout) {
+        assert initTimeout > 0 : "Timeout must be greater than zero [timeout=" + initTimeout + ']';
+
+        Future<?> timeoutFuture = timer.repeatWithFixedDelay(() -> {
+            if (op.isDone()) {
+                // Do not execute anymore (operation already completed).
+                return false;
+            }
+
+            if (op.shouldExpireOnTimeout()) {
+                // Process expiration on the worker thread.
+                op.worker().execute(() -> {
+                    String errMsg = "Messaging operation timed out [timeout=" + op.opts().timeout() + ", message=" + op.message() + ']';
+
+                    doNotifyOnError(op, new MessageTimeoutException(errMsg));
+                });
+
+                // Do not execute anymore (operation timed out).
+                return false;
+            }
+
+            // Re-run this check later (for subscriptions).
+            return true;
+        }, initTimeout, op.opts().timeout(), TimeUnit.MILLISECONDS);
+
+        op.registerTimeout(timeoutFuture);
     }
 
     DefaultMessagingChannel<T> channel() {
@@ -489,266 +637,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
         return sendPressure;
     }
 
-    private void sendWithRouter(Router<T> router, Object affinityKey, T msg, MessagingOpts<T> opts, SendCallback callback) {
-        checkMessageType(msg);
-
-        if (callback != null && opts.isConfirmReceive()) {
-            MessageContext<T> ctx = newContext(OutboundType.SEND_WITH_ACK, affinityKey, msg, opts);
-
-            requestAsync(msg, ctx, router, (err, rsp) -> callback.onComplete(err));
-        } else {
-            MessageContext<T> ctx = newContext(OutboundType.SEND_NO_ACK, affinityKey, msg, opts);
-
-            try {
-                long timeout = backPressureAcquire(ctx.opts().timeout(), msg);
-
-                if (timeout > 0) {
-                    doScheduleTimeout(timeout, ctx, callback);
-                }
-
-                routeAndSend(ctx, router, callback, Optional.empty());
-            } catch (InterruptedException | MessageQueueOverflowException | MessageQueueTimeoutException e) {
-                notifyOnErrorAsync(ctx, callback, e);
-            }
-        }
-    }
-
-    private void routeAndSend(MessageContext<T> ctx, Router<T> router, SendCallback callback, Optional<FailureInfo> prevFailure) {
-        MessageAttempt<T> attempt = null;
-
-        try {
-            attempt = route(ctx, router, prevFailure);
-        } catch (HekateException e) {
-            notifyOnErrorAsync(ctx, callback, e);
-        } catch (RuntimeException | Error e) {
-            if (log.isErrorEnabled()) {
-                log.error("Got an unexpected runtime error during message routing.", e);
-            }
-
-            notifyOnErrorAsync(ctx, callback, e);
-        } catch (ClientSelectionRejectedException e) {
-            notifyOnErrorAsync(ctx, callback, e.getCause());
-        }
-
-        if (attempt != null) {
-            doSend(attempt, router, callback);
-        }
-    }
-
-    private void doSend(MessageAttempt<T> attempt, Router<T> router, SendCallback callback) {
-        MessageContext<T> ctx = attempt.ctx();
-
-        // Decorate callback with failover, error handling logic, etc.
-        SendCallback retryCallback = err -> {
-            attempt.client().touch();
-
-            if (err == null || ctx.opts().failover() == null) {
-                // Complete operation.
-                if (ctx.complete()) {
-                    backPressureRelease();
-
-                    if (callback != null) {
-                        callback.onComplete(err);
-                    }
-                }
-            } else {
-                // Apply failover actions.
-                FailoverCallback onFailover = new FailoverCallback() {
-                    @Override
-                    public void retry(FailoverRoutingPolicy routing, Optional<FailureInfo> failure) {
-                        switch (routing) {
-                            case RETRY_SAME_NODE: {
-                                doSend(attempt.newAttempt(failure), router, callback);
-
-                                break;
-                            }
-                            case PREFER_SAME_NODE: {
-                                if (isKnownNode(attempt.client().node())) {
-                                    doSend(attempt.newAttempt(failure), router, callback);
-                                } else {
-                                    routeAndSend(ctx, router, callback, failure);
-                                }
-
-                                break;
-                            }
-                            case RE_ROUTE: {
-                                routeAndSend(ctx, router, callback, failure);
-
-                                break;
-                            }
-                            default: {
-                                throw new IllegalArgumentException("Unexpected routing policy: " + routing);
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void fail(Throwable cause) {
-                        notifyOnErrorAsync(ctx, callback, cause);
-                    }
-                };
-
-                applyFailoverAsync(attempt, err, onFailover);
-            }
-        };
-
-        attempt.client().send(attempt, retryCallback);
-    }
-
-    private void requestWithRouter(Router<T> router, Object affinityKey, T msg, MessagingOpts<T> opts, ResponseCallback<T> callback) {
-        checkMessageType(msg);
-
-        MessageContext<T> ctx = newContext(OutboundType.REQUEST, affinityKey, msg, opts);
-
-        requestAsync(msg, ctx, router, callback);
-    }
-
-    private void requestAsync(T request, MessageContext<T> ctx, Router<T> router, ResponseCallback<T> callback) {
-        try {
-            long timeout = backPressureAcquire(ctx.opts().timeout(), request);
-
-            if (timeout > 0) {
-                doScheduleTimeout(timeout, ctx, callback);
-            }
-
-            routeAndRequest(ctx, router, callback, Optional.empty());
-        } catch (InterruptedException | MessageQueueOverflowException | MessageQueueTimeoutException e) {
-            notifyOnErrorAsync(ctx, callback, e);
-        }
-    }
-
-    private void routeAndRequest(MessageContext<T> ctx, Router<T> router, ResponseCallback<T> callback, Optional<FailureInfo> prevFailure) {
-        MessageAttempt<T> attempt = null;
-
-        try {
-            attempt = route(ctx, router, prevFailure);
-        } catch (HekateException e) {
-            notifyOnErrorAsync(ctx, callback, e);
-        } catch (RuntimeException | Error e) {
-            if (log.isErrorEnabled()) {
-                log.error("Got an unexpected runtime error during message routing.", e);
-            }
-
-            notifyOnErrorAsync(ctx, callback, e);
-        } catch (ClientSelectionRejectedException e) {
-            notifyOnErrorAsync(ctx, callback, e.getCause());
-        }
-
-        if (attempt != null) {
-            doRequest(attempt, router, callback);
-        }
-    }
-
-    private void doRequest(MessageAttempt<T> attempt, Router<T> router, ResponseCallback<T> callback) {
-        // Decorate callback with failover, error handling logic, etc.
-        final MessageContext<T> ctx = attempt.ctx();
-
-        InternalRequestCallback<T> internalCallback = (request, err, reply) -> {
-            attempt.client().touch();
-
-            // Check if reply is an application-level error message.
-            if (err == null) {
-                err = tryConvertToError(reply, attempt.receiver());
-            }
-
-            // Resolve effective reply.
-            Response<T> effectiveReply = err == null ? reply : null;
-
-            // Check if request callback can accept the response.
-            ReplyDecision decision = callback.accept(err, effectiveReply);
-
-            if (decision == null) {
-                decision = ReplyDecision.DEFAULT;
-            }
-
-            FailoverPolicy failover = ctx.opts().failover();
-
-            if ((decision == ReplyDecision.COMPLETE) || (decision == ReplyDecision.DEFAULT && err == null) || (failover == null)) {
-                // Check if this is the final response or an error (ignore chunks).
-                if (err != null || isFinalOrVoidResponse(reply)) {
-                    /////////////////////////////////////////////////////////////
-                    // Final response or error.
-                    /////////////////////////////////////////////////////////////
-                    // Make sure that callback will be notified only once.
-                    if (ctx.complete()) {
-                        request.unregister();
-
-                        backPressureRelease();
-
-                        // Accept final reply.
-                        callback.onComplete(err, reply);
-                    }
-                } else if (!ctx.isCompleted()) {
-                    /////////////////////////////////////////////////////////////
-                    // Response chunk.
-                    /////////////////////////////////////////////////////////////
-                    // Ensure that stream doesn't get timed out.
-                    if (ctx.opts().hasTimeout()) {
-                        ctx.keepAlive();
-                    }
-
-                    // Accept chunk.
-                    callback.onComplete(null, reply);
-                }
-            } else if (!ctx.isCompleted()) {
-                /////////////////////////////////////////////////////////////
-                // Apply failover.
-                /////////////////////////////////////////////////////////////
-                // Unregister request (if failover actions will be successful then a new request will be registered).
-                request.unregister();
-
-                // Apply failover actions.
-                if (decision == ReplyDecision.REJECT) {
-                    Object rejected = reply != null ? reply.get() : null;
-
-                    err = new RejectedReplyException("Response was rejected by the request callback", rejected, err);
-                }
-
-                // Failover callback.
-                FailoverCallback onFailover = new FailoverCallback() {
-                    @Override
-                    public void retry(FailoverRoutingPolicy routing, Optional<FailureInfo> failure) {
-                        switch (routing) {
-                            case RETRY_SAME_NODE: {
-                                doRequest(attempt.newAttempt(failure), router, callback);
-
-                                break;
-                            }
-                            case PREFER_SAME_NODE: {
-                                if (isKnownNode(attempt.client().node())) {
-                                    doRequest(attempt.newAttempt(failure), router, callback);
-                                } else {
-                                    routeAndRequest(ctx, router, callback, failure);
-                                }
-
-                                break;
-                            }
-                            case RE_ROUTE: {
-                                routeAndRequest(ctx, router, callback, failure);
-
-                                break;
-                            }
-                            default: {
-                                throw new IllegalArgumentException("Unexpected routing policy: " + routing);
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void fail(Throwable cause) {
-                        notifyOnErrorAsync(ctx, callback, cause);
-                    }
-                };
-
-                // Apply failover.
-                applyFailoverAsync(attempt, err, onFailover);
-            }
-        };
-
-        attempt.client().request(attempt, internalCallback);
-    }
-
-    boolean register(MessagingConnectionNetIn<T> conn) {
+    boolean register(MessagingConnectionIn<T> conn) {
         long readLock = lock.readLock();
 
         try {
@@ -766,7 +655,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
         }
     }
 
-    void unregister(MessagingConnectionNetIn<T> conn) {
+    void unregister(MessagingConnectionIn<T> conn) {
         long readLock = lock.readLock();
 
         try {
@@ -790,7 +679,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
         }
     }
 
-    void updateTopology() {
+    void checkTopologyChanges() {
         List<MessagingClient<T>> clientsToClose = null;
 
         long writeLock = lock.writeLock();
@@ -871,7 +760,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
     // This method is for testing purposes only.
     MessagingClient<T> clientOf(ClusterNodeId nodeId) throws MessagingException {
         // Ensure that we are using the latest topology.
-        updateTopology();
+        checkTopologyChanges();
 
         long readLock = lock.readLock();
 
@@ -882,43 +771,6 @@ class MessagingGatewayContext<T> implements HekateSupport {
         }
     }
 
-    private List<ClusterNode> nodesForBroadcast(Object affinityKey, MessagingOpts<T> opts) {
-        List<ClusterNode> nodes;
-
-        if (affinityKey == null) {
-            // Use the whole topology if affinity key is not specified.
-            nodes = opts.cluster().topology().nodes();
-        } else {
-            // Use only those nodes that are mapped to the partition.
-            nodes = opts.partitions().map(affinityKey).nodes();
-        }
-
-        return nodes;
-    }
-
-    private void doScheduleTimeout(long timeout, MessageContext<T> ctx, Object callback) {
-        if (!ctx.isCompleted()) {
-            try {
-                Future<?> future = ctx.worker().executeDeferred(timeout, () -> {
-                    if (ctx.completeOnTimeout()) {
-                        // Timed out.
-                        T msg = ctx.originalMessage();
-
-                        doNotifyOnError(callback, new MessageTimeoutException("Messaging operation timed out [message=" + msg + ']'));
-                    } else {
-                        // Try reschedule next timeout (for subscriptions).
-                        doScheduleTimeout(timeout, ctx, callback);
-                    }
-                });
-
-                ctx.setTimeoutFuture(future);
-            } catch (RejectedExecutionException e) {
-                // Ignore since this error means that channel is closed.
-                // In such case we can ignore timeout notification because messaging context will be notified by another error.
-            }
-        }
-    }
-
     private boolean isKnownNode(ClusterNode node) {
         long readLock = lock.readLock();
 
@@ -926,153 +778,6 @@ class MessagingGatewayContext<T> implements HekateSupport {
             return clients.containsKey(node.id());
         } finally {
             lock.unlockRead(readLock);
-        }
-    }
-
-    private MessageAttempt<T> route(
-        MessageContext<T> ctx,
-        Router<T> router,
-        Optional<FailureInfo> prevFailure
-    ) throws HekateException, ClientSelectionRejectedException {
-        // Perform routing in a loop to circumvent concurrent cluster topology changes.
-        while (true) {
-            PartitionMapper mapper = ctx.opts().partitions().snapshot();
-
-            ClusterTopology topology = mapper.topology();
-
-            // Fail if topology is empty.
-            if (topology.isEmpty()) {
-                if (prevFailure.isPresent()) {
-                    throw new ClientSelectionRejectedException(prevFailure.get().error());
-                } else {
-                    throw new EmptyTopologyException("No suitable receivers [channel=" + name + ']');
-                }
-            }
-
-            ClusterNodeId routed = router.route(ctx, prevFailure, mapper, topology, hekate);
-
-            // Check if routing was successful.
-            if (routed == null) {
-                if (prevFailure.isPresent()) {
-                    throw new ClientSelectionRejectedException(prevFailure.get().error());
-                } else {
-                    throw new UnknownRouteException("Load balancer failed to select a target node.");
-                }
-            }
-
-            // Enter lock (prevents channel state changes).
-            long readLock = lock.readLock();
-
-            try {
-                // Make sure that channel is not closed.
-                if (closed) {
-                    throw channelClosedError(null);
-                }
-
-                MessagingClient<T> client = clients.get(routed);
-
-                if (client == null) {
-                    // Post-check that topology was not changed during routing.
-                    // -------------------------------------------------------------
-                    // We are comparing the following topologies:
-                    //  - Latest topology that is known to the cluster
-                    //  - Topology that was used for routing (since it could expire while routing was in progress)
-                    //  - Topology of client connections (since it is updated asynchronously and can lag behind the latest cluster topology)
-                    // In case of any mismatch between those topologies we need to perform another routing attempt.
-                    ClusterTopology latestTopology = ctx.opts().partitions().topology();
-
-                    if (latestTopology.version() == topology.version()
-                        && clientsTopology != null // <-- Can be null if service was still initializing when this method got called.
-                        && clientsTopology.version() >= topology.version()) {
-                        // Report failure since topologies are consistent but the selected node is not within the cluster.
-                        if (prevFailure.isPresent()) {
-                            throw new ClientSelectionRejectedException(prevFailure.get().error());
-                        } else {
-                            throw new UnknownRouteException("Node is not within the channel topology [id=" + routed + ']');
-                        }
-                    }
-
-                    // Retry routing (note we are not exiting the loop)...
-                } else {
-                    return new MessageAttempt<>(client, topology, ctx, prevFailure);
-                }
-            } finally {
-                lock.unlockRead(readLock);
-            }
-
-            // Since we are here it means that topology was changed during routing.
-            if (debug) {
-                log.debug("Retrying routing since topology was changed [balancer={}]", ctx.opts().balancer());
-            }
-
-            updateTopology();
-        }
-    }
-
-    private void applyFailoverAsync(MessageAttempt<T> attempt, Throwable cause, FailoverCallback callback) {
-        attempt.ctx().worker().execute(() ->
-            applyFailover(attempt, cause, callback)
-        );
-    }
-
-    private void applyFailover(MessageAttempt<T> attempt, Throwable cause, FailoverCallback callback) {
-        // Do nothing if operation is already completed.
-        if (attempt.ctx().isCompleted()) {
-            return;
-        }
-
-        boolean applied = false;
-
-        Throwable finalCause = cause;
-
-        FailoverPolicy policy = attempt.ctx().opts().failover();
-
-        if (policy != null && isRecoverable(cause)) {
-            ClusterNode failedNode = attempt.client().node();
-
-            DefaultFailoverContext failoverCtx = newFailoverContext(cause, failedNode, attempt.failure());
-
-            // Apply failover policy.
-            try {
-                FailureResolution resolution = policy.apply(failoverCtx);
-
-                // Enter lock (prevents channel state changes).
-                long readLock = lock.readLock();
-
-                try {
-                    if (closed) {
-                        finalCause = channelClosedError(cause);
-                    } else if (resolution != null && resolution.isRetry()) {
-                        FailoverRoutingPolicy routing = resolution.routing();
-
-                        // Apply failover only if re-routing was requested or if the target node is still within the cluster topology.
-                        if (routing != RETRY_SAME_NODE || clients.containsKey(failedNode.id())) {
-                            onRetry();
-
-                            MessagingWorker worker = attempt.ctx().worker();
-
-                            // Schedule timeout task to apply failover actions after the failover delay.
-                            worker.executeDeferred(resolution.delay(), () -> {
-                                try {
-                                    callback.retry(routing, Optional.of(failoverCtx.withRouting(routing)));
-                                } catch (RuntimeException | Error e) {
-                                    log.error("Got an unexpected error during failover task processing.", e);
-                                }
-                            });
-
-                            applied = true;
-                        }
-                    }
-                } finally {
-                    lock.unlockRead(readLock);
-                }
-            } catch (RuntimeException | Error e) {
-                log.error("Got an unexpected error while applying failover policy.", e);
-            }
-        }
-
-        if (!applied) {
-            callback.fail(finalCause);
         }
     }
 
@@ -1095,7 +800,7 @@ class MessagingGatewayContext<T> implements HekateSupport {
         } else {
             attempt = 0;
             prevRouting = RETRY_SAME_NODE;
-            failedNodes = Collections.singleton(failed);
+            failedNodes = singleton(failed);
         }
 
         return new DefaultFailoverContext(attempt, cause, failed, failedNodes, prevRouting);
@@ -1107,80 +812,21 @@ class MessagingGatewayContext<T> implements HekateSupport {
     }
 
     private MessagingClient<T> createClient(ClusterNode node) {
-        if (localNode.equals(node)) {
-            return new MessagingClientMem<>(localNode, this);
-        } else {
-            return new MessagingClientNet<>(name, node, net, this, checkIdle);
+        return new MessagingClient<>(node, net, this, checkIdle);
+    }
+
+    private void notifyOnErrorAsync(MessageOperation<T> op, Throwable err) {
+        op.worker().execute(() ->
+            doNotifyOnError(op, err)
+        );
+    }
+
+    private void doNotifyOnError(MessageOperation<T> op, Throwable err) {
+        try {
+            op.complete(err, null);
+        } catch (RuntimeException | Error e) {
+            log.error("Got an unexpected runtime error while notifying on another error [cause={}]", err, e);
         }
-    }
-
-    private long backPressureAcquire(long timeout, T msg) throws MessageQueueOverflowException, InterruptedException,
-        MessageQueueTimeoutException {
-        if (sendPressure != null) {
-            return sendPressure.onEnqueue(timeout, msg);
-        }
-
-        return timeout;
-    }
-
-    private void backPressureRelease() {
-        if (sendPressure != null) {
-            sendPressure.onDequeue();
-        }
-    }
-
-    private void onRetry() {
-        metrics.onRetry();
-    }
-
-    private void notifyOnErrorAsync(MessageContext<T> ctx, Object callback, Throwable err) {
-        ctx.worker().execute(() -> {
-            if (ctx.complete()) {
-                doNotifyOnError(callback, err);
-            }
-        });
-    }
-
-    @SuppressWarnings("unchecked")
-    private void doNotifyOnError(Object callback, Throwable err) {
-        backPressureRelease();
-
-        if (callback != null) {
-            if (callback instanceof SendCallback) {
-                try {
-                    ((SendCallback)callback).onComplete(err);
-                } catch (RuntimeException | Error e) {
-                    log.error("Got an unexpected runtime error while notifying send callback on another error [cause={}]", err, e);
-                }
-            } else if (callback instanceof ResponseCallback) {
-                try {
-                    ((ResponseCallback)callback).onComplete(err, null);
-                } catch (RuntimeException | Error e) {
-                    log.error("Got an unexpected runtime error while notifying request callback on another error [cause={}]", err, e);
-                }
-            } else {
-                throw new IllegalArgumentException("Unexpected callback type: " + callback);
-            }
-        }
-    }
-
-    private MessageContext<T> newContext(OutboundType type, Object affinityKey, T msg, MessagingOpts<T> opts) {
-        int affinity = affinity(affinityKey);
-
-        MessagingWorker worker;
-
-        if (affinityKey != null
-            || type == OutboundType.SUBSCRIBE /* <- Subscription operations should always be processed by the same thread. */) {
-            worker = async.workerFor(affinity);
-        } else {
-            worker = async.pooledWorker();
-        }
-
-        return new MessageContext<>(msg, affinity, affinityKey, worker, opts, type, interceptor);
-    }
-
-    private MessagingChannelClosedException channelClosedError(Throwable cause) {
-        return new MessagingChannelClosedException("Channel closed [channel=" + name + ']', cause);
     }
 
     private Throwable tryConvertToError(Response<T> reply, ClusterNode fromNode) {
@@ -1203,6 +849,10 @@ class MessagingGatewayContext<T> implements HekateSupport {
         return err;
     }
 
+    private MessagingChannelClosedException channelClosedError(Throwable cause) {
+        return new MessagingChannelClosedException("Channel closed [channel=" + name + ']', cause);
+    }
+
     private void checkMessageType(T msg) {
         assert msg != null : "Message must be not null.";
 
@@ -1212,21 +862,10 @@ class MessagingGatewayContext<T> implements HekateSupport {
         }
     }
 
-    private static int affinity(Object key) {
-        if (key == null) {
-            return ThreadLocalRandom.current().nextInt();
-        } else {
-            return key.hashCode();
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> Router<T> unicastRouter() {
-        return (Router<T>)UNICAST_ROUTER;
-    }
-
-    private static boolean isFinalOrVoidResponse(Response<?> reply) {
-        return reply == null || !reply.isPartial();
+    private static boolean shouldComplete(MessageOperation<?> operation, ReplyDecision decision, Throwable err) {
+        return (decision == ReplyDecision.DEFAULT && err == null)
+            || (decision == ReplyDecision.ACCEPT)
+            || (operation.opts().failover() == null);
     }
 
     @Override

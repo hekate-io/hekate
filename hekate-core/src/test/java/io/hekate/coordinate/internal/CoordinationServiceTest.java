@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.Future;
@@ -292,15 +293,23 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
         HekateTestNode node = createCoordinationNode(handler);
 
         repeat(3, i -> {
+            CompletableFuture<?> handlerComplete = new CompletableFuture<>();
+
             doAnswer(invocation -> {
                 ((CoordinatorContext)invocation.getArguments()[0]).complete();
 
                 return null;
             }).when(handler).coordinate(any());
 
+            doAnswer(invocation ->
+                handlerComplete.complete(null)
+            ).when(handler).complete(any());
+
             node.join();
 
             get(node.coordination().futureOf("test"));
+
+            get(handlerComplete);
 
             InOrder order = inOrder(handler);
 

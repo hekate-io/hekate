@@ -189,7 +189,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
                 .withClusterFilter(HAS_SERVICE_FILTER)
                 .withNioThreads(nioThreads)
                 .withIdleSocketTimeout(idleSocketTimeout)
-                .withLogCategory(DefaultCoordinationService.class.getName())
+                .withLogCategory(CoordinationProtocol.class.getName())
                 .withMessageCodec(() -> new CoordinationProtocolCodec(processCodecs))
                 .withReceiver(this::handleMessage)
         );

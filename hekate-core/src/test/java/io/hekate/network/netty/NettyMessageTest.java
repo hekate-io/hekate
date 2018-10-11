@@ -18,7 +18,6 @@ package io.hekate.network.netty;
 
 import io.hekate.HekateTestBase;
 import io.hekate.codec.Codec;
-import io.hekate.codec.CodecException;
 import io.hekate.codec.DataReader;
 import io.hekate.codec.DataWriter;
 import io.netty.buffer.ByteBuf;
@@ -32,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class NettyMessageTest extends HekateTestBase {
@@ -141,18 +139,13 @@ public class NettyMessageTest extends HekateTestBase {
         try {
             Exchanger<Object> ref = new Exchanger<>();
 
-            msg.handleAsync(thread,
-                m -> {
-                    try {
-                        ref.exchange(m);
-                    } catch (InterruptedException e) {
-                        // No-op.
-                    }
-                },
-                err -> {
+            msg.handleAsync(thread, m -> {
+                try {
+                    ref.exchange(m.decode());
+                } catch (InterruptedException | IOException e) {
                     // No-op.
                 }
-            );
+            });
 
             val = ref.exchange(null);
         } finally {
@@ -162,66 +155,6 @@ public class NettyMessageTest extends HekateTestBase {
         }
 
         assertEquals((byte)1, val);
-        assertEquals(1, buf.refCnt());
-    }
-
-    @Test
-    public void testHandleAsyncError() throws Exception {
-        ByteBuf buf = Unpooled.buffer();
-
-        buf.writeByte(1);
-
-        NettyMessage msg = new NettyMessage(buf, new Codec<Object>() {
-            @Override
-            public boolean isStateful() {
-                return false;
-            }
-
-            @Override
-            public Class<Object> baseType() {
-                return Object.class;
-            }
-
-            @Override
-            public Object decode(DataReader in) throws IOException {
-                throw TEST_ERROR;
-            }
-
-            @Override
-            public void encode(Object obj, DataWriter out) throws IOException {
-                throw new AssertionError("Should not be called.");
-            }
-        });
-
-        Throwable expected;
-
-        ExecutorService thread = Executors.newSingleThreadExecutor();
-
-        try {
-            Exchanger<Throwable> ref = new Exchanger<>();
-
-            msg.handleAsync(thread,
-                m -> {
-                    // No-op.
-                },
-                err -> {
-                    try {
-                        ref.exchange(err);
-                    } catch (InterruptedException e) {
-                        // No-op.
-                    }
-                }
-            );
-
-            expected = ref.exchange(null);
-        } finally {
-            thread.shutdownNow();
-
-            thread.awaitTermination(3, TimeUnit.SECONDS);
-        }
-
-        assertTrue(expected.toString(), expected instanceof CodecException);
-        assertSame(TEST_ERROR, expected.getCause());
         assertEquals(1, buf.refCnt());
     }
 }

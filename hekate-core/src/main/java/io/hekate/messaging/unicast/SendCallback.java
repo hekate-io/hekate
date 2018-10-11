@@ -16,12 +16,10 @@
 
 package io.hekate.messaging.unicast;
 
-import io.hekate.messaging.MessagingChannel;
-
 /**
- * Callback for {@link MessagingChannel#send(Object, SendCallback) send(...)} operation.
+ * Callback for a {@link Send} operation.
  *
- * @see MessagingChannel#send(Object, SendCallback)
+ * @see Send#submit(SendCallback)
  */
 @FunctionalInterface
 public interface SendCallback {

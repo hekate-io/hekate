@@ -19,7 +19,7 @@ package io.hekate.messaging.internal;
 import io.hekate.failover.FailoverContext;
 import io.hekate.messaging.unicast.RejectedReplyException;
 import io.hekate.messaging.unicast.ReplyDecision;
-import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.RequestCondition;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
@@ -28,14 +28,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
+public class RequestConditionTest extends MessagingServiceTestBase {
     private final AtomicInteger failures = new AtomicInteger();
 
     private TestChannel sender;
 
     private TestChannel receiver;
 
-    public ResponseCallbackAcceptTest(MessagingTestContext ctx) {
+    public RequestConditionTest(MessagingTestContext ctx) {
         super(ctx);
     }
 
@@ -61,74 +61,76 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testCompleteNoPolicy() throws Exception {
+    public void testAcceptWithNoFailoverPolicy() throws Exception {
         AtomicInteger accepts = new AtomicInteger();
 
-        ResponseCallbackMock callback = new ResponseCallbackMock("test") {
-            @Override
-            public ReplyDecision accept(Throwable err, Response<String> reply) {
-                assertEquals(receiver.nodeId(), reply.endpoint().remoteNodeId());
+        RequestCallbackMock callback = new RequestCallbackMock("test");
 
-                if (err != null) {
-                    return ReplyDecision.COMPLETE;
-                }
+        RequestCondition<String> condition = (err, reply) -> {
+            assertEquals(receiver.nodeId(), reply.endpoint().remoteNodeId());
 
-                accepts.incrementAndGet();
-
-                return ReplyDecision.COMPLETE;
+            if (err != null) {
+                return ReplyDecision.ACCEPT;
             }
+
+            accepts.incrementAndGet();
+
+            return ReplyDecision.ACCEPT;
         };
 
-        sender.get().forNode(receiver.nodeId()).request("test", callback);
+        sender.get().forNode(receiver.nodeId()).newRequest("test").until(condition).submit(callback);
 
         assertEquals("test-reply", callback.get().get());
         assertEquals(1, accepts.get());
     }
 
     @Test
-    public void testCompleteWithPolicy() throws Exception {
+    public void testAcceptWithFailoverPolicy() throws Exception {
         AtomicInteger accepts = new AtomicInteger();
 
-        ResponseCallbackMock callback = new ResponseCallbackMock("test") {
-            @Override
-            public ReplyDecision accept(Throwable err, Response<String> reply) {
-                assertEquals(receiver.nodeId(), reply.from().id());
+        RequestCallbackMock callback = new RequestCallbackMock("test");
 
-                accepts.incrementAndGet();
+        RequestCondition<String> condition = (err, reply) -> {
+            assertEquals(receiver.nodeId(), reply.from().id());
 
-                return ReplyDecision.COMPLETE;
-            }
+            accepts.incrementAndGet();
+
+            return ReplyDecision.ACCEPT;
         };
 
         sender.get()
             .withFailover(FailoverContext::retry)
             .forNode(receiver.nodeId())
-            .request("test", callback);
+            .newRequest("test")
+            .until(condition)
+            .submit(callback);
 
         assertEquals("test-reply", callback.get().get());
         assertEquals(1, accepts.get());
     }
 
     @Test
-    public void testRetryNoPolicy() throws Exception {
+    public void testRetryWithNoFailoverPolicy() throws Exception {
         AtomicInteger accepts = new AtomicInteger();
 
-        ResponseCallbackMock callback = new ResponseCallbackMock("test") {
-            @Override
-            public ReplyDecision accept(Throwable err, Response<String> reply) {
-                assertEquals(receiver.nodeId(), reply.from().id());
+        RequestCallbackMock callback = new RequestCallbackMock("test");
 
-                if (err != null) {
-                    return ReplyDecision.COMPLETE;
-                }
+        RequestCondition<String> condition = (err, reply) -> {
+            assertEquals(receiver.nodeId(), reply.from().id());
 
-                accepts.incrementAndGet();
-
-                return ReplyDecision.REJECT;
+            if (err != null) {
+                return ReplyDecision.ACCEPT;
             }
+
+            accepts.incrementAndGet();
+
+            return ReplyDecision.REJECT;
         };
 
-        sender.get().forNode(receiver.nodeId()).request("test", callback);
+        sender.get().forNode(receiver.nodeId())
+            .newRequest("test")
+            .until(condition)
+            .submit(callback);
 
         assertEquals("test-reply", callback.get().get());
         assertEquals(1, accepts.get());
@@ -136,28 +138,29 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testRetryWithPolicyRetry() throws Exception {
+    public void testRetryWithFailoverPolicyRetry() throws Exception {
         AtomicInteger accepts = new AtomicInteger();
 
-        ResponseCallbackMock callback = new ResponseCallbackMock("test") {
-            @Override
-            public ReplyDecision accept(Throwable err, Response<String> reply) {
-                assertEquals(receiver.nodeId(), reply.from().id());
+        RequestCallbackMock callback = new RequestCallbackMock("test");
 
-                if (err != null) {
-                    return ReplyDecision.COMPLETE;
-                }
+        RequestCondition<String> condition = (err, reply) -> {
+            assertEquals(receiver.nodeId(), reply.from().id());
 
-                accepts.incrementAndGet();
-
-                return accepts.get() == 3 ? ReplyDecision.COMPLETE : ReplyDecision.REJECT;
+            if (err != null) {
+                return ReplyDecision.ACCEPT;
             }
+
+            accepts.incrementAndGet();
+
+            return accepts.get() == 3 ? ReplyDecision.ACCEPT : ReplyDecision.REJECT;
         };
 
         sender.get()
             .withFailover(FailoverContext::retry)
             .forNode(receiver.nodeId())
-            .request("test", callback);
+            .newRequest("test")
+            .until(condition)
+            .submit(callback);
 
         assertEquals("test-reply", callback.get().get());
         assertEquals(3, accepts.get());
@@ -165,28 +168,29 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testRetryWithPolicyFail() throws Exception {
+    public void testRetryWithFailoverPolicyFail() throws Exception {
         AtomicInteger accepts = new AtomicInteger();
 
-        ResponseCallbackMock callback = new ResponseCallbackMock("test") {
-            @Override
-            public ReplyDecision accept(Throwable err, Response<String> reply) {
-                assertEquals(receiver.nodeId(), reply.from().id());
+        RequestCallbackMock callback = new RequestCallbackMock("test");
 
-                if (err != null) {
-                    return ReplyDecision.COMPLETE;
-                }
+        RequestCondition<String> condition = (err, reply) -> {
+            assertEquals(receiver.nodeId(), reply.from().id());
 
-                accepts.incrementAndGet();
-
-                return ReplyDecision.REJECT;
+            if (err != null) {
+                return ReplyDecision.ACCEPT;
             }
+
+            accepts.incrementAndGet();
+
+            return ReplyDecision.REJECT;
         };
 
         sender.get()
             .withFailover(FailoverContext::fail)
             .forNode(receiver.nodeId())
-            .request("test", callback);
+            .newRequest("test")
+            .until(condition)
+            .submit(callback);
 
         try {
             callback.get();
@@ -207,23 +211,24 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         AtomicInteger accepts = new AtomicInteger();
 
-        ResponseCallbackMock callback = new ResponseCallbackMock("test") {
-            @Override
-            public ReplyDecision accept(Throwable err, Response<String> reply) {
-                if (err == null) {
-                    assertEquals(receiver.nodeId(), reply.from().id());
-                }
+        RequestCallbackMock callback = new RequestCallbackMock("test");
 
-                accepts.incrementAndGet();
-
-                return ReplyDecision.DEFAULT;
+        RequestCondition<String> condition = (err, reply) -> {
+            if (err == null) {
+                assertEquals(receiver.nodeId(), reply.from().id());
             }
+
+            accepts.incrementAndGet();
+
+            return ReplyDecision.DEFAULT;
         };
 
         sender.get()
             .withFailover(FailoverContext::retry)
             .forNode(receiver.nodeId())
-            .request("test", callback);
+            .newRequest("test")
+            .until(condition)
+            .submit(callback);
 
         callback.get();
 
@@ -237,23 +242,24 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
 
         AtomicInteger accepts = new AtomicInteger();
 
-        ResponseCallbackMock callback = new ResponseCallbackMock("test") {
-            @Override
-            public ReplyDecision accept(Throwable err, Response<String> reply) {
-                if (err == null) {
-                    assertEquals(receiver.nodeId(), reply.from().id());
-                }
+        RequestCallbackMock callback = new RequestCallbackMock("test");
 
-                accepts.incrementAndGet();
-
-                return err == null ? ReplyDecision.COMPLETE : ReplyDecision.REJECT;
+        RequestCondition<String> condition = (err, reply) -> {
+            if (err == null) {
+                assertEquals(receiver.nodeId(), reply.from().id());
             }
+
+            accepts.incrementAndGet();
+
+            return err == null ? ReplyDecision.ACCEPT : ReplyDecision.REJECT;
         };
 
         sender.get()
             .withFailover(FailoverContext::retry)
             .forNode(receiver.nodeId())
-            .request("test", callback);
+            .newRequest("test")
+            .until(condition)
+            .submit(callback);
 
         callback.get();
 
@@ -262,30 +268,31 @@ public class ResponseCallbackAcceptTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testCompleteAfterReject() throws Exception {
+    public void testAcceptAfterReject() throws Exception {
         AtomicInteger accepts = new AtomicInteger();
 
-        ResponseCallbackMock callback = new ResponseCallbackMock("test") {
-            @Override
-            public ReplyDecision accept(Throwable err, Response<String> reply) {
-                assertEquals(receiver.nodeId(), reply.from().id());
+        RequestCallbackMock callback = new RequestCallbackMock("test");
 
-                if (err != null) {
-                    return ReplyDecision.COMPLETE;
-                }
+        RequestCondition<String> condition = (err, reply) -> {
+            assertEquals(receiver.nodeId(), reply.from().id());
 
-                if (accepts.incrementAndGet() == 3) {
-                    return ReplyDecision.COMPLETE;
-                } else {
-                    return ReplyDecision.REJECT;
-                }
+            if (err != null) {
+                return ReplyDecision.ACCEPT;
+            }
+
+            if (accepts.incrementAndGet() == 3) {
+                return ReplyDecision.ACCEPT;
+            } else {
+                return ReplyDecision.REJECT;
             }
         };
 
         sender.get()
             .withFailover(FailoverContext::retry)
             .forNode(receiver.nodeId())
-            .request("test", callback);
+            .newRequest("test")
+            .until(condition)
+            .submit(callback);
 
         callback.get();
 

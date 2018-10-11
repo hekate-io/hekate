@@ -25,13 +25,16 @@ import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.DefaultServiceFactory;
 import io.hekate.core.service.Service;
 import io.hekate.failover.FailoverPolicy;
-import io.hekate.messaging.broadcast.AggregateCallback;
+import io.hekate.messaging.broadcast.Aggregate;
 import io.hekate.messaging.broadcast.AggregateResult;
-import io.hekate.messaging.broadcast.BroadcastCallback;
+import io.hekate.messaging.broadcast.Broadcast;
 import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancer;
-import io.hekate.messaging.unicast.ResponseCallback;
+import io.hekate.messaging.unicast.Request;
+import io.hekate.messaging.unicast.RequestCallback;
+import io.hekate.messaging.unicast.Send;
 import io.hekate.messaging.unicast.SendCallback;
+import io.hekate.messaging.unicast.Subscribe;
 import io.hekate.partition.Partition;
 import java.util.List;
 
@@ -139,20 +142,20 @@ import java.util.List;
  * </p>
  *
  * <p>
- * ... or using a completely asynchronous callback-based approach (see {@link MessagingChannel#request(Object, ResponseCallback)}):
+ * ... or using a completely asynchronous callback-based approach:
  * ${source: messaging/MessagingServiceJavadocTest.java#unicast_request_async}
  * </p>
  *
  * <a name="send_and_forget"></a>
  * <h3>Send and Forget</h3>
  * <p>
- * {@link MessagingChannel#send(Object)} provides support for unidirectional communications (i.e. when remote node doesn't need to send
+ * {@link MessagingChannel#newSend(Object)} provides support for unidirectional communications (i.e. when remote node doesn't need to send
  * back a response) using the fire and forget approach:
  * ${source: messaging/MessagingServiceJavadocTest.java#unicast_send_sync}
  * </p>
  *
  * <p>
- * ... or using a completely asynchronous callback-based approach (see {@link MessagingChannel#send(Object, SendCallback)}):
+ * ... or using a completely asynchronous callback-based approach:
  * ${source: messaging/MessagingServiceJavadocTest.java#unicast_send_async}
  * </p>
  *
@@ -170,7 +173,7 @@ import java.util.List;
  * </p>
  *
  * <p>
- * ... or using a completely asynchronous callback-based approach (see {@link MessagingChannel#aggregate(Object, AggregateCallback)}):
+ * ... or using a completely asynchronous callback-based approach:
  * ${source: messaging/MessagingServiceJavadocTest.java#aggregate_async}
  * </p>
  *
@@ -186,7 +189,7 @@ import java.util.List;
  * ${source: messaging/MessagingServiceJavadocTest.java#broadcast_sync}
  * </p>
  * <p>
- * ... or using a completely asynchronous callback-based approach (see {@link MessagingChannel#broadcast(Object, BroadcastCallback)}):
+ * ... or using a completely asynchronous callback-based approach:
  * ${source: messaging/MessagingServiceJavadocTest.java#broadcast_async}
  * </p>
  *
@@ -210,7 +213,7 @@ import java.util.List;
  * <h2>Routing and load balancing</h2>
  * <p>
  * Every messaging channel uses an instance of {@link LoadBalancer} interface to perform routing of unicast operations
- * (like {@link MessagingChannel#send(Object) send(...)} and {@link MessagingChannel#request(Object) request(...)}). Load balancer can
+ * (like {@link MessagingChannel#newSend(Object) send(...)} and {@link MessagingChannel#request(Object) request(...)}). Load balancer can
  * be pre-configured via the {@link MessagingChannelConfig#setLoadBalancer(LoadBalancer)} method or specified dynamically via the {@link
  * MessagingChannel#withLoadBalancer(LoadBalancer)} method. If load balancer is not specified then messaging channel will fall back to the
  * {@link DefaultLoadBalancer}.
@@ -232,22 +235,34 @@ import java.util.List;
  * </p>
  *
  * <p>
- * Affinity key can be specified via the {@link MessagingChannel#withAffinity(Object)} method. This method returns a lightweight wrapper
- * over the messaging channel instance. Such wrapper will apply the specified affinity key to all messaging operations of that wrapper.
+ * Affinity key can for unicast operations can be specified via the following methods:
  * </p>
+ * <ul>
+ * <li>{@link Send#withAffinity(Object)}</li>
+ * <li>{@link Request#withAffinity(Object)}</li>
+ * <li>{@link Subscribe#withAffinity(Object)}</li>
+ * </ul>
  *
  * <p>
- * If affinity key is specified for a broadcast operation then messaging channel will use its {@link MessagingChannel#partitions()
- * partition mapper} to select the target {@link Partition} for that key. Once the partition is selected then all of its
- * {@link Partition#nodes() nodes} will be used for broadcast (i.e. {@link Partition#primaryNode() primary node} + {@link
- * Partition#backupNodes() backup nodes}).
+ * Affinity key can for broadcast operations can be specified via the following methods:
+ * </p>
+ * <ul>
+ * <li>{@link Broadcast#withAffinity(Object)}</li>
+ * <li>{@link Aggregate#withAffinity(Object)}</li>
+ * </ul>
+ *
+ * <p>
+ * <b>Note:</b> If affinity key is specified for a broadcast operation then messaging channel will use its
+ * {@link MessagingChannel#partitions() partition mapper} to select the target {@link Partition} for that key. Once the partition is
+ * selected then all of its {@link Partition#nodes() nodes} will be used for broadcast (i.e. {@link Partition#primaryNode() primary node} +
+ * {@link Partition#backupNodes() backup nodes}).
  * </p>
  *
  * <h3>Thread affinity</h3>
  * <p>
  * Besides providing a hint to the {@link LoadBalancer}, specifying an affinity key also instructs the messaging channel to process all
  * messages of the same affinity key on the same thread. This applies both to sending a message (see {@link SendCallback} or {@link
- * ResponseCallback}) and to receiving a message (see {@link MessageReceiver#receive(Message)}).
+ * RequestCallback}) and to receiving a message (see {@link MessageReceiver#receive(Message)}).
  * </p>
  *
  * <a name="topology_filterring"></a>
@@ -326,7 +341,7 @@ public interface MessagingService extends Service {
      * @return Messaging channel.
      *
      * @throws IllegalArgumentException if there is no such channel configuration with the specified name.
-     * @see MessagingServiceFactory#setChannels(List)
+     * @see MessagingChannelConfig
      */
     MessagingChannel<Object> channel(String name) throws IllegalArgumentException;
 
@@ -341,7 +356,7 @@ public interface MessagingService extends Service {
      * @return Messaging channel.
      *
      * @throws IllegalArgumentException if there is no such channel configuration with the specified name.
-     * @see MessagingServiceFactory#setChannels(List)
+     * @see MessagingChannelConfig
      */
     <T> MessagingChannel<T> channel(String name, Class<T> baseType) throws IllegalArgumentException;
 

@@ -19,8 +19,10 @@ package io.hekate.messaging.internal;
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.messaging.broadcast.BroadcastCallback;
+import io.hekate.messaging.broadcast.BroadcastFuture;
 import io.hekate.messaging.broadcast.BroadcastResult;
 import io.hekate.util.format.ToString;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import org.junit.Before;
@@ -32,11 +34,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class BroadcastContextTest extends HekateTestBase {
     private static final String TEST_MESSAGE = "test";
@@ -56,14 +54,14 @@ public class BroadcastContextTest extends HekateTestBase {
 
     @Test
     public void testToString() {
-        BroadcastContext<String> ctx = ctx(allNodes(), callbackMock());
+        BroadcastContext<String> ctx = ctx(allNodes());
 
         assertEquals(ToString.format(BroadcastResult.class, ctx), ctx.toString());
     }
 
     @Test
     public void testInitialState() {
-        BroadcastContext<String> ctx = ctx(allNodes(), callbackMock());
+        BroadcastContext<String> ctx = ctx(allNodes());
 
         assertEquals(allNodes(), ctx.nodes());
         assertTrue(ctx.errors().isEmpty());
@@ -71,18 +69,18 @@ public class BroadcastContextTest extends HekateTestBase {
 
     @Test
     public void testMessage() {
-        BroadcastContext<String> ctx = ctx(allNodes(), callbackMock());
+        BroadcastContext<String> ctx = ctx(allNodes());
 
         assertEquals(TEST_MESSAGE, ctx.message());
     }
 
     @Test
     public void testNodes() {
-        assertEquals(allNodes(), ctx(allNodes(), callbackMock()).nodes());
+        assertEquals(allNodes(), ctx(allNodes()).nodes());
 
-        assertEquals(singletonList(n1), ctx(singletonList(n1), callbackMock()).nodes());
+        assertEquals(singletonList(n1), ctx(singletonList(n1)).nodes());
 
-        BroadcastContext<String> ctx = ctx(allNodes(), callbackMock());
+        BroadcastContext<String> ctx = ctx(allNodes());
 
         assertFalse(ctx.forgetNode(n1));
         assertEquals(asList(n2, n3), ctx.nodes());
@@ -97,43 +95,24 @@ public class BroadcastContextTest extends HekateTestBase {
 
     @Test
     public void testOnSendSuccess() {
-        BroadcastContext<String> ctx = ctx(allNodes(), new BroadcastCallback<String>() {
-            @Override
-            public void onComplete(Throwable err, BroadcastResult<String> result) {
-                // No-op.
-            }
+        BroadcastContext<String> ctx = ctx(allNodes());
 
-            @Override
-            public void onSendSuccess(String message, ClusterNode node) {
-                throw TEST_ERROR;
-            }
-        });
-
-        assertFalse(ctx.onSendSuccess(n1));
-        assertFalse(ctx.onSendSuccess(n2));
-        assertTrue(ctx.onSendSuccess(n3));
+        assertFalse(ctx.onSendSuccess());
+        assertFalse(ctx.onSendSuccess());
+        assertTrue(ctx.onSendSuccess());
 
         assertTrue(ctx.isSuccess());
-        assertTrue(ctx.isSuccess(n1));
-        assertTrue(ctx.isSuccess(n2));
-        assertTrue(ctx.isSuccess(n3));
+
+        allNodes().forEach(n ->
+            assertTrue(ctx.isSuccess(n))
+        );
 
         assertTrue(ctx.errors().isEmpty());
     }
 
     @Test
     public void testOnSendFailure() {
-        BroadcastContext<String> ctx = ctx(allNodes(), new BroadcastCallback<String>() {
-            @Override
-            public void onComplete(Throwable err, BroadcastResult<String> result) {
-                // No-op.
-            }
-
-            @Override
-            public void onSendFailure(String message, ClusterNode node, Throwable error) {
-                throw TEST_ERROR;
-            }
-        });
+        BroadcastContext<String> ctx = ctx(allNodes());
 
         Exception err1 = new Exception();
         Exception err2 = new Exception();
@@ -157,24 +136,25 @@ public class BroadcastContextTest extends HekateTestBase {
 
     @Test
     public void testComplete() {
-        BroadcastCallback<String> callback = callbackMock();
-
-        BroadcastContext<String> ctx = ctx(allNodes(), callback);
+        BroadcastContext<String> ctx = ctx(allNodes());
 
         ctx.complete();
 
-        verify(callback).onComplete(isNull(), any());
-        verifyNoMoreInteractions(callback);
+        assertTrue(ctx.isSuccess());
+        assertFalse(ctx.nodes().isEmpty());
+        assertTrue(ctx.errors().isEmpty());
 
-        BroadcastContext<String> errCtx = ctx(allNodes(), (err, result) -> {
+        BroadcastContext<String> errCtx = ctx(allNodes());
+
+        errCtx.future().whenComplete((stringBroadcastResult, throwable) -> {
             throw TEST_ERROR;
         });
 
         errCtx.complete();
     }
 
-    private BroadcastContext<String> ctx(List<ClusterNode> nodes, BroadcastCallback<String> callback) {
-        return new BroadcastContext<>(TEST_MESSAGE, nodes, callback);
+    private BroadcastContext<String> ctx(List<ClusterNode> nodes) {
+        return new BroadcastContext<>(TEST_MESSAGE, new ArrayList<>(nodes), new BroadcastFuture<>());
     }
 
     private List<ClusterNode> allNodes() {

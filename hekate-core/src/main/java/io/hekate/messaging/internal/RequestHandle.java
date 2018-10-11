@@ -18,41 +18,27 @@ package io.hekate.messaging.internal;
 
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-
-import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
 
 class RequestHandle<T> {
-    private static final AtomicIntegerFieldUpdater<RequestHandle> UNREGISTERED = newUpdater(RequestHandle.class, "unregistered");
-
     private final Integer id;
 
     private final int epoch;
 
-    private final MessageAttempt<T> attempt;
-
-    @ToStringIgnore
-    private final InternalRequestCallback<T> callback;
+    private final MessageOperationAttempt<T> attempt;
 
     @ToStringIgnore
     private final RequestRegistry<T> registry;
 
-    @ToStringIgnore
-    @SuppressWarnings("unused")
-    private volatile int unregistered;
-
     public RequestHandle(
         Integer id,
         RequestRegistry<T> registry,
-        MessageAttempt<T> attempt,
-        int epoch,
-        InternalRequestCallback<T> callback
+        MessageOperationAttempt<T> attempt,
+        int epoch
     ) {
         this.id = id;
         this.registry = registry;
         this.attempt = attempt;
         this.epoch = epoch;
-        this.callback = callback;
     }
 
     public Integer id() {
@@ -60,41 +46,23 @@ class RequestHandle<T> {
     }
 
     public MessagingWorker worker() {
-        return attempt.ctx().worker();
+        return attempt.operation().worker();
     }
 
     public T message() {
-        return attempt.ctx().originalMessage();
+        return attempt.operation().message();
     }
 
     public int epoch() {
         return epoch;
     }
 
-    public InternalRequestCallback<T> callback() {
-        return callback;
-    }
-
-    public MessageContext<T> context() {
-        return attempt.ctx();
-    }
-
-    public MessageAttempt<T> attempt() {
+    public MessageOperationAttempt<T> attempt() {
         return attempt;
     }
 
-    public boolean isRegistered() {
-        return unregistered == 0;
-    }
-
     public boolean unregister() {
-        if (UNREGISTERED.compareAndSet(this, 0, 1)) {
-            registry.unregister(id);
-
-            return true;
-        }
-
-        return false;
+        return registry.unregister(id);
     }
 
     @Override

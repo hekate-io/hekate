@@ -47,15 +47,6 @@ public class LeaderFuture extends HekateFuture<ClusterNode, LeaderFuture> {
     }
 
     @Override
-    public ClusterNode getUninterruptedly() throws LeaderException {
-        try {
-            return super.getUninterruptedly();
-        } catch (ExecutionException e) {
-            throw new LeaderException(e.getMessage(), e.getCause());
-        }
-    }
-
-    @Override
     protected LeaderFuture newInstance() {
         return new LeaderFuture();
     }

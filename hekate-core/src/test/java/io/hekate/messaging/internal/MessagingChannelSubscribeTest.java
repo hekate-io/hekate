@@ -20,7 +20,6 @@ import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.unicast.SendCallback;
-import io.hekate.messaging.unicast.SubscribeFuture;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,11 +63,11 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
         awaitForChannelsTopology(sender, receiver);
 
         repeat(5, i -> {
-            SubscribeFuture<String> future = sender.get().forNode(receiver.nodeId()).subscribe("request");
+            List<String> results = sender.get().forNode(receiver.nodeId())
+                .newSubscribe("request")
+                .collectAll(3, TimeUnit.SECONDS);
 
-            List<String> expected = Arrays.asList("response0", "response1", "response2", "final");
-
-            assertEquals(expected, get(future));
+            assertEquals(Arrays.asList("response0", "response1", "response2", "final"), results);
 
             receiver.checkReceiverError();
         });
@@ -221,7 +220,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        sender.get().forNode(receiver.nodeId()).subscribe("test");
+        sender.get().forNode(receiver.nodeId()).subscribe("test", (err, rsp) -> { /* Ignore. */ });
 
         Message<String> msg = messageExchanger.exchange(null, 3, TimeUnit.SECONDS);
 

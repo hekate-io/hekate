@@ -18,22 +18,17 @@ package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterFilter;
 import io.hekate.cluster.ClusterView;
-import io.hekate.core.Hekate;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelId;
-import io.hekate.messaging.broadcast.AggregateCallback;
-import io.hekate.messaging.broadcast.AggregateFuture;
-import io.hekate.messaging.broadcast.BroadcastCallback;
-import io.hekate.messaging.broadcast.BroadcastFuture;
+import io.hekate.messaging.broadcast.Aggregate;
+import io.hekate.messaging.broadcast.Broadcast;
 import io.hekate.messaging.loadbalance.LoadBalancer;
-import io.hekate.messaging.unicast.ResponseCallback;
-import io.hekate.messaging.unicast.ResponseFuture;
-import io.hekate.messaging.unicast.SendCallback;
-import io.hekate.messaging.unicast.SendFuture;
-import io.hekate.messaging.unicast.SubscribeFuture;
+import io.hekate.messaging.unicast.Request;
+import io.hekate.messaging.unicast.Send;
+import io.hekate.messaging.unicast.Subscribe;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
@@ -41,9 +36,7 @@ import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T> {
-    private static final boolean DEFAULT_CONFIRM_RECEIVE = true;
-
+class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperationOpts<T> {
     private final MessagingGateway<T> gateway;
 
     @ToStringIgnore
@@ -55,11 +48,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
 
     private final LoadBalancer<T> balancer;
 
-    private final Object affinityKey;
-
     private final long timeout;
-
-    private final boolean confirmReceive;
 
     public DefaultMessagingChannel(
         MessagingGateway<T> gateway,
@@ -68,19 +57,6 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
         LoadBalancer<T> balancer,
         FailoverPolicy failover,
         long timeout
-    ) {
-        this(gateway, cluster, partitions, balancer, failover, timeout, DEFAULT_CONFIRM_RECEIVE, null);
-    }
-
-    private DefaultMessagingChannel(
-        MessagingGateway<T> gateway,
-        ClusterView cluster,
-        RendezvousHashMapper partitions,
-        LoadBalancer<T> balancer,
-        FailoverPolicy failover,
-        long timeout,
-        boolean confirmReceive,
-        Object affinityKey
     ) {
         assert gateway != null : "Gateway is null.";
         assert cluster != null : "Cluster view is null.";
@@ -92,82 +68,31 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
         this.balancer = balancer;
         this.failover = failover;
         this.timeout = timeout;
-        this.confirmReceive = confirmReceive;
-        this.affinityKey = affinityKey;
     }
 
     @Override
-    public SendFuture send(T message) {
-        ArgAssert.notNull(message, "Message");
-
-        return gateway.send(affinityKey, message, this);
+    public Send<T> newSend(T message) {
+        return new SendOperationBuilder<>(message, context(), this);
     }
 
     @Override
-    public void send(T message, SendCallback callback) {
-        ArgAssert.notNull(message, "Message");
-
-        gateway.send(affinityKey, message, this, callback);
+    public Request<T> newRequest(T request) {
+        return new RequestOperationBuilder<>(request, context(), this);
     }
 
     @Override
-    public ResponseFuture<T> request(T request) {
-        ArgAssert.notNull(request, "Message");
-
-        return gateway.request(affinityKey, request, this);
+    public Subscribe<T> newSubscribe(T request) {
+        return new SubscribeOperationBuilder<>(request, context(), this);
     }
 
     @Override
-    public void request(T request, ResponseCallback<T> callback) {
-        ArgAssert.notNull(request, "Message");
-        ArgAssert.notNull(callback, "Callback");
-
-        gateway.request(affinityKey, request, this, callback);
+    public Broadcast<T> newBroadcast(T request) {
+        return new BroadcastOperationBuilder<>(request, context(), this);
     }
 
     @Override
-    public void subscribe(T request, ResponseCallback<T> callback) {
-        ArgAssert.notNull(request, "Message");
-        ArgAssert.notNull(callback, "Callback");
-
-        gateway.subscribe(affinityKey, request, this, callback);
-    }
-
-    @Override
-    public SubscribeFuture<T> subscribe(T request) {
-        ArgAssert.notNull(request, "Message");
-
-        return gateway.subscribe(affinityKey, request, this);
-    }
-
-    @Override
-    public BroadcastFuture<T> broadcast(T message) {
-        ArgAssert.notNull(message, "Message");
-
-        return gateway.broadcast(affinityKey, message, this);
-    }
-
-    @Override
-    public void broadcast(T message, BroadcastCallback<T> callback) {
-        ArgAssert.notNull(message, "Message");
-        ArgAssert.notNull(callback, "Callback");
-
-        gateway.broadcast(affinityKey, message, this, callback);
-    }
-
-    @Override
-    public AggregateFuture<T> aggregate(T message) {
-        ArgAssert.notNull(message, "Message");
-
-        return gateway.aggregate(affinityKey, message, this);
-    }
-
-    @Override
-    public void aggregate(T message, AggregateCallback<T> callback) {
-        ArgAssert.notNull(message, "Message");
-        ArgAssert.notNull(callback, "Callback");
-
-        gateway.aggregate(affinityKey, message, this, callback);
+    public Aggregate<T> newAggregate(T request) {
+        return new AggregateOperationBuilder<>(request, context(), this);
     }
 
     @Override
@@ -183,25 +108,6 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     @Override
     public Class<T> baseType() {
         return gateway.baseType();
-    }
-
-    @Override
-    public DefaultMessagingChannel<T> withAffinity(Object affinityKey) {
-        return new DefaultMessagingChannel<>(
-            gateway,
-            cluster,
-            partitions,
-            balancer,
-            failover,
-            timeout,
-            confirmReceive,
-            affinityKey
-        );
-    }
-
-    @Override
-    public Object affinity() {
-        return affinityKey;
     }
 
     @Override
@@ -223,9 +129,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
             newPartitions,
             balancer,
             failover,
-            timeout,
-            confirmReceive,
-            affinityKey
+            timeout
         );
     }
 
@@ -239,9 +143,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
             partitions,
             balancer,
             failover,
-            timeout,
-            confirmReceive,
-            affinityKey
+            timeout
         );
     }
 
@@ -258,9 +160,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
             partitions,
             balancer,
             policy,
-            timeout,
-            confirmReceive,
-            affinityKey
+            timeout
         );
     }
 
@@ -279,9 +179,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
             partitions,
             balancer,
             failover,
-            unit.toMillis(timeout),
-            confirmReceive,
-            affinityKey
+            unit.toMillis(timeout)
         );
     }
 
@@ -298,9 +196,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
             newPartitions,
             balancer,
             failover,
-            timeout,
-            confirmReceive,
-            affinityKey
+            timeout
         );
     }
 
@@ -313,7 +209,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     public DefaultMessagingChannel<T> withCluster(ClusterView cluster) {
         ArgAssert.notNull(cluster, "Cluster");
 
-        ClusterView newCluster = cluster.filter(ChannelMetaData.hasReceiver(gateway.name()));
+        ClusterView newCluster = cluster.filter(MessagingMetaData.hasReceiver(gateway.name()));
         RendezvousHashMapper newPartitions = partitions.copy(newCluster);
 
         return new DefaultMessagingChannel<>(
@@ -322,29 +218,8 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
             newPartitions,
             balancer,
             failover,
-            timeout,
-            confirmReceive,
-            affinityKey
+            timeout
         );
-    }
-
-    @Override
-    public DefaultMessagingChannel<T> withConfirmReceive(boolean confirmReceive) {
-        return new DefaultMessagingChannel<>(
-            gateway,
-            cluster,
-            partitions,
-            balancer,
-            failover,
-            timeout,
-            confirmReceive,
-            affinityKey
-        );
-    }
-
-    @Override
-    public boolean isConfirmReceive() {
-        return confirmReceive;
     }
 
     @Override
@@ -370,11 +245,6 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessagingOpts<T
     @Override
     public long timeout() {
         return timeout;
-    }
-
-    @Override
-    public Hekate hekate() {
-        return gateway.hekate();
     }
 
     // Package level for testing purposes.

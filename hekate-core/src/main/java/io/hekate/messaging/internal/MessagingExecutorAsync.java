@@ -21,7 +21,6 @@ import io.hekate.core.internal.util.Utils;
 import io.hekate.util.async.Waiting;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
 
 class MessagingExecutorAsync implements MessagingExecutor {
     private final MessagingSingleThreadWorker[] affinityWorkers;
@@ -30,19 +29,18 @@ class MessagingExecutorAsync implements MessagingExecutor {
 
     private final int size;
 
-    public MessagingExecutorAsync(HekateThreadFactory factory, int size, ScheduledExecutorService timer) {
+    public MessagingExecutorAsync(int size, HekateThreadFactory factory) {
         assert size > 0 : "Thread pool size must be above zero [size=" + size + ']';
-        assert timer != null : "Timer is null.";
 
         this.size = size;
 
         affinityWorkers = new MessagingSingleThreadWorker[size];
 
         for (int i = 0; i < size; i++) {
-            affinityWorkers[i] = new MessagingSingleThreadWorker(factory, timer);
+            affinityWorkers[i] = new MessagingSingleThreadWorker(factory);
         }
 
-        pooledWorker = new MessagingThreadPoolWorker(size, factory, timer);
+        pooledWorker = new MessagingThreadPoolWorker(size, factory);
     }
 
     @Override
@@ -56,11 +54,6 @@ class MessagingExecutorAsync implements MessagingExecutor {
     }
 
     @Override
-    public boolean isAsync() {
-        return true;
-    }
-
-    @Override
     public Waiting terminate() {
         List<Waiting> waiting = new ArrayList<>();
 
@@ -71,11 +64,6 @@ class MessagingExecutorAsync implements MessagingExecutor {
         waiting.add(pooledWorker.terminate());
 
         return Waiting.awaitAll(waiting);
-    }
-
-    @Override
-    public int poolSize() {
-        return size;
     }
 
     @Override

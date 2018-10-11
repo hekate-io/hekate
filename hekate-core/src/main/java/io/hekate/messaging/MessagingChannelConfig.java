@@ -85,7 +85,7 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
     private LoadBalancer<T> loadBalancer;
 
     /** See {@link #setInterceptors(List)}. */
-    private List<MessageInterceptor<T>> interceptors;
+    private List<MessageInterceptor> interceptors;
 
     /** See {@link #setMessagingTimeout(long)}. */
     private long messagingTimeout;
@@ -529,7 +529,7 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
      *
      * @return Message interceptors.
      */
-    public List<MessageInterceptor<T>> getInterceptors() {
+    public List<MessageInterceptor> getInterceptors() {
         return interceptors;
     }
 
@@ -542,7 +542,7 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
      *
      * @param interceptors Message interceptors.
      */
-    public void setInterceptors(List<MessageInterceptor<T>> interceptors) {
+    public void setInterceptors(List<MessageInterceptor> interceptors) {
         this.interceptors = interceptors;
     }
 
@@ -553,7 +553,7 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
      *
      * @return This instance.
      */
-    public MessagingChannelConfig<T> withInterceptor(MessageInterceptor<T> interceptor) {
+    public MessagingChannelConfig<T> withInterceptor(MessageInterceptor interceptor) {
         if (getInterceptors() == null) {
             setInterceptors(new ArrayList<>());
         }
@@ -578,7 +578,7 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
      *
      * <p>
      * If particular messaging operation (f.e. {@link MessagingChannel#request(Object) request(...)}
-     * or {@link MessagingChannel#send(Object) send(...)}) can't be completed within the specified timeout then such operation will fail
+     * or {@link MessagingChannel#newSend(Object) send(...)}) can't be completed within the specified timeout then such operation will fail
      * with {@link MessageTimeoutException}.
      * </p>
      *

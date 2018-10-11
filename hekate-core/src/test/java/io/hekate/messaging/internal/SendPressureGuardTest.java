@@ -150,8 +150,6 @@ public class SendPressureGuardTest extends HekateTestBase {
                     assertTrue(err.toString(), err.getCause() instanceof InterruptedException);
                 }
 
-                backPressure.onDequeue();
-
                 assertEquals(10, backPressure.queueSize());
             }
 
@@ -263,8 +261,6 @@ public class SendPressureGuardTest extends HekateTestBase {
                     assertEquals("Send queue overflow [queue-size=11, low-watermark=5, high-watermark=10]", e.getMessage());
                 }
 
-                backPressure.onDequeue();
-
                 assertEquals(10, backPressure.queueSize());
             }
 
@@ -303,9 +299,7 @@ public class SendPressureGuardTest extends HekateTestBase {
                 assertTrue(getStacktrace(e), ErrorUtils.isCausedBy(MessageQueueTimeoutException.class, e));
             }
 
-            assertEquals(11, backPressure.queueSize());
-
-            backPressure.onDequeue();
+            assertEquals(10, backPressure.queueSize());
 
             CountDownLatch enqueueLatch = new CountDownLatch(1);
 

@@ -22,14 +22,16 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockOwnerInfo;
+import io.hekate.lock.internal.LockProtocol.LockOwnerRequest;
+import io.hekate.lock.internal.LockProtocol.LockOwnerResponse;
 import io.hekate.lock.internal.LockProtocol.LockRequest;
 import io.hekate.lock.internal.LockProtocol.LockResponse;
 import io.hekate.lock.internal.LockProtocol.UnlockRequest;
 import io.hekate.lock.internal.LockProtocol.UnlockResponse;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.unicast.ReplyDecision;
+import io.hekate.messaging.unicast.RequestCallback;
+import io.hekate.messaging.unicast.RequestCondition;
 import io.hekate.messaging.unicast.Response;
-import io.hekate.messaging.unicast.ResponseCallback;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -38,7 +40,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.hekate.messaging.unicast.ReplyDecision.COMPLETE;
+import static io.hekate.messaging.unicast.ReplyDecision.ACCEPT;
 import static io.hekate.messaging.unicast.ReplyDecision.REJECT;
 
 class LockControllerClient {
@@ -54,13 +56,11 @@ class LockControllerClient {
         TERMINATED
     }
 
-    interface CleanupCallback {
-        void cleanup(LockControllerClient lock);
-    }
-
     private static final Logger log = LoggerFactory.getLogger(LockControllerClient.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
+
+    private static final boolean TRACE = log.isTraceEnabled();
 
     private final LockKey key;
 
@@ -77,9 +77,6 @@ class LockControllerClient {
 
     @ToStringIgnore
     private final ReentrantLock lock = new ReentrantLock();
-
-    @ToStringIgnore
-    private final CleanupCallback cleanupCallback;
 
     @ToStringIgnore
     private final LockFuture lockFuture;
@@ -112,26 +109,21 @@ class LockControllerClient {
         MessagingChannel<LockProtocol> channel,
         long lockTimeout,
         LockRegionMetrics metrics,
-        AsyncLockCallbackAdaptor asyncCallback,
-        CleanupCallback cleanupCallback
+        AsyncLockCallbackAdaptor asyncCallback
     ) {
         assert localNode != null : "Cluster node is null.";
         assert lock != null : "Lock is null.";
         assert channel != null : "Channel is null.";
         assert metrics != null : "Metrics are null.";
-        assert cleanupCallback != null : "Cleanup callback is null.";
 
         this.key = new LockKey(lock.regionName(), lock.name());
         this.lockId = lockId;
         this.localNode = localNode;
         this.threadId = threadId;
+        this.channel = channel;
         this.lockTimeout = lockTimeout;
         this.metrics = metrics;
-        this.cleanupCallback = cleanupCallback;
         this.asyncCallback = asyncCallback;
-
-        // Make sure that all messages will be routed with the affinity key of this lock.
-        this.channel = channel.withAffinity(key);
 
         lockFuture = new LockFuture(this);
         unlockFuture = new LockFuture(this);
@@ -179,6 +171,10 @@ class LockControllerClient {
                 this.topology = mapping.topology();
 
                 this.manager = mapping.map(key).primaryNode().id();
+
+                if (TRACE) {
+                    log.trace("Updated partition mapping [key={}, manager={}, topology={}]", key, manager, topology);
+                }
             } finally {
                 lock.unlock();
             }
@@ -190,6 +186,10 @@ class LockControllerClient {
 
         try {
             this.topology = topology;
+
+            if (DEBUG) {
+                log.trace("Updated topology [key={}, topology={}]", key, topology);
+            }
 
             return status == Status.LOCKED;
         } finally {
@@ -204,6 +204,10 @@ class LockControllerClient {
             assert status == Status.UNLOCKED;
 
             status = Status.LOCKING;
+
+            if (DEBUG) {
+                log.debug("Became {} [key={}]", status, key);
+            }
 
             update(mapping);
 
@@ -223,18 +227,18 @@ class LockControllerClient {
         doBecomeUnlocking(true);
     }
 
-    public void becomeTerminated(boolean cancel) {
+    public void becomeTerminated() {
         lock.lock();
 
         try {
             status = Status.TERMINATED;
 
+            if (DEBUG) {
+                log.debug("Became {} [key={}]", status, key);
+            }
+
             if (!lockFuture.isDone()) {
-                if (cancel) {
-                    lockFuture.cancel(false);
-                } else {
-                    lockFuture.completeExceptionally(new CancellationException("Lock service terminated."));
-                }
+                lockFuture.completeExceptionally(new CancellationException("Lock service terminated."));
             }
 
             if (unlockFuture.complete(true)) {
@@ -257,6 +261,10 @@ class LockControllerClient {
                 case LOCKING: {
                     status = Status.UNLOCKING;
 
+                    if (DEBUG) {
+                        log.debug("Became {} [key={}]", status, key);
+                    }
+
                     if (!lockFuture.isDone()) {
                         lockFuture.complete(false);
                     }
@@ -268,6 +276,10 @@ class LockControllerClient {
                 case LOCKED: {
                     if (!ignoreIfLocked) {
                         status = Status.UNLOCKING;
+
+                        if (DEBUG) {
+                            log.debug("Became {} [key={}]", status, key);
+                        }
 
                         remoteUnlock();
                     }
@@ -300,6 +312,10 @@ class LockControllerClient {
 
         try {
             if (topology == null || !requestTopology.equals(topology.hash())) {
+                if (TRACE) {
+                    log.trace("Rejected to become {} [key={}, topology={}]", Status.LOCKED, key, topology);
+                }
+
                 return false;
             }
 
@@ -308,6 +324,10 @@ class LockControllerClient {
                     status = Status.LOCKED;
 
                     lockOwner = new DefaultLockOwnerInfo(threadId, topology.localNode());
+
+                    if (DEBUG) {
+                        log.debug("Became {} [key={}]", status, key);
+                    }
 
                     metrics.onLock();
 
@@ -347,57 +367,41 @@ class LockControllerClient {
         return true;
     }
 
-    private boolean notifyOnLockBusy(ClusterNodeId ownerId, long ownerThreadId, ClusterHash requestTopology) {
-        if (asyncCallback != null) {
-            lock.lock();
-
-            try {
-                if (topology == null || !requestTopology.equals(topology.hash())) {
-                    return false;
-                }
-
-                if (status == Status.LOCKING) {
-                    ClusterNode ownerNode = topology.get(ownerId);
-
-                    LockOwnerInfo newOwner = new DefaultLockOwnerInfo(ownerThreadId, ownerNode);
-
-                    if (lockOwner == null) {
-                        lockOwner = newOwner;
-
-                        asyncCallback.onLockBusy(newOwner);
-                    } else if (!lockOwner.equals(newOwner)) {
-                        lockOwner = newOwner;
-
-                        asyncCallback.onLockOwnerChange(newOwner);
-                    }
-                }
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        return true;
-    }
-
     private void becomeUnlocked() {
-        becomeUnlocked(null);
+        doBecomeUnlocked();
     }
 
-    private boolean becomeUnlocked(ClusterHash requestTopology) {
-        boolean cleanup = false;
-
+    private boolean tryBecomeUnlocked(ClusterHash requestTopology) {
         lock.lock();
 
         try {
             if (topology == null || (requestTopology != null && !requestTopology.equals(topology.hash()))) {
-                return false;
-            }
+                if (TRACE) {
+                    log.trace("Rejected to become {} [key={}, topology={}]", Status.UNLOCKED, key, topology);
+                }
 
+                return false;
+            } else {
+                doBecomeUnlocked();
+
+                return true;
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void doBecomeUnlocked() {
+        lock.lock();
+
+        try {
             switch (status) {
                 case LOCKING: {
                     status = Status.UNLOCKED;
 
-                    cleanup = true;
+                    if (DEBUG) {
+                        log.debug("Became {} [key={}]", status, key);
+                    }
 
                     lockFuture.complete(false);
 
@@ -411,9 +415,11 @@ class LockControllerClient {
                 case UNLOCKING: {
                     status = Status.UNLOCKED;
 
-                    metrics.onUnlock();
+                    if (DEBUG) {
+                        log.debug("Became {} [key={}]", status, key);
+                    }
 
-                    cleanup = true;
+                    metrics.onUnlock();
 
                     unlockFuture.complete(true);
 
@@ -440,115 +446,126 @@ class LockControllerClient {
 
             lock.unlock();
         }
-
-        // Cleanup out of synchronization block.
-        if (cleanup) {
-            cleanupCallback.cleanup(this);
-        }
-
-        return true;
     }
 
     private void remoteLock() {
         LockRequest lockReq = new LockRequest(lockId, key.region(), key.name(), localNode, lockTimeout, threadId);
 
-        ResponseCallback<LockProtocol> callback = new ResponseCallback<LockProtocol>() {
-            @Override
-            public ReplyDecision accept(Throwable err, Response<LockProtocol> reply) {
-                if (err == null) {
-                    LockResponse lockRsp = reply.get(LockResponse.class);
+        RequestCondition<LockProtocol> until = (err, reply) -> {
+            if (err == null) {
+                LockResponse lockRsp = reply.get(LockResponse.class);
 
-                    switch (lockRsp.status()) {
-                        case OK: {
-                            ClusterHash topology = reply.topology().hash();
+                if (DEBUG) {
+                    log.debug("Got lock response [from={}, response={}]", reply.from(), reply);
+                }
 
-                            if (becomeLocked(topology)) {
-                                return COMPLETE;
-                            } else {
-                                // Retry if still LOCKING.
-                                return is(Status.LOCKING) ? REJECT : COMPLETE;
-                            }
-                        }
-                        case RETRY: {
+                switch (lockRsp.status()) {
+                    case OK: {
+                        ClusterHash topology = reply.topology().hash();
+
+                        if (becomeLocked(topology)) {
+                            return ACCEPT;
+                        } else {
                             // Retry if still LOCKING.
-                            return is(Status.LOCKING) ? REJECT : COMPLETE;
-                        }
-                        case TIMEOUT: {
-                            becomeUnlocked();
-
-                            return COMPLETE;
-                        }
-                        case REPLACED: {
-                            return COMPLETE;
-                        }
-                        case BUSY: {
-                            becomeUnlocked();
-
-                            return COMPLETE;
-                        }
-                        case LOCK_INFO: {
-                            ClusterHash topology = reply.topology().hash();
-
-                            if (notifyOnLockBusy(lockRsp.owner(), lockRsp.ownerThreadId(), topology)) {
-                                return COMPLETE;
-                            } else {
-                                // Retry if still LOCKING.
-                                return is(Status.LOCKING) ? REJECT : COMPLETE;
-                            }
-                        }
-                        default: {
-                            throw new IllegalArgumentException("Unexpected status: " + lockRsp.status());
+                            return is(Status.LOCKING) ? REJECT : ACCEPT;
                         }
                     }
-                } else {
-                    if (DEBUG) {
-                        log.debug("Failed to send lock message [error={}, message={}]", err.toString(), lockReq);
+                    case RETRY: {
+                        // Retry if still LOCKING.
+                        return is(Status.LOCKING) ? REJECT : ACCEPT;
                     }
+                    case LOCK_TIMEOUT: {
+                        becomeUnlocked();
 
-                    // Retry if still LOCKING.
-                    return is(Status.LOCKING) ? REJECT : COMPLETE;
+                        return ACCEPT;
+                    }
+                    case LOCK_BUSY: {
+                        becomeUnlocked();
+
+                        return ACCEPT;
+                    }
+                    case LOCK_OWNER_CHANGE: {
+                        throw new IllegalArgumentException("Got an unexpected lock owner update message: " + reply);
+                    }
+                    default: {
+                        throw new IllegalArgumentException("Unexpected status: " + lockRsp.status());
+                    }
                 }
+            } else {
+                if (DEBUG) {
+                    log.debug("Failed to send lock request [error={}, request={}]", err.toString(), lockReq);
+                }
+
+                // Retry if still LOCKING.
+                return is(Status.LOCKING) ? REJECT : ACCEPT;
             }
+        };
 
-            @Override
-            public void onComplete(Throwable err, Response<LockProtocol> rsp) {
-                if (err != null && is(Status.LOCKING)) {
-                    log.error("Failed to submit lock request [request={}]", lockReq, err);
+        RequestCallback<LockProtocol> onResponse = (err, rsp) -> {
+            if (err == null) {
+                LockResponse lockRsp = rsp.get(LockResponse.class);
+
+                if (lockRsp.status() == LockResponse.Status.LOCK_OWNER_CHANGE) {
+                    processLockOwnerChange(lockRsp, rsp);
                 }
+            } else if (is(Status.LOCKING)) {
+                log.error("Failed to submit lock request [request={}]", lockReq, err);
             }
         };
 
         if (asyncCallback == null) {
+            if (DEBUG) {
+                log.debug("Submitting lock request [request={}]", lockReq);
+            }
+
             // Send single request if we don't need to subscribe for updates.
-            channel.request(lockReq, callback);
+            channel.newRequest(lockReq)
+                .withAffinity(key)
+                .until(until)
+                .submit(onResponse);
         } else {
+            if (DEBUG) {
+                log.debug("Submitting lock subscription [request={}]", lockReq);
+            }
+
             // Send subscription request if we need to receive lock owner updates.
-            channel.subscribe(lockReq, callback);
+            channel.newSubscribe(lockReq)
+                .withAffinity(key)
+                .until(until)
+                .submit(onResponse);
         }
     }
 
     private void remoteUnlock() {
         UnlockRequest unlockReq = new UnlockRequest(lockId, key.region(), key.name(), localNode);
 
-        channel.request(unlockReq, new ResponseCallback<LockProtocol>() {
-            @Override
-            public ReplyDecision accept(Throwable err, Response<LockProtocol> reply) {
+        if (DEBUG) {
+            log.debug("Submitting unlock request [request={}]", unlockReq);
+        }
+
+        channel.newRequest(unlockReq)
+            .withAffinity(key)
+            .until((err, rsp) -> {
                 if (err == null) {
-                    UnlockResponse lockRsp = reply.get(UnlockResponse.class);
+                    UnlockResponse lockRsp = rsp.get(UnlockResponse.class);
+
+                    if (DEBUG) {
+                        log.debug("Got unlock response [from={}, response={}]", rsp.from(), lockRsp);
+                    }
 
                     switch (lockRsp.status()) {
                         case OK: {
-                            ClusterHash topology = reply.topology().hash();
+                            ClusterHash topology = rsp.topology().hash();
 
-                            if (becomeUnlocked(topology)) {
-                                return COMPLETE;
+                            if (tryBecomeUnlocked(topology)) {
+                                return ACCEPT;
                             } else {
                                 return REJECT;
                             }
                         }
                         case RETRY: {
                             // Retry if not TERMINATED.
-                            return !is(Status.TERMINATED) ? REJECT : COMPLETE;
+                            return !is(Status.TERMINATED) ? REJECT : ACCEPT;
                         }
                         default: {
                             throw new IllegalArgumentException("Unexpected status: " + lockRsp.status());
@@ -556,21 +573,116 @@ class LockControllerClient {
                     }
                 } else {
                     if (DEBUG) {
-                        log.debug("Failed to send lock message [error={}, message={}]", err.toString(), unlockReq);
+                        log.debug("Failed to send unlock request [error={}, request={}]", err.toString(), unlockReq);
                     }
 
                     // Retry if not TERMINATED.
-                    return !is(Status.TERMINATED) ? REJECT : COMPLETE;
+                    return !is(Status.TERMINATED) ? REJECT : ACCEPT;
                 }
-            }
-
-            @Override
-            public void onComplete(Throwable err, Response<LockProtocol> rsp) {
+            })
+            .submit((err, rsp) -> {
                 if (err != null && !is(Status.TERMINATED)) {
                     log.error("Failed to submit unlock request [request={}]", unlockReq, err);
                 }
+            });
+    }
+
+    private void processLockOwnerChange(LockResponse lockRsp, Response<LockProtocol> msg) {
+        boolean retry = tryNotifyOnLockOwnerChange(lockRsp.owner(), lockRsp.ownerThreadId(), msg.topology().hash());
+
+        if (retry) {
+            if (DEBUG) {
+                log.debug("Sending explicit lock owner query [to={}, key={}]", msg.from(), key);
             }
-        });
+
+            channel.newRequest(new LockOwnerRequest(key.region(), key.name()))
+                .withAffinity(key)
+                .until((err, rsp) -> {
+                    if (err == null) {
+                        if (DEBUG) {
+                            log.debug("Got explicit lock owner query response [from={}, response={}]", rsp.from(), rsp);
+                        }
+
+                        LockOwnerResponse ownerRsp = rsp.get(LockOwnerResponse.class);
+
+                        if (ownerRsp.status() == LockOwnerResponse.Status.OK) {
+                            boolean retryAgain = tryNotifyOnLockOwnerChange(ownerRsp.owner(), ownerRsp.threadId(), rsp.topology().hash());
+
+                            // Retry if update got rejected.
+                            return retryAgain ? REJECT : ACCEPT;
+                        }
+                    } else {
+                        if (DEBUG) {
+                            log.debug("Failed to query for explicit lock owner [to={}, key={}, cause={}]", rsp.from(), key, err.toString());
+                        }
+                    }
+
+                    // Retry if still locking.
+                    if (is(Status.LOCKING)) {
+                        if (DEBUG) {
+                            log.debug("Will retry to send explicit lock owner query [to={}, key={}]", rsp.from(), key);
+                        }
+
+                        return REJECT;
+                    } else {
+                        if (DEBUG) {
+                            log.debug("Will not retry to send explicit lock owner query [to={}, key={}]", rsp.from(), key);
+                        }
+
+                        return ACCEPT;
+                    }
+                })
+                .submit();
+        }
+    }
+
+    private boolean tryNotifyOnLockOwnerChange(ClusterNodeId ownerId, long ownerThreadId, ClusterHash requestTopology) {
+        lock.lock();
+
+        try {
+            if (status != Status.LOCKING) {
+                if (TRACE) {
+                    log.trace("Ignored lock owner change because status is not {} [key={}, status={}]", Status.LOCKING, key, status);
+                }
+
+                // Not locking anymore (should not retry).
+                return false;
+            } else if (topology == null || !requestTopology.equals(topology.hash())) {
+                if (TRACE) {
+                    log.trace("Ignored lock owner change because of topology mismatch [key={}, topology={}]", key, topology);
+                }
+
+                // Should retry.
+                return true;
+            } else {
+                ClusterNode ownerNode = topology.get(ownerId);
+
+                LockOwnerInfo newOwner = new DefaultLockOwnerInfo(ownerThreadId, ownerNode);
+
+                if (lockOwner == null) {
+                    if (DEBUG) {
+                        log.debug("Set initial lock owner [key={}, owner={}]", key, newOwner);
+                    }
+
+                    lockOwner = newOwner;
+
+                    asyncCallback.onLockBusy(newOwner);
+                } else if (!lockOwner.equals(newOwner)) {
+                    if (DEBUG) {
+                        log.debug("Updated lock owner [key={}, owner={}]", key, newOwner);
+                    }
+
+                    lockOwner = newOwner;
+
+                    asyncCallback.onLockOwnerChange(newOwner);
+                }
+
+                // Successfully updated (should not retry).
+                return false;
+            }
+        } finally {
+            lock.unlock();
+        }
     }
 
     private boolean is(Status status) {

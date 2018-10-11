@@ -21,7 +21,7 @@ import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.core.ServiceInfo;
 import io.hekate.messaging.MessagingService;
 
-class ChannelMetaData {
+class MessagingMetaData {
     private static class HasReceiver implements ClusterNodeFilter {
         private final String channelName;
 
@@ -39,7 +39,7 @@ class ChannelMetaData {
             ServiceInfo service = node.service(MessagingService.class);
 
             if (service != null) {
-                ChannelMetaData meta = parse(service.stringProperty(propertyName(channelName)));
+                MessagingMetaData meta = parse(service.stringProperty(propertyName(channelName)));
 
                 if (meta != null && meta.isReceiving()) {
                     return delegate == null || delegate.accept(node);
@@ -54,12 +54,12 @@ class ChannelMetaData {
 
     private final String type;
 
-    public ChannelMetaData(boolean receiving, String type) {
+    public MessagingMetaData(boolean receiving, String type) {
         this.receiving = receiving;
         this.type = type;
     }
 
-    public static ChannelMetaData parse(String str) {
+    public static MessagingMetaData parse(String str) {
         if (str == null || str.isEmpty()) {
             return null;
         }
@@ -69,7 +69,7 @@ class ChannelMetaData {
         boolean receiving = Boolean.valueOf(tokens[0]);
         String type = tokens[1];
 
-        return new ChannelMetaData(receiving, type);
+        return new MessagingMetaData(receiving, type);
     }
 
     public static String propertyName(String channel) {

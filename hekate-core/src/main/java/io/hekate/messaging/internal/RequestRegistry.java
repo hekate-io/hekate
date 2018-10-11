@@ -35,22 +35,15 @@ class RequestRegistry<T> {
         this.metrics = metrics;
     }
 
-    public RequestHandle<T> register(int epoch, MessageAttempt<T> attempt, InternalRequestCallback<T> callback) {
+    public RequestHandle<T> register(int epoch, MessageOperationAttempt<T> attempt) {
         while (true) {
             Integer id = idGen.incrementAndGet();
 
-            RequestHandle<T> req = new RequestHandle<>(id, this, attempt, epoch, callback);
+            RequestHandle<T> req = new RequestHandle<>(id, this, attempt, epoch);
 
             // Do not overwrite very very very old requests.
             if (requests.putIfAbsent(id, req) == null) {
                 metrics.onPendingRequestAdded();
-
-                if (attempt.ctx().opts().hasTimeout()) {
-                    // Unregister if messaging operation gets timed out.
-                    attempt.ctx().setTimeoutListener(() ->
-                        unregister(id)
-                    );
-                }
 
                 return req;
             }
@@ -71,8 +64,6 @@ class RequestRegistry<T> {
                 }
             }
         }
-
-        metrics.onPendingRequestsRemoved(removed.size());
 
         return removed;
     }

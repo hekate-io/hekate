@@ -210,7 +210,6 @@ public class CandidateHandlerTest extends HekateTestBase {
 
         assertTrue(future.isDone());
         assertEquals(localNode, future.get());
-        assertEquals(localNode, future.getUninterruptedly());
         assertEquals(localNode, get(future));
     }
 
@@ -255,10 +254,8 @@ public class CandidateHandlerTest extends HekateTestBase {
         assertTrue(after.isDone());
 
         expect(CancellationException.class, before::get);
-        expect(CancellationException.class, before::getUninterruptedly);
         expect(CancellationException.class, () -> get(before));
         expect(CancellationException.class, after::get);
-        expect(CancellationException.class, after::getUninterruptedly);
         expect(CancellationException.class, () -> get(after));
     }
 

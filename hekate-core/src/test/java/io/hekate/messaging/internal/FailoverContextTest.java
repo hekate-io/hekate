@@ -21,7 +21,6 @@ import io.hekate.messaging.MessagingRemoteException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -38,11 +37,11 @@ public class FailoverContextTest extends FailoverTestBase {
 
         failures.set(3);
 
-        toRemote.withFailover(ctx -> {
+        get(toRemote.withFailover(ctx -> {
             contexts.add(ctx);
 
             return ctx.retry();
-        }).request("test--1").response(3, TimeUnit.SECONDS);
+        }).request("test--1"));
 
         assertEquals(3, contexts.size());
 
