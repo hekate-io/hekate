@@ -168,7 +168,7 @@ class DefaultLockRegion implements LockRegion {
         lockChannel = channel.withFailover(new FailoverPolicyBuilder()
             .withConstantRetryDelay(retryInterval)
             .withAlwaysReRoute()
-            .withRetryUntil(failover -> !isTerminated())
+            .withRetryUntil(err -> !isTerminated())
         );
 
         // Configure messaging channel for locks migration.
@@ -176,7 +176,7 @@ class DefaultLockRegion implements LockRegion {
             .withFailover(new FailoverPolicyBuilder()
                 .withAlwaysReRoute()
                 .withConstantRetryDelay(retryInterval)
-                .withRetryUntil(failover -> !isTerminated())
+                .withRetryUntil(err -> !isTerminated())
             );
 
         // Configure metrics.

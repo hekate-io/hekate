@@ -36,9 +36,9 @@ public interface FailoverCondition {
     /**
      * Returns {@code true} if failover policy should be applied.
      *
-     * @param failover Failover attempt info.
+     * @param failure Failure info.
      *
      * @return {@code true} if failover policy should be applied.
      */
-    boolean test(FailureInfo failover);
+    boolean test(FailureInfo failure);
 }

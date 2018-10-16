@@ -42,8 +42,8 @@ public class MaxFailoverAttempts implements FailoverCondition {
     }
 
     @Override
-    public boolean test(FailureInfo failover) {
-        return failover.attempt() < maxAttempts;
+    public boolean test(FailureInfo failure) {
+        return failure.attempt() < maxAttempts;
     }
 
     @Override
