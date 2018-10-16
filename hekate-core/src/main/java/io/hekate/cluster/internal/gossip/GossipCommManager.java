@@ -184,9 +184,9 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
         if (callbackErr.isPresent()) {
             listener.onSendFailure(msg, callbackErr.get());
         } else {
-            NetworkClient<GossipProtocol> sendOnceClient = connector.newClient();
+            NetworkClient<GossipProtocol> oneTimeClient = connector.newClient();
 
-            sendOnceClient.connect(msg.toAddress(), msg, new NetworkClientCallback<GossipProtocol>() {
+            oneTimeClient.connect(msg.toAddress(), msg, new NetworkClientCallback<GossipProtocol>() {
                 @Override
                 public void onMessage(NetworkMessage<GossipProtocol> message, NetworkClient<GossipProtocol> from) {
                     // No-op.

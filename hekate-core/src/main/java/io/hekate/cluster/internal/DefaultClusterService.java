@@ -769,11 +769,13 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                     guard.withReadLockIfInitialized(() -> {
                         JoinRequest msg = gossipMgr.join(nodes);
 
-                        if (msg != null && log.isInfoEnabled()) {
-                            log.info("Sending cluster join request [seed-node={}].", msg.toAddress());
-                        }
+                        if (msg != null) {
+                            if (log.isInfoEnabled()) {
+                                log.info("Sending cluster join request [seed-node={}].", msg.toAddress());
+                            }
 
-                        sendAndDisconnect(msg);
+                            sendAndDisconnect(msg);
+                        }
                     })
                 );
             } catch (HekateException e) {
