@@ -29,7 +29,7 @@ import io.hekate.messaging.MessagingService;
  * <p>
  * Implementations of this interface are responsible for unicast message routing within a {@link MessagingChannel}. Channel calls the
  * {@link #route(Object, LoadBalancerContext)} method of this interface every time when it is going to perform a unicast operation
- * (f.e. {@link MessagingChannel#newSend(Object) send(...)} or {@link MessagingChannel#request(Object) request(...)}).
+ * (f.e. {@link MessagingChannel#send(Object) send(...)} or {@link MessagingChannel#request(Object) request(...)}).
  * Implementations of this method must select one of the cluster nodes from the provided context. The selected cluster node will be used by
  * the channel as a messaging operation target.
  * </p>

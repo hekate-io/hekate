@@ -24,7 +24,7 @@ import io.hekate.messaging.MessagingFuture;
  *
  * @param <T> Base type of request message.
  *
- * @see MessagingChannel#newSubscribe(Object)
+ * @see MessagingChannel#subscribe(Object)
  */
 public class SubscribeFuture<T> extends MessagingFuture<Response<T>> {
     // No-op.

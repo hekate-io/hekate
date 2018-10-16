@@ -78,7 +78,7 @@ public class RequestConditionTest extends MessagingServiceTestBase {
             return ReplyDecision.ACCEPT;
         };
 
-        sender.get().forNode(receiver.nodeId()).newRequest("test").until(condition).submit(callback);
+        sender.channel().forNode(receiver.nodeId()).request("test").until(condition).submit(callback);
 
         assertEquals("test-reply", callback.get().get());
         assertEquals(1, accepts.get());
@@ -98,10 +98,10 @@ public class RequestConditionTest extends MessagingServiceTestBase {
             return ReplyDecision.ACCEPT;
         };
 
-        sender.get()
+        sender.channel()
             .withFailover(FailoverContext::retry)
             .forNode(receiver.nodeId())
-            .newRequest("test")
+            .request("test")
             .until(condition)
             .submit(callback);
 
@@ -127,8 +127,8 @@ public class RequestConditionTest extends MessagingServiceTestBase {
             return ReplyDecision.REJECT;
         };
 
-        sender.get().forNode(receiver.nodeId())
-            .newRequest("test")
+        sender.channel().forNode(receiver.nodeId())
+            .request("test")
             .until(condition)
             .submit(callback);
 
@@ -155,10 +155,10 @@ public class RequestConditionTest extends MessagingServiceTestBase {
             return accepts.get() == 3 ? ReplyDecision.ACCEPT : ReplyDecision.REJECT;
         };
 
-        sender.get()
+        sender.channel()
             .withFailover(FailoverContext::retry)
             .forNode(receiver.nodeId())
-            .newRequest("test")
+            .request("test")
             .until(condition)
             .submit(callback);
 
@@ -185,10 +185,10 @@ public class RequestConditionTest extends MessagingServiceTestBase {
             return ReplyDecision.REJECT;
         };
 
-        sender.get()
+        sender.channel()
             .withFailover(FailoverContext::fail)
             .forNode(receiver.nodeId())
-            .newRequest("test")
+            .request("test")
             .until(condition)
             .submit(callback);
 
@@ -223,10 +223,10 @@ public class RequestConditionTest extends MessagingServiceTestBase {
             return ReplyDecision.DEFAULT;
         };
 
-        sender.get()
+        sender.channel()
             .withFailover(FailoverContext::retry)
             .forNode(receiver.nodeId())
-            .newRequest("test")
+            .request("test")
             .until(condition)
             .submit(callback);
 
@@ -254,10 +254,10 @@ public class RequestConditionTest extends MessagingServiceTestBase {
             return err == null ? ReplyDecision.ACCEPT : ReplyDecision.REJECT;
         };
 
-        sender.get()
+        sender.channel()
             .withFailover(FailoverContext::retry)
             .forNode(receiver.nodeId())
-            .newRequest("test")
+            .request("test")
             .until(condition)
             .submit(callback);
 
@@ -287,10 +287,10 @@ public class RequestConditionTest extends MessagingServiceTestBase {
             }
         };
 
-        sender.get()
+        sender.channel()
             .withFailover(FailoverContext::retry)
             .forNode(receiver.nodeId())
-            .newRequest("test")
+            .request("test")
             .until(condition)
             .submit(callback);
 

@@ -53,11 +53,11 @@ public class FailoverSendTest extends FailoverTestBase {
 
             AtomicInteger failoverCalls = new AtomicInteger();
 
-            SendFuture future = sender.get().forRemotes().withFailover(ctx -> {
+            SendFuture future = sender.channel().forRemotes().withFailover(ctx -> {
                 failoverCalls.incrementAndGet();
 
                 return ctx.retry().withDelay(10).withRoutingPolicy(FailoverRoutingPolicy.RETRY_SAME_NODE);
-            }).newSend("test").submit();
+            }).send("test").submit();
 
             get(future);
 
@@ -79,11 +79,11 @@ public class FailoverSendTest extends FailoverTestBase {
 
             AtomicInteger failoverCalls = new AtomicInteger();
 
-            SendFuture future = sender.get().forRemotes().withFailover(ctx -> {
+            SendFuture future = sender.channel().forRemotes().withFailover(ctx -> {
                 failoverCalls.incrementAndGet();
 
                 return ctx.retry().withDelay(10).withRoutingPolicy(FailoverRoutingPolicy.RE_ROUTE);
-            }).newSend("test").submit();
+            }).send("test").submit();
 
             get(future);
 
@@ -107,7 +107,7 @@ public class FailoverSendTest extends FailoverTestBase {
 
             AtomicInteger failoverCalls = new AtomicInteger();
 
-            SendFuture future = sender.get().forRemotes().withFailover(ctx -> {
+            SendFuture future = sender.channel().forRemotes().withFailover(ctx -> {
                 try {
                     get(receiver.node().leaveAsync());
                 } catch (Exception e) {
@@ -117,7 +117,7 @@ public class FailoverSendTest extends FailoverTestBase {
                 failoverCalls.incrementAndGet();
 
                 return ctx.retry().withDelay(10).withRoutingPolicy(FailoverRoutingPolicy.PREFER_SAME_NODE);
-            }).newSend("test").submit();
+            }).send("test").submit();
 
             get(future);
         });
@@ -139,11 +139,11 @@ public class FailoverSendTest extends FailoverTestBase {
 
             AtomicInteger failoverCalls = new AtomicInteger();
 
-            SendFuture future = sender.get().forRemotes().withFailover(ctx -> {
+            SendFuture future = sender.channel().forRemotes().withFailover(ctx -> {
                 failoverCalls.incrementAndGet();
 
                 return ctx.retry().withDelay(10).withRoutingPolicy(FailoverRoutingPolicy.PREFER_SAME_NODE);
-            }).newSend("test").submit();
+            }).send("test").submit();
 
             get(future);
 
@@ -165,11 +165,11 @@ public class FailoverSendTest extends FailoverTestBase {
 
             AtomicInteger failoverCalls = new AtomicInteger();
 
-            SendFuture future = sender.get().forRemotes().withFailover(ctx -> {
+            SendFuture future = sender.channel().forRemotes().withFailover(ctx -> {
                 failoverCalls.incrementAndGet();
 
                 return ctx.retry().withDelay(10).withRoutingPolicy(FailoverRoutingPolicy.PREFER_SAME_NODE);
-            }).newSend("test").submit();
+            }).send("test").submit();
 
             get(future);
 
@@ -186,7 +186,7 @@ public class FailoverSendTest extends FailoverTestBase {
                 sender.node().leaveAsync();
 
                 return ctx.retry().withDelay(50);
-            }).newSend("test").submit();
+            }).send("test").submit();
 
             get(future);
 
@@ -204,13 +204,13 @@ public class FailoverSendTest extends FailoverTestBase {
         ClusterNodeId unknown = newNodeId();
 
         try {
-            get(sender.get().forNode(unknown)
+            get(sender.channel().forNode(unknown)
                 .withFailover(context -> {
                     failoverCalls.incrementAndGet();
 
                     return context.retry().withReRoute();
                 })
-                .newSend("error")
+                .send("error")
                 .submit()
             );
 

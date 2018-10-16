@@ -89,8 +89,8 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             for (TestChannel to : channels) {
                 String msg = "test-" + from.nodeId();
 
-                assertEquals(msg + "-reply", from.get().forNode(to.nodeId()).request(msg).result());
-                assertEquals(msg + "-reply", from.get().forNode(to.nodeId()).request(msg).result(String.class));
+                assertEquals(msg + "-reply", from.channel().forNode(to.nodeId()).request(msg).submit().result());
+                assertEquals(msg + "-reply", from.channel().forNode(to.nodeId()).request(msg).submit().result(String.class));
 
                 to.assertReceived(msg);
             }
@@ -118,7 +118,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         repeat(5, i -> {
             replyCallbackRef.set(new SendCallbackMock());
 
-            Response<String> msg = get(sender.get().forNode(receiver.nodeId()).request("request"));
+            Response<String> msg = get(sender.channel().forNode(receiver.nodeId()).request("request").submit());
 
             replyCallbackRef.get().get();
 
@@ -134,7 +134,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         TestChannel channel = createChannel().join();
 
         MessagingFutureException err = expect(MessagingFutureException.class, () ->
-            channel.get().forNode(newNodeId()).request("failed").get()
+            channel.channel().forNode(newNodeId()).request("failed").submit().get()
         );
 
         assertTrue(ErrorUtils.stackTrace(err), err.isCausedBy(EmptyTopologyException.class));
@@ -159,7 +159,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             repeat(5, i -> {
                 assertFalse(client.isConnected());
 
-                sender.get().forNode(receiver.nodeId()).request("test" + i).get();
+                sender.channel().forNode(receiver.nodeId()).request("test" + i).submit().get();
 
                 busyWait("disconnect idle", () -> !client.isConnected());
 
@@ -186,7 +186,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         awaitForChannelsTopology(sender, receiver);
 
         runParallel(4, 1000, s ->
-            sender.get().forNode(receiver.nodeId()).request("test").get()
+            sender.channel().forNode(receiver.nodeId()).request("test").submit().get()
         );
 
         sender.leave();
@@ -230,7 +230,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
                 try {
                     // Send message.
-                    future = sender.get().forNode(receiver.nodeId()).request("test" + i);
+                    future = sender.channel().forNode(receiver.nodeId()).request("test" + i).submit();
 
                     // Await for timeout.
                     sleep((long)(idleTimeout * 3));
@@ -354,7 +354,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        sender.get().forNode(receiver.nodeId()).request("test");
+        sender.channel().forNode(receiver.nodeId()).request("test").submit();
 
         Message<String> msg = messageExchanger.exchange(null, 3, TimeUnit.SECONDS);
 
@@ -497,13 +497,15 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             CountDownLatch routeLatch = new CountDownLatch(1);
             CountDownLatch closeLatch = new CountDownLatch(1);
 
-            Future<RequestFuture<String>> future = runAsync(() -> sender.withLoadBalancer((msg, topology) -> {
-                routeLatch.countDown();
+            Future<RequestFuture<String>> future = runAsync(() -> sender.channel()
+                .withLoadBalancer((msg, topology) -> {
+                    routeLatch.countDown();
 
-                await(closeLatch);
+                    await(closeLatch);
 
-                return receiver.nodeId();
-            }).request("test"));
+                    return receiver.nodeId();
+                })
+                .request("test").submit());
 
             await(routeLatch);
 
@@ -553,15 +555,17 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             RequestCallbackMock joinCallback = new RequestCallbackMock(joinMsg);
 
             runAsync(() -> {
-                sender.withLoadBalancer((msg, topology) -> {
-                    beforeJoinLatch.countDown();
+                sender.channel()
+                    .withLoadBalancer((msg, topology) -> {
+                        beforeJoinLatch.countDown();
 
-                    joinInvocations.incrementAndGet();
+                        joinInvocations.incrementAndGet();
 
-                    await(joinLatch);
+                        await(joinLatch);
 
-                    return topology.youngest().id();
-                }).newRequest(joinMsg).submit(joinCallback);
+                        return topology.youngest().id();
+                    })
+                    .request(joinMsg).submit(joinCallback);
 
                 return null;
             });
@@ -594,15 +598,17 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             RequestCallbackMock leaveCallback = new RequestCallbackMock(leaveMsg);
 
             runAsync(() -> {
-                sender.withLoadBalancer((msg, topology) -> {
-                    beforeLeaveLatch.countDown();
+                sender.channel()
+                    .withLoadBalancer((msg, topology) -> {
+                        beforeLeaveLatch.countDown();
 
-                    leaveInvocations.incrementAndGet();
+                        leaveInvocations.incrementAndGet();
 
-                    await(leaveLatch);
+                        await(leaveLatch);
 
-                    return topology.youngest().id();
-                }).newRequest(leaveMsg).submit(leaveCallback);
+                        return topology.youngest().id();
+                    })
+                    .request(leaveMsg).submit(leaveCallback);
 
                 return null;
             });
@@ -634,13 +640,13 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
                 MessagingChannel<String> send = channel.node().messaging().channel(TEST_CHANNEL_NAME, String.class);
 
                 if (event.type() == ClusterEventType.JOIN) {
-                    get(send.request("to-self"));
+                    get(send.request("to-self").submit());
 
-                    send.newRequest("to-self").submit(toSelfCallback);
+                    send.request("to-self").submit(toSelfCallback);
                 } else if (event.type() == ClusterEventType.CHANGE) {
-                    get(send.forRemotes().request("to-remote"));
+                    get(send.forRemotes().request("to-remote").submit());
 
-                    send.forRemotes().newRequest("to-remote").submit(toRemoteCallback);
+                    send.forRemotes().request("to-remote").submit(toRemoteCallback);
                 }
             } catch (Throwable err) {
                 errRef.compareAndSet(null, err);
@@ -677,9 +683,11 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         awaitForChannelsTopology(sender, receiver);
 
         repeat(3, i -> {
-            RequestFuture<String> future = sender.withLoadBalancer((msg, topology) -> {
-                throw new LoadBalancerException(HekateTestError.MESSAGE);
-            }).request("failed" + i);
+            RequestFuture<String> future = sender.channel()
+                .withLoadBalancer((msg, topology) -> {
+                    throw new LoadBalancerException(HekateTestError.MESSAGE);
+                })
+                .request("failed" + i).submit();
 
             try {
                 future.result();
@@ -691,7 +699,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             }
         });
 
-        assertEquals("success-reply", sender.get().forNode(receiver.nodeId()).request("success").result());
+        assertEquals("success-reply", sender.channel().forNode(receiver.nodeId()).request("success").submit().result());
     }
 
     @Test
@@ -707,7 +715,10 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         awaitForChannelsTopology(sender, receiver);
 
         repeat(3, i -> {
-            RequestFuture<String> future = sender.withLoadBalancer((msg, topology) -> null).request("failed" + i);
+            RequestFuture<String> future = sender.channel()
+                .withLoadBalancer((msg, topology) -> null)
+                .request("failed" + i)
+                .submit();
 
             try {
                 future.result();
@@ -719,7 +730,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             }
         });
 
-        assertEquals("success-reply", sender.get().forNode(receiver.nodeId()).request("success").result());
+        assertEquals("success-reply", sender.channel().forNode(receiver.nodeId()).request("success").submit().result());
     }
 
     @Test
@@ -737,7 +748,10 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         ClusterNodeId invalidNodeId = newNodeId();
 
         repeat(3, i -> {
-            RequestFuture<String> future = sender.withLoadBalancer((msg, topology) -> invalidNodeId).request("failed" + i);
+            RequestFuture<String> future = sender.channel()
+                .withLoadBalancer((msg, topology) -> invalidNodeId)
+                .request("failed" + i)
+                .submit();
 
             try {
                 future.result();
@@ -749,7 +763,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             }
         });
 
-        assertEquals("success-reply", sender.get().forNode(receiver.nodeId()).request("success").result());
+        assertEquals("success-reply", sender.channel().forNode(receiver.nodeId()).request("success").submit().result());
     }
 
     @Test
@@ -771,7 +785,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         awaitForChannelsTopology(channel1, channel2, channel3);
 
         for (int i = 0; i < 100; i++) {
-            get(channel1.get().request("test" + i));
+            get(channel1.channel().request("test" + i).submit());
         }
 
         List<String> received1 = received.get(channel1.node().localNode());
@@ -813,7 +827,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             received.clear();
 
             for (int i = 0; i < 50; i++) {
-                get(channel1.get().newRequest("test" + i).withAffinity(j).submit());
+                get(channel1.channel().request("test" + i).withAffinity(j).submit());
             }
 
             List<ClusterNode> singleNode = received.entrySet().stream()
@@ -835,7 +849,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         ).join();
 
         try {
-            get(channel.get().forNode(channel.nodeId()).request("test"));
+            get(channel.channel().forNode(channel.nodeId()).request("test").submit());
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
@@ -858,12 +872,12 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         channel.join();
 
-        get(channel.get().forNode(channel.nodeId()).newSend("test").submit());
+        get(channel.channel().forNode(channel.nodeId()).send("test").submit());
 
         channel.leave();
 
         try {
-            get(channel.get().forNode(channel.nodeId()).request("test"));
+            get(channel.channel().forNode(channel.nodeId()).request("test").submit());
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
@@ -890,7 +904,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        sender.get().forNode(receiver.nodeId()).request("test");
+        sender.channel().forNode(receiver.nodeId()).request("test").submit();
 
         Message<String> request = get(requestFuture);
 
@@ -910,7 +924,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         repeat(5, i -> {
             MessagingFutureException err = expect(MessagingFutureException.class, () ->
-                get(sender.messaging().channel("test").forRemotes().request(new NonSerializable()))
+                get(sender.messaging().channel("test").forRemotes().request(new NonSerializable()).submit())
             );
 
             assertSame(err.toString(), MessagingException.class, err.getCause().getClass());
@@ -927,7 +941,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         repeat(5, i -> {
             MessagingFutureException err = expect(MessagingFutureException.class, () ->
-                get(sender.messaging().channel("test").forRemotes().request(new NonDeserializable()))
+                get(sender.messaging().channel("test").forRemotes().request(new NonDeserializable()).submit())
             );
 
             assertSame(err.toString(), MessagingRemoteException.class, err.getCause().getClass());
@@ -943,7 +957,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         repeat(5, i -> {
             MessagingFutureException err = expect(MessagingFutureException.class, () ->
-                get(sender.messaging().channel("test").forRemotes().request("OK"))
+                get(sender.messaging().channel("test").forRemotes().request("OK").submit())
             );
 
             assertSame(ErrorUtils.stackTrace(err), MessagingRemoteException.class, err.getCause().getClass());
@@ -959,7 +973,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         repeat(5, i -> {
             MessagingFutureException err = expect(MessagingFutureException.class, () ->
-                get(sender.messaging().channel("test").forRemotes().request("OK"))
+                get(sender.messaging().channel("test").forRemotes().request("OK").submit())
             );
 
             assertSame(err.toString(), MessagingException.class, err.getCause().getClass());

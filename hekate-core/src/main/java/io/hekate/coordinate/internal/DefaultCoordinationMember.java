@@ -175,7 +175,7 @@ class DefaultCoordinationMember implements CoordinationMember {
         }
 
         if (enqueued) {
-            channel.newRequest(request)
+            channel.request(request)
                 .withAffinity(processName)
                 .until((err, rsp) -> {
                     if (future.isDone()) {
@@ -219,8 +219,8 @@ class DefaultCoordinationMember implements CoordinationMember {
                 .submit((err, rsp) -> {
                     unregister(future);
 
-                    if (DEBUG) {
-                        if (err != null && !disposed) {
+                    if (err != null && !disposed) {
+                        if (DEBUG) {
                             log.debug("Failed to submit coordination request [request={}]", request, err);
                         }
                     }
@@ -230,20 +230,20 @@ class DefaultCoordinationMember implements CoordinationMember {
         }
     }
 
-    private CompletableFuture<Object> newRequestFuture(CoordinationProtocol.RequestBase request, CoordinationRequestCallback callback) {
+    private CompletableFuture<Object> newRequestFuture(CoordinationProtocol.RequestBase req, CoordinationRequestCallback callback) {
         CompletableFuture<Object> future = new CompletableFuture<>();
 
-        future.whenCompleteAsync((response, error) -> {
+        future.whenCompleteAsync((rsp, err) -> {
             try {
-                if (error == null) {
+                if (err == null) {
                     if (DEBUG) {
-                        log.debug("Received coordination response [from={}, message={}]", node, response);
+                        log.debug("Received coordination response [from={}, message={}]", node, rsp);
                     }
 
-                    callback.onResponse(response, this);
+                    callback.onResponse(rsp, this);
                 } else {
                     if (DEBUG) {
-                        log.debug("Canceled coordination request sending [to={}, message={}]", node, request);
+                        log.debug("Canceled coordination request sending [to={}, message={}]", node, req);
                     }
 
                     callback.onCancel();

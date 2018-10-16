@@ -197,7 +197,7 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
                 // Submit RPC request.
                 RpcCall<T> call = new RpcCall<>(methodIdxKey(), rpc(), tag(), method(), partArgs, true /* <- Split. */);
 
-                roundRobin.newRequest(call).submit(aggrFuture /* <-- Future is a callback. */);
+                roundRobin.request(call).submit(aggrFuture /* <-- Future is a callback. */);
             }
 
             future = aggrFuture;

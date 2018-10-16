@@ -67,9 +67,9 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
             for (TestChannel to : channels) {
                 String msg = "test-" + from.nodeId();
 
-                MessagingChannel<String> channel = from.get().forNode(to.nodeId());
+                MessagingChannel<String> channel = from.channel().forNode(to.nodeId());
 
-                channel.newSend(msg)
+                channel.send(msg)
                     .withConfirmReceive(true)
                     .submit()
                     .get();
@@ -84,8 +84,8 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
         TestChannel channel = createChannel().join();
 
         try {
-            channel.get().forNode(newNodeId())
-                .newSend("failed")
+            channel.channel().forNode(newNodeId())
+                .send("failed")
                 .withConfirmReceive(true)
                 .submit()
                 .get();
@@ -111,8 +111,8 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
             repeat(5, i -> {
                 assertFalse(client.isConnected());
 
-                sender.get().forNode(receiver.nodeId())
-                    .newSend("test" + i)
+                sender.channel().forNode(receiver.nodeId())
+                    .send("test" + i)
                     .withConfirmReceive(true)
                     .submit()
                     .get();
@@ -139,8 +139,8 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
         awaitForChannelsTopology(sender, receiver);
 
         runParallel(4, 1000, s ->
-            sender.get().forNode(receiver.nodeId())
-                .newSend("test")
+            sender.channel().forNode(receiver.nodeId())
+                .send("test")
                 .withConfirmReceive(true)
                 .submit()
                 .get()
@@ -181,8 +181,8 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
 
                 try {
                     // Send message.
-                    sent = sender.get().forNode(receiver.nodeId())
-                        .newSend("test" + i)
+                    sent = sender.channel().forNode(receiver.nodeId())
+                        .send("test" + i)
                         .withConfirmReceive(true)
                         .submit();
 
@@ -232,8 +232,8 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
             received.clear();
 
             for (int i = 0; i < 50; i++) {
-                get(channel1.get()
-                    .newSend("test" + i)
+                get(channel1.channel()
+                    .send("test" + i)
                     .withConfirmReceive(true)
                     .withAffinity(j)
                     .submit()
@@ -266,8 +266,8 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
             String msg = "request" + i;
 
             try {
-                sender.get().forNode(receiver.nodeId())
-                    .newSend(msg)
+                sender.channel().forNode(receiver.nodeId())
+                    .send(msg)
                     .withConfirmReceive(true)
                     .submit()
                     .get();
@@ -297,8 +297,8 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
 
         repeat(5, i -> {
             try {
-                sender.get().forNode(receiver.nodeId())
-                    .newSend("request" + i)
+                sender.channel().forNode(receiver.nodeId())
+                    .send("request" + i)
                     .withConfirmReceive(true)
                     .submit()
                     .get();
@@ -330,8 +330,8 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
 
         repeat(5, i -> {
             try {
-                sender.get().forNode(receiver.nodeId())
-                    .newSend("request" + i)
+                sender.channel().forNode(receiver.nodeId())
+                    .send("request" + i)
                     .withConfirmReceive(true)
                     .submit()
                     .get();
@@ -351,7 +351,7 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
             MessagingFutureException err = expect(MessagingFutureException.class, () ->
                 get(sender.messaging().channel("test")
                     .forRemotes()
-                    .newSend(new NonSerializable())
+                    .send(new NonSerializable())
                     .withConfirmReceive(true)
                     .submit()
                 )
@@ -371,7 +371,7 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
             MessagingFutureException err = expect(MessagingFutureException.class, () ->
                 get(sender.messaging().channel("test")
                     .forRemotes()
-                    .newSend(new NonDeserializable())
+                    .send(new NonDeserializable())
                     .withConfirmReceive(true)
                     .submit()
                 )

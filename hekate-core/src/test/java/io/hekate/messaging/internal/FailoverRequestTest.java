@@ -53,7 +53,7 @@ public class FailoverRequestTest extends FailoverTestBase {
                 sender.node().leaveAsync();
 
                 return ctx.retry().withDelay(50);
-            }).request("test").result();
+            }).request("test").submit().result();
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
@@ -148,13 +148,13 @@ public class FailoverRequestTest extends FailoverTestBase {
         ClusterNodeId unknown = newNodeId();
 
         try {
-            get(sender.get().forNode(unknown)
+            get(sender.channel().forNode(unknown)
                 .withFailover(context -> {
                     failoverCalls.incrementAndGet();
 
                     return context.retry().withReRoute();
                 })
-                .request("error")
+                .request("error").submit()
             );
 
             fail("Error was expected.");
@@ -173,21 +173,24 @@ public class FailoverRequestTest extends FailoverTestBase {
 
         AtomicReference<TestChannel> lastTried = new AtomicReference<>();
 
-        String response = sender.withLoadBalancer((message, ctx) -> {
-            if (lastTried.get() == null || lastTried.get() == sender) {
-                lastTried.set(receiver);
-            } else {
-                lastTried.set(sender);
-            }
+        String response = sender.channel()
+            .withLoadBalancer((message, ctx) -> {
+                if (lastTried.get() == null || lastTried.get() == sender) {
+                    lastTried.set(receiver);
+                } else {
+                    lastTried.set(sender);
+                }
 
-            return lastTried.get().nodeId();
-        }).withFailover(ctx -> {
-            contexts.add(ctx);
+                return lastTried.get().nodeId();
+            })
+            .withFailover(ctx -> {
+                contexts.add(ctx);
 
-            onFailover.accept(ctx);
+                onFailover.accept(ctx);
 
-            return ctx.retry().withRoutingPolicy(policy);
-        }).request("test").result();
+                return ctx.retry().withRoutingPolicy(policy);
+            })
+            .request("test").submit().result();
 
         assertEquals(5, contexts.size());
         assertEquals("test-" + RETRANSMIT_SUFFIX, response);
@@ -207,7 +210,7 @@ public class FailoverRequestTest extends FailoverTestBase {
                 failoverCalls.incrementAndGet();
 
                 return context.retry();
-            }).request("test").result();
+            }).request("test").submit().result();
 
             assertNotNull(response);
             assertEquals("test-" + RETRANSMIT_SUFFIX, response);
@@ -229,7 +232,7 @@ public class FailoverRequestTest extends FailoverTestBase {
             times.add(time);
 
             return context.retry().withDelay(failoverDelay);
-        }).request("test").result();
+        }).request("test").submit().result();
 
         assertNotNull(response);
 
@@ -260,7 +263,7 @@ public class FailoverRequestTest extends FailoverTestBase {
                     failoverCalls.incrementAndGet();
 
                     return context.attempt() < attempts ? context.retry() : context.fail();
-                }).request("test"));
+                }).request("test").submit());
 
                 fail("Error was expected.");
             } catch (MessagingFutureException e) {

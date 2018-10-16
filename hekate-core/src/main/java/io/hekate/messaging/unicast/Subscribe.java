@@ -15,7 +15,7 @@ import java.util.concurrent.TimeoutException;
  * This interface represents a bidirectional subscribe operation. Typical use of this interface is:
  * </p>
  * <ol>
- * <li>Obtain an instance of this interface via the {@link MessagingChannel#newSubscribe(Object)} call</li>
+ * <li>Obtain an instance of this interface via the {@link MessagingChannel#subscribe(Object)} call</li>
  * <li>Set options (f.e. {@link #withAffinity(Object) affinity key})</li>
  * <li>Execute this operation via the {@link #submit(RequestCallback)}  method</li>
  * <li>Await for the execution result, if needed</li>

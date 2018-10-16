@@ -41,16 +41,16 @@ public class BackPressureSendTest extends BackPressureParametrizedTestBase {
             await(resumeReceive, 10)
         )).join();
 
-        MessagingChannel<String> sender = createChannel(this::useBackPressure).join().get().forRemotes();
+        MessagingChannel<String> sender = createChannel(this::useBackPressure).join().channel().forRemotes();
 
         // Ensure that sender -> receiver connection is established.
-        get(sender.newSend("init").submit());
+        get(sender.send("init").submit());
 
         SendFuture future = null;
 
         try {
             for (int step = 0; step < 200000; step++) {
-                future = sender.newSend("message-" + step).submit();
+                future = sender.send("message-" + step).submit();
 
                 if (future.isCompletedExceptionally()) {
                     say("Completed after " + step + " steps.");

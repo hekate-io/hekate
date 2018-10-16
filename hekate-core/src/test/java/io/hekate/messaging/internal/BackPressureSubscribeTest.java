@@ -48,12 +48,12 @@ public class BackPressureSubscribeTest extends BackPressureParametrizedTestBase 
         awaitForChannelsTopology(sender, receiver);
 
         // Enforce back pressure on the receiver in order to block sending of partial responses.
-        List<RequestFuture<String>> futureResponses = requestUpToHighWatermark(receiver.get());
+        List<RequestFuture<String>> futureResponses = requestUpToHighWatermark(receiver.channel());
 
         busyWait("requests received", () -> requests.size() == futureResponses.size());
 
         // Send trigger message.
-        sender.get().forRemotes().subscribe("init", (err, rsp) -> { /* Ignore. */ });
+        sender.channel().forRemotes().subscribe("init").submit((err, rsp) -> { /* Ignore. */ });
 
         // Await for trigger message to be received.
         busyWait("trigger received", () -> receivedRef.get() != null);

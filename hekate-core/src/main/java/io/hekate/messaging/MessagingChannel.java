@@ -21,19 +21,13 @@ import io.hekate.cluster.ClusterView;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.broadcast.Aggregate;
-import io.hekate.messaging.broadcast.AggregateFuture;
 import io.hekate.messaging.broadcast.Broadcast;
-import io.hekate.messaging.broadcast.BroadcastFuture;
 import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.messaging.unicast.Request;
 import io.hekate.messaging.unicast.RequestCallback;
-import io.hekate.messaging.unicast.RequestFuture;
-import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.Send;
-import io.hekate.messaging.unicast.SendFuture;
 import io.hekate.messaging.unicast.Subscribe;
-import io.hekate.messaging.unicast.SubscribeFuture;
 import io.hekate.partition.PartitionMapper;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -63,7 +57,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * <p>
      * Send operation doesn't assume any response to be received from the destination node. If request-response type of communication is
-     * required then consider using the {@link #newRequest(Object)} method.
+     * required then consider using the {@link #request(Object)} method.
      * </p>
      *
      * <p>
@@ -77,7 +71,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @see Send#submit()
      */
-    Send<T> newSend(T message);
+    Send<T> send(T message);
 
     /**
      * Creates a new {@link Request} operation.
@@ -88,7 +82,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @see Request#submit()
      */
-    Request<T> newRequest(T request);
+    Request<T> request(T request);
 
     /**
      * Creates a new {@link Subscribe} operation.
@@ -99,7 +93,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @see Subscribe#submit(RequestCallback)
      */
-    Subscribe<T> newSubscribe(T request);
+    Subscribe<T> subscribe(T request);
 
     /**
      * Creates a new {@link Broadcast} operation.
@@ -115,7 +109,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @see Broadcast#submit()
      */
-    Broadcast<T> newBroadcast(T request);
+    Broadcast<T> broadcast(T request);
 
     /**
      * Creates a new {@link Aggregate} operation.
@@ -126,7 +120,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @see Aggregate#submit()
      */
-    Aggregate<T> newAggregate(T request);
+    Aggregate<T> aggregate(T request);
 
     /**
      * Returns the universally unique identifier of this channel.
@@ -294,72 +288,4 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @see MessagingChannelConfig#setWorkerThreads(int)
      */
     Executor executor();
-
-    /**
-     * Asynchronously sends a one way message and returns a future object that can be used to inspect the operation result.
-     *
-     * <p>
-     * This method doesn't assume any response to be received from the destination node. If request-response type of communication is
-     * required then consider using the {@link #request(Object)} method.
-     * </p>
-     *
-     * @param message Message to be sent.
-     *
-     * @return Future object that can be used to inspect the operation result.
-     */
-    default SendFuture send(T message) {
-        return newSend(message).submit();
-    }
-
-    /**
-     * Asynchronously broadcasts the specified message and returns a future object that can be used to inspect the operation result.
-     *
-     * @param message Message to broadcast.
-     *
-     * @return Future object that can be used to inspect the broadcast operation result.
-     */
-    default BroadcastFuture<T> broadcast(T message) {
-        return newBroadcast(message).submit();
-    }
-
-    /**
-     * Asynchronously sends the query message and aggregates responses from all the nodes that received this message. This method returns a
-     * future object that can be used to inspect the aggregation results.
-     *
-     * @param message Query message that should be sent.
-     *
-     * @return Future object that can be used to inspect the aggregation results.
-     */
-    default AggregateFuture<T> aggregate(T message) {
-        return newAggregate(message).submit();
-    }
-
-    /**
-     * Asynchronously sends a request message and returns a future object that will be completed after receiving the response.
-     *
-     * @param request Request message.
-     *
-     * @return Future object that can be used to obtain the response.
-     */
-    default RequestFuture<T> request(T request) {
-        return newRequest(request).submit();
-    }
-
-    /**
-     * Opens a stream for receiving continuous responses.
-     *
-     * <p>
-     * This method asynchronously sends a request message and opens a stream for receiving {@link Message#partialReply(Object) partial
-     * replies}. For each such reply the {@link RequestCallback#onComplete(Throwable, Response)} method will be called until the last
-     * (non-{@link Response#isPartial() partial}) response is received.
-     * </p>
-     *
-     * @param request Request.
-     * @param callback Callback.
-     *
-     * @return Future object that gets completed when the final chunk of a response stream is received.
-     */
-    default SubscribeFuture<T> subscribe(T request, RequestCallback<T> callback) {
-        return newSubscribe(request).submit(callback);
-    }
 }

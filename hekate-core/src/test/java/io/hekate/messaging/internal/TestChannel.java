@@ -23,7 +23,6 @@ import io.hekate.core.HekateFutureException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.messaging.unicast.Response;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -76,12 +75,8 @@ public class TestChannel {
         });
     }
 
-    public MessagingChannel<String> get() {
+    public MessagingChannel<String> channel() {
         return channel;
-    }
-
-    public MessagingChannel<String> withLoadBalancer(LoadBalancer<String> balancer) {
-        return channel.withLoadBalancer(balancer);
     }
 
     public ClusterNodeId nodeId() {
@@ -115,7 +110,7 @@ public class TestChannel {
     public Response<String> requestWithSyncCallback(ClusterNodeId nodeId, String msg) throws Exception {
         RequestCallbackMock callback = new RequestCallbackMock(msg);
 
-        channel.forNode(nodeId).newRequest(msg).submit(callback);
+        channel.forNode(nodeId).request(msg).submit(callback);
 
         try {
             return callback.get();

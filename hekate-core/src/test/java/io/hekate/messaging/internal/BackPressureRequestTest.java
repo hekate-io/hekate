@@ -53,7 +53,7 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
             .withReceiver(requests::add)
         ).join();
 
-        MessagingChannel<String> sender = createChannel(this::useBackPressure).join().get().forRemotes();
+        MessagingChannel<String> sender = createChannel(this::useBackPressure).join().channel().forRemotes();
 
         // Enforce back pressure on sender.
         List<RequestFuture<String>> futureResponses = requestUpToHighWatermark(sender);
@@ -70,7 +70,7 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
         );
 
         // Check that new request can be processed.
-        get(sender.newSend("last").submit());
+        get(sender.send("last").submit());
 
         requests.stream().filter(Message::mustReply).forEach(r -> r.reply("ok"));
 
@@ -87,7 +87,7 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
 
         MessagingChannel<String> sender = createChannel(cfg ->
             useBackPressure(cfg).getBackPressure().withOutOverflowPolicy(MessagingOverflowPolicy.BLOCK)
-        ).join().get().forRemotes();
+        ).join().channel().forRemotes();
 
         int requests = 1000;
 
@@ -98,7 +98,7 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
                 say("Submitted requests: %s", i);
             }
 
-            asyncResponses.add(sender.request("test-" + i));
+            asyncResponses.add(sender.request("test-" + i).submit());
         }
 
         for (RequestFuture<String> future : asyncResponses) {
@@ -116,7 +116,7 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
 
         MessagingChannel<String> sender = createChannel(c ->
             useBackPressure(c).getBackPressure().setOutOverflowPolicy(MessagingOverflowPolicy.BLOCK)
-        ).join().get().forRemotes();
+        ).join().channel().forRemotes();
 
         // Enforce back pressure on sender.
         List<RequestFuture<String>> futureResponses = requestUpToHighWatermark(sender);
@@ -125,7 +125,7 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
 
         // Check timeout.
         try {
-            get(sender.withTimeout(10, MILLISECONDS).request("timeout"));
+            get(sender.withTimeout(10, MILLISECONDS).request("timeout").submit());
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
@@ -140,7 +140,7 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
         );
 
         // Check that new request can be processed.
-        get(sender.newSend("last").submit());
+        get(sender.send("last").submit());
 
         requests.stream().filter(Message::mustReply).forEach(r -> r.reply("ok"));
 
@@ -159,7 +159,7 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
 
         TestChannel sender = createChannel(this::useBackPressure).join();
 
-        MessagingChannel<String> senderChannel = sender.get().forRemotes();
+        MessagingChannel<String> senderChannel = sender.channel().forRemotes();
 
         // Enforce back pressure on sender.
         List<RequestFuture<String>> futureResponses = requestUpToHighWatermark(senderChannel);
@@ -183,7 +183,7 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
         busyWait("all responses failed", () -> futureResponses.stream().allMatch(CompletableFuture::isDone));
 
         // Check that new request can be processed.
-        get(senderChannel.newSend("last").submit());
+        get(senderChannel.send("last").submit());
     }
 
     @Test
@@ -204,13 +204,13 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
         ).join();
 
         // Request up to high watermark.
-        sender.get().forRemotes().request("request");
+        sender.channel().forRemotes().request("request").submit();
 
         busyWait("requests received", () -> requests.get() == 1);
 
         // Asynchronously try to send a new message (should block).
         Future<RequestFuture<String>> async = runAsync(() ->
-            sender.get().forRemotes().request("must-block")
+            sender.channel().forRemotes().request("must-block").submit()
         );
 
         // Give async thread some time to block.
@@ -258,13 +258,13 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
         awaitForChannelsTopology(first, second);
 
         // Enforce back pressure on 'first'.
-        requestUpToHighWatermark(first.get());
+        requestUpToHighWatermark(first.channel());
 
         // 'first' must have back pressure being enabled.
-        assertBackPressureEnabled(first.get());
+        assertBackPressureEnabled(first.channel());
 
         // Request 'second' -> 'first' in order to trigger response while back pressure is enabled.
-        RequestFuture<String> request = second.get().forRemotes().request("check");
+        RequestFuture<String> request = second.channel().forRemotes().request("check").submit();
 
         // Make sure that there were no back pressure-related errors.
         assertNull(get(errFuture));

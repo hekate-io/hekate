@@ -41,7 +41,7 @@ public class FailoverContextTest extends FailoverTestBase {
             contexts.add(ctx);
 
             return ctx.retry();
-        }).request("test--1"));
+        }).request("test--1").submit());
 
         assertEquals(3, contexts.size());
 

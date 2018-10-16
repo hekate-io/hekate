@@ -60,7 +60,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
             awaitForChannelsTopology(channels);
 
-            BroadcastResult<String> result = get(channel.get().broadcast("test" + i));
+            BroadcastResult<String> result = get(channel.channel().broadcast("test" + i).submit());
 
             assertTrue(result.toString(), result.isSuccess());
             assertTrue(result.toString(), result.errors().isEmpty());
@@ -85,8 +85,8 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
             for (TestChannel channel : channels) {
                 repeat(100, j -> {
-                    BroadcastResult<String> result = get(channel.get()
-                        .newBroadcast("test-" + j)
+                    BroadcastResult<String> result = get(channel.channel()
+                        .broadcast("test-" + j)
                         .withAffinity(j)
                         .submit()
                     );
@@ -94,7 +94,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
                     assertTrue(result.isSuccess());
 
                     List<ClusterNode> sentTo = result.nodes();
-                    List<ClusterNode> mappedTo = channel.get().partitions().map(j).nodes();
+                    List<ClusterNode> mappedTo = channel.channel().partitions().map(j).nodes();
 
                     assertEquals(nodesPerPartition, sentTo.size());
                     assertEquals(mappedTo.stream().sorted().collect(toList()), sentTo.stream().sorted().collect(toList()));
@@ -119,7 +119,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             awaitForChannelsTopology(channels);
 
             // Empty targets.
-            BroadcastResult<String> result = get(channel.get().forRole("no-such-role").broadcast("test" + i));
+            BroadcastResult<String> result = get(channel.channel().forRole("no-such-role").broadcast("test" + i).submit());
 
             assertTrue(result.toString(), result.isSuccess());
             assertTrue(result.toString(), result.errors().isEmpty());
@@ -138,7 +138,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
         TestChannel source = channels.get(channels.size() - 1);
 
         // Initialize connection to all nodes.
-        get(source.get().broadcast("test"));
+        get(source.channel().broadcast("test").submit());
 
         repeat(channels.size() - 1, i -> {
             TestChannel target = channels.get(i);
@@ -148,7 +148,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             // Induce failure by closing existing network connections.
             client.close();
 
-            BroadcastResult<String> result = get(source.get().broadcast("test" + i));
+            BroadcastResult<String> result = get(source.channel().broadcast("test" + i).submit());
 
             assertEquals("test" + i, result.message());
             assertFalse(result.errors().toString(), result.isSuccess());
@@ -179,13 +179,13 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             BroadcastTestCallback joinCallback = new BroadcastTestCallback();
 
             runAsync(() -> {
-                channel.get().filterAll(nodes -> {
+                channel.channel().filterAll(nodes -> {
                     joinFilterCallLatch.countDown();
 
                     await(joinLatch);
 
                     return nodes;
-                }).newBroadcast("test-join" + i).submit(joinCallback);
+                }).broadcast("test-join" + i).submit(joinCallback);
 
                 return null;
             });
@@ -222,13 +222,13 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             BroadcastTestCallback leaveCallback = new BroadcastTestCallback();
 
             runAsync(() -> {
-                channel.get().filterAll(nodes -> {
+                channel.channel().filterAll(nodes -> {
                     leaveFilterCallLatch.countDown();
 
                     await(leaveLatch);
 
                     return nodes;
-                }).newBroadcast("test-join" + i).submit(leaveCallback);
+                }).broadcast("test-join" + i).submit(leaveCallback);
 
                 return null;
             });

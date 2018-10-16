@@ -61,7 +61,7 @@ public class RequestOrderTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        MessagingChannel<String> channel = sender.get()
+        MessagingChannel<String> channel = sender.channel()
             .forRemotes()
             .withFailover(new FailoverPolicyBuilder()
                 .withRetryUntil(failover -> true)
@@ -73,7 +73,7 @@ public class RequestOrderTest extends MessagingServiceTestBase {
         List<RequestFuture<String>> tasks = new ArrayList<>();
 
         for (int i = 0; i < 100; i++) {
-            tasks.add(channel.newRequest(String.valueOf(i))
+            tasks.add(channel.request(String.valueOf(i))
                 .withAffinity(1)
                 .submit()
             );

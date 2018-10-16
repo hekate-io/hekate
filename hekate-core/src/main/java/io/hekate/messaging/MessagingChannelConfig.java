@@ -578,7 +578,7 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
      *
      * <p>
      * If particular messaging operation (f.e. {@link MessagingChannel#request(Object) request(...)}
-     * or {@link MessagingChannel#newSend(Object) send(...)}) can't be completed within the specified timeout then such operation will fail
+     * or {@link MessagingChannel#send(Object) send(...)}) can't be completed within the specified timeout then such operation will fail
      * with {@link MessageTimeoutException}.
      * </p>
      *

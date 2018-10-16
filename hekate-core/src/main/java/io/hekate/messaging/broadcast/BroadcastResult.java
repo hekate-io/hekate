@@ -26,7 +26,7 @@ import java.util.Map;
  *
  * @param <T> Base type of broadcast message.
  *
- * @see MessagingChannel#newBroadcast(Object)
+ * @see MessagingChannel#broadcast(Object)
  */
 public interface BroadcastResult<T> {
     /**

@@ -49,7 +49,7 @@ public final class ClusterFilters {
                 case 1: {
                     ClusterNode node = nodes.get(0);
 
-                    return node.isLocal() ? singletonList(node) : emptyList();
+                    return node.isLocal() ? nodes : emptyList();
                 }
                 default: {
                     ClusterNode local = null;

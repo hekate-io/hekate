@@ -47,7 +47,7 @@ public class MessagingChannelBroadcastConfirmationTest extends MessagingServiceT
 
             awaitForChannelsTopology(channels);
 
-            BroadcastFuture<String> future = channel.get().newBroadcast("test" + i)
+            BroadcastFuture<String> future = channel.channel().broadcast("test" + i)
                 .withConfirmReceive(true)
                 .submit();
 
@@ -72,8 +72,8 @@ public class MessagingChannelBroadcastConfirmationTest extends MessagingServiceT
 
             for (TestChannel channel : channels) {
                 repeat(100, j -> {
-                    BroadcastResult<String> result = get(channel.get()
-                        .newBroadcast("test-" + j)
+                    BroadcastResult<String> result = get(channel.channel()
+                        .broadcast("test-" + j)
                         .withConfirmReceive(true)
                         .withAffinity(j)
                         .submit()
@@ -82,7 +82,7 @@ public class MessagingChannelBroadcastConfirmationTest extends MessagingServiceT
                     assertTrue(result.isSuccess());
 
                     List<ClusterNode> receivedBy = result.nodes();
-                    List<ClusterNode> mappedTo = channel.get().partitions().map(j).nodes();
+                    List<ClusterNode> mappedTo = channel.channel().partitions().map(j).nodes();
 
                     assertEquals(nodesPerPartition, receivedBy.size());
                     assertEquals(mappedTo.stream().sorted().collect(toList()), receivedBy.stream().sorted().collect(toList()));
@@ -106,8 +106,8 @@ public class MessagingChannelBroadcastConfirmationTest extends MessagingServiceT
 
             TestChannel channel = channels.get(channels.size() - 1);
 
-            BroadcastResult<String> result = get(channel.get()
-                .newBroadcast("test" + i)
+            BroadcastResult<String> result = get(channel.channel()
+                .broadcast("test" + i)
                 .withConfirmReceive(true)
                 .submit()
             );

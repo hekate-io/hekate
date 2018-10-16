@@ -66,7 +66,7 @@ public abstract class FailoverTestBase extends MessagingServiceTestBase {
 
         receiver = channels.get(1);
 
-        toSelf = sender.get().forNode(sender.nodeId());
-        toRemote = sender.get().forNode(receiver.nodeId());
+        toSelf = sender.channel().forNode(sender.nodeId());
+        toRemote = sender.channel().forNode(receiver.nodeId());
     }
 }

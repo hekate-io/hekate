@@ -11,7 +11,7 @@ import io.hekate.messaging.MessagingChannel;
  * This interface represents a unidirectional broadcast operation. Typical use of this interface is:
  * </p>
  * <ol>
- * <li>Obtain an instance of this interface via the {@link MessagingChannel#newBroadcast(Object)} method call</li>
+ * <li>Obtain an instance of this interface via the {@link MessagingChannel#broadcast(Object)} method call</li>
  * <li>Set options (f.e. {@link #withConfirmReceive(boolean) confirmation mode} or {@link #withAffinity(Object) affinity key})</li>
  * <li>Execute this operation via the {@link #submit()} method</li>
  * <li>Await for the execution result, if needed</li>

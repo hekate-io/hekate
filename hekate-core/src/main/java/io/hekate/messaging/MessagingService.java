@@ -149,7 +149,7 @@ import java.util.List;
  * <a name="send_and_forget"></a>
  * <h3>Send and Forget</h3>
  * <p>
- * {@link MessagingChannel#newSend(Object)} provides support for unidirectional communications (i.e. when remote node doesn't need to send
+ * {@link MessagingChannel#send(Object)} provides support for unidirectional communications (i.e. when remote node doesn't need to send
  * back a response) using the fire and forget approach:
  * ${source: messaging/MessagingServiceJavadocTest.java#unicast_send_sync}
  * </p>
@@ -213,7 +213,7 @@ import java.util.List;
  * <h2>Routing and load balancing</h2>
  * <p>
  * Every messaging channel uses an instance of {@link LoadBalancer} interface to perform routing of unicast operations
- * (like {@link MessagingChannel#newSend(Object) send(...)} and {@link MessagingChannel#request(Object) request(...)}). Load balancer can
+ * (like {@link MessagingChannel#send(Object) send(...)} and {@link MessagingChannel#request(Object) request(...)}). Load balancer can
  * be pre-configured via the {@link MessagingChannelConfig#setLoadBalancer(LoadBalancer)} method or specified dynamically via the {@link
  * MessagingChannel#withLoadBalancer(LoadBalancer)} method. If load balancer is not specified then messaging channel will fall back to the
  * {@link DefaultLoadBalancer}.

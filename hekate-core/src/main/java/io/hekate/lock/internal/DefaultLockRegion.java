@@ -172,7 +172,7 @@ class DefaultLockRegion implements LockRegion {
         );
 
         // Configure messaging channel for locks migration.
-        migrationRing = channel.filterAll(ClusterFilters.forNextInJoinOrder()) // <-- use ring-based communications.
+        migrationRing = channel.filterAll(ClusterFilters.forNextInJoinOrder()) // <-- Use ring-based communications.
             .withFailover(new FailoverPolicyBuilder()
                 .withAlwaysReRoute()
                 .withConstantRetryDelay(retryInterval)
@@ -207,7 +207,7 @@ class DefaultLockRegion implements LockRegion {
 
         LockOwnerRequest request = new LockOwnerRequest(regionName, lockName);
 
-        lockChannel.newRequest(request)
+        lockChannel.request(request)
             .withAffinity(new LockKey(regionName, lockName))
             .until((err, rsp) -> {
                 if (err == null) {
@@ -237,7 +237,6 @@ class DefaultLockRegion implements LockRegion {
                 return resultFuture.isDone() ? ACCEPT : REJECT;
             })
             .submit((err, rsp) -> {
-                // All attempts failed which means that manager is terminated.
                 if (err != null) {
                     resultFuture.complete(Optional.empty());
                 }
@@ -904,7 +903,7 @@ class DefaultLockRegion implements LockRegion {
     }
 
     private void sendToNextNode(MigrationRequest request) {
-        migrationRing.newRequest(request)
+        migrationRing.request(request)
             .withAffinity(regionName)
             .until((err, reply) -> {
                 if (err == null) {
@@ -957,7 +956,7 @@ class DefaultLockRegion implements LockRegion {
         }
 
         if (DEBUG) {
-            log.debug("Request is invalid [request={}]", request);
+            log.debug("Request is obsolete [request={}]", request);
         }
 
         return false;

@@ -10,7 +10,7 @@ import io.hekate.messaging.loadbalance.LoadBalancer;
  * This interface represents a bidirectional request operation. Typical use of this interface is:
  * </p>
  * <ol>
- * <li>Obtain an instance of this interface via the {@link MessagingChannel#newRequest(Object)} method call</li>
+ * <li>Obtain an instance of this interface via the {@link MessagingChannel#request(Object)} method call</li>
  * <li>Set options (f.e. {@link #withAffinity(Object) affinity key})</li>
  * <li>Execute this operation via the {@link #submit()} method</li>
  * <li>Process the response (synchronously or asynchronously)</li>

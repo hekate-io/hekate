@@ -65,7 +65,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
                     .withReceiver(new ExampleReceiver())))
             .join();
 
-        hekate.messaging().channel("example", String.class).aggregate("example message").get();
+        hekate.messaging().channel("example", String.class).aggregate("example message").submit().get();
 
         hekate.leave();
     }
@@ -135,7 +135,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         // Start:send_operation
         MessagingChannel<String> channel = hekate.messaging().channel("example.channel", String.class);
 
-        SendFuture future = channel.newSend("some-message") // Some dummy message.
+        SendFuture future = channel.send("some-message") // Some dummy message.
             .withConfirmReceive(true) // Set confirmation mode.
             .submit(); // Asynchronously execute the operation.
 
@@ -147,7 +147,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         // Start:request_operation
         MessagingChannel<String> channel = hekate.messaging().channel("example.channel", String.class);
 
-        RequestFuture<String> future = channel.newRequest("some-message") // Some dummy message.
+        RequestFuture<String> future = channel.request("some-message") // Some dummy message.
             .withAffinity("100500") // Some dummy affinity (optional).
             .submit(); // Asynchronously execute the operation.
 
@@ -160,7 +160,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         // Start:subscribe_operation
         MessagingChannel<String> channel = hekate.messaging().channel("example.channel", String.class);
 
-        SubscribeFuture<String> future = channel.newSubscribe("some-message") // Some dummy message.
+        SubscribeFuture<String> future = channel.subscribe("some-message") // Some dummy message.
             .withAffinity("100500") // Some dummy affinity (optional).
             // Execute and listen for responses.
             .submit((err, rsp) -> {
@@ -180,7 +180,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         // Start:broadcast_operation
         MessagingChannel<String> channel = hekate.messaging().channel("example.channel", String.class);
 
-        BroadcastFuture<String> future = channel.newBroadcast("some-message") // Some dummy message.
+        BroadcastFuture<String> future = channel.broadcast("some-message") // Some dummy message.
             .withConfirmReceive(true) // Set confirmation mode.
             .submit(); // Asynchronously execute the operation.
 
@@ -192,7 +192,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         // Start:aggregate_operation
         MessagingChannel<String> channel = hekate.messaging().channel("example.channel", String.class);
 
-        AggregateFuture<String> future = channel.newAggregate("some-message") // Some dummy message.
+        AggregateFuture<String> future = channel.aggregate("some-message") // Some dummy message.
             .withAffinity("100500") // Some dummy affinity (optional).
             .submit(); // Asynchronously execute the operation.
 
@@ -205,7 +205,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         // Start:unicast_send_async
         // Send message to the oldest node
         // and process operation result in the asynchronous callback.
-        channel.forOldest().newSend("example message").submit(err -> {
+        channel.forOldest().send("example message").submit(err -> {
             if (err == null) {
                 System.out.println("Message sent.");
             } else {
@@ -219,7 +219,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         // Start:unicast_send_sync
         // Send message to the oldest node
         // and synchronously await for operation result (success/failure).
-        channel.forOldest().newSend("example message").submit().get();
+        channel.forOldest().send("example message").submit().get();
         // End:unicast_send_sync
     }
 
@@ -227,7 +227,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         // Start:unicast_request_async
         // Submit request to the oldest node
         // and process reply in the asynchronous callback.
-        channel.forOldest().newRequest("example request").submit((err, reply) -> {
+        channel.forOldest().request("example request").submit((err, reply) -> {
             if (err == null) {
                 System.out.println("Got reply: " + reply.get());
             } else {
@@ -241,7 +241,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         throws MessagingFutureException, InterruptedException {
         // Start:unicast_request_sync
         // Execute request to the oldest node and synchronously await for reply.
-        String response = channel.forOldest().request("example request").result();
+        String response = channel.forOldest().request("example request").submit().result();
         // End:unicast_request_sync
 
         assertNotNull(response);
@@ -252,14 +252,14 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
 
         // Start:aggregate_sync
         // Submit aggregation request to all remote nodes.
-        channel.forRemotes().aggregate("example message").forEach(rslt ->
+        channel.forRemotes().aggregate("example message").submit().forEach(rslt ->
             System.out.println("Got result: " + rslt)
         );
         // End:aggregate_sync
 
         // Start:aggregate_async
         // Asynchronously submit aggregation request to all remote nodes.
-        channel.forRemotes().newAggregate("example message").submit((err, results) -> {
+        channel.forRemotes().aggregate("example message").submit((err, results) -> {
             if (err == null) {
                 results.forEach(rslt ->
                     System.out.println("Got result: " + rslt)
@@ -272,12 +272,12 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
 
         // Start:broadcast_sync
         // Broadcast message to all remote nodes.
-        channel.forRemotes().broadcast("example message").get();
+        channel.forRemotes().broadcast("example message").submit().get();
         // End:broadcast_sync
 
         // Start:broadcast_async
         // Asynchronously broadcast message to all remote nodes.
-        channel.forRemotes().newBroadcast("example message").submit((err, result) -> {
+        channel.forRemotes().broadcast("example message").submit((err, result) -> {
             if (err == null) {
                 System.out.println("Broadcast success.");
             } else {

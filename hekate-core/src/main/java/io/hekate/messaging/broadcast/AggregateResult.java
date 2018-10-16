@@ -31,7 +31,7 @@ import static java.util.Collections.emptyList;
  *
  * @param <T> Base type of aggregation results.
  *
- * @see MessagingChannel#newAggregate(Object)
+ * @see MessagingChannel#aggregate(Object)
  */
 public interface AggregateResult<T> extends Iterable<T> {
     /**

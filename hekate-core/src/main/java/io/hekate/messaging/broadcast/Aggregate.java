@@ -9,7 +9,7 @@ import io.hekate.messaging.MessagingChannel;
  * This interface represents a bidirectional aggregate operation. Typical use of this interface is:
  * </p>
  * <ol>
- * <li>Obtain an instance of this interface via the {@link MessagingChannel#newAggregate(Object)} method call</li>
+ * <li>Obtain an instance of this interface via the {@link MessagingChannel#aggregate(Object)} method call</li>
  * <li>Set options (f.e. {@link #withAffinity(Object) affinity key})</li>
  * <li>Execute this operation via the {@link #submit()} method</li>
  * <li>Process results (synchronously or asynchronously)</li>

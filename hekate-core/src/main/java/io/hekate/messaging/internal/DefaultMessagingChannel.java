@@ -71,27 +71,27 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
     }
 
     @Override
-    public Send<T> newSend(T message) {
+    public Send<T> send(T message) {
         return new SendOperationBuilder<>(message, context(), this);
     }
 
     @Override
-    public Request<T> newRequest(T request) {
+    public Request<T> request(T request) {
         return new RequestOperationBuilder<>(request, context(), this);
     }
 
     @Override
-    public Subscribe<T> newSubscribe(T request) {
+    public Subscribe<T> subscribe(T request) {
         return new SubscribeOperationBuilder<>(request, context(), this);
     }
 
     @Override
-    public Broadcast<T> newBroadcast(T request) {
+    public Broadcast<T> broadcast(T request) {
         return new BroadcastOperationBuilder<>(request, context(), this);
     }
 
     @Override
-    public Aggregate<T> newAggregate(T request) {
+    public Aggregate<T> aggregate(T request) {
         return new AggregateOperationBuilder<>(request, context(), this);
     }
 

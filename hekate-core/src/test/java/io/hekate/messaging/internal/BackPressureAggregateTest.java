@@ -67,13 +67,13 @@ public class BackPressureAggregateTest extends BackPressureTestBase {
             .withReceiver(requests2::add)
         ).join();
 
-        MessagingChannel<String> sender = createChannel(this::useBackPressure).join().get().forRemotes();
+        MessagingChannel<String> sender = createChannel(this::useBackPressure).join().channel().forRemotes();
 
         // Request (aggregate) up to high watermark in order to trigger back pressure.
         List<AggregateFuture<?>> futureResponses = new ArrayList<>();
 
         for (int i = 0; i < highWatermark / RECEIVERS; i++) {
-            futureResponses.add(sender.aggregate("request-" + i));
+            futureResponses.add(sender.aggregate("request-" + i).submit());
         }
 
         busyWait("requests received", () -> requests1.size() == futureResponses.size());
@@ -100,7 +100,7 @@ public class BackPressureAggregateTest extends BackPressureTestBase {
         );
 
         // Check that new request can be processed.
-        AggregateFuture<String> last = sender.aggregate("last");
+        AggregateFuture<String> last = sender.aggregate("last").submit();
 
         busyWait("last request received", () -> requests1.size() == futureResponses.size() + 1);
         busyWait("last request received", () -> requests2.size() == futureResponses.size() + 1);
@@ -128,13 +128,13 @@ public class BackPressureAggregateTest extends BackPressureTestBase {
             .withReceiver(requests2::add)
         ).join();
 
-        MessagingChannel<String> sender = createChannel(this::useBackPressure).join().get().forRemotes();
+        MessagingChannel<String> sender = createChannel(this::useBackPressure).join().channel().forRemotes();
 
         // Request (aggregate) up to high watermark in order to trigger back pressure.
         List<AggregateFuture<?>> futureResponses = new ArrayList<>();
 
         for (int i = 0; i < highWatermark / RECEIVERS; i++) {
-            futureResponses.add(sender.aggregate("request-" + i));
+            futureResponses.add(sender.aggregate("request-" + i).submit());
         }
 
         // Check that message can't be sent when high watermark reached.
@@ -163,7 +163,7 @@ public class BackPressureAggregateTest extends BackPressureTestBase {
         );
 
         // Check that new request can be processed.
-        AggregateFuture<String> last = sender.aggregate("last");
+        AggregateFuture<String> last = sender.aggregate("last").submit();
 
         busyWait("last request received", () -> requests1.size() == futureResponses.size() + 1);
 
@@ -189,7 +189,7 @@ public class BackPressureAggregateTest extends BackPressureTestBase {
         MessagingChannel<String> sender = createChannel(cfg -> {
             useBackPressure(cfg);
             cfg.getBackPressure().withOutOverflowPolicy(MessagingOverflowPolicy.BLOCK);
-        }).join().get().forRemotes();
+        }).join().channel().forRemotes();
 
         get(sender.cluster().futureOf(topology -> topology.size() == remoteNodes));
 
@@ -202,7 +202,7 @@ public class BackPressureAggregateTest extends BackPressureTestBase {
                 say("Submitted requests: %s", i);
             }
 
-            asyncResponses.add(sender.aggregate("test-" + i));
+            asyncResponses.add(sender.aggregate("test-" + i).submit());
         }
 
         for (AggregateFuture<String> future : asyncResponses) {

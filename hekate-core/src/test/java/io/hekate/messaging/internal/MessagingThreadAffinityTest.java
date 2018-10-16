@@ -91,9 +91,9 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
-                MessagingChannel<String> channel = sender.get().forNode(receiver.nodeId());
+                MessagingChannel<String> channel = sender.channel().forNode(receiver.nodeId());
 
-                channel.newSend(AffinityCollector.affinityMessage(j, i))
+                channel.send(AffinityCollector.affinityMessage(j, i))
                     .withAffinity(j)
                     .submit();
             }
@@ -126,9 +126,9 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
-                MessagingChannel<String> channel = sender.get().forNode(receiver.nodeId());
+                MessagingChannel<String> channel = sender.channel().forNode(receiver.nodeId());
 
-                channel.newRequest(AffinityCollector.affinityMessage(j, i))
+                channel.request(AffinityCollector.affinityMessage(j, i))
                     .withAffinity(j)
                     .submit();
             }
@@ -167,9 +167,9 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
         awaitForChannelsTopology(sender, receiver);
 
         repeat(5, i -> {
-            get(sender.get()
+            get(sender.channel()
                 .forNode(receiver.nodeId())
-                .newRequest("request")
+                .request("request")
                 .withAffinity(i)
                 .submit()
             );
@@ -206,9 +206,9 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
-                MessagingChannel<String> channel = sender.get().forRemotes();
+                MessagingChannel<String> channel = sender.channel().forRemotes();
 
-                channel.newBroadcast(AffinityCollector.affinityMessage(j, i))
+                channel.broadcast(AffinityCollector.affinityMessage(j, i))
                     .withAffinity(j)
                     .submit();
             }
@@ -256,9 +256,9 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
-                MessagingChannel<String> channel = sender.get().forRemotes();
+                MessagingChannel<String> channel = sender.channel().forRemotes();
 
-                channel.newAggregate(AffinityCollector.affinityMessage(j, i))
+                channel.aggregate(AffinityCollector.affinityMessage(j, i))
                     .withAffinity(j)
                     .submit();
             }
