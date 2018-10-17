@@ -65,11 +65,11 @@
         <kryo.version>4.0.2</kryo.version>
         <kryo.serializers.version>0.42</kryo.serializers.version>
         <fst.version>2.57</fst.version>
-        <spring.boot.version>2.0.5.RELEASE</spring.boot.version>
+        <spring.boot.version>2.0.6.RELEASE</spring.boot.version>
         <zookeeper.curator.version>2.12.0</zookeeper.curator.version>
         <kubernetes.client.version>4.0.3</kubernetes.client.version>
         <jclouds.version>2.1.1</jclouds.version>
-        <aws.sdk.version>1.11.380</aws.sdk.version>
+        <aws.sdk.version>1.11.430</aws.sdk.version>
 
         <!-- Test dependencies.-->
         <junit.version>4.12</junit.version>
@@ -119,12 +119,6 @@
             <dependency>
                 <groupId>com.esotericsoftware</groupId>
                 <artifactId>kryo-shaded</artifactId>
-                <version>${kryo.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.esotericsoftware</groupId>
-                <artifactId>kryo</artifactId>
                 <version>${kryo.version}</version>
             </dependency>
 
