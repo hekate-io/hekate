@@ -1288,12 +1288,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     }
 
     private void sendAndDisconnect(GossipProtocol msg) {
-        sendAndDisconnect(msg, null);
-    }
-
-    private void sendAndDisconnect(GossipProtocol msg, Runnable callback) {
         if (msg != null) {
-            commMgr.sendAndDisconnect(msg, callback);
+            commMgr.sendAndDisconnect(msg);
         }
     }
 
