@@ -50,7 +50,7 @@ public class HekateSpringBootstrapTest extends HekateTestBase {
 
         Hekate node = null;
 
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 3; i++) {
             node = ctx.getBean("hekate", Hekate.class);
 
             assertSame(Hekate.State.UP, node.state());

@@ -161,7 +161,9 @@ public class HekateSpringBootstrap extends HekateBootstrap implements Initializi
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        node.cluster().addListener(ctxEventPublisher);
+        if (node != null) {
+            node.cluster().addListener(ctxEventPublisher);
+        }
     }
 
     @Override
