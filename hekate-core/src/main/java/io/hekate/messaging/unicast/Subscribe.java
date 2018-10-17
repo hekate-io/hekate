@@ -50,15 +50,15 @@ public interface Subscribe<T> {
      * Response condition.
      *
      * <p>
-     * Operation will not be completed unless its results (final response or an error) matches with the specified {@link RequestCondition}.
-     * Negative decision will trigger resubmission of a subscription request.
+     * Operation will not be completed unless its results (final response or an error) matches with the specified
+     * {@link RequestRetryCondition}. Negative decision will trigger resubmission of a subscription request.
      * </p>
      *
      * @param condition Condition.
      *
      * @return This instance.
      */
-    Subscribe<T> until(RequestCondition<T> condition);
+    Subscribe<T> until(RequestRetryCondition<T> condition);
 
     /**
      * Asynchronously executes this operation.

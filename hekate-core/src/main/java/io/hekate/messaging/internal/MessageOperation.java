@@ -4,8 +4,8 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.intercept.OutboundType;
 import io.hekate.messaging.loadbalance.LoadBalancerException;
-import io.hekate.messaging.unicast.ReplyDecision;
 import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.RetryDecision;
 import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -74,7 +74,7 @@ abstract class MessageOperation<T> {
 
     public abstract OutboundType type();
 
-    public abstract ReplyDecision accept(Throwable error, Response<T> response);
+    public abstract RetryDecision shouldRetry(Throwable error, Response<T> response);
 
     public abstract CompletableFuture<?> future();
 

@@ -62,8 +62,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.hekate.messaging.unicast.ReplyDecision.ACCEPT;
-import static io.hekate.messaging.unicast.ReplyDecision.REJECT;
+import static io.hekate.messaging.unicast.RetryDecision.DONE;
+import static io.hekate.messaging.unicast.RetryDecision.RETRY;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toSet;
@@ -234,7 +234,7 @@ class DefaultLockRegion implements LockRegion {
                     }
                 }
 
-                return resultFuture.isDone() ? ACCEPT : REJECT;
+                return resultFuture.isDone() ? DONE : RETRY;
             })
             .submit((err, rsp) -> {
                 if (err != null) {
@@ -915,10 +915,10 @@ class DefaultLockRegion implements LockRegion {
 
                     switch (response.status()) {
                         case OK: {
-                            return ACCEPT;
+                            return DONE;
                         }
                         case RETRY: {
-                            return isValid(request) ? REJECT : ACCEPT;
+                            return isValid(request) ? RETRY : DONE;
                         }
                         default: {
                             throw new IllegalArgumentException("Unexpected status type: " + response.status());
@@ -929,7 +929,7 @@ class DefaultLockRegion implements LockRegion {
                         log.debug("Got migration request failure [cause={}, request={}]", err.toString(), request);
                     }
 
-                    return isValid(request) ? REJECT : ACCEPT;
+                    return isValid(request) ? RETRY : DONE;
                 }
             })
             .submit((err, rsp) -> {

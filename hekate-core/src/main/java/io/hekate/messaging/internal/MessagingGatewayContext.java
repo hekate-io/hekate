@@ -38,8 +38,8 @@ import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.loadbalance.UnknownRouteException;
 import io.hekate.messaging.unicast.FailureResponse;
 import io.hekate.messaging.unicast.RejectedReplyException;
-import io.hekate.messaging.unicast.ReplyDecision;
 import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.RetryDecision;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkFuture;
 import io.hekate.partition.PartitionMapper;
@@ -432,10 +432,10 @@ class MessagingGatewayContext<T> {
             Response<T> effectiveReply = err == null ? reply : null;
 
             // Check if this is an acceptable response.
-            ReplyDecision decision = operation.accept(err, effectiveReply);
+            RetryDecision decision = operation.shouldRetry(err, effectiveReply);
 
             if (decision == null) {
-                decision = ReplyDecision.DEFAULT;
+                decision = RetryDecision.USE_DEFAULTS;
             }
 
             boolean completed = false;
@@ -453,7 +453,7 @@ class MessagingGatewayContext<T> {
                 // Complete the current attempt (successful failover actions will result in a new attempt).
                 completed = true;
 
-                if (decision == ReplyDecision.REJECT) {
+                if (decision == RetryDecision.RETRY) {
                     Object rejected = effectiveReply != null ? effectiveReply.get() : null;
 
                     err = new RejectedReplyException("Response was rejected by the request callback", rejected, err);
@@ -862,9 +862,9 @@ class MessagingGatewayContext<T> {
         }
     }
 
-    private static boolean shouldComplete(MessageOperation<?> operation, ReplyDecision decision, Throwable err) {
-        return (decision == ReplyDecision.DEFAULT && err == null)
-            || (decision == ReplyDecision.ACCEPT)
+    private static boolean shouldComplete(MessageOperation<?> operation, RetryDecision decision, Throwable err) {
+        return (decision == RetryDecision.USE_DEFAULTS && err == null)
+            || (decision == RetryDecision.DONE)
             || (operation.opts().failover() == null);
     }
 

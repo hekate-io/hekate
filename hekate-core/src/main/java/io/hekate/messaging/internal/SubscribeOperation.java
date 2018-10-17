@@ -1,10 +1,10 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.intercept.OutboundType;
-import io.hekate.messaging.unicast.ReplyDecision;
 import io.hekate.messaging.unicast.RequestCallback;
-import io.hekate.messaging.unicast.RequestCondition;
+import io.hekate.messaging.unicast.RequestRetryCondition;
 import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.RetryDecision;
 import io.hekate.messaging.unicast.SubscribeFuture;
 
 class SubscribeOperation<T> extends UnicastOperation<T> {
@@ -12,7 +12,7 @@ class SubscribeOperation<T> extends UnicastOperation<T> {
 
     private final RequestCallback<T> callback;
 
-    private final RequestCondition<T> condition;
+    private final RequestRetryCondition<T> condition;
 
     private volatile boolean active;
 
@@ -22,7 +22,7 @@ class SubscribeOperation<T> extends UnicastOperation<T> {
         MessagingGatewayContext<T> gateway,
         MessageOperationOpts<T> opts,
         RequestCallback<T> callback,
-        RequestCondition<T> condition
+        RequestRetryCondition<T> condition
     ) {
         super(message, affinityKey, gateway, opts, true);
 
@@ -41,9 +41,9 @@ class SubscribeOperation<T> extends UnicastOperation<T> {
     }
 
     @Override
-    public ReplyDecision accept(Throwable error, Response<T> response) {
+    public RetryDecision shouldRetry(Throwable error, Response<T> response) {
         if (condition == null || isPartial(response)) {
-            return ReplyDecision.DEFAULT;
+            return RetryDecision.USE_DEFAULTS;
         }
 
         return condition.accept(error, response);

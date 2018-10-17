@@ -2,7 +2,7 @@ package io.hekate.messaging.internal;
 
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.unicast.RequestCallback;
-import io.hekate.messaging.unicast.RequestCondition;
+import io.hekate.messaging.unicast.RequestRetryCondition;
 import io.hekate.messaging.unicast.Subscribe;
 import io.hekate.messaging.unicast.SubscribeFuture;
 import java.util.ArrayList;
@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 class SubscribeOperationBuilder<T> extends MessageOperationBuilder<T> implements Subscribe<T> {
-    private RequestCondition<T> condition;
+    private RequestRetryCondition<T> condition;
 
     private Object affinity;
 
@@ -20,7 +20,7 @@ class SubscribeOperationBuilder<T> extends MessageOperationBuilder<T> implements
     }
 
     @Override
-    public Subscribe<T> until(RequestCondition<T> condition) {
+    public Subscribe<T> until(RequestRetryCondition<T> condition) {
         this.condition = condition;
 
         return this;

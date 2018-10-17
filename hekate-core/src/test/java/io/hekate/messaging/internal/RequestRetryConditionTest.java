@@ -18,8 +18,8 @@ package io.hekate.messaging.internal;
 
 import io.hekate.failover.FailoverContext;
 import io.hekate.messaging.unicast.RejectedReplyException;
-import io.hekate.messaging.unicast.ReplyDecision;
-import io.hekate.messaging.unicast.RequestCondition;
+import io.hekate.messaging.unicast.RequestRetryCondition;
+import io.hekate.messaging.unicast.RetryDecision;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
@@ -28,14 +28,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class RequestConditionTest extends MessagingServiceTestBase {
+public class RequestRetryConditionTest extends MessagingServiceTestBase {
     private final AtomicInteger failures = new AtomicInteger();
 
     private TestChannel sender;
 
     private TestChannel receiver;
 
-    public RequestConditionTest(MessagingTestContext ctx) {
+    public RequestRetryConditionTest(MessagingTestContext ctx) {
         super(ctx);
     }
 
@@ -66,16 +66,16 @@ public class RequestConditionTest extends MessagingServiceTestBase {
 
         RequestCallbackMock callback = new RequestCallbackMock("test");
 
-        RequestCondition<String> condition = (err, reply) -> {
+        RequestRetryCondition<String> condition = (err, reply) -> {
             assertEquals(receiver.nodeId(), reply.endpoint().remoteNodeId());
 
             if (err != null) {
-                return ReplyDecision.ACCEPT;
+                return RetryDecision.DONE;
             }
 
             accepts.incrementAndGet();
 
-            return ReplyDecision.ACCEPT;
+            return RetryDecision.DONE;
         };
 
         sender.channel().forNode(receiver.nodeId()).request("test").until(condition).submit(callback);
@@ -90,12 +90,12 @@ public class RequestConditionTest extends MessagingServiceTestBase {
 
         RequestCallbackMock callback = new RequestCallbackMock("test");
 
-        RequestCondition<String> condition = (err, reply) -> {
+        RequestRetryCondition<String> condition = (err, reply) -> {
             assertEquals(receiver.nodeId(), reply.from().id());
 
             accepts.incrementAndGet();
 
-            return ReplyDecision.ACCEPT;
+            return RetryDecision.DONE;
         };
 
         sender.channel()
@@ -115,16 +115,16 @@ public class RequestConditionTest extends MessagingServiceTestBase {
 
         RequestCallbackMock callback = new RequestCallbackMock("test");
 
-        RequestCondition<String> condition = (err, reply) -> {
+        RequestRetryCondition<String> condition = (err, reply) -> {
             assertEquals(receiver.nodeId(), reply.from().id());
 
             if (err != null) {
-                return ReplyDecision.ACCEPT;
+                return RetryDecision.DONE;
             }
 
             accepts.incrementAndGet();
 
-            return ReplyDecision.REJECT;
+            return RetryDecision.RETRY;
         };
 
         sender.channel().forNode(receiver.nodeId())
@@ -143,16 +143,16 @@ public class RequestConditionTest extends MessagingServiceTestBase {
 
         RequestCallbackMock callback = new RequestCallbackMock("test");
 
-        RequestCondition<String> condition = (err, reply) -> {
+        RequestRetryCondition<String> condition = (err, reply) -> {
             assertEquals(receiver.nodeId(), reply.from().id());
 
             if (err != null) {
-                return ReplyDecision.ACCEPT;
+                return RetryDecision.DONE;
             }
 
             accepts.incrementAndGet();
 
-            return accepts.get() == 3 ? ReplyDecision.ACCEPT : ReplyDecision.REJECT;
+            return accepts.get() == 3 ? RetryDecision.DONE : RetryDecision.RETRY;
         };
 
         sender.channel()
@@ -173,16 +173,16 @@ public class RequestConditionTest extends MessagingServiceTestBase {
 
         RequestCallbackMock callback = new RequestCallbackMock("test");
 
-        RequestCondition<String> condition = (err, reply) -> {
+        RequestRetryCondition<String> condition = (err, reply) -> {
             assertEquals(receiver.nodeId(), reply.from().id());
 
             if (err != null) {
-                return ReplyDecision.ACCEPT;
+                return RetryDecision.DONE;
             }
 
             accepts.incrementAndGet();
 
-            return ReplyDecision.REJECT;
+            return RetryDecision.RETRY;
         };
 
         sender.channel()
@@ -213,14 +213,14 @@ public class RequestConditionTest extends MessagingServiceTestBase {
 
         RequestCallbackMock callback = new RequestCallbackMock("test");
 
-        RequestCondition<String> condition = (err, reply) -> {
+        RequestRetryCondition<String> condition = (err, reply) -> {
             if (err == null) {
                 assertEquals(receiver.nodeId(), reply.from().id());
             }
 
             accepts.incrementAndGet();
 
-            return ReplyDecision.DEFAULT;
+            return RetryDecision.USE_DEFAULTS;
         };
 
         sender.channel()
@@ -244,14 +244,14 @@ public class RequestConditionTest extends MessagingServiceTestBase {
 
         RequestCallbackMock callback = new RequestCallbackMock("test");
 
-        RequestCondition<String> condition = (err, reply) -> {
+        RequestRetryCondition<String> condition = (err, reply) -> {
             if (err == null) {
                 assertEquals(receiver.nodeId(), reply.from().id());
             }
 
             accepts.incrementAndGet();
 
-            return err == null ? ReplyDecision.ACCEPT : ReplyDecision.REJECT;
+            return err == null ? RetryDecision.DONE : RetryDecision.RETRY;
         };
 
         sender.channel()
@@ -273,17 +273,17 @@ public class RequestConditionTest extends MessagingServiceTestBase {
 
         RequestCallbackMock callback = new RequestCallbackMock("test");
 
-        RequestCondition<String> condition = (err, reply) -> {
+        RequestRetryCondition<String> condition = (err, reply) -> {
             assertEquals(receiver.nodeId(), reply.from().id());
 
             if (err != null) {
-                return ReplyDecision.ACCEPT;
+                return RetryDecision.DONE;
             }
 
             if (accepts.incrementAndGet() == 3) {
-                return ReplyDecision.ACCEPT;
+                return RetryDecision.DONE;
             } else {
-                return ReplyDecision.REJECT;
+                return RetryDecision.RETRY;
             }
         };
 

@@ -1,20 +1,20 @@
 package io.hekate.messaging.unicast;
 
 /**
- * Request condition.
+ * Request retry condition.
  *
  * @param <T> Response type.
  *
- * @see Request#until(RequestCondition)
+ * @see Request#until(RequestRetryCondition)
  */
 @FunctionalInterface
-public interface RequestCondition<T> {
+public interface RequestRetryCondition<T> {
     /**
      * Called upon a request operation completion (either successfully or with an error) in order decide on whether the operation outcome
-     * can be accepted by this callback.
+     * can be accepted.
      *
-     * <p>
-     * For more details about possible decisions please see the documentation of {@link ReplyDecision} enum values.
+     * <p>                        
+     * For more details about possible decisions please see the documentation of {@link RetryDecision} enum values.
      * </p>
      *
      * @param err Error ({@code null} if operation was successful).
@@ -22,5 +22,5 @@ public interface RequestCondition<T> {
      *
      * @return Decision.
      */
-    ReplyDecision accept(Throwable err, Response<T> reply);
+    RetryDecision accept(Throwable err, Response<T> reply);
 }

@@ -30,7 +30,7 @@ import io.hekate.lock.internal.LockProtocol.UnlockRequest;
 import io.hekate.lock.internal.LockProtocol.UnlockResponse;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.unicast.RequestCallback;
-import io.hekate.messaging.unicast.RequestCondition;
+import io.hekate.messaging.unicast.RequestRetryCondition;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.util.format.ToString;
@@ -40,8 +40,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.hekate.messaging.unicast.ReplyDecision.ACCEPT;
-import static io.hekate.messaging.unicast.ReplyDecision.REJECT;
+import static io.hekate.messaging.unicast.RetryDecision.DONE;
+import static io.hekate.messaging.unicast.RetryDecision.RETRY;
 
 class LockControllerClient {
     enum Status {
@@ -451,10 +451,10 @@ class LockControllerClient {
     private void remoteLock() {
         LockRequest lockReq = new LockRequest(lockId, key.region(), key.name(), localNode, lockTimeout, threadId);
 
-        RequestCondition<LockProtocol> until = (err, reply) -> {
+        RequestRetryCondition<LockProtocol> until = (err, reply) -> {
             // Do not retry if not LOCKING anymore.
             if (!is(Status.LOCKING)) {
-                return ACCEPT;
+                return DONE;
             }
 
             if (err == null) {
@@ -469,24 +469,23 @@ class LockControllerClient {
                         ClusterHash topology = reply.topology().hash();
 
                         if (becomeLocked(topology)) {
-                            return ACCEPT;
+                            return DONE;
                         } else {
-                            return REJECT;
+                            return RETRY;
                         }
                     }
                     case RETRY: {
-                        // Retry.
-                        return REJECT;
+                        return RETRY;
                     }
                     case LOCK_TIMEOUT: {
                         becomeUnlocked();
 
-                        return ACCEPT;
+                        return DONE;
                     }
                     case LOCK_BUSY: {
                         becomeUnlocked();
 
-                        return ACCEPT;
+                        return DONE;
                     }
                     case LOCK_OWNER_CHANGE: {
                         throw new IllegalArgumentException("Got an unexpected lock owner update message: " + reply);
@@ -501,7 +500,7 @@ class LockControllerClient {
                 }
 
                 // Retry on error.
-                return REJECT;
+                return RETRY;
             }
         };
 
@@ -552,7 +551,7 @@ class LockControllerClient {
             .until((err, rsp) -> {
                 if (!is(Status.UNLOCKING)) {
                     // Do not retry if not UNLOCKING anymore.
-                    return ACCEPT;
+                    return DONE;
                 }
 
                 if (err == null) {
@@ -563,9 +562,9 @@ class LockControllerClient {
                     }
 
                     if (lockRsp.status() == UnlockResponse.Status.OK && tryBecomeUnlocked(rsp.topology().hash())) {
-                        return ACCEPT;
+                        return DONE;
                     } else {
-                        return REJECT;
+                        return RETRY;
                     }
                 } else {
                     if (DEBUG) {
@@ -573,7 +572,7 @@ class LockControllerClient {
                     }
 
                     // Retry on error.
-                    return REJECT;
+                    return RETRY;
                 }
             })
             .submit((err, rsp) -> {
@@ -596,7 +595,7 @@ class LockControllerClient {
                 .until((err, rsp) -> {
                     // Do not retry if not LOCKING anymore.
                     if (!is(Status.LOCKING)) {
-                        return ACCEPT;
+                        return DONE;
                     }
 
                     if (err == null) {
@@ -609,9 +608,9 @@ class LockControllerClient {
                         if (ownerRsp.status() != LockOwnerResponse.Status.OK
                             || !tryNotifyOnLockOwnerChange(ownerRsp.owner(), ownerRsp.threadId(), rsp.topology().hash())) {
                             // Retry if update got rejected.
-                            return REJECT;
+                            return RETRY;
                         } else {
-                            return ACCEPT;
+                            return DONE;
                         }
                     } else {
                         if (DEBUG) {
@@ -619,7 +618,7 @@ class LockControllerClient {
                         }
 
                         // Retry on error.
-                        return REJECT;
+                        return RETRY;
                     }
                 })
                 .submit();

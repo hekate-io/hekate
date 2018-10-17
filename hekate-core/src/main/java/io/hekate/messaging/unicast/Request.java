@@ -45,14 +45,14 @@ public interface Request<T> {
      * Response condition.
      *
      * <p>
-     * Operation will not be completed unless its results matches with the specified {@link RequestCondition}.
+     * Operation will not be completed unless its results matches with the specified {@link RequestRetryCondition}.
      * </p>
      *
      * @param condition Condition.
      *
      * @return This instance.
      */
-    Request<T> until(RequestCondition<T> condition);
+    Request<T> until(RequestRetryCondition<T> condition);
 
     /**
      * Asynchronously executes this operation.

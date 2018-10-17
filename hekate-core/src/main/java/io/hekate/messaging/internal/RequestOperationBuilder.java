@@ -1,11 +1,11 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.unicast.Request;
-import io.hekate.messaging.unicast.RequestCondition;
 import io.hekate.messaging.unicast.RequestFuture;
+import io.hekate.messaging.unicast.RequestRetryCondition;
 
 class RequestOperationBuilder<T> extends MessageOperationBuilder<T> implements Request<T> {
-    private RequestCondition<T> condition;
+    private RequestRetryCondition<T> until;
 
     private Object affinity;
 
@@ -14,8 +14,8 @@ class RequestOperationBuilder<T> extends MessageOperationBuilder<T> implements R
     }
 
     @Override
-    public Request<T> until(RequestCondition<T> condition) {
-        this.condition = condition;
+    public Request<T> until(RequestRetryCondition<T> until) {
+        this.until = until;
 
         return this;
     }
@@ -29,7 +29,7 @@ class RequestOperationBuilder<T> extends MessageOperationBuilder<T> implements R
 
     @Override
     public RequestFuture<T> submit() {
-        RequestOperation<T> op = new RequestOperation<>(message(), affinity, gateway(), opts(), condition);
+        RequestOperation<T> op = new RequestOperation<>(message(), affinity, gateway(), opts(), until);
 
         gateway().submit(op);
 

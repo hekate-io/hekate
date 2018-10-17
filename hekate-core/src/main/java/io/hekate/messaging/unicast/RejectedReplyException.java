@@ -20,9 +20,9 @@ import io.hekate.core.HekateException;
 import java.util.Optional;
 
 /**
- * Signals that the result of a request operation was {@link ReplyDecision#REJECT rejected} by a {@link RequestCallback}.
+ * Signals that the result of a request operation was {@link RetryDecision#RETRY rejected} by a {@link RequestCallback}.
  *
- * @see RequestCondition#accept(Throwable, Response)
+ * @see RequestRetryCondition#accept(Throwable, Response)
  */
 public class RejectedReplyException extends HekateException {
     private static final long serialVersionUID = 1;
@@ -34,7 +34,7 @@ public class RejectedReplyException extends HekateException {
      *
      * @param message Error message.
      * @param reply Rejected reply (if reply was successfully received but rejected by a {@link RequestCallback}).
-     * @param cause Error cause (if request operation failed and {@link RequestCallback} decided to {@link ReplyDecision#REJECT} such
+     * @param cause Error cause (if request operation failed and {@link RequestCallback} decided to {@link RetryDecision#RETRY} such
      * failure).
      */
     public RejectedReplyException(String message, Object reply, Throwable cause) {

@@ -37,8 +37,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.hekate.messaging.unicast.ReplyDecision.ACCEPT;
-import static io.hekate.messaging.unicast.ReplyDecision.REJECT;
+import static io.hekate.messaging.unicast.RetryDecision.DONE;
+import static io.hekate.messaging.unicast.RetryDecision.RETRY;
 
 class DefaultCoordinationMember implements CoordinationMember {
     private static final Logger log = LoggerFactory.getLogger(DefaultCoordinationMember.class);
@@ -183,19 +183,19 @@ class DefaultCoordinationMember implements CoordinationMember {
                             log.debug("Skipped response [from={}, response={}]", node, rsp);
                         }
 
-                        return ACCEPT;
+                        return DONE;
                     } else if (err != null) {
                         if (DEBUG) {
                             log.debug("Got an error [from={}, error={}, request={}]", node, err.toString(), request);
                         }
 
-                        return REJECT;
+                        return RETRY;
                     } else if (rsp.is(CoordinationProtocol.Reject.class)) {
                         if (DEBUG) {
                             log.debug("Got a reject [from={}, request={}]", node, request);
                         }
 
-                        return REJECT;
+                        return RETRY;
                     } else {
                         if (rsp.is(CoordinationProtocol.Confirm.class)) {
                             if (DEBUG) {
@@ -213,7 +213,7 @@ class DefaultCoordinationMember implements CoordinationMember {
                             future.complete(response.response());
                         }
 
-                        return ACCEPT;
+                        return DONE;
                     }
                 })
                 .submit((err, rsp) -> {

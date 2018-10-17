@@ -1,8 +1,8 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.intercept.OutboundType;
-import io.hekate.messaging.unicast.ReplyDecision;
 import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.RetryDecision;
 import io.hekate.messaging.unicast.SendFuture;
 
 class SendOperation<T> extends UnicastOperation<T> {
@@ -27,8 +27,8 @@ class SendOperation<T> extends UnicastOperation<T> {
     }
 
     @Override
-    public ReplyDecision accept(Throwable error, Response<T> response) {
-        return ReplyDecision.DEFAULT;
+    public RetryDecision shouldRetry(Throwable error, Response<T> response) {
+        return RetryDecision.USE_DEFAULTS;
     }
 
     @Override
