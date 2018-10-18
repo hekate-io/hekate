@@ -16,21 +16,15 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.cluster.ClusterNodeId;
 import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.messaging.broadcast.AggregateResult;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
-import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -86,44 +80,6 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
 
             assertEquals(channels.size() * attempts, failoverCalls.get());
         });
-    }
-
-    @Test
-    public void testDelay() throws Exception {
-        failures.set(channels.size() * 3);
-
-        Map<ClusterNodeId, List<Long>> times = new HashMap<>();
-
-        channels.forEach(c ->
-            times.put(c.nodeId(), synchronizedList(new ArrayList<>()))
-        );
-
-        AggregateResult<String> result = get(sender.channel()
-            .withFailover(ctx -> {
-                times.get(ctx.failedNode().id()).add(System.nanoTime());
-
-                return ctx.retry();
-            })
-            .aggregate("test")
-            .submit()
-        );
-
-        times.forEach((id, series) -> {
-            assertEquals(3, series.size());
-
-            long prevTime = 0;
-
-            for (Long time : series) {
-                if (prevTime != 0) {
-                    assertTrue(time - prevTime >= TimeUnit.MILLISECONDS.toNanos(TEST_BACKOFF_DELAY));
-                }
-
-                prevTime = time;
-            }
-        });
-
-        assertTrue(result.isSuccess());
-        assertEquals(channels.size(), result.results().size());
     }
 
     @Test
