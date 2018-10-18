@@ -27,12 +27,15 @@ import java.util.List;
  *
  * <h2>Overview</h2>
  * <p>
- * Implementations of this interface can be registered within the {@link ClusterService} in order to get notifications on cluster-related
- * events. Listeners can be registered at {@link ClusterServiceFactory#setClusterListeners(List) configuration time} or at {@link
- * ClusterService#addListener(ClusterEventListener) runtime}. The key difference between those two approaches is that listeners that were
- * added at configuration time will be kept registered across multiple restarts while listeners that were added at runtime will be kept
- * registered only while node stays in the cluster and will be automatically unregistered when node {@link Hekate#leave() leaves} the
- * cluster.
+ * Implementations of this interface can be registered to the {@link ClusterService} in order to get notified on
+ * {@link ClusterEvent cluster events}.
+ * </p>
+ *
+ * <p>
+ * Listener can be registered at {@link ClusterServiceFactory#setClusterListeners(List) configuration time} or at
+ * {@link ClusterService#addListener(ClusterEventListener) runtime}. The key difference between those two approaches is that
+ * a configuration-time listener stays registered across multiple restarts of the cluster node, while a runtime-listener stays registered
+ * only while the node stays in the cluster and will be unregistered when the node leaves the cluster.
  * </p>
  *
  * <h2>Event types</h2>
