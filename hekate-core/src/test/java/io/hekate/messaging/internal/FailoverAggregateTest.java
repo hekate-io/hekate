@@ -20,7 +20,6 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.messaging.broadcast.AggregateResult;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +30,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
 import static java.lang.System.currentTimeMillis;
+import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -71,11 +71,15 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
 
             AtomicInteger failoverCalls = new AtomicInteger();
 
-            AggregateResult<String> result = get(sender.channel().withFailover(context -> {
-                failoverCalls.incrementAndGet();
+            AggregateResult<String> result = get(sender.channel()
+                .withFailover(context -> {
+                    failoverCalls.incrementAndGet();
 
-                return context.retry();
-            }).aggregate("test").submit());
+                    return context.retry();
+                })
+                .aggregate("test")
+                .submit()
+            );
 
             assertTrue(result.isSuccess());
             assertEquals(channels.size(), result.results().size());
@@ -92,13 +96,19 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
 
         Map<ClusterNodeId, List<Long>> times = new HashMap<>();
 
-        channels.forEach(c -> times.put(c.nodeId(), Collections.synchronizedList(new ArrayList<>())));
+        channels.forEach(c ->
+            times.put(c.nodeId(), synchronizedList(new ArrayList<>()))
+        );
 
-        AggregateResult<String> result = get(sender.channel().withFailover(ctx -> {
-            times.get(ctx.failedNode().id()).add(currentTimeMillis());
+        AggregateResult<String> result = get(sender.channel()
+            .withFailover(ctx -> {
+                times.get(ctx.failedNode().id()).add(currentTimeMillis());
 
-            return ctx.retry().withDelay(failoverDelay);
-        }).aggregate("test").submit());
+                return ctx.retry().withDelay(failoverDelay);
+            })
+            .aggregate("test")
+            .submit()
+        );
 
         times.forEach((id, series) -> {
             assertEquals(3, series.size());
@@ -127,11 +137,15 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
 
             AtomicInteger failoverCalls = new AtomicInteger();
 
-            AggregateResult<String> result = get(sender.channel().withFailover(context -> {
-                failoverCalls.incrementAndGet();
+            AggregateResult<String> result = get(sender.channel()
+                .withFailover(context -> {
+                    failoverCalls.incrementAndGet();
 
-                return context.retry();
-            }).aggregate("test").submit());
+                    return context.retry();
+                })
+                .aggregate("test")
+                .submit()
+            );
 
             assertTrue(result.isSuccess());
             assertEquals(channels.size(), result.results().size());
@@ -149,11 +163,15 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
 
             AtomicInteger failoverCalls = new AtomicInteger();
 
-            AggregateResult<String> result = get(sender.channel().withFailover(context -> {
-                failoverCalls.incrementAndGet();
+            AggregateResult<String> result = get(sender.channel()
+                .withFailover(context -> {
+                    failoverCalls.incrementAndGet();
 
-                return context.attempt() < attempts ? context.retry() : context.fail();
-            }).aggregate("test").submit());
+                    return context.attempt() < attempts ? context.retry() : context.fail();
+                })
+                .aggregate("test")
+                .submit()
+            );
 
             assertFalse(result.isSuccess());
             assertTrue(result.results().isEmpty());
@@ -172,11 +190,15 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
 
             AtomicInteger failoverCalls = new AtomicInteger();
 
-            AggregateResult<String> result = get(sender.channel().withFailover(context -> {
-                failoverCalls.incrementAndGet();
+            AggregateResult<String> result = get(sender.channel()
+                .withFailover(context -> {
+                    failoverCalls.incrementAndGet();
 
-                return context.fail();
-            }).aggregate("test").submit());
+                    return context.fail();
+                })
+                .aggregate("test")
+                .submit()
+            );
 
             assertFalse(result.isSuccess());
             assertEquals(channels.size() - attempts, result.results().size());
@@ -191,9 +213,13 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
         repeat(3, i -> {
             failures.set(Integer.MAX_VALUE);
 
-            AggregateResult<String> result = get(sender.channel().withFailover(context -> {
-                throw TEST_ERROR;
-            }).aggregate("test").submit());
+            AggregateResult<String> result = get(sender.channel()
+                .withFailover(context -> {
+                    throw TEST_ERROR;
+                })
+                .aggregate("test")
+                .submit()
+            );
 
             assertFalse(result.isSuccess());
             assertTrue(result.results().isEmpty());
@@ -212,21 +238,26 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
                 AtomicReference<Exception> errRef = new AtomicReference<>();
                 AtomicReference<TestChannel> leaveRef = new AtomicReference<>();
 
-                AggregateResult<String> result = get(sender.channel().forRemotes().withFailover(context -> {
-                    try {
-                        TestChannel leave = channels.stream()
-                            .filter(c -> c.nodeId().equals(context.failedNode().id()))
-                            .findFirst()
-                            .orElseThrow(AssertionError::new)
-                            .leave();
+                AggregateResult<String> result = get(sender.channel()
+                    .forRemotes()
+                    .withFailover(context -> {
+                        try {
+                            TestChannel leave = channels.stream()
+                                .filter(c -> c.nodeId().equals(context.failedNode().id()))
+                                .findFirst()
+                                .orElseThrow(AssertionError::new)
+                                .leave();
 
-                        leaveRef.set(leave);
-                    } catch (ExecutionException | InterruptedException | TimeoutException e) {
-                        errRef.compareAndSet(null, e);
-                    }
+                            leaveRef.set(leave);
+                        } catch (ExecutionException | InterruptedException | TimeoutException e) {
+                            errRef.compareAndSet(null, e);
+                        }
 
-                    return context.retry().withRoutingPolicy(policy);
-                }).aggregate("test").submit());
+                        return context.retry().withRoutingPolicy(policy);
+                    })
+                    .aggregate("test")
+                    .submit()
+                );
 
                 if (errRef.get() != null) {
                     throw new AssertionError(errRef.get());
