@@ -27,7 +27,7 @@ public class ExampleFailoverPolicy implements FailoverPolicy {
     public FailureResolution apply(FailoverContext ctx) {
         // Retry only up to 3 times and only in case of I/O errors.
         if (ctx.attempt() < 3 && ctx.isCausedBy(IOException.class)) {
-            return ctx.retry().withDelay(500); // Wait for 500ms before retrying.
+            return ctx.retry();
         }
 
         // All attempts failed.

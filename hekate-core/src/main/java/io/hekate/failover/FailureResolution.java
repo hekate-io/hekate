@@ -45,20 +45,6 @@ public interface FailureResolution {
     boolean isRetry();
 
     /**
-     * Instructs to retry the operation after the specified delay (in milliseconds). Using zero (default)
-     * or negative value instructs to retry the operation without any delay.
-     *
-     * <p>
-     * <b>Note:</b> calling this method has no effect if {@link #isRetry()} returns {@code false}.
-     * </p>
-     *
-     * @param delay Delay in milliseconds.
-     *
-     * @return This instance.
-     */
-    FailureResolution withDelay(long delay);
-
-    /**
      * Instructs to apply the {@link FailoverRoutingPolicy#RE_ROUTE} policy.
      *
      * @return This instance.
@@ -87,15 +73,6 @@ public interface FailureResolution {
      * @return This instance.
      */
     FailureResolution withRoutingPolicy(FailoverRoutingPolicy policy);
-
-    /**
-     * Returns the delay that was set via {@link #withDelay(long)}.
-     *
-     * @return Delay in milliseconds.
-     *
-     * @see #withDelay(long)
-     */
-    long delay();
 
     /**
      * Returns the routing policy that should be applied during failover.

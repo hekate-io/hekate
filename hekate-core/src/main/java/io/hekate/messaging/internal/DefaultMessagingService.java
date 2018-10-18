@@ -124,10 +124,14 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         List<MessageInterceptor> interceptors = StreamUtils.nullSafe(factory.getGlobalInterceptors()).collect(toList());
 
         // Collect channel configurations.
-        StreamUtils.nullSafe(factory.getChannels()).forEach(cfg -> registerProxy(cfg, interceptors));
+        StreamUtils.nullSafe(factory.getChannels()).forEach(cfg ->
+            registerProxy(cfg, interceptors)
+        );
 
         StreamUtils.nullSafe(factory.getConfigProviders()).forEach(provider ->
-            StreamUtils.nullSafe(provider.configureMessaging()).forEach(cfg -> registerProxy(cfg, interceptors))
+            StreamUtils.nullSafe(provider.configureMessaging()).forEach(cfg ->
+                registerProxy(cfg, interceptors)
+            )
         );
 
         Collection<MessagingConfigProvider> providers = ctx.findComponents(MessagingConfigProvider.class);
@@ -135,7 +139,9 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         StreamUtils.nullSafe(providers).forEach(provider -> {
             Collection<MessagingChannelConfig<?>> regions = provider.configureMessaging();
 
-            StreamUtils.nullSafe(regions).forEach(cfg -> registerProxy(cfg, interceptors));
+            StreamUtils.nullSafe(regions).forEach(cfg ->
+                registerProxy(cfg, interceptors)
+            );
         });
 
         // Register channel meta-data as a service property.
@@ -331,6 +337,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         check.notEmpty(cfg.getName(), "name");
         check.validSysName(cfg.getName(), "name");
         check.notNull(cfg.getBaseType(), "base type");
+        check.notNull(cfg.getBackoffPolicy(), "backoff policy");
         check.positive(cfg.getPartitions(), "partitions");
         check.isPowerOfTwo(cfg.getPartitions(), "partitions size");
 
@@ -409,6 +416,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             channelMetrics,
             gateway.receivePressureGuard(),
             gateway.sendPressureGuard(),
+            gateway.backoffPolicy(),
             gateway.interceptors(),
             gateway.log(),
             gateway.idleSocketTimeout() > 0, /* <-- Check for idle connections.*/

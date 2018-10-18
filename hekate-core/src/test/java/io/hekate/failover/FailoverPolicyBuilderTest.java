@@ -62,28 +62,6 @@ public class FailoverPolicyBuilderTest extends FailoverPolicyTestBase {
     }
 
     @Test
-    public void testRetryDelay() {
-        assertNull(builder.getRetryDelay());
-
-        FailoverDelaySupplier s1 = failover -> 100;
-        FailoverDelaySupplier s2 = failover -> 200;
-
-        builder.setRetryDelay(s1);
-
-        assertSame(s1, builder.getRetryDelay());
-
-        builder.setRetryDelay(null);
-
-        assertNull(builder.getRetryDelay());
-
-        assertSame(builder, builder.withRetryDelay(s2));
-
-        assertSame(s2, builder.getRetryDelay());
-
-        assertTrue(builder.withConstantRetryDelay(111).getRetryDelay() instanceof ConstantFailoverDelay);
-    }
-
-    @Test
     public void testRetryUntil() {
         assertNull(builder.getRetryUntil());
 
@@ -153,8 +131,6 @@ public class FailoverPolicyBuilderTest extends FailoverPolicyTestBase {
         alwaysRetry.setErrorTypes(null);
 
         assertFalse(alwaysRetry.withErrorTypes(IOException.class).build().apply(ctx).isRetry());
-
-        assertEquals(987, alwaysRetry.withErrorTypes(Exception.class).withRetryDelay(f -> 987).build().apply(ctx).delay());
 
         assertTrue(alwaysRetry.build().toString().startsWith(FailoverPolicy.class.getSimpleName()));
     }

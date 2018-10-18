@@ -33,11 +33,11 @@ package io.hekate.failover;
  *
  * <p>
  * It is possible to customize the retry behavior by setting a number of options on a {@link FailureResolution} instance. For example
- * it is possible to specify the delay before retrying.
+ * it is possible to specify the {@link FailureResolution#withRoutingPolicy(FailoverRoutingPolicy) routing policy}.
  * </p>
  *
  * <p>
- * Below is the example of a simple policy implementation that performs a limited number of reties with a fixed delay between attempts.
+ * Below is the example of a simple policy implementation that performs a limited number of reties.
  * ${source: failover/ExampleFailoverPolicy.java#example}
  * </p>
  */

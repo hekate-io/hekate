@@ -28,8 +28,6 @@ import static java.util.stream.Collectors.toList;
  * Builder for {@link FailoverPolicy}.
  */
 public class FailoverPolicyBuilder {
-    private FailoverDelaySupplier retryDelay;
-
     private List<FailoverCondition> retryUntil;
 
     private List<Class<? extends Throwable>> errorTypes;
@@ -42,7 +40,7 @@ public class FailoverPolicyBuilder {
      * @return New failover policy.
      */
     public FailoverPolicy build() {
-        if (retryUntil == null && retryDelay == null) {
+        if (retryUntil == null) {
             return FailoverPolicy.alwaysFail();
         }
 
@@ -54,7 +52,7 @@ public class FailoverPolicyBuilder {
 
         List<Class<? extends Throwable>> localErrorTypes = StreamUtils.nullSafe(errorTypes).collect(toList());
 
-        return doBuild(localRetryUntil, retryDelay, localErrorTypes, routingPolicy);
+        return doBuild(localRetryUntil, localErrorTypes, routingPolicy);
     }
 
     /**
@@ -119,49 +117,6 @@ public class FailoverPolicyBuilder {
         }
 
         return this;
-    }
-
-    /**
-     * Returns the {@link FailureResolution#delay() retry delay} supplier (see {@link #setRetryDelay(FailoverDelaySupplier)}).
-     *
-     * @return Supplier of {@link FailureResolution#delay() retry delay} value.
-     */
-    public FailoverDelaySupplier getRetryDelay() {
-        return retryDelay;
-    }
-
-    /**
-     * Sets the {@link FailureResolution#delay() retry delay} supplier. This supplier will be used by a failover policy to get a retry
-     * delay value for the {@link FailureResolution#withDelay(long)} method.
-     *
-     * @param retryDelay Delay supplier.
-     */
-    public void setRetryDelay(FailoverDelaySupplier retryDelay) {
-        this.retryDelay = retryDelay;
-    }
-
-    /**
-     * Fluent-style version of {@link #setRetryDelay(FailoverDelaySupplier)}.
-     *
-     * @param retryDelay Delay supplier.
-     *
-     * @return This instance.
-     */
-    public FailoverPolicyBuilder withRetryDelay(FailoverDelaySupplier retryDelay) {
-        setRetryDelay(retryDelay);
-
-        return this;
-    }
-
-    /**
-     * Shortcut method to apply {@link ConstantFailoverDelay} to this builder.
-     *
-     * @param delay Delay in milliseconds (see {@link ConstantFailoverDelay#ConstantFailoverDelay(long)}).
-     *
-     * @return This instance.
-     */
-    public FailoverPolicyBuilder withConstantRetryDelay(long delay) {
-        return withRetryDelay(new ConstantFailoverDelay(delay));
     }
 
     /**
@@ -278,8 +233,11 @@ public class FailoverPolicyBuilder {
         return this;
     }
 
-    private static FailoverPolicy doBuild(List<FailoverCondition> retryUntil, FailoverDelaySupplier retryDelay,
-        List<Class<? extends Throwable>> errTypes, FailoverRoutingPolicy routingPolicy) {
+    private static FailoverPolicy doBuild(
+        List<FailoverCondition> retryUntil,
+        List<Class<? extends Throwable>> errTypes,
+        FailoverRoutingPolicy routingPolicy
+    ) {
         return new FailoverPolicy() {
             @Override
             public FailureResolution apply(FailoverContext ctx) {
@@ -307,10 +265,6 @@ public class FailoverPolicyBuilder {
 
                 FailureResolution retry = ctx.retry();
 
-                if (retryDelay != null) {
-                    retry.withDelay(retryDelay.delayOf(ctx));
-                }
-
                 if (routingPolicy != null) {
                     retry.withRoutingPolicy(routingPolicy);
                 }
@@ -322,7 +276,6 @@ public class FailoverPolicyBuilder {
             public String toString() {
                 return FailoverPolicy.class.getSimpleName()
                     + "[error-types=" + errTypes
-                    + ", retry-delay=" + retryDelay
                     + ", retry-until=" + retryUntil
                     + ']';
             }

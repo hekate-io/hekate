@@ -35,6 +35,7 @@ import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.TerminatingService;
+import io.hekate.failover.BackoffPolicy;
 import io.hekate.lock.LockConfigProvider;
 import io.hekate.lock.LockRegion;
 import io.hekate.lock.LockRegionConfig;
@@ -172,6 +173,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                 .withWorkerThreads(workerThreads)
                 .withMessageCodec(new SingletonCodecFactory<>(new LockProtocolCodec()))
                 .withBackupNodes(0)
+                .withBackoffPolicy(BackoffPolicy.fixedDelay(retryInterval))
                 .withInterceptor(new ClientMessageInterceptor<LockProtocol>() {
                     @Override
                     public void interceptClientSend(ClientSendContext<LockProtocol> ctx) {
@@ -221,7 +223,6 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                         name,
                         node.id(),
                         scheduler,
-                        retryInterval,
                         ctx.metrics(),
                         channel.filter(new LockRegionNodeFilter(name))
                     );

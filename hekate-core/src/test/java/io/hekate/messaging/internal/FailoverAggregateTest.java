@@ -24,12 +24,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
-import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -90,8 +90,6 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
 
     @Test
     public void testDelay() throws Exception {
-        int failoverDelay = 200;
-
         failures.set(channels.size() * 3);
 
         Map<ClusterNodeId, List<Long>> times = new HashMap<>();
@@ -102,9 +100,9 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
 
         AggregateResult<String> result = get(sender.channel()
             .withFailover(ctx -> {
-                times.get(ctx.failedNode().id()).add(currentTimeMillis());
+                times.get(ctx.failedNode().id()).add(System.nanoTime());
 
-                return ctx.retry().withDelay(failoverDelay);
+                return ctx.retry();
             })
             .aggregate("test")
             .submit()
@@ -117,7 +115,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
 
             for (Long time : series) {
                 if (prevTime != 0) {
-                    assertTrue(time - prevTime >= failoverDelay);
+                    assertTrue(time - prevTime >= TimeUnit.MILLISECONDS.toNanos(TEST_BACKOFF_DELAY));
                 }
 
                 prevTime = time;

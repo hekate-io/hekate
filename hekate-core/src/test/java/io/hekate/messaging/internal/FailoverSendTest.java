@@ -56,7 +56,7 @@ public class FailoverSendTest extends FailoverTestBase {
             SendFuture future = sender.channel().forRemotes().withFailover(ctx -> {
                 failoverCalls.incrementAndGet();
 
-                return ctx.retry().withDelay(10).withRoutingPolicy(FailoverRoutingPolicy.RETRY_SAME_NODE);
+                return ctx.retry().withRoutingPolicy(FailoverRoutingPolicy.RETRY_SAME_NODE);
             }).send("test").submit();
 
             get(future);
@@ -82,7 +82,7 @@ public class FailoverSendTest extends FailoverTestBase {
             SendFuture future = sender.channel().forRemotes().withFailover(ctx -> {
                 failoverCalls.incrementAndGet();
 
-                return ctx.retry().withDelay(10).withRoutingPolicy(FailoverRoutingPolicy.RE_ROUTE);
+                return ctx.retry().withRoutingPolicy(FailoverRoutingPolicy.RE_ROUTE);
             }).send("test").submit();
 
             get(future);
@@ -116,7 +116,7 @@ public class FailoverSendTest extends FailoverTestBase {
 
                 failoverCalls.incrementAndGet();
 
-                return ctx.retry().withDelay(10).withRoutingPolicy(FailoverRoutingPolicy.PREFER_SAME_NODE);
+                return ctx.retry().withRoutingPolicy(FailoverRoutingPolicy.PREFER_SAME_NODE);
             }).send("test").submit();
 
             get(future);
@@ -142,7 +142,7 @@ public class FailoverSendTest extends FailoverTestBase {
             SendFuture future = sender.channel().forRemotes().withFailover(ctx -> {
                 failoverCalls.incrementAndGet();
 
-                return ctx.retry().withDelay(10).withRoutingPolicy(FailoverRoutingPolicy.PREFER_SAME_NODE);
+                return ctx.retry().withRoutingPolicy(FailoverRoutingPolicy.PREFER_SAME_NODE);
             }).send("test").submit();
 
             get(future);
@@ -168,7 +168,7 @@ public class FailoverSendTest extends FailoverTestBase {
             SendFuture future = sender.channel().forRemotes().withFailover(ctx -> {
                 failoverCalls.incrementAndGet();
 
-                return ctx.retry().withDelay(10).withRoutingPolicy(FailoverRoutingPolicy.PREFER_SAME_NODE);
+                return ctx.retry().withRoutingPolicy(FailoverRoutingPolicy.PREFER_SAME_NODE);
             }).send("test").submit();
 
             get(future);
@@ -178,14 +178,14 @@ public class FailoverSendTest extends FailoverTestBase {
     }
 
     @Test
-    public void testChannelCloseWhileInFailoverWithDelay() throws Exception {
+    public void testChannelCloseWhileInFailover() throws Exception {
         failures.set(Integer.MAX_VALUE);
 
         try {
             SendFuture future = toRemote.withFailover(ctx -> {
                 sender.node().leaveAsync();
 
-                return ctx.retry().withDelay(50);
+                return ctx.retry();
             }).send("test").submit();
 
             get(future);

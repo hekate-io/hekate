@@ -71,8 +71,7 @@ class DefaultCoordinationMember implements CoordinationMember {
         ClusterTopology topology,
         boolean coordinator,
         MessagingChannel<CoordinationProtocol> channel,
-        ExecutorService async,
-        long failoverDelay
+        ExecutorService async
     ) {
         assert processName != null : "Coordination process name is null.";
         assert node != null : "Node is null.";
@@ -92,7 +91,6 @@ class DefaultCoordinationMember implements CoordinationMember {
                 // Retry to death.
                 .withRetryUntil(ctx -> !disposed)
                 .withAlwaysRetrySameNode()
-                .withConstantRetryDelay(failoverDelay)
             );
     }
 

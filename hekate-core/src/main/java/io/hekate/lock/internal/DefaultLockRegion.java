@@ -146,7 +146,6 @@ class DefaultLockRegion implements LockRegion {
         String regionName,
         ClusterNodeId localNode,
         ScheduledExecutorService scheduler,
-        long retryInterval,
         MeterRegistry metrics,
         MessagingChannel<LockProtocol> channel
     ) {
@@ -166,7 +165,6 @@ class DefaultLockRegion implements LockRegion {
 
         // Configure messaging channel for locking operations.
         lockChannel = channel.withFailover(new FailoverPolicyBuilder()
-            .withConstantRetryDelay(retryInterval)
             .withAlwaysReRoute()
             .withRetryUntil(err -> !isTerminated())
         );
@@ -175,7 +173,6 @@ class DefaultLockRegion implements LockRegion {
         migrationRing = channel.filterAll(ClusterFilters.forNextInJoinOrder()) // <-- Use ring-based communications.
             .withFailover(new FailoverPolicyBuilder()
                 .withAlwaysReRoute()
-                .withConstantRetryDelay(retryInterval)
                 .withRetryUntil(err -> !isTerminated())
             );
 

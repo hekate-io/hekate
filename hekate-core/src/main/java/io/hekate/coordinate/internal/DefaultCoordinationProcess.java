@@ -51,9 +51,6 @@ class DefaultCoordinationProcess implements CoordinationProcess {
     private final MessagingChannel<CoordinationProtocol> channel;
 
     @ToStringIgnore
-    private final long failoverDelay;
-
-    @ToStringIgnore
     private final StateGuard guard = new StateGuard(DefaultCoordinationProcess.class);
 
     @ToStringIgnore
@@ -70,8 +67,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
         HekateSupport hekate,
         CoordinationHandler handler,
         ExecutorService async,
-        MessagingChannel<CoordinationProtocol> channel,
-        long failoverDelay
+        MessagingChannel<CoordinationProtocol> channel
     ) {
         assert name != null : "Name is null.";
         assert hekate != null : "Hekate is null.";
@@ -84,7 +80,6 @@ class DefaultCoordinationProcess implements CoordinationProcess {
         this.handler = handler;
         this.async = async;
         this.channel = channel;
-        this.failoverDelay = failoverDelay;
     }
 
     public CompletableFuture<?> initialize() {
@@ -191,7 +186,6 @@ class DefaultCoordinationProcess implements CoordinationProcess {
                     channel,
                     async,
                     handler,
-                    failoverDelay,
                     () -> future.complete(this)
                 );
 

@@ -45,6 +45,7 @@ import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.TerminatingService;
+import io.hekate.failover.BackoffPolicy;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
@@ -189,6 +190,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
                 .withClusterFilter(HAS_SERVICE_FILTER)
                 .withNioThreads(nioThreads)
                 .withIdleSocketTimeout(idleSocketTimeout)
+                .withBackoffPolicy(BackoffPolicy.fixedDelay(failoverDelay))
                 .withLogCategory(CoordinationProtocol.class.getName())
                 .withMessageCodec(() -> new CoordinationProtocolCodec(processCodecs))
                 .withReceiver(this::handleMessage)
@@ -335,7 +337,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
         ExecutorService async = Executors.newSingleThreadExecutor(new HekateThreadFactory("Coordination-" + name));
 
-        DefaultCoordinationProcess process = new DefaultCoordinationProcess(name, hekate, cfg.getHandler(), async, channel, failoverDelay);
+        DefaultCoordinationProcess process = new DefaultCoordinationProcess(name, hekate, cfg.getHandler(), async, channel);
 
         processes.put(name, process);
 

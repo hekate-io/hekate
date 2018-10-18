@@ -22,6 +22,7 @@ import io.hekate.codec.Codec;
 import io.hekate.codec.CodecFactory;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.failover.BackoffPolicy;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.loadbalance.LoadBalancer;
@@ -80,6 +81,9 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
 
     /** See {@link #setFailoverPolicy(FailoverPolicy)}. */
     private FailoverPolicy failoverPolicy;
+
+    /** See {@link #setBackoffPolicy(BackoffPolicy)}. */
+    private BackoffPolicy backoffPolicy = BackoffPolicy.defaultFixedDelay();
 
     /** See {@link #setLoadBalancer(LoadBalancer)}. */
     private LoadBalancer<T> loadBalancer;
@@ -485,6 +489,37 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
      */
     public MessagingChannelConfig<T> withFailoverPolicy(FailoverPolicy failoverPolicy) {
         setFailoverPolicy(failoverPolicy);
+
+        return this;
+    }
+
+    /**
+     * Returns the backoff policy of failover and retries (see {@link #setBackoffPolicy(BackoffPolicy)}).
+     *
+     * @return Backoff policy.
+     */
+    public BackoffPolicy getBackoffPolicy() {
+        return backoffPolicy;
+    }
+
+    /**
+     * Sets the backoff policy of failover and retries.
+     *
+     * @param backoffPolicy Backoff policy.
+     */
+    public void setBackoffPolicy(BackoffPolicy backoffPolicy) {
+        this.backoffPolicy = backoffPolicy;
+    }
+
+    /**
+     * Fluent-style version of {@link #setBackoffPolicy(BackoffPolicy)}.
+     *
+     * @param backoffPolicy Backoff policy.
+     *
+     * @return This instance.
+     */
+    public MessagingChannelConfig<T> withBackoffPolicy(BackoffPolicy backoffPolicy) {
+        setBackoffPolicy(backoffPolicy);
 
         return this;
     }

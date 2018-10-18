@@ -29,8 +29,6 @@ public class DefaultFailoverContext implements FailoverContext {
     static class Resolution implements FailureResolution {
         private final boolean retry;
 
-        private long delay;
-
         private FailoverRoutingPolicy routingPolicy = FailoverRoutingPolicy.PREFER_SAME_NODE;
 
         public Resolution(boolean retry) {
@@ -40,13 +38,6 @@ public class DefaultFailoverContext implements FailoverContext {
         @Override
         public boolean isRetry() {
             return retry;
-        }
-
-        @Override
-        public FailureResolution withDelay(long delay) {
-            this.delay = delay;
-
-            return this;
         }
 
         @Override
@@ -80,11 +71,6 @@ public class DefaultFailoverContext implements FailoverContext {
         }
 
         @Override
-        public long delay() {
-            return delay;
-        }
-
-        @Override
         public FailoverRoutingPolicy routing() {
             return routingPolicy;
         }
@@ -105,8 +91,13 @@ public class DefaultFailoverContext implements FailoverContext {
 
     private final FailoverRoutingPolicy routing;
 
-    public DefaultFailoverContext(int attempt, Throwable error, ClusterNode failedNode, Set<ClusterNode> failedNodes,
-        FailoverRoutingPolicy routing) {
+    public DefaultFailoverContext(
+        int attempt,
+        Throwable error,
+        ClusterNode failedNode,
+        Set<ClusterNode> failedNodes,
+        FailoverRoutingPolicy routing
+    ) {
         assert attempt >= 0 : "Attempt must be >= 0";
         assert error != null : "Error is null.";
         assert failedNode != null : "Failed node is null.";

@@ -22,6 +22,7 @@ import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
 import io.hekate.codec.CodecException;
 import io.hekate.core.HekateException;
+import io.hekate.failover.BackoffPolicy;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.failover.FailureInfo;
@@ -127,6 +128,9 @@ class MessagingGatewayContext<T> {
     private final SendPressureGuard sendPressure;
 
     @ToStringIgnore
+    private final BackoffPolicy backoffPolicy;
+
+    @ToStringIgnore
     private final MessageInterceptors<T> interceptors;
 
     @ToStringIgnore
@@ -158,6 +162,7 @@ class MessagingGatewayContext<T> {
         MessagingMetrics metrics,
         ReceivePressureGuard receivePressure,
         SendPressureGuard sendPressure,
+        BackoffPolicy backoffPolicy,
         MessageInterceptors<T> interceptors,
         Logger log,
         boolean checkIdle,
@@ -170,6 +175,7 @@ class MessagingGatewayContext<T> {
         assert async != null : "Executor is null.";
         assert metrics != null : "Metrics are null.";
         assert channel != null : "Default channel is null.";
+        assert backoffPolicy != null : "Backoff policy is null.";
 
         this.id = new MessagingChannelId();
         this.name = name;
@@ -184,6 +190,7 @@ class MessagingGatewayContext<T> {
         this.metrics = metrics;
         this.receivePressure = receivePressure;
         this.sendPressure = sendPressure;
+        this.backoffPolicy = backoffPolicy;
         this.checkIdle = checkIdle;
         this.log = log;
         this.debug = log.isDebugEnabled();
@@ -512,8 +519,10 @@ class MessagingGatewayContext<T> {
     }
 
     private void applyFailover(MessageOperationAttempt<T> attempt, Throwable cause, FailoverCallback callback) {
+        MessageOperation<T> operation = attempt.operation();
+
         // Do nothing if operation is already completed.
-        if (attempt.operation().isDone()) {
+        if (operation.isDone()) {
             return;
         }
 
@@ -521,15 +530,15 @@ class MessagingGatewayContext<T> {
 
         Throwable finalCause = cause;
 
-        FailoverPolicy policy = attempt.operation().opts().failover();
+        FailoverPolicy policy = operation.opts().failover();
 
         if (policy != null && isRecoverable(cause)) {
             ClusterNode failedNode = attempt.receiver();
 
             DefaultFailoverContext failoverCtx = newFailoverContext(cause, failedNode, attempt.prevFailure());
 
-            // Apply failover policy.
             try {
+                // Apply the failover policy.
                 FailureResolution resolution = policy.apply(failoverCtx);
 
                 // Enter lock (prevents channel state changes).
@@ -541,23 +550,27 @@ class MessagingGatewayContext<T> {
                     } else if (resolution != null && resolution.isRetry()) {
                         FailoverRoutingPolicy routing = resolution.routing();
 
-                        // Apply failover only if re-routing was requested or if the target node is still within the cluster topology.
+                        // Retry only if re-routing was requested or if the target node is still within the cluster topology.
                         if (routing != RETRY_SAME_NODE || clients.containsKey(failedNode.id())) {
                             metrics.onRetry();
 
-                            // Schedule timeout task to apply failover actions after the failover delay.
-                            long delay = resolution.delay();
+                            Runnable retry = () -> {
+                                try {
+                                    callback.retry(routing, Optional.of(failoverCtx.withRouting(routing)));
+                                } catch (RuntimeException | Error e) {
+                                    log.error("Got an unexpected error during failover task processing.", e);
+                                }
+                            };
 
-                            timer.schedule(() -> {
-                                // Execute callback on the worker thread.
-                                attempt.operation().worker().execute(() -> {
-                                    try {
-                                        callback.retry(routing, Optional.of(failoverCtx.withRouting(routing)));
-                                    } catch (RuntimeException | Error e) {
-                                        log.error("Got an unexpected error during failover task processing.", e);
-                                    }
-                                });
-                            }, delay, TimeUnit.MILLISECONDS);
+                            long delay = backoffPolicy.delayBeforeRetry(failoverCtx.attempt());
+
+                            if (delay > 0) {
+                                // Schedule timeout task to retry with the delay.
+                                timer.schedule(() -> operation.worker().execute(retry), delay, TimeUnit.MILLISECONDS);
+                            } else {
+                                // Apply failover actions without a delay.
+                                operation.worker().execute(retry);
+                            }
 
                             applied = true;
                         }

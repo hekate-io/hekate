@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import org.junit.Test;
 
+import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -45,14 +46,14 @@ public class FailoverRequestTest extends FailoverTestBase {
     }
 
     @Test
-    public void testChannelCloseWhileInFailoverWithDelay() throws Exception {
+    public void testChannelCloseWhileInFailover() throws Exception {
         failures.set(Integer.MAX_VALUE);
 
         try {
             toRemote.withFailover(ctx -> {
                 sender.node().leaveAsync();
 
-                return ctx.retry().withDelay(50);
+                return ctx.retry();
             }).request("test").submit().result();
 
             fail("Error was expected.");
@@ -167,7 +168,7 @@ public class FailoverRequestTest extends FailoverTestBase {
 
     private List<FailoverContext> testWithRoutingPolicy(FailoverRoutingPolicy policy, Consumer<FailureInfo> onFailover)
         throws Exception {
-        List<FailoverContext> contexts = Collections.synchronizedList(new ArrayList<>());
+        List<FailoverContext> contexts = synchronizedList(new ArrayList<>());
 
         failures.set(5);
 
@@ -220,18 +221,16 @@ public class FailoverRequestTest extends FailoverTestBase {
     }
 
     private void doFailoverDelay(MessagingChannel<String> channel) throws Exception {
-        int failoverDelay = 200;
-
         failures.set(3);
 
-        List<Long> times = Collections.synchronizedList(new ArrayList<>());
+        List<Long> times = synchronizedList(new ArrayList<>());
 
         String response = channel.withFailover(context -> {
             long time = System.nanoTime();
 
             times.add(time);
 
-            return context.retry().withDelay(failoverDelay);
+            return context.retry();
         }).request("test").submit().result();
 
         assertNotNull(response);
@@ -243,7 +242,7 @@ public class FailoverRequestTest extends FailoverTestBase {
 
         for (Long time : times) {
             if (prevTime != 0) {
-                assertTrue(time - prevTime >= TimeUnit.MILLISECONDS.toNanos(failoverDelay));
+                assertTrue(time - prevTime >= TimeUnit.MILLISECONDS.toNanos(TEST_BACKOFF_DELAY));
             }
 
             prevTime = time;

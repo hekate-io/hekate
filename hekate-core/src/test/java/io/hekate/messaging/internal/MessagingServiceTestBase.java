@@ -19,6 +19,7 @@ package io.hekate.messaging.internal;
 import io.hekate.HekateNodeParamTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.core.internal.HekateTestNode;
+import io.hekate.failover.BackoffPolicy;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingServiceFactory;
@@ -55,6 +56,8 @@ public abstract class MessagingServiceTestBase extends HekateNodeParamTestBase {
     public static final String TEST_CHANNEL_NAME = "test-channel";
 
     public static final String TEST_NODE_ROLE = "test_comm";
+
+    public static final int TEST_BACKOFF_DELAY = 10;
 
     protected final int workerThreads;
 
@@ -155,6 +158,7 @@ public abstract class MessagingServiceTestBase extends HekateNodeParamTestBase {
             .withName(TEST_CHANNEL_NAME)
             .withWorkerThreads(workerThreads)
             .withNioThreads(nioThreads)
+            .withBackoffPolicy(BackoffPolicy.fixedDelay(TEST_BACKOFF_DELAY))
             .withClusterFilter(node -> node.hasRole(TEST_NODE_ROLE))
             .withLogCategory(getClass().getName());
     }

@@ -66,7 +66,6 @@ public class RequestOrderTest extends MessagingServiceTestBase {
             .withFailover(new FailoverPolicyBuilder()
                 .withRetryUntil(failover -> true)
                 .withErrorTypes(Throwable.class)
-                .withConstantRetryDelay(100)
                 .withMaxAttempts(10)
             );
 

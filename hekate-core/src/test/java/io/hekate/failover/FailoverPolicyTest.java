@@ -18,9 +18,7 @@ package io.hekate.failover;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class FailoverPolicyTest extends FailoverPolicyTestBase {
     @Test
@@ -30,29 +28,5 @@ public class FailoverPolicyTest extends FailoverPolicyTestBase {
         FailureResolution resolution = policy.apply(newContext(0));
 
         assertFalse(resolution.isRetry());
-    }
-
-    @Test
-    public void testMaxFailoverAttempts() throws Exception {
-        MaxFailoverAttempts attempts = new MaxFailoverAttempts(2);
-
-        assertTrue(attempts.test(newContext(0)));
-        assertTrue(attempts.test(newContext(1)));
-
-        assertFalse(attempts.test(newContext(2)));
-        assertFalse(attempts.test(newContext(3)));
-
-        assertTrue(attempts.toString(), attempts.toString().startsWith(MaxFailoverAttempts.class.getSimpleName()));
-    }
-
-    @Test
-    public void testConstantFailoverDelay() throws Exception {
-        ConstantFailoverDelay delay = new ConstantFailoverDelay(99);
-
-        assertEquals(99, delay.delayOf(newContext(0)));
-        assertEquals(99, delay.delayOf(newContext(1)));
-        assertEquals(99, delay.delayOf(newContext(2)));
-
-        assertTrue(delay.toString(), delay.toString().startsWith(ConstantFailoverDelay.class.getSimpleName()));
     }
 }

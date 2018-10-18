@@ -100,7 +100,6 @@ class DefaultCoordinatorContext implements CoordinatorContext {
         MessagingChannel<CoordinationProtocol> channel,
         ExecutorService async,
         CoordinationHandler handler,
-        long failoverDelay,
         Runnable onComplete
     ) {
         assert hekate != null : "Hekate is null.";
@@ -127,8 +126,7 @@ class DefaultCoordinatorContext implements CoordinatorContext {
                 topology,
                 coordinator,
                 channel,
-                async,
-                failoverDelay
+                async
             );
 
             membersById.put(node.id(), member);

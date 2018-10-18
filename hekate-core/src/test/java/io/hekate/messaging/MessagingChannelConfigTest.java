@@ -19,6 +19,7 @@ package io.hekate.messaging;
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.codec.CodecFactory;
+import io.hekate.failover.BackoffPolicy;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.loadbalance.LoadBalancer;
@@ -28,6 +29,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -138,6 +140,25 @@ public class MessagingChannelConfigTest extends HekateTestBase {
         assertSame(cfg, cfg.withClusterFilter(filter));
 
         assertSame(filter, cfg.getClusterFilter());
+    }
+
+    @Test
+    public void testBackoffPolicy() {
+        assertNotNull(cfg.getBackoffPolicy());
+
+        BackoffPolicy backoff = mock(BackoffPolicy.class);
+
+        cfg.setBackoffPolicy(backoff);
+
+        assertSame(backoff, cfg.getBackoffPolicy());
+
+        cfg.setBackoffPolicy(null);
+
+        assertNull(cfg.getBackoffPolicy());
+
+        assertSame(cfg, cfg.withBackoffPolicy(backoff));
+
+        assertSame(backoff, cfg.getBackoffPolicy());
     }
 
     @Test

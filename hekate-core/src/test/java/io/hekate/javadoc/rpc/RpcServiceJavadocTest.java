@@ -24,6 +24,7 @@ import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcServerConfig;
 import io.hekate.rpc.RpcService;
 import io.hekate.rpc.RpcServiceFactory;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
@@ -103,7 +104,7 @@ public class RpcServiceJavadocTest extends HekateNodeTestBase {
             .withTimeout(3, TimeUnit.SECONDS) // RPC timeout.
             .withFailover(new FailoverPolicyBuilder() // Failover policy.
                 .withMaxAttempts(3) // Up to 3 times.
-                .withConstantRetryDelay(200) // 200ms delay between attempts.
+                .withErrorTypes(IOException.class) // Only in case of I/O errors.
             )
             .build();
 
