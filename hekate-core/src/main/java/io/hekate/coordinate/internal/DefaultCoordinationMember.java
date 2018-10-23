@@ -59,7 +59,7 @@ class DefaultCoordinationMember implements CoordinationMember {
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    private final Set<Future<?>> requestFutures = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Set<Future<?>> requests = Collections.newSetFromMap(new IdentityHashMap<>());
 
     private final ClusterNode localNode;
 
@@ -140,7 +140,7 @@ class DefaultCoordinationMember implements CoordinationMember {
             } else {
                 disposed = true;
 
-                toCancel = new ArrayList<>(requestFutures);
+                toCancel = new ArrayList<>(requests);
             }
         } finally {
             lock.unlock();
@@ -158,21 +158,7 @@ class DefaultCoordinationMember implements CoordinationMember {
 
         CompletableFuture<Object> future = newRequestFuture(request, callback);
 
-        boolean enqueued = false;
-
-        lock.lock();
-
-        try {
-            if (!disposed) {
-                enqueued = true;
-
-                requestFutures.add(future);
-            }
-        } finally {
-            lock.unlock();
-        }
-
-        if (enqueued) {
+        if (!future.isDone()) {
             channel.request(request)
                 .withAffinity(processName)
                 .until((err, rsp) -> {
@@ -221,8 +207,6 @@ class DefaultCoordinationMember implements CoordinationMember {
                         future.completeExceptionally(err);
                     }
                 });
-        } else {
-            future.cancel(false);
         }
     }
 
@@ -239,7 +223,7 @@ class DefaultCoordinationMember implements CoordinationMember {
                     callback.onResponse(rsp, this);
                 } else {
                     if (DEBUG) {
-                        log.debug("Canceled coordination request sending [to={}, message={}]", node, req);
+                        log.debug("Canceled coordination request [to={}, message={}]", node, req);
                     }
 
                     callback.onCancel();
@@ -249,6 +233,24 @@ class DefaultCoordinationMember implements CoordinationMember {
             }
         }, async);
 
+        return tryRegisterOrCancel(future);
+    }
+
+    private CompletableFuture<Object> tryRegisterOrCancel(CompletableFuture<Object> future) {
+        lock.lock();
+
+        try {
+            if (!disposed) {
+                requests.add(future);
+
+                return future;
+            }
+        } finally {
+            lock.unlock();
+        }
+
+        future.cancel(false);
+
         return future;
     }
 
@@ -256,7 +258,7 @@ class DefaultCoordinationMember implements CoordinationMember {
         lock.lock();
 
         try {
-            requestFutures.remove(future);
+            requests.remove(future);
         } finally {
             lock.unlock();
         }
