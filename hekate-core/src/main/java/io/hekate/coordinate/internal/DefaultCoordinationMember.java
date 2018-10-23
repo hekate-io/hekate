@@ -217,10 +217,8 @@ class DefaultCoordinationMember implements CoordinationMember {
                 .submit((err, rsp) -> {
                     unregister(future);
 
-                    if (err != null && !disposed) {
-                        if (DEBUG) {
-                            log.debug("Failed to submit coordination request [request={}]", request, err);
-                        }
+                    if (err != null) {
+                        future.completeExceptionally(err);
                     }
                 });
         } else {
