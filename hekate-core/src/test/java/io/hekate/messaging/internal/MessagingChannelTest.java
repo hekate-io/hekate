@@ -20,6 +20,7 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.UpdatableClusterView;
+import io.hekate.failover.BackoffPolicy;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelId;
@@ -54,6 +55,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 public class MessagingChannelTest extends MessagingServiceTestBase {
     public MessagingChannelTest(MessagingTestContext ctx) {
@@ -74,6 +76,16 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         assertEquals(workerThreads, channel.workerThreads());
         assertNotNull(channel.executor());
         assertEquals(100500, channel.timeout());
+
+        FailoverPolicy failover = mock(FailoverPolicy.class);
+
+        assertNotSame(channel, channel.withFailover(failover));
+        assertSame(failover, channel.withFailover(failover).failover());
+
+        BackoffPolicy backoff = mock(BackoffPolicy.class);
+
+        assertNotSame(channel, channel.withBackoff(backoff));
+        assertSame(backoff, channel.withBackoff(backoff).backoff());
     }
 
     @Test

@@ -505,6 +505,10 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
     /**
      * Sets the backoff policy of failover and retries.
      *
+     * <p>
+     * Backoff policy can be overridden dynamically via {@link MessagingChannel#withBackoff(BackoffPolicy)} method.
+     * </p>
+     *
      * @param backoffPolicy Backoff policy.
      */
     public void setBackoffPolicy(BackoffPolicy backoffPolicy) {

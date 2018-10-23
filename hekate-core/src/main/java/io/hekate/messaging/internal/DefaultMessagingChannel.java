@@ -19,6 +19,7 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterFilter;
 import io.hekate.cluster.ClusterView;
 import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.failover.BackoffPolicy;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.MessagingChannel;
@@ -46,6 +47,8 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
 
     private final FailoverPolicy failover;
 
+    private final BackoffPolicy backoff;
+
     private final LoadBalancer<T> balancer;
 
     private final long timeout;
@@ -56,17 +59,20 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
         RendezvousHashMapper partitions,
         LoadBalancer<T> balancer,
         FailoverPolicy failover,
+        BackoffPolicy backoff,
         long timeout
     ) {
         assert gateway != null : "Gateway is null.";
         assert cluster != null : "Cluster view is null.";
         assert partitions != null : "Partition mapper is null.";
+        assert backoff != null : "Backoff policy is null.";
 
         this.gateway = gateway;
         this.cluster = cluster;
         this.partitions = partitions;
         this.balancer = balancer;
         this.failover = failover;
+        this.backoff = backoff;
         this.timeout = timeout;
     }
 
@@ -129,6 +135,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             newPartitions,
             balancer,
             failover,
+            backoff,
             timeout
         );
     }
@@ -143,6 +150,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             partitions,
             balancer,
             failover,
+            backoff,
             timeout
         );
     }
@@ -160,6 +168,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             partitions,
             balancer,
             policy,
+            backoff,
             timeout
         );
     }
@@ -179,6 +188,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             partitions,
             balancer,
             failover,
+            backoff,
             unit.toMillis(timeout)
         );
     }
@@ -196,6 +206,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             newPartitions,
             balancer,
             failover,
+            backoff,
             timeout
         );
     }
@@ -218,6 +229,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             newPartitions,
             balancer,
             failover,
+            backoff,
             timeout
         );
     }
@@ -240,6 +252,24 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
     @Override
     public FailoverPolicy failover() {
         return failover;
+    }
+
+    @Override
+    public MessagingChannel<T> withBackoff(BackoffPolicy backoff) {
+        return new DefaultMessagingChannel<>(
+            gateway,
+            cluster,
+            partitions,
+            balancer,
+            failover,
+            backoff,
+            timeout
+        );
+    }
+
+    @Override
+    public BackoffPolicy backoff() {
+        return backoff;
     }
 
     @Override

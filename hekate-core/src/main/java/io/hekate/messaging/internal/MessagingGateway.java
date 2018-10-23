@@ -23,7 +23,6 @@ import io.hekate.codec.CodecService;
 import io.hekate.codec.ThreadLocalCodecFactory;
 import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.internal.util.Utils;
-import io.hekate.failover.BackoffPolicy;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingBackPressureConfig;
 import io.hekate.messaging.MessagingChannel;
@@ -65,9 +64,6 @@ class MessagingGateway<T> {
     private final CodecFactory<T> codecFactory;
 
     @ToStringIgnore
-    private final BackoffPolicy backoffPolicy;
-
-    @ToStringIgnore
     private final MessageReceiver<T> unguardedReceiver;
 
     @ToStringIgnore
@@ -103,7 +99,6 @@ class MessagingGateway<T> {
         this.unguardedReceiver = cfg.getReceiver();
         this.partitions = cfg.getPartitions();
         this.backupNodes = cfg.getBackupNodes();
-        this.backoffPolicy = cfg.getBackoffPolicy();
 
         // Interceptors.
         this.interceptors = new MessageInterceptors<>(
@@ -170,6 +165,7 @@ class MessagingGateway<T> {
             mapper,
             loadBalancer,
             cfg.getFailoverPolicy(),
+            cfg.getBackoffPolicy(),
             cfg.getMessagingTimeout()
         );
     }
@@ -227,10 +223,6 @@ class MessagingGateway<T> {
 
     public ReceivePressureGuard receivePressureGuard() {
         return receivePressure;
-    }
-
-    public BackoffPolicy backoffPolicy() {
-        return backoffPolicy;
     }
 
     public CodecFactory<T> codecFactory() {

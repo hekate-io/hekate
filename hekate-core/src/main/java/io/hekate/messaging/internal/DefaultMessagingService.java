@@ -416,7 +416,6 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             channelMetrics,
             gateway.receivePressureGuard(),
             gateway.sendPressureGuard(),
-            gateway.backoffPolicy(),
             gateway.interceptors(),
             gateway.log(),
             gateway.idleSocketTimeout() > 0, /* <-- Check for idle connections.*/

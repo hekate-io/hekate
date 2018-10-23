@@ -18,6 +18,7 @@ package io.hekate.messaging;
 
 import io.hekate.cluster.ClusterFilterSupport;
 import io.hekate.cluster.ClusterView;
+import io.hekate.failover.BackoffPolicy;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.broadcast.Aggregate;
@@ -213,6 +214,26 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @return Failover policy or {@code null}, if no policy is specified.
      */
     FailoverPolicy failover();
+
+    /**
+     * Returns a copy of this channel that will use the specified backoff policy and will inherit all other options from this instance.
+     *
+     * @param backoff Backoff policy.
+     *
+     * @return Channel wrapper.
+     *
+     * @see MessagingChannelConfig#setBackoffPolicy(BackoffPolicy)
+     */
+    MessagingChannel<T> withBackoff(BackoffPolicy backoff);
+
+    /**
+     * Returns the backoff policy of this channel.
+     *
+     * @return Backoff policy.
+     *
+     * @see #withBackoff(BackoffPolicy)
+     */
+    BackoffPolicy backoff();
 
     /**
      * Returns a copy of this channel that will use the specified timeout value and will inherit all other options from this instance.

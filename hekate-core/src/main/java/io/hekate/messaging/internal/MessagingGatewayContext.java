@@ -22,7 +22,6 @@ import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
 import io.hekate.codec.CodecException;
 import io.hekate.core.HekateException;
-import io.hekate.failover.BackoffPolicy;
 import io.hekate.failover.FailoverPolicy;
 import io.hekate.failover.FailoverRoutingPolicy;
 import io.hekate.failover.FailureInfo;
@@ -128,9 +127,6 @@ class MessagingGatewayContext<T> {
     private final SendPressureGuard sendPressure;
 
     @ToStringIgnore
-    private final BackoffPolicy backoffPolicy;
-
-    @ToStringIgnore
     private final MessageInterceptors<T> interceptors;
 
     @ToStringIgnore
@@ -162,7 +158,6 @@ class MessagingGatewayContext<T> {
         MessagingMetrics metrics,
         ReceivePressureGuard receivePressure,
         SendPressureGuard sendPressure,
-        BackoffPolicy backoffPolicy,
         MessageInterceptors<T> interceptors,
         Logger log,
         boolean checkIdle,
@@ -175,7 +170,6 @@ class MessagingGatewayContext<T> {
         assert async != null : "Executor is null.";
         assert metrics != null : "Metrics are null.";
         assert channel != null : "Default channel is null.";
-        assert backoffPolicy != null : "Backoff policy is null.";
 
         this.id = new MessagingChannelId();
         this.name = name;
@@ -190,7 +184,6 @@ class MessagingGatewayContext<T> {
         this.metrics = metrics;
         this.receivePressure = receivePressure;
         this.sendPressure = sendPressure;
-        this.backoffPolicy = backoffPolicy;
         this.checkIdle = checkIdle;
         this.log = log;
         this.debug = log.isDebugEnabled();
@@ -562,7 +555,7 @@ class MessagingGatewayContext<T> {
                                 }
                             };
 
-                            long delay = backoffPolicy.delayBeforeRetry(failoverCtx.attempt());
+                            long delay = operation.opts().backoff().delayBeforeRetry(failoverCtx.attempt());
 
                             if (delay > 0) {
                                 // Schedule timeout task to retry with the delay.
