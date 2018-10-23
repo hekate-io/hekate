@@ -29,6 +29,7 @@ import io.hekate.lock.LockOwnerInfo;
 import io.hekate.lock.LockRegion;
 import io.hekate.lock.internal.LockProtocol.LockOwnerRequest;
 import io.hekate.lock.internal.LockProtocol.LockOwnerResponse;
+import io.hekate.lock.internal.LockProtocol.LockRequest;
 import io.hekate.lock.internal.LockProtocol.LockResponse;
 import io.hekate.lock.internal.LockProtocol.MigrationApplyRequest;
 import io.hekate.lock.internal.LockProtocol.MigrationPrepareRequest;
@@ -348,7 +349,7 @@ class DefaultLockRegion implements LockRegion {
         readLock.lock();
 
         try {
-            LockProtocol.LockRequest request = msg.get(LockProtocol.LockRequest.class);
+            LockRequest request = msg.get(LockRequest.class);
 
             if (status == Status.MIGRATING || status == Status.TERMINATED || !request.topology().equals(activeTopology())) {
                 reply(msg, new LockResponse(LockResponse.Status.RETRY, null, 0));
