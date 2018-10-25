@@ -25,7 +25,7 @@ class LockFuture extends CompletableFuture<Boolean> {
         this.handle = handle;
     }
 
-    public static LockFuture completedFuture(boolean result) {
+    public static LockFuture completed(boolean result) {
         LockFuture future = new LockFuture(null);
 
         future.complete(result);

@@ -422,41 +422,38 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                     log.debug("Skipped leave request since already in {} state.", state);
                 }
 
-                // Not joined. Return a future that is immediately completed.
-                LeaveFuture future = new LeaveFuture();
+                // Not joined.
+                return LeaveFuture.completed(this);
+            } else {
+                // Fork the leave future early in order to guard against internal state changes (f.e. by lifecycle listeners).
+                LeaveFuture leaveFutureFork = leaveFuture.fork();
 
-                future.complete(this);
+                if (state.get() == INITIALIZING || state.get() == INITIALIZED) {
+                    // Safe to run termination process (and bypass leave protocol) since we haven't started joining yet.
+                    doTerminateAsync(ClusterLeaveReason.LEAVE);
+                } else if (state.get() == JOINING || state.get() == SYNCHRONIZING || state.get() == UP) {
+                    state.set(LEAVING);
 
-                return future;
-            } else if (state.get() == INITIALIZING || state.get() == INITIALIZED) {
-                // Since we are still initializing it is safe to run termination process (and bypass leave protocol).
-                doTerminateAsync(ClusterLeaveReason.LEAVE);
+                    notifyOnLifecycleChange();
 
-                return leaveFuture.fork();
-            } else if (state.compareAndSet(JOINING, LEAVING)
-                || state.compareAndSet(SYNCHRONIZING, LEAVING)
-                || state.compareAndSet(UP, LEAVING)) {
-                notifyOnLifecycleChange();
+                    // Double check that state wasn't changed by listeners.
+                    if (state.get() == LEAVING) {
+                        if (DEBUG) {
+                            log.debug("Scheduling leave task for asynchronous processing.");
+                        }
 
-                // Double check that state wasn't changed by listeners.
-                if (state.get() == LEAVING) {
+                        runOnSysThread(this::doLeave);
+                    }
+                } else /* <-- LEAVING or TERMINATING */ {
                     if (DEBUG) {
-                        log.debug("Scheduling leave task for asynchronous processing.");
+                        log.debug("Skipped leave request since already in {} state.", state);
                     }
 
-                    runOnSysThread(this::doLeave);
+                    // Make sure that rejoining will not take place.
+                    rejoining.compareAndSet(true, false);
                 }
 
-                return leaveFuture.fork();
-            } else /* <-- LEAVING or TERMINATING */ {
-                if (DEBUG) {
-                    log.debug("Skipped leave request since already in {} state.", state);
-                }
-
-                // Make sure that rejoining will not take place.
-                rejoining.compareAndSet(true, false);
-
-                return leaveFuture.fork();
+                return leaveFutureFork;
             }
         });
     }
@@ -997,11 +994,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                     log.debug("Skipped termination request processing since service is already in {} state.", DOWN);
                 }
 
-                TerminateFuture future = new TerminateFuture();
-
-                future.complete(this);
-
-                return future;
+                // Already terminated.
+                return TerminateFuture.completed(this);
             }
         });
     }

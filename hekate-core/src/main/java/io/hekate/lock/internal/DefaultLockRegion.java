@@ -326,7 +326,7 @@ class DefaultLockRegion implements LockRegion {
                     log.debug("Rejected unlocking since region is in {} state [region={}, lock-id={}]", regionName, status, lockId);
                 }
 
-                return LockFuture.completedFuture(true);
+                return LockFuture.completed(true);
             } else {
                 LockControllerClient client = lockClients.get(lockId);
 
