@@ -336,7 +336,7 @@ class NetworkProtocolCodec {
 
                 out.writeInt(accept.hbInterval());
                 out.writeInt(accept.hbLossThreshold());
-                out.writeBoolean(accept.hbDisabled());
+                out.writeBoolean(accept.isHbDisabled());
 
                 break;
             }

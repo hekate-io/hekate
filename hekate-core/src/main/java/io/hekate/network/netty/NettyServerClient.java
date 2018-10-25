@@ -23,7 +23,7 @@ import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkSendCallback;
 import io.hekate.network.NetworkServerHandler;
-import io.hekate.network.netty.DefaultNettyServer.HandlerRegistration;
+import io.hekate.network.internal.NettyChannelSupport;
 import io.hekate.network.netty.NetworkProtocol.HandshakeAccept;
 import io.hekate.network.netty.NetworkProtocol.HandshakeReject;
 import io.hekate.network.netty.NetworkProtocol.HandshakeRequest;
@@ -64,13 +64,13 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         new ClosedChannelException(), NettyServerClient.class, "doSend()"
     );
 
-    private final Map<String, HandlerRegistration> handlers;
+    private final Map<String, NettyServerHandler> handlers;
 
     private final InetSocketAddress remoteAddress;
 
     private final InetSocketAddress localAddress;
 
-    private final EventLoopGroup coreEventLoopGroup;
+    private final EventLoopGroup eventLoopGroup;
 
     private final NettyWriteQueue writeQueue = new NettyWriteQueue();
 
@@ -84,19 +84,19 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
 
     private final GenericFutureListener<Future<? super Void>> hbFlushListener;
 
-    private boolean hbFlushed = true;
-
     private Logger log = LoggerFactory.getLogger(NettyServerClient.class);
 
     private boolean debug = log.isDebugEnabled();
 
     private boolean trace = log.isTraceEnabled();
 
+    private boolean hbFlushed = true;
+
     private int ignoreReadTimeouts;
 
     private NetworkServerHandler<Object> serverHandler;
 
-    private HandlerRegistration handlerReg;
+    private NettyServerHandler handlerReg;
 
     private NettyMetricsSink metrics;
 
@@ -112,8 +112,16 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
 
     private volatile ChannelHandlerContext handlerCtx;
 
-    public NettyServerClient(InetSocketAddress remoteAddress, InetSocketAddress localAddress, boolean ssl, int hbInterval,
-        int hbLossThreshold, boolean hbDisabled, Map<String, HandlerRegistration> handlers, EventLoopGroup coreEventLoopGroup) {
+    public NettyServerClient(
+        InetSocketAddress remoteAddress,
+        InetSocketAddress localAddress,
+        boolean ssl,
+        int hbInterval,
+        int hbLossThreshold,
+        boolean hbDisabled,
+        Map<String, NettyServerHandler> handlers,
+        EventLoopGroup eventLoopGroup
+    ) {
         this.remoteAddress = remoteAddress;
         this.localAddress = localAddress;
         this.ssl = ssl;
@@ -121,7 +129,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         this.hbLossThreshold = hbLossThreshold;
         this.hbDisabled = hbDisabled;
         this.handlers = handlers;
-        this.coreEventLoopGroup = coreEventLoopGroup;
+        this.eventLoopGroup = eventLoopGroup;
 
         hbFlushListener = future -> hbFlushed = true;
     }
@@ -160,8 +168,8 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         Channel channel = ctx.channel();
 
-        if (debug) {
-            log.debug("Got connection [from={}]", channel.remoteAddress());
+        if (trace) {
+            log.trace("Got connection [from={}]", channel.remoteAddress());
         }
 
         this.handlerCtx = ctx;
@@ -169,6 +177,10 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         mayBeCreateIdleStateHandler().ifPresent(handler ->
             ctx.pipeline().addFirst(IdleStateHandler.class.getName(), handler)
         );
+
+        if (metrics != null) {
+            metrics.onConnect();
+        }
     }
 
     @Override
@@ -223,14 +235,14 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                 }
             }
         } else {
-            if (debug) {
-                log.debug("Received network handshake request [from={}, message={}]", address(), msg);
+            if (trace) {
+                log.trace("Received network handshake request [from={}, message={}]", address(), msg);
             }
 
             HandshakeRequest handshake = (HandshakeRequest)msg;
 
             String protocol;
-            HandlerRegistration handlerReg;
+            NettyServerHandler handlerReg;
 
             if (handshake == null) {
                 protocol = null;
@@ -258,8 +270,8 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                     // No need to rebind.
                     init(ctx.channel(), handshake, handlerReg);
                 } else {
-                    if (debug) {
-                        log.debug("Registering channel to a custom NIO thread [from={}, protocol={}]", address(), protocol);
+                    if (trace) {
+                        log.trace("Registering channel to a custom NIO thread [from={}, protocol={}]", address(), protocol);
                     }
 
                     // Unregister and then re-register IdleStateHandler in order to prevent RejectedExecutionException if same
@@ -273,9 +285,9 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                             if (!eventLoop.isShutdown() && channel.isOpen()) {
                                 eventLoop.register(channel).addListener(register -> {
                                     if (register.isSuccess() && channel.isOpen()) {
-                                        if (debug) {
-                                            log.debug("Registered channel to a custom NIO thread "
-                                                + "[from={}, protocol={}]", address(), protocol);
+                                        if (trace) {
+                                            log.trace("Registered channel to a custom NIO thread [from={}, protocol={}]",
+                                                address(), protocol);
                                         }
 
                                         mayBeCreateIdleStateHandler().ifPresent(handler ->
@@ -460,29 +472,20 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
 
     private Optional<IdleStateHandler> mayBeCreateIdleStateHandler() {
         if (hbInterval > 0 && hbLossThreshold > 0) {
-            int interval = hbInterval;
-            int readTimeout = hbInterval * hbLossThreshold;
+            int readerIdle = hbInterval * hbLossThreshold;
+            int writerIdle = hbDisabled ? 0 : hbInterval;
 
-            if (hbDisabled) {
-                interval = 0;
-
-                if (debug) {
-                    log.debug("Registering heartbeatless timeout handler [from={}, read-timeout={}]", address(), readTimeout);
-                }
-            } else {
-                if (debug) {
-                    log.debug("Registering heartbeat handler [from={}, interval={}, loss-threshold={}, read-timeout={}]",
-                        address(), interval, hbLossThreshold, readTimeout);
-                }
+            if (trace) {
+                log.trace("Registering heartbeat handler [from={}, reader-idle={}, writer-idle={}]", address(), readerIdle, writerIdle);
             }
 
-            return Optional.of(new IdleStateHandler(readTimeout, interval, 0, TimeUnit.MILLISECONDS));
+            return Optional.of(new IdleStateHandler(readerIdle, writerIdle, 0, TimeUnit.MILLISECONDS));
+        } else {
+            return Optional.empty();
         }
-
-        return Optional.empty();
     }
 
-    private void init(Channel channel, HandshakeRequest request, HandlerRegistration handlerReg) {
+    private void init(Channel channel, HandshakeRequest request, NettyServerHandler handlerReg) {
         NettyServerHandlerConfig<Object> cfg = handlerReg.config();
 
         if (cfg.getLoggerCategory() != null) {
@@ -490,10 +493,6 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
 
             debug = log.isDebugEnabled();
             trace = log.isTraceEnabled();
-        }
-
-        if (debug) {
-            log.debug("Initialized connection [from={}, protocol={}]", address(), cfg.getProtocol());
         }
 
         this.eventLoop = channel.eventLoop();
@@ -505,22 +504,25 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         // Register this client.
         handlerReg.add(this);
 
+        // Configure metrics.
         if (metrics != null) {
-            channel.pipeline().addFirst(new ChannelTrafficShapingHandler(0, 0, NettyClient.TRAFFIC_SHAPING_INTERVAL) {
+            channel.pipeline().addFirst(new ChannelTrafficShapingHandler(0, 0, NettyInternalConst.TRAFFIC_SHAPING_INTERVAL) {
                 @Override
                 protected void doAccounting(TrafficCounter counter) {
                     metrics.onBytesReceived(counter.lastReadBytes());
                     metrics.onBytesSent(counter.lastWrittenBytes());
                 }
             });
+        }
 
-            metrics.onConnect();
+        if (debug) {
+            log.debug("Accepted connection [from={}, protocol={}]", address(), cfg.getProtocol());
         }
 
         // Accept handshake.
-        HandshakeAccept accepted = new HandshakeAccept(hbInterval, hbLossThreshold, hbDisabled);
+        HandshakeAccept accept = new HandshakeAccept(hbInterval, hbLossThreshold, hbDisabled);
 
-        channel.writeAndFlush(accepted).addListener(future -> {
+        channel.writeAndFlush(accept).addListener(future -> {
                 if (channel.isOpen()) {
                     connectNotified = true;
 
@@ -553,7 +555,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         }
 
         if (debug) {
-            log.debug("Sending to a client [to={}, message={}]", address(), msg);
+            log.debug("Sending to client [to={}, message={}]", address(), msg);
         }
 
         if (metrics != null) {
@@ -594,7 +596,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             if (result.isSuccess()) {
                 // Successful operation.
                 if (debug) {
-                    log.debug("Done sending message to a client [to={}, message={}]", address(), msg);
+                    log.debug("Done sending to client [to={}, message={}]", address(), msg);
                 }
 
                 if (metrics != null) {
@@ -603,7 +605,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
             } else {
                 // Failed operation.
                 if (debug) {
-                    log.debug("Failed to send message to a client [to={}, message={}]", address(), msg, result.cause());
+                    log.debug("Failed to send to client [to={}, message={}]", address(), msg, result.cause());
                 }
 
                 // Notify channel pipeline on error (ignore if channel is already closed).
@@ -653,13 +655,13 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         }
     }
 
-    private EventLoop mapToThread(int affinity, HandlerRegistration handler) {
+    private EventLoop mapToThread(int affinity, NettyServerHandler handler) {
         EventLoopGroup group;
 
         // Check if a dedicated thread pool is defined for this protocol.
         if (handler.config().getEventLoop() == null) {
             // Use core thread pool.
-            group = coreEventLoopGroup;
+            group = eventLoopGroup;
         } else {
             // Use dedicated thread pool.
             group = handler.config().getEventLoop();

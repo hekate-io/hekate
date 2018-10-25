@@ -42,6 +42,8 @@ class NettyWriteQueue {
 
     private volatile int writable;
 
+    private volatile Throwable alwaysFails;
+
     public NettyWriteQueue() {
         this(true, null);
     }
@@ -57,29 +59,33 @@ class NettyWriteQueue {
             int cnt = 0;
 
             for (DeferredMessage msg = queue.poll(); msg != null; msg = queue.poll()) {
-                try {
-                    if (spy != null) {
-                        spy.onBeforeFlush(msg.source());
-                    }
+                Throwable err = this.alwaysFails;
 
-                    msg.channel().write(msg, msg.promise());
-                } catch (Throwable e) {
-                    if (msg.promise().tryFailure(e)) {
-                        if (msg.isPreEncoded()) {
-                            ReferenceCountUtil.release(msg);
-                        }
+                if (err == null && spy != null) {
+                    try {
+                        spy.onBeforeFlush(msg.source());
+                    } catch (Throwable t) {
+                        err = t;
                     }
                 }
 
-                lastNonFlushed = msg;
+                if (err == null) {
+                    msg.channel().write(msg, msg.promise());
 
-                cnt++;
+                    lastNonFlushed = msg;
 
-                if (cnt == MAX_FLUSH_BATCH_SIZE) {
-                    lastNonFlushed.channel().flush();
+                    cnt++;
 
-                    lastNonFlushed = null;
-                    cnt = 0;
+                    if (cnt == MAX_FLUSH_BATCH_SIZE) {
+                        lastNonFlushed.channel().flush();
+
+                        lastNonFlushed = null;
+                        cnt = 0;
+                    }
+                } else if (msg.promise().tryFailure(err)) {
+                    if (msg.isPreEncoded()) {
+                        ReferenceCountUtil.release(msg);
+                    }
                 }
             }
 
@@ -101,6 +107,13 @@ class NettyWriteQueue {
         if (WRITABLE_UPDATER.compareAndSet(this, WRITABLE_OFF, WRITABLE_ON)) {
             flush(executor);
         }
+    }
+
+    public void dispose(Throwable err, Executor executor) {
+        alwaysFails = err;
+
+        // Ensure that all pending writes will be processed.
+        enableWrites(executor);
     }
 
     private void flush(Executor executor) {

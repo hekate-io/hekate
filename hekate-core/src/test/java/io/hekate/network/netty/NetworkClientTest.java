@@ -83,8 +83,6 @@ public class NetworkClientTest extends NetworkTestBase {
             }
 
             assertSame(NetworkClient.State.DISCONNECTED, client.state());
-            assertNull(client.remoteAddress());
-            assertNull(client.localAddress());
             callback.assertConnects(0);
             callback.assertDisconnects(1);
             callback.assertErrors(1);
@@ -123,8 +121,6 @@ public class NetworkClientTest extends NetworkTestBase {
             assertTrue(getStacktrace(sendErr), ErrorUtils.isCausedBy(IOException.class, sendErr));
 
             assertSame(NetworkClient.State.DISCONNECTED, client.state());
-            assertNull(client.remoteAddress());
-            assertNull(client.localAddress());
             callback.assertConnects(0);
             callback.assertDisconnects(1);
             callback.assertErrors(1);
@@ -150,8 +146,6 @@ public class NetworkClientTest extends NetworkTestBase {
             }
 
             assertSame(NetworkClient.State.DISCONNECTED, client.state());
-            assertNull(client.remoteAddress());
-            assertNull(client.localAddress());
             callback.assertConnects(0);
             callback.assertDisconnects(1);
             callback.assertErrors(1);
@@ -191,8 +185,6 @@ public class NetworkClientTest extends NetworkTestBase {
 
             assertSame(NetworkClient.State.DISCONNECTED, client.state());
 
-            assertNull(client.remoteAddress());
-            assertNull(client.localAddress());
             callback.assertConnects(1);
             callback.assertDisconnects(1);
             callback.assertNoErrors();
@@ -324,8 +316,6 @@ public class NetworkClientTest extends NetworkTestBase {
 
             assertSame(NetworkClient.State.DISCONNECTED, client.state());
 
-            assertNull(client.remoteAddress());
-            assertNull(client.localAddress());
             callback.assertConnects(1);
             callback.assertDisconnects(1);
             callback.assertNoErrors();
@@ -353,11 +343,11 @@ public class NetworkClientTest extends NetworkTestBase {
             callback.assertDisconnects(0);
             callback.assertNoErrors();
 
-            assertEquals((Integer)i, client.getContext());
+            assertEquals(i, client.getContext());
 
             client.disconnect().get();
 
-            assertEquals((Integer)i, client.getContext());
+            assertEquals(i, client.getContext());
 
             callback.assertConnects(1);
             callback.assertDisconnects(1);
@@ -636,51 +626,6 @@ public class NetworkClientTest extends NetworkTestBase {
     }
 
     @Test
-    public void testMultipleEnsureConnected() throws Exception {
-        NetworkServer server = createServer();
-
-        NetworkServerCallbackMock listener = new NetworkServerCallbackMock();
-
-        server.start(newServerAddress(), listener).get();
-
-        NetworkClient<String> client = createClient();
-
-        repeat(3, i -> {
-            NetworkClientCallbackMock<String> callback = new NetworkClientCallbackMock<>();
-
-            NetworkFuture<String> future = client.ensureConnected(server.address(), callback);
-
-            future.get();
-
-            assertSame(NetworkClient.State.CONNECTED, client.state());
-
-            NetworkClientCallbackMock<String> rejected1 = new NetworkClientCallbackMock<>();
-            NetworkClientCallbackMock<String> rejected2 = new NetworkClientCallbackMock<>();
-            NetworkClientCallbackMock<String> rejected3 = new NetworkClientCallbackMock<>();
-
-            assertSame(future, client.ensureConnected(server.address(), rejected1));
-            assertSame(future, client.ensureConnected(server.address(), rejected2));
-            assertSame(future, client.ensureConnected(server.address(), rejected3));
-
-            assertSame(NetworkClient.State.CONNECTED, client.state());
-
-            client.disconnect().get();
-
-            assertSame(NetworkClient.State.DISCONNECTED, client.state());
-
-            callback.assertConnects(1);
-            callback.assertDisconnects(1);
-            callback.assertNoErrors();
-
-            rejected1.assertConnects(0);
-            rejected2.assertConnects(0);
-            rejected3.assertConnects(0);
-
-            listener.assertNoErrors();
-        });
-    }
-
-    @Test
     public void testMultipleDisconnects() throws Exception {
         NetworkServer server = createServer();
 
@@ -828,11 +773,14 @@ public class NetworkClientTest extends NetworkTestBase {
             NetworkFuture<String> disconnect = client.disconnect();
 
             get(disconnect);
-            get(connect);
 
             assertSame(NetworkClient.State.DISCONNECTED, client.state());
 
-            callback.assertErrors(0);
+            expectCause(ConnectException.class, () ->
+                get(connect)
+            );
+
+            callback.assertErrors(1);
         }
     }
 
@@ -1034,9 +982,7 @@ public class NetworkClientTest extends NetworkTestBase {
             callback.assertConnects(0);
             callback.assertErrors(1);
 
-            messageCallback.assertFailed("one");
-            messageCallback.assertFailed("two");
-            messageCallback.assertFailed("three");
+            messageCallback.awaitForErrors("one", "two", "three");
 
             callback.getErrors().forEach(e -> assertTrue(e instanceof ConnectTimeoutException));
         } finally {

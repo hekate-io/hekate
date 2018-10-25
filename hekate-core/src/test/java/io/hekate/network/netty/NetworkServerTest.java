@@ -149,7 +149,7 @@ public class NetworkServerTest extends NetworkTestBase {
     public void testFailover() throws Exception {
         int failoverInterval = 50;
 
-        DefaultNettyServer nettyServer = (DefaultNettyServer)createServer();
+        NettyServer nettyServer = (NettyServer)createServer();
 
         AtomicReference<CountDownLatch> errorLatch = new AtomicReference<>();
 
@@ -198,7 +198,7 @@ public class NetworkServerTest extends NetworkTestBase {
     public void testAddressChangeOnFailover() throws Exception {
         int failoverInterval = 50;
 
-        DefaultNettyServer nettyServer = (DefaultNettyServer)createServer();
+        NettyServer nettyServer = (NettyServer)createServer();
 
         AtomicReference<CountDownLatch> errorLatch = new AtomicReference<>();
 

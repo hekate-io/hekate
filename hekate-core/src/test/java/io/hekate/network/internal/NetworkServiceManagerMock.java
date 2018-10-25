@@ -31,7 +31,6 @@ import io.hekate.network.NetworkServer;
 import io.hekate.network.NetworkServerFuture;
 import io.hekate.network.NetworkService;
 import io.hekate.network.PingCallback;
-import io.hekate.network.netty.NettyChannelSupport;
 import io.netty.channel.Channel;
 import java.net.InetSocketAddress;
 import java.util.Optional;

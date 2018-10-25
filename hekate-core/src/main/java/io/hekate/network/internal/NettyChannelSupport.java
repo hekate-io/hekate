@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package io.hekate.network.netty;
+package io.hekate.network.internal;
 
 import io.netty.channel.Channel;
 import java.util.Optional;

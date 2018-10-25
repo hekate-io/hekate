@@ -24,6 +24,7 @@ import io.hekate.core.service.DefaultServiceFactory;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -66,6 +67,8 @@ public class ServiceManager {
 
     private final List<Class<? extends Service>> coreServices;
 
+    private final MeterRegistry metrics;
+
     private Map<String, ServiceInfo> servicesInfo;
 
     private Set<Class<? extends Service>> serviceTypes;
@@ -74,11 +77,13 @@ public class ServiceManager {
         String nodeName,
         String clusterName,
         Hekate container,
+        MeterRegistry metrics,
         List<? extends Service> builtInServices,
         List<Class<? extends Service>> coreServices,
         List<? extends ServiceFactory<?>> factories
     ) {
         assert container != null : "Container is null.";
+        assert metrics != null : "Metrics registry is null.";
         assert builtInServices != null : "Built-in services list is null.";
         assert coreServices != null : "Core services list is null.";
         assert factories != null : "Service factories list is null.";
@@ -86,6 +91,7 @@ public class ServiceManager {
         this.nodeName = nodeName;
         this.clusterName = clusterName;
         this.container = container;
+        this.metrics = metrics;
         this.builtInServices = builtInServices;
         this.coreServices = coreServices;
         this.factories = new ArrayList<>(factories);
@@ -306,6 +312,10 @@ public class ServiceManager {
 
     public List<ServiceHandler> getHandlers() {
         return handlers;
+    }
+
+    public MeterRegistry metrics() {
+        return metrics;
     }
 
     ServiceHandler findServiceDirect(Class<? extends Service> type) {

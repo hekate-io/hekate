@@ -51,7 +51,7 @@ abstract class NetworkProtocol {
             return hbLossThreshold;
         }
 
-        public boolean hbDisabled() {
+        public boolean isHbDisabled() {
             return hbDisabled;
         }
 
@@ -132,8 +132,6 @@ abstract class NetworkProtocol {
             return Type.HEARTBEAT;
         }
     }
-
-    public static final int VERSION = 1;
 
     public abstract Type type();
 

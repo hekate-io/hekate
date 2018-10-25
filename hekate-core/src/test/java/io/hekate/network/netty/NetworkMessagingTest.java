@@ -29,6 +29,7 @@ import io.hekate.network.NetworkTransportType;
 import io.hekate.network.internal.NetworkTestBase;
 import io.hekate.test.NetworkClientCallbackMock;
 import io.netty.channel.EventLoopGroup;
+import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -318,10 +319,13 @@ public class NetworkMessagingTest extends NetworkTestBase {
 
                 NetworkFuture<String> discFuture = client.disconnect();
 
-                connFuture.get();
                 discFuture.get();
 
                 callback.awaitForErrors("one", "two", "three");
+
+                expectCause(ConnectException.class, () ->
+                    get(connFuture)
+                );
 
                 clientCallback.reset();
             });

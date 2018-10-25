@@ -1202,6 +1202,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
             nodeName,
             clusterName,
             this,
+            metrics,
             builtInServices,
             coreServices,
             factories

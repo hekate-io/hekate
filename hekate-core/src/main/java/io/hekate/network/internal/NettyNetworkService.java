@@ -59,7 +59,6 @@ import io.hekate.network.PingCallback;
 import io.hekate.network.PingResult;
 import io.hekate.network.address.AddressSelector;
 import io.hekate.network.netty.NettyClientFactory;
-import io.hekate.network.netty.NettyServer;
 import io.hekate.network.netty.NettyServerFactory;
 import io.hekate.network.netty.NettyServerHandlerConfig;
 import io.hekate.network.netty.NettyUtils;
@@ -187,13 +186,16 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     private JmxService jmx;
 
     @ToStringIgnore
+    private NettyMetricsBuilder metrics;
+
+    @ToStringIgnore
     private EventLoopGroup acceptorLoop;
 
     @ToStringIgnore
     private EventLoopGroup coreLoop;
 
     @ToStringIgnore
-    private NettyServer server;
+    private NetworkServer server;
 
     public NettyNetworkService(NetworkServiceFactory factory) {
         assert factory != null : "Factory is null.";
@@ -243,6 +245,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     public void resolve(DependencyContext ctx) {
         codec = ctx.require(CodecService.class);
         resources = ctx.require(ResourceService.class);
+        metrics = new NettyMetricsBuilder(ctx.metrics());
 
         jmx = ctx.optional(JmxService.class);
     }
@@ -304,6 +307,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
             factory.setAcceptorEventLoop(acceptorLoop);
             factory.setWorkerEventLoop(coreLoop);
             factory.setSsl(serverSsl);
+            factory.setMetrics(metrics.createServerFactory());
 
             server = factory.createServer();
 
@@ -380,14 +384,9 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
                 log.debug("Initializing...");
             }
 
-            // Enable server metrics gathering.
-            NettyMetricsBuilder metrics = new NettyMetricsBuilder(ctx.metrics());
-
-            server.setMetrics(metrics.createServerFactory());
-
             // Register connectors.
             connectorConfigs.forEach(cfg -> {
-                ConnectorRegistration<?> reg = register(cfg, metrics);
+                ConnectorRegistration<?> reg = register(cfg);
 
                 if (reg.serverHandler() != null) {
                     server.addHandler(reg.serverHandler());
@@ -627,7 +626,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         }
     }
 
-    private <T> ConnectorRegistration<T> register(NetworkConnectorConfig<T> cfg, NettyMetricsBuilder metrics) {
+    private <T> ConnectorRegistration<T> register(NetworkConnectorConfig<T> cfg) {
         assert cfg != null : "Connector configuration is null.";
 
         // Sanity checks.

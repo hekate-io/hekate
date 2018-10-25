@@ -170,30 +170,6 @@ public interface NetworkClient<T> extends NetworkEndpoint<T>, Closeable {
     NetworkFuture<T> connect(InetSocketAddress address, T login, NetworkClientCallback<T> callback) throws IllegalStateException;
 
     /**
-     * Same as {@link #connect(InetSocketAddress, NetworkClientCallback)} but does nothing if client is already in
-     * {@link NetworkClient.State#CONNECTING} or {@link NetworkClient.State#CONNECTED} state.
-     *
-     * @param address Socket address where {@link NetworkService} is running.
-     * @param callback Connection callback.
-     *
-     * @return Future object that can be used to obtain result of this operation.
-     */
-    NetworkFuture<T> ensureConnected(InetSocketAddress address, NetworkClientCallback<T> callback);
-
-    /**
-     * Same as {@link #connect(InetSocketAddress, Object, NetworkClientCallback)} but does nothing if client is already in
-     * {@link NetworkClient.State#CONNECTING} or {@link NetworkClient.State#CONNECTED} state.
-     *
-     * @param address Socket address where {@link NetworkService} is running.
-     * @param login Login message that should be passed to the {@link NetworkServerHandler#onConnect(Object, NetworkEndpoint)} method.
-     * Can be {@code null}.
-     * @param callback Connection callback.
-     *
-     * @return Future object that can be used to obtain result of this operation.
-     */
-    NetworkFuture<T> ensureConnected(InetSocketAddress address, T login, NetworkClientCallback<T> callback);
-
-    /**
      * Returns the connection state.
      *
      * @return Connection state.
