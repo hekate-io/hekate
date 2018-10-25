@@ -45,6 +45,8 @@ import io.hekate.network.NetworkConfigProvider;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkConnectorConfig;
 import io.hekate.network.NetworkMessage;
+import io.hekate.network.NetworkPingCallback;
+import io.hekate.network.NetworkPingResult;
 import io.hekate.network.NetworkServer;
 import io.hekate.network.NetworkServerCallback;
 import io.hekate.network.NetworkServerFailure;
@@ -54,9 +56,8 @@ import io.hekate.network.NetworkService;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.network.NetworkServiceJmx;
 import io.hekate.network.NetworkSslConfig;
+import io.hekate.network.NetworkTimeoutException;
 import io.hekate.network.NetworkTransportType;
-import io.hekate.network.PingCallback;
-import io.hekate.network.PingResult;
 import io.hekate.network.address.AddressSelector;
 import io.hekate.network.netty.NettyClientFactory;
 import io.hekate.network.netty.NettyServerFactory;
@@ -66,7 +67,6 @@ import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
-import io.netty.channel.ConnectTimeoutException;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
@@ -75,7 +75,6 @@ import io.netty.handler.ssl.SslContext;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -528,22 +527,22 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     }
 
     @Override
-    public void ping(InetSocketAddress address, PingCallback callback) {
+    public void ping(InetSocketAddress address, NetworkPingCallback callback) {
         connector(PING_PROTOCOL).newClient().connect(address, new NetworkClientCallback<Object>() {
             @Override
             public void onConnect(NetworkClient<Object> client) {
                 client.disconnect();
 
-                callback.onResult(address, PingResult.SUCCESS);
+                callback.onResult(address, NetworkPingResult.SUCCESS);
             }
 
             @Override
             public void onDisconnect(NetworkClient<Object> client, Optional<Throwable> cause) {
                 cause.ifPresent(err -> {
-                    if (err instanceof ConnectTimeoutException || err instanceof SocketTimeoutException) {
-                        callback.onResult(address, PingResult.TIMEOUT);
+                    if (err instanceof NetworkTimeoutException) {
+                        callback.onResult(address, NetworkPingResult.TIMEOUT);
                     } else {
-                        callback.onResult(address, PingResult.FAILURE);
+                        callback.onResult(address, NetworkPingResult.FAILURE);
                     }
                 });
             }

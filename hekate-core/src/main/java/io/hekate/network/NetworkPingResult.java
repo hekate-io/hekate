@@ -19,17 +19,23 @@ package io.hekate.network;
 import java.net.InetSocketAddress;
 
 /**
- * Callback for {@link NetworkService#ping(InetSocketAddress, PingCallback) ping(...)} operation.
+ * Enumeration with possible outcome of {@link NetworkService#ping(InetSocketAddress, NetworkPingCallback) ping(...)} operation.
  *
  * @see NetworkService
  */
-@FunctionalInterface
-public interface PingCallback {
+public enum NetworkPingResult {
     /**
-     * Called when asynchronous ping operation result is ready.
-     *
-     * @param address Address that was checked.
-     * @param result Result.
+     * Ping operation failed.
      */
-    void onResult(InetSocketAddress address, PingResult result);
+    FAILURE,
+
+    /**
+     * Ping operation was successful.
+     */
+    SUCCESS,
+
+    /**
+     * Ping operation failed due to a timeout. It is up to the application logic to decide on how to treat timeouts and unresponsive nodes.
+     */
+    TIMEOUT
 }

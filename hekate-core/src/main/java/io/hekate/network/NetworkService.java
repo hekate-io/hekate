@@ -254,7 +254,7 @@ public interface NetworkService extends Service {
      * @param address Address.
      * @param callback Callback to be notified.
      *
-     * @see PingResult
+     * @see NetworkPingResult
      */
-    void ping(InetSocketAddress address, PingCallback callback);
+    void ping(InetSocketAddress address, NetworkPingCallback callback);
 }

@@ -20,6 +20,7 @@ import io.hekate.HekateTestContext;
 import io.hekate.codec.CodecException;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.network.NetworkClient;
+import io.hekate.network.NetworkConnectTimeoutException;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkMessage;
@@ -149,7 +150,7 @@ public class NetworkClientTest extends NetworkTestBase {
             callback.assertConnects(0);
             callback.assertDisconnects(1);
             callback.assertErrors(1);
-            callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof ConnectTimeoutException));
+            callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof NetworkConnectTimeoutException));
         });
     }
 
@@ -984,7 +985,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
             messageCallback.awaitForErrors("one", "two", "three");
 
-            callback.getErrors().forEach(e -> assertTrue(e instanceof ConnectTimeoutException));
+            callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof NetworkConnectTimeoutException));
         } finally {
             stopLatch.countDown();
 

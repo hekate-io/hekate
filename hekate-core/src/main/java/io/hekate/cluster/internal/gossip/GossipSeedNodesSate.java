@@ -17,6 +17,7 @@
 package io.hekate.cluster.internal.gossip;
 
 import io.hekate.core.internal.util.AddressUtils;
+import io.hekate.network.NetworkTimeoutException;
 import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
 import java.util.HashSet;
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class GossipSeedNodesSate {
+class GossipSeedNodesSate {
     private enum Status {
         NEW,
 
@@ -38,12 +39,12 @@ public class GossipSeedNodesSate {
         BAN
     }
 
-    private static class SeedNodeStatus implements Comparable<SeedNodeStatus> {
+    private static class SeedNodeState implements Comparable<SeedNodeState> {
         private final InetSocketAddress address;
 
         private Status status;
 
-        public SeedNodeStatus(InetSocketAddress address) {
+        public SeedNodeState(InetSocketAddress address) {
             this.address = address;
             this.status = Status.NEW;
         }
@@ -61,7 +62,7 @@ public class GossipSeedNodesSate {
         }
 
         @Override
-        public int compareTo(SeedNodeStatus o) {
+        public int compareTo(SeedNodeState o) {
             return compare(address, o.address);
         }
 
@@ -71,11 +72,11 @@ public class GossipSeedNodesSate {
                 return true;
             }
 
-            if (!(o instanceof SeedNodeStatus)) {
+            if (!(o instanceof SeedNodeState)) {
                 return false;
             }
 
-            SeedNodeStatus that = (SeedNodeStatus)o;
+            SeedNodeState that = (SeedNodeState)o;
 
             return Objects.equals(address, that.address);
         }
@@ -95,7 +96,7 @@ public class GossipSeedNodesSate {
 
     private final InetSocketAddress localAddress;
 
-    private List<SeedNodeStatus> seeds;
+    private List<SeedNodeState> seeds;
 
     private InetSocketAddress lastTried;
 
@@ -107,7 +108,7 @@ public class GossipSeedNodesSate {
         uniqueAddresses.add(localAddress);
 
         this.seeds = uniqueAddresses.stream()
-            .map(SeedNodeStatus::new)
+            .map(SeedNodeState::new)
             .sorted()
             .peek(it -> {
                 if (log.isInfoEnabled() && !localAddress.equals(it.address())) {
@@ -131,7 +132,7 @@ public class GossipSeedNodesSate {
             lastTried = seeds.stream()
                 .filter(s -> s.status() != Status.BAN && !s.address().equals(localAddress) && compare(s.address(), lastTried) > 0)
                 .findFirst()
-                .map(SeedNodeStatus::address)
+                .map(SeedNodeState::address)
                 .orElse(null);
         }
 
@@ -139,7 +140,7 @@ public class GossipSeedNodesSate {
             lastTried = seeds.stream()
                 .filter(s -> s.status() != Status.BAN && !s.address().equals(localAddress))
                 .findFirst()
-                .map(SeedNodeStatus::address)
+                .map(SeedNodeState::address)
                 .orElse(null);
         }
 
@@ -162,7 +163,7 @@ public class GossipSeedNodesSate {
                         log.info("Discovered new seed node [address={}]", address);
                     }
 
-                    return new SeedNodeStatus(address);
+                    return new SeedNodeState(address);
                 }))
             .sorted()
             .collect(Collectors.toList());
@@ -184,11 +185,19 @@ public class GossipSeedNodesSate {
             .filter(s -> s.status() != Status.BAN && s.status() != Status.FAILED && s.address().equals(seed))
             .findFirst()
             .ifPresent(s -> {
-                if (log.isWarnEnabled()) {
-                    log.warn("Couldn't contact seed node [address={}, cause={}]", s.address(), String.valueOf(cause));
-                }
+                if (cause instanceof NetworkTimeoutException) {
+                    if (log.isWarnEnabled()) {
+                        log.warn("Seed node timeout ...will retry [address={}, cause={}]", s.address(), String.valueOf(cause));
+                    }
 
-                s.updateStatus(Status.FAILED);
+                    s.updateStatus(Status.RETRY);
+                } else {
+                    if (log.isWarnEnabled()) {
+                        log.warn("Couldn't contact seed node [address={}, cause={}]", s.address(), String.valueOf(cause));
+                    }
+
+                    s.updateStatus(Status.FAILED);
+                }
             });
     }
 

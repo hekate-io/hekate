@@ -20,9 +20,9 @@ import io.hekate.HekateTestBase;
 import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.cluster.seed.SeedNodeProviderAdaptor;
 import io.hekate.core.HekateException;
+import io.hekate.network.NetworkPingCallback;
+import io.hekate.network.NetworkPingResult;
 import io.hekate.network.NetworkService;
-import io.hekate.network.PingCallback;
-import io.hekate.network.PingResult;
 import io.hekate.test.HekateTestError;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -206,16 +206,16 @@ public class SeedNodeManagerTest extends HekateTestBase {
 
         doAnswer(invocation -> {
             InetSocketAddress address = (InetSocketAddress)invocation.getArguments()[0];
-            PingCallback callback = (PingCallback)invocation.getArguments()[1];
+            NetworkPingCallback callback = (NetworkPingCallback)invocation.getArguments()[1];
 
             if (canPing.containsKey(address)) {
-                callback.onResult(address, PingResult.SUCCESS);
+                callback.onResult(address, NetworkPingResult.SUCCESS);
             } else {
-                callback.onResult(address, PingResult.FAILURE);
+                callback.onResult(address, NetworkPingResult.FAILURE);
             }
 
             return null;
-        }).when(netMock).ping(any(InetSocketAddress.class), any(PingCallback.class));
+        }).when(netMock).ping(any(InetSocketAddress.class), any(NetworkPingCallback.class));
 
         manager.startCleaning(netMock, alive::keySet);
 

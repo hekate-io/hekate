@@ -952,7 +952,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                 );
             } else {
                 if (DEBUG) {
-                    log.debug("Failed to sent gossip message [error={}, message={}]", error.toString(), msg);
+                    log.debug("Failed to sent gossip message [cause={}, message={}]", error.toString(), msg);
                 }
             }
         });

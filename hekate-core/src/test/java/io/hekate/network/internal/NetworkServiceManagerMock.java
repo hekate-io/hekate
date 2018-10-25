@@ -27,10 +27,10 @@ import io.hekate.core.service.NetworkBindCallback;
 import io.hekate.core.service.NetworkServiceManager;
 import io.hekate.core.service.TerminatingService;
 import io.hekate.network.NetworkConnector;
+import io.hekate.network.NetworkPingCallback;
 import io.hekate.network.NetworkServer;
 import io.hekate.network.NetworkServerFuture;
 import io.hekate.network.NetworkService;
-import io.hekate.network.PingCallback;
 import io.netty.channel.Channel;
 import java.net.InetSocketAddress;
 import java.util.Optional;
@@ -78,7 +78,7 @@ public class NetworkServiceManagerMock implements NetworkServiceManager, Network
     }
 
     @Override
-    public void ping(InetSocketAddress address, PingCallback callback) {
+    public void ping(InetSocketAddress address, NetworkPingCallback callback) {
         delegate.ping(address, callback);
     }
 
