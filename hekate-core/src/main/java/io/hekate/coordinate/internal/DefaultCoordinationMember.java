@@ -33,19 +33,23 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.hekate.messaging.unicast.RetryDecision.DONE;
 import static io.hekate.messaging.unicast.RetryDecision.RETRY;
+import static java.util.Collections.newSetFromMap;
 
 class DefaultCoordinationMember implements CoordinationMember {
     private static final Logger log = LoggerFactory.getLogger(DefaultCoordinationMember.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private final String processName;
+    private final Set<Future<?>> requests = newSetFromMap(new IdentityHashMap<>());
+
+    private final Object mux = new Object();
+
+    private final String process;
 
     private final ClusterNode node;
 
@@ -57,29 +61,25 @@ class DefaultCoordinationMember implements CoordinationMember {
 
     private final ExecutorService async;
 
-    private final ReentrantLock lock = new ReentrantLock();
-
-    private final Set<Future<?>> requests = Collections.newSetFromMap(new IdentityHashMap<>());
-
     private final ClusterNode localNode;
 
     private volatile boolean disposed;
 
     public DefaultCoordinationMember(
-        String processName,
+        String process,
         ClusterNode node,
         ClusterTopology topology,
         boolean coordinator,
         MessagingChannel<CoordinationProtocol> channel,
         ExecutorService async
     ) {
-        assert processName != null : "Coordination process name is null.";
+        assert process != null : "Coordination process name is null.";
         assert node != null : "Node is null.";
         assert topology != null : "Topology is null.";
         assert channel != null : "Channel is null.";
         assert async != null : "Executor service is null.";
 
-        this.processName = processName;
+        this.process = process;
         this.localNode = topology.localNode();
         this.node = node;
         this.topology = topology;
@@ -112,29 +112,27 @@ class DefaultCoordinationMember implements CoordinationMember {
         ClusterNodeId from = localNode.id();
         ClusterHash clusterHash = topology.hash();
 
-        doRequest(new CoordinationProtocol.Request(processName, from, clusterHash, request), callback);
+        doRequest(new CoordinationProtocol.Request(process, from, clusterHash, request), callback);
     }
 
     public void sendPrepare(CoordinationRequestCallback callback) {
         ClusterNodeId from = localNode.id();
         ClusterHash clusterHash = topology.hash();
 
-        doRequest(new CoordinationProtocol.Prepare(processName, from, clusterHash), callback);
+        doRequest(new CoordinationProtocol.Prepare(process, from, clusterHash), callback);
     }
 
     public void sendComplete(CoordinationRequestCallback callback) {
         ClusterNodeId from = localNode.id();
         ClusterHash clusterHash = topology.hash();
 
-        doRequest(new CoordinationProtocol.Complete(processName, from, clusterHash), callback);
+        doRequest(new CoordinationProtocol.Complete(process, from, clusterHash), callback);
     }
 
     public void dispose() {
         List<Future<?>> toCancel;
 
-        lock.lock();
-
-        try {
+        synchronized (mux) {
             if (disposed) {
                 toCancel = Collections.emptyList();
             } else {
@@ -142,12 +140,12 @@ class DefaultCoordinationMember implements CoordinationMember {
 
                 toCancel = new ArrayList<>(requests);
             }
-        } finally {
-            lock.unlock();
         }
 
         if (!toCancel.isEmpty()) {
-            toCancel.forEach(future -> future.cancel(false));
+            toCancel.forEach(future ->
+                future.cancel(false)
+            );
         }
     }
 
@@ -160,7 +158,7 @@ class DefaultCoordinationMember implements CoordinationMember {
 
         if (!future.isDone()) {
             channel.request(request)
-                .withAffinity(processName)
+                .withAffinity(process)
                 .until((err, rsp) -> {
                     if (future.isDone()) {
                         if (DEBUG) {
@@ -237,30 +235,28 @@ class DefaultCoordinationMember implements CoordinationMember {
     }
 
     private CompletableFuture<Object> tryRegisterOrCancel(CompletableFuture<Object> future) {
-        lock.lock();
-
-        try {
-            if (!disposed) {
-                requests.add(future);
-
-                return future;
-            }
-        } finally {
-            lock.unlock();
+        if (!tryRegister(future)) {
+            future.cancel(false);
         }
-
-        future.cancel(false);
 
         return future;
     }
 
-    private void unregister(CompletableFuture<Object> future) {
-        lock.lock();
+    private boolean tryRegister(CompletableFuture<Object> future) {
+        synchronized (mux) {
+            if (disposed) {
+                return false;
+            } else {
+                requests.add(future);
 
-        try {
+                return true;
+            }
+        }
+    }
+
+    private void unregister(CompletableFuture<Object> future) {
+        synchronized (mux) {
             requests.remove(future);
-        } finally {
-            lock.unlock();
         }
     }
 
