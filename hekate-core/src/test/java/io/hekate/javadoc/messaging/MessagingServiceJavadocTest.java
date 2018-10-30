@@ -249,7 +249,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
 
         // Start:aggregate_sync
         // Submit aggregation request.
-        channel.aggregate("example message").submit().forEach(rslt ->
+        channel.aggregate("example message").submit().results().forEach(rslt ->
             System.out.println("Got result: " + rslt)
         );
         // End:aggregate_sync

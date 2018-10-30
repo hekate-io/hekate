@@ -20,7 +20,6 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFuture;
 import io.hekate.messaging.MessagingFutureException;
 import java.util.Collection;
-import java.util.function.Consumer;
 
 /**
  * Asynchronous result of {@link Aggregate} operation.
@@ -58,34 +57,6 @@ public class AggregateFuture<T> extends MessagingFuture<AggregateResult<T>> {
         Collection<T> results = get().results();
 
         return cast(type, results);
-    }
-
-    /**
-     * Awaits for the asynchronous aggregation to complete and performs the given action for each element of the aggregation
-     * {@link #results() results}.
-     *
-     * @param action The action to be performed for each result.
-     *
-     * @throws MessagingFutureException Signals that aggregation failed.
-     * @throws InterruptedException Signals that the thread was interrupted while waiting for aggregation to complete.
-     */
-    public void forEach(Consumer<? super T> action) throws InterruptedException, MessagingFutureException {
-        results().forEach(action);
-    }
-
-    /**
-     * Awaits for the asynchronous aggregation to complete and performs the given action for each element of the aggregation
-     * {@link #results() results}.
-     *
-     * @param type Result type.
-     * @param action The action to be performed for each result.
-     * @param <V> Result type.
-     *
-     * @throws MessagingFutureException Signals that aggregation failed.
-     * @throws InterruptedException Signals that the thread was interrupted while waiting for aggregation to complete.
-     */
-    public <V extends T> void forEach(Class<V> type, Consumer<? super V> action) throws InterruptedException, MessagingFutureException {
-        cast(type, results()).forEach(action);
     }
 
     @SuppressWarnings("unchecked")
