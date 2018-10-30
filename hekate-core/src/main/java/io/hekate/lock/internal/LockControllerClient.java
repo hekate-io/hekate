@@ -20,7 +20,6 @@ import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockOwnerInfo;
 import io.hekate.lock.internal.LockProtocol.LockOwnerRequest;
 import io.hekate.lock.internal.LockProtocol.LockOwnerResponse;
@@ -36,7 +35,6 @@ import io.hekate.partition.PartitionMapper;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +74,7 @@ class LockControllerClient {
     private final MessagingChannel<LockProtocol> channel;
 
     @ToStringIgnore
-    private final ReentrantLock lock = new ReentrantLock();
+    private final Object mux = new Object();
 
     @ToStringIgnore
     private final LockFuture lockFuture;
@@ -103,20 +101,22 @@ class LockControllerClient {
 
     public LockControllerClient(
         long lockId,
+        String region,
+        String name,
         ClusterNodeId localNode,
         long threadId,
-        DistributedLock lock,
         MessagingChannel<LockProtocol> channel,
         long lockTimeout,
         LockRegionMetrics metrics,
         AsyncLockCallbackAdaptor asyncCallback
     ) {
         assert localNode != null : "Cluster node is null.";
-        assert lock != null : "Lock is null.";
+        assert region != null : "Lock region is null.";
+        assert name != null : "Lock name is null.";
         assert channel != null : "Channel is null.";
         assert metrics != null : "Metrics are null.";
 
-        this.key = new LockKey(lock.regionName(), lock.name());
+        this.key = new LockKey(region, name);
         this.lockId = lockId;
         this.localNode = localNode;
         this.threadId = threadId;
@@ -142,12 +142,8 @@ class LockControllerClient {
     }
 
     public ClusterNodeId manager() {
-        lock.lock();
-
-        try {
+        synchronized (mux) {
             return manager;
-        } finally {
-            lock.unlock();
         }
     }
 
@@ -165,9 +161,7 @@ class LockControllerClient {
 
     public void update(PartitionMapper mapping) {
         if (mapping != null) {
-            lock.lock();
-
-            try {
+            synchronized (mux) {
                 this.topology = mapping.topology();
 
                 this.manager = mapping.map(key).primaryNode().id();
@@ -175,16 +169,12 @@ class LockControllerClient {
                 if (TRACE) {
                     log.trace("Updated partition mapping [key={}, manager={}, topology={}]", key, manager, topology);
                 }
-            } finally {
-                lock.unlock();
             }
         }
     }
 
     public boolean updateAndCheckLocked(ClusterTopology topology) {
-        lock.lock();
-
-        try {
+        synchronized (mux) {
             this.topology = topology;
 
             if (DEBUG) {
@@ -192,15 +182,11 @@ class LockControllerClient {
             }
 
             return status == Status.LOCKED;
-        } finally {
-            lock.unlock();
         }
     }
 
     public void becomeLocking(PartitionMapper mapping) {
-        lock.lock();
-
-        try {
+        synchronized (mux) {
             assert status == Status.UNLOCKED;
 
             status = Status.LOCKING;
@@ -212,8 +198,6 @@ class LockControllerClient {
             update(mapping);
 
             remoteLock();
-        } finally {
-            lock.unlock();
         }
     }
 
@@ -228,9 +212,7 @@ class LockControllerClient {
     }
 
     public void becomeTerminated() {
-        lock.lock();
-
-        try {
+        synchronized (mux) {
             status = Status.TERMINATED;
 
             if (DEBUG) {
@@ -248,15 +230,11 @@ class LockControllerClient {
                     asyncCallback.onLockRelease();
                 }
             }
-        } finally {
-            lock.unlock();
         }
     }
 
     private void doBecomeUnlocking(boolean ignoreIfLocked) {
-        lock.lock();
-
-        try {
+        synchronized (mux) {
             switch (status) {
                 case LOCKING: {
                     status = Status.UNLOCKING;
@@ -302,15 +280,11 @@ class LockControllerClient {
                     throw new IllegalArgumentException("Unexpected lock status: " + status);
                 }
             }
-        } finally {
-            lock.unlock();
         }
     }
 
     private boolean becomeLocked(ClusterHash requestTopology) {
-        lock.lock();
-
-        try {
+        synchronized (mux) {
             if (topology == null || !requestTopology.equals(topology.hash())) {
                 if (TRACE) {
                     log.trace("Rejected to become {} [key={}, topology={}]", Status.LOCKED, key, topology);
@@ -360,8 +334,6 @@ class LockControllerClient {
                     throw new IllegalArgumentException("Unexpected lock status: " + status);
                 }
             }
-        } finally {
-            lock.unlock();
         }
 
         return true;
@@ -372,9 +344,7 @@ class LockControllerClient {
     }
 
     private boolean tryBecomeUnlocked(ClusterHash requestTopology) {
-        lock.lock();
-
-        try {
+        synchronized (mux) {
             if (topology == null || (requestTopology != null && !requestTopology.equals(topology.hash()))) {
                 if (TRACE) {
                     log.trace("Rejected to become {} [key={}, topology={}]", Status.UNLOCKED, key, topology);
@@ -386,65 +356,61 @@ class LockControllerClient {
 
                 return true;
             }
-        } finally {
-            lock.unlock();
         }
     }
 
     private void doBecomeUnlocked() {
-        lock.lock();
+        synchronized (mux) {
+            try {
+                switch (status) {
+                    case LOCKING: {
+                        status = Status.UNLOCKED;
 
-        try {
-            switch (status) {
-                case LOCKING: {
-                    status = Status.UNLOCKED;
+                        if (DEBUG) {
+                            log.debug("Became {} [key={}]", status, key);
+                        }
 
-                    if (DEBUG) {
-                        log.debug("Became {} [key={}]", status, key);
+                        lockFuture.complete(false);
+
+                        break;
                     }
+                    case LOCKED: {
+                        illegalStateTransition(Status.UNLOCKED);
 
-                    lockFuture.complete(false);
-
-                    break;
-                }
-                case LOCKED: {
-                    illegalStateTransition(Status.UNLOCKED);
-
-                    break;
-                }
-                case UNLOCKING: {
-                    status = Status.UNLOCKED;
-
-                    if (DEBUG) {
-                        log.debug("Became {} [key={}]", status, key);
+                        break;
                     }
+                    case UNLOCKING: {
+                        status = Status.UNLOCKED;
 
-                    metrics.onUnlock();
+                        if (DEBUG) {
+                            log.debug("Became {} [key={}]", status, key);
+                        }
 
-                    unlockFuture.complete(true);
+                        metrics.onUnlock();
 
-                    if (asyncCallback != null) {
-                        asyncCallback.onLockRelease();
+                        unlockFuture.complete(true);
+
+                        if (asyncCallback != null) {
+                            asyncCallback.onLockRelease();
+                        }
+
+                        break;
                     }
-
-                    break;
+                    case UNLOCKED: {
+                        // No-op.
+                        break;
+                    }
+                    case TERMINATED: {
+                        // No-op.
+                        break;
+                    }
+                    default: {
+                        throw new IllegalArgumentException("Unexpected lock status: " + status);
+                    }
                 }
-                case UNLOCKED: {
-                    // No-op.
-                    break;
-                }
-                case TERMINATED: {
-                    // No-op.
-                    break;
-                }
-                default: {
-                    throw new IllegalArgumentException("Unexpected lock status: " + status);
-                }
+            } finally {
+                lockOwner = null;
             }
-        } finally {
-            lockOwner = null;
-
-            lock.unlock();
         }
     }
 
@@ -626,9 +592,7 @@ class LockControllerClient {
     }
 
     private boolean tryNotifyOnLockOwnerChange(ClusterNodeId ownerId, long ownerThreadId, ClusterHash requestTopology) {
-        lock.lock();
-
-        try {
+        synchronized (mux) {
             if (status != Status.LOCKING) {
                 if (TRACE) {
                     log.trace("Ignored lock owner change because status is not {} [key={}, status={}]", Status.LOCKING, key, status);
@@ -669,18 +633,12 @@ class LockControllerClient {
                 // Successfully updated (should not retry).
                 return true;
             }
-        } finally {
-            lock.unlock();
         }
     }
 
     private boolean is(Status status) {
-        lock.lock();
-
-        try {
+        synchronized (mux) {
             return this.status == status;
-        } finally {
-            lock.unlock();
         }
     }
 

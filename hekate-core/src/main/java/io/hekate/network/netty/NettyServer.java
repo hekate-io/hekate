@@ -56,7 +56,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,7 +71,7 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
 
     private static final boolean TRACE = log.isTraceEnabled();
 
-    private final ReentrantLock lock = new ReentrantLock();
+    private final Object mux = new Object();
 
     private final boolean autoAccept;
 
@@ -172,9 +171,7 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
     public NetworkServerFuture start(InetSocketAddress address, NetworkServerCallback callback) {
         ArgAssert.notNull(address, "Address");
 
-        lock.lock();
-
-        try {
+        synchronized (mux) {
             if (state != STOPPED) {
                 throw new IllegalStateException("Server is in " + state + " state [address=" + this.address + ']');
             }
@@ -192,16 +189,12 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
             doStart(0);
 
             return startFuture;
-        } finally {
-            lock.unlock();
         }
     }
 
     @Override
     public void startAccepting() {
-        lock.lock();
-
-        try {
+        synchronized (mux) {
             if (server != null && !server.config().isAutoRead()) {
                 if (DEBUG) {
                     log.debug("Start accepting [address={}]", address);
@@ -209,8 +202,6 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
 
                 server.config().setAutoRead(true);
             }
-        } finally {
-            lock.unlock();
         }
     }
 
@@ -228,9 +219,7 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
     }
 
     public void addHandler(NettyServerHandlerConfig<?> cfg) {
-        lock.lock();
-
-        try {
+        synchronized (mux) {
             ConfigCheck check = validate(cfg);
 
             @SuppressWarnings("unchecked")
@@ -257,8 +246,6 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
             handlers.put(copy.getProtocol(), registration);
 
             codecs.put(copy.getProtocol(), copy.getCodecFactory());
-        } finally {
-            lock.unlock();
         }
     }
 
@@ -270,9 +257,7 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
             log.debug("Removing handler [protocol={}]", protocol);
         }
 
-        lock.lock();
-
-        try {
+        synchronized (mux) {
             handlers.remove(protocol);
             codecs.remove(protocol);
 
@@ -287,8 +272,6 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
             }
 
             return liveClients;
-        } finally {
-            lock.unlock();
         }
     }
 
@@ -305,17 +288,13 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
 
     @Override
     public Optional<Channel> nettyChannel() {
-        lock.lock();
-
-        try {
+        synchronized (mux) {
             return Optional.ofNullable(server);
-        } finally {
-            lock.unlock();
         }
     }
 
     private void doStart(int attempt) {
-        assert lock.isHeldByCurrentThread() : "Thread must hold lock.";
+        assert Thread.holdsLock(mux) : "Thread must hold lock.";
 
         ServerBootstrap boot = new ServerBootstrap();
 
@@ -351,9 +330,7 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
                 InetSocketAddress remoteAddress = channel.remoteAddress();
                 InetSocketAddress localAddress = channel.localAddress();
 
-                lock.lock();
-
-                try {
+                synchronized (mux) {
                     if (state == STOPPING || state == STOPPED) {
                         if (DEBUG) {
                             log.debug("Closing connection since server is in {} state [address={}].", state, remoteAddress);
@@ -402,16 +379,10 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
                             log.debug("Removing connection from server registry [address={}]", remoteAddress);
                         }
 
-                        lock.lock();
-
-                        try {
+                        synchronized (mux) {
                             clients.remove(channel);
-                        } finally {
-                            lock.unlock();
                         }
                     });
-                } finally {
-                    lock.unlock();
                 }
             }
         });
@@ -422,9 +393,7 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
 
         bindFuture.addListener((ChannelFutureListener)bind -> {
             if (bind.isSuccess()) {
-                lock.lock();
-
-                try {
+                synchronized (mux) {
                     failoverInProgress = false;
 
                     if (state == STARTING) {
@@ -443,8 +412,6 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
 
                         startFuture.complete(this);
                     }
-                } finally {
-                    lock.unlock();
                 }
             } else {
                 mayBeRetry(bind.channel(), attempt, bind.cause());
@@ -456,9 +423,7 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
         boolean stopWithError = true;
 
         if (cause instanceof IOException) {
-            lock.lock();
-
-            try {
+            synchronized (mux) {
                 if (state == STARTED || state == STARTING) {
                     InetSocketAddress newAddress = null;
 
@@ -502,20 +467,18 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
                         address = newAddress;
 
                         Runnable failoverTask = () -> {
-                            lock.lock();
-
                             try {
-                                if (failoverInProgress) {
-                                    failoverInProgress = false;
+                                synchronized (mux) {
+                                    if (failoverInProgress) {
+                                        failoverInProgress = false;
 
-                                    doStart(attempt + 1);
+                                        doStart(attempt + 1);
+                                    }
                                 }
                             } catch (RuntimeException | Error e) {
                                 if (log.isErrorEnabled()) {
                                     log.error("Got an unexpected runtime error during network server failover.", e);
                                 }
-                            } finally {
-                                lock.unlock();
                             }
                         };
 
@@ -526,8 +489,6 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
                         }
                     }
                 }
-            } finally {
-                lock.unlock();
             }
         }
 
@@ -541,9 +502,7 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
     }
 
     private NetworkServerFuture doStop(Throwable cause) {
-        lock.lock();
-
-        try {
+        synchronized (mux) {
             if (state == STOPPING) {
                 return stopFuture;
             } else if (state == STARTING || state == STARTED) {
@@ -564,9 +523,7 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
                 server.close().addListener(serverClose -> {
                     CompletableFuture<Void> allClientsClosed = new CompletableFuture<>();
 
-                    lock.lock();
-
-                    try {
+                    synchronized (mux) {
                         // Close client connections.
                         if (clients.isEmpty()) {
                             allClientsClosed.complete(null);
@@ -589,14 +546,10 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
                                 });
                             });
                         }
-                    } finally {
-                        lock.unlock();
                     }
 
                     allClientsClosed.thenRun(() -> {
-                        lock.lock();
-
-                        try {
+                        synchronized (mux) {
                             state = STOPPED;
 
                             server = null;
@@ -633,8 +586,6 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
                             if (callback == localCallback) {
                                 callback = null;
                             }
-                        } finally {
-                            lock.unlock();
                         }
                     });
                 });
@@ -645,8 +596,6 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
                     log.trace("Skipped stop request since server is in {} state [address={}]", state, address);
                 }
             }
-        } finally {
-            lock.unlock();
         }
 
         return NetworkServerFuture.completed(this);
@@ -664,7 +613,7 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
     }
 
     private ConfigCheck validate(NetworkServerHandlerConfig<?> handler) {
-        assert lock.isHeldByCurrentThread() : "Thread must hold lock.";
+        assert Thread.holdsLock(mux) : "Thread must hold lock.";
 
         ConfigCheck check = ConfigCheck.get(NetworkServerHandlerConfig.class);
 

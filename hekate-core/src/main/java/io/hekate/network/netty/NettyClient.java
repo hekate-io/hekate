@@ -36,7 +36,6 @@ import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +51,7 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
 
     private final AtomicReference<NettyClientContext<T>> ctx = new AtomicReference<>();
 
-    private final ReentrantLock lock = new ReentrantLock();
+    private final Object mux = new Object();
 
     private final CodecFactory<Object> codecFactory;
 
@@ -164,9 +163,7 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
         ArgAssert.notNull(address, "Address");
         ArgAssert.notNull(callback, "Callback");
 
-        lock.lock();
-
-        try {
+        synchronized (mux) {
             NettyClientContext<T> oldCtx = ctx.get();
 
             if (oldCtx != null && (oldCtx.state() == CONNECTING || oldCtx.state() == CONNECTED)) {
@@ -207,13 +204,11 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
 
             // Cleanup on disconnect.
             newCtx.disconnectFuture().whenComplete((endpoint, err) ->
-                // Update only this is the same context object.
+                // Nullify only if this is the same context object.
                 ctx.compareAndSet(newCtx, null)
             );
 
             return newCtx.connectFuture();
-        } finally {
-            lock.unlock();
         }
     }
 

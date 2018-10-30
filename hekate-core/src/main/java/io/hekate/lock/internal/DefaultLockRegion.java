@@ -274,9 +274,10 @@ class DefaultLockRegion implements LockRegion {
             // Create lock client.
             LockControllerClient lockClient = new LockControllerClient(
                 lockId,
+                regionName,
+                lock.name(),
                 localNode,
                 threadId,
-                lock,
                 lockChannel,
                 timeout,
                 metrics,
