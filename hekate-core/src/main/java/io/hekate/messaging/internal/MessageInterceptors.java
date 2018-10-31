@@ -47,7 +47,7 @@ class MessageInterceptors<T> {
 
     public void clientReceiveConfirmation(ClientSendContext<T> ctx) {
         for (ClientMessageInterceptor<T> interceptor : clients) {
-            interceptor.interceptClientReceiveConfirmation(ctx);
+            interceptor.interceptClientReceiveAck(ctx);
         }
     }
 

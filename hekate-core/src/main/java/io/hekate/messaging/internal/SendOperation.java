@@ -3,22 +3,29 @@ package io.hekate.messaging.internal;
 import io.hekate.messaging.intercept.OutboundType;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.RetryDecision;
+import io.hekate.messaging.unicast.SendAckMode;
 import io.hekate.messaging.unicast.SendFuture;
 
 class SendOperation<T> extends UnicastOperation<T> {
     private final SendFuture future = new SendFuture();
 
-    private final boolean confirm;
+    private final SendAckMode ackMode;
 
-    public SendOperation(T message, Object affinityKey, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts, boolean confirm) {
+    public SendOperation(
+        T message,
+        Object affinityKey,
+        MessagingGatewayContext<T> gateway,
+        MessageOperationOpts<T> opts,
+        SendAckMode ackMode
+    ) {
         super(message, affinityKey, gateway, opts, false);
 
-        this.confirm = confirm;
+        this.ackMode = ackMode;
     }
 
     @Override
     public OutboundType type() {
-        return confirm ? OutboundType.SEND_WITH_ACK : OutboundType.SEND_NO_ACK;
+        return ackMode == SendAckMode.REQUIRED ? OutboundType.SEND_WITH_ACK : OutboundType.SEND_NO_ACK;
     }
 
     @Override

@@ -4,6 +4,7 @@ import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFutureException;
+import io.hekate.messaging.unicast.SendAckMode;
 
 /**
  * Broadcast operation.
@@ -13,7 +14,7 @@ import io.hekate.messaging.MessagingFutureException;
  * </p>
  * <ol>
  * <li>Obtain an instance of this interface via the {@link MessagingChannel#broadcast(Object)} method call</li>
- * <li>Set options (f.e. {@link #withConfirmReceive(boolean) confirmation mode} or {@link #withAffinity(Object) affinity key})</li>
+ * <li>Set options (f.e. {@link #withAckMode(SendAckMode) acknowledgement mode} or {@link #withAffinity(Object) affinity key})</li>
  * <li>Execute this operation via the {@link #execute()} method</li>
  * <li>Await for the execution result, if needed</li>
  * </ol>
@@ -38,28 +39,28 @@ public interface Broadcast<T> {
     Broadcast<T> withAffinity(Object affinity);
 
     /**
-     * Confirmation mode.
+     * Acknowledgement mode.
      *
      * <p>
-     * If this option is set to {@code true} then the receiver of this operation will send back a confirmation to indicate that this
-     * operation was successfully {@link MessageReceiver#receive(Message) received}. In such case the operation's callback/future will be
-     * notified only when such confirmation is received from all nodes (or if operation fails).
+     * If this option is set to {@link SendAckMode#REQUIRED} then the receiver of this operation will send back an acknowledgement to
+     * indicate that this operation was successfully {@link MessageReceiver#receive(Message) received}. In such case the operation's
+     * callback/future will be notified only when such acknowledgement is received from all nodes (or if operation fails).
      * </p>
      *
      * <p>
-     * If this option is set to {@code false} then operation will be assumed to be successful once the message gets flushed to the network
-     * buffer without any additional confirmations from receivers.
+     * If this option is set to {@link SendAckMode#NOT_NEEDED} then operation will be assumed to be successful once the message gets
+     * flushed to the network buffer without any additional acknowledgements from receivers.
      * </p>
      *
      * <p>
-     * Default value of this option is {@code false} (i.e. confirmations are disabled by default).
+     * Default value of this option is {@link SendAckMode#NOT_NEEDED}.
      * </p>
      *
-     * @param confirmReceive Confirmation mode.
+     * @param ackMode Acknowledgement mode.
      *
      * @return This instance.
      */
-    Broadcast<T> withConfirmReceive(boolean confirmReceive);
+    Broadcast<T> withAckMode(SendAckMode ackMode);
 
     /**
      * Asynchronously executes this operation.
@@ -67,6 +68,28 @@ public interface Broadcast<T> {
      * @return Future result of this operation.
      */
     BroadcastFuture<T> execute();
+
+    /**
+     * Sets acknowledgement mode to {@link SendAckMode#REQUIRED}.
+     *
+     * @return This instance.
+     *
+     * @see #withAckMode(SendAckMode)
+     */
+    default Broadcast<T> withAck() {
+        return withAckMode(SendAckMode.REQUIRED);
+    }
+
+    /**
+     * Sets acknowledgement mode to {@link SendAckMode#NOT_NEEDED}.
+     *
+     * @return This instance.
+     *
+     * @see #withAckMode(SendAckMode)
+     */
+    default Broadcast<T> withNoAck() {
+        return withAckMode(SendAckMode.NOT_NEEDED);
+    }
 
     /**
      * Synchronously executes this operation and returns the result.

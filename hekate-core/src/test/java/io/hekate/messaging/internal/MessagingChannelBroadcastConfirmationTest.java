@@ -48,7 +48,7 @@ public class MessagingChannelBroadcastConfirmationTest extends MessagingServiceT
             awaitForChannelsTopology(channels);
 
             BroadcastFuture<String> future = channel.channel().broadcast("test" + i)
-                .withConfirmReceive(true)
+                .withAck()
                 .execute();
 
             BroadcastResult<String> result = get(future);
@@ -72,12 +72,11 @@ public class MessagingChannelBroadcastConfirmationTest extends MessagingServiceT
 
             for (TestChannel channel : channels) {
                 repeat(100, j -> {
-                    BroadcastResult<String> result = get(channel.channel()
+                    BroadcastResult<String> result = channel.channel()
                         .broadcast("test-" + j)
-                        .withConfirmReceive(true)
                         .withAffinity(j)
-                        .execute()
-                    );
+                        .withAck()
+                        .sync();
 
                     assertTrue(result.isSuccess());
 
@@ -106,11 +105,10 @@ public class MessagingChannelBroadcastConfirmationTest extends MessagingServiceT
 
             TestChannel channel = channels.get(channels.size() - 1);
 
-            BroadcastResult<String> result = get(channel.channel()
+            BroadcastResult<String> result = channel.channel()
                 .broadcast("test" + i)
-                .withConfirmReceive(true)
-                .execute()
-            );
+                .withAck()
+                .sync();
 
             assertEquals("test" + i, result.message());
             assertFalse(result.isSuccess());

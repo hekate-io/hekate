@@ -1,15 +1,17 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
+import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.messaging.broadcast.Broadcast;
 import io.hekate.messaging.broadcast.BroadcastFuture;
 import io.hekate.messaging.loadbalance.UnknownRouteException;
+import io.hekate.messaging.unicast.SendAckMode;
 import java.util.List;
 
 class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements Broadcast<T> {
     private Object affinity;
 
-    private boolean confirmReceive;
+    private SendAckMode ackMode = SendAckMode.NOT_NEEDED;
 
     public BroadcastOperationBuilder(T message, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts) {
         super(message, gateway, opts);
@@ -23,8 +25,10 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
     }
 
     @Override
-    public Broadcast<T> withConfirmReceive(boolean confirmReceive) {
-        this.confirmReceive = confirmReceive;
+    public Broadcast<T> withAckMode(SendAckMode ackMode) {
+        ArgAssert.notNull(ackMode, "Acknowledgement mode");
+
+        this.ackMode = ackMode;
 
         return this;
     }
@@ -32,6 +36,7 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
     @Override
     public BroadcastFuture<T> execute() {
         Object affinity = this.affinity;
+        SendAckMode ackMode = this.ackMode;
 
         BroadcastFuture<T> future = new BroadcastFuture<>();
 
@@ -43,7 +48,7 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
             BroadcastContext<T> ctx = new BroadcastContext<>(message(), nodes, future);
 
             nodes.forEach(node -> {
-                BroadcastOperation<T> op = new BroadcastOperation<>(message(), affinity, gateway(), opts(), confirmReceive, node);
+                BroadcastOperation<T> op = new BroadcastOperation<>(message(), affinity, gateway(), opts(), ackMode, node);
 
                 gateway().submit(op);
 

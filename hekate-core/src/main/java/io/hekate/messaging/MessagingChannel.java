@@ -27,6 +27,7 @@ import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.messaging.unicast.Request;
 import io.hekate.messaging.unicast.Send;
+import io.hekate.messaging.unicast.SendAckMode;
 import io.hekate.messaging.unicast.Subscribe;
 import io.hekate.messaging.unicast.SubscribeCallback;
 import io.hekate.partition.PartitionMapper;
@@ -63,7 +64,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * <p>
      * By default, this operation will not wait for the message to be processed on the receiver side. It is possible to change this behavior
-     * via {@link Send#withConfirmReceive(boolean)} method.
+     * via {@link Send#withAckMode(SendAckMode)} method.
      * </p>
      *
      * @param message Message to be sent.
@@ -101,7 +102,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * <p>
      * By default, this operation will not wait for the message to be processed on the receiver side. It is possible to change this behavior
-     * via {@link Send#withConfirmReceive(boolean)} method.
+     * via {@link Broadcast#withAckMode(SendAckMode)} method.
      * </p>
      *
      * @param request Message to broadcast.

@@ -1,12 +1,14 @@
 package io.hekate.messaging.internal;
 
+import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.messaging.unicast.Send;
+import io.hekate.messaging.unicast.SendAckMode;
 import io.hekate.messaging.unicast.SendFuture;
 
 class SendOperationBuilder<T> extends MessageOperationBuilder<T> implements Send<T> {
     private Object affinity;
 
-    private boolean confirmReceive;
+    private SendAckMode ackMode;
 
     public SendOperationBuilder(T message, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts) {
         super(message, gateway, opts);
@@ -20,15 +22,17 @@ class SendOperationBuilder<T> extends MessageOperationBuilder<T> implements Send
     }
 
     @Override
-    public Send<T> withConfirmReceive(boolean confirmReceive) {
-        this.confirmReceive = confirmReceive;
+    public Send<T> withAckMode(SendAckMode ackMode) {
+        ArgAssert.notNull(ackMode, "Acknowledgement mode");
+
+        this.ackMode = ackMode;
 
         return this;
     }
 
     @Override
     public SendFuture execute() {
-        SendOperation<T> op = new SendOperation<>(message(), affinity, gateway(), opts(), confirmReceive);
+        SendOperation<T> op = new SendOperation<>(message(), affinity, gateway(), opts(), ackMode);
 
         gateway().submit(op);
 

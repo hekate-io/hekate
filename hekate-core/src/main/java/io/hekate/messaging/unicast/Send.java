@@ -15,7 +15,7 @@ import io.hekate.messaging.loadbalance.LoadBalancer;
  * </p>
  * <ol>
  * <li>Obtain an instance of this interface via the {@link MessagingChannel#send(Object)} method call</li>
- * <li>Set options (f.e. {@link #withConfirmReceive(boolean) confirmation mode} or {@link #withAffinity(Object) affinity key})</li>
+ * <li>Set options (f.e. {@link #withAckMode(SendAckMode) acknowledgement mode}  or {@link #withAffinity(Object) affinity key})</li>
  * <li>Execute this operation via the {@link #execute()} method</li>
  * <li>Await for the execution result, if needed</li>
  * </ol>
@@ -46,28 +46,28 @@ public interface Send<T> {
     Send<T> withAffinity(Object affinity);
 
     /**
-     * Confirmation mode.
+     * Acknowledgement mode.
      *
      * <p>
-     * If this option is set to {@code true} then the receiver of this operation will send back a confirmation to indicate that this
-     * operation was successfully {@link MessageReceiver#receive(Message) received}. In such case the operation's callback/future will be
-     * notified only when such confirmation is received (or if operation fails).
+     * If this option is set to {@link SendAckMode#REQUIRED} then the receiver of this operation will send back an acknowledgement to
+     * indicate that this operation was successfully {@link MessageReceiver#receive(Message) received}. In such case the operation's
+     * callback/future will be notified only when such acknowledgement is received from all nodes (or if operation fails).
      * </p>
      *
      * <p>
-     * If this option is set to {@code false} then operation will be assumed to be successful once the message gets flushed to the network
-     * buffer without any additional confirmations from the receiver side.
+     * If this option is set to {@link SendAckMode#NOT_NEEDED} then operation will be assumed to be successful once the message gets
+     * flushed to the network buffer without any additional acknowledgements from receivers.
      * </p>
      *
      * <p>
-     * Default value of this option is {@code false} (i.e. confirmations are disabled by default).
+     * Default value of this option is {@link SendAckMode#NOT_NEEDED}.
      * </p>
      *
-     * @param confirmReceive Confirmation mode.
+     * @param ackMode Acknowledgement mode.
      *
      * @return This instance.
      */
-    Send<T> withConfirmReceive(boolean confirmReceive);
+    Send<T> withAckMode(SendAckMode ackMode);
 
     /**
      * Asynchronously executes this operation.
@@ -75,6 +75,28 @@ public interface Send<T> {
      * @return Future result of this operation.
      */
     SendFuture execute();
+
+    /**
+     * Sets acknowledgement mode to {@link SendAckMode#REQUIRED}.
+     *
+     * @return This instance.
+     *
+     * @see #withAckMode(SendAckMode)
+     */
+    default Send<T> withAck() {
+        return withAckMode(SendAckMode.REQUIRED);
+    }
+
+    /**
+     * Sets acknowledgement mode to {@link SendAckMode#NOT_NEEDED}.
+     *
+     * @return This instance.
+     *
+     * @see #withAckMode(SendAckMode)
+     */
+    default Send<T> withNoAck() {
+        return withAckMode(SendAckMode.NOT_NEEDED);
+    }
 
     /**
      * Synchronously executes this operation.

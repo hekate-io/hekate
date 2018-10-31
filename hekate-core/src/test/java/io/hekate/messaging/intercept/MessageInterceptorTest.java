@@ -6,6 +6,7 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.internal.MessagingServiceTestBase;
 import io.hekate.messaging.internal.TestChannel;
+import io.hekate.messaging.unicast.SendAckMode;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
@@ -123,7 +124,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 }
 
                 @Override
-                public void interceptClientReceiveConfirmation(ClientOutboundContext<String> ctx) {
+                public void interceptClientReceiveAck(ClientOutboundContext<String> ctx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
             });
@@ -288,7 +289,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 }
 
                 @Override
-                public void interceptClientReceiveConfirmation(ClientOutboundContext<String> ctx) {
+                public void interceptClientReceiveAck(ClientOutboundContext<String> ctx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
             });
@@ -400,7 +401,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 }
 
                 @Override
-                public void interceptClientReceiveConfirmation(ClientOutboundContext<String> ctx) {
+                public void interceptClientReceiveAck(ClientOutboundContext<String> ctx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
 
@@ -469,7 +470,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 }
 
                 @Override
-                public void interceptClientReceiveConfirmation(ClientOutboundContext<String> ctx) {
+                public void interceptClientReceiveAck(ClientOutboundContext<String> ctx) {
                     assertNotNull(ctx.payload());
                     assertSame(OutboundType.SEND_WITH_ACK, ctx.type());
                     assertNotNull(ctx.receiver());
@@ -525,7 +526,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
 
                 from.channel().forNode(to.nodeId())
                     .send(msg)
-                    .withConfirmReceive(true)
+                    .withAckMode(SendAckMode.REQUIRED)
                     .execute()
                     .get();
 
@@ -559,7 +560,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 MessagingChannel<String> channel = from.channel().forNode(to.nodeId());
 
                 MessagingFutureException err = expect(MessagingFutureException.class, () ->
-                    get(channel.send("msg").withConfirmReceive(true).execute())
+                    channel.send("msg").withAckMode(SendAckMode.REQUIRED).sync()
                 );
 
                 verify(interceptor).interceptClientReceiveError(any(), ArgumentMatchers.same(err.getCause()));
