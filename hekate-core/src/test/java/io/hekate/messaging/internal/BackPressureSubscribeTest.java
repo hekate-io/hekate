@@ -53,7 +53,7 @@ public class BackPressureSubscribeTest extends BackPressureParametrizedTestBase 
         busyWait("requests received", () -> requests.size() == futureResponses.size());
 
         // Send trigger message.
-        sender.channel().forRemotes().subscribe("init").submit((err, rsp) -> { /* Ignore. */ });
+        sender.channel().forRemotes().subscribe("init").async((err, rsp) -> { /* Ignore. */ });
 
         // Await for trigger message to be received.
         busyWait("trigger received", () -> receivedRef.get() != null);

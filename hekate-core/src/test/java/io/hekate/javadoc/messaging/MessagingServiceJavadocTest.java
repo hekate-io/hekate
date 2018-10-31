@@ -65,7 +65,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
                     .withReceiver(new ExampleReceiver())))
             .join();
 
-        hekate.messaging().channel("example", String.class).aggregate("example message").submit().get();
+        hekate.messaging().channel("example", String.class).aggregate("example message").execute().get();
 
         hekate.leave();
     }
@@ -137,7 +137,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
 
         SendFuture future = channel.send("some-message") // Some dummy message.
             .withConfirmReceive(true) // Set confirmation mode.
-            .submit(); // Asynchronously execute the operation.
+            .execute(); // Asynchronously execute the operation.
 
         future.join(); // Await for confirmation.
         // End:send_operation
@@ -149,7 +149,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
 
         RequestFuture<String> future = channel.request("some-message") // Some dummy message.
             .withAffinity("100500") // Some dummy affinity (optional).
-            .submit(); // Asynchronously execute the operation.
+            .execute(); // Asynchronously execute the operation.
 
         // Await and print the response.
         System.out.println("Response: " + future.result());
@@ -163,7 +163,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         SubscribeFuture<String> future = channel.subscribe("some-message") // Some dummy message.
             .withAffinity("100500") // Some dummy affinity (optional).
             // Execute and listen for responses.
-            .submit((err, rsp) -> {
+            .async((err, rsp) -> {
                 if (rsp.isPartial()) {
                     System.out.println("Got a response chunk: " + rsp.payload());
                 } else {
@@ -182,7 +182,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
 
         BroadcastFuture<String> future = channel.broadcast("some-message") // Some dummy message.
             .withConfirmReceive(true) // Set confirmation mode.
-            .submit(); // Asynchronously execute the operation.
+            .execute(); // Asynchronously execute the operation.
 
         future.join(); // Await for confirmations.
         // End:broadcast_operation
@@ -194,7 +194,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
 
         AggregateFuture<String> future = channel.aggregate("some-message") // Some dummy message.
             .withAffinity("100500") // Some dummy affinity (optional).
-            .submit(); // Asynchronously execute the operation.
+            .execute(); // Asynchronously execute the operation.
 
         // Await and print results.
         System.out.println("Results: " + future.results());
@@ -204,7 +204,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
     private void unicastSendAsyncExample(MessagingChannel<String> channel) {
         // Start:unicast_send_async
         // Send message and process results in the asynchronous callback.
-        channel.send("example message").submit(err -> {
+        channel.send("example message").async(err -> {
             if (err == null) {
                 System.out.println("Message sent.");
             } else {
@@ -217,14 +217,14 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
     private void unicastSendSyncExample(MessagingChannel<String> channel) throws InterruptedException, MessagingFutureException {
         // Start:unicast_send_sync
         // Send message and synchronously await for the operation's result.
-        channel.send("example message").submit().get();
+        channel.send("example message").sync();
         // End:unicast_send_sync
     }
 
     private void unicastRequestAsyncExample(MessagingChannel<String> channel) {
         // Start:unicast_request_async
         // Submit request and process response in the asynchronous callback.
-        channel.request("example request").submit((err, rsp) -> {
+        channel.request("example request").async((err, rsp) -> {
             if (err == null) {
                 System.out.println("Got response: " + rsp.payload());
             } else {
@@ -238,7 +238,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         throws MessagingFutureException, InterruptedException {
         // Start:unicast_request_sync
         // Submit request and synchronously await for the response.
-        String response = channel.request("example request").submit().result();
+        String response = channel.request("example request").sync();
         // End:unicast_request_sync
 
         assertNotNull(response);
@@ -249,14 +249,14 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
 
         // Start:aggregate_sync
         // Submit aggregation request.
-        channel.aggregate("example message").submit().results().forEach(rslt ->
+        channel.aggregate("example message").sync().forEach(rslt ->
             System.out.println("Got result: " + rslt)
         );
         // End:aggregate_sync
 
         // Start:aggregate_async
         // Asynchronously submit aggregation request.
-        channel.aggregate("example message").submit((err, rslts) -> {
+        channel.aggregate("example message").async((err, rslts) -> {
             if (err == null) {
                 rslts.forEach(rslt ->
                     System.out.println("Got result: " + rslt)
@@ -269,12 +269,12 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
 
         // Start:broadcast_sync
         // Broadcast message.
-        channel.broadcast("example message").submit().get();
+        channel.broadcast("example message").sync();
         // End:broadcast_sync
 
         // Start:broadcast_async
         // Asynchronously broadcast message.
-        channel.broadcast("example message").submit((err, rslt) -> {
+        channel.broadcast("example message").async((err, rslt) -> {
             if (err == null) {
                 System.out.println("Broadcast success.");
             } else {

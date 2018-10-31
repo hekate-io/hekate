@@ -60,7 +60,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
             try {
                 MessagingFutureException e = expect(MessagingFutureException.class, () ->
-                    get(sender.channel().forRemotes().request("must-fail-" + i).submit())
+                    get(sender.channel().forRemotes().request("must-fail-" + i).execute())
                 );
 
                 assertTrue(getStacktrace(e), e.isCausedBy(MessageTimeoutException.class));
@@ -108,7 +108,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
                     .map(req -> sender.channel().forRemotes()
                         .request("must-fail-" + req)
                         .withAffinity("1")
-                        .submit()
+                        .execute()
                     )
                     .collect(toList());
 
@@ -154,7 +154,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
         assertEquals(1000, sender.channel().timeout());
 
         repeat(5, i ->
-            get(sender.channel().forRemotes().request("request-" + i).submit())
+            get(sender.channel().forRemotes().request("request-" + i).execute())
         );
     }
 
@@ -177,7 +177,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
             try {
                 MessagingFutureException e = expect(MessagingFutureException.class, () ->
-                    get(sender.channel().forRemotes().subscribe("must-fail-" + i).submit((err, rsp) -> { /* Ignore. */ }))
+                    get(sender.channel().forRemotes().subscribe("must-fail-" + i).async((err, rsp) -> { /* Ignore. */ }))
                 );
 
                 assertTrue(getStacktrace(e), e.isCausedBy(MessageTimeoutException.class));
@@ -211,7 +211,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
             SubscribeFuture<String> future = sender.channel()
                 .forRemotes()
                 .subscribe("must-fail-" + i)
-                .submit((err, rsp) -> { /* Ignore. */ });
+                .async((err, rsp) -> { /* Ignore. */ });
 
             Message<String> request = msgRef.exchange(null);
 
@@ -248,7 +248,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
         repeat(3, i -> {
             try {
-                get(sender.channel().forRemotes().send("must-fail-" + i).submit());
+                get(sender.channel().forRemotes().send("must-fail-" + i).execute());
 
                 fail("Error was expected.");
             } catch (MessagingFutureException e) {
@@ -279,7 +279,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
         assertEquals(1000, sender.channel().timeout());
 
         repeat(3, i ->
-            get(sender.channel().forRemotes().send("request-" + i).submit())
+            get(sender.channel().forRemotes().send("request-" + i).execute())
         );
     }
 }

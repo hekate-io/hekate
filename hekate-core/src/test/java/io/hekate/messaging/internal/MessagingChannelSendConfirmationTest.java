@@ -69,10 +69,7 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
 
                 MessagingChannel<String> channel = from.channel().forNode(to.nodeId());
 
-                channel.send(msg)
-                    .withConfirmReceive(true)
-                    .submit()
-                    .get();
+                channel.send(msg).withConfirmReceive(true).sync();
 
                 to.assertReceived(msg);
             }
@@ -87,8 +84,7 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
             channel.channel().forNode(newNodeId())
                 .send("failed")
                 .withConfirmReceive(true)
-                .submit()
-                .get();
+                .sync();
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
@@ -114,8 +110,7 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
                 sender.channel().forNode(receiver.nodeId())
                     .send("test" + i)
                     .withConfirmReceive(true)
-                    .submit()
-                    .get();
+                    .sync();
 
                 busyWait("disconnect idle", () -> !client.isConnected());
 
@@ -142,8 +137,7 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
             sender.channel().forNode(receiver.nodeId())
                 .send("test")
                 .withConfirmReceive(true)
-                .submit()
-                .get()
+                .sync()
         );
 
         sender.leave();
@@ -184,7 +178,7 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
                     sent = sender.channel().forNode(receiver.nodeId())
                         .send("test" + i)
                         .withConfirmReceive(true)
-                        .submit();
+                        .execute();
 
                     // Await for timeout.
                     sleep((long)(idleTimeout * 3));
@@ -236,7 +230,7 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
                     .send("test" + i)
                     .withConfirmReceive(true)
                     .withAffinity(j)
-                    .submit()
+                    .execute()
                 );
             }
 
@@ -269,8 +263,7 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
                 sender.channel().forNode(receiver.nodeId())
                     .send(msg)
                     .withConfirmReceive(true)
-                    .submit()
-                    .get();
+                    .sync();
 
                 fail("Error was expected.");
             } catch (MessagingFutureException e) {
@@ -300,8 +293,7 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
                 sender.channel().forNode(receiver.nodeId())
                     .send("request" + i)
                     .withConfirmReceive(true)
-                    .submit()
-                    .get();
+                    .sync();
 
                 fail("Error was expected.");
             } catch (MessagingFutureException e) {
@@ -333,8 +325,7 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
                 sender.channel().forNode(receiver.nodeId())
                     .send("request" + i)
                     .withConfirmReceive(true)
-                    .submit()
-                    .get();
+                    .sync();
 
                 fail("Error was expected.");
             } catch (MessagingFutureException e) {
@@ -353,7 +344,7 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
                     .forRemotes()
                     .send(new NonSerializable())
                     .withConfirmReceive(true)
-                    .submit()
+                    .execute()
                 )
             );
 
@@ -373,7 +364,7 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
                     .forRemotes()
                     .send(new NonDeserializable())
                     .withConfirmReceive(true)
-                    .submit()
+                    .execute()
                 )
             );
 

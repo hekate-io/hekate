@@ -78,7 +78,7 @@ public class RequestRetryConditionTest extends MessagingServiceTestBase {
             return RetryDecision.DONE;
         };
 
-        sender.channel().forNode(receiver.nodeId()).request("test").until(condition).submit(callback);
+        sender.channel().forNode(receiver.nodeId()).request("test").until(condition).async(callback);
 
         assertEquals("test-reply", callback.get().payload());
         assertEquals(1, accepts.get());
@@ -103,7 +103,7 @@ public class RequestRetryConditionTest extends MessagingServiceTestBase {
             .forNode(receiver.nodeId())
             .request("test")
             .until(condition)
-            .submit(callback);
+            .async(callback);
 
         assertEquals("test-reply", callback.get().payload());
         assertEquals(1, accepts.get());
@@ -130,7 +130,7 @@ public class RequestRetryConditionTest extends MessagingServiceTestBase {
         sender.channel().forNode(receiver.nodeId())
             .request("test")
             .until(condition)
-            .submit(callback);
+            .async(callback);
 
         assertEquals("test-reply", callback.get().payload());
         assertEquals(1, accepts.get());
@@ -160,7 +160,7 @@ public class RequestRetryConditionTest extends MessagingServiceTestBase {
             .forNode(receiver.nodeId())
             .request("test")
             .until(condition)
-            .submit(callback);
+            .async(callback);
 
         assertEquals("test-reply", callback.get().payload());
         assertEquals(3, accepts.get());
@@ -190,7 +190,7 @@ public class RequestRetryConditionTest extends MessagingServiceTestBase {
             .forNode(receiver.nodeId())
             .request("test")
             .until(condition)
-            .submit(callback);
+            .async(callback);
 
         try {
             callback.get();
@@ -228,7 +228,7 @@ public class RequestRetryConditionTest extends MessagingServiceTestBase {
             .forNode(receiver.nodeId())
             .request("test")
             .until(condition)
-            .submit(callback);
+            .async(callback);
 
         callback.get();
 
@@ -259,7 +259,7 @@ public class RequestRetryConditionTest extends MessagingServiceTestBase {
             .forNode(receiver.nodeId())
             .request("test")
             .until(condition)
-            .submit(callback);
+            .async(callback);
 
         callback.get();
 
@@ -292,7 +292,7 @@ public class RequestRetryConditionTest extends MessagingServiceTestBase {
             .forNode(receiver.nodeId())
             .request("test")
             .until(condition)
-            .submit(callback);
+            .async(callback);
 
         callback.get();
 

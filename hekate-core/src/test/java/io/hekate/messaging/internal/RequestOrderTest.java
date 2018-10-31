@@ -74,7 +74,7 @@ public class RequestOrderTest extends MessagingServiceTestBase {
         for (int i = 0; i < 100; i++) {
             tasks.add(channel.request(String.valueOf(i))
                 .withAffinity(1)
-                .submit()
+                .execute()
             );
         }
 

@@ -74,13 +74,13 @@ public class BackPressureBroadcastTest extends BackPressureTestBase {
         MessagingChannel<String> sender = createChannel(this::useBackPressure).join().channel().forRemotes();
 
         // Ensure that connection to each node is established.
-        get(sender.request("init").submit());
+        sender.request("init").sync();
 
         BroadcastFuture<String> future = null;
 
         try {
             for (int step = 0; step < 2000000; step++) {
-                future = sender.broadcast("message-" + step).submit();
+                future = sender.broadcast("message-" + step).execute();
 
                 if (future.isDone() && !future.get().isSuccess()) {
                     say("Completed after " + step + " steps.");

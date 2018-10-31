@@ -155,7 +155,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        sender.channel().forNode(receiver.nodeId()).request("request").submit().get();
+        sender.channel().forNode(receiver.nodeId()).request("request").execute().get();
 
         if (errorRef.get() != null) {
             throw errorRef.get();
@@ -235,27 +235,27 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel().join();
 
-        sender.channel().forRemotes().send("send").submit();
+        sender.channel().forRemotes().send("send").execute();
         Optional.ofNullable(errRef.exchange(null)).ifPresent(e -> {
             throw new AssertionError(e);
         });
 
-        sender.channel().forRemotes().request("request").submit();
+        sender.channel().forRemotes().request("request").execute();
         Optional.ofNullable(errRef.exchange(null)).ifPresent(e -> {
             throw new AssertionError(e);
         });
 
-        sender.channel().forRemotes().subscribe("stream-request").submit((err, rsp) -> { /* Ignore. */ });
+        sender.channel().forRemotes().subscribe("stream-request").async((err, rsp) -> { /* Ignore. */ });
         Optional.ofNullable(errRef.exchange(null)).ifPresent(e -> {
             throw new AssertionError(e);
         });
 
-        sender.channel().forRemotes().broadcast("broadcast").submit();
+        sender.channel().forRemotes().broadcast("broadcast").execute();
         Optional.ofNullable(errRef.exchange(null)).ifPresent(e -> {
             throw new AssertionError(e);
         });
 
-        sender.channel().forRemotes().aggregate("aggregate").submit();
+        sender.channel().forRemotes().aggregate("aggregate").execute();
         Optional.ofNullable(errRef.exchange(null)).ifPresent(e -> {
             throw new AssertionError(e);
         });
@@ -345,7 +345,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         channels.forEach(c ->
             expectCause(EmptyTopologyException.class, () ->
-                get(sender.forNode(c.nodeId()).request("test").submit())
+                get(sender.forNode(c.nodeId()).request("test").execute())
             )
         );
 
@@ -360,7 +360,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         channels.forEach(c ->
             expectCause(EmptyTopologyException.class, () ->
-                get(sender.forNode(c.nodeId()).request("test").submit())
+                get(sender.forNode(c.nodeId()).request("test").execute())
             )
         );
 
@@ -375,7 +375,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         channels.forEach(c ->
             expectCause(EmptyTopologyException.class, () ->
-                get(sender.forNode(c.nodeId()).request("test").submit())
+                get(sender.forNode(c.nodeId()).request("test").execute())
             )
         );
 
@@ -389,7 +389,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
             assertEquals(1, sender.partitions().topology().size());
             assertTrue(sender.partitions().topology().contains(c.nodeId()));
 
-            get(sender.forNode(c.nodeId()).request("test").submit());
+            get(sender.forNode(c.nodeId()).request("test").execute());
         }
 
         // New node should not be visible.
@@ -409,12 +409,12 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         // New node should not be visible.
         expectCause(EmptyTopologyException.class, () ->
-            get(sender2.forNode(channels.get(channels.size() - 1).nodeId()).request("test").submit())
+            get(sender2.forNode(channels.get(channels.size() - 1).nodeId()).request("test").execute())
         );
 
         // Old nodes should be visible.
         for (int i = 0; i < channels.size() - 1 /* <- Exclude newly added node */; i++) {
-            get(sender2.forNode(channels.get(i).nodeId()).request("test").submit());
+            get(sender2.forNode(channels.get(i).nodeId()).request("test").execute());
         }
 
         // Removed node should be still visible.
@@ -434,7 +434,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         assertEquals(4, sender3.cluster().topology().size());
 
         expectCause(UnknownRouteException.class, () ->
-            get(sender3.forNode(removed.nodeId()).request("test").submit())
+            get(sender3.forNode(removed.nodeId()).request("test").execute())
         );
 
         // Non-channel node should be filtered out.

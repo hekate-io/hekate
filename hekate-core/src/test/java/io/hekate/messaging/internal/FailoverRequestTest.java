@@ -54,7 +54,7 @@ public class FailoverRequestTest extends FailoverTestBase {
                 sender.node().leaveAsync();
 
                 return ctx.retry();
-            }).request("test").submit().result();
+            }).request("test").execute().result();
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
@@ -155,7 +155,7 @@ public class FailoverRequestTest extends FailoverTestBase {
 
                     return context.retry().withReRoute();
                 })
-                .request("error").submit()
+                .request("error").execute()
             );
 
             fail("Error was expected.");
@@ -191,7 +191,7 @@ public class FailoverRequestTest extends FailoverTestBase {
 
                 return ctx.retry().withRoutingPolicy(policy);
             })
-            .request("test").submit().result();
+            .request("test").execute().result();
 
         assertEquals(5, contexts.size());
         assertEquals("test-" + RETRANSMIT_SUFFIX, response);
@@ -211,7 +211,7 @@ public class FailoverRequestTest extends FailoverTestBase {
                 failoverCalls.incrementAndGet();
 
                 return context.retry();
-            }).request("test").submit().result();
+            }).request("test").execute().result();
 
             assertNotNull(response);
             assertEquals("test-" + RETRANSMIT_SUFFIX, response);
@@ -231,7 +231,7 @@ public class FailoverRequestTest extends FailoverTestBase {
             times.add(time);
 
             return context.retry();
-        }).request("test").submit().result();
+        }).request("test").sync();
 
         assertNotNull(response);
 
@@ -262,7 +262,7 @@ public class FailoverRequestTest extends FailoverTestBase {
                     failoverCalls.incrementAndGet();
 
                     return context.attempt() < attempts ? context.retry() : context.fail();
-                }).request("test").submit());
+                }).request("test").execute());
 
                 fail("Error was expected.");
             } catch (MessagingFutureException e) {

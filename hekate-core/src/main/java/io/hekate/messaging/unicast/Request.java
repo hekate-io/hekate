@@ -1,6 +1,7 @@
 package io.hekate.messaging.unicast;
 
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 
 /**
@@ -12,7 +13,7 @@ import io.hekate.messaging.loadbalance.LoadBalancer;
  * <ol>
  * <li>Obtain an instance of this interface via the {@link MessagingChannel#request(Object)} method call</li>
  * <li>Set options (f.e. {@link #withAffinity(Object) affinity key})</li>
- * <li>Execute this operation via the {@link #submit()} method</li>
+ * <li>Execute this operation via the {@link #execute()} method</li>
  * <li>Process the response (synchronously or asynchronously)</li>
  * </ol>
  * <h3>Example:</h3>
@@ -59,22 +60,43 @@ public interface Request<T> {
      *
      * @return Future result of this operation.
      */
-    RequestFuture<T> submit();
+    RequestFuture<T> execute();
+
+    /**
+     * Synchronously executes this operation and returns the response.
+     *
+     * @return Response.
+     *
+     * @throws MessagingFutureException if operations fails.
+     * @throws InterruptedException if thread got interrupted while awaiting for this operation to complete.
+     */
+    default T sync() throws MessagingFutureException, InterruptedException {
+        return execute().get().payload();
+    }
+
+    /**
+     * Synchronously executes this operation and returns the response.
+     *
+     * @param <R> Response type.
+     * @param responseType Response type.
+     *
+     * @return Response.
+     *
+     * @throws MessagingFutureException if operations fails.
+     * @throws InterruptedException if thread got interrupted while awaiting for this operation to complete.
+     */
+    default <R extends T> R sync(Class<R> responseType) throws MessagingFutureException, InterruptedException {
+        return execute().get().payload(responseType);
+    }
 
     /**
      * Asynchronously executes this operation and notifies the specified callback upon completion.
      *
      * @param callback Callback.
-     *
-     * @return Future result of this operation.
      */
-    default RequestFuture<T> submit(RequestCallback<T> callback) {
-        RequestFuture<T> future = submit();
-
-        future.whenComplete((rsp, err) ->
+    default void async(RequestCallback<T> callback) {
+        execute().whenComplete((rsp, err) ->
             callback.onComplete(err, rsp)
         );
-
-        return future;
     }
 }

@@ -95,7 +95,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
                 channel.send(AffinityCollector.affinityMessage(j, i))
                     .withAffinity(j)
-                    .submit();
+                    .execute();
             }
         }
 
@@ -130,7 +130,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
                 channel.request(AffinityCollector.affinityMessage(j, i))
                     .withAffinity(j)
-                    .submit();
+                    .execute();
             }
         }
 
@@ -171,7 +171,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
                 .forNode(receiver.nodeId())
                 .request("request")
                 .withAffinity(i)
-                .submit()
+                .execute()
             );
 
             callbackRef.get().get();
@@ -210,7 +210,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
                 channel.broadcast(AffinityCollector.affinityMessage(j, i))
                     .withAffinity(j)
-                    .submit();
+                    .execute();
             }
         }
 
@@ -260,7 +260,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
                 channel.aggregate(AffinityCollector.affinityMessage(j, i))
                     .withAffinity(j)
-                    .submit();
+                    .execute();
             }
         }
 

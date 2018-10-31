@@ -49,7 +49,7 @@ class RpcMethodClient<T> extends RpcMethodClientBase<T> {
 
         RequestFuture<RpcProtocol> future = channel().request(call)
             .withAffinity(affinity)
-            .submit();
+            .execute();
 
         if (method().isAsync()) {
             return future.thenApply(RESPONSE_CONVERTER);

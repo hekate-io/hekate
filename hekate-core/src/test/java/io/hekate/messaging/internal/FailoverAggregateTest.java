@@ -72,7 +72,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
                     return context.retry();
                 })
                 .aggregate("test")
-                .submit()
+                .execute()
             );
 
             assertTrue(result.isSuccess());
@@ -98,7 +98,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
                     return context.retry();
                 })
                 .aggregate("test")
-                .submit()
+                .execute()
             );
 
             assertTrue(result.isSuccess());
@@ -124,7 +124,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
                     return context.attempt() < attempts ? context.retry() : context.fail();
                 })
                 .aggregate("test")
-                .submit()
+                .execute()
             );
 
             assertFalse(result.isSuccess());
@@ -151,7 +151,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
                     return context.fail();
                 })
                 .aggregate("test")
-                .submit()
+                .execute()
             );
 
             assertFalse(result.isSuccess());
@@ -172,7 +172,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
                     throw TEST_ERROR;
                 })
                 .aggregate("test")
-                .submit()
+                .execute()
             );
 
             assertFalse(result.isSuccess());
@@ -210,7 +210,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
                         return context.retry().withRoutingPolicy(policy);
                     })
                     .aggregate("test")
-                    .submit()
+                    .execute()
                 );
 
                 if (errRef.get() != null) {

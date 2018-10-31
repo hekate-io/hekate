@@ -478,7 +478,7 @@ class LockControllerClient {
             channel.request(lockReq)
                 .withAffinity(key)
                 .until(until)
-                .submit((err, rsp) -> {
+                .async((err, rsp) -> {
                     if (err != null && is(Status.LOCKING)) {
                         log.error("Failed to submit lock request [request={}]", lockReq, err);
                     }
@@ -492,7 +492,7 @@ class LockControllerClient {
             channel.subscribe(lockReq)
                 .withAffinity(key)
                 .until(until)
-                .submit((err, rsp) -> {
+                .async((err, rsp) -> {
                     if (err == null) {
                         LockResponse lockRsp = rsp.payload(LockResponse.class);
 
@@ -542,7 +542,7 @@ class LockControllerClient {
                     return RETRY;
                 }
             })
-            .submit((err, rsp) -> {
+            .async((err, rsp) -> {
                 if (err != null && is(Status.UNLOCKING)) {
                     log.error("Failed to submit unlock request [request={}]", unlockReq, err);
                 }
@@ -588,7 +588,7 @@ class LockControllerClient {
                         return RETRY;
                     }
                 })
-                .submit();
+                .execute();
         }
     }
 

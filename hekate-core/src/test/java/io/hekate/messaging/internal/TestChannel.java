@@ -110,7 +110,7 @@ public class TestChannel {
     public Response<String> requestWithSyncCallback(ClusterNodeId nodeId, String msg) throws Exception {
         RequestCallbackMock callback = new RequestCallbackMock(msg);
 
-        channel.forNode(nodeId).request(msg).submit(callback);
+        channel.forNode(nodeId).request(msg).async(callback);
 
         try {
             return callback.get();

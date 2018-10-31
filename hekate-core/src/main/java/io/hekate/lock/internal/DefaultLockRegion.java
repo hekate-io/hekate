@@ -234,7 +234,7 @@ class DefaultLockRegion implements LockRegion {
 
                 return resultFuture.isDone() ? DONE : RETRY;
             })
-            .submit((err, rsp) -> {
+            .async((err, rsp) -> {
                 if (err != null) {
                     resultFuture.complete(Optional.empty());
                 }
@@ -931,7 +931,7 @@ class DefaultLockRegion implements LockRegion {
                     return isValid(request) ? RETRY : DONE;
                 }
             })
-            .submit((err, rsp) -> {
+            .async((err, rsp) -> {
                 if (err != null && isValid(request)) {
                     log.error("Failed to submit migration request [request={}]", request, err);
                 }

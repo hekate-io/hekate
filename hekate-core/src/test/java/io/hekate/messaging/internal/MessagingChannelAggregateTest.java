@@ -52,7 +52,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
         Set<String> channelIds = channels.stream().map(c -> c.channel().id().toString()).collect(Collectors.toSet());
 
         for (TestChannel channel : channels) {
-            AggregateResult<String> result = channel.channel().aggregate("test").submit().get();
+            AggregateResult<String> result = channel.channel().aggregate("test").sync();
 
             assertTrue(result.errors().toString(), result.isSuccess());
             assertEquals(channels.size(), result.results().size());
@@ -76,11 +76,10 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
 
             for (TestChannel channel : channels) {
                 repeat(100, j -> {
-                    AggregateResult<String> result = get(channel.channel()
+                    AggregateResult<String> result = channel.channel()
                         .aggregate("test-" + j)
                         .withAffinity(j)
-                        .submit()
-                    );
+                        .sync();
 
                     assertTrue(result.isSuccess());
 
@@ -109,7 +108,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
 
             awaitForChannelsTopology(channels);
 
-            AggregateFuture<String> future = channel.channel().aggregate("test" + i).submit();
+            AggregateFuture<String> future = channel.channel().aggregate("test" + i).execute();
 
             AggregateResult<String> result = get(future);
 
@@ -139,7 +138,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
             awaitForChannelsTopology(channels);
 
             // Empty targets.
-            AggregateFuture<String> future = channel.channel().forRole("no-such-role").aggregate("test" + i).submit();
+            AggregateFuture<String> future = channel.channel().forRole("no-such-role").aggregate("test" + i).execute();
 
             AggregateResult<String> result = get(future);
 
@@ -169,7 +168,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
 
             TestChannel channel = channels.get(channels.size() - 1);
 
-            AggregateResult<String> result = get(channel.channel().aggregate("test" + i).submit());
+            AggregateResult<String> result = channel.channel().aggregate("test" + i).sync();
 
             assertEquals("test" + i, result.request());
             assertFalse(result.isSuccess());
@@ -211,7 +210,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
                     await(joinLatch);
 
                     return nodes;
-                }).aggregate("test-join" + i).submit()
+                }).aggregate("test-join" + i).execute()
             );
 
             await(joinFilterCallLatch);
@@ -250,7 +249,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
                     await(leaveLatch);
 
                     return nodes;
-                }).aggregate("test-join" + i).submit()
+                }).aggregate("test-join" + i).execute()
             );
 
             await(leaveFilterCallLatch);
@@ -290,7 +289,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
         awaitForTopology(allNodes);
 
         for (TestChannel channel : channels) {
-            AggregateResult<String> result = get(channel.channel().aggregate("test").submit());
+            AggregateResult<String> result = get(channel.channel().aggregate("test").execute());
 
             assertEquals("test", result.request());
             assertTrue(result.isSuccess());

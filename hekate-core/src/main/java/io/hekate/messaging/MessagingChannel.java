@@ -70,7 +70,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return New operation.
      *
-     * @see Send#submit()
+     * @see Send#execute()
      */
     Send<T> send(T message);
 
@@ -81,7 +81,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return New operation.
      *
-     * @see Request#submit()
+     * @see Request#execute()
      */
     Request<T> request(T request);
 
@@ -92,7 +92,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return New operation.
      *
-     * @see Subscribe#submit(SubscribeCallback)
+     * @see Subscribe#async(SubscribeCallback)
      */
     Subscribe<T> subscribe(T request);
 
@@ -108,7 +108,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return New operation.
      *
-     * @see Broadcast#submit()
+     * @see Broadcast#execute()
      */
     Broadcast<T> broadcast(T request);
 
@@ -119,7 +119,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return New operation.
      *
-     * @see Aggregate#submit()
+     * @see Aggregate#execute()
      */
     Aggregate<T> aggregate(T request);
 

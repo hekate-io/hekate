@@ -21,7 +21,7 @@ package io.hekate.messaging.unicast;
  *
  * @param <T> Base type of request message.
  *
- * @see Subscribe#submit(SubscribeCallback)
+ * @see Subscribe#async(SubscribeCallback)
  */
 @FunctionalInterface
 public interface SubscribeCallback<T> {

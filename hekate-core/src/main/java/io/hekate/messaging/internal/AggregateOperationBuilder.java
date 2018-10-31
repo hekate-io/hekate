@@ -23,7 +23,7 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
     }
 
     @Override
-    public AggregateFuture<T> submit() {
+    public AggregateFuture<T> execute() {
         Object affinity = this.affinity;
 
         AggregateFuture<T> future = new AggregateFuture<>();

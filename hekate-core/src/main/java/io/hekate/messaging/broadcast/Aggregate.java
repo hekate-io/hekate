@@ -1,6 +1,7 @@
 package io.hekate.messaging.broadcast;
 
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.messaging.MessagingFutureException;
 
 /**
  * Aggregate operation.
@@ -11,7 +12,7 @@ import io.hekate.messaging.MessagingChannel;
  * <ol>
  * <li>Obtain an instance of this interface via the {@link MessagingChannel#aggregate(Object)} method call</li>
  * <li>Set options (f.e. {@link #withAffinity(Object) affinity key})</li>
- * <li>Execute this operation via the {@link #submit()} method</li>
+ * <li>Execute this operation via the {@link #execute()} method</li>
  * <li>Process results (synchronously or asynchronously)</li>
  * </ol>
  * <h3>Example:</h3>
@@ -40,22 +41,28 @@ public interface Aggregate<T> {
      *
      * @return Future result of this operation.
      */
-    AggregateFuture<T> submit();
+    AggregateFuture<T> execute();
+
+    /**
+     * Synchronously executes this operation and returns the result.
+     *
+     * @return Result.
+     *
+     * @throws MessagingFutureException If operations fails.
+     * @throws InterruptedException If thread got interrupted while awaiting for this operation to complete.
+     */
+    default AggregateResult<T> sync() throws MessagingFutureException, InterruptedException {
+        return execute().get();
+    }
 
     /**
      * Asynchronously executes this operation and notifies the specified callback upon completion.
      *
      * @param callback Callback.
-     *
-     * @return Future result of this operation.
      */
-    default AggregateFuture<T> submit(AggregateCallback<T> callback) {
-        AggregateFuture<T> future = submit();
-
-        future.whenComplete((rslt, err) ->
+    default void async(AggregateCallback<T> callback) {
+        execute().whenComplete((rslt, err) ->
             callback.onComplete(err, rslt)
         );
-
-        return future;
     }
 }

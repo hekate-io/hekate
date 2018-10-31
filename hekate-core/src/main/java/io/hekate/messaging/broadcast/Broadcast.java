@@ -3,6 +3,7 @@ package io.hekate.messaging.broadcast;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.messaging.MessagingFutureException;
 
 /**
  * Broadcast operation.
@@ -13,7 +14,7 @@ import io.hekate.messaging.MessagingChannel;
  * <ol>
  * <li>Obtain an instance of this interface via the {@link MessagingChannel#broadcast(Object)} method call</li>
  * <li>Set options (f.e. {@link #withConfirmReceive(boolean) confirmation mode} or {@link #withAffinity(Object) affinity key})</li>
- * <li>Execute this operation via the {@link #submit()} method</li>
+ * <li>Execute this operation via the {@link #execute()} method</li>
  * <li>Await for the execution result, if needed</li>
  * </ol>
  * <h3>Example:</h3>
@@ -65,22 +66,28 @@ public interface Broadcast<T> {
      *
      * @return Future result of this operation.
      */
-    BroadcastFuture<T> submit();
+    BroadcastFuture<T> execute();
+
+    /**
+     * Synchronously executes this operation and returns the result.
+     *
+     * @return Result.
+     *
+     * @throws MessagingFutureException If operations fails.
+     * @throws InterruptedException If thread got interrupted while awaiting for this operation to complete.
+     */
+    default BroadcastResult<T> sync() throws MessagingFutureException, InterruptedException {
+        return execute().get();
+    }
 
     /**
      * Asynchronously executes this operation and notifies the specified callback upon completion.
      *
      * @param callback Callback.
-     *
-     * @return Future result of this operation.
      */
-    default BroadcastFuture<T> submit(BroadcastCallback<T> callback) {
-        BroadcastFuture<T> future = submit();
-
-        future.whenComplete((result, error) ->
+    default void async(BroadcastCallback<T> callback) {
+        execute().whenComplete((result, error) ->
             callback.onComplete(error, result)
         );
-
-        return future;
     }
 }

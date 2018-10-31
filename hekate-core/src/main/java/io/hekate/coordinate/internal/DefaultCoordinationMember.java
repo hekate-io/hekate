@@ -198,7 +198,7 @@ class DefaultCoordinationMember implements CoordinationMember {
                         return DONE;
                     }
                 })
-                .submit((err, rsp) -> {
+                .async((err, rsp) -> {
                     unregister(future);
 
                     if (err != null) {

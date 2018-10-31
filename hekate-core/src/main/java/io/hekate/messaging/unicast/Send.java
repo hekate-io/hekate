@@ -4,6 +4,7 @@ import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 
 /**
@@ -15,7 +16,7 @@ import io.hekate.messaging.loadbalance.LoadBalancer;
  * <ol>
  * <li>Obtain an instance of this interface via the {@link MessagingChannel#send(Object)} method call</li>
  * <li>Set options (f.e. {@link #withConfirmReceive(boolean) confirmation mode} or {@link #withAffinity(Object) affinity key})</li>
- * <li>Execute this operation via the {@link #submit()} method</li>
+ * <li>Execute this operation via the {@link #execute()} method</li>
  * <li>Await for the execution result, if needed</li>
  * </ol>
  * <h3>Example:</h3>
@@ -73,24 +74,28 @@ public interface Send<T> {
      *
      * @return Future result of this operation.
      */
-    SendFuture submit();
+    SendFuture execute();
+
+    /**
+     * Synchronously executes this operation.
+     *
+     * @throws MessagingFutureException if operations fails.
+     * @throws InterruptedException if thread got interrupted while awaiting for this operation to complete.
+     */
+    default void sync() throws MessagingFutureException, InterruptedException {
+        execute().get();
+    }
 
     /**
      * Asynchronously executes this operation and notifies the specified callback upon completion.
      *
      * @param callback Callback.
-     *
-     * @return Future result of this operation.
      */
-    default SendFuture submit(SendCallback callback) {
+    default void async(SendCallback callback) {
         ArgAssert.notNull(callback, "Callback");
 
-        SendFuture future = submit();
-
-        future.whenComplete((ignore, err) ->
+        execute().whenComplete((ignore, err) ->
             callback.onComplete(err)
         );
-
-        return future;
     }
 }

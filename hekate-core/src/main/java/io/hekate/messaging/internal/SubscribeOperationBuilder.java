@@ -7,8 +7,6 @@ import io.hekate.messaging.unicast.SubscribeCallback;
 import io.hekate.messaging.unicast.SubscribeFuture;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 class SubscribeOperationBuilder<T> extends MessageOperationBuilder<T> implements Subscribe<T> {
     private RequestRetryCondition<T> condition;
@@ -34,7 +32,7 @@ class SubscribeOperationBuilder<T> extends MessageOperationBuilder<T> implements
     }
 
     @Override
-    public SubscribeFuture<T> submit(SubscribeCallback<T> callback) {
+    public SubscribeFuture<T> async(SubscribeCallback<T> callback) {
         SubscribeOperation<T> op = new SubscribeOperation<>(message(), affinity, gateway(), opts(), callback, condition);
 
         gateway().submit(op);
@@ -43,16 +41,16 @@ class SubscribeOperationBuilder<T> extends MessageOperationBuilder<T> implements
     }
 
     @Override
-    public List<T> collectAll(long timeout, TimeUnit unit) throws InterruptedException, MessagingFutureException, TimeoutException {
+    public List<T> sync() throws InterruptedException, MessagingFutureException {
         List<T> results = new ArrayList<>();
 
-        SubscribeFuture<T> future = submit((err, rsp) -> {
+        SubscribeFuture<T> future = async((err, rsp) -> {
             if (err == null) {
                 results.add(rsp.payload());
             }
         });
 
-        future.get(timeout, unit);
+        future.get();
 
         return results;
     }

@@ -77,7 +77,7 @@ public abstract class BackPressureTestBase extends MessagingServiceTestBase {
     protected boolean isBackPressureEnabled(MessagingChannel<String> channel) {
         // Check that message can't be sent when high watermark reached.
         try {
-            get(channel.request("fail-on-back-pressure").submit());
+            get(channel.request("fail-on-back-pressure").execute());
 
             return false;
         } catch (TimeoutException | InterruptedException e) {
@@ -113,7 +113,7 @@ public abstract class BackPressureTestBase extends MessagingServiceTestBase {
 
         // Request up to high watermark in order to enable back pressure.
         for (int i = 0; i < highWatermark; i++) {
-            responses.add(channel.forRemotes().request("request-" + i).submit());
+            responses.add(channel.forRemotes().request("request-" + i).execute());
         }
 
         return responses;

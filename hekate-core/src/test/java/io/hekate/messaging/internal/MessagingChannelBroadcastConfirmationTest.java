@@ -49,7 +49,7 @@ public class MessagingChannelBroadcastConfirmationTest extends MessagingServiceT
 
             BroadcastFuture<String> future = channel.channel().broadcast("test" + i)
                 .withConfirmReceive(true)
-                .submit();
+                .execute();
 
             BroadcastResult<String> result = get(future);
 
@@ -76,7 +76,7 @@ public class MessagingChannelBroadcastConfirmationTest extends MessagingServiceT
                         .broadcast("test-" + j)
                         .withConfirmReceive(true)
                         .withAffinity(j)
-                        .submit()
+                        .execute()
                     );
 
                     assertTrue(result.isSuccess());
@@ -109,7 +109,7 @@ public class MessagingChannelBroadcastConfirmationTest extends MessagingServiceT
             BroadcastResult<String> result = get(channel.channel()
                 .broadcast("test" + i)
                 .withConfirmReceive(true)
-                .submit()
+                .execute()
             );
 
             assertEquals("test" + i, result.message());

@@ -5,8 +5,6 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Subscribe operation.
@@ -17,7 +15,7 @@ import java.util.concurrent.TimeoutException;
  * <ol>
  * <li>Obtain an instance of this interface via the {@link MessagingChannel#subscribe(Object)} call</li>
  * <li>Set options (f.e. {@link #withAffinity(Object) affinity key})</li>
- * <li>Execute this operation via the {@link #submit(SubscribeCallback)}  method</li>
+ * <li>Execute this operation via the {@link #async(SubscribeCallback)}  method</li>
  * <li>Await for the execution result, if needed</li>
  * </ol>
  * <h3>Example:</h3>
@@ -67,7 +65,7 @@ public interface Subscribe<T> {
      *
      * @return Future result of this operation.
      */
-    SubscribeFuture<T> submit(SubscribeCallback<T> callback);
+    SubscribeFuture<T> async(SubscribeCallback<T> callback);
 
     /**
      * Synchronously collects all response chunks.
@@ -77,14 +75,10 @@ public interface Subscribe<T> {
      * All responses will be collected into an in-memory list, hence this method should be used with caution (mostly for testing purposes).
      * </p>
      *
-     * @param timeout Time to wait for operation result.
-     * @param unit Time unit of the timeout argument
-     *
      * @return List of all {@link Message#partialReply(Object) partial responses} and the {@link Message#reply(Object) final response}.
      *
      * @throws MessagingFutureException if the operation fails.
      * @throws InterruptedException if the current thread is interrupted.
-     * @throws TimeoutException if operation times out.
      */
-    List<T> collectAll(long timeout, TimeUnit unit) throws InterruptedException, MessagingFutureException, TimeoutException;
+    List<T> sync() throws InterruptedException, MessagingFutureException;
 }

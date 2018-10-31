@@ -146,7 +146,7 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
         AggregateFuture<RpcProtocol> future = channel().aggregate(call)
             .withAffinity(affinity)
-            .submit();
+            .execute();
 
         if (method().isAsync()) {
             return future.thenApply(converter);
