@@ -150,7 +150,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
                 });
             } else {
                 if (DEBUG) {
-                    log.debug("Rejected coordination request since process is not initialized [message={}]", msg.get());
+                    log.debug("Rejected coordination request since process is not initialized [message={}]", msg.payload());
                 }
 
                 msg.reply(CoordinationProtocol.Reject.INSTANCE);

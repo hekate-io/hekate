@@ -30,7 +30,7 @@ import java.util.function.Function;
 
 class RpcMethodClient<T> extends RpcMethodClientBase<T> {
     private static final Function<Response<RpcProtocol>, Object> RESPONSE_CONVERTER = response -> {
-        RpcProtocol result = response.get();
+        RpcProtocol result = response.payload();
 
         if (result instanceof RpcCallResult) {
             return ((RpcCallResult)result).result();

@@ -86,13 +86,13 @@ public class BackPressureAggregateTest extends BackPressureTestBase {
         for (int i = 0; i < getLowWatermarkBounds(); i++) {
             String request = "request-" + i;
 
-            requests1.stream().filter(r -> r.get().equals(request)).findFirst().ifPresent(r -> r.reply("ok"));
+            requests1.stream().filter(r -> r.payload().equals(request)).findFirst().ifPresent(r -> r.reply("ok"));
         }
 
         for (int i = 0; i < getLowWatermarkBounds(); i++) {
             String request = "request-" + i;
 
-            requests2.stream().filter(r -> r.get().equals(request)).findFirst().ifPresent(r -> r.reply("ok"));
+            requests2.stream().filter(r -> r.payload().equals(request)).findFirst().ifPresent(r -> r.reply("ok"));
         }
 
         busyWait("responses received", () ->
@@ -148,7 +148,7 @@ public class BackPressureAggregateTest extends BackPressureTestBase {
             String request = "request-" + i;
 
             requests1.stream()
-                .filter(r -> r.get().equals(request))
+                .filter(r -> r.payload().equals(request))
                 .findFirst()
                 .ifPresent(r ->
                     r.reply("ok")

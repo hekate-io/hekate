@@ -64,7 +64,7 @@ class RpcMethodHandler {
 
     public void handle(Message<RpcProtocol> msg) {
         // Enforces type check.
-        RpcCompactCall call = msg.get(RpcCompactCall.class);
+        RpcCompactCall call = msg.payload(RpcCompactCall.class);
 
         doHandle(call.args(), msg.endpoint(), (err, result) -> {
             if (err == null) {

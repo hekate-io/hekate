@@ -187,7 +187,7 @@ public class AggregateContextTest extends HekateTestBase {
     private Response<String> responseMock(String response) {
         Response mock = mock(Response.class);
 
-        when(mock.get()).thenReturn(response);
+        when(mock.payload()).thenReturn(response);
 
         return mock;
     }

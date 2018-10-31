@@ -21,7 +21,7 @@ public interface ServerInboundContext<T> {
      *
      * @return Message.
      */
-    T get();
+    T payload();
 
     /**
      * Returns the channel name (see {@link MessagingChannel#name()}).

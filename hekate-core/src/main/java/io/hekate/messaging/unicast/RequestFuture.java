@@ -29,7 +29,7 @@ import io.hekate.messaging.MessagingFutureException;
  */
 public class RequestFuture<T> extends MessagingFuture<Response<T>> {
     /**
-     * Awaits for the asynchronous operation to complete and returns the {@link Response#get() payload} of reply.
+     * Awaits for this operation to complete and returns the {@link Response#payload() payload} of the response.
      *
      * @return Response.
      *
@@ -37,11 +37,11 @@ public class RequestFuture<T> extends MessagingFuture<Response<T>> {
      * @throws InterruptedException Signals that thread was interrupted while awaiting for operation completion.
      */
     public T result() throws MessagingFutureException, InterruptedException {
-        return get().get();
+        return get().payload();
     }
 
     /**
-     * Awaits for the asynchronous operation to complete and returns the {@link Response#get() payload} of reply.
+     * Awaits for this operation to complete and returns the {@link Response#payload() payload} of the response.
      *
      * @param type Response type.
      * @param <V> Response type.
@@ -49,9 +49,9 @@ public class RequestFuture<T> extends MessagingFuture<Response<T>> {
      * @return Response.
      *
      * @throws MessagingFutureException Signals that request operation failed.
-     * @throws InterruptedException Signals that thread was interrupted while awaiting for operation completion.
+     * @throws InterruptedException Signals that thread was interrupted while awaiting for this operation to complete.
      */
     public <V extends T> V result(Class<V> type) throws MessagingFutureException, InterruptedException {
-        return type.cast(get().get());
+        return type.cast(get().payload());
     }
 }

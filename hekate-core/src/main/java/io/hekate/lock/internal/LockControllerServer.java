@@ -197,7 +197,7 @@ class LockControllerServer {
             log.debug("Got lock request [from={}, request={}]", msg.endpoint(), msg);
         }
 
-        LockRequest request = msg.get(LockRequest.class);
+        LockRequest request = msg.payload(LockRequest.class);
 
         sync.lock();
 
@@ -234,7 +234,7 @@ class LockControllerServer {
             log.debug("Got unlock request [from={}, request={}]", msg.endpoint(), msg);
         }
 
-        UnlockRequest request = msg.get(UnlockRequest.class);
+        UnlockRequest request = msg.payload(UnlockRequest.class);
 
         sync.lock();
 

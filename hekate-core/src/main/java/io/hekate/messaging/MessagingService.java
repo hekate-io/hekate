@@ -196,9 +196,9 @@ import java.util.List;
  * <h2>Receiving messages</h2>
  * <p>
  * Messaging channel can receive messages from remote nodes by {@link MessagingChannelConfig#setReceiver(MessageReceiver) registering} an
- * instance of {@link MessageReceiver} interface. Received messages are represented by the {@link Message} interface. This interface
- * provides methods for {@link Message#get() getting} the payload of a received message as well as methods for {@link Message#reply(Object)
- * replying} to that message.
+ * instance of {@link MessageReceiver} interface. Received messages are represented by the {@link Message} interface.
+ * This interface provides methods for {@link Message#payload() getting} the payload of a received message as well as methods for
+ * {@link Message#reply(Object) replying} to that message.
  * </p>
  *
  * <p>

@@ -243,7 +243,7 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
         TestChannel first = createChannel(c -> useBackPressure(c)
             .withReceiver(msg -> {
                 // This message should be received when this channel's back pressure is enabled.
-                if (msg.mustReply() && msg.get().equals("check")) {
+                if (msg.mustReply() && msg.payload().equals("check")) {
                     msg.reply("ok", errFuture::complete);
                 }
             })
@@ -269,6 +269,6 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
         // Make sure that there were no back pressure-related errors.
         assertNull(get(errFuture));
 
-        assertEquals("ok", get(request).get());
+        assertEquals("ok", get(request).payload());
     }
 }

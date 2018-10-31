@@ -186,7 +186,7 @@ class DefaultCoordinationMember implements CoordinationMember {
 
                             future.complete(null);
                         } else {
-                            CoordinationProtocol.Response response = rsp.get(CoordinationProtocol.Response.class);
+                            CoordinationProtocol.Response response = rsp.payload(CoordinationProtocol.Response.class);
 
                             if (DEBUG) {
                                 log.debug("Got a response [from={}, response={}]", node, response.response());

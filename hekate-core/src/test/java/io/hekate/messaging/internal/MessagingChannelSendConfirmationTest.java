@@ -217,7 +217,7 @@ public class MessagingChannelSendConfirmationTest extends MessagingServiceTestBa
         MessageReceiver<String> receiver = msg -> {
             ClusterNode localNode = msg.channel().cluster().topology().localNode();
 
-            received.computeIfAbsent(localNode, n -> synchronizedList(new ArrayList<>())).add(msg.get());
+            received.computeIfAbsent(localNode, n -> synchronizedList(new ArrayList<>())).add(msg.payload());
         };
 
         TestChannel channel1 = createChannel(c -> c.setReceiver(receiver)).join();

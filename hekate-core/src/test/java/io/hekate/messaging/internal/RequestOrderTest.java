@@ -44,7 +44,7 @@ public class RequestOrderTest extends MessagingServiceTestBase {
         AtomicInteger processed = new AtomicInteger();
 
         TestChannel receiver = createChannel(c -> c.withReceiver(msg -> {
-            int order = Integer.parseInt(msg.get());
+            int order = Integer.parseInt(msg.payload());
 
             int attempt = processed.getAndIncrement();
 

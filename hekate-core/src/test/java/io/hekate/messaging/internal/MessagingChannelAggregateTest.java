@@ -103,7 +103,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
         List<TestChannel> channels = new ArrayList<>();
 
         repeat(5, i -> {
-            TestChannel channel = createChannel(c -> c.setReceiver(msg -> msg.reply(msg.get() + "-reply"))).join();
+            TestChannel channel = createChannel(c -> c.setReceiver(msg -> msg.reply(msg.payload() + "-reply"))).join();
 
             channels.add(channel);
 
@@ -132,7 +132,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
         List<TestChannel> channels = new ArrayList<>();
 
         repeat(5, i -> {
-            TestChannel channel = createChannel(c -> c.setReceiver(msg -> msg.reply(msg.get() + "-reply"))).join();
+            TestChannel channel = createChannel(c -> c.setReceiver(msg -> msg.reply(msg.payload() + "-reply"))).join();
 
             channels.add(channel);
 
@@ -160,7 +160,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
 
     @Test
     public void testPartialFailureFuture() throws Exception {
-        MessageReceiver<String> receiver = msg -> msg.reply(msg.get() + "-reply");
+        MessageReceiver<String> receiver = msg -> msg.reply(msg.payload() + "-reply");
 
         List<TestChannel> channels = createAndJoinChannels(5, c -> c.setReceiver(receiver));
 
@@ -192,7 +192,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
 
     @Test
     public void testTopologyChange() throws Throwable {
-        MessageReceiver<String> receiver = msg -> msg.reply(msg.get() + "-reply");
+        MessageReceiver<String> receiver = msg -> msg.reply(msg.payload() + "-reply");
 
         List<TestChannel> channels = createAndJoinChannels(3, c -> c.setReceiver(receiver));
 
@@ -275,7 +275,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
 
     @Test
     public void testNonChannelNodes() throws Exception {
-        MessageReceiver<String> receiver = msg -> msg.reply(msg.get() + "-reply");
+        MessageReceiver<String> receiver = msg -> msg.reply(msg.payload() + "-reply");
 
         List<TestChannel> channels = createAndJoinChannels(3, c -> c.setReceiver(receiver));
 

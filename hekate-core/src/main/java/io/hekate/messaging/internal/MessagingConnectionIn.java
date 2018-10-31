@@ -108,14 +108,14 @@ class MessagingConnectionIn<T> extends MessagingConnection<T> {
                 }
 
                 if (error == null) {
-                    notifyResponseSendSuccess(worker, msg.get(), callback);
+                    notifyResponseSendSuccess(worker, msg.payload(), callback);
                 } else {
-                    notifyResponseSendFailure(worker, msg.get(), error, callback);
+                    notifyResponseSendFailure(worker, msg.payload(), error, callback);
                 }
             });
         } else {
             // Back pressure failure.
-            notifyResponseSendFailure(worker, msg.get(), backPressureErr, callback);
+            notifyResponseSendFailure(worker, msg.payload(), backPressureErr, callback);
         }
     }
 
@@ -141,13 +141,13 @@ class MessagingConnectionIn<T> extends MessagingConnection<T> {
             }
 
             if (error == null) {
-                notifyResponseSendSuccess(worker, msg.get(), callback);
+                notifyResponseSendSuccess(worker, msg.payload(), callback);
             } else {
                 if (error instanceof CodecException) {
                     replyError(msg.requestId(), error);
                 }
 
-                notifyResponseSendFailure(worker, msg.get(), error, callback);
+                notifyResponseSendFailure(worker, msg.payload(), error, callback);
             }
         });
     }

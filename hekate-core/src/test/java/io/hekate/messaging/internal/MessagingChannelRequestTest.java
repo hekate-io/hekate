@@ -80,7 +80,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
     @Test
     public void testSendReceive() throws Exception {
         List<TestChannel> channels = createAndJoinChannels(3, c -> {
-            MessageReceiver<String> receiver = msg -> msg.reply(msg.get() + "-reply");
+            MessageReceiver<String> receiver = msg -> msg.reply(msg.payload() + "-reply");
 
             c.setReceiver(receiver);
         });
@@ -123,7 +123,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             replyCallbackRef.get().get();
 
             assertNotNull(msg);
-            assertEquals("response", msg.get());
+            assertEquals("response", msg.payload());
 
             receiver.checkReceiverError();
         });
@@ -537,7 +537,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         TestChannel sender = createChannel().join();
 
         TestChannel receiver = createChannel(c -> c.setReceiver(msg -> {
-            String response = "response-" + msg.get();
+            String response = "response-" + msg.payload();
 
             msg.reply(response);
         })).join();
@@ -573,7 +573,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             await(beforeJoinLatch);
 
             TestChannel temporary = createChannel(c -> c.setReceiver(msg -> {
-                String response = "response-" + msg.get();
+                String response = "response-" + msg.payload();
 
                 msg.reply(response);
             })).join();
@@ -582,7 +582,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
             joinLatch.countDown();
 
-            assertEquals("response-" + joinMsg, joinCallback.get().get());
+            assertEquals("response-" + joinMsg, joinCallback.get().payload());
 
             receiver.awaitForMessage(joinMsg);
 
@@ -655,7 +655,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         channel.join();
 
-        assertEquals("ok", toSelfCallback.get().get());
+        assertEquals("ok", toSelfCallback.get().payload());
 
         if (errRef.get() != null) {
             throw errRef.get();
@@ -663,7 +663,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         createChannel(c -> c.withReceiver(msg -> msg.reply("ok"))).join();
 
-        assertEquals("ok", toRemoteCallback.get().get());
+        assertEquals("ok", toRemoteCallback.get().payload());
 
         if (errRef.get() != null) {
             throw errRef.get();
@@ -675,7 +675,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         TestChannel sender = createChannel().join();
 
         TestChannel receiver = createChannel(c -> c.setReceiver(msg -> {
-            String response = msg.get() + "-reply";
+            String response = msg.payload() + "-reply";
 
             msg.reply(response);
         })).join();
@@ -707,7 +707,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         TestChannel sender = createChannel().join();
 
         TestChannel receiver = createChannel(c -> c.setReceiver(msg -> {
-            String response = msg.get() + "-reply";
+            String response = msg.payload() + "-reply";
 
             msg.reply(response);
         })).join();
@@ -738,7 +738,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         TestChannel sender = createChannel().join();
 
         TestChannel receiver = createChannel(c -> c.setReceiver(msg -> {
-            String response = msg.get() + "-reply";
+            String response = msg.payload() + "-reply";
 
             msg.reply(response);
         })).join();
@@ -773,9 +773,9 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         MessageReceiver<String> receiver = msg -> {
             ClusterNode localNode = msg.channel().cluster().topology().localNode();
 
-            received.computeIfAbsent(localNode, n -> synchronizedList(new ArrayList<>())).add(msg.get());
+            received.computeIfAbsent(localNode, n -> synchronizedList(new ArrayList<>())).add(msg.payload());
 
-            msg.reply(msg.get() + "-reply");
+            msg.reply(msg.payload() + "-reply");
         };
 
         TestChannel channel1 = createChannel(c -> c.setReceiver(receiver)).join();
@@ -810,9 +810,9 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
         MessageReceiver<String> receiver = msg -> {
             ClusterNode localNode = msg.channel().cluster().topology().localNode();
 
-            received.computeIfAbsent(localNode, n -> synchronizedList(new ArrayList<>())).add(msg.get());
+            received.computeIfAbsent(localNode, n -> synchronizedList(new ArrayList<>())).add(msg.payload());
 
-            msg.reply(msg.get() + "-reply");
+            msg.reply(msg.payload() + "-reply");
         };
 
         TestChannel channel1 = createChannel(c -> c.setReceiver(receiver)).join();

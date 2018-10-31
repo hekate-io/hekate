@@ -22,7 +22,7 @@ public interface ServerSendContext<T> {
      *
      * @return Outbound message.
      */
-    T get();
+    T payload();
 
     /**
      * Returns the inbound context.

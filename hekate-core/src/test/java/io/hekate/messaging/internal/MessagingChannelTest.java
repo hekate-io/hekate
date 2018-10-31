@@ -147,7 +147,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
             }
 
             if (msg.mustReply()) {
-                String response = msg.get() + "-reply";
+                String response = msg.payload() + "-reply";
 
                 msg.reply(response);
             }
@@ -168,7 +168,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         createChannel(c -> c.setReceiver(msg -> {
             try {
-                switch (msg.get()) {
+                switch (msg.payload()) {
                     case "send":
                     case "broadcast": {
                         assertFalse(msg.mustReply());
@@ -327,7 +327,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
     @Test
     public void testCustomClusterView() throws Exception {
         List<TestChannel> channels = createAndJoinChannels(3, c ->
-            c.setReceiver(msg -> msg.reply(msg.get() + "-reply"))
+            c.setReceiver(msg -> msg.reply(msg.payload() + "-reply"))
         );
 
         MessagingChannel<String> originalSender = channels.get(0).channel();
@@ -402,7 +402,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         // Join new node.
         channels.add(createChannel(c ->
-            c.setReceiver(msg -> msg.reply(msg.get() + "-reply"))
+            c.setReceiver(msg -> msg.reply(msg.payload() + "-reply"))
         ).join());
 
         awaitForChannelsTopology(channels);

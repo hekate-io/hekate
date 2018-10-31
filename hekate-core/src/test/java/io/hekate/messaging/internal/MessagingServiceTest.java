@@ -185,12 +185,12 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
     @Test
     public void testGlobalInterceptors() throws Exception {
         createChannel(
-            c -> c.withReceiver(msg -> msg.reply(msg.get() + "-OK")),
+            c -> c.withReceiver(msg -> msg.reply(msg.payload() + "-OK")),
             boot -> boot.withService(MessagingServiceFactory.class, msg ->
                 msg.withGlobalInterceptor(new ServerMessageInterceptor<Object>() {
                     @Override
                     public void interceptServerReceive(ServerReceiveContext<Object> ctx) {
-                        ctx.overrideMessage(ctx.get() + "-intercepted");
+                        ctx.overrideMessage(ctx.payload() + "-intercepted");
                     }
                 })
             )
@@ -198,6 +198,6 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel().join();
 
-        assertEquals("test-intercepted-OK", get(sender.channel().forRemotes().request("test").submit()).get());
+        assertEquals("test-intercepted-OK", get(sender.channel().forRemotes().request("test").submit()).payload());
     }
 }

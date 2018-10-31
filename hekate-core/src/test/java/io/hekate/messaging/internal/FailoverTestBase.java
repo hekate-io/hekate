@@ -52,7 +52,7 @@ public abstract class FailoverTestBase extends MessagingServiceTestBase {
                 }
 
                 if (msg.mustReply()) {
-                    msg.reply(msg.get() + "-" + (msg.isRetransmit() ? RETRANSMIT_SUFFIX : "invalid"));
+                    msg.reply(msg.payload() + "-" + (msg.isRetransmit() ? RETRANSMIT_SUFFIX : "invalid"));
                 }
             }),
             boot -> boot.withService(NetworkServiceFactoryForTest.class, net -> {

@@ -50,7 +50,7 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
                 throw TEST_ERROR;
             }
 
-            msg.reply(msg.get() + "reply");
+            msg.reply(msg.payload() + "reply");
         }));
 
         sender = channels.get(0);

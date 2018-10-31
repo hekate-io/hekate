@@ -424,7 +424,7 @@ class LockControllerClient {
             }
 
             if (err == null) {
-                LockResponse lockRsp = reply.get(LockResponse.class);
+                LockResponse lockRsp = reply.payload(LockResponse.class);
 
                 if (DEBUG) {
                     log.debug("Got lock response [from={}, response={}]", reply.from(), reply);
@@ -472,7 +472,7 @@ class LockControllerClient {
 
         RequestCallback<LockProtocol> onResponse = (err, rsp) -> {
             if (err == null) {
-                LockResponse lockRsp = rsp.get(LockResponse.class);
+                LockResponse lockRsp = rsp.payload(LockResponse.class);
 
                 if (lockRsp.status() == LockResponse.Status.LOCK_OWNER_CHANGE) {
                     processLockOwnerChange(lockRsp, rsp);
@@ -521,7 +521,7 @@ class LockControllerClient {
                 }
 
                 if (err == null) {
-                    UnlockResponse lockRsp = rsp.get(UnlockResponse.class);
+                    UnlockResponse lockRsp = rsp.payload(UnlockResponse.class);
 
                     if (DEBUG) {
                         log.debug("Got unlock response [from={}, response={}]", rsp.from(), lockRsp);
@@ -569,7 +569,7 @@ class LockControllerClient {
                             log.debug("Got explicit lock owner query response [from={}, response={}]", rsp.from(), rsp);
                         }
 
-                        LockOwnerResponse ownerRsp = rsp.get(LockOwnerResponse.class);
+                        LockOwnerResponse ownerRsp = rsp.payload(LockOwnerResponse.class);
 
                         if (ownerRsp.status() != LockOwnerResponse.Status.OK
                             || !tryNotifyOnLockOwnerChange(ownerRsp.owner(), ownerRsp.threadId(), rsp.topology().hash())) {

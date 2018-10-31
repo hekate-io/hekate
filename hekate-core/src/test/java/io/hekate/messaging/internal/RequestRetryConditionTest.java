@@ -49,7 +49,7 @@ public class RequestRetryConditionTest extends MessagingServiceTestBase {
             }
 
             if (msg.mustReply()) {
-                msg.reply(msg.get() + "-reply");
+                msg.reply(msg.payload() + "-reply");
             }
         }));
 
@@ -80,7 +80,7 @@ public class RequestRetryConditionTest extends MessagingServiceTestBase {
 
         sender.channel().forNode(receiver.nodeId()).request("test").until(condition).submit(callback);
 
-        assertEquals("test-reply", callback.get().get());
+        assertEquals("test-reply", callback.get().payload());
         assertEquals(1, accepts.get());
     }
 
@@ -105,7 +105,7 @@ public class RequestRetryConditionTest extends MessagingServiceTestBase {
             .until(condition)
             .submit(callback);
 
-        assertEquals("test-reply", callback.get().get());
+        assertEquals("test-reply", callback.get().payload());
         assertEquals(1, accepts.get());
     }
 
@@ -132,7 +132,7 @@ public class RequestRetryConditionTest extends MessagingServiceTestBase {
             .until(condition)
             .submit(callback);
 
-        assertEquals("test-reply", callback.get().get());
+        assertEquals("test-reply", callback.get().payload());
         assertEquals(1, accepts.get());
         assertEquals(1, receiver.received().size());
     }
@@ -162,7 +162,7 @@ public class RequestRetryConditionTest extends MessagingServiceTestBase {
             .until(condition)
             .submit(callback);
 
-        assertEquals("test-reply", callback.get().get());
+        assertEquals("test-reply", callback.get().payload());
         assertEquals(3, accepts.get());
         assertEquals(3, receiver.received().size());
     }

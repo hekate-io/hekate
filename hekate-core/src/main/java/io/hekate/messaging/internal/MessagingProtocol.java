@@ -148,12 +148,12 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public T get() {
+        public T payload() {
             return payload;
         }
 
         @Override
-        public <P extends T> P get(Class<P> type) {
+        public <P extends T> P payload(Class<P> type) {
             return type.cast(payload);
         }
 
@@ -364,12 +364,12 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public T get() {
+        public T payload() {
             return payload;
         }
 
         @Override
-        public <P extends T> P get(Class<P> type) {
+        public <P extends T> P payload(Class<P> type) {
             return type.cast(payload);
         }
 
@@ -449,7 +449,7 @@ abstract class MessagingProtocol {
 
         private void responded() {
             if (!MUST_REPLY.compareAndSet(this, 0, 1)) {
-                throw new IllegalStateException("Message already responded [message=" + get() + ']');
+                throw new IllegalStateException("Message already responded [message=" + payload() + ']');
             }
         }
     }
@@ -701,12 +701,12 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public T get() {
+        public T payload() {
             return payload;
         }
 
         @Override
-        public <P extends T> P get(Class<P> type) {
+        public <P extends T> P payload(Class<P> type) {
             return type.cast(payload);
         }
 
@@ -744,7 +744,7 @@ abstract class MessagingProtocol {
 
         @Override
         public T request() {
-            return clientCtx.get();
+            return clientCtx.payload();
         }
 
         @Override

@@ -40,7 +40,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         @Override
         public void receive(Message<String> msg) {
             // Get payload.
-            String payload = msg.get();
+            String payload = msg.payload();
 
             // Check if sender is expecting a response.
             if (msg.mustReply()) {
@@ -78,7 +78,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
             .withName("example.channel") // Channel name.
             // Message receiver (optional - if not specified then channel will act as a sender only)
             .withReceiver(msg -> {
-                System.out.println("Received request: " + msg.get());
+                System.out.println("Received request: " + msg.payload());
 
                 // Send reply (if required).
                 if (msg.mustReply()) {
@@ -165,9 +165,9 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
             // Execute and listen for responses.
             .submit((err, rsp) -> {
                 if (rsp.isPartial()) {
-                    System.out.println("Got a response chunk: " + rsp.get());
+                    System.out.println("Got a response chunk: " + rsp.payload());
                 } else {
-                    System.out.println("Got the last response chunk: " + rsp.get());
+                    System.out.println("Got the last response chunk: " + rsp.payload());
                 }
             });
 
@@ -226,7 +226,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         // Submit request and process response in the asynchronous callback.
         channel.request("example request").submit((err, rsp) -> {
             if (err == null) {
-                System.out.println("Got response: " + rsp.get());
+                System.out.println("Got response: " + rsp.payload());
             } else {
                 System.out.println("Request failed: " + err);
             }

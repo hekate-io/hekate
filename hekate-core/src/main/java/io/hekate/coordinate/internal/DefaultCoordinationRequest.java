@@ -44,7 +44,7 @@ class DefaultCoordinationRequest implements CoordinationRequest {
         this.from = from;
         this.msg = msg;
 
-        this.request = msg.get(CoordinationProtocol.Request.class);
+        this.request = msg.payload(CoordinationProtocol.Request.class);
     }
 
     @Override

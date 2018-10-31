@@ -26,7 +26,7 @@ public interface ClientOutboundContext<T> {
      *
      * @return Message.
      */
-    T get();
+    T payload();
 
     /**
      * Returns the channel name (see {@link MessagingChannel#name()}).

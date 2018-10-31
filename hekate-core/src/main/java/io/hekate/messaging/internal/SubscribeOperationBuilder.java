@@ -48,7 +48,7 @@ class SubscribeOperationBuilder<T> extends MessageOperationBuilder<T> implements
 
         SubscribeFuture<T> future = submit((err, rsp) -> {
             if (err == null) {
-                results.add(rsp.get());
+                results.add(rsp.payload());
             }
         });
 

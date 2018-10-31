@@ -243,7 +243,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
     }
 
     @Override
-    public T get() {
+    public T payload() {
         return operation.message();
     }
 

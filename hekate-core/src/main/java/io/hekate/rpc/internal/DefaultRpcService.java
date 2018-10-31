@@ -277,8 +277,8 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
                 @Override
                 public void interceptClientSend(ClientSendContext<RpcProtocol> ctx) {
                     // Convert method calls to compact representations.
-                    if (ctx.get() instanceof RpcCall) {
-                        RpcCall<?> req = (RpcCall<?>)ctx.get();
+                    if (ctx.payload() instanceof RpcCall) {
+                        RpcCall<?> req = (RpcCall<?>)ctx.payload();
 
                         // Use the method's index instead of the method signature.
                         int methodIdx = ctx.receiver().service(RpcService.class).intProperty(req.methodIdxKey());
@@ -444,7 +444,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     }
 
     private void handleMessage(Message<RpcProtocol> msg) {
-        RpcProtocol rpcMsg = msg.get();
+        RpcProtocol rpcMsg = msg.payload();
 
         switch (rpcMsg.type()) {
             case COMPACT_CALL_REQUEST:

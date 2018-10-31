@@ -259,7 +259,7 @@ class DefaultCoordinatorContext implements CoordinatorContext {
     }
 
     public void processMessage(Message<CoordinationProtocol> msg) {
-        CoordinationProtocol.RequestBase request = msg.get(CoordinationProtocol.RequestBase.class);
+        CoordinationProtocol.RequestBase request = msg.payload(CoordinationProtocol.RequestBase.class);
 
         boolean reject = false;
 

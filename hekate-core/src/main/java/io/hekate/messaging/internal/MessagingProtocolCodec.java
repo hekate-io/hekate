@@ -154,7 +154,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     encodeMetaData(notification.metaData(), out);
                 }
 
-                delegate.encode(notification.get(), out);
+                delegate.encode(notification.payload(), out);
 
                 break;
             }
@@ -175,7 +175,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     encodeMetaData(notification.metaData(), out);
                 }
 
-                delegate.encode(notification.get(), out);
+                delegate.encode(notification.payload(), out);
 
                 break;
             }
@@ -199,7 +199,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     encodeMetaData(request.metaData(), out);
                 }
 
-                delegate.encode(request.get(), out);
+                delegate.encode(request.payload(), out);
 
                 break;
             }
@@ -221,7 +221,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     encodeMetaData(request.metaData(), out);
                 }
 
-                delegate.encode(request.get(), out);
+                delegate.encode(request.payload(), out);
 
                 break;
             }
@@ -245,7 +245,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     encodeMetaData(request.metaData(), out);
                 }
 
-                delegate.encode(request.get(), out);
+                delegate.encode(request.payload(), out);
 
                 break;
             }
@@ -267,7 +267,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     encodeMetaData(request.metaData(), out);
                 }
 
-                delegate.encode(request.get(), out);
+                delegate.encode(request.payload(), out);
 
                 break;
             }
@@ -290,7 +290,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     encodeMetaData(request.metaData(), out);
                 }
 
-                delegate.encode(request.get(), out);
+                delegate.encode(request.payload(), out);
 
                 break;
             }
@@ -312,7 +312,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     encodeMetaData(request.metaData(), out);
                 }
 
-                delegate.encode(request.get(), out);
+                delegate.encode(request.payload(), out);
 
                 break;
             }
@@ -328,7 +328,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     encodeMetaData(response.metaData(), out);
                 }
 
-                delegate.encode(response.get(), out);
+                delegate.encode(response.payload(), out);
 
                 break;
             }
@@ -344,7 +344,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     encodeMetaData(response.metaData(), out);
                 }
 
-                delegate.encode(response.get(), out);
+                delegate.encode(response.payload(), out);
 
                 break;
             }

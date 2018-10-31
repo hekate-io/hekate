@@ -209,7 +209,7 @@ class DefaultLockRegion implements LockRegion {
             .withAffinity(new LockKey(regionName, lockName))
             .until((err, rsp) -> {
                 if (err == null) {
-                    LockOwnerResponse lockReply = rsp.get(LockOwnerResponse.class);
+                    LockOwnerResponse lockReply = rsp.payload(LockOwnerResponse.class);
 
                     if (lockReply.status() == LockOwnerResponse.Status.OK) {
                         ClusterNodeId ownerId = lockReply.owner();
@@ -350,7 +350,7 @@ class DefaultLockRegion implements LockRegion {
         readLock.lock();
 
         try {
-            LockRequest request = msg.get(LockRequest.class);
+            LockRequest request = msg.payload(LockRequest.class);
 
             if (status == Status.MIGRATING || status == Status.TERMINATED || !request.topology().equals(activeTopology())) {
                 reply(msg, new LockResponse(LockResponse.Status.RETRY, null, 0));
@@ -380,7 +380,7 @@ class DefaultLockRegion implements LockRegion {
         readLock.lock();
 
         try {
-            UnlockRequest request = msg.get(UnlockRequest.class);
+            UnlockRequest request = msg.payload(UnlockRequest.class);
 
             if (status == Status.MIGRATING || status == Status.TERMINATED || !request.topology().equals(activeTopology())) {
                 reply(msg, new UnlockResponse(UnlockResponse.Status.RETRY));
@@ -412,7 +412,7 @@ class DefaultLockRegion implements LockRegion {
         readLock.lock();
 
         try {
-            LockOwnerRequest request = msg.get(LockOwnerRequest.class);
+            LockOwnerRequest request = msg.payload(LockOwnerRequest.class);
 
             if (status == Status.MIGRATING || status == Status.TERMINATED || !request.topology().equals(activeTopology())) {
                 reply(msg, new LockOwnerResponse(0, null, LockOwnerResponse.Status.RETRY));
@@ -433,7 +433,7 @@ class DefaultLockRegion implements LockRegion {
     }
 
     public void processMigrationPrepare(Message<LockProtocol> msg) {
-        MigrationPrepareRequest request = msg.get(MigrationPrepareRequest.class);
+        MigrationPrepareRequest request = msg.payload(MigrationPrepareRequest.class);
 
         LockMigrationKey key = request.key();
 
@@ -567,7 +567,7 @@ class DefaultLockRegion implements LockRegion {
     }
 
     public void processMigrationApply(Message<LockProtocol> msg) {
-        MigrationApplyRequest request = msg.get(MigrationApplyRequest.class);
+        MigrationApplyRequest request = msg.payload(MigrationApplyRequest.class);
 
         LockMigrationKey key = request.key();
 
@@ -906,7 +906,7 @@ class DefaultLockRegion implements LockRegion {
             .withAffinity(regionName)
             .until((err, reply) -> {
                 if (err == null) {
-                    MigrationResponse response = reply.get(MigrationResponse.class);
+                    MigrationResponse response = reply.payload(MigrationResponse.class);
 
                     if (DEBUG) {
                         log.debug("Got {} response [request={}]", response.status(), request);

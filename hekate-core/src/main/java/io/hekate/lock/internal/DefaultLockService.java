@@ -177,8 +177,8 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                 .withInterceptor(new ClientMessageInterceptor<LockProtocol>() {
                     @Override
                     public void interceptClientSend(ClientSendContext<LockProtocol> ctx) {
-                        if (ctx.get() instanceof LockRequestBase) {
-                            LockRequestBase req = (LockRequestBase)ctx.get();
+                        if (ctx.payload() instanceof LockRequestBase) {
+                            LockRequestBase req = (LockRequestBase)ctx.payload();
 
                             // Store routed topology within the lock request so that it would be possible
                             // to detect routing collisions (in case of cluster topology changes) on the receiving side.
@@ -327,11 +327,11 @@ public class DefaultLockService implements LockService, InitializingService, Dep
         guard.lockRead();
 
         try {
-            LockProtocol.Type type = msg.get().type();
+            LockProtocol.Type type = msg.payload().type();
 
             switch (type) {
                 case LOCK_REQUEST: {
-                    LockRequest request = msg.get(LockRequest.class);
+                    LockRequest request = msg.payload(LockRequest.class);
 
                     if (guard.isInitialized()) {
                         DefaultLockRegion region = regions.get(request.region());
@@ -348,7 +348,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                     break;
                 }
                 case UNLOCK_REQUEST: {
-                    UnlockRequest request = msg.get(UnlockRequest.class);
+                    UnlockRequest request = msg.payload(UnlockRequest.class);
 
                     if (guard.isInitialized()) {
                         DefaultLockRegion region = regions.get(request.region());
@@ -365,7 +365,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                     break;
                 }
                 case OWNER_REQUEST: {
-                    LockOwnerRequest request = msg.get(LockOwnerRequest.class);
+                    LockOwnerRequest request = msg.payload(LockOwnerRequest.class);
 
                     if (guard.isInitialized()) {
                         DefaultLockRegion region = regions.get(request.region());
@@ -382,7 +382,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                     break;
                 }
                 case MIGRATION_PREPARE: {
-                    MigrationPrepareRequest request = msg.get(MigrationPrepareRequest.class);
+                    MigrationPrepareRequest request = msg.payload(MigrationPrepareRequest.class);
 
                     if (guard.isInitialized()) {
                         DefaultLockRegion region = regions.get(request.region());
@@ -399,7 +399,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                     break;
                 }
                 case MIGRATION_APPLY: {
-                    MigrationApplyRequest request = msg.get(MigrationApplyRequest.class);
+                    MigrationApplyRequest request = msg.payload(MigrationApplyRequest.class);
 
                     if (guard.isInitialized()) {
                         DefaultLockRegion region = regions.get(request.region());

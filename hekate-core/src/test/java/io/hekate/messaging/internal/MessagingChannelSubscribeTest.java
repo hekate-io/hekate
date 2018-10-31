@@ -101,9 +101,9 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
             sender.channel().forNode(receiver.nodeId()).subscribe("request").submit((err, reply) -> {
                 if (err == null) {
                     try {
-                        senderMessages.add(reply.get());
+                        senderMessages.add(reply.payload());
 
-                        if (reply.get().equals("final")) {
+                        if (reply.payload().equals("final")) {
                             assertFalse(reply.isPartial());
 
                             errFuture.complete(null);
@@ -172,9 +172,9 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
             sender.channel().forNode(receiver.nodeId()).subscribe("request").submit((err, reply) -> {
                 if (err == null) {
                     try {
-                        senderMessages.add(reply.get());
+                        senderMessages.add(reply.payload());
 
-                        if (reply.get().equals("final")) {
+                        if (reply.payload().equals("final")) {
                             assertFalse(reply.isPartial());
 
                             sendErrFuture.complete(null);

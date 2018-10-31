@@ -80,7 +80,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
         AffinityCollector collector = new AffinityCollector();
 
         TestChannel receiver = createChannel(c -> c.setReceiver(msg ->
-            collector.collect(msg.get())
+            collector.collect(msg.payload())
         )).join();
 
         TestChannel sender = createChannel().join();
@@ -113,7 +113,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
         AffinityCollector collector = new AffinityCollector();
 
         TestChannel receiver = createChannel(c -> c.setReceiver(msg -> {
-            collector.collect(msg.get());
+            collector.collect(msg.payload());
 
             msg.reply("ok");
         })).join();
@@ -193,7 +193,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
             receivers.add(createChannel(c -> {
                 c.setBackupNodes(testNodes - 1);
                 c.setReceiver(msg ->
-                    collector.collect(msg.get())
+                    collector.collect(msg.payload())
                 );
             }).join());
 
@@ -240,7 +240,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
             receivers.add(createChannel(c -> {
                 c.setBackupNodes(testNodes - 1);
                 c.setReceiver(msg -> {
-                        collector.collect(msg.get());
+                        collector.collect(msg.payload());
 
                         msg.reply("ok");
                     }

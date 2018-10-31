@@ -49,7 +49,7 @@ public class TestChannel {
 
     public TestChannel(MessageReceiver<String> receiverDelegate) {
         receiver = msg -> {
-            received.add(msg.get());
+            received.add(msg.payload());
 
             if (receiverDelegate != null) {
                 try {

@@ -60,13 +60,13 @@ public class BackPressureBroadcastTest extends BackPressureTestBase {
         CountDownLatch resumeReceive = new CountDownLatch(1);
 
         createChannel(c -> useBackPressure(c).withReceiver(msg -> {
-            if (!msg.get().equals("init")) {
+            if (!msg.payload().equals("init")) {
                 await(resumeReceive);
             }
         })).join();
 
         createChannel(c -> useBackPressure(c).withReceiver(msg -> {
-            if (!msg.get().equals("init")) {
+            if (!msg.payload().equals("init")) {
                 await(resumeReceive);
             }
         })).join();

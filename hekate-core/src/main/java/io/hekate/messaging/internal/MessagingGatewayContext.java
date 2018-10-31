@@ -454,7 +454,7 @@ class MessagingGatewayContext<T> {
                 completed = true;
 
                 if (decision == RetryDecision.RETRY) {
-                    Object rejected = effectiveReply != null ? effectiveReply.get() : null;
+                    Object rejected = effectiveReply != null ? effectiveReply.payload() : null;
 
                     err = new RejectedReplyException("Response was rejected by the request callback", rejected, err);
                 }
@@ -839,7 +839,7 @@ class MessagingGatewayContext<T> {
         Throwable err = null;
 
         if (reply != null) {
-            T replyMsg = reply.get();
+            T replyMsg = reply.payload();
 
             // Check if message should be converted to an error.
             if (replyMsg instanceof FailureResponse) {

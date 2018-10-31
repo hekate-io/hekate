@@ -62,7 +62,7 @@ class RpcSplitAggregateFuture extends MessagingFuture<Object> implements Request
             synchronized (responses) {
                 if (mappedErr == null) {
                     if (rsp != null) { // <-- Can be null if there was a real error but it was ignored by the error policy.
-                        responses.add(rsp.get());
+                        responses.add(rsp.payload());
                     }
                 } else {
                     if (firstError == null) {
