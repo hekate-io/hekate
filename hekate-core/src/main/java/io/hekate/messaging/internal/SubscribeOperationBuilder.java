@@ -1,9 +1,9 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.MessagingFutureException;
-import io.hekate.messaging.unicast.RequestCallback;
 import io.hekate.messaging.unicast.RequestRetryCondition;
 import io.hekate.messaging.unicast.Subscribe;
+import io.hekate.messaging.unicast.SubscribeCallback;
 import io.hekate.messaging.unicast.SubscribeFuture;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +34,7 @@ class SubscribeOperationBuilder<T> extends MessageOperationBuilder<T> implements
     }
 
     @Override
-    public SubscribeFuture<T> submit(RequestCallback<T> callback) {
+    public SubscribeFuture<T> submit(SubscribeCallback<T> callback) {
         SubscribeOperation<T> op = new SubscribeOperation<>(message(), affinity, gateway(), opts(), callback, condition);
 
         gateway().submit(op);

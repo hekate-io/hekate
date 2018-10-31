@@ -1,16 +1,16 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.intercept.OutboundType;
-import io.hekate.messaging.unicast.RequestCallback;
 import io.hekate.messaging.unicast.RequestRetryCondition;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.RetryDecision;
+import io.hekate.messaging.unicast.SubscribeCallback;
 import io.hekate.messaging.unicast.SubscribeFuture;
 
 class SubscribeOperation<T> extends UnicastOperation<T> {
     private final SubscribeFuture<T> future = new SubscribeFuture<>();
 
-    private final RequestCallback<T> callback;
+    private final SubscribeCallback<T> callback;
 
     private final RequestRetryCondition<T> condition;
 
@@ -21,7 +21,7 @@ class SubscribeOperation<T> extends UnicastOperation<T> {
         Object affinityKey,
         MessagingGatewayContext<T> gateway,
         MessageOperationOpts<T> opts,
-        RequestCallback<T> callback,
+        SubscribeCallback<T> callback,
         RequestRetryCondition<T> condition
     ) {
         super(message, affinityKey, gateway, opts, true);

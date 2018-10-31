@@ -26,9 +26,9 @@ import io.hekate.messaging.broadcast.Broadcast;
 import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.messaging.unicast.Request;
-import io.hekate.messaging.unicast.RequestCallback;
 import io.hekate.messaging.unicast.Send;
 import io.hekate.messaging.unicast.Subscribe;
+import io.hekate.messaging.unicast.SubscribeCallback;
 import io.hekate.partition.PartitionMapper;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -92,7 +92,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return New operation.
      *
-     * @see Subscribe#submit(RequestCallback)
+     * @see Subscribe#submit(SubscribeCallback)
      */
     Subscribe<T> subscribe(T request);
 

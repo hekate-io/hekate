@@ -28,7 +28,6 @@ import io.hekate.lock.internal.LockProtocol.LockResponse;
 import io.hekate.lock.internal.LockProtocol.UnlockRequest;
 import io.hekate.lock.internal.LockProtocol.UnlockResponse;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.unicast.RequestCallback;
 import io.hekate.messaging.unicast.RequestRetryCondition;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.partition.PartitionMapper;
@@ -470,18 +469,6 @@ class LockControllerClient {
             }
         };
 
-        RequestCallback<LockProtocol> onResponse = (err, rsp) -> {
-            if (err == null) {
-                LockResponse lockRsp = rsp.payload(LockResponse.class);
-
-                if (lockRsp.status() == LockResponse.Status.LOCK_OWNER_CHANGE) {
-                    processLockOwnerChange(lockRsp, rsp);
-                }
-            } else if (is(Status.LOCKING)) {
-                log.error("Failed to submit lock request [request={}]", lockReq, err);
-            }
-        };
-
         if (asyncCallback == null) {
             if (DEBUG) {
                 log.debug("Submitting lock request [request={}]", lockReq);
@@ -491,7 +478,11 @@ class LockControllerClient {
             channel.request(lockReq)
                 .withAffinity(key)
                 .until(until)
-                .submit(onResponse);
+                .submit((err, rsp) -> {
+                    if (err != null && is(Status.LOCKING)) {
+                        log.error("Failed to submit lock request [request={}]", lockReq, err);
+                    }
+                });
         } else {
             if (DEBUG) {
                 log.debug("Submitting lock subscription [request={}]", lockReq);
@@ -501,7 +492,17 @@ class LockControllerClient {
             channel.subscribe(lockReq)
                 .withAffinity(key)
                 .until(until)
-                .submit(onResponse);
+                .submit((err, rsp) -> {
+                    if (err == null) {
+                        LockResponse lockRsp = rsp.payload(LockResponse.class);
+
+                        if (lockRsp.status() == LockResponse.Status.LOCK_OWNER_CHANGE) {
+                            processLockOwnerChange(lockRsp, rsp);
+                        }
+                    } else if (is(Status.LOCKING)) {
+                        log.error("Failed to submit lock request [request={}]", lockReq, err);
+                    }
+                });
         }
     }
 
