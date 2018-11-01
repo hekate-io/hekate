@@ -4,7 +4,7 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.intercept.OutboundType;
 import io.hekate.messaging.loadbalance.LoadBalancerException;
-import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.ResponsePart;
 import io.hekate.messaging.unicast.RetryDecision;
 import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
@@ -74,11 +74,11 @@ abstract class MessageOperation<T> {
 
     public abstract OutboundType type();
 
-    public abstract RetryDecision shouldRetry(Throwable error, Response<T> response);
+    public abstract RetryDecision shouldRetry(Throwable error, ResponsePart<T> response);
 
     public abstract CompletableFuture<?> future();
 
-    protected abstract void doReceiveFinal(Response<T> response);
+    protected abstract void doReceiveFinal(ResponsePart<T> response);
 
     protected abstract void doFail(Throwable error);
 
@@ -94,8 +94,8 @@ abstract class MessageOperation<T> {
         return state == STATE_COMPLETED;
     }
 
-    public boolean complete(Throwable error, Response<T> response) {
-        if (response != null && response.isPartial()) {
+    public boolean complete(Throwable error, ResponsePart<T> response) {
+        if (response != null && !response.isLastPart()) {
             // Do not complete on partial responses.
             doReceivePartial(response);
         } else if (STATE.compareAndSet(this, STATE_PENDING, STATE_COMPLETED)) {
@@ -151,7 +151,7 @@ abstract class MessageOperation<T> {
         return worker;
     }
 
-    protected void doReceivePartial(Response<T> response) {
+    protected void doReceivePartial(ResponsePart<T> response) {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " can't receive " + response);
     }
 }

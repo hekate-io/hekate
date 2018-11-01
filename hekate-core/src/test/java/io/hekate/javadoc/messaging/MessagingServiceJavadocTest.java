@@ -165,10 +165,10 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
             .withAffinity("100500") // Some dummy affinity (optional).
             // Execute and listen for responses.
             .submit((err, rsp) -> {
-                if (rsp.isPartial()) {
-                    System.out.println("Got a response chunk: " + rsp.payload());
-                } else {
+                if (rsp.isLastPart()) {
                     System.out.println("Got the last response chunk: " + rsp.payload());
+                } else {
+                    System.out.println("Got a response chunk: " + rsp.payload());
                 }
             });
 

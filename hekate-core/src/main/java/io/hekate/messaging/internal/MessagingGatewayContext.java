@@ -39,6 +39,7 @@ import io.hekate.messaging.loadbalance.UnknownRouteException;
 import io.hekate.messaging.unicast.FailureResponse;
 import io.hekate.messaging.unicast.RejectedReplyException;
 import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.ResponsePart;
 import io.hekate.messaging.unicast.RetryDecision;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkFuture;
@@ -429,7 +430,7 @@ class MessagingGatewayContext<T> {
             }
 
             // Resolve effective reply.
-            Response<T> effectiveReply = err == null ? reply : null;
+            ResponsePart<T> effectiveReply = err == null ? reply : null;
 
             // Check if this is an acceptable response.
             RetryDecision decision = operation.shouldRetry(err, effectiveReply);

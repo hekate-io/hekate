@@ -31,7 +31,7 @@ import io.hekate.messaging.intercept.OutboundType;
 import io.hekate.messaging.intercept.ServerInboundContext;
 import io.hekate.messaging.intercept.ServerReceiveContext;
 import io.hekate.messaging.intercept.ServerSendContext;
-import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.ResponsePart;
 import io.hekate.messaging.unicast.SendCallback;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -654,7 +654,7 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class ResponseChunk<T> extends MessagingProtocol implements Response<T>, ServerSendContext<T>, ClientReceiveContext<T> {
+    static class ResponseChunk<T> extends MessagingProtocol implements ResponsePart<T>, ServerSendContext<T>, ClientReceiveContext<T> {
         private final int requestId;
 
         private T payload;
@@ -728,8 +728,8 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public boolean isPartial() {
-            return true;
+        public boolean isLastPart() {
+            return false;
         }
 
         @Override
@@ -792,8 +792,8 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public boolean isPartial() {
-            return false;
+        public boolean isLastPart() {
+            return true;
         }
 
         @Override

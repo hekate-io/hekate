@@ -1,7 +1,7 @@
 package io.hekate.messaging.internal;
 
-import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.ResponsePart;
 
 interface MessageOperationCallback<T> {
-    boolean completeAttempt(MessageOperationAttempt<T> attempt, Response<T> rsp, Throwable err);
+    boolean completeAttempt(MessageOperationAttempt<T> attempt, ResponsePart<T> rsp, Throwable err);
 }

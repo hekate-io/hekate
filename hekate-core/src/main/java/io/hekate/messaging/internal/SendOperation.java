@@ -1,7 +1,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.intercept.OutboundType;
-import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.ResponsePart;
 import io.hekate.messaging.unicast.RetryDecision;
 import io.hekate.messaging.unicast.SendAckMode;
 import io.hekate.messaging.unicast.SendFuture;
@@ -34,12 +34,12 @@ class SendOperation<T> extends UnicastOperation<T> {
     }
 
     @Override
-    public RetryDecision shouldRetry(Throwable error, Response<T> response) {
+    public RetryDecision shouldRetry(Throwable error, ResponsePart<T> response) {
         return RetryDecision.USE_DEFAULTS;
     }
 
     @Override
-    protected void doReceiveFinal(Response<T> response) {
+    protected void doReceiveFinal(ResponsePart<T> response) {
         future.complete(null);
     }
 

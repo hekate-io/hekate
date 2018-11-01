@@ -17,7 +17,6 @@
 package io.hekate.messaging.unicast;
 
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageBase;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.loadbalance.LoadBalancer;
@@ -51,17 +50,6 @@ public interface Response<T> extends MessageBase<T> {
      * @see #request()
      */
     <P extends T> P request(Class<P> type);
-
-    /**
-     * Returns {@code true} if this message represents a partial response that was produced by the {@link Message#partialReply(Object,
-     * SendCallback)} method. This flag can be used to check if there is more data on the messaging stream or if this is the final response
-     * (see {@link Message#reply(Object)}).
-     *
-     * @return {@code true} if this message is a partial response; {@code false} if this message is a final response.
-     *
-     * @see MessagingChannel#newSubscribe(Object)
-     */
-    boolean isPartial();
 
     /**
      * Cluster topology that was used by the {@link LoadBalancer} to submit the request.

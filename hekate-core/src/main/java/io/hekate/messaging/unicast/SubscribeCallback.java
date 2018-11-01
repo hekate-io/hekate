@@ -35,7 +35,7 @@ public interface SubscribeCallback<T> {
      * </p>
      *
      * @param err Error ({@code null} if operation was successful).
-     * @param rsp Response ({@code null} if operation failed).
+     * @param rsp Response part ({@code null} if operation failed).
      */
-    void onComplete(Throwable err, Response<T> rsp);
+    void onComplete(Throwable err, ResponsePart<T> rsp);
 }

@@ -3,7 +3,7 @@ package io.hekate.messaging.internal;
 import io.hekate.messaging.intercept.OutboundType;
 import io.hekate.messaging.unicast.RequestFuture;
 import io.hekate.messaging.unicast.RequestRetryCondition;
-import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.ResponsePart;
 import io.hekate.messaging.unicast.RetryDecision;
 
 class RequestOperation<T> extends UnicastOperation<T> {
@@ -34,7 +34,7 @@ class RequestOperation<T> extends UnicastOperation<T> {
     }
 
     @Override
-    public RetryDecision shouldRetry(Throwable error, Response<T> response) {
+    public RetryDecision shouldRetry(Throwable error, ResponsePart<T> response) {
         if (until == null) {
             return RetryDecision.USE_DEFAULTS;
         }
@@ -43,7 +43,7 @@ class RequestOperation<T> extends UnicastOperation<T> {
     }
 
     @Override
-    protected void doReceiveFinal(Response<T> response) {
+    protected void doReceiveFinal(ResponsePart<T> response) {
         future.complete(response);
     }
 

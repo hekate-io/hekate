@@ -98,17 +98,17 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
 
             List<String> senderMessages = Collections.synchronizedList(new ArrayList<>());
 
-            sender.channel().forNode(receiver.nodeId()).newSubscribe("request").submit((err, reply) -> {
+            sender.channel().forNode(receiver.nodeId()).newSubscribe("request").submit((err, rsp) -> {
                 if (err == null) {
                     try {
-                        senderMessages.add(reply.payload());
+                        senderMessages.add(rsp.payload());
 
-                        if (reply.payload().equals("final")) {
-                            assertFalse(reply.isPartial());
+                        if (rsp.payload().equals("final")) {
+                            assertTrue(rsp.isLastPart());
 
                             errFuture.complete(null);
                         } else {
-                            assertTrue(reply.isPartial());
+                            assertFalse(rsp.isLastPart());
                         }
                     } catch (Throwable e) {
                         errFuture.complete(e);
@@ -169,17 +169,17 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
 
             List<String> senderMessages = Collections.synchronizedList(new ArrayList<>());
 
-            sender.channel().forNode(receiver.nodeId()).newSubscribe("request").submit((err, reply) -> {
+            sender.channel().forNode(receiver.nodeId()).newSubscribe("request").submit((err, rsp) -> {
                 if (err == null) {
                     try {
-                        senderMessages.add(reply.payload());
+                        senderMessages.add(rsp.payload());
 
-                        if (reply.payload().equals("final")) {
-                            assertFalse(reply.isPartial());
+                        if (rsp.payload().equals("final")) {
+                            assertTrue(rsp.isLastPart());
 
                             sendErrFuture.complete(null);
                         } else {
-                            assertTrue(reply.isPartial());
+                            assertFalse(rsp.isLastPart());
                         }
                     } catch (AssertionError e) {
                         sendErrFuture.complete(e);

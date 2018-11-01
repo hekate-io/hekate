@@ -2,7 +2,7 @@ package io.hekate.messaging.internal;
 
 import io.hekate.messaging.intercept.OutboundType;
 import io.hekate.messaging.unicast.RequestRetryCondition;
-import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.unicast.ResponsePart;
 import io.hekate.messaging.unicast.RetryDecision;
 import io.hekate.messaging.unicast.SubscribeCallback;
 import io.hekate.messaging.unicast.SubscribeFuture;
@@ -41,7 +41,7 @@ class SubscribeOperation<T> extends UnicastOperation<T> {
     }
 
     @Override
-    public RetryDecision shouldRetry(Throwable error, Response<T> response) {
+    public RetryDecision shouldRetry(Throwable error, ResponsePart<T> response) {
         if (condition == null || isPartial(response)) {
             return RetryDecision.USE_DEFAULTS;
         }
@@ -63,7 +63,7 @@ class SubscribeOperation<T> extends UnicastOperation<T> {
     }
 
     @Override
-    protected void doReceivePartial(Response<T> response) {
+    protected void doReceivePartial(ResponsePart<T> response) {
         if (!active) {
             active = true;
         }
@@ -72,7 +72,7 @@ class SubscribeOperation<T> extends UnicastOperation<T> {
     }
 
     @Override
-    protected void doReceiveFinal(Response<T> response) {
+    protected void doReceiveFinal(ResponsePart<T> response) {
         try {
             callback.onComplete(null, response);
         } finally {
@@ -89,7 +89,7 @@ class SubscribeOperation<T> extends UnicastOperation<T> {
         }
     }
 
-    private static boolean isPartial(Response<?> response) {
-        return response != null && response.isPartial();
+    private static boolean isPartial(ResponsePart<?> response) {
+        return response != null && !response.isLastPart();
     }
 }
