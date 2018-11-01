@@ -21,7 +21,7 @@ package io.hekate.messaging.broadcast;
  *
  * @param <T> Base type of a messages.
  *
- * @see Broadcast#async(BroadcastCallback)
+ * @see Broadcast#submit(BroadcastCallback)
  * @see BroadcastResult
  */
 @FunctionalInterface

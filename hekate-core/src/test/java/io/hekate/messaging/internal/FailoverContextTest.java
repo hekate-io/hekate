@@ -37,11 +37,11 @@ public class FailoverContextTest extends FailoverTestBase {
 
         failures.set(3);
 
-        get(toRemote.withFailover(ctx -> {
+        toRemote.withFailover(ctx -> {
             contexts.add(ctx);
 
             return ctx.retry();
-        }).request("test--1").execute());
+        }).newRequest("test--1").response();
 
         assertEquals(3, contexts.size());
 

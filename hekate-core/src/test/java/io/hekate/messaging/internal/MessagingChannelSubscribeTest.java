@@ -64,8 +64,8 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
 
         repeat(5, i -> {
             List<String> results = sender.channel().forNode(receiver.nodeId())
-                .subscribe("request")
-                .sync();
+                .newSubscribe("request")
+                .responses();
 
             assertEquals(Arrays.asList("response0", "response1", "response2", "final"), results);
 
@@ -98,7 +98,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
 
             List<String> senderMessages = Collections.synchronizedList(new ArrayList<>());
 
-            sender.channel().forNode(receiver.nodeId()).subscribe("request").async((err, reply) -> {
+            sender.channel().forNode(receiver.nodeId()).newSubscribe("request").submit((err, reply) -> {
                 if (err == null) {
                     try {
                         senderMessages.add(reply.payload());
@@ -169,7 +169,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
 
             List<String> senderMessages = Collections.synchronizedList(new ArrayList<>());
 
-            sender.channel().forNode(receiver.nodeId()).subscribe("request").async((err, reply) -> {
+            sender.channel().forNode(receiver.nodeId()).newSubscribe("request").submit((err, reply) -> {
                 if (err == null) {
                     try {
                         senderMessages.add(reply.payload());
@@ -220,7 +220,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        sender.channel().forNode(receiver.nodeId()).subscribe("test").async((err, rsp) -> { /* Ignore. */ });
+        sender.channel().forNode(receiver.nodeId()).newSubscribe("test").submit((err, rsp) -> { /* Ignore. */ });
 
         Message<String> msg = messageExchanger.exchange(null, 3, TimeUnit.SECONDS);
 

@@ -137,7 +137,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 MessagingChannel<String> channel = from.channel().forNode(to.nodeId());
 
                 // No affinity.
-                assertEquals(msg + "-CS-false-null-SR-reply-SS-CR", channel.request(msg).sync());
+                assertEquals(msg + "-CS-false-null-SR-reply-SS-CR", channel.newRequest(msg).response());
                 busyWait("receive complete", () ->
                     (msg + "-CS-false-null-SR").equals(lastServerReceiveComplete.getAndSet(null))
                 );
@@ -145,9 +145,9 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 to.assertReceived(msg + "-CS-false-null-SR");
 
                 // With affinity.
-                assertEquals(msg + "-CS-true-1-SR-reply-SS-CR", channel.request(msg)
+                assertEquals(msg + "-CS-true-1-SR-reply-SS-CR", channel.newRequest(msg)
                     .withAffinity(1)
-                    .execute()
+                    .submit()
                     .result()
                 );
 
@@ -177,7 +177,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 MessagingChannel<String> channel = from.channel().forNode(to.nodeId());
 
                 MessagingFutureException err = expect(MessagingFutureException.class, () ->
-                    get(channel.request("msg").execute())
+                    get(channel.newRequest("msg").submit())
                 );
 
                 verify(interceptor).interceptClientReceiveError(any(), ArgumentMatchers.same(err.getCause()));
@@ -302,7 +302,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 String msg = "test1-" + from.nodeId();
 
                 // No affinity.
-                List<String> replies = channel.subscribe(msg).sync();
+                List<String> replies = channel.newSubscribe(msg).responses();
 
                 busyWait("receive complete", () ->
                     (msg + "-CS-false-null-SR").equals(lastServerReceiveComplete.getAndSet(null))
@@ -315,7 +315,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 to.assertReceived(msg + "-CS-false-null-SR");
 
                 // With affinity.
-                List<String> affinityReplies = channel.subscribe(msg).withAffinity(1).sync();
+                List<String> affinityReplies = channel.newSubscribe(msg).withAffinity(1).responses();
 
                 busyWait("receive complete", () ->
                     (msg + "-CS-true-1-SR").equals(lastServerReceiveComplete.getAndSet(null))
@@ -347,7 +347,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 MessagingChannel<String> channel = from.channel().forNode(to.nodeId());
 
                 MessagingFutureException err = expect(MessagingFutureException.class, () ->
-                    channel.subscribe("msg").sync()
+                    channel.newSubscribe("msg").responses()
                 );
 
                 verify(interceptor).interceptClientReceiveError(any(), ArgumentMatchers.same(err.getCause()));
@@ -427,8 +427,8 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 String msg = "test-" + from.nodeId();
 
                 from.channel().forNode(to.nodeId())
-                    .send(msg)
-                    .execute()
+                    .newSend(msg)
+                    .submit()
                     .get();
 
                 busyWait("receive complete", () ->
@@ -525,9 +525,9 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 String msg = "test-" + from.nodeId();
 
                 from.channel().forNode(to.nodeId())
-                    .send(msg)
+                    .newSend(msg)
                     .withAckMode(SendAckMode.REQUIRED)
-                    .execute()
+                    .submit()
                     .get();
 
                 busyWait("receive complete", () ->
@@ -560,7 +560,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 MessagingChannel<String> channel = from.channel().forNode(to.nodeId());
 
                 MessagingFutureException err = expect(MessagingFutureException.class, () ->
-                    channel.send("msg").withAckMode(SendAckMode.REQUIRED).sync()
+                    channel.newSend("msg").withAckMode(SendAckMode.REQUIRED).sync()
                 );
 
                 verify(interceptor).interceptClientReceiveError(any(), ArgumentMatchers.same(err.getCause()));

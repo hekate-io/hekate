@@ -24,7 +24,7 @@ import io.hekate.messaging.MessagingFuture;
  *
  * @param <T> Base type of a broadcast message.
  *
- * @see MessagingChannel#broadcast(Object)
+ * @see MessagingChannel#newBroadcast(Object)
  * @see BroadcastResult
  */
 public class BroadcastFuture<T> extends MessagingFuture<BroadcastResult<T>> {

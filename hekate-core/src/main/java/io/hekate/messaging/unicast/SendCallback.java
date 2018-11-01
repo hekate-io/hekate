@@ -19,7 +19,7 @@ package io.hekate.messaging.unicast;
 /**
  * Callback for a {@link Send} operation.
  *
- * @see Send#async(SendCallback)
+ * @see Send#submit(SendCallback)
  */
 @FunctionalInterface
 public interface SendCallback {

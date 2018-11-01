@@ -27,7 +27,7 @@ import io.hekate.messaging.loadbalance.LoadBalancer;
  *
  * @param <T> Payload type.
  *
- * @see MessagingChannel#request(Object)
+ * @see MessagingChannel#newRequest(Object)
  */
 public interface Response<T> extends MessageBase<T> {
     /**
@@ -59,7 +59,7 @@ public interface Response<T> extends MessageBase<T> {
      *
      * @return {@code true} if this message is a partial response; {@code false} if this message is a final response.
      *
-     * @see MessagingChannel#subscribe(Object)
+     * @see MessagingChannel#newSubscribe(Object)
      */
     boolean isPartial();
 

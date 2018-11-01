@@ -47,9 +47,9 @@ class RpcMethodClient<T> extends RpcMethodClientBase<T> {
     protected Object doInvoke(Object affinity, Object[] args) throws MessagingFutureException, InterruptedException, TimeoutException {
         RpcCall<T> call = new RpcCall<>(methodIdxKey(), rpc(), tag(), method(), args);
 
-        RequestFuture<RpcProtocol> future = channel().request(call)
+        RequestFuture<RpcProtocol> future = channel().newRequest(call)
             .withAffinity(affinity)
-            .execute();
+            .submit();
 
         if (method().isAsync()) {
             return future.thenApply(RESPONSE_CONVERTER);

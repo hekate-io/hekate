@@ -14,9 +14,9 @@ import io.hekate.messaging.loadbalance.LoadBalancer;
  * This interface represents a unidirectional send operation. Typical use of this interface is:
  * </p>
  * <ol>
- * <li>Obtain an instance of this interface via the {@link MessagingChannel#send(Object)} method call</li>
+ * <li>Obtain an instance of this interface via the {@link MessagingChannel#newSend(Object)} method call</li>
  * <li>Set options (f.e. {@link #withAckMode(SendAckMode) acknowledgement mode}  or {@link #withAffinity(Object) affinity key})</li>
- * <li>Execute this operation via the {@link #execute()} method</li>
+ * <li>Execute this operation via the {@link #submit()} method</li>
  * <li>Await for the execution result, if needed</li>
  * </ol>
  * <h3>Example:</h3>
@@ -74,7 +74,30 @@ public interface Send<T> {
      *
      * @return Future result of this operation.
      */
-    SendFuture execute();
+    SendFuture submit();
+
+    /**
+     * Asynchronously executes this operation and notifies the specified callback upon completion.
+     *
+     * @param callback Callback.
+     */
+    default void submit(SendCallback callback) {
+        ArgAssert.notNull(callback, "Callback");
+
+        submit().whenComplete((ignore, err) ->
+            callback.onComplete(err)
+        );
+    }
+
+    /**
+     * Synchronously executes this operation.
+     *
+     * @throws MessagingFutureException if operations fails.
+     * @throws InterruptedException if thread got interrupted while awaiting for this operation to complete.
+     */
+    default void sync() throws MessagingFutureException, InterruptedException {
+        submit().get();
+    }
 
     /**
      * Sets acknowledgement mode to {@link SendAckMode#REQUIRED}.
@@ -96,28 +119,5 @@ public interface Send<T> {
      */
     default Send<T> withNoAck() {
         return withAckMode(SendAckMode.NOT_NEEDED);
-    }
-
-    /**
-     * Synchronously executes this operation.
-     *
-     * @throws MessagingFutureException if operations fails.
-     * @throws InterruptedException if thread got interrupted while awaiting for this operation to complete.
-     */
-    default void sync() throws MessagingFutureException, InterruptedException {
-        execute().get();
-    }
-
-    /**
-     * Asynchronously executes this operation and notifies the specified callback upon completion.
-     *
-     * @param callback Callback.
-     */
-    default void async(SendCallback callback) {
-        ArgAssert.notNull(callback, "Callback");
-
-        execute().whenComplete((ignore, err) ->
-            callback.onComplete(err)
-        );
     }
 }

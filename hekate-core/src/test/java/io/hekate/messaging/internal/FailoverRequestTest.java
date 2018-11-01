@@ -54,7 +54,7 @@ public class FailoverRequestTest extends FailoverTestBase {
                 sender.node().leaveAsync();
 
                 return ctx.retry();
-            }).request("test").execute().result();
+            }).newRequest("test").submit().result();
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {
@@ -155,7 +155,7 @@ public class FailoverRequestTest extends FailoverTestBase {
 
                     return context.retry().withReRoute();
                 })
-                .request("error").execute()
+                .newRequest("error").submit()
             );
 
             fail("Error was expected.");
@@ -191,7 +191,7 @@ public class FailoverRequestTest extends FailoverTestBase {
 
                 return ctx.retry().withRoutingPolicy(policy);
             })
-            .request("test").execute().result();
+            .newRequest("test").submit().result();
 
         assertEquals(5, contexts.size());
         assertEquals("test-" + RETRANSMIT_SUFFIX, response);
@@ -211,7 +211,7 @@ public class FailoverRequestTest extends FailoverTestBase {
                 failoverCalls.incrementAndGet();
 
                 return context.retry();
-            }).request("test").execute().result();
+            }).newRequest("test").submit().result();
 
             assertNotNull(response);
             assertEquals("test-" + RETRANSMIT_SUFFIX, response);
@@ -231,7 +231,7 @@ public class FailoverRequestTest extends FailoverTestBase {
             times.add(time);
 
             return context.retry();
-        }).request("test").sync();
+        }).newRequest("test").response();
 
         assertNotNull(response);
 
@@ -262,7 +262,7 @@ public class FailoverRequestTest extends FailoverTestBase {
                     failoverCalls.incrementAndGet();
 
                     return context.attempt() < attempts ? context.retry() : context.fail();
-                }).request("test").execute());
+                }).newRequest("test").submit());
 
                 fail("Error was expected.");
             } catch (MessagingFutureException e) {

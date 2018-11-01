@@ -32,7 +32,7 @@ class SubscribeOperationBuilder<T> extends MessageOperationBuilder<T> implements
     }
 
     @Override
-    public SubscribeFuture<T> async(SubscribeCallback<T> callback) {
+    public SubscribeFuture<T> submit(SubscribeCallback<T> callback) {
         SubscribeOperation<T> op = new SubscribeOperation<>(message(), affinity, gateway(), opts(), callback, condition);
 
         gateway().submit(op);
@@ -41,10 +41,10 @@ class SubscribeOperationBuilder<T> extends MessageOperationBuilder<T> implements
     }
 
     @Override
-    public List<T> sync() throws InterruptedException, MessagingFutureException {
+    public List<T> responses() throws InterruptedException, MessagingFutureException {
         List<T> results = new ArrayList<>();
 
-        SubscribeFuture<T> future = async((err, rsp) -> {
+        SubscribeFuture<T> future = submit((err, rsp) -> {
             if (err == null) {
                 results.add(rsp.payload());
             }

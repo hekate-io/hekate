@@ -13,9 +13,9 @@ import java.util.List;
  * This interface represents a bidirectional subscribe operation. Typical use of this interface is:
  * </p>
  * <ol>
- * <li>Obtain an instance of this interface via the {@link MessagingChannel#subscribe(Object)} call</li>
+ * <li>Obtain an instance of this interface via the {@link MessagingChannel#newSubscribe(Object)} call</li>
  * <li>Set options (f.e. {@link #withAffinity(Object) affinity key})</li>
- * <li>Execute this operation via the {@link #async(SubscribeCallback)}  method</li>
+ * <li>Execute this operation via the {@link #submit(SubscribeCallback)}  method</li>
  * <li>Await for the execution result, if needed</li>
  * </ol>
  * <h3>Example:</h3>
@@ -65,7 +65,7 @@ public interface Subscribe<T> {
      *
      * @return Future result of this operation.
      */
-    SubscribeFuture<T> async(SubscribeCallback<T> callback);
+    SubscribeFuture<T> submit(SubscribeCallback<T> callback);
 
     /**
      * Synchronously collects all response chunks.
@@ -80,5 +80,5 @@ public interface Subscribe<T> {
      * @throws MessagingFutureException if the operation fails.
      * @throws InterruptedException if the current thread is interrupted.
      */
-    List<T> sync() throws InterruptedException, MessagingFutureException;
+    List<T> responses() throws InterruptedException, MessagingFutureException;
 }

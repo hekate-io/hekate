@@ -2,6 +2,7 @@ package io.hekate.messaging.broadcast;
 
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFutureException;
+import java.util.Collection;
 
 /**
  * Aggregate operation.
@@ -10,9 +11,9 @@ import io.hekate.messaging.MessagingFutureException;
  * This interface represents a bidirectional aggregate operation. Typical use of this interface is:
  * </p>
  * <ol>
- * <li>Obtain an instance of this interface via the {@link MessagingChannel#aggregate(Object)} method call</li>
+ * <li>Obtain an instance of this interface via the {@link MessagingChannel#newAggregate(Object)} method call</li>
  * <li>Set options (f.e. {@link #withAffinity(Object) affinity key})</li>
- * <li>Execute this operation via the {@link #execute()} method</li>
+ * <li>Execute this operation via the {@link #submit()} method</li>
  * <li>Process results (synchronously or asynchronously)</li>
  * </ol>
  * <h3>Example:</h3>
@@ -41,7 +42,30 @@ public interface Aggregate<T> {
      *
      * @return Future result of this operation.
      */
-    AggregateFuture<T> execute();
+    AggregateFuture<T> submit();
+
+    /**
+     * Asynchronously executes this operation and notifies the specified callback upon completion.
+     *
+     * @param callback Callback.
+     */
+    default void submit(AggregateCallback<T> callback) {
+        submit().whenComplete((rslt, err) ->
+            callback.onComplete(err, rslt)
+        );
+    }
+
+    /**
+     * Synchronously executes this operation and returns the result.
+     *
+     * @return Result (see {@link AggregateResult#results()}).
+     *
+     * @throws MessagingFutureException If operations fails.
+     * @throws InterruptedException If thread got interrupted while awaiting for this operation to complete.
+     */
+    default Collection<T> results() throws MessagingFutureException, InterruptedException {
+        return submit().get().results();
+    }
 
     /**
      * Synchronously executes this operation and returns the result.
@@ -51,18 +75,7 @@ public interface Aggregate<T> {
      * @throws MessagingFutureException If operations fails.
      * @throws InterruptedException If thread got interrupted while awaiting for this operation to complete.
      */
-    default AggregateResult<T> sync() throws MessagingFutureException, InterruptedException {
-        return execute().get();
-    }
-
-    /**
-     * Asynchronously executes this operation and notifies the specified callback upon completion.
-     *
-     * @param callback Callback.
-     */
-    default void async(AggregateCallback<T> callback) {
-        execute().whenComplete((rslt, err) ->
-            callback.onComplete(err, rslt)
-        );
+    default AggregateResult<T> get() throws MessagingFutureException, InterruptedException {
+        return submit().get();
     }
 }

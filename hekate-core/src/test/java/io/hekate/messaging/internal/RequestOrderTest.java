@@ -72,9 +72,9 @@ public class RequestOrderTest extends MessagingServiceTestBase {
         List<RequestFuture<String>> tasks = new ArrayList<>();
 
         for (int i = 0; i < 100; i++) {
-            tasks.add(channel.request(String.valueOf(i))
+            tasks.add(channel.newRequest(String.valueOf(i))
                 .withAffinity(1)
-                .execute()
+                .submit()
             );
         }
 

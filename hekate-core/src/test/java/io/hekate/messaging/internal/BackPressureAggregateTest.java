@@ -73,7 +73,7 @@ public class BackPressureAggregateTest extends BackPressureTestBase {
         List<AggregateFuture<?>> futureResponses = new ArrayList<>();
 
         for (int i = 0; i < highWatermark / RECEIVERS; i++) {
-            futureResponses.add(sender.aggregate("request-" + i).execute());
+            futureResponses.add(sender.newAggregate("request-" + i).submit());
         }
 
         busyWait("requests received", () -> requests1.size() == futureResponses.size());
@@ -100,7 +100,7 @@ public class BackPressureAggregateTest extends BackPressureTestBase {
         );
 
         // Check that new request can be processed.
-        AggregateFuture<String> last = sender.aggregate("last").execute();
+        AggregateFuture<String> last = sender.newAggregate("last").submit();
 
         busyWait("last request received", () -> requests1.size() == futureResponses.size() + 1);
         busyWait("last request received", () -> requests2.size() == futureResponses.size() + 1);
@@ -134,7 +134,7 @@ public class BackPressureAggregateTest extends BackPressureTestBase {
         List<AggregateFuture<?>> futureResponses = new ArrayList<>();
 
         for (int i = 0; i < highWatermark / RECEIVERS; i++) {
-            futureResponses.add(sender.aggregate("request-" + i).execute());
+            futureResponses.add(sender.newAggregate("request-" + i).submit());
         }
 
         // Check that message can't be sent when high watermark reached.
@@ -163,7 +163,7 @@ public class BackPressureAggregateTest extends BackPressureTestBase {
         );
 
         // Check that new request can be processed.
-        AggregateFuture<String> last = sender.aggregate("last").execute();
+        AggregateFuture<String> last = sender.newAggregate("last").submit();
 
         busyWait("last request received", () -> requests1.size() == futureResponses.size() + 1);
 
@@ -202,7 +202,7 @@ public class BackPressureAggregateTest extends BackPressureTestBase {
                 say("Submitted requests: %s", i);
             }
 
-            asyncResponses.add(sender.aggregate("test-" + i).execute());
+            asyncResponses.add(sender.newAggregate("test-" + i).submit());
         }
 
         for (AggregateFuture<String> future : asyncResponses) {

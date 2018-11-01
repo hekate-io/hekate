@@ -90,19 +90,19 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
         awaitForChannelsTopology(sender, receiver);
 
         repeat(3, i -> {
-            get(sender.channel().forNode(receiver.nodeId()).request("success").execute());
+            get(sender.channel().forNode(receiver.nodeId()).newRequest("success").submit());
 
             sender.leave();
 
             MessagingFutureException err = expect(MessagingFutureException.class, () ->
-                get(sender.channel().forNode(receiver.nodeId()).request("fail").execute())
+                get(sender.channel().forNode(receiver.nodeId()).newRequest("fail").submit())
             );
 
             assertTrue(err.isCausedBy(MessagingChannelClosedException.class));
 
             sender.join();
 
-            get(sender.channel().forNode(receiver.nodeId()).request("success").execute());
+            get(sender.channel().forNode(receiver.nodeId()).newRequest("success").submit());
         });
     }
 
@@ -113,7 +113,7 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
         repeat(3, i -> {
             sender.join();
 
-            get(sender.channel().request("test" + i).execute());
+            get(sender.channel().newRequest("test" + i).submit());
 
             sender.leave();
         });
@@ -130,7 +130,7 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
 
             for (TestChannel from : channels) {
                 for (TestChannel to : channels) {
-                    from.channel().forNode(to.nodeId()).send("test-" + from.nodeId()).execute();
+                    from.channel().forNode(to.nodeId()).newSend("test-" + from.nodeId()).submit();
                 }
             }
 
@@ -158,7 +158,7 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
 
             for (TestChannel from : channels) {
                 for (TestChannel to : channels) {
-                    from.channel().forNode(to.nodeId()).send("test-" + from.nodeId()).execute();
+                    from.channel().forNode(to.nodeId()).newSend("test-" + from.nodeId()).submit();
                 }
             }
 
@@ -174,7 +174,7 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
                 for (TestChannel to : removed) {
                     ExpectedSendFailure sendFailure = new ExpectedSendFailure();
 
-                    from.channel().forNode(to.nodeId()).send("failed").async(sendFailure);
+                    from.channel().forNode(to.nodeId()).newSend("failed").submit(sendFailure);
 
                     sendFailure.awaitAndCheck(EmptyTopologyException.class);
                 }
@@ -198,6 +198,6 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel().join();
 
-        assertEquals("test-intercepted-OK", get(sender.channel().forRemotes().request("test").execute()).payload());
+        assertEquals("test-intercepted-OK", get(sender.channel().forRemotes().newRequest("test").submit()).payload());
     }
 }

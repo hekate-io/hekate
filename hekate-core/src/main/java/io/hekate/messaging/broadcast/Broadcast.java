@@ -13,9 +13,9 @@ import io.hekate.messaging.unicast.SendAckMode;
  * This interface represents a unidirectional broadcast operation. Typical use of this interface is:
  * </p>
  * <ol>
- * <li>Obtain an instance of this interface via the {@link MessagingChannel#broadcast(Object)} method call</li>
+ * <li>Obtain an instance of this interface via the {@link MessagingChannel#newBroadcast(Object)} method call</li>
  * <li>Set options (f.e. {@link #withAckMode(SendAckMode) acknowledgement mode} or {@link #withAffinity(Object) affinity key})</li>
- * <li>Execute this operation via the {@link #execute()} method</li>
+ * <li>Execute this operation via the {@link #submit()} method</li>
  * <li>Await for the execution result, if needed</li>
  * </ol>
  * <h3>Example:</h3>
@@ -67,7 +67,30 @@ public interface Broadcast<T> {
      *
      * @return Future result of this operation.
      */
-    BroadcastFuture<T> execute();
+    BroadcastFuture<T> submit();
+
+    /**
+     * Asynchronously executes this operation and notifies the specified callback upon completion.
+     *
+     * @param callback Callback.
+     */
+    default void submit(BroadcastCallback<T> callback) {
+        submit().whenComplete((result, error) ->
+            callback.onComplete(error, result)
+        );
+    }
+
+    /**
+     * Synchronously executes this operation and returns the result.
+     *
+     * @return Result.
+     *
+     * @throws MessagingFutureException If operations fails.
+     * @throws InterruptedException If thread got interrupted while awaiting for this operation to complete.
+     */
+    default BroadcastResult<T> sync() throws MessagingFutureException, InterruptedException {
+        return submit().get();
+    }
 
     /**
      * Sets acknowledgement mode to {@link SendAckMode#REQUIRED}.
@@ -89,28 +112,5 @@ public interface Broadcast<T> {
      */
     default Broadcast<T> withNoAck() {
         return withAckMode(SendAckMode.NOT_NEEDED);
-    }
-
-    /**
-     * Synchronously executes this operation and returns the result.
-     *
-     * @return Result.
-     *
-     * @throws MessagingFutureException If operations fails.
-     * @throws InterruptedException If thread got interrupted while awaiting for this operation to complete.
-     */
-    default BroadcastResult<T> sync() throws MessagingFutureException, InterruptedException {
-        return execute().get();
-    }
-
-    /**
-     * Asynchronously executes this operation and notifies the specified callback upon completion.
-     *
-     * @param callback Callback.
-     */
-    default void async(BroadcastCallback<T> callback) {
-        execute().whenComplete((result, error) ->
-            callback.onComplete(error, result)
-        );
     }
 }

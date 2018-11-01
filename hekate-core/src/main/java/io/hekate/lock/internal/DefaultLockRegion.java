@@ -205,7 +205,7 @@ class DefaultLockRegion implements LockRegion {
 
         LockOwnerRequest request = new LockOwnerRequest(regionName, lockName);
 
-        lockChannel.request(request)
+        lockChannel.newRequest(request)
             .withAffinity(new LockKey(regionName, lockName))
             .until((err, rsp) -> {
                 if (err == null) {
@@ -234,7 +234,7 @@ class DefaultLockRegion implements LockRegion {
 
                 return resultFuture.isDone() ? DONE : RETRY;
             })
-            .async((err, rsp) -> {
+            .submit((err, rsp) -> {
                 if (err != null) {
                     resultFuture.complete(Optional.empty());
                 }
@@ -902,7 +902,7 @@ class DefaultLockRegion implements LockRegion {
     }
 
     private void sendToNextNode(MigrationRequest request) {
-        migrationRing.request(request)
+        migrationRing.newRequest(request)
             .withAffinity(regionName)
             .until((err, reply) -> {
                 if (err == null) {
@@ -931,7 +931,7 @@ class DefaultLockRegion implements LockRegion {
                     return isValid(request) ? RETRY : DONE;
                 }
             })
-            .async((err, rsp) -> {
+            .submit((err, rsp) -> {
                 if (err != null && isValid(request)) {
                     log.error("Failed to submit migration request [request={}]", request, err);
                 }

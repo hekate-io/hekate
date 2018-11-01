@@ -59,7 +59,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * <p>
      * Send operation doesn't assume any response to be received from the destination node. If request-response type of communication is
-     * required then consider using the {@link #request(Object)} method.
+     * required then consider using the {@link #newRequest(Object)} method.
      * </p>
      *
      * <p>
@@ -71,9 +71,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return New operation.
      *
-     * @see Send#execute()
+     * @see Send#submit()
      */
-    Send<T> send(T message);
+    Send<T> newSend(T message);
 
     /**
      * Creates a new {@link Request} operation.
@@ -82,9 +82,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return New operation.
      *
-     * @see Request#execute()
+     * @see Request#submit()
      */
-    Request<T> request(T request);
+    Request<T> newRequest(T request);
 
     /**
      * Creates a new {@link Subscribe} operation.
@@ -93,9 +93,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return New operation.
      *
-     * @see Subscribe#async(SubscribeCallback)
+     * @see Subscribe#submit(SubscribeCallback)
      */
-    Subscribe<T> subscribe(T request);
+    Subscribe<T> newSubscribe(T request);
 
     /**
      * Creates a new {@link Broadcast} operation.
@@ -109,9 +109,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return New operation.
      *
-     * @see Broadcast#execute()
+     * @see Broadcast#submit()
      */
-    Broadcast<T> broadcast(T request);
+    Broadcast<T> newBroadcast(T request);
 
     /**
      * Creates a new {@link Aggregate} operation.
@@ -120,9 +120,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return New operation.
      *
-     * @see Aggregate#execute()
+     * @see Aggregate#submit()
      */
-    Aggregate<T> aggregate(T request);
+    Aggregate<T> newAggregate(T request);
 
     /**
      * Returns the universally unique identifier of this channel.

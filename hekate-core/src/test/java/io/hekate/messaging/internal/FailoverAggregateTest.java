@@ -71,8 +71,8 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
 
                     return context.retry();
                 })
-                .aggregate("test")
-                .execute()
+                .newAggregate("test")
+                .submit()
             );
 
             assertTrue(result.isSuccess());
@@ -97,8 +97,8 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
 
                     return context.retry();
                 })
-                .aggregate("test")
-                .execute()
+                .newAggregate("test")
+                .submit()
             );
 
             assertTrue(result.isSuccess());
@@ -123,8 +123,8 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
 
                     return context.attempt() < attempts ? context.retry() : context.fail();
                 })
-                .aggregate("test")
-                .execute()
+                .newAggregate("test")
+                .submit()
             );
 
             assertFalse(result.isSuccess());
@@ -150,8 +150,8 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
 
                     return context.fail();
                 })
-                .aggregate("test")
-                .execute()
+                .newAggregate("test")
+                .submit()
             );
 
             assertFalse(result.isSuccess());
@@ -171,8 +171,8 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
                 .withFailover(context -> {
                     throw TEST_ERROR;
                 })
-                .aggregate("test")
-                .execute()
+                .newAggregate("test")
+                .submit()
             );
 
             assertFalse(result.isSuccess());
@@ -209,8 +209,8 @@ public class FailoverAggregateTest extends MessagingServiceTestBase {
 
                         return context.retry().withRoutingPolicy(policy);
                     })
-                    .aggregate("test")
-                    .execute()
+                    .newAggregate("test")
+                    .submit()
                 );
 
                 if (errRef.get() != null) {

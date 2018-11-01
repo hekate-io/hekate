@@ -69,7 +69,7 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
 
                 MessagingChannel<String> channel = from.channel().forNode(to.nodeId());
 
-                channel.send(msg).withAck().sync();
+                channel.newSend(msg).withAck().sync();
 
                 to.assertReceived(msg);
             }
@@ -82,7 +82,7 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
 
         try {
             channel.channel().forNode(newNodeId())
-                .send("failed")
+                .newSend("failed")
                 .withAck()
                 .sync();
 
@@ -108,7 +108,7 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
                 assertFalse(client.isConnected());
 
                 sender.channel().forNode(receiver.nodeId())
-                    .send("test" + i)
+                    .newSend("test" + i)
                     .withAck()
                     .sync();
 
@@ -135,7 +135,7 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
 
         runParallel(4, 1000, s ->
             sender.channel().forNode(receiver.nodeId())
-                .send("test")
+                .newSend("test")
                 .withAck()
                 .sync()
         );
@@ -176,9 +176,9 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
                 try {
                     // Send message.
                     sent = sender.channel().forNode(receiver.nodeId())
-                        .send("test" + i)
+                        .newSend("test" + i)
                         .withAck()
-                        .execute();
+                        .submit();
 
                     // Await for timeout.
                     sleep((long)(idleTimeout * 3));
@@ -227,10 +227,10 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
 
             for (int i = 0; i < 50; i++) {
                 get(channel1.channel()
-                    .send("test" + i)
+                    .newSend("test" + i)
                     .withAck()
                     .withAffinity(j)
-                    .execute()
+                    .submit()
                 );
             }
 
@@ -261,7 +261,7 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
 
             try {
                 sender.channel().forNode(receiver.nodeId())
-                    .send(msg)
+                    .newSend(msg)
                     .withAck()
                     .sync();
 
@@ -291,7 +291,7 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
         repeat(5, i -> {
             try {
                 sender.channel().forNode(receiver.nodeId())
-                    .send("request" + i)
+                    .newSend("request" + i)
                     .withAck()
                     .sync();
 
@@ -322,7 +322,7 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
 
         repeat(5, i -> {
             try {
-                sender.channel().forNode(receiver.nodeId()).send("request" + i).withAck().sync();
+                sender.channel().forNode(receiver.nodeId()).newSend("request" + i).withAck().sync();
 
                 fail("Error was expected.");
             } catch (MessagingFutureException e) {
@@ -339,9 +339,9 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
             MessagingFutureException err = expect(MessagingFutureException.class, () ->
                 get(sender.messaging().channel("test")
                     .forRemotes()
-                    .send(new NonSerializable())
+                    .newSend(new NonSerializable())
                     .withAck()
-                    .execute()
+                    .submit()
                 )
             );
 
@@ -359,9 +359,9 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
             MessagingFutureException err = expect(MessagingFutureException.class, () ->
                 get(sender.messaging().channel("test")
                     .forRemotes()
-                    .send(new NonDeserializable())
+                    .newSend(new NonDeserializable())
                     .withAck()
-                    .execute()
+                    .submit()
                 )
             );
 

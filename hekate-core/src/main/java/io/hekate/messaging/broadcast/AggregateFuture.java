@@ -26,7 +26,7 @@ import java.util.Collection;
  *
  * @param <T> Base type of aggregation results.
  *
- * @see MessagingChannel#aggregate(Object)
+ * @see MessagingChannel#newAggregate(Object)
  * @see AggregateResult
  */
 public class AggregateFuture<T> extends MessagingFuture<AggregateResult<T>> {

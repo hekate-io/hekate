@@ -21,7 +21,7 @@ package io.hekate.messaging.broadcast;
  *
  * @param <T> Base type of a messages.
  *
- * @see Aggregate#execute()
+ * @see Aggregate#submit()
  * @see AggregateResult
  */
 @FunctionalInterface

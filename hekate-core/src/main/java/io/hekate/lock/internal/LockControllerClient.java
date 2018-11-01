@@ -475,10 +475,10 @@ class LockControllerClient {
             }
 
             // Send single request if we don't need to subscribe for updates.
-            channel.request(lockReq)
+            channel.newRequest(lockReq)
                 .withAffinity(key)
                 .until(until)
-                .async((err, rsp) -> {
+                .submit((err, rsp) -> {
                     if (err != null && is(Status.LOCKING)) {
                         log.error("Failed to submit lock request [request={}]", lockReq, err);
                     }
@@ -489,10 +489,10 @@ class LockControllerClient {
             }
 
             // Send subscription request if we need to receive lock owner updates.
-            channel.subscribe(lockReq)
+            channel.newSubscribe(lockReq)
                 .withAffinity(key)
                 .until(until)
-                .async((err, rsp) -> {
+                .submit((err, rsp) -> {
                     if (err == null) {
                         LockResponse lockRsp = rsp.payload(LockResponse.class);
 
@@ -513,7 +513,7 @@ class LockControllerClient {
             log.debug("Submitting unlock request [request={}]", unlockReq);
         }
 
-        channel.request(unlockReq)
+        channel.newRequest(unlockReq)
             .withAffinity(key)
             .until((err, rsp) -> {
                 if (!is(Status.UNLOCKING)) {
@@ -542,7 +542,7 @@ class LockControllerClient {
                     return RETRY;
                 }
             })
-            .async((err, rsp) -> {
+            .submit((err, rsp) -> {
                 if (err != null && is(Status.UNLOCKING)) {
                     log.error("Failed to submit unlock request [request={}]", unlockReq, err);
                 }
@@ -557,7 +557,9 @@ class LockControllerClient {
                 log.debug("Sending explicit lock owner query [to={}, key={}]", msg.from(), key);
             }
 
-            channel.request(new LockOwnerRequest(key.region(), key.name()))
+            LockOwnerRequest req = new LockOwnerRequest(key.region(), key.name());
+
+            channel.newRequest(req)
                 .withAffinity(key)
                 .until((err, rsp) -> {
                     // Do not retry if not LOCKING anymore.
@@ -581,14 +583,18 @@ class LockControllerClient {
                         }
                     } else {
                         if (DEBUG) {
-                            log.debug("Failed to query for explicit lock owner [to={}, key={}, cause={}]", rsp.from(), key, err.toString());
+                            log.debug("Explicit lock owner query failed [to={}, key={}, cause={}]", rsp.from(), key, err.toString());
                         }
 
                         // Retry on error.
                         return RETRY;
                     }
                 })
-                .execute();
+                .submit((err, rsp) -> {
+                    if (err != null && is(Status.LOCKING)) {
+                        log.error("Failed to submit explicit lock owner query [request={}]", req, err);
+                    }
+                });
         }
     }
 

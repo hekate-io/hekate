@@ -60,7 +60,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
             awaitForChannelsTopology(channels);
 
-            BroadcastResult<String> result = channel.channel().broadcast("test" + i).sync();
+            BroadcastResult<String> result = channel.channel().newBroadcast("test" + i).sync();
 
             assertTrue(result.toString(), result.isSuccess());
             assertTrue(result.toString(), result.errors().isEmpty());
@@ -86,7 +86,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             for (TestChannel channel : channels) {
                 repeat(100, j -> {
                     BroadcastResult<String> result = channel.channel()
-                        .broadcast("test-" + j)
+                        .newBroadcast("test-" + j)
                         .withAffinity(j)
                         .sync();
 
@@ -119,7 +119,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
             BroadcastResult<String> result = channel.channel()
                 .forRole("no-such-role") // Empty targets.
-                .broadcast("test" + i)
+                .newBroadcast("test" + i)
                 .sync();
 
             assertTrue(result.toString(), result.isSuccess());
@@ -139,7 +139,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
         TestChannel source = channels.get(channels.size() - 1);
 
         // Initialize connection to all nodes.
-        source.channel().broadcast("test").sync();
+        source.channel().newBroadcast("test").sync();
 
         repeat(channels.size() - 1, i -> {
             TestChannel target = channels.get(i);
@@ -149,7 +149,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             // Induce failure by closing existing network connections.
             client.close();
 
-            BroadcastResult<String> result = get(source.channel().broadcast("test" + i).execute());
+            BroadcastResult<String> result = get(source.channel().newBroadcast("test" + i).submit());
 
             assertEquals("test" + i, result.message());
             assertFalse(result.errors().toString(), result.isSuccess());
@@ -186,7 +186,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
                     await(joinLatch);
 
                     return nodes;
-                }).broadcast("test-join" + i).async(joinCallback);
+                }).newBroadcast("test-join" + i).submit(joinCallback);
 
                 return null;
             });
@@ -229,7 +229,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
                     await(leaveLatch);
 
                     return nodes;
-                }).broadcast("test-join" + i).async(leaveCallback);
+                }).newBroadcast("test-join" + i).submit(leaveCallback);
 
                 return null;
             });

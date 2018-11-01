@@ -157,7 +157,7 @@ class DefaultCoordinationMember implements CoordinationMember {
         CompletableFuture<Object> future = newRequestFuture(request, callback);
 
         if (!future.isDone()) {
-            channel.request(request)
+            channel.newRequest(request)
                 .withAffinity(process)
                 .until((err, rsp) -> {
                     if (future.isDone()) {
@@ -198,7 +198,7 @@ class DefaultCoordinationMember implements CoordinationMember {
                         return DONE;
                     }
                 })
-                .async((err, rsp) -> {
+                .submit((err, rsp) -> {
                     unregister(future);
 
                     if (err != null) {

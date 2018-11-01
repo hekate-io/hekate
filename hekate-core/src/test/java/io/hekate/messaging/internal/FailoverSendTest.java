@@ -57,7 +57,7 @@ public class FailoverSendTest extends FailoverTestBase {
                 failoverCalls.incrementAndGet();
 
                 return ctx.retry().withRoutingPolicy(FailoverRoutingPolicy.RETRY_SAME_NODE);
-            }).send("test").execute();
+            }).newSend("test").submit();
 
             get(future);
 
@@ -83,7 +83,7 @@ public class FailoverSendTest extends FailoverTestBase {
                 failoverCalls.incrementAndGet();
 
                 return ctx.retry().withRoutingPolicy(FailoverRoutingPolicy.RE_ROUTE);
-            }).send("test").execute();
+            }).newSend("test").submit();
 
             get(future);
 
@@ -117,7 +117,7 @@ public class FailoverSendTest extends FailoverTestBase {
                 failoverCalls.incrementAndGet();
 
                 return ctx.retry().withRoutingPolicy(FailoverRoutingPolicy.PREFER_SAME_NODE);
-            }).send("test").execute();
+            }).newSend("test").submit();
 
             get(future);
         });
@@ -143,7 +143,7 @@ public class FailoverSendTest extends FailoverTestBase {
                 failoverCalls.incrementAndGet();
 
                 return ctx.retry().withRoutingPolicy(FailoverRoutingPolicy.PREFER_SAME_NODE);
-            }).send("test").execute();
+            }).newSend("test").submit();
 
             get(future);
 
@@ -169,7 +169,7 @@ public class FailoverSendTest extends FailoverTestBase {
                 failoverCalls.incrementAndGet();
 
                 return ctx.retry().withRoutingPolicy(FailoverRoutingPolicy.PREFER_SAME_NODE);
-            }).send("test").execute();
+            }).newSend("test").submit();
 
             get(future);
 
@@ -186,7 +186,7 @@ public class FailoverSendTest extends FailoverTestBase {
                 sender.node().leaveAsync();
 
                 return ctx.retry();
-            }).send("test").execute();
+            }).newSend("test").submit();
 
             get(future);
 
@@ -210,8 +210,8 @@ public class FailoverSendTest extends FailoverTestBase {
 
                     return context.retry().withReRoute();
                 })
-                .send("error")
-                .execute()
+                .newSend("error")
+                .submit()
             );
 
             fail("Error was expected.");

@@ -136,7 +136,7 @@ import java.util.List;
  * <a name="request_response"></a>
  * <h3>Request/Response</h3>
  * <p>
- * {@link MessagingChannel#request(Object)} can be used for bidirectional communications with remote nodes using the request-response
+ * {@link MessagingChannel#newRequest(Object)} can be used for bidirectional communications with remote nodes using the request-response
  * pattern:
  * ${source: messaging/MessagingServiceJavadocTest.java#unicast_request_sync}
  * </p>
@@ -149,7 +149,7 @@ import java.util.List;
  * <a name="send_and_forget"></a>
  * <h3>Send and Forget</h3>
  * <p>
- * {@link MessagingChannel#send(Object)} provides support for unidirectional communications (i.e. when remote node doesn't need to send
+ * {@link MessagingChannel#newSend(Object)} provides support for unidirectional communications (i.e. when remote node doesn't need to send
  * back a response) using the fire and forget approach:
  * ${source: messaging/MessagingServiceJavadocTest.java#unicast_send_sync}
  * </p>
@@ -162,7 +162,7 @@ import java.util.List;
  * <a name="aggregate"></a>
  * <h3>Aggregation</h3>
  * <p>
- * {@link MessagingChannel#aggregate(Object)} can be used for bidirectional communications by submitting a message to multiple nodes and
+ * {@link MessagingChannel#newAggregate(Object)} can be used for bidirectional communications by submitting a message to multiple nodes and
  * gathering (aggregating) replies from those nodes. Results of such aggregation are represented by the {@link AggregateResult} interface.
  * This interface provides methods for analyzing responses from remote nodes and checking for possible failures.
  * </p>
@@ -180,8 +180,8 @@ import java.util.List;
  * <a name="broadcast"></a>
  * <h3>Broadcasting</h3>
  * <p>
- * {@link MessagingChannel#broadcast(Object)} provides support for unidirectional broadcasting (i.e. when remote nodes do not need to send
- * a reply and no aggregation should take place) using the fire and forget approach.
+ * {@link MessagingChannel#newBroadcast(Object)} provides support for unidirectional broadcasting (i.e. when remote nodes do not need to
+ * send a reply and no aggregation should take place) using the fire and forget approach.
  * </p>
  *
  * <p>
@@ -213,14 +213,15 @@ import java.util.List;
  * <h2>Routing and load balancing</h2>
  * <p>
  * Every messaging channel uses an instance of {@link LoadBalancer} interface to perform routing of unicast operations
- * (like {@link MessagingChannel#send(Object) send(...)} and {@link MessagingChannel#request(Object) request(...)}). Load balancer can
+ * (like {@link MessagingChannel#newSend(Object) send(...)} and {@link MessagingChannel#newRequest(Object) request(...)}). Load balancer
+ * can
  * be pre-configured via the {@link MessagingChannelConfig#setLoadBalancer(LoadBalancer)} method or specified dynamically via the {@link
  * MessagingChannel#withLoadBalancer(LoadBalancer)} method. If load balancer is not specified then messaging channel will fall back to the
  * {@link DefaultLoadBalancer}.
  * </p>
  * <p>
- * Note that load balancing does not get applied to broadcast operations (like {@link MessagingChannel#broadcast(Object)} and {@link
- * MessagingChannel#aggregate(Object)}). Such operations are submitted to all nodes within the channel's cluster topology.
+ * Note that load balancing does not get applied to broadcast operations (like {@link MessagingChannel#newBroadcast(Object)} and {@link
+ * MessagingChannel#newAggregate(Object)}). Such operations are submitted to all nodes within the channel's cluster topology.
  * Please see the "<a href="#topology_filterring">Cluster topology filtering</a>" section for details of how to control the channel's
  * cluster topology.
  * </p>

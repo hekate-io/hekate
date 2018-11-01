@@ -31,7 +31,7 @@ class SendOperationBuilder<T> extends MessageOperationBuilder<T> implements Send
     }
 
     @Override
-    public SendFuture execute() {
+    public SendFuture submit() {
         SendOperation<T> op = new SendOperation<>(message(), affinity, gateway(), opts(), ackMode);
 
         gateway().submit(op);

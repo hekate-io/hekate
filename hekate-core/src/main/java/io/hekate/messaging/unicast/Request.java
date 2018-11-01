@@ -11,9 +11,9 @@ import io.hekate.messaging.loadbalance.LoadBalancer;
  * This interface represents a bidirectional request operation. Typical use of this interface is:
  * </p>
  * <ol>
- * <li>Obtain an instance of this interface via the {@link MessagingChannel#request(Object)} method call</li>
+ * <li>Obtain an instance of this interface via the {@link MessagingChannel#newRequest(Object)} method call</li>
  * <li>Set options (f.e. {@link #withAffinity(Object) affinity key})</li>
- * <li>Execute this operation via the {@link #execute()} method</li>
+ * <li>Execute this operation via the {@link #submit()} method</li>
  * <li>Process the response (synchronously or asynchronously)</li>
  * </ol>
  * <h3>Example:</h3>
@@ -60,18 +60,29 @@ public interface Request<T> {
      *
      * @return Future result of this operation.
      */
-    RequestFuture<T> execute();
+    RequestFuture<T> submit();
 
     /**
-     * Synchronously executes this operation and returns the response.
+     * Asynchronously executes this operation and notifies the specified callback upon completion.
      *
-     * @return Response.
+     * @param callback Callback.
+     */
+    default void submit(RequestCallback<T> callback) {
+        submit().whenComplete((rsp, err) ->
+            callback.onComplete(err, rsp)
+        );
+    }
+
+    /**
+     * Synchronously executes this operation and returns the response's payload.
+     *
+     * @return Response's payload (see {@link Response#payload()}).
      *
      * @throws MessagingFutureException if operations fails.
      * @throws InterruptedException if thread got interrupted while awaiting for this operation to complete.
      */
-    default T sync() throws MessagingFutureException, InterruptedException {
-        return execute().get().payload();
+    default T response() throws MessagingFutureException, InterruptedException {
+        return submit().get().payload();
     }
 
     /**
@@ -85,18 +96,19 @@ public interface Request<T> {
      * @throws MessagingFutureException if operations fails.
      * @throws InterruptedException if thread got interrupted while awaiting for this operation to complete.
      */
-    default <R extends T> R sync(Class<R> responseType) throws MessagingFutureException, InterruptedException {
-        return execute().get().payload(responseType);
+    default <R extends T> R response(Class<R> responseType) throws MessagingFutureException, InterruptedException {
+        return submit().get().payload(responseType);
     }
 
     /**
-     * Asynchronously executes this operation and notifies the specified callback upon completion.
+     * Synchronously executes this operation and returns the response.
      *
-     * @param callback Callback.
+     * @return Response.
+     *
+     * @throws MessagingFutureException if operations fails.
+     * @throws InterruptedException if thread got interrupted while awaiting for this operation to complete.
      */
-    default void async(RequestCallback<T> callback) {
-        execute().whenComplete((rsp, err) ->
-            callback.onComplete(err, rsp)
-        );
+    default Response<T> get() throws MessagingFutureException, InterruptedException {
+        return submit().get();
     }
 }

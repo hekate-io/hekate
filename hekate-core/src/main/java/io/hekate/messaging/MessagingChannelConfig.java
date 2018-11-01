@@ -616,8 +616,8 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
      * Sets the timeout in milliseconds that should be applied to all messaging operations within this channel.
      *
      * <p>
-     * If particular messaging operation (f.e. {@link MessagingChannel#request(Object) request(...)}
-     * or {@link MessagingChannel#send(Object) send(...)}) can't be completed within the specified timeout then such operation will fail
+     * If particular messaging operation (f.e. {@link MessagingChannel#newRequest(Object) request(...)}
+     * or {@link MessagingChannel#newSend(Object) send(...)}) can't be completed within the specified timeout then such operation will fail
      * with {@link MessageTimeoutException}.
      * </p>
      *

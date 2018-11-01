@@ -93,9 +93,9 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
             for (int j = 0; j < partitionSize; j++) {
                 MessagingChannel<String> channel = sender.channel().forNode(receiver.nodeId());
 
-                channel.send(AffinityCollector.affinityMessage(j, i))
+                channel.newSend(AffinityCollector.affinityMessage(j, i))
                     .withAffinity(j)
-                    .execute();
+                    .submit();
             }
         }
 
@@ -128,9 +128,9 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
             for (int j = 0; j < partitionSize; j++) {
                 MessagingChannel<String> channel = sender.channel().forNode(receiver.nodeId());
 
-                channel.request(AffinityCollector.affinityMessage(j, i))
+                channel.newRequest(AffinityCollector.affinityMessage(j, i))
                     .withAffinity(j)
-                    .execute();
+                    .submit();
             }
         }
 
@@ -169,9 +169,9 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
         repeat(5, i -> {
             get(sender.channel()
                 .forNode(receiver.nodeId())
-                .request("request")
+                .newRequest("request")
                 .withAffinity(i)
-                .execute()
+                .submit()
             );
 
             callbackRef.get().get();
@@ -208,9 +208,9 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
             for (int j = 0; j < partitionSize; j++) {
                 MessagingChannel<String> channel = sender.channel().forRemotes();
 
-                channel.broadcast(AffinityCollector.affinityMessage(j, i))
+                channel.newBroadcast(AffinityCollector.affinityMessage(j, i))
                     .withAffinity(j)
-                    .execute();
+                    .submit();
             }
         }
 
@@ -258,9 +258,9 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
             for (int j = 0; j < partitionSize; j++) {
                 MessagingChannel<String> channel = sender.channel().forRemotes();
 
-                channel.aggregate(AffinityCollector.affinityMessage(j, i))
+                channel.newAggregate(AffinityCollector.affinityMessage(j, i))
                     .withAffinity(j)
-                    .execute();
+                    .submit();
             }
         }
 

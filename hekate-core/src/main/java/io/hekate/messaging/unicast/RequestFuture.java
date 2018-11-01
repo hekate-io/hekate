@@ -25,7 +25,7 @@ import io.hekate.messaging.MessagingFutureException;
  *
  * @param <T> Base type of request message.
  *
- * @see MessagingChannel#request(Object)
+ * @see MessagingChannel#newRequest(Object)
  */
 public class RequestFuture<T> extends MessagingFuture<Response<T>> {
     /**

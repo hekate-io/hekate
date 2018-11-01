@@ -28,7 +28,7 @@ class RequestOperationBuilder<T> extends MessageOperationBuilder<T> implements R
     }
 
     @Override
-    public RequestFuture<T> execute() {
+    public RequestFuture<T> submit() {
         RequestOperation<T> op = new RequestOperation<>(message(), affinity, gateway(), opts(), until);
 
         gateway().submit(op);
