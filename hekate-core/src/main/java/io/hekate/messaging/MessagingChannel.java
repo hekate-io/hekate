@@ -30,7 +30,6 @@ import io.hekate.messaging.unicast.Subscribe;
 import io.hekate.messaging.unicast.SubscribeCallback;
 import io.hekate.partition.PartitionMapper;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Messaging channel.
@@ -204,36 +203,6 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @see #withBackoff(RetryBackoffPolicy)
      */
     RetryBackoffPolicy backoff();
-
-    /**
-     * Returns a copy of this channel that will use the specified timeout value and will inherit all other options from this instance.
-     *
-     * <p>
-     * If the message exchange operation can not be completed at the specified timeout then such operation will end up the error {@link
-     * MessageTimeoutException}.
-     * </p>
-     *
-     * <p>
-     * Specifying a negative or zero value disables the timeout check.
-     * </p>
-     *
-     * @param timeout Timeout.
-     * @param unit Unit.
-     *
-     * @return Channel wrapper.
-     *
-     * @see MessagingChannelConfig#setMessagingTimeout(long)
-     */
-    MessagingChannel<T> withTimeout(long timeout, TimeUnit unit);
-
-    /**
-     * Returns the timeout value in milliseconds.
-     *
-     * @return Timeout in milliseconds or 0, if timeout was not specified.
-     *
-     * @see #withTimeout(long, TimeUnit)
-     */
-    long timeout();
 
     /**
      * Returns a copy of this channel that will use the specified load balancer and will inherit all other options from this instance.

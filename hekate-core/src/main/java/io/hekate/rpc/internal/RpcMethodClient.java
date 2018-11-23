@@ -39,8 +39,18 @@ class RpcMethodClient<T> extends RpcMethodClientBase<T> {
         }
     };
 
-    public RpcMethodClient(RpcInterfaceInfo<T> rpc, String tag, RpcMethodInfo method, MessagingChannel<RpcProtocol> channel) {
+    private final long timeout;
+
+    public RpcMethodClient(
+        RpcInterfaceInfo<T> rpc,
+        String tag,
+        RpcMethodInfo method,
+        MessagingChannel<RpcProtocol> channel,
+        long timeout
+    ) {
         super(rpc, tag, method, channel);
+
+        this.timeout = timeout;
     }
 
     @Override
@@ -49,20 +59,13 @@ class RpcMethodClient<T> extends RpcMethodClientBase<T> {
 
         RequestFuture<RpcProtocol> future = channel().newRequest(call)
             .withAffinity(affinity)
+            .withTimeout(timeout, TimeUnit.MILLISECONDS)
             .submit();
 
         if (method().isAsync()) {
             return future.thenApply(RESPONSE_CONVERTER);
         } else {
-            Response<RpcProtocol> response;
-
-            if (channel().timeout() > 0) {
-                response = future.get(channel().timeout(), TimeUnit.MILLISECONDS);
-            } else {
-                response = future.get();
-            }
-
-            return RESPONSE_CONVERTER.apply(response);
+            return RESPONSE_CONVERTER.apply(future.get());
         }
     }
 }

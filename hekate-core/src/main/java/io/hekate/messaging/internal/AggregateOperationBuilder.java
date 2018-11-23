@@ -12,6 +12,7 @@ import io.hekate.messaging.retry.RetryCondition;
 import io.hekate.messaging.retry.RetryErrorPolicy;
 import io.hekate.messaging.retry.RetryResponsePolicy;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static io.hekate.messaging.internal.BroadcastOperationBuilder.nodesForBroadcast;
 
@@ -28,13 +29,24 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
 
     private int maxAttempts;
 
+    private long timeout;
+
     public AggregateOperationBuilder(T message, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts) {
         super(message, gateway, opts);
+
+        this.timeout = gateway.messagingTimeout();
     }
 
     @Override
     public Aggregate<T> withAffinity(Object affinity) {
         this.affinity = affinity;
+
+        return this;
+    }
+
+    @Override
+    public Aggregate<T> withTimeout(long timeout, TimeUnit unit) {
+        this.timeout = unit.toMillis(timeout);
 
         return this;
     }
@@ -54,7 +66,7 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
     @Override
     public AggregateFuture<T> submit() {
         // Use a static method to make sure that we immutably capture all current settings of this operation.
-        return doSubmit(message(), affinity, retryErr, retryResp, retryCondition, retryCallback, maxAttempts, gateway(), opts());
+        return doSubmit(message(), affinity, timeout, maxAttempts, retryErr, retryResp, retryCondition, retryCallback, gateway(), opts());
     }
 
     @Override
@@ -95,11 +107,12 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
     private static <T> AggregateFuture<T> doSubmit(
         T msg,
         Object affinity,
+        long timeout,
+        int maxAttempts,
         RetryErrorPolicy retryErr,
         RetryResponsePolicy<T> retryRsp,
         RetryCondition retryCondition,
         RetryCallback retryCallback,
-        int maxAttempts,
         MessagingGatewayContext<T> gateway,
         MessageOperationOpts<T> opts
     ) {
@@ -116,6 +129,7 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
                 AggregateOperation<T> op = new AggregateOperation<>(
                     msg,
                     affinity,
+                    timeout,
                     maxAttempts,
                     retryErr,
                     retryRsp,

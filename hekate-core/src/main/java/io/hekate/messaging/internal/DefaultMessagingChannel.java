@@ -33,7 +33,6 @@ import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 
 class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperationOpts<T> {
     private final MessagingGateway<T> gateway;
@@ -47,15 +46,12 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
 
     private final LoadBalancer<T> balancer;
 
-    private final long timeout;
-
     public DefaultMessagingChannel(
         MessagingGateway<T> gateway,
         ClusterView cluster,
         RendezvousHashMapper partitions,
         LoadBalancer<T> balancer,
-        RetryBackoffPolicy backoff,
-        long timeout
+        RetryBackoffPolicy backoff
     ) {
         assert gateway != null : "Gateway is null.";
         assert cluster != null : "Cluster view is null.";
@@ -67,7 +63,6 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
         this.partitions = partitions;
         this.balancer = balancer;
         this.backoff = backoff;
-        this.timeout = timeout;
     }
 
     @Override
@@ -128,8 +123,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             cluster,
             newPartitions,
             balancer,
-            backoff,
-            timeout
+            backoff
         );
     }
 
@@ -142,28 +136,13 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             cluster,
             partitions,
             balancer,
-            backoff,
-            timeout
+            backoff
         );
     }
 
     @Override
     public Executor executor() {
         return gateway.executor();
-    }
-
-    @Override
-    public DefaultMessagingChannel<T> withTimeout(long timeout, TimeUnit unit) {
-        ArgAssert.notNull(unit, "Time unit");
-
-        return new DefaultMessagingChannel<>(
-            gateway,
-            cluster,
-            partitions,
-            balancer,
-            backoff,
-            unit.toMillis(timeout)
-        );
     }
 
     @Override
@@ -178,8 +157,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             newCluster,
             newPartitions,
             balancer,
-            backoff,
-            timeout
+            backoff
         );
     }
 
@@ -200,8 +178,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             newCluster,
             newPartitions,
             balancer,
-            backoff,
-            timeout
+            backoff
         );
     }
 
@@ -227,19 +204,13 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             cluster,
             partitions,
             balancer,
-            backoff,
-            timeout
+            backoff
         );
     }
 
     @Override
     public RetryBackoffPolicy backoff() {
         return backoff;
-    }
-
-    @Override
-    public long timeout() {
-        return timeout;
     }
 
     // Package level for testing purposes.

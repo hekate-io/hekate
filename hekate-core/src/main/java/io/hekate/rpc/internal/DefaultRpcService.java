@@ -469,7 +469,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
         MessagingChannel<RpcProtocol> clientChannel = channelForClient(type, key.tag());
 
-        DefaultRpcClientBuilder<?> client = new DefaultRpcClientBuilder<>(type, key.tag(), clientChannel);
+        DefaultRpcClientBuilder<?> client = new DefaultRpcClientBuilder<>(type, key.tag(), clientChannel, idleSocketTimeout);
 
         if (DEBUG) {
             log.debug("Created new RPC client builder [key={}, builder={}]", key, client);

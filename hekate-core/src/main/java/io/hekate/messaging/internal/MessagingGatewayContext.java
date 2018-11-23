@@ -140,6 +140,9 @@ class MessagingGatewayContext<T> {
     private final ExtendedScheduledExecutor timer;
 
     @ToStringIgnore
+    private final long messagingTimeout;
+
+    @ToStringIgnore
     private ClusterTopology clientsTopology;
 
     @ToStringIgnore
@@ -159,6 +162,7 @@ class MessagingGatewayContext<T> {
         MessageInterceptors<T> interceptors,
         Logger log,
         boolean checkIdle,
+        long messagingTimeout,
         DefaultMessagingChannel<T> channel
     ) {
         assert name != null : "Name is null.";
@@ -182,6 +186,7 @@ class MessagingGatewayContext<T> {
         this.metrics = metrics;
         this.receivePressure = receivePressure;
         this.sendPressure = sendPressure;
+        this.messagingTimeout = messagingTimeout;
         this.checkIdle = checkIdle;
         this.log = log;
         this.debug = log.isDebugEnabled();
@@ -208,6 +213,10 @@ class MessagingGatewayContext<T> {
         return log;
     }
 
+    public long messagingTimeout() {
+        return messagingTimeout;
+    }
+
     public MessageReceiver<T> receiver() {
         return receiver;
     }
@@ -226,7 +235,7 @@ class MessagingGatewayContext<T> {
         try {
             long remainingTimeout = applyBackPressure(op);
 
-            if (op.opts().hasTimeout()) {
+            if (op.hasTimeout()) {
                 scheduleTimeout(op, remainingTimeout);
             }
 
@@ -606,14 +615,14 @@ class MessagingGatewayContext<T> {
         MessageQueueTimeoutException {
 
         if (sendPressure != null) {
-            long remainingTime = sendPressure.onEnqueue(op.opts().timeout(), op.message());
+            long remainingTime = sendPressure.onEnqueue(op.timeout(), op.message());
 
             op.registerSendPressure(sendPressure);
 
             return remainingTime;
         }
 
-        return op.opts().timeout();
+        return op.timeout();
     }
 
     private void scheduleTimeout(MessageOperation<T> op, long initTimeout) {
@@ -628,7 +637,7 @@ class MessagingGatewayContext<T> {
             if (op.shouldExpireOnTimeout()) {
                 // Process expiration on the worker thread.
                 op.worker().execute(() -> {
-                    String errMsg = "Messaging operation timed out [timeout=" + op.opts().timeout() + ", message=" + op.message() + ']';
+                    String errMsg = "Messaging operation timed out [timeout=" + op.timeout() + ", message=" + op.message() + ']';
 
                     doNotifyOnError(op, new MessageTimeoutException(errMsg));
                 });
@@ -639,7 +648,7 @@ class MessagingGatewayContext<T> {
 
             // Re-run this check later (for subscriptions).
             return true;
-        }, initTimeout, op.opts().timeout(), TimeUnit.MILLISECONDS);
+        }, initTimeout, op.timeout(), TimeUnit.MILLISECONDS);
 
         op.registerTimeout(timeoutFuture);
     }

@@ -17,6 +17,7 @@ class SendOperation<T> extends UnicastOperation<T> {
     public SendOperation(
         T message,
         Object affinityKey,
+        long timeout,
         int maxAttempts,
         RetryErrorPolicy retryErr,
         RetryCondition retryCondition,
@@ -26,7 +27,19 @@ class SendOperation<T> extends UnicastOperation<T> {
         MessageOperationOpts<T> opts,
         SendAckMode ackMode
     ) {
-        super(message, affinityKey, maxAttempts, retryErr, retryCondition, retryCallback, retryRoute, gateway, opts, false);
+        super(
+            message,
+            affinityKey,
+            timeout,
+            maxAttempts,
+            retryErr,
+            retryCondition,
+            retryCallback,
+            retryRoute,
+            gateway,
+            opts,
+            false
+        );
 
         this.ackMode = ackMode;
     }

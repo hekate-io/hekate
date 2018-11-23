@@ -18,6 +18,7 @@ class BroadcastOperation<T> extends SendOperation<T> {
     public BroadcastOperation(
         T message,
         Object affinityKey,
+        long timeout,
         int maxAttempts,
         RetryErrorPolicy retryErr,
         RetryCondition retryCondition,
@@ -27,7 +28,19 @@ class BroadcastOperation<T> extends SendOperation<T> {
         SendAckMode ackMode,
         ClusterNode node
     ) {
-        super(message, affinityKey, maxAttempts, retryErr, retryCondition, retryCallback, RETRY_SAME_NODE, gateway, opts, ackMode);
+        super(
+            message,
+            affinityKey,
+            timeout,
+            maxAttempts,
+            retryErr,
+            retryCondition,
+            retryCallback,
+            RETRY_SAME_NODE,
+            gateway,
+            opts,
+            ackMode
+        );
 
         this.node = node;
     }

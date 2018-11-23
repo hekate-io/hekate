@@ -16,15 +16,13 @@
 
 package io.hekate.messaging;
 
-import java.util.concurrent.TimeUnit;
-
 /**
  * Signals {@link MessagingChannel}'s send queue timeout.
  *
  * <p>
- * This error is thrown by a {@link MessagingChannel} when its send queue is full (above {@link
+ * This error is thrown by a {@link MessagingChannel} when its send queue is full (above the {@link
  * MessagingBackPressureConfig#setOutHighWatermark(int) high watermark}) and messaging operation
- * {@link MessagingChannel#withTimeout(long, TimeUnit) timed out}.
+ * {@link MessagingChannelConfig#withMessagingTimeout(long)} timed out}.
  * </p>
  *
  * @see MessagingBackPressureConfig

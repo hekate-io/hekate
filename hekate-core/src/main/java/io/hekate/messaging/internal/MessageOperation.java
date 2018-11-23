@@ -43,6 +43,8 @@ abstract class MessageOperation<T> {
 
     private final int maxAttempts;
 
+    private final long timeout;
+
     private final MessagingWorker worker;
 
     private final MessagingGatewayContext<T> gateway;
@@ -57,6 +59,7 @@ abstract class MessageOperation<T> {
     public MessageOperation(
         T message,
         Object affinityKey,
+        long timeout,
         int maxAttempts,
         RetryErrorPolicy retryErr,
         RetryCondition retryCondition,
@@ -67,14 +70,15 @@ abstract class MessageOperation<T> {
         boolean threadAffinity
     ) {
         this.message = message;
+        this.affinityKey = affinityKey;
+        this.maxAttempts = maxAttempts;
+        this.timeout = timeout;
         this.gateway = gateway;
         this.retryErr = retryErr;
         this.retryCondition = retryCondition;
         this.retryCallback = retryCallback;
-        this.maxAttempts = maxAttempts;
         this.retryRoute = retryRoute;
         this.opts = opts;
-        this.affinityKey = affinityKey;
 
         if (affinityKey == null) {
             // Use artificial affinity.
@@ -104,6 +108,14 @@ abstract class MessageOperation<T> {
     protected abstract void doReceiveFinal(ResponsePart<T> response);
 
     protected abstract void doFail(Throwable error);
+
+    public long timeout() {
+        return timeout;
+    }
+
+    public boolean hasTimeout() {
+        return timeout > 0;
+    }
 
     public void registerTimeout(Future<?> timeoutFuture) {
         this.timeoutFuture = timeoutFuture;

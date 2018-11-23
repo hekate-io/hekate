@@ -14,6 +14,7 @@ import io.hekate.messaging.unicast.SubscribeCallback;
 import io.hekate.messaging.unicast.SubscribeFuture;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 class SubscribeOperationBuilder<T> extends MessageOperationBuilder<T> implements Subscribe<T>, RequestRetryPolicy<T> {
     private Object affinity;
@@ -30,13 +31,24 @@ class SubscribeOperationBuilder<T> extends MessageOperationBuilder<T> implements
 
     private int maxAttempts;
 
+    private long timeout;
+
     public SubscribeOperationBuilder(T message, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts) {
         super(message, gateway, opts);
+
+        this.timeout = gateway.messagingTimeout();
     }
 
     @Override
     public Subscribe<T> withAffinity(Object affinity) {
         this.affinity = affinity;
+
+        return this;
+    }
+
+    @Override
+    public Subscribe<T> withTimeout(long timeout, TimeUnit unit) {
+        this.timeout = unit.toMillis(timeout);
 
         return this;
     }
@@ -58,6 +70,7 @@ class SubscribeOperationBuilder<T> extends MessageOperationBuilder<T> implements
         SubscribeOperation<T> op = new SubscribeOperation<>(
             message(),
             affinity,
+            timeout,
             maxAttempts,
             retryErr,
             retryResp,

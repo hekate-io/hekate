@@ -16,13 +16,11 @@
 
 package io.hekate.messaging;
 
-import java.util.concurrent.TimeUnit;
-
 /**
  * Signals that messaging operation timed out.
  *
  * @see MessagingChannelConfig#setMessagingTimeout(long)
- * @see MessagingChannel#withTimeout(long, TimeUnit)
+ * @see MessagingChannelConfig#withMessagingTimeout(long)
  */
 public class MessageTimeoutException extends MessagingException {
     private static final long serialVersionUID = 1;

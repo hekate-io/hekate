@@ -80,7 +80,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
         operation.gateway().interceptors().clientSend(this);
 
         // Build and submit the message.
-        long timeout = operation.opts().timeout();
+        long timeout = operation.timeout();
         boolean isRetransmit = prevFailure.isPresent();
         MessageMetaData metaData = hasMetaData() ? metaData() : null;
 

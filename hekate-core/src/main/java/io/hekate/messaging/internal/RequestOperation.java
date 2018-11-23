@@ -17,6 +17,7 @@ class RequestOperation<T> extends UnicastOperation<T> {
     public RequestOperation(
         T message,
         Object affinityKey,
+        long timeout,
         int maxAttempts,
         RetryErrorPolicy retryErr,
         RetryResponsePolicy<T> retryRsp,
@@ -26,7 +27,19 @@ class RequestOperation<T> extends UnicastOperation<T> {
         MessagingGatewayContext<T> gateway,
         MessageOperationOpts<T> opts
     ) {
-        super(message, affinityKey, maxAttempts, retryErr, retryCondition, retryCallback, retryRoute, gateway, opts, false);
+        super(
+            message,
+            affinityKey,
+            timeout,
+            maxAttempts,
+            retryErr,
+            retryCondition,
+            retryCallback,
+            retryRoute,
+            gateway,
+            opts,
+            false
+        );
 
         this.retryRsp = retryRsp;
     }

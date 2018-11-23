@@ -32,7 +32,7 @@ public abstract class MessagingConfigBase<T extends MessagingConfigBase<T>> {
 
     /** See {@link #setIdleSocketTimeout(long)}. */
     private long idleSocketTimeout;
-    
+
     /** See {@link #setBackPressure(MessagingBackPressureConfig)}. */
     private MessagingBackPressureConfig backPressure = new MessagingBackPressureConfig();
 

@@ -53,14 +53,15 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel(c -> c.withMessagingTimeout(1)).join();
 
-        assertEquals(1, sender.channel().timeout());
-
         repeat(5, i -> {
             hangLatchRef.set(new CountDownLatch(1));
 
             try {
                 MessagingFutureException e = expect(MessagingFutureException.class, () ->
-                    get(sender.channel().forRemotes().newRequest("must-fail-" + i).submit())
+                    get(sender.channel()
+                        .forRemotes()
+                        .newRequest("must-fail-" + i)
+                        .submit())
                 );
 
                 assertTrue(getStacktrace(e), e.isCausedBy(MessageTimeoutException.class));
@@ -151,8 +152,6 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel(c -> c.withMessagingTimeout(1000)).join();
 
-        assertEquals(1000, sender.channel().timeout());
-
         repeat(5, i ->
             get(sender.channel().forRemotes().newRequest("request-" + i).submit())
         );
@@ -169,8 +168,6 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
         })).join();
 
         TestChannel sender = createChannel(c -> c.withMessagingTimeout(1)).join();
-
-        assertEquals(1, sender.channel().timeout());
 
         repeat(5, i -> {
             hangLatchRef.set(new CountDownLatch(1));
@@ -204,8 +201,6 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
         })).join();
 
         TestChannel sender = createChannel(c -> c.withMessagingTimeout(150)).join();
-
-        assertEquals(150, sender.channel().timeout());
 
         repeat(3, i -> {
             SubscribeFuture<String> future = sender.channel()
@@ -244,8 +239,6 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
             }
         ).join();
 
-        assertEquals(1, sender.channel().timeout());
-
         repeat(3, i -> {
             try {
                 get(sender.channel().forRemotes().newSend("must-fail-" + i).submit());
@@ -275,8 +268,6 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
                 });
             }
         ).join();
-
-        assertEquals(1000, sender.channel().timeout());
 
         repeat(3, i ->
             get(sender.channel().forRemotes().newSend("request-" + i).submit())

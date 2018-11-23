@@ -56,13 +56,22 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
     private final Function<List<RpcProtocol>, Object> aggregator;
 
-    public RpcSplitAggregateMethodClient(RpcInterfaceInfo<T> rpc, String tag, RpcMethodInfo method, MessagingChannel<RpcProtocol> channel) {
+    private final long timeout;
+
+    public RpcSplitAggregateMethodClient(
+        RpcInterfaceInfo<T> rpc,
+        String tag,
+        RpcMethodInfo method,
+        MessagingChannel<RpcProtocol> channel,
+        long timeout
+    ) {
         super(rpc, tag, method, channel);
 
         assert method.aggregate().isPresent() : "Not an aggregate method [rpc=" + rpc + ", method=" + method + ']';
         assert method.splitArg().isPresent() : "Split argument index is not defined.";
         assert method.splitArgType().isPresent() : "Split argument index is not defined.";
 
+        this.timeout = timeout;
         this.splitArgIdx = method.splitArg().getAsInt();
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -197,7 +206,9 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
                 // Submit RPC request.
                 RpcCall<T> call = new RpcCall<>(methodIdxKey(), rpc(), tag(), method(), partArgs, true /* <- Split. */);
 
-                roundRobin.newRequest(call).submit(aggrFuture /* <-- Future is a callback. */);
+                roundRobin.newRequest(call)
+                    .withTimeout(timeout, TimeUnit.MILLISECONDS)
+                    .submit(aggrFuture); // <- Future is a callback.
             }
 
             future = aggrFuture;
@@ -207,11 +218,7 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         if (method().isAsync()) {
             return future;
         } else {
-            if (channel().timeout() > 0) {
-                return future.get(channel().timeout(), TimeUnit.MILLISECONDS);
-            } else {
-                return future.get();
-            }
+            return future.get();
         }
     }
 

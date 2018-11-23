@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Exchanger;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
@@ -63,7 +62,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
     @Test
     public void testChannel() throws Exception {
-        TestChannel testChannel = createChannel(c -> c.withMessagingTimeout(100500)).join();
+        TestChannel testChannel = createChannel().join();
 
         MessagingChannel<String> channel = testChannel.channel();
 
@@ -74,7 +73,6 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         assertEquals(nioThreads, channel.nioThreads());
         assertEquals(workerThreads, channel.workerThreads());
         assertNotNull(channel.executor());
-        assertEquals(100500, channel.timeout());
 
         RetryBackoffPolicy backoff = mock(RetryBackoffPolicy.class);
 
@@ -276,22 +274,6 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         // Should return self if request partitions and backup nodes are the same with the current one.
         assertSame(channel2, channel2.withPartitions(128, 6));
-    }
-
-    @Test
-    public void testTimeout() throws Exception {
-        MessagingChannel<String> channel = createChannel().join().channel();
-
-        assertEquals(0, channel.timeout());
-
-        assertEquals(1000, channel.withTimeout(1, TimeUnit.SECONDS).timeout());
-        assertEquals(0, channel.timeout());
-
-        assertEquals(2000, channel.forRemotes().withTimeout(2, TimeUnit.SECONDS).timeout());
-        assertEquals(0, channel.timeout());
-
-        assertEquals(3000, channel.forRemotes().withTimeout(3, TimeUnit.SECONDS).forRemotes().timeout());
-        assertEquals(0, channel.timeout());
     }
 
     @Test

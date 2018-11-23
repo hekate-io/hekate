@@ -66,11 +66,13 @@ public class RpcServiceJavadocTest extends HekateNodeTestBase {
         RpcService rpc = hekate.rpc();
         // End:access
 
-        assertNotNull(rpc);
+        try {
+            assertNotNull(rpc);
 
-        clientExample(hekate);
-
-        hekate.leave();
+            clientExample(hekate);
+        } finally {
+            hekate.leave();
+        }
     }
 
     @Test
@@ -90,9 +92,11 @@ public class RpcServiceJavadocTest extends HekateNodeTestBase {
             .join();
         // End:server
 
-        clientExample(hekate);
-
-        hekate.leave();
+        try {
+            clientExample(hekate);
+        } finally {
+            hekate.leave();
+        }
     }
 
     private void clientExample(Hekate hekate) {

@@ -125,7 +125,7 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
 
         // Check timeout.
         try {
-            sender.withTimeout(10, MILLISECONDS).newRequest("timeout").response();
+            sender.newRequest("timeout").withTimeout(10, MILLISECONDS).response();
 
             fail("Error was expected.");
         } catch (MessagingFutureException e) {

@@ -10,6 +10,7 @@ import io.hekate.messaging.unicast.Request;
 import io.hekate.messaging.unicast.RequestFuture;
 import io.hekate.messaging.unicast.RequestRetryConfigurer;
 import io.hekate.messaging.unicast.RequestRetryPolicy;
+import java.util.concurrent.TimeUnit;
 
 class RequestOperationBuilder<T> extends MessageOperationBuilder<T> implements Request<T>, RequestRetryPolicy<T> {
     private RetryResponsePolicy<T> retryRsp;
@@ -26,13 +27,24 @@ class RequestOperationBuilder<T> extends MessageOperationBuilder<T> implements R
 
     private int maxAttempts;
 
+    private long timeout;
+
     public RequestOperationBuilder(T message, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts) {
         super(message, gateway, opts);
+
+        this.timeout = gateway.messagingTimeout();
     }
 
     @Override
     public Request<T> withAffinity(Object affinity) {
         this.affinity = affinity;
+
+        return this;
+    }
+
+    @Override
+    public Request<T> withTimeout(long timeout, TimeUnit unit) {
+        this.timeout = unit.toMillis(timeout);
 
         return this;
     }
@@ -54,10 +66,11 @@ class RequestOperationBuilder<T> extends MessageOperationBuilder<T> implements R
         RequestOperation<T> op = new RequestOperation<>(
             message(),
             affinity,
+            timeout,
             maxAttempts,
             retryErr,
             retryRsp,
-            retryCondition, 
+            retryCondition,
             retryCallback,
             retryRoute,
             gateway(),

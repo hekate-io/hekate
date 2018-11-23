@@ -12,6 +12,7 @@ import io.hekate.messaging.retry.RetryCondition;
 import io.hekate.messaging.retry.RetryErrorPolicy;
 import io.hekate.messaging.unicast.SendAckMode;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements Broadcast<T>, BroadcastRetryPolicy {
     private Object affinity;
@@ -26,13 +27,24 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
 
     private int maxAttempts;
 
+    private long timeout;
+
     public BroadcastOperationBuilder(T message, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts) {
         super(message, gateway, opts);
+
+        this.timeout = gateway.messagingTimeout();
     }
 
     @Override
     public Broadcast<T> withAffinity(Object affinity) {
         this.affinity = affinity;
+
+        return this;
+    }
+
+    @Override
+    public Broadcast<T> withTimeout(long timeout, TimeUnit unit) {
+        this.timeout = unit.toMillis(timeout);
 
         return this;
     }
@@ -61,7 +73,7 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
     @Override
     public BroadcastFuture<T> submit() {
         // Use a static method to make sure that we immutably capture all current settings of this operation.
-        return doSubmit(message(), affinity, ackMode, retryErr, retryCondition, retryCallback, maxAttempts, gateway(), opts());
+        return doSubmit(message(), affinity, timeout, maxAttempts, ackMode, retryErr, retryCondition, retryCallback, gateway(), opts());
     }
 
     @Override
@@ -109,11 +121,12 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
     private static <T> BroadcastFuture<T> doSubmit(
         T msg,
         Object affinity,
+        long timeout,
+        int maxAttempts,
         SendAckMode ackMode,
         RetryErrorPolicy retry,
         RetryCondition retryCondition,
         RetryCallback retryCallback,
-        int maxAttempts,
         MessagingGatewayContext<T> gateway,
         MessageOperationOpts<T> opts
     ) {
@@ -130,6 +143,7 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
                 BroadcastOperation<T> op = new BroadcastOperation<>(
                     msg,
                     affinity,
+                    timeout,
                     maxAttempts,
                     retry,
                     retryCondition,

@@ -50,10 +50,20 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
     private final Function<AggregateResult<RpcProtocol>, ?> converter;
 
-    public RpcAggregateMethodClient(RpcInterfaceInfo<T> rpc, String tag, RpcMethodInfo method, MessagingChannel<RpcProtocol> channel) {
+    private final long timeout;
+
+    public RpcAggregateMethodClient(
+        RpcInterfaceInfo<T> rpc,
+        String tag,
+        RpcMethodInfo method,
+        MessagingChannel<RpcProtocol> channel,
+        long timeout
+    ) {
         super(rpc, tag, method, channel);
 
         assert method.aggregate().isPresent() : "Not an aggregate method [rpc=" + rpc + ", method=" + method + ']';
+
+        this.timeout = timeout;
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Error handling.
@@ -146,20 +156,13 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
         AggregateFuture<RpcProtocol> future = channel().newAggregate(call)
             .withAffinity(affinity)
+            .withTimeout(timeout, TimeUnit.MILLISECONDS)
             .submit();
 
         if (method().isAsync()) {
             return future.thenApply(converter);
         } else {
-            AggregateResult<RpcProtocol> result;
-
-            if (channel().timeout() > 0) {
-                result = future.get(channel().timeout(), TimeUnit.MILLISECONDS);
-            } else {
-                result = future.get();
-            }
-
-            return converter.apply(result);
+            return converter.apply(future.get());
         }
     }
 }

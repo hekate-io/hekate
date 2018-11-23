@@ -40,13 +40,16 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
 
     private final MessagingChannel<RpcProtocol> channel;
 
-    public DefaultRpcClientBuilder(RpcInterfaceInfo<T> type, String tag, MessagingChannel<RpcProtocol> channel) {
+    private final long timeout;
+
+    public DefaultRpcClientBuilder(RpcInterfaceInfo<T> type, String tag, MessagingChannel<RpcProtocol> channel, long timeout) {
         assert type != null : "RPC type is null.";
         assert channel != null : "Messaging channel is null.";
 
         this.type = type;
         this.tag = tag;
         this.channel = channel;
+        this.timeout = timeout;
     }
 
     @Override
@@ -57,22 +60,22 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
             return balancer.route(request, ctx);
         };
 
-        return new DefaultRpcClientBuilder<>(type, tag, channel.withLoadBalancer(rpcBalancer));
+        return new DefaultRpcClientBuilder<>(type, tag, channel.withLoadBalancer(rpcBalancer), timeout);
     }
 
     @Override
     public long timeout() {
-        return channel.timeout();
+        return timeout;
     }
 
     @Override
     public RpcClientBuilder<T> withTimeout(long timeout, TimeUnit unit) {
-        return new DefaultRpcClientBuilder<>(type, tag, channel.withTimeout(timeout, unit));
+        return new DefaultRpcClientBuilder<>(type, tag, channel, unit.toMillis(timeout));
     }
 
     @Override
     public RpcClientBuilder<T> filterAll(ClusterFilter filter) {
-        return new DefaultRpcClientBuilder<>(type, tag, channel.filterAll(filter));
+        return new DefaultRpcClientBuilder<>(type, tag, channel.filterAll(filter), timeout);
     }
 
     @Override
@@ -82,7 +85,7 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
 
     @Override
     public RpcClientBuilder<T> withPartitions(int partitions, int backupNodes) {
-        return new DefaultRpcClientBuilder<>(type, tag, channel.withPartitions(partitions, backupNodes));
+        return new DefaultRpcClientBuilder<>(type, tag, channel.withPartitions(partitions, backupNodes), timeout);
     }
 
     @Override
@@ -102,7 +105,7 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
 
     @Override
     public RpcClientBuilder<T> withCluster(ClusterView cluster) {
-        return new DefaultRpcClientBuilder<>(type, tag, channel.withCluster(cluster.filter(RpcUtils.filterFor(type, tag))));
+        return new DefaultRpcClientBuilder<>(type, tag, channel.withCluster(cluster.filter(RpcUtils.filterFor(type, tag))), timeout);
     }
 
     @Override
@@ -116,13 +119,13 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
             RpcMethodClientBase<T> client;
 
             if (method.splitArg().isPresent()) {
-                client = new RpcSplitAggregateMethodClient<>(type, tag, method, channel);
+                client = new RpcSplitAggregateMethodClient<>(type, tag, method, channel, timeout);
             } else if (method.aggregate().isPresent()) {
-                client = new RpcAggregateMethodClient<>(type, tag, method, channel);
+                client = new RpcAggregateMethodClient<>(type, tag, method, channel, timeout);
             } else if (method.broadcast().isPresent()) {
-                client = new RpcBroadcastMethodClient<>(type, tag, method, channel);
+                client = new RpcBroadcastMethodClient<>(type, tag, method, channel, timeout);
             } else {
-                client = new RpcMethodClient<>(type, tag, method, channel);
+                client = new RpcMethodClient<>(type, tag, method, channel, timeout);
             }
 
             clients.put(method.javaMethod(), client);

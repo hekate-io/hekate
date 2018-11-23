@@ -31,10 +31,4 @@ interface MessageOperationOpts<T> {
     RetryBackoffPolicy backoff();
 
     PartitionMapper partitions();
-
-    long timeout();
-
-    default boolean hasTimeout() {
-        return timeout() > 0;
-    }
 }

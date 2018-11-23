@@ -15,6 +15,7 @@ abstract class UnicastOperation<T> extends MessageOperation<T> {
     public UnicastOperation(
         T message,
         Object affinityKey,
+        long timeout,
         int maxAttempts,
         RetryErrorPolicy retryErr,
         RetryCondition retryCondition,
@@ -24,7 +25,19 @@ abstract class UnicastOperation<T> extends MessageOperation<T> {
         MessageOperationOpts<T> opts,
         boolean threadAffinity
     ) {
-        super(message, affinityKey, maxAttempts, retryErr, retryCondition, retryCallback, retryRoute, gateway, opts, threadAffinity);
+        super(
+            message,
+            affinityKey,
+            timeout,
+            maxAttempts,
+            retryErr,
+            retryCondition,
+            retryCallback,
+            retryRoute,
+            gateway,
+            opts,
+            threadAffinity
+        );
     }
 
     @Override

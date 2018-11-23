@@ -18,6 +18,7 @@ class AggregateOperation<T> extends RequestOperation<T> {
     public AggregateOperation(
         T message,
         Object affinityKey,
+        long timeout,
         int maxAttempts,
         RetryErrorPolicy retryErr,
         RetryResponsePolicy<T> retryRsp,
@@ -27,7 +28,19 @@ class AggregateOperation<T> extends RequestOperation<T> {
         MessageOperationOpts<T> opts,
         ClusterNode node
     ) {
-        super(message, affinityKey, maxAttempts, retryErr, retryRsp, retryCondition, retryCallback, RETRY_SAME_NODE, gateway, opts);
+        super(
+            message,
+            affinityKey,
+            timeout,
+            maxAttempts,
+            retryErr,
+            retryRsp,
+            retryCondition,
+            retryCallback,
+            RETRY_SAME_NODE,
+            gateway,
+            opts
+        );
 
         this.node = node;
     }

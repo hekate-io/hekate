@@ -40,10 +40,20 @@ class RpcBroadcastMethodClient<T> extends RpcMethodClientBase<T> {
 
     private final Function<AggregateResult<RpcProtocol>, ?> converter;
 
-    public RpcBroadcastMethodClient(RpcInterfaceInfo<T> rpc, String tag, RpcMethodInfo method, MessagingChannel<RpcProtocol> channel) {
+    private final long timeout;
+
+    public RpcBroadcastMethodClient(
+        RpcInterfaceInfo<T> rpc,
+        String tag,
+        RpcMethodInfo method,
+        MessagingChannel<RpcProtocol> channel,
+        long timeout
+    ) {
         super(rpc, tag, method, channel);
 
         assert method.broadcast().isPresent() : "Not a broadcast method [rpc=" + rpc + ", method=" + method + ']';
+
+        this.timeout = timeout;
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Error handling.
@@ -89,21 +99,14 @@ class RpcBroadcastMethodClient<T> extends RpcMethodClientBase<T> {
         RpcCall<T> call = new RpcCall<>(methodIdxKey(), rpc(), tag(), method(), args);
 
         AggregateFuture<RpcProtocol> future = channel().newAggregate(call)
+            .withTimeout(timeout, TimeUnit.MILLISECONDS)
             .withAffinity(affinity)
             .submit();
 
         if (method().isAsync()) {
             return future.thenApply(converter);
         } else {
-            AggregateResult<RpcProtocol> result;
-
-            if (channel().timeout() > 0) {
-                result = future.get(channel().timeout(), TimeUnit.MILLISECONDS);
-            } else {
-                result = future.get();
-            }
-
-            return converter.apply(result);
+            return converter.apply(future.get());
         }
     }
 }

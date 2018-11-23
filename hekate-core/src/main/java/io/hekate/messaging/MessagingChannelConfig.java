@@ -30,7 +30,6 @@ import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Configuration options for a {@link MessagingChannel}.
@@ -574,12 +573,11 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
     }
 
     /**
-     * Sets the timeout in milliseconds that should be applied to all messaging operations within this channel.
+     * Sets the timeout in milliseconds that should be applied to all messaging operations of this channel.
      *
      * <p>
-     * If particular messaging operation (f.e. {@link MessagingChannel#newRequest(Object) request(...)}
-     * or {@link MessagingChannel#newSend(Object) send(...)}) can't be completed within the specified timeout then such operation will fail
-     * with {@link MessageTimeoutException}.
+     * If particular messaging operation can't be completed within the specified timeout then such operation will fail with
+     * {@link MessageTimeoutException}.
      * </p>
      *
      * <p>
@@ -587,13 +585,7 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
      * of this parameter is 0.
      * </p>
      *
-     * <p>
-     * <b>Note:</b> it is possible to dynamically specify timeout via {@link MessagingChannel#withTimeout(long, TimeUnit)}.
-     * </p>
-     *
      * @param messagingTimeout Timeout in milliseconds.
-     *
-     * @see MessagingChannel#withTimeout(long, TimeUnit)
      */
     public void setMessagingTimeout(long messagingTimeout) {
         this.messagingTimeout = messagingTimeout;

@@ -10,6 +10,7 @@ import io.hekate.messaging.unicast.SendAckMode;
 import io.hekate.messaging.unicast.SendFuture;
 import io.hekate.messaging.unicast.SendRetryConfigurer;
 import io.hekate.messaging.unicast.SendRetryPolicy;
+import java.util.concurrent.TimeUnit;
 
 class SendOperationBuilder<T> extends MessageOperationBuilder<T> implements Send<T>, SendRetryPolicy {
     private Object affinity;
@@ -26,13 +27,24 @@ class SendOperationBuilder<T> extends MessageOperationBuilder<T> implements Send
 
     private int maxAttempts;
 
+    private long timeout;
+
     public SendOperationBuilder(T message, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts) {
         super(message, gateway, opts);
+
+        this.timeout = gateway.messagingTimeout();
     }
 
     @Override
     public Send<T> withAffinity(Object affinity) {
         this.affinity = affinity;
+
+        return this;
+    }
+
+    @Override
+    public Send<T> withTimeout(long timeout, TimeUnit unit) {
+        this.timeout = unit.toMillis(timeout);
 
         return this;
     }
@@ -63,6 +75,7 @@ class SendOperationBuilder<T> extends MessageOperationBuilder<T> implements Send
         SendOperation<T> op = new SendOperation<>(
             message(),
             affinity,
+            timeout,
             maxAttempts,
             retryErr,
             retryCondition,

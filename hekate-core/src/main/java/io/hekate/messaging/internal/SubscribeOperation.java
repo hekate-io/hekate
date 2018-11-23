@@ -22,6 +22,7 @@ class SubscribeOperation<T> extends UnicastOperation<T> {
     public SubscribeOperation(
         T message,
         Object affinityKey,
+        long timeout,
         int maxAttempts,
         RetryErrorPolicy retryErr,
         RetryResponsePolicy<T> retryRsp,
@@ -32,7 +33,19 @@ class SubscribeOperation<T> extends UnicastOperation<T> {
         MessageOperationOpts<T> opts,
         SubscribeCallback<T> callback
     ) {
-        super(message, affinityKey, maxAttempts, retryErr, retryCondition, retryCallback, retryRoute, gateway, opts, true);
+        super(
+            message,
+            affinityKey,
+            timeout,
+            maxAttempts,
+            retryErr,
+            retryCondition,
+            retryCallback,
+            retryRoute,
+            gateway,
+            opts,
+            true
+        );
 
         this.callback = callback;
         this.retryRsp = retryRsp;

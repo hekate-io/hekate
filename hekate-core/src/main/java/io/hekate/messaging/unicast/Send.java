@@ -3,9 +3,12 @@ package io.hekate.messaging.unicast;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageReceiver;
+import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingChannel;
+import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Send operation.
@@ -44,6 +47,26 @@ public interface Send<T> {
      * @return This instance.
      */
     Send<T> withAffinity(Object affinity);
+
+    /**
+     * Overrides the channel's default timeout value for this operation.
+     *
+     * <p>
+     * If this operation can not complete at the specified timeout then this operation will end up the the {@link MessageTimeoutException}.
+     * </p>
+     *
+     * <p>
+     * Specifying a negative or zero value disables the timeout check.
+     * </p>
+     *
+     * @param timeout Timeout.
+     * @param unit Unit.
+     *
+     * @return This instance.
+     *
+     * @see MessagingChannelConfig#setMessagingTimeout(long)
+     */
+    Send<T> withTimeout(long timeout, TimeUnit unit);
 
     /**
      * Acknowledgement mode.
