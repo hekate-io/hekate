@@ -3,7 +3,6 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.MessageMetaData;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.intercept.ClientSendContext;
@@ -18,6 +17,7 @@ import io.hekate.messaging.internal.MessagingProtocol.RequestBase;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
 import io.hekate.messaging.internal.MessagingProtocol.SubscribeRequest;
 import io.hekate.messaging.internal.MessagingProtocol.VoidRequest;
+import io.hekate.messaging.retry.RetryFailure;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -29,7 +29,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
 
     private final MessageOperation<T> operation;
 
-    private final Optional<FailureInfo> prevFailure;
+    private final Optional<RetryFailure> prevFailure;
 
     private final MessageOperationCallback<T> callback;
 
@@ -45,7 +45,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
         MessagingClient<T> client,
         ClusterTopology topology,
         MessageOperation<T> operation,
-        Optional<FailureInfo> prevFailure,
+        Optional<RetryFailure> prevFailure,
         MessageOperationCallback<T> callback
     ) {
         this(client, topology, operation, prevFailure, callback, null, null);
@@ -55,7 +55,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
         MessagingClient<T> client,
         ClusterTopology topology,
         MessageOperation<T> operation,
-        Optional<FailureInfo> prevFailure,
+        Optional<RetryFailure> prevFailure,
         MessageOperationCallback<T> callback,
         MessageMetaData metaData,
         Map<String, Object> attributes
@@ -71,7 +71,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
         this.payload = operation.message();
     }
 
-    public MessageOperationAttempt<T> nextAttempt(Optional<FailureInfo> failure) {
+    public MessageOperationAttempt<T> nextAttempt(Optional<RetryFailure> failure) {
         return new MessageOperationAttempt<>(client, topology, operation, failure, callback, metaData, attributes);
     }
 
@@ -229,6 +229,16 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
         }
     }
 
+    public boolean hasMoreAttempts() {
+        if (operation.maxAttempts() < 0) {
+            return true;
+        } else if (operation.maxAttempts() == 0) {
+            return false;
+        } else {
+            return prevFailure.map(prev -> prev.attempt() + 1 < operation.maxAttempts()).orElse(true);
+        }
+    }
+
     public MessagingClient<T> client() {
         return client;
     }
@@ -313,7 +323,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
     }
 
     @Override
-    public Optional<FailureInfo> prevFailure() {
+    public Optional<RetryFailure> prevFailure() {
         return prevFailure;
     }
 

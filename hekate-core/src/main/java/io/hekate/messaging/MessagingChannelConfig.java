@@ -22,10 +22,9 @@ import io.hekate.codec.Codec;
 import io.hekate.codec.CodecFactory;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.failover.BackoffPolicy;
-import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.partition.Partition;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
@@ -79,11 +78,8 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
     /** See {@link #setReceiver(MessageReceiver)}. */
     private MessageReceiver<T> receiver;
 
-    /** See {@link #setFailoverPolicy(FailoverPolicy)}. */
-    private FailoverPolicy failoverPolicy;
-
-    /** See {@link #setBackoffPolicy(BackoffPolicy)}. */
-    private BackoffPolicy backoffPolicy = BackoffPolicy.defaultFixedDelay();
+    /** See {@link #setBackoffPolicy(RetryBackoffPolicy)}. */
+    private RetryBackoffPolicy backoffPolicy = RetryBackoffPolicy.defaultFixedDelay();
 
     /** See {@link #setLoadBalancer(LoadBalancer)}. */
     private LoadBalancer<T> loadBalancer;
@@ -459,70 +455,35 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
     }
 
     /**
-     * Returns the default failover policy that should be used by the channel (see {@link #setFailoverPolicy(FailoverPolicy)}).
-     *
-     * @return Default failover policy of this channel.
-     */
-    public FailoverPolicy getFailoverPolicy() {
-        return failoverPolicy;
-    }
-
-    /**
-     * Sets the default failover policy that should be used by the {@link MessagingChannel}.
-     *
-     * <p>
-     * Failover policy can be overridden dynamically via {@link MessagingChannel#withFailover(FailoverPolicy)} method.
-     * </p>
-     *
-     * @param failoverPolicy Default failover policy.
-     */
-    public void setFailoverPolicy(FailoverPolicy failoverPolicy) {
-        this.failoverPolicy = failoverPolicy;
-    }
-
-    /**
-     * Fluent-style version of {@link #setFailoverPolicy(FailoverPolicy)}.
-     *
-     * @param failoverPolicy Default failover policy.
-     *
-     * @return This instance.
-     */
-    public MessagingChannelConfig<T> withFailoverPolicy(FailoverPolicy failoverPolicy) {
-        setFailoverPolicy(failoverPolicy);
-
-        return this;
-    }
-
-    /**
-     * Returns the backoff policy of failover and retries (see {@link #setBackoffPolicy(BackoffPolicy)}).
+     * Returns the backoff policy for retries(see {@link #setBackoffPolicy(RetryBackoffPolicy)}).
      *
      * @return Backoff policy.
      */
-    public BackoffPolicy getBackoffPolicy() {
+    public RetryBackoffPolicy getBackoffPolicy() {
         return backoffPolicy;
     }
 
     /**
-     * Sets the backoff policy of failover and retries.
+     * Sets the backoff policy for retries.
      *
      * <p>
-     * Backoff policy can be overridden dynamically via {@link MessagingChannel#withBackoff(BackoffPolicy)} method.
+     * Backoff policy can be overridden dynamically via the {@link MessagingChannel#withBackoff(RetryBackoffPolicy)} method.
      * </p>
      *
      * @param backoffPolicy Backoff policy.
      */
-    public void setBackoffPolicy(BackoffPolicy backoffPolicy) {
+    public void setBackoffPolicy(RetryBackoffPolicy backoffPolicy) {
         this.backoffPolicy = backoffPolicy;
     }
 
     /**
-     * Fluent-style version of {@link #setBackoffPolicy(BackoffPolicy)}.
+     * Fluent-style version of {@link #setBackoffPolicy(RetryBackoffPolicy)}.
      *
      * @param backoffPolicy Backoff policy.
      *
      * @return This instance.
      */
-    public MessagingChannelConfig<T> withBackoffPolicy(BackoffPolicy backoffPolicy) {
+    public MessagingChannelConfig<T> withBackoffPolicy(RetryBackoffPolicy backoffPolicy) {
         setBackoffPolicy(backoffPolicy);
 
         return this;

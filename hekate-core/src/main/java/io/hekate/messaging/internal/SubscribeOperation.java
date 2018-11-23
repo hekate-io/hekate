@@ -1,9 +1,12 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.intercept.OutboundType;
-import io.hekate.messaging.unicast.RequestRetryCondition;
+import io.hekate.messaging.retry.RetryCallback;
+import io.hekate.messaging.retry.RetryCondition;
+import io.hekate.messaging.retry.RetryErrorPolicy;
+import io.hekate.messaging.retry.RetryResponsePolicy;
+import io.hekate.messaging.retry.RetryRoutingPolicy;
 import io.hekate.messaging.unicast.ResponsePart;
-import io.hekate.messaging.unicast.RetryDecision;
 import io.hekate.messaging.unicast.SubscribeCallback;
 import io.hekate.messaging.unicast.SubscribeFuture;
 
@@ -12,22 +15,27 @@ class SubscribeOperation<T> extends UnicastOperation<T> {
 
     private final SubscribeCallback<T> callback;
 
-    private final RequestRetryCondition<T> condition;
+    private final RetryResponsePolicy<T> retryRsp;
 
     private volatile boolean active;
 
     public SubscribeOperation(
         T message,
         Object affinityKey,
+        int maxAttempts,
+        RetryErrorPolicy retryErr,
+        RetryResponsePolicy<T> retryRsp,
+        RetryCondition retryCondition,
+        RetryCallback retryCallback,
+        RetryRoutingPolicy retryRoute,
         MessagingGatewayContext<T> gateway,
         MessageOperationOpts<T> opts,
-        SubscribeCallback<T> callback,
-        RequestRetryCondition<T> condition
+        SubscribeCallback<T> callback
     ) {
-        super(message, affinityKey, gateway, opts, true);
+        super(message, affinityKey, maxAttempts, retryErr, retryCondition, retryCallback, retryRoute, gateway, opts, true);
 
         this.callback = callback;
-        this.condition = condition;
+        this.retryRsp = retryRsp;
     }
 
     @Override
@@ -41,12 +49,10 @@ class SubscribeOperation<T> extends UnicastOperation<T> {
     }
 
     @Override
-    public RetryDecision shouldRetry(Throwable error, ResponsePart<T> response) {
-        if (condition == null || isPartial(response)) {
-            return RetryDecision.USE_DEFAULTS;
-        }
-
-        return condition.accept(error, response);
+    public boolean shouldRetry(ResponsePart<T> response) {
+        return retryRsp != null
+            && !isPartial(response)
+            && retryRsp.shouldRetry(response);
     }
 
     @Override

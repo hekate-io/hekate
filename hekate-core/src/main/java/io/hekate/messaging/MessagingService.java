@@ -24,7 +24,6 @@ import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.DefaultServiceFactory;
 import io.hekate.core.service.Service;
-import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.broadcast.Aggregate;
 import io.hekate.messaging.broadcast.AggregateResult;
 import io.hekate.messaging.broadcast.Broadcast;
@@ -308,22 +307,6 @@ import java.util.List;
  * case if message processing is a heavy operation that can block NIO thread for a long time.
  * </li>
  * </ul>
- *
- * <h2>Messaging failover</h2>
- * <p>
- * Failover of messaging errors is controlled by the {@link FailoverPolicy} interface. Implementations of this interface can be
- * configured for each {@link MessagingChannel} individually via {@link MessagingChannelConfig#setFailoverPolicy(FailoverPolicy)} method or
- * defined at runtime via {@link MessagingChannel#withFailover(FailoverPolicy)}. In case of a messaging error this interface will be called
- * by the channel in order to decided on whether the message should be retransmitted or the messaging operation should fail.
- * </p>
- * <p>
- * On the {@link MessageReceiver#receive(Message) receiving} side it is possible to detect messages that were retransmitted by checking the
- * {@link Message#isRetransmit()} flag.
- * </p>
- *
- * <p>
- * For more details and usage examples please see the documentation of {@link FailoverPolicy} interface.
- * </p>
  */
 @DefaultServiceFactory(MessagingServiceFactory.class)
 public interface MessagingService extends Service {

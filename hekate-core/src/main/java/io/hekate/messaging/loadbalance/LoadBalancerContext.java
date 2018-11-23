@@ -19,8 +19,8 @@ package io.hekate.messaging.loadbalance;
 import io.hekate.cluster.ClusterFilter;
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.failover.FailoverPolicy;
-import io.hekate.failover.FailureInfo;
+import io.hekate.messaging.retry.RetryErrorPolicy;
+import io.hekate.messaging.retry.RetryFailure;
 import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
 
@@ -68,13 +68,13 @@ public interface LoadBalancerContext extends ClusterTopology {
     Object affinityKey();
 
     /**
-     * Returns information about a failover attempt if this context represents a {@link FailoverPolicy} re-routing attempts.
+     * Returns information about a failure if this context represents a retry attempts.
      *
-     * @return Information about a failover attempt.
+     * @return Information about a retry attempt.
      *
-     * @see FailoverPolicy
+     * @see RetryErrorPolicy
      */
-    Optional<FailureInfo> failure();
+    Optional<RetryFailure> failure();
 
     @Override
     LoadBalancerContext filter(ClusterNodeFilter filter);

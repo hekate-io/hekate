@@ -19,8 +19,8 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterTopologyTestBase;
 import io.hekate.cluster.internal.DefaultClusterTopology;
-import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
+import io.hekate.messaging.retry.RetryFailure;
 import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
 import java.util.Set;
@@ -34,8 +34,8 @@ import static org.mockito.Mockito.mock;
 
 public class DefaultLoadBalancerContextTest extends ClusterTopologyTestBase {
     @Test
-    public void testFailoverDetails() throws Exception {
-        FailureInfo details = mock(FailureInfo.class);
+    public void testFailure() throws Exception {
+        RetryFailure details = mock(RetryFailure.class);
 
         ClusterNode n1 = newNode();
 
@@ -55,9 +55,9 @@ public class DefaultLoadBalancerContextTest extends ClusterTopologyTestBase {
         return newContext(100, "test", version, nodes, null);
     }
 
-    private DefaultLoadBalancerContext newContext(int affinity, Object affinityKey, int ver, Set<ClusterNode> nodes, FailureInfo failure) {
+    private DefaultLoadBalancerContext newContext(int affinity, Object affinityKey, int ver, Set<ClusterNode> nodes, RetryFailure failure) {
         DefaultClusterTopology topology = DefaultClusterTopology.of(ver, nodes);
-        Optional<FailureInfo> optFailure = Optional.ofNullable(failure);
+        Optional<RetryFailure> optFailure = Optional.ofNullable(failure);
         PartitionMapper partitions = mock(PartitionMapper.class);
 
         return new DefaultLoadBalancerContext(affinity, affinityKey, topology, partitions, optFailure);

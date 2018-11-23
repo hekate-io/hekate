@@ -61,12 +61,12 @@ public interface LoadBalancer<T> {
      * fail with {@link LoadBalancerException}.
      * </p>
      *
-     * @param message Message.
+     * @param msg Message.
      * @param ctx Load balancer context.
      *
      * @return Node that should be used for the messaging operation.
      *
      * @throws LoadBalancerException if failed to perform load balancing.
      */
-    ClusterNodeId route(T message, LoadBalancerContext ctx) throws LoadBalancerException;
+    ClusterNodeId route(T msg, LoadBalancerContext ctx) throws LoadBalancerException;
 }

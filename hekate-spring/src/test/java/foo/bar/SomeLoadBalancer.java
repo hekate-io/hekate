@@ -22,7 +22,7 @@ import io.hekate.messaging.loadbalance.LoadBalancerContext;
 
 public class SomeLoadBalancer implements LoadBalancer<Object> {
     @Override
-    public ClusterNodeId route(Object message, LoadBalancerContext ctx) {
+    public ClusterNodeId route(Object msg, LoadBalancerContext ctx) {
         return ctx.topology().random().id();
     }
 }

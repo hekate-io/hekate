@@ -151,9 +151,6 @@
                 <cluster-filter>
                     <s:bean class="foo.bar.SomeClusterNodeFilter"/>
                 </cluster-filter>
-                <failover-policy>
-                    <s:bean class="foo.bar.SomeFailoverPolicy"/>
-                </failover-policy>
             </channel>
 
             <channel name="another.channel"/>
@@ -170,18 +167,12 @@
                     <load-balancer>
                         <s:bean class="foo.bar.SomeRpcLoadBalancer"/>
                     </load-balancer>
-                    <failover-policy>
-                        <s:bean class="foo.bar.SomeFailoverPolicy"/>
-                    </failover-policy>
                 </client>
 
                 <client name="someRpcClient2" interface="foo.bar.SomeRpcService" tag="some-tag-2">
                     <load-balancer>
                         <s:bean class="foo.bar.SomeRpcLoadBalancer"/>
                     </load-balancer>
-                    <failover-policy>
-                        <s:bean class="foo.bar.SomeFailoverPolicy"/>
-                    </failover-policy>
                 </client>
             </clients>
             <servers>

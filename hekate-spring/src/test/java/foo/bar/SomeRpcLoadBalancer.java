@@ -23,7 +23,7 @@ import io.hekate.rpc.RpcRequest;
 
 public class SomeRpcLoadBalancer implements RpcLoadBalancer {
     @Override
-    public ClusterNodeId route(RpcRequest message, LoadBalancerContext ctx) {
+    public ClusterNodeId route(RpcRequest msg, LoadBalancerContext ctx) {
         return ctx.topology().random().id();
     }
 }

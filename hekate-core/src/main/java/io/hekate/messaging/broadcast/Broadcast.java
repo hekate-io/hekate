@@ -63,6 +63,15 @@ public interface Broadcast<T> {
     Broadcast<T> withAckMode(SendAckMode ackMode);
 
     /**
+     * Retry policy.
+     *
+     * @param retry Retry policy.
+     *
+     * @return This instance.
+     */
+    Broadcast<T> withRetry(BroadcastRetryConfigurer retry);
+
+    /**
      * Asynchronously executes this operation.
      *
      * @return Future result of this operation.

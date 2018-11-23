@@ -1,11 +1,14 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNodeId;
-import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.intercept.OutboundType;
 import io.hekate.messaging.loadbalance.LoadBalancerException;
+import io.hekate.messaging.retry.RetryCallback;
+import io.hekate.messaging.retry.RetryCondition;
+import io.hekate.messaging.retry.RetryErrorPolicy;
+import io.hekate.messaging.retry.RetryFailure;
+import io.hekate.messaging.retry.RetryRoutingPolicy;
 import io.hekate.messaging.unicast.ResponsePart;
-import io.hekate.messaging.unicast.RetryDecision;
 import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -30,6 +33,16 @@ abstract class MessageOperation<T> {
 
     private final int affinity;
 
+    private final RetryErrorPolicy retryErr;
+
+    private final RetryCondition retryCondition;
+
+    private final RetryCallback retryCallback;
+
+    private final RetryRoutingPolicy retryRoute;
+
+    private final int maxAttempts;
+
     private final MessagingWorker worker;
 
     private final MessagingGatewayContext<T> gateway;
@@ -44,12 +57,22 @@ abstract class MessageOperation<T> {
     public MessageOperation(
         T message,
         Object affinityKey,
+        int maxAttempts,
+        RetryErrorPolicy retryErr,
+        RetryCondition retryCondition,
+        RetryCallback retryCallback,
+        RetryRoutingPolicy retryRoute,
         MessagingGatewayContext<T> gateway,
         MessageOperationOpts<T> opts,
         boolean threadAffinity
     ) {
         this.message = message;
         this.gateway = gateway;
+        this.retryErr = retryErr;
+        this.retryCondition = retryCondition;
+        this.retryCallback = retryCallback;
+        this.maxAttempts = maxAttempts;
+        this.retryRoute = retryRoute;
         this.opts = opts;
         this.affinityKey = affinityKey;
 
@@ -70,11 +93,11 @@ abstract class MessageOperation<T> {
         }
     }
 
-    public abstract ClusterNodeId route(PartitionMapper mapper, Optional<FailureInfo> prevFailure) throws LoadBalancerException;
+    public abstract ClusterNodeId route(PartitionMapper mapper, Optional<RetryFailure> prevFailure) throws LoadBalancerException;
 
     public abstract OutboundType type();
 
-    public abstract RetryDecision shouldRetry(Throwable error, ResponsePart<T> response);
+    public abstract boolean shouldRetry(ResponsePart<T> response);
 
     public abstract CompletableFuture<?> future();
 
@@ -92,6 +115,16 @@ abstract class MessageOperation<T> {
 
     public boolean isDone() {
         return state == STATE_COMPLETED;
+    }
+
+    public boolean canRetry() {
+        return retryCondition == null || retryCondition.shouldRetry();
+    }
+
+    public void onRetry(RetryFailure failure) {
+        if (retryCallback != null) {
+            retryCallback.onRetry(failure);
+        }
     }
 
     public boolean complete(Throwable error, ResponsePart<T> response) {
@@ -125,6 +158,18 @@ abstract class MessageOperation<T> {
 
     public T message() {
         return message;
+    }
+
+    public RetryErrorPolicy retryErrorPolicy() {
+        return retryErr;
+    }
+
+    public RetryRoutingPolicy retryRoute() {
+        return retryRoute;
+    }
+
+    public int maxAttempts() {
+        return maxAttempts;
     }
 
     public MessagingGatewayContext<T> gateway() {

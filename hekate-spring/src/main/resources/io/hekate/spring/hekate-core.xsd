@@ -1114,14 +1114,6 @@
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-            <xsd:element name="failover-policy" type="beanOrRefType" minOccurs="0">
-                <xsd:annotation>
-                    <xsd:documentation>
-                        See javadoc of
-                        'io.hekate.messaging.MessagingChannelConfig#setFailoverPolicy(io.hekate.failover.FailoverPolicy)'.
-                    </xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
             <xsd:element name="back-pressure" type="messagingBackPressureType" minOccurs="0">
                 <xsd:annotation>
                     <xsd:documentation>
@@ -1320,13 +1312,6 @@
                     <xsd:documentation>
                         See javadoc of
                         'io.hekate.rpc.RpcClientConfig#setLoadBalancer(io.hekate.rpc.RpcLoadBalancer)'.
-                    </xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
-            <xsd:element name="failover-policy" type="beanOrRefType" minOccurs="0">
-                <xsd:annotation>
-                    <xsd:documentation>
-                        See javadoc of 'io.hekate.rpc.RpcClientConfig#setFailoverPolicy(io.hekate.failover.FailoverPolicy)'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>

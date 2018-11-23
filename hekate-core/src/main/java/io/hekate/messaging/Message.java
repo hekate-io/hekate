@@ -16,7 +16,6 @@
 
 package io.hekate.messaging;
 
-import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.unicast.RequestCallback;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.SendCallback;
@@ -164,7 +163,7 @@ public interface Message<T> extends MessageBase<T> {
 
     /**
      * Returns {@code true} if this message is a possible duplicate of another message that was received earlier and then was
-     * retransmitted by the {@link MessagingChannel#withFailover(FailoverPolicy) failover} logic.
+     * retransmitted based on retry logic.
      *
      * @return {@code true} if this message is a possible duplicate of a previously received message.
      */

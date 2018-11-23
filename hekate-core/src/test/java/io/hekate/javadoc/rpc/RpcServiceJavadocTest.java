@@ -19,12 +19,10 @@ package io.hekate.javadoc.rpc;
 import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
-import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcServerConfig;
 import io.hekate.rpc.RpcService;
 import io.hekate.rpc.RpcServiceFactory;
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
@@ -100,12 +98,7 @@ public class RpcServiceJavadocTest extends HekateNodeTestBase {
     private void clientExample(Hekate hekate) {
         // Start:client
         SomeRpcService client = hekate.rpc().clientFor(SomeRpcService.class)
-            // Set some configuration options (optional).
-            .withTimeout(3, TimeUnit.SECONDS) // RPC timeout.
-            .withFailover(new FailoverPolicyBuilder() // Failover policy.
-                .withMaxAttempts(3) // Up to 3 times.
-                .withErrorTypes(IOException.class) // Only in case of I/O errors.
-            )
+            .withTimeout(3, TimeUnit.SECONDS) // RPC timeout (optional).
             .build();
 
         // Call RPC method.

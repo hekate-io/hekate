@@ -17,9 +17,8 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterView;
-import io.hekate.failover.BackoffPolicy;
-import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.partition.PartitionMapper;
 
 interface MessageOperationOpts<T> {
@@ -29,9 +28,7 @@ interface MessageOperationOpts<T> {
 
     ClusterView cluster();
 
-    FailoverPolicy failover();
-
-    BackoffPolicy backoff();
+    RetryBackoffPolicy backoff();
 
     PartitionMapper partitions();
 

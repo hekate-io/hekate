@@ -23,7 +23,6 @@ import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.DefaultServiceFactory;
 import io.hekate.core.service.Service;
-import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import io.hekate.partition.RendezvousHashMapper;
 import java.util.Collection;
@@ -186,7 +185,7 @@ import java.util.concurrent.CompletableFuture;
  * The client side of RPC communication is represented by a Java reflections proxy of an @{@link Rpc}-annotated interface. Such proxies can
  * be constructed on an RPC client node via {@link RpcService#clientFor(Class)} method. This method returns an instance of {@link
  * RpcClientBuilder} interface that provides support for dynamically configuring different aspects of a client proxy object (f.e. timeouts,
- * load balancing/failover policies, etc). The client proxy object can be created by calling the {@link RpcClientBuilder#build()} method as
+ * load balancing, retry policies, etc). The client proxy object can be created by calling the {@link RpcClientBuilder#build()} method as
  * in the example below:
  * ${source: rpc/RpcServiceJavadocTest.java#client}
  * </p>
@@ -267,18 +266,6 @@ import java.util.concurrent.CompletableFuture;
  * <p>
  * If filtering rules are specified for an RPC client then all RPC operations of that client will be distributed among only those nodes
  * that do match the filtering criteria.
- * </p>
- *
- * <h2>RPC failover</h2>
- * <p>
- * Failover of RPC errors is controlled by the {@link FailoverPolicy} interface. Implementations of this interface can be
- * pre-configured for each RPC client individually via {@link RpcClientConfig#setFailover(FailoverPolicy)} method or
- * defined at runtime via {@link RpcClientBuilder#withFailover(FailoverPolicy)}. In case of an RPC error this interface will be called
- * in order to decided on whether another attempt should be performed or operation should fail.
- * </p>
- *
- * <p>
- * For more details and usage examples please see the documentation of {@link FailoverPolicy} interface.
  * </p>
  */
 @DefaultServiceFactory(RpcServiceFactory.class)

@@ -17,7 +17,6 @@
 package io.hekate.messaging.unicast;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.MessagingChannel;
 
 /**
@@ -26,8 +25,7 @@ import io.hekate.messaging.MessagingChannel;
  * <p>
  * Messages can implement this interface in order to indicated that particular {@link Response} represents an application-specific error
  * that should be treated as a messaging failure. If {@link MessagingChannel} receives a reply of this type then it will call the
- * {@link #asError(ClusterNode)} method and will fail the messaging operation (or will apply a {@link FailoverPolicy} if it is {@link
- * MessagingChannel#withFailover(FailoverPolicy) configured}) using the resulting error.
+ * {@link #asError(ClusterNode)} method and will fail the messaging operation with the resulting error.
  * </p>
  */
 public interface FailureResponse {

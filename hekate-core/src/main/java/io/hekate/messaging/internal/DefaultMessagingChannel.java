@@ -19,14 +19,12 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterFilter;
 import io.hekate.cluster.ClusterView;
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.failover.BackoffPolicy;
-import io.hekate.failover.FailoverPolicy;
-import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.broadcast.Aggregate;
 import io.hekate.messaging.broadcast.Broadcast;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.unicast.Request;
 import io.hekate.messaging.unicast.Send;
 import io.hekate.messaging.unicast.Subscribe;
@@ -45,9 +43,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
 
     private final RendezvousHashMapper partitions;
 
-    private final FailoverPolicy failover;
-
-    private final BackoffPolicy backoff;
+    private final RetryBackoffPolicy backoff;
 
     private final LoadBalancer<T> balancer;
 
@@ -58,8 +54,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
         ClusterView cluster,
         RendezvousHashMapper partitions,
         LoadBalancer<T> balancer,
-        FailoverPolicy failover,
-        BackoffPolicy backoff,
+        RetryBackoffPolicy backoff,
         long timeout
     ) {
         assert gateway != null : "Gateway is null.";
@@ -71,7 +66,6 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
         this.cluster = cluster;
         this.partitions = partitions;
         this.balancer = balancer;
-        this.failover = failover;
         this.backoff = backoff;
         this.timeout = timeout;
     }
@@ -134,7 +128,6 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             cluster,
             newPartitions,
             balancer,
-            failover,
             backoff,
             timeout
         );
@@ -149,7 +142,6 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             cluster,
             partitions,
             balancer,
-            failover,
             backoff,
             timeout
         );
@@ -161,24 +153,6 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
     }
 
     @Override
-    public DefaultMessagingChannel<T> withFailover(FailoverPolicy policy) {
-        return new DefaultMessagingChannel<>(
-            gateway,
-            cluster,
-            partitions,
-            balancer,
-            policy,
-            backoff,
-            timeout
-        );
-    }
-
-    @Override
-    public DefaultMessagingChannel<T> withFailover(FailoverPolicyBuilder policy) {
-        return withFailover(policy.build());
-    }
-
-    @Override
     public DefaultMessagingChannel<T> withTimeout(long timeout, TimeUnit unit) {
         ArgAssert.notNull(unit, "Time unit");
 
@@ -187,7 +161,6 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             cluster,
             partitions,
             balancer,
-            failover,
             backoff,
             unit.toMillis(timeout)
         );
@@ -205,7 +178,6 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             newCluster,
             newPartitions,
             balancer,
-            failover,
             backoff,
             timeout
         );
@@ -228,7 +200,6 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             newCluster,
             newPartitions,
             balancer,
-            failover,
             backoff,
             timeout
         );
@@ -250,25 +221,19 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
     }
 
     @Override
-    public FailoverPolicy failover() {
-        return failover;
-    }
-
-    @Override
-    public MessagingChannel<T> withBackoff(BackoffPolicy backoff) {
+    public MessagingChannel<T> withBackoff(RetryBackoffPolicy backoff) {
         return new DefaultMessagingChannel<>(
             gateway,
             cluster,
             partitions,
             balancer,
-            failover,
             backoff,
             timeout
         );
     }
 
     @Override
-    public BackoffPolicy backoff() {
+    public RetryBackoffPolicy backoff() {
         return backoff;
     }
 

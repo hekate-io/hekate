@@ -43,17 +43,13 @@ public interface Request<T> {
     Request<T> withAffinity(Object affinity);
 
     /**
-     * Response condition.
+     * Retry policy.
      *
-     * <p>
-     * Operation will not be completed unless its results matches with the specified {@link RequestRetryCondition}.
-     * </p>
-     *
-     * @param condition Condition.
+     * @param retry Retry policy.
      *
      * @return This instance.
      */
-    Request<T> until(RequestRetryCondition<T> condition);
+    Request<T> withRetry(RequestRetryConfigurer<T> retry);
 
     /**
      * Asynchronously executes this operation.

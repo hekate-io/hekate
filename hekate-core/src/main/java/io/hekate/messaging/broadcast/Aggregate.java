@@ -34,8 +34,16 @@ public interface Aggregate<T> {
      *
      * @return This instance.
      */
-
     Aggregate<T> withAffinity(Object affinity);
+
+    /**
+     * Retry policy.
+     *
+     * @param retry Retry policy.
+     *
+     * @return This instance.
+     */
+    Aggregate<T> withRetry(AggregateRetryConfigurer<T> retry);
 
     /**
      * Asynchronously executes this operation.

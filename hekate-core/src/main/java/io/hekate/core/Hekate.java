@@ -53,7 +53,7 @@ import java.util.Set;
  * </li>
  * <li>
  * <b>{@link MessagingService Messaging}</b> - provides high-level API for asynchronous messaging among the cluster nodes with built-in
- * failover and load balancing
+ * load balancing and retries.
  * </li>
  * <li>
  * <b>{@link RpcService Remote Procedure Calls (RPC)}</b> - provides support for remote calls of Java objects

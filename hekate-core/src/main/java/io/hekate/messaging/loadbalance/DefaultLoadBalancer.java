@@ -19,12 +19,12 @@ package io.hekate.messaging.loadbalance;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.failover.FailureInfo;
+import io.hekate.messaging.retry.RetryFailure;
 import io.hekate.partition.Partition;
 import java.util.Collections;
 import java.util.List;
 
-import static io.hekate.failover.FailoverRoutingPolicy.RE_ROUTE;
+import static io.hekate.messaging.retry.RetryRoutingPolicy.RE_ROUTE;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -41,14 +41,14 @@ import static java.util.stream.Collectors.toList;
  */
 public class DefaultLoadBalancer<T> implements LoadBalancer<T> {
     @Override
-    public ClusterNodeId route(T message, LoadBalancerContext ctx) throws LoadBalancerException {
+    public ClusterNodeId route(T msg, LoadBalancerContext ctx) throws LoadBalancerException {
         ClusterNode selected;
 
         if (ctx.hasAffinity()) {
-            selected = affinityRoute(message, ctx);
+            selected = affinityRoute(msg, ctx);
 
         } else {
-            selected = nonAffinityRoute(message, ctx);
+            selected = nonAffinityRoute(msg, ctx);
 
         }
 
@@ -60,25 +60,25 @@ public class DefaultLoadBalancer<T> implements LoadBalancer<T> {
      * to be {@link LoadBalancerContext#failure() failed} then another random non-failed node will be selected. If all nodes are known to be
      * failed then this method will fallback to the initially selected node.
      *
-     * @param message Message.
+     * @param msg Message.
      * @param ctx Load balancer context.
      *
      * @return Selected node.
      *
      * @throws LoadBalancerException if failed to perform load balancing.
      */
-    protected ClusterNode nonAffinityRoute(T message, LoadBalancerContext ctx) throws LoadBalancerException {
+    protected ClusterNode nonAffinityRoute(T msg, LoadBalancerContext ctx) throws LoadBalancerException {
         // Select any random node.
         ClusterNode selected = ctx.random();
 
-        // Check if this is a failover attempt and try to re-route in case if the selected node is known to be failed.
+        // Check if this is a retry attempt and try to re-route in case if the selected node is known to be failed.
         if (ctx.failure().isPresent()) {
-            FailureInfo failure = ctx.failure().get();
+            RetryFailure failure = ctx.failure().get();
 
-            if (failure.routing() == RE_ROUTE && failure.isFailed(selected)) {
+            if (failure.routing() == RE_ROUTE && failure.hasTriedNode(selected)) {
                 // Exclude all failed nodes.
                 List<ClusterNode> nonFailed = ctx.stream()
-                    .filter(n -> !failure.isFailed(n))
+                    .filter(n -> !failure.hasTriedNode(n))
                     .collect(toList());
 
                 if (!nonFailed.isEmpty()) {
@@ -104,14 +104,14 @@ public class DefaultLoadBalancer<T> implements LoadBalancer<T> {
      * initially selected node.
      * </p>
      *
-     * @param message Message.
+     * @param msg Message.
      * @param ctx Load balancer context.
      *
      * @return Selected node.
      *
      * @throws LoadBalancerException if failed to perform load balancing.
      */
-    protected ClusterNode affinityRoute(T message, LoadBalancerContext ctx) throws LoadBalancerException {
+    protected ClusterNode affinityRoute(T msg, LoadBalancerContext ctx) throws LoadBalancerException {
         ArgAssert.isTrue(ctx.hasAffinity(), "Can't load balance on non-affinity context.");
 
         // Use partition-based routing.
@@ -119,13 +119,13 @@ public class DefaultLoadBalancer<T> implements LoadBalancer<T> {
 
         ClusterNode selected = partition.primaryNode();
 
-        // Check if this is a failover attempt and try to re-route in case if the selected node is known to be failed.
+        // Check if this is a retry attempt and try to re-route in case if the selected node is known to be failed.
         if (ctx.failure().isPresent() && partition.hasBackupNodes()) {
-            FailureInfo failure = ctx.failure().get();
+            RetryFailure failure = ctx.failure().get();
 
-            if (failure.routing() == RE_ROUTE && failure.isFailed(selected)) {
+            if (failure.routing() == RE_ROUTE && failure.hasTriedNode(selected)) {
                 selected = partition.backupNodes().stream()
-                    .filter(n -> !failure.isFailed(n))
+                    .filter(n -> !failure.hasTriedNode(n))
                     .findFirst()
                     .orElse(selected); // <-- Fall back to the originally selected node.
             }

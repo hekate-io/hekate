@@ -28,7 +28,7 @@ import io.hekate.lock.internal.LockProtocol.LockResponse;
 import io.hekate.lock.internal.LockProtocol.UnlockRequest;
 import io.hekate.lock.internal.LockProtocol.UnlockResponse;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.unicast.RequestRetryCondition;
+import io.hekate.messaging.unicast.RequestRetryConfigurer;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.util.format.ToString;
@@ -36,9 +36,6 @@ import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.CancellationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.hekate.messaging.unicast.RetryDecision.DONE;
-import static io.hekate.messaging.unicast.RetryDecision.RETRY;
 
 class LockControllerClient {
     enum Status {
@@ -416,58 +413,41 @@ class LockControllerClient {
     private void remoteLock() {
         LockRequest lockReq = new LockRequest(lockId, key.region(), key.name(), localNode, lockTimeout, threadId);
 
-        RequestRetryCondition<LockProtocol> until = (err, reply) -> {
-            // Do not retry if not LOCKING anymore.
-            if (!is(Status.LOCKING)) {
-                return DONE;
-            }
+        // Retry policy.
+        RequestRetryConfigurer<LockProtocol> retryPolicy = retry -> retry
+            .unlimitedAttempts()
+            .alwaysReRoute()
+            .whileTrue(() -> is(Status.LOCKING))
+            .whileResponse(rsp -> {
+                LockResponse lockRsp1 = rsp.payload(LockResponse.class);
 
-            if (err == null) {
-                LockResponse lockRsp = reply.payload(LockResponse.class);
-
-                if (DEBUG) {
-                    log.debug("Got lock response [from={}, response={}]", reply.from(), reply);
-                }
-
-                switch (lockRsp.status()) {
+                switch (lockRsp1.status()) {
                     case OK: {
-                        ClusterHash topology = reply.topology().hash();
+                        ClusterHash topology1 = rsp.topology().hash();
 
-                        if (becomeLocked(topology)) {
-                            return DONE;
-                        } else {
-                            return RETRY;
-                        }
+                        return !becomeLocked(topology1);
                     }
                     case RETRY: {
-                        return RETRY;
+                        return true;
                     }
                     case LOCK_TIMEOUT: {
                         becomeUnlocked();
 
-                        return DONE;
+                        return false;
                     }
                     case LOCK_BUSY: {
                         becomeUnlocked();
 
-                        return DONE;
+                        return false;
                     }
                     case LOCK_OWNER_CHANGE: {
-                        throw new IllegalArgumentException("Got an unexpected lock owner update message: " + reply);
+                        throw new IllegalArgumentException("Got an unexpected lock owner update message: " + rsp);
                     }
                     default: {
-                        throw new IllegalArgumentException("Unexpected status: " + lockRsp.status());
+                        throw new IllegalArgumentException("Unexpected status: " + lockRsp1.status());
                     }
                 }
-            } else {
-                if (DEBUG) {
-                    log.debug("Failed to send lock request [error={}, request={}]", err.toString(), lockReq);
-                }
-
-                // Retry on error.
-                return RETRY;
-            }
-        };
+            });
 
         if (asyncCallback == null) {
             if (DEBUG) {
@@ -477,7 +457,7 @@ class LockControllerClient {
             // Send single request if we don't need to subscribe for updates.
             channel.newRequest(lockReq)
                 .withAffinity(key)
-                .until(until)
+                .withRetry(retryPolicy)
                 .submit((err, rsp) -> {
                     if (err != null && is(Status.LOCKING)) {
                         log.error("Failed to submit lock request [request={}]", lockReq, err);
@@ -491,7 +471,7 @@ class LockControllerClient {
             // Send subscription request if we need to receive lock owner updates.
             channel.newSubscribe(lockReq)
                 .withAffinity(key)
-                .until(until)
+                .withRetry(retryPolicy)
                 .submit((err, rsp) -> {
                     if (err == null) {
                         LockResponse lockRsp = rsp.payload(LockResponse.class);
@@ -515,33 +495,17 @@ class LockControllerClient {
 
         channel.newRequest(unlockReq)
             .withAffinity(key)
-            .until((err, rsp) -> {
-                if (!is(Status.UNLOCKING)) {
-                    // Do not retry if not UNLOCKING anymore.
-                    return DONE;
-                }
+            .withRetry(retry -> retry
+                .unlimitedAttempts()
+                .alwaysReRoute()
+                .whileTrue(() -> is(Status.UNLOCKING))
+                .whileResponse(rsp -> {
+                    UnlockResponse unlockRsp = rsp.payload(UnlockResponse.class);
 
-                if (err == null) {
-                    UnlockResponse lockRsp = rsp.payload(UnlockResponse.class);
-
-                    if (DEBUG) {
-                        log.debug("Got unlock response [from={}, response={}]", rsp.from(), lockRsp);
-                    }
-
-                    if (lockRsp.status() == UnlockResponse.Status.OK && tryBecomeUnlocked(rsp.topology().hash())) {
-                        return DONE;
-                    } else {
-                        return RETRY;
-                    }
-                } else {
-                    if (DEBUG) {
-                        log.debug("Failed to send unlock request [error={}, request={}]", err.toString(), unlockReq);
-                    }
-
-                    // Retry on error.
-                    return RETRY;
-                }
-            })
+                    return unlockRsp.status() != UnlockResponse.Status.OK
+                        || !tryBecomeUnlocked(rsp.topology().hash());
+                })
+            )
             .submit((err, rsp) -> {
                 if (err != null && is(Status.UNLOCKING)) {
                     log.error("Failed to submit unlock request [request={}]", unlockReq, err);
@@ -561,35 +525,18 @@ class LockControllerClient {
 
             channel.newRequest(req)
                 .withAffinity(key)
-                .until((err, rsp) -> {
-                    // Do not retry if not LOCKING anymore.
-                    if (!is(Status.LOCKING)) {
-                        return DONE;
-                    }
-
-                    if (err == null) {
-                        if (DEBUG) {
-                            log.debug("Got explicit lock owner query response [from={}, response={}]", rsp.from(), rsp);
-                        }
-
+                .withRetry(retry -> retry
+                    .unlimitedAttempts()
+                    .alwaysReRoute()
+                    .whileTrue(() -> is(Status.LOCKING))
+                    .whileResponse(rsp -> {
                         LockOwnerResponse ownerRsp = rsp.payload(LockOwnerResponse.class);
 
-                        if (ownerRsp.status() != LockOwnerResponse.Status.OK
-                            || !tryNotifyOnLockOwnerChange(ownerRsp.owner(), ownerRsp.threadId(), rsp.topology().hash())) {
-                            // Retry if update got rejected.
-                            return RETRY;
-                        } else {
-                            return DONE;
-                        }
-                    } else {
-                        if (DEBUG) {
-                            log.debug("Explicit lock owner query failed [to={}, key={}, cause={}]", rsp.from(), key, err.toString());
-                        }
-
-                        // Retry on error.
-                        return RETRY;
-                    }
-                })
+                        // Retry if update got rejected.
+                        return ownerRsp.status() != LockOwnerResponse.Status.OK
+                            || !tryNotifyOnLockOwnerChange(ownerRsp.owner(), ownerRsp.threadId(), rsp.topology().hash());
+                    })
+                )
                 .submit((err, rsp) -> {
                     if (err != null && is(Status.LOCKING)) {
                         log.error("Failed to submit explicit lock owner query [request={}]", req, err);

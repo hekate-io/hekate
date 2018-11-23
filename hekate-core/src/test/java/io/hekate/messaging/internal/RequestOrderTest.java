@@ -16,7 +16,6 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.unicast.RequestFuture;
 import java.util.ArrayList;
@@ -38,7 +37,7 @@ public class RequestOrderTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testRequestOrderAfterFailover() throws Exception {
+    public void testRequestOrderAfterRetry() throws Exception {
         List<Integer> received = Collections.synchronizedList(new ArrayList<>());
 
         AtomicInteger processed = new AtomicInteger();
@@ -61,19 +60,14 @@ public class RequestOrderTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        MessagingChannel<String> channel = sender.channel()
-            .forRemotes()
-            .withFailover(new FailoverPolicyBuilder()
-                .withRetryUntil(failover -> true)
-                .withErrorTypes(Throwable.class)
-                .withMaxAttempts(10)
-            );
+        MessagingChannel<String> channel = sender.channel().forRemotes();
 
         List<RequestFuture<String>> tasks = new ArrayList<>();
 
         for (int i = 0; i < 100; i++) {
             tasks.add(channel.newRequest(String.valueOf(i))
                 .withAffinity(1)
+                .withRetry(retry -> retry.maxAttempts(10))
                 .submit()
             );
         }

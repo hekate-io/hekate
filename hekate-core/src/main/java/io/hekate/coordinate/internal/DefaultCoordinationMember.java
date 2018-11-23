@@ -23,7 +23,6 @@ import io.hekate.cluster.ClusterTopology;
 import io.hekate.coordinate.CoordinationMember;
 import io.hekate.coordinate.CoordinationRequestCallback;
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.MessagingChannel;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,8 +35,6 @@ import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.hekate.messaging.unicast.RetryDecision.DONE;
-import static io.hekate.messaging.unicast.RetryDecision.RETRY;
 import static java.util.Collections.newSetFromMap;
 
 class DefaultCoordinationMember implements CoordinationMember {
@@ -86,12 +83,7 @@ class DefaultCoordinationMember implements CoordinationMember {
         this.coordinator = coordinator;
         this.async = async;
 
-        this.channel = channel.forNode(node)
-            .withFailover(new FailoverPolicyBuilder()
-                // Retry to death.
-                .withRetryUntil(ctx -> !disposed)
-                .withAlwaysRetrySameNode()
-            );
+        this.channel = channel.forNode(node);
     }
 
     @Override
@@ -159,45 +151,38 @@ class DefaultCoordinationMember implements CoordinationMember {
         if (!future.isDone()) {
             channel.newRequest(request)
                 .withAffinity(process)
-                .until((err, rsp) -> {
-                    if (future.isDone()) {
-                        if (DEBUG) {
-                            log.debug("Skipped response [from={}, response={}]", node, rsp);
-                        }
-
-                        return DONE;
-                    } else if (err != null) {
-                        if (DEBUG) {
-                            log.debug("Got an error [from={}, error={}, request={}]", node, err.toString(), request);
-                        }
-
-                        return RETRY;
-                    } else if (rsp.is(CoordinationProtocol.Reject.class)) {
-                        if (DEBUG) {
-                            log.debug("Got a reject [from={}, request={}]", node, request);
-                        }
-
-                        return RETRY;
-                    } else {
-                        if (rsp.is(CoordinationProtocol.Confirm.class)) {
+                .withRetry(retry -> retry
+                    .unlimitedAttempts()
+                    .alwaysTrySameNode()
+                    .whileTrue(() -> !disposed && !future.isDone())
+                    .whileResponse(rsp -> {
+                        if (rsp.is(CoordinationProtocol.Reject.class)) {
                             if (DEBUG) {
-                                log.debug("Got a confirmation [from={}, request={}]", node, request);
+                                log.debug("Got a reject [from={}, request={}]", node, request);
                             }
 
-                            future.complete(null);
+                            return true;
                         } else {
-                            CoordinationProtocol.Response response = rsp.payload(CoordinationProtocol.Response.class);
+                            if (rsp.is(CoordinationProtocol.Confirm.class)) {
+                                if (DEBUG) {
+                                    log.debug("Got a confirmation [from={}, request={}]", node, request);
+                                }
 
-                            if (DEBUG) {
-                                log.debug("Got a response [from={}, response={}]", node, response.response());
+                                future.complete(null);
+                            } else {
+                                CoordinationProtocol.Response response = rsp.payload(CoordinationProtocol.Response.class);
+
+                                if (DEBUG) {
+                                    log.debug("Got a response [from={}, response={}]", node, response.response());
+                                }
+
+                                future.complete(response.response());
                             }
 
-                            future.complete(response.response());
+                            return false;
                         }
-
-                        return DONE;
-                    }
-                })
+                    })
+                )
                 .submit((err, rsp) -> {
                     unregister(future);
 

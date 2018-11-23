@@ -18,8 +18,6 @@ package io.hekate.rpc;
 
 import io.hekate.cluster.ClusterFilterSupport;
 import io.hekate.cluster.ClusterView;
-import io.hekate.failover.FailoverPolicy;
-import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.partition.PartitionMapper;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -68,39 +66,6 @@ public interface RpcClientBuilder<T> extends ClusterFilterSupport<RpcClientBuild
      * @see RpcServerConfig#setTags(Set)
      */
     String tag();
-
-    /**
-     * Returns the failover policy (see {@link #withFailover(FailoverPolicy)}).
-     *
-     * @return Failover policy.
-     */
-    FailoverPolicy failover();
-
-    /**
-     * Returns a new builder that will apply the specifier failover policy to all of the clients that it will produce.
-     *
-     * <p>
-     * Alternatively, the failover policy can be pre-configured via {@link RpcClientConfig#setFailover(FailoverPolicy)} method.
-     * </p>
-     *
-     * @param policy Failover policy.
-     *
-     * @return New builder that will use the specified failover policy and will inherit all other options from this builder.
-     */
-    RpcClientBuilder<T> withFailover(FailoverPolicy policy);
-
-    /**
-     * Returns a new builder that will apply the specifier failover policy to all of the clients that it will produce.
-     *
-     * <p>
-     * Alternatively, the failover policy can be pre-configured via {@link RpcClientConfig#setFailover(FailoverPolicy)} method.
-     * </p>
-     *
-     * @param policy Failover policy builder.
-     *
-     * @return New builder that will use the specified failover policy and will inherit all other options from this builder.
-     */
-    RpcClientBuilder<T> withFailover(FailoverPolicyBuilder policy);
 
     /**
      * Returns a new builder that will apply the specifier load balancer to all of the clients that it will produce.

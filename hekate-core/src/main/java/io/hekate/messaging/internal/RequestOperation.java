@@ -1,26 +1,34 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.intercept.OutboundType;
+import io.hekate.messaging.retry.RetryCallback;
+import io.hekate.messaging.retry.RetryCondition;
+import io.hekate.messaging.retry.RetryErrorPolicy;
+import io.hekate.messaging.retry.RetryResponsePolicy;
+import io.hekate.messaging.retry.RetryRoutingPolicy;
 import io.hekate.messaging.unicast.RequestFuture;
-import io.hekate.messaging.unicast.RequestRetryCondition;
 import io.hekate.messaging.unicast.ResponsePart;
-import io.hekate.messaging.unicast.RetryDecision;
 
 class RequestOperation<T> extends UnicastOperation<T> {
     private final RequestFuture<T> future = new RequestFuture<>();
 
-    private final RequestRetryCondition<T> until;
+    private final RetryResponsePolicy<T> retryRsp;
 
     public RequestOperation(
         T message,
         Object affinityKey,
+        int maxAttempts,
+        RetryErrorPolicy retryErr,
+        RetryResponsePolicy<T> retryRsp,
+        RetryCondition retryCondition,
+        RetryCallback retryCallback,
+        RetryRoutingPolicy retryRoute,
         MessagingGatewayContext<T> gateway,
-        MessageOperationOpts<T> opts,
-        RequestRetryCondition<T> until
+        MessageOperationOpts<T> opts
     ) {
-        super(message, affinityKey, gateway, opts, false);
+        super(message, affinityKey, maxAttempts, retryErr, retryCondition, retryCallback, retryRoute, gateway, opts, false);
 
-        this.until = until;
+        this.retryRsp = retryRsp;
     }
 
     @Override
@@ -34,12 +42,8 @@ class RequestOperation<T> extends UnicastOperation<T> {
     }
 
     @Override
-    public RetryDecision shouldRetry(Throwable error, ResponsePart<T> response) {
-        if (until == null) {
-            return RetryDecision.USE_DEFAULTS;
-        }
-
-        return until.accept(error, response);
+    public boolean shouldRetry(ResponsePart<T> response) {
+        return retryRsp != null && retryRsp.shouldRetry(response);
     }
 
     @Override

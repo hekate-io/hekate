@@ -138,7 +138,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
     private final int connectTimeout;
 
-    private final long acceptorFailoverInterval;
+    private final long acceptorRetryInterval;
 
     private final int heartbeatInterval;
 
@@ -213,7 +213,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         portRange = factory.getPortRange();
         addressSelector = factory.getHostSelector();
         connectTimeout = factory.getConnectTimeout();
-        acceptorFailoverInterval = factory.getAcceptRetryInterval();
+        acceptorRetryInterval = factory.getAcceptRetryInterval();
         heartbeatInterval = factory.getHeartbeatInterval();
         heartbeatLossThreshold = factory.getHeartbeatLossThreshold();
         nioThreadPoolSize = factory.getNioThreads();
@@ -352,14 +352,14 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
                                 // Retry with the next port.
                                 return err.retry().withRetryAddress(newAddress);
                             }
-                        } else if (server.state() == NetworkServer.State.STARTED && acceptorFailoverInterval > 0) {
+                        } else if (server.state() == NetworkServer.State.STARTED && acceptorRetryInterval > 0) {
                             if (log.isErrorEnabled()) {
                                 log.error("Network server encountered an error ...will try to restart after {} ms [attempt={}, address={}]",
-                                    acceptorFailoverInterval, err.attempt(), err.lastTriedAddress(), cause);
+                                    acceptorRetryInterval, err.attempt(), err.lastTriedAddress(), cause);
                             }
 
                             // Failed while server had already been running for a while -> Retry with the same port.
-                            return err.retry().withRetryDelay(acceptorFailoverInterval);
+                            return err.retry().withRetryDelay(acceptorRetryInterval);
                         }
                     }
 

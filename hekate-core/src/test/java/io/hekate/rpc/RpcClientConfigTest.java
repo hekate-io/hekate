@@ -17,7 +17,6 @@
 package io.hekate.rpc;
 
 import io.hekate.HekateTestBase;
-import io.hekate.failover.FailoverPolicy;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
 import org.junit.Test;
@@ -63,24 +62,6 @@ public class RpcClientConfigTest extends HekateTestBase {
 
         assertSame(cfg, cfg.withTag("test"));
         assertEquals("test", cfg.getTag());
-    }
-
-    @Test
-    public void testFailover() {
-        assertNull(cfg.getFailover());
-
-        FailoverPolicy policy = ctx -> null;
-
-        cfg.setFailover(policy);
-
-        assertSame(policy, cfg.getFailover());
-
-        cfg.setFailover(null);
-
-        assertNull(cfg.getFailover());
-
-        assertSame(cfg, cfg.withFailover(policy));
-        assertSame(policy, cfg.getFailover());
     }
 
     @Test

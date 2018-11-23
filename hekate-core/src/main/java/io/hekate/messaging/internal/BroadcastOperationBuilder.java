@@ -4,14 +4,27 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.messaging.broadcast.Broadcast;
 import io.hekate.messaging.broadcast.BroadcastFuture;
+import io.hekate.messaging.broadcast.BroadcastRetryConfigurer;
+import io.hekate.messaging.broadcast.BroadcastRetryPolicy;
 import io.hekate.messaging.loadbalance.UnknownRouteException;
+import io.hekate.messaging.retry.RetryCallback;
+import io.hekate.messaging.retry.RetryCondition;
+import io.hekate.messaging.retry.RetryErrorPolicy;
 import io.hekate.messaging.unicast.SendAckMode;
 import java.util.List;
 
-class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements Broadcast<T> {
+class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements Broadcast<T>, BroadcastRetryPolicy {
     private Object affinity;
 
     private SendAckMode ackMode = SendAckMode.NOT_NEEDED;
+
+    private RetryErrorPolicy retryErr;
+
+    private RetryCondition retryCondition;
+
+    private RetryCallback retryCallback;
+
+    private int maxAttempts;
 
     public BroadcastOperationBuilder(T message, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts) {
         super(message, gateway, opts);
@@ -34,23 +47,100 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
     }
 
     @Override
-    public BroadcastFuture<T> submit() {
-        Object affinity = this.affinity;
-        SendAckMode ackMode = this.ackMode;
+    public Broadcast<T> withRetry(BroadcastRetryConfigurer retry) {
+        ArgAssert.notNull(retry, "Retry policy");
 
+        // Make sure that by default we retry all errors.
+        retryErr = RetryErrorPolicy.alwaysRetry();
+
+        retry.configure(this);
+
+        return this;
+    }
+
+    @Override
+    public BroadcastFuture<T> submit() {
+        // Use a static method to make sure that we immutably capture all current settings of this operation.
+        return doSubmit(message(), affinity, ackMode, retryErr, retryCondition, retryCallback, maxAttempts, gateway(), opts());
+    }
+
+    @Override
+    public BroadcastRetryPolicy whileTrue(RetryCondition condition) {
+        this.retryCondition = condition;
+
+        return this;
+    }
+
+    @Override
+    public BroadcastRetryPolicy whileError(RetryErrorPolicy policy) {
+        this.retryErr = policy;
+
+        return this;
+    }
+
+    @Override
+    public BroadcastRetryPolicy onRetry(RetryCallback callback) {
+        this.retryCallback = callback;
+
+        return this;
+    }
+
+    @Override
+    public BroadcastRetryPolicy maxAttempts(int maxAttempts) {
+        this.maxAttempts = maxAttempts;
+
+        return this;
+    }
+
+    static List<ClusterNode> nodesForBroadcast(Object affinityKey, MessageOperationOpts<?> opts) {
+        List<ClusterNode> nodes;
+
+        if (affinityKey == null) {
+            // Use the whole topology if affinity key is not specified.
+            nodes = opts.cluster().topology().nodes();
+        } else {
+            // Use only those nodes that are mapped to the affinity key.
+            nodes = opts.partitions().map(affinityKey).nodes();
+        }
+
+        return nodes;
+    }
+
+    private static <T> BroadcastFuture<T> doSubmit(
+        T msg,
+        Object affinity,
+        SendAckMode ackMode,
+        RetryErrorPolicy retry,
+        RetryCondition retryCondition,
+        RetryCallback retryCallback,
+        int maxAttempts,
+        MessagingGatewayContext<T> gateway,
+        MessageOperationOpts<T> opts
+    ) {
         BroadcastFuture<T> future = new BroadcastFuture<>();
 
-        List<ClusterNode> nodes = nodesForBroadcast(affinity, opts());
+        List<ClusterNode> nodes = nodesForBroadcast(affinity, opts);
 
         if (nodes.isEmpty()) {
-            future.complete(new EmptyBroadcastResult<>(message()));
+            future.complete(new EmptyBroadcastResult<>(msg));
         } else {
-            BroadcastContext<T> ctx = new BroadcastContext<>(message(), nodes, future);
+            BroadcastContext<T> ctx = new BroadcastContext<>(msg, nodes, future);
 
             nodes.forEach(node -> {
-                BroadcastOperation<T> op = new BroadcastOperation<>(message(), affinity, gateway(), opts(), ackMode, node);
+                BroadcastOperation<T> op = new BroadcastOperation<>(
+                    msg,
+                    affinity,
+                    maxAttempts,
+                    retry,
+                    retryCondition,
+                    retryCallback,
+                    gateway,
+                    opts,
+                    ackMode,
+                    node
+                );
 
-                gateway().submit(op);
+                gateway.submit(op);
 
                 op.future().whenComplete((ignore, err) -> {
                     boolean complete;
@@ -76,19 +166,5 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
         }
 
         return future;
-    }
-
-    static List<ClusterNode> nodesForBroadcast(Object affinityKey, MessageOperationOpts<?> opts) {
-        List<ClusterNode> nodes;
-
-        if (affinityKey == null) {
-            // Use the whole topology if affinity key is not specified.
-            nodes = opts.cluster().topology().nodes();
-        } else {
-            // Use only those nodes that are mapped to the affinity key.
-            nodes = opts.partitions().map(affinityKey).nodes();
-        }
-
-        return nodes;
     }
 }

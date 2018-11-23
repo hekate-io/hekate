@@ -18,13 +18,11 @@ package io.hekate.messaging;
 
 import io.hekate.cluster.ClusterFilterSupport;
 import io.hekate.cluster.ClusterView;
-import io.hekate.failover.BackoffPolicy;
-import io.hekate.failover.FailoverPolicy;
-import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.broadcast.Aggregate;
 import io.hekate.messaging.broadcast.Broadcast;
 import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.unicast.Request;
 import io.hekate.messaging.unicast.Send;
 import io.hekate.messaging.unicast.SendAckMode;
@@ -188,53 +186,24 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     MessagingChannel<T> withPartitions(int partitions, int backupNodes);
 
     /**
-     * Returns a copy of this channel that will use the specified failover policy and will inherit all other options from this instance.
-     *
-     * @param policy Failover policy.
-     *
-     * @return Channel wrapper.
-     *
-     * @see MessagingChannelConfig#setFailoverPolicy(FailoverPolicy)
-     */
-    MessagingChannel<T> withFailover(FailoverPolicy policy);
-
-    /**
-     * Returns a copy of this channel that will use the specified failover policy and will inherit all other options from this instance.
-     *
-     * @param policy Failover policy.
-     *
-     * @return Channel wrapper.
-     *
-     * @see MessagingChannelConfig#setFailoverPolicy(FailoverPolicy)
-     */
-    MessagingChannel<T> withFailover(FailoverPolicyBuilder policy);
-
-    /**
-     * Returns the failover policy that was set via {@link #withFailover(FailoverPolicy)}.
-     *
-     * @return Failover policy or {@code null}, if no policy is specified.
-     */
-    FailoverPolicy failover();
-
-    /**
      * Returns a copy of this channel that will use the specified backoff policy and will inherit all other options from this instance.
      *
      * @param backoff Backoff policy.
      *
      * @return Channel wrapper.
      *
-     * @see MessagingChannelConfig#setBackoffPolicy(BackoffPolicy)
+     * @see MessagingChannelConfig#setBackoffPolicy(RetryBackoffPolicy)
      */
-    MessagingChannel<T> withBackoff(BackoffPolicy backoff);
+    MessagingChannel<T> withBackoff(RetryBackoffPolicy backoff);
 
     /**
      * Returns the backoff policy of this channel.
      *
      * @return Backoff policy.
      *
-     * @see #withBackoff(BackoffPolicy)
+     * @see #withBackoff(RetryBackoffPolicy)
      */
-    BackoffPolicy backoff();
+    RetryBackoffPolicy backoff();
 
     /**
      * Returns a copy of this channel that will use the specified timeout value and will inherit all other options from this instance.

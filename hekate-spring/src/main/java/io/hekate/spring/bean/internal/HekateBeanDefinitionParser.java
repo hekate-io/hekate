@@ -750,7 +750,6 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 setBeanOrRef(channel, channelEl, "loadBalancer", "load-balancer", ctx);
                 setBeanOrRef(channel, channelEl, "messageCodec", "message-codec", ctx);
                 setBeanOrRef(channel, channelEl, "clusterFilter", "cluster-filter", ctx);
-                setBeanOrRef(channel, channelEl, "failoverPolicy", "failover-policy", ctx);
 
                 parseCommonMessagingConfig(channelEl, channel, ctx);
 
@@ -843,7 +842,6 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
 
                 // Nested elements.
                 setBeanOrRef(client, clientEl, "loadBalancer", "load-balancer", ctx);
-                setBeanOrRef(client, clientEl, "failover", "failover-policy", ctx);
 
                 String name = clientEl.getAttribute("name");
 

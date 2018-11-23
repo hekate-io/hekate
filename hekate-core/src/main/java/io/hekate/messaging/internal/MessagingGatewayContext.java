@@ -22,11 +22,6 @@ import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
 import io.hekate.codec.CodecException;
 import io.hekate.core.HekateException;
-import io.hekate.failover.FailoverPolicy;
-import io.hekate.failover.FailoverRoutingPolicy;
-import io.hekate.failover.FailureInfo;
-import io.hekate.failover.FailureResolution;
-import io.hekate.failover.internal.DefaultFailoverContext;
 import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessageQueueTimeoutException;
 import io.hekate.messaging.MessageReceiver;
@@ -36,11 +31,13 @@ import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.loadbalance.UnknownRouteException;
+import io.hekate.messaging.retry.RetryErrorPolicy;
+import io.hekate.messaging.retry.RetryFailure;
+import io.hekate.messaging.retry.RetryRoutingPolicy;
 import io.hekate.messaging.unicast.FailureResponse;
-import io.hekate.messaging.unicast.RejectedReplyException;
+import io.hekate.messaging.unicast.RejectedResponseException;
 import io.hekate.messaging.unicast.Response;
 import io.hekate.messaging.unicast.ResponsePart;
-import io.hekate.messaging.unicast.RetryDecision;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkFuture;
 import io.hekate.partition.PartitionMapper;
@@ -63,15 +60,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.StampedLock;
 import org.slf4j.Logger;
 
-import static io.hekate.failover.FailoverRoutingPolicy.RETRY_SAME_NODE;
+import static io.hekate.messaging.retry.RetryRoutingPolicy.RETRY_SAME_NODE;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toList;
 
 class MessagingGatewayContext<T> {
-    private interface FailoverCallback {
-        void retry(FailoverRoutingPolicy routingPolicy, Optional<FailureInfo> newFailure);
+    private interface RetryCallback {
+        void retry(RetryRoutingPolicy routingPolicy, Optional<RetryFailure> newFailure);
 
         void fail(Throwable cause);
     }
@@ -309,7 +306,7 @@ class MessagingGatewayContext<T> {
         return Waiting.awaitAll(waiting);
     }
 
-    private void routeAndSubmit(MessageOperation<T> op, Optional<FailureInfo> prevFailure) {
+    private void routeAndSubmit(MessageOperation<T> op, Optional<RetryFailure> prevFailure) {
         MessageOperationAttempt<T> attempt = null;
 
         try {
@@ -331,7 +328,7 @@ class MessagingGatewayContext<T> {
         }
     }
 
-    private MessageOperationAttempt<T> route(MessageOperation<T> op, Optional<FailureInfo> prevFailure) throws HekateException,
+    private MessageOperationAttempt<T> route(MessageOperation<T> op, Optional<RetryFailure> prevFailure) throws HekateException,
         ClientSelectionRejectedException {
         // Perform routing in a loop to circumvent concurrent cluster topology changes.
         while (true) {
@@ -411,93 +408,104 @@ class MessagingGatewayContext<T> {
 
     private MessageOperationAttempt<T> createAttempt(
         MessageOperation<T> operation,
-        Optional<FailureInfo> prevFailure,
+        Optional<RetryFailure> prevFailure,
         ClusterTopology topology,
         MessagingClient<T> client
     ) {
-        MessageOperationCallback<T> callback = (attempt, reply, err) -> {
+        MessageOperationCallback<T> callback = (attempt, rsp, err) -> {
             // Signal that network connection is not idle.
             attempt.client().touch();
 
             // Do not process completed operations.
-            if (operation.isDone()) {
+            if (attempt.operation().isDone()) {
                 return false;
             }
 
-            // Check if reply is an application-level error message.
+            // Check if reply is an application-level error.
             if (err == null) {
-                err = tryConvertToError(reply, attempt.receiver());
+                err = tryConvertToError(rsp, attempt.receiver());
             }
 
-            // Resolve effective reply.
-            ResponsePart<T> effectiveReply = err == null ? reply : null;
+            // Resolve effective response.
+            ResponsePart<T> effectiveRsp = err == null ? rsp : null;
+
+            // Check if operation can be retried at all.
+            boolean canRetry = attempt.operation().canRetry();
 
             // Check if this is an acceptable response.
-            RetryDecision decision = operation.shouldRetry(err, effectiveReply);
+            boolean rspRejected = false;
 
-            if (decision == null) {
-                decision = RetryDecision.USE_DEFAULTS;
+            if (canRetry && effectiveRsp != null) {
+                rspRejected = shouldRetry(attempt, effectiveRsp);
             }
 
             boolean completed = false;
 
-            if (shouldComplete(operation, decision, err)) {
+            if (canRetry && !shouldComplete(attempt, rspRejected, err)) {
+                /////////////////////////////////////////////////////////////
+                // Retry.
+                /////////////////////////////////////////////////////////////
+                if (!attempt.operation().isDone()) {
+                    // Complete the current attempt (successful retry actions will result in a new attempt).
+                    completed = true;
+
+                    RetryErrorPolicy policy;
+
+                    if (rspRejected) {
+                        err = new RejectedResponseException("Response rejected by the application logic", effectiveRsp.payload());
+
+                        // Always retry.
+                        policy = RetryErrorPolicy.alwaysRetry();
+                    } else {
+                        // Use the operation's policy.
+                        policy = attempt.operation().retryErrorPolicy();
+                    }
+
+                    // Retry callback.
+                    RetryCallback onRetry = new RetryCallback() {
+                        @Override
+                        public void retry(RetryRoutingPolicy routing, Optional<RetryFailure> failure) {
+                            switch (routing) {
+                                case RETRY_SAME_NODE: {
+                                    attempt.nextAttempt(failure).submit();
+
+                                    break;
+                                }
+                                case PREFER_SAME_NODE: {
+                                    if (isKnownNode(attempt.receiver())) {
+                                        attempt.nextAttempt(failure).submit();
+                                    } else {
+                                        routeAndSubmit(attempt.operation(), failure);
+                                    }
+
+                                    break;
+                                }
+                                case RE_ROUTE: {
+                                    routeAndSubmit(attempt.operation(), failure);
+
+                                    break;
+                                }
+                                default: {
+                                    throw new IllegalArgumentException("Unexpected routing policy: " + routing);
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void fail(Throwable cause) {
+                            notifyOnErrorAsync(attempt.operation(), cause);
+                        }
+                    };
+
+                    // Retry.
+                    retryAsync(attempt, policy, err, onRetry);
+                }
+            } else {
                 /////////////////////////////////////////////////////////////
                 // Complete the operation.
                 /////////////////////////////////////////////////////////////
-                // Note that it is up to the operation to decide on whether it is really completed or not.
-                completed = operation.complete(err, effectiveReply);
-            } else if (!operation.isDone()) {
-                /////////////////////////////////////////////////////////////
-                // Apply failover.
-                /////////////////////////////////////////////////////////////
-                // Complete the current attempt (successful failover actions will result in a new attempt).
-                completed = true;
-
-                if (decision == RetryDecision.RETRY) {
-                    Object rejected = effectiveReply != null ? effectiveReply.payload() : null;
-
-                    err = new RejectedReplyException("Response was rejected by the request callback", rejected, err);
-                }
-
-                // Failover callback.
-                FailoverCallback onFailover = new FailoverCallback() {
-                    @Override
-                    public void retry(FailoverRoutingPolicy routing, Optional<FailureInfo> failure) {
-                        switch (routing) {
-                            case RETRY_SAME_NODE: {
-                                attempt.nextAttempt(failure).submit();
-
-                                break;
-                            }
-                            case PREFER_SAME_NODE: {
-                                if (isKnownNode(attempt.receiver())) {
-                                    attempt.nextAttempt(failure).submit();
-                                } else {
-                                    routeAndSubmit(operation, failure);
-                                }
-
-                                break;
-                            }
-                            case RE_ROUTE: {
-                                routeAndSubmit(operation, failure);
-
-                                break;
-                            }
-                            default: {
-                                throw new IllegalArgumentException("Unexpected routing policy: " + routing);
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void fail(Throwable cause) {
-                        notifyOnErrorAsync(operation, cause);
-                    }
-                };
-
-                // Apply failover.
-                applyFailoverAsync(attempt, err, onFailover);
+                // Note that it is up to the operation to decide on whether it is really complete or not.
+                completed = attempt.operation().complete(err, effectiveRsp);
             }
 
             return completed;
@@ -506,13 +514,22 @@ class MessagingGatewayContext<T> {
         return new MessageOperationAttempt<>(client, topology, operation, prevFailure, callback);
     }
 
-    private void applyFailoverAsync(MessageOperationAttempt<T> attempt, Throwable cause, FailoverCallback callback) {
+    private boolean shouldRetry(MessageOperationAttempt<T> attempt, ResponsePart<T> effectiveRsp) {
+        boolean rspRejected = false;
+
+        if (effectiveRsp != null) {
+            rspRejected = attempt.operation().shouldRetry(effectiveRsp);
+        }
+        return rspRejected;
+    }
+
+    private void retryAsync(MessageOperationAttempt<T> attempt, RetryErrorPolicy policy, Throwable cause, RetryCallback callback) {
         attempt.operation().worker().execute(() ->
-            applyFailover(attempt, cause, callback)
+            retry(attempt, policy, cause, callback)
         );
     }
 
-    private void applyFailover(MessageOperationAttempt<T> attempt, Throwable cause, FailoverCallback callback) {
+    private void retry(MessageOperationAttempt<T> attempt, RetryErrorPolicy policy, Throwable cause, RetryCallback callback) {
         MessageOperation<T> operation = attempt.operation();
 
         // Do nothing if operation is already completed.
@@ -524,16 +541,19 @@ class MessagingGatewayContext<T> {
 
         Throwable finalCause = cause;
 
-        FailoverPolicy policy = operation.opts().failover();
-
         if (policy != null && isRecoverable(cause)) {
             ClusterNode failedNode = attempt.receiver();
 
-            DefaultFailoverContext failoverCtx = newFailoverContext(cause, failedNode, attempt.prevFailure());
+            MessageOperationFailure failure = newFailure(cause, failedNode, attempt.prevFailure());
 
             try {
-                // Apply the failover policy.
-                FailureResolution resolution = policy.apply(failoverCtx);
+                // Apply the retry policy.
+                boolean shouldRetry = policy.shouldRetry(failure);
+
+                if (shouldRetry) {
+                    // Notify the operation that it will be retried.
+                    operation.onRetry(failure);
+                }
 
                 // Enter lock (prevents channel state changes).
                 long readLock = lock.readLock();
@@ -541,8 +561,8 @@ class MessagingGatewayContext<T> {
                 try {
                     if (closed) {
                         finalCause = channelClosedError(cause);
-                    } else if (resolution != null && resolution.isRetry()) {
-                        FailoverRoutingPolicy routing = resolution.routing();
+                    } else if (shouldRetry) {
+                        RetryRoutingPolicy routing = operation.retryRoute();
 
                         // Retry only if re-routing was requested or if the target node is still within the cluster topology.
                         if (routing != RETRY_SAME_NODE || clients.containsKey(failedNode.id())) {
@@ -550,19 +570,19 @@ class MessagingGatewayContext<T> {
 
                             Runnable retry = () -> {
                                 try {
-                                    callback.retry(routing, Optional.of(failoverCtx.withRouting(routing)));
+                                    callback.retry(routing, Optional.of(failure.withRouting(routing)));
                                 } catch (RuntimeException | Error e) {
-                                    log.error("Got an unexpected error during failover task processing.", e);
+                                    log.error("Got an unexpected error while retrying.", e);
                                 }
                             };
 
-                            long delay = operation.opts().backoff().delayBeforeRetry(failoverCtx.attempt());
+                            long delay = operation.opts().backoff().delayBeforeRetry(failure.attempt());
 
                             if (delay > 0) {
                                 // Schedule timeout task to retry with the delay.
                                 timer.schedule(() -> operation.worker().execute(retry), delay, TimeUnit.MILLISECONDS);
                             } else {
-                                // Apply failover actions without a delay.
+                                // Retry immediately.
                                 operation.worker().execute(retry);
                             }
 
@@ -573,7 +593,7 @@ class MessagingGatewayContext<T> {
                     lock.unlockRead(readLock);
                 }
             } catch (RuntimeException | Error e) {
-                log.error("Got an unexpected error while applying failover policy.", e);
+                log.error("Got an unexpected error while retrying.", e);
             }
         }
 
@@ -788,18 +808,18 @@ class MessagingGatewayContext<T> {
         }
     }
 
-    private DefaultFailoverContext newFailoverContext(Throwable cause, ClusterNode failed, Optional<FailureInfo> prevFailure) {
+    private MessageOperationFailure newFailure(Throwable cause, ClusterNode failed, Optional<RetryFailure> prevFailure) {
         int attempt;
-        FailoverRoutingPolicy prevRouting;
+        RetryRoutingPolicy prevRouting;
         Set<ClusterNode> failedNodes;
 
         if (prevFailure.isPresent()) {
-            FailureInfo failure = prevFailure.get();
+            RetryFailure failure = prevFailure.get();
 
             attempt = failure.attempt() + 1;
             prevRouting = failure.routing();
 
-            failedNodes = new HashSet<>(failure.allFailedNodes());
+            failedNodes = new HashSet<>(failure.allTriedNodes());
 
             failedNodes.add(failed);
 
@@ -810,7 +830,7 @@ class MessagingGatewayContext<T> {
             failedNodes = singleton(failed);
         }
 
-        return new DefaultFailoverContext(attempt, cause, failed, failedNodes, prevRouting);
+        return new MessageOperationFailure(attempt, cause, failed, failedNodes, prevRouting);
     }
 
     private boolean isRecoverable(Throwable cause) {
@@ -836,15 +856,15 @@ class MessagingGatewayContext<T> {
         }
     }
 
-    private Throwable tryConvertToError(Response<T> reply, ClusterNode fromNode) {
+    private Throwable tryConvertToError(Response<T> rsp, ClusterNode from) {
         Throwable err = null;
 
-        if (reply != null) {
-            T replyMsg = reply.payload();
+        if (rsp != null) {
+            T replyMsg = rsp.payload();
 
             // Check if message should be converted to an error.
             if (replyMsg instanceof FailureResponse) {
-                err = ((FailureResponse)replyMsg).asError(fromNode);
+                err = ((FailureResponse)replyMsg).asError(from);
 
                 if (err == null) {
                     err = new IllegalArgumentException(FailureResponse.class.getSimpleName() + " message returned null error "
@@ -869,10 +889,10 @@ class MessagingGatewayContext<T> {
         }
     }
 
-    private static boolean shouldComplete(MessageOperation<?> operation, RetryDecision decision, Throwable err) {
-        return (decision == RetryDecision.USE_DEFAULTS && err == null)
-            || (decision == RetryDecision.DONE)
-            || (operation.opts().failover() == null);
+    private static boolean shouldComplete(MessageOperationAttempt<?> attempt, boolean responseRejected, Throwable err) {
+        return (err == null && !responseRejected)
+            || (err != null && attempt.operation().retryErrorPolicy() == null)
+            || !attempt.hasMoreAttempts();
     }
 
     @Override

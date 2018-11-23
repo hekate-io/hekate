@@ -164,7 +164,6 @@ class MessagingGateway<T> {
             clusterView,
             mapper,
             loadBalancer,
-            cfg.getFailoverPolicy(),
             cfg.getBackoffPolicy(),
             cfg.getMessagingTimeout()
         );

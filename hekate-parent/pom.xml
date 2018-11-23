@@ -666,7 +666,7 @@
                         </group>
                         <group>
                             <title>Common Helpers and Utilities</title>
-                            <packages>io.hekate.failover*:io.hekate.partition*:io.hekate.util*</packages>
+                            <packages>io.hekate.partition*:io.hekate.util*</packages>
                         </group>
                         <group>
                             <title>Command line runner</title>

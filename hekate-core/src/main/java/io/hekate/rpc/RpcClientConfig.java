@@ -16,7 +16,6 @@
 
 package io.hekate.rpc;
 
-import io.hekate.failover.FailoverPolicy;
 import io.hekate.partition.Partition;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
@@ -54,8 +53,6 @@ public class RpcClientConfig {
     private Class<?> rpcInterface;
 
     private String tag;
-
-    private FailoverPolicy failover;
 
     private RpcLoadBalancer loadBalancer;
 
@@ -136,39 +133,6 @@ public class RpcClientConfig {
      */
     public RpcClientConfig withTag(String tag) {
         setTag(tag);
-
-        return this;
-    }
-
-    /**
-     * Returns the failover policy (see {@link #setFailover(FailoverPolicy)}).
-     *
-     * @return Failover policy.
-     */
-    public FailoverPolicy getFailover() {
-        return failover;
-    }
-
-    /**
-     * Sets the failover policy.
-     *
-     * @param failover Failover policy.
-     */
-    public void setFailover(FailoverPolicy failover) {
-        this.failover = failover;
-    }
-
-    /**
-     * Fluent-style version of {@link #setFailover(FailoverPolicy)}.
-     *
-     * @param failover Failover policy.
-     *
-     * @return This instance.
-     *
-     * @see RpcClientBuilder#withFailover(FailoverPolicy)
-     */
-    public RpcClientConfig withFailover(FailoverPolicy failover) {
-        setFailover(failover);
 
         return this;
     }

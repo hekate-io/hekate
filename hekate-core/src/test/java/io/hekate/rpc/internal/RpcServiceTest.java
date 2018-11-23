@@ -18,7 +18,6 @@ package io.hekate.rpc.internal;
 
 import io.hekate.core.HekateConfigurationException;
 import io.hekate.core.internal.HekateTestNode;
-import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import io.hekate.partition.RendezvousHashMapper;
@@ -213,15 +212,12 @@ public class RpcServiceTest extends RpcServiceTestBase {
         ClientAndServer ctx = prepareClientAndServer(rpc);
 
         RpcLoadBalancer lb = mock(RpcLoadBalancer.class);
-        FailoverPolicy fp = mock(FailoverPolicy.class);
 
         RpcClientBuilder<TestRpcA> builder = ctx.client().rpc().clientFor(TestRpcA.class)
             .withLoadBalancer(lb)
-            .withFailover(fp)
             .withTimeout(3, TimeUnit.SECONDS);
 
         assertSame(TestRpcA.class, builder.type());
-        assertSame(fp, builder.failover());
         assertEquals(3000, builder.timeout());
         assertTrue(builder.cluster().topology().contains(ctx.server().localNode()));
         assertFalse(builder.cluster().topology().contains(ctx.client().localNode()));
@@ -298,7 +294,6 @@ public class RpcServiceTest extends RpcServiceTestBase {
                 )
         ).join();
 
-        FailoverPolicy fp = mock(FailoverPolicy.class);
         RpcLoadBalancer lb = mock(RpcLoadBalancer.class);
 
         when(lb.route(any(RpcRequest.class), any(LoadBalancerContext.class))).thenReturn(server.cluster().localNode().id());
@@ -310,7 +305,6 @@ public class RpcServiceTest extends RpcServiceTestBase {
                     .withRpcInterface(TestRpcA.class)
                     .withLoadBalancer(lb)
                     .withTimeout(100500)
-                    .withFailover(fp)
                     .withPartitions(RendezvousHashMapper.DEFAULT_PARTITIONS * 2)
                     .withBackupNodes(100500)
                 )
@@ -321,7 +315,6 @@ public class RpcServiceTest extends RpcServiceTestBase {
 
         assertSame(TestRpcA.class, builder.type());
         assertEquals("test-tag", builder.tag());
-        assertSame(fp, builder.failover());
         assertEquals(100500, builder.timeout());
         assertEquals(RendezvousHashMapper.DEFAULT_PARTITIONS * 2, builder.partitions().partitions());
         assertEquals(100500, builder.partitions().backupNodes());

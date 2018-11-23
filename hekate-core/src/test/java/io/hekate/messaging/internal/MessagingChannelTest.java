@@ -20,8 +20,6 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.UpdatableClusterView;
-import io.hekate.failover.BackoffPolicy;
-import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
@@ -29,6 +27,7 @@ import io.hekate.messaging.internal.MessagingProtocol.Connect;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.loadbalance.UnknownRouteException;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkService;
@@ -77,12 +76,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         assertNotNull(channel.executor());
         assertEquals(100500, channel.timeout());
 
-        FailoverPolicy failover = mock(FailoverPolicy.class);
-
-        assertNotSame(channel, channel.withFailover(failover));
-        assertSame(failover, channel.withFailover(failover).failover());
-
-        BackoffPolicy backoff = mock(BackoffPolicy.class);
+        RetryBackoffPolicy backoff = mock(RetryBackoffPolicy.class);
 
         assertNotSame(channel, channel.withBackoff(backoff));
         assertSame(backoff, channel.withBackoff(backoff).backoff());
@@ -259,30 +253,6 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         Optional.ofNullable(errRef.exchange(null)).ifPresent(e -> {
             throw new AssertionError(e);
         });
-    }
-
-    @Test
-    public void testFailover() throws Exception {
-        MessagingChannel<String> channel = createChannel().join().channel();
-
-        assertNull(channel.failover());
-        assertNull(channel.forRemotes().failover());
-
-        FailoverPolicy p1 = context -> null;
-        FailoverPolicy p2 = context -> null;
-        FailoverPolicy p3 = context -> null;
-
-        assertSame(p1, channel.withFailover(p1).failover());
-        assertNull(channel.failover());
-        assertNull(channel.forRemotes().failover());
-
-        assertSame(p2, channel.forRemotes().withFailover(p2).failover());
-        assertNull(channel.failover());
-        assertNull(channel.forRemotes().failover());
-
-        assertSame(p3, channel.forRemotes().withFailover(p3).forRemotes().failover());
-        assertNull(channel.failover());
-        assertNull(channel.forRemotes().failover());
     }
 
     @Test

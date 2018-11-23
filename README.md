@@ -35,6 +35,7 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
     - Cluster-aware Load Balancing and Routing
     - SSL/TLS Encryption of Network Communications (optional)
     - Back Pressure Policies
+    - Error Retry Policies
     - Pluggable Serialization
         - [Kryo](https://github.com/EsotericSoftware/kryo)
         - [FST](https://github.com/RuedigerMoeller/fast-serialization)
@@ -46,7 +47,8 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
     - Automatic Discovery and Load Balancing
     - Synchronous and Asynchronous APIs
     - Multi-node Broadcasting and Aggregation of Results
-    - Pluggable Failover and Retry Policies
+    - Back Pressure Policies
+    - Error Retry Policies
     - ...and everything from the "Messaging" section above:)
     
 - **Cluster Leader Election (aka Cluster Singleton)**

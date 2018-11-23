@@ -19,10 +19,9 @@ package io.hekate.messaging;
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.codec.CodecFactory;
-import io.hekate.failover.BackoffPolicy;
-import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.partition.RendezvousHashMapper;
 import java.util.Collections;
 import org.junit.Test;
@@ -146,7 +145,7 @@ public class MessagingChannelConfigTest extends HekateTestBase {
     public void testBackoffPolicy() {
         assertNotNull(cfg.getBackoffPolicy());
 
-        BackoffPolicy backoff = mock(BackoffPolicy.class);
+        RetryBackoffPolicy backoff = mock(RetryBackoffPolicy.class);
 
         cfg.setBackoffPolicy(backoff);
 
@@ -195,25 +194,6 @@ public class MessagingChannelConfigTest extends HekateTestBase {
         cfg.setReceiver(null);
 
         assertFalse(cfg.hasReceiver());
-    }
-
-    @Test
-    public void testFailoverPolicy() {
-        FailoverPolicy policy = mock(FailoverPolicy.class);
-
-        assertNull(cfg.getFailoverPolicy());
-
-        cfg.setFailoverPolicy(policy);
-
-        assertSame(policy, cfg.getFailoverPolicy());
-
-        cfg.setFailoverPolicy(null);
-
-        assertNull(cfg.getFailoverPolicy());
-
-        assertSame(cfg, cfg.withFailoverPolicy(policy));
-
-        assertSame(policy, cfg.getFailoverPolicy());
     }
 
     @Test

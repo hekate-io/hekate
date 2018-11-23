@@ -70,6 +70,15 @@ public interface Send<T> {
     Send<T> withAckMode(SendAckMode ackMode);
 
     /**
+     * Retry policy.
+     *
+     * @param retry Retry policy.
+     *
+     * @return This instance.
+     */
+    Send<T> withRetry(SendRetryConfigurer retry);
+
+    /**
      * Asynchronously executes this operation.
      *
      * @return Future result of this operation.

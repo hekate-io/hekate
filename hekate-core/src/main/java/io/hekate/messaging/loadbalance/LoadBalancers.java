@@ -18,12 +18,12 @@ package io.hekate.messaging.loadbalance;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
-import io.hekate.failover.FailureInfo;
+import io.hekate.messaging.retry.RetryFailure;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
-import static io.hekate.failover.FailoverRoutingPolicy.RE_ROUTE;
+import static io.hekate.messaging.retry.RetryRoutingPolicy.RE_ROUTE;
 import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
 import static java.util.stream.Collectors.toList;
 
@@ -64,11 +64,11 @@ public final class LoadBalancers {
             ClusterNode node = ctx.nodes().get(idx);
 
             if (ctx.failure().isPresent()) {
-                FailureInfo failure = ctx.failure().get();
+                RetryFailure failure = ctx.failure().get();
 
-                if (failure.routing() == RE_ROUTE && failure.isFailed(node)) {
+                if (failure.routing() == RE_ROUTE && failure.hasTriedNode(node)) {
                     List<ClusterNode> nonFailed = ctx.stream()
-                        .filter(n -> !failure.isFailed(n))
+                        .filter(n -> !failure.hasTriedNode(n))
                         .collect(toList());
 
                     if (!nonFailed.isEmpty()) {

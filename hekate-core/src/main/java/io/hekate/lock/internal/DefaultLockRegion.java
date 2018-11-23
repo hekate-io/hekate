@@ -23,7 +23,6 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockOwnerInfo;
 import io.hekate.lock.LockRegion;
@@ -63,8 +62,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.hekate.messaging.unicast.RetryDecision.DONE;
-import static io.hekate.messaging.unicast.RetryDecision.RETRY;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toSet;
@@ -165,17 +162,10 @@ class DefaultLockRegion implements LockRegion {
         writeLock = lock.writeLock();
 
         // Configure messaging channel for locking operations.
-        lockChannel = channel.withFailover(new FailoverPolicyBuilder()
-            .withAlwaysReRoute()
-            .withRetryUntil(err -> !isTerminated())
-        );
+        lockChannel = channel;
 
         // Configure messaging channel for locks migration.
-        migrationRing = channel.filterAll(ClusterFilters.forNextInJoinOrder()) // <-- Use ring-based communications.
-            .withFailover(new FailoverPolicyBuilder()
-                .withAlwaysReRoute()
-                .withRetryUntil(err -> !isTerminated())
-            );
+        migrationRing = channel.filterAll(ClusterFilters.forNextInJoinOrder()); // <-- Use ring-based communications.
 
         // Configure metrics.
         this.metrics = new LockRegionMetrics(regionName, metrics);
@@ -201,21 +191,24 @@ class DefaultLockRegion implements LockRegion {
             return Optional.empty();
         }
 
-        CompletableFuture<Optional<LockOwnerInfo>> resultFuture = new CompletableFuture<>();
+        CompletableFuture<Optional<LockOwnerInfo>> future = new CompletableFuture<>();
 
         LockOwnerRequest request = new LockOwnerRequest(regionName, lockName);
 
         lockChannel.newRequest(request)
             .withAffinity(new LockKey(regionName, lockName))
-            .until((err, rsp) -> {
-                if (err == null) {
+            .withRetry(retry -> retry
+                .unlimitedAttempts()
+                .alwaysReRoute()
+                .whileTrue(() -> !isTerminated() && !future.isDone())
+                .whileResponse(rsp -> {
                     LockOwnerResponse lockReply = rsp.payload(LockOwnerResponse.class);
 
                     if (lockReply.status() == LockOwnerResponse.Status.OK) {
                         ClusterNodeId ownerId = lockReply.owner();
 
                         if (ownerId == null) {
-                            resultFuture.complete(Optional.empty());
+                            future.complete(Optional.empty());
                         } else {
                             ClusterTopology topology = lockChannel.cluster().topology();
 
@@ -226,24 +219,24 @@ class DefaultLockRegion implements LockRegion {
                             if (ownerNode != null) {
                                 DefaultLockOwnerInfo info = new DefaultLockOwnerInfo(lockReply.threadId(), ownerNode);
 
-                                resultFuture.complete(Optional.of(info));
+                                future.complete(Optional.of(info));
                             }
                         }
                     }
-                }
 
-                return resultFuture.isDone() ? DONE : RETRY;
-            })
+                    return !future.isDone();
+                })
+            )
             .submit((err, rsp) -> {
                 if (err != null) {
-                    resultFuture.complete(Optional.empty());
+                    future.complete(Optional.empty());
                 }
             });
 
         try {
-            return resultFuture.get();
+            return future.get();
         } catch (InterruptedException e) {
-            resultFuture.cancel(false);
+            future.cancel(false);
 
             throw e;
         } catch (ExecutionException e) {
@@ -645,9 +638,6 @@ class DefaultLockRegion implements LockRegion {
 
             initMigration.countDown();
 
-            // Important to update status after lock controllers termination.
-            // Need to do it in order to prevent contention between the failover conditions of the messaging channel
-            // and retry logic within the lock client controller.
             status = Status.TERMINATED;
 
             latestMapping = null;
@@ -904,33 +894,26 @@ class DefaultLockRegion implements LockRegion {
     private void sendToNextNode(MigrationRequest request) {
         migrationRing.newRequest(request)
             .withAffinity(regionName)
-            .until((err, reply) -> {
-                if (err == null) {
-                    MigrationResponse response = reply.payload(MigrationResponse.class);
+            .withRetry(retry -> retry
+                .unlimitedAttempts()
+                .alwaysTrySameNode()
+                .whileTrue(() -> !isTerminated() && isValid(request))
+                .whileResponse(rsp -> {
+                    MigrationResponse payload = rsp.payload(MigrationResponse.class);
 
-                    if (DEBUG) {
-                        log.debug("Got {} response [request={}]", response.status(), request);
-                    }
-
-                    switch (response.status()) {
+                    switch (payload.status()) {
                         case OK: {
-                            return DONE;
+                            return false;
                         }
                         case RETRY: {
-                            return isValid(request) ? RETRY : DONE;
+                            return isValid(request);
                         }
                         default: {
-                            throw new IllegalArgumentException("Unexpected status type: " + response.status());
+                            throw new IllegalArgumentException("Unexpected status type: " + payload.status());
                         }
                     }
-                } else {
-                    if (DEBUG) {
-                        log.debug("Got migration request failure [cause={}, request={}]", err.toString(), request);
-                    }
-
-                    return isValid(request) ? RETRY : DONE;
-                }
-            })
+                })
+            )
             .submit((err, rsp) -> {
                 if (err != null && isValid(request)) {
                     log.error("Failed to submit migration request [request={}]", request, err);

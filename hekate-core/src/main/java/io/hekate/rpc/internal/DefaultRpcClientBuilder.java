@@ -18,8 +18,6 @@ package io.hekate.rpc.internal;
 
 import io.hekate.cluster.ClusterFilter;
 import io.hekate.cluster.ClusterView;
-import io.hekate.failover.FailoverPolicy;
-import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.partition.PartitionMapper;
@@ -49,16 +47,6 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
         this.type = type;
         this.tag = tag;
         this.channel = channel;
-    }
-
-    @Override
-    public RpcClientBuilder<T> withFailover(FailoverPolicy policy) {
-        return new DefaultRpcClientBuilder<>(type, tag, channel.withFailover(policy));
-    }
-
-    @Override
-    public RpcClientBuilder<T> withFailover(FailoverPolicyBuilder policy) {
-        return new DefaultRpcClientBuilder<>(type, tag, channel.withFailover(policy));
     }
 
     @Override
@@ -105,11 +93,6 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
     @Override
     public String tag() {
         return tag;
-    }
-
-    @Override
-    public FailoverPolicy failover() {
-        return channel.failover();
     }
 
     @Override

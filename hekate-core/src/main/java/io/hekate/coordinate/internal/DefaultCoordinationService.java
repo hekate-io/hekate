@@ -45,12 +45,12 @@ import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.TerminatingService;
-import io.hekate.failover.BackoffPolicy;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingConfigProvider;
 import io.hekate.messaging.MessagingService;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
@@ -82,7 +82,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
     private static final ClusterNodeFilter HAS_SERVICE_FILTER = node -> node.hasService(CoordinationService.class);
 
-    private final long failoverDelay;
+    private final long retryDelay;
 
     private final int nioThreads;
 
@@ -117,7 +117,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
         check.positive(factory.getRetryInterval(), "retry interval");
 
         this.nioThreads = factory.getNioThreads();
-        this.failoverDelay = factory.getRetryInterval();
+        this.retryDelay = factory.getRetryInterval();
         this.idleSocketTimeout = factory.getIdleSocketTimeout();
 
         StreamUtils.nullSafe(factory.getProcesses()).forEach(processesConfig::add);
@@ -190,7 +190,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
                 .withClusterFilter(HAS_SERVICE_FILTER)
                 .withNioThreads(nioThreads)
                 .withIdleSocketTimeout(idleSocketTimeout)
-                .withBackoffPolicy(BackoffPolicy.fixedDelay(failoverDelay))
+                .withBackoffPolicy(RetryBackoffPolicy.fixedDelay(retryDelay))
                 .withLogCategory(CoordinationProtocol.class.getName())
                 .withMessageCodec(() -> new CoordinationProtocolCodec(processCodecs))
                 .withReceiver(this::handleMessage)

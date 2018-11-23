@@ -321,10 +321,6 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
                     .withTimeout(cfg.getTimeout(), TimeUnit.MILLISECONDS)
                     .withPartitions(cfg.getPartitions(), cfg.getBackupNodes());
 
-                if (cfg.getFailover() != null) {
-                    client = client.withFailover(cfg.getFailover());
-                }
-
                 if (cfg.getLoadBalancer() != null) {
                     client = client.withLoadBalancer(cfg.getLoadBalancer());
                 }

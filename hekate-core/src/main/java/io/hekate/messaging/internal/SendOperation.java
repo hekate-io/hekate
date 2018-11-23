@@ -1,8 +1,11 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.intercept.OutboundType;
+import io.hekate.messaging.retry.RetryCallback;
+import io.hekate.messaging.retry.RetryCondition;
+import io.hekate.messaging.retry.RetryErrorPolicy;
+import io.hekate.messaging.retry.RetryRoutingPolicy;
 import io.hekate.messaging.unicast.ResponsePart;
-import io.hekate.messaging.unicast.RetryDecision;
 import io.hekate.messaging.unicast.SendAckMode;
 import io.hekate.messaging.unicast.SendFuture;
 
@@ -14,11 +17,16 @@ class SendOperation<T> extends UnicastOperation<T> {
     public SendOperation(
         T message,
         Object affinityKey,
+        int maxAttempts,
+        RetryErrorPolicy retryErr,
+        RetryCondition retryCondition,
+        RetryCallback retryCallback,
+        RetryRoutingPolicy retryRoute,
         MessagingGatewayContext<T> gateway,
         MessageOperationOpts<T> opts,
         SendAckMode ackMode
     ) {
-        super(message, affinityKey, gateway, opts, false);
+        super(message, affinityKey, maxAttempts, retryErr, retryCondition, retryCallback, retryRoute, gateway, opts, false);
 
         this.ackMode = ackMode;
     }
@@ -34,8 +42,8 @@ class SendOperation<T> extends UnicastOperation<T> {
     }
 
     @Override
-    public RetryDecision shouldRetry(Throwable error, ResponsePart<T> response) {
-        return RetryDecision.USE_DEFAULTS;
+    public boolean shouldRetry(ResponsePart<T> response) {
+        return false;
     }
 
     @Override

@@ -45,18 +45,13 @@ public interface Subscribe<T> {
     Subscribe<T> withAffinity(Object affinity);
 
     /**
-     * Response condition.
+     * Retry policy.
      *
-     * <p>
-     * Operation will not be completed unless its results (final response or an error) matches with the specified
-     * {@link RequestRetryCondition}. Negative decision will trigger resubmission of a subscription request.
-     * </p>
-     *
-     * @param condition Condition.
+     * @param retry Retry policy.
      *
      * @return This instance.
      */
-    Subscribe<T> until(RequestRetryCondition<T> condition);
+    Subscribe<T> withRetry(RequestRetryConfigurer<T> retry);
 
     /**
      * Asynchronously executes this operation.
