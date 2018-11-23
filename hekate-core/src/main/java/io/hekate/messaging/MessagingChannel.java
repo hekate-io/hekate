@@ -18,16 +18,16 @@ package io.hekate.messaging;
 
 import io.hekate.cluster.ClusterFilterSupport;
 import io.hekate.cluster.ClusterView;
-import io.hekate.messaging.broadcast.Aggregate;
-import io.hekate.messaging.broadcast.Broadcast;
 import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.operation.Aggregate;
+import io.hekate.messaging.operation.Broadcast;
+import io.hekate.messaging.operation.Request;
+import io.hekate.messaging.operation.Send;
+import io.hekate.messaging.operation.SendAckMode;
+import io.hekate.messaging.operation.Subscribe;
+import io.hekate.messaging.operation.SubscribeCallback;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
-import io.hekate.messaging.unicast.Request;
-import io.hekate.messaging.unicast.Send;
-import io.hekate.messaging.unicast.SendAckMode;
-import io.hekate.messaging.unicast.Subscribe;
-import io.hekate.messaging.unicast.SubscribeCallback;
 import io.hekate.partition.PartitionMapper;
 import java.util.concurrent.Executor;
 

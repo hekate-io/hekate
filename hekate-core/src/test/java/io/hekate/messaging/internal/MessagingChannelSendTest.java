@@ -28,7 +28,7 @@ import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.loadbalance.LoadBalancerException;
 import io.hekate.messaging.loadbalance.UnknownRouteException;
-import io.hekate.messaging.unicast.SendFuture;
+import io.hekate.messaging.operation.SendFuture;
 import io.hekate.network.NetworkFuture;
 import io.hekate.test.HekateTestError;
 import io.hekate.util.async.Waiting;

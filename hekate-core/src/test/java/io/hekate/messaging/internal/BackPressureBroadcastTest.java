@@ -20,7 +20,7 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.broadcast.BroadcastFuture;
+import io.hekate.messaging.operation.BroadcastFuture;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;

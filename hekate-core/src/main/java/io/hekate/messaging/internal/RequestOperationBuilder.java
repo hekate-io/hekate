@@ -1,15 +1,15 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.messaging.operation.Request;
+import io.hekate.messaging.operation.RequestFuture;
+import io.hekate.messaging.operation.RequestRetryConfigurer;
+import io.hekate.messaging.operation.RequestRetryPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
 import io.hekate.messaging.retry.RetryErrorPolicy;
 import io.hekate.messaging.retry.RetryResponsePolicy;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
-import io.hekate.messaging.unicast.Request;
-import io.hekate.messaging.unicast.RequestFuture;
-import io.hekate.messaging.unicast.RequestRetryConfigurer;
-import io.hekate.messaging.unicast.RequestRetryPolicy;
 import java.util.concurrent.TimeUnit;
 
 class RequestOperationBuilder<T> extends MessageOperationBuilder<T> implements Request<T>, RequestRetryPolicy<T> {

@@ -25,12 +25,12 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingServiceFactory;
-import io.hekate.messaging.broadcast.AggregateFuture;
-import io.hekate.messaging.broadcast.BroadcastFuture;
-import io.hekate.messaging.unicast.RequestFuture;
-import io.hekate.messaging.unicast.SendAckMode;
-import io.hekate.messaging.unicast.SendFuture;
-import io.hekate.messaging.unicast.SubscribeFuture;
+import io.hekate.messaging.operation.AggregateFuture;
+import io.hekate.messaging.operation.BroadcastFuture;
+import io.hekate.messaging.operation.RequestFuture;
+import io.hekate.messaging.operation.SendAckMode;
+import io.hekate.messaging.operation.SendFuture;
+import io.hekate.messaging.operation.SubscribeFuture;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;

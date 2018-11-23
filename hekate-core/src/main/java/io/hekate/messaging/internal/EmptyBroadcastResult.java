@@ -17,7 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.messaging.broadcast.BroadcastResult;
+import io.hekate.messaging.operation.BroadcastResult;
 import io.hekate.util.format.ToString;
 import java.util.Collections;
 import java.util.List;

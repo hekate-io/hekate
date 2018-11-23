@@ -20,7 +20,7 @@ import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFutureException;
-import io.hekate.messaging.unicast.SendFuture;
+import io.hekate.messaging.operation.SendFuture;
 import java.util.concurrent.CountDownLatch;
 import org.junit.Test;
 

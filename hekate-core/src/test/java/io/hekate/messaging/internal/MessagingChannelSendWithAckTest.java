@@ -28,7 +28,7 @@ import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingRemoteException;
 import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
-import io.hekate.messaging.unicast.SendFuture;
+import io.hekate.messaging.operation.SendFuture;
 import io.hekate.test.HekateTestError;
 import io.hekate.test.NonDeserializable;
 import io.hekate.test.NonSerializable;

@@ -2,11 +2,11 @@ package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.messaging.broadcast.Aggregate;
-import io.hekate.messaging.broadcast.AggregateFuture;
-import io.hekate.messaging.broadcast.AggregateRetryConfigurer;
-import io.hekate.messaging.broadcast.AggregateRetryPolicy;
 import io.hekate.messaging.loadbalance.UnknownRouteException;
+import io.hekate.messaging.operation.Aggregate;
+import io.hekate.messaging.operation.AggregateFuture;
+import io.hekate.messaging.operation.AggregateRetryConfigurer;
+import io.hekate.messaging.operation.AggregateRetryPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
 import io.hekate.messaging.retry.RetryErrorPolicy;

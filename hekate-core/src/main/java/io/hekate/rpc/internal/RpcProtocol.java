@@ -17,7 +17,7 @@
 package io.hekate.rpc.internal;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.messaging.unicast.FailureResponse;
+import io.hekate.messaging.operation.FailureResponse;
 import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
 import io.hekate.rpc.RpcRequest;

@@ -1,14 +1,14 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.intercept.OutboundType;
+import io.hekate.messaging.operation.ResponsePart;
+import io.hekate.messaging.operation.SubscribeCallback;
+import io.hekate.messaging.operation.SubscribeFuture;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
 import io.hekate.messaging.retry.RetryErrorPolicy;
 import io.hekate.messaging.retry.RetryResponsePolicy;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
-import io.hekate.messaging.unicast.ResponsePart;
-import io.hekate.messaging.unicast.SubscribeCallback;
-import io.hekate.messaging.unicast.SubscribeFuture;
 
 class SubscribeOperation<T> extends UnicastOperation<T> {
     private final SubscribeFuture<T> future = new SubscribeFuture<>();

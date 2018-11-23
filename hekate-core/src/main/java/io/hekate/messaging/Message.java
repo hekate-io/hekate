@@ -16,9 +16,9 @@
 
 package io.hekate.messaging;
 
-import io.hekate.messaging.unicast.RequestCallback;
-import io.hekate.messaging.unicast.Response;
-import io.hekate.messaging.unicast.SendCallback;
+import io.hekate.messaging.operation.RequestCallback;
+import io.hekate.messaging.operation.Response;
+import io.hekate.messaging.operation.SendCallback;
 
 /**
  * Message with arbitrary payload.

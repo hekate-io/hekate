@@ -23,7 +23,7 @@ import io.hekate.core.HekateFutureException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.operation.Response;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

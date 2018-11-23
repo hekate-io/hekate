@@ -6,7 +6,7 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.internal.MessagingServiceTestBase;
 import io.hekate.messaging.internal.TestChannel;
-import io.hekate.messaging.unicast.SendAckMode;
+import io.hekate.messaging.operation.SendAckMode;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;

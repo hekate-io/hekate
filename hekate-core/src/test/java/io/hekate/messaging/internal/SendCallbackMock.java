@@ -16,7 +16,7 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.messaging.unicast.SendCallback;
+import io.hekate.messaging.operation.SendCallback;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 

@@ -19,7 +19,7 @@ package io.hekate.messaging.internal;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingException;
-import io.hekate.messaging.unicast.SendCallback;
+import io.hekate.messaging.operation.SendCallback;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Arrays;

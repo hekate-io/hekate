@@ -18,9 +18,9 @@ package io.hekate.messaging.internal;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.messaging.broadcast.AggregateFuture;
-import io.hekate.messaging.broadcast.AggregateResult;
-import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.operation.AggregateFuture;
+import io.hekate.messaging.operation.AggregateResult;
+import io.hekate.messaging.operation.Response;
 import io.hekate.util.format.ToString;
 import java.util.ArrayList;
 import java.util.Arrays;

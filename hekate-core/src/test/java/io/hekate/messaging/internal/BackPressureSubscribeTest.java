@@ -17,7 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.Message;
-import io.hekate.messaging.unicast.RequestFuture;
+import io.hekate.messaging.operation.RequestFuture;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;

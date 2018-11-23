@@ -22,7 +22,7 @@ import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.intercept.ServerMessageInterceptor;
 import io.hekate.messaging.intercept.ServerReceiveContext;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
-import io.hekate.messaging.unicast.SendCallback;
+import io.hekate.messaging.operation.SendCallback;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;

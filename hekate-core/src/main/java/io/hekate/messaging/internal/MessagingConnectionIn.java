@@ -31,7 +31,7 @@ import io.hekate.messaging.internal.MessagingProtocol.RequestForResponseBase;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
 import io.hekate.messaging.internal.MessagingProtocol.SubscribeRequest;
 import io.hekate.messaging.internal.MessagingProtocol.VoidResponse;
-import io.hekate.messaging.unicast.SendCallback;
+import io.hekate.messaging.operation.SendCallback;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkMessage;

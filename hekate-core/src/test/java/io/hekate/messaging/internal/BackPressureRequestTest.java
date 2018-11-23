@@ -23,7 +23,7 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingOverflowPolicy;
-import io.hekate.messaging.unicast.RequestFuture;
+import io.hekate.messaging.operation.RequestFuture;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

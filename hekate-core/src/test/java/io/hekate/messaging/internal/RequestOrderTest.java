@@ -17,7 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.unicast.RequestFuture;
+import io.hekate.messaging.operation.RequestFuture;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

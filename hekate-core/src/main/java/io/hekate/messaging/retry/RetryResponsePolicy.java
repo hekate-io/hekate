@@ -1,6 +1,6 @@
 package io.hekate.messaging.retry;
 
-import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.operation.Response;
 
 /**
  * Policy to retry upon an unexpected response.

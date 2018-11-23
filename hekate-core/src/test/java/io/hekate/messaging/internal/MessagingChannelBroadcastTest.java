@@ -17,8 +17,8 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.messaging.broadcast.BroadcastCallback;
-import io.hekate.messaging.broadcast.BroadcastResult;
+import io.hekate.messaging.operation.BroadcastCallback;
+import io.hekate.messaging.operation.BroadcastResult;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

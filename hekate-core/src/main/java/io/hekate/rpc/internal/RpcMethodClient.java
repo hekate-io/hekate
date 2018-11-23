@@ -18,8 +18,8 @@ package io.hekate.rpc.internal;
 
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFutureException;
-import io.hekate.messaging.unicast.RequestFuture;
-import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.operation.RequestFuture;
+import io.hekate.messaging.operation.Response;
 import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
 import io.hekate.rpc.internal.RpcProtocol.RpcCall;

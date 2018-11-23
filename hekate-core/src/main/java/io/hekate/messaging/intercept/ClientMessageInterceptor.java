@@ -1,10 +1,10 @@
 package io.hekate.messaging.intercept;
 
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.broadcast.Broadcast;
 import io.hekate.messaging.loadbalance.LoadBalancer;
-import io.hekate.messaging.unicast.Send;
-import io.hekate.messaging.unicast.SendAckMode;
+import io.hekate.messaging.operation.Broadcast;
+import io.hekate.messaging.operation.Send;
+import io.hekate.messaging.operation.SendAckMode;
 
 /**
  * Client-side message interceptor.

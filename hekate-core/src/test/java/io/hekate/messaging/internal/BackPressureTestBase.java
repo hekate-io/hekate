@@ -22,7 +22,7 @@ import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingOverflowPolicy;
-import io.hekate.messaging.unicast.RequestFuture;
+import io.hekate.messaging.operation.RequestFuture;
 import io.hekate.util.format.ToString;
 import java.util.ArrayList;
 import java.util.List;

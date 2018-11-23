@@ -1,9 +1,9 @@
 package io.hekate.messaging.intercept;
 
-import io.hekate.messaging.unicast.Request;
-import io.hekate.messaging.unicast.Send;
-import io.hekate.messaging.unicast.SendAckMode;
-import io.hekate.messaging.unicast.Subscribe;
+import io.hekate.messaging.operation.Request;
+import io.hekate.messaging.operation.Send;
+import io.hekate.messaging.operation.SendAckMode;
+import io.hekate.messaging.operation.Subscribe;
 
 /**
  * Type of an outbound message.

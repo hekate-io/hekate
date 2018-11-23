@@ -17,8 +17,8 @@
 package io.hekate.rpc.internal;
 
 import io.hekate.messaging.MessagingFuture;
-import io.hekate.messaging.unicast.RequestCallback;
-import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.operation.RequestCallback;
+import io.hekate.messaging.operation.Response;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
