@@ -897,7 +897,7 @@ class DefaultLockRegion implements LockRegion {
             .withRetry(retry -> retry
                 .unlimitedAttempts()
                 .alwaysTrySameNode()
-                .whileTrue(() -> !isTerminated() && isValid(request))
+                .whileTrue(() -> isValid(request))
                 .whileResponse(rsp -> {
                     MigrationResponse payload = rsp.payload(MigrationResponse.class);
 
@@ -922,19 +922,22 @@ class DefaultLockRegion implements LockRegion {
     }
 
     private boolean isValid(MigrationRequest request) {
-        // No need to lock since field is volatile.
-        PartitionMapper mapping = this.latestMapping;
+        if (!isTerminated()) {
+            // No need to lock since field is volatile.
+            PartitionMapper mapping = this.latestMapping;
 
-        if (request.key().isSameTopology(mapping)) {
-            ClusterNodeId coordinator = request.key().coordinator();
+            if (request.key().isSameTopology(mapping)) {
+                ClusterNodeId coordinator = request.key().coordinator();
 
-            if (mapping.topology().contains(coordinator)) {
-                if (DEBUG) {
-                    log.debug("Request is valid [request={}]", request);
+                if (mapping.topology().contains(coordinator)) {
+                    if (DEBUG) {
+                        log.debug("Request is valid [request={}]", request);
+                    }
+
+                    return true;
                 }
-
-                return true;
             }
+
         }
 
         if (DEBUG) {
