@@ -57,7 +57,7 @@ import io.hekate.messaging.MessagingConfigProvider;
 import io.hekate.messaging.MessagingService;
 import io.hekate.messaging.intercept.ClientMessageInterceptor;
 import io.hekate.messaging.intercept.ClientSendContext;
-import io.hekate.messaging.retry.RetryBackoffPolicy;
+import io.hekate.messaging.retry.FixedBackoffPolicy;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
@@ -173,7 +173,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                 .withWorkerThreads(workerThreads)
                 .withMessageCodec(new SingletonCodecFactory<>(new LockProtocolCodec()))
                 .withBackupNodes(0)
-                .withBackoffPolicy(RetryBackoffPolicy.fixedDelay(retryInterval))
+                .withBackoffPolicy(new FixedBackoffPolicy(retryInterval))
                 .withInterceptor(new ClientMessageInterceptor<LockProtocol>() {
                     @Override
                     public void interceptClientSend(ClientSendContext<LockProtocol> ctx) {

@@ -50,7 +50,7 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingConfigProvider;
 import io.hekate.messaging.MessagingService;
-import io.hekate.messaging.retry.RetryBackoffPolicy;
+import io.hekate.messaging.retry.FixedBackoffPolicy;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
@@ -190,7 +190,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
                 .withClusterFilter(HAS_SERVICE_FILTER)
                 .withNioThreads(nioThreads)
                 .withIdleSocketTimeout(idleSocketTimeout)
-                .withBackoffPolicy(RetryBackoffPolicy.fixedDelay(retryDelay))
+                .withBackoffPolicy(new FixedBackoffPolicy(retryDelay))
                 .withLogCategory(CoordinationProtocol.class.getName())
                 .withMessageCodec(() -> new CoordinationProtocolCodec(processCodecs))
                 .withReceiver(this::handleMessage)

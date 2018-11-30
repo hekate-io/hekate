@@ -24,6 +24,7 @@ import io.hekate.core.HekateBootstrap;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.retry.FixedBackoffPolicy;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryPolicy;
 import io.hekate.partition.Partition;
@@ -79,7 +80,7 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
     private MessageReceiver<T> receiver;
 
     /** See {@link #setBackoffPolicy(RetryBackoffPolicy)}. */
-    private RetryBackoffPolicy backoffPolicy = RetryBackoffPolicy.defaultFixedDelay();
+    private RetryBackoffPolicy backoffPolicy = new FixedBackoffPolicy();
 
     /** See {@link #setLoadBalancer(LoadBalancer)}. */
     private LoadBalancer<T> loadBalancer;

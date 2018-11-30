@@ -1,15 +1,16 @@
 package io.hekate.retry;
 
 import io.hekate.HekateTestBase;
+import io.hekate.messaging.retry.FixedBackoffPolicy;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class RetryBackoffPolicyTest extends HekateTestBase {
+public class FixedBackoffPolicyTest extends HekateTestBase {
     @Test
     public void testFixedDelay() {
-        RetryBackoffPolicy backoff = RetryBackoffPolicy.fixedDelay(100500);
+        RetryBackoffPolicy backoff = new FixedBackoffPolicy(100500);
 
         for (int i = 0; i < 10; i++) {
             assertEquals(100500, backoff.delayBeforeRetry(i));
@@ -18,10 +19,10 @@ public class RetryBackoffPolicyTest extends HekateTestBase {
 
     @Test
     public void testDefaultFixedDelay() {
-        RetryBackoffPolicy backoff = RetryBackoffPolicy.defaultFixedDelay();
+        RetryBackoffPolicy backoff = new FixedBackoffPolicy();
 
         for (int i = 0; i < 10; i++) {
-            assertEquals(RetryBackoffPolicy.DEFAULT_FIXED_DELAY, backoff.delayBeforeRetry(i));
+            assertEquals(FixedBackoffPolicy.DEFAULT_DELAY, backoff.delayBeforeRetry(i));
         }
     }
 }
