@@ -5,18 +5,17 @@ import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 
 /**
- * Exponential delay policy.
+ * A backoff policy that waits exponentially longer between each attempt (but keeps a constant delay once a maximum delay is reached).
  *
  * <p>
- * This backoff policy waits exponentially longer between each attempt (but keeps a constant delay once a maximum delay is reached) and uses
- * the following formula:
- * </p>
+ * This policy uses the following formula to calculate the backoff delay:
  *
  * <pre>{@code
  *   (2 ^ (attempt -1)) * baseDelay
  * }</pre>
  *
  * <b>Note:</b> for the very first attempt the answer is always {@code 0} (i.e. retry immediately).
+ * </p>
  *
  * <p>
  * Parameters of this policy are:
@@ -102,6 +101,30 @@ public class ExponentialBackoffPolicy implements RetryBackoffPolicy {
 
         // Maximum attempts before we start to overflow.
         this.attemptOverflow = Long.SIZE - Long.numberOfLeadingZeros(Long.MAX_VALUE / baseDelay) - 1;
+    }
+
+    public static void main(String[] args) {
+        long baseDelay = DEFAULT_BASE_DELAY;
+        long maxDelay = DEFAULT_MAX_DELAY;
+
+        ExponentialBackoffPolicy p = new ExponentialBackoffPolicy(baseDelay, maxDelay);
+
+        System.out.println("BaseDelay: " + baseDelay + "  MaxDelay: " + maxDelay);
+        System.out.println("-------------------------------");
+
+        for (int i = 0; i < 100; i++) {
+            long delay = p.delayBeforeRetry(i);
+
+            System.out.println("assertEquals(" + p.delayBeforeRetry(i) + ", policy.delayBeforeRetry(" + i + "));");
+
+            if (delay == maxDelay) {
+                break;
+            }
+        }
+
+        System.out.println("MAX/2 ~ " + p.delayBeforeRetry(Integer.MAX_VALUE / 2));
+        System.out.println("MAX ~ " + p.delayBeforeRetry(Integer.MAX_VALUE));
+        System.out.println("MIN ~ " + p.delayBeforeRetry(Integer.MIN_VALUE));
     }
 
     @Override
