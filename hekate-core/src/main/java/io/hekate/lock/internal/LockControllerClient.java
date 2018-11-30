@@ -419,9 +419,9 @@ class LockControllerClient {
             .alwaysReRoute()
             .whileTrue(() -> is(Status.LOCKING))
             .whileResponse(rsp -> {
-                LockResponse lockRsp1 = rsp.payload(LockResponse.class);
+                LockResponse lockRsp = rsp.payload(LockResponse.class);
 
-                switch (lockRsp1.status()) {
+                switch (lockRsp.status()) {
                     case OK: {
                         ClusterHash topology1 = rsp.topology().hash();
 
@@ -444,7 +444,7 @@ class LockControllerClient {
                         throw new IllegalArgumentException("Got an unexpected lock owner update message: " + rsp);
                     }
                     default: {
-                        throw new IllegalArgumentException("Unexpected status: " + lockRsp1.status());
+                        throw new IllegalArgumentException("Unexpected status: " + lockRsp.status());
                     }
                 }
             });
