@@ -3,7 +3,7 @@ package io.hekate.messaging.retry;
 import io.hekate.util.format.ToString;
 
 /**
- * Backoff policy with a fixed delay.
+ * Fixed delay policy.
  */
 public class FixedBackoffPolicy implements RetryBackoffPolicy {
     /** Default delay (={@value}) in milliseconds. */

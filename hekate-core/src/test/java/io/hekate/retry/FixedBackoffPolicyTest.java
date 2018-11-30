@@ -9,7 +9,7 @@ import static org.junit.Assert.assertEquals;
 
 public class FixedBackoffPolicyTest extends HekateTestBase {
     @Test
-    public void testFixedDelay() {
+    public void testCustom() {
         RetryBackoffPolicy backoff = new FixedBackoffPolicy(100500);
 
         for (int i = 0; i < 10; i++) {
@@ -18,7 +18,7 @@ public class FixedBackoffPolicyTest extends HekateTestBase {
     }
 
     @Test
-    public void testDefaultFixedDelay() {
+    public void testDefault() {
         RetryBackoffPolicy backoff = new FixedBackoffPolicy();
 
         for (int i = 0; i < 10; i++) {

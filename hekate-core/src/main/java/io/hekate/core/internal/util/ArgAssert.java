@@ -47,7 +47,7 @@ public final class ArgAssert {
         check(condition, msg);
     }
 
-    public static void positive(int val, String argName) {
+    public static void positive(long val, String argName) {
         doCheck(val > 0, argName, " must be > 0.");
     }
 
