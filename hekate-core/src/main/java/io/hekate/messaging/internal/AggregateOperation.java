@@ -2,6 +2,7 @@ package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
 import io.hekate.messaging.retry.RetryErrorPolicy;
@@ -23,6 +24,7 @@ class AggregateOperation<T> extends RequestOperation<T> {
         RetryErrorPolicy retryErr,
         RetryResponsePolicy<T> retryRsp,
         RetryCondition retryCondition,
+        RetryBackoffPolicy retryBackoff,
         RetryCallback retryCallback,
         MessagingGatewayContext<T> gateway,
         MessageOperationOpts<T> opts,
@@ -36,6 +38,7 @@ class AggregateOperation<T> extends RequestOperation<T> {
             retryErr,
             retryRsp,
             retryCondition,
+            retryBackoff,
             retryCallback,
             RETRY_SAME_NODE,
             gateway,

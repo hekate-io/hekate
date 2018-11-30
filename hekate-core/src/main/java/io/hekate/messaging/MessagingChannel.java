@@ -27,7 +27,6 @@ import io.hekate.messaging.operation.Send;
 import io.hekate.messaging.operation.SendAckMode;
 import io.hekate.messaging.operation.Subscribe;
 import io.hekate.messaging.operation.SubscribeCallback;
-import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.partition.PartitionMapper;
 import java.util.concurrent.Executor;
 
@@ -183,26 +182,6 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @see #partitions()
      */
     MessagingChannel<T> withPartitions(int partitions, int backupNodes);
-
-    /**
-     * Returns a copy of this channel that will use the specified backoff policy and will inherit all other options from this instance.
-     *
-     * @param backoff Backoff policy.
-     *
-     * @return Channel wrapper.
-     *
-     * @see MessagingChannelConfig#setBackoffPolicy(RetryBackoffPolicy)
-     */
-    MessagingChannel<T> withBackoff(RetryBackoffPolicy backoff);
-
-    /**
-     * Returns the backoff policy of this channel.
-     *
-     * @return Backoff policy.
-     *
-     * @see #withBackoff(RetryBackoffPolicy)
-     */
-    RetryBackoffPolicy backoff();
 
     /**
      * Returns a copy of this channel that will use the specified load balancer and will inherit all other options from this instance.

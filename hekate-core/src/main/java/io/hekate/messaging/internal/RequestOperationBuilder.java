@@ -5,6 +5,7 @@ import io.hekate.messaging.operation.Request;
 import io.hekate.messaging.operation.RequestFuture;
 import io.hekate.messaging.operation.RequestRetryConfigurer;
 import io.hekate.messaging.operation.RequestRetryPolicy;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
 import io.hekate.messaging.retry.RetryErrorPolicy;
@@ -21,6 +22,8 @@ class RequestOperationBuilder<T> extends MessageOperationBuilder<T> implements R
 
     private RetryCondition retryCondition;
 
+    private RetryBackoffPolicy retryBackoff;
+
     private RetryCallback retryCallback;
 
     private RetryRoutingPolicy retryRoute = RetryRoutingPolicy.defaultPolicy();
@@ -32,6 +35,7 @@ class RequestOperationBuilder<T> extends MessageOperationBuilder<T> implements R
     public RequestOperationBuilder(T message, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts) {
         super(message, gateway, opts);
 
+        this.retryBackoff = gateway.backoff();
         this.timeout = gateway.messagingTimeout();
     }
 
@@ -71,6 +75,7 @@ class RequestOperationBuilder<T> extends MessageOperationBuilder<T> implements R
             retryErr,
             retryRsp,
             retryCondition,
+            retryBackoff,
             retryCallback,
             retryRoute,
             gateway(),
@@ -85,6 +90,15 @@ class RequestOperationBuilder<T> extends MessageOperationBuilder<T> implements R
     @Override
     public RequestRetryPolicy<T> whileResponse(RetryResponsePolicy<T> policy) {
         this.retryRsp = policy;
+
+        return this;
+    }
+
+    @Override
+    public RequestRetryPolicy<T> withBackoff(RetryBackoffPolicy backoff) {
+        ArgAssert.notNull(backoff, "Backoff policy");
+
+        this.retryBackoff = backoff;
 
         return this;
     }

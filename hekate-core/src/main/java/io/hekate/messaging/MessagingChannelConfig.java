@@ -25,6 +25,7 @@ import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
+import io.hekate.messaging.retry.RetryPolicy;
 import io.hekate.partition.Partition;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
@@ -466,7 +467,8 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
      * Sets the backoff policy for retries.
      *
      * <p>
-     * Backoff policy can be overridden dynamically via the {@link MessagingChannel#withBackoff(RetryBackoffPolicy)} method.
+     * Backoff policy can be overridden for each messaging operation individually via the
+     * {@link RetryPolicy#withBackoff(RetryBackoffPolicy)} method.
      * </p>
      *
      * @param backoffPolicy Backoff policy.

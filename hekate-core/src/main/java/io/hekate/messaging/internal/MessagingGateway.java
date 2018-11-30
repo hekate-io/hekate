@@ -32,6 +32,7 @@ import io.hekate.messaging.MessagingOverflowPolicy;
 import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.List;
@@ -64,6 +65,9 @@ class MessagingGateway<T> {
     private final ReceivePressureGuard receivePressure;
 
     private final CodecFactory<T> codecFactory;
+
+    @ToStringIgnore
+    private final RetryBackoffPolicy backoff;
 
     @ToStringIgnore
     private final MessageReceiver<T> unguardedReceiver;
@@ -102,6 +106,7 @@ class MessagingGateway<T> {
         this.unguardedReceiver = cfg.getReceiver();
         this.partitions = cfg.getPartitions();
         this.backupNodes = cfg.getBackupNodes();
+        this.backoff = cfg.getBackoffPolicy();
 
         // Interceptors.
         this.interceptors = new MessageInterceptors<>(
@@ -166,8 +171,7 @@ class MessagingGateway<T> {
             this,
             clusterView,
             mapper,
-            loadBalancer,
-            cfg.getBackoffPolicy()
+            loadBalancer
         );
     }
 
@@ -212,6 +216,10 @@ class MessagingGateway<T> {
 
     public int backupNodes() {
         return backupNodes;
+    }
+
+    public RetryBackoffPolicy backoff() {
+        return backoff;
     }
 
     public MessageReceiver<T> unguardedReceiver() {

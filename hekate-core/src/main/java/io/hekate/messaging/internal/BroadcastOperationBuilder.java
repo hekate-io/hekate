@@ -8,6 +8,7 @@ import io.hekate.messaging.operation.BroadcastFuture;
 import io.hekate.messaging.operation.BroadcastRetryConfigurer;
 import io.hekate.messaging.operation.BroadcastRetryPolicy;
 import io.hekate.messaging.operation.SendAckMode;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
 import io.hekate.messaging.retry.RetryErrorPolicy;
@@ -21,6 +22,8 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
 
     private RetryErrorPolicy retryErr;
 
+    private RetryBackoffPolicy retryBackoff;
+
     private RetryCondition retryCondition;
 
     private RetryCallback retryCallback;
@@ -32,6 +35,7 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
     public BroadcastOperationBuilder(T message, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts) {
         super(message, gateway, opts);
 
+        this.retryBackoff = gateway.backoff();
         this.timeout = gateway.messagingTimeout();
     }
 
@@ -73,7 +77,28 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
     @Override
     public BroadcastFuture<T> submit() {
         // Use a static method to make sure that we immutably capture all current settings of this operation.
-        return doSubmit(message(), affinity, timeout, maxAttempts, ackMode, retryErr, retryCondition, retryCallback, gateway(), opts());
+        return doSubmit(
+            message(),
+            affinity,
+            timeout,
+            maxAttempts,
+            ackMode,
+            retryErr,
+            retryCondition,
+            retryBackoff,
+            retryCallback,
+            gateway(),
+            opts()
+        );
+    }
+
+    @Override
+    public BroadcastRetryPolicy withBackoff(RetryBackoffPolicy backoff) {
+        ArgAssert.notNull(backoff, "Backoff policy");
+
+        this.retryBackoff = backoff;
+
+        return this;
     }
 
     @Override
@@ -126,6 +151,7 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
         SendAckMode ackMode,
         RetryErrorPolicy retry,
         RetryCondition retryCondition,
+        RetryBackoffPolicy retryBackoff,
         RetryCallback retryCallback,
         MessagingGatewayContext<T> gateway,
         MessageOperationOpts<T> opts
@@ -147,6 +173,7 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
                     maxAttempts,
                     retry,
                     retryCondition,
+                    retryBackoff,
                     retryCallback,
                     gateway,
                     opts,

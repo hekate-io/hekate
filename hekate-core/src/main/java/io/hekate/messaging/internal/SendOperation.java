@@ -4,6 +4,7 @@ import io.hekate.messaging.intercept.OutboundType;
 import io.hekate.messaging.operation.ResponsePart;
 import io.hekate.messaging.operation.SendAckMode;
 import io.hekate.messaging.operation.SendFuture;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
 import io.hekate.messaging.retry.RetryErrorPolicy;
@@ -21,6 +22,7 @@ class SendOperation<T> extends UnicastOperation<T> {
         int maxAttempts,
         RetryErrorPolicy retryErr,
         RetryCondition retryCondition,
+        RetryBackoffPolicy retryBackoff,
         RetryCallback retryCallback,
         RetryRoutingPolicy retryRoute,
         MessagingGatewayContext<T> gateway,
@@ -34,6 +36,7 @@ class SendOperation<T> extends UnicastOperation<T> {
             maxAttempts,
             retryErr,
             retryCondition,
+            retryBackoff,
             retryCallback,
             retryRoute,
             gateway,

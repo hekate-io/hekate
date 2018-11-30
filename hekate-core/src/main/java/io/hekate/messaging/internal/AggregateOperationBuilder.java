@@ -7,6 +7,7 @@ import io.hekate.messaging.operation.Aggregate;
 import io.hekate.messaging.operation.AggregateFuture;
 import io.hekate.messaging.operation.AggregateRetryConfigurer;
 import io.hekate.messaging.operation.AggregateRetryPolicy;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
 import io.hekate.messaging.retry.RetryErrorPolicy;
@@ -25,6 +26,8 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
 
     private RetryCondition retryCondition;
 
+    private RetryBackoffPolicy retryBackoff;
+
     private RetryCallback retryCallback;
 
     private int maxAttempts;
@@ -34,6 +37,7 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
     public AggregateOperationBuilder(T message, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts) {
         super(message, gateway, opts);
 
+        this.retryBackoff = gateway.backoff();
         this.timeout = gateway.messagingTimeout();
     }
 
@@ -66,7 +70,28 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
     @Override
     public AggregateFuture<T> submit() {
         // Use a static method to make sure that we immutably capture all current settings of this operation.
-        return doSubmit(message(), affinity, timeout, maxAttempts, retryErr, retryResp, retryCondition, retryCallback, gateway(), opts());
+        return doSubmit(
+            message(),
+            affinity,
+            timeout,
+            maxAttempts,
+            retryErr,
+            retryResp,
+            retryCondition,
+            retryBackoff,
+            retryCallback,
+            gateway(),
+            opts()
+        );
+    }
+
+    @Override
+    public AggregateRetryPolicy<T> withBackoff(RetryBackoffPolicy backoff) {
+        ArgAssert.notNull(backoff, "Backoff policy");
+
+        this.retryBackoff = backoff;
+
+        return this;
     }
 
     @Override
@@ -112,6 +137,7 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
         RetryErrorPolicy retryErr,
         RetryResponsePolicy<T> retryRsp,
         RetryCondition retryCondition,
+        RetryBackoffPolicy retryBackoff,
         RetryCallback retryCallback,
         MessagingGatewayContext<T> gateway,
         MessageOperationOpts<T> opts
@@ -134,6 +160,7 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
                     retryErr,
                     retryRsp,
                     retryCondition,
+                    retryBackoff,
                     retryCallback,
                     gateway,
                     opts,

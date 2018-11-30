@@ -6,6 +6,7 @@ import io.hekate.messaging.operation.SendAckMode;
 import io.hekate.messaging.operation.SendFuture;
 import io.hekate.messaging.operation.SendRetryConfigurer;
 import io.hekate.messaging.operation.SendRetryPolicy;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
 import io.hekate.messaging.retry.RetryErrorPolicy;
@@ -21,6 +22,8 @@ class SendOperationBuilder<T> extends MessageOperationBuilder<T> implements Send
 
     private RetryCondition retryCondition;
 
+    private RetryBackoffPolicy retryBackoff;
+
     private RetryCallback retryCallback;
 
     private RetryRoutingPolicy retryRoute = RetryRoutingPolicy.defaultPolicy();
@@ -32,6 +35,7 @@ class SendOperationBuilder<T> extends MessageOperationBuilder<T> implements Send
     public SendOperationBuilder(T message, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts) {
         super(message, gateway, opts);
 
+        this.retryBackoff = gateway.backoff();
         this.timeout = gateway.messagingTimeout();
     }
 
@@ -79,6 +83,7 @@ class SendOperationBuilder<T> extends MessageOperationBuilder<T> implements Send
             maxAttempts,
             retryErr,
             retryCondition,
+            retryBackoff,
             retryCallback,
             retryRoute,
             gateway(),
@@ -96,6 +101,15 @@ class SendOperationBuilder<T> extends MessageOperationBuilder<T> implements Send
         ArgAssert.notNull(policy, "Routing policy");
 
         this.retryRoute = policy;
+
+        return this;
+    }
+
+    @Override
+    public SendRetryPolicy withBackoff(RetryBackoffPolicy backoff) {
+        ArgAssert.notNull(backoff, "Backoff policy");
+
+        this.retryBackoff = backoff;
 
         return this;
     }

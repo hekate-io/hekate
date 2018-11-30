@@ -18,7 +18,6 @@ package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterView;
 import io.hekate.messaging.loadbalance.LoadBalancer;
-import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.partition.PartitionMapper;
 
 interface MessageOperationOpts<T> {
@@ -27,8 +26,6 @@ interface MessageOperationOpts<T> {
     LoadBalancer<T> balancer();
 
     ClusterView cluster();
-
-    RetryBackoffPolicy backoff();
 
     PartitionMapper partitions();
 }

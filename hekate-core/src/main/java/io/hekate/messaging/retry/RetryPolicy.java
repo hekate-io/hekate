@@ -1,11 +1,26 @@
 package io.hekate.messaging.retry;
 
+import io.hekate.messaging.MessagingChannelConfig;
+
 /**
  * Base interface for retry policies.
  *
  * @param <P> Policy type.
  */
 public interface RetryPolicy<P extends RetryPolicy<P>> {
+    /**
+     * Backoff policy.
+     *
+     * <p>
+     * This method overrides the channel's default backoff policy (see {@link MessagingChannelConfig#setBackoffPolicy(RetryBackoffPolicy)}).
+     * </p>
+     *
+     * @param backoff Backoff policy.
+     *
+     * @return This instance.
+     */
+    P withBackoff(RetryBackoffPolicy backoff);
+
     /**
      * Retry while this condition is {@code true}.
      *

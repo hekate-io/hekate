@@ -125,12 +125,12 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
         // Collect channel configurations.
         StreamUtils.nullSafe(factory.getChannels()).forEach(cfg ->
-            registerProxy(cfg, interceptors)
+            register(cfg, interceptors)
         );
 
         StreamUtils.nullSafe(factory.getConfigProviders()).forEach(provider ->
             StreamUtils.nullSafe(provider.configureMessaging()).forEach(cfg ->
-                registerProxy(cfg, interceptors)
+                register(cfg, interceptors)
             )
         );
 
@@ -140,7 +140,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             Collection<MessagingChannelConfig<?>> regions = provider.configureMessaging();
 
             StreamUtils.nullSafe(regions).forEach(cfg ->
-                registerProxy(cfg, interceptors)
+                register(cfg, interceptors)
             );
         });
 
@@ -330,7 +330,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         return gateways.containsKey(channelName);
     }
 
-    private <T> void registerProxy(MessagingChannelConfig<T> cfg, List<MessageInterceptor> interceptors) {
+    private <T> void register(MessagingChannelConfig<T> cfg, List<MessageInterceptor> interceptors) {
         ConfigCheck check = ConfigCheck.get(MessagingChannelConfig.class);
 
         // Validate configuration.
@@ -420,6 +420,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             gateway.log(),
             gateway.idleSocketTimeout() > 0, /* <-- Check for idle connections.*/
             gateway.messagingTimeout(),
+            gateway.backoff(),
             gateway.rootChannel()
         );
 

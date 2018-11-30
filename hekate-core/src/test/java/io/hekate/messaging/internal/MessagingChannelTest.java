@@ -27,7 +27,6 @@ import io.hekate.messaging.internal.MessagingProtocol.Connect;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.loadbalance.UnknownRouteException;
-import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkService;
@@ -53,7 +52,6 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
 
 public class MessagingChannelTest extends MessagingServiceTestBase {
     public MessagingChannelTest(MessagingTestContext ctx) {
@@ -73,11 +71,6 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         assertEquals(nioThreads, channel.nioThreads());
         assertEquals(workerThreads, channel.workerThreads());
         assertNotNull(channel.executor());
-
-        RetryBackoffPolicy backoff = mock(RetryBackoffPolicy.class);
-
-        assertNotSame(channel, channel.withBackoff(backoff));
-        assertSame(backoff, channel.withBackoff(backoff).backoff());
     }
 
     @Test

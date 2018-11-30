@@ -35,6 +35,7 @@ import io.hekate.messaging.operation.FailureResponse;
 import io.hekate.messaging.operation.RejectedResponseException;
 import io.hekate.messaging.operation.Response;
 import io.hekate.messaging.operation.ResponsePart;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryErrorPolicy;
 import io.hekate.messaging.retry.RetryFailure;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
@@ -143,6 +144,9 @@ class MessagingGatewayContext<T> {
     private final long messagingTimeout;
 
     @ToStringIgnore
+    private final RetryBackoffPolicy backoff;
+
+    @ToStringIgnore
     private ClusterTopology clientsTopology;
 
     @ToStringIgnore
@@ -163,6 +167,7 @@ class MessagingGatewayContext<T> {
         Logger log,
         boolean checkIdle,
         long messagingTimeout,
+        RetryBackoffPolicy backoff,
         DefaultMessagingChannel<T> channel
     ) {
         assert name != null : "Name is null.";
@@ -172,6 +177,7 @@ class MessagingGatewayContext<T> {
         assert async != null : "Executor is null.";
         assert metrics != null : "Metrics are null.";
         assert channel != null : "Default channel is null.";
+        assert backoff != null : "Backoff policy is null.";
 
         this.id = new MessagingChannelId();
         this.name = name;
@@ -187,6 +193,7 @@ class MessagingGatewayContext<T> {
         this.receivePressure = receivePressure;
         this.sendPressure = sendPressure;
         this.messagingTimeout = messagingTimeout;
+        this.backoff = backoff;
         this.checkIdle = checkIdle;
         this.log = log;
         this.debug = log.isDebugEnabled();
@@ -215,6 +222,10 @@ class MessagingGatewayContext<T> {
 
     public long messagingTimeout() {
         return messagingTimeout;
+    }
+
+    public RetryBackoffPolicy backoff() {
+        return backoff;
     }
 
     public MessageReceiver<T> receiver() {
@@ -585,7 +596,7 @@ class MessagingGatewayContext<T> {
                                 }
                             };
 
-                            long delay = operation.opts().backoff().delayBeforeRetry(failure.attempt());
+                            long delay = operation.retryBackoff().delayBeforeRetry(failure.attempt());
 
                             if (delay > 0) {
                                 // Schedule timeout task to retry with the delay.

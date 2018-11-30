@@ -3,6 +3,7 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import io.hekate.messaging.loadbalance.LoadBalancerException;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
 import io.hekate.messaging.retry.RetryErrorPolicy;
@@ -19,6 +20,7 @@ abstract class UnicastOperation<T> extends MessageOperation<T> {
         int maxAttempts,
         RetryErrorPolicy retryErr,
         RetryCondition retryCondition,
+        RetryBackoffPolicy retryBackoff,
         RetryCallback retryCallback,
         RetryRoutingPolicy retryRoute,
         MessagingGatewayContext<T> gateway,
@@ -32,6 +34,7 @@ abstract class UnicastOperation<T> extends MessageOperation<T> {
             maxAttempts,
             retryErr,
             retryCondition,
+            retryBackoff, 
             retryCallback,
             retryRoute,
             gateway,

@@ -3,6 +3,7 @@ package io.hekate.messaging.internal;
 import io.hekate.messaging.intercept.OutboundType;
 import io.hekate.messaging.operation.RequestFuture;
 import io.hekate.messaging.operation.ResponsePart;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
 import io.hekate.messaging.retry.RetryErrorPolicy;
@@ -22,6 +23,7 @@ class RequestOperation<T> extends UnicastOperation<T> {
         RetryErrorPolicy retryErr,
         RetryResponsePolicy<T> retryRsp,
         RetryCondition retryCondition,
+        RetryBackoffPolicy retryBackoff,
         RetryCallback retryCallback,
         RetryRoutingPolicy retryRoute,
         MessagingGatewayContext<T> gateway,
@@ -34,6 +36,7 @@ class RequestOperation<T> extends UnicastOperation<T> {
             maxAttempts,
             retryErr,
             retryCondition,
+            retryBackoff,
             retryCallback,
             retryRoute,
             gateway,

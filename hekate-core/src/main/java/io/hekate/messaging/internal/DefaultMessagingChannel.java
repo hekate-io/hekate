@@ -27,7 +27,6 @@ import io.hekate.messaging.operation.Broadcast;
 import io.hekate.messaging.operation.Request;
 import io.hekate.messaging.operation.Send;
 import io.hekate.messaging.operation.Subscribe;
-import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
@@ -42,27 +41,22 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
 
     private final RendezvousHashMapper partitions;
 
-    private final RetryBackoffPolicy backoff;
-
     private final LoadBalancer<T> balancer;
 
     public DefaultMessagingChannel(
         MessagingGateway<T> gateway,
         ClusterView cluster,
         RendezvousHashMapper partitions,
-        LoadBalancer<T> balancer,
-        RetryBackoffPolicy backoff
+        LoadBalancer<T> balancer
     ) {
         assert gateway != null : "Gateway is null.";
         assert cluster != null : "Cluster view is null.";
         assert partitions != null : "Partition mapper is null.";
-        assert backoff != null : "Backoff policy is null.";
 
         this.gateway = gateway;
         this.cluster = cluster;
         this.partitions = partitions;
         this.balancer = balancer;
-        this.backoff = backoff;
     }
 
     @Override
@@ -122,8 +116,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             gateway,
             cluster,
             newPartitions,
-            balancer,
-            backoff
+            balancer
         );
     }
 
@@ -135,8 +128,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             gateway,
             cluster,
             partitions,
-            balancer,
-            backoff
+            balancer
         );
     }
 
@@ -156,8 +148,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             gateway,
             newCluster,
             newPartitions,
-            balancer,
-            backoff
+            balancer
         );
     }
 
@@ -177,8 +168,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             gateway,
             newCluster,
             newPartitions,
-            balancer,
-            backoff
+            balancer
         );
     }
 
@@ -195,22 +185,6 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
     @Override
     public LoadBalancer<T> balancer() {
         return balancer;
-    }
-
-    @Override
-    public MessagingChannel<T> withBackoff(RetryBackoffPolicy backoff) {
-        return new DefaultMessagingChannel<>(
-            gateway,
-            cluster,
-            partitions,
-            balancer,
-            backoff
-        );
-    }
-
-    @Override
-    public RetryBackoffPolicy backoff() {
-        return backoff;
     }
 
     // Package level for testing purposes.

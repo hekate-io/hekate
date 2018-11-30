@@ -4,6 +4,7 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.messaging.intercept.OutboundType;
 import io.hekate.messaging.loadbalance.LoadBalancerException;
 import io.hekate.messaging.operation.ResponsePart;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
 import io.hekate.messaging.retry.RetryErrorPolicy;
@@ -37,6 +38,8 @@ abstract class MessageOperation<T> {
 
     private final RetryCondition retryCondition;
 
+    private final RetryBackoffPolicy retryBackoff;
+
     private final RetryCallback retryCallback;
 
     private final RetryRoutingPolicy retryRoute;
@@ -63,6 +66,7 @@ abstract class MessageOperation<T> {
         int maxAttempts,
         RetryErrorPolicy retryErr,
         RetryCondition retryCondition,
+        RetryBackoffPolicy retryBackoff,
         RetryCallback retryCallback,
         RetryRoutingPolicy retryRoute,
         MessagingGatewayContext<T> gateway,
@@ -76,6 +80,7 @@ abstract class MessageOperation<T> {
         this.gateway = gateway;
         this.retryErr = retryErr;
         this.retryCondition = retryCondition;
+        this.retryBackoff = retryBackoff;
         this.retryCallback = retryCallback;
         this.retryRoute = retryRoute;
         this.opts = opts;
@@ -206,6 +211,10 @@ abstract class MessageOperation<T> {
 
     public MessagingWorker worker() {
         return worker;
+    }
+
+    public RetryBackoffPolicy retryBackoff() {
+        return retryBackoff;
     }
 
     protected void doReceivePartial(ResponsePart<T> response) {
