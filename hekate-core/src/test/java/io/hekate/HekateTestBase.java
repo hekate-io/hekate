@@ -281,7 +281,7 @@ public abstract class HekateTestBase {
     }
 
     public static CountDownLatch await(CountDownLatch latch) {
-        return await(latch, 3);
+        return await(latch, 5);
     }
 
     public static CountDownLatch await(CountDownLatch latch, int seconds) {
