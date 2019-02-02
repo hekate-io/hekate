@@ -916,14 +916,16 @@ class DefaultLockRegion implements LockRegion {
             )
             .submit((err, rsp) -> {
                 if (err != null && isValid(request)) {
-                    log.error("Failed to submit migration request [request={}]", request, err);
+                    if (DEBUG) {
+                        log.debug("Failed to submit migration request [request={}, cause={}]", request, err.toString());
+                    }
                 }
             });
     }
 
     private boolean isValid(MigrationRequest request) {
         if (!isTerminated()) {
-            // No need to lock since field is volatile.
+            // Get latest topology from the messaging channel.
             PartitionMapper mapping = this.latestMapping;
 
             if (request.key().isSameTopology(mapping)) {

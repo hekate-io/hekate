@@ -547,7 +547,11 @@ public class DistributedLockTest extends LockServiceTestBase {
                 Future<Object> async = runAsync(() -> {
                     awaitForQueuedLock(lockName);
 
+                    say("Terminating %s...", managerNode);
+
                     managerNode.terminate();
+
+                    say("Terminated manager.");
 
                     return null;
                 });
@@ -607,7 +611,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                 Future<Object> async = runAsync(() -> {
                     awaitForQueuedLock(lockName);
 
-                    say("Terminating...");
+                    say("Terminating %s...", managerNode);
 
                     managerNode.terminate();
 
