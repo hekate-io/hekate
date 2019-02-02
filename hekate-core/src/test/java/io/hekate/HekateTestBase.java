@@ -387,7 +387,9 @@ public abstract class HekateTestBase {
 
         StringBuilder buf = new StringBuilder();
 
-        buf.append("----------------------- Thread dump start ---------------------------").append(nl);
+        buf.append("----------------------- Thread dump start ")
+            .append(TIMESTAMP_FORMAT.format(LocalDateTime.now()))
+            .append("---------------------------").append(nl);
 
         for (ThreadInfo thread : threads) {
             buf.append(toString(thread)).append(nl);
