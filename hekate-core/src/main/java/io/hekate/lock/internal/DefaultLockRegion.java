@@ -937,7 +937,6 @@ class DefaultLockRegion implements LockRegion {
                     return true;
                 }
             }
-
         }
 
         if (DEBUG) {
