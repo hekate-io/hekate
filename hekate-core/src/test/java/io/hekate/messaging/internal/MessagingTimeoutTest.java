@@ -229,11 +229,11 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
         })).join();
 
         TestChannel sender = createChannel(c -> {
-                c.withMessagingTimeout(1);
+                c.withMessagingTimeout(10);
                 c.withInterceptor(new ClientMessageInterceptor<String>() {
                     @Override
                     public void interceptClientSend(ClientSendContext ctx) {
-                        sleep(30);
+                        sleep(50);
                     }
                 });
             }
@@ -246,7 +246,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
                 fail("Error was expected.");
             } catch (MessagingFutureException e) {
                 assertTrue(getStacktrace(e), e.isCausedBy(MessageTimeoutException.class));
-                assertEquals("Messaging operation timed out [timeout=1, message=must-fail-" + i + ']',
+                assertEquals("Messaging operation timed out [timeout=10, message=must-fail-" + i + ']',
                     e.findCause(MessageTimeoutException.class).getMessage());
             }
         });
