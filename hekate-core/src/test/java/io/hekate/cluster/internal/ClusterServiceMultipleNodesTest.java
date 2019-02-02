@@ -317,12 +317,12 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         HekateTestNode node = createNode();
 
         // Not joined.
-        assertFalse(node.cluster().awaitFor(t -> t.size() > 1, 3, TimeUnit.SECONDS));
+        assertFalse(node.cluster().awaitFor(t -> t.size() > 1, AWAIT_TIMEOUT, TimeUnit.SECONDS));
 
         node.join();
 
         // Joined and condition is met.
-        assertTrue(node.cluster().awaitFor(t -> t.size() == 1, 3, TimeUnit.SECONDS));
+        assertTrue(node.cluster().awaitFor(t -> t.size() == 1, AWAIT_TIMEOUT, TimeUnit.SECONDS));
 
         CountDownLatch asyncReady = new CountDownLatch(1);
 
@@ -346,7 +346,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         assertFalse(get(future));
 
         // Not joined.
-        assertFalse(node.cluster().awaitFor(t -> t.size() > 1, 3, TimeUnit.SECONDS));
+        assertFalse(node.cluster().awaitFor(t -> t.size() > 1, AWAIT_TIMEOUT, TimeUnit.SECONDS));
 
         node.join();
 
@@ -363,8 +363,8 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         // Should unblock.
         assertTrue(get(future));
 
-        assertTrue(node.cluster().awaitFor(t -> t.size() > 1, 3, TimeUnit.SECONDS));
-        assertTrue(node.cluster().forRemotes().awaitFor(t -> t.size() == 1, 3, TimeUnit.SECONDS));
+        assertTrue(node.cluster().awaitFor(t -> t.size() > 1, AWAIT_TIMEOUT, TimeUnit.SECONDS));
+        assertTrue(node.cluster().forRemotes().awaitFor(t -> t.size() == 1, AWAIT_TIMEOUT, TimeUnit.SECONDS));
 
         // Test thread interruption.
         try {
@@ -383,13 +383,13 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         HekateTestNode node = createNode();
 
         // Not joined.
-        assertFalse(node.cluster().awaitForNodes(3, TimeUnit.SECONDS));
+        assertFalse(node.cluster().awaitForNodes(AWAIT_TIMEOUT, TimeUnit.SECONDS));
         assertFalse(node.cluster().awaitForNodes());
 
         node.join();
 
         // Joined and condition is met.
-        assertTrue(node.cluster().awaitForNodes(3, TimeUnit.SECONDS));
+        assertTrue(node.cluster().awaitForNodes(AWAIT_TIMEOUT, TimeUnit.SECONDS));
         assertTrue(node.cluster().awaitForNodes());
 
         CountDownLatch asyncReady = new CountDownLatch(1);
@@ -414,14 +414,14 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         assertFalse(get(future));
 
         // Not joined.
-        assertFalse(node.cluster().awaitForNodes(3, TimeUnit.SECONDS));
+        assertFalse(node.cluster().awaitForNodes(AWAIT_TIMEOUT, TimeUnit.SECONDS));
         assertFalse(node.cluster().awaitForNodes());
 
         node.join();
 
         // Should block.
         future = runAsync(() ->
-            node.cluster().forRemotes().awaitForNodes(3, TimeUnit.SECONDS)
+            node.cluster().forRemotes().awaitForNodes(AWAIT_TIMEOUT, TimeUnit.SECONDS)
         );
 
         assertFalse(future.isDone());
@@ -432,7 +432,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         // Should unblock.
         assertTrue(get(future));
 
-        assertTrue(node.cluster().forRemotes().awaitForNodes(3, TimeUnit.SECONDS));
+        assertTrue(node.cluster().forRemotes().awaitForNodes(AWAIT_TIMEOUT, TimeUnit.SECONDS));
         assertTrue(node.cluster().forRemotes().awaitForNodes());
     }
 

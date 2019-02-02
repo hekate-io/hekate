@@ -131,6 +131,9 @@ public abstract class HekateTestBase {
     /** Interval between loops of {@link #busyWait(String, Callable)}. */
     public static final int BUSY_WAIT_INTERVAL = 25;
 
+    /** Timeout in {@link TimeUnit#SECONDS} to wait for asynchronous tasks (like {@link Future#get()} or {@link CountDownLatch#await()}). */
+    public static final int AWAIT_TIMEOUT = 5;
+
     /** Singleton for expected errors ...{@link HekateTestError#MESSAGE RELAX:)}. */
     public static final AssertionError TEST_ERROR = new HekateTestError(HekateTestError.MESSAGE);
 
@@ -281,7 +284,7 @@ public abstract class HekateTestBase {
     }
 
     public static CountDownLatch await(CountDownLatch latch) {
-        return await(latch, 5);
+        return await(latch, AWAIT_TIMEOUT);
     }
 
     public static CountDownLatch await(CountDownLatch latch, int seconds) {
@@ -302,7 +305,7 @@ public abstract class HekateTestBase {
 
     public static <T> T get(Future<T> future) throws ExecutionException, InterruptedException, TimeoutException {
         try {
-            return future.get(3, TimeUnit.SECONDS);
+            return future.get(AWAIT_TIMEOUT, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
             System.out.println(threadDump());
 

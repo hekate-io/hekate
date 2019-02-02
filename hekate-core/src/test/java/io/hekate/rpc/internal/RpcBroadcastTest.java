@@ -73,7 +73,7 @@ public class RpcBroadcastTest extends RpcServiceTestBase {
         server2 = ctx.servers().get(1);
 
         client = ctx.client().rpc().clientFor(BroadcastRpc.class)
-            .withTimeout(3, TimeUnit.SECONDS)
+            .withTimeout(AWAIT_TIMEOUT, TimeUnit.SECONDS)
             .build();
     }
 

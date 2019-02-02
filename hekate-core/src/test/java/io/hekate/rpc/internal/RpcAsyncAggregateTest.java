@@ -93,7 +93,7 @@ public class RpcAsyncAggregateTest extends RpcServiceTestBase {
         server2 = ctx.servers().get(1);
 
         client = ctx.client().rpc().clientFor(AggregateRpc.class)
-            .withTimeout(3, TimeUnit.SECONDS)
+            .withTimeout(AWAIT_TIMEOUT, TimeUnit.SECONDS)
             .build();
     }
 

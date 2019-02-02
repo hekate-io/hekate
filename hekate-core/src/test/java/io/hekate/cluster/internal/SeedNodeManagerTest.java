@@ -184,7 +184,7 @@ public class SeedNodeManagerTest extends HekateTestBase {
                 addresses.put(address, true);
 
                 try {
-                    latch.exchange("register-" + address, 3, TimeUnit.SECONDS);
+                    latch.exchange("register-" + address, AWAIT_TIMEOUT, TimeUnit.SECONDS);
                 } catch (InterruptedException | TimeoutException e) {
                     throw new HekateException("Unexpected timing error.", e);
                 }
@@ -195,7 +195,7 @@ public class SeedNodeManagerTest extends HekateTestBase {
                 addresses.remove(address);
 
                 try {
-                    latch.exchange("unregister-" + address, 3, TimeUnit.SECONDS);
+                    latch.exchange("unregister-" + address, AWAIT_TIMEOUT, TimeUnit.SECONDS);
                 } catch (InterruptedException | TimeoutException e) {
                     throw new HekateException("Unexpected timing error.", e);
                 }
@@ -229,7 +229,7 @@ public class SeedNodeManagerTest extends HekateTestBase {
             canPing.remove(address2);
             alive.remove(address2);
 
-            assertEquals("unregister-" + address2, latch.exchange(null, 3, TimeUnit.SECONDS));
+            assertEquals("unregister-" + address2, latch.exchange(null, AWAIT_TIMEOUT, TimeUnit.SECONDS));
 
             nodes = manager.getSeedNodes();
 
@@ -239,7 +239,7 @@ public class SeedNodeManagerTest extends HekateTestBase {
 
             alive.put(address2, true);
 
-            assertEquals("register-" + address2, latch.exchange(null, 3, TimeUnit.SECONDS));
+            assertEquals("register-" + address2, latch.exchange(null, AWAIT_TIMEOUT, TimeUnit.SECONDS));
 
             nodes = manager.getSeedNodes();
 
