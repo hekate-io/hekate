@@ -94,6 +94,9 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
     /** See {@link #setLogCategory(String)}. */
     private String logCategory;
 
+    /** See {@link #setWarnOnRetry(int)}. */
+    private int warnOnRetry = -1;
+
     /**
      * Unsafe default constructor that should be used only for reflections-based instantiation by IoC frameworks. For programmatic
      * construction the {@link #MessagingChannelConfig(Class)} constructor must be used instead of this one.
@@ -634,6 +637,47 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
      */
     public MessagingChannelConfig<T> withLogCategory(String logCategory) {
         setLogCategory(logCategory);
+
+        return this;
+    }
+
+    /**
+     * Returns the amount of retry attempts to skip before logging a warn message (see {@link #setWarnOnRetry(int)}).
+     *
+     * @return Amount of retry attempts to skip before logging a warn message.
+     */
+    public int getWarnOnRetry() {
+        return warnOnRetry;
+    }
+
+    /**
+     * Sets the amount of retry attempts to skip before logging a warn message.
+     *
+     * <ul>
+     * <li>0 - log every every attempt</li>
+     * <li>positive N - log every every N'th attempt</li>
+     * <li>negative - do not log warning on retries</li>
+     * </ul>
+     *
+     * <p>
+     * By default this property is set to a negative value (i.e. retry warnings are disabled).
+     * </p>
+     *
+     * @param warnOnRetry How many attempts to skip before logging a warn message.
+     */
+    public void setWarnOnRetry(int warnOnRetry) {
+        this.warnOnRetry = warnOnRetry;
+    }
+
+    /**
+     * Fluent-style version of {@link #setWarnOnRetry(int)}.
+     *
+     * @param warnOnRetry How many attempts to skip before logging a warn message.
+     *
+     * @return This instance.
+     */
+    public MessagingChannelConfig<T> withWarnOnRetry(int warnOnRetry) {
+        setWarnOnRetry(warnOnRetry);
 
         return this;
     }
