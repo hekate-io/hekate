@@ -522,7 +522,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
 
     private void awaitForNodeChange(ClusterNodeId id, HekateTestNode node) throws Exception {
         busyWait("node change from " + id, () -> {
-            assertTrue(node.clusterGuard().tryLockRead(3, TimeUnit.SECONDS));
+            assertTrue(node.clusterGuard().tryLockRead(AWAIT_TIMEOUT, TimeUnit.SECONDS));
 
             try {
                 return node.state() != DOWN

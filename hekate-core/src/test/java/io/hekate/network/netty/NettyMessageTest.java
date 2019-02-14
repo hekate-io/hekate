@@ -151,7 +151,7 @@ public class NettyMessageTest extends HekateTestBase {
         } finally {
             thread.shutdownNow();
 
-            thread.awaitTermination(3, TimeUnit.SECONDS);
+            thread.awaitTermination(AWAIT_TIMEOUT, TimeUnit.SECONDS);
         }
 
         assertEquals((byte)1, val);

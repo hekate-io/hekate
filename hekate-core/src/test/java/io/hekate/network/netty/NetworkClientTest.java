@@ -534,7 +534,7 @@ public class NetworkClientTest extends NetworkTestBase {
         // Send a message to trigger response.
         client.send("test", new NetworkSendCallbackMock<>());
 
-        NetworkEndpoint<String> receiver = receiverRef.exchange(null, 3, TimeUnit.SECONDS);
+        NetworkEndpoint<String> receiver = receiverRef.exchange(null, AWAIT_TIMEOUT, TimeUnit.SECONDS);
 
         assertNotNull(receiver);
 

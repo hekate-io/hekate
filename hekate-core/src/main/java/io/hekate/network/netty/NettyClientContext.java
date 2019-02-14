@@ -279,7 +279,7 @@ class NettyClientContext<T> {
     }
 
     public NetworkFuture<T> disconnect() {
-        if (state.compareAndSet(CONNECTED, DISCONNECTING) || state.compareAndSet(CONNECTING, DISCONNECTING)) {
+        if (state.compareAndSet(CONNECTING, DISCONNECTING) || state.compareAndSet(CONNECTED, DISCONNECTING)) {
             channel.close();
         }
 
@@ -412,18 +412,10 @@ class NettyClientContext<T> {
     }
 
     private void onDisconnect(Optional<Throwable> rawError) {
-        State oldState = null;
-
-        if (state.compareAndSet(CONNECTED, DISCONNECTED)) {
-            oldState = CONNECTED;
-        } else if (state.compareAndSet(CONNECTING, DISCONNECTED)) {
-            oldState = CONNECTING;
-        } else if (state.compareAndSet(DISCONNECTING, DISCONNECTED)) {
-            oldState = DISCONNECTING;
-        }
+        State oldState = state.getAndSet(DISCONNECTED);
 
         // Proceed only if state changed.
-        if (oldState != null) {
+        if (oldState != DISCONNECTED) {
             // Unwrap error.
             Optional<Throwable> err = rawError.map(NettyErrorUtils::unwrap);
 

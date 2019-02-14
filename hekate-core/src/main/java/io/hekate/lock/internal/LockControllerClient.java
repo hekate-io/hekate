@@ -423,9 +423,9 @@ class LockControllerClient {
 
                 switch (lockRsp.status()) {
                     case OK: {
-                        ClusterHash topology1 = rsp.topology().hash();
+                        ClusterHash topology = rsp.topology().hash();
 
-                        return !becomeLocked(topology1);
+                        return !becomeLocked(topology);
                     }
                     case RETRY: {
                         return true;

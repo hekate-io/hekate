@@ -356,7 +356,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
 
         sender.channel().forNode(receiver.nodeId()).newRequest("test").submit();
 
-        Message<String> msg = messageExchanger.exchange(null, 3, TimeUnit.SECONDS);
+        Message<String> msg = messageExchanger.exchange(null, AWAIT_TIMEOUT, TimeUnit.SECONDS);
 
         receiver.leave();
 
@@ -370,7 +370,7 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
             }
         });
 
-        Throwable err = errExchanger.exchange(null, 3, TimeUnit.SECONDS);
+        Throwable err = errExchanger.exchange(null, AWAIT_TIMEOUT, TimeUnit.SECONDS);
 
         assertTrue(getStacktrace(err), err instanceof MessagingException);
         assertTrue(getStacktrace(err), ErrorUtils.isCausedBy(ClosedChannelException.class, err));

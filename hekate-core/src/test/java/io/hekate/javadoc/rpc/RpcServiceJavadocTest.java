@@ -102,7 +102,7 @@ public class RpcServiceJavadocTest extends HekateNodeTestBase {
     private void clientExample(Hekate hekate) {
         // Start:client
         SomeRpcService client = hekate.rpc().clientFor(SomeRpcService.class)
-            .withTimeout(3, TimeUnit.SECONDS) // RPC timeout (optional).
+            .withTimeout(AWAIT_TIMEOUT, TimeUnit.SECONDS) // RPC timeout (optional).
             .build();
 
         // Call RPC method.

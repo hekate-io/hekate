@@ -393,7 +393,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
         doAnswer(invocation -> {
             startLatch.countDown();
 
-            endLatch.await(3, TimeUnit.SECONDS);
+            endLatch.await(AWAIT_TIMEOUT, TimeUnit.SECONDS);
 
             ((CoordinatorContext)invocation.getArguments()[0]).complete();
 

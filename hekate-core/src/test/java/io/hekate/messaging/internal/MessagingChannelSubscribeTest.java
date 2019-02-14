@@ -222,7 +222,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
 
         sender.channel().forNode(receiver.nodeId()).newSubscribe("test").submit((err, rsp) -> { /* Ignore. */ });
 
-        Message<String> msg = messageExchanger.exchange(null, 3, TimeUnit.SECONDS);
+        Message<String> msg = messageExchanger.exchange(null, AWAIT_TIMEOUT, TimeUnit.SECONDS);
 
         receiver.leave();
 
@@ -237,7 +237,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
                 }
             });
 
-            Throwable partialErr = errExchanger.exchange(null, 3, TimeUnit.SECONDS);
+            Throwable partialErr = errExchanger.exchange(null, AWAIT_TIMEOUT, TimeUnit.SECONDS);
 
             assertTrue(getStacktrace(partialErr), partialErr instanceof MessagingException);
             assertTrue(getStacktrace(partialErr), ErrorUtils.isCausedBy(ClosedChannelException.class, partialErr));
@@ -251,7 +251,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
             }
         });
 
-        Throwable err = errExchanger.exchange(null, 3, TimeUnit.SECONDS);
+        Throwable err = errExchanger.exchange(null, AWAIT_TIMEOUT, TimeUnit.SECONDS);
 
         assertTrue(getStacktrace(err), err instanceof MessagingException);
         assertTrue(getStacktrace(err), ErrorUtils.isCausedBy(ClosedChannelException.class, err));

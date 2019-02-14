@@ -78,7 +78,7 @@ public class RpcAsyncSplitAggregateTest extends RpcServiceTestBase {
         ClientAndServers ctx = prepareClientAndServers(rpc1, rpc2);
 
         client = ctx.client().rpc().clientFor(AggregateRpc.class)
-            .withTimeout(3, TimeUnit.SECONDS)
+            .withTimeout(AWAIT_TIMEOUT, TimeUnit.SECONDS)
             .build();
     }
 
