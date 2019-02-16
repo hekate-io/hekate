@@ -39,7 +39,9 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
 
     private Map<String, Object> attributes;
 
-    private RequestHandle<T> reqHandle;
+    private RequestHandle<T> request;
+
+    private boolean completed;
 
     public MessageOperationAttempt(
         MessagingClient<T> client,
@@ -88,14 +90,14 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
 
         switch (type()) {
             case REQUEST: {
-                reqHandle = conn.registerRequest(this);
+                request = conn.registerRequest(this);
 
                 RequestBase<T> req;
 
                 if (operation.hasAffinity()) {
                     req = new AffinityRequest<>(
                         operation.affinity(),
-                        reqHandle.id(),
+                        request.id(),
                         isRetransmit,
                         timeout,
                         payload,
@@ -103,7 +105,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
                     );
                 } else {
                     req = new Request<>(
-                        reqHandle.id(),
+                        request.id(),
                         isRetransmit,
                         timeout,
                         payload,
@@ -116,14 +118,14 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
                 break;
             }
             case SUBSCRIBE: {
-                reqHandle = conn.registerRequest(this);
+                request = conn.registerRequest(this);
 
                 RequestBase<T> req;
 
                 if (operation.hasAffinity()) {
                     req = new AffinitySubscribeRequest<>(
                         operation.affinity(),
-                        reqHandle.id(),
+                        request.id(),
                         isRetransmit,
                         timeout,
                         payload,
@@ -131,7 +133,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
                     );
                 } else {
                     req = new SubscribeRequest<>(
-                        reqHandle.id(),
+                        request.id(),
                         isRetransmit,
                         timeout,
                         payload,
@@ -144,14 +146,14 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
                 break;
             }
             case SEND_WITH_ACK: {
-                reqHandle = conn.registerRequest(this);
+                request = conn.registerRequest(this);
 
                 RequestBase<T> req;
 
                 if (operation.hasAffinity()) {
                     req = new AffinityVoidRequest<>(
                         operation.affinity(),
-                        reqHandle.id(),
+                        request.id(),
                         isRetransmit,
                         timeout,
                         payload,
@@ -159,7 +161,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
                     );
                 } else {
                     req = new VoidRequest<>(
-                        reqHandle.id(),
+                        request.id(),
                         isRetransmit,
                         timeout,
                         payload,
@@ -202,29 +204,41 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
     }
 
     public void receive(ResponseChunk<T> rsp) {
-        // TODO: Catch all errors.
-        if (rsp == null) {
-            if (operation.type() == OutboundType.SEND_WITH_ACK) {
-                operation.gateway().interceptors().clientReceiveConfirmation(this);
-            }
-        } else {
-            operation.gateway().interceptors().clientReceive(rsp);
-        }
+        synchronized (this) {
+            if (!completed) {
+                // TODO: Catch all errors.
+                if (rsp == null) {
+                    if (operation.type() == OutboundType.SEND_WITH_ACK) {
+                        operation.gateway().interceptors().clientReceiveConfirmation(this);
+                    }
+                } else {
+                    operation.gateway().interceptors().clientReceive(rsp);
+                }
 
-        if (callback.completeAttempt(this, rsp, null)) {
-            if (reqHandle != null) {
-                reqHandle.unregister();
+                if (callback.completeAttempt(this, rsp, null)) {
+                    completed = true;
+
+                    if (request != null) {
+                        request.unregister();
+                    }
+                }
             }
         }
     }
 
     public void fail(Throwable err) {
-        // TODO: Catch all errors.
-        operation.gateway().interceptors().clientReceiveError(err, this);
+        synchronized (this) {
+            if (!completed) {
+                // TODO: Catch all errors.
+                operation.gateway().interceptors().clientReceiveError(err, this);
 
-        if (callback.completeAttempt(this, null, err)) {
-            if (reqHandle != null) {
-                reqHandle.unregister();
+                if (callback.completeAttempt(this, null, err)) {
+                    completed = true;
+
+                    if (request != null) {
+                        request.unregister();
+                    }
+                }
             }
         }
     }
