@@ -420,6 +420,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             gateway.log(),
             gateway.idleSocketTimeout() > 0, /* <-- Check for idle connections.*/
             gateway.messagingTimeout(),
+            gateway.warnOnRetry(),
             gateway.backoff(),
             gateway.rootChannel()
         );

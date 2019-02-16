@@ -147,6 +147,9 @@ class MessagingGatewayContext<T> {
     private final RetryBackoffPolicy backoff;
 
     @ToStringIgnore
+    private final int warnOnRetry;
+
+    @ToStringIgnore
     private ClusterTopology clientsTopology;
 
     @ToStringIgnore
@@ -167,6 +170,7 @@ class MessagingGatewayContext<T> {
         Logger log,
         boolean checkIdle,
         long messagingTimeout,
+        int warnOnRetry,
         RetryBackoffPolicy backoff,
         DefaultMessagingChannel<T> channel
     ) {
@@ -194,6 +198,7 @@ class MessagingGatewayContext<T> {
         this.sendPressure = sendPressure;
         this.messagingTimeout = messagingTimeout;
         this.backoff = backoff;
+        this.warnOnRetry = warnOnRetry;
         this.checkIdle = checkIdle;
         this.log = log;
         this.debug = log.isDebugEnabled();
@@ -446,22 +451,18 @@ class MessagingGatewayContext<T> {
                 err = tryConvertToError(rsp, attempt.receiver());
             }
 
-            // Resolve effective response.
+            // Nullify response if it was converted to an error.
             ResponsePart<T> effectiveRsp = err == null ? rsp : null;
-
-            // Check if operation can be retried at all.
-            boolean canRetry = attempt.operation().canRetry();
-
-            // Check if this is an acceptable response.
-            boolean rspRejected = false;
-
-            if (canRetry && effectiveRsp != null) {
-                rspRejected = shouldRetry(attempt, effectiveRsp);
-            }
 
             boolean completed = false;
 
-            if (canRetry && !shouldComplete(attempt, rspRejected, err)) {
+            if (shouldComplete(attempt, effectiveRsp, err)) {
+                /////////////////////////////////////////////////////////////
+                // Complete the operation.
+                /////////////////////////////////////////////////////////////
+                // Note that it is up to the operation to decide on whether it is really complete or not.
+                completed = attempt.operation().complete(err, effectiveRsp);
+            } else {
                 /////////////////////////////////////////////////////////////
                 // Retry.
                 /////////////////////////////////////////////////////////////
@@ -471,7 +472,8 @@ class MessagingGatewayContext<T> {
 
                     RetryErrorPolicy policy;
 
-                    if (rspRejected) {
+                    // Check whether it was a real error or the response was rejected by the logic of the user application.
+                    if (err == null) {
                         err = new RejectedResponseException("Response rejected by the application logic", effectiveRsp.payload());
 
                         // Always retry.
@@ -520,27 +522,12 @@ class MessagingGatewayContext<T> {
                     // Retry.
                     retryAsync(attempt, policy, err, onRetry);
                 }
-            } else {
-                /////////////////////////////////////////////////////////////
-                // Complete the operation.
-                /////////////////////////////////////////////////////////////
-                // Note that it is up to the operation to decide on whether it is really complete or not.
-                completed = attempt.operation().complete(err, effectiveRsp);
             }
 
             return completed;
         };
 
         return new MessageOperationAttempt<>(client, topology, operation, prevFailure, callback);
-    }
-
-    private boolean shouldRetry(MessageOperationAttempt<T> attempt, ResponsePart<T> effectiveRsp) {
-        boolean rspRejected = false;
-
-        if (effectiveRsp != null) {
-            rspRejected = attempt.operation().shouldRetry(effectiveRsp);
-        }
-        return rspRejected;
     }
 
     private void retryAsync(MessageOperationAttempt<T> attempt, RetryErrorPolicy policy, Throwable cause, RetryCallback callback) {
@@ -588,6 +575,7 @@ class MessagingGatewayContext<T> {
                         if (routing != RETRY_SAME_NODE || clients.containsKey(failedNode.id())) {
                             metrics.onRetry();
 
+                            // Prepare a retry task.
                             Runnable retry = () -> {
                                 try {
                                     callback.retry(routing, Optional.of(failure.withRouting(routing)));
@@ -596,8 +584,19 @@ class MessagingGatewayContext<T> {
                                 }
                             };
 
+                            // Calculate the delay before retrying.
                             long delay = operation.retryBackoff().delayBeforeRetry(failure.attempt());
 
+                            // Log a warning message (if configured).
+                            if (shouldWarnOnRetry(failure)) {
+                                if (log.isWarnEnabled()) {
+                                    log.warn("Retrying messaging operation [attempt={}, delay={}, message={}]",
+                                        failure.attempt(), delay, operation.message(), failure.error()
+                                    );
+                                }
+                            }
+
+                            // Schedule the retry task for asynchronous execution.
                             if (delay > 0) {
                                 // Schedule timeout task to retry with the delay.
                                 timer.schedule(() -> operation.worker().execute(retry), delay, TimeUnit.MILLISECONDS);
@@ -620,6 +619,11 @@ class MessagingGatewayContext<T> {
         if (!applied) {
             callback.fail(finalCause);
         }
+    }
+
+    private boolean shouldWarnOnRetry(MessageOperationFailure failure) {
+        return (warnOnRetry == 0)
+            || (warnOnRetry > 0 && failure.attempt() > 0 && failure.attempt() % warnOnRetry == 0);
     }
 
     private long applyBackPressure(MessageOperation<T> op) throws MessageQueueOverflowException, InterruptedException,
@@ -909,10 +913,31 @@ class MessagingGatewayContext<T> {
         }
     }
 
-    private static boolean shouldComplete(MessageOperationAttempt<?> attempt, boolean responseRejected, Throwable err) {
-        return (err == null && !responseRejected)
-            || (err != null && attempt.operation().retryErrorPolicy() == null)
-            || !attempt.hasMoreAttempts();
+    private boolean shouldComplete(MessageOperationAttempt<T> attempt, ResponsePart<T> rsp, Throwable err) {
+        // Check if the operation can be retried at all.
+        boolean canRetry = attempt.operation().canRetry();
+
+        if (canRetry) {
+            if (err == null) {
+                // In case of a successful response we need to check if the user application accepts it.
+                if (rsp == null || !attempt.operation().shouldRetry(rsp)) {
+                    // Retry not needed -> complete the operation.
+                    return true;
+                }
+            } else {
+                // In case of an error we need to check if a retry policy is set for the message operation.
+                if (attempt.operation().retryErrorPolicy() == null) {
+                    // No error retry policy -> complete the operation.
+                    return true;
+                }
+            }
+
+            // No more retry attempts -> complete the operation.
+            return !attempt.hasMoreAttempts();
+        } else {
+            // Can't retry at all -> complete the operation.
+            return true;
+        }
     }
 
     @Override

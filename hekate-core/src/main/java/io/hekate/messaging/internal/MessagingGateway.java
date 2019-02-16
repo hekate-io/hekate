@@ -67,6 +67,9 @@ class MessagingGateway<T> {
     private final CodecFactory<T> codecFactory;
 
     @ToStringIgnore
+    private final int warnOnRetry;
+
+    @ToStringIgnore
     private final RetryBackoffPolicy backoff;
 
     @ToStringIgnore
@@ -106,6 +109,7 @@ class MessagingGateway<T> {
         this.unguardedReceiver = cfg.getReceiver();
         this.partitions = cfg.getPartitions();
         this.backupNodes = cfg.getBackupNodes();
+        this.warnOnRetry = cfg.getWarnOnRetry();
         this.backoff = cfg.getBackoffPolicy();
 
         // Interceptors.
@@ -216,6 +220,10 @@ class MessagingGateway<T> {
 
     public int backupNodes() {
         return backupNodes;
+    }
+
+    public int warnOnRetry() {
+        return warnOnRetry;
     }
 
     public RetryBackoffPolicy backoff() {
