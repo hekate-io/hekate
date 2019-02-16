@@ -249,7 +249,7 @@ public class MessagingChannelConfigTest extends HekateTestBase {
     }
 
     @Test
-    public void testWarnOnRetry(){
+    public void testWarnOnRetry() {
         assertEquals(-1, cfg.getWarnOnRetry());
 
         cfg.setWarnOnRetry(0);
