@@ -128,7 +128,7 @@ class KryoCodec implements Codec<Object> {
 
         // Try to register extended serializers for the JDK classes that are not supported by Kryo out of the box.
         if (KRYO_SERIALIZERS_SUPPORTED) {
-            JavaKaffeeSerializersRegistrar.tryRegister(kryo);
+            JavaKaffeeSerializersRegistrar.register(kryo);
         }
 
         // Enforce JDK default serialization (required for writeReplace/readResolve/etc).

@@ -34,14 +34,14 @@ import java.util.Collections;
 import java.util.GregorianCalendar;
 
 /**
- * Utility class that can try to register {@code de.javakaffee:kryo-serializers} if they are available on the classpath.
+ * Utility class that registers {@code de.javakaffee:kryo-serializers}.
  */
 final class JavaKaffeeSerializersRegistrar {
     private JavaKaffeeSerializersRegistrar() {
         // No-op.
     }
 
-    public static void tryRegister(Kryo kryo) {
+    public static void register(Kryo kryo) {
         kryo.register(Arrays.asList("", "").getClass(), new ArraysAsListSerializer());
         kryo.register(Collections.emptyList().getClass(), new CollectionsEmptyListSerializer());
         kryo.register(Collections.emptyMap().getClass(), new CollectionsEmptyMapSerializer());
