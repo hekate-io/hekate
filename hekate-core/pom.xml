@@ -65,6 +65,7 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
 
+        <!-- Optional dependencies.-->
         <dependency>
             <groupId>com.esotericsoftware</groupId>
             <artifactId>kryo-shaded</artifactId>

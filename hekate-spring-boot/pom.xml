@@ -38,12 +38,14 @@
     </scm>
 
     <dependencies>
+        <!-- Production dependencies.-->
         <dependency>
             <artifactId>hekate-spring</artifactId>
             <groupId>${project.groupId}</groupId>
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Optional dependencies.-->
         <dependency>
             <artifactId>hekate-codec-kryo</artifactId>
             <groupId>${project.groupId}</groupId>
@@ -76,12 +78,6 @@
             <artifactId>hekate-jclouds-aws</artifactId>
             <groupId>${project.groupId}</groupId>
             <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
-        
-        <dependency>
-            <groupId>de.ruedigermoeller</groupId>
-            <artifactId>fst</artifactId>
             <optional>true</optional>
         </dependency>
 
