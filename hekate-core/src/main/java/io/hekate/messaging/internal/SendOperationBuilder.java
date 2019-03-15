@@ -1,8 +1,8 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.messaging.operation.AckMode;
 import io.hekate.messaging.operation.Send;
-import io.hekate.messaging.operation.SendAckMode;
 import io.hekate.messaging.operation.SendFuture;
 import io.hekate.messaging.operation.SendRetryConfigurer;
 import io.hekate.messaging.operation.SendRetryPolicy;
@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 class SendOperationBuilder<T> extends MessageOperationBuilder<T> implements Send<T>, SendRetryPolicy {
     private Object affinity;
 
-    private SendAckMode ackMode;
+    private AckMode ackMode;
 
     private RetryErrorPolicy retryErr;
 
@@ -54,7 +54,7 @@ class SendOperationBuilder<T> extends MessageOperationBuilder<T> implements Send
     }
 
     @Override
-    public Send<T> withAckMode(SendAckMode ackMode) {
+    public Send<T> withAckMode(AckMode ackMode) {
         ArgAssert.notNull(ackMode, "Acknowledgement mode");
 
         this.ackMode = ackMode;

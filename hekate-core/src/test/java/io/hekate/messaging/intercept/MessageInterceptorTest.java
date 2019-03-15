@@ -6,7 +6,7 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.internal.MessagingServiceTestBase;
 import io.hekate.messaging.internal.TestChannel;
-import io.hekate.messaging.operation.SendAckMode;
+import io.hekate.messaging.operation.AckMode;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
@@ -526,7 +526,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
 
                 from.channel().forNode(to.nodeId())
                     .newSend(msg)
-                    .withAckMode(SendAckMode.REQUIRED)
+                    .withAckMode(AckMode.REQUIRED)
                     .submit()
                     .get();
 
@@ -560,7 +560,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 MessagingChannel<String> channel = from.channel().forNode(to.nodeId());
 
                 MessagingFutureException err = expect(MessagingFutureException.class, () ->
-                    channel.newSend("msg").withAckMode(SendAckMode.REQUIRED).sync()
+                    channel.newSend("msg").withAckMode(AckMode.REQUIRED).sync()
                 );
 
                 verify(interceptor).interceptClientReceiveError(any(), ArgumentMatchers.same(err.getCause()));

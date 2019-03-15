@@ -1,8 +1,8 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.intercept.OutboundType;
+import io.hekate.messaging.operation.AckMode;
 import io.hekate.messaging.operation.ResponsePart;
-import io.hekate.messaging.operation.SendAckMode;
 import io.hekate.messaging.operation.SendFuture;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
@@ -13,7 +13,7 @@ import io.hekate.messaging.retry.RetryRoutingPolicy;
 class SendOperation<T> extends UnicastOperation<T> {
     private final SendFuture future = new SendFuture();
 
-    private final SendAckMode ackMode;
+    private final AckMode ackMode;
 
     public SendOperation(
         T message,
@@ -27,7 +27,7 @@ class SendOperation<T> extends UnicastOperation<T> {
         RetryRoutingPolicy retryRoute,
         MessagingGatewayContext<T> gateway,
         MessageOperationOpts<T> opts,
-        SendAckMode ackMode
+        AckMode ackMode
     ) {
         super(
             message,
@@ -49,7 +49,7 @@ class SendOperation<T> extends UnicastOperation<T> {
 
     @Override
     public OutboundType type() {
-        return ackMode == SendAckMode.REQUIRED ? OutboundType.SEND_WITH_ACK : OutboundType.SEND_NO_ACK;
+        return ackMode == AckMode.REQUIRED ? OutboundType.SEND_WITH_ACK : OutboundType.SEND_NO_ACK;
     }
 
     @Override

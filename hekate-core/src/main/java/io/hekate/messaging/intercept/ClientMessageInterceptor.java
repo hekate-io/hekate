@@ -2,9 +2,9 @@ package io.hekate.messaging.intercept;
 
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.operation.AckMode;
 import io.hekate.messaging.operation.Broadcast;
 import io.hekate.messaging.operation.Send;
-import io.hekate.messaging.operation.SendAckMode;
 
 /**
  * Client-side message interceptor.
@@ -57,8 +57,8 @@ public interface ClientMessageInterceptor<T> extends MessageInterceptor {
      *
      * @param ctx Context of a sent message (same object as in {@link #interceptClientSend(ClientSendContext)}).
      *
-     * @see Send#withAckMode(SendAckMode)
-     * @see Broadcast#withAckMode(SendAckMode)
+     * @see Send#withAckMode(AckMode)
+     * @see Broadcast#withAckMode(AckMode)
      */
     default void interceptClientReceiveAck(ClientOutboundContext<T> ctx) {
         // No-op.

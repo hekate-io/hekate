@@ -3,7 +3,7 @@ package io.hekate.messaging.operation;
 /**
  * Acknowledgement mode.
  */
-public enum SendAckMode {
+public enum AckMode {
     /** Require an acknowledgement. */
     REQUIRED,
 

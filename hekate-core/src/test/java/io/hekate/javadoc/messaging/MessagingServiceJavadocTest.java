@@ -25,10 +25,10 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingServiceFactory;
+import io.hekate.messaging.operation.AckMode;
 import io.hekate.messaging.operation.AggregateFuture;
 import io.hekate.messaging.operation.BroadcastFuture;
 import io.hekate.messaging.operation.RequestFuture;
-import io.hekate.messaging.operation.SendAckMode;
 import io.hekate.messaging.operation.SendFuture;
 import io.hekate.messaging.operation.SubscribeFuture;
 import org.junit.Test;
@@ -137,7 +137,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         MessagingChannel<String> channel = hekate.messaging().channel("example.channel", String.class);
 
         SendFuture future = channel.newSend("some-message") // Some dummy message.
-            .withAckMode(SendAckMode.REQUIRED) // Set acknowledgement mode.
+            .withAckMode(AckMode.REQUIRED) // Set acknowledgement mode.
             .submit(); // Asynchronously execute the operation.
 
         future.join(); // Await for confirmation.
@@ -182,7 +182,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         MessagingChannel<String> channel = hekate.messaging().channel("example.channel", String.class);
 
         BroadcastFuture<String> future = channel.newBroadcast("some-message") // Some dummy message.
-            .withAckMode(SendAckMode.REQUIRED) // Set acknowledgement mode.
+            .withAckMode(AckMode.REQUIRED) // Set acknowledgement mode.
             .submit(); // Asynchronously execute the operation.
 
         future.join(); // Await for confirmations.

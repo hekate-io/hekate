@@ -1,8 +1,8 @@
 package io.hekate.messaging.intercept;
 
+import io.hekate.messaging.operation.AckMode;
 import io.hekate.messaging.operation.Request;
 import io.hekate.messaging.operation.Send;
-import io.hekate.messaging.operation.SendAckMode;
 import io.hekate.messaging.operation.Subscribe;
 
 /**
@@ -18,12 +18,12 @@ public enum OutboundType {
     SUBSCRIBE,
 
     /**
-     * Message is submitted as a {@link Send} operation with {@link Send#withAckMode(SendAckMode)} set to {@link SendAckMode#REQUIRED}.
+     * Message is submitted as a {@link Send} operation with {@link Send#withAckMode(AckMode)} set to {@link AckMode#REQUIRED}.
      */
     SEND_WITH_ACK,
 
     /**
-     * Message is submitted as a {@link Send} operation with {@link Send#withAckMode(SendAckMode)} set to {@link SendAckMode#NOT_NEEDED}.
+     * Message is submitted as a {@link Send} operation with {@link Send#withAckMode(AckMode)} set to {@link AckMode#NOT_NEEDED}.
      */
     SEND_NO_ACK
 }

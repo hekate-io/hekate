@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  * </p>
  * <ol>
  * <li>Obtain an instance of this interface via the {@link MessagingChannel#newSend(Object)} method call</li>
- * <li>Set options (f.e. {@link #withAckMode(SendAckMode) acknowledgement mode}  or {@link #withAffinity(Object) affinity key})</li>
+ * <li>Set options (f.e. {@link #withAckMode(AckMode) acknowledgement mode}  or {@link #withAffinity(Object) affinity key})</li>
  * <li>Execute this operation via the {@link #submit()} method</li>
  * <li>Await for the execution result, if needed</li>
  * </ol>
@@ -72,25 +72,25 @@ public interface Send<T> {
      * Acknowledgement mode.
      *
      * <p>
-     * If this option is set to {@link SendAckMode#REQUIRED} then the receiver of this operation will send back an acknowledgement to
+     * If this option is set to {@link AckMode#REQUIRED} then the receiver of this operation will send back an acknowledgement to
      * indicate that this operation was successfully {@link MessageReceiver#receive(Message) received}. In such case the operation's
      * callback/future will be notified only when such acknowledgement is received from all nodes (or if operation fails).
      * </p>
      *
      * <p>
-     * If this option is set to {@link SendAckMode#NOT_NEEDED} then operation will be assumed to be successful once the message gets
+     * If this option is set to {@link AckMode#NOT_NEEDED} then operation will be assumed to be successful once the message gets
      * flushed to the network buffer without any additional acknowledgements from receivers.
      * </p>
      *
      * <p>
-     * Default value of this option is {@link SendAckMode#NOT_NEEDED}.
+     * Default value of this option is {@link AckMode#NOT_NEEDED}.
      * </p>
      *
      * @param ackMode Acknowledgement mode.
      *
      * @return This instance.
      */
-    Send<T> withAckMode(SendAckMode ackMode);
+    Send<T> withAckMode(AckMode ackMode);
 
     /**
      * Retry policy.
@@ -132,24 +132,24 @@ public interface Send<T> {
     }
 
     /**
-     * Sets acknowledgement mode to {@link SendAckMode#REQUIRED}.
+     * Sets acknowledgement mode to {@link AckMode#REQUIRED}.
      *
      * @return This instance.
      *
-     * @see #withAckMode(SendAckMode)
+     * @see #withAckMode(AckMode)
      */
     default Send<T> withAck() {
-        return withAckMode(SendAckMode.REQUIRED);
+        return withAckMode(AckMode.REQUIRED);
     }
 
     /**
-     * Sets acknowledgement mode to {@link SendAckMode#NOT_NEEDED}.
+     * Sets acknowledgement mode to {@link AckMode#NOT_NEEDED}.
      *
      * @return This instance.
      *
-     * @see #withAckMode(SendAckMode)
+     * @see #withAckMode(AckMode)
      */
     default Send<T> withNoAck() {
-        return withAckMode(SendAckMode.NOT_NEEDED);
+        return withAckMode(AckMode.NOT_NEEDED);
     }
 }

@@ -3,11 +3,11 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.messaging.loadbalance.UnknownRouteException;
+import io.hekate.messaging.operation.AckMode;
 import io.hekate.messaging.operation.Broadcast;
 import io.hekate.messaging.operation.BroadcastFuture;
 import io.hekate.messaging.operation.BroadcastRetryConfigurer;
 import io.hekate.messaging.operation.BroadcastRetryPolicy;
-import io.hekate.messaging.operation.SendAckMode;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements Broadcast<T>, BroadcastRetryPolicy {
     private Object affinity;
 
-    private SendAckMode ackMode = SendAckMode.NOT_NEEDED;
+    private AckMode ackMode = AckMode.NOT_NEEDED;
 
     private RetryErrorPolicy retryErr;
 
@@ -54,7 +54,7 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
     }
 
     @Override
-    public Broadcast<T> withAckMode(SendAckMode ackMode) {
+    public Broadcast<T> withAckMode(AckMode ackMode) {
         ArgAssert.notNull(ackMode, "Acknowledgement mode");
 
         this.ackMode = ackMode;
@@ -148,7 +148,7 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
         Object affinity,
         long timeout,
         int maxAttempts,
-        SendAckMode ackMode,
+        AckMode ackMode,
         RetryErrorPolicy retry,
         RetryCondition retryCondition,
         RetryBackoffPolicy retryBackoff,
