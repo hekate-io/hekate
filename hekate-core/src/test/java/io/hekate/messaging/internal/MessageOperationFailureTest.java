@@ -18,7 +18,7 @@ package io.hekate.messaging.internal;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.messaging.retry.RetryFailure;
+import io.hekate.messaging.retry.FailedAttempt;
 import java.io.IOException;
 import org.junit.Test;
 
@@ -52,7 +52,7 @@ public class MessageOperationFailureTest extends HekateTestBase {
         assertTrue(ctx.allTriedNodes().contains(failedNode));
         assertTrue(ctx.hasTriedNode(failedNode));
         assertSame(RETRY_SAME_NODE, ctx.routing());
-        assertTrue(ctx.toString(), ctx.toString().startsWith(RetryFailure.class.getSimpleName()));
+        assertTrue(ctx.toString(), ctx.toString().startsWith(FailedAttempt.class.getSimpleName()));
 
         assertSame(RE_ROUTE, ctx.withRouting(RE_ROUTE).routing());
     }

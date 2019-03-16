@@ -22,7 +22,7 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancer;
-import io.hekate.messaging.retry.RetryFailure;
+import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.partition.RendezvousHashMapper;
@@ -80,7 +80,7 @@ public class DefaultLoadBalancerTest extends HekateTestBase {
 
     @Test
     public void testNonAffinityWithFailure() throws Exception {
-        RetryFailure failure = new MessageOperationFailure(2, new Exception(), n1, toSet(n1, n2), RetryRoutingPolicy.RE_ROUTE);
+        FailedAttempt failure = new MessageOperationFailure(2, new Exception(), n1, toSet(n1, n2), RetryRoutingPolicy.RE_ROUTE);
 
         for (int i = 0; i < 100; i++) {
 
@@ -114,7 +114,7 @@ public class DefaultLoadBalancerTest extends HekateTestBase {
     public void testAffinityWithFailure() throws Exception {
         PartitionMapper backupMapper = RendezvousHashMapper.of(topology).withBackupNodes(2).build();
 
-        RetryFailure failure = new MessageOperationFailure(2, new Exception(), n1, toSet(n1, n2), RetryRoutingPolicy.RE_ROUTE);
+        FailedAttempt failure = new MessageOperationFailure(2, new Exception(), n1, toSet(n1, n2), RetryRoutingPolicy.RE_ROUTE);
 
         for (int i = 0; i < 100; i++) {
             DefaultLoadBalancerContext ctx = new DefaultLoadBalancerContext(i, i, topology, backupMapper, Optional.of(failure));
@@ -130,7 +130,7 @@ public class DefaultLoadBalancerTest extends HekateTestBase {
     public void testAffinityWithFailureNoBackupNodes() throws Exception {
         Set<ClusterNodeId> allRoutes = new HashSet<>();
 
-        RetryFailure failure = new MessageOperationFailure(2, new Exception(), n1, toSet(n1, n2), RetryRoutingPolicy.RE_ROUTE);
+        FailedAttempt failure = new MessageOperationFailure(2, new Exception(), n1, toSet(n1, n2), RetryRoutingPolicy.RE_ROUTE);
 
         for (int i = 0; i < 100; i++) {
             DefaultLoadBalancerContext ctx = new DefaultLoadBalancerContext(i, i, topology, mapper, Optional.of(failure));

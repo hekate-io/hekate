@@ -22,7 +22,7 @@ import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingRemoteException;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
-import io.hekate.messaging.retry.RetryFailure;
+import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,10 +69,10 @@ public class RetryRequestTest extends RetryTestBase {
     public void testRoutingPolicyReRoute() throws Exception {
         RetryRoutingPolicy policy = RetryRoutingPolicy.RE_ROUTE;
 
-        List<RetryFailure> attempts = testWithRoutingPolicy(policy, details -> { /* No-op.*/ });
+        List<FailedAttempt> attempts = testWithRoutingPolicy(policy, details -> { /* No-op.*/ });
 
         for (int i = 0; i < attempts.size(); i++) {
-            RetryFailure ctx = attempts.get(i);
+            FailedAttempt ctx = attempts.get(i);
 
             if (i % 2 == 0) {
                 assertEquals(receiver.nodeId(), ctx.lastTriedNode().id());
@@ -86,7 +86,7 @@ public class RetryRequestTest extends RetryTestBase {
     public void testRoutingPolicyPreferSameNode() throws Exception {
         RetryRoutingPolicy policy = RetryRoutingPolicy.PREFER_SAME_NODE;
 
-        List<RetryFailure> attempts = testWithRoutingPolicy(policy, details -> {
+        List<FailedAttempt> attempts = testWithRoutingPolicy(policy, details -> {
             if (details.isFirstAttempt()) {
                 receiver.node().leaveAsync().join();
 
@@ -95,7 +95,7 @@ public class RetryRequestTest extends RetryTestBase {
         });
 
         for (int i = 0; i < attempts.size(); i++) {
-            RetryFailure ctx = attempts.get(i);
+            FailedAttempt ctx = attempts.get(i);
 
             if (i == 0) {
                 assertEquals(receiver.nodeId(), ctx.lastTriedNode().id());
@@ -109,7 +109,7 @@ public class RetryRequestTest extends RetryTestBase {
     public void testRoutingPolicyRetrySameNode() throws Exception {
         RetryRoutingPolicy policy = RetryRoutingPolicy.RETRY_SAME_NODE;
 
-        List<RetryFailure> attempts = testWithRoutingPolicy(policy, details -> { /* No-op.*/ });
+        List<FailedAttempt> attempts = testWithRoutingPolicy(policy, details -> { /* No-op.*/ });
 
         attempts.forEach(ctx -> assertEquals(receiver.nodeId(), ctx.lastTriedNode().id()));
     }
@@ -170,9 +170,9 @@ public class RetryRequestTest extends RetryTestBase {
         assertEquals(0, retries.get());
     }
 
-    private List<RetryFailure> testWithRoutingPolicy(RetryRoutingPolicy policy, Consumer<RetryFailure> onRetry)
+    private List<FailedAttempt> testWithRoutingPolicy(RetryRoutingPolicy policy, Consumer<FailedAttempt> onRetry)
         throws Exception {
-        List<RetryFailure> attempts = synchronizedList(new ArrayList<>());
+        List<FailedAttempt> attempts = synchronizedList(new ArrayList<>());
 
         failures.set(5);
 

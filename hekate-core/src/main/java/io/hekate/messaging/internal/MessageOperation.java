@@ -4,11 +4,11 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.messaging.intercept.OutboundType;
 import io.hekate.messaging.loadbalance.LoadBalancerException;
 import io.hekate.messaging.operation.ResponsePart;
+import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
 import io.hekate.messaging.retry.RetryErrorPolicy;
-import io.hekate.messaging.retry.RetryFailure;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
 import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
@@ -102,7 +102,7 @@ abstract class MessageOperation<T> {
         }
     }
 
-    public abstract ClusterNodeId route(PartitionMapper mapper, Optional<RetryFailure> prevFailure) throws LoadBalancerException;
+    public abstract ClusterNodeId route(PartitionMapper mapper, Optional<FailedAttempt> prevFailure) throws LoadBalancerException;
 
     public abstract OutboundType type();
 
@@ -138,7 +138,7 @@ abstract class MessageOperation<T> {
         return retryCondition == null || retryCondition.shouldRetry();
     }
 
-    public void onRetry(RetryFailure failure) {
+    public void onRetry(FailedAttempt failure) {
         if (retryCallback != null) {
             retryCallback.onRetry(failure);
         }

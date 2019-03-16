@@ -12,5 +12,5 @@ public interface RetryCallback {
      *
      * @param failure Failure.
      */
-    void onRetry(RetryFailure failure);
+    void onRetry(FailedAttempt failure);
 }

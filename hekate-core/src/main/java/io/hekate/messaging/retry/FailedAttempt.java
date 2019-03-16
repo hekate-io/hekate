@@ -19,7 +19,7 @@ package io.hekate.messaging.retry;
 /**
  * Failed attempt.
  */
-public interface RetryFailure extends RetryAttempt {
+public interface FailedAttempt extends Attempt {
     /**
      * Returns the routing policy.
      *

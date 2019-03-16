@@ -4,7 +4,7 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.loadbalance.LoadBalancer;
-import io.hekate.messaging.retry.RetryFailure;
+import io.hekate.messaging.retry.FailedAttempt;
 import java.util.Optional;
 
 /**
@@ -86,5 +86,5 @@ public interface ClientOutboundContext<T> {
      *
      * @return Failure of a previous attempt.
      */
-    Optional<RetryFailure> prevFailure();
+    Optional<FailedAttempt> prevFailure();
 }

@@ -35,9 +35,9 @@ import io.hekate.messaging.operation.FailureResponse;
 import io.hekate.messaging.operation.RejectedResponseException;
 import io.hekate.messaging.operation.Response;
 import io.hekate.messaging.operation.ResponsePart;
+import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryErrorPolicy;
-import io.hekate.messaging.retry.RetryFailure;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkFuture;
@@ -69,7 +69,7 @@ import static java.util.stream.Collectors.toList;
 
 class MessagingGatewayContext<T> {
     private interface RetryCallback {
-        void retry(RetryRoutingPolicy routingPolicy, Optional<RetryFailure> newFailure);
+        void retry(RetryRoutingPolicy routingPolicy, Optional<FailedAttempt> newFailure);
 
         void fail(Throwable cause);
     }
@@ -331,7 +331,7 @@ class MessagingGatewayContext<T> {
         return Waiting.awaitAll(waiting);
     }
 
-    private void routeAndSubmit(MessageOperation<T> op, Optional<RetryFailure> prevFailure) {
+    private void routeAndSubmit(MessageOperation<T> op, Optional<FailedAttempt> prevFailure) {
         MessageOperationAttempt<T> attempt = null;
 
         try {
@@ -353,7 +353,7 @@ class MessagingGatewayContext<T> {
         }
     }
 
-    private MessageOperationAttempt<T> route(MessageOperation<T> op, Optional<RetryFailure> prevFailure) throws HekateException,
+    private MessageOperationAttempt<T> route(MessageOperation<T> op, Optional<FailedAttempt> prevFailure) throws HekateException,
         ClientSelectionRejectedException {
         // Perform routing in a loop to circumvent concurrent cluster topology changes.
         while (true) {
@@ -433,7 +433,7 @@ class MessagingGatewayContext<T> {
 
     private MessageOperationAttempt<T> createAttempt(
         MessageOperation<T> operation,
-        Optional<RetryFailure> prevFailure,
+        Optional<FailedAttempt> prevFailure,
         ClusterTopology topology,
         MessagingClient<T> client
     ) {
@@ -486,7 +486,7 @@ class MessagingGatewayContext<T> {
                     // Retry callback.
                     RetryCallback onRetry = new RetryCallback() {
                         @Override
-                        public void retry(RetryRoutingPolicy routing, Optional<RetryFailure> failure) {
+                        public void retry(RetryRoutingPolicy routing, Optional<FailedAttempt> failure) {
                             switch (routing) {
                                 case RETRY_SAME_NODE: {
                                     attempt.nextAttempt(failure).submit();
@@ -832,13 +832,13 @@ class MessagingGatewayContext<T> {
         }
     }
 
-    private MessageOperationFailure newFailure(Throwable cause, ClusterNode failed, Optional<RetryFailure> prevFailure) {
+    private MessageOperationFailure newFailure(Throwable cause, ClusterNode failed, Optional<FailedAttempt> prevFailure) {
         int attempt;
         RetryRoutingPolicy prevRouting;
         Set<ClusterNode> failedNodes;
 
         if (prevFailure.isPresent()) {
-            RetryFailure failure = prevFailure.get();
+            FailedAttempt failure = prevFailure.get();
 
             attempt = failure.attempt() + 1;
             prevRouting = failure.routing();

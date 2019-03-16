@@ -28,7 +28,7 @@ public interface RetryErrorPolicy {
      *
      * @return {@code true} if operation should be retried.
      */
-    boolean shouldRetry(RetryFailure err);
+    boolean shouldRetry(FailedAttempt err);
 
     /**
      * Returns the policy that always fails.

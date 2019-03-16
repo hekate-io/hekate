@@ -3,11 +3,11 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.messaging.operation.AckMode;
+import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
 import io.hekate.messaging.retry.RetryErrorPolicy;
-import io.hekate.messaging.retry.RetryFailure;
 import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
 
@@ -49,7 +49,7 @@ class BroadcastOperation<T> extends SendOperation<T> {
     }
 
     @Override
-    public ClusterNodeId route(PartitionMapper mapper, Optional<RetryFailure> prevFailure) {
+    public ClusterNodeId route(PartitionMapper mapper, Optional<FailedAttempt> prevFailure) {
         return node.id();
     }
 }

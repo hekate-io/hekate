@@ -17,7 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.MessagingRemoteException;
-import io.hekate.messaging.retry.RetryFailure;
+import io.hekate.messaging.retry.FailedAttempt;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -33,7 +33,7 @@ public class RetryFailureTest extends RetryTestBase {
 
     @Test
     public void test() throws Exception {
-        List<RetryFailure> failures = Collections.synchronizedList(new ArrayList<>());
+        List<FailedAttempt> failures = Collections.synchronizedList(new ArrayList<>());
 
         this.failures.set(3);
 
@@ -47,7 +47,7 @@ public class RetryFailureTest extends RetryTestBase {
         assertEquals(3, failures.size());
 
         for (int i = 0; i < failures.size(); i++) {
-            RetryFailure failure = failures.get(i);
+            FailedAttempt failure = failures.get(i);
 
             assertEquals(i, failure.attempt());
             assertSame(MessagingRemoteException.class, failure.error().getClass());

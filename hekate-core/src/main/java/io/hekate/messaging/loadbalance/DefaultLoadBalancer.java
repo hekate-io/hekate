@@ -19,7 +19,7 @@ package io.hekate.messaging.loadbalance;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.messaging.retry.RetryFailure;
+import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.partition.Partition;
 import java.util.Collections;
 import java.util.List;
@@ -73,7 +73,7 @@ public class DefaultLoadBalancer<T> implements LoadBalancer<T> {
 
         // Check if this is a retry attempt and try to re-route in case if the selected node is known to be failed.
         if (ctx.failure().isPresent()) {
-            RetryFailure failure = ctx.failure().get();
+            FailedAttempt failure = ctx.failure().get();
 
             if (failure.routing() == RE_ROUTE && failure.hasTriedNode(selected)) {
                 // Exclude all failed nodes.
@@ -121,7 +121,7 @@ public class DefaultLoadBalancer<T> implements LoadBalancer<T> {
 
         // Check if this is a retry attempt and try to re-route in case if the selected node is known to be failed.
         if (ctx.failure().isPresent() && partition.hasBackupNodes()) {
-            RetryFailure failure = ctx.failure().get();
+            FailedAttempt failure = ctx.failure().get();
 
             if (failure.routing() == RE_ROUTE && failure.hasTriedNode(selected)) {
                 selected = partition.backupNodes().stream()

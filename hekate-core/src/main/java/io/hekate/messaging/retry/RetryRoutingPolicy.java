@@ -21,12 +21,12 @@ package io.hekate.messaging.retry;
  */
 public enum RetryRoutingPolicy {
     /**
-     * Do not try to re-route and always use the same {@link RetryFailure#lastTriedNode() node}.
+     * Do not try to re-route and always use the same {@link FailedAttempt#lastTriedNode() node}.
      */
     RETRY_SAME_NODE,
 
     /**
-     * If {@link RetryFailure#lastTriedNode() failed node} is still within the cluster topology then try using it. If failed node left the
+     * If {@link FailedAttempt#lastTriedNode() failed node} is still within the cluster topology then try using it. If failed node left the
      * cluster topology then preform re-routing.
      */
     PREFER_SAME_NODE,

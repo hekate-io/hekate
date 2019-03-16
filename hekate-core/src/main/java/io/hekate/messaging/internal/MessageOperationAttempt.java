@@ -17,7 +17,7 @@ import io.hekate.messaging.internal.MessagingProtocol.RequestBase;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
 import io.hekate.messaging.internal.MessagingProtocol.SubscribeRequest;
 import io.hekate.messaging.internal.MessagingProtocol.VoidRequest;
-import io.hekate.messaging.retry.RetryFailure;
+import io.hekate.messaging.retry.FailedAttempt;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -29,7 +29,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
 
     private final MessageOperation<T> operation;
 
-    private final Optional<RetryFailure> prevFailure;
+    private final Optional<FailedAttempt> prevFailure;
 
     private final MessageOperationCallback<T> callback;
 
@@ -47,7 +47,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
         MessagingClient<T> client,
         ClusterTopology topology,
         MessageOperation<T> operation,
-        Optional<RetryFailure> prevFailure,
+        Optional<FailedAttempt> prevFailure,
         MessageOperationCallback<T> callback
     ) {
         this(client, topology, operation, prevFailure, callback, null, null);
@@ -57,7 +57,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
         MessagingClient<T> client,
         ClusterTopology topology,
         MessageOperation<T> operation,
-        Optional<RetryFailure> prevFailure,
+        Optional<FailedAttempt> prevFailure,
         MessageOperationCallback<T> callback,
         MessageMetaData metaData,
         Map<String, Object> attributes
@@ -73,7 +73,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
         this.payload = operation.message();
     }
 
-    public MessageOperationAttempt<T> nextAttempt(Optional<RetryFailure> failure) {
+    public MessageOperationAttempt<T> nextAttempt(Optional<FailedAttempt> failure) {
         return new MessageOperationAttempt<>(client, topology, operation, failure, callback, metaData, attributes);
     }
 
@@ -337,7 +337,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
     }
 
     @Override
-    public Optional<RetryFailure> prevFailure() {
+    public Optional<FailedAttempt> prevFailure() {
         return prevFailure;
     }
 

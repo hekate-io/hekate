@@ -6,7 +6,7 @@ import java.util.Set;
 /**
  * Attempt.
  */
-public interface RetryAttempt {
+public interface Attempt {
     /**
      * Returns the current attempts (starting with zero for the first attempt).
      *

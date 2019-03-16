@@ -3,11 +3,11 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import io.hekate.messaging.loadbalance.LoadBalancerException;
+import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
 import io.hekate.messaging.retry.RetryErrorPolicy;
-import io.hekate.messaging.retry.RetryFailure;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
 import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
@@ -44,7 +44,7 @@ abstract class UnicastOperation<T> extends MessageOperation<T> {
     }
 
     @Override
-    public ClusterNodeId route(PartitionMapper mapper, Optional<RetryFailure> prevFailure) throws LoadBalancerException {
+    public ClusterNodeId route(PartitionMapper mapper, Optional<FailedAttempt> prevFailure) throws LoadBalancerException {
         LoadBalancerContext ctx = new DefaultLoadBalancerContext(
             affinity(),
             affinityKey(),

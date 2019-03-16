@@ -23,7 +23,7 @@ import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
-import io.hekate.messaging.retry.RetryFailure;
+import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.util.format.ToString;
 import java.util.Iterator;
@@ -42,14 +42,14 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
 
     private final ClusterTopology topology;
 
-    private final Optional<RetryFailure> failure;
+    private final Optional<FailedAttempt> failure;
 
     public DefaultLoadBalancerContext(
         int affinity,
         Object affinityKey,
         ClusterTopology topology,
         PartitionMapper partitions,
-        Optional<RetryFailure> failure
+        Optional<FailedAttempt> failure
     ) {
         this.affinity = affinity;
         this.affinityKey = affinityKey;
@@ -84,7 +84,7 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
     }
 
     @Override
-    public Optional<RetryFailure> failure() {
+    public Optional<FailedAttempt> failure() {
         return failure;
     }
 

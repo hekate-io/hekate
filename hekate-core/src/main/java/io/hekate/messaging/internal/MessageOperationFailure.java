@@ -18,12 +18,12 @@ package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.internal.util.ErrorUtils;
-import io.hekate.messaging.retry.RetryFailure;
+import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
 import io.hekate.util.format.ToString;
 import java.util.Set;
 
-class MessageOperationFailure implements RetryFailure {
+class MessageOperationFailure implements FailedAttempt {
     private final int attempt;
 
     private final Throwable error;
@@ -92,6 +92,6 @@ class MessageOperationFailure implements RetryFailure {
 
     @Override
     public String toString() {
-        return ToString.format(RetryFailure.class, this);
+        return ToString.format(FailedAttempt.class, this);
     }
 }
