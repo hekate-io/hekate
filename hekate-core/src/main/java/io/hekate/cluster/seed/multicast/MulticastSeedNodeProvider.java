@@ -461,7 +461,7 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
                 discoveryFuture = null;
             }
 
-            if (sender != null && sender.isOpen()) {
+            if (sender != null) {
                 if (DEBUG) {
                     log.debug("Closing multicast sender channel [channel={}]", sender);
                 }
