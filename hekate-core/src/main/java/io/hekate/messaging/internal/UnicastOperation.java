@@ -7,7 +7,7 @@ import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
-import io.hekate.messaging.retry.RetryErrorPolicy;
+import io.hekate.messaging.retry.RetryErrorPredicate;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
 import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
@@ -18,7 +18,7 @@ abstract class UnicastOperation<T> extends MessageOperation<T> {
         Object affinityKey,
         long timeout,
         int maxAttempts,
-        RetryErrorPolicy retryErr,
+        RetryErrorPredicate retryErr,
         RetryCondition retryCondition,
         RetryBackoffPolicy retryBackoff,
         RetryCallback retryCallback,

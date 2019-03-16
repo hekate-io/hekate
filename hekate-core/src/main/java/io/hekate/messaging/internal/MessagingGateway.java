@@ -32,7 +32,9 @@ import io.hekate.messaging.MessagingOverflowPolicy;
 import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancer;
-import io.hekate.messaging.retry.RetryBackoffPolicy;
+import io.hekate.messaging.retry.FixedBackoffPolicy;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
+import io.hekate.messaging.retry.RetryErrorPredicate;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.List;
@@ -70,7 +72,7 @@ class MessagingGateway<T> {
     private final int warnOnRetry;
 
     @ToStringIgnore
-    private final RetryBackoffPolicy backoff;
+    private final GenericRetryConfigurer retryPolicy;
 
     @ToStringIgnore
     private final MessageReceiver<T> unguardedReceiver;
@@ -110,7 +112,35 @@ class MessagingGateway<T> {
         this.partitions = cfg.getPartitions();
         this.backupNodes = cfg.getBackupNodes();
         this.warnOnRetry = cfg.getWarnOnRetry();
-        this.backoff = cfg.getBackoffPolicy();
+
+        // Retry policy.
+        GenericRetryConfigurer retryPolicy;
+
+        if (cfg.getRetryPolicy() == null) {
+            // Use an empty stub that doesn't support retries.
+            retryPolicy = GenericRetryConfigurer.noRetries();
+        } else {
+            // Use custom policy.
+            GenericRetryConfigurer customPolicy = cfg.getRetryPolicy();
+
+            retryPolicy = retry -> {
+                // Make sure that retries are enabled for all types of errors by default.
+                // Custom policy can override this setting.
+                retry.whileError(RetryErrorPredicate.acceptAll());
+
+                // Apply real policy
+                customPolicy.configure(retry);
+            };
+        }
+
+        this.retryPolicy = retry -> {
+            // Make sure that backoff delay is always set.
+            // Custom policy can override this setting.
+            retry.withBackoff(FixedBackoffPolicy.defaultPolicy());
+
+            // Apply real policy.
+            retryPolicy.configure(retry);
+        };
 
         // Interceptors.
         this.interceptors = new MessageInterceptors<>(
@@ -226,8 +256,8 @@ class MessagingGateway<T> {
         return warnOnRetry;
     }
 
-    public RetryBackoffPolicy backoff() {
-        return backoff;
+    public GenericRetryConfigurer baseRetryPolicy() {
+        return retryPolicy;
     }
 
     public MessageReceiver<T> unguardedReceiver() {

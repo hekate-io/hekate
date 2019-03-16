@@ -11,7 +11,7 @@ import io.hekate.messaging.operation.BroadcastRetryPolicy;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
-import io.hekate.messaging.retry.RetryErrorPolicy;
+import io.hekate.messaging.retry.RetryErrorPredicate;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -20,7 +20,7 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
 
     private AckMode ackMode = AckMode.NOT_NEEDED;
 
-    private RetryErrorPolicy retryErr;
+    private RetryErrorPredicate retryErr;
 
     private RetryBackoffPolicy retryBackoff;
 
@@ -35,7 +35,6 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
     public BroadcastOperationBuilder(T message, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts) {
         super(message, gateway, opts);
 
-        this.retryBackoff = gateway.backoff();
         this.timeout = gateway.messagingTimeout();
     }
 
@@ -67,7 +66,7 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
         ArgAssert.notNull(retry, "Retry policy");
 
         // Make sure that by default we retry all errors.
-        retryErr = RetryErrorPolicy.alwaysRetry();
+        retryErr = RetryErrorPredicate.acceptAll();
 
         retry.configure(this);
 
@@ -109,7 +108,7 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
     }
 
     @Override
-    public BroadcastRetryPolicy whileError(RetryErrorPolicy policy) {
+    public BroadcastRetryPolicy whileError(RetryErrorPredicate policy) {
         this.retryErr = policy;
 
         return this;
@@ -149,7 +148,7 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
         long timeout,
         int maxAttempts,
         AckMode ackMode,
-        RetryErrorPolicy retry,
+        RetryErrorPredicate retry,
         RetryCondition retryCondition,
         RetryBackoffPolicy retryBackoff,
         RetryCallback retryCallback,

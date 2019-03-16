@@ -92,7 +92,7 @@ public class ExponentialBackoffPolicy implements RetryBackoffPolicy {
     /**
      * Constructs a new instance.
      *
-     * @param baseDelay Multiplier  for each attempt (in milliseconds).
+     * @param baseDelay Multiplier for each attempt (in milliseconds).
      * @param maxDelay Maximum delay in milliseconds (calculated delay will never exceed this value).
      */
     public ExponentialBackoffPolicy(long baseDelay, long maxDelay) {
@@ -105,6 +105,24 @@ public class ExponentialBackoffPolicy implements RetryBackoffPolicy {
 
         // Maximum attempts before we start to overflow.
         this.attemptOverflow = Long.SIZE - Long.numberOfLeadingZeros(Long.MAX_VALUE / baseDelay) - 1;
+    }
+
+    /**
+     * Returns the base delay of this policy in milliseconds.
+     *
+     * @return Base delay in milliseconds.
+     */
+    public long baseDelay() {
+        return baseDelay;
+    }
+
+    /**
+     * Returns the maximum delay of this policy in milliseconds.
+     *
+     * @return Maximum delay in milliseconds.
+     */
+    public long maxDelay() {
+        return maxDelay;
     }
 
     @Override

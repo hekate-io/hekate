@@ -21,14 +21,13 @@ import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.codec.CodecFactory;
 import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.loadbalance.LoadBalancer;
-import io.hekate.messaging.retry.RetryBackoffPolicy;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.partition.RendezvousHashMapper;
 import java.util.Collections;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -142,22 +141,22 @@ public class MessagingChannelConfigTest extends HekateTestBase {
     }
 
     @Test
-    public void testBackoffPolicy() {
-        assertNotNull(cfg.getBackoffPolicy());
+    public void testRetryPolicy() {
+        assertNull(cfg.getRetryPolicy());
 
-        RetryBackoffPolicy backoff = mock(RetryBackoffPolicy.class);
+        GenericRetryConfigurer retry = mock(GenericRetryConfigurer.class);
 
-        cfg.setBackoffPolicy(backoff);
+        cfg.setRetryPolicy(retry);
 
-        assertSame(backoff, cfg.getBackoffPolicy());
+        assertSame(retry, cfg.getRetryPolicy());
 
-        cfg.setBackoffPolicy(null);
+        cfg.setRetryPolicy(null);
 
-        assertNull(cfg.getBackoffPolicy());
+        assertNull(cfg.getRetryPolicy());
 
-        assertSame(cfg, cfg.withBackoffPolicy(backoff));
+        assertSame(cfg, cfg.withRetryPolicy(retry));
 
-        assertSame(backoff, cfg.getBackoffPolicy());
+        assertSame(retry, cfg.getRetryPolicy());
     }
 
     @Test

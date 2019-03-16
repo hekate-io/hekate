@@ -66,22 +66,38 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
 
     @Override
     public Request<T> newRequest(T request) {
-        return new RequestOperationBuilder<>(request, context(), this);
+        RequestOperationBuilder<T> builder = new RequestOperationBuilder<>(request, context(), this);
+
+        gateway.baseRetryPolicy().configure(builder);
+
+        return builder;
     }
 
     @Override
     public Subscribe<T> newSubscribe(T request) {
-        return new SubscribeOperationBuilder<>(request, context(), this);
+        SubscribeOperationBuilder<T> builder = new SubscribeOperationBuilder<>(request, context(), this);
+
+        gateway.baseRetryPolicy().configure(builder);
+
+        return builder;
     }
 
     @Override
     public Broadcast<T> newBroadcast(T request) {
-        return new BroadcastOperationBuilder<>(request, context(), this);
+        BroadcastOperationBuilder<T> builder = new BroadcastOperationBuilder<>(request, context(), this);
+
+        gateway.baseRetryPolicy().configure(builder);
+
+        return builder;
     }
 
     @Override
     public Aggregate<T> newAggregate(T request) {
-        return new AggregateOperationBuilder<>(request, context(), this);
+        AggregateOperationBuilder<T> builder = new AggregateOperationBuilder<>(request, context(), this);
+
+        gateway.baseRetryPolicy().configure(builder);
+
+        return builder;
     }
 
     @Override

@@ -337,7 +337,6 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         check.notEmpty(cfg.getName(), "name");
         check.validSysName(cfg.getName(), "name");
         check.notNull(cfg.getBaseType(), "base type");
-        check.notNull(cfg.getBackoffPolicy(), "backoff policy");
         check.positive(cfg.getPartitions(), "partitions");
         check.isPowerOfTwo(cfg.getPartitions(), "partitions size");
 
@@ -421,7 +420,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             gateway.idleSocketTimeout() > 0, /* <-- Check for idle connections.*/
             gateway.messagingTimeout(),
             gateway.warnOnRetry(),
-            gateway.backoff(),
+            gateway.baseRetryPolicy(),
             gateway.rootChannel()
         );
 

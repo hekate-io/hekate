@@ -17,10 +17,10 @@
 package io.hekate.messaging.retry;
 
 /**
- * Policy to retry upon an error.
+ * Predicate to test if particular error should be retried.
  */
 @FunctionalInterface
-public interface RetryErrorPolicy {
+public interface RetryErrorPredicate {
     /**
      * Decides on whether the specified error should be retried.
      *
@@ -31,20 +31,20 @@ public interface RetryErrorPolicy {
     boolean shouldRetry(FailedAttempt err);
 
     /**
-     * Returns the policy that always fails.
+     * Never retry.
      *
-     * @return Policy that always fails.
+     * @return Policy that rejects all errors.
      */
-    static RetryErrorPolicy alwaysFail() {
+    static RetryErrorPredicate rejectAll() {
         return err -> false;
     }
 
     /**
-     * Returns the policy that always retries.
+     * Always retry.
      *
      * @return Policy that always retries.
      */
-    static RetryErrorPolicy alwaysRetry() {
+    static RetryErrorPredicate acceptAll() {
         return err -> true;
     }
 }

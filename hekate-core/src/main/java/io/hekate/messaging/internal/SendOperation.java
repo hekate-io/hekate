@@ -7,7 +7,7 @@ import io.hekate.messaging.operation.SendFuture;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
-import io.hekate.messaging.retry.RetryErrorPolicy;
+import io.hekate.messaging.retry.RetryErrorPredicate;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
 
 class SendOperation<T> extends UnicastOperation<T> {
@@ -20,7 +20,7 @@ class SendOperation<T> extends UnicastOperation<T> {
         Object affinityKey,
         long timeout,
         int maxAttempts,
-        RetryErrorPolicy retryErr,
+        RetryErrorPredicate retryErr,
         RetryCondition retryCondition,
         RetryBackoffPolicy retryBackoff,
         RetryCallback retryCallback,

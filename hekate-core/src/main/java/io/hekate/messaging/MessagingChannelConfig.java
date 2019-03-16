@@ -24,9 +24,15 @@ import io.hekate.core.HekateBootstrap;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.loadbalance.LoadBalancer;
-import io.hekate.messaging.retry.FixedBackoffPolicy;
-import io.hekate.messaging.retry.RetryBackoffPolicy;
-import io.hekate.messaging.retry.RetryPolicy;
+import io.hekate.messaging.operation.Aggregate;
+import io.hekate.messaging.operation.AggregateRetryConfigurer;
+import io.hekate.messaging.operation.Broadcast;
+import io.hekate.messaging.operation.BroadcastRetryConfigurer;
+import io.hekate.messaging.operation.Request;
+import io.hekate.messaging.operation.RequestRetryConfigurer;
+import io.hekate.messaging.operation.Send;
+import io.hekate.messaging.operation.SendRetryConfigurer;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.partition.Partition;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
@@ -79,8 +85,8 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
     /** See {@link #setReceiver(MessageReceiver)}. */
     private MessageReceiver<T> receiver;
 
-    /** See {@link #setBackoffPolicy(RetryBackoffPolicy)}. */
-    private RetryBackoffPolicy backoffPolicy = new FixedBackoffPolicy();
+    /** See {@link #setRetryPolicy(GenericRetryConfigurer)}. */
+    private GenericRetryConfigurer retryPolicy;
 
     /** See {@link #setLoadBalancer(LoadBalancer)}. */
     private LoadBalancer<T> loadBalancer;
@@ -459,37 +465,42 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
     }
 
     /**
-     * Returns the backoff policy for retries(see {@link #setBackoffPolicy(RetryBackoffPolicy)}).
+     * Returns the generic retry policy to be applied to all messaging operations of this channel.
      *
-     * @return Backoff policy.
+     * @return Generic retry policy to be applied to all messaging operations of this channel.
      */
-    public RetryBackoffPolicy getBackoffPolicy() {
-        return backoffPolicy;
+    public GenericRetryConfigurer getRetryPolicy() {
+        return retryPolicy;
     }
 
     /**
-     * Sets the backoff policy for retries.
+     * Sets the generic retry policy to be applied to all messaging operations of this channel.
      *
      * <p>
-     * Backoff policy can be overridden for each messaging operation individually via the
-     * {@link RetryPolicy#withBackoff(RetryBackoffPolicy)} method.
+     * This policy can be overridden for each individual operation via the following methods:
      * </p>
+     * <ul>
+     * <li>{@link Request#withRetry(RequestRetryConfigurer)}</li>
+     * <li>{@link Send#withRetry(SendRetryConfigurer)}</li>
+     * <li>{@link Broadcast#withRetry(BroadcastRetryConfigurer)}</li>
+     * <li>{@link Aggregate#withRetry(AggregateRetryConfigurer)}</li>
+     * </ul>
      *
-     * @param backoffPolicy Backoff policy.
+     * @param retryPolicy Retry policy.
      */
-    public void setBackoffPolicy(RetryBackoffPolicy backoffPolicy) {
-        this.backoffPolicy = backoffPolicy;
+    public void setRetryPolicy(GenericRetryConfigurer retryPolicy) {
+        this.retryPolicy = retryPolicy;
     }
 
     /**
-     * Fluent-style version of {@link #setBackoffPolicy(RetryBackoffPolicy)}.
+     * Fluent-style version of {@link #setRetryPolicy(GenericRetryConfigurer)}.
      *
-     * @param backoffPolicy Backoff policy.
+     * @param retryPolicy Retry policy.
      *
      * @return This instance.
      */
-    public MessagingChannelConfig<T> withBackoffPolicy(RetryBackoffPolicy backoffPolicy) {
-        setBackoffPolicy(backoffPolicy);
+    public MessagingChannelConfig<T> withRetryPolicy(GenericRetryConfigurer retryPolicy) {
+        setRetryPolicy(retryPolicy);
 
         return this;
     }

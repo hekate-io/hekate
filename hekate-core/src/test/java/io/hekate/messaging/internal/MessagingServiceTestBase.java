@@ -22,7 +22,6 @@ import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingServiceFactory;
-import io.hekate.messaging.retry.FixedBackoffPolicy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -158,8 +157,12 @@ public abstract class MessagingServiceTestBase extends HekateNodeParamTestBase {
             .withName(TEST_CHANNEL_NAME)
             .withWorkerThreads(workerThreads)
             .withNioThreads(nioThreads)
-            .withBackoffPolicy(new FixedBackoffPolicy(TEST_BACKOFF_DELAY))
-            .withClusterFilter(node -> node.hasRole(TEST_NODE_ROLE))
+            .withRetryPolicy(retry ->
+                retry.withFixedDelay(TEST_BACKOFF_DELAY)
+            )
+            .withClusterFilter(node ->
+                node.hasRole(TEST_NODE_ROLE)
+            )
             .withLogCategory(getClass().getName());
     }
 

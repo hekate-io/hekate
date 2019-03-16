@@ -6,8 +6,8 @@ import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
-import io.hekate.messaging.retry.RetryErrorPolicy;
-import io.hekate.messaging.retry.RetryResponsePolicy;
+import io.hekate.messaging.retry.RetryErrorPredicate;
+import io.hekate.messaging.retry.RetryResponsePredicate;
 import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
 
@@ -21,8 +21,8 @@ class AggregateOperation<T> extends RequestOperation<T> {
         Object affinityKey,
         long timeout,
         int maxAttempts,
-        RetryErrorPolicy retryErr,
-        RetryResponsePolicy<T> retryRsp,
+        RetryErrorPredicate retryErr,
+        RetryResponsePredicate<T> retryRsp,
         RetryCondition retryCondition,
         RetryBackoffPolicy retryBackoff,
         RetryCallback retryCallback,

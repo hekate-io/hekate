@@ -10,8 +10,8 @@ import io.hekate.messaging.operation.AggregateRetryPolicy;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
-import io.hekate.messaging.retry.RetryErrorPolicy;
-import io.hekate.messaging.retry.RetryResponsePolicy;
+import io.hekate.messaging.retry.RetryErrorPredicate;
+import io.hekate.messaging.retry.RetryResponsePredicate;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -20,9 +20,9 @@ import static io.hekate.messaging.internal.BroadcastOperationBuilder.nodesForBro
 class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements Aggregate<T>, AggregateRetryPolicy<T> {
     private Object affinity;
 
-    private RetryErrorPolicy retryErr;
+    private RetryErrorPredicate retryErr;
 
-    private RetryResponsePolicy<T> retryResp;
+    private RetryResponsePredicate<T> retryResp;
 
     private RetryCondition retryCondition;
 
@@ -37,7 +37,6 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
     public AggregateOperationBuilder(T message, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts) {
         super(message, gateway, opts);
 
-        this.retryBackoff = gateway.backoff();
         this.timeout = gateway.messagingTimeout();
     }
 
@@ -60,7 +59,7 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
         ArgAssert.notNull(retry, "Retry policy");
 
         // Make sure that by default we retry all errors.
-        retryErr = RetryErrorPolicy.alwaysRetry();
+        retryErr = RetryErrorPredicate.acceptAll();
 
         retry.configure(this);
 
@@ -102,14 +101,14 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
     }
 
     @Override
-    public AggregateRetryPolicy<T> whileError(RetryErrorPolicy policy) {
+    public AggregateRetryPolicy<T> whileError(RetryErrorPredicate policy) {
         this.retryErr = policy;
 
         return this;
     }
 
     @Override
-    public AggregateRetryPolicy<T> whileResponse(RetryResponsePolicy<T> policy) {
+    public AggregateRetryPolicy<T> whileResponse(RetryResponsePredicate<T> policy) {
         this.retryResp = policy;
 
         return this;
@@ -134,8 +133,8 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
         Object affinity,
         long timeout,
         int maxAttempts,
-        RetryErrorPolicy retryErr,
-        RetryResponsePolicy<T> retryRsp,
+        RetryErrorPredicate retryErr,
+        RetryResponsePredicate<T> retryRsp,
         RetryCondition retryCondition,
         RetryBackoffPolicy retryBackoff,
         RetryCallback retryCallback,

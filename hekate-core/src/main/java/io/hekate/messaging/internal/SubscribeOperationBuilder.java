@@ -10,8 +10,8 @@ import io.hekate.messaging.operation.SubscribeFuture;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
-import io.hekate.messaging.retry.RetryErrorPolicy;
-import io.hekate.messaging.retry.RetryResponsePolicy;
+import io.hekate.messaging.retry.RetryErrorPredicate;
+import io.hekate.messaging.retry.RetryResponsePredicate;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,9 +20,9 @@ import java.util.concurrent.TimeUnit;
 class SubscribeOperationBuilder<T> extends MessageOperationBuilder<T> implements Subscribe<T>, RequestRetryPolicy<T> {
     private Object affinity;
 
-    private RetryErrorPolicy retryErr;
+    private RetryErrorPredicate retryErr;
 
-    private RetryResponsePolicy<T> retryResp;
+    private RetryResponsePredicate<T> retryResp;
 
     private RetryCondition retryCondition;
 
@@ -39,7 +39,6 @@ class SubscribeOperationBuilder<T> extends MessageOperationBuilder<T> implements
     public SubscribeOperationBuilder(T message, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts) {
         super(message, gateway, opts);
 
-        this.retryBackoff = gateway.backoff();
         this.timeout = gateway.messagingTimeout();
     }
 
@@ -62,7 +61,7 @@ class SubscribeOperationBuilder<T> extends MessageOperationBuilder<T> implements
         ArgAssert.notNull(retry, "Retry policy");
 
         // Make sure that by default we retry all errors.
-        retryErr = RetryErrorPolicy.alwaysRetry();
+        retryErr = RetryErrorPredicate.acceptAll();
 
         retry.configure(this);
 
@@ -117,7 +116,7 @@ class SubscribeOperationBuilder<T> extends MessageOperationBuilder<T> implements
     }
 
     @Override
-    public RequestRetryPolicy<T> whileResponse(RetryResponsePolicy<T> policy) {
+    public RequestRetryPolicy<T> whileResponse(RetryResponsePredicate<T> policy) {
         this.retryResp = policy;
 
         return this;
@@ -131,7 +130,7 @@ class SubscribeOperationBuilder<T> extends MessageOperationBuilder<T> implements
     }
 
     @Override
-    public RequestRetryPolicy<T> whileError(RetryErrorPolicy policy) {
+    public RequestRetryPolicy<T> whileError(RetryErrorPredicate policy) {
         this.retryErr = policy;
 
         return this;

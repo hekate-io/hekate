@@ -17,12 +17,12 @@
 package io.hekate.messaging.operation;
 
 import io.hekate.core.HekateException;
-import io.hekate.messaging.retry.RetryResponsePolicy;
+import io.hekate.messaging.retry.RetryResponsePredicate;
 
 /**
- * Signals that the result of a request operation was rejected by a {@link RetryResponsePolicy}.
+ * Signals that the result of a request operation was rejected by a {@link RetryResponsePredicate}.
  *
- * @see RetryResponsePolicy#shouldRetry(Response)
+ * @see RetryResponsePredicate#shouldRetry(Response)
  */
 public class RejectedResponseException extends HekateException {
     private static final long serialVersionUID = 1;

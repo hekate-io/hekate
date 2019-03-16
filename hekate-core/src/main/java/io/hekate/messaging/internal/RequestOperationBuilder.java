@@ -8,17 +8,17 @@ import io.hekate.messaging.operation.RequestRetryPolicy;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
-import io.hekate.messaging.retry.RetryErrorPolicy;
-import io.hekate.messaging.retry.RetryResponsePolicy;
+import io.hekate.messaging.retry.RetryErrorPredicate;
+import io.hekate.messaging.retry.RetryResponsePredicate;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
 import java.util.concurrent.TimeUnit;
 
 class RequestOperationBuilder<T> extends MessageOperationBuilder<T> implements Request<T>, RequestRetryPolicy<T> {
-    private RetryResponsePolicy<T> retryRsp;
+    private RetryResponsePredicate<T> retryRsp;
 
     private Object affinity;
 
-    private RetryErrorPolicy retryErr;
+    private RetryErrorPredicate retryErr;
 
     private RetryCondition retryCondition;
 
@@ -35,7 +35,6 @@ class RequestOperationBuilder<T> extends MessageOperationBuilder<T> implements R
     public RequestOperationBuilder(T message, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts) {
         super(message, gateway, opts);
 
-        this.retryBackoff = gateway.backoff();
         this.timeout = gateway.messagingTimeout();
     }
 
@@ -58,7 +57,7 @@ class RequestOperationBuilder<T> extends MessageOperationBuilder<T> implements R
         ArgAssert.notNull(retry, "Retry policy");
 
         // Make sure that by default we retry all errors.
-        retryErr = RetryErrorPolicy.alwaysRetry();
+        retryErr = RetryErrorPredicate.acceptAll();
 
         retry.configure(this);
 
@@ -88,7 +87,7 @@ class RequestOperationBuilder<T> extends MessageOperationBuilder<T> implements R
     }
 
     @Override
-    public RequestRetryPolicy<T> whileResponse(RetryResponsePolicy<T> policy) {
+    public RequestRetryPolicy<T> whileResponse(RetryResponsePredicate<T> policy) {
         this.retryRsp = policy;
 
         return this;
@@ -111,7 +110,7 @@ class RequestOperationBuilder<T> extends MessageOperationBuilder<T> implements R
     }
 
     @Override
-    public RequestRetryPolicy<T> whileError(RetryErrorPolicy policy) {
+    public RequestRetryPolicy<T> whileError(RetryErrorPredicate policy) {
         this.retryErr = policy;
 
         return this;

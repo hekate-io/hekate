@@ -1,7 +1,5 @@
 package io.hekate.messaging.retry;
 
-import io.hekate.messaging.MessagingChannelConfig;
-
 /**
  * Base interface for retry policies.
  *
@@ -10,10 +8,6 @@ import io.hekate.messaging.MessagingChannelConfig;
 public interface RetryPolicy<P extends RetryPolicy<P>> {
     /**
      * Backoff policy.
-     *
-     * <p>
-     * This method overrides the channel's default backoff policy (see {@link MessagingChannelConfig#setBackoffPolicy(RetryBackoffPolicy)}).
-     * </p>
      *
      * @param backoff Backoff policy.
      *
@@ -31,17 +25,17 @@ public interface RetryPolicy<P extends RetryPolicy<P>> {
     P whileTrue(RetryCondition condition);
 
     /**
-     * Registers a predicate to control if the operation should to be repeated upon the error.
+     * Registers a predicate to control if the operation should be retried upon an error.
      *
      * <p>
-     * If such a predicate is not registered, the operation will be repeated for any error.
+     * If such a predicate is not registered, the operation will be retried for any error.
      * </p>
      *
      * @param predicate Predicate.
      *
      * @return This instance.
      */
-    P whileError(RetryErrorPolicy predicate);
+    P whileError(RetryErrorPredicate predicate);
 
     /**
      * Registers a callback to be notified when this policy decides to retry a failed operation.
@@ -60,6 +54,29 @@ public interface RetryPolicy<P extends RetryPolicy<P>> {
      * @return This instance.
      */
     P maxAttempts(int maxAttempts);
+
+    /**
+     * Use {@link FixedBackoffPolicy} with the specified delay (in milliseconds).
+     *
+     * @param delay Delay in milliseconds.
+     *
+     * @return This instance.
+     */
+    default P withFixedDelay(long delay) {
+        return withBackoff(new FixedBackoffPolicy(delay));
+    }
+
+    /**
+     * Use {@link ExponentialBackoffPolicy} with the specified base/max delays (in milliseconds).
+     *
+     * @param baseDelay Multiplier  for each attempt (in milliseconds).
+     * @param maxDelay Maximum delay in milliseconds (calculated delay will never exceed this value).
+     *
+     * @return This instance.
+     */
+    default P withExponentialDelay(long baseDelay, long maxDelay) {
+        return withBackoff(new ExponentialBackoffPolicy(baseDelay, maxDelay));
+    }
 
     /**
      * Retry with unlimited number of attempts.

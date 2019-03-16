@@ -7,8 +7,8 @@ import io.hekate.messaging.operation.SubscribeFuture;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
-import io.hekate.messaging.retry.RetryErrorPolicy;
-import io.hekate.messaging.retry.RetryResponsePolicy;
+import io.hekate.messaging.retry.RetryErrorPredicate;
+import io.hekate.messaging.retry.RetryResponsePredicate;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
 
 class SubscribeOperation<T> extends UnicastOperation<T> {
@@ -16,7 +16,7 @@ class SubscribeOperation<T> extends UnicastOperation<T> {
 
     private final SubscribeCallback<T> callback;
 
-    private final RetryResponsePolicy<T> retryRsp;
+    private final RetryResponsePredicate<T> retryRsp;
 
     private volatile boolean active;
 
@@ -25,8 +25,8 @@ class SubscribeOperation<T> extends UnicastOperation<T> {
         Object affinityKey,
         long timeout,
         int maxAttempts,
-        RetryErrorPolicy retryErr,
-        RetryResponsePolicy<T> retryRsp,
+        RetryErrorPredicate retryErr,
+        RetryResponsePredicate<T> retryRsp,
         RetryCondition retryCondition,
         RetryBackoffPolicy retryBackoff,
         RetryCallback retryCallback,

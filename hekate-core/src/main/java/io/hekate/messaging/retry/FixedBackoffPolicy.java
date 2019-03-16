@@ -6,8 +6,10 @@ import io.hekate.util.format.ToString;
  * Fixed delay policy.
  */
 public class FixedBackoffPolicy implements RetryBackoffPolicy {
-    /** Default delay (={@value}) in milliseconds. */
+    /** Default delay (={@value}) in milliseconds (see {@link #defaultPolicy()}). */
     public static final long DEFAULT_DELAY = 100;
+
+    private static final FixedBackoffPolicy DEFAULT_POLICY = new FixedBackoffPolicy(DEFAULT_DELAY);
 
     /** Delay. */
     private final long delay;
@@ -26,6 +28,15 @@ public class FixedBackoffPolicy implements RetryBackoffPolicy {
      */
     public FixedBackoffPolicy(long delay) {
         this.delay = delay;
+    }
+
+    /**
+     * Returns the default policy with {@value #DEFAULT_DELAY}ms interval.
+     *
+     * @return Default backoff policy.
+     */
+    public static FixedBackoffPolicy defaultPolicy() {
+        return DEFAULT_POLICY;
     }
 
     @Override

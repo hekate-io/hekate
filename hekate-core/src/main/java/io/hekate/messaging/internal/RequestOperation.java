@@ -6,22 +6,22 @@ import io.hekate.messaging.operation.ResponsePart;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
-import io.hekate.messaging.retry.RetryErrorPolicy;
-import io.hekate.messaging.retry.RetryResponsePolicy;
+import io.hekate.messaging.retry.RetryErrorPredicate;
+import io.hekate.messaging.retry.RetryResponsePredicate;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
 
 class RequestOperation<T> extends UnicastOperation<T> {
     private final RequestFuture<T> future = new RequestFuture<>();
 
-    private final RetryResponsePolicy<T> retryRsp;
+    private final RetryResponsePredicate<T> retryRsp;
 
     public RequestOperation(
         T message,
         Object affinityKey,
         long timeout,
         int maxAttempts,
-        RetryErrorPolicy retryErr,
-        RetryResponsePolicy<T> retryRsp,
+        RetryErrorPredicate retryErr,
+        RetryResponsePredicate<T> retryRsp,
         RetryCondition retryCondition,
         RetryBackoffPolicy retryBackoff,
         RetryCallback retryCallback,

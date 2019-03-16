@@ -18,7 +18,7 @@ package io.hekate.retry;
 
 import io.hekate.HekateTestBase;
 import io.hekate.messaging.retry.FailedAttempt;
-import io.hekate.messaging.retry.RetryErrorPolicy;
+import io.hekate.messaging.retry.RetryErrorPredicate;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
@@ -26,19 +26,19 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-public class RetryErrorPolicyTest extends HekateTestBase {
+public class RetryErrorPredicateTest extends HekateTestBase {
     private final FailedAttempt failure = mock(FailedAttempt.class);
 
     @Test
-    public void testAlwaysFail() throws Exception {
-        assertFalse(RetryErrorPolicy.alwaysFail().shouldRetry(failure));
+    public void testRejectAll() throws Exception {
+        assertFalse(RetryErrorPredicate.rejectAll().shouldRetry(failure));
 
         verifyNoMoreInteractions(failure);
     }
 
     @Test
-    public void testAlwaysRetry() throws Exception {
-        assertTrue(RetryErrorPolicy.alwaysRetry().shouldRetry(failure));
+    public void testAcceptAll() throws Exception {
+        assertTrue(RetryErrorPredicate.acceptAll().shouldRetry(failure));
 
         verifyNoMoreInteractions(failure);
     }

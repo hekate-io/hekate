@@ -14,5 +14,5 @@ public interface RetryResponseSupport<T, P extends RetryResponseSupport<T, P>> {
      *
      * @return This instance.
      */
-    P whileResponse(RetryResponsePolicy<T> predicate);
+    P whileResponse(RetryResponsePredicate<T> predicate);
 }

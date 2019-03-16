@@ -16,21 +16,21 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.messaging.retry.RetryResponsePolicy;
+import io.hekate.messaging.retry.RetryResponsePredicate;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class RetryResponsePolicyTest extends MessagingServiceTestBase {
+public class RetryResponsePredicateTest extends MessagingServiceTestBase {
     private final AtomicInteger failures = new AtomicInteger();
 
     private TestChannel sender;
 
     private TestChannel receiver;
 
-    public RetryResponsePolicyTest(MessagingTestContext ctx) {
+    public RetryResponsePredicateTest(MessagingTestContext ctx) {
         super(ctx);
     }
 
@@ -61,7 +61,7 @@ public class RetryResponsePolicyTest extends MessagingServiceTestBase {
 
         RequestCallbackMock callback = new RequestCallbackMock("test");
 
-        RetryResponsePolicy<String> predicate = rsp -> {
+        RetryResponsePredicate<String> predicate = rsp -> {
             assertEquals(receiver.nodeId(), rsp.endpoint().remoteNodeId());
 
             accepts.incrementAndGet();
@@ -89,7 +89,7 @@ public class RetryResponsePolicyTest extends MessagingServiceTestBase {
 
         RequestCallbackMock callback = new RequestCallbackMock("test");
 
-        RetryResponsePolicy<String> predicate = rsp -> {
+        RetryResponsePredicate<String> predicate = rsp -> {
             assertEquals(receiver.nodeId(), rsp.from().id());
 
             accepts.incrementAndGet();
@@ -117,7 +117,7 @@ public class RetryResponsePolicyTest extends MessagingServiceTestBase {
 
         RequestCallbackMock callback = new RequestCallbackMock("test");
 
-        RetryResponsePolicy<String> predicate = rsp -> {
+        RetryResponsePredicate<String> predicate = rsp -> {
             assertEquals(receiver.nodeId(), rsp.from().id());
 
             return accepts.incrementAndGet() != 3;
@@ -145,7 +145,7 @@ public class RetryResponsePolicyTest extends MessagingServiceTestBase {
 
         RequestCallbackMock callback = new RequestCallbackMock("test");
 
-        RetryResponsePolicy<String> predicate = rsp -> {
+        RetryResponsePredicate<String> predicate = rsp -> {
             assertEquals(receiver.nodeId(), rsp.from().id());
 
             accepts.incrementAndGet();

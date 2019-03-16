@@ -36,8 +36,9 @@ import io.hekate.messaging.operation.RejectedResponseException;
 import io.hekate.messaging.operation.Response;
 import io.hekate.messaging.operation.ResponsePart;
 import io.hekate.messaging.retry.FailedAttempt;
-import io.hekate.messaging.retry.RetryBackoffPolicy;
-import io.hekate.messaging.retry.RetryErrorPolicy;
+import io.hekate.messaging.retry.FixedBackoffPolicy;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
+import io.hekate.messaging.retry.RetryErrorPredicate;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkFuture;
@@ -144,7 +145,7 @@ class MessagingGatewayContext<T> {
     private final long messagingTimeout;
 
     @ToStringIgnore
-    private final RetryBackoffPolicy backoff;
+    private final GenericRetryConfigurer baseRetryPolicy;
 
     @ToStringIgnore
     private final int warnOnRetry;
@@ -171,7 +172,7 @@ class MessagingGatewayContext<T> {
         boolean checkIdle,
         long messagingTimeout,
         int warnOnRetry,
-        RetryBackoffPolicy backoff,
+        GenericRetryConfigurer baseRetryPolicy,
         DefaultMessagingChannel<T> channel
     ) {
         assert name != null : "Name is null.";
@@ -181,7 +182,7 @@ class MessagingGatewayContext<T> {
         assert async != null : "Executor is null.";
         assert metrics != null : "Metrics are null.";
         assert channel != null : "Default channel is null.";
-        assert backoff != null : "Backoff policy is null.";
+        assert baseRetryPolicy != null : "Base retry policy is null.";
 
         this.id = new MessagingChannelId();
         this.name = name;
@@ -197,7 +198,7 @@ class MessagingGatewayContext<T> {
         this.receivePressure = receivePressure;
         this.sendPressure = sendPressure;
         this.messagingTimeout = messagingTimeout;
-        this.backoff = backoff;
+        this.baseRetryPolicy = baseRetryPolicy;
         this.warnOnRetry = warnOnRetry;
         this.checkIdle = checkIdle;
         this.log = log;
@@ -229,8 +230,8 @@ class MessagingGatewayContext<T> {
         return messagingTimeout;
     }
 
-    public RetryBackoffPolicy backoff() {
-        return backoff;
+    public GenericRetryConfigurer baseRetryPolicy() {
+        return baseRetryPolicy;
     }
 
     public MessageReceiver<T> receiver() {
@@ -470,16 +471,16 @@ class MessagingGatewayContext<T> {
                     // Complete the current attempt (successful retry actions will result in a new attempt).
                     completed = true;
 
-                    RetryErrorPolicy policy;
+                    RetryErrorPredicate policy;
 
-                    // Check whether it was a real error or the response was rejected by the logic of the user application.
+                    // Check whether it was a real error or response was rejected by the user application logic.
                     if (err == null) {
                         err = new RejectedResponseException("Response rejected by the application logic", effectiveRsp.payload());
 
                         // Always retry.
-                        policy = RetryErrorPolicy.alwaysRetry();
+                        policy = RetryErrorPredicate.acceptAll();
                     } else {
-                        // Use the operation's policy.
+                        // Use operation's policy.
                         policy = attempt.operation().retryErrorPolicy();
                     }
 
@@ -530,13 +531,13 @@ class MessagingGatewayContext<T> {
         return new MessageOperationAttempt<>(client, topology, operation, prevFailure, callback);
     }
 
-    private void retryAsync(MessageOperationAttempt<T> attempt, RetryErrorPolicy policy, Throwable cause, RetryCallback callback) {
+    private void retryAsync(MessageOperationAttempt<T> attempt, RetryErrorPredicate policy, Throwable cause, RetryCallback callback) {
         attempt.operation().worker().execute(() ->
             retry(attempt, policy, cause, callback)
         );
     }
 
-    private void retry(MessageOperationAttempt<T> attempt, RetryErrorPolicy policy, Throwable cause, RetryCallback callback) {
+    private void retry(MessageOperationAttempt<T> attempt, RetryErrorPredicate policy, Throwable cause, RetryCallback callback) {
         MessageOperation<T> operation = attempt.operation();
 
         // Do nothing if operation is already completed.
@@ -584,8 +585,16 @@ class MessagingGatewayContext<T> {
                                 }
                             };
 
-                            // Calculate the delay before retrying.
-                            long delay = operation.retryBackoff().delayBeforeRetry(failure.attempt());
+                            // Calculate the retry delay.
+                            long delay;
+
+                            if (operation.retryBackoff() == null) {
+                                // Use default policy.
+                                delay = FixedBackoffPolicy.defaultPolicy().delayBeforeRetry(failure.attempt());
+                            } else {
+                                // Use custom policy.
+                                delay = operation.retryBackoff().delayBeforeRetry(failure.attempt());
+                            }
 
                             // Log a warning message (if configured).
                             if (shouldWarnOnRetry(failure)) {

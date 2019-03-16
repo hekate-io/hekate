@@ -8,7 +8,7 @@ import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
 import io.hekate.messaging.retry.RetryCallback;
 import io.hekate.messaging.retry.RetryCondition;
-import io.hekate.messaging.retry.RetryErrorPolicy;
+import io.hekate.messaging.retry.RetryErrorPredicate;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
 import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
@@ -34,7 +34,7 @@ abstract class MessageOperation<T> {
 
     private final int affinity;
 
-    private final RetryErrorPolicy retryErr;
+    private final RetryErrorPredicate retryErr;
 
     private final RetryCondition retryCondition;
 
@@ -64,7 +64,7 @@ abstract class MessageOperation<T> {
         Object affinityKey,
         long timeout,
         int maxAttempts,
-        RetryErrorPolicy retryErr,
+        RetryErrorPredicate retryErr,
         RetryCondition retryCondition,
         RetryBackoffPolicy retryBackoff,
         RetryCallback retryCallback,
@@ -177,7 +177,7 @@ abstract class MessageOperation<T> {
         return message;
     }
 
-    public RetryErrorPolicy retryErrorPolicy() {
+    public RetryErrorPredicate retryErrorPolicy() {
         return retryErr;
     }
 

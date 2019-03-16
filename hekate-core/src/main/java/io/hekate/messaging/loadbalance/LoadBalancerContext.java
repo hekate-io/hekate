@@ -20,7 +20,7 @@ import io.hekate.cluster.ClusterFilter;
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.messaging.retry.FailedAttempt;
-import io.hekate.messaging.retry.RetryErrorPolicy;
+import io.hekate.messaging.retry.RetryErrorPredicate;
 import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
 
@@ -72,7 +72,7 @@ public interface LoadBalancerContext extends ClusterTopology {
      *
      * @return Information about a retry attempt.
      *
-     * @see RetryErrorPolicy
+     * @see RetryErrorPredicate
      */
     Optional<FailedAttempt> failure();
 
