@@ -123,11 +123,6 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
           serialization.
         - [hekate-codec-fst](hekate-codec-fst/README.md) - Integration with [FST](https://github.com/RuedigerMoeller/fast-serialization) for 
           data serialization.
-    - **Metrics**
-        - [hekate-metrics-influxdb](hekate-metrics-influxdb/) - Metrics publishing to the [InfluxDB](https://www.influxdata.com) 
-          (time-series data storage).
-        - [hekate-metrics-statsd](hekate-metrics-statsd/) - Metrics publishing to the [StatsD](https://github.com/etsy/statsd) 
-          (statistics aggregation daemon). 
 
 ## How to build
 
