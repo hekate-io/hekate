@@ -68,7 +68,7 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
       to Simplify Configuration
 
 - **Metrics**
-    - Internal metrics recording and publishing via [Micrometer.io](https://micrometer.io/): 
+    - Internal metrics recording and publishing via [Micrometer.io](https://micrometer.io/) 
 
 - **Raft-based Replicated State Machines (_planned_)**
 
