@@ -61,7 +61,11 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
 
     @Override
     public Send<T> newSend(T message) {
-        return new SendOperationBuilder<>(message, context(), this);
+        SendOperationBuilder<T> builder = new SendOperationBuilder<>(message, context(), this);
+
+        gateway.baseRetryPolicy().configure(builder);
+
+        return builder;
     }
 
     @Override
