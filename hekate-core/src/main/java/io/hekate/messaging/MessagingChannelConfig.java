@@ -665,8 +665,8 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
      * Sets the amount of retry attempts to skip before logging a warn message.
      *
      * <ul>
-     * <li>0 - log every every attempt</li>
-     * <li>positive N - log every every N'th attempt</li>
+     * <li>0 - log every attempt</li>
+     * <li>positive N - log every N'th attempt</li>
      * <li>negative - do not log warning on retries</li>
      * </ul>
      *
