@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.util.IdentityHashMap;
 import java.util.Optional;
 import java.util.Set;
@@ -760,28 +761,28 @@ public class NetworkClientTest extends NetworkTestBase {
 
     @Test
     public void testDisconnectNoWait() throws Exception {
-        NetworkServer server = createServer();
+        InetSocketAddress address = newServerAddress();
 
-        server.start(newServerAddress()).get();
+        try (ServerSocket ignore = new ServerSocket(address.getPort())) {
+            for (int i = 20; i >= 0; i--) {
+                NetworkClient<String> client = createClient();
 
-        for (int i = 20; i >= 0; i--) {
-            NetworkClient<String> client = createClient();
+                NetworkClientCallbackMock<String> callback = new NetworkClientCallbackMock<>();
 
-            NetworkClientCallbackMock<String> callback = new NetworkClientCallbackMock<>();
+                NetworkFuture<String> connect = client.connect(address, callback);
 
-            NetworkFuture<String> connect = client.connect(server.address(), callback);
+                NetworkFuture<String> disconnect = client.disconnect();
 
-            NetworkFuture<String> disconnect = client.disconnect();
+                get(disconnect);
 
-            get(disconnect);
+                assertSame(NetworkClient.State.DISCONNECTED, client.state());
 
-            assertSame(NetworkClient.State.DISCONNECTED, client.state());
+                expectCause(ConnectException.class, () ->
+                    get(connect)
+                );
 
-            expectCause(ConnectException.class, () ->
-                get(connect)
-            );
-
-            callback.assertErrors(1);
+                callback.assertErrors(1);
+            }
         }
     }
 
