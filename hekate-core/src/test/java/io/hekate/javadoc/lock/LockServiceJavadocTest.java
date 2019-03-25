@@ -45,11 +45,10 @@ public class LockServiceJavadocTest extends HekateNodeTestBase {
         Hekate hekate = new HekateBootstrap()
             .withService(factory)
             .join();
-        // End:configure
 
-        // Start:access
+        // Access the service.
         LockService locks = hekate.locks();
-        // End:access
+        // End:configure
 
         assertNotNull(locks);
 

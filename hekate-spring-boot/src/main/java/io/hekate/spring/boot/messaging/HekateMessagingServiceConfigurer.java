@@ -57,7 +57,7 @@ import org.springframework.stereotype.Component;
  * context.
  * </p>
  *
- * <h2>Channels injections</h2>
+ * <h2>Channels Injection</h2>
  * <p>
  * This auto-configuration provides support for injecting beans of {@link MessagingChannel} type into other beans with the help of {@link
  * InjectChannel} annotation. Please see its documentation for more details.

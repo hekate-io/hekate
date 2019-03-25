@@ -33,7 +33,7 @@ import java.net.URL;
  * target="_blank">Spring Framework</a> then it will utilize the framework's resource loading capabilities.
  * </p>
  *
- * <h2>Accessing service</h2>
+ * <h2>Accessing the Service</h2>
  * <p>
  * {@link ResourceService} can be accessed via {@link Hekate#get(Class)} method as in the example below:
  * ${source: core/resource/ResourceServiceJavadocTest.java#access}

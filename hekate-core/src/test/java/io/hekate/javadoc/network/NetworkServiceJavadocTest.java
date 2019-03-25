@@ -84,9 +84,12 @@ public class NetworkServiceJavadocTest extends HekateNodeTestBase {
         Hekate hekate = new HekateBootstrap()
             .withService(factory)
             .join();
+
+        // Access the service.
+        NetworkService network = hekate.network();
         // End:config
 
-        getServiceExample(hekate);
+        assertNotNull(network);
 
         // Start:ping
         hekate.network().ping(new InetSocketAddress("127.0.0.1", 10012), (address, result) -> {
@@ -170,13 +173,5 @@ public class NetworkServiceJavadocTest extends HekateNodeTestBase {
         // End:client_send_example
 
         hekate.leave();
-    }
-
-    private void getServiceExample(Hekate hekate) {
-        // Start:get_service
-        NetworkService network = hekate.network();
-        // End:get_service
-
-        assertNotNull(network);
     }
 }

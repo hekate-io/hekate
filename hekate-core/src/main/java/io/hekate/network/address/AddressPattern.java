@@ -46,7 +46,8 @@ import org.slf4j.LoggerFactory;
  *
  * <ul>
  * <li><b>any</b> - any non-loopback address</li>
- * <li><b>any-ip4</b> - any IPv6 non-loopback address</li>
+ * <li><b>any-ip4</b> - any IPv4 non-loopback address</li>
+ * <li><b>any-ip6</b> - any IPv6 non-loopback address</li>
  *
  * <li><b>ip~<i>regex</i></b> - any IP address that matches the specified regular expression</li>
  * <li><b>ip4~<i>regex</i></b> - any IPv4 address that matches the specified regular expression</li>

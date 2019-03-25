@@ -60,11 +60,10 @@ public class RpcServiceJavadocTest extends HekateNodeTestBase {
         Hekate hekate = new HekateBootstrap()
             .withService(factory)
             .join();
-        // End:configure
 
-        // Start:access
+        // Access the service.
         RpcService rpc = hekate.rpc();
-        // End:access
+        // End:configure
 
         try {
             assertNotNull(rpc);

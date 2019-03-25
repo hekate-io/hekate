@@ -31,8 +31,7 @@ import org.springframework.context.annotation.Configuration;
  *
  * <h2>Configuration</h2>
  * <p>
- * This auto-configuration can be enabled by setting the {@code 'hekate.codec'} property to {@code 'jdk'} in the application's
- * configuration.
+ * This auto-configuration can be enabled by setting the {@code 'hekate.codec'} property to {@code 'jdk'} in the application configuration.
  * </p>
  *
  * <p>

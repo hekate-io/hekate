@@ -52,9 +52,22 @@ import java.util.List;
  * cluster service configuration options.
  * </p>
  *
- * <h2>Service configuration</h2>
+ * <ul>
+ * <li><a href="#service_configuration">Service Configuration</a></li>
+ * <li><a href="#cluster_topology">Cluster Topology</a></li>
+ * <li><a href="#cluster_event_listeners">Cluster Event Listener</a></li>
+ * <li><a href="#seed_nodes_discovery">Seed Nodes Discovery</a></li>
+ * <li><a href="#failure_detection">Failure Detection</a></li>
+ * <li><a href="#split_brain_detection">Split-brain Detection</a></li>
+ * <li><a href="#cluster_acceptors">Cluster Acceptors</a></li>
+ * <li><a href="#gossip_protocol">Gossip Protocol</a></li>
+ * </ul>
+ *
+ * <a name="service_configuration"></a>
+ * <h2>Service Configuration</h2>
  * <p>
- * {@link ClusterService} can be configured and registered within the {@link HekateBootstrap} via the {@link ClusterServiceFactory} class as
+ * {@link ClusterService} can be configured and registered within the {@link HekateBootstrap} via the {@link ClusterServiceFactory} class
+ * as
  * in the example below:
  * </p>
  *
@@ -80,24 +93,11 @@ import java.util.List;
  * </div>
  *
  * <p>
- * Key configuration options that are available in {@link ClusterServiceFactory} are:
+ * For more details about the configuration options please see the documentation of {@link ClusterServiceFactory} class.
  * </p>
  *
- * <ul>
- * <li><a href="#seed_nodes">Seed node provider</a></li>
- * <li><a href="#failure_detection">Failure detector</a></li>
- * <li><a href="#gossip_protocol">Gossip protocol options</a></li>
- * <li><a href="#split_brain_detector">Split-brain detector</a></li>
- * <li><a href="#acceptors">Cluster acceptors</a></li>
- * </ul>
- *
- * <h2>Accessing service</h2>
- * <p>
- * Instances of {@link ClusterService} can be obtained via {@link Hekate#cluster()} method as in the example below:
- * ${source: cluster/ClusterServiceJavadocTest.java#get_service}
- * </p>
- *
- * <h2>Cluster topology</h2>
+ * <a name="cluster_topology"></a>
+ * <h2>Cluster Topology</h2>
  * <p>
  * Cluster membership information (aka cluster topology) is represented by the {@link ClusterTopology} interface. Instances of this
  * interface can be obtained via {@link #topology()} method. This interface provides various methods for getting information about the
@@ -132,7 +132,8 @@ import java.util.List;
  * counter).
  * </p>
  *
- * <h2>Cluster events</h2>
+ * <a name="cluster_event_listeners"></a>
+ * <h2>Cluster Event Listener</h2>
  * <p>
  * Listening for cluster events can be implemented by registering an instance of {@link ClusterEventListener} interface. This can be done
  * at {@link ClusterServiceFactory#withClusterListener(ClusterEventListener) configuration time} or at {@link
@@ -155,8 +156,8 @@ import java.util.List;
  *
  * <p>For more details of cluster events processing please see the documentation of {@link ClusterEventListener} interface.</p>
  *
- * <a name="seed_nodes"></a>
- * <h2>Seed nodes discovery</h2>
+ * <a name="seed_nodes_discovery"></a>
+ * <h2>Seed Nodes Discovery</h2>
  * <p>
  * Whenever local node starts joining the cluster it tries to discover nodes that are already running. If none of such nodes could be
  * found then local node assumes that it is the first node in the cluster and switches to the {@link State#UP UP} state. If some
@@ -184,7 +185,7 @@ import java.util.List;
  * <p>Please see the documentation of {@link SeedNodeProvider} for more details on providing custom implementations of this interface.</p>
  *
  * <a name="failure_detection"></a>
- * <h2>Failure detection</h2>
+ * <h2>Failure Detection</h2>
  * <p>
  * Cluster service relies on {@link FailureDetector} interface for node failure detection. Implementations of this interface are typically
  * using a heartbeat-based approach for failure detection, however other algorithms can also be implemented.
@@ -204,8 +205,55 @@ import java.util.List;
  * Please see the documentation of {@link FailureDetector} interface for more details on implementing  custom failure detection logic.
  * </p>
  *
+ * <a name="split_brain_detection"></a>
+ * <h2>Split-brain Detection</h2>
+ * <p>
+ * Cluster service can be configured to automatically detect and perform appropriate actions in case if
+ * <a href="https://en.wikipedia.org/wiki/Split-brain_(computing)"target="_blank">split-brain</a> problem arises. Detection is controlled
+ * by an implementation of {@link SplitBrainDetector} interface that can be registered within the cluster service via {@link
+ * ClusterServiceFactory#setSplitBrainDetector(SplitBrainDetector)} method.
+ * </p>
+ *
+ * <p>
+ * The following implementations of this interface are available out of the box:
+ * </p>
+ * <ul>
+ * <li>{@link AddressReachabilityDetector} - checks connectivity with a pre-configured socket address</li>
+ * <li>{@link HostReachabilityDetector} - detector that checks reachability of a pre-configured host address</li>
+ * <li>{@link JdbcConnectivityDetector} - detector that checks reachability of a JDBC database</li>
+ * </ul>
+ *
+ * <p>
+ * Multiple detectors can be combined with the help of {@link SplitBrainDetectorGroup} class.
+ * </p>
+ *
+ * <p>
+ * Actions that should be performed by the cluster service in case of split-brain problem is controlled by the {@link SplitBrainAction}
+ * enumeration that can be configured via {@link ClusterServiceFactory#setSplitBrainAction(SplitBrainAction)} method. Please see the
+ * documentation of {@link SplitBrainAction} for details about the available options.
+ * </p>
+ *
+ * <a name="cluster_acceptors"></a>
+ * <h2>Cluster Acceptors</h2>
+ * <p>
+ * Whenever a new node tries joins the cluster it can be verified based on some custom application-specific rules (f.e. authorization and
+ * permissions checking) and rejected in case of a verification failure.
+ * </p>
+ *
+ * <p>
+ * Such verification can be implemented by {@link ClusterServiceFactory#setAcceptors(List) configuring} an implementation of
+ * {@link ClusterAcceptor} interface within the cluster service. This interface is used by an existing cluster node when a join
+ * request is received from a new node that tries to join the cluster. Implementation of this interface can use the joining node
+ * information in order to decide whether the new node should be accepted or it should be rejected. If node gets rejected then it will fail
+ * with {@link ClusterJoinRejectedException}.
+ * </p>
+ *
+ * <p>
+ * Please see the documentation of {@link ClusterAcceptor} interface for mode details.
+ * </p>
+ *
  * <a name="gossip_protocol"></a>
- * <h2>Gossip protocol</h2>
+ * <h2>Gossip Protocol</h2>
  * <p>
  * Cluster service uses a push-pull <a href="https://en.wikipedia.org/wiki/Gossip_protocol" target="_blank">gossip protocol</a> for
  * membership state management. At high level this protocol can be described as follows:
@@ -239,52 +287,7 @@ import java.util.List;
  * protocol can be speeded up by using the reactive approach during messages exchange</li>
  * </ul>
  *
- * <a name="split_brain_detector"></a>
- * <h2>Split-brain detection</h2>
- * <p>
- * Cluster service can be configured to automatically detect and perform appropriate actions in case if
- * <a href="https://en.wikipedia.org/wiki/Split-brain_(computing)"target="_blank">split-brain</a> problem arises. Detection is controlled
- * by an implementation of {@link SplitBrainDetector} interface that can be registered within the cluster service via {@link
- * ClusterServiceFactory#setSplitBrainDetector(SplitBrainDetector)} method.
- * </p>
- *
- * <p>
- * The following implementations of this interface are available out of the box:
- * </p>
- * <ul>
- * <li>{@link AddressReachabilityDetector} - checks connectivity with a pre-configured socket address</li>
- * <li>{@link HostReachabilityDetector} - detector that checks reachability of a pre-configured host address</li>
- * <li>{@link JdbcConnectivityDetector} - detector that checks reachability of a JDBC database</li>
- * </ul>
- *
- * <p>
- * Multiple detectors can be combined with the help of {@link SplitBrainDetectorGroup} class.
- * </p>
- *
- * <p>
- * Actions that should be performed by the cluster service in case of split-brain problem is controlled by the {@link SplitBrainAction}
- * enumeration that can be configured via {@link ClusterServiceFactory#setSplitBrainAction(SplitBrainAction)} method. Please see the
- * documentation of {@link SplitBrainAction} for details about the available options.
- * </p>
- *
- * <a name="acceptors"></a>
- * <h2>Cluster acceptors</h2>
- * <p>
- * Whenever a new node tries joins the cluster it can be verified based on some custom application-specific rules (f.e. authorization and
- * permissions checking) and rejected in case of a verification failure.
- * </p>
- *
- * <p>
- * Such verification can be implemented by {@link ClusterServiceFactory#setAcceptors(List) configuring} an implementation of
- * {@link ClusterAcceptor} interface within the cluster service. This interface is used by an existing cluster node when a join
- * request is received from a new node that tries to join the cluster. Implementation of this interface can use the joining node
- * information in order to decide whether the new node should be accepted or it should be rejected. If node gets rejected then it will fail
- * with {@link ClusterJoinRejectedException}.
- * </p>
- *
- * <p>
- * Please see the documentation of {@link ClusterAcceptor} interface for mode details.
- * </p>
+ * @see ClusterServiceFactory
  */
 @DefaultServiceFactory(ClusterServiceFactory.class)
 public interface ClusterService extends Service, ClusterView {

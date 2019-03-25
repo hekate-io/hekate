@@ -4,6 +4,7 @@ import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingFutureException;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
@@ -11,16 +12,41 @@ import java.util.concurrent.TimeUnit;
  * <b>Aggregate operation.</b>
  *
  * <p>
- * This interface represents a bidirectional aggregate operation. Typical use of this interface is:
+ * This interface represents a request/response-style broadcast operation of a {@link MessagingChannel}.
+ * This operation submits the same request message to multiple remote nodes and aggregates their responses.
+ * </p>
+ *
+ * <h2>Usage Example</h2>
+ * <p>
+ * Typical use of this interface is:
  * </p>
  * <ol>
  * <li>Obtain an instance of this interface via the {@link MessagingChannel#newAggregate(Object)} method call</li>
- * <li>Set options (f.e. {@link #withAffinity(Object) affinity key})</li>
+ * <li>Set options (if needed):
+ * <ul>
+ * <li>{@link #withTimeout(long, TimeUnit) Request Timeout}</li>
+ * <li>{@link #withAffinity(Object) Affinity Key}</li>
+ * <li>{@link #withRetry(AggregateRetryConfigurer) Retry Policy}</li>
+ * </ul>
+ * </li>
  * <li>Execute this operation via the {@link #submit()} method</li>
  * <li>Process results (synchronously or asynchronously)</li>
  * </ol>
- * <h3>Example:</h3>
+ *
+ * <p>
  * ${source: messaging/MessagingServiceJavadocTest.java#aggregate_operation}
+ * </p>
+ *
+ * <h2>Shortcut Methods</h2>
+ * <p>
+ * {@link MessagingChannel} interface provides a set of synchronous and asynchronous shortcut methods for common use cases:
+ * </p>
+ * <ul>
+ * <li>{@link MessagingChannel#aggregate(Object)}</li>
+ * <li>{@link MessagingChannel#aggregate(Object, Object)}</li>
+ * <li>{@link MessagingChannel#aggregateAsync(Object)}</li>
+ * <li>{@link MessagingChannel#aggregateAsync(Object, Object)}</li>
+ * </ul>
  *
  * @param <T> Message type.
  */
@@ -30,7 +56,7 @@ public interface Aggregate<T> {
      *
      * <p>
      * Specifying an affinity key ensures that all operation with the same key will always be transmitted over the same network
-     * connection and will always be processed by the same thread.
+     * connection and will always be processed by the same thread (if the cluster topology doesn't change).
      * </p>
      *
      * @param affinity Affinity key.
@@ -43,7 +69,7 @@ public interface Aggregate<T> {
      * Overrides the channel's default timeout value for this operation.
      *
      * <p>
-     * If this operation can not complete at the specified timeout then this operation will end up the the {@link MessageTimeoutException}.
+     * If this operation can not complete at the specified timeout then this operation will end up in a {@link MessageTimeoutException}.
      * </p>
      *
      * <p>
@@ -65,6 +91,8 @@ public interface Aggregate<T> {
      * @param retry Retry policy.
      *
      * @return This instance.
+     *
+     * @see MessagingChannelConfig#setRetryPolicy(GenericRetryConfigurer)
      */
     Aggregate<T> withRetry(AggregateRetryConfigurer<T> retry);
 

@@ -31,6 +31,7 @@ import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.util.format.ToString;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -540,6 +541,10 @@ public class HekateBootstrap {
 
     /**
      * Sets the metrics registry.
+     *
+     * <p>
+     * If not specified then {@link SimpleMeterRegistry} will be used by default.
+     * </p>
      *
      * @param metrics Metrics registry.
      */

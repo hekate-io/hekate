@@ -40,11 +40,11 @@ import org.springframework.context.event.ContextRefreshedEvent;
  * <h2>Overview</h2>
  * <p>
  * All configurable components and service factories of {@link Hekate} can be used as plain Spring &lt;bean&gt;s and can be configured via
- * &lt;property&gt; setters. This class provides an extension of {@link HekateBootstrap} class that makes it possible to easily
- * configure {@link Hekate} nodes and bound them to the lifecycle of Spring context.
+ * &lt;property&gt; setters. This class provides the extension of the {@link HekateBootstrap} class that makes it possible to easily
+ * configure a {@link Hekate} node and bound it to the lifecycle of the Spring application context.
  * </p>
  *
- * <h2>Module dependency</h2>
+ * <h2>Module Dependency</h2>
  * <p>
  * Spring Framework integration is provided by the 'hekate-spring' module and can be imported into the project dependency management system
  * as in the example below:
