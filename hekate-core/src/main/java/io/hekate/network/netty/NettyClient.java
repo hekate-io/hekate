@@ -200,6 +200,7 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
                 callback
             );
 
+            // Set the current active context.
             this.ctx.set(newCtx);
 
             // Cleanup on disconnect.
@@ -208,7 +209,8 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
                 ctx.compareAndSet(newCtx, null)
             );
 
-            return newCtx.connectFuture();
+            // Connect.
+            return newCtx.connect();
         }
     }
 

@@ -44,7 +44,7 @@ import static io.hekate.network.NetworkClient.State.DISCONNECTING;
 class NettyClientContext<T> {
     private final String id;
 
-    private final AtomicReference<State> state = new AtomicReference<>(CONNECTING);
+    private final AtomicReference<State> state = new AtomicReference<>(DISCONNECTED);
 
     @ToStringIgnore
     private final InetSocketAddress remoteAddress;
@@ -262,20 +262,24 @@ class NettyClientContext<T> {
             log.debug("Connecting [to={}, transport={}, ssl={}]", id, epoll ? "EPOLL" : "NIO", ssl != null);
         }
 
-        // Connect channel.
-        ChannelFuture connect = boot.connect(remoteAddress);
+        // Initialize channel.
+        channel = boot.register().channel();
+    }
 
-        channel = connect.channel();
-
-        connect.addListener(future -> {
-            if (!future.isSuccess()) {
-                if (future.cause() instanceof ClosedChannelException) {
-                    onDisconnect(Optional.of(new ConnectException("Got disconnected on handshake [from=" + id + ']')));
-                } else {
-                    onDisconnect(Optional.of(future.cause()));
+    public NetworkFuture<T> connect() {
+        if (state.compareAndSet(DISCONNECTED, CONNECTING)) {
+            channel.connect(remoteAddress).addListener(future -> {
+                if (!future.isSuccess()) {
+                    if (future.cause() instanceof ClosedChannelException) {
+                        onDisconnect(Optional.of(new ConnectException("Got disconnected on handshake [from=" + id + ']')));
+                    } else {
+                        onDisconnect(Optional.of(future.cause()));
+                    }
                 }
-            }
-        });
+            });
+        }
+
+        return connFuture;
     }
 
     public NetworkFuture<T> disconnect() {
@@ -284,10 +288,6 @@ class NettyClientContext<T> {
         }
 
         return discFuture;
-    }
-
-    public NetworkFuture<T> connectFuture() {
-        return connFuture;
     }
 
     public NetworkFuture<T> disconnectFuture() {
