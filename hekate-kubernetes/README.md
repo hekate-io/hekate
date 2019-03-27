@@ -7,6 +7,6 @@ for [Hekate.io](https://github.com/hekate-io/hekate) library.
  <dependency>
      <groupId>io.hekate</groupId>
      <artifactId>hekate-kubernetes</artifactId>
-     <version>3.0.0</version>
+     <version>3.1.0</version>
  </dependency>
  ```
