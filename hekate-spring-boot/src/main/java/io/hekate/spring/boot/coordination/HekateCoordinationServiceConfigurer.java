@@ -48,7 +48,7 @@ import org.springframework.context.annotation.Lazy;
  * application context.
  * </p>
  *
- * <h2>Configuration properties</h2>
+ * <h2>Configuration Properties</h2>
  * <p>
  * It is possible to configure {@link CoordinationServiceFactory} via application properties prefixed with {@code 'hekate.coordination'}.
  * For example:

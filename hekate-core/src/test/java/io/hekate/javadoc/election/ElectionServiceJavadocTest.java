@@ -78,12 +78,10 @@ public class ElectionServiceJavadocTest extends HekateNodeTestBase {
         Hekate hekate = new HekateBootstrap()
             .withService(factory)
             .join();
-        // End:configure
 
-        // Start:access
-        // Get service.
+        // Access the service.
         ElectionService election = hekate.election();
-        // End:access
+        // End:configure
 
         assertNotNull(election);
 

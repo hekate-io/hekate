@@ -20,22 +20,25 @@ import io.hekate.core.internal.HekateTestNode;
 import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcAggregate;
 import io.hekate.rpc.RpcAggregateException;
-import java.util.Arrays;
+import io.hekate.rpc.RpcRetry;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import org.junit.Test;
 
 import static io.hekate.rpc.RpcAggregate.RemoteErrors.IGNORE;
 import static io.hekate.rpc.RpcAggregate.RemoteErrors.WARN;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -66,13 +69,23 @@ public class RpcAggregateTest extends RpcServiceTestBase {
 
         @RpcAggregate
         Collection<Object> errors(Object arg);
+
+        @RpcRetry
+        @RpcAggregate
+        List<Object> retry(Object arg);
+
+        @RpcAggregate
+        @RpcRetry(errors = AssertionError.class, maxAttempts = "1", delay = "1", maxDelay = "10")
+        List<Object> retryMethod(Object arg);
     }
 
     private final AggregateRpc rpc1 = mock(AggregateRpc.class);
 
     private final AggregateRpc rpc2 = mock(AggregateRpc.class);
 
-    private AggregateRpc client;
+    private AggregateRpc clientRpc;
+
+    private HekateTestNode client;
 
     private HekateTestNode server1;
 
@@ -91,7 +104,9 @@ public class RpcAggregateTest extends RpcServiceTestBase {
         server1 = ctx.servers().get(0);
         server2 = ctx.servers().get(1);
 
-        client = ctx.client().rpc().clientFor(AggregateRpc.class)
+        client = ctx.client();
+
+        clientRpc = client.rpc().clientFor(AggregateRpc.class)
             .withTimeout(AWAIT_TIMEOUT, TimeUnit.SECONDS)
             .build();
     }
@@ -102,7 +117,7 @@ public class RpcAggregateTest extends RpcServiceTestBase {
             when(rpc1.list(i)).thenReturn(asList(i, i, i));
             when(rpc2.list(i)).thenReturn(asList(i, i, i));
 
-            List<Object> result = client.list(i);
+            List<Object> result = clientRpc.list(i);
 
             assertEquals(6, result.size());
             assertTrue(result.stream().allMatch(r -> (Integer)r == i));
@@ -121,7 +136,7 @@ public class RpcAggregateTest extends RpcServiceTestBase {
             when(rpc1.list(i)).thenReturn(asList(i, i, i));
             when(rpc2.list(i)).thenReturn(null);
 
-            List<Object> result = client.list(i);
+            List<Object> result = clientRpc.list(i);
 
             assertEquals(3, result.size());
             assertTrue(result.stream().allMatch(r -> (Integer)r == i));
@@ -140,7 +155,7 @@ public class RpcAggregateTest extends RpcServiceTestBase {
             when(rpc1.set(i)).thenReturn(toSet("a" + i, "b" + i, "c" + i));
             when(rpc2.set(i)).thenReturn(toSet("d" + i, "e" + i, "f" + i));
 
-            Set<Object> result = client.set(i);
+            Set<Object> result = clientRpc.set(i);
 
             assertEquals(result, toSet("a" + i, "b" + i, "c" + i, "d" + i, "e" + i, "f" + i));
 
@@ -158,7 +173,7 @@ public class RpcAggregateTest extends RpcServiceTestBase {
             when(rpc1.set(i)).thenReturn(toSet("a" + i, "b" + i, "c" + i));
             when(rpc2.set(i)).thenReturn(null);
 
-            Set<Object> result = client.set(i);
+            Set<Object> result = clientRpc.set(i);
 
             assertEquals(result, toSet("a" + i, "b" + i, "c" + i));
 
@@ -179,7 +194,7 @@ public class RpcAggregateTest extends RpcServiceTestBase {
             when(rpc1.map(i)).thenReturn(m1);
             when(rpc2.map(i)).thenReturn(m2);
 
-            Map<Object, Object> result = client.map(i);
+            Map<Object, Object> result = clientRpc.map(i);
 
             Map<Object, Object> expected = new HashMap<>();
             expected.putAll(m1);
@@ -203,7 +218,7 @@ public class RpcAggregateTest extends RpcServiceTestBase {
             when(rpc1.map(i)).thenReturn(m1);
             when(rpc2.map(i)).thenReturn(null);
 
-            Map<Object, Object> result = client.map(i);
+            Map<Object, Object> result = clientRpc.map(i);
 
             assertEquals(m1, result);
 
@@ -221,7 +236,7 @@ public class RpcAggregateTest extends RpcServiceTestBase {
             when(rpc1.collection(i)).thenReturn(asList(i, i, i));
             when(rpc2.collection(i)).thenReturn(toSet(i));
 
-            Collection<Object> result = client.collection(i);
+            Collection<Object> result = clientRpc.collection(i);
 
             assertEquals(4, result.size());
             assertTrue(result.stream().allMatch(r -> (Integer)r == i));
@@ -240,7 +255,7 @@ public class RpcAggregateTest extends RpcServiceTestBase {
             when(rpc1.ignoreErrors(i)).thenThrow(TEST_ERROR);
             when(rpc2.ignoreErrors(i)).thenThrow(TEST_ERROR);
 
-            Collection<Object> result = client.ignoreErrors(i);
+            Collection<Object> result = clientRpc.ignoreErrors(i);
 
             assertEquals(0, result.size());
 
@@ -258,7 +273,7 @@ public class RpcAggregateTest extends RpcServiceTestBase {
             when(rpc1.ignoreErrors(i)).thenReturn(asList(i, i, i));
             when(rpc2.ignoreErrors(i)).thenThrow(TEST_ERROR);
 
-            Collection<Object> result = client.ignoreErrors(i);
+            Collection<Object> result = clientRpc.ignoreErrors(i);
 
             assertEquals(3, result.size());
             assertTrue(result.stream().allMatch(r -> (Integer)r == i));
@@ -277,7 +292,7 @@ public class RpcAggregateTest extends RpcServiceTestBase {
             when(rpc1.warnErrors(i)).thenReturn(asList(i, i, i));
             when(rpc2.warnErrors(i)).thenThrow(TEST_ERROR);
 
-            Collection<Object> result = client.warnErrors(i);
+            Collection<Object> result = clientRpc.warnErrors(i);
 
             assertEquals(3, result.size());
             assertTrue(result.stream().allMatch(r -> (Integer)r == i));
@@ -296,7 +311,7 @@ public class RpcAggregateTest extends RpcServiceTestBase {
             when(rpc1.errors(i)).thenThrow(TEST_ERROR);
             when(rpc2.errors(i)).thenThrow(TEST_ERROR);
 
-            RpcAggregateException err = expect(RpcAggregateException.class, () -> client.errors(i));
+            RpcAggregateException err = expect(RpcAggregateException.class, () -> clientRpc.errors(i));
 
             assertTrue(err.partialResults().isEmpty());
 
@@ -318,7 +333,7 @@ public class RpcAggregateTest extends RpcServiceTestBase {
             when(rpc1.errors(i)).thenReturn(asList(i, i, i));
             when(rpc2.errors(i)).thenThrow(TEST_ERROR);
 
-            RpcAggregateException err = expect(RpcAggregateException.class, () -> client.errors(i));
+            RpcAggregateException err = expect(RpcAggregateException.class, () -> clientRpc.errors(i));
 
             assertEquals(1, err.partialResults().size());
             assertEquals(asList(i, i, i), err.partialResults().get(server1.localNode()));
@@ -343,9 +358,9 @@ public class RpcAggregateTest extends RpcServiceTestBase {
 
         repeat(3, i -> {
             when(rpc1.list(i)).thenAnswer(invocation -> nestedRpc1.list(i));
-            when(rpc2.list(i)).thenReturn(Arrays.asList(i, i, i));
+            when(rpc2.list(i)).thenReturn(asList(i, i, i));
 
-            List<Object> result = client.list(i);
+            List<Object> result = clientRpc.list(i);
 
             assertEquals(6, result.size());
             assertTrue(result.stream().allMatch(r -> (Integer)r == i));
@@ -369,7 +384,7 @@ public class RpcAggregateTest extends RpcServiceTestBase {
             when(rpc1.errors(i)).thenAnswer(invocation -> nestedRpc1.errors(i));
             when(rpc2.errors(i)).thenThrow(TEST_ERROR);
 
-            RpcAggregateException err = expect(RpcAggregateException.class, () -> client.errors(i));
+            RpcAggregateException err = expect(RpcAggregateException.class, () -> clientRpc.errors(i));
 
             assertEquals(2, err.errors().size());
             assertEquals(TEST_ERROR.getClass(), err.errors().get(server2.localNode()).getClass());
@@ -381,6 +396,65 @@ public class RpcAggregateTest extends RpcServiceTestBase {
 
             verify(rpc1).errors(i);
             verify(rpc2, times(2)).errors(i);
+
+            verifyNoMoreInteractions(rpc1, rpc2);
+            reset(rpc1, rpc2);
+        });
+    }
+
+    @Test
+    public void testRetryDefaultSettings() throws Exception {
+        clientRpc = client.rpc().clientFor(AggregateRpc.class)
+            .withRetryPolicy(retry -> retry
+                .withFixedDelay(10)
+                .maxAttempts(1)
+            )
+            .build();
+
+        repeat(3, i -> {
+            AtomicInteger attempt = new AtomicInteger();
+
+            when(rpc1.retry(any())).thenReturn(singletonList("ok"));
+            when(rpc2.retry(any())).thenAnswer(x -> {
+                if (attempt.getAndIncrement() == 0) {
+                    throw TEST_ERROR;
+                } else {
+                    return singletonList("ok");
+                }
+            });
+
+            List<Object> result = clientRpc.retry("test");
+
+            verify(rpc1).retry(any());
+            verify(rpc2, times(2)).retry(any());
+
+            assertEquals(asList("ok", "ok"), result);
+
+            verifyNoMoreInteractions(rpc1, rpc2);
+            reset(rpc1, rpc2);
+        });
+    }
+
+    @Test
+    public void testRetryMethodSettings() throws Exception {
+        repeat(3, i -> {
+            AtomicInteger attempt = new AtomicInteger();
+
+            when(rpc1.retryMethod(any())).thenReturn(singletonList("ok"));
+            when(rpc2.retryMethod(any())).thenAnswer(x -> {
+                if (attempt.getAndIncrement() == 0) {
+                    throw TEST_ERROR;
+                } else {
+                    return singletonList("ok");
+                }
+            });
+
+            List<Object> result = clientRpc.retryMethod("test");
+
+            verify(rpc1).retryMethod(any());
+            verify(rpc2, times(2)).retryMethod(any());
+
+            assertEquals(asList("ok", "ok"), result);
 
             verifyNoMoreInteractions(rpc1, rpc2);
             reset(rpc1, rpc2);

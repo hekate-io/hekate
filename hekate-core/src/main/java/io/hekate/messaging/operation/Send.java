@@ -8,22 +8,61 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import java.util.concurrent.TimeUnit;
 
 /**
  * <b>Send operation.</b>
  *
  * <p>
- * This interface represents a unidirectional send operation. Typical use of this interface is:
+ * This interface represents a one-way message sending operation of a {@link MessagingChannel}.
+ * </p>
+ *
+ * <h2>Acknowledgements</h2>
+ * <p>
+ * Messages can be sent with or without acknowledgements:
+ * </p>
+ * <ul>
+ * <li>If acknowledgements are enabled then this operation will be completed only when an acknowledgement is received from the receiver</li>
+ * <li>If acknowledgements are disabled then this operation will be completed immediately once it is flushed to the network buffer</li>
+ * </ul>
+ *
+ * <h2>Usage Example</h2>
+ * <p>
+ * Typical use of this interface is:
  * </p>
  * <ol>
  * <li>Obtain an instance of this interface via the {@link MessagingChannel#newSend(Object)} method call</li>
- * <li>Set options (f.e. {@link #withAckMode(AckMode) acknowledgement mode}  or {@link #withAffinity(Object) affinity key})</li>
+ * <li>Set options (if needed):
+ * <ul>
+ * <li>{@link #withAckMode(AckMode) Acknowledgement Mode}</li>
+ * <li>{@link #withTimeout(long, TimeUnit) Operation Timeout}</li>
+ * <li>{@link #withAffinity(Object) Affinity Key}</li>
+ * <li>{@link #withRetry(SendRetryConfigurer) Retry Policy}</li>
+ * </ul>
+ * </li>
  * <li>Execute this operation via the {@link #submit()} method</li>
  * <li>Await for the execution result, if needed</li>
  * </ol>
- * <h3>Example:</h3>
+ *
+ * <p>
  * ${source: messaging/MessagingServiceJavadocTest.java#send_operation}
+ * </p>
+ *
+ * <h2>Shortcut Methods</h2>
+ * <p>
+ * {@link MessagingChannel} interface provides a set of synchronous and asynchronous shortcut methods for common use cases:
+ * </p>
+ * <ul>
+ * <li>{@link MessagingChannel#send(Object)}</li>
+ * <li>{@link MessagingChannel#send(Object, AckMode)}</li>
+ * <li>{@link MessagingChannel#send(Object, Object)}</li>
+ * <li>{@link MessagingChannel#send(Object, Object, AckMode)}</li>
+ * <li>{@link MessagingChannel#sendAsync(Object)}</li>
+ * <li>{@link MessagingChannel#sendAsync(Object, AckMode)}</li>
+ * <li>{@link MessagingChannel#sendAsync(Object, Object)}</li>
+ * <li>{@link MessagingChannel#sendAsync(Object, Object, AckMode)}</li>
+ * </ul>
  *
  * @param <T> Message type.
  */
@@ -33,7 +72,7 @@ public interface Send<T> {
      *
      * <p>
      * Specifying an affinity key ensures that all operation with the same key will always be transmitted over the same network
-     * connection and will always be processed by the same thread.
+     * connection and will always be processed by the same thread (if the cluster topology doesn't change).
      * </p>
      *
      * <p>
@@ -52,7 +91,7 @@ public interface Send<T> {
      * Overrides the channel's default timeout value for this operation.
      *
      * <p>
-     * If this operation can not complete at the specified timeout then this operation will end up the the {@link MessageTimeoutException}.
+     * If this operation can not complete at the specified timeout then this operation will end up in a {@link MessageTimeoutException}.
      * </p>
      *
      * <p>
@@ -98,6 +137,8 @@ public interface Send<T> {
      * @param retry Retry policy.
      *
      * @return This instance.
+     *
+     * @see MessagingChannelConfig#setRetryPolicy(GenericRetryConfigurer)
      */
     Send<T> withRetry(SendRetryConfigurer retry);
 

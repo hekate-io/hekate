@@ -17,6 +17,7 @@
 package io.hekate.rpc;
 
 import io.hekate.HekateTestBase;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
 import org.junit.Test;
@@ -119,6 +120,26 @@ public class RpcClientConfigTest extends HekateTestBase {
         assertSame(cfg, cfg.withBackupNodes(10002));
 
         assertEquals(10002, cfg.getBackupNodes());
+    }
+
+    @Test
+    public void testRetryPolicy() {
+        assertNull(cfg.getRetryPolicy());
+
+        GenericRetryConfigurer policy = retry -> {
+            // No-op.
+        };
+
+        cfg.setRetryPolicy(policy);
+
+        assertSame(policy, cfg.getRetryPolicy());
+
+        cfg.setRetryPolicy(null);
+
+        assertNull(cfg.getRetryPolicy());
+
+        assertSame(cfg, cfg.withRetryPolicy(policy));
+        assertSame(policy, cfg.getRetryPolicy());
     }
 
     @Test

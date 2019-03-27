@@ -19,20 +19,23 @@ package io.hekate.core;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterServiceFactory;
-import io.hekate.cluster.health.FailureDetector;
 import io.hekate.cluster.seed.SeedNodeProvider;
-import io.hekate.cluster.split.SplitBrainDetector;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.coordinate.CoordinationService;
+import io.hekate.coordinate.CoordinationServiceFactory;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.election.ElectionService;
+import io.hekate.election.ElectionServiceFactory;
 import io.hekate.lock.LockService;
+import io.hekate.lock.LockServiceFactory;
 import io.hekate.messaging.MessagingService;
+import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.network.NetworkService;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.rpc.RpcService;
+import io.hekate.rpc.RpcServiceFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,7 +46,12 @@ import java.util.Set;
  * <h2>Overview</h2>
  * <p>
  * Hekate is a Java Library for cluster discovery and communications. It provides a number of services for building a cluster of
- * interconnected processes with messaging capabilities. This interface is the main entry point for accessing the following services:
+ * interconnected processes with messaging capabilities.
+ * </p>
+ *
+ * <h2>Services</h2>
+ * <p>
+ * This interface is the main entry point for accessing the following services:
  * </p>
  *
  * <ul>
@@ -75,21 +83,36 @@ import java.util.Set;
  * </li>
  * </ul>
  *
- * <h2>Bootstrapping</h2>
+ * <h2>Configuration and Bootstrapping</h2>
  * <p>
- * Instances of {@link Hekate} interface can be constructed by calling the {@link HekateBootstrap#join()} method (or its {@link
- * HekateBootstrap#joinAsync() asynchronous equivalent}). This method creates a new {@link Hekate} instance and joins it to the cluster.
+ * Instances of {@link Hekate} interface can be constructed by calling the {@link HekateBootstrap#join()} method (or its
+ * {@link HekateBootstrap#joinAsync() asynchronous equivalent}). This method creates a new {@link Hekate} instance and joins it to the
+ * cluster.
+ * </p>
+ *
+ * <p>
  * It is possible to create and run multiple {@link Hekate} instances within a single JVM. Each such instance is an independent cluster
  * node with its own set of resources (threads, sockets, etc).
  * </p>
  *
  * <p>
- * If application runs on top of the <a href="http://projects.spring.io/spring-framework" target="_blank">Spring Framework</a>, then
- * you can use the Spring Framework integration provided by the
- * <a href="{@docRoot}/io/hekate/spring/bean/HekateSpringBootstrap.html">HekateSpringBootstrap</a> class (please see its documentation for
- * more details).
+ * Key configuration options of {@link HekateBootstrap} are:
+ * </p>
+ * <ul>
+ * <li>{@link HekateBootstrap#setClusterName(String) Cluster name}</li>
+ * <li>{@link HekateBootstrap#setNodeName(String) Node name}</li>
+ * <li>{@link HekateBootstrap#setProperties(Map) Node properties}</li>
+ * <li>{@link HekateBootstrap#setRoles(List) Node roles}</li>
+ * <li>{@link HekateBootstrap#setDefaultCodec(CodecFactory) Serialization codec}</li>
+ * <li>{@link HekateBootstrap#setServices(List) Services} to be provided by the node</li>
+ * <li>{@link HekateBootstrap#setPlugins(List) Plugins} that should run within the node</li>
+ * </ul>
+ *
+ * <p>
+ * For service-dependent configuration options please see the <a href="#service_factories">Services Factories</a> section below.
  * </p>
  *
+ * <p>Minimalistic example of {@link Hekate} bootstrapping:</p>
  * <div class="tabs">
  * <ul>
  * <li><a href="#simple-java">Java</a></li>
@@ -111,51 +134,28 @@ import java.util.Set;
  * </div>
  * </div>
  *
- * <h2>Configuration</h2>
- * <p>
- * Configuration options for the {@link Hekate} instance can be specified via properties of the {@link HekateBootstrap} class.
- * This class provides bean-style properties with getters/setters (for <a href="http://projects.spring.io/spring-framework"
- * target="_blank">Spring Framework</a> XML files) as well as <a href="https://en.wikipedia.org/wiki/Fluent_interface"
- * target="_blank">fluent</a>-style API for programmatic configuration via Java code.
- * </p>
- *
- * <p>
- * The key configuration options are:
- * </p>
- * <ul>
- * <li>{@link HekateBootstrap#setClusterName(String) Cluster name}</li>
- * <li>{@link HekateBootstrap#setNodeName(String) Node name}</li>
- * <li>{@link HekateBootstrap#setProperties(Map) Node properties}</li>
- * <li>{@link HekateBootstrap#setRoles(List) Node roles}</li>
- * <li>{@link HekateBootstrap#setDefaultCodec(CodecFactory) Serialization codec}</li>
- * <li>{@link HekateBootstrap#setServices(List) Services} to be provided by the node</li>
- * <li>{@link HekateBootstrap#setPlugins(List) Plugins} that should run within the node</li>
- * </ul>
- *
- * <p>
- * Other noticeable configuration options are:
- * </p>
- * <ul>
- * <li>
- * Network {@link NetworkServiceFactory#setHost(String) address} and {@link NetworkServiceFactory#setPort(int) port}
- * </li>
- * <li>
- * Cluster {@link ClusterServiceFactory#setSeedNodeProvider(SeedNodeProvider) discovery} and {@link
- * ClusterServiceFactory#setAcceptors(List) validation}
- * </li>
- * <li>
- * Cluster {@link ClusterServiceFactory#setFailureDetector(FailureDetector) failure} and
- * {@link ClusterServiceFactory#setSplitBrainDetector(SplitBrainDetector) split-brain} detection
- * </li>
- * </ul>
- *
- * <h2>Services configuration</h2>
+ * <a name="service_factories"></a>
+ * <h2>Service Factories</h2>
  * <p>
  * Each service has a configurable {@link ServiceFactory} that can be registered within a {@link HekateBootstrap} instance via {@link
  * HekateBootstrap#setServices(List)} or {@link HekateBootstrap#withService(ServiceFactory)} methods. The code example below shows how
  * different services can be configured:
  * ${source: HekateJavadocTest.java#configure_services}
  * </p>
+ *
+ * <p>
+ * For other configuration options please see the documentation of a relevant service factory:
+ * </p>
+ * <ul>
+ * <li>{@link ClusterServiceFactory}</li>
+ * <li>{@link NetworkServiceFactory}</li>
+ * <li>{@link MessagingServiceFactory}</li>
+ * <li>{@link RpcServiceFactory}</li>
+ * <li>{@link LockServiceFactory}</li>
+ * <li>{@link ElectionServiceFactory}</li>
+ * <li>{@link CoordinationServiceFactory}</li>
+ * </ul>
+ *
  *
  * <a name="lifecycle"></a>
  * <h2>Lifecycle</h2>
@@ -171,22 +171,6 @@ import java.util.Set;
  * left the cluster only based on their failure detection settings). In general, it is recommended to use {@link #leave() graceful}
  * shutdown and use this method for abnormal termination (f.e. in case of unrecoverable error) or for testing purposes to emulate failures
  * of cluster nodes</li>
- * </ul>
- *
- * <p>
- * Each instance of {@link Hekate} goes through the following stages of the life cycle:
- * </p>
- *
- * <ul>
- * <li>{@link State#DOWN} - initial state</li>
- * <li>{@link State#INITIALIZING} - node is initializing its services</li>
- * <li>{@link State#INITIALIZED} - node is initialized and is ready to start joining the cluster</li>
- * <li>{@link State#JOINING} - node successfully discovered a seed node and started joining the cluster</li>
- * <li>{@link State#SYNCHRONIZING} - node successfully joined the cluster and synchronizing with remote nodes</li>
- * <li>{@link State#UP} - node successfully joined the cluster and is ready to perform user operations</li>
- * <li>{@link State#LEAVING} - node started leaving the cluster.</li>
- * <li>{@link State#TERMINATING} - node left the cluster and started terminating all of its services. Once this stage is completed then
- * node will go back to the {@link State#DOWN} state.</li>
  * </ul>
  *
  * <p>

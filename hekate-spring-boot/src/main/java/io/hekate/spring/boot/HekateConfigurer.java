@@ -60,7 +60,7 @@ import org.springframework.stereotype.Component;
  * below).
  * </p>
  *
- * <h2>Module dependency</h2>
+ * <h2>Module Dependency</h2>
  * <p>
  * Spring Boot integration is provided by the 'hekate-spring-boot' module and can be imported into the project dependency management system
  * as in the example below:
@@ -93,7 +93,7 @@ import org.springframework.stereotype.Component;
  * </div>
  *
  * <a name="usage_example"></a>
- * <h2>Usage example</h2>
+ * <h2>Usage Example</h2>
  * <p>
  * The code example below shows how {@link Hekate} auto-configuration can be used in a Spring Boot-enabled applications.
  * </p>
@@ -106,7 +106,7 @@ import org.springframework.stereotype.Component;
  * Note that {@link Hekate} instance doesn't require any manual construction.
  * </p>
  *
- * <h2>Registering and configuring services</h2>
+ * <h2>Registering and Configuring Services</h2>
  * <p>
  * This class automatically registers all application-provided {@link Bean Bean}s of {@link ServiceFactory} type into the auto-configured
  * {@link Hekate} instance.
@@ -126,7 +126,7 @@ import org.springframework.stereotype.Component;
  * <li>{@link HekateElectionServiceConfigurer}</li>
  * </ul>
  *
- * <h2>Configuration options</h2>
+ * <h2>Configuration Options</h2>
  * <p>
  * The following application properties can be used to configure the constructed {@link Hekate} instance:
  * </p>
@@ -137,7 +137,7 @@ import org.springframework.stereotype.Component;
  * <li>{@link HekateBootstrap#setProperties(Map) 'hekate.properties'}</li>
  * </ul>
  *
- * <h2>Deferred cluster joining</h2>
+ * <h2>Deferred Cluster Joining</h2>
  * <p>
  * It is possible to control the timing of when {@link Hekate} node will start joining the cluster by specifying the following properties:
  * </p>

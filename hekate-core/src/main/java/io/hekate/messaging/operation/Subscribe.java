@@ -6,6 +6,7 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -13,16 +14,41 @@ import java.util.concurrent.TimeUnit;
  * <b>Subscribe operation.</b>
  *
  * <p>
- * This interface represents a bidirectional subscribe operation. Typical use of this interface is:
+ * This interface represents a subscribe operation of a {@link MessagingChannel}. This operation submits a single request (subscription) and
+ * expects multiple response chunks (updates) to be returned by the receiver.
+ * </p>
+ *
+ * <h2>Usage Example</h2>
+ * <p>
+ * Typical use of this interface is:
  * </p>
  * <ol>
  * <li>Obtain an instance of this interface via the {@link MessagingChannel#newSubscribe(Object)} call</li>
- * <li>Set options (f.e. {@link #withAffinity(Object) affinity key})</li>
+ * <li>Set options (if needed):
+ * <ul>
+ * <li>{@link #withTimeout(long, TimeUnit) Operation Timeout}</li>
+ * <li>{@link #withAffinity(Object) Affinity Key}</li>
+ * <li>{@link #withRetry(RequestRetryConfigurer) Retry Policy}</li>
+ * </ul>
+ * </li>
  * <li>Execute this operation via the {@link #submit(SubscribeCallback)}  method</li>
  * <li>Await for the execution result, if needed</li>
  * </ol>
- * <h3>Example:</h3>
+ *
+ * <p>
  * ${source: messaging/MessagingServiceJavadocTest.java#subscribe_operation}
+ * </p>
+ *
+ * <h2>Shortcut Methods</h2>
+ * <p>
+ * {@link MessagingChannel} interface provides a set of synchronous and asynchronous shortcut methods for common use cases:
+ * </p>
+ * <ul>
+ * <li>{@link MessagingChannel#subscribe(Object)}</li>
+ * <li>{@link MessagingChannel#subscribe(Object, Object)} </li>
+ * <li>{@link MessagingChannel#subscribeAsync(Object, SubscribeCallback)}</li>
+ * <li>{@link MessagingChannel#subscribeAsync(Object, Object, SubscribeCallback)} </li>
+ * </ul>
  *
  * @param <T> Message type.
  */
@@ -32,7 +58,7 @@ public interface Subscribe<T> {
      *
      * <p>
      * Specifying an affinity key ensures that all operation with the same key will always be transmitted over the same network
-     * connection and will always be processed by the same thread.
+     * connection and will always be processed by the same thread (if the cluster topology doesn't change).
      * </p>
      *
      * <p>
@@ -51,7 +77,7 @@ public interface Subscribe<T> {
      * Overrides the channel's default timeout value for this operation.
      *
      * <p>
-     * If this operation can not complete at the specified timeout then this operation will end up the the {@link MessageTimeoutException}.
+     * If this operation can not complete at the specified timeout then this operation will end up in a {@link MessageTimeoutException}.
      * </p>
      *
      * <p>
@@ -73,6 +99,8 @@ public interface Subscribe<T> {
      * @param retry Retry policy.
      *
      * @return This instance.
+     *
+     * @see MessagingChannelConfig#setRetryPolicy(GenericRetryConfigurer)
      */
     Subscribe<T> withRetry(RequestRetryConfigurer<T> retry);
 

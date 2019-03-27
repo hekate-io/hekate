@@ -20,6 +20,7 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.operation.AggregateFuture;
 import io.hekate.messaging.operation.AggregateResult;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.rpc.RpcAggregateException;
 import io.hekate.rpc.RpcBroadcast;
 import io.hekate.rpc.RpcInterfaceInfo;
@@ -40,6 +41,8 @@ class RpcBroadcastMethodClient<T> extends RpcMethodClientBase<T> {
 
     private final Function<AggregateResult<RpcProtocol>, ?> converter;
 
+    private final GenericRetryConfigurer retryPolicy;
+
     private final long timeout;
 
     public RpcBroadcastMethodClient(
@@ -47,12 +50,14 @@ class RpcBroadcastMethodClient<T> extends RpcMethodClientBase<T> {
         String tag,
         RpcMethodInfo method,
         MessagingChannel<RpcProtocol> channel,
+        GenericRetryConfigurer retryPolicy,
         long timeout
     ) {
         super(rpc, tag, method, channel);
 
         assert method.broadcast().isPresent() : "Not a broadcast method [rpc=" + rpc + ", method=" + method + ']';
 
+        this.retryPolicy = retryPolicy;
         this.timeout = timeout;
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -101,6 +106,11 @@ class RpcBroadcastMethodClient<T> extends RpcMethodClientBase<T> {
         AggregateFuture<RpcProtocol> future = channel().newAggregate(call)
             .withTimeout(timeout, TimeUnit.MILLISECONDS)
             .withAffinity(affinity)
+            .withRetry(retry -> {
+                if (retryPolicy != null) {
+                    retryPolicy.configure(retry);
+                }
+            })
             .submit();
 
         if (method().isAsync()) {

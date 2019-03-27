@@ -19,9 +19,7 @@ package io.hekate.messaging;
 import io.hekate.cluster.ClusterFilterSupport;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
-import io.hekate.codec.CodecFactory;
 import io.hekate.core.Hekate;
-import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.DefaultServiceFactory;
 import io.hekate.core.service.Service;
 import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
@@ -47,6 +45,17 @@ import java.util.List;
  * and provide a high level API for implementing various messaging patterns.
  * </p>
  *
+ * <ul>
+ * <li><a href="#messaging_channels">Messaging Channels</a></li>
+ * <li><a href="#configuring_channels">Configuring Channels</a></li>
+ * <li><a href="#accessing_channels">Accessing Channels</a></li>
+ * <li><a href="#sending_messages">Sending Messages</a></li>
+ * <li><a href="#receiving_messages">Receiving Messages</a></li>
+ * <li><a href="#roouting_and_load_balancing">Routing and Load Balancing</a></li>
+ * <li><a href="#thread_pooling">Thread Pooling</a></li>
+ * </ul>
+ *
+ * <a name="messaging_channels"></a>
  * <h2>Messaging Channels</h2>
  * <p>
  * Messaging channel is a communication unit that can act as a sender, as a receiver or perform both of those roles simultaneously.
@@ -55,26 +64,15 @@ import java.util.List;
  * the communication patterns.
  * </p>
  *
- * <h2>Configuring channels</h2>
+ * <a name="configuring_channels"></a>
+ * <h2>Configuring Channels</h2>
  * <p>
- * Configuration of a messaging channel is represented by the {@link MessagingChannelConfig} class. Instances of this class be registered
- * via the {@link MessagingServiceFactory#withChannel(MessagingChannelConfig)} method.
+ * Configuration of a messaging channel is represented by the {@link MessagingChannelConfig} class.
  * </p>
  *
  * <p>
- * Below are the key configuration options of a messaging channel:
+ * Instances of this class can be registered via the {@link MessagingServiceFactory#withChannel(MessagingChannelConfig)} method.
  * </p>
- * <ul>
- * <li>{@link MessagingChannelConfig#setName(String) Channel Name} - only channels with the same name can communicate with each other.
- * Note that channel name must be unique within each {@link MessagingService} instance and any attempt to register multiple channels with
- * the same name will result in an error</li>
- * <li>{@link MessagingChannelConfig#setReceiver(MessageReceiver) Message Receiver} if channel should be able to receive messages from
- * remote nodes (i.e. act as a server)</li>
- * <li>{@link MessagingChannelConfig#setMessageCodec(CodecFactory) Message Codec} - for messages serialization/deserialization.
- * If not specified then the {@link HekateBootstrap#setDefaultCodec(CodecFactory) default codec} will be used.</li>
- * <li>{@link MessagingChannelConfig#setNioThreads(int) NIO} and {@link MessagingChannelConfig#setWorkerThreads(int) worker} thread pool
- * options</li>
- * </ul>
  *
  * <p>
  * Example:
@@ -102,10 +100,11 @@ import java.util.List;
  * </div>
  *
  * <p>
- * For more details about the available configuration options please see the documentation of {@link MessagingChannelConfig} class.
+ * For more details about the configuration options please see the documentation of {@link MessagingChannelConfig} class.
  * </p>
  *
- * <h2>Accessing channels</h2>
+ * <a name="accessing_channels"></a>
+ * <h2>Accessing Channels</h2>
  * <p>
  * Channel can be accessed via the {@link MessagingService#channel(String, Class)} method, with the first parameter being the
  * {@link MessagingChannelConfig#setName(String) channel name} and the second parameter being the
@@ -113,29 +112,23 @@ import java.util.List;
  * ${source: messaging/MessagingServiceJavadocTest.java#access_channel}
  * </p>
  *
- * <h2>Sending messages</h2>
+ * <a name="sending_messages"></a>
+ * <h2>Sending Messages</h2>
  * <p>
  * {@link MessagingChannel} provides API for the following communication patterns:
  * </p>
  * <ul>
- * <li>
- * <a href="#request_response">Request/Response</a> - bidirectional node to node communication
- * </li>
- * <li>
- * <a href="#send_and_forget">Send and Forget</a> - unidirectional node to node communication
- * </li>
- * <li>
- * <a href="#aggregate">Aggregation</a> - bidirectional node to many nodes communication
- * </li>
- * <li>
- * <a href="#broadcast">Broadcasting</a> - unidirectional node to many nodes communication
- * </li>
+ * <li><a href="#request">Request</a> - Submit a request and get a response</li>
+ * <li><a href="#send">Send</a> - Submit a one-way message that doesn't need a response</li>
+ * <li><a href="#subscribe">Subscribe</a> - Submit a request (subscribe) and get multiple response chunks (updates)</li>
+ * <li><a href="#aggregate">Aggregate</a> - Submit a one-way message to multiple nodes simultaneously</li>
+ * <li><a href="#broadcast">Broadcast</a> - Submit a request to multiple nodes simultaneously and aggregate their responses</li>
  * </ul>
  *
- * <a name="request_response"></a>
- * <h3>Request/Response</h3>
+ * <a name="request"></a>
+ * <h3>Request</h3>
  * <p>
- * {@link MessagingChannel#newRequest(Object)} can be used for bidirectional communications with remote nodes using the request-response
+ * {@link Request} interface can be used for bidirectional communications with remote nodes using the request-response
  * pattern:
  * ${source: messaging/MessagingServiceJavadocTest.java#unicast_request_sync}
  * </p>
@@ -145,10 +138,14 @@ import java.util.List;
  * ${source: messaging/MessagingServiceJavadocTest.java#unicast_request_async}
  * </p>
  *
- * <a name="send_and_forget"></a>
- * <h3>Send and Forget</h3>
  * <p>
- * {@link MessagingChannel#newSend(Object)} provides support for unidirectional communications (i.e. when remote node doesn't need to send
+ * For more details please see the documentation of {@link Request} interface.
+ * </p>
+ *
+ * <a name="send"></a>
+ * <h3>Send</h3>
+ * <p>
+ * {@link Send} interface provides support for unidirectional communications (i.e. when remote node doesn't need to send
  * back a response) using the fire and forget approach:
  * ${source: messaging/MessagingServiceJavadocTest.java#unicast_send_sync}
  * </p>
@@ -158,10 +155,27 @@ import java.util.List;
  * ${source: messaging/MessagingServiceJavadocTest.java#unicast_send_async}
  * </p>
  *
- * <a name="aggregate"></a>
- * <h3>Aggregation</h3>
  * <p>
- * {@link MessagingChannel#newAggregate(Object)} can be used for bidirectional communications by submitting a message to multiple nodes and
+ * For more details please see the documentation of {@link Send} interface.
+ * </p>
+ *
+ * <a name="subscribe"></a>
+ * <h3>Subscribe</h3>
+ * <p>
+ * {@link Subscribe} interface can be used for bidirectional communications with remote nodes using the request-response pattern.
+ * Unlike the basic {@link Request} operation, this operation doesn't end with the first response and continues receiving updates unless
+ * the very final response is received:
+ * ${source: messaging/MessagingServiceJavadocTest.java#unicast_subscribe_async}
+ * </p>
+ *
+ * <p>
+ * For more details please see the documentation of {@link Subscribe} interface.
+ * </p>
+ *
+ * <a name="aggregate"></a>
+ * <h3>Aggregate</h3>
+ * <p>
+ * {@link Aggregate} interface can be used for bidirectional communications by submitting a message to multiple nodes and
  * gathering (aggregating) replies from those nodes. Results of such aggregation are represented by the {@link AggregateResult} interface.
  * This interface provides methods for analyzing responses from remote nodes and checking for possible failures.
  * </p>
@@ -176,10 +190,14 @@ import java.util.List;
  * ${source: messaging/MessagingServiceJavadocTest.java#aggregate_async}
  * </p>
  *
- * <a name="broadcast"></a>
- * <h3>Broadcasting</h3>
  * <p>
- * {@link MessagingChannel#newBroadcast(Object)} provides support for unidirectional broadcasting (i.e. when remote nodes do not need to
+ * For more details please see the documentation of {@link Aggregate} interface.
+ * </p>
+ *
+ * <a name="broadcast"></a>
+ * <h3>Broadcast</h3>
+ * <p>
+ * {@link Broadcast} interface provides support for unidirectional broadcasting (i.e. when remote nodes do not need to
  * send a reply and no aggregation should take place) using the fire and forget approach.
  * </p>
  *
@@ -192,12 +210,15 @@ import java.util.List;
  * ${source: messaging/MessagingServiceJavadocTest.java#broadcast_async}
  * </p>
  *
- * <h2>Receiving messages</h2>
  * <p>
- * Messaging channel can receive messages from remote nodes by {@link MessagingChannelConfig#setReceiver(MessageReceiver) registering} an
- * instance of {@link MessageReceiver} interface. Received messages are represented by the {@link Message} interface.
- * This interface provides methods for {@link Message#payload() getting} the payload of a received message as well as methods for
- * {@link Message#reply(Object) replying} to that message.
+ * For more details please see the documentation of {@link Broadcast} interface.
+ * </p>
+ *
+ * <a name="receiving_messages"></a>
+ * <h2>Receiving Messages</h2>
+ * <p>
+ * Messaging channel can receive messages from remote nodes by registering an instance of {@link MessageReceiver} interface via the {@link
+ * MessagingChannelConfig#setReceiver(MessageReceiver)} method.
  * </p>
  *
  * <p>
@@ -205,11 +226,18 @@ import java.util.List;
  * </p>
  *
  * <p>
+ * Received messages are represented by the {@link Message} interface. This interface provides methods for {@link Message#payload()
+ * getting}
+ * the payload of a received message as well as methods for {@link Message#reply(Object) replying} to that message.
+ * </p>
+ *
+ * <p>
  * Below is the example of {@link MessageReceiver} implementation:
  * ${source: messaging/MessagingServiceJavadocTest.java#message_receiver}
  * </p>
  *
- * <h2>Routing and load balancing</h2>
+ * <a name="roouting_and_load_balancing"></a>
+ * <h2>Routing and Load Balancing</h2>
  * <p>
  * Every messaging channel uses an instance of {@link LoadBalancer} interface to perform routing of unicast operations
  * (like {@link MessagingChannel#newSend(Object) send(...)} and {@link MessagingChannel#newRequest(Object) request(...)}). Load balancer
@@ -221,11 +249,12 @@ import java.util.List;
  * <p>
  * Note that load balancing does not get applied to broadcast operations (like {@link MessagingChannel#newBroadcast(Object)} and {@link
  * MessagingChannel#newAggregate(Object)}). Such operations are submitted to all nodes within the channel's cluster topology.
- * Please see the "<a href="#topology_filterring">Cluster topology filtering</a>" section for details of how to control the channel's
- * cluster topology.
+ * Please see the "<a href="#cluster_topology_filtering">Cluster topology filtering</a>" section for details of how to control the
+ * channel's cluster topology.
  * </p>
  *
- * <h3>Consistent routing</h3>
+ * <a name="consistent_routing"></a>
+ * <h3>Consistent Routing</h3>
  * <p>
  * Applications can provide an affinity key to the {@link LoadBalancer} so that it could perform consistent routing based on some
  * application-specific criteria. For example, if the {@link DefaultLoadBalancer} is being used by the messaging channel then it will make
@@ -258,15 +287,16 @@ import java.util.List;
  * {@link Partition#backupNodes() backup nodes}).
  * </p>
  *
- * <h3>Thread affinity</h3>
+ * <a name="thread_affinity"></a>
+ * <h3>Thread Affinity</h3>
  * <p>
  * Besides providing a hint to the {@link LoadBalancer}, specifying an affinity key also instructs the messaging channel to process all
  * messages of the same affinity key on the same thread. This applies both to sending a message (see {@link SendCallback} or {@link
  * RequestCallback}) and to receiving a message (see {@link MessageReceiver#receive(Message)}).
  * </p>
  *
- * <a name="topology_filterring"></a>
- * <h3>Cluster topology filtering</h3>
+ * <a name="cluster_topology_filtering"></a>
+ * <h3>Cluster Topology Filtering</h3>
  * <p>
  * It is possible to narrow down the list of nodes that are visible to the {@link MessagingChannel} by setting a {@link ClusterNodeFilter}.
  * Such filter can be pre-configured via the {@link MessagingChannelConfig#setClusterFilter(ClusterNodeFilter)} method or set dynamically
@@ -291,7 +321,8 @@ import java.util.List;
  * If filter is specified then all messaging operations will be distributed among only those nodes that match the filter's criteria.
  * </p>
  *
- * <h2>Thread pooling</h2>
+ * <a name="thread_pooling"></a>
+ * <h2>Thread Pooling</h2>
  * <p>
  * Messaging service manages a pool of threads for each of its registered channels. The following  thread pools are managed:
  * </p>
@@ -307,6 +338,8 @@ import java.util.List;
  * case if message processing is a heavy operation that can block NIO thread for a long time.
  * </li>
  * </ul>
+ *
+ * @see MessagingServiceFactory
  */
 @DefaultServiceFactory(MessagingServiceFactory.class)
 public interface MessagingService extends Service {

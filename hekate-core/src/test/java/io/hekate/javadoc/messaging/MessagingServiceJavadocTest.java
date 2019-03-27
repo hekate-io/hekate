@@ -31,6 +31,8 @@ import io.hekate.messaging.operation.BroadcastFuture;
 import io.hekate.messaging.operation.RequestFuture;
 import io.hekate.messaging.operation.SendFuture;
 import io.hekate.messaging.operation.SubscribeFuture;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
@@ -43,15 +45,15 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
             // Get payload.
             String payload = msg.payload();
 
-            // Check if sender is expecting a response.
+            // Check if the sender expects a response.
             if (msg.mustReply()) {
-                System.out.println("Received request: " + payload);
+                System.out.println("Request received: " + payload);
 
-                // Send back the response.
+                // Send back a response.
                 msg.reply("...some response...");
             } else {
                 // No need to send a response since this is a unidirectional message.
-                System.out.println("Received notification: " + payload);
+                System.out.println("Notification received: " + payload);
             }
         }
     }
@@ -79,21 +81,20 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
             .withName("example.channel") // Channel name.
             // Message receiver (optional - if not specified then channel will act as a sender only)
             .withReceiver(msg -> {
-                System.out.println("Received request: " + msg.payload());
+                System.out.println("Request received: " + msg.payload());
 
-                // Send reply (if required).
+                // Reply (if this is a request and not a unidirectional notification).
                 if (msg.mustReply()) {
                     msg.reply("some response");
                 }
             });
 
-        // Prepare messaging service factory and register channel.
-        MessagingServiceFactory factory = new MessagingServiceFactory()
-            .withChannel(channelCfg);
-
         // Start node.
         Hekate hekate = new HekateBootstrap()
-            .withService(factory)
+            // Register channel to the messaging service.
+            .withService(MessagingServiceFactory.class, messaging ->
+                messaging.withChannel(channelCfg)
+            )
             .join();
         // End:configure_channel
 
@@ -117,6 +118,8 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
 
         unicastRequestAsyncExample(channel);
 
+        unicastSubscribeSyncExample(channel);
+
         unicastSendSyncExample(channel);
 
         unicastSendAsyncExample(channel);
@@ -138,6 +141,14 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
 
         SendFuture future = channel.newSend("some-message") // Some dummy message.
             .withAckMode(AckMode.REQUIRED) // Set acknowledgement mode.
+            .withTimeout(3, TimeUnit.SECONDS) // Timeout.
+            .withAffinity("100500") // Some dummy affinity key.
+            .withRetry(retry -> retry
+                .whileError(err -> err.isCausedBy(IOException.class)) // Only if I/O error.
+                .withFixedDelay(100) // Delay between retries.
+                .maxAttempts(3) // Retry up to 3 times.
+                .alwaysReRoute() // Retry on different nodes.
+            )
             .submit(); // Asynchronously execute the operation.
 
         future.join(); // Await for confirmation.
@@ -149,7 +160,14 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         MessagingChannel<String> channel = hekate.messaging().channel("example.channel", String.class);
 
         RequestFuture<String> future = channel.newRequest("some-message") // Some dummy message.
-            .withAffinity("100500") // Some dummy affinity (optional).
+            .withTimeout(3, TimeUnit.SECONDS) // Timeout.
+            .withAffinity("100500") // Some dummy affinity key.
+            .withRetry(retry -> retry
+                .whileError(err -> err.isCausedBy(IOException.class)) // Only if I/O error.
+                .withFixedDelay(100) // Delay between retries.
+                .maxAttempts(3) // Retry up to 3 times.
+                .alwaysReRoute() // Retry on different nodes.
+            )
             .submit(); // Asynchronously execute the operation.
 
         // Await and print the response.
@@ -162,7 +180,14 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         MessagingChannel<String> channel = hekate.messaging().channel("example.channel", String.class);
 
         SubscribeFuture<String> future = channel.newSubscribe("some-message") // Some dummy message.
-            .withAffinity("100500") // Some dummy affinity (optional).
+            .withTimeout(3, TimeUnit.SECONDS) // Timeout.
+            .withAffinity("100500") // Some dummy affinity key.
+            .withRetry(retry -> retry
+                .whileError(err -> err.isCausedBy(IOException.class)) // Only if I/O error.
+                .withFixedDelay(100) // Delay between retries.
+                .maxAttempts(3) // Retry up to 3 times.
+                .alwaysReRoute() // Retry on different nodes.
+            )
             // Execute and listen for responses.
             .submit((err, rsp) -> {
                 if (rsp.isLastPart()) {
@@ -183,6 +208,13 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
 
         BroadcastFuture<String> future = channel.newBroadcast("some-message") // Some dummy message.
             .withAckMode(AckMode.REQUIRED) // Set acknowledgement mode.
+            .withTimeout(3, TimeUnit.SECONDS) // Timeout.
+            .withAffinity("100500") // Some dummy affinity key.
+            .withRetry(retry -> retry
+                .whileError(err -> err.isCausedBy(IOException.class)) // Only if I/O error.
+                .withFixedDelay(100) // Delay between retries.
+                .maxAttempts(3) // Retry up to 3 times.
+            )
             .submit(); // Asynchronously execute the operation.
 
         future.join(); // Await for confirmations.
@@ -194,7 +226,13 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         MessagingChannel<String> channel = hekate.messaging().channel("example.channel", String.class);
 
         AggregateFuture<String> future = channel.newAggregate("some-message") // Some dummy message.
-            .withAffinity("100500") // Some dummy affinity (optional).
+            .withTimeout(3, TimeUnit.SECONDS) // Timeout.
+            .withAffinity("100500") // Some dummy affinity key.
+            .withRetry(retry -> retry
+                .whileError(err -> err.isCausedBy(IOException.class)) // Only if I/O error.
+                .withFixedDelay(100) // Delay between retries.
+                .maxAttempts(3) // Retry up to 3 times.
+            )
             .submit(); // Asynchronously execute the operation.
 
         // Await and print results.
@@ -215,7 +253,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         // End:unicast_send_async
     }
 
-    private void unicastSendSyncExample(MessagingChannel<String> channel) throws InterruptedException, MessagingFutureException {
+    private void unicastSendSyncExample(MessagingChannel<String> channel) throws Exception {
         // Start:unicast_send_sync
         // Send message and synchronously await for the operation's result.
         channel.newSend("example message").sync();
@@ -245,13 +283,26 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         assertNotNull(response);
     }
 
+    private void unicastSubscribeSyncExample(MessagingChannel<String> channel) {
+        // Start:unicast_subscribe_async
+        // Submit request and synchronously await for the response.
+        channel.newSubscribe("example request").submit((err, rsp) -> {
+            if (rsp.isLastPart()) {
+                System.out.println("Done: " + rsp.payload());
+            } else {
+                System.out.println("Update: " + rsp.payload());
+            }
+        });
+        // End:unicast_subscribe_async
+    }
+
     private void broadcastExample(Hekate hekate) throws Exception {
         MessagingChannel<String> channel = hekate.messaging().channel("example.channel", String.class);
 
         // Start:aggregate_sync
         // Submit aggregation request.
         channel.newAggregate("example message").results().forEach(rslt ->
-            System.out.println("Got result: " + rslt)
+            System.out.println("Got results: " + rslt)
         );
         // End:aggregate_sync
 
@@ -260,7 +311,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         channel.newAggregate("example message").submit((err, rslts) -> {
             if (err == null) {
                 rslts.forEach(rslt ->
-                    System.out.println("Got result: " + rslt)
+                    System.out.println("Got results: " + rslt)
                 );
             } else {
                 System.out.println("Aggregation failure: " + err);

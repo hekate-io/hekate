@@ -56,7 +56,7 @@ import org.springframework.stereotype.Component;
  * NetworkServiceFactory} type.
  * </p>
  *
- * <h2>Configuration properties</h2>
+ * <h2>Configuration Properties</h2>
  * <p>
  * It is possible to configure {@link NetworkServiceFactory} via application properties prefixed with {@code 'hekate.network'}:
  * </p>
@@ -93,7 +93,7 @@ import org.springframework.stereotype.Component;
  * <li>{@link NetworkSslConfig#setTrustStoreAlgorithm(String) 'hekate.network.ssl.trust-store-algorithm'}</li>
  * </ul>
  *
- * <h2>Connectors injection</h2>
+ * <h2>Connectors Injection</h2>
  * <p>
  * This auto-configuration provides support for injecting beans of {@link NetworkConnector} type into other beans with the help of {@link
  * InjectConnector} annotation. Please see its documentation for more details.

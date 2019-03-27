@@ -80,12 +80,42 @@ Complete reference guide is coming soon.
 
 ## Code Examples
 
-Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examples) project.
+Quickstart for Standalone Java Applications 
+```java
+public class MyApplication{
+    public static void main(String[] args) throws Exception {
+        Hekate hekate = new HekateBootstrap()
+            .withClusterName("my-cluster")
+            .withNodeName("my-node")
+            .join();
+        
+        System.out.println("Cluster topology: " + hekate.cluster().topology());
+    }
+}
+
+```
+
+Quickstart for Spring Boot Applications
+```java
+@EnableHekate // <-- Turn on Hekate integration.
+@SpringBootApplication
+public class MyApplication {
+    @Autowired
+    private Hekate hekate;
+
+    public static void main(String[] args) {
+        SpringApplication.run(MyApplication.class, args);
+    }
+}
+```
+
+Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examples)** project for more examples.
+
 
 ## Maven artifacts
 
  * For projects based on **Spring Boot**:
-```
+```xml
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring-boot</artifactId>
@@ -94,7 +124,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 ```
 
  * For projects based on **Spring Framework**:
-```
+```xml
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring</artifactId>
@@ -103,7 +133,7 @@ Please see [hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examp
 ```
 
  * For standalone applications:
-```
+```xml
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-core</artifactId>

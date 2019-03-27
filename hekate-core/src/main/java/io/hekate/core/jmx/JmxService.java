@@ -35,7 +35,7 @@ import javax.management.ObjectName;
  * This service is primarily intended to be used by the {@link Hekate}'s internal components and services.
  * </p>
  *
- * <h2>Service configuration</h2>
+ * <h2>Service Configuration</h2>
  * <p>
  * {@link JmxService} can be registered and configured in {@link HekateBootstrap} with the help of {@link JmxServiceFactory} as shown in
  * the example below:
@@ -61,7 +61,7 @@ import javax.management.ObjectName;
  * </div>
  * </div>
  *
- * <h2>Accessing service</h2>
+ * <h2>Accessing the Service</h2>
  * <p>
  * {@link JmxService} is an optional service that is available only if application registers an instance of {@link JmxServiceFactory}
  * within
@@ -78,7 +78,7 @@ import javax.management.ObjectName;
  * JmxSupport#jmx()} method will be registered as an MX bean.
  * </p>
  *
- * <h2>JMX object names</h2>
+ * <h2>JMX Object Names</h2>
  * <p>
  * {@link ObjectName}s of all registered beans are constructed based on the {@link HekateBootstrap#setClusterName(String) cluster name},
  * {@link HekateBootstrap#setNodeName(String) node name} and bean's class name as follows:

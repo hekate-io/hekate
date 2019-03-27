@@ -131,11 +131,10 @@ public class CoordinationServiceJavadocTest extends HekateNodeTestBase {
         Hekate hekate = new HekateBootstrap()
             .withService(factory)
             .join();
-        // End:configure
 
-        // Start:access
+        // Access the service.
         CoordinationService coordination = hekate.coordination();
-        // End:access
+        // End:configure
 
         assertNotNull(coordination);
 

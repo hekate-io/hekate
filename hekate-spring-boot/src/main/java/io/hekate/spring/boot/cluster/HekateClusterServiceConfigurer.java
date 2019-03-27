@@ -62,7 +62,7 @@ import org.springframework.context.annotation.Lazy;
  * ClusterServiceFactory} type.
  * </p>
  *
- * <h2>Configuration properties</h2>
+ * <h2>Configuration Properties</h2>
  * <p>
  * It is possible to configure {@link ClusterServiceFactory} via application properties prefixed with {@code 'hekate.cluster'}.
  * For example:
@@ -84,7 +84,7 @@ import org.springframework.context.annotation.Lazy;
  * <li>{@link DefaultFailureDetectorConfig#setFailFast(boolean)} 'hekate.cluster.health.fail-fast'}</li>
  * </ul>
  *
- * <h2>Seed node providers</h2>
+ * <h2>Seed Node Providers</h2>
  * <p>
  * This auto-configuration registers all beans of the {@link SeedNodeProvider} type that can be found in the application context.
  * All such providers will be registered as a single {@link SeedNodeProviderGroup}. Rrror handling policy of that group can be specified

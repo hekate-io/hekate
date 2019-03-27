@@ -33,7 +33,7 @@ import java.util.List;
  * information about available configuration options.
  * </p>
  *
- * <h2>Starting and stopping</h2>
+ * <h2>Starting and Stopping</h2>
  * <p>
  * Server can be started by calling {@link #start(InetSocketAddress, NetworkServerCallback)} method and providing an optional callback that
  * will be notified upon lifecycle events. This method is asynchronous and returns a future object that can be used to get operation
@@ -56,7 +56,7 @@ import java.util.List;
  * Instances of this interface can be obtained via {@link NetworkServerFactoryBase#createServer()} method.
  * </p>
  *
- * <h2>Server failover</h2>
+ * <h2>Server Failover</h2>
  * <p>
  * Whenever an error occurs, server notifies {@link NetworkServerCallback#onFailure(NetworkServer, NetworkServerFailure)} callback.
  * Implementation of this method can control which actions should be performed in this case by analyzing {@link NetworkServerFailure} and

@@ -16,7 +16,6 @@
 
 package io.hekate.coordinate;
 
-import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.DefaultServiceFactory;
 import io.hekate.core.service.Service;
@@ -40,7 +39,17 @@ import java.util.List;
  * cluster event.
  * </p>
  *
- * <h2>Service configuration</h2>
+ * <ul>
+ * <li><a href="#service_configuration">Service Configuration</a></li>
+ * <li><a href="#coordination_handler">Coordination Handler</a></li>
+ * <li><a href="#messaging">Messaging</a></li>
+ * <li><a href="#topology_changes">Topology Changes</a></li>
+ * <li><a href="#awaiting_for_initial_coordination">Awaiting for Initial Coordination</a></li>
+ * <li><a href="#thread_management">Thread Management</a></li>
+ * </ul>
+ *
+ * <a name="service_configuration"></a>
+ * <h2>Service Configuration</h2>
  * <p>
  * {@link CoordinationService} can be registered and configured in {@link HekateBootstrap} with the help of {@link
  * CoordinationServiceFactory} as shown in the example below:
@@ -67,13 +76,8 @@ import java.util.List;
  * </div>
  * </div>
  *
- * <h2>Accessing service</h2>
- * <p>
- * {@link CoordinationService} can be accessed via {@link Hekate#coordination()} method as in the example below:
- * ${source: coordinate/CoordinationServiceJavadocTest.java#access}
- * </p>
- *
- * <h2>Coordination handler</h2>
+ * <a name="coordination_handler"></a>
+ * <h2>Coordination Handler</h2>
  * <p>
  * Application-specific logic of a distributed coordination process must be encapsulated into an implementation of {@link
  * CoordinationHandler} interface.
@@ -91,15 +95,41 @@ import java.util.List;
  * coordinator must explicitly notify the {@link CoordinationService} by calling the {@link CoordinatorContext#complete()} method.
  * </p>
  *
+ * <h3>Example</h3>
+ * <p>
+ * The code example below shows how {@link CoordinationHandler} can be implemented in order to perform distributed coordination of cluster
+ * members. For the sake of brevity the coordination scenario is very simple and has the goal of executing some application-specific logic
+ * on each of the coordinated members with each member holding an exclusive local lock. The coordination protocol can be described as
+ * follows:
+ * </p>
+ * <ol>
+ * <li>Ask all members to acquire local lock and await for confirmation from each member</li>
+ * <li>Ask all members to execute their application-specific logic and await for confirmation from each member</li>
+ * <li>Ask all members to release their local locks</li>
+ * </ol>
+ *
+ * <p>
+ * ${source: coordinate/CoordinationServiceJavadocTest.java#handler}
+ * </p>
+ *
+ * <a name="messaging"></a>
  * <h2>Messaging</h2>
  * <p>
- * {@link CoordinationService} provides support for asynchronous messages exchange among the coordination participants. It can be done via
- * {@link CoordinationContext#broadcast(Object, CoordinationBroadcastCallback)} method (to send the same request to all members at once) or
- * via {@link CoordinationMember#request(Object, CoordinationRequestCallback)} method (to send requests to each node individually). When
- * some node receives a request (either from the coordinator or from some other node) then its {@link
- * CoordinationHandler#process(CoordinationRequest, CoordinationContext)} method gets called. Implementations of this method must perform
- * their application-specific logic based on the request content and send back a response via {@link CoordinationRequest#reply(Object)}
- * method.
+ * {@link CoordinationService} provides support for asynchronous message exchange among the coordination participants. It can be done via
+ * the following methods:
+ * </p>
+ * <ul>
+ * <li>
+ * {@link CoordinationContext#broadcast(Object, CoordinationBroadcastCallback)} - broadcast the same request to all members at once
+ * </li>
+ * <li>{@link CoordinationMember#request(Object, CoordinationRequestCallback)} - send request to individual member</li>
+ * </ul>
+ *
+ * <p>
+ * When some node receives a request (either from the coordinator or from some other node) then its
+ * {@link CoordinationHandler#process(CoordinationRequest, CoordinationContext)} method gets called. Implementations of this method must
+ * perform their application-specific logic based on the request payload and send back a response via the
+ * {@link CoordinationRequest#reply(Object)} method.
  * </p>
  *
  * <p>
@@ -110,7 +140,8 @@ import java.util.List;
  * cluster topology.
  * </p>
  *
- * <h2>Concurrent topology changes</h2>
+ * <a name="topology_changes"></a>
+ * <h2>Topology Changes</h2>
  * <p>
  * If topology change happens while coordination process is still running then {@link CoordinationService} will try to cancel the current
  * process via {@link CoordinationHandler#cancel(CoordinationContext)} method and will start a new coordination process.
@@ -131,24 +162,8 @@ import java.util.List;
  * CoordinationContext} instance (see {@link CoordinationContext#setAttachment(Object)}/{@link CoordinationContext#getAttachment()}).
  * </p>
  *
- * <h2>Coordination handler example</h2>
- * <p>
- * The code example below shows how {@link CoordinationHandler} can be implemented in order to perform distributed coordination of cluster
- * members. For the sake of brevity the coordination scenario is very simple and has the goal of executing some application-specific logic
- * on each of the coordinated members with each member holding an exclusive local lock. The coordination protocol can be described as
- * follows:
- * </p>
- * <ol>
- * <li>Ask all members to acquire local lock and await for confirmation from each member</li>
- * <li>Ask all members to execute their application-specific logic and await for confirmation from each member</li>
- * <li>Ask all members to release their local locks</li>
- * </ol>
- *
- * <p>
- * ${source: coordinate/CoordinationServiceJavadocTest.java#handler}
- * </p>
- *
- * <h2>Awaiting for initial coordination</h2>
+ * <a name="awaiting_for_initial_coordination"></a>
+ * <h2>Awaiting for Initial Coordination</h2>
  * <p>
  * Sometimes it is required for applications to await for initial coordination process to complete before proceeding to their main
  * tasks (f.e. if application needs to know which data partitions or roles were assigned to its node by some imaginary
@@ -162,7 +177,8 @@ import java.util.List;
  * ${source: coordinate/CoordinationServiceJavadocTest.java#future}
  * </p>
  *
- * <h2>Thread management</h2>
+ * <a name="thread_management"></a>
+ * <h2>Thread Management</h2>
  * <p>
  * Each {@link CoordinationHandler} instance is bound to a single thread that is managed by the {@link CoordinationService}. All
  * coordination and messaging callbacks get processed on that thread sequentially in order to simplify asynchronous operations handling and
@@ -174,6 +190,8 @@ import java.util.List;
  * pool to offload such operations from the main coordination thread. Otherwise such operations will block subsequent notification from the
  * {@link CoordinationService} and will negatively impact on the overall coordination performance.
  * </p>
+ *
+ * @see CoordinationServiceFactory
  */
 @DefaultServiceFactory(CoordinationServiceFactory.class)
 public interface CoordinationService extends Service {

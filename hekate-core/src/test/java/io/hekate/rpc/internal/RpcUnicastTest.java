@@ -28,7 +28,9 @@ import io.hekate.partition.PartitionMapper;
 import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcAffinityKey;
 import io.hekate.rpc.RpcClientBuilder;
+import io.hekate.rpc.RpcClientConfig;
 import io.hekate.rpc.RpcException;
+import io.hekate.rpc.RpcRetry;
 import io.hekate.rpc.RpcServerConfig;
 import io.hekate.rpc.RpcServiceFactory;
 import io.hekate.test.HekateTestError;
@@ -40,18 +42,21 @@ import java.io.NotSerializableException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -92,6 +97,15 @@ public class RpcUnicastTest extends RpcServiceTestBase {
     }
 
     @Rpc
+    public interface TestRpcRetry {
+        @RpcRetry
+        Object retry();
+
+        @RpcRetry(errors = AssertionError.class, maxAttempts = "1", delay = "10")
+        Object retryMethod();
+    }
+
+    @Rpc
     public interface TestAsyncRpc {
         CompletableFuture<Object> call();
     }
@@ -103,6 +117,17 @@ public class RpcUnicastTest extends RpcServiceTestBase {
 
     public RpcUnicastTest(MultiCodecTestContext ctx) {
         super(ctx);
+    }
+
+    @Test
+    public void testNonRpcMethod() throws Exception {
+        TestRpcB rpc = mock(TestRpcB.class);
+
+        HekateTestNode client = prepareClientAndServer(rpc).client();
+
+        TestRpcB proxy = client.rpc().clientFor(TestRpcB.class).build();
+
+        assertNotNull(proxy.toString());
     }
 
     @Test
@@ -363,6 +388,105 @@ public class RpcUnicastTest extends RpcServiceTestBase {
             verify(rpc).callD();
             verifyNoMoreInteractions(rpc);
 
+            reset(rpc);
+        });
+    }
+
+    @Test
+    public void testRetryDefaultSettingsInConfig() throws Exception {
+        TestRpcRetry rpcApi = mock(TestRpcRetry.class);
+
+        HekateTestNode server = prepareServer(rpcApi, null);
+
+        HekateTestNode client = createNode(boot -> boot
+            .withNodeName("rpc-client")
+            .withService(RpcServiceFactory.class, rpc -> {
+                rpc.withClient(new RpcClientConfig()
+                    .withRpcInterface(TestRpcRetry.class)
+                    .withRetryPolicy(retry -> retry
+                        .maxAttempts(1)
+                        .withFixedDelay(10)
+                    )
+                );
+            })
+        ).join();
+
+        awaitForTopology(client, server);
+
+        TestRpcRetry proxy = client.rpc().clientFor(TestRpcRetry.class).build();
+
+        repeat(3, i -> {
+            AtomicInteger attempt = new AtomicInteger();
+
+            when(rpcApi.retry()).thenAnswer(x -> {
+                if (attempt.getAndIncrement() == 0) {
+                    throw TEST_ERROR;
+                } else {
+                    return "ok";
+                }
+            });
+
+            assertEquals("ok", proxy.retry());
+
+            verify(rpcApi, times(2)).retry();
+            verifyNoMoreInteractions(rpcApi);
+            reset(rpcApi);
+        });
+    }
+
+    @Test
+    public void testRetryDefaultSettingsInBuilder() throws Exception {
+        TestRpcRetry rpc = mock(TestRpcRetry.class);
+
+        HekateTestNode client = prepareClientAndServer(rpc).client();
+
+        TestRpcRetry proxy = client.rpc().clientFor(TestRpcRetry.class)
+            .withRetryPolicy(retry -> retry
+                .maxAttempts(1)
+                .withFixedDelay(10)
+            )
+            .build();
+
+        repeat(3, i -> {
+            AtomicInteger attempt = new AtomicInteger();
+
+            when(rpc.retry()).thenAnswer(x -> {
+                if (attempt.getAndIncrement() == 0) {
+                    throw TEST_ERROR;
+                } else {
+                    return "ok";
+                }
+            });
+
+            assertEquals("ok", proxy.retry());
+
+            verify(rpc, times(2)).retry();
+            verifyNoMoreInteractions(rpc);
+            reset(rpc);
+        });
+    }
+
+    @Test
+    public void testRetryMethodSettings() throws Exception {
+        TestRpcRetry rpc = mock(TestRpcRetry.class);
+
+        TestRpcRetry proxy = prepareClientAndServer(rpc).client().rpc().clientFor(TestRpcRetry.class).build();
+
+        repeat(3, i -> {
+            AtomicInteger attempt = new AtomicInteger();
+
+            when(rpc.retryMethod()).thenAnswer(x -> {
+                if (attempt.getAndIncrement() == 0) {
+                    throw TEST_ERROR;
+                } else {
+                    return "ok";
+                }
+            });
+
+            assertEquals("ok", proxy.retryMethod());
+
+            verify(rpc, times(2)).retryMethod();
+            verifyNoMoreInteractions(rpc);
             reset(rpc);
         });
     }

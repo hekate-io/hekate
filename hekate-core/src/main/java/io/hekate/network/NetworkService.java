@@ -22,7 +22,6 @@ import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.DefaultServiceFactory;
 import io.hekate.core.service.Service;
-import io.hekate.messaging.MessagingService;
 import java.net.InetSocketAddress;
 import java.util.List;
 
@@ -34,12 +33,19 @@ import java.util.List;
  * {@link NetworkService} provides an abstraction layer on top of sockets API for building connection-oriented communication protocols.
  * </p>
  *
- * <p>
- * <b>Note:</b> {@link NetworkService} provides a low-level communication API. For high-level cluster-wide messaging API please see the
- * documentation of {@link MessagingService}.
- * </p>
+ * <ul>
+ * <li><a href="#service_configuration">Service Configuration</a></li>
+ * <li><a href="#connectors">Connectors</a></li>
+ * <li><a href="#connectors_configuration">Connectors Configuration</a></li>
+ * <li><a href="#protocol_identifier">Protocol Identifier</a></li>
+ * <li><a href="#ssl_encryption">SSL Encryption</a></li>
+ * <li><a href="#data_serialization">Data Serialization</a></li>
+ * <li><a href="#thread_management">Thread Management</a></li>
+ * <li><a href="#example">Example</a></li>
+ * </ul>
  *
- * <h2>Service configuration</h2>
+ * <a name="service_configuration"></a>
+ * <h2>Service Configuration</h2>
  * <p>
  * {@link NetworkService} can be configured and registered within the {@link HekateBootstrap} via the {@link NetworkServiceFactory} class
  * as in the example below:
@@ -67,16 +73,11 @@ import java.util.List;
  * </div>
  *
  * <p>
- * Please see the documentation of {@link NetworkServiceFactory} properties for more details about the available configuration options.
+ * Please see the documentation of {@link NetworkServiceFactory} class for more details about the available configuration options.
  * </p>
  *
- * <h2>Accessing service</h2>
- * <p>
- * Instances of {@link NetworkService} can be obtained via {@link Hekate#network()} method as in the example below:
- * ${source: network/NetworkServiceJavadocTest.java#get_service}
- * </p>
- *
- * <h2>Network connectors</h2>
+ * <a name="connectors"></a>
+ * <h2>Connectors</h2>
  * <p>
  * Communication units in the {@link NetworkService} are represented by the {@link NetworkConnector} interface. This interface provides API
  * for creating client connections based on the connector options as well as accepting connections from remote clients (optional).
@@ -100,7 +101,8 @@ import java.util.List;
  * will act in a pure client mode and will not be able to accept connections from remote addresses.
  * </p>
  *
- * <h2>Connectors configuration</h2>
+ * <a name="connectors_configuration"></a>
+ * <h2>Connectors Configuration</h2>
  * <p>
  * {@link NetworkConnector} configuration is represented by the {@link NetworkConnectorConfig} class. Please see its documentation for the
  * complete list of all available configuration options.
@@ -111,7 +113,8 @@ import java.util.List;
  * method.
  * </p>
  *
- * <h2>Protocol identifiers</h2>
+ * <a name="protocol_identifier"></a>
+ * <h2>Protocol Identifier</h2>
  * <p>
  * Each connector must have a protocol identifier. This identifier is used by the {@link NetworkService} to select which {@link
  * NetworkConnector} should be responsible for processing each particular connection from a remote {@link NetworkClient}. When {@link
@@ -121,7 +124,8 @@ import java.util.List;
  * handled by its {@link NetworkServerHandler}. If such instance can't be found then connection will be rejected.
  * </p>
  *
- * <h2>SSL encryption</h2>
+ * <a name="ssl_encryption"></a>
+ * <h2>SSL Encryption</h2>
  * <p>
  * It is possible to configure {@link NetworkService} to use secure communications by setting {@link
  * NetworkServiceFactory#setSsl(NetworkSslConfig) SSL configuration}. Please see the documentation of the {@link NetworkSslConfig}
@@ -139,7 +143,8 @@ import java.util.List;
  * NetworkConnectorConfig#setProtocol(String)} method.
  * </p>
  *
- * <h2>Data serialization</h2>
+ * <a name="data_serialization"></a>
+ * <h2>Data Serialization</h2>
  * <p>
  * Data serialization and deserialization within connectors is handled by the {@link Codec} interface. Instances of this interface can
  * be specified for each connector independently via {@link NetworkConnectorConfig#setMessageCodec(CodecFactory)} method. If not
@@ -151,7 +156,8 @@ import java.util.List;
  * Please see the documentation of {@link Codec} interface for more details about data serialization.
  * </p>
  *
- * <h2>Threads management</h2>
+ * <a name="thread_management"></a>
+ * <h2>Thread Management</h2>
  * <p>
  * {@link NetworkService} manages a core NIO thread pool of {@link NetworkServiceFactory#setNioThreads(int)} size. This thread pools
  * is used to process all incoming and outgoing connections by default.
@@ -173,7 +179,8 @@ import java.util.List;
  * unregisters itself from its worker thread.
  * </p>
  *
- * <h2>Usage example</h2>
+ * <a name="example"></a>
+ * <h2>Example</h2>
  * <p>
  * The code example below shows how {@link NetworkService} can be used to implement client/server communications. For the sake of brevity
  * this example uses the default Java serialization and messages of {@link String} type. For real world applications it is recommended to
@@ -182,7 +189,7 @@ import java.util.List;
  * </p>
  *
  * <a name="server_example"></a>
- * <h3>Server example</h3>
+ * <h3>Server Example</h3>
  * <p>
  * 1) Prepare server handler.
  * ${source: network/NetworkServiceJavadocTest.java#server_handler_example}
@@ -200,7 +207,7 @@ import java.util.List;
  * </p>
  *
  * <a name="client_example"></a>
- * <h3>Client example</h3>
+ * <h3>Client Example</h3>
  * <p>
  * <b>Note:</b> This example uses the same connector configuration as in the <a href="#server_example_connector">server example.</a>
  * </p>
@@ -214,6 +221,8 @@ import java.util.List;
  * 2) Start sending messages (can be done even if connection establishment is still in progress).
  * ${source: network/NetworkServiceJavadocTest.java#client_send_example}
  * </p>
+ *
+ * @see NetworkServiceFactory
  */
 @DefaultServiceFactory(NetworkServiceFactory.class)
 public interface NetworkService extends Service {
