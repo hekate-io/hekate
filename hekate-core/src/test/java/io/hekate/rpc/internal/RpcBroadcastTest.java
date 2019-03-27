@@ -20,11 +20,14 @@ import io.hekate.core.internal.HekateTestNode;
 import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcAggregateException;
 import io.hekate.rpc.RpcBroadcast;
+import io.hekate.rpc.RpcRetry;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -47,13 +50,23 @@ public class RpcBroadcastTest extends RpcServiceTestBase {
 
         @RpcBroadcast
         void errors(Object arg);
+
+        @RpcRetry
+        @RpcBroadcast
+        void retry(Object arg);
+
+        @RpcBroadcast
+        @RpcRetry(maxAttempts = "1", delay = "10")
+        void retryMethod(Object arg);
     }
 
     private final BroadcastRpc rpc1 = mock(BroadcastRpc.class);
 
     private final BroadcastRpc rpc2 = mock(BroadcastRpc.class);
 
-    private BroadcastRpc client;
+    private BroadcastRpc clientRpc;
+
+    private HekateTestNode client;
 
     private HekateTestNode server1;
 
@@ -72,7 +85,9 @@ public class RpcBroadcastTest extends RpcServiceTestBase {
         server1 = ctx.servers().get(0);
         server2 = ctx.servers().get(1);
 
-        client = ctx.client().rpc().clientFor(BroadcastRpc.class)
+        client = ctx.client();
+
+        clientRpc = client.rpc().clientFor(BroadcastRpc.class)
             .withTimeout(AWAIT_TIMEOUT, TimeUnit.SECONDS)
             .build();
     }
@@ -80,7 +95,7 @@ public class RpcBroadcastTest extends RpcServiceTestBase {
     @Test
     public void testCall() throws Exception {
         repeat(3, i -> {
-            client.call(i);
+            clientRpc.call(i);
 
             verify(rpc1).call(i);
             verify(rpc2).call(i);
@@ -96,7 +111,7 @@ public class RpcBroadcastTest extends RpcServiceTestBase {
             doThrow(TEST_ERROR).when(rpc1).ignoreErrors(i);
             doThrow(TEST_ERROR).when(rpc2).ignoreErrors(i);
 
-            client.ignoreErrors(i);
+            clientRpc.ignoreErrors(i);
 
             verify(rpc1).ignoreErrors(i);
             verify(rpc2).ignoreErrors(i);
@@ -111,7 +126,7 @@ public class RpcBroadcastTest extends RpcServiceTestBase {
         repeat(3, i -> {
             doThrow(TEST_ERROR).when(rpc2).ignoreErrors(i);
 
-            client.ignoreErrors(i);
+            clientRpc.ignoreErrors(i);
 
             verify(rpc1).ignoreErrors(i);
             verify(rpc2).ignoreErrors(i);
@@ -126,7 +141,7 @@ public class RpcBroadcastTest extends RpcServiceTestBase {
         repeat(3, i -> {
             doThrow(TEST_ERROR).when(rpc2).warnErrors(i);
 
-            client.warnErrors(i);
+            clientRpc.warnErrors(i);
 
             verify(rpc1).warnErrors(i);
             verify(rpc2).warnErrors(i);
@@ -142,7 +157,7 @@ public class RpcBroadcastTest extends RpcServiceTestBase {
             doThrow(TEST_ERROR).when(rpc1).errors(i);
             doThrow(TEST_ERROR).when(rpc2).errors(i);
 
-            RpcAggregateException err = expect(RpcAggregateException.class, () -> client.errors(i));
+            RpcAggregateException err = expect(RpcAggregateException.class, () -> clientRpc.errors(i));
 
             assertTrue(err.partialResults().isEmpty());
 
@@ -163,7 +178,7 @@ public class RpcBroadcastTest extends RpcServiceTestBase {
         repeat(3, i -> {
             doThrow(TEST_ERROR).when(rpc2).errors(i);
 
-            RpcAggregateException err = expect(RpcAggregateException.class, () -> client.errors(i));
+            RpcAggregateException err = expect(RpcAggregateException.class, () -> clientRpc.errors(i));
 
             assertTrue(err.partialResults().isEmpty());
 
@@ -193,7 +208,7 @@ public class RpcBroadcastTest extends RpcServiceTestBase {
             }).when(rpc1).errors(i);
             doThrow(TEST_ERROR).when(rpc2).errors(i);
 
-            RpcAggregateException err = expect(RpcAggregateException.class, () -> client.errors(i));
+            RpcAggregateException err = expect(RpcAggregateException.class, () -> clientRpc.errors(i));
 
             assertEquals(2, err.errors().size());
             assertEquals(TEST_ERROR.getClass(), err.errors().get(server2.localNode()).getClass());
@@ -205,6 +220,59 @@ public class RpcBroadcastTest extends RpcServiceTestBase {
 
             verify(rpc1).errors(i);
             verify(rpc2, times(2)).errors(i);
+
+            verifyNoMoreInteractions(rpc1, rpc2);
+            reset(rpc1, rpc2);
+        });
+    }
+
+    @Test
+    public void testRetryDefaultSettings() throws Exception {
+        clientRpc = client.rpc().clientFor(BroadcastRpc.class)
+            .withRetryPolicy(retry -> retry
+                .withFixedDelay(10)
+                .maxAttempts(1)
+            )
+            .build();
+
+        repeat(3, i -> {
+            AtomicInteger attempt = new AtomicInteger();
+
+            doAnswer(x -> {
+                if (attempt.getAndIncrement() == 0) {
+                    throw TEST_ERROR;
+                } else {
+                    return null;
+                }
+            }).when(rpc1).retry(any());
+
+            clientRpc.retry("test");
+
+            verify(rpc1, times(2)).retry(any());
+            verify(rpc2).retry(any());
+
+            verifyNoMoreInteractions(rpc1, rpc2);
+            reset(rpc1, rpc2);
+        });
+    }
+
+    @Test
+    public void testRetryMethodSettings() throws Exception {
+        repeat(3, i -> {
+            AtomicInteger attempt = new AtomicInteger();
+
+            doAnswer(x -> {
+                if (attempt.getAndIncrement() == 0) {
+                    throw TEST_ERROR;
+                } else {
+                    return null;
+                }
+            }).when(rpc1).retryMethod(any());
+
+            clientRpc.retryMethod("test");
+
+            verify(rpc1, times(2)).retryMethod(any());
+            verify(rpc2).retryMethod(any());
 
             verifyNoMoreInteractions(rpc1, rpc2);
             reset(rpc1, rpc2);

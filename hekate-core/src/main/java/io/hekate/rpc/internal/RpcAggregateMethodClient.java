@@ -21,6 +21,7 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.operation.AggregateFuture;
 import io.hekate.messaging.operation.AggregateResult;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.rpc.RpcAggregate;
 import io.hekate.rpc.RpcAggregateException;
 import io.hekate.rpc.RpcInterfaceInfo;
@@ -50,6 +51,8 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
     private final Function<AggregateResult<RpcProtocol>, ?> converter;
 
+    private final GenericRetryConfigurer retryPolicy;
+
     private final long timeout;
 
     public RpcAggregateMethodClient(
@@ -57,12 +60,14 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         String tag,
         RpcMethodInfo method,
         MessagingChannel<RpcProtocol> channel,
+        GenericRetryConfigurer retryPolicy,
         long timeout
     ) {
         super(rpc, tag, method, channel);
 
         assert method.aggregate().isPresent() : "Not an aggregate method [rpc=" + rpc + ", method=" + method + ']';
 
+        this.retryPolicy = retryPolicy;
         this.timeout = timeout;
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -157,6 +162,11 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         AggregateFuture<RpcProtocol> future = channel().newAggregate(call)
             .withAffinity(affinity)
             .withTimeout(timeout, TimeUnit.MILLISECONDS)
+            .withRetry(retry -> {
+                if (retryPolicy != null) {
+                    retryPolicy.configure(retry);
+                }
+            })
             .submit();
 
         if (method().isAsync()) {

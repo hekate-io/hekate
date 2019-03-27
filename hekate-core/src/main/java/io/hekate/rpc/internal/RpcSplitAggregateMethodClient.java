@@ -22,6 +22,7 @@ import io.hekate.messaging.MessagingFuture;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.loadbalance.LoadBalancers;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.rpc.RpcAggregate;
 import io.hekate.rpc.RpcException;
 import io.hekate.rpc.RpcInterfaceInfo;
@@ -56,6 +57,8 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
     private final Function<List<RpcProtocol>, Object> aggregator;
 
+    private final GenericRetryConfigurer retryPolicy;
+
     private final long timeout;
 
     public RpcSplitAggregateMethodClient(
@@ -63,6 +66,7 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         String tag,
         RpcMethodInfo method,
         MessagingChannel<RpcProtocol> channel,
+        GenericRetryConfigurer retryPolicy,
         long timeout
     ) {
         super(rpc, tag, method, channel);
@@ -72,6 +76,7 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         assert method.splitArgType().isPresent() : "Split argument index is not defined.";
 
         this.timeout = timeout;
+        this.retryPolicy = retryPolicy;
         this.splitArgIdx = method.splitArg().getAsInt();
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -200,7 +205,7 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
             // Process each part as a separate RPC request with a shared callback.
             for (Object part : parts) {
-                // Substitute original arguments with the part that should be submitted to the remote node.
+                // Replace the original argument with the part that should be sent to the remote node.
                 Object[] partArgs = substituteArgs(args, part);
 
                 // Submit RPC request.
@@ -208,6 +213,11 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
                 roundRobin.newRequest(call)
                     .withTimeout(timeout, TimeUnit.MILLISECONDS)
+                    .withRetry(retry -> {
+                        if (retryPolicy != null) {
+                            retryPolicy.configure(retry);
+                        }
+                    })
                     .submit(aggrFuture); // <- Future is a callback.
             }
 

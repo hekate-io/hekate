@@ -20,6 +20,7 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.operation.RequestFuture;
 import io.hekate.messaging.operation.Response;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
 import io.hekate.rpc.internal.RpcProtocol.RpcCall;
@@ -39,6 +40,8 @@ class RpcMethodClient<T> extends RpcMethodClientBase<T> {
         }
     };
 
+    private final GenericRetryConfigurer retryPolicy;
+
     private final long timeout;
 
     public RpcMethodClient(
@@ -46,10 +49,12 @@ class RpcMethodClient<T> extends RpcMethodClientBase<T> {
         String tag,
         RpcMethodInfo method,
         MessagingChannel<RpcProtocol> channel,
+        GenericRetryConfigurer retryPolicy,
         long timeout
     ) {
         super(rpc, tag, method, channel);
 
+        this.retryPolicy = retryPolicy;
         this.timeout = timeout;
     }
 
@@ -60,6 +65,11 @@ class RpcMethodClient<T> extends RpcMethodClientBase<T> {
         RequestFuture<RpcProtocol> future = channel().newRequest(call)
             .withAffinity(affinity)
             .withTimeout(timeout, TimeUnit.MILLISECONDS)
+            .withRetry(retry -> {
+                if (retryPolicy != null) {
+                    retryPolicy.configure(retry);
+                }
+            })
             .submit();
 
         if (method().isAsync()) {

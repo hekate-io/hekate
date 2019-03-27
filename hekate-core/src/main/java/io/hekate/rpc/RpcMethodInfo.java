@@ -49,6 +49,8 @@ public class RpcMethodInfo {
 
     private final OptionalInt affinityArg;
 
+    private final Optional<RpcRetryInfo> retry;
+
     @ToStringIgnore
     private final Class<?> realReturnType;
 
@@ -70,6 +72,7 @@ public class RpcMethodInfo {
         this.async = isAsyncReturnType(javaMethod);
         this.aggregate = findAggregate(javaMethod);
         this.broadcast = findBroadcast(javaMethod);
+        this.retry = findRetry(javaMethod);
 
         if (broadcast.isPresent()) {
             this.realReturnType = Void.class;
@@ -177,6 +180,17 @@ public class RpcMethodInfo {
     }
 
     /**
+     * Returns the error retry policy of this method based on the {@link RpcRetry} annotation attributes.
+     *
+     * @return Error retry policy.
+     *
+     * @see RpcRetry
+     */
+    public Optional<RpcRetryInfo> retry() {
+        return retry;
+    }
+
+    /**
      * Returns the zero-based index of an argument that is annotated with {@link RpcAffinityKey} (if presents).
      *
      * @return Zero-based index of an argument that is annotated with {@link RpcAffinityKey}.
@@ -234,6 +248,10 @@ public class RpcMethodInfo {
 
     private static Optional<RpcBroadcast> findBroadcast(Method meth) {
         return Optional.ofNullable(meth.getAnnotation(RpcBroadcast.class));
+    }
+
+    private static Optional<RpcRetryInfo> findRetry(Method meth) {
+        return Optional.ofNullable(meth.getAnnotation(RpcRetry.class)).map(RpcRetryInfo::parse);
     }
 
     private static OptionalInt findSplitArg(Method meth) {

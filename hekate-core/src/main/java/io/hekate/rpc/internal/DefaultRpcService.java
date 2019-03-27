@@ -317,7 +317,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
             clientConfigs.forEach(cfg -> {
                 RpcTypeKey key = new RpcTypeKey(cfg.getRpcInterface(), cfg.getTag());
 
-                RpcClientBuilder<?> client = createClient(key)
+                RpcClientBuilder<?> client = createClient(key, cfg)
                     .withTimeout(cfg.getTimeout(), TimeUnit.MILLISECONDS)
                     .withPartitions(cfg.getPartitions(), cfg.getBackupNodes());
 
@@ -396,7 +396,9 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
         try {
             @SuppressWarnings("unchecked")
-            RpcClientBuilder<T> client = (RpcClientBuilder<T>)clients.computeIfAbsent(key, this::createClient);
+            RpcClientBuilder<T> client = (RpcClientBuilder<T>)clients.computeIfAbsent(key, missingKey ->
+                createClient(missingKey, null)
+            );
 
             return client;
         } finally {
@@ -464,12 +466,16 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
         }
     }
 
-    private RpcClientBuilder<?> createClient(RpcTypeKey key) {
+    private RpcClientBuilder<?> createClient(RpcTypeKey key, RpcClientConfig cfg) {
         RpcInterfaceInfo<?> type = typeAnalyzer.analyzeType(key.type());
 
-        MessagingChannel<RpcProtocol> clientChannel = channelForClient(type, key.tag());
-
-        DefaultRpcClientBuilder<?> client = new DefaultRpcClientBuilder<>(type, key.tag(), clientChannel, idleSocketTimeout);
+        DefaultRpcClientBuilder<?> client = new DefaultRpcClientBuilder<>(
+            type,
+            key.tag(),
+            channelForClient(type, key.tag()),
+            cfg != null ? cfg.getTimeout() : 0,
+            cfg != null ? cfg.getRetryPolicy() : null
+        );
 
         if (DEBUG) {
             log.debug("Created new RPC client builder [key={}, builder={}]", key, client);

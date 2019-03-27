@@ -24,6 +24,7 @@ import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.DefaultServiceFactory;
 import io.hekate.core.service.Service;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.partition.RendezvousHashMapper;
 import java.util.Collection;
 import java.util.List;
@@ -48,6 +49,7 @@ import java.util.concurrent.CompletableFuture;
  * <li><a href="#rpc_server">RPC Server</a></li>
  * <li><a href="#rpc_client">RPC Client</a></li>
  * <li><a href="#routing_and_load_balancing">Routing and Load Balancing</a></li>
+ * <li><a href="#retrying_on_error">Retrying on Error</a></li>
  * </ul>
  *
  * <a name="service_configuration"></a>
@@ -280,6 +282,25 @@ import java.util.concurrent.CompletableFuture;
  * <p>
  * If filtering rules are specified for an RPC client then all RPC operations of that client will be distributed only among those nodes
  * that do match the filtering criteria.
+ * </p>
+ *
+ * <a name="retrying_on_error"></a>
+ * <h2>Retrying on Error</h2>
+ * <p>
+ * RPC service provides support for specifying a retry behavior in case of a remote invocation error.
+ * </p>
+ *
+ * <p>
+ * This can be done by marking a method of an RPC interface with the {@link RpcRetry} annotation. If such annotation is present on a method
+ * then all failed invocations of that method will be transparently retried based on the annotation attribute values.
+ * </p>
+ *
+ * <p>
+ * {@link RpcRetry}'s attributes provide support for specifying different parameters of retry behavior (like maximum attempts, delay
+ * between retries, etc). It is also possible to configure default values of those attributes by registering an instance
+ * of {@link GenericRetryConfigurer} interface in the RPC client's configuration via the
+ * {@link RpcClientConfig#setRetryPolicy(GenericRetryConfigurer)} or at the RPC client construction time via the
+ * {@link RpcClientBuilder#withRetryPolicy(GenericRetryConfigurer)} method.
  * </p>
  *
  * @see RpcServiceFactory
