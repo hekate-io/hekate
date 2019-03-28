@@ -83,8 +83,8 @@ public interface ClusterTopology extends Iterable<ClusterNode>, ClusterTopologyS
     ClusterNode localNode();
 
     /**
-     * Returns an immutable list of all nodes with consistent ordering based on {@link ClusterNode#compareTo(Object)} method. Returns an
-     * empty list if there are no nodes within this topology.
+     * Returns an immutable list of all nodes with consistent ordering based on {@link ClusterNode#compareTo(ClusterNode)} method.
+     * Returns an empty list if there are no nodes within this topology.
      *
      * @return Immutable list of all nodes with consistent ordering or an empty list if there are no nodes within this topology.
      */
