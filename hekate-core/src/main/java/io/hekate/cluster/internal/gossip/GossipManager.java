@@ -981,7 +981,7 @@ public class GossipManager {
 
             Set<ClusterNode> failed = unmodifiableSet(
                 localGossip.members().values().stream()
-                    .filter(n -> !n.node().equals(localNode) && n.status() == FAILED)
+                    .filter(n -> !n.node().equals(localNode) && n.status() == FAILED && oldTopology.contains(n.node()))
                     .map(GossipNodeState::node)
                     .collect(Collectors.toSet())
             );

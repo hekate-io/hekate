@@ -509,7 +509,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
         List<HekateTestNode> nodes = new ArrayList<>();
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 10; i++) {
             HekateTestNode added = createNode();
 
             added.startRecording();
