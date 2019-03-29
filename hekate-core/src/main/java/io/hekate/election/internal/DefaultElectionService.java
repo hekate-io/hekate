@@ -155,9 +155,9 @@ public class DefaultElectionService implements ElectionService, DependentService
 
                 // Initialize handlers after joining the cluster.
                 ctx.cluster().addListener(event ->
-                    guard.withReadLockIfInitialized(() -> {
-                        handlers.values().forEach(CandidateHandler::initialize);
-                    }), ClusterEventType.JOIN
+                    guard.withReadLockIfInitialized(() ->
+                        handlers.values().forEach(CandidateHandler::initialize)
+                    ), ClusterEventType.JOIN
                 );
             }
         } finally {

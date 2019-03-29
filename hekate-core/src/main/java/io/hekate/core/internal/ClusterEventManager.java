@@ -34,6 +34,7 @@ import io.hekate.util.format.ToString;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -86,7 +87,7 @@ class ClusterEventManager implements HekateSupport {
 
             FilteredListener that = (FilteredListener)o;
 
-            return !(delegate != null ? !delegate.equals(that.delegate) : that.delegate != null);
+            return Objects.equals(delegate, that.delegate);
         }
 
         @Override

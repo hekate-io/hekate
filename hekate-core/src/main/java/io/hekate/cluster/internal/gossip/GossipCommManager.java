@@ -201,9 +201,9 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
                 @Override
                 public void onDisconnect(NetworkClient<GossipProtocol> client, Optional<Throwable> cause) {
-                    cause.ifPresent(err -> {
-                        listener.onSendFailure(msg, err);
-                    });
+                    cause.ifPresent(err ->
+                        listener.onSendFailure(msg, err)
+                    );
                 }
             });
         }

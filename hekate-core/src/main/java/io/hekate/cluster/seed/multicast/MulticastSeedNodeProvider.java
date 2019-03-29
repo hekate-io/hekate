@@ -52,6 +52,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -114,11 +115,11 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
 
             SeedNode seedNode = (SeedNode)o;
 
-            if (address != null ? !address.equals(seedNode.address) : seedNode.address != null) {
+            if (!Objects.equals(address, seedNode.address)) {
                 return false;
             }
 
-            return !(cluster != null ? !cluster.equals(seedNode.cluster) : seedNode.cluster != null);
+            return Objects.equals(cluster, seedNode.cluster);
         }
 
         @Override

@@ -213,55 +213,7 @@ class MessagingConnectionIn<T> extends MessagingConnection<T> {
                     break;
                 }
                 case REQUEST:
-                case VOID_REQUEST: {
-                    MessagingWorker worker = async.pooledWorker();
-
-                    if (worker.isAsync()) {
-                        long receivedAtNanos = receivedAtNanos(netMsg);
-
-                        onReceiveAsyncEnqueue(from);
-
-                        netMsg.handleAsync(worker, msg -> {
-                            onReceiveAsyncDequeue();
-
-                            try {
-                                receiveRequestAsync(msg.decode().cast(), worker, receivedAtNanos);
-                            } catch (Throwable err) {
-                                handleReceiveError(msg, err);
-                            }
-                        });
-                    } else {
-                        receiveRequestSync(netMsg.decode().cast(), worker);
-                    }
-
-                    break;
-                }
-                case AFFINITY_REQUEST:
-                case AFFINITY_VOID_REQUEST: {
-                    int affinity = MessagingProtocolCodec.previewAffinity(netMsg);
-
-                    MessagingWorker worker = async.workerFor(affinity);
-
-                    if (worker.isAsync()) {
-                        long receivedAtNanos = receivedAtNanos(netMsg);
-
-                        onReceiveAsyncEnqueue(from);
-
-                        netMsg.handleAsync(worker, msg -> {
-                            onReceiveAsyncDequeue();
-
-                            try {
-                                receiveRequestAsync(msg.decode().cast(), worker, receivedAtNanos);
-                            } catch (Throwable err) {
-                                handleReceiveError(msg, err);
-                            }
-                        });
-                    } else {
-                        receiveRequestSync(netMsg.decode().cast(), worker);
-                    }
-
-                    break;
-                }
+                case VOID_REQUEST:
                 case SUBSCRIBE: {
                     MessagingWorker worker = async.pooledWorker();
 
@@ -285,6 +237,8 @@ class MessagingConnectionIn<T> extends MessagingConnection<T> {
 
                     break;
                 }
+                case AFFINITY_REQUEST:
+                case AFFINITY_VOID_REQUEST:
                 case AFFINITY_SUBSCRIBE: {
                     int affinity = MessagingProtocolCodec.previewAffinity(netMsg);
 

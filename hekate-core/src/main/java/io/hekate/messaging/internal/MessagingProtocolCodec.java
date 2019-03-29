@@ -32,6 +32,7 @@ import io.hekate.messaging.internal.MessagingProtocol.ErrorResponse;
 import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.internal.MessagingProtocol.Request;
+import io.hekate.messaging.internal.MessagingProtocol.RequestBase;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
 import io.hekate.messaging.internal.MessagingProtocol.SubscribeRequest;
 import io.hekate.messaging.internal.MessagingProtocol.VoidRequest;
@@ -187,7 +188,6 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 flags = appendHasMetaData(flags, request.hasMetaData());
 
                 out.writeByte(flags);
-
                 out.writeInt(request.affinity());
                 out.writeVarInt(request.requestId());
 
@@ -203,8 +203,10 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 break;
             }
-            case REQUEST: {
-                Request<T> request = msg.cast();
+            case REQUEST:
+            case VOID_REQUEST:
+            case SUBSCRIBE: {
+                RequestBase<T> request = msg.cast();
 
                 flags = appendHasTimeout(flags, request.hasTimeout());
                 flags = appendIsRetransmit(flags, request.isRetransmit());
@@ -233,30 +235,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 flags = appendHasMetaData(flags, request.hasMetaData());
 
                 out.writeByte(flags);
-
                 out.writeInt(request.affinity());
-                out.writeVarInt(request.requestId());
-
-                if (request.hasTimeout()) {
-                    out.writeVarLong(request.timeout());
-                }
-
-                if (request.hasMetaData()) {
-                    encodeMetaData(request.metaData(), out);
-                }
-
-                delegate.encode(request.payload(), out);
-
-                break;
-            }
-            case VOID_REQUEST: {
-                VoidRequest<T> request = msg.cast();
-
-                flags = appendHasTimeout(flags, request.hasTimeout());
-                flags = appendIsRetransmit(flags, request.isRetransmit());
-                flags = appendHasMetaData(flags, request.hasMetaData());
-
-                out.writeByte(flags);
                 out.writeVarInt(request.requestId());
 
                 if (request.hasTimeout()) {
@@ -294,46 +273,9 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
 
                 break;
             }
-            case SUBSCRIBE: {
-                SubscribeRequest<T> request = msg.cast();
-
-                flags = appendHasTimeout(flags, request.hasTimeout());
-                flags = appendIsRetransmit(flags, request.isRetransmit());
-                flags = appendHasMetaData(flags, request.hasMetaData());
-
-                out.writeByte(flags);
-                out.writeVarInt(request.requestId());
-
-                if (request.hasTimeout()) {
-                    out.writeVarLong(request.timeout());
-                }
-
-                if (request.hasMetaData()) {
-                    encodeMetaData(request.metaData(), out);
-                }
-
-                delegate.encode(request.payload(), out);
-
-                break;
-            }
-            case RESPONSE_CHUNK: {
-                ResponseChunk<T> response = msg.cast();
-
-                flags = appendHasMetaData(flags, response.hasMetaData());
-
-                out.writeByte(flags);
-                out.writeVarInt(response.requestId());
-
-                if (response.hasMetaData()) {
-                    encodeMetaData(response.metaData(), out);
-                }
-
-                delegate.encode(response.payload(), out);
-
-                break;
-            }
+            case RESPONSE_CHUNK:
             case FINAL_RESPONSE: {
-                FinalResponse<T> response = msg.cast();
+                ResponseChunk<T> response = msg.cast();
 
                 flags = appendHasMetaData(flags, response.hasMetaData());
 

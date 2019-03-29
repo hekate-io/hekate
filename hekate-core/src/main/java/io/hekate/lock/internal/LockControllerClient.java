@@ -260,14 +260,8 @@ class LockControllerClient {
 
                     break;
                 }
-                case UNLOCKING: {
-                    // No-op.
-                    break;
-                }
-                case UNLOCKED: {
-                    // No-op.
-                    break;
-                }
+                case UNLOCKING:
+                case UNLOCKED:
                 case TERMINATED: {
                     // No-op.
                     break;
@@ -309,19 +303,13 @@ class LockControllerClient {
 
                     break;
                 }
-                case LOCKED: {
-                    // No-op.
-                    break;
-                }
-                case UNLOCKING: {
-                    // No-op.
-                    break;
-                }
                 case UNLOCKED: {
                     remoteUnlock();
 
                     break;
                 }
+                case LOCKED:
+                case UNLOCKING:
                 case TERMINATED: {
                     // No-op.
                     break;
@@ -392,10 +380,7 @@ class LockControllerClient {
 
                         break;
                     }
-                    case UNLOCKED: {
-                        // No-op.
-                        break;
-                    }
+                    case UNLOCKED:
                     case TERMINATED: {
                         // No-op.
                         break;
@@ -430,11 +415,7 @@ class LockControllerClient {
                     case RETRY: {
                         return true;
                     }
-                    case LOCK_TIMEOUT: {
-                        becomeUnlocked();
-
-                        return false;
-                    }
+                    case LOCK_TIMEOUT:
                     case LOCK_BUSY: {
                         becomeUnlocked();
 
