@@ -55,7 +55,7 @@ public interface GossipPolicy {
             }
 
             List<GossipNodeState> liveNodes = nodes.stream()
-                .filter(n -> n.status() != GossipNodeStatus.DOWN)
+                .filter(n -> !n.status().isTerminated())
                 .collect(toList());
 
             if (liveNodes.size() == size) {
@@ -92,7 +92,7 @@ public interface GossipPolicy {
             assert seen != null : "Seen list is null.";
 
             nodes = nodes.stream()
-                .filter(n -> !seen.contains(n.id()) && n.status() != GossipNodeStatus.DOWN)
+                .filter(n -> !seen.contains(n.id()) && !n.status().isTerminated())
                 .collect(toList());
 
             if (nodes.size() <= size) {
@@ -172,8 +172,8 @@ public interface GossipPolicy {
                     .forEach(targets::add);
             }
 
-            // If all selected nodes are DOWN or LEAVING then try to add any other non LEAVING/DOWN node.
-            Predicate<GossipNodeState> isLiveNode = s -> s.status() != GossipNodeStatus.DOWN && s.status() != GossipNodeStatus.LEAVING;
+            // If all selected nodes are DOWN, FAILED or LEAVING then try to add any other alive node.
+            Predicate<GossipNodeState> isLiveNode = s -> !s.status().isTerminated() && s.status() != GossipNodeStatus.LEAVING;
 
             if (!targets.isEmpty() && targets.stream().noneMatch(isLiveNode)) {
                 List<GossipNodeState> nonDown = nodes.stream().filter(isLiveNode).collect(toList());

@@ -56,11 +56,11 @@ public class ClusterServiceFactoryMock extends ClusterServiceFactory {
         }
 
         @Override
-        public void onTopologyChange(Set<ClusterNode> oldTopology, Set<ClusterNode> newTopology) {
+        public void onTopologyChange(Set<ClusterNode> oldTopology, Set<ClusterNode> newTopology, Set<ClusterNode> failed) {
             GossipListener delegate = this.delegate;
 
             if (delegate != null) {
-                delegate.onTopologyChange(oldTopology, newTopology);
+                delegate.onTopologyChange(oldTopology, newTopology, failed);
             }
         }
 

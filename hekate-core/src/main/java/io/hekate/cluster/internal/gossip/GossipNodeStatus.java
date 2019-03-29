@@ -17,11 +17,26 @@
 package io.hekate.cluster.internal.gossip;
 
 public enum GossipNodeStatus {
-    JOINING,
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    // Notice!!! Order of values is important as it defines the order of cluster state transitioning.
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    JOINING(false),
 
-    UP,
+    UP(false),
 
-    LEAVING,
+    LEAVING(false),
 
-    DOWN
+    FAILED(true),
+
+    DOWN(true);
+
+    private final boolean terminated;
+
+    GossipNodeStatus(boolean terminated) {
+        this.terminated = terminated;
+    }
+
+    public boolean isTerminated() {
+        return terminated;
+    }
 }

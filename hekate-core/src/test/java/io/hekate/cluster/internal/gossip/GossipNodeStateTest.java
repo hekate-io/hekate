@@ -65,7 +65,7 @@ public class GossipNodeStateTest extends HekateTestBase {
         assertSame(ComparisonResult.BEFORE, s1.compare(s2));
         assertSame(ComparisonResult.AFTER, s2.compare(s1));
 
-        GossipNodeState s3 = s2.unsuspected(s2.suspected());
+        GossipNodeState s3 = s2.unsuspect(s2.suspected());
 
         assertNotSame(s2, s1);
 
@@ -83,7 +83,7 @@ public class GossipNodeStateTest extends HekateTestBase {
         assertSame(ComparisonResult.CONCURRENT, s1.compare(s2));
         assertSame(ComparisonResult.CONCURRENT, s2.compare(s1));
 
-        s1 = s1.unsuspected(s1.suspected());
+        s1 = s1.unsuspect(s1.suspected());
 
         assertSame(ComparisonResult.CONCURRENT, s1.compare(s2));
         assertSame(ComparisonResult.CONCURRENT, s2.compare(s1));
@@ -169,7 +169,7 @@ public class GossipNodeStateTest extends HekateTestBase {
         assertTrue(s.isSuspected(id1));
         assertTrue(s.isSuspected(id2));
 
-        s = s.unsuspected(id1);
+        s = s.unsuspect(id1);
 
         assertTrue(s.hasSuspected());
         assertEquals(1, s.suspected().size());
@@ -177,7 +177,7 @@ public class GossipNodeStateTest extends HekateTestBase {
         assertTrue(s.isSuspected(id2));
         assertFalse(s.isSuspected(id1));
 
-        s = s.unsuspected(id2);
+        s = s.unsuspect(id2);
 
         assertFalse(s.hasSuspected());
         assertEquals(0, s.suspected().size());
@@ -199,6 +199,6 @@ public class GossipNodeStateTest extends HekateTestBase {
         assertTrue(s1.suspected().contains(id1));
         assertTrue(s1.isSuspected(id1));
 
-        assertSame(s1, s1.unsuspected(id2));
+        assertSame(s1, s1.unsuspect(id2));
     }
 }

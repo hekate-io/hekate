@@ -759,7 +759,7 @@ public class GossipManagerTest extends HekateTestBase {
 
         assertEquals(3, g1.members().size());
         assertSame(GossipNodeStatus.UP, g1.member(m1.id()).status());
-        assertSame(GossipNodeStatus.DOWN, g1.member(m2.id()).status());
+        assertSame(GossipNodeStatus.FAILED, g1.member(m2.id()).status());
         assertSame(GossipNodeStatus.UP, g1.member(m3.id()).status());
         assertEquals(1, g1.suspectedView().suspected().size());
         assertTrue(g1.suspectedView().suspecting(m2.id()).contains(m1.id()));
@@ -1068,8 +1068,8 @@ public class GossipManagerTest extends HekateTestBase {
             }
 
             @Override
-            public void onTopologyChange(Set<ClusterNode> oldTopology, Set<ClusterNode> newTopology) {
-                say("Topology  change on " + node + " " + oldTopology + " -> " + newTopology);
+            public void onTopologyChange(Set<ClusterNode> oldTopology, Set<ClusterNode> newTopology, Set<ClusterNode> failed) {
+                say("Topology  change on " + node + " " + oldTopology + " -> " + newTopology + " (failed=" + failed + ')');
             }
 
             @Override

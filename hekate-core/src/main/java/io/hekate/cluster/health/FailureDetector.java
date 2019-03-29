@@ -27,8 +27,9 @@ import java.util.Set;
  * <span class="startHere">&laquo; start here</span>Cluster nodes failure detector.
  *
  * <p>
- * Implementations of this interface are responsible for providing failure detection logic to {@link ClusterService}. Usually this logic is
- * based on heartbeat messages exchange between cluster nodes, however there is no hard restriction and any other algorithms can be used.
+ * Implementations of this interface are responsible for providing failure detection logic to the {@link ClusterService}.
+ * Typically this logic is based on heartbeat messages exchange between cluster nodes, however there is no hard restriction and any other
+ * algorithms can be used.
  * </p>
  *
  * <p>

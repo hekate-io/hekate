@@ -437,7 +437,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     }
 
     @Test
-    public void testTopologyChangeEvents() throws Exception {
+    public void testTopologyChangeEventsWithLeave() throws Exception {
         List<HekateTestNode> nodes = new ArrayList<>();
 
         for (int i = 0; i < 10; i++) {
@@ -460,6 +460,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
                 assertEquals(1, event.added().size());
                 assertEquals(0, event.removed().size());
+                assertEquals(0, event.failed().size());
 
                 assertEquals(added.localNode(), event.added().iterator().next());
 
@@ -493,6 +494,78 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
                 assertEquals(0, event.added().size());
                 assertEquals(1, event.removed().size());
+                assertEquals(0, event.failed().size());
+
+                assertEquals(removedNode, event.removed().iterator().next());
+
+                n.clearEvents();
+            });
+        }
+    }
+
+    @Test
+    public void testTopologyChangeEventsWithTerminate() throws Exception {
+        disableNodeFailurePostCheck();
+
+        List<HekateTestNode> nodes = new ArrayList<>();
+
+        for (int i = 0; i < 3; i++) {
+            HekateTestNode added = createNode();
+
+            added.startRecording();
+
+            nodes.add(added);
+
+            added.join();
+
+            nodes.forEach(n -> n.awaitForTopology(nodes));
+
+            nodes.stream().filter(n -> !n.localNode().equals(added.localNode())).forEach(n -> {
+                List<ClusterEvent> events = n.events(ClusterEventType.CHANGE);
+
+                assertEquals(1, events.size());
+
+                ClusterChangeEvent event = events.iterator().next().asChange();
+
+                assertEquals(1, event.added().size());
+                assertEquals(0, event.removed().size());
+                assertEquals(0, event.failed().size());
+
+                assertEquals(added.localNode(), event.added().iterator().next());
+
+                n.clearEvents();
+            });
+        }
+
+        for (Iterator<HekateTestNode> it = nodes.iterator(); it.hasNext(); ) {
+            HekateTestNode removed = it.next();
+
+            ClusterNode removedNode = removed.localNode();
+
+            it.remove();
+
+            say("Terminating [node=" + removedNode + ", remaining=" + nodes.size() + ']');
+
+            removed.terminate();
+
+            List<ClusterEvent> leaveEvents = removed.events(ClusterEventType.LEAVE);
+
+            assertEquals(1, leaveEvents.size());
+            assertEquals(0, leaveEvents.get(0).asLeave().added().size());
+            assertEquals(0, leaveEvents.get(0).asLeave().removed().size());
+
+            nodes.forEach(n -> n.awaitForTopology(nodes));
+
+            nodes.forEach(n -> {
+                List<ClusterEvent> events = n.events(ClusterEventType.CHANGE);
+
+                assertEquals(1, events.size());
+
+                ClusterChangeEvent event = events.iterator().next().asChange();
+
+                assertEquals(0, event.added().size());
+                assertEquals(1, event.removed().size());
+                assertEquals(1, event.failed().size());
 
                 assertEquals(removedNode, event.removed().iterator().next());
 

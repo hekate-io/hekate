@@ -26,7 +26,7 @@ public interface GossipListener {
 
     void onStatusChange(GossipNodeStatus oldStatus, GossipNodeStatus newStatus, int order, Set<ClusterNode> topology);
 
-    void onTopologyChange(Set<ClusterNode> oldTopology, Set<ClusterNode> newTopology);
+    void onTopologyChange(Set<ClusterNode> oldTopology, Set<ClusterNode> newTopology, Set<ClusterNode> failed);
 
     void onKnownAddressesChange(Set<ClusterAddress> oldAddresses, Set<ClusterAddress> newAddresses);
 

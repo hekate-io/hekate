@@ -436,7 +436,7 @@ public class ClusterEventManagerTest extends HekateTestBase {
     private ClusterChangeEvent newChangeEvent() throws Exception {
         ClusterTopology topology = newTopology();
 
-        return new ClusterChangeEvent(topology, topology.nodes(), emptyList(), mock(Hekate.class));
+        return new ClusterChangeEvent(topology, topology.nodes(), emptyList(), emptyList(), mock(Hekate.class));
     }
 
     private ClusterLeaveEvent newLeaveEvent() throws Exception {

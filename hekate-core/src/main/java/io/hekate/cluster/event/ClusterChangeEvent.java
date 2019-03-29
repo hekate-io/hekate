@@ -19,6 +19,7 @@ package io.hekate.cluster.event;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.cluster.health.FailureDetector;
 import io.hekate.core.HekateSupport;
 import java.util.List;
 
@@ -41,19 +42,29 @@ public class ClusterChangeEvent extends ClusterEventBase {
 
     private final List<ClusterNode> removed;
 
+    private final List<ClusterNode> failed;
+
     /**
      * Constructs a new instance.
      *
      * @param topology Topology.
      * @param added List of newly joined nodes (see {@link #added()}).
      * @param removed List of nodes that left the cluster (see {@link #removed()}).
+     * @param failed List of failed nodes (see {@link #failed()}).
      * @param hekate Delegate for {@link #hekate()}.
      */
-    public ClusterChangeEvent(ClusterTopology topology, List<ClusterNode> added, List<ClusterNode> removed, HekateSupport hekate) {
+    public ClusterChangeEvent(
+        ClusterTopology topology,
+        List<ClusterNode> added,
+        List<ClusterNode> removed,
+        List<ClusterNode> failed,
+        HekateSupport hekate
+    ) {
         super(topology, hekate);
 
         this.added = added;
         this.removed = removed;
+        this.failed = failed;
     }
 
     /**
@@ -68,10 +79,32 @@ public class ClusterChangeEvent extends ClusterEventBase {
     /**
      * Returns the list of nodes that left the cluster.
      *
+     * <p>
+     * This list contains nodes that left the cluster normally <b>and</b> those that were considered to be failed and forcefully removed.
+     * </p>
+     *
+     * <p>
+     * For the list of nodes that were forcefully removed from the cluster by the failure detection logic please see the {@link #failed()}
+     * method.
+     * </p>
+     *
      * @return List of nodes that left the cluster.
      */
     public List<ClusterNode> removed() {
         return removed;
+    }
+
+    /**
+     * Returns the list of failed nodes.
+     *
+     * <p>
+     * This list contains those nodes that were removed from the cluster by the failure detection logic (see {@link FailureDetector}).
+     * </p>
+     *
+     * @return List of failed nodes.
+     */
+    public List<ClusterNode> failed() {
+        return failed;
     }
 
     /**
@@ -99,6 +132,7 @@ public class ClusterChangeEvent extends ClusterEventBase {
         return getClass().getSimpleName()
             + "[added=" + added()
             + ", removed=" + removed()
+            + ", failed=" + failed()
             + ", topology=" + topology()
             + ']';
     }

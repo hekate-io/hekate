@@ -69,7 +69,7 @@ public class GossipNodesDeathWatchTest extends HekateTestBase {
 
         watch.update(gossip);
 
-        gossip = gossip.update(id, n1.unsuspected(n2.id()));
+        gossip = gossip.update(id, n1.unsuspect(n2.id()));
 
         watch.update(gossip);
 

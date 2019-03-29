@@ -33,7 +33,7 @@ public class GossipSpyAdaptor implements GossipListener {
     }
 
     @Override
-    public void onTopologyChange(Set<ClusterNode> oldTopology, Set<ClusterNode> newTopology) {
+    public void onTopologyChange(Set<ClusterNode> oldTopology, Set<ClusterNode> newTopology, Set<ClusterNode> failed) {
         // No-op.
     }
 

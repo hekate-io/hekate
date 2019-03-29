@@ -56,7 +56,7 @@ class ClusterEventLogger implements ClusterEventListener {
         if (log.isInfoEnabled()) {
             switch (event.type()) {
                 case JOIN: {
-                    log.info("{}", toDetailedString("Join topology", event.topology(), null, null));
+                    log.info("{}", toDetailedString("Join topology", event.topology(), null, null, null));
 
                     break;
                 }
@@ -66,7 +66,7 @@ class ClusterEventLogger implements ClusterEventListener {
                     List<ClusterNode> added = leave.added();
                     List<ClusterNode> removed = leave.removed();
 
-                    log.info("{}", toDetailedString("Leave topology", event.topology(), added, removed));
+                    log.info("{}", toDetailedString("Leave topology", event.topology(), added, removed, null));
 
                     break;
                 }
@@ -75,8 +75,9 @@ class ClusterEventLogger implements ClusterEventListener {
 
                     List<ClusterNode> added = change.added();
                     List<ClusterNode> removed = change.removed();
+                    List<ClusterNode> failed = change.failed();
 
-                    log.info("{}", toDetailedString("Topology change", event.topology(), added, removed));
+                    log.info("{}", toDetailedString("Topology change", event.topology(), added, removed, failed));
 
                     break;
                 }
@@ -87,7 +88,13 @@ class ClusterEventLogger implements ClusterEventListener {
         }
     }
 
-    private String toDetailedString(String eventType, ClusterTopology topology, List<ClusterNode> added, List<ClusterNode> removed) {
+    private String toDetailedString(
+        String eventType,
+        ClusterTopology topology,
+        List<ClusterNode> added,
+        List<ClusterNode> removed,
+        List<ClusterNode> failed
+    ) {
         String nl = System.lineSeparator();
 
         List<ClusterNode> allNodes = new ArrayList<>(topology.nodes());
@@ -110,6 +117,8 @@ class ClusterEventLogger implements ClusterEventListener {
                 buf.append("   this -> ");
             } else if (added != null && added.contains(n)) {
                 buf.append("  added -> ");
+            } else if (failed != null && failed.contains(n)) {
+                buf.append(" failed -> ");
             } else if (removed != null && removed.contains(n)) {
                 buf.append("removed -> ");
             } else {

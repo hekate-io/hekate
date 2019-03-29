@@ -1051,6 +1051,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                         // No-op.
                         break;
                     }
+                    case FAILED:
                     case DOWN: {
                         if (ctx.state() == Hekate.State.LEAVING) {
                             if (DEBUG) {
@@ -1096,12 +1097,12 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             }
 
             @Override
-            public void onTopologyChange(Set<ClusterNode> oldTopology, Set<ClusterNode> newTopology) {
+            public void onTopologyChange(Set<ClusterNode> oldTopology, Set<ClusterNode> newTopology, Set<ClusterNode> failed) {
                 if (gossipSpy != null) {
-                    gossipSpy.onTopologyChange(oldTopology, newTopology);
+                    gossipSpy.onTopologyChange(oldTopology, newTopology, failed);
                 }
 
-                ctx.cluster().onTopologyChange(newTopology).thenAcceptAsync(event -> {
+                ctx.cluster().onTopologyChange(newTopology, failed).thenAcceptAsync(event -> {
                     if (event != null) {
                         guard.withReadLockIfInitialized(() -> {
                             try {
@@ -1175,6 +1176,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                 Hekate.State state = ctx.state();
 
                 switch (state) {
+                    case INITIALIZING:
+                    case INITIALIZED:
                     case JOINING:
                     case SYNCHRONIZING:
                     case UP: {
@@ -1189,14 +1192,12 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                         break;
                     }
                     case DOWN:
-                    case INITIALIZING:
-                    case INITIALIZED:
                     case TERMINATING: {
                         // No-op.
                         break;
                     }
                     default: {
-                        throw new IllegalStateException("Unexpected status: " + state);
+                        throw new IllegalStateException("Unexpected cluster node state: " + state);
                     }
                 }
             }

@@ -58,11 +58,12 @@ public interface ClusterContext {
     /**
      * Fires the {@link ClusterChangeEvent}.
      *
-     * @param newTopology New topology.
+     * @param live Nodes that are alive.
+     * @param failed Nodes that are known to be failed (i.e. left the cluster abnormally without going through the cluster leave protocol).
      *
      * @return Future object that gets completed after processing the cluster event.
      */
-    CompletableFuture<ClusterChangeEvent> onTopologyChange(Set<ClusterNode> newTopology);
+    CompletableFuture<ClusterChangeEvent> onTopologyChange(Set<ClusterNode> live, Set<ClusterNode> failed);
 
     /**
      * Asynchronously notifies on {@link ClusterService} successfully left the cluster.

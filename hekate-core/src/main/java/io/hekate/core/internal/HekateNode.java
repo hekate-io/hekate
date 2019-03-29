@@ -793,7 +793,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
             }
 
             @Override
-            public CompletableFuture<ClusterChangeEvent> onTopologyChange(Set<ClusterNode> nodes) {
+            public CompletableFuture<ClusterChangeEvent> onTopologyChange(Set<ClusterNode> liveSet, Set<ClusterNode> failedSet) {
                 CompletableFuture<ClusterChangeEvent> future = new CompletableFuture<>();
 
                 runOnSysThread(() ->
@@ -801,7 +801,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                         if (clusterEvents.isJoinEventFired()) {
                             DefaultClusterTopology lastTopology = topology;
 
-                            DefaultClusterTopology newTopology = lastTopology.updateIfModified(nodes);
+                            DefaultClusterTopology newTopology = lastTopology.updateIfModified(liveSet);
 
                             if (newTopology.version() == lastTopology.version()) {
                                 future.complete(null);
@@ -815,14 +815,16 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                                 Set<ClusterNode> oldNodes = lastTopology.nodeSet();
                                 Set<ClusterNode> newNodes = newTopology.nodeSet();
 
-                                List<ClusterNode> removed = getDiff(oldNodes, newNodes);
-                                List<ClusterNode> added = getDiff(newNodes, oldNodes);
+                                List<ClusterNode> removed = getImmutableDiff(oldNodes, newNodes);
+                                List<ClusterNode> added = getImmutableDiff(newNodes, oldNodes);
+                                List<ClusterNode> failed = unmodifiableList(new ArrayList<>(failedSet));
 
                                 if (log.isInfoEnabled()) {
-                                    log.info("Updated cluster topology [added={}, removed={}, topology={}]", added, removed, topology);
+                                    log.info("Updated cluster topology [added={}, removed={}, failed={}, topology={}]",
+                                        added, removed, failed, topology);
                                 }
 
-                                ClusterChangeEvent event = new ClusterChangeEvent(newTopology, added, removed, hekate());
+                                ClusterChangeEvent event = new ClusterChangeEvent(newTopology, added, removed, failed, hekate());
 
                                 clusterEvents.fireAsync(event);
 
@@ -1209,7 +1211,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
         );
     }
 
-    private List<ClusterNode> getDiff(Set<ClusterNode> oldNodes, Set<ClusterNode> newNodes) {
+    private List<ClusterNode> getImmutableDiff(Set<ClusterNode> oldNodes, Set<ClusterNode> newNodes) {
         List<ClusterNode> removed = null;
 
         for (ClusterNode oldNode : oldNodes) {

@@ -644,7 +644,7 @@ public class GossipTest extends HekateTestBase {
         assertFalse(g.isConvergent());
 
         // Unsuspected.
-        g = g.update(s1.id(), s1.unsuspected(s2.id()));
+        g = g.update(s1.id(), s1.unsuspect(s2.id()));
 
         assertFalse(g.isConvergent());
 
