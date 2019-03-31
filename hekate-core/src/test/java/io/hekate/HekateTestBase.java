@@ -313,6 +313,26 @@ public abstract class HekateTestBase {
         }
     }
 
+    public static String threadDump() {
+        ThreadInfo[] threads = ManagementFactory.getThreadMXBean().dumpAllThreads(true, true);
+
+        String nl = System.lineSeparator();
+
+        StringBuilder buf = new StringBuilder();
+
+        buf.append("----------------------- Thread dump start ")
+            .append(TIMESTAMP_FORMAT.format(LocalDateTime.now()))
+            .append("---------------------------").append(nl);
+
+        for (ThreadInfo thread : threads) {
+            buf.append(toString(thread)).append(nl);
+        }
+
+        buf.append("----------------------- Thread dump end -----------------------------").append(nl);
+
+        return buf.toString();
+    }
+
     @After
     public void cleanup() throws Exception {
         if (async != null) {
@@ -378,26 +398,6 @@ public abstract class HekateTestBase {
 
     protected static String getStacktrace(Throwable error) {
         return ErrorUtils.stackTrace(error);
-    }
-
-    protected static String threadDump() {
-        ThreadInfo[] threads = ManagementFactory.getThreadMXBean().dumpAllThreads(true, true);
-
-        String nl = System.lineSeparator();
-
-        StringBuilder buf = new StringBuilder();
-
-        buf.append("----------------------- Thread dump start ")
-            .append(TIMESTAMP_FORMAT.format(LocalDateTime.now()))
-            .append("---------------------------").append(nl);
-
-        for (ThreadInfo thread : threads) {
-            buf.append(toString(thread)).append(nl);
-        }
-
-        buf.append("----------------------- Thread dump end -----------------------------").append(nl);
-
-        return buf.toString();
     }
 
     protected void ignoreGhostThreads() {

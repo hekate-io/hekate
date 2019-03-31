@@ -26,9 +26,9 @@ public enum GossipNodeStatus {
 
     LEAVING(false),
 
-    FAILED(true),
+    DOWN(true),
 
-    DOWN(true);
+    FAILED(true);
 
     private final boolean terminated;
 

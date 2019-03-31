@@ -326,12 +326,18 @@ public class GossipManager {
             batchSize = 1;
         }
 
+        if (TRACE) {
+            log.trace("Selecting nodes to gossip [policy={}, batch-size={}]", policy, batchSize);
+        }
+
         Collection<UpdateBase> msgs = tryCoordinateAndGossip(batchSize, policy);
 
-        if (DEBUG) {
-            if (msgs.isEmpty()) {
+        if (msgs.isEmpty()) {
+            if (TRACE) {
                 log.trace("No nodes to gossip.");
-            } else {
+            }
+        } else {
+            if (DEBUG) {
                 msgs.forEach(msg -> log.debug("Will gossip [gossip={}]", msg));
             }
         }
@@ -633,7 +639,7 @@ public class GossipManager {
 
                 List<ClusterNodeId> terminated = deathWatch.terminateNodes();
 
-                // Set state of terminated nodes to DOWN.
+                // Set state of terminated nodes to FAILED.
                 if (!terminated.isEmpty()) {
                     List<GossipNodeState> updated = terminated.stream()
                         .filter(terminatedId -> {
@@ -869,7 +875,7 @@ public class GossipManager {
                     updateLocalGossip(localGossip.update(id, modified).maxJoinOrder(maxOrder.get()));
                 }
 
-                // Update local state if some DOWN nodes were removed.
+                // Update local state if some DOWN/FAILED nodes were removed.
                 if (!removed.isEmpty() && !removed.equals(localGossip.removed())) {
                     changed = true;
 
@@ -1019,8 +1025,10 @@ public class GossipManager {
     }
 
     private boolean canGossip(GossipNodeState n) {
-        // Node is not a local node and is not suspected to be failed.
-        return n != null && !n.id().equals(id) && !localGossip.isSuspected(n.id());
+        // Node is not a local node and is not suspected or failed.
+        return !n.id().equals(id)
+            && n.status() != FAILED
+            && !localGossip.isSuspected(n.id());
     }
 
     private void updateLocalGossip(Gossip update) {

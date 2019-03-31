@@ -62,13 +62,19 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
             }
         } finally {
             try {
+                boolean throttle = false;
+
                 for (HekateTestNode node : allNodes) {
                     try {
-                        node.leaveAsync().get(5, TimeUnit.SECONDS);
+                        node.leaveAsync().get(3, TimeUnit.SECONDS);
                     } catch (TimeoutException e) {
-                        say("Failed to await for node termination: " + e);
+                        say("Node termination timed out : " + node.localNode());
 
-                        System.out.println(threadDump());
+                        if (!throttle) {
+                            throttle = true;
+
+                            System.out.println(threadDump());
+                        }
                     }
                 }
             } finally {
