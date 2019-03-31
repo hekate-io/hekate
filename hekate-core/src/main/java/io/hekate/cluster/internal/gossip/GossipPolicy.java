@@ -31,8 +31,12 @@ import static java.util.stream.Collectors.toList;
 public interface GossipPolicy {
     GossipPolicy RANDOM_PREFER_UNSEEN = new GossipPolicy() {
         @Override
-        public Collection<GossipNodeState> selectNodes(int size, GossipNodeState fromNode, List<GossipNodeState> nodes,
-            Set<ClusterNodeId> seen) {
+        public Collection<GossipNodeState> selectNodes(
+            int size,
+            GossipNodeState fromNode,
+            List<GossipNodeState> nodes,
+            Set<ClusterNodeId> seen
+        ) {
             assert size > 0 : "Size must be above zero [size=" + size + ']';
             assert fromNode != null : "From node is null.";
             assert seen != null : "Seen list is null.";
@@ -85,8 +89,12 @@ public interface GossipPolicy {
 
     GossipPolicy RANDOM_UNSEEN_NON_DOWN = new GossipPolicy() {
         @Override
-        public Collection<GossipNodeState> selectNodes(int size, GossipNodeState fromNode, List<GossipNodeState> nodes,
-            Set<ClusterNodeId> seen) {
+        public Collection<GossipNodeState> selectNodes(
+            int size,
+            GossipNodeState fromNode,
+            List<GossipNodeState> nodes,
+            Set<ClusterNodeId> seen
+        ) {
             assert size > 0 : "Size must be above zero [size=" + size + ']';
             assert fromNode != null : "From node is null.";
             assert seen != null : "Seen list is null.";
@@ -118,8 +126,12 @@ public interface GossipPolicy {
 
     GossipPolicy RANDOM_UNSEEN = new GossipPolicy() {
         @Override
-        public Collection<GossipNodeState> selectNodes(int size, GossipNodeState fromNode, List<GossipNodeState> nodes,
-            Set<ClusterNodeId> seen) {
+        public Collection<GossipNodeState> selectNodes(
+            int size,
+            GossipNodeState fromNode,
+            List<GossipNodeState> nodes,
+            Set<ClusterNodeId> seen
+        ) {
             assert size > 0 : "Size must be above zero [size=" + size + ']';
             assert fromNode != null : "From node is null.";
             assert seen != null : "Seen list is null.";
@@ -151,8 +163,12 @@ public interface GossipPolicy {
 
     GossipPolicy ON_DOWN = new GossipPolicy() {
         @Override
-        public Collection<GossipNodeState> selectNodes(int size, GossipNodeState fromNode, List<GossipNodeState> nodes,
-            Set<ClusterNodeId> seen) {
+        public Collection<GossipNodeState> selectNodes(
+            int size,
+            GossipNodeState fromNode,
+            List<GossipNodeState> nodes,
+            Set<ClusterNodeId> seen
+        ) {
             assert size > 0 : "Size must be above zero [size=" + size + ']';
             assert fromNode != null : "From node is null.";
             assert seen != null : "Seen list is null.";

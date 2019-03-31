@@ -58,10 +58,8 @@ public class GossipNodesDeathWatch {
             return timestamp;
         }
 
-        public boolean isSuspectBySame(Set<ClusterNodeId> other) {
-            assert other != null : "Other nodes list is null.";
-
-            return suspectedBy.size() == other.size() && suspectedBy.containsAll(other) && other.containsAll(suspectedBy);
+        public boolean isSameSuspectedBy(Set<ClusterNodeId> other) {
+            return suspectedBy.equals(other);
         }
 
         public boolean isDead(Set<ClusterNodeId> liveNodes, int quorum) {
@@ -162,7 +160,7 @@ public class GossipNodesDeathWatch {
                 if (DEBUG) {
                     log.debug("Registering new suspect [suspect={}]", newSuspect);
                 }
-            } else if (!existing.isSuspectBySame(suspectedBy)) {
+            } else if (!existing.isSameSuspectedBy(suspectedBy)) {
                 newSuspect = new Suspect(suspectId, suspectedBy, now);
 
                 if (DEBUG) {
