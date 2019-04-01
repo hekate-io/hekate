@@ -108,9 +108,9 @@ public class GossipNodesDeathWatch {
     public void update(Gossip gossip) {
         assert gossip != null : "Gossip is null.";
 
-        SuspectedNodesView view = gossip.suspectedView();
+        GossipSuspectView suspectView = gossip.suspectView();
 
-        Set<ClusterNodeId> newSuspects = view.suspected().stream()
+        Set<ClusterNodeId> newSuspects = suspectView.suspected().stream()
             .filter(suspectId -> !localNodeId.equals(suspectId) && gossip.hasMember(suspectId))
             .collect(toSet());
 
@@ -118,7 +118,7 @@ public class GossipNodesDeathWatch {
 
         gossip.stream()
             .map(GossipNodeState::id)
-            .filter(id -> !newSuspects.contains(id) || !view.suspecting(id).contains(localNodeId))
+            .filter(id -> !newSuspects.contains(id) || !suspectView.suspecting(id).contains(localNodeId))
             .forEach(newLiveNodes::add);
 
         newLiveNodes.add(localNodeId);
@@ -150,7 +150,7 @@ public class GossipNodesDeathWatch {
         for (ClusterNodeId suspectId : newSuspects) {
             Suspect existing = suspects.get(suspectId);
 
-            Set<ClusterNodeId> suspectedBy = view.suspecting(suspectId);
+            Set<ClusterNodeId> suspectedBy = suspectView.suspecting(suspectId);
 
             Suspect newSuspect = null;
 

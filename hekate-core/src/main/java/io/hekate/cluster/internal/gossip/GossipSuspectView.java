@@ -22,12 +22,12 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-public class SuspectedNodesView {
-    public static final SuspectedNodesView EMPTY = new SuspectedNodesView(Collections.emptyMap());
+public class GossipSuspectView {
+    public static final GossipSuspectView EMPTY = new GossipSuspectView(Collections.emptyMap());
 
     private final Map<ClusterNodeId, Set<ClusterNodeId>> suspected;
 
-    public SuspectedNodesView(Map<ClusterNodeId, Set<ClusterNodeId>> suspected) {
+    public GossipSuspectView(Map<ClusterNodeId, Set<ClusterNodeId>> suspected) {
         assert suspected != null : "Suspect map is null.";
 
         this.suspected = suspected;

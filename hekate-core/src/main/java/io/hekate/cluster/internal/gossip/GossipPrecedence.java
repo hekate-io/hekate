@@ -16,7 +16,7 @@
 
 package io.hekate.cluster.internal.gossip;
 
-public enum ComparisonResult {
+public enum GossipPrecedence {
     BEFORE,
 
     AFTER,

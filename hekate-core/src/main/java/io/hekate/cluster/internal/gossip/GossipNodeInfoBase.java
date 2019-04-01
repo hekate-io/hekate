@@ -25,7 +25,7 @@ public abstract class GossipNodeInfoBase {
 
     public abstract long version();
 
-    public ComparisonResult compare(GossipNodeInfoBase other) {
+    public GossipPrecedence compare(GossipNodeInfoBase other) {
         assert other != null : "Other node is null.";
 
         int cmp = status().compareTo(other.status());
@@ -34,11 +34,11 @@ public abstract class GossipNodeInfoBase {
         long otherVer = other.version();
 
         if (cmp == 0) {
-            return thisVer == otherVer ? ComparisonResult.SAME : thisVer > otherVer ? ComparisonResult.AFTER : ComparisonResult.BEFORE;
+            return thisVer == otherVer ? GossipPrecedence.SAME : thisVer > otherVer ? GossipPrecedence.AFTER : GossipPrecedence.BEFORE;
         } else if (cmp < 0) {
-            return thisVer <= otherVer ? ComparisonResult.BEFORE : ComparisonResult.CONCURRENT;
+            return thisVer <= otherVer ? GossipPrecedence.BEFORE : GossipPrecedence.CONCURRENT;
         } else {
-            return thisVer >= otherVer ? ComparisonResult.AFTER : ComparisonResult.CONCURRENT;
+            return thisVer >= otherVer ? GossipPrecedence.AFTER : GossipPrecedence.CONCURRENT;
         }
     }
 }

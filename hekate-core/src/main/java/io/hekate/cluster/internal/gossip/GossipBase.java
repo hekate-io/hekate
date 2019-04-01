@@ -21,10 +21,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static io.hekate.cluster.internal.gossip.ComparisonResult.AFTER;
-import static io.hekate.cluster.internal.gossip.ComparisonResult.BEFORE;
-import static io.hekate.cluster.internal.gossip.ComparisonResult.CONCURRENT;
-import static io.hekate.cluster.internal.gossip.ComparisonResult.SAME;
+import static io.hekate.cluster.internal.gossip.GossipPrecedence.AFTER;
+import static io.hekate.cluster.internal.gossip.GossipPrecedence.BEFORE;
+import static io.hekate.cluster.internal.gossip.GossipPrecedence.CONCURRENT;
+import static io.hekate.cluster.internal.gossip.GossipPrecedence.SAME;
 
 public abstract class GossipBase {
     public abstract Map<ClusterNodeId, ? extends GossipNodeInfoBase> membersInfo();
@@ -51,13 +51,13 @@ public abstract class GossipBase {
         return membersInfo().containsKey(id);
     }
 
-    public ComparisonResult compare(GossipBase other) {
+    public GossipPrecedence compare(GossipBase other) {
         assert other != null : "Other gossip digest is null.";
 
         return compareVersions(this, other);
     }
 
-    private static ComparisonResult compareVersions(GossipBase g1, GossipBase g2) {
+    private static GossipPrecedence compareVersions(GossipBase g1, GossipBase g2) {
         Map<ClusterNodeId, ? extends GossipNodeInfoBase> members1 = g1.membersInfo();
         Map<ClusterNodeId, ? extends GossipNodeInfoBase> members2 = g2.membersInfo();
 
@@ -71,18 +71,18 @@ public abstract class GossipBase {
 
         Set<ClusterNodeId> removed;
 
-        ComparisonResult result;
+        GossipPrecedence precedence;
 
         if (ver1 == ver2) {
-            result = SAME;
+            precedence = SAME;
 
             removed = g1.removed();
         } else if (ver1 > ver2) {
-            result = AFTER;
+            precedence = AFTER;
 
             removed = g1.removed();
         } else {
-            result = BEFORE;
+            precedence = BEFORE;
 
             removed = g2.removed();
         }
@@ -93,49 +93,49 @@ public abstract class GossipBase {
 
             if (n1 == null) {
                 if (removed.contains(id)) {
-                    if (result == SAME || result == AFTER) {
-                        result = AFTER;
+                    if (precedence == SAME || precedence == AFTER) {
+                        precedence = AFTER;
                     } else {
-                        result = CONCURRENT;
+                        precedence = CONCURRENT;
                     }
                 } else {
-                    if (result == SAME || result == BEFORE) {
-                        result = BEFORE;
+                    if (precedence == SAME || precedence == BEFORE) {
+                        precedence = BEFORE;
                     } else {
-                        result = CONCURRENT;
+                        precedence = CONCURRENT;
                     }
                 }
             } else if (n2 == null) {
                 if (removed.contains(id)) {
-                    if (result == SAME || result == BEFORE) {
-                        result = BEFORE;
+                    if (precedence == SAME || precedence == BEFORE) {
+                        precedence = BEFORE;
                     } else {
-                        result = CONCURRENT;
+                        precedence = CONCURRENT;
                     }
                 } else {
-                    if (result == SAME || result == AFTER) {
-                        result = AFTER;
+                    if (precedence == SAME || precedence == AFTER) {
+                        precedence = AFTER;
                     } else {
-                        result = CONCURRENT;
+                        precedence = CONCURRENT;
                     }
                 }
             } else {
-                ComparisonResult nodeResult = n1.compare(n2);
+                GossipPrecedence nodePrecedence = n1.compare(n2);
 
-                if (nodeResult != SAME) {
-                    if ((result == BEFORE && nodeResult == AFTER) || (result == AFTER && nodeResult == BEFORE)) {
-                        result = CONCURRENT;
+                if (nodePrecedence != SAME) {
+                    if ((precedence == BEFORE && nodePrecedence == AFTER) || (precedence == AFTER && nodePrecedence == BEFORE)) {
+                        precedence = CONCURRENT;
                     } else {
-                        result = nodeResult;
+                        precedence = nodePrecedence;
                     }
                 }
             }
 
-            if (result == CONCURRENT) {
+            if (precedence == CONCURRENT) {
                 break;
             }
         }
 
-        return result;
+        return precedence;
     }
 }

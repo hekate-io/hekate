@@ -429,10 +429,10 @@ public class GossipManager {
             log.debug("Processing gossip message [message={}]", msg);
         }
 
-        ComparisonResult comparison = localGossip.compare(remote);
+        GossipPrecedence precedence = localGossip.compare(remote);
 
         if (DEBUG) {
-            log.debug("Compared gossip versions [comparison-result={}, local={}, remote={}]", comparison, localGossip, remote);
+            log.debug("Compared gossip versions [precedence={}, local={}, remote={}]", precedence, localGossip, remote);
         }
 
         boolean needToReply;
@@ -441,7 +441,7 @@ public class GossipManager {
         boolean seenChanged = false;
         boolean gossipStateChanged = false;
 
-        switch (comparison) {
+        switch (precedence) {
             case BEFORE: {
                 // Local is older.
                 needToReply = !remote.hasSeen(id);
@@ -522,7 +522,7 @@ public class GossipManager {
                 break;
             }
             default: {
-                throw new IllegalStateException("Unexpected comparison result: " + comparison);
+                throw new IllegalStateException("Unexpected comparison result: " + precedence);
             }
         }
 
