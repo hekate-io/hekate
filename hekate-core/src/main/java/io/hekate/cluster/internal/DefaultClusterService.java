@@ -99,7 +99,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
@@ -128,12 +127,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     private final FailureDetector failureDetector;
 
-    private final SplitBrainAction splitBrainAction;
-
-    private final SplitBrainDetector splitBrainDetector;
-
-    @ToStringIgnore
-    private final AtomicBoolean splitBrainDetectorActive = new AtomicBoolean();
+    private final SplitBrainManager splitBrain;
 
     @ToStringIgnore
     private final List<ClusterAcceptor> acceptors;
@@ -210,11 +204,9 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         this.gossipInterval = factory.getGossipInterval();
         this.speedUpGossipSize = factory.getSpeedUpGossipSize();
         this.failureDetector = factory.getFailureDetector();
-        this.splitBrainAction = factory.getSplitBrainAction();
-        this.splitBrainDetector = factory.getSplitBrainDetector();
         this.gossipSpy = gossipSpy;
 
-        // Service lock.
+        // State guard.
         if (guard == null) {
             this.guard = new StateGuard(ClusterService.class);
         } else {
@@ -232,6 +224,12 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         } else {
             seedNodeProvider = factory.getSeedNodeProvider();
         }
+
+        // Split-brain manager.
+        splitBrain = new SplitBrainManager(
+            factory.getSplitBrainAction(),
+            factory.getSplitBrainDetector()
+        );
 
         // Pre-configured (unmodifiable) event listeners.
         this.listeners = unmodifiableList(nullSafe(factory.getClusterListeners()).collect(toCollection(() -> {
@@ -317,11 +315,16 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             localNodeIdRef.set(initCtx.localNode().id());
 
             // Register cluster listeners.
-            listeners.forEach(listener -> ctx.cluster().addListener(listener));
-            deferredListeners.forEach(deferred -> ctx.cluster().addListener(deferred.listener(), deferred.eventTypes()));
+            listeners.forEach(listener ->
+                ctx.cluster().addListener(listener)
+            );
+
+            deferredListeners.forEach(deferred ->
+                ctx.cluster().addListener(deferred.listener(), deferred.eventTypes())
+            );
 
             // Prepare seed node manager.
-            seedNodeMgr = new SeedNodeManager(initCtx.clusterName(), seedNodeProvider);
+            seedNodeMgr = new SeedNodeManager(ctx.clusterName(), seedNodeProvider);
 
             // Prepare workers.
             gossipThread = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("ClusterGossip"));
@@ -334,7 +337,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             GossipListener gossipListener = createGossipListener();
 
             // Prepare gossip manager.
-            gossipMgr = new GossipManager(initCtx.clusterName(), localNode, speedUpGossipSize, failureDetector, gossipListener);
+            gossipMgr = new GossipManager(ctx.clusterName(), localNode, speedUpGossipSize, failureDetector, gossipListener);
 
             // Prepare gossip communication manager.
             NetworkConnector<GossipProtocol> connector = net.connector(PROTOCOL_ID);
@@ -366,6 +369,29 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                 }
             });
 
+            // Prepare split-brain manager.
+            splitBrain.initialize(localNode, serviceThread, new SplitBrainManager.Callback() {
+                @Override
+                public void rejoin() {
+                    initCtx.rejoin();
+                }
+
+                @Override
+                public void terminate() {
+                    initCtx.terminate();
+                }
+
+                @Override
+                public void kill() {
+                    Jvm.exit(250);
+                }
+
+                @Override
+                public void error(Throwable t) {
+                    fatalError(t);
+                }
+            });
+
             // Prepare metrics sink.
             metricsSink = new ClusterMetricsSink(ctx.metrics());
 
@@ -376,8 +402,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                 jmx.register(failureDetector);
                 jmx.register(seedNodeProvider);
 
-                if (splitBrainDetector != null) {
-                    jmx.register(splitBrainDetector);
+                if (splitBrain.detector() != null) {
+                    jmx.register(splitBrain.detector());
                 }
             }
         } finally {
@@ -420,20 +446,16 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
                             try {
                                 // Check if node is not in a split-brain mode before trying to join.
-                                if (splitBrainDetector != null) {
-                                    boolean valid = splitBrainDetector.isValid(localNode);
+                                if (!splitBrain.check()) {
+                                    // Try to schedule a new join attempt.
+                                    guard.withReadLockIfInitialized(() -> {
+                                        log.warn("Split-brain detected ...will wait for {} ms before making another attempt "
+                                            + "[split-brain-detector={}]", gossipInterval, splitBrain.detector());
 
-                                    if (!valid) {
-                                        // Try to schedule a new join attempt.
-                                        guard.withReadLockIfInitialized(() -> {
-                                            log.warn("Split-brain detected ...will wait for {} ms before making another attempt "
-                                                + "[split-brain-detector={}]", gossipInterval, splitBrainDetector);
+                                        serviceThread.schedule(this, gossipInterval, TimeUnit.MILLISECONDS);
+                                    });
 
-                                            serviceThread.schedule(this, gossipInterval, TimeUnit.MILLISECONDS);
-                                        });
-
-                                        return;
-                                    }
+                                    return;
                                 }
 
                                 // Start seed nodes discovery.
@@ -522,6 +544,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         guard.withWriteLock(() -> {
             if (guard.becomeTerminated()) {
                 acceptMgr.terminate();
+                splitBrain.terminate();
 
                 if (seedNodeMgr != null) {
                     waiting.add(seedNodeMgr.stopCleaning());
@@ -708,11 +731,11 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     }
 
     public SplitBrainDetector splitBrainDetector() {
-        return splitBrainDetector;
+        return splitBrain.detector();
     }
 
     public SplitBrainAction splitBrainAction() {
-        return splitBrainAction;
+        return splitBrain.action();
     }
 
     public List<ClusterAcceptor> acceptors() {
@@ -1117,7 +1140,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                 }
 
                                 if (!event.removed().isEmpty()) {
-                                    checkSplitBrain(localNode);
+                                    splitBrain.checkAsync();
                                 }
                             } catch (RuntimeException | Error e) {
                                 fatalError(e);
@@ -1181,7 +1204,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                     case JOINING:
                     case SYNCHRONIZING:
                     case UP: {
-                        applySplitBrainPolicy();
+                        splitBrain.applyAction();
 
                         break;
                     }
@@ -1215,67 +1238,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                 seedNodeMgr.startCleaning(net, () -> knownAddresses);
             }
         };
-    }
-
-    private void checkSplitBrain(ClusterNode localNode) {
-        if (splitBrainDetector != null) {
-            if (splitBrainDetectorActive.compareAndSet(false, true)) {
-                runOnServiceThread(() -> {
-                    try {
-                        if (DEBUG) {
-                            log.debug("Checking for cluster split-brain [detector={}]", splitBrainDetector);
-                        }
-
-                        if (!splitBrainDetector.isValid(localNode)) {
-                            if (log.isWarnEnabled()) {
-                                log.warn("Split-brain detected.");
-                            }
-
-                            applySplitBrainPolicy();
-                        }
-                    } finally {
-                        splitBrainDetectorActive.compareAndSet(true, false);
-                    }
-                });
-            }
-        }
-    }
-
-    private void applySplitBrainPolicy() {
-        guard.withReadLockIfInitialized(() -> {
-            switch (splitBrainAction) {
-                case REJOIN: {
-                    if (log.isWarnEnabled()) {
-                        log.warn("Rejoining due to inconsistency of the cluster state.");
-                    }
-
-                    ctx.rejoin();
-
-                    break;
-                }
-                case TERMINATE: {
-                    if (log.isErrorEnabled()) {
-                        log.error("Terminating due to inconsistency of the cluster state.");
-                    }
-
-                    ctx.terminate();
-
-                    break;
-                }
-                case KILL_JVM: {
-                    if (log.isErrorEnabled()) {
-                        log.error("Killing the JVM due to inconsistency of the cluster state.");
-                    }
-
-                    Jvm.exit(250);
-
-                    break;
-                }
-                default: {
-                    throw new IllegalArgumentException("Unexpected policy: " + splitBrainAction);
-                }
-            }
-        });
     }
 
     private void send(GossipMessage msg) {
