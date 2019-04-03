@@ -16,15 +16,16 @@
 
 package io.hekate.spring.bean.network;
 
+import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkConnectorConfig;
 import io.hekate.spring.bean.HekateBaseBean;
-import org.springframework.beans.factory.annotation.Required;
+import org.springframework.beans.factory.InitializingBean;
 
 /**
  * Imports {@link NetworkConnector} into a Spring context.
  */
-public class NetworkConnectorBean extends HekateBaseBean<NetworkConnector<?>> {
+public class NetworkConnectorBean extends HekateBaseBean<NetworkConnector<?>> implements InitializingBean {
     private String protocol;
 
     @Override
@@ -53,8 +54,12 @@ public class NetworkConnectorBean extends HekateBaseBean<NetworkConnector<?>> {
      *
      * @see NetworkConnectorConfig#setProtocol(String)
      */
-    @Required
     public void setProtocol(String protocol) {
         this.protocol = protocol;
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        ConfigCheck.get(getClass()).notEmpty(protocol, "protocol");
     }
 }

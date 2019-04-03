@@ -14,21 +14,18 @@
  * under the License.
  */
 
-package io.hekate.javadoc.network;
+package io.hekate.javadoc.lock;
 
 import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.cluster.seed.StaticSeedNodeProvider;
 import io.hekate.cluster.seed.StaticSeedNodeProviderConfig;
-import io.hekate.network.NetworkConnector;
-import io.hekate.network.NetworkConnectorConfig;
+import io.hekate.lock.LockRegion;
 import io.hekate.network.NetworkServiceFactory;
-import io.hekate.spring.boot.EnableHekate;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
-import io.hekate.spring.boot.network.InjectConnector;
+import io.hekate.spring.boot.lock.InjectLockRegion;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import org.junit.Test;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
@@ -36,33 +33,16 @@ import org.springframework.stereotype.Component;
 
 import static org.junit.Assert.assertNotNull;
 
-public class NetworkInjectionJavadocTest extends HekateAutoConfigurerTestBase {
+public class LockRegionInjectionJavadocTest extends HekateAutoConfigurerTestBase {
     // Start:bean
     @Component
     public static class MyBean {
-        @InjectConnector("my-connector")
-        private NetworkConnector<Object> connector;
+        @InjectLockRegion("my-region")
+        private LockRegion region;
 
         // ... other fields and methods...
     }
     // End:bean
-
-    // Start:app
-    @EnableHekate
-    @SpringBootApplication
-    public static class MyApp {
-        @Bean
-        public NetworkConnectorConfig<Object> networkConnectorConfig() {
-            return new NetworkConnectorConfig<>()
-                .withProtocol("my-connector")
-                .withServerHandler((msg, from) ->
-                    System.out.println("Got message " + msg + " from " + from)
-                );
-        }
-
-        // ... other beans and methods...
-    }
-    // End:app
 
     @ComponentScan(excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = MyApp.class))
     public static class FasterMyApp extends MyApp {
@@ -75,9 +55,9 @@ public class NetworkInjectionJavadocTest extends HekateAutoConfigurerTestBase {
     }
 
     @Test
-    public void test() {
+    public void regionExample() {
         registerAndRefresh(FasterMyApp.class);
 
-        assertNotNull(get(MyBean.class).connector);
+        assertNotNull(get(MyBean.class).region);
     }
 }

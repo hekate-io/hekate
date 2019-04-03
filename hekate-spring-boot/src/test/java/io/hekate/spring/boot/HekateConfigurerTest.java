@@ -33,6 +33,7 @@ import java.util.Optional;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -44,6 +45,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
+    @Configuration
     @EnableAutoConfiguration
     public static class DefaultTestConfig extends HekateTestConfigBase {
         @Component
@@ -81,6 +83,7 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
         private NetworkService networkService;
     }
 
+    @Configuration
     @EnableAutoConfiguration
     public static class NoAnnotationTestConfig {
         @Autowired(required = false)
@@ -88,6 +91,7 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
     }
 
     @EnableHekate
+    @Configuration
     @EnableAutoConfiguration
     public static class DisableTestConfig {
         @Autowired

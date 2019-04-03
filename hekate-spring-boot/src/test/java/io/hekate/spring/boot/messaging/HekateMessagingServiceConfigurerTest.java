@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
 import static org.junit.Assert.assertEquals;
@@ -44,6 +45,7 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
         private T t;
     }
 
+    @Configuration
     @EnableAutoConfiguration
     public static class MessagingTestConfig extends HekateTestConfigBase {
         @Component
@@ -118,6 +120,7 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
         }
     }
 
+    @Configuration
     @EnableAutoConfiguration
     public static class MessagingTypeSafetyTestConfig extends HekateTestConfigBase {
         @Component
@@ -154,6 +157,7 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
         }
     }
 
+    @Configuration
     @EnableAutoConfiguration
     public static class CustomizeChannelConfig extends HekateTestConfigBase {
         @Bean

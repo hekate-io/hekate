@@ -187,6 +187,7 @@ public abstract class HekateTestBase {
         KNOWN_THREAD_PREFIXES.add("Keep-Alive-SocketCleaner".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("H2 Close".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("Abandoned connection cleanup thread".toLowerCase());
+        KNOWN_THREAD_PREFIXES.add("mysql-cj-abandoned-connection-cleanup".toLowerCase());
     }
 
     /** Test timeout rule (see {@link #MAX_TEST_TIMEOUT}). */

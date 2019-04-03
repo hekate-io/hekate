@@ -16,16 +16,17 @@
 
 package io.hekate.spring.bean.lock;
 
+import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockRegion;
 import io.hekate.lock.LockRegionConfig;
 import io.hekate.spring.bean.HekateBaseBean;
-import org.springframework.beans.factory.annotation.Required;
+import org.springframework.beans.factory.InitializingBean;
 
 /**
  * Imports {@link DistributedLock} into a Spring context.
  */
-public class LockBean extends HekateBaseBean<DistributedLock> {
+public class LockBean extends HekateBaseBean<DistributedLock> implements InitializingBean {
     private String name;
 
     private String region;
@@ -56,7 +57,6 @@ public class LockBean extends HekateBaseBean<DistributedLock> {
      *
      * @see LockRegion#get(String)
      */
-    @Required
     public void setName(String name) {
         this.name = name;
     }
@@ -77,8 +77,15 @@ public class LockBean extends HekateBaseBean<DistributedLock> {
      *
      * @see LockRegionConfig#setName(String)
      */
-    @Required
     public void setRegion(String region) {
         this.region = region;
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        ConfigCheck check = ConfigCheck.get(getClass());
+
+        check.notEmpty(region, "region");
+        check.notEmpty(name, "name");
     }
 }
