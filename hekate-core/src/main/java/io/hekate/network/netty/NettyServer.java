@@ -32,8 +32,8 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
@@ -317,7 +317,7 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
         setOpts(boot);
         setChildOpts(boot);
 
-        boot.handler(new ChannelHandlerAdapter() {
+        boot.handler(new ChannelInboundHandlerAdapter() {
             @Override
             public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
                 mayBeRetry(ctx.channel(), attempt, cause);
