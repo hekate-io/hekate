@@ -68,7 +68,7 @@
         <zookeeper.curator.version>2.12.0</zookeeper.curator.version>
         <kubernetes.client.version>4.1.3</kubernetes.client.version>
         <jclouds.version>2.1.2</jclouds.version>
-        <aws.sdk.version>1.11.430</aws.sdk.version>
+        <aws.sdk.version>1.11.533</aws.sdk.version>
 
         <!-- Test dependencies.-->
         <junit.version>4.12</junit.version>
