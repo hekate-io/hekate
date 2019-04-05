@@ -81,7 +81,7 @@ Complete reference guide is coming soon.
 
 ## Code Examples
 
-Quickstart for Standalone Java Applications 
+Quickstart for Standalone Java Application
 ```java
 public class MyApplication{
     public static void main(String[] args) throws Exception {
@@ -96,9 +96,9 @@ public class MyApplication{
 
 ```
 
-Quickstart for Spring Boot Applications
+Quickstart for Spring Boot Application
 ```java
-@EnableHekate // <-- Turn on Hekate integration.
+@EnableHekate // <-- Enable Hekate integration.
 @SpringBootApplication
 public class MyApplication {
     @Autowired
@@ -106,6 +106,11 @@ public class MyApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(MyApplication.class, args);
+    }
+    
+    @PostConstruct
+    public void start(){
+        System.out.println("Cluster topology: " + hekate.cluster().topology());
     }
 }
 ```
