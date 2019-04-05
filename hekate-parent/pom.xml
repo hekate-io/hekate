@@ -63,7 +63,7 @@
         <!-- Production dependencies.-->
         <spring.boot.version>2.1.4.RELEASE</spring.boot.version>
         <kryo.version>4.0.2</kryo.version>
-        <kryo.serializers.version>0.45</kryo.serializers.version>
+        <kryo.serializers.version>0.43</kryo.serializers.version>
         <fst.version>2.57</fst.version>
         <zookeeper.curator.version>2.13.0</zookeeper.curator.version>
         <kubernetes.client.version>4.2.0</kubernetes.client.version>
