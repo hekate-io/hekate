@@ -378,7 +378,7 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
     }
 
     /**
-     * Sets the maximum amount of nodes in the cluster for the gossip protocol to speeded up by sending messages at a higher rate so that
+     * Sets the maximum amount of nodes in the cluster for the gossip protocol to speed up by sending messages at a higher rate so that
      * the cluster could converge faster.
      *
      * <p>
