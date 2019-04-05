@@ -1,6 +1,6 @@
 # Hekate.io
 
-Java Library for Cluster Discovery and Communications
+Java Library for Distributed Services
 
 [![Build Status](https://travis-ci.org/hekate-io/hekate.svg?branch=master)](https://travis-ci.org/hekate-io/hekate)
 [![codecov](https://codecov.io/gh/hekate-io/hekate/branch/master/graph/badge.svg)](https://codecov.io/gh/hekate-io/hekate)
@@ -12,12 +12,9 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
 
 ## Features
 
-- **Cluster**
-    - Gossip-based Decentralized Cluster Membership
-    - Pluggable Bootstrapping (aka Seed Node Discovery)
-        - Multicast
-        - Shared Database (JDBC-based)
-        - Shared File System
+- **Distributed Service Discovery**
+    - Decentralized Service Discovery (based on performance-optimized [Gossip](https://en.wikipedia.org/wiki/Gossip_protocol) protocol)
+    - Easy integration into existing infrastructure
         - Clouds (based on [Apache JClouds](https://jclouds.apache.org))
             - Amazon EC2 and S3
             - Google Cloud Storage and Compute Engine
@@ -25,13 +22,16 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
             - etc
         - [Kubernetes](https://kubernetes.io)    
         - [ZooKeeper](https://zookeeper.apache.org)
+        - IP Multicast
+        - Shared Database (JDBC-based)
+        - Shared File System
         - [Etcd](https://github.com/coreos/etcd) (_planned_)
+    - User-defined Service Properties and Roles
     - Cluster Event Listeners    
-    - User-defined Properties and Roles of Cluster Nodes
-    - Cluster Views and Node Filtering API
+    - Service Topology Views and Filtering APIs
     
 - **Messaging**
-    - Synchronous and Asynchronous APIs (backed by [Netty](https://netty.io))
+    - Synchronous and Asynchronous Messaging (backed by [Netty](https://netty.io))
     - Cluster-aware Load Balancing and Routing
     - SSL/TLS Encryption of Network Communications (optional)
     - Back Pressure Policies
@@ -39,11 +39,12 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
     - Pluggable Serialization
         - [Kryo](https://github.com/EsotericSoftware/kryo)
         - [FST](https://github.com/RuedigerMoeller/fast-serialization)
+        - [Protocol Buffers](https://developers.google.com/protocol-buffers/) (_work in progress_)
         - JDK Serialization
         - Manual Serialization
         
 - **Remote Procedure Calls (RPC)**
-    - Type-safe Invocation of Remote Java objects
+    - Type-safe Invocation of Remote Java Services
     - Automatic Discovery and Load Balancing
     - Synchronous and Asynchronous APIs
     - Multi-node Broadcasting and Aggregation of Results
@@ -51,7 +52,7 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
     - Error Retry Policies
     - ...and everything from the "Messaging" section above:)
     
-- **Cluster Leader Election (aka Cluster Singleton)**
+- **Cluster-wide Singleton Service (aka Leader Election )**
     - Decentralized Leader Election
     - Followers are Aware of the Current Leader
     - Leader can Dynamically Yield Leadership
@@ -68,7 +69,7 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
       to Simplify Configuration
 
 - **Metrics**
-    - Internal metrics recording and publishing via [Micrometer.io](https://micrometer.io/) 
+    - Internal Metrics Recording and Publishing via [Micrometer.io](https://micrometer.io/) 
 
 - **Raft-based Replicated State Machines (_planned_)**
 
