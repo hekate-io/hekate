@@ -180,7 +180,7 @@ public class RpcTypeAnalyzerTest extends HekateTestBase {
         List<?> method(@RpcSplit List<Object> arg);
     }
 
-    private final RpcTypeAnalyzer analyzer = new RpcTypeAnalyzer();
+    private final RpcTypeAnalyzer analyzer = new RpcTypeAnalyzer(value -> value);
 
     @Test
     public void testAnalyzeWithoutRpcAnnotation() {

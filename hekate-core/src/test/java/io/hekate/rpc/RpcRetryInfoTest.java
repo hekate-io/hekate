@@ -105,6 +105,6 @@ public class RpcRetryInfoTest extends HekateTestBase {
             }
         };
 
-        return RpcRetryInfo.parse(retry);
+        return RpcRetryInfo.parse(retry, value -> value);
     }
 }

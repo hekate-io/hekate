@@ -1,5 +1,6 @@
 package io.hekate.rpc;
 
+import io.hekate.core.inject.PlaceholderResolver;
 import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.messaging.retry.RetryPolicy;
 import io.hekate.util.format.ToString;
@@ -24,7 +25,12 @@ public final class RpcRetryInfo implements GenericRetryConfigurer {
 
     private final List<Class<? extends Throwable>> errors;
 
-    private RpcRetryInfo(OptionalInt maxAttempts, OptionalLong delay, OptionalLong maxDelay, List<Class<? extends Throwable>> errors) {
+    private RpcRetryInfo(
+        OptionalInt maxAttempts,
+        OptionalLong delay,
+        OptionalLong maxDelay,
+        List<Class<? extends Throwable>> errors
+    ) {
         this.errors = errors;
         this.maxAttempts = maxAttempts;
         this.delay = delay;
@@ -35,13 +41,14 @@ public final class RpcRetryInfo implements GenericRetryConfigurer {
      * Parses the specified {@link RpcRetry} annotation.
      *
      * @param retry Annotation.
+     * @param resolver String value resolver.
      *
      * @return Meta-information about RPC retry settings.
      */
-    public static RpcRetryInfo parse(RpcRetry retry) {
-        OptionalInt maxAttempts = tryParseInt("maxAttempts", retry.maxAttempts());
-        OptionalLong delay = tryParseLong("delay", retry.delay());
-        OptionalLong maxDelay = tryParseLong("maxDelay", retry.maxDelay());
+    public static RpcRetryInfo parse(RpcRetry retry, PlaceholderResolver resolver) {
+        OptionalInt maxAttempts = tryParseInt("maxAttempts", retry.maxAttempts(), resolver);
+        OptionalLong delay = tryParseLong("delay", retry.delay(), resolver);
+        OptionalLong maxDelay = tryParseLong("maxDelay", retry.maxDelay(), resolver);
         List<Class<? extends Throwable>> errors = unmodifiableList(asList(retry.errors()));
 
         return new RpcRetryInfo(maxAttempts, delay, maxDelay, errors);
@@ -102,8 +109,8 @@ public final class RpcRetryInfo implements GenericRetryConfigurer {
         }
     }
 
-    private static OptionalInt tryParseInt(String field, String value) {
-        value = value.trim();
+    private static OptionalInt tryParseInt(String field, String value, PlaceholderResolver resolver) {
+        value = resolver.resolvePlaceholders(value).trim();
 
         if (value.isEmpty()) {
             return OptionalInt.empty();
@@ -116,8 +123,8 @@ public final class RpcRetryInfo implements GenericRetryConfigurer {
         }
     }
 
-    private static OptionalLong tryParseLong(String field, String value) {
-        value = value.trim();
+    private static OptionalLong tryParseLong(String field, String value, PlaceholderResolver resolver) {
+        value = resolver.resolvePlaceholders(value).trim();
 
         if (value.isEmpty()) {
             return OptionalLong.empty();

@@ -30,25 +30,30 @@ import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.util.StringValueResolver;
 
 class SpringInjectionService implements InjectionService, ConfigurableService {
-    private final ApplicationContext parentCtx;
+    private final ApplicationContext parent;
+
+    private final StringValueResolver resolver;
 
     private AutowireCapableBeanFactory autowire;
 
-    public SpringInjectionService(ApplicationContext parentCtx) {
-        assert parentCtx != null : "Application context is null.";
+    public SpringInjectionService(ApplicationContext parent, StringValueResolver resolver) {
+        assert parent != null : "Application context is null.";
+        assert resolver != null : "String value resolver is null.";
 
-        this.parentCtx = parentCtx;
+        this.parent = parent;
+        this.resolver = resolver;
     }
 
-    public static ServiceFactory<InjectionService> factory(ApplicationContext ctx) {
+    public static ServiceFactory<InjectionService> factory(ApplicationContext ctx, StringValueResolver resolver) {
         assert ctx != null : "Application context is null.";
 
         return new ServiceFactory<InjectionService>() {
             @Override
             public InjectionService createService() {
-                return new SpringInjectionService(ctx);
+                return new SpringInjectionService(ctx, resolver);
             }
 
             @Override
@@ -67,6 +72,11 @@ class SpringInjectionService implements InjectionService, ConfigurableService {
         if (inject) {
             autowire.autowireBeanProperties(obj, AutowireCapableBeanFactory.AUTOWIRE_NO, true);
         }
+    }
+
+    @Override
+    public String resolvePlaceholders(String value) {
+        return resolver.resolveStringValue(value);
     }
 
     @Override
@@ -92,7 +102,7 @@ class SpringInjectionService implements InjectionService, ConfigurableService {
 
         autowireCtx.refresh();
 
-        autowireCtx.setParent(parentCtx);
+        autowireCtx.setParent(parent);
 
         autowire = autowireCtx.getAutowireCapableBeanFactory();
     }

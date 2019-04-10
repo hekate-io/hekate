@@ -20,6 +20,7 @@ import io.hekate.cluster.ClusterView;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.core.HekateException;
+import io.hekate.core.inject.InjectionService;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.jmx.JmxService;
@@ -102,13 +103,13 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     private final StateGuard guard = new StateGuard(RpcService.class);
 
     @ToStringIgnore
-    private final RpcTypeAnalyzer typeAnalyzer = new RpcTypeAnalyzer();
-
-    @ToStringIgnore
     private final Map<RpcTypeKey, RpcClientBuilder<?>> clients = new ConcurrentHashMap<>();
 
     @ToStringIgnore
     private final List<RpcClientConfig> clientConfigs = new ArrayList<>();
+
+    @ToStringIgnore
+    private RpcTypeAnalyzer typeAnalyzer;
 
     private List<RpcServerInfo> servers;
 
@@ -153,6 +154,14 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
         codec = ctx.require(CodecService.class).codecFactory();
 
         jmx = ctx.optional(JmxService.class);
+
+        InjectionService inject = ctx.optional(InjectionService.class);
+
+        if (inject == null) {
+            typeAnalyzer = new RpcTypeAnalyzer(value -> value);
+        } else {
+            typeAnalyzer = new RpcTypeAnalyzer(inject);
+        }
     }
 
     @Override

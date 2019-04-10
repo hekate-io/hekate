@@ -62,7 +62,7 @@ import io.hekate.core.service.Service;
  * be provided by an underlying IoC container are not supported.
  * </p>
  */
-public interface InjectionService extends Service {
+public interface InjectionService extends Service, PlaceholderResolver {
     /**
      * Injects dependencies into the specified object.
      *

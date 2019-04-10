@@ -32,7 +32,9 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.EmbeddedValueResolverAware;
 import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.util.StringValueResolver;
 
 /**
  * <span class="startHere">&laquo; start here</span>Main entry point to Spring Framework integration.
@@ -124,7 +126,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
  * </div>
  */
 public class HekateSpringBootstrap extends HekateBootstrap implements InitializingBean, DisposableBean, FactoryBean<Hekate>,
-    ApplicationContextAware, ApplicationListener<ContextRefreshedEvent> {
+    ApplicationContextAware, EmbeddedValueResolverAware, ApplicationListener<ContextRefreshedEvent> {
     private boolean deferredJoin;
 
     @ToStringIgnore
@@ -133,6 +135,7 @@ public class HekateSpringBootstrap extends HekateBootstrap implements Initializi
     @ToStringIgnore
     private volatile ApplicationContext ctx;
 
+    @ToStringIgnore
     private final ClusterEventListener ctxEventPublisher = new ClusterEventListener() {
         @Override
         public void onEvent(ClusterEvent event) throws HekateException {
@@ -143,6 +146,9 @@ public class HekateSpringBootstrap extends HekateBootstrap implements Initializi
     };
 
     @ToStringIgnore
+    private volatile StringValueResolver resolver;
+
+    @ToStringIgnore
     private ServiceFactory<InjectionService> injection;
 
     @ToStringIgnore
@@ -150,7 +156,7 @@ public class HekateSpringBootstrap extends HekateBootstrap implements Initializi
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        injection = SpringInjectionService.factory(ctx);
+        injection = SpringInjectionService.factory(ctx, resolver);
         resource = SpringResourceService.factory(ctx);
 
         withService(injection);
@@ -234,5 +240,10 @@ public class HekateSpringBootstrap extends HekateBootstrap implements Initializi
     @Override
     public void setApplicationContext(ApplicationContext ctx) throws BeansException {
         this.ctx = ctx;
+    }
+
+    @Override
+    public void setEmbeddedValueResolver(StringValueResolver resolver) {
+        this.resolver = resolver;
     }
 }

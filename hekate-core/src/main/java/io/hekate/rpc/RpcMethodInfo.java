@@ -16,6 +16,7 @@
 
 package io.hekate.rpc;
 
+import io.hekate.core.inject.PlaceholderResolver;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -61,8 +62,9 @@ public class RpcMethodInfo {
      * Constructs a new instance.
      *
      * @param javaMethod Java method.
+     * @param resolver String value resolver.
      */
-    public RpcMethodInfo(Method javaMethod) {
+    public RpcMethodInfo(Method javaMethod, PlaceholderResolver resolver) {
         ArgAssert.notNull(javaMethod, "Java method");
 
         this.signature = shortSignature(javaMethod);
@@ -72,7 +74,7 @@ public class RpcMethodInfo {
         this.async = isAsyncReturnType(javaMethod);
         this.aggregate = findAggregate(javaMethod);
         this.broadcast = findBroadcast(javaMethod);
-        this.retry = findRetry(javaMethod);
+        this.retry = findRetry(javaMethod, resolver);
 
         if (broadcast.isPresent()) {
             this.realReturnType = Void.class;
@@ -250,8 +252,8 @@ public class RpcMethodInfo {
         return Optional.ofNullable(meth.getAnnotation(RpcBroadcast.class));
     }
 
-    private static Optional<RpcRetryInfo> findRetry(Method meth) {
-        return Optional.ofNullable(meth.getAnnotation(RpcRetry.class)).map(RpcRetryInfo::parse);
+    private static Optional<RpcRetryInfo> findRetry(Method meth, PlaceholderResolver resolver) {
+        return Optional.ofNullable(meth.getAnnotation(RpcRetry.class)).map((RpcRetry retry) -> RpcRetryInfo.parse(retry, resolver));
     }
 
     private static OptionalInt findSplitArg(Method meth) {

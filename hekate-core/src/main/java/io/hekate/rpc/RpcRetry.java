@@ -62,6 +62,10 @@ public @interface RpcRetry {
     /**
      * Maximum amount of attempts. Zero to disable retries, negative value for unlimited attempts.
      *
+     * <p>
+     * It is possible to use {@code ${...}} property placeholders when Hekate is running inside of a Spring Application Context.
+     * </p>
+     *
      * @return Maximum amount of attempts.
      *
      * @see RetryPolicy#maxAttempts(int)
@@ -76,6 +80,10 @@ public @interface RpcRetry {
      * If {@link #maxDelay()} attribute is also set then the {@link ExponentialBackoffPolicy} will be used.
      * </p>
      *
+     * <p>
+     * It is possible to use {@code ${...}} property placeholders when Hekate is running inside of a Spring Application Context.
+     * </p>
+     *
      * @return Delay in milliseconds between attempts.
      *
      * @see RetryPolicy#withFixedDelay(long)
@@ -88,6 +96,10 @@ public @interface RpcRetry {
      * <p>
      * If this attribute is set then the {@link ExponentialBackoffPolicy} will be used to calculate delay between attempts. In  such case
      * the {@link #delay()} attribute's value will be used as a base delay and the value of this attribute as a maximum delay.
+     * </p>
+     *
+     * <p>
+     * It is possible to use {@code ${...}} property placeholders when Hekate is running inside of a Spring Application Context.
      * </p>
      *
      * @return Maximum delay in milliseconds between attempts.
