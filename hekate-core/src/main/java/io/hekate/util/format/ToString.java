@@ -63,9 +63,7 @@ public final class ToString {
                     try {
                         for (Constructor<?> c : type.getDeclaredConstructors()) {
                             if (c != null && c.getParameterCount() == 0) {
-                                if (!c.isAccessible()) {
-                                    c.setAccessible(true);
-                                }
+                                c.setAccessible(true);
 
                                 customFormat = (ToStringFormat.Formatter)c.newInstance();
                             }

@@ -65,6 +65,12 @@
             <artifactId>jclouds-slf4j</artifactId>
         </dependency>
 
+        <!-- TODO: Required for JClouds + Java 11 -->
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+        </dependency>
+
         <!-- Test dependencies.-->
         <dependency>
             <artifactId>hekate-core</artifactId>

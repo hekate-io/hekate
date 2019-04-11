@@ -182,6 +182,7 @@ public abstract class HekateTestBase {
         // Third party libraries that start threads but do not allow to stop them.
         KNOWN_THREAD_PREFIXES.add("Okio Watchdog".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("OkHttp ConnectionPool".toLowerCase());
+        KNOWN_THREAD_PREFIXES.add("OkHttp Http2Connection".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("com.google.inject.internal.util.$Finalizer".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("Keep-Alive-Timer".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("Keep-Alive-SocketCleaner".toLowerCase());
