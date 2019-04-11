@@ -45,9 +45,9 @@
             <id>hekate.io</id>
             <name>The Hekate Project Contributors</name>
             <email>hekate.dev@gmail.com</email>
-            <url>http://hekate.io/</url>
+            <url>https://hekate.io/</url>
             <organization>The Hekate Project</organization>
-            <organizationUrl>http://hekate.io/</organizationUrl>
+            <organizationUrl>https://hekate.io/</organizationUrl>
         </developer>
     </developers>
 
