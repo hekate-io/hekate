@@ -145,9 +145,6 @@ class MessagingGatewayContext<T> {
     private final long messagingTimeout;
 
     @ToStringIgnore
-    private final GenericRetryConfigurer baseRetryPolicy;
-
-    @ToStringIgnore
     private final int warnOnRetry;
 
     @ToStringIgnore
@@ -198,7 +195,6 @@ class MessagingGatewayContext<T> {
         this.receivePressure = receivePressure;
         this.sendPressure = sendPressure;
         this.messagingTimeout = messagingTimeout;
-        this.baseRetryPolicy = baseRetryPolicy;
         this.warnOnRetry = warnOnRetry;
         this.checkIdle = checkIdle;
         this.log = log;
@@ -228,10 +224,6 @@ class MessagingGatewayContext<T> {
 
     public long messagingTimeout() {
         return messagingTimeout;
-    }
-
-    public GenericRetryConfigurer baseRetryPolicy() {
-        return baseRetryPolicy;
     }
 
     public MessageReceiver<T> receiver() {
@@ -852,11 +844,15 @@ class MessagingGatewayContext<T> {
             attempt = failure.attempt() + 1;
             prevRouting = failure.routing();
 
-            failedNodes = new HashSet<>(failure.allTriedNodes());
+            if (failure.allTriedNodes().contains(failed)) {
+                failedNodes = failure.allTriedNodes();
+            } else {
+                failedNodes = new HashSet<>(failure.allTriedNodes());
 
-            failedNodes.add(failed);
+                failedNodes.add(failed);
 
-            failedNodes = unmodifiableSet(failedNodes);
+                failedNodes = unmodifiableSet(failedNodes);
+            }
         } else {
             attempt = 0;
             prevRouting = RETRY_SAME_NODE;
