@@ -48,7 +48,7 @@ public abstract class HekateNodeMultiCodecTestBase extends HekateNodeParamTestBa
     }
 
     @Parameters(name = "{index}: {0}")
-    public static Collection<MultiCodecTestContext> getLockAsyncTestContexts() {
+    public static Collection<MultiCodecTestContext> getCodecTestContexts() {
         return mapTestContext(p -> Stream.of(
             new MultiCodecTestContext(p, new KryoCodecFactory<>()),
             new MultiCodecTestContext(p, new FstCodecFactory<>()),
