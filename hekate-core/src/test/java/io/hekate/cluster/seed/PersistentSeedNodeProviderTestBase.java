@@ -192,7 +192,7 @@ public abstract class PersistentSeedNodeProviderTestBase<T extends SeedNodeProvi
                 });
             });
 
-            node.join();
+            get(node.joinAsync());
 
             assertTrue(controlProvider.findSeedNodes(CLUSTER_1).contains(node.localNode().socket()));
 

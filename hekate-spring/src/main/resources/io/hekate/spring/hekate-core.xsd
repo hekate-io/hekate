@@ -506,7 +506,14 @@
             <xsd:element name="zookeeper" type="clusterZooKeeperSeedNodeProviderType">
                 <xsd:annotation>
                     <xsd:documentation>
-                        Registers 'io.hekate.cluster.seed.zookeeper.ZooKeeperSeedNodeProvider.
+                        Registers 'io.hekate.cluster.seed.zookeeper.ZooKeeperSeedNodeProvider'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="etcd" type="clusterEtcdSeedNodeProviderType">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.cluster.seed.etcd.EtcdSeedNodeProvider'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
@@ -685,6 +692,46 @@
             <xsd:annotation>
                 <xsd:documentation>
                     See javadoc of 'io.hekate.cluster.seed.zookeeper.ZooKeeperSeedNodeProviderConfig#setBasePath(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="clusterEtcdSeedNodeProviderType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="endpoint" type="xsd:string">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.cluster.seed.etcd.EtcdSeedNodeProviderConfig#setEndpoints(java.util.List)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+        <xsd:attribute name="username" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.etcd.EtcdSeedNodeProviderConfig#setUsername(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="password" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.etcd.EtcdSeedNodeProviderConfig#setPassword(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="cleanup-interval-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.etcd.EtcdSeedNodeProviderConfig#setCleanupInterval(int)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="base-path" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.etcd.EtcdSeedNodeProviderConfig#setBasePath(java.lang.String)'.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>

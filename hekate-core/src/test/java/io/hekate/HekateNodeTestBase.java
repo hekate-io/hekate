@@ -43,15 +43,13 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
 
     protected SeedNodeProviderMock seedNodes;
 
-    private List<HekateTestNode> allNodes;
+    private final List<HekateTestNode> allNodes = new CopyOnWriteArrayList<>();
 
     private boolean ignoreNodeFailures;
 
     @Before
     public void setUp() throws Exception {
         seedNodes = new SeedNodeProviderMock();
-
-        allNodes = new CopyOnWriteArrayList<>();
     }
 
     @After

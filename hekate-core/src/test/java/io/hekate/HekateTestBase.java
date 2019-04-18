@@ -56,6 +56,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -69,6 +70,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
@@ -404,6 +406,28 @@ public abstract class HekateTestBase {
 
     protected void ignoreGhostThreads() {
         ignoreGhostThreads = true;
+    }
+
+    protected void awaitForNoSuchThread(String prefix) throws InterruptedException {
+        ThreadMXBean jmx = ManagementFactory.getThreadMXBean();
+
+        for (int i = 0; i < BUSY_WAIT_LOOPS; i++) {
+            ThreadInfo[] threads = jmx.getThreadInfo(jmx.getAllThreadIds());
+
+            boolean notExist = Stream.of(threads)
+                .filter(Objects::nonNull)
+                .map(ThreadInfo::getThreadName)
+                .map(String::toLowerCase)
+                .noneMatch(name -> name.startsWith(prefix));
+
+            if (notExist) {
+                return;
+            }
+
+            Thread.sleep(BUSY_WAIT_INTERVAL);
+        }
+
+        checkGhostThreads();
     }
 
     protected void checkGhostThreads() throws InterruptedException {

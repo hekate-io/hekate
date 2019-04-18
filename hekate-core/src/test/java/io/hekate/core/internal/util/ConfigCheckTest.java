@@ -21,6 +21,7 @@ import io.hekate.core.HekateConfigurationException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.stream.Stream;
 import org.junit.Test;
 
 public class ConfigCheckTest extends HekateTestBase {
@@ -147,9 +148,9 @@ public class ConfigCheckTest extends HekateTestBase {
     }
 
     @Test
-    public void testNotEmpty() {
+    public void testNotEmptyString() {
         expectExactMessage(HCE, PREFIX + "Epic fail must be not null.", () ->
-            check.notEmpty(null, "Epic fail")
+            check.notEmpty((String)null, "Epic fail")
         );
 
         expectExactMessage(HCE, PREFIX + "Epic fail must be a non-empty string.", () ->
@@ -165,6 +166,21 @@ public class ConfigCheckTest extends HekateTestBase {
         );
 
         check.notEmpty("777", "Success");
+    }
+
+    @Test
+    public void testNotEmptyStream() {
+        expectExactMessage(HCE, PREFIX + "Epic fail must be not null.", () ->
+            check.notEmpty((Stream<?>)null, "Epic fail")
+        );
+
+        expectExactMessage(HCE, PREFIX + "Epic fail must be not empty.", () ->
+            check.notEmpty(Stream.empty(), "Epic fail")
+        );
+
+        check.notEmpty(Stream.of("777"), "Success");
+
+        check.notEmpty(Stream.of((String)null), "Success");
     }
 
     @Test

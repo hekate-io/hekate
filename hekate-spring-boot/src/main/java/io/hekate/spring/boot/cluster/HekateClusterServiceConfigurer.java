@@ -99,6 +99,7 @@ import org.springframework.context.annotation.Lazy;
  * <li>{@link HekateFsSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateJdbcSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateZooKeeperSeedNodeProviderConfigurer}</li>
+ * <li>{@link HekateEtcdSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateCloudStoreSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateCloudSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateStaticSeedNodeProviderConfigurer}</li>

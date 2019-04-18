@@ -66,6 +66,7 @@
         <kryo.serializers.version>0.43</kryo.serializers.version>
         <fst.version>2.57</fst.version>
         <zookeeper.curator.version>2.13.0</zookeeper.curator.version>
+        <jetcd.version>0.3.0</jetcd.version>
         <kubernetes.client.version>4.2.0</kubernetes.client.version>
         <jclouds.version>2.1.2</jclouds.version>
         <aws.sdk.version>1.11.533</aws.sdk.version>
@@ -195,6 +196,13 @@
                 <version>${zookeeper.curator.version}</version>
             </dependency>
 
+            <!-- Etcd. -->
+            <dependency>
+                <groupId>io.etcd</groupId>
+                <artifactId>jetcd-core</artifactId>
+                <version>${jetcd.version}</version>
+            </dependency>
+
             <!-- Kubernetes. -->
             <dependency>
                 <groupId>io.fabric8</groupId>
@@ -237,7 +245,13 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>18.0</version>
+                <version>27.0.1-jre</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>2.1.2</version>
             </dependency>
 
             <dependency>

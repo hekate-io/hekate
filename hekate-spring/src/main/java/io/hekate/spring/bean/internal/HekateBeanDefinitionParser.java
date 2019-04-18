@@ -23,6 +23,8 @@ import io.hekate.cluster.seed.SeedNodeProviderGroup;
 import io.hekate.cluster.seed.SeedNodeProviderGroupConfig;
 import io.hekate.cluster.seed.StaticSeedNodeProvider;
 import io.hekate.cluster.seed.StaticSeedNodeProviderConfig;
+import io.hekate.cluster.seed.etcd.EtcdSeedNodeProvider;
+import io.hekate.cluster.seed.etcd.EtcdSeedNodeProviderConfig;
 import io.hekate.cluster.seed.fs.FsSeedNodeProvider;
 import io.hekate.cluster.seed.fs.FsSeedNodeProviderConfig;
 import io.hekate.cluster.seed.jclouds.BasicCredentialsSupplier;
@@ -69,7 +71,6 @@ import io.hekate.spring.bean.network.NetworkConnectorBean;
 import io.hekate.spring.bean.network.NetworkServiceBean;
 import io.hekate.spring.bean.rpc.RpcClientBean;
 import io.hekate.spring.bean.rpc.RpcServiceBean;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -294,6 +295,9 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             case "zookeeper": {
                 return parseZooKeeperSeedNodeProvider(el, ctx);
             }
+            case "etcd": {
+                return parseEtcdSeedNodeProvider(el, ctx);
+            }
             case "custom-provider": {
                 return parseRefOrBean(el, ctx).orElseGet(() -> {
                     ctx.getReaderContext().error("Malformed seed node provider element <" + el.getLocalName() + '>', el);
@@ -319,6 +323,31 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         setProperty(cfg, el, "cleanupInterval", "cleanup-interval-ms");
 
         BeanDefinitionBuilder provider = newBean(ZooKeeperSeedNodeProvider.class, el);
+
+        provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
+
+        return registerInnerBean(provider, ctx);
+    }
+
+    private RuntimeBeanReference parseEtcdSeedNodeProvider(Element el, ParserContext ctx) {
+        BeanDefinitionBuilder cfg = newBean(EtcdSeedNodeProviderConfig.class, el);
+
+        List<String> endpoints = new ManagedList<>();
+
+        getChildElementsByTagName(el, "endpoint").forEach(addrEl ->
+            endpoints.add(getTextValue(addrEl))
+        );
+
+        if (!endpoints.isEmpty()) {
+            cfg.addPropertyValue("endpoints", endpoints);
+        }
+
+        setProperty(cfg, el, "username", "username");
+        setProperty(cfg, el, "password", "password");
+        setProperty(cfg, el, "basePath", "base-path");
+        setProperty(cfg, el, "cleanupInterval", "cleanup-interval-ms");
+
+        BeanDefinitionBuilder provider = newBean(EtcdSeedNodeProvider.class, el);
 
         provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
 
@@ -445,7 +474,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
     private RuntimeBeanReference parseStaticSeedNodeProvider(Element el, ParserContext ctx) {
         BeanDefinitionBuilder cfg = newBean(StaticSeedNodeProviderConfig.class, el);
 
-        List<String> addresses = new ArrayList<>();
+        List<String> addresses = new ManagedList<>();
 
         getChildElementsByTagName(el, "address").forEach(addrEl ->
             addresses.add(getTextValue(addrEl))
