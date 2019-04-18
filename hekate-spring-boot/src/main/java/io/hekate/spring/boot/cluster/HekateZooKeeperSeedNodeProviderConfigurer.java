@@ -73,7 +73,7 @@ public class HekateZooKeeperSeedNodeProviderConfigurer {
      * @return New provider.
      */
     @Bean
-    public ZooKeeperSeedNodeProvider fsSeedNodeProvider(ZooKeeperSeedNodeProviderConfig cfg) {
+    public ZooKeeperSeedNodeProvider zooKeeperSeedNodeProvider(ZooKeeperSeedNodeProviderConfig cfg) {
         return new ZooKeeperSeedNodeProvider(cfg);
     }
 }
