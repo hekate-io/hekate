@@ -22,10 +22,10 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
             - etc
         - [Kubernetes](https://kubernetes.io)    
         - [ZooKeeper](https://zookeeper.apache.org)
+        - [Etcd](https://github.com/coreos/etcd)
         - IP Multicast
         - Shared Database (JDBC-based)
         - Shared File System
-        - [Etcd](https://github.com/coreos/etcd) (_planned_)
     - User-defined Service Properties and Roles
     - Cluster Event Listeners    
     - Service Topology Views and Filtering APIs
@@ -149,11 +149,12 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
 
  * Other artifacts:
     - **Cluster Bootstrapping** (seed node discovery)
-        - [hekate-jclouds-core](hekate-jclouds-core/) - Integration with the [Apache JClouds](https://jclouds.apache.org) 
+        - [hekate-jclouds-core](hekate-jclouds-core/) - Integration with [Apache JClouds](https://jclouds.apache.org) 
           for cloud environments.
-        - [hekate-jclouds-aws](hekate-jclouds-aws/) - Extended integration with the [Amazon EC2](https://aws.amazon.com) cloud.
-        - [hekate-kubernetes](hekate-kubernetes/) - Integration with the [Kubernetes](https://kubernetes.io) 
-        - [hekate-zookeeper](hekate-zookeeper/) - Integration with the [Apache ZooKeeper](https://zookeeper.apache.org) 
+        - [hekate-jclouds-aws](hekate-jclouds-aws/) - Extended integration with [Amazon EC2](https://aws.amazon.com) cloud.
+        - [hekate-kubernetes](hekate-kubernetes/) - Integration with [Kubernetes](https://kubernetes.io) 
+        - [hekate-zookeeper](hekate-zookeeper/) - Integration with [Apache ZooKeeper](https://zookeeper.apache.org) 
+        - [hekate-etcd](hekate-etcd/) - Integration with [Etcd](https://github.com/etcd-io/etcd) 
     - **Serialization Codecs**
         - [hekate-codec-kryo](hekate-codec-kryo/README.md) - Integration with [Kryo](https://github.com/EsotericSoftware/kryo) for data 
           serialization.
@@ -164,16 +165,16 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
 
 ### Software requirements:
 
- - Latest stable [Oracle JDK 8](http://www.oracle.com/technetwork/java/) or [Open JDK 8](http://openjdk.java.net/)
+ - Latest stable [Java SDK](https://adoptopenjdk.net/) (8+)
  - Latest stable [Docker](https://www.docker.com) (required for tests only)
 
 
-### Building (no tests):
+### Build (no tests):
 
  - `cd` to the project's root folder
  - run `./mvnw clean package -DskipTests=true`
  
-### Building (with tests):
+### Build (with tests):
  
   - cd to the project's root folder
   - make a copy of `test.properties` file with name `my_test.properties`
@@ -183,6 +184,8 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
   
 ## Release History
 
+ - v.3.3.0 (19-Apr-2019) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.3.0)]
+ 
  - v.3.2.0 (5-Apr-2019) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.2.0)]
  
  - v.3.1.0 (28-Mar-2019) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.1.0)]
