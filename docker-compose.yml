@@ -40,5 +40,5 @@ services:
     container_name: hekate-test-etcd
     image: quay.io/coreos/etcd:v3.3.9
     ports:
-      - "2380:2379"
+      - "2479:2379"
     command: etcd -name=hekate-etcd -advertise-client-urls http://etcd:2379 -listen-client-urls http://0.0.0.0:2379
