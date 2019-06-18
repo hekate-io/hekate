@@ -87,12 +87,12 @@ import org.springframework.context.annotation.Lazy;
  * <h2>Seed Node Providers</h2>
  * <p>
  * This auto-configuration registers all beans of the {@link SeedNodeProvider} type that can be found in the application context.
- * All such providers will be registered as a single {@link SeedNodeProviderGroup}. Rrror handling policy of that group can be specified
+ * All such providers will be registered as a single {@link SeedNodeProviderGroup}. Error handling policy of that group can be specified
  * via the {@link SeedNodeProviderGroupConfig#setPolicy(SeedNodeProviderGroupPolicy) 'hekate.cluster.seed.policy'} property.
  * </p>
  *
  * <p>
- * For auto-configuration of {@link SeedNodeProvider}s please see the documentation of the following classes:
+ * For auto-configuration of {@link SeedNodeProvider SeedNodeProviders} please see the documentation of the following classes:
  * </p>
  * <ul>
  * <li>{@link HekateMulticastSeedNodeProviderConfigurer}</li>
@@ -100,6 +100,7 @@ import org.springframework.context.annotation.Lazy;
  * <li>{@link HekateJdbcSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateZooKeeperSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateEtcdSeedNodeProviderConfigurer}</li>
+ * <li>{@link HekateConsulSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateCloudStoreSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateCloudSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateStaticSeedNodeProviderConfigurer}</li>

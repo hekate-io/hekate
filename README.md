@@ -23,6 +23,7 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
         - [Kubernetes](https://kubernetes.io)    
         - [ZooKeeper](https://zookeeper.apache.org)
         - [Etcd](https://github.com/coreos/etcd)
+        - [Etcd](https://github.com/hashicorp/consul)
         - IP Multicast
         - Shared Database (JDBC-based)
         - Shared File System
@@ -155,6 +156,7 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
         - [hekate-kubernetes](hekate-kubernetes/) - Integration with [Kubernetes](https://kubernetes.io) 
         - [hekate-zookeeper](hekate-zookeeper/) - Integration with [Apache ZooKeeper](https://zookeeper.apache.org) 
         - [hekate-etcd](hekate-etcd/) - Integration with [Etcd](https://github.com/etcd-io/etcd) 
+        - [hekate-consul](hekate-consul/) - Integration with [Consul](https://github.com/hashicorp/consul) 
     - **Serialization Codecs**
         - [hekate-codec-kryo](hekate-codec-kryo/README.md) - Integration with [Kryo](https://github.com/EsotericSoftware/kryo) for data 
           serialization.

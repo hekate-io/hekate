@@ -38,6 +38,7 @@
         <module>hekate-spring-boot</module>
         <module>hekate-zookeeper</module>
         <module>hekate-etcd</module>
+        <module>hekate-consul</module>
         <module>hekate-kubernetes</module>
         <module>hekate-jclouds-core</module>
         <module>hekate-jclouds-aws</module>

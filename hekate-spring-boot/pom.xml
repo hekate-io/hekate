@@ -75,6 +75,13 @@
         </dependency>
 
         <dependency>
+            <artifactId>hekate-consul</artifactId>
+            <groupId>${project.groupId}</groupId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
             <artifactId>hekate-kubernetes</artifactId>
             <groupId>${project.groupId}</groupId>
             <version>${project.version}</version>
