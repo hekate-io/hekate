@@ -33,7 +33,7 @@ public class HostReachabilityDetectorTest extends HekateTestBase {
 
     @Test
     public void testInvalid() throws Exception {
-        HostReachabilityDetector detector = new HostReachabilityDetector("some.invalid.localhost", 2000);
+        HostReachabilityDetector detector = new HostReachabilityDetector("some.invalid.host", 2000);
 
         assertFalse(detector.isValid(newNode()));
     }
