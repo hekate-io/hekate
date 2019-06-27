@@ -29,7 +29,7 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
     - User-defined Service Properties and Roles
     - Cluster Event Listeners    
     - Service Topology Views and Filtering APIs
-    - Split-brain Detection
+    - Health Monitoring and Split-brain Detection
     
 - **Messaging**
     - Synchronous and Asynchronous Messaging (backed by [Netty](https://netty.io))
