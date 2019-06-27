@@ -71,6 +71,7 @@ import org.springframework.context.annotation.Lazy;
  * <li>{@link ClusterServiceFactory#setGossipInterval(long) 'hekate.cluster.gossip-interval'}</li>
  * <li>{@link ClusterServiceFactory#setSpeedUpGossipSize(int) 'hekate.cluster.speed-up-gossip-size'}</li>
  * <li>{@link ClusterServiceFactory#setSplitBrainAction(SplitBrainAction) 'hekate.cluster.split-brain-action'}</li>
+ * <li>{@link ClusterServiceFactory#setSplitBrainCheckInterval(long)} 'hekate.cluster.split-brain-check-interval'}</li>
  * </ul>
  *
  * <p>

@@ -71,7 +71,7 @@
                 <heartbeat interval-ms="501" loss-threshold="5" quorum="3"/>
             </failure-detection>
 
-            <split-brain-detection action="TERMINATE">
+            <split-brain-detection action="TERMINATE" check-interval-ms="1000">
                 <group require="ANY_VALID">
                     <host-reachable host="127.0.0.1" timeout-ms="3000"/>
                     <group require="ALL_VALID">

@@ -156,6 +156,8 @@ public class SplitBrainManagerTest extends HekateTestBase {
         mgr.initialize(newNode(), async, mock(Callback.class));
 
         for (int i = 0; i < 5; i++) {
+            when(detector.isValid(any())).thenReturn(true);
+
             mgr.checkAsync();
             mgr.checkAsync();
             mgr.checkAsync();

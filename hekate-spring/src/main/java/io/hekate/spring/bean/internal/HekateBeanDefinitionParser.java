@@ -592,6 +592,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
 
         if (splitBrainEl != null) {
             setProperty(cluster, splitBrainEl, "splitBrainAction", "action");
+            setProperty(cluster, splitBrainEl, "splitBrainCheckInterval", "check-interval-ms");
 
             Element groupEl = getChildElementByTagName(splitBrainEl, "group");
 

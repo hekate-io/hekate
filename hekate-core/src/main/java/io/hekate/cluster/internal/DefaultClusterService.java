@@ -129,6 +129,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     private final SplitBrainManager splitBrain;
 
+    private final long splitBrainCheckInterval;
+
     @ToStringIgnore
     private final List<ClusterAcceptor> acceptors;
 
@@ -230,6 +232,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             factory.getSplitBrainAction(),
             factory.getSplitBrainDetector()
         );
+
+        splitBrainCheckInterval = factory.getSplitBrainCheckInterval();
 
         // Pre-configured (unmodifiable) event listeners.
         this.listeners = unmodifiableList(nullSafe(factory.getClusterListeners()).collect(toCollection(() -> {
@@ -1061,6 +1065,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                         if (isCoordinator(topology)) {
                                             startSeedNodeCleaner();
                                         }
+
+                                        startPeriodicSplitBrainChecks();
                                     });
                                 } catch (RuntimeException | Error e) {
                                     fatalError(e);
@@ -1236,6 +1242,14 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
             private void startSeedNodeCleaner() {
                 seedNodeMgr.startCleaning(net, () -> knownAddresses);
+            }
+
+            private void startPeriodicSplitBrainChecks() {
+                if (splitBrain.hasDetector() && splitBrainCheckInterval > 0) {
+                    scheduleOn(serviceThread, () -> {
+                        guard.withReadLockIfInitialized(splitBrain::checkAsync);
+                    }, 0, splitBrainCheckInterval);
+                }
             }
         };
     }

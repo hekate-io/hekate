@@ -215,4 +215,25 @@ public class ClusterServiceSplitBrainTest extends HekateNodeParamTestBase {
 
         node.awaitForStatus(Hekate.State.DOWN);
     }
+
+    @Test
+    public void testPeriodicChecks() throws Exception {
+        SplitBrainDetectorMock detector = new SplitBrainDetectorMock(true);
+
+        HekateTestNode node = createNode(c -> {
+            ClusterServiceFactory cluster = c.service(ClusterServiceFactory.class).get();
+
+            cluster.setSplitBrainAction(SplitBrainAction.TERMINATE);
+            cluster.setSplitBrainDetector(detector);
+            cluster.setSplitBrainCheckInterval(10);
+        });
+
+        node.join();
+
+        detector.setValid(false);
+
+        busyWait("node termination", () ->
+            node.state() == Hekate.State.DOWN
+        );
+    }
 }

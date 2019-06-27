@@ -83,6 +83,17 @@ public class ClusterServiceFactoryTest extends HekateTestBase {
     }
 
     @Test
+    public void testSplitBrainCheckInterval() {
+        assertEquals(0, factory.getSplitBrainCheckInterval());
+
+        factory.setSplitBrainCheckInterval(10000);
+
+        assertEquals(10000, factory.getSplitBrainCheckInterval());
+
+        assertEquals(10001, factory.withSplitBrainCheckInterval(10001).getSplitBrainCheckInterval());
+    }
+
+    @Test
     public void testGossipInterval() {
         assertEquals(ClusterServiceFactory.DEFAULT_GOSSIP_INTERVAL, factory.getGossipInterval());
 

@@ -58,6 +58,8 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
 
     private SplitBrainDetector splitBrainDetector;
 
+    private long splitBrainCheckInterval;
+
     private SeedNodeProvider seedNodeProvider;
 
     private FailureDetector failureDetector = new DefaultFailureDetector();
@@ -241,6 +243,47 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
      */
     public ClusterServiceFactory withSplitBrainDetector(SplitBrainDetector splitBrainDetector) {
         setSplitBrainDetector(splitBrainDetector);
+
+        return this;
+    }
+
+    /**
+     * Returns the time interval in milliseconds for split-brain checking (see {@link #setSplitBrainCheckInterval(long)}).
+     *
+     * @return Time interval in milliseconds.
+     */
+    public long getSplitBrainCheckInterval() {
+        return splitBrainCheckInterval;
+    }
+
+    /**
+     * Sets the time interval in milliseconds for split-brain checking.
+     *
+     * <p>
+     * If the specified value is greater than zero then once per such interval the {@link #setSplitBrainDetector(SplitBrainDetector)
+     * SplitBrainDetector} component will be called to check the node's health. If check fails then the
+     * {@link #setSplitBrainAction(SplitBrainAction) SplitBrainAction} will be applied to the local node.
+     * </p>
+     *
+     * <p>
+     * Default value of this parameter is {@code 0} (i.e. periodic checks are disabled by default).
+     * </p>
+     *
+     * @param splitBrainCheckInterval Time interval in milliseconds.
+     */
+    public void setSplitBrainCheckInterval(long splitBrainCheckInterval) {
+        this.splitBrainCheckInterval = splitBrainCheckInterval;
+    }
+
+    /**
+     * Fluent-style version of {@link #setSplitBrainCheckInterval(long)}.
+     *
+     * @param splitBrainCheckInterval Time interval in milliseconds.
+     *
+     * @return This instance.
+     */
+    public ClusterServiceFactory withSplitBrainCheckInterval(long splitBrainCheckInterval) {
+        setSplitBrainCheckInterval(splitBrainCheckInterval);
 
         return this;
     }

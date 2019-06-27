@@ -37,6 +37,9 @@ class SplitBrainManager {
     private final AtomicBoolean active = new AtomicBoolean();
 
     @ToStringIgnore
+    private final AtomicBoolean actionApplied = new AtomicBoolean();
+
+    @ToStringIgnore
     private ClusterNode localNode;
 
     @ToStringIgnore
@@ -50,6 +53,10 @@ class SplitBrainManager {
 
         this.detector = detector;
         this.action = action;
+    }
+
+    public boolean hasDetector() {
+        return detector != null;
     }
 
     public SplitBrainDetector detector() {
@@ -71,6 +78,7 @@ class SplitBrainManager {
             this.localNode = localNode;
             this.async = async;
             this.callback = callback;
+            this.actionApplied.set(false);
         });
     }
 
@@ -84,28 +92,41 @@ class SplitBrainManager {
     }
 
     public boolean check() {
-        return guard.withReadLock(() ->
-            detector == null || localNode == null || detector.isValid(localNode)
-        );
+        return guard.withReadLock(() -> {
+            if (hasDetector() && localNode != null && active.compareAndSet(false, true)) {
+                try {
+                    return detector.isValid(localNode);
+                } finally {
+                    active.compareAndSet(true, false);
+                }
+            } else {
+                return true;
+            }
+        });
     }
 
     public void checkAsync() {
-        if (detector != null) {
+        if (hasDetector()) {
             guard.withReadLockIfInitialized(() -> {
                 if (active.compareAndSet(false, true)) {
                     runAsync(() -> {
                         try {
                             guard.withReadLockIfInitialized(() -> {
-                                if (DEBUG) {
-                                    log.debug("Checking for cluster split-brain [detector={}]", detector);
-                                }
-
-                                if (!detector.isValid(localNode)) {
-                                    if (log.isWarnEnabled()) {
-                                        log.warn("Split-brain detected.");
+                                if (!actionApplied.get()) {
+                                    if (DEBUG) {
+                                        log.debug("Checking for cluster split-brain [detector={}]", detector);
                                     }
 
-                                    applyAction();
+                                    if (!detector.isValid(localNode)) {
+                                        // Make sure that we apply action only once.
+                                        if (actionApplied.compareAndSet(false, true)) {
+                                            if (log.isWarnEnabled()) {
+                                                log.warn("Split-brain detected.");
+                                            }
+
+                                            applyAction();
+                                        }
+                                    }
                                 }
                             });
                         } finally {
