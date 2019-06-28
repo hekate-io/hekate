@@ -20,7 +20,7 @@ import io.hekate.HekateTestProps;
 import io.hekate.cluster.internal.DefaultClusterService;
 import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.cluster.seed.SeedNodeProviderGroup;
-import io.hekate.cluster.seed.etcd.EtcdSeedNodeProvider;
+import io.hekate.cluster.seed.consul.ConsulSeedNodeProvider;
 import io.hekate.spring.boot.EnableHekate;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
 import io.hekate.spring.boot.HekateTestConfigBase;
@@ -31,33 +31,32 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class HekateEtcdSeedNodeProviderConfigurerTest extends HekateAutoConfigurerTestBase {
+public class HekateConsulSeedNodeProviderConfigurerTest extends HekateAutoConfigurerTestBase {
     @EnableHekate
     @EnableAutoConfiguration
-    public static class EtcdEnabledConfig {
+    public static class ConsulEnabledConfig {
         // No-op.
     }
 
     @EnableAutoConfiguration
-    public static class EtcdDisabledConfig extends HekateTestConfigBase {
+    public static class ConsulDisabledConfig extends HekateTestConfigBase {
         // No-op.
     }
 
-    private URI etcdUrl;
+    private URI consulUrl;
 
     @BeforeClass
     public static void mayBeDisableTest() {
-        Assume.assumeTrue(HekateTestProps.is("ETCD_ENABLED"));
+        Assume.assumeTrue(HekateTestProps.is("CONSUL_ENABLED"));
     }
 
     @Before
     public void setUp() throws Exception {
-        etcdUrl = new URI(HekateTestProps.get("ETCD_URL"));
+        consulUrl = new URI(HekateTestProps.get("CONSUL_URL"));
     }
 
     @Test
@@ -66,23 +65,23 @@ public class HekateEtcdSeedNodeProviderConfigurerTest extends HekateAutoConfigur
 
         registerAndRefresh(
             new String[]{
-                "hekate.cluster.seed.etcd.enable=true",
-                "hekate.cluster.seed.etcd.endpoints=" + etcdUrl + ',' + etcdUrl,
-                "hekate.cluster.seed.etcd.base-path=/hekate-test"
+                "hekate.cluster.seed.consul.enable=true",
+                "hekate.cluster.seed.consul.url=" + consulUrl,
+                "hekate.cluster.seed.consul.base-path=///////hekate-test"
             },
-            EtcdEnabledConfig.class
+            HekateConsulSeedNodeProviderConfigurerTest.ConsulEnabledConfig.class
         );
 
         SeedNodeProviderGroup group = (SeedNodeProviderGroup)getNode().get(DefaultClusterService.class).seedNodeProvider();
 
         assertEquals(1, group.allProviders().size());
-        assertTrue(group.allProviders().get(0) instanceof EtcdSeedNodeProvider);
+        assertTrue(group.allProviders().get(0) instanceof ConsulSeedNodeProvider);
         assertEquals(group.allProviders(), group.liveProviders());
 
-        EtcdSeedNodeProvider provider = (EtcdSeedNodeProvider)group.allProviders().get(0);
+        ConsulSeedNodeProvider provider = (ConsulSeedNodeProvider)group.allProviders().get(0);
 
-        assertEquals("/hekate-test", provider.basePath());
-        assertEquals(asList(etcdUrl, etcdUrl), provider.endpoints());
+        assertEquals("hekate-test", provider.basePath());
+        assertEquals(consulUrl, provider.url());
     }
 
     @Test
@@ -90,11 +89,11 @@ public class HekateEtcdSeedNodeProviderConfigurerTest extends HekateAutoConfigur
         ignoreGhostThreads();
 
         registerAndRefresh(new String[]{
-            "hekate.cluster.seed.etcd.enable=false"
-        }, EtcdDisabledConfig.class);
+            "hekate.cluster.seed.consul.enable=false"
+        }, ConsulDisabledConfig.class);
 
         SeedNodeProvider provider = getNode().get(DefaultClusterService.class).seedNodeProvider();
 
-        assertFalse(provider instanceof EtcdSeedNodeProvider);
+        assertFalse(provider instanceof ConsulSeedNodeProvider);
     }
 }
