@@ -23,7 +23,7 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
         - [Kubernetes](https://kubernetes.io)    
         - [ZooKeeper](https://zookeeper.apache.org)
         - [Etcd](https://github.com/coreos/etcd)
-        - [Etcd](https://github.com/hashicorp/consul)
+        - [Consul](https://github.com/hashicorp/consul)
         - IP Multicast
         - Shared Database (JDBC-based)
         - Shared File System
