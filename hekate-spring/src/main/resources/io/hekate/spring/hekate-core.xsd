@@ -517,6 +517,13 @@
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
+            <xsd:element name="consul" type="clusterConsulSeedNodeProviderType">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.cluster.seed.consul.ConsulSeedNodeProvider.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
             <xsd:element name="shared-folder" type="clusterSharedFolderSeedNodeProviderType">
                 <xsd:annotation>
                     <xsd:documentation>
@@ -732,6 +739,51 @@
             <xsd:annotation>
                 <xsd:documentation>
                     See javadoc of 'io.hekate.cluster.seed.etcd.EtcdSeedNodeProviderConfig#setBasePath(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="clusterConsulSeedNodeProviderType">
+        <xsd:attribute name="url" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.consul.ConsulSeedNodeProviderConfig#setUrl(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="cleanup-interval-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.consul.ConsulSeedNodeProviderConfig#setCleanupInterval(int)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="base-path" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.consul.ConsulSeedNodeProviderConfig#setBasePath(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="connect-timeout-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.consul.ConsulSeedNodeProviderConfig#setConnectTimeout(Long)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="read-timeout-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.consul.ConsulSeedNodeProviderConfig#setReadTimeout(Long)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="write-timeout-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.consul.ConsulSeedNodeProviderConfig#setWriteTimeout(Long)'.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>

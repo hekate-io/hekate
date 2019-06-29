@@ -23,6 +23,8 @@ import io.hekate.cluster.seed.SeedNodeProviderGroup;
 import io.hekate.cluster.seed.SeedNodeProviderGroupConfig;
 import io.hekate.cluster.seed.StaticSeedNodeProvider;
 import io.hekate.cluster.seed.StaticSeedNodeProviderConfig;
+import io.hekate.cluster.seed.consul.ConsulSeedNodeProvider;
+import io.hekate.cluster.seed.consul.ConsulSeedNodeProviderConfig;
 import io.hekate.cluster.seed.etcd.EtcdSeedNodeProvider;
 import io.hekate.cluster.seed.etcd.EtcdSeedNodeProviderConfig;
 import io.hekate.cluster.seed.fs.FsSeedNodeProvider;
@@ -298,6 +300,9 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             case "etcd": {
                 return parseEtcdSeedNodeProvider(el, ctx);
             }
+            case "consul": {
+                return parseConsulSeedNodeProvider(el, ctx);
+            }
             case "custom-provider": {
                 return parseRefOrBean(el, ctx).orElseGet(() -> {
                     ctx.getReaderContext().error("Malformed seed node provider element <" + el.getLocalName() + '>', el);
@@ -348,6 +353,23 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         setProperty(cfg, el, "cleanupInterval", "cleanup-interval-ms");
 
         BeanDefinitionBuilder provider = newBean(EtcdSeedNodeProvider.class, el);
+
+        provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
+
+        return registerInnerBean(provider, ctx);
+    }
+
+    private RuntimeBeanReference parseConsulSeedNodeProvider(Element el, ParserContext ctx) {
+        BeanDefinitionBuilder cfg = newBean(ConsulSeedNodeProviderConfig.class, el);
+
+        setProperty(cfg, el, "url", "url");
+        setProperty(cfg, el, "basePath", "base-path");
+        setProperty(cfg, el, "cleanupInterval", "cleanup-interval-ms");
+        setProperty(cfg, el, "connectTimeout", "connect-timeout-ms");
+        setProperty(cfg, el, "readTimeout", "read-timeout-ms");
+        setProperty(cfg, el, "writeTimeout", "write-timeout-ms");
+
+        BeanDefinitionBuilder provider = newBean(ConsulSeedNodeProvider.class, el);
 
         provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
 

@@ -114,7 +114,7 @@ public class ConsulSeedNodeProvider implements SeedNodeProvider {
     }
 
     /**
-     * Returns the base path for storing seed nodes information in Consul kv storage.
+     * Returns the base path for storing seed nodes information in Consul Key-Value storage.
      *
      * @return Base path for storing seed nodes information in Consul.
      *
@@ -125,7 +125,7 @@ public class ConsulSeedNodeProvider implements SeedNodeProvider {
     }
 
     /**
-     * Return url path to Consul HTTP API.
+     * Return URL path to Consul HTTP API.
      *
      * @return Consul HTTP API path.
      *
@@ -133,6 +133,33 @@ public class ConsulSeedNodeProvider implements SeedNodeProvider {
      */
     public URI url() {
         return url;
+    }
+
+    /**
+     * Returns the Consul connect timeout in milliseconds.
+     *
+     * @return Connect timeout in milliseconds.
+     */
+    public Long connectTimeout() {
+        return connectTimeout;
+    }
+
+    /**
+     * Returns the Consul read timeout in milliseconds.
+     *
+     * @return Read timeout in milliseconds.
+     */
+    public Long readTimeout() {
+        return readTimeout;
+    }
+
+    /**
+     * Returns the Consul write timeout in milliseconds.
+     *
+     * @return Write timeout in milliseconds.
+     */
+    public Long writeTimeout() {
+        return writeTimeout;
     }
 
     @Override
