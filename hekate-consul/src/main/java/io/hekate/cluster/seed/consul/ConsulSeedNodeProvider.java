@@ -34,17 +34,17 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.hekate.cluster.seed.consul.ConsulSeedNodeProviderConfig.SEPARATOR;
+import static java.util.stream.Collectors.toList;
 
 /**
- * Implementation of {@link SeedNodeProvider} interface with usage of Consul's kv store.
+ * Implementation of {@link SeedNodeProvider} interface with usage of Consul's Key-Value store.
  *
  * <p>
- * This provider uses <a href="https://github.com/hashicorp/consul" target="_blank">Consul</a> key-value store to keep track of active seed
+ * This provider uses <a href="https://github.com/hashicorp/consul" target="_blank">Consul</a> Key-Value store to keep track of active seed
  * nodes.
  * </p>
  *
@@ -71,16 +71,20 @@ import static io.hekate.cluster.seed.consul.ConsulSeedNodeProviderConfig.SEPARAT
 public class ConsulSeedNodeProvider implements SeedNodeProvider {
     private static final Logger log = LoggerFactory.getLogger(ConsulSeedNodeProvider.class);
 
-    private final long cleanupInterval;
+    private static final boolean DEBUG = log.isDebugEnabled();
+
+    private static final Pattern LEADING_OR_TRAILING_SLASHES = Pattern.compile("^(/+)|(/+$)");
 
     private final URI url;
 
     private final String basePath;
 
+    private final long cleanupInterval;
+
     /**
      * Initializes new consul seed node provider.
      *
-     * @param cfg config
+     * @param cfg Configuration.
      */
     public ConsulSeedNodeProvider(ConsulSeedNodeProviderConfig cfg) {
         ArgAssert.notNull(cfg, "Configuration");
@@ -91,15 +95,13 @@ public class ConsulSeedNodeProvider implements SeedNodeProvider {
         check.notEmpty(cfg.getBasePath(), "base path");
 
         this.cleanupInterval = cfg.getCleanupInterval();
-        this.basePath = cfg.getBasePath().replaceFirst("^/+", "");
+        this.basePath = normalizeBasePath(cfg.getBasePath());
 
         try {
             url = new URI(cfg.getUrl());
         } catch (URISyntaxException e) {
             throw check.fail(e);
         }
-
-        check.notEmpty(basePath, "base path");
     }
 
     /**
@@ -128,17 +130,19 @@ public class ConsulSeedNodeProvider implements SeedNodeProvider {
     public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
         String clusterPath = makeClusterPath(cluster);
 
-        log.debug("Searching for seed nodes [cluster-path={}]", clusterPath);
+        if (DEBUG) {
+            log.debug("Searching for seed nodes [cluster-path={}]", clusterPath);
+        }
 
-        return runFuncWithClient(kv -> kv
-            .getValues(makeClusterPath(cluster))
-            .stream()
-            .map(Value::getKey)
-            .filter(s -> s.startsWith(clusterPath))
-            .map(s -> s.replaceFirst(clusterPath + SEPARATOR, ""))
-            .map(s -> AddressUtils.fromFileName(s, log))
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList()));
+        return getWithClient(consul ->
+            consul.getValues(clusterPath).stream()
+                .map(Value::getKey)
+                .filter(it -> it.startsWith(clusterPath) && it.length() > clusterPath.length())
+                .map(it -> it.substring(clusterPath.length()))
+                .map(it -> AddressUtils.fromFileName(it, log))
+                .filter(Objects::nonNull)
+                .collect(toList())
+        );
     }
 
     @Override
@@ -171,62 +175,64 @@ public class ConsulSeedNodeProvider implements SeedNodeProvider {
         doUnregister(cluster, node, false);
     }
 
-    @Override
-    public String toString() {
-        return ToString.format(this);
-    }
-
     private void doRegister(String cluster, InetSocketAddress node, boolean local) throws HekateException {
-        String path = makePath(cluster, node);
+        String path = makeAddressPath(cluster, node);
 
         if (log.isInfoEnabled()) {
             log.info("Registering {} seed node [key={}]", local ? "local" : "remote", path);
         }
 
-        runWithClient(kv -> kv.putValue(path));
+        withConsul(consul ->
+            consul.putValue(path)
+        );
     }
 
     private void doUnregister(String cluster, InetSocketAddress node, boolean local) throws HekateException {
-        String path = makePath(cluster, node);
+        String path = makeAddressPath(cluster, node);
 
         if (log.isInfoEnabled()) {
             log.info("Unregistering {} seed node [key={}]", local ? "local" : "remote", path);
         }
 
-        runWithClient(kv -> kv.deleteKey(path));
+        withConsul(consul ->
+            consul.deleteKey(path)
+        );
+    }
+
+    private String makeAddressPath(String cluster, InetSocketAddress node) {
+        return makeClusterPath(cluster) + AddressUtils.toFileName(node);
     }
 
     private String makeClusterPath(String cluster) {
-        return basePath + SEPARATOR + cluster;
+        return basePath + '/' + cluster + '/';
     }
 
-    private String makePath(String cluster, InetSocketAddress node) {
-        String addressStr = AddressUtils.toFileName(node);
-
-        return makeClusterPath(cluster) + SEPARATOR + addressStr;
-    }
-
-    private <T> T runFuncWithClient(Function<KeyValueClient, T> f) {
+    private <T> T getWithClient(Function<KeyValueClient, T> f) {
         Consul consul = Consul.builder().withUrl(url.toString()).build();
 
-        KeyValueClient kvClient = consul.keyValueClient();
-
         try {
-            return f.apply(kvClient);
+            return f.apply(consul.keyValueClient());
         } finally {
             consul.destroy();
         }
     }
 
-    private void runWithClient(Consumer<KeyValueClient> consumer) {
+    private void withConsul(Consumer<KeyValueClient> consumer) {
         Consul consul = Consul.builder().withUrl(url.toString()).build();
 
-        KeyValueClient kvClient = consul.keyValueClient();
-
         try {
-            consumer.accept(kvClient);
+            consumer.accept(consul.keyValueClient());
         } finally {
             consul.destroy();
         }
+    }
+
+    private static String normalizeBasePath(String basePath) {
+        return LEADING_OR_TRAILING_SLASHES.matcher(basePath.trim()).replaceAll("");
+    }
+
+    @Override
+    public String toString() {
+        return ToString.format(this);
     }
 }

@@ -32,13 +32,13 @@ public class ConsulSeedNodeProviderConfig {
     /** Default value (={@value}) for {@link #setBasePath(String)}. */
     public static final String DEFAULT_BASE_PATH = "/hekate/cluster";
 
-    /** Default consul's path separator. */
-    public static final char SEPARATOR = '/';
-
+    /** See {@link #setUrl(String)}. */
     private String url;
 
+    /** See {@link #setCleanupInterval(long)}. */
     private long cleanupInterval = DEFAULT_CLEANUP_INTERVAL;
 
+    /** See {@link #setBasePath(String)}. */
     private String basePath = DEFAULT_BASE_PATH;
 
     /**
@@ -61,6 +61,19 @@ public class ConsulSeedNodeProviderConfig {
      */
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    /**
+     * Fluent-style version of {@link #setUrl(String)}.
+     *
+     * @param url Consul url.
+     *
+     * @return This instance.
+     */
+    public ConsulSeedNodeProviderConfig withUrl(String url) {
+        setUrl(url);
+
+        return this;
     }
 
     /**
@@ -90,6 +103,19 @@ public class ConsulSeedNodeProviderConfig {
     }
 
     /**
+     * Fluent-style version of {@link #setCleanupInterval(long)}.
+     *
+     * @param cleanupInterval Time interval in milliseconds.
+     *
+     * @return This instance.
+     */
+    public ConsulSeedNodeProviderConfig withCleanupInterval(long cleanupInterval) {
+        setCleanupInterval(cleanupInterval);
+
+        return this;
+    }
+
+    /**
      * Returns the base path to store seed nodes information in Consul (see {@link #setBasePath(String)}).
      *
      * @return Base path to store seed nodes.
@@ -109,6 +135,19 @@ public class ConsulSeedNodeProviderConfig {
      */
     public void setBasePath(String basePath) {
         this.basePath = basePath;
+    }
+
+    /**
+     * Fluent-style version of {@link #setBasePath(String)}.
+     *
+     * @param basePath Base path to store seed nodes.
+     *
+     * @return This instance.
+     */
+    public ConsulSeedNodeProviderConfig withBasePath(String basePath) {
+        setBasePath(basePath);
+
+        return this;
     }
 
     @Override
