@@ -127,7 +127,7 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring-boot</artifactId>
-    <version>3.3.0</version>
+    <version>3.4.0</version>
 </dependency>
 ```
 
@@ -136,7 +136,7 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring</artifactId>
-    <version>3.3.0</version>
+    <version>3.4.0</version>
 </dependency>
 ```
 
@@ -145,7 +145,7 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-core</artifactId>
-    <version>3.3.0</version>
+    <version>3.4.0</version>
 </dependency>
 ```
 
@@ -187,6 +187,8 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
   
 ## Release History
 
+ - v.3.4.0 (29-Jun-2019) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.4.0)]
+ 
  - v.3.3.0 (19-Apr-2019) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.3.0)]
  
  - v.3.2.0 (5-Apr-2019) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.2.0)]
