@@ -51,6 +51,45 @@ public class ConsulSeedNodeProviderConfigTest extends HekateTestBase {
     }
 
     @Test
+    public void testConnectTimeout() {
+        assertNull(cfg.getConnectTimeout());
+
+        cfg.setConnectTimeout(10001L);
+
+        assertEquals(10001L, cfg.getConnectTimeout().longValue());
+
+        assertSame(cfg, cfg.withConnectTimeout(10002L));
+
+        assertEquals(10002L, cfg.getConnectTimeout().longValue());
+    }
+
+    @Test
+    public void testReadTimeout() {
+        assertNull(cfg.getReadTimeout());
+
+        cfg.setReadTimeout(10001L);
+
+        assertEquals(10001L, cfg.getReadTimeout().longValue());
+
+        assertSame(cfg, cfg.withReadTimeout(10002L));
+
+        assertEquals(10002L, cfg.getReadTimeout().longValue());
+    }
+
+    @Test
+    public void testWriteTimeout() {
+        assertNull(cfg.getWriteTimeout());
+
+        cfg.setWriteTimeout(10001L);
+
+        assertEquals(10001L, cfg.getWriteTimeout().longValue());
+
+        assertSame(cfg, cfg.withWriteTimeout(10002L));
+
+        assertEquals(10002L, cfg.getWriteTimeout().longValue());
+    }
+
+    @Test
     public void testToString() {
         cfg.setUrl("http://127.0.0.1:8501");
 

@@ -81,6 +81,12 @@ public class ConsulSeedNodeProvider implements SeedNodeProvider {
 
     private final long cleanupInterval;
 
+    private final Long connectTimeout;
+
+    private final Long readTimeout;
+
+    private final Long writeTimeout;
+
     /**
      * Initializes new consul seed node provider.
      *
@@ -94,8 +100,11 @@ public class ConsulSeedNodeProvider implements SeedNodeProvider {
         check.notNull(cfg.getUrl(), "url");
         check.notEmpty(cfg.getBasePath(), "base path");
 
-        this.cleanupInterval = cfg.getCleanupInterval();
         this.basePath = normalizeBasePath(cfg.getBasePath());
+        this.cleanupInterval = cfg.getCleanupInterval();
+        this.connectTimeout = cfg.getConnectTimeout();
+        this.readTimeout = cfg.getReadTimeout();
+        this.writeTimeout = cfg.getWriteTimeout();
 
         try {
             url = new URI(cfg.getUrl());
@@ -208,7 +217,21 @@ public class ConsulSeedNodeProvider implements SeedNodeProvider {
     }
 
     private <T> T getWithClient(Function<KeyValueClient, T> f) {
-        Consul consul = Consul.builder().withUrl(url.toString()).build();
+        Consul.Builder builder = Consul.builder().withUrl(url.toString());
+
+        if (connectTimeout != null) {
+            builder.withConnectTimeoutMillis(connectTimeout);
+        }
+
+        if (readTimeout != null) {
+            builder.withReadTimeoutMillis(readTimeout);
+        }
+
+        if (writeTimeout != null) {
+            builder.withWriteTimeoutMillis(writeTimeout);
+        }
+
+        Consul consul = builder.build();
 
         try {
             return f.apply(consul.keyValueClient());

@@ -39,6 +39,9 @@ public class ConsulSeedNodeProviderTest extends PersistentSeedNodeProviderTestBa
         cfg.setUrl(url);
         cfg.setCleanupInterval(100);
         cfg.setBasePath("hekate/test");
+        cfg.setConnectTimeout(3000L);
+        cfg.setReadTimeout(3000L);
+        cfg.setWriteTimeout(3000L);
 
         return new ConsulSeedNodeProvider(cfg);
     }

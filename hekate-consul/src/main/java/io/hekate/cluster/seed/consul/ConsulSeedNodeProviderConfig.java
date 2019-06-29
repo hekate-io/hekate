@@ -41,6 +41,12 @@ public class ConsulSeedNodeProviderConfig {
     /** See {@link #setBasePath(String)}. */
     private String basePath = DEFAULT_BASE_PATH;
 
+    private Long connectTimeout;
+
+    private Long readTimeout;
+
+    private Long writeTimeout;
+
     /**
      * Returns url of the Consul (see {@link #setUrl(String)} (String)}).
      *
@@ -146,6 +152,111 @@ public class ConsulSeedNodeProviderConfig {
      */
     public ConsulSeedNodeProviderConfig withBasePath(String basePath) {
         setBasePath(basePath);
+
+        return this;
+    }
+
+    /**
+     * Returns the connect timeout value in milliseconds (see {@link #setConnectTimeout(Long)}).
+     *
+     * @return Timeout in milliseconds.
+     */
+    public Long getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    /**
+     * Set the connect timeout value in milliseconds.
+     *
+     * <p>
+     * This parameter is optional, and if it is not specified, the Consul’s client library will use its default value.
+     * </p>
+     *
+     * @param connectTimeout Timeout in milliseconds.
+     */
+    public void setConnectTimeout(Long connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
+
+    /**
+     * Fluent style version of {@link #setConnectTimeout(Long)}.
+     *
+     * @param connectTimeout Timeout in milliseconds.
+     *
+     * @return This instance.
+     */
+    public ConsulSeedNodeProviderConfig withConnectTimeout(Long connectTimeout) {
+        setConnectTimeout(connectTimeout);
+
+        return this;
+    }
+
+    /**
+     * Returns the read timeout value in milliseconds (see {@link #setReadTimeout(Long)}).
+     *
+     * @return Timeout in milliseconds.
+     */
+    public Long getReadTimeout() {
+        return readTimeout;
+    }
+
+    /**
+     * Set the read timeout value in milliseconds.
+     *
+     * <p>
+     * This parameter is optional, and if it is not specified, the Consul’s client library will use its default value.
+     * </p>
+     *
+     * @param readTimeout Timeout in milliseconds.
+     */
+    public void setReadTimeout(Long readTimeout) {
+        this.readTimeout = readTimeout;
+    }
+
+    /**
+     * Fluent style version of {@link #setReadTimeout(Long)}.
+     *
+     * @param readTimeout Timeout in milliseconds.
+     *
+     * @return This instance.
+     */
+    public ConsulSeedNodeProviderConfig withReadTimeout(Long readTimeout) {
+        setReadTimeout(readTimeout);
+
+        return this;
+    }
+
+    /**
+     * Returns the write timeout value in milliseconds (see {@link #setWriteTimeout(Long)}).
+     *
+     * @return Timeout in milliseconds.
+     */
+    public Long getWriteTimeout() {
+        return writeTimeout;
+    }
+
+    /**
+     * Set the write timeout value in milliseconds.
+     *
+     * <p>
+     * This parameter is optional, and if it is not specified, the Consul’s client library will use its default value.
+     * </p>
+     *
+     * @param writeTimeout Timeout in milliseconds.
+     */
+    public void setWriteTimeout(Long writeTimeout) {
+        this.writeTimeout = writeTimeout;
+    }
+
+    /**
+     * Fluent style version of {@link #setWriteTimeout(Long)}.
+     *
+     * @param writeTimeout Timeout in milliseconds.
+     *
+     * @return This instance.
+     */
+    public ConsulSeedNodeProviderConfig withWriteTimeout(Long writeTimeout) {
+        setWriteTimeout(writeTimeout);
 
         return this;
     }

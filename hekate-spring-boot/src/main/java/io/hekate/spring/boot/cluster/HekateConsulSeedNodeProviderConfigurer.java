@@ -41,6 +41,9 @@ import org.springframework.context.annotation.Configuration;
  * <li>{@link ConsulSeedNodeProviderConfig#setUrl(String)} 'hekate.cluster.seed.consul.url'}</li>
  * <li>{@link ConsulSeedNodeProviderConfig#setBasePath(String) 'hekate.cluster.seed.consul.base-path'}</li>
  * <li>{@link ConsulSeedNodeProviderConfig#setCleanupInterval(long) 'hekate.cluster.seed.consul.cleanup-interval'}</li>
+ * <li>{@link ConsulSeedNodeProviderConfig#setConnectTimeout(Long)} 'hekate.cluster.seed.consul.connect-timeout'}</li>
+ * <li>{@link ConsulSeedNodeProviderConfig#setReadTimeout(Long)} 'hekate.cluster.seed.consul.read-timeout'}</li>
+ * <li>{@link ConsulSeedNodeProviderConfig#setWriteTimeout(Long)} 'hekate.cluster.seed.consul.write-timeout'}</li>
  * </ul>
  *
  * @see HekateClusterServiceConfigurer
