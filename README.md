@@ -117,7 +117,7 @@ public class MyApplication {
 }
 ```
 
-Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examples)** project for more examples.
+__More Examples__: Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examples)** project for more examples.
 
 
 ## Maven artifacts
