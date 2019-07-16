@@ -75,7 +75,8 @@ import org.slf4j.LoggerFactory;
  * </ul>
  *
  * <p>
- * If multiple addresses match the specified pattern then the first one will be selected (order is not guaranteed).
+ * If several addresses match the specified pattern, the first one will be selected (order is not guaranteed, but preference will be given
+ * to non-{@link NetworkInterface#isPointToPoint() P2P} addresses).
  * </p>
  *
  * @see AddressSelector
@@ -135,6 +136,9 @@ public class AddressPattern implements AddressSelector {
 
             List<NetworkInterface> nis = networkInterfaces();
 
+            InetAddress p2pAddr = null;
+            String p2pNiName = null;
+
             for (NetworkInterface ni : nis) {
                 if (!ni.isUp() || ni.isLoopback()) {
                     continue;
@@ -153,11 +157,20 @@ public class AddressPattern implements AddressSelector {
                         }
 
                         if (checkAddress(addrIncludes, addrExcludes, niName, address)) {
-                            if (DEBUG) {
-                                log.debug("Resolved address [interface={}, address={}]", niName, address);
-                            }
+                            if (ni.isPointToPoint()) {
+                                // If this is a P2P address then store it as a selected address in case if there are no other addresses.
+                                if (p2pAddr == null) {
+                                    p2pAddr = address;
+                                    p2pNiName = niName;
+                                }
+                            } else {
+                                if (DEBUG) {
+                                    log.debug("Resolved address [interface={}, address={}]", niName, address);
+                                }
 
-                            return address;
+                                // Returns the selected address.
+                                return address;
+                            }
                         }
                     }
                 } else {
@@ -166,11 +179,16 @@ public class AddressPattern implements AddressSelector {
                     }
                 }
             }
+
+            if (DEBUG) {
+                log.debug("Resolved Point-to-Point address [interface={}, address={}]", p2pNiName, p2pAddr);
+            }
+
+            // Returns the first selected P2P address if we couldn't find any alternatives.
+            return p2pAddr;
         } catch (IOException e) {
             throw new HekateException("Failed to resolve node address [" + opts + ']', e);
         }
-
-        return null;
     }
 
     // Package level for testing purposes.

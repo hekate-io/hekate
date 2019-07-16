@@ -31,6 +31,7 @@ import io.hekate.core.ServiceProperty;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.service.internal.DefaultServiceInfo;
+import io.hekate.network.address.AddressPattern;
 import io.hekate.test.HekateTestError;
 import java.io.IOException;
 import java.lang.management.LockInfo;
@@ -43,7 +44,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
 import java.net.UnknownHostException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -51,7 +51,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -78,7 +77,6 @@ import org.junit.rules.TestWatcher;
 import org.junit.rules.Timeout;
 import org.junit.runner.Description;
 import org.junit.runners.model.TestTimedOutException;
-import org.mockito.internal.util.collections.Iterables;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -816,27 +814,7 @@ public abstract class HekateTestBase {
         InetAddress cached = LOCAL_ADDRESS_CACHE.get();
 
         if (cached == null) {
-            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-
-            for (NetworkInterface nif : Iterables.toIterable(interfaces)) {
-                if (nif.isUp() && !nif.isLoopback() && nif.supportsMulticast()) {
-                    for (InetAddress addr : Iterables.toIterable(nif.getInetAddresses())) {
-                        if (!addr.isLinkLocalAddress()) {
-                            cached = addr;
-
-                            break;
-                        }
-                    }
-
-                    if (cached != null) {
-                        break;
-                    }
-                }
-            }
-
-            if (cached == null) {
-                cached = InetAddress.getLocalHost();
-            }
+            cached = new AddressPattern("any-ip4").select();
 
             LOCAL_ADDRESS_CACHE.set(cached);
         }
