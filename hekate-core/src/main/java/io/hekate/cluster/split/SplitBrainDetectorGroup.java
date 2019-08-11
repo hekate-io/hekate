@@ -51,7 +51,13 @@ public class SplitBrainDetectorGroup implements SplitBrainDetector {
          * If at least one of {@link SplitBrainDetectorGroup#setDetectors(List) detectors} reported failure then the whole group check is
          * considered to be failed.
          */
-        ALL_VALID
+        ALL_VALID,
+
+        /**
+         * If the majority of {@link SplitBrainDetectorGroup#setDetectors(List) detectors} reported success then the whole group check is
+         * considered to be successful.
+         */
+        QUORUM
     }
 
     private GroupPolicy groupPolicy = GroupPolicy.ANY_VALID;
@@ -80,6 +86,9 @@ public class SplitBrainDetectorGroup implements SplitBrainDetector {
                 }
                 case ALL_VALID: {
                     return invalid == 0;
+                }
+                case QUORUM: {
+                    return valid > invalid;
                 }
                 default: {
                     throw new IllegalArgumentException("Unexpected policy: " + groupPolicy);
