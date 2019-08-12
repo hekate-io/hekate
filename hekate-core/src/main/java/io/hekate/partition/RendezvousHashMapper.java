@@ -26,9 +26,14 @@ import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.function.Predicate;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
@@ -198,13 +203,29 @@ public final class RendezvousHashMapper implements PartitionMapper {
 
                     // Find backup nodes.
                     if (backupSize > 0) {
+                        Predicate<ClusterNode> couldBeBackup = x -> !x.socket().getHostName().equals(primary.socket().getHostName());
+
                         int maxNodes = Math.min(backupSize, hashes.length - 1);
 
                         if (maxNodes > 0) {
-                            backup = new ArrayList<>(maxNodes);
+                            Map<String, ClusterNode> backupMap = new HashMap<>(maxNodes, 1.0f);
 
-                            for (int j = 1; j < maxNodes + 1; j++) {
-                                backup.add(hashes[j].node());
+                            for (int i = 1; i < hashes.length && backupMap.size() < maxNodes; i++) {
+                                if (couldBeBackup.test(hashes[i].node)) {
+                                    backupMap.putIfAbsent(hashes[i].node.socket().getHostName(), hashes[i].node);
+                                }
+                            }
+
+                            backup = new ArrayList<>(backupMap.values());
+
+                            if (backup.size() < maxNodes) {
+                                Set<ClusterNode> usedNodes = new HashSet<>(backupMap.values());
+
+                                for (int i = 1; backup.size() < maxNodes && i < hashes.length; i++) {
+                                    if (!usedNodes.contains(hashes[i].node)) {
+                                        backup.add(hashes[i].node);
+                                    }
+                                }
                             }
 
                             backup = unmodifiableList(backup);
