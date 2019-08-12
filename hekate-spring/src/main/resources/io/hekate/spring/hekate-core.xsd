@@ -1097,6 +1097,13 @@
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:enumeration>
+                    <xsd:enumeration value="QUORUM">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.cluster.split.SplitBrainDetectorGroup.GroupPolicy#QUORUM'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:enumeration>
                 </xsd:restriction>
             </xsd:simpleType>
         </xsd:attribute>

@@ -100,6 +100,29 @@ public class SplitBrainDetectorGroupTest extends HekateTestBase {
     }
 
     @Test
+    public void testQuorumPolicy() throws Exception {
+        group.withGroupPolicy(SplitBrainDetectorGroup.GroupPolicy.QUORUM);
+
+        SplitBrainDetectorMock d1 = new SplitBrainDetectorMock(true);
+        SplitBrainDetectorMock d2 = new SplitBrainDetectorMock(true);
+        SplitBrainDetectorMock d3 = new SplitBrainDetectorMock(true);
+
+        group.setDetectors(Arrays.asList(d1, d2, d3));
+
+        ClusterNode node = newNode();
+
+        assertTrue(group.isValid(node));
+
+        d1.setValid(false);
+
+        assertTrue(group.isValid(node));
+
+        d2.setValid(false);
+
+        assertFalse(group.isValid(node));
+    }
+
+    @Test
     public void testSetDetectors() {
         assertNull(group.getDetectors());
 
