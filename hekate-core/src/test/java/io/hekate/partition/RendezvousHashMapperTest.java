@@ -167,12 +167,12 @@ public class RendezvousHashMapperTest extends HekateNodeTestBase {
     @Test
     public void testSameHostBackups() throws Exception {
         Set<ClusterNode> nodes = new HashSet<>(Arrays.asList(
-            newNode("host1", 1, "22a0310ac3b04a4a8920175d1874fba5"),
-            newNode("host1", 2, "39f2a564bcc64a40ab977deaadf1dd50"),
-            newNode("host1", 3, "435e757397654e3d89c0b5c9051c8f62"),
-            newNode("host2", 1, "4952491f27f64a2082a99567bcd1b8fa"),
-            newNode("host2", 2, "57414611d3384a3f9f2a8a53c8e92284"),
-            newNode("host3", 1, "7a2ead0f048947d7b0f08c53bdaa5c9d")
+            newNode("127.0.0.1", 1, "22a0310ac3b04a4a8920175d1874fba5"),
+            newNode("127.0.0.2", 2, "39f2a564bcc64a40ab977deaadf1dd50"),
+            newNode("127.0.0.3", 3, "435e757397654e3d89c0b5c9051c8f62"),
+            newNode("127.0.0.4", 1, "4952491f27f64a2082a99567bcd1b8fa"),
+            newNode("127.0.0.5", 2, "57414611d3384a3f9f2a8a53c8e92284"),
+            newNode("127.0.0.6", 1, "7a2ead0f048947d7b0f08c53bdaa5c9d")
         ));
 
         DefaultClusterTopology topology = DefaultClusterTopology.of(1, nodes);
@@ -189,15 +189,18 @@ public class RendezvousHashMapperTest extends HekateNodeTestBase {
         assertTrue(nodes.contains(partition.primaryNode()));
         assertEquals(2, partition.backupNodes().size());
         assertTrue(nodes.containsAll(partition.nodes()));
-        assertFalse(
-            "Backup node on the same host as primary node.",
-            partition.backupNodes().stream()
-                .anyMatch(n -> n.address().socket().getHostName().equals(partition.primaryNode().address().socket().getHostName()))
+
+        assertTrue(
+            "No backup node on the same host as primary node.",
+            partition.backupNodes().stream().noneMatch(n ->
+                n.address().socket().getAddress().equals(partition.primaryNode().address().socket().getAddress())
+            )
         );
+
         assertEquals(
             "All nodes should be on different hosts.",
             partition.nodes().size(),
-            partition.nodes().stream().map(it -> it.address().socket().getHostName()).distinct().count()
+            partition.nodes().stream().map(it -> it.address().socket().getAddress()).distinct().count()
         );
 
         mapper = RendezvousHashMapper.of(topology)
