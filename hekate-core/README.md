@@ -6,6 +6,6 @@ This module represents the core functionality of [Hekate.io](https://github.com/
  <dependency>
      <groupId>io.hekate</groupId>
      <artifactId>hekate-core</artifactId>
-     <version>3.4.1</version>
+     <version>3.5.0</version>
  </dependency>
  ```

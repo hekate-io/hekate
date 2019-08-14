@@ -127,7 +127,7 @@ __More Examples__: Please see the **[hekate-io/hekate-examples](https://github.c
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring-boot</artifactId>
-    <version>3.4.1</version>
+    <version>3.5.0</version>
 </dependency>
 ```
 
@@ -136,7 +136,7 @@ __More Examples__: Please see the **[hekate-io/hekate-examples](https://github.c
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring</artifactId>
-    <version>3.4.1</version>
+    <version>3.5.0</version>
 </dependency>
 ```
 
@@ -145,7 +145,7 @@ __More Examples__: Please see the **[hekate-io/hekate-examples](https://github.c
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-core</artifactId>
-    <version>3.4.1</version>
+    <version>3.5.0</version>
 </dependency>
 ```
 
@@ -187,6 +187,8 @@ __More Examples__: Please see the **[hekate-io/hekate-examples](https://github.c
   
 ## Release History
 
+ - v.3.5.0 (14-Aug-2019) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.5.0)]
+ 
  - v.3.4.1 (4-Jul-2019) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.4.1)]
 
  - v.3.4.0 (29-Jun-2019) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.4.0)]
@@ -214,13 +216,5 @@ __More Examples__: Please see the **[hekate-io/hekate-examples](https://github.c
  - v.2.2.2 (21-Apr-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.2.2)]
 
  - v.2.2.1 (12-Apr-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.2.1)]
-
- - v.2.2.0 (11-Apr-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.2.0)]
-
- - v.2.1.0 (22-Feb-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.1.0)]
-
- - v.2.0.0 (2-Jan-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.0.0)]
-
- - v.1.0.2 (23-Sep-2017) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.1.0.2)]
 
  - [...and so on](https://github.com/hekate-io/hekate/releases)

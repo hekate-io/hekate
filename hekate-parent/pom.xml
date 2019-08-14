@@ -21,7 +21,7 @@
     <groupId>io.hekate</groupId>
     <artifactId>hekate-parent</artifactId>
     <packaging>pom</packaging>
-    <version>3.4.1</version>
+    <version>3.5.0</version>
 
     <name>Hekate.io</name>
     <description>Java library for cluster communications and computing.</description>
