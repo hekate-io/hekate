@@ -100,8 +100,8 @@ public class SplitBrainDetectorGroupTest extends HekateTestBase {
     }
 
     @Test
-    public void testQuorumPolicy() throws Exception {
-        group.withGroupPolicy(SplitBrainDetectorGroup.GroupPolicy.QUORUM);
+    public void testMajorityValidPolicy() throws Exception {
+        group.withGroupPolicy(SplitBrainDetectorGroup.GroupPolicy.MAJORITY_VALID);
 
         SplitBrainDetectorMock d1 = new SplitBrainDetectorMock(true);
         SplitBrainDetectorMock d2 = new SplitBrainDetectorMock(true);

@@ -57,7 +57,7 @@ public class SplitBrainDetectorGroup implements SplitBrainDetector {
          * If the majority of {@link SplitBrainDetectorGroup#setDetectors(List) detectors} reported success then the whole group check is
          * considered to be successful.
          */
-        QUORUM
+        MAJORITY_VALID
     }
 
     private GroupPolicy groupPolicy = GroupPolicy.ANY_VALID;
@@ -87,7 +87,7 @@ public class SplitBrainDetectorGroup implements SplitBrainDetector {
                 case ALL_VALID: {
                     return invalid == 0;
                 }
-                case QUORUM: {
+                case MAJORITY_VALID: {
                     return valid > invalid;
                 }
                 default: {
