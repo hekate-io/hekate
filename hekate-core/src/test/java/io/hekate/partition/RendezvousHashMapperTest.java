@@ -60,7 +60,7 @@ public class RendezvousHashMapperTest extends HekateNodeTestBase {
     }
 
     @Test
-    public void testSingleNode() throws Exception {
+    public void testSingleNodeMapping() throws Exception {
         ClusterNode node = newNode();
 
         DefaultClusterTopology topology = DefaultClusterTopology.of(1, singleton(node));
@@ -112,7 +112,7 @@ public class RendezvousHashMapperTest extends HekateNodeTestBase {
     }
 
     @Test
-    public void testMapping() throws Exception {
+    public void testMappingDistribution() throws Exception {
         repeat(5, i -> {
             int partitions = 256;
             int values = 10000;
@@ -165,24 +165,24 @@ public class RendezvousHashMapperTest extends HekateNodeTestBase {
     }
 
     @Test
-    public void testSameHostBackups() throws Exception {
+    public void testBakupsResideOnDifferentHosts() throws Exception {
         Set<ClusterNode> nodes = new HashSet<>(Arrays.asList(
             newNode("127.0.0.1", 1, "22a0310ac3b04a4a8920175d1874fba5"),
-            newNode("127.0.0.2", 2, "39f2a564bcc64a40ab977deaadf1dd50"),
-            newNode("127.0.0.3", 3, "435e757397654e3d89c0b5c9051c8f62"),
-            newNode("127.0.0.4", 1, "4952491f27f64a2082a99567bcd1b8fa"),
-            newNode("127.0.0.5", 2, "57414611d3384a3f9f2a8a53c8e92284"),
-            newNode("127.0.0.6", 1, "7a2ead0f048947d7b0f08c53bdaa5c9d")
+            newNode("127.0.0.1", 2, "39f2a564bcc64a40ab977deaadf1dd50"),
+            newNode("127.0.0.2", 1, "435e757397654e3d89c0b5c9051c8f62"),
+            newNode("127.0.0.2", 2, "4952491f27f64a2082a99567bcd1b8fa"),
+            newNode("127.0.0.3", 1, "57414611d3384a3f9f2a8a53c8e92284"),
+            newNode("127.0.0.4", 1, "7a2ead0f048947d7b0f08c53bdaa5c9d")
         ));
 
         DefaultClusterTopology topology = DefaultClusterTopology.of(1, nodes);
 
-        PartitionMapper mapper = RendezvousHashMapper.of(topology)
+        PartitionMapper twoBackups = RendezvousHashMapper.of(topology)
             .withPartitions(128)
             .withBackupNodes(2)
             .build();
 
-        Partition partition = mapper.map(1);
+        Partition partition = twoBackups.map(1);
 
         assertNotNull(partition);
         assertEquals(1, partition.id());
@@ -203,14 +203,12 @@ public class RendezvousHashMapperTest extends HekateNodeTestBase {
             partition.nodes().stream().map(it -> it.address().socket().getAddress()).distinct().count()
         );
 
-        mapper = RendezvousHashMapper.of(topology)
+        PartitionMapper fiveBackups = RendezvousHashMapper.of(topology)
             .withPartitions(128)
             .withBackupNodes(5)
             .build();
 
-        Partition partition2 = mapper.map(1);
-
-        assertEquals(5, partition2.backupNodes().size());
+        assertEquals(5, fiveBackups.map(1).backupNodes().size());
     }
 
     private ClusterNode newNode(String host, int port, String id) throws Exception {
