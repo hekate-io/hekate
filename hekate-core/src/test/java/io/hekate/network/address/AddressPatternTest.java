@@ -19,7 +19,6 @@ package io.hekate.network.address;
 import io.hekate.HekateTestBase;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.AddressUtils;
-import io.hekate.util.format.ToString;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -196,7 +195,7 @@ public class AddressPatternTest extends HekateTestBase {
     public void testToString() {
         AddressPattern selector = new AddressPattern();
 
-        assertEquals(ToString.format(selector), selector.toString());
+        assertEquals(selector.opts().toString(), selector.toString());
     }
 
     private AddressPattern createSelector(String pattern) {
