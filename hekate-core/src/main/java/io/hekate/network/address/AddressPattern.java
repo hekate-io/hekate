@@ -19,7 +19,6 @@ package io.hekate.network.address;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.network.NetworkServiceFactory;
-import io.hekate.util.format.ToString;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -261,6 +260,6 @@ public class AddressPattern implements AddressSelector {
 
     @Override
     public String toString() {
-        return ToString.format(this);
+        return opts.toString();
     }
 }

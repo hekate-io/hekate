@@ -20,6 +20,8 @@ import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ConfigCheck;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -46,7 +48,7 @@ import java.util.List;
  * @see ClusterServiceFactory#setSeedNodeProvider(SeedNodeProvider)
  * @see SeedNodeProvider
  */
-public class StaticSeedNodeProvider implements SeedNodeProvider {
+public class StaticSeedNodeProvider implements SeedNodeProvider, ConfigReportSupport {
     private final List<InetSocketAddress> addresses;
 
     /**
@@ -60,6 +62,13 @@ public class StaticSeedNodeProvider implements SeedNodeProvider {
         ConfigCheck.get(StaticSeedNodeProvider.class).notNull(cfg, "configuration");
 
         this.addresses = parseAddresses(cfg.getAddresses());
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("static", r ->
+            r.value("addresses", addresses)
+        );
     }
 
     @Override

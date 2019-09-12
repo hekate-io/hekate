@@ -47,8 +47,10 @@ import io.hekate.core.TerminateFuture;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
+import io.hekate.core.internal.util.Utils;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxSupport;
+import io.hekate.core.report.DefaultConfigReporter;
 import io.hekate.core.resource.ResourceService;
 import io.hekate.core.service.ClusterContext;
 import io.hekate.core.service.ClusterServiceManager;
@@ -114,6 +116,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     private final Set<String> nodeRoles;
 
     private final Map<String, String> nodeProps;
+
+    private final boolean configReport;
 
     private final NetworkServiceManager networkManager;
 
@@ -193,6 +197,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
         // Basic properties.
         this.nodeName = boot.getNodeName() != null ? boot.getNodeName().trim() : "";
         this.clusterName = boot.getClusterName().trim();
+        this.configReport = boot.isConfigReport();
 
         // Node roles.
         Set<String> roles;
@@ -611,6 +616,10 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
             // Make sure that we are still initializing with the same node identifier.
             // Need to perform this check in order to stop early in case of concurrent leave/termination events.
             if (isInitializingFor(localNodeId)) {
+                if (DEBUG) {
+                    log.debug("Initializing node...");
+                }
+
                 // Initialize node info.
                 ClusterAddress address = new ClusterAddress(nodeAddress, localNodeId);
 
@@ -637,16 +646,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                     topology = oldTopology.update(emptySet());
                 }
 
-                if (log.isInfoEnabled()) {
-                    log.info("Initialized local node info [node={}]", localNode.toDetailedString());
-                }
-
                 // Initialize services.
                 InitializationContext ctx = createInitContext(localNode, joinFuture);
-
-                if (log.isInfoEnabled()) {
-                    log.info("Initializing services...");
-                }
 
                 services.preInitialize(ctx);
 
@@ -659,6 +660,35 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
                 if (jmx != null) {
                     jmx.register(this);
+                }
+
+                // Configuration report.
+                if (configReport) {
+                    DefaultConfigReporter report = new DefaultConfigReporter();
+
+                    // Node details report.
+                    report.section("node", r -> {
+                        r.value("id", localNode.id());
+                        r.value("address", localNode.address().socket());
+                        r.value("name", localNode.name());
+                        r.value("cluster", clusterName);
+                        r.value("roles", localNode.roles());
+                        r.value("properties", localNode.properties());
+                        r.value("pid", localNode.runtime().pid());
+                        r.value("cpu", localNode.runtime().cpus());
+                        r.value("ram", Utils.byteSizeFormat(localNode.runtime().maxMemory()));
+                        r.value("os", localNode.runtime().osName());
+                        r.value("jvm", localNode.runtime().jvmName()
+                            + " - " + localNode.runtime().jvmVersion()
+                            + " (" + localNode.runtime().jvmVendor() + ")"
+                        );
+                    });
+
+                    // Services report.
+                    services.configReport(report);
+
+                    // Log report.
+                    log.info("Initialized node: {}", report.report());
                 }
 
                 // Start plugins.
@@ -674,8 +704,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                     notifyOnLifecycleChange();
                 }
 
-                if (log.isInfoEnabled()) {
-                    log.info("Done initializing services.");
+                if (DEBUG) {
+                    log.debug("Done initializing node.");
                 }
             } else {
                 if (DEBUG) {
@@ -889,7 +919,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
         assert localNode != null : "Local node is null.";
         assert guard.isWriteLocked() : "Thread must hold a write.";
 
-        ClusterContext clusterCtx = createClusterContext(localNode, joinFuture);
+        ClusterContext cluster = createClusterContext(localNode, joinFuture);
 
         return new InitializationContext() {
             @Override
@@ -904,7 +934,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
             @Override
             public ClusterContext cluster() {
-                return clusterCtx;
+                return cluster;
             }
 
             @Override

@@ -24,6 +24,8 @@ import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.core.jmx.JmxSupport;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.network.netty.NettyUtils;
 import io.hekate.util.async.Waiting;
 import io.hekate.util.format.ToString;
@@ -78,7 +80,7 @@ import static java.util.stream.Collectors.toList;
  * @see ClusterServiceFactory#setSeedNodeProvider(SeedNodeProvider)
  * @see MulticastSeedNodeProviderConfig
  */
-public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<MulticastSeedNodeProviderJmx> {
+public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<MulticastSeedNodeProviderJmx>, ConfigReportSupport {
     private enum MessageTYpe {
         DISCOVERY,
 
@@ -213,6 +215,17 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
         loopBackDisabled = cfg.isLoopBackDisabled();
 
         ipVer = group.getAddress() instanceof Inet6Address ? InternetProtocolFamily.IPv6 : InternetProtocolFamily.IPv4;
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("multicast", r -> {
+            r.value("group", group);
+            r.value("ttl", ttl);
+            r.value("interval", interval);
+            r.value("wait-time", waitTime);
+            r.value("loopback-disabled", loopBackDisabled);
+        });
     }
 
     @Override
@@ -390,6 +403,16 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
      */
     public long waitTime() {
         return waitTime;
+    }
+
+    /**
+     * Returns {@code true} if receiving of multicast messages on the loopback address is disabled
+     * (see {@link MulticastSeedNodeProviderConfig#setLoopBackDisabled(boolean)}).
+     *
+     * @return {@code true} if receiving of multicast messages on the loopback address is disabled.
+     */
+    public boolean isLoopBackDisabled() {
+        return loopBackDisabled;
     }
 
     @Override

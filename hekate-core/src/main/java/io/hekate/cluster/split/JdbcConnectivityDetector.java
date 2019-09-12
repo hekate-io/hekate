@@ -20,6 +20,8 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.util.format.ToString;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -42,7 +44,7 @@ import org.slf4j.LoggerFactory;
  * @see ClusterServiceFactory#setSplitBrainDetector(SplitBrainDetector)
  */
 
-public class JdbcConnectivityDetector implements SplitBrainDetector {
+public class JdbcConnectivityDetector implements SplitBrainDetector, ConfigReportSupport {
     private static final Logger log = LoggerFactory.getLogger(JdbcConnectivityDetector.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -67,6 +69,32 @@ public class JdbcConnectivityDetector implements SplitBrainDetector {
 
         this.ds = ds;
         this.timeout = timeout;
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("jdbc-connectivity", r -> {
+            r.value("datasource", ds);
+            r.value("timeout", timeout);
+        });
+    }
+
+    /**
+     * Datasource to check.
+     *
+     * @return Datasource to check.
+     */
+    public DataSource datasource() {
+        return ds;
+    }
+
+    /**
+     * Check timeout in seconds.
+     *
+     * @return Timeout in seconds.
+     */
+    public int timeout() {
+        return timeout;
     }
 
     @Override

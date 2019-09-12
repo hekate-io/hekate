@@ -18,6 +18,7 @@ package io.hekate.cluster.seed.zookeeper;
 
 import io.hekate.cluster.seed.PersistentSeedNodeProviderTestBase;
 import io.hekate.core.HekateException;
+import io.hekate.core.report.DefaultConfigReporter;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.function.Consumer;
@@ -52,6 +53,22 @@ public class ZooKeeperSeedNodeProviderTest extends PersistentSeedNodeProviderTes
         ignoreGhostThreads();
 
         super.setUp();
+    }
+
+    @Test
+    public void testConfigReport() throws Exception {
+        ZooKeeperSeedNodeProvider provider = createProvider();
+
+        assertEquals(
+            "\n"
+                + "  zookeeper\n"
+                + "    connection-string: " + provider.connectionString() + "\n"
+                + "    base-path: " + provider.basePath() + "\n"
+                + "    connect-timeout: " + provider.connectTimeout() + "\n"
+                + "    session-timeout: " + provider.sessionTimeout() + "\n"
+                + "    cleanup-interval: " + provider.cleanupInterval() + "\n",
+            DefaultConfigReporter.report(provider)
+        );
     }
 
     @Test

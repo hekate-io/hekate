@@ -17,6 +17,7 @@
 package io.hekate.cluster.split;
 
 import io.hekate.HekateTestBase;
+import io.hekate.core.report.DefaultConfigReporter;
 import io.hekate.test.HekateTestError;
 import io.hekate.test.JdbcTestDataSources;
 import io.hekate.util.format.ToString;
@@ -35,6 +36,21 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 public class JdbcConnectivityDetectorTest extends HekateTestBase {
+    @Test
+    public void testConfigReport() throws Exception {
+        DataSource ds = mock(DataSource.class);
+
+        JdbcConnectivityDetector detector = new JdbcConnectivityDetector(ds, 100500);
+
+        assertEquals(
+            "\n"
+                + "  jdbc-connectivity\n"
+                + "    datasource: " + detector.datasource() + "\n"
+                + "    timeout: " + detector.timeout() + "\n",
+            DefaultConfigReporter.report(detector)
+        );
+    }
+
     @Test
     public void testRealDataSources() throws Exception {
         for (DataSource ds : JdbcTestDataSources.all()) {

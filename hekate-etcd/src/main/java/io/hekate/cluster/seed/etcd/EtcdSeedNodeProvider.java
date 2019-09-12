@@ -29,6 +29,8 @@ import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.net.InetSocketAddress;
@@ -74,7 +76,7 @@ import static java.util.stream.Collectors.toList;
  * @see ClusterServiceFactory#setSeedNodeProvider(SeedNodeProvider)
  * @see SeedNodeProvider
  */
-public class EtcdSeedNodeProvider implements SeedNodeProvider {
+public class EtcdSeedNodeProvider implements SeedNodeProvider, ConfigReportSupport {
     private interface EtcdTask {
         void execute(KV client) throws HekateException;
     }
@@ -131,6 +133,15 @@ public class EtcdSeedNodeProvider implements SeedNodeProvider {
         } else {
             this.basePath = basePath;
         }
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("etcd", r -> {
+            r.value("endpoints", endpoints);
+            r.value("base-path", basePath);
+            r.value("cleanup-interval", cleanupInterval);
+        });
     }
 
     /**

@@ -23,8 +23,9 @@ import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.StreamUtils;
-import io.hekate.core.internal.util.Utils;
 import io.hekate.core.jmx.JmxService;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.DependencyContext;
@@ -32,6 +33,7 @@ import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.TerminatingService;
+import io.hekate.election.Candidate;
 import io.hekate.election.CandidateConfig;
 import io.hekate.election.CandidateConfigProvider;
 import io.hekate.election.ElectionService;
@@ -59,7 +61,7 @@ import org.slf4j.LoggerFactory;
 import static java.util.stream.Collectors.toList;
 
 public class DefaultElectionService implements ElectionService, DependentService, ConfigurableService, InitializingService,
-    TerminatingService, LockConfigProvider {
+    TerminatingService, LockConfigProvider, ConfigReportSupport {
     private static final Logger log = LoggerFactory.getLogger(DefaultElectionService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -170,6 +172,20 @@ public class DefaultElectionService implements ElectionService, DependentService
     }
 
     @Override
+    public void report(ConfigReporter report) {
+        report.section("election", election ->
+            election.section("candidates", candidates ->
+                handlers.values().forEach(h ->
+                    candidates.section("candidate", candidate -> {
+                        candidate.value("group", h.group());
+                        candidate.value("candidate", h.candidate());
+                    })
+                )
+            )
+        );
+    }
+
+    @Override
     public void preTerminate() throws HekateException {
         Waiting waiting = null;
 
@@ -259,15 +275,20 @@ public class DefaultElectionService implements ElectionService, DependentService
             log.debug("Registering new configuration [config={}]", cfg);
         }
 
+        // Prepare configuration values.
         String group = cfg.getGroup().trim();
+        Candidate candidate = cfg.getCandidate();
 
+        // Coordination lock.
         DistributedLock lock = locks.region(LOCK_REGION).get(group);
 
+        // Coordination thread.
         ExecutorService worker = Executors.newSingleThreadExecutor(new HekateThreadFactory("Election" + '-' + group));
 
+        // Register coordination handler.
         CandidateHandler handler = new CandidateHandler(
             group,
-            cfg.getCandidate(),
+            candidate,
             worker,
             lock,
             hekate.localNode(),
@@ -279,6 +300,6 @@ public class DefaultElectionService implements ElectionService, DependentService
 
     @Override
     public String toString() {
-        return ElectionService.class.getSimpleName() + "[candidates=" + Utils.toString(candidatesConfig, CandidateConfig::getGroup) + ']';
+        return getClass().getSimpleName();
     }
 }

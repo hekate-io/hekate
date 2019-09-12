@@ -16,13 +16,15 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.IdentityHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-class ReceivePressureGuard {
+class ReceivePressureGuard implements ConfigReportSupport {
     private final int loMark;
 
     private final int hiMark;
@@ -42,6 +44,12 @@ class ReceivePressureGuard {
 
         this.loMark = loMark;
         this.hiMark = hiMark;
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.value("lo-mark", loMark);
+        report.value("hi-mark", hiMark);
     }
 
     public int loMark() {

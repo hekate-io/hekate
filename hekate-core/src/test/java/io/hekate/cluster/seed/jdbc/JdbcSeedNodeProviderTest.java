@@ -18,6 +18,7 @@ package io.hekate.cluster.seed.jdbc;
 
 import io.hekate.cluster.seed.PersistentSeedNodeProviderTestBase;
 import io.hekate.core.HekateException;
+import io.hekate.core.report.DefaultConfigReporter;
 import io.hekate.test.JdbcTestDataSources;
 import java.net.InetSocketAddress;
 import java.sql.Connection;
@@ -88,6 +89,21 @@ public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase
                 keepDbAlive = null;
             }
         }
+    }
+
+    @Test
+    public void testConfigReport() throws Exception {
+        JdbcSeedNodeProvider provider = createProvider();
+
+        assertEquals(
+            "\n"
+                + "  jdbc\n"
+                + "    datasource: " + provider.dataSource() + "\n"
+                + "    insert-sql: " + provider.insertSql() + "\n"
+                + "    cleanup-interval: " + provider.cleanupInterval() + "\n"
+                + "    query-timeout: " + provider.queryTimeout() + "\n",
+            DefaultConfigReporter.report(provider)
+        );
     }
 
     @Test

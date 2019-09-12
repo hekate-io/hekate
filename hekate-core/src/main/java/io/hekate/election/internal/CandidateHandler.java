@@ -151,8 +151,14 @@ class CandidateHandler implements AsyncLockCallback, JmxSupport<CandidateJmx> {
 
     private volatile boolean terminated;
 
-    public CandidateHandler(String group, Candidate candidate, ExecutorService worker, DistributedLock lock, ClusterNode localNode,
-        HekateSupport hekate) {
+    public CandidateHandler(
+        String group,
+        Candidate candidate,
+        ExecutorService worker,
+        DistributedLock lock,
+        ClusterNode localNode,
+        HekateSupport hekate
+    ) {
         assert group != null : "Group name is null.";
         assert candidate != null : "Candidate is null.";
         assert worker != null : "Worker is null.";
@@ -170,6 +176,10 @@ class CandidateHandler implements AsyncLockCallback, JmxSupport<CandidateJmx> {
 
     public String group() {
         return group;
+    }
+
+    public Candidate candidate() {
+        return candidate;
     }
 
     @Override

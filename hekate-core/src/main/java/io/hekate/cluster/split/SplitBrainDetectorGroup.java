@@ -19,6 +19,8 @@ package io.hekate.cluster.split;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.core.internal.util.ConfigCheck;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.util.format.ToString;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +36,7 @@ import java.util.List;
  *
  * @see ClusterServiceFactory#setSplitBrainDetector(SplitBrainDetector)
  */
-public class SplitBrainDetectorGroup implements SplitBrainDetector {
+public class SplitBrainDetectorGroup implements SplitBrainDetector, ConfigReportSupport {
     /**
      * Group policy for {@link SplitBrainDetectorGroup}.
      *
@@ -97,6 +99,19 @@ public class SplitBrainDetectorGroup implements SplitBrainDetector {
         }
 
         return true;
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        if (detectors != null) {
+            report.value("group-policy", groupPolicy);
+
+            report.section("detectors", r ->
+                detectors.forEach(detector ->
+                    r.value("detector", detector)
+                )
+            );
+        }
     }
 
     /**

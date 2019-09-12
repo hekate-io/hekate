@@ -20,6 +20,7 @@ import io.hekate.core.Hekate;
 import io.hekate.core.HekateConfigurationException;
 import io.hekate.core.HekateException;
 import io.hekate.core.ServiceInfo;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.core.service.DefaultServiceFactory;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.Service;
@@ -206,6 +207,12 @@ public class ServiceManager {
 
         if (DEBUG) {
             log.debug("Post-initialized services.");
+        }
+    }
+
+    public void configReport(ConfigReporter reporter) {
+        for (ServiceHandler handler : initOrder.order()) {
+            handler.configReport(reporter);
         }
     }
 

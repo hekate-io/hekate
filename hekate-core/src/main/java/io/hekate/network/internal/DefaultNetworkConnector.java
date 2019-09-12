@@ -36,7 +36,12 @@ class DefaultNetworkConnector<T> implements NetworkConnector<T>, JmxSupport<Netw
     @ToStringIgnore
     private final boolean server;
 
-    public DefaultNetworkConnector(String protocol, int nioThreads, boolean server, NettyClientFactory<T> factory) {
+    public DefaultNetworkConnector(
+        String protocol,
+        int nioThreads,
+        boolean server,
+        NettyClientFactory<T> factory
+    ) {
         this.protocol = protocol;
         this.nioThreads = nioThreads;
         this.server = server;
@@ -46,6 +51,18 @@ class DefaultNetworkConnector<T> implements NetworkConnector<T>, JmxSupport<Netw
     @Override
     public String protocol() {
         return protocol;
+    }
+
+    public long idleSocketTimeout() {
+        return factory.getIdleTimeout();
+    }
+
+    public long nioThreads() {
+        return nioThreads;
+    }
+
+    public boolean isServer() {
+        return server;
     }
 
     @Override

@@ -16,6 +16,8 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessageQueueTimeoutException;
 import io.hekate.messaging.MessagingOverflowPolicy;
@@ -26,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-class SendPressureGuard {
+class SendPressureGuard implements ConfigReportSupport {
     private final int loMark;
 
     private final int hiMark;
@@ -57,6 +59,13 @@ class SendPressureGuard {
         this.loMark = loMark;
         this.hiMark = hiMark;
         this.policy = policy;
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.value("policy", policy);
+        report.value("lo-mark", loMark);
+        report.value("hi-mark", hiMark);
     }
 
     public int loMark() {

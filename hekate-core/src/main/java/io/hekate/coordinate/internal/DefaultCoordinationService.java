@@ -38,6 +38,8 @@ import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.internal.util.Utils;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.DependencyContext;
@@ -72,14 +74,14 @@ import org.slf4j.LoggerFactory;
 import static java.util.stream.Collectors.toList;
 
 public class DefaultCoordinationService implements CoordinationService, ConfigurableService, DependentService, InitializingService,
-    TerminatingService, MessagingConfigProvider {
+    TerminatingService, MessagingConfigProvider, ConfigReportSupport {
     private static final Logger log = LoggerFactory.getLogger(DefaultCoordinationProcess.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
     private static final String CHANNEL_NAME = "hekate.coordination";
 
-    private static final ClusterNodeFilter HAS_SERVICE_FILTER = node -> node.hasService(CoordinationService.class);
+    private static final ClusterNodeFilter HAS_COORDINATION_FILTER = node -> node.hasService(CoordinationService.class);
 
     private final long retryDelay;
 
@@ -127,7 +129,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
         hekate = ctx.hekate();
 
         messaging = ctx.require(MessagingService.class);
-        cluster = ctx.require(ClusterService.class).filter(HAS_SERVICE_FILTER);
+        cluster = ctx.require(ClusterService.class).filter(HAS_COORDINATION_FILTER);
         defaultCodec = ctx.require(CodecService.class);
     }
 
@@ -186,7 +188,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
         return Collections.singleton(
             MessagingChannelConfig.of(CoordinationProtocol.class)
                 .withName(CHANNEL_NAME)
-                .withClusterFilter(HAS_SERVICE_FILTER)
+                .withClusterFilter(HAS_COORDINATION_FILTER)
                 .withNioThreads(nioThreads)
                 .withIdleSocketTimeout(idleSocketTimeout)
                 .withRetryPolicy(retry ->
@@ -210,10 +212,13 @@ public class DefaultCoordinationService implements CoordinationService, Configur
             }
 
             if (!processesConfig.isEmpty()) {
+                // Register cluster listener to trigger coordination.
                 cluster.addListener(this::processTopologyChange, ClusterEventType.JOIN, ClusterEventType.CHANGE);
 
+                // Get coordination messaging channel (shared among all coordination processes).
                 MessagingChannel<CoordinationProtocol> channel = messaging.channel(CHANNEL_NAME, CoordinationProtocol.class);
 
+                // Initialize coordination processes.
                 for (CoordinationProcessConfig cfg : processesConfig) {
                     initializeProcess(cfg, ctx, channel);
                 }
@@ -225,6 +230,21 @@ public class DefaultCoordinationService implements CoordinationService, Configur
         } finally {
             guard.unlockWrite();
         }
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("coordination", c -> {
+            c.value("retry-delay", retryDelay);
+
+            for (DefaultCoordinationProcess process : processes.values()) {
+                c.section("process", p -> {
+                    p.value("name", process.name());
+                    p.value("async-init", process.isAsyncInit());
+                    p.value("handler", process.handler());
+                });
+            }
+        });
     }
 
     @Override
@@ -336,16 +356,27 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
         String name = cfg.getName().trim();
 
+        // Prepare worker thread.
         ExecutorService async = Executors.newSingleThreadExecutor(new HekateThreadFactory("Coordination-" + name));
 
-        DefaultCoordinationProcess process = new DefaultCoordinationProcess(name, hekate, cfg.getHandler(), async, channel);
+        // Instantiate and register.
+        DefaultCoordinationProcess process = new DefaultCoordinationProcess(
+            name,
+            hekate,
+            cfg.getHandler(),
+            cfg.isAsyncInit(),
+            async,
+            channel
+        );
 
         processes.put(name, process);
 
-        if (!cfg.isAsyncInit()) {
+        // Register initial coordination future.
+        if (!process.isAsyncInit()) {
             ctx.cluster().addSyncFuture(process.future());
         }
 
+        // Initialize.
         try {
             AsyncUtils.getUninterruptedly(process.initialize());
         } catch (ExecutionException e) {

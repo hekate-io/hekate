@@ -61,6 +61,8 @@ import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Jvm;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxSupport;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.core.service.ClusterServiceManager;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
@@ -112,7 +114,7 @@ import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toSet;
 
 public class DefaultClusterService implements ClusterService, ClusterServiceManager, DependentService, ConfigurableService,
-    InitializingService, TerminatingService, NetworkConfigProvider, JmxSupport<ClusterServiceJmx> {
+    InitializingService, TerminatingService, NetworkConfigProvider, JmxSupport<ClusterServiceJmx>, ConfigReportSupport {
     private static final Logger log = LoggerFactory.getLogger(DefaultClusterService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -128,8 +130,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     private final FailureDetector failureDetector;
 
     private final SplitBrainManager splitBrain;
-
-    private final long splitBrainCheckInterval;
 
     @ToStringIgnore
     private final List<ClusterAcceptor> acceptors;
@@ -230,10 +230,9 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         // Split-brain manager.
         splitBrain = new SplitBrainManager(
             factory.getSplitBrainAction(),
+            factory.getSplitBrainCheckInterval(),
             factory.getSplitBrainDetector()
         );
-
-        splitBrainCheckInterval = factory.getSplitBrainCheckInterval();
 
         // Pre-configured (unmodifiable) event listeners.
         this.listeners = unmodifiableList(nullSafe(factory.getClusterListeners()).collect(toCollection(() -> {
@@ -413,6 +412,17 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         } finally {
             guard.unlockWrite();
         }
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("cluster", cs -> {
+            cs.value("gossip-interval", gossipInterval);
+            cs.value("speed-up-gossip-size", speedUpGossipSize);
+            cs.value("seed-node-provider", seedNodeProvider);
+            cs.value("failure-detector", failureDetector);
+            cs.value("split-brain", splitBrain);
+        });
     }
 
     @Override
@@ -1245,10 +1255,10 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             }
 
             private void startPeriodicSplitBrainChecks() {
-                if (splitBrain.hasDetector() && splitBrainCheckInterval > 0) {
+                if (splitBrain.hasDetector() && splitBrain.checkInterval() > 0) {
                     scheduleOn(serviceThread, () -> {
                         guard.withReadLockIfInitialized(splitBrain::checkAsync);
-                    }, 0, splitBrainCheckInterval);
+                    }, 0, splitBrain.checkInterval());
                 }
             }
         };
@@ -1342,6 +1352,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     @Override
     public String toString() {
-        return ToString.format(ClusterService.class, this);
+        return ToString.format(this);
     }
 }

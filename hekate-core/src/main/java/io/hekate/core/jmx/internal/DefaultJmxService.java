@@ -24,6 +24,8 @@ import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxServiceException;
 import io.hekate.core.jmx.JmxServiceFactory;
 import io.hekate.core.jmx.JmxSupport;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.TerminatingService;
@@ -49,7 +51,7 @@ import org.slf4j.LoggerFactory;
 import static io.hekate.core.jmx.internal.JmxUtils.jmxName;
 import static java.util.stream.Collectors.toList;
 
-public class DefaultJmxService implements JmxService, InitializingService, TerminatingService {
+public class DefaultJmxService implements JmxService, InitializingService, TerminatingService, ConfigReportSupport {
     private static final Logger log = LoggerFactory.getLogger(DefaultJmxService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -79,24 +81,25 @@ public class DefaultJmxService implements JmxService, InitializingService, Termi
 
     @Override
     public void initialize(InitializationContext ctx) throws HekateException {
-        guard.lockWrite();
-
-        try {
+        guard.withWriteLock(() -> {
             guard.becomeInitialized();
 
             if (DEBUG) {
                 log.debug("Initialized.");
             }
-        } finally {
-            guard.unlockWrite();
-        }
+        });
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("jmx", jmx ->
+            jmx.value("domain", domain)
+        );
     }
 
     @Override
     public void preTerminate() throws HekateException {
-        guard.lockWrite();
-
-        try {
+        guard.withWriteLock(() -> {
             if (guard.becomeTerminated()) {
                 if (DEBUG) {
                     log.debug("Terminating...");
@@ -122,9 +125,7 @@ public class DefaultJmxService implements JmxService, InitializingService, Termi
                     log.debug("Terminated.");
                 }
             }
-        } finally {
-            guard.unlockWrite();
-        }
+        });
     }
 
     @Override

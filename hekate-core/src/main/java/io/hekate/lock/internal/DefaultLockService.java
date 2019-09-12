@@ -27,7 +27,8 @@ import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.StreamUtils;
-import io.hekate.core.internal.util.Utils;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.DependencyContext;
@@ -60,6 +61,8 @@ import io.hekate.messaging.intercept.ClientSendContext;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
+import io.hekate.util.format.ToString;
+import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -73,7 +76,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DefaultLockService implements LockService, InitializingService, DependentService, ConfigurableService, TerminatingService,
-    MessagingConfigProvider {
+    MessagingConfigProvider, ConfigReportSupport {
     static final ClusterNodeFilter HAS_SERVICE_FILTER = node -> node.hasService(LockService.class);
 
     private static final Logger log = LoggerFactory.getLogger(DefaultLockService.class);
@@ -82,22 +85,30 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
     private static final String CHANNEL_NAME = "hekate.locks";
 
-    private final StateGuard guard = new StateGuard(LockService.class);
-
-    private final List<LockRegionConfig> regionsConfig = new ArrayList<>();
-
     private final long retryInterval;
 
+    @ToStringIgnore
     private final int nioThreads;
 
+    @ToStringIgnore
     private final int workerThreads;
 
+    @ToStringIgnore
+    private final List<LockRegionConfig> regionsConfig = new ArrayList<>();
+
+    @ToStringIgnore
+    private final StateGuard guard = new StateGuard(LockService.class);
+
+    @ToStringIgnore
     private final Map<String, DefaultLockRegion> regions = new HashMap<>();
 
+    @ToStringIgnore
     private ScheduledThreadPoolExecutor scheduler;
 
+    @ToStringIgnore
     private ClusterView cluster;
 
+    @ToStringIgnore
     private MessagingService messaging;
 
     public DefaultLockService(LockServiceFactory factory) {
@@ -205,14 +216,18 @@ public class DefaultLockService implements LockService, InitializingService, Dep
             if (!regionsConfig.isEmpty()) {
                 ClusterNode node = ctx.localNode();
 
+                // Register cluster listener to trigger locks rebalancing.
                 cluster.addListener(evt -> processTopologyChange(), ClusterEventType.JOIN, ClusterEventType.CHANGE);
 
+                // Get channel for locking messages.
+                MessagingChannel<LockProtocol> channel = messaging.channel(CHANNEL_NAME, LockProtocol.class);
+
+                // Prepare schedule for asynchronous operations in lock regions.
                 scheduler = new ScheduledThreadPoolExecutor(1, new HekateThreadFactory("LockService"));
 
                 scheduler.setRemoveOnCancelPolicy(true);
 
-                MessagingChannel<LockProtocol> channel = messaging.channel(CHANNEL_NAME, LockProtocol.class);
-
+                // Register lock regions.
                 regionsConfig.forEach(cfg -> {
                     if (DEBUG) {
                         log.debug("Registering new lock region [config={}]", cfg);
@@ -228,7 +243,7 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                         channel.filter(new LockRegionNodeFilter(name))
                     );
 
-                    regions.put(name, region);
+                    this.regions.put(name, region);
                 });
             }
 
@@ -238,6 +253,21 @@ public class DefaultLockService implements LockService, InitializingService, Dep
         } finally {
             guard.unlockWrite();
         }
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("locks", ls -> {
+            ls.value("retry-interval", retryInterval);
+
+            ls.section("regions", rss ->
+                regionsConfig.forEach(cfg ->
+                    rss.section("region", rs ->
+                        rs.value("name", cfg.getName())
+                    )
+                )
+            );
+        });
     }
 
     @Override
@@ -441,6 +471,6 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
     @Override
     public String toString() {
-        return LockService.class.getSimpleName() + "[regions=" + Utils.toString(regionsConfig, LockRegionConfig::getName) + ']';
+        return ToString.format(this);
     }
 }

@@ -29,6 +29,8 @@ import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxSupport;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.core.resource.ResourceService;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
@@ -89,15 +91,19 @@ import org.slf4j.LoggerFactory;
 import static java.util.stream.Collectors.toList;
 
 public class NettyNetworkService implements NetworkService, NetworkServiceManager, DependentService, ConfigurableService,
-    InitializingService, TerminatingService, JmxSupport<NetworkServiceJmx> {
+    InitializingService, TerminatingService, JmxSupport<NetworkServiceJmx>, ConfigReportSupport {
     private static class ConnectorRegistration<T> {
         private final EventLoopGroup eventLoop;
 
-        private final NetworkConnector<T> connector;
+        private final DefaultNetworkConnector<T> connector;
 
         private final NettyServerHandlerConfig<T> serverHandler;
 
-        public ConnectorRegistration(EventLoopGroup eventLoop, NetworkConnector<T> connector, NettyServerHandlerConfig<T> serverHandler) {
+        public ConnectorRegistration(
+            EventLoopGroup eventLoop,
+            DefaultNetworkConnector<T> connector,
+            NettyServerHandlerConfig<T> serverHandler
+        ) {
             assert connector != null : "Connector is null.";
 
             this.eventLoop = eventLoop;
@@ -117,7 +123,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
             return serverHandler;
         }
 
-        public NetworkConnector<T> connector() {
+        public DefaultNetworkConnector<T> connector() {
             return connector;
         }
     }
@@ -278,7 +284,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         }
 
         if (log.isInfoEnabled()) {
-            log.info("Selected public address [address={}]", publicIp);
+            log.info("Selected public address [address={}, selector={}]", publicIp, addressSelector);
 
             log.info("Binding network acceptor [port={}]", initPort);
         }
@@ -384,13 +390,15 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
             }
 
             // Register connectors.
-            connectorConfigs.forEach(cfg -> {
-                ConnectorRegistration<?> reg = register(cfg);
+            if (!connectorConfigs.isEmpty()) {
+                connectorConfigs.forEach(cfg -> {
+                    ConnectorRegistration<?> reg = register(cfg);
 
-                if (reg.serverHandler() != null) {
-                    server.addHandler(reg.serverHandler());
-                }
-            });
+                    if (reg.serverHandler() != null) {
+                        server.addHandler(reg.serverHandler());
+                    }
+                });
+            }
 
             // Register JMX (optional).
             if (jmx != null) {
@@ -410,11 +418,6 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     }
 
     @Override
-    public void preInitialize(InitializationContext ctx) {
-        // No-op.
-    }
-
-    @Override
     public void postInitialize(InitializationContext ctx) {
         guard.lockRead();
 
@@ -429,6 +432,53 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         } finally {
             guard.unlockRead();
         }
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("network", net -> {
+            net.value("address-selector", addressSelector);
+            net.value("transport", transport);
+            net.value("init-port", initPort);
+            net.value("port-range", portRange);
+            net.value("acceptor-retry-interval", acceptorRetryInterval);
+            net.value("connect-timeout", connectTimeout);
+            net.value("heartbeat-interval", heartbeatInterval);
+            net.value("heartbeat-loss-threshold", heartbeatLossThreshold);
+            net.value("nio-thread-pool-size", nioThreadPoolSize);
+            net.value("tcp-no-delay", tcpNoDelay);
+            net.value("so-receive-buffer-size", soReceiveBufferSize);
+            net.value("so-send-buffer-size", soSendBufferSize);
+            net.value("so-reuse-address", soReuseAddress);
+            net.value("so-backlog", soBacklog);
+
+            if (sslConfig != null) {
+                net.section("ssl", ssl -> {
+                    ssl.value("provider", sslConfig.getProvider());
+                    ssl.value("key-store-path", sslConfig.getKeyStorePath());
+                    ssl.value("key-store-type", sslConfig.getKeyStoreType());
+                    ssl.value("key-store-type", sslConfig.getKeyStoreAlgorithm());
+                    ssl.value("trust-store-path", sslConfig.getTrustStorePath());
+                    ssl.value("trust-store-type", sslConfig.getTrustStoreType());
+                    ssl.value("trust-store-type", sslConfig.getTrustStoreAlgorithm());
+                    ssl.value("session-cache-size", sslConfig.getSslSessionCacheSize());
+                    ssl.value("session-cache-timeout", sslConfig.getSslSessionCacheTimeout());
+                });
+            }
+
+            if (!connectors.isEmpty()) {
+                net.section("connectors", css ->
+                    connectors.values().forEach(c ->
+                        css.section("connector", cs -> {
+                            cs.value("protocol", c.connector().protocol());
+                            cs.value("server", c.connector().isServer());
+                            cs.value("idle-timeout", c.connector().idleSocketTimeout());
+                            cs.value("nio-threads", c.hasEventLoop() ? c.connector().nioThreads() : "shared");
+                        })
+                    )
+                );
+            }
+        });
     }
 
     @Override
@@ -704,7 +754,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         }
 
         // Register connector.
-        NetworkConnector<T> conn = new DefaultNetworkConnector<>(
+        DefaultNetworkConnector<T> conn = new DefaultNetworkConnector<>(
             protocol,
             nioThreads,
             handlerCfg != null, // <-- Has server handler.
@@ -781,6 +831,6 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
     @Override
     public String toString() {
-        return ToString.format(NetworkService.class, this);
+        return ToString.format(this);
     }
 }

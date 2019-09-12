@@ -26,6 +26,8 @@ import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -68,7 +70,7 @@ import static java.util.stream.Collectors.toList;
  * @see ClusterServiceFactory#setSeedNodeProvider(SeedNodeProvider)
  * @see SeedNodeProvider
  */
-public class ConsulSeedNodeProvider implements SeedNodeProvider {
+public class ConsulSeedNodeProvider implements SeedNodeProvider, ConfigReportSupport {
     private static final Logger log = LoggerFactory.getLogger(ConsulSeedNodeProvider.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -111,6 +113,18 @@ public class ConsulSeedNodeProvider implements SeedNodeProvider {
         } catch (URISyntaxException e) {
             throw check.fail(e);
         }
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("consul", r -> {
+            r.value("url", url);
+            r.value("base-path", basePath);
+            r.value("cleanup-interval", cleanupInterval);
+            r.value("connect-timeout", connectTimeout);
+            r.value("read-timeout", readTimeout);
+            r.value("write-timeout", writeTimeout);
+        });
     }
 
     /**

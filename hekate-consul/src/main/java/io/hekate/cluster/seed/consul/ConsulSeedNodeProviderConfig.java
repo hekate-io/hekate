@@ -41,10 +41,13 @@ public class ConsulSeedNodeProviderConfig {
     /** See {@link #setBasePath(String)}. */
     private String basePath = DEFAULT_BASE_PATH;
 
+    /** See {@link #setConnectTimeout(Long)}. */
     private Long connectTimeout;
 
+    /** See {@link #setReadTimeout(Long)}. */
     private Long readTimeout;
 
+    /** See {@link #setWriteTimeout(Long)}. */
     private Long writeTimeout;
 
     /**

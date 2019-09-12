@@ -3,6 +3,8 @@ package io.hekate.cluster.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.cluster.split.SplitBrainDetector;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.util.StateGuard;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -11,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class SplitBrainManager {
+class SplitBrainManager implements ConfigReportSupport {
     interface Callback {
         void rejoin();
 
@@ -25,6 +27,8 @@ class SplitBrainManager {
     private static final Logger log = LoggerFactory.getLogger(SplitBrainManager.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
+
+    private final long checkInterval;
 
     private final SplitBrainAction action;
 
@@ -48,11 +52,23 @@ class SplitBrainManager {
     @ToStringIgnore
     private Executor async;
 
-    public SplitBrainManager(SplitBrainAction action, SplitBrainDetector detector) {
+    public SplitBrainManager(SplitBrainAction action, long checkInterval, SplitBrainDetector detector) {
         assert action != null : "Action is null.";
 
         this.detector = detector;
+        this.checkInterval = checkInterval;
         this.action = action;
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.value("action", action);
+        report.value("check-interval", checkInterval);
+        report.value("detector", detector);
+    }
+
+    public long checkInterval() {
+        return checkInterval;
     }
 
     public boolean hasDetector() {

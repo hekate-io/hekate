@@ -22,6 +22,8 @@ import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.jmx.JmxSupport;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
@@ -66,7 +68,7 @@ import static java.util.stream.Collectors.toList;
  * @see DefaultFailureDetectorConfig
  * @see ClusterServiceFactory#setFailureDetector(FailureDetector)
  */
-public class DefaultFailureDetector implements FailureDetector, JmxSupport<DefaultFailureDetectorJmx> {
+public class DefaultFailureDetector implements FailureDetector, JmxSupport<DefaultFailureDetectorJmx>, ConfigReportSupport {
     private static class NodeMonitor {
         private final ClusterAddress address;
 
@@ -128,12 +130,11 @@ public class DefaultFailureDetector implements FailureDetector, JmxSupport<Defau
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    @ToStringIgnore
-    private final int failureQuorum;
-
     private final int hbLossThreshold;
 
     private final long hbInterval;
+
+    private final int failureQuorum;
 
     private final boolean failFast;
 
@@ -186,6 +187,14 @@ public class DefaultFailureDetector implements FailureDetector, JmxSupport<Defau
 
         readLock = lock.readLock();
         writeLock = lock.writeLock();
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.value("hb-interval", hbInterval);
+        report.value("hb-loss-threshold", hbLossThreshold);
+        report.value("failure-quorum", failureQuorum);
+        report.value("fail-fast", failFast);
     }
 
     @Override

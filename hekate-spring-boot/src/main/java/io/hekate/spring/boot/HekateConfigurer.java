@@ -135,6 +135,7 @@ import org.springframework.stereotype.Component;
  * <li>{@link HekateBootstrap#setClusterName(String) 'hekate.cluster-name'}</li>
  * <li>{@link HekateBootstrap#setRoles(List) 'hekate.roles'}</li>
  * <li>{@link HekateBootstrap#setProperties(Map) 'hekate.properties'}</li>
+ * <li>{@link HekateBootstrap#setConfigReport(boolean)} 'hekate.config-report'}</li>
  * </ul>
  *
  * <h2>Deferred Cluster Joining</h2>

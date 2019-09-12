@@ -24,6 +24,8 @@ import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.jmx.JmxSupport;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.util.format.ToString;
 import java.io.File;
 import java.io.FileFilter;
@@ -56,7 +58,7 @@ import org.slf4j.LoggerFactory;
  * @see ClusterServiceFactory#setSeedNodeProvider(SeedNodeProvider)
  * @see SeedNodeProvider
  */
-public class FsSeedNodeProvider implements SeedNodeProvider, JmxSupport<FsSeedNodeProviderJmx> {
+public class FsSeedNodeProvider implements SeedNodeProvider, JmxSupport<FsSeedNodeProviderJmx>, ConfigReportSupport {
     private static final Logger log = LoggerFactory.getLogger(FsSeedNodeProvider.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -94,6 +96,14 @@ public class FsSeedNodeProvider implements SeedNodeProvider, JmxSupport<FsSeedNo
 
         this.cleanupInterval = cfg.getCleanupInterval();
         this.workDir = dir;
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("shared-folder", r -> {
+            r.value("work-dir", workDir);
+            r.value("cleanup-interval", cleanupInterval);
+        });
     }
 
     @Override

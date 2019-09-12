@@ -19,6 +19,7 @@ package io.hekate.cluster.seed.etcd;
 import io.hekate.HekateTestProps;
 import io.hekate.cluster.seed.PersistentSeedNodeProviderTestBase;
 import io.hekate.core.HekateException;
+import io.hekate.core.report.DefaultConfigReporter;
 import java.net.InetSocketAddress;
 import java.util.function.Consumer;
 import org.junit.Assume;
@@ -26,6 +27,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
 
 public class EtcdSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase<EtcdSeedNodeProvider> {
     private static String url;
@@ -68,6 +70,20 @@ public class EtcdSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase
         // Need to await for gRPC-related threads termination
         // as there seems to be no way to hook into the Etcd client's shutdown logic.
         awaitForNoSuchThread("grpc-default");
+    }
+
+    @Test
+    public void testConfigReport() throws Exception {
+        EtcdSeedNodeProvider provider = createProvider();
+
+        assertEquals(
+            "\n"
+                + "  etcd\n"
+                + "    endpoints: " + provider.endpoints() + "\n"
+                + "    base-path: " + provider.basePath() + "\n"
+                + "    cleanup-interval: " + provider.cleanupInterval() + "\n",
+            DefaultConfigReporter.report(provider)
+        );
     }
 
     @Test

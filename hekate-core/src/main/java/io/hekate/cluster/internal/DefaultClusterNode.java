@@ -23,7 +23,6 @@ import io.hekate.cluster.ClusterNodeRuntime;
 import io.hekate.core.ServiceInfo;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.core.service.Service;
-import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringFormat;
 import io.hekate.util.format.ToStringIgnore;
 import java.io.Serializable;
@@ -164,7 +163,7 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
 
     @Override
     public boolean hasService(Class<? extends Service> type) {
-        return services.keySet().contains(type.getName());
+        return services.containsKey(type.getName());
     }
 
     @Override
@@ -195,10 +194,6 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     @Override
     public int compareTo(ClusterNode o) {
         return address.compareTo(o.address());
-    }
-
-    public String toDetailedString() {
-        return ToString.format(ClusterNode.class, this);
     }
 
     @Override

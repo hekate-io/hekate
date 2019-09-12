@@ -41,6 +41,8 @@ class DefaultCoordinationProcess implements CoordinationProcess {
 
     private final String name;
 
+    private final boolean asyncInit;
+
     @ToStringIgnore
     private final CoordinationHandler handler;
 
@@ -66,6 +68,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
         String name,
         HekateSupport hekate,
         CoordinationHandler handler,
+        boolean asyncInit,
         ExecutorService async,
         MessagingChannel<CoordinationProtocol> channel
     ) {
@@ -79,6 +82,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
         this.hekate = hekate;
         this.handler = handler;
         this.async = async;
+        this.asyncInit = asyncInit;
         this.channel = channel;
     }
 
@@ -223,6 +227,10 @@ class DefaultCoordinationProcess implements CoordinationProcess {
     @Override
     public CoordinationHandler handler() {
         return handler;
+    }
+
+    public boolean isAsyncInit() {
+        return asyncInit;
     }
 
     private Waiting cancelCurrentContext() {

@@ -18,6 +18,7 @@ package io.hekate.cluster.seed.fs;
 
 import io.hekate.cluster.seed.PersistentSeedNodeProviderTestBase;
 import io.hekate.core.internal.util.AddressUtils;
+import io.hekate.core.report.DefaultConfigReporter;
 import io.hekate.test.TestUtils;
 import java.io.File;
 import java.net.InetSocketAddress;
@@ -43,6 +44,19 @@ public class FsSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase<F
         TestUtils.deleteDir(tempDir);
 
         super.tearDown();
+    }
+
+    @Test
+    public void testConfigReport() throws Exception {
+        FsSeedNodeProvider provider = createProvider();
+
+        assertEquals(
+            "\n"
+                + "  shared-folder\n"
+                + "    work-dir: " + provider.getWorkDir() + "\n"
+                + "    cleanup-interval: " + provider.cleanupInterval() + "\n",
+            DefaultConfigReporter.report(provider)
+        );
     }
 
     @Test

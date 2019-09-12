@@ -17,6 +17,8 @@
 package io.hekate.core.service.internal;
 
 import io.hekate.core.HekateException;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
@@ -118,9 +120,11 @@ class ServiceHandler {
             InitializingService init = (InitializingService)service;
 
             init.initialize(ctx);
-        }
 
-        log.info("Initialized {}", service);
+            if (DEBUG) {
+                log.debug("Initialized {}", service);
+            }
+        }
     }
 
     public void postInitialize(InitializationContext ctx) throws HekateException {
@@ -164,10 +168,10 @@ class ServiceHandler {
             } catch (HekateException | RuntimeException | Error e) {
                 log.error("Failed to terminate service [service={}]", term, e);
             }
-        }
 
-        if (log.isInfoEnabled()) {
-            log.info("Terminated {}", service);
+            if (DEBUG) {
+                log.debug("Terminated {}", service);
+            }
         }
     }
 
@@ -184,6 +188,12 @@ class ServiceHandler {
             } catch (HekateException | RuntimeException | Error e) {
                 log.error("Failed to post-terminate service [service={}]", term, e);
             }
+        }
+    }
+
+    public void configReport(ConfigReporter reporter) {
+        if (service instanceof ConfigReportSupport) {
+            ((ConfigReportSupport)service).report(reporter);
         }
     }
 }

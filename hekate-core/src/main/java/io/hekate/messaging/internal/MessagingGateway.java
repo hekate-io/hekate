@@ -56,7 +56,7 @@ class MessagingGateway<T> {
 
     private final long messagingTimeout;
 
-    private final long idleTimeout;
+    private final long idleSocketTimeout;
 
     private final int partitions;
 
@@ -107,7 +107,7 @@ class MessagingGateway<T> {
         this.nioThreads = cfg.getNioThreads();
         this.workerThreads = cfg.getWorkerThreads();
         this.messagingTimeout = cfg.getMessagingTimeout();
-        this.idleTimeout = cfg.getIdleSocketTimeout();
+        this.idleSocketTimeout = cfg.getIdleSocketTimeout();
         this.unguardedReceiver = cfg.getReceiver();
         this.partitions = cfg.getPartitions();
         this.backupNodes = cfg.getBackupNodes();
@@ -237,7 +237,7 @@ class MessagingGateway<T> {
     }
 
     public long idleSocketTimeout() {
-        return idleTimeout;
+        return idleSocketTimeout;
     }
 
     public long messagingTimeout() {

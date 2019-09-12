@@ -26,6 +26,8 @@ import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.ErrorUtils;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.io.IOException;
@@ -67,7 +69,7 @@ import org.slf4j.LoggerFactory;
  * @see ClusterServiceFactory#setSeedNodeProvider(SeedNodeProvider)
  * @see SeedNodeProvider
  */
-public class CloudStoreSeedNodeProvider implements SeedNodeProvider {
+public class CloudStoreSeedNodeProvider implements SeedNodeProvider, ConfigReportSupport {
     private static final Logger log = LoggerFactory.getLogger(CloudStoreSeedNodeProvider.class);
 
     private final String provider;
@@ -107,6 +109,55 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider {
         }
 
         this.properties = properties;
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("cloud-store", r -> {
+            r.value("provider", provider);
+            r.value("container", container);
+            r.value("properties", properties);
+            r.value("cleanup-interval", cleanupInterval);
+        });
+    }
+
+    /**
+     * Cloud store provider.
+     *
+     * @return Cloud store provider.
+     *
+     * @see CloudStoreSeedNodeProviderConfig#setProvider(String)
+     */
+    public String provider() {
+        return provider;
+    }
+
+    /**
+     * Cloud store container.
+     *
+     * @return Cloud store container.
+     *
+     * @see CloudStoreSeedNodeProviderConfig#setContainer(String)
+     */
+    public String container() {
+        return container;
+    }
+
+    /**
+     * Cloud store provider properties.
+     *
+     * @return Cloud provider properties.
+     *
+     * @see CloudStoreSeedNodeProviderConfig#setProperties(Properties)
+     */
+    public Properties properties() {
+        Properties copy = new Properties();
+
+        for (String name : properties.stringPropertyNames()) {
+            copy.setProperty(name, properties.getProperty(name));
+        }
+
+        return copy;
     }
 
     @Override

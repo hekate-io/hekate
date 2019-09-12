@@ -20,7 +20,6 @@ import io.hekate.HekateNodeTestBase;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
-import io.hekate.messaging.MessagingService;
 import io.hekate.messaging.MessagingServiceFactory;
 import org.junit.Test;
 
@@ -44,8 +43,6 @@ public class MessagingServiceSingleNodeTest extends HekateNodeTestBase {
         assertFalse(node.messaging().hasChannel("no-such-channel"));
 
         expect(IllegalArgumentException.class, () -> node.messaging().channel("no-such-channel"));
-
-        assertTrue(node.messaging().toString(), node.messaging().toString().startsWith(MessagingService.class.getSimpleName()));
     }
 
     @Test
@@ -96,9 +93,5 @@ public class MessagingServiceSingleNodeTest extends HekateNodeTestBase {
         assertEquals(2 + BUILT_IN_CHANNELS, node.messaging().allChannels().size());
         assertTrue(node.messaging().allChannels().contains(channel1));
         assertTrue(node.messaging().allChannels().contains(channel2));
-
-        assertTrue(node.messaging().toString(), node.messaging().toString().startsWith(MessagingService.class.getSimpleName()));
-        assertTrue(node.messaging().toString(), node.messaging().toString().contains("channel1"));
-        assertTrue(node.messaging().toString(), node.messaging().toString().contains("channel2"));
     }
 }

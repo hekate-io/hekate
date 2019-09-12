@@ -17,12 +17,16 @@
 package io.hekate.cluster.seed.jclouds;
 
 import io.hekate.cluster.seed.PersistentSeedNodeProviderTestBase;
+import io.hekate.core.report.DefaultConfigReporter;
 import java.util.Collection;
 import org.junit.Assume;
 import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 public class CloudStoreSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase<CloudStoreSeedNodeProvider> {
@@ -41,6 +45,21 @@ public class CloudStoreSeedNodeProviderTest extends PersistentSeedNodeProviderTe
     public static void mayBeDisableTest() {
         // Disable if there are no cloud providers that are configured for tests.
         Assume.assumeFalse(getCloudTestContexts().isEmpty());
+    }
+
+    @Test
+    public void testConfigReport() throws Exception {
+        CloudStoreSeedNodeProvider provider = createProvider();
+
+        assertEquals(
+            "\n"
+                + "  cloud-store\n"
+                + "    provider: " + provider.provider() + "\n"
+                + "    container: " + provider.container() + "\n"
+                + "    properties: " + provider.properties() + "\n"
+                + "    cleanup-interval: " + provider.cleanupInterval() + "\n",
+            DefaultConfigReporter.report(provider)
+        );
     }
 
     @Override

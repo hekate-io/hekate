@@ -18,8 +18,12 @@ package io.hekate.cluster.seed.consul;
 
 import io.hekate.HekateTestProps;
 import io.hekate.cluster.seed.PersistentSeedNodeProviderTestBase;
+import io.hekate.core.report.DefaultConfigReporter;
 import org.junit.Assume;
 import org.junit.BeforeClass;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class ConsulSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase<ConsulSeedNodeProvider> {
     private static String url;
@@ -30,6 +34,23 @@ public class ConsulSeedNodeProviderTest extends PersistentSeedNodeProviderTestBa
         Assume.assumeTrue(HekateTestProps.is("CONSUL_ENABLED"));
 
         url = HekateTestProps.get("CONSUL_URL");
+    }
+
+    @Test
+    public void testConfigReport() throws Exception {
+        ConsulSeedNodeProvider provider = createProvider();
+
+        assertEquals(
+            "\n"
+                + "  consul\n"
+                + "    url: " + provider.url() + "\n"
+                + "    base-path: " + provider.basePath() + "\n"
+                + "    cleanup-interval: " + provider.cleanupInterval() + "\n"
+                + "    connect-timeout: " + provider.connectTimeout() + "\n"
+                + "    read-timeout: " + provider.readTimeout() + "\n"
+                + "    write-timeout: " + provider.writeTimeout() + "\n",
+            DefaultConfigReporter.report(provider)
+        );
     }
 
     @Override

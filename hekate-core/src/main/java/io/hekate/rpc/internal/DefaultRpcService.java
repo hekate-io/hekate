@@ -24,6 +24,8 @@ import io.hekate.core.inject.InjectionService;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.jmx.JmxService;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.DependencyContext;
@@ -53,8 +55,6 @@ import io.hekate.rpc.internal.RpcProtocol.RpcCall;
 import io.hekate.rpc.internal.RpcProtocol.RpcCompactCall;
 import io.hekate.rpc.internal.RpcProtocol.RpcCompactSplitCall;
 import io.hekate.util.StateGuard;
-import io.hekate.util.format.ToString;
-import io.hekate.util.format.ToStringIgnore;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -78,7 +78,7 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toList;
 
 public class DefaultRpcService implements RpcService, ConfigurableService, DependentService, InitializingService, TerminatingService,
-    MessagingConfigProvider {
+    MessagingConfigProvider, ConfigReportSupport {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultRpcService.class);
 
@@ -96,36 +96,26 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
     private final MessagingBackPressureConfig backPressure;
 
-    @ToStringIgnore
     private final List<RpcServerConfig> serverConfigs = new ArrayList<>();
 
-    @ToStringIgnore
     private final StateGuard guard = new StateGuard(RpcService.class);
 
-    @ToStringIgnore
     private final Map<RpcTypeKey, RpcClientBuilder<?>> clients = new ConcurrentHashMap<>();
 
-    @ToStringIgnore
     private final List<RpcClientConfig> clientConfigs = new ArrayList<>();
 
-    @ToStringIgnore
     private RpcTypeAnalyzer typeAnalyzer;
 
     private List<RpcServerInfo> servers;
 
-    @ToStringIgnore
     private RpcMethodHandler[] methodHandlers;
 
-    @ToStringIgnore
     private MessagingService messaging;
 
-    @ToStringIgnore
     private CodecFactory<Object> codec;
 
-    @ToStringIgnore
     private JmxService jmx;
 
-    @ToStringIgnore
     private MessagingChannel<RpcProtocol> channel;
 
     public DefaultRpcService(RpcServiceFactory factory) {
@@ -450,6 +440,30 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
         return workerThreads;
     }
 
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("rpc", rs ->
+            rs.section("servers", ss ->
+                servers.forEach(server ->
+                    ss.section("server", s -> {
+                        s.value("tags", server.tags());
+                        s.value("implementation", server.rpc());
+
+                        s.section("interfaces", irs ->
+                            server.interfaces().forEach(i ->
+                                irs.section("interface", ir -> {
+                                    ir.value("type", i.javaType().getName());
+                                    ir.value("min-client-version", i.minClientVersion());
+                                    ir.value("version", i.version());
+                                })
+                            )
+                        );
+                    })
+                )
+            )
+        );
+    }
+
     private void handleMessage(Message<RpcProtocol> msg) {
         RpcProtocol rpcMsg = msg.payload();
 
@@ -499,6 +513,6 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
     @Override
     public String toString() {
-        return ToString.format(RpcService.class, this);
+        return getClass().getSimpleName();
     }
 }
