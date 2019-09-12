@@ -71,6 +71,8 @@
         <kubernetes.client.version>4.3.0</kubernetes.client.version>
         <jclouds.version>2.1.2</jclouds.version>
         <aws.sdk.version>1.11.587</aws.sdk.version>
+        <zipkin.sender.version>2.7.8</zipkin.sender.version>
+        <zipkin.brave.version>5.3.3</zipkin.brave.version>
 
         <!-- Test dependencies.-->
         <junit.version>4.12</junit.version>
@@ -228,6 +230,19 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <!-- Distributed Tracing. -->
+            <dependency>
+                <groupId>io.zipkin.brave</groupId>
+                <artifactId>brave</artifactId>
+                <version>${zipkin.brave.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.zipkin.reporter2</groupId>
+                <artifactId>zipkin-sender-okhttp3</artifactId>
+                <version>${zipkin.sender.version}</version>
             </dependency>
 
             <!-- Testing. -->
