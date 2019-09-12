@@ -146,6 +146,7 @@
         <exclude name="JUnit4TestShouldUseTestAnnotation"/>
         <exclude name="JUnit4TestShouldUseBeforeAnnotation"/>
         <exclude name="JUnit4TestShouldUseAfterAnnotation"/>
+        <exclude name="AvoidStringBufferField"/>
     </rule>
 
     <rule ref="category/java/bestpractices.xml/GuardLogStatement">
