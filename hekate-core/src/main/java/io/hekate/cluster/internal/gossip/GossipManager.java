@@ -656,7 +656,11 @@ public class GossipManager {
                                 log.debug("Terminating node [node={}, state={}]", from.node(), from.status());
                             }
 
-                            listener.onNodeFailure(from.node(), from.status());
+                            // Report only if node was not in LEAVING state.
+                            // It is possible that LEAVING node became DOWN and stopped before this node received this information.
+                            if (from.status() != LEAVING) {
+                                listener.onNodeFailure(from.node(), from.status());
+                            }
 
                             return to;
                         })
