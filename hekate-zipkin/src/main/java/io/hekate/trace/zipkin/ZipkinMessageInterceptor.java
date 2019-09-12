@@ -68,28 +68,28 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
 
             switch (ctx.type()) {
                 case REQUEST: {
-                    annotate("request", span, ctx.get(), ctx.channelName());
+                    annotate("request", span, ctx.payload(), ctx.channelName());
 
                     ctx.setAttribute(SPAN_ATTRIBUTE, span.kind(CLIENT).start());
 
                     break;
                 }
                 case SUBSCRIBE: {
-                    annotate("subscribe", span, ctx.get(), ctx.channelName());
+                    annotate("subscribe", span, ctx.payload(), ctx.channelName());
 
                     ctx.setAttribute(SPAN_ATTRIBUTE, span.kind(CLIENT).start());
 
                     break;
                 }
                 case SEND_WITH_ACK: {
-                    annotate("send-with-ack", span, ctx.get(), ctx.channelName());
+                    annotate("send-with-ack", span, ctx.payload(), ctx.channelName());
 
                     ctx.setAttribute(SPAN_ATTRIBUTE, span.kind(CLIENT).start());
 
                     break;
                 }
                 case SEND_NO_ACK: {
-                    annotate("send-no-ack", span, ctx.get(), ctx.channelName());
+                    annotate("send-no-ack", span, ctx.payload(), ctx.channelName());
 
                     // Immediately finish as we don't expected any feedback from the server.
                     span.kind(PRODUCER).start().flush();
@@ -115,7 +115,7 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
                 case RESPONSE_CHUNK: {
                     Span chunkSpan = tracer.newChild(span.context());
 
-                    annotate("receive-chunk", chunkSpan, ctx.get(), null)
+                    annotate("receive-chunk", chunkSpan, ctx.payload(), null)
                         .kind(CONSUMER)
                         .start()
                         .flush();
@@ -135,7 +135,7 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
     }
 
     @Override
-    public void interceptClientReceiveConfirmation(ClientOutboundContext ctx) {
+    public void interceptClientReceiveAck(ClientOutboundContext ctx) {
         Span span = (Span)ctx.getAttribute(SPAN_ATTRIBUTE);
 
         if (span != null) {
@@ -167,14 +167,14 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
                 case SEND_WITH_ACK: {
                     span.kind(SERVER);
 
-                    annotate("receive", span, ctx.get(), ctx.channelName());
+                    annotate("receive", span, ctx.payload(), ctx.channelName());
 
                     break;
                 }
                 case SEND_NO_ACK: {
                     span.kind(CONSUMER);
 
-                    annotate("receive", span, ctx.get(), ctx.channelName());
+                    annotate("receive", span, ctx.payload(), ctx.channelName());
 
                     break;
                 }
@@ -224,7 +224,7 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
                 case RESPONSE_CHUNK: {
                     Span chunkSpan = tracer.newChild(span.context());
 
-                    annotate("reply-chunk", chunkSpan, ctx.get(), null)
+                    annotate("reply-chunk", chunkSpan, ctx.payload(), null)
                         .kind(PRODUCER)
                         .start()
                         .flush();
@@ -232,7 +232,7 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
                     break;
                 }
                 case FINAL_RESPONSE: {
-                    annotate("reply", span, ctx.get(), null);
+                    annotate("reply", span, ctx.payload(), null);
 
                     span.finish();
 

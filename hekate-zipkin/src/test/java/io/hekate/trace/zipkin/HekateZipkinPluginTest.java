@@ -18,7 +18,6 @@ import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcServerConfig;
 import io.hekate.rpc.RpcServiceFactory;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -125,23 +124,23 @@ public class HekateZipkinPluginTest extends MessagingServiceTestBase {
         );
 
         trace("Request", () ->
-            get(channels.get(0).get().forRemotes().request("request"))
+            channels.get(0).channel().forRemotes().request("request")
         );
 
         trace("Send no ack", () ->
-            get(channels.get(0).get().forRemotes().send("send"))
+            channels.get(0).channel().forRemotes().send("send")
         );
 
         trace("Send with ack", () ->
-            get(channels.get(0).get().forRemotes().newSend("send").withConfirmReceive(true).submit())
+            get(channels.get(0).channel().forRemotes().newSend("send").withNoAck().submit())
         );
 
         trace("subscribe", () ->
-            channels.get(0).get().forRemotes().newSubscribe("subscribe").collectAll(3, TimeUnit.SECONDS)
+            channels.get(0).channel().forRemotes().subscribe("subscribe")
         );
 
         trace("aggregate", () ->
-            get(channels.get(0).get().forRemotes().aggregate("aggregate"))
+            channels.get(0).channel().forRemotes().aggregate("aggregate")
         );
     }
 
