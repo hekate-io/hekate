@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -44,7 +44,7 @@ class DefaultCoordinationRequest implements CoordinationRequest {
         this.from = from;
         this.msg = msg;
 
-        this.request = msg.get(CoordinationProtocol.Request.class);
+        this.request = msg.payload(CoordinationProtocol.Request.class);
     }
 
     @Override

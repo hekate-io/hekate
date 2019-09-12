@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -33,7 +33,7 @@ public class GossipSpyAdaptor implements GossipListener {
     }
 
     @Override
-    public void onTopologyChange(Set<ClusterNode> oldTopology, Set<ClusterNode> newTopology) {
+    public void onTopologyChange(Set<ClusterNode> oldTopology, Set<ClusterNode> newTopology, Set<ClusterNode> failed) {
         // No-op.
     }
 

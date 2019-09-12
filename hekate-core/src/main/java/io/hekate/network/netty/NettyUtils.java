@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -27,10 +27,6 @@ import java.util.concurrent.TimeUnit;
  * Netty-related utilities.
  */
 public final class NettyUtils {
-    /** Time period (={@value}) in milliseconds for {@link #shutdown(EventExecutorGroup)}. */
-    // Package level for testing purposes.
-    public static final long GRACEFUL_SHUTDOWN_PERIOD = 0;
-
     private NettyUtils() {
         // No-op.
     }
@@ -47,13 +43,13 @@ public final class NettyUtils {
         if (executor == null) {
             return Waiting.NO_WAIT;
         } else {
-            return executor.shutdownGracefully(GRACEFUL_SHUTDOWN_PERIOD, Long.MAX_VALUE, TimeUnit.MILLISECONDS)::await;
+            return executor.shutdownGracefully(0, Long.MAX_VALUE, TimeUnit.MILLISECONDS)::await;
         }
     }
 
     /**
-     * Executes the task using the provided event loop or falls back to {@link AsyncUtils#fallbackExecutor()} if event loop is {@link
-     * EventLoop#isShuttingDown() shut down}.
+     * Executes the task using the provided event loop or falls back to {@link AsyncUtils#fallbackExecutor()} if event loop is already
+     * {@link EventLoop#isShuttingDown() shut down}.
      *
      * @param eventLoop Event loop.
      * @param task Task.

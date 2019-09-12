@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -19,6 +19,7 @@ package io.hekate.core.internal.util;
 import io.hekate.core.HekateConfigurationException;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public final class ConfigCheck {
     private static final Pattern SYS_NAME = Pattern.compile("^[a-z0-9]+([-.][a-z0-9]+)*$", Pattern.CASE_INSENSITIVE);
@@ -110,6 +111,12 @@ public final class ConfigCheck {
         notNull(value, component);
 
         that(!value.trim().isEmpty(), component + " must be a non-empty string.");
+    }
+
+    public void notEmpty(Stream<?> stream, String component) throws HekateConfigurationException {
+        notNull(stream, component);
+
+        that(stream.count() > 0, component + " must be not empty.");
     }
 
     public void isPowerOfTwo(int n, String component) throws HekateConfigurationException {

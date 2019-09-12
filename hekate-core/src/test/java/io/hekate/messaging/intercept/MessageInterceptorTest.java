@@ -6,8 +6,8 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.internal.MessagingServiceTestBase;
 import io.hekate.messaging.internal.TestChannel;
+import io.hekate.messaging.operation.AckMode;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
@@ -33,11 +33,11 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
         AtomicReference<String> lastServerReceiveComplete = new AtomicReference<>();
 
         List<TestChannel> channels = createAndJoinChannels(3, c -> {
-            c.withReceiver(msg -> msg.reply(msg.get() + "-reply"));
+            c.withReceiver(msg -> msg.reply(msg.payload() + "-reply"));
             c.withInterceptor(new AllMessageInterceptor<String>() {
                 @Override
                 public void interceptClientSend(ClientSendContext<String> ctx) {
-                    assertNotNull(ctx.get());
+                    assertNotNull(ctx.payload());
                     assertSame(OutboundType.REQUEST, ctx.type());
                     assertNotNull(ctx.receiver());
                     assertNotNull(ctx.channelName());
@@ -51,12 +51,12 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                     ctx.metaData().set(TEST_KEY, "client-meta-val");
                     assertTrue(ctx.hasMetaData());
 
-                    ctx.overrideMessage(ctx.get() + "-CS-" + ctx.hasAffinity() + "-" + ctx.affinityKey());
+                    ctx.overrideMessage(ctx.payload() + "-CS-" + ctx.hasAffinity() + "-" + ctx.affinityKey());
                 }
 
                 @Override
                 public void interceptClientReceiveResponse(ClientReceiveContext<String> ctx) {
-                    assertNotNull(ctx.get());
+                    assertNotNull(ctx.payload());
                     assertSame(InboundType.FINAL_RESPONSE, ctx.type());
 
                     assertSame(OutboundType.REQUEST, ctx.outboundContext().type());
@@ -71,12 +71,12 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                     assertTrue(ctx.readMetaData().isPresent());
                     assertEquals("server-meta-val", ctx.readMetaData().get().get(TEST_KEY));
 
-                    ctx.overrideMessage(ctx.get() + "-CR");
+                    ctx.overrideMessage(ctx.payload() + "-CR");
                 }
 
                 @Override
                 public void interceptServerReceive(ServerReceiveContext<String> ctx) {
-                    assertNotNull(ctx.get());
+                    assertNotNull(ctx.payload());
                     assertSame(OutboundType.REQUEST, ctx.type());
                     assertNotNull(ctx.from());
                     assertNotNull(ctx.channelName());
@@ -88,7 +88,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                     assertTrue(ctx.readMetaData().isPresent());
                     assertEquals("client-meta-val", ctx.readMetaData().get().get(TEST_KEY));
 
-                    ctx.overrideMessage(ctx.get() + "-SR");
+                    ctx.overrideMessage(ctx.payload() + "-SR");
                 }
 
                 @Override
@@ -100,12 +100,12 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                     // Verify attribute.
                     assertEquals("test-val", ctx.getAttribute("test-attr"));
 
-                    lastServerReceiveComplete.compareAndSet(null, ctx.get());
+                    lastServerReceiveComplete.compareAndSet(null, ctx.payload());
                 }
 
                 @Override
                 public void interceptServerSend(ServerSendContext<String> ctx) {
-                    assertNotNull(ctx.get());
+                    assertNotNull(ctx.payload());
                     assertSame(InboundType.FINAL_RESPONSE, ctx.type());
                     assertFalse(ctx.hasMetaData());
 
@@ -120,11 +120,11 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                     ctx.metaData().set(TEST_KEY, "server-meta-val");
                     assertTrue(ctx.hasMetaData());
 
-                    ctx.overrideMessage(ctx.get() + "-SS");
+                    ctx.overrideMessage(ctx.payload() + "-SS");
                 }
 
                 @Override
-                public void interceptClientReceiveConfirmation(ClientOutboundContext<String> ctx) {
+                public void interceptClientReceiveAck(ClientOutboundContext<String> ctx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
             });
@@ -134,10 +134,10 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
             for (TestChannel to : channels) {
                 String msg = "test-" + from.nodeId();
 
-                MessagingChannel<String> channel = from.get().forNode(to.nodeId());
+                MessagingChannel<String> channel = from.channel().forNode(to.nodeId());
 
                 // No affinity.
-                assertEquals(msg + "-CS-false-null-SR-reply-SS-CR", channel.request(msg).result());
+                assertEquals(msg + "-CS-false-null-SR-reply-SS-CR", channel.newRequest(msg).response());
                 busyWait("receive complete", () ->
                     (msg + "-CS-false-null-SR").equals(lastServerReceiveComplete.getAndSet(null))
                 );
@@ -174,10 +174,10 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
 
         for (TestChannel from : channels) {
             for (TestChannel to : channels) {
-                MessagingChannel<String> channel = from.get().forNode(to.nodeId());
+                MessagingChannel<String> channel = from.channel().forNode(to.nodeId());
 
                 MessagingFutureException err = expect(MessagingFutureException.class, () ->
-                    get(channel.request("msg"))
+                    get(channel.newRequest("msg").submit())
                 );
 
                 verify(interceptor).interceptClientReceiveError(any(), ArgumentMatchers.same(err.getCause()));
@@ -191,14 +191,14 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
 
         List<TestChannel> channels = createAndJoinChannels(3, c -> {
             c.withReceiver(msg -> {
-                msg.partialReply(msg.get() + "-reply-part");
-                msg.partialReply(msg.get() + "-reply-part");
-                msg.reply(msg.get() + "-reply");
+                msg.partialReply(msg.payload() + "-reply-part");
+                msg.partialReply(msg.payload() + "-reply-part");
+                msg.reply(msg.payload() + "-reply");
             });
             c.withInterceptor(new AllMessageInterceptor<String>() {
                 @Override
                 public void interceptClientSend(ClientSendContext<String> ctx) {
-                    assertNotNull(ctx.get());
+                    assertNotNull(ctx.payload());
                     assertSame(OutboundType.SUBSCRIBE, ctx.type());
                     assertNotNull(ctx.receiver());
                     assertNotNull(ctx.topology());
@@ -210,14 +210,14 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                     ctx.metaData().set(TEST_KEY, "client-meta-val");
                     assertTrue(ctx.hasMetaData());
 
-                    ctx.overrideMessage(ctx.get() + "-CS-" + ctx.hasAffinity() + "-" + ctx.affinityKey());
+                    ctx.overrideMessage(ctx.payload() + "-CS-" + ctx.hasAffinity() + "-" + ctx.affinityKey());
                 }
 
                 @Override
                 public void interceptClientReceiveResponse(ClientReceiveContext<String> ctx) {
-                    assertNotNull(ctx.get());
+                    assertNotNull(ctx.payload());
 
-                    if (ctx.get().contains("-part")) {
+                    if (ctx.payload().contains("-part")) {
                         assertSame(InboundType.RESPONSE_CHUNK, ctx.type());
                     } else {
                         assertSame(InboundType.FINAL_RESPONSE, ctx.type());
@@ -234,12 +234,12 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                     assertTrue(ctx.readMetaData().isPresent());
                     assertEquals("server-meta-val" + ctx.type(), ctx.readMetaData().get().get(TEST_KEY));
 
-                    ctx.overrideMessage(ctx.get() + "-CR");
+                    ctx.overrideMessage(ctx.payload() + "-CR");
                 }
 
                 @Override
                 public void interceptServerReceive(ServerReceiveContext<String> ctx) {
-                    assertNotNull(ctx.get());
+                    assertNotNull(ctx.payload());
                     assertSame(OutboundType.SUBSCRIBE, ctx.type());
                     assertNotNull(ctx.from());
 
@@ -250,16 +250,16 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                     assertTrue(ctx.readMetaData().isPresent());
                     assertEquals("client-meta-val", ctx.readMetaData().get().get(TEST_KEY));
 
-                    ctx.overrideMessage(ctx.get() + "-SR");
+                    ctx.overrideMessage(ctx.payload() + "-SR");
                 }
 
                 @Override
                 public void interceptServerReceiveComplete(ServerInboundContext<String> ctx) {
-                    assertNotNull(ctx.get());
+                    assertNotNull(ctx.payload());
                     assertSame(OutboundType.SUBSCRIBE, ctx.type());
                     assertNotNull(ctx.from());
 
-                    lastServerReceiveComplete.compareAndSet(null, ctx.get());
+                    lastServerReceiveComplete.compareAndSet(null, ctx.payload());
 
                     // Verify attribute.
                     assertEquals("test-val", ctx.getAttribute("test-attr"));
@@ -267,9 +267,9 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
 
                 @Override
                 public void interceptServerSend(ServerSendContext<String> ctx) {
-                    assertNotNull(ctx.get());
+                    assertNotNull(ctx.payload());
 
-                    if (ctx.get().contains("-part")) {
+                    if (ctx.payload().contains("-part")) {
                         assertSame(InboundType.RESPONSE_CHUNK, ctx.type());
                     } else {
                         assertSame(InboundType.FINAL_RESPONSE, ctx.type());
@@ -285,11 +285,11 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                     ctx.metaData().set(TEST_KEY, "server-meta-val" + ctx.type());
                     assertTrue(ctx.hasMetaData());
 
-                    ctx.overrideMessage(ctx.get() + "-SS");
+                    ctx.overrideMessage(ctx.payload() + "-SS");
                 }
 
                 @Override
-                public void interceptClientReceiveConfirmation(ClientOutboundContext<String> ctx) {
+                public void interceptClientReceiveAck(ClientOutboundContext<String> ctx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
             });
@@ -297,12 +297,12 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
 
         for (TestChannel from : channels) {
             for (TestChannel to : channels) {
-                MessagingChannel<String> channel = from.get().forNode(to.nodeId());
+                MessagingChannel<String> channel = from.channel().forNode(to.nodeId());
 
                 String msg = "test1-" + from.nodeId();
 
                 // No affinity.
-                List<String> replies = channel.newSubscribe(msg).collectAll(3, TimeUnit.SECONDS);
+                List<String> replies = channel.newSubscribe(msg).responses();
 
                 busyWait("receive complete", () ->
                     (msg + "-CS-false-null-SR").equals(lastServerReceiveComplete.getAndSet(null))
@@ -315,9 +315,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                 to.assertReceived(msg + "-CS-false-null-SR");
 
                 // With affinity.
-                List<String> affinityReplies = channel.newSubscribe(msg)
-                    .withAffinity(1)
-                    .collectAll(3, TimeUnit.SECONDS);
+                List<String> affinityReplies = channel.newSubscribe(msg).withAffinity(1).responses();
 
                 busyWait("receive complete", () ->
                     (msg + "-CS-true-1-SR").equals(lastServerReceiveComplete.getAndSet(null))
@@ -346,10 +344,10 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
 
         for (TestChannel from : channels) {
             for (TestChannel to : channels) {
-                MessagingChannel<String> channel = from.get().forNode(to.nodeId());
+                MessagingChannel<String> channel = from.channel().forNode(to.nodeId());
 
                 MessagingFutureException err = expect(MessagingFutureException.class, () ->
-                    channel.newSubscribe("msg").collectAll(3, TimeUnit.SECONDS)
+                    channel.newSubscribe("msg").responses()
                 );
 
                 verify(interceptor).interceptClientReceiveError(any(), ArgumentMatchers.same(err.getCause()));
@@ -365,7 +363,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
             c.withInterceptor(new AllMessageInterceptor<String>() {
                 @Override
                 public void interceptClientSend(ClientSendContext<String> ctx) {
-                    assertNotNull(ctx.get());
+                    assertNotNull(ctx.payload());
                     assertSame(OutboundType.SEND_NO_ACK, ctx.type());
                     assertNotNull(ctx.receiver());
                     assertNotNull(ctx.topology());
@@ -375,12 +373,12 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                     ctx.metaData().set(TEST_KEY, "client-meta-val");
                     assertTrue(ctx.hasMetaData());
 
-                    ctx.overrideMessage(ctx.get() + "-CS");
+                    ctx.overrideMessage(ctx.payload() + "-CS");
                 }
 
                 @Override
                 public void interceptServerReceive(ServerReceiveContext<String> ctx) {
-                    assertNotNull(ctx.get());
+                    assertNotNull(ctx.payload());
                     assertSame(OutboundType.SEND_NO_ACK, ctx.type());
                     assertNotNull(ctx.from());
                     assertNotNull(ctx.channelName());
@@ -389,21 +387,21 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                     assertTrue(ctx.readMetaData().isPresent());
                     assertEquals("client-meta-val", ctx.readMetaData().get().get(TEST_KEY));
 
-                    ctx.overrideMessage(ctx.get() + "-SR");
+                    ctx.overrideMessage(ctx.payload() + "-SR");
                 }
 
                 @Override
                 public void interceptServerReceiveComplete(ServerInboundContext<String> ctx) {
-                    assertNotNull(ctx.get());
+                    assertNotNull(ctx.payload());
                     assertSame(OutboundType.SEND_NO_ACK, ctx.type());
                     assertNotNull(ctx.from());
                     assertNotNull(ctx.channelName());
 
-                    lastServerReceiveComplete.compareAndSet(null, ctx.get());
+                    lastServerReceiveComplete.compareAndSet(null, ctx.payload());
                 }
 
                 @Override
-                public void interceptClientReceiveConfirmation(ClientOutboundContext<String> ctx) {
+                public void interceptClientReceiveAck(ClientOutboundContext<String> ctx) {
                     throw new UnsupportedOperationException("Unexpected method call.");
                 }
 
@@ -428,7 +426,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
             for (TestChannel to : channels) {
                 String msg = "test-" + from.nodeId();
 
-                from.get().forNode(to.nodeId())
+                from.channel().forNode(to.nodeId())
                     .newSend(msg)
                     .submit()
                     .get();
@@ -454,7 +452,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
             c.withInterceptor(new AllMessageInterceptor<String>() {
                 @Override
                 public void interceptClientSend(ClientSendContext<String> ctx) {
-                    assertNotNull(ctx.get());
+                    assertNotNull(ctx.payload());
                     assertSame(OutboundType.SEND_WITH_ACK, ctx.type());
                     assertNotNull(ctx.receiver());
                     assertNotNull(ctx.topology());
@@ -468,12 +466,12 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                     ctx.metaData().set(TEST_KEY, "client-meta-val");
                     assertTrue(ctx.hasMetaData());
 
-                    ctx.overrideMessage(ctx.get() + "-CS");
+                    ctx.overrideMessage(ctx.payload() + "-CS");
                 }
 
                 @Override
-                public void interceptClientReceiveConfirmation(ClientOutboundContext<String> ctx) {
-                    assertNotNull(ctx.get());
+                public void interceptClientReceiveAck(ClientOutboundContext<String> ctx) {
+                    assertNotNull(ctx.payload());
                     assertSame(OutboundType.SEND_WITH_ACK, ctx.type());
                     assertNotNull(ctx.receiver());
                     assertNotNull(ctx.topology());
@@ -483,7 +481,7 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
 
                 @Override
                 public void interceptServerReceive(ServerReceiveContext<String> ctx) {
-                    assertNotNull(ctx.get());
+                    assertNotNull(ctx.payload());
                     assertSame(OutboundType.SEND_WITH_ACK, ctx.type());
                     assertNotNull(ctx.channelName());
                     assertNotNull(ctx.from());
@@ -492,17 +490,17 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
                     assertTrue(ctx.readMetaData().isPresent());
                     assertEquals("client-meta-val", ctx.readMetaData().get().get(TEST_KEY));
 
-                    ctx.overrideMessage(ctx.get() + "-SR");
+                    ctx.overrideMessage(ctx.payload() + "-SR");
                 }
 
                 @Override
                 public void interceptServerReceiveComplete(ServerInboundContext<String> ctx) {
-                    assertNotNull(ctx.get());
+                    assertNotNull(ctx.payload());
                     assertSame(OutboundType.SEND_WITH_ACK, ctx.type());
                     assertNotNull(ctx.channelName());
                     assertNotNull(ctx.from());
 
-                    lastServerReceiveComplete.compareAndSet(null, ctx.get());
+                    lastServerReceiveComplete.compareAndSet(null, ctx.payload());
                 }
 
                 @Override
@@ -526,9 +524,9 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
             for (TestChannel to : channels) {
                 String msg = "test-" + from.nodeId();
 
-                from.get().forNode(to.nodeId())
+                from.channel().forNode(to.nodeId())
                     .newSend(msg)
-                    .withConfirmReceive(true)
+                    .withAckMode(AckMode.REQUIRED)
                     .submit()
                     .get();
 
@@ -559,10 +557,10 @@ public class MessageInterceptorTest extends MessagingServiceTestBase {
 
         for (TestChannel from : channels) {
             for (TestChannel to : channels) {
-                MessagingChannel<String> channel = from.get().forNode(to.nodeId());
+                MessagingChannel<String> channel = from.channel().forNode(to.nodeId());
 
                 MessagingFutureException err = expect(MessagingFutureException.class, () ->
-                    get(channel.newSend("msg").withConfirmReceive(true).submit())
+                    channel.newSend("msg").withAckMode(AckMode.REQUIRED).sync()
                 );
 
                 verify(interceptor).interceptClientReceiveError(any(), ArgumentMatchers.same(err.getCause()));

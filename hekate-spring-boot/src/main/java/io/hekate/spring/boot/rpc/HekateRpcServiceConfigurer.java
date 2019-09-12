@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -57,7 +57,7 @@ import org.springframework.stereotype.Component;
  * type.
  * </p>
  *
- * <h2>Configuration properties</h2>
+ * <h2>Configuration Properties</h2>
  * <p>
  * It is possible to configure {@link RpcServiceFactory} via application properties prefixed with {@code 'hekate.rpc'}.
  * For example:
@@ -73,7 +73,7 @@ import org.springframework.stereotype.Component;
  * <li>{@link MessagingBackPressureConfig#setOutOverflowPolicy(MessagingOverflowPolicy) 'hekate.rpc.back-bressure.out-overflow-policy'}</li>
  * </ul>
  *
- * <h2>Injection of RPC client proxies</h2>
+ * <h2>Injection of RPC Client Proxies</h2>
  * <p>
  * This auto-configuration provides support for injection of RPC client proxies into other beans with the help of {@link InjectRpcClient}
  * annotation. Please see its documentation for more details.

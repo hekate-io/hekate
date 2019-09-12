@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,6 +17,9 @@
 package io.hekate.spring.boot.rpc;
 
 import io.hekate.rpc.Rpc;
+import io.hekate.rpc.RpcMethodInfo;
+import io.hekate.rpc.RpcRetry;
+import io.hekate.rpc.RpcRetryInfo;
 import io.hekate.rpc.RpcServerConfig;
 import io.hekate.rpc.RpcService;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
@@ -32,6 +35,7 @@ import static org.junit.Assert.assertNotNull;
 public class HekateRpcServiceConfigurerTest extends HekateAutoConfigurerTestBase {
     @Rpc
     public interface TestRpc {
+        @RpcRetry(maxAttempts = "${rpc.retry.max-attempts}", delay = "${rpc.retry.delay}")
         int someMethod(int arg);
     }
 
@@ -98,7 +102,13 @@ public class HekateRpcServiceConfigurerTest extends HekateAutoConfigurerTestBase
 
     @Test
     public void test() {
-        registerAndRefresh(RpcTestConfig.class);
+        registerAndRefresh(
+            new String[]{
+                "rpc.retry.max-attempts=3",
+                "rpc.retry.delay=100"
+            },
+            RpcTestConfig.class
+        );
 
         assertNotNull(get("rpcService", RpcService.class));
 
@@ -128,6 +138,21 @@ public class HekateRpcServiceConfigurerTest extends HekateAutoConfigurerTestBase
             private RpcService rpcService;
         }
 
-        assertNotNull(autowire(new TestAutowire()).rpcService);
+        TestAutowire autowired = autowire(new TestAutowire());
+
+        assertNotNull(autowired.rpcService);
+
+        RpcRetryInfo retryInfo = autowired.rpcService.servers().stream()
+            .filter(x -> x.rpc() instanceof TestRpc)
+            .flatMap(x -> x.interfaces().stream())
+            .filter(x -> TestRpc.class.isAssignableFrom(x.javaType()))
+            .flatMap(x -> x.methods().stream())
+            .filter(x -> x.javaMethod().getName().equals("someMethod"))
+            .findFirst()
+            .flatMap(RpcMethodInfo::retry)
+            .orElseThrow(AssertionError::new);
+
+        assertEquals(3, retryInfo.maxAttempts().getAsInt());
+        assertEquals(100, retryInfo.delay().getAsLong());
     }
 }

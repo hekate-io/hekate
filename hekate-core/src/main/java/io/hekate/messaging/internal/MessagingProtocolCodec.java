@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -32,6 +32,7 @@ import io.hekate.messaging.internal.MessagingProtocol.ErrorResponse;
 import io.hekate.messaging.internal.MessagingProtocol.FinalResponse;
 import io.hekate.messaging.internal.MessagingProtocol.Notification;
 import io.hekate.messaging.internal.MessagingProtocol.Request;
+import io.hekate.messaging.internal.MessagingProtocol.RequestBase;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
 import io.hekate.messaging.internal.MessagingProtocol.SubscribeRequest;
 import io.hekate.messaging.internal.MessagingProtocol.VoidRequest;
@@ -154,7 +155,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     encodeMetaData(notification.metaData(), out);
                 }
 
-                delegate.encode(notification.get(), out);
+                delegate.encode(notification.payload(), out);
 
                 break;
             }
@@ -175,7 +176,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     encodeMetaData(notification.metaData(), out);
                 }
 
-                delegate.encode(notification.get(), out);
+                delegate.encode(notification.payload(), out);
 
                 break;
             }
@@ -187,7 +188,6 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 flags = appendHasMetaData(flags, request.hasMetaData());
 
                 out.writeByte(flags);
-
                 out.writeInt(request.affinity());
                 out.writeVarInt(request.requestId());
 
@@ -199,12 +199,14 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     encodeMetaData(request.metaData(), out);
                 }
 
-                delegate.encode(request.get(), out);
+                delegate.encode(request.payload(), out);
 
                 break;
             }
-            case REQUEST: {
-                Request<T> request = msg.cast();
+            case REQUEST:
+            case VOID_REQUEST:
+            case SUBSCRIBE: {
+                RequestBase<T> request = msg.cast();
 
                 flags = appendHasTimeout(flags, request.hasTimeout());
                 flags = appendIsRetransmit(flags, request.isRetransmit());
@@ -221,7 +223,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     encodeMetaData(request.metaData(), out);
                 }
 
-                delegate.encode(request.get(), out);
+                delegate.encode(request.payload(), out);
 
                 break;
             }
@@ -233,7 +235,6 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                 flags = appendHasMetaData(flags, request.hasMetaData());
 
                 out.writeByte(flags);
-
                 out.writeInt(request.affinity());
                 out.writeVarInt(request.requestId());
 
@@ -245,29 +246,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     encodeMetaData(request.metaData(), out);
                 }
 
-                delegate.encode(request.get(), out);
-
-                break;
-            }
-            case VOID_REQUEST: {
-                VoidRequest<T> request = msg.cast();
-
-                flags = appendHasTimeout(flags, request.hasTimeout());
-                flags = appendIsRetransmit(flags, request.isRetransmit());
-                flags = appendHasMetaData(flags, request.hasMetaData());
-
-                out.writeByte(flags);
-                out.writeVarInt(request.requestId());
-
-                if (request.hasTimeout()) {
-                    out.writeVarLong(request.timeout());
-                }
-
-                if (request.hasMetaData()) {
-                    encodeMetaData(request.metaData(), out);
-                }
-
-                delegate.encode(request.get(), out);
+                delegate.encode(request.payload(), out);
 
                 break;
             }
@@ -290,33 +269,12 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     encodeMetaData(request.metaData(), out);
                 }
 
-                delegate.encode(request.get(), out);
+                delegate.encode(request.payload(), out);
 
                 break;
             }
-            case SUBSCRIBE: {
-                SubscribeRequest<T> request = msg.cast();
-
-                flags = appendHasTimeout(flags, request.hasTimeout());
-                flags = appendIsRetransmit(flags, request.isRetransmit());
-                flags = appendHasMetaData(flags, request.hasMetaData());
-
-                out.writeByte(flags);
-                out.writeVarInt(request.requestId());
-
-                if (request.hasTimeout()) {
-                    out.writeVarLong(request.timeout());
-                }
-
-                if (request.hasMetaData()) {
-                    encodeMetaData(request.metaData(), out);
-                }
-
-                delegate.encode(request.get(), out);
-
-                break;
-            }
-            case RESPONSE_CHUNK: {
+            case RESPONSE_CHUNK:
+            case FINAL_RESPONSE: {
                 ResponseChunk<T> response = msg.cast();
 
                 flags = appendHasMetaData(flags, response.hasMetaData());
@@ -328,23 +286,7 @@ class MessagingProtocolCodec<T> implements Codec<MessagingProtocol> {
                     encodeMetaData(response.metaData(), out);
                 }
 
-                delegate.encode(response.get(), out);
-
-                break;
-            }
-            case FINAL_RESPONSE: {
-                FinalResponse<T> response = msg.cast();
-
-                flags = appendHasMetaData(flags, response.hasMetaData());
-
-                out.writeByte(flags);
-                out.writeVarInt(response.requestId());
-
-                if (response.hasMetaData()) {
-                    encodeMetaData(response.metaData(), out);
-                }
-
-                delegate.encode(response.get(), out);
+                delegate.encode(response.payload(), out);
 
                 break;
             }

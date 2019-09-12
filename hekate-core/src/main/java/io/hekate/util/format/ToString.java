@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -63,9 +63,7 @@ public final class ToString {
                     try {
                         for (Constructor<?> c : type.getDeclaredConstructors()) {
                             if (c != null && c.getParameterCount() == 0) {
-                                if (!c.isAccessible()) {
-                                    c.setAccessible(true);
-                                }
+                                c.setAccessible(true);
 
                                 customFormat = (ToStringFormat.Formatter)c.newInstance();
                             }

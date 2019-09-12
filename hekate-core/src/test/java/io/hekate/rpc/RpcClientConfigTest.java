@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,7 +17,7 @@
 package io.hekate.rpc;
 
 import io.hekate.HekateTestBase;
-import io.hekate.failover.FailoverPolicy;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
 import org.junit.Test;
@@ -63,24 +63,6 @@ public class RpcClientConfigTest extends HekateTestBase {
 
         assertSame(cfg, cfg.withTag("test"));
         assertEquals("test", cfg.getTag());
-    }
-
-    @Test
-    public void testFailover() {
-        assertNull(cfg.getFailover());
-
-        FailoverPolicy policy = ctx -> null;
-
-        cfg.setFailover(policy);
-
-        assertSame(policy, cfg.getFailover());
-
-        cfg.setFailover(null);
-
-        assertNull(cfg.getFailover());
-
-        assertSame(cfg, cfg.withFailover(policy));
-        assertSame(policy, cfg.getFailover());
     }
 
     @Test
@@ -138,6 +120,26 @@ public class RpcClientConfigTest extends HekateTestBase {
         assertSame(cfg, cfg.withBackupNodes(10002));
 
         assertEquals(10002, cfg.getBackupNodes());
+    }
+
+    @Test
+    public void testRetryPolicy() {
+        assertNull(cfg.getRetryPolicy());
+
+        GenericRetryConfigurer policy = retry -> {
+            // No-op.
+        };
+
+        cfg.setRetryPolicy(policy);
+
+        assertSame(policy, cfg.getRetryPolicy());
+
+        cfg.setRetryPolicy(null);
+
+        assertNull(cfg.getRetryPolicy());
+
+        assertSame(cfg, cfg.withRetryPolicy(policy));
+        assertSame(policy, cfg.getRetryPolicy());
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -22,7 +22,7 @@ import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.intercept.ServerMessageInterceptor;
 import io.hekate.messaging.intercept.ServerReceiveContext;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
-import io.hekate.messaging.unicast.SendCallback;
+import io.hekate.messaging.operation.SendCallback;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -78,8 +78,8 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
     public void testChannelOptions() throws Exception {
         TestChannel channel = createChannel().join();
 
-        assertEquals(workerThreads(), channel.get().workerThreads());
-        assertEquals(nioThreads(), channel.get().nioThreads());
+        assertEquals(workerThreads(), channel.channel().workerThreads());
+        assertEquals(nioThreads(), channel.channel().nioThreads());
     }
 
     @Test
@@ -90,19 +90,19 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
         awaitForChannelsTopology(sender, receiver);
 
         repeat(3, i -> {
-            get(sender.get().forNode(receiver.nodeId()).request("success"));
+            get(sender.channel().forNode(receiver.nodeId()).newRequest("success").submit());
 
             sender.leave();
 
             MessagingFutureException err = expect(MessagingFutureException.class, () ->
-                get(sender.get().forNode(receiver.nodeId()).request("fail"))
+                get(sender.channel().forNode(receiver.nodeId()).newRequest("fail").submit())
             );
 
             assertTrue(err.isCausedBy(MessagingChannelClosedException.class));
 
             sender.join();
 
-            get(sender.get().forNode(receiver.nodeId()).request("success"));
+            get(sender.channel().forNode(receiver.nodeId()).newRequest("success").submit());
         });
     }
 
@@ -113,7 +113,7 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
         repeat(3, i -> {
             sender.join();
 
-            get(sender.get().request("test" + i));
+            get(sender.channel().newRequest("test" + i).submit());
 
             sender.leave();
         });
@@ -130,7 +130,7 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
 
             for (TestChannel from : channels) {
                 for (TestChannel to : channels) {
-                    from.get().forNode(to.nodeId()).newSend("test-" + from.nodeId()).submit();
+                    from.channel().forNode(to.nodeId()).newSend("test-" + from.nodeId()).submit();
                 }
             }
 
@@ -158,7 +158,7 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
 
             for (TestChannel from : channels) {
                 for (TestChannel to : channels) {
-                    from.get().forNode(to.nodeId()).newSend("test-" + from.nodeId()).submit();
+                    from.channel().forNode(to.nodeId()).newSend("test-" + from.nodeId()).submit();
                 }
             }
 
@@ -174,7 +174,7 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
                 for (TestChannel to : removed) {
                     ExpectedSendFailure sendFailure = new ExpectedSendFailure();
 
-                    from.get().forNode(to.nodeId()).newSend("failed").submit(sendFailure);
+                    from.channel().forNode(to.nodeId()).newSend("failed").submit(sendFailure);
 
                     sendFailure.awaitAndCheck(EmptyTopologyException.class);
                 }
@@ -185,12 +185,12 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
     @Test
     public void testGlobalInterceptors() throws Exception {
         createChannel(
-            c -> c.withReceiver(msg -> msg.reply(msg.get() + "-OK")),
+            c -> c.withReceiver(msg -> msg.reply(msg.payload() + "-OK")),
             boot -> boot.withService(MessagingServiceFactory.class, msg ->
                 msg.withGlobalInterceptor(new ServerMessageInterceptor<Object>() {
                     @Override
                     public void interceptServerReceive(ServerReceiveContext<Object> ctx) {
-                        ctx.overrideMessage(ctx.get() + "-intercepted");
+                        ctx.overrideMessage(ctx.payload() + "-intercepted");
                     }
                 })
             )
@@ -198,6 +198,6 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel().join();
 
-        assertEquals("test-intercepted-OK", get(sender.get().forRemotes().request("test")).get());
+        assertEquals("test-intercepted-OK", get(sender.channel().forRemotes().newRequest("test").submit()).payload());
     }
 }

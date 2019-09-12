@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -34,7 +34,7 @@ import java.util.Optional;
  * Instances of this interface can be obtained via {@link NetworkConnector#newClient()} method.
  * </p>
  *
- * <h2>Connecting and disconnecting</h2>
+ * <h2>Connecting and Disconnecting</h2>
  * <p>
  * Each {@link NetworkClient} instance manages a single NIO channel that is created when {@link #connect(InetSocketAddress,
  * NetworkClientCallback) connect(...)} method is called and destroyed when {@link #disconnect()} is called. Both of those  methods are
@@ -57,7 +57,7 @@ import java.util.Optional;
  * {@link #disconnect() disconnected} state before trying to establish a new connection.
  * </p>
  *
- * <h2>Sending and receiving messages</h2>
+ * <h2>Sending and Receiving Messages</h2>
  * <p>
  * Messages sending can be done by calling {@link #send(Object, NetworkSendCallback)} method that accepts a message to be sent and a
  * callback that will be notified upon operation completion. Note that message sending operation is asynchronous and doesn't block the
@@ -78,7 +78,7 @@ import java.util.Optional;
  * the {@link NetworkClient} instance from a server.
  * </p>
  *
- * <h2>Messages serialization</h2>
+ * <h2>Messages Serialization</h2>
  * <p>
  * Messages serialization and deserialization is handled by the {@link CodecFactory} interface. Implementations of this interface can
  * be registered via {@link NetworkConnectorConfig#setMessageCodec(CodecFactory)} method. Every time when {@link NetworkClient}
@@ -86,7 +86,7 @@ import java.util.Optional;
  * decoding.
  * </p>
  *
- * <h2>Thread safety</h2>
+ * <h2>Thread Safety</h2>
  * <p>
  * {@link NetworkClient} is thread safe and can be called by multiple threads in parallel.
  * </p>
@@ -168,30 +168,6 @@ public interface NetworkClient<T> extends NetworkEndpoint<T>, Closeable {
      * NetworkClient.State#CONNECTED} state.
      */
     NetworkFuture<T> connect(InetSocketAddress address, T login, NetworkClientCallback<T> callback) throws IllegalStateException;
-
-    /**
-     * Same as {@link #connect(InetSocketAddress, NetworkClientCallback)} but does nothing if client is already in
-     * {@link NetworkClient.State#CONNECTING} or {@link NetworkClient.State#CONNECTED} state.
-     *
-     * @param address Socket address where {@link NetworkService} is running.
-     * @param callback Connection callback.
-     *
-     * @return Future object that can be used to obtain result of this operation.
-     */
-    NetworkFuture<T> ensureConnected(InetSocketAddress address, NetworkClientCallback<T> callback);
-
-    /**
-     * Same as {@link #connect(InetSocketAddress, Object, NetworkClientCallback)} but does nothing if client is already in
-     * {@link NetworkClient.State#CONNECTING} or {@link NetworkClient.State#CONNECTED} state.
-     *
-     * @param address Socket address where {@link NetworkService} is running.
-     * @param login Login message that should be passed to the {@link NetworkServerHandler#onConnect(Object, NetworkEndpoint)} method.
-     * Can be {@code null}.
-     * @param callback Connection callback.
-     *
-     * @return Future object that can be used to obtain result of this operation.
-     */
-    NetworkFuture<T> ensureConnected(InetSocketAddress address, T login, NetworkClientCallback<T> callback);
 
     /**
      * Returns the connection state.

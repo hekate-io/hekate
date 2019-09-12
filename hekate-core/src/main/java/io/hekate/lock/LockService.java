@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,7 +16,6 @@
 
 package io.hekate.lock;
 
-import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.DefaultServiceFactory;
 import io.hekate.core.service.Service;
@@ -33,7 +32,15 @@ import java.util.List;
  * or until the owner node goes down and leaves the cluster.
  * </p>
  *
- * <h2>Service configuration</h2>
+ * <ul>
+ * <li><a href="#service_configuration">Service Configuration</a></li>
+ * <li><a href="#locks_and_regions">Locks and Regions</a></li>
+ * <li><a href="#locking_and_unlocking">Locking and Unlocking</a></li>
+ * <li><a href="#protocol_details">Protocol Details</a></li>
+ * </ul>
+ *
+ * <a name="service_configuration"></a>
+ * <h2>Service Configuration</h2>
  * <p>
  * {@link LockService} can be registered and configured in {@link HekateBootstrap} with the help of {@link LockServiceFactory} as shown in
  * the example below:
@@ -60,12 +67,7 @@ import java.util.List;
  * </div>
  * </div>
  *
- * <h2>Accessing service</h2>
- * <p>
- * {@link LockService} can be accessed via the {@link Hekate#locks()} method as in the example below:
- * ${source: lock/LockServiceJavadocTest.java#access}
- * </p>
- *
+ * <a name="locks_and_regions"></a>
  * <h2>Locks and Regions</h2>
  * <p>
  * Each lock within the lock service is identified by its {@link DistributedLock#name() name} and a {@link LockRegion}. Lock name is
@@ -82,7 +84,8 @@ import java.util.List;
  * regions are managed by the particular node).
  * </p>
  *
- * <h2>Locking/Unlocking</h2>
+ * <a name="locking_and_unlocking"></a>
+ * <h2>Locking and Unlocking</h2>
  * <p>
  * In order obtain the lock, one must get the {@link LockRegion} instance from the {@link LockService} and then use that instance to create
  * a named {@link DistributedLock} as in the example below:
@@ -96,7 +99,8 @@ import java.util.List;
  * must always be followed by the same amount of {@link DistributedLock#unlock() unlock()} method calls or the lock will never be released.
  * </p>
  *
- * <h2>Locking protocol details</h2>
+ * <a name="protocol_details"></a>
+ * <h2>Protocol Details</h2>
  * <p>
  * {@link LockService} uses {@link RendezvousHashMapper} to evenly distribute locks processing workload among the nodes. For each
  * lock/unlock operation it selects a node that is responsible for managing the lock with the given name and forwards those operations to
@@ -122,6 +126,8 @@ import java.util.List;
  * their lock management state (i.e. take control over newly assigned locks and unload locks that were re-mapped to some other manager
  * node).
  * </p>
+ *
+ * @see LockServiceFactory
  */
 @DefaultServiceFactory(LockServiceFactory.class)
 public interface LockService extends Service {

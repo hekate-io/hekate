@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,7 +17,6 @@
 package io.hekate.spring.bean.internal;
 
 import foo.bar.SomeClusterAcceptor;
-import foo.bar.SomeFailoverPolicy;
 import foo.bar.SomeRpcService;
 import foo.bar.SomeRpcServiceImpl;
 import io.hekate.HekateTestBase;
@@ -240,9 +239,6 @@ public class XsdSingleNodeTest extends HekateTestBase {
 
         assertEquals(SomeRpcServiceImpl.class, server2.rpc().getClass());
         assertEquals(toSet("server-2-tag-1", "server-2-tag-2"), server2.tags());
-
-        assertEquals(SomeFailoverPolicy.class, client1.failover().getClass());
-        assertEquals(SomeFailoverPolicy.class, client2.failover().getClass());
     }
 
     private void verifyCoordination() {

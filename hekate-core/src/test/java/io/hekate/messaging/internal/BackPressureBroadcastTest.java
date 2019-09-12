@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -20,7 +20,7 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.broadcast.BroadcastFuture;
+import io.hekate.messaging.operation.BroadcastFuture;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -60,27 +60,27 @@ public class BackPressureBroadcastTest extends BackPressureTestBase {
         CountDownLatch resumeReceive = new CountDownLatch(1);
 
         createChannel(c -> useBackPressure(c).withReceiver(msg -> {
-            if (!msg.get().equals("init")) {
+            if (!msg.payload().equals("init")) {
                 await(resumeReceive);
             }
         })).join();
 
         createChannel(c -> useBackPressure(c).withReceiver(msg -> {
-            if (!msg.get().equals("init")) {
+            if (!msg.payload().equals("init")) {
                 await(resumeReceive);
             }
         })).join();
 
-        MessagingChannel<String> sender = createChannel(this::useBackPressure).join().get().forRemotes();
+        MessagingChannel<String> sender = createChannel(this::useBackPressure).join().channel().forRemotes();
 
         // Ensure that connection to each node is established.
-        get(sender.broadcast("init"));
+        sender.newRequest("init").response();
 
         BroadcastFuture<String> future = null;
 
         try {
             for (int step = 0; step < 2000000; step++) {
-                future = sender.broadcast("message-" + step);
+                future = sender.newBroadcast("message-" + step).submit();
 
                 if (future.isDone() && !future.get().isSuccess()) {
                     say("Completed after " + step + " steps.");

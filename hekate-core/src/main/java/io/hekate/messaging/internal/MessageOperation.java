@@ -1,11 +1,15 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNodeId;
-import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.intercept.OutboundType;
 import io.hekate.messaging.loadbalance.LoadBalancerException;
-import io.hekate.messaging.unicast.ReplyDecision;
-import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.operation.ResponsePart;
+import io.hekate.messaging.retry.FailedAttempt;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
+import io.hekate.messaging.retry.RetryCallback;
+import io.hekate.messaging.retry.RetryCondition;
+import io.hekate.messaging.retry.RetryErrorPredicate;
+import io.hekate.messaging.retry.RetryRoutingPolicy;
 import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -30,6 +34,20 @@ abstract class MessageOperation<T> {
 
     private final int affinity;
 
+    private final RetryErrorPredicate retryErr;
+
+    private final RetryCondition retryCondition;
+
+    private final RetryBackoffPolicy retryBackoff;
+
+    private final RetryCallback retryCallback;
+
+    private final RetryRoutingPolicy retryRoute;
+
+    private final int maxAttempts;
+
+    private final long timeout;
+
     private final MessagingWorker worker;
 
     private final MessagingGatewayContext<T> gateway;
@@ -44,14 +62,28 @@ abstract class MessageOperation<T> {
     public MessageOperation(
         T message,
         Object affinityKey,
+        long timeout,
+        int maxAttempts,
+        RetryErrorPredicate retryErr,
+        RetryCondition retryCondition,
+        RetryBackoffPolicy retryBackoff,
+        RetryCallback retryCallback,
+        RetryRoutingPolicy retryRoute,
         MessagingGatewayContext<T> gateway,
         MessageOperationOpts<T> opts,
         boolean threadAffinity
     ) {
         this.message = message;
-        this.gateway = gateway;
-        this.opts = opts;
         this.affinityKey = affinityKey;
+        this.maxAttempts = maxAttempts;
+        this.timeout = timeout;
+        this.gateway = gateway;
+        this.retryErr = retryErr;
+        this.retryCondition = retryCondition;
+        this.retryBackoff = retryBackoff;
+        this.retryCallback = retryCallback;
+        this.retryRoute = retryRoute;
+        this.opts = opts;
 
         if (affinityKey == null) {
             // Use artificial affinity.
@@ -70,17 +102,25 @@ abstract class MessageOperation<T> {
         }
     }
 
-    public abstract ClusterNodeId route(PartitionMapper mapper, Optional<FailureInfo> prevFailure) throws LoadBalancerException;
+    public abstract ClusterNodeId route(PartitionMapper mapper, Optional<FailedAttempt> prevFailure) throws LoadBalancerException;
 
     public abstract OutboundType type();
 
-    public abstract ReplyDecision accept(Throwable error, Response<T> response);
+    public abstract boolean shouldRetry(ResponsePart<T> response);
 
     public abstract CompletableFuture<?> future();
 
-    protected abstract void doReceiveFinal(Response<T> response);
+    protected abstract void doReceiveFinal(ResponsePart<T> response);
 
     protected abstract void doFail(Throwable error);
+
+    public long timeout() {
+        return timeout;
+    }
+
+    public boolean hasTimeout() {
+        return timeout > 0;
+    }
 
     public void registerTimeout(Future<?> timeoutFuture) {
         this.timeoutFuture = timeoutFuture;
@@ -94,8 +134,18 @@ abstract class MessageOperation<T> {
         return state == STATE_COMPLETED;
     }
 
-    public boolean complete(Throwable error, Response<T> response) {
-        if (response != null && response.isPartial()) {
+    public boolean canRetry() {
+        return retryCondition == null || retryCondition.shouldRetry();
+    }
+
+    public void onRetry(FailedAttempt failure) {
+        if (retryCallback != null) {
+            retryCallback.onRetry(failure);
+        }
+    }
+
+    public boolean complete(Throwable error, ResponsePart<T> response) {
+        if (response != null && !response.isLastPart()) {
             // Do not complete on partial responses.
             doReceivePartial(response);
         } else if (STATE.compareAndSet(this, STATE_PENDING, STATE_COMPLETED)) {
@@ -127,6 +177,18 @@ abstract class MessageOperation<T> {
         return message;
     }
 
+    public RetryErrorPredicate retryErrorPolicy() {
+        return retryErr;
+    }
+
+    public RetryRoutingPolicy retryRoute() {
+        return retryRoute;
+    }
+
+    public int maxAttempts() {
+        return maxAttempts;
+    }
+
     public MessagingGatewayContext<T> gateway() {
         return gateway;
     }
@@ -151,7 +213,11 @@ abstract class MessageOperation<T> {
         return worker;
     }
 
-    protected void doReceivePartial(Response<T> response) {
+    public RetryBackoffPolicy retryBackoff() {
+        return retryBackoff;
+    }
+
+    protected void doReceivePartial(ResponsePart<T> response) {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " can't receive " + response);
     }
 }

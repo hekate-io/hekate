@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -58,10 +58,8 @@ public class GossipNodesDeathWatch {
             return timestamp;
         }
 
-        public boolean isSuspectBySame(Set<ClusterNodeId> other) {
-            assert other != null : "Other nodes list is null.";
-
-            return suspectedBy.size() == other.size() && suspectedBy.containsAll(other) && other.containsAll(suspectedBy);
+        public boolean isSameSuspectedBy(Set<ClusterNodeId> other) {
+            return suspectedBy.equals(other);
         }
 
         public boolean isDead(Set<ClusterNodeId> liveNodes, int quorum) {
@@ -110,9 +108,9 @@ public class GossipNodesDeathWatch {
     public void update(Gossip gossip) {
         assert gossip != null : "Gossip is null.";
 
-        SuspectedNodesView view = gossip.suspectedView();
+        GossipSuspectView suspectView = gossip.suspectView();
 
-        Set<ClusterNodeId> newSuspects = view.suspected().stream()
+        Set<ClusterNodeId> newSuspects = suspectView.suspected().stream()
             .filter(suspectId -> !localNodeId.equals(suspectId) && gossip.hasMember(suspectId))
             .collect(toSet());
 
@@ -120,7 +118,7 @@ public class GossipNodesDeathWatch {
 
         gossip.stream()
             .map(GossipNodeState::id)
-            .filter(id -> !newSuspects.contains(id) || !view.suspecting(id).contains(localNodeId))
+            .filter(id -> !newSuspects.contains(id) || !suspectView.suspecting(id).contains(localNodeId))
             .forEach(newLiveNodes::add);
 
         newLiveNodes.add(localNodeId);
@@ -152,7 +150,7 @@ public class GossipNodesDeathWatch {
         for (ClusterNodeId suspectId : newSuspects) {
             Suspect existing = suspects.get(suspectId);
 
-            Set<ClusterNodeId> suspectedBy = view.suspecting(suspectId);
+            Set<ClusterNodeId> suspectedBy = suspectView.suspecting(suspectId);
 
             Suspect newSuspect = null;
 
@@ -162,7 +160,7 @@ public class GossipNodesDeathWatch {
                 if (DEBUG) {
                     log.debug("Registering new suspect [suspect={}]", newSuspect);
                 }
-            } else if (!existing.isSuspectBySame(suspectedBy)) {
+            } else if (!existing.isSameSuspectedBy(suspectedBy)) {
                 newSuspect = new Suspect(suspectId, suspectedBy, now);
 
                 if (DEBUG) {

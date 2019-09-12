@@ -2,11 +2,11 @@
 
 All-in-One Maven module that contains all binary/source code and javadocs of [Hekate.io](https://github.com/hekate-io/hekate) library.
  
- ```
+ ```xml
  <dependency>
      <groupId>io.hekate</groupId>
      <artifactId>hekate-all</artifactId>
-     <version>3.0.0-SNAPSHOT</version>
+     <version>3.6.0-SNAPSHOT</version>
  </dependency>
  ```
  **NOTICE:** Dependencies on third party libraries are **not included** in this module. 

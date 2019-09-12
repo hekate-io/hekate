@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -19,8 +19,9 @@ package io.hekate.rpc.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFutureException;
-import io.hekate.messaging.broadcast.AggregateFuture;
-import io.hekate.messaging.broadcast.AggregateResult;
+import io.hekate.messaging.operation.AggregateFuture;
+import io.hekate.messaging.operation.AggregateResult;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.rpc.RpcAggregate;
 import io.hekate.rpc.RpcAggregateException;
 import io.hekate.rpc.RpcInterfaceInfo;
@@ -50,10 +51,24 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
     private final Function<AggregateResult<RpcProtocol>, ?> converter;
 
-    public RpcAggregateMethodClient(RpcInterfaceInfo<T> rpc, String tag, RpcMethodInfo method, MessagingChannel<RpcProtocol> channel) {
+    private final GenericRetryConfigurer retryPolicy;
+
+    private final long timeout;
+
+    public RpcAggregateMethodClient(
+        RpcInterfaceInfo<T> rpc,
+        String tag,
+        RpcMethodInfo method,
+        MessagingChannel<RpcProtocol> channel,
+        GenericRetryConfigurer retryPolicy,
+        long timeout
+    ) {
         super(rpc, tag, method, channel);
 
         assert method.aggregate().isPresent() : "Not an aggregate method [rpc=" + rpc + ", method=" + method + ']';
+
+        this.retryPolicy = retryPolicy;
+        this.timeout = timeout;
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Error handling.
@@ -146,20 +161,18 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
         AggregateFuture<RpcProtocol> future = channel().newAggregate(call)
             .withAffinity(affinity)
+            .withTimeout(timeout, TimeUnit.MILLISECONDS)
+            .withRetry(retry -> {
+                if (retryPolicy != null) {
+                    retryPolicy.configure(retry);
+                }
+            })
             .submit();
 
         if (method().isAsync()) {
             return future.thenApply(converter);
         } else {
-            AggregateResult<RpcProtocol> result;
-
-            if (channel().timeout() > 0) {
-                result = future.get(channel().timeout(), TimeUnit.MILLISECONDS);
-            } else {
-                result = future.get();
-            }
-
-            return converter.apply(result);
+            return converter.apply(future.get());
         }
     }
 }

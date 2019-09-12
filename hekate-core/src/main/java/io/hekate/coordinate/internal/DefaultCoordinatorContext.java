@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -100,7 +100,6 @@ class DefaultCoordinatorContext implements CoordinatorContext {
         MessagingChannel<CoordinationProtocol> channel,
         ExecutorService async,
         CoordinationHandler handler,
-        long failoverDelay,
         Runnable onComplete
     ) {
         assert hekate != null : "Hekate is null.";
@@ -127,8 +126,7 @@ class DefaultCoordinatorContext implements CoordinatorContext {
                 topology,
                 coordinator,
                 channel,
-                async,
-                failoverDelay
+                async
             );
 
             membersById.put(node.id(), member);
@@ -261,7 +259,7 @@ class DefaultCoordinatorContext implements CoordinatorContext {
     }
 
     public void processMessage(Message<CoordinationProtocol> msg) {
-        CoordinationProtocol.RequestBase request = msg.get(CoordinationProtocol.RequestBase.class);
+        CoordinationProtocol.RequestBase request = msg.payload(CoordinationProtocol.RequestBase.class);
 
         boolean reject = false;
 

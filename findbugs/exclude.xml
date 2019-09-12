@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Copyright 2018 The Hekate Project
+  Copyright 2019 The Hekate Project
 
   The Hekate Project licenses this file to you under the Apache License,
   version 2.0 (the "License"); you may not use this file except in compliance
@@ -27,12 +27,20 @@
 
     <!--
         Excluded because of the following issue:
-            #493 Try-with-resources and java9 shows bugs
-            https://github.com/spotbugs/spotbugs/issues/493
+            #259 false positive RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE on try-with-resources
+            https://github.com/spotbugs/spotbugs/issues/259
     -->
     <Match>
-        <Bug pattern="OBL_UNSATISFIED_OBLIGATION"/>
-        <Class name="io.hekate.cluster.seed.jdbc.JdbcSeedNodeProvider"/>
+        <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"/>
+    </Match>
+
+    <!--
+        Excluded because of the following issue:
+            #756 try with resources with Java 11 triggers RCN warnings
+            https://github.com/spotbugs/spotbugs/issues/756
+    -->
+    <Match>
+        <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
     </Match>
 
     <!-- Excluded for performance reasons. -->

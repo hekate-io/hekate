@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -31,6 +31,7 @@ import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.util.format.ToString;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -73,25 +74,38 @@ public class HekateBootstrap {
     /** Default value (={@value}) for {@link #setClusterName(String)}. */
     public static final String DEFAULT_CLUSTER_NAME = "default";
 
+    /** See {@link #setNodeName(String)}. */
     private String nodeName;
 
+    /** See {@link #setClusterName(String)}. */
     private String clusterName = DEFAULT_CLUSTER_NAME;
 
+    /** See {@link #setRoles(List)}. */
     private List<String> roles;
 
+    /** See {@link #setProperties(Map)}. */
     private Map<String, String> properties;
 
+    /** See {@link #setPropertyProviders(List)}. */
     private List<PropertyProvider> propertyProviders;
 
+    /** See {@link #setServices(List)}. */
     private List<ServiceFactory<? extends Service>> services;
 
+    /** See {@link #setDefaultCodec(CodecFactory)}. */
     private CodecFactory<Object> defaultCodec = new AutoSelectCodecFactory<>();
 
+    /** See {@link #setPlugins(List)}. */
     private List<Plugin> plugins;
 
+    /** See {@link #setMetrics(MeterRegistry)}. */
     private MeterRegistry metrics;
 
+    /** See {@link #setLifecycleListeners(List)}. */
     private List<Hekate.LifecycleListener> lifecycleListeners;
+
+    /** See {@link #setConfigReport(boolean)}. */
+    private boolean configReport;
 
     /**
      * Constructs a new {@link Hekate} instance and asynchronously {@link Hekate#joinAsync() joins} the cluster.
@@ -541,6 +555,10 @@ public class HekateBootstrap {
     /**
      * Sets the metrics registry.
      *
+     * <p>
+     * If not specified then {@link SimpleMeterRegistry} will be used by default.
+     * </p>
+     *
      * @param metrics Metrics registry.
      */
     public void setMetrics(MeterRegistry metrics) {
@@ -593,6 +611,41 @@ public class HekateBootstrap {
         }
 
         lifecycleListeners.add(listener);
+
+        return this;
+    }
+
+    /**
+     * {@code true} if the configuration report should be logged during node initialization.
+     *
+     * @return {@code true} if the configuration report should be logged during node initialization.
+     */
+    public boolean isConfigReport() {
+        return configReport;
+    }
+
+    /**
+     * {@code true} if the configuration report should be logged during node initialization.
+     *
+     * <p>
+     * Default value of this property is {@code false}.
+     * </p>
+     *
+     * @param configReport {@code true} if the configuration report should be logged during node initialization.
+     */
+    public void setConfigReport(boolean configReport) {
+        this.configReport = configReport;
+    }
+
+    /**
+     * Fluent-style version of {@link #setConfigReport(boolean)}.
+     *
+     * @param configReport {@code true} if the configuration report should be logged during node initialization.
+     *
+     * @return This instance.
+     */
+    public HekateBootstrap withConfigReport(boolean configReport) {
+        setConfigReport(configReport);
 
         return this;
     }

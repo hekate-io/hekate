@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!--
-  Copyright 2018 The Hekate Project
+  Copyright 2019 The Hekate Project
 
   The Hekate Project licenses this file to you under the Apache License,
   version 2.0 (the "License"); you may not use this file except in compliance
@@ -56,6 +56,13 @@
                         <xsd:annotation>
                             <xsd:documentation>
                                 See javadoc of 'io.hekate.core.HekateBootstrap#setCluserCluster(String)'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="config-report" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.core.HekateBootstrap#setConfigReport(boolean)'.
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
@@ -506,7 +513,21 @@
             <xsd:element name="zookeeper" type="clusterZooKeeperSeedNodeProviderType">
                 <xsd:annotation>
                     <xsd:documentation>
-                        Registers 'io.hekate.cluster.seed.zookeeper.ZooKeeperSeedNodeProvider.
+                        Registers 'io.hekate.cluster.seed.zookeeper.ZooKeeperSeedNodeProvider'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="etcd" type="clusterEtcdSeedNodeProviderType">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.cluster.seed.etcd.EtcdSeedNodeProvider'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="consul" type="clusterConsulSeedNodeProviderType">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Registers 'io.hekate.cluster.seed.consul.ConsulSeedNodeProvider.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
@@ -685,6 +706,91 @@
             <xsd:annotation>
                 <xsd:documentation>
                     See javadoc of 'io.hekate.cluster.seed.zookeeper.ZooKeeperSeedNodeProviderConfig#setBasePath(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="clusterEtcdSeedNodeProviderType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="endpoint" type="xsd:string">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        See javadoc of 'io.hekate.cluster.seed.etcd.EtcdSeedNodeProviderConfig#setEndpoints(java.util.List)'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+        <xsd:attribute name="username" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.etcd.EtcdSeedNodeProviderConfig#setUsername(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="password" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.etcd.EtcdSeedNodeProviderConfig#setPassword(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="cleanup-interval-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.etcd.EtcdSeedNodeProviderConfig#setCleanupInterval(int)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="base-path" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.etcd.EtcdSeedNodeProviderConfig#setBasePath(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="clusterConsulSeedNodeProviderType">
+        <xsd:attribute name="url" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.consul.ConsulSeedNodeProviderConfig#setUrl(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="cleanup-interval-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.consul.ConsulSeedNodeProviderConfig#setCleanupInterval(int)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="base-path" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.consul.ConsulSeedNodeProviderConfig#setBasePath(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="connect-timeout-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.consul.ConsulSeedNodeProviderConfig#setConnectTimeout(Long)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="read-timeout-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.consul.ConsulSeedNodeProviderConfig#setReadTimeout(Long)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="write-timeout-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.consul.ConsulSeedNodeProviderConfig#setWriteTimeout(Long)'.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
@@ -902,6 +1008,13 @@
                 </xsd:restriction>
             </xsd:simpleType>
         </xsd:attribute>
+        <xsd:attribute name="check-interval-ms" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.ClusterServiceFactory#setSplitBrainCheckInterval(long)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
     </xsd:complexType>
 
     <xsd:complexType name="splitBrainDetectorsGroupType">
@@ -988,6 +1101,13 @@
                         <xsd:annotation>
                             <xsd:documentation>
                                 See javadoc of 'io.hekate.cluster.split.SplitBrainDetectorGroup.GroupPolicy#ALL_VALID'.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:enumeration>
+                    <xsd:enumeration value="QUORUM">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                See javadoc of 'io.hekate.cluster.split.SplitBrainDetectorGroup.GroupPolicy#QUORUM'.
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:enumeration>
@@ -1111,14 +1231,6 @@
                 <xsd:annotation>
                     <xsd:documentation>
                         See javadoc of 'io.hekate.messaging.MessagingChannelConfig#setClusterFilter(io.hekate.cluster.ClusterNodeFilter)'.
-                    </xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
-            <xsd:element name="failover-policy" type="beanOrRefType" minOccurs="0">
-                <xsd:annotation>
-                    <xsd:documentation>
-                        See javadoc of
-                        'io.hekate.messaging.MessagingChannelConfig#setFailoverPolicy(io.hekate.failover.FailoverPolicy)'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
@@ -1320,13 +1432,6 @@
                     <xsd:documentation>
                         See javadoc of
                         'io.hekate.rpc.RpcClientConfig#setLoadBalancer(io.hekate.rpc.RpcLoadBalancer)'.
-                    </xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
-            <xsd:element name="failover-policy" type="beanOrRefType" minOccurs="0">
-                <xsd:annotation>
-                    <xsd:documentation>
-                        See javadoc of 'io.hekate.rpc.RpcClientConfig#setFailoverPolicy(io.hekate.failover.FailoverPolicy)'.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>

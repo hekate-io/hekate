@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -393,7 +393,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
         doAnswer(invocation -> {
             startLatch.countDown();
 
-            endLatch.await(3, TimeUnit.SECONDS);
+            endLatch.await(AWAIT_TIMEOUT, TimeUnit.SECONDS);
 
             ((CoordinatorContext)invocation.getArguments()[0]).complete();
 

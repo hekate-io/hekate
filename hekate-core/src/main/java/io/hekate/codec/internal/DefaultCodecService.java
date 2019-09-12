@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -28,6 +28,7 @@ import io.hekate.codec.StreamDataWriter;
 import io.hekate.codec.ThreadLocalCodecFactory;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.util.format.ToString;
+import io.hekate.util.format.ToStringIgnore;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -40,9 +41,11 @@ public class DefaultCodecService implements CodecService, EncoderDecoder<Object>
 
     private final CodecFactory<Object> codecFactory;
 
+    @ToStringIgnore
     private final ByteArrayOutputStreamPool bufferPool;
 
-    private final EncoderDecoder<Object> objEncodec;
+    @ToStringIgnore
+    private final EncoderDecoder<Object> objCodec;
 
     public DefaultCodecService(CodecFactory<Object> codecFactory) {
         assert codecFactory != null : "Codec factory is null.";
@@ -51,7 +54,7 @@ public class DefaultCodecService implements CodecService, EncoderDecoder<Object>
 
         this.codecFactory = threadLocalCodecFactory;
         this.bufferPool = new ByteArrayOutputStreamPool(MAX_REUSABLE_BUFFER_SIZE);
-        this.objEncodec = new DefaultEncoderDecoder<>(bufferPool, threadLocalCodecFactory);
+        this.objCodec = new DefaultEncoderDecoder<>(bufferPool, threadLocalCodecFactory);
     }
 
     @Override
@@ -75,17 +78,17 @@ public class DefaultCodecService implements CodecService, EncoderDecoder<Object>
 
     @Override
     public void encode(Object obj, OutputStream out) throws IOException {
-        objEncodec.encode(obj, out);
+        objCodec.encode(obj, out);
     }
 
     @Override
     public void encode(Object obj, DataWriter out) throws IOException {
-        objEncodec.encode(obj, out);
+        objCodec.encode(obj, out);
     }
 
     @Override
     public byte[] encode(Object obj) throws IOException {
-        return objEncodec.encode(obj);
+        return objCodec.encode(obj);
     }
 
     @Override
@@ -105,22 +108,22 @@ public class DefaultCodecService implements CodecService, EncoderDecoder<Object>
 
     @Override
     public Object decode(InputStream in) throws IOException {
-        return objEncodec.decode(in);
+        return objCodec.decode(in);
     }
 
     @Override
     public Object decode(DataReader in) throws IOException {
-        return objEncodec.decode(in);
+        return objCodec.decode(in);
     }
 
     @Override
     public Object decode(byte[] bytes) throws IOException {
-        return objEncodec.decode(bytes);
+        return objCodec.decode(bytes);
     }
 
     @Override
     public Object decode(byte[] bytes, int offset, int size) throws IOException {
-        return objEncodec.decode(bytes, offset, size);
+        return objCodec.decode(bytes, offset, size);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -24,7 +24,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marker annotation that can be placed on a Java interface in order to expose its methods for remote access.
+ * Marker annotation for RPC interfaces.
+ *
+ * <p>
+ * This annotation that can be placed on a Java interface in order to expose its methods for remote access.
+ * </p>
  *
  * @see RpcService
  */

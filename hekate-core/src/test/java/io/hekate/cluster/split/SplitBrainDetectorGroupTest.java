@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -95,6 +95,29 @@ public class SplitBrainDetectorGroupTest extends HekateTestBase {
 
         d2.setValid(true);
         d3.setValid(false);
+
+        assertFalse(group.isValid(node));
+    }
+
+    @Test
+    public void testMajorityValidPolicy() throws Exception {
+        group.withGroupPolicy(SplitBrainDetectorGroup.GroupPolicy.MAJORITY_VALID);
+
+        SplitBrainDetectorMock d1 = new SplitBrainDetectorMock(true);
+        SplitBrainDetectorMock d2 = new SplitBrainDetectorMock(true);
+        SplitBrainDetectorMock d3 = new SplitBrainDetectorMock(true);
+
+        group.setDetectors(Arrays.asList(d1, d2, d3));
+
+        ClusterNode node = newNode();
+
+        assertTrue(group.isValid(node));
+
+        d1.setValid(false);
+
+        assertTrue(group.isValid(node));
+
+        d2.setValid(false);
 
         assertFalse(group.isValid(node));
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -22,20 +22,21 @@ import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.jmx.JmxSupport;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +68,7 @@ import static java.util.stream.Collectors.toList;
  * @see DefaultFailureDetectorConfig
  * @see ClusterServiceFactory#setFailureDetector(FailureDetector)
  */
-public class DefaultFailureDetector implements FailureDetector, JmxSupport<DefaultFailureDetectorJmx> {
+public class DefaultFailureDetector implements FailureDetector, JmxSupport<DefaultFailureDetectorJmx>, ConfigReportSupport {
     private static class NodeMonitor {
         private final ClusterAddress address;
 
@@ -129,12 +130,11 @@ public class DefaultFailureDetector implements FailureDetector, JmxSupport<Defau
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    @ToStringIgnore
-    private final int failureQuorum;
-
     private final int hbLossThreshold;
 
     private final long hbInterval;
+
+    private final int failureQuorum;
 
     private final boolean failFast;
 
@@ -187,6 +187,14 @@ public class DefaultFailureDetector implements FailureDetector, JmxSupport<Defau
 
         readLock = lock.readLock();
         writeLock = lock.writeLock();
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.value("hb-interval", hbInterval);
+        report.value("hb-loss-threshold", hbLossThreshold);
+        report.value("failure-quorum", failureQuorum);
+        report.value("fail-fast", failFast);
     }
 
     @Override
@@ -246,7 +254,7 @@ public class DefaultFailureDetector implements FailureDetector, JmxSupport<Defau
         writeLock.lock();
 
         try {
-            doUpdateMonitors(Collections.emptyMap());
+            updateMonitors();
 
             return monitors.values().stream()
                 .map(monitor -> {
@@ -362,6 +370,19 @@ public class DefaultFailureDetector implements FailureDetector, JmxSupport<Defau
             if (!nodes.equals(allNodes)) {
                 allNodes = new HashSet<>(nodes);
 
+                // Remove monitors of nodes that are not in the cluster topology anymore.
+                for (Iterator<ClusterAddress> it = monitors.keySet().iterator(); it.hasNext(); ) {
+                    ClusterAddress node = it.next();
+
+                    if (!allNodes.contains(node)) {
+                        it.remove();
+
+                        if (DEBUG) {
+                            log.debug("Stopped monitoring [node={}]", node);
+                        }
+                    }
+                }
+
                 updateMonitors();
             }
         } finally {
@@ -395,6 +416,25 @@ public class DefaultFailureDetector implements FailureDetector, JmxSupport<Defau
         }
     }
 
+    /**
+     * Returns {@code true} if the specified node is in the list of {@link #monitored()} nodes.
+     *
+     * @param node Node to check.
+     *
+     * @return {@code true} if the specified node is in the list of {@link #monitored()} nodes.
+     */
+    public boolean isMonitored(ClusterAddress node) {
+        ArgAssert.notNull(node, "Node");
+
+        readLock.lock();
+
+        try {
+            return monitors.containsKey(node);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
     @Override
     public DefaultFailureDetectorJmx jmx() {
         return new DefaultFailureDetectorJmx() {
@@ -420,132 +460,54 @@ public class DefaultFailureDetector implements FailureDetector, JmxSupport<Defau
         };
     }
 
-    /**
-     * Returns {@code true} if the specified node is in the list of {@link #monitored()} nodes.
-     *
-     * @param node Node to check.
-     *
-     * @return {@code true} if the specified node is in the list of {@link #monitored()} nodes.
-     */
-    public boolean isMonitored(ClusterAddress node) {
-        ArgAssert.notNull(node, "Node");
-
-        readLock.lock();
-
-        try {
-            return monitors.containsKey(node);
-        } finally {
-            readLock.unlock();
-        }
-    }
-
     private void updateMonitors() {
         assert writeLock.isHeldByCurrentThread() : "Thread must hold write lock: " + Thread.currentThread().getName();
 
-        Map<ClusterAddress, NodeMonitor> oldMonitors;
-
-        if (monitors.isEmpty()) {
-            oldMonitors = Collections.emptyMap();
-        } else {
-            oldMonitors = new HashMap<>(monitors);
-        }
-
-        monitors.clear();
-
-        doUpdateMonitors(oldMonitors);
-    }
-
-    private void doUpdateMonitors(Map<ClusterAddress, NodeMonitor> oldMonitors) {
-        assert writeLock.isHeldByCurrentThread() : "Thread must hold write lock: " + Thread.currentThread().getName();
-
         if (allNodes.size() > 1) {
-            long aliveMonitors = monitors.values().stream().filter(NodeMonitor::isAlive).count();
+            int monitored = 0;
 
-            long missingMonitors = failureQuorum - aliveMonitors;
+            for (ClusterAddress node : nodeRing()) {
+                if (monitored < failureQuorum) {
+                    // Make sure that we have enough monitors.
+                    NodeMonitor monitor = monitors.get(node);
 
-            if (missingMonitors > 0) {
-                addMonitors(missingMonitors, oldMonitors);
-            } else if (missingMonitors < 0) {
-                removeMonitors(-missingMonitors);
-            }
-        }
+                    if (monitor == null) {
+                        // Add new monitor.
+                        monitored++;
 
-        if (DEBUG && !oldMonitors.isEmpty()) {
-            oldMonitors.keySet().forEach(n -> {
-                if (!monitors.containsKey(n)) {
-                    log.debug("Stopped monitoring [node={}]", n);
+                        if (DEBUG) {
+                            log.debug("Started monitoring [node={}]", node);
+                        }
+
+                        monitors.put(node, new NodeMonitor(node, hbLossThreshold, hbInterval));
+                    } else if (monitor.isAlive()) {
+                        // Monitor exists and is alive.
+                        monitored++;
+                    }
+                } else {
+                    // Cleanup redundant monitors.
+                    if (monitors.remove(node) != null) {
+                        if (DEBUG) {
+                            log.debug("Stopped monitoring [node={}]", node);
+                        }
+                    }
                 }
-            });
+            }
         }
     }
 
-    private void addMonitors(long limit, Map<ClusterAddress, NodeMonitor> oldMonitors) {
-        assert writeLock.isHeldByCurrentThread() : "Thread must hold write lock: " + Thread.currentThread().getName();
-
-        Consumer<ClusterAddress> doAddNewOrKeepOld = node -> {
-            NodeMonitor oldMonitor = oldMonitors.get(node);
-
-            if (oldMonitor == null) {
-                if (DEBUG) {
-                    log.debug("Started monitoring [node={}]", node);
-                }
-
-                monitors.put(node, new NodeMonitor(node, hbLossThreshold, hbInterval));
-            } else {
-                monitors.put(node, oldMonitor);
-            }
-        };
+    private List<ClusterAddress> nodeRing() {
+        List<ClusterAddress> ring = new ArrayList<>(allNodes.size());
 
         NavigableSet<ClusterAddress> allSorted = new TreeSet<>(allNodes);
 
         // Nodes that are after the local node in the ring.
-        List<ClusterAddress> toAdd = allSorted.tailSet(localNode, false).stream()
-            .filter(node -> !monitors.containsKey(node))
-            .limit(limit)
-            .collect(toList());
-
-        toAdd.forEach(doAddNewOrKeepOld);
-
-        long addMore = limit - toAdd.size();
-
-        if (addMore > 0) {
-            // Nodes that are before the local node in the ring.
-            allSorted.headSet(localNode, false).stream()
-                .filter(node -> !monitors.containsKey(node))
-                .limit(addMore)
-                .forEach(doAddNewOrKeepOld);
-        }
-    }
-
-    private void removeMonitors(long limit) {
-        assert writeLock.isHeldByCurrentThread() : "Thread must hold write lock: " + Thread.currentThread().getName();
-
-        Consumer<ClusterAddress> doRemove = node -> {
-            if (DEBUG) {
-                log.debug("Stopped monitoring [node={}]", node);
-            }
-
-            monitors.remove(node);
-        };
-
-        NavigableSet<ClusterAddress> allSorted = new TreeSet<>(allNodes);
+        ring.addAll(allSorted.tailSet(localNode, false));
 
         // Nodes that are before the local node in the ring.
-        List<ClusterAddress> toRemove = allSorted.headSet(localNode, false).stream()
-            .filter(monitors::containsKey)
-            .limit(limit)
-            .collect(toList());
+        ring.addAll(allSorted.headSet(localNode, false));
 
-        toRemove.forEach(doRemove);
-
-        long removeMore = limit - toRemove.size();
-
-        if (removeMore > 0) {
-            allSorted.tailSet(localNode, false).stream()
-                .filter(monitors::containsKey)
-                .limit(limit)
-                .forEach(doRemove);
-        }
+        return ring;
     }
 
     @Override

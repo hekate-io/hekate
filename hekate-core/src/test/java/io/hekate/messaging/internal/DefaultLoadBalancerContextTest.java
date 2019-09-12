@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -19,8 +19,8 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterTopologyTestBase;
 import io.hekate.cluster.internal.DefaultClusterTopology;
-import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
+import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
 import java.util.Set;
@@ -34,8 +34,8 @@ import static org.mockito.Mockito.mock;
 
 public class DefaultLoadBalancerContextTest extends ClusterTopologyTestBase {
     @Test
-    public void testFailoverDetails() throws Exception {
-        FailureInfo details = mock(FailureInfo.class);
+    public void testFailure() throws Exception {
+        FailedAttempt details = mock(FailedAttempt.class);
 
         ClusterNode n1 = newNode();
 
@@ -55,9 +55,15 @@ public class DefaultLoadBalancerContextTest extends ClusterTopologyTestBase {
         return newContext(100, "test", version, nodes, null);
     }
 
-    private DefaultLoadBalancerContext newContext(int affinity, Object affinityKey, int ver, Set<ClusterNode> nodes, FailureInfo failure) {
-        DefaultClusterTopology topology = DefaultClusterTopology.of(ver, nodes);
-        Optional<FailureInfo> optFailure = Optional.ofNullable(failure);
+    private DefaultLoadBalancerContext newContext(
+        int affinity,
+        Object affinityKey,
+        int topologyVersion,
+        Set<ClusterNode> nodes,
+        FailedAttempt failure
+    ) {
+        DefaultClusterTopology topology = DefaultClusterTopology.of(topologyVersion, nodes);
+        Optional<FailedAttempt> optFailure = Optional.ofNullable(failure);
         PartitionMapper partitions = mock(PartitionMapper.class);
 
         return new DefaultLoadBalancerContext(affinity, affinityKey, topology, partitions, optFailure);

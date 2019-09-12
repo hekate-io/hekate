@@ -20,10 +20,12 @@ class MessageInterceptors<T> {
     public MessageInterceptors(Collection<MessageInterceptor> interceptors) {
         this.clients = StreamUtils.nullSafe(interceptors)
             .filter(it -> it instanceof ClientMessageInterceptor)
+            .map(it -> (ClientMessageInterceptor)it)
             .toArray(ClientMessageInterceptor[]::new);
 
         this.servers = StreamUtils.nullSafe(interceptors)
             .filter(it -> it instanceof ServerMessageInterceptor)
+            .map(it -> (ServerMessageInterceptor)it)
             .toArray(ServerMessageInterceptor[]::new);
     }
 
@@ -47,7 +49,7 @@ class MessageInterceptors<T> {
 
     public void clientReceiveConfirmation(ClientSendContext<T> ctx) {
         for (ClientMessageInterceptor<T> interceptor : clients) {
-            interceptor.interceptClientReceiveConfirmation(ctx);
+            interceptor.interceptClientReceiveAck(ctx);
         }
     }
 

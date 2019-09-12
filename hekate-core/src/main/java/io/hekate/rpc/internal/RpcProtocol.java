@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,7 +17,7 @@
 package io.hekate.rpc.internal;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.messaging.unicast.FailureResponse;
+import io.hekate.messaging.operation.FailureResponse;
 import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
 import io.hekate.rpc.RpcRequest;

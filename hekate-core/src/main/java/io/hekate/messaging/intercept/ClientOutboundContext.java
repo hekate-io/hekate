@@ -2,10 +2,9 @@ package io.hekate.messaging.intercept;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.failover.FailoverPolicy;
-import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.retry.FailedAttempt;
 import java.util.Optional;
 
 /**
@@ -26,7 +25,7 @@ public interface ClientOutboundContext<T> {
      *
      * @return Message.
      */
-    T get();
+    T payload();
 
     /**
      * Returns the channel name (see {@link MessagingChannel#name()}).
@@ -83,11 +82,9 @@ public interface ClientOutboundContext<T> {
     Object affinityKey();
 
     /**
-     * Returns the previous failure in case if this is a failover attempt.
+     * Returns the previous failure in case if this is a retry attempt.
      *
      * @return Failure of a previous attempt.
-     *
-     * @see MessagingChannel#withFailover(FailoverPolicy)
      */
-    Optional<FailureInfo> prevFailure();
+    Optional<FailedAttempt> prevFailure();
 }

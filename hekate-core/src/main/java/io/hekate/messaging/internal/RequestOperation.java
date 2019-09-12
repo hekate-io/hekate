@@ -1,26 +1,50 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.intercept.OutboundType;
-import io.hekate.messaging.unicast.ReplyDecision;
-import io.hekate.messaging.unicast.RequestCondition;
-import io.hekate.messaging.unicast.RequestFuture;
-import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.operation.RequestFuture;
+import io.hekate.messaging.operation.ResponsePart;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
+import io.hekate.messaging.retry.RetryCallback;
+import io.hekate.messaging.retry.RetryCondition;
+import io.hekate.messaging.retry.RetryErrorPredicate;
+import io.hekate.messaging.retry.RetryResponsePredicate;
+import io.hekate.messaging.retry.RetryRoutingPolicy;
 
 class RequestOperation<T> extends UnicastOperation<T> {
     private final RequestFuture<T> future = new RequestFuture<>();
 
-    private final RequestCondition<T> condition;
+    private final RetryResponsePredicate<T> retryRsp;
 
     public RequestOperation(
         T message,
         Object affinityKey,
+        long timeout,
+        int maxAttempts,
+        RetryErrorPredicate retryErr,
+        RetryResponsePredicate<T> retryRsp,
+        RetryCondition retryCondition,
+        RetryBackoffPolicy retryBackoff,
+        RetryCallback retryCallback,
+        RetryRoutingPolicy retryRoute,
         MessagingGatewayContext<T> gateway,
-        MessageOperationOpts<T> opts,
-        RequestCondition<T> condition
+        MessageOperationOpts<T> opts
     ) {
-        super(message, affinityKey, gateway, opts, false);
+        super(
+            message,
+            affinityKey,
+            timeout,
+            maxAttempts,
+            retryErr,
+            retryCondition,
+            retryBackoff,
+            retryCallback,
+            retryRoute,
+            gateway,
+            opts,
+            false
+        );
 
-        this.condition = condition;
+        this.retryRsp = retryRsp;
     }
 
     @Override
@@ -34,16 +58,12 @@ class RequestOperation<T> extends UnicastOperation<T> {
     }
 
     @Override
-    public ReplyDecision accept(Throwable error, Response<T> response) {
-        if (condition == null) {
-            return ReplyDecision.DEFAULT;
-        }
-
-        return condition.accept(error, response);
+    public boolean shouldRetry(ResponsePart<T> response) {
+        return retryRsp != null && retryRsp.shouldRetry(response);
     }
 
     @Override
-    protected void doReceiveFinal(Response<T> response) {
+    protected void doReceiveFinal(ResponsePart<T> response) {
         future.complete(response);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -23,6 +23,8 @@ import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -55,7 +57,7 @@ import org.slf4j.LoggerFactory;
  * @see ClusterServiceFactory#setSeedNodeProvider(SeedNodeProvider)
  * @see SeedNodeProvider
  */
-public class ZooKeeperSeedNodeProvider implements SeedNodeProvider {
+public class ZooKeeperSeedNodeProvider implements SeedNodeProvider, ConfigReportSupport {
     private interface ZooKeeperTask {
         void execute(CuratorFramework client) throws HekateException;
     }
@@ -103,6 +105,17 @@ public class ZooKeeperSeedNodeProvider implements SeedNodeProvider {
         }
     }
 
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("zookeeper", r -> {
+            r.value("connection-string", connectionString);
+            r.value("base-path", basePath);
+            r.value("connect-timeout", connectTimeout);
+            r.value("session-timeout", sessionTimeout);
+            r.value("cleanup-interval", cleanupInterval);
+        });
+    }
+
     /**
      * Returns the ZooKeeper connection string.
      *
@@ -123,6 +136,28 @@ public class ZooKeeperSeedNodeProvider implements SeedNodeProvider {
      */
     public String basePath() {
         return basePath;
+    }
+
+    /**
+     * Zookeeper connect timeout.
+     *
+     * @return Zookeeper connect timeout.
+     *
+     * @see ZooKeeperSeedNodeProviderConfig#setConnectTimeout(int)
+     */
+    public int connectTimeout() {
+        return connectTimeout;
+    }
+
+    /**
+     * Zookeeper session timeout.
+     *
+     * @return Zookeeper session timeout.
+     *
+     * @see ZooKeeperSeedNodeProviderConfig#setSessionTimeout(int)
+     */
+    public int sessionTimeout() {
+        return sessionTimeout;
     }
 
     @Override

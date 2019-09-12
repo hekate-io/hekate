@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,10 +16,9 @@
 
 package io.hekate.messaging;
 
-import io.hekate.failover.FailoverPolicy;
-import io.hekate.messaging.unicast.RequestCallback;
-import io.hekate.messaging.unicast.Response;
-import io.hekate.messaging.unicast.SendCallback;
+import io.hekate.messaging.operation.RequestCallback;
+import io.hekate.messaging.operation.Response;
+import io.hekate.messaging.operation.SendCallback;
 
 /**
  * Message with arbitrary payload.
@@ -84,9 +83,9 @@ public interface Message<T> extends MessageBase<T> {
      * Asynchronously sends a response and uses the specified callback for notification of the operation result.
      *
      * <p>
-     * Calling this method will put the message into the 'replied' state and its {@link #mustReply()} method will start returning {@code
-     * false}. Note that each message can be responded only once and all subsequent attempts to call this method will result in {@link
-     * IllegalStateException}.
+     * Calling this method will put the message into the 'replied' state and its {@link #mustReply()} method will start returning
+     * {@code false}. Note that each message can be responded only once and all subsequent attempts to call this method will result in
+     * {@link IllegalStateException}.
      * </p>
      *
      * <p>
@@ -104,21 +103,20 @@ public interface Message<T> extends MessageBase<T> {
     void reply(T response, SendCallback callback) throws UnsupportedOperationException, IllegalStateException;
 
     /**
-     * Asynchronously sends a partial reply in response to a
-     * {@link MessagingChannel#subscribe(Object, RequestCallback) subscription request}.
+     * Asynchronously sends a partial response for a {@link MessagingChannel#newSubscribe(Object) subscription request}.
      *
      * <p>
      * This method provides support for streaming messages from the recipient back to the sender.
-     * For example, the sender can subscribe to a topic using the {@link MessagingChannel#subscribe(Object, RequestCallback)} method,
-     * and then the recipient of such a request can start to continuously stream updates back to the sender. The subscriber will receive
-     * those updates via the {@link RequestCallback#onComplete(Throwable, Response)} method. After the streaming is complete, the final
-     * response must be sent using the {@link #reply(Object)} method.
+     * For example, the sender can subscribe to a topic using the {@link MessagingChannel#newSubscribe(Object)} method, and then the
+     * recipient of such a request can start to continuously stream updates back to the sender. The subscriber will receive those updates
+     * via the {@link RequestCallback#onComplete(Throwable, Response)} method. After the streaming is complete, the final response must be
+     * sent using the {@link #reply(Object)} method.
      * </p>
      *
      * <p>
-     * <b>Note:</b> This method can only be called for messages that were sent using the
-     * {@link MessagingChannel#subscribe(Object, RequestCallback)} method (or its overloaded versions). If the message was sent by some
-     * other method, then all attempts to call this method will throw {@link UnsupportedOperationException}.
+     * <b>Note:</b> This method can only be called for messages that were sent using the {@link MessagingChannel#newSubscribe(Object)}
+     * method (or its overloaded versions). If the message was sent by some other method, then all attempts to call this method will throw
+     * {@link UnsupportedOperationException}.
      * </p>
      *
      * <p>
@@ -135,20 +133,20 @@ public interface Message<T> extends MessageBase<T> {
 
     /**
      * Asynchronously sends a partial reply in response to a
-     * {@link MessagingChannel#subscribe(Object, RequestCallback) subscription request}.
+     * {@link MessagingChannel#newSubscribe(Object) subscription request}.
      *
      * <p>
      * This method provides support for streaming messages from the recipient back to the sender.
-     * For example, the sender can subscribe to a topic using the {@link MessagingChannel#subscribe(Object, RequestCallback)} method,
-     * and then the recipient of such a request can start to continuously stream updates back to the sender. The subscriber will receive
-     * these updates via the {@link RequestCallback#onComplete(Throwable, Response)} method. After the streaming is complete, the final
-     * response must be sent using the {@link #reply(Object)} method.
+     * For example, the sender can subscribe to a topic using the {@link MessagingChannel#newSubscribe(Object)} method, and then the
+     * recipient of such a request can start to continuously stream updates back to the sender. The subscriber will receive these updates
+     * via the {@link RequestCallback#onComplete(Throwable, Response)} method. After the streaming is complete, the final response must be
+     * sent using the {@link #reply(Object)} method.
      * </p>
      *
      * <p>
-     * <b>Note:</b> This method can only be called for messages that were sent using the
-     * {@link MessagingChannel#subscribe(Object, RequestCallback)} method (or its overloaded versions). If the message was sent by some
-     * other method, then all attempts to call this method will throw {@link UnsupportedOperationException}.
+     * <b>Note:</b> This method can only be called for messages that were sent using the {@link MessagingChannel#newSubscribe(Object)}
+     * method (or its overloaded versions). If the message was sent by some other method, then all attempts to call this method will throw
+     * {@link UnsupportedOperationException}.
      * </p>
      *
      * <p>
@@ -165,17 +163,17 @@ public interface Message<T> extends MessageBase<T> {
 
     /**
      * Returns {@code true} if this message is a possible duplicate of another message that was received earlier and then was
-     * retransmitted by the {@link MessagingChannel#withFailover(FailoverPolicy) failover} logic.
+     * retransmitted based on retry logic.
      *
      * @return {@code true} if this message is a possible duplicate of a previously received message.
      */
     boolean isRetransmit();
 
     /**
-     * Returns {@code true} if this message represents a {@link MessagingChannel#subscribe(Object, RequestCallback) subscription request}
-     * and supports {@link #partialReply(Object, SendCallback) partial responses}.
+     * Returns {@code true} if this message represents a {@link MessagingChannel#newSubscribe(Object) subscription request} and supports
+     * {@link #partialReply(Object, SendCallback) partial responses}.
      *
-     * @return {@code true} if this message represents a {@link MessagingChannel#subscribe(Object, RequestCallback) subscription request}.
+     * @return {@code true} if this message represents a {@link MessagingChannel#newSubscribe(Object) subscription request}.
      */
     boolean isSubscription();
 

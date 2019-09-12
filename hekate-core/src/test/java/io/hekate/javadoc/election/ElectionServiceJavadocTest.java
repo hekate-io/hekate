@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -78,12 +78,10 @@ public class ElectionServiceJavadocTest extends HekateNodeTestBase {
         Hekate hekate = new HekateBootstrap()
             .withService(factory)
             .join();
-        // End:configure
 
-        // Start:access
-        // Get service.
+        // Access the service.
         ElectionService election = hekate.election();
-        // End:access
+        // End:configure
 
         assertNotNull(election);
 

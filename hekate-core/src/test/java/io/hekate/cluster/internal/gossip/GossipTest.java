@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -43,7 +43,7 @@ public class GossipTest extends HekateTestBase {
         assertFalse(gossip.hasMembers());
         assertNotNull(gossip.stream());
 
-        SuspectedNodesView suspectedView = gossip.suspectedView();
+        GossipSuspectView suspectedView = gossip.suspectView();
 
         assertNotNull(suspectedView);
         assertTrue(suspectedView.isEmpty());
@@ -227,7 +227,7 @@ public class GossipTest extends HekateTestBase {
         GossipNodeState s2 = newState(GossipNodeStatus.JOINING);
         GossipNodeState s3 = newState(GossipNodeStatus.JOINING);
 
-        assertSame(ComparisonResult.SAME, g1.compare(g2));
+        assertSame(GossipPrecedence.SAME, g1.compare(g2));
 
         g1 = g1.update(s1.id(), s1)
             .update(s1.id(), s2)
@@ -237,20 +237,20 @@ public class GossipTest extends HekateTestBase {
             .update(s1.id(), s2)
             .update(s1.id(), s3);
 
-        assertSame(ComparisonResult.SAME, g1.compare(g2));
+        assertSame(GossipPrecedence.SAME, g1.compare(g2));
 
         g2 = g2.update(s1.id(), s1.status(GossipNodeStatus.UP));
 
-        assertSame(ComparisonResult.BEFORE, g1.compare(g2));
-        assertSame(ComparisonResult.AFTER, g2.compare(g1));
+        assertSame(GossipPrecedence.BEFORE, g1.compare(g2));
+        assertSame(GossipPrecedence.AFTER, g2.compare(g1));
 
-        assertSame(ComparisonResult.CONCURRENT, g1.update(s1.id(), s2.status(GossipNodeStatus.UP)).compare(g2));
-        assertSame(ComparisonResult.CONCURRENT, g2.compare(g1.update(s1.id(), s2.status(GossipNodeStatus.UP))));
+        assertSame(GossipPrecedence.CONCURRENT, g1.update(s1.id(), s2.status(GossipNodeStatus.UP)).compare(g2));
+        assertSame(GossipPrecedence.CONCURRENT, g2.compare(g1.update(s1.id(), s2.status(GossipNodeStatus.UP))));
 
         g1 = g1.update(s1.id(), s1.status(GossipNodeStatus.UP));
 
-        assertSame(ComparisonResult.SAME, g1.compare(g2));
-        assertSame(ComparisonResult.SAME, g2.compare(g1));
+        assertSame(GossipPrecedence.SAME, g1.compare(g2));
+        assertSame(GossipPrecedence.SAME, g2.compare(g1));
     }
 
     @Test
@@ -262,7 +262,7 @@ public class GossipTest extends HekateTestBase {
         GossipNodeState s2 = newState(GossipNodeStatus.UP);
         GossipNodeState s3 = newState(GossipNodeStatus.JOINING);
 
-        assertSame(ComparisonResult.SAME, g1.compare(g2));
+        assertSame(GossipPrecedence.SAME, g1.compare(g2));
 
         g1 = g1.update(s1.id(), s1)
             .update(s1.id(), s2)
@@ -272,15 +272,15 @@ public class GossipTest extends HekateTestBase {
             .update(s1.id(), s2.status(GossipNodeStatus.JOINING))
             .update(s1.id(), s3.status(GossipNodeStatus.UP));
 
-        assertSame(ComparisonResult.CONCURRENT, g1.compare(g2));
+        assertSame(GossipPrecedence.CONCURRENT, g1.compare(g2));
 
         Gossip g3 = g1.merge(s1.id(), g2);
 
-        assertSame(ComparisonResult.BEFORE, g1.compare(g3));
-        assertSame(ComparisonResult.BEFORE, g2.compare(g3));
+        assertSame(GossipPrecedence.BEFORE, g1.compare(g3));
+        assertSame(GossipPrecedence.BEFORE, g2.compare(g3));
 
-        assertSame(ComparisonResult.AFTER, g3.compare(g1));
-        assertSame(ComparisonResult.AFTER, g3.compare(g2));
+        assertSame(GossipPrecedence.AFTER, g3.compare(g1));
+        assertSame(GossipPrecedence.AFTER, g3.compare(g2));
 
         assertSame(GossipNodeStatus.UP, g3.member(s1.id()).status());
         assertSame(GossipNodeStatus.UP, g3.member(s2.id()).status());
@@ -288,8 +288,8 @@ public class GossipTest extends HekateTestBase {
 
         Gossip g4 = g2.merge(s1.id(), g1);
 
-        assertSame(ComparisonResult.SAME, g3.compare(g4));
-        assertSame(ComparisonResult.SAME, g4.compare(g3));
+        assertSame(GossipPrecedence.SAME, g3.compare(g4));
+        assertSame(GossipPrecedence.SAME, g4.compare(g3));
     }
 
     @Test
@@ -301,7 +301,7 @@ public class GossipTest extends HekateTestBase {
         GossipNodeState s2 = newState(GossipNodeStatus.UP);
         GossipNodeState s3 = newState(GossipNodeStatus.JOINING);
 
-        assertSame(ComparisonResult.SAME, g1.compare(g2));
+        assertSame(GossipPrecedence.SAME, g1.compare(g2));
 
         g1 = g1.update(s1.id(), s1)
             .update(s1.id(), s2)
@@ -313,15 +313,15 @@ public class GossipTest extends HekateTestBase {
             .update(s1.id(), s3.status(GossipNodeStatus.UP))
             .maxJoinOrder(100);
 
-        assertSame(ComparisonResult.CONCURRENT, g1.compare(g2));
+        assertSame(GossipPrecedence.CONCURRENT, g1.compare(g2));
 
         Gossip g3 = g1.merge(s1.id(), g2);
 
-        assertSame(ComparisonResult.BEFORE, g1.compare(g3));
-        assertSame(ComparisonResult.BEFORE, g2.compare(g3));
+        assertSame(GossipPrecedence.BEFORE, g1.compare(g3));
+        assertSame(GossipPrecedence.BEFORE, g2.compare(g3));
 
-        assertSame(ComparisonResult.AFTER, g3.compare(g1));
-        assertSame(ComparisonResult.AFTER, g3.compare(g2));
+        assertSame(GossipPrecedence.AFTER, g3.compare(g1));
+        assertSame(GossipPrecedence.AFTER, g3.compare(g2));
 
         assertSame(GossipNodeStatus.UP, g3.member(s1.id()).status());
         assertSame(GossipNodeStatus.UP, g3.member(s2.id()).status());
@@ -331,8 +331,8 @@ public class GossipTest extends HekateTestBase {
 
         Gossip g4 = g2.merge(s1.id(), g1);
 
-        assertSame(ComparisonResult.SAME, g3.compare(g4));
-        assertSame(ComparisonResult.SAME, g4.compare(g3));
+        assertSame(GossipPrecedence.SAME, g3.compare(g4));
+        assertSame(GossipPrecedence.SAME, g4.compare(g3));
 
         assertEquals(100, g4.maxJoinOrder());
     }
@@ -347,7 +347,7 @@ public class GossipTest extends HekateTestBase {
         GossipNodeState s3 = newState(GossipNodeStatus.JOINING);
         GossipNodeState s4 = newState(GossipNodeStatus.JOINING);
 
-        assertSame(ComparisonResult.SAME, g1.compare(g2));
+        assertSame(GossipPrecedence.SAME, g1.compare(g2));
 
         g1 = g1.update(s1.id(), s1)
             .update(s1.id(), s2)
@@ -356,13 +356,13 @@ public class GossipTest extends HekateTestBase {
         g2 = g2.update(s1.id(), s1)
             .update(s1.id(), s2);
 
-        assertSame(ComparisonResult.AFTER, g1.compare(g2));
-        assertSame(ComparisonResult.BEFORE, g2.compare(g1));
+        assertSame(GossipPrecedence.AFTER, g1.compare(g2));
+        assertSame(GossipPrecedence.BEFORE, g2.compare(g1));
 
         g2 = g2.update(s1.id(), s4);
 
-        assertSame(ComparisonResult.CONCURRENT, g1.compare(g2));
-        assertSame(ComparisonResult.CONCURRENT, g2.compare(g1));
+        assertSame(GossipPrecedence.CONCURRENT, g1.compare(g2));
+        assertSame(GossipPrecedence.CONCURRENT, g2.compare(g1));
     }
 
     @Test
@@ -376,7 +376,7 @@ public class GossipTest extends HekateTestBase {
         GossipNodeState s4 = newState(GossipNodeStatus.JOINING);
         GossipNodeState s5 = newState(GossipNodeStatus.JOINING);
 
-        assertSame(ComparisonResult.SAME, g1.compare(g2));
+        assertSame(GossipPrecedence.SAME, g1.compare(g2));
 
         g1 = g1.update(s1.id(), s1)
             .update(s1.id(), s2)
@@ -386,18 +386,18 @@ public class GossipTest extends HekateTestBase {
             .update(s1.id(), s2)
             .purge(s1.id(), Collections.singleton(s3.id()));
 
-        assertSame(ComparisonResult.BEFORE, g1.compare(g2));
-        assertSame(ComparisonResult.AFTER, g2.compare(g1));
+        assertSame(GossipPrecedence.BEFORE, g1.compare(g2));
+        assertSame(GossipPrecedence.AFTER, g2.compare(g1));
 
         g2 = g2.update(s1.id(), s4);
 
-        assertSame(ComparisonResult.BEFORE, g1.compare(g2));
-        assertSame(ComparisonResult.AFTER, g2.compare(g1));
+        assertSame(GossipPrecedence.BEFORE, g1.compare(g2));
+        assertSame(GossipPrecedence.AFTER, g2.compare(g1));
 
         g1 = g1.update(s1.id(), s5);
 
-        assertSame(ComparisonResult.CONCURRENT, g1.compare(g2));
-        assertSame(ComparisonResult.CONCURRENT, g2.compare(g1));
+        assertSame(GossipPrecedence.CONCURRENT, g1.compare(g2));
+        assertSame(GossipPrecedence.CONCURRENT, g2.compare(g1));
     }
 
     @Test
@@ -410,7 +410,7 @@ public class GossipTest extends HekateTestBase {
         GossipNodeState s3 = newState(GossipNodeStatus.JOINING);
         GossipNodeState s4 = newState(GossipNodeStatus.JOINING);
 
-        assertSame(ComparisonResult.SAME, g1.compare(g2));
+        assertSame(GossipPrecedence.SAME, g1.compare(g2));
 
         g1 = g1.update(s1.id(), s1)
             .update(s1.id(), s2)
@@ -420,16 +420,16 @@ public class GossipTest extends HekateTestBase {
             .update(s1.id(), s2)
             .update(s1.id(), s4);
 
-        assertSame(ComparisonResult.CONCURRENT, g1.compare(g2));
-        assertSame(ComparisonResult.CONCURRENT, g2.compare(g1));
+        assertSame(GossipPrecedence.CONCURRENT, g1.compare(g2));
+        assertSame(GossipPrecedence.CONCURRENT, g2.compare(g1));
 
         Gossip g3 = g1.merge(s1.id(), g2);
 
-        assertSame(ComparisonResult.BEFORE, g1.compare(g3));
-        assertSame(ComparisonResult.BEFORE, g2.compare(g3));
+        assertSame(GossipPrecedence.BEFORE, g1.compare(g3));
+        assertSame(GossipPrecedence.BEFORE, g2.compare(g3));
 
-        assertSame(ComparisonResult.AFTER, g3.compare(g1));
-        assertSame(ComparisonResult.AFTER, g3.compare(g2));
+        assertSame(GossipPrecedence.AFTER, g3.compare(g1));
+        assertSame(GossipPrecedence.AFTER, g3.compare(g2));
 
         assertTrue(g3.hasMember(s1.id()));
         assertTrue(g3.hasMember(s2.id()));
@@ -438,8 +438,8 @@ public class GossipTest extends HekateTestBase {
 
         Gossip g4 = g2.merge(s1.id(), g1);
 
-        assertSame(ComparisonResult.SAME, g3.compare(g4));
-        assertSame(ComparisonResult.SAME, g4.compare(g3));
+        assertSame(GossipPrecedence.SAME, g3.compare(g4));
+        assertSame(GossipPrecedence.SAME, g4.compare(g3));
     }
 
     @Test
@@ -459,16 +459,16 @@ public class GossipTest extends HekateTestBase {
             .update(s1.id(), s2)
             .update(s1.id(), s3);
 
-        assertSame(ComparisonResult.SAME, g1.compare(g2));
+        assertSame(GossipPrecedence.SAME, g1.compare(g2));
 
         g2 = g2.update(s1.id(), s1.suspect(s2.id()));
 
-        assertSame(ComparisonResult.BEFORE, g1.compare(g2));
-        assertSame(ComparisonResult.AFTER, g2.compare(g1));
+        assertSame(GossipPrecedence.BEFORE, g1.compare(g2));
+        assertSame(GossipPrecedence.AFTER, g2.compare(g1));
 
-        assertSame(ComparisonResult.CONCURRENT,
+        assertSame(GossipPrecedence.CONCURRENT,
             g1.update(s1.id(), s2.suspect(s1.id())).compare(g2));
-        assertSame(ComparisonResult.CONCURRENT,
+        assertSame(GossipPrecedence.CONCURRENT,
             g2.compare(g1.update(s1.id(), s2.suspect(s1.id()))));
     }
 
@@ -490,7 +490,7 @@ public class GossipTest extends HekateTestBase {
 
         g1 = g1.update(s1.id(), s2.status(GossipNodeStatus.LEAVING));
 
-        assertSame(ComparisonResult.CONCURRENT, g2.compare(g1));
+        assertSame(GossipPrecedence.CONCURRENT, g2.compare(g1));
 
         Gossip g3 = g2.merge(s1.id(), g1);
 
@@ -518,16 +518,16 @@ public class GossipTest extends HekateTestBase {
             .update(s1.id(), s2.suspect(s1.id()))
             .update(s1.id(), s3);
 
-        assertSame(ComparisonResult.CONCURRENT, g1.compare(g2));
-        assertSame(ComparisonResult.CONCURRENT, g2.compare(g1));
+        assertSame(GossipPrecedence.CONCURRENT, g1.compare(g2));
+        assertSame(GossipPrecedence.CONCURRENT, g2.compare(g1));
 
         Gossip g3 = g1.merge(s1.id(), g2);
 
-        assertSame(ComparisonResult.BEFORE, g1.compare(g3));
-        assertSame(ComparisonResult.BEFORE, g2.compare(g3));
+        assertSame(GossipPrecedence.BEFORE, g1.compare(g3));
+        assertSame(GossipPrecedence.BEFORE, g2.compare(g3));
 
-        assertSame(ComparisonResult.AFTER, g3.compare(g1));
-        assertSame(ComparisonResult.AFTER, g3.compare(g2));
+        assertSame(GossipPrecedence.AFTER, g3.compare(g1));
+        assertSame(GossipPrecedence.AFTER, g3.compare(g2));
 
         assertTrue(g3.member(s1.id()).isSuspected(s2.id()));
         assertTrue(g3.member(s2.id()).isSuspected(s1.id()));
@@ -535,8 +535,8 @@ public class GossipTest extends HekateTestBase {
 
         Gossip g4 = g2.merge(s1.id(), g1);
 
-        assertSame(ComparisonResult.SAME, g3.compare(g4));
-        assertSame(ComparisonResult.SAME, g4.compare(g3));
+        assertSame(GossipPrecedence.SAME, g3.compare(g4));
+        assertSame(GossipPrecedence.SAME, g4.compare(g3));
     }
 
     @Test
@@ -644,7 +644,7 @@ public class GossipTest extends HekateTestBase {
         assertFalse(g.isConvergent());
 
         // Unsuspected.
-        g = g.update(s1.id(), s1.unsuspected(s2.id()));
+        g = g.update(s1.id(), s1.unsuspect(s2.id()));
 
         assertFalse(g.isConvergent());
 
@@ -667,25 +667,25 @@ public class GossipTest extends HekateTestBase {
         assertFalse(g.isSuspected(s1.id()));
         assertFalse(g.isSuspected(s2.id()));
         assertFalse(g.isSuspected(s3.id()));
-        assertTrue(g.suspectedView().isEmpty());
+        assertTrue(g.suspectView().isEmpty());
 
         g = g.update(s1.id(), s1.suspect(s2.id()));
 
         assertFalse(g.isSuspected(s1.id()));
         assertTrue(g.isSuspected(s2.id()));
         assertFalse(g.isSuspected(s3.id()));
-        assertFalse(g.suspectedView().isEmpty());
-        assertEquals(1, g.suspectedView().suspected().size());
-        assertEquals(Collections.singleton(s1.id()), g.suspectedView().suspecting(s2.id()));
+        assertFalse(g.suspectView().isEmpty());
+        assertEquals(1, g.suspectView().suspected().size());
+        assertEquals(Collections.singleton(s1.id()), g.suspectView().suspecting(s2.id()));
 
         g = g.update(s1.id(), s3.suspect(s2.id()));
 
         assertFalse(g.isSuspected(s1.id()));
         assertTrue(g.isSuspected(s2.id()));
         assertFalse(g.isSuspected(s3.id()));
-        assertFalse(g.suspectedView().isEmpty());
-        assertEquals(1, g.suspectedView().suspected().size());
-        assertEquals(toSet(s1.id(), s3.id()), g.suspectedView().suspecting(s2.id()));
+        assertFalse(g.suspectView().isEmpty());
+        assertEquals(1, g.suspectView().suspected().size());
+        assertEquals(toSet(s1.id(), s3.id()), g.suspectView().suspecting(s2.id()));
     }
 
     @Test

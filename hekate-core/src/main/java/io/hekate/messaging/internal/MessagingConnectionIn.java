@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -31,7 +31,7 @@ import io.hekate.messaging.internal.MessagingProtocol.RequestForResponseBase;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
 import io.hekate.messaging.internal.MessagingProtocol.SubscribeRequest;
 import io.hekate.messaging.internal.MessagingProtocol.VoidResponse;
-import io.hekate.messaging.unicast.SendCallback;
+import io.hekate.messaging.operation.SendCallback;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkMessage;
@@ -108,14 +108,14 @@ class MessagingConnectionIn<T> extends MessagingConnection<T> {
                 }
 
                 if (error == null) {
-                    notifyResponseSendSuccess(worker, msg.get(), callback);
+                    notifyResponseSendSuccess(worker, msg.payload(), callback);
                 } else {
-                    notifyResponseSendFailure(worker, msg.get(), error, callback);
+                    notifyResponseSendFailure(worker, msg.payload(), error, callback);
                 }
             });
         } else {
             // Back pressure failure.
-            notifyResponseSendFailure(worker, msg.get(), backPressureErr, callback);
+            notifyResponseSendFailure(worker, msg.payload(), backPressureErr, callback);
         }
     }
 
@@ -141,13 +141,13 @@ class MessagingConnectionIn<T> extends MessagingConnection<T> {
             }
 
             if (error == null) {
-                notifyResponseSendSuccess(worker, msg.get(), callback);
+                notifyResponseSendSuccess(worker, msg.payload(), callback);
             } else {
                 if (error instanceof CodecException) {
                     replyError(msg.requestId(), error);
                 }
 
-                notifyResponseSendFailure(worker, msg.get(), error, callback);
+                notifyResponseSendFailure(worker, msg.payload(), error, callback);
             }
         });
     }
@@ -213,55 +213,7 @@ class MessagingConnectionIn<T> extends MessagingConnection<T> {
                     break;
                 }
                 case REQUEST:
-                case VOID_REQUEST: {
-                    MessagingWorker worker = async.pooledWorker();
-
-                    if (worker.isAsync()) {
-                        long receivedAtNanos = receivedAtNanos(netMsg);
-
-                        onReceiveAsyncEnqueue(from);
-
-                        netMsg.handleAsync(worker, msg -> {
-                            onReceiveAsyncDequeue();
-
-                            try {
-                                receiveRequestAsync(msg.decode().cast(), worker, receivedAtNanos);
-                            } catch (Throwable err) {
-                                handleReceiveError(msg, err);
-                            }
-                        });
-                    } else {
-                        receiveRequestSync(netMsg.decode().cast(), worker);
-                    }
-
-                    break;
-                }
-                case AFFINITY_REQUEST:
-                case AFFINITY_VOID_REQUEST: {
-                    int affinity = MessagingProtocolCodec.previewAffinity(netMsg);
-
-                    MessagingWorker worker = async.workerFor(affinity);
-
-                    if (worker.isAsync()) {
-                        long receivedAtNanos = receivedAtNanos(netMsg);
-
-                        onReceiveAsyncEnqueue(from);
-
-                        netMsg.handleAsync(worker, msg -> {
-                            onReceiveAsyncDequeue();
-
-                            try {
-                                receiveRequestAsync(msg.decode().cast(), worker, receivedAtNanos);
-                            } catch (Throwable err) {
-                                handleReceiveError(msg, err);
-                            }
-                        });
-                    } else {
-                        receiveRequestSync(netMsg.decode().cast(), worker);
-                    }
-
-                    break;
-                }
+                case VOID_REQUEST:
                 case SUBSCRIBE: {
                     MessagingWorker worker = async.pooledWorker();
 
@@ -285,6 +237,8 @@ class MessagingConnectionIn<T> extends MessagingConnection<T> {
 
                     break;
                 }
+                case AFFINITY_REQUEST:
+                case AFFINITY_VOID_REQUEST:
                 case AFFINITY_SUBSCRIBE: {
                     int affinity = MessagingProtocolCodec.previewAffinity(netMsg);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,8 +18,9 @@ package io.hekate.rpc.internal;
 
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFutureException;
-import io.hekate.messaging.unicast.RequestFuture;
-import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.operation.RequestFuture;
+import io.hekate.messaging.operation.Response;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
 import io.hekate.rpc.internal.RpcProtocol.RpcCall;
@@ -30,7 +31,7 @@ import java.util.function.Function;
 
 class RpcMethodClient<T> extends RpcMethodClientBase<T> {
     private static final Function<Response<RpcProtocol>, Object> RESPONSE_CONVERTER = response -> {
-        RpcProtocol result = response.get();
+        RpcProtocol result = response.payload();
 
         if (result instanceof RpcCallResult) {
             return ((RpcCallResult)result).result();
@@ -39,8 +40,22 @@ class RpcMethodClient<T> extends RpcMethodClientBase<T> {
         }
     };
 
-    public RpcMethodClient(RpcInterfaceInfo<T> rpc, String tag, RpcMethodInfo method, MessagingChannel<RpcProtocol> channel) {
+    private final GenericRetryConfigurer retryPolicy;
+
+    private final long timeout;
+
+    public RpcMethodClient(
+        RpcInterfaceInfo<T> rpc,
+        String tag,
+        RpcMethodInfo method,
+        MessagingChannel<RpcProtocol> channel,
+        GenericRetryConfigurer retryPolicy,
+        long timeout
+    ) {
         super(rpc, tag, method, channel);
+
+        this.retryPolicy = retryPolicy;
+        this.timeout = timeout;
     }
 
     @Override
@@ -49,20 +64,18 @@ class RpcMethodClient<T> extends RpcMethodClientBase<T> {
 
         RequestFuture<RpcProtocol> future = channel().newRequest(call)
             .withAffinity(affinity)
+            .withTimeout(timeout, TimeUnit.MILLISECONDS)
+            .withRetry(retry -> {
+                if (retryPolicy != null) {
+                    retryPolicy.configure(retry);
+                }
+            })
             .submit();
 
         if (method().isAsync()) {
             return future.thenApply(RESPONSE_CONVERTER);
         } else {
-            Response<RpcProtocol> response;
-
-            if (channel().timeout() > 0) {
-                response = future.get(channel().timeout(), TimeUnit.MILLISECONDS);
-            } else {
-                response = future.get();
-            }
-
-            return RESPONSE_CONVERTER.apply(response);
+            return RESPONSE_CONVERTER.apply(future.get());
         }
     }
 }

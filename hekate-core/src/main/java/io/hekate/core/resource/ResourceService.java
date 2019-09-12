@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -33,7 +33,7 @@ import java.net.URL;
  * target="_blank">Spring Framework</a> then it will utilize the framework's resource loading capabilities.
  * </p>
  *
- * <h2>Accessing service</h2>
+ * <h2>Accessing the Service</h2>
  * <p>
  * {@link ResourceService} can be accessed via {@link Hekate#get(Class)} method as in the example below:
  * ${source: core/resource/ResourceServiceJavadocTest.java#access}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -62,7 +62,7 @@ import org.springframework.context.annotation.Lazy;
  * ClusterServiceFactory} type.
  * </p>
  *
- * <h2>Configuration properties</h2>
+ * <h2>Configuration Properties</h2>
  * <p>
  * It is possible to configure {@link ClusterServiceFactory} via application properties prefixed with {@code 'hekate.cluster'}.
  * For example:
@@ -71,6 +71,7 @@ import org.springframework.context.annotation.Lazy;
  * <li>{@link ClusterServiceFactory#setGossipInterval(long) 'hekate.cluster.gossip-interval'}</li>
  * <li>{@link ClusterServiceFactory#setSpeedUpGossipSize(int) 'hekate.cluster.speed-up-gossip-size'}</li>
  * <li>{@link ClusterServiceFactory#setSplitBrainAction(SplitBrainAction) 'hekate.cluster.split-brain-action'}</li>
+ * <li>{@link ClusterServiceFactory#setSplitBrainCheckInterval(long)} 'hekate.cluster.split-brain-check-interval'}</li>
  * </ul>
  *
  * <p>
@@ -84,21 +85,23 @@ import org.springframework.context.annotation.Lazy;
  * <li>{@link DefaultFailureDetectorConfig#setFailFast(boolean)} 'hekate.cluster.health.fail-fast'}</li>
  * </ul>
  *
- * <h2>Seed node providers</h2>
+ * <h2>Seed Node Providers</h2>
  * <p>
  * This auto-configuration registers all beans of the {@link SeedNodeProvider} type that can be found in the application context.
- * All such providers will be registered as a single {@link SeedNodeProviderGroup}. Rrror handling policy of that group can be specified
+ * All such providers will be registered as a single {@link SeedNodeProviderGroup}. Error handling policy of that group can be specified
  * via the {@link SeedNodeProviderGroupConfig#setPolicy(SeedNodeProviderGroupPolicy) 'hekate.cluster.seed.policy'} property.
  * </p>
  *
  * <p>
- * For auto-configuration of {@link SeedNodeProvider}s please see the documentation of the following classes:
+ * For auto-configuration of {@link SeedNodeProvider SeedNodeProviders} please see the documentation of the following classes:
  * </p>
  * <ul>
  * <li>{@link HekateMulticastSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateFsSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateJdbcSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateZooKeeperSeedNodeProviderConfigurer}</li>
+ * <li>{@link HekateEtcdSeedNodeProviderConfigurer}</li>
+ * <li>{@link HekateConsulSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateCloudStoreSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateCloudSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateStaticSeedNodeProviderConfigurer}</li>

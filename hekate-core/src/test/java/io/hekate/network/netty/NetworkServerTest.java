@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -149,7 +149,7 @@ public class NetworkServerTest extends NetworkTestBase {
     public void testFailover() throws Exception {
         int failoverInterval = 50;
 
-        DefaultNettyServer nettyServer = (DefaultNettyServer)createServer();
+        NettyServer nettyServer = (NettyServer)createServer();
 
         AtomicReference<CountDownLatch> errorLatch = new AtomicReference<>();
 
@@ -198,7 +198,7 @@ public class NetworkServerTest extends NetworkTestBase {
     public void testAddressChangeOnFailover() throws Exception {
         int failoverInterval = 50;
 
-        DefaultNettyServer nettyServer = (DefaultNettyServer)createServer();
+        NettyServer nettyServer = (NettyServer)createServer();
 
         AtomicReference<CountDownLatch> errorLatch = new AtomicReference<>();
 
@@ -380,7 +380,7 @@ public class NetworkServerTest extends NetworkTestBase {
         int clients = 5;
         int messagesPerClient = 5;
 
-        CountDownLatch ready = new CountDownLatch(clients);
+        CountDownLatch clientsDisconnected = new CountDownLatch(clients);
 
         Map<String, List<String>> contexts = new ConcurrentHashMap<>();
 
@@ -405,7 +405,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
                 events.add("disconnect");
 
-                ready.countDown();
+                clientsDisconnected.countDown();
             }
 
             @Override
@@ -442,12 +442,20 @@ public class NetworkServerTest extends NetworkTestBase {
                 client.send("msg_" + i + "_" + j);
             }
 
-            client.send("fail");
+            CompletableFuture<String> failSend = new CompletableFuture<>();
 
-            client.disconnect().get();
+            client.send("fail", (msg, err) -> {
+                if (err == null) {
+                    failSend.complete(msg);
+                } else {
+                    failSend.completeExceptionally(err);
+                }
+            });
+
+            failSend.thenRun(client::disconnect);
         }
 
-        await(ready);
+        await(clientsDisconnected);
 
         server.stop().get();
 

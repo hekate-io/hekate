@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -30,6 +30,8 @@ import java.net.UnknownHostException;
 import org.junit.Test;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.stereotype.Component;
 
 import static org.junit.Assert.assertNotNull;
@@ -62,6 +64,7 @@ public class MessagingInjectionJavadocTest extends HekateAutoConfigurerTestBase 
     }
     // End:app
 
+    @ComponentScan(excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = MyApp.class))
     public static class FasterMyApp extends MyApp {
         @Bean
         public SeedNodeProvider seedNodeProvider() throws UnknownHostException {

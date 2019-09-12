@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -20,6 +20,7 @@ import io.hekate.HekateTestContext;
 import io.hekate.codec.CodecException;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.network.NetworkClient;
+import io.hekate.network.NetworkConnectTimeoutException;
 import io.hekate.network.NetworkEndpoint;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkMessage;
@@ -41,6 +42,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.util.IdentityHashMap;
 import java.util.Optional;
 import java.util.Set;
@@ -83,8 +85,6 @@ public class NetworkClientTest extends NetworkTestBase {
             }
 
             assertSame(NetworkClient.State.DISCONNECTED, client.state());
-            assertNull(client.remoteAddress());
-            assertNull(client.localAddress());
             callback.assertConnects(0);
             callback.assertDisconnects(1);
             callback.assertErrors(1);
@@ -123,8 +123,6 @@ public class NetworkClientTest extends NetworkTestBase {
             assertTrue(getStacktrace(sendErr), ErrorUtils.isCausedBy(IOException.class, sendErr));
 
             assertSame(NetworkClient.State.DISCONNECTED, client.state());
-            assertNull(client.remoteAddress());
-            assertNull(client.localAddress());
             callback.assertConnects(0);
             callback.assertDisconnects(1);
             callback.assertErrors(1);
@@ -150,12 +148,10 @@ public class NetworkClientTest extends NetworkTestBase {
             }
 
             assertSame(NetworkClient.State.DISCONNECTED, client.state());
-            assertNull(client.remoteAddress());
-            assertNull(client.localAddress());
             callback.assertConnects(0);
             callback.assertDisconnects(1);
             callback.assertErrors(1);
-            callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof ConnectTimeoutException));
+            callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof NetworkConnectTimeoutException));
         });
     }
 
@@ -191,8 +187,6 @@ public class NetworkClientTest extends NetworkTestBase {
 
             assertSame(NetworkClient.State.DISCONNECTED, client.state());
 
-            assertNull(client.remoteAddress());
-            assertNull(client.localAddress());
             callback.assertConnects(1);
             callback.assertDisconnects(1);
             callback.assertNoErrors();
@@ -324,8 +318,6 @@ public class NetworkClientTest extends NetworkTestBase {
 
             assertSame(NetworkClient.State.DISCONNECTED, client.state());
 
-            assertNull(client.remoteAddress());
-            assertNull(client.localAddress());
             callback.assertConnects(1);
             callback.assertDisconnects(1);
             callback.assertNoErrors();
@@ -353,11 +345,11 @@ public class NetworkClientTest extends NetworkTestBase {
             callback.assertDisconnects(0);
             callback.assertNoErrors();
 
-            assertEquals((Integer)i, client.getContext());
+            assertEquals(i, client.getContext());
 
             client.disconnect().get();
 
-            assertEquals((Integer)i, client.getContext());
+            assertEquals(i, client.getContext());
 
             callback.assertConnects(1);
             callback.assertDisconnects(1);
@@ -543,7 +535,7 @@ public class NetworkClientTest extends NetworkTestBase {
         // Send a message to trigger response.
         client.send("test", new NetworkSendCallbackMock<>());
 
-        NetworkEndpoint<String> receiver = receiverRef.exchange(null, 3, TimeUnit.SECONDS);
+        NetworkEndpoint<String> receiver = receiverRef.exchange(null, AWAIT_TIMEOUT, TimeUnit.SECONDS);
 
         assertNotNull(receiver);
 
@@ -630,51 +622,6 @@ public class NetworkClientTest extends NetworkTestBase {
             callback.assertConnects(1);
             callback.assertDisconnects(1);
             callback.assertNoErrors();
-
-            listener.assertNoErrors();
-        });
-    }
-
-    @Test
-    public void testMultipleEnsureConnected() throws Exception {
-        NetworkServer server = createServer();
-
-        NetworkServerCallbackMock listener = new NetworkServerCallbackMock();
-
-        server.start(newServerAddress(), listener).get();
-
-        NetworkClient<String> client = createClient();
-
-        repeat(3, i -> {
-            NetworkClientCallbackMock<String> callback = new NetworkClientCallbackMock<>();
-
-            NetworkFuture<String> future = client.ensureConnected(server.address(), callback);
-
-            future.get();
-
-            assertSame(NetworkClient.State.CONNECTED, client.state());
-
-            NetworkClientCallbackMock<String> rejected1 = new NetworkClientCallbackMock<>();
-            NetworkClientCallbackMock<String> rejected2 = new NetworkClientCallbackMock<>();
-            NetworkClientCallbackMock<String> rejected3 = new NetworkClientCallbackMock<>();
-
-            assertSame(future, client.ensureConnected(server.address(), rejected1));
-            assertSame(future, client.ensureConnected(server.address(), rejected2));
-            assertSame(future, client.ensureConnected(server.address(), rejected3));
-
-            assertSame(NetworkClient.State.CONNECTED, client.state());
-
-            client.disconnect().get();
-
-            assertSame(NetworkClient.State.DISCONNECTED, client.state());
-
-            callback.assertConnects(1);
-            callback.assertDisconnects(1);
-            callback.assertNoErrors();
-
-            rejected1.assertConnects(0);
-            rejected2.assertConnects(0);
-            rejected3.assertConnects(0);
 
             listener.assertNoErrors();
         });
@@ -814,25 +761,28 @@ public class NetworkClientTest extends NetworkTestBase {
 
     @Test
     public void testDisconnectNoWait() throws Exception {
-        NetworkServer server = createServer();
+        InetSocketAddress address = newServerAddress();
 
-        server.start(newServerAddress()).get();
+        try (ServerSocket ignore = new ServerSocket(address.getPort())) {
+            for (int i = 20; i >= 0; i--) {
+                NetworkClient<String> client = createClient();
 
-        for (int i = 20; i >= 0; i--) {
-            NetworkClient<String> client = createClient();
+                NetworkClientCallbackMock<String> callback = new NetworkClientCallbackMock<>();
 
-            NetworkClientCallbackMock<String> callback = new NetworkClientCallbackMock<>();
+                NetworkFuture<String> connect = client.connect(address, callback);
 
-            NetworkFuture<String> connect = client.connect(server.address(), callback);
+                NetworkFuture<String> disconnect = client.disconnect();
 
-            NetworkFuture<String> disconnect = client.disconnect();
+                get(disconnect);
 
-            get(disconnect);
-            get(connect);
+                assertSame(NetworkClient.State.DISCONNECTED, client.state());
 
-            assertSame(NetworkClient.State.DISCONNECTED, client.state());
+                expectCause(ConnectException.class, () ->
+                    get(connect)
+                );
 
-            callback.assertErrors(0);
+                callback.assertErrors(1);
+            }
         }
     }
 
@@ -1034,11 +984,9 @@ public class NetworkClientTest extends NetworkTestBase {
             callback.assertConnects(0);
             callback.assertErrors(1);
 
-            messageCallback.assertFailed("one");
-            messageCallback.assertFailed("two");
-            messageCallback.assertFailed("three");
+            messageCallback.awaitForErrors("one", "two", "three");
 
-            callback.getErrors().forEach(e -> assertTrue(e instanceof ConnectTimeoutException));
+            callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof NetworkConnectTimeoutException));
         } finally {
             stopLatch.countDown();
 

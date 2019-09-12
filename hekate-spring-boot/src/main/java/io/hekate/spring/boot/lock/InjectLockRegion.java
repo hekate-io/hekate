@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -41,9 +41,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
  *
  * <p>
  * 1) Define a bean that will use {@link InjectLockRegion} annotation to inject {@link LockRegion} into its field.
- * ${source:lock/LockInjectionJavadocTest.java#region_bean}
+ * ${source:lock/LockRegionInjectionJavadocTest.java#bean}
  * 2) Define a Spring Boot application that will provide lock region configuration.
- * ${source:lock/LockInjectionJavadocTest.java#region_app}
+ * ${source:lock/MyApp.java#app}
  * </p>
  *
  * @see HekateLockServiceConfigurer

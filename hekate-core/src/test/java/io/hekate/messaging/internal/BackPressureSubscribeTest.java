@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,7 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.Message;
-import io.hekate.messaging.unicast.RequestFuture;
+import io.hekate.messaging.operation.RequestFuture;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -48,12 +48,12 @@ public class BackPressureSubscribeTest extends BackPressureParametrizedTestBase 
         awaitForChannelsTopology(sender, receiver);
 
         // Enforce back pressure on the receiver in order to block sending of partial responses.
-        List<RequestFuture<String>> futureResponses = requestUpToHighWatermark(receiver.get());
+        List<RequestFuture<String>> futureResponses = requestUpToHighWatermark(receiver.channel());
 
         busyWait("requests received", () -> requests.size() == futureResponses.size());
 
         // Send trigger message.
-        sender.get().forRemotes().subscribe("init", (err, rsp) -> { /* Ignore. */ });
+        sender.channel().forRemotes().newSubscribe("init").submit((err, rsp) -> { /* Ignore. */ });
 
         // Await for trigger message to be received.
         busyWait("trigger received", () -> receivedRef.get() != null);

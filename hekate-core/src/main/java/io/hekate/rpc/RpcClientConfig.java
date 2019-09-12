@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,7 +16,7 @@
 
 package io.hekate.rpc;
 
-import io.hekate.failover.FailoverPolicy;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.partition.Partition;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
@@ -55,8 +55,6 @@ public class RpcClientConfig {
 
     private String tag;
 
-    private FailoverPolicy failover;
-
     private RpcLoadBalancer loadBalancer;
 
     private int partitions = RendezvousHashMapper.DEFAULT_PARTITIONS;
@@ -64,6 +62,8 @@ public class RpcClientConfig {
     private int backupNodes;
 
     private long timeout;
+
+    private GenericRetryConfigurer retryPolicy;
 
     /**
      * Returns the RPC interface (see {@link #setRpcInterface(Class)}).
@@ -136,39 +136,6 @@ public class RpcClientConfig {
      */
     public RpcClientConfig withTag(String tag) {
         setTag(tag);
-
-        return this;
-    }
-
-    /**
-     * Returns the failover policy (see {@link #setFailover(FailoverPolicy)}).
-     *
-     * @return Failover policy.
-     */
-    public FailoverPolicy getFailover() {
-        return failover;
-    }
-
-    /**
-     * Sets the failover policy.
-     *
-     * @param failover Failover policy.
-     */
-    public void setFailover(FailoverPolicy failover) {
-        this.failover = failover;
-    }
-
-    /**
-     * Fluent-style version of {@link #setFailover(FailoverPolicy)}.
-     *
-     * @param failover Failover policy.
-     *
-     * @return This instance.
-     *
-     * @see RpcClientBuilder#withFailover(FailoverPolicy)
-     */
-    public RpcClientConfig withFailover(FailoverPolicy failover) {
-        setFailover(failover);
 
         return this;
     }
@@ -322,6 +289,50 @@ public class RpcClientConfig {
      */
     public RpcClientConfig withTimeout(long timeout) {
         setTimeout(timeout);
+
+        return this;
+    }
+
+    /**
+     * Returns the generic retry policy (see {@link #setRetryPolicy(GenericRetryConfigurer)}).
+     *
+     * @return Generic retry policy.
+     */
+    public GenericRetryConfigurer getRetryPolicy() {
+        return retryPolicy;
+    }
+
+    /**
+     * Sets the generic retry policy.
+     *
+     * <p>
+     * <b>Notice:</b>
+     * The specified retry policy will be applied only to those RPC methods that are explicitly marked with the {@link RpcRetry} annotation.
+     * Options that are defined in the annotation's attributes have higher priority over this policy.
+     * </p>
+     *
+     * <p>
+     * Alternatively the generic retry policy can be specified at the RPC client construction time via the
+     * {@link RpcClientBuilder#withRetryPolicy(GenericRetryConfigurer)} method.
+     * </p>
+     *
+     * @param retryPolicy Generic retry policy.
+     *
+     * @see RpcRetry
+     */
+    public void setRetryPolicy(GenericRetryConfigurer retryPolicy) {
+        this.retryPolicy = retryPolicy;
+    }
+
+    /**
+     * Fluent-style version of {@link #setRetryPolicy(GenericRetryConfigurer)}.
+     *
+     * @param retryPolicy Generic retry policy.
+     *
+     * @return This instance.
+     */
+    public RpcClientConfig withRetryPolicy(GenericRetryConfigurer retryPolicy) {
+        setRetryPolicy(retryPolicy);
 
         return this;
     }

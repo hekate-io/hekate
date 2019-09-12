@@ -1,33 +1,57 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.intercept.OutboundType;
-import io.hekate.messaging.unicast.ReplyDecision;
-import io.hekate.messaging.unicast.RequestCallback;
-import io.hekate.messaging.unicast.RequestCondition;
-import io.hekate.messaging.unicast.Response;
-import io.hekate.messaging.unicast.SubscribeFuture;
+import io.hekate.messaging.operation.ResponsePart;
+import io.hekate.messaging.operation.SubscribeCallback;
+import io.hekate.messaging.operation.SubscribeFuture;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
+import io.hekate.messaging.retry.RetryCallback;
+import io.hekate.messaging.retry.RetryCondition;
+import io.hekate.messaging.retry.RetryErrorPredicate;
+import io.hekate.messaging.retry.RetryResponsePredicate;
+import io.hekate.messaging.retry.RetryRoutingPolicy;
 
 class SubscribeOperation<T> extends UnicastOperation<T> {
     private final SubscribeFuture<T> future = new SubscribeFuture<>();
 
-    private final RequestCallback<T> callback;
+    private final SubscribeCallback<T> callback;
 
-    private final RequestCondition<T> condition;
+    private final RetryResponsePredicate<T> retryRsp;
 
     private volatile boolean active;
 
     public SubscribeOperation(
         T message,
         Object affinityKey,
+        long timeout,
+        int maxAttempts,
+        RetryErrorPredicate retryErr,
+        RetryResponsePredicate<T> retryRsp,
+        RetryCondition retryCondition,
+        RetryBackoffPolicy retryBackoff,
+        RetryCallback retryCallback,
+        RetryRoutingPolicy retryRoute,
         MessagingGatewayContext<T> gateway,
         MessageOperationOpts<T> opts,
-        RequestCallback<T> callback,
-        RequestCondition<T> condition
+        SubscribeCallback<T> callback
     ) {
-        super(message, affinityKey, gateway, opts, true);
+        super(
+            message,
+            affinityKey,
+            timeout,
+            maxAttempts,
+            retryErr,
+            retryCondition,
+            retryBackoff,
+            retryCallback,
+            retryRoute,
+            gateway,
+            opts,
+            true
+        );
 
         this.callback = callback;
-        this.condition = condition;
+        this.retryRsp = retryRsp;
     }
 
     @Override
@@ -41,12 +65,10 @@ class SubscribeOperation<T> extends UnicastOperation<T> {
     }
 
     @Override
-    public ReplyDecision accept(Throwable error, Response<T> response) {
-        if (condition == null || isPartial(response)) {
-            return ReplyDecision.DEFAULT;
-        }
-
-        return condition.accept(error, response);
+    public boolean shouldRetry(ResponsePart<T> response) {
+        return retryRsp != null
+            && !isPartial(response)
+            && retryRsp.shouldRetry(response);
     }
 
     @Override
@@ -63,7 +85,7 @@ class SubscribeOperation<T> extends UnicastOperation<T> {
     }
 
     @Override
-    protected void doReceivePartial(Response<T> response) {
+    protected void doReceivePartial(ResponsePart<T> response) {
         if (!active) {
             active = true;
         }
@@ -72,7 +94,7 @@ class SubscribeOperation<T> extends UnicastOperation<T> {
     }
 
     @Override
-    protected void doReceiveFinal(Response<T> response) {
+    protected void doReceiveFinal(ResponsePart<T> response) {
         try {
             callback.onComplete(null, response);
         } finally {
@@ -89,7 +111,7 @@ class SubscribeOperation<T> extends UnicastOperation<T> {
         }
     }
 
-    private static boolean isPartial(Response<?> response) {
-        return response != null && response.isPartial();
+    private static boolean isPartial(ResponsePart<?> response) {
+        return response != null && !response.isLastPart();
     }
 }

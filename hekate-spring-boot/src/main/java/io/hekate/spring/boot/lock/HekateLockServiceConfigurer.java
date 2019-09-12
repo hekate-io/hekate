@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -59,7 +59,7 @@ import org.springframework.stereotype.Component;
  * LockServiceFactory} type and if there is at least one {@link Bean} of {@link LockRegionConfig} type within the application context.
  * </p>
  *
- * <h2>Configuration properties</h2>
+ * <h2>Configuration Properties</h2>
  * <p>
  * It is possible to configure {@link LockServiceFactory} via application properties prefixed with {@code 'hekate.locks'}.
  * For example:
@@ -70,7 +70,7 @@ import org.springframework.stereotype.Component;
  * <li>{@link LockServiceFactory#setRetryInterval(long) 'hekate.locks.retry-interval'}</li>
  * </ul>
  *
- * <h2>Locks injections</h2>
+ * <h2>Locks Injections</h2>
  * <p>
  * This auto-configuration provides support for injecting beans of {@link LockRegion} and {@link DistributedLock} type into other beans with
  * the help of {@link InjectLockRegion} and {@link InjectLock} annotations.

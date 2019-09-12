@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -19,7 +19,6 @@ package io.hekate.javadoc.rpc;
 import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
-import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcServerConfig;
 import io.hekate.rpc.RpcService;
@@ -61,17 +60,18 @@ public class RpcServiceJavadocTest extends HekateNodeTestBase {
         Hekate hekate = new HekateBootstrap()
             .withService(factory)
             .join();
+
+        // Access the service.
+        RpcService rpc = hekate.rpc();
         // End:configure
 
-        // Start:access
-        RpcService rpc = hekate.rpc();
-        // End:access
+        try {
+            assertNotNull(rpc);
 
-        assertNotNull(rpc);
-
-        clientExample(hekate);
-
-        hekate.leave();
+            clientExample(hekate);
+        } finally {
+            hekate.leave();
+        }
     }
 
     @Test
@@ -91,20 +91,17 @@ public class RpcServiceJavadocTest extends HekateNodeTestBase {
             .join();
         // End:server
 
-        clientExample(hekate);
-
-        hekate.leave();
+        try {
+            clientExample(hekate);
+        } finally {
+            hekate.leave();
+        }
     }
 
     private void clientExample(Hekate hekate) {
         // Start:client
         SomeRpcService client = hekate.rpc().clientFor(SomeRpcService.class)
-            // Set some configuration options (optional).
-            .withTimeout(3, TimeUnit.SECONDS) // RPC timeout.
-            .withFailover(new FailoverPolicyBuilder() // Failover policy.
-                .withMaxAttempts(3) // Up to 3 times.
-                .withConstantRetryDelay(200) // 200ms delay between attempts.
-            )
+            .withTimeout(AWAIT_TIMEOUT, TimeUnit.SECONDS) // RPC timeout (optional).
             .build();
 
         // Call RPC method.

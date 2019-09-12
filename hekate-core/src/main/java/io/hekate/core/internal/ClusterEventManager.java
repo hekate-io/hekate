@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -34,6 +34,7 @@ import io.hekate.util.format.ToString;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -86,7 +87,7 @@ class ClusterEventManager implements HekateSupport {
 
             FilteredListener that = (FilteredListener)o;
 
-            return !(delegate != null ? !delegate.equals(that.delegate) : that.delegate != null);
+            return Objects.equals(delegate, that.delegate);
         }
 
         @Override

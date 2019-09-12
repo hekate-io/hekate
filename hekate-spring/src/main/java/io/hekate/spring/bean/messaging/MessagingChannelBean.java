@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,15 +16,16 @@
 
 package io.hekate.spring.bean.messaging;
 
+import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.spring.bean.HekateBaseBean;
-import org.springframework.beans.factory.annotation.Required;
+import org.springframework.beans.factory.InitializingBean;
 
 /**
  * Imports {@link MessagingChannel} into a Spring context.
  */
-public class MessagingChannelBean extends HekateBaseBean<MessagingChannel<?>> {
+public class MessagingChannelBean extends HekateBaseBean<MessagingChannel<?>> implements InitializingBean {
     private String channel;
 
     @Override
@@ -53,8 +54,12 @@ public class MessagingChannelBean extends HekateBaseBean<MessagingChannel<?>> {
      *
      * @see MessagingChannelConfig#setName(String)
      */
-    @Required
     public void setChannel(String channel) {
         this.channel = channel;
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        ConfigCheck.get(getClass()).notEmpty(channel, "channel");
     }
 }

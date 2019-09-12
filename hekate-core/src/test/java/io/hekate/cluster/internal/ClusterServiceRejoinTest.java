@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -522,7 +522,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
 
     private void awaitForNodeChange(ClusterNodeId id, HekateTestNode node) throws Exception {
         busyWait("node change from " + id, () -> {
-            assertTrue(node.clusterGuard().tryLockRead(3, TimeUnit.SECONDS));
+            assertTrue(node.clusterGuard().tryLockRead(AWAIT_TIMEOUT, TimeUnit.SECONDS));
 
             try {
                 return node.state() != DOWN

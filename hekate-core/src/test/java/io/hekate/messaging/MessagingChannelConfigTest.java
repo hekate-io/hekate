@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -19,9 +19,9 @@ package io.hekate.messaging;
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.codec.CodecFactory;
-import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.partition.RendezvousHashMapper;
 import java.util.Collections;
 import org.junit.Test;
@@ -141,6 +141,25 @@ public class MessagingChannelConfigTest extends HekateTestBase {
     }
 
     @Test
+    public void testRetryPolicy() {
+        assertNull(cfg.getRetryPolicy());
+
+        GenericRetryConfigurer retry = mock(GenericRetryConfigurer.class);
+
+        cfg.setRetryPolicy(retry);
+
+        assertSame(retry, cfg.getRetryPolicy());
+
+        cfg.setRetryPolicy(null);
+
+        assertNull(cfg.getRetryPolicy());
+
+        assertSame(cfg, cfg.withRetryPolicy(retry));
+
+        assertSame(retry, cfg.getRetryPolicy());
+    }
+
+    @Test
     public void testReceiver() {
         MessageReceiver<Object> receiver = msg -> {
             // No-op.
@@ -174,25 +193,6 @@ public class MessagingChannelConfigTest extends HekateTestBase {
         cfg.setReceiver(null);
 
         assertFalse(cfg.hasReceiver());
-    }
-
-    @Test
-    public void testFailoverPolicy() {
-        FailoverPolicy policy = mock(FailoverPolicy.class);
-
-        assertNull(cfg.getFailoverPolicy());
-
-        cfg.setFailoverPolicy(policy);
-
-        assertSame(policy, cfg.getFailoverPolicy());
-
-        cfg.setFailoverPolicy(null);
-
-        assertNull(cfg.getFailoverPolicy());
-
-        assertSame(cfg, cfg.withFailoverPolicy(policy));
-
-        assertSame(policy, cfg.getFailoverPolicy());
     }
 
     @Test
@@ -245,6 +245,19 @@ public class MessagingChannelConfigTest extends HekateTestBase {
         assertSame(cfg, cfg.withLogCategory("test2"));
 
         assertEquals("test2", cfg.getLogCategory());
+    }
+
+    @Test
+    public void testWarnOnRetry() {
+        assertEquals(-1, cfg.getWarnOnRetry());
+
+        cfg.setWarnOnRetry(0);
+
+        assertEquals(0, cfg.getWarnOnRetry());
+
+        assertSame(cfg, cfg.withWarnOnRetry(10));
+
+        assertEquals(10, cfg.getWarnOnRetry());
     }
 
     @Test

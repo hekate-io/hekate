@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,8 +18,8 @@ package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.messaging.MessageReceiver;
-import io.hekate.messaging.broadcast.BroadcastFuture;
-import io.hekate.messaging.broadcast.BroadcastResult;
+import io.hekate.messaging.operation.BroadcastFuture;
+import io.hekate.messaging.operation.BroadcastResult;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
@@ -47,8 +47,8 @@ public class MessagingChannelBroadcastConfirmationTest extends MessagingServiceT
 
             awaitForChannelsTopology(channels);
 
-            BroadcastFuture<String> future = channel.get().newBroadcast("test" + i)
-                .withConfirmReceive(true)
+            BroadcastFuture<String> future = channel.channel().newBroadcast("test" + i)
+                .withAck()
                 .submit();
 
             BroadcastResult<String> result = get(future);
@@ -72,17 +72,16 @@ public class MessagingChannelBroadcastConfirmationTest extends MessagingServiceT
 
             for (TestChannel channel : channels) {
                 repeat(100, j -> {
-                    BroadcastResult<String> result = get(channel.get()
+                    BroadcastResult<String> result = channel.channel()
                         .newBroadcast("test-" + j)
-                        .withConfirmReceive(true)
                         .withAffinity(j)
-                        .submit()
-                    );
+                        .withAck()
+                        .sync();
 
                     assertTrue(result.isSuccess());
 
                     List<ClusterNode> receivedBy = result.nodes();
-                    List<ClusterNode> mappedTo = channel.get().partitions().map(j).nodes();
+                    List<ClusterNode> mappedTo = channel.channel().partitions().map(j).nodes();
 
                     assertEquals(nodesPerPartition, receivedBy.size());
                     assertEquals(mappedTo.stream().sorted().collect(toList()), receivedBy.stream().sorted().collect(toList()));
@@ -106,11 +105,10 @@ public class MessagingChannelBroadcastConfirmationTest extends MessagingServiceT
 
             TestChannel channel = channels.get(channels.size() - 1);
 
-            BroadcastResult<String> result = get(channel.get()
+            BroadcastResult<String> result = channel.channel()
                 .newBroadcast("test" + i)
-                .withConfirmReceive(true)
-                .submit()
-            );
+                .withAck()
+                .sync();
 
             assertEquals("test" + i, result.message());
             assertFalse(result.isSuccess());

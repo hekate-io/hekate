@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -31,7 +31,7 @@ import io.hekate.core.service.Service;
  * dependencies into objects that were received from some external sources (f.e. deserialized from a socket).
  * </p>
  *
- * <h2>Accessing service</h2>
+ * <h2>Accessing the Service</h2>
  * <p>
  * {@link InjectionService} is available only if {@link Hekate} instance was constructed via framework-specific bootstrap class
  * (like <a href="{@docRoot}/io/hekate/spring/bean/HekateSpringBootstrap.html">HekateSpringBootstrap</a>). Availability of this service can
@@ -40,13 +40,13 @@ import io.hekate.core.service.Service;
  * ${source: core/inject/InjectionServiceJavadocTest.java#access}
  * </p>
  *
- * <h2>Enabling injection</h2>
+ * <h2>Enabling Injection</h2>
  * <p>
  * In order to enable injection the {@link HekateInject} annotation must be added to a class who's dependencies should be injected.
  * Classes that do not have this annotation will be ignored by the {@link InjectionService}.
  * </p>
  *
- * <h2>Injectable components</h2>
+ * <h2>Injectable Components</h2>
  * <p>
  * The following components can can be injected:
  * </p>
@@ -62,7 +62,7 @@ import io.hekate.core.service.Service;
  * be provided by an underlying IoC container are not supported.
  * </p>
  */
-public interface InjectionService extends Service {
+public interface InjectionService extends Service, PlaceholderResolver {
     /**
      * Injects dependencies into the specified object.
      *

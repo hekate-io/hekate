@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -23,8 +23,8 @@ import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.DefaultServiceFactory;
 import io.hekate.core.service.Service;
-import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.partition.RendezvousHashMapper;
 import java.util.Collection;
 import java.util.List;
@@ -39,15 +39,24 @@ import java.util.concurrent.CompletableFuture;
  * <h2>Overview</h2>
  * <p>
  * This service provides support for remote calls of Java objects in a cluster of {@link Hekate} nodes. Each such object must declare one
- * or more Java interfaces marked with the @{@link Rpc} annotation. Remote nodes (clients) use this interface to build a proxy object that
- * will translate all local calls of methods of this proxy object to remote calls on cluster nodes.
+ * or more Java interfaces marked with the @{@link Rpc} annotation. Client nodes use this interface to build a proxy object that
+ * transparently executes all local methods calls on remote nodes.
  * </p>
  *
- * <h2>Service configuration</h2>
+ * <ul>
+ * <li><a href="#service_configuration">Service Configuration</a></li>
+ * <li><a href="#rpc_interface">RPC Interface</a></li>
+ * <li><a href="#rpc_server">RPC Server</a></li>
+ * <li><a href="#rpc_client">RPC Client</a></li>
+ * <li><a href="#routing_and_load_balancing">Routing and Load Balancing</a></li>
+ * <li><a href="#retrying_on_error">Retrying on Error</a></li>
+ * </ul>
+ *
+ * <a name="service_configuration"></a>
+ * <h2>Service Configuration</h2>
  * <p>
- * {@link RpcService} can be registered and configured in {@link HekateBootstrap} with the help of {@link RpcServiceFactory} as shown in
- * the
- * example below:
+ * {@link RpcService} can be configured and registered in {@link HekateBootstrap} with the help of {@link RpcServiceFactory} as shown in
+ * the example below:
  * </p>
  *
  * <div class="tabs">
@@ -71,28 +80,27 @@ import java.util.concurrent.CompletableFuture;
  * </div>
  * </div>
  *
- * <h2>Accessing service</h2>
- * <p>
- * {@link RpcService} can be accessed via {@link Hekate#rpc()} method as in the example below:
- * ${source: rpc/RpcServiceJavadocTest.java#access}
- * </p>
- *
- * <h2>RPC interface</h2>
+ * <a name="rpc_interface"></a>
+ * <h2>RPC Interface</h2>
  * <p>
  * Every object that is exposed for RPC access must implement at least one @{@link Rpc}-annotated interface.
  * Below is the example of a simple RPC interface:
  * ${source: rpc/RpcServiceJavadocTest.java#interface}
  * </p>
  *
- * <h3>Asynchronous RPC methods</h3>
+ * <h3>Synchronous vs Asynchronous</h3>
  * <p>
  * RPC interfaces can declare both synchronous and asynchronous methods. Synchronous methods are regular methods that return an object of
  * arbitrary Java type. Invocations of such methods are always synchronous and blocks the client thread unless remote invocation is
- * completed. Asynchronous methods must use a {@link CompletableFuture} as their result type. Such methods are always executed
- * asynchronously by the {@link RpcService} without blocking the client thread.
+ * completed.
  * </p>
  *
- * <h3>RPC aggregation and broadcast</h3>
+ * <p>
+ * Asynchronous methods must use a {@link CompletableFuture} as their result type. Such methods are always executed asynchronously by the
+ * {@link RpcService} without blocking the client thread.
+ * </p>
+ *
+ * <h3>Aggregate and Broadcast</h3>
  * <p>
  * RPC service provides support for broadcast/aggregate operations. Each such RPC operations gets submitted to multiple nodes at once and
  * all RPC results from those nodes gets aggregated into a single result object.
@@ -114,7 +122,7 @@ import java.util.concurrent.CompletableFuture;
  * {@code void} return type (or {@link CompletableFuture}{@code <?>} for asynchronous calls).
  * </p>
  *
- * <h3>Arguments splitting</h3>
+ * <h3>Arguments Splitting</h3>
  * <p>
  * RPC service provides support for Map/Reduce style of data processing. This can be achieved by placing @{@link RpcSplit} annotation on
  * one of an @{@link RpcAggregate}-annotated method's parameter. Such parameter must be of one of the following types:
@@ -128,11 +136,12 @@ import java.util.concurrent.CompletableFuture;
  * <p>
  * If @{@link RpcSplit} annotation is present then the value of that parameter will be split into smaller chunks (sub-collections) based
  * on the number of available cluster nodes. All chunks will be evenly distributed among the cluster nodes for parallel processing and once
- * processing on all nodes is completed then results of each node will be aggregated the same way as during the regular {@link RpcAggregate}
+ * processing on all nodes is completed then results of each node will be aggregated the same way as during the regular {@link
+ * RpcAggregate}
  * call.
  * </p>
  *
- * <h3>RPC interface versioning</h3>
+ * <h3>Versioning</h3>
  * <p>
  * RPC interface can define client compatibility rules by using the interface versioning approach. Version can be specified via {@link
  * Rpc#version()} and {@link Rpc#minClientVersion()} attributes. {@link Rpc#version()}  defines the current version of the RPC interface
@@ -154,20 +163,21 @@ import java.util.concurrent.CompletableFuture;
  * will still be able to route requests to the new server.</li>
  * </ol>
  *
- * <h2>RPC server</h2>
+ * <a name="rpc_server"></a>
+ * <h2>RPC Server</h2>
  * <p>
  * RPC server is a Java class that implements one or more @{@link Rpc}-annotated interfaces. Below is the example of such class:
  * ${source: rpc/RpcServiceJavadocTest.java#impl}
  * </p>
  *
- * <h3>RPC server registration</h3>
+ * <h3>Server Registration</h3>
  * <p>
  * Each RPC server must be registered within the {@link RpcServiceFactory} in order to be exposed for remote access. Configuration of each
  * RPC server is represented by the {@link RpcServerConfig} class. Below is the example of RPC server registration:
  * ${source: rpc/RpcServiceJavadocTest.java#server}
  * </p>
  *
- * <h3>RPC server tagging</h3>
+ * <h3>Tagging</h3>
  * <p>
  * If multiple servers implement the same RPC interface and must be deployed to the same {@link Hekate} node then each such server must
  * have an additional qualifier that will help RPC clients to distinguish which exact RPC server they are communicating with.
@@ -181,12 +191,13 @@ import java.util.concurrent.CompletableFuture;
  * and communicate with that server.
  * </p>
  *
- * <h2>RPC client</h2>
+ * <a name="rpc_client"></a>
+ * <h2>RPC Client</h2>
  * <p>
  * The client side of RPC communication is represented by a Java reflections proxy of an @{@link Rpc}-annotated interface. Such proxies can
  * be constructed on an RPC client node via {@link RpcService#clientFor(Class)} method. This method returns an instance of {@link
  * RpcClientBuilder} interface that provides support for dynamically configuring different aspects of a client proxy object (f.e. timeouts,
- * load balancing/failover policies, etc). The client proxy object can be created by calling the {@link RpcClientBuilder#build()} method as
+ * load balancing, retry policies, etc). The client proxy object can be created by calling the {@link RpcClientBuilder#build()} method as
  * in the example below:
  * ${source: rpc/RpcServiceJavadocTest.java#client}
  * </p>
@@ -206,7 +217,8 @@ import java.util.concurrent.CompletableFuture;
  * For the complete list of pre-configurable options please see the documentation of {@link RpcClientConfig} class.
  * </p>
  *
- * <h2>Routing and load balancing</h2>
+ * <a name="routing_and_load_balancing"></a>
+ * <h2>Routing and Load Balancing</h2>
  * <p>
  * Every RPC client proxy uses an instance of {@link RpcLoadBalancer} interface to perform routing of RPC unicast operations. Load balancer
  * can be pre-configured via the {@link RpcClientConfig#setLoadBalancer(RpcLoadBalancer)} method or specified dynamically via the {@link
@@ -220,7 +232,7 @@ import java.util.concurrent.CompletableFuture;
  * cluster topology.
  * </p>
  *
- * <h3>Consistent routing</h3>
+ * <h3>Consistent Routing</h3>
  * <p>
  * Applications can provide an affinity key to the {@link RpcLoadBalancer} so that it could perform consistent routing based on some
  * application-specific criteria. For example, if the {@link DefaultRpcLoadBalancer} is being used by the RPC client then it will
@@ -239,7 +251,7 @@ import java.util.concurrent.CompletableFuture;
  * {@link Object#equals(Object)} methods.
  * </p>
  *
- * <h3>Thread affinity</h3>
+ * <h3>Thread Affinity</h3>
  * <p>
  * Besides providing a hint to the {@link RpcLoadBalancer}, specifying an {@link RpcAffinityKey} also instructs the RPC service to
  * process all RPC operations of the same affinity key on the same thread. This applies both to the server side and to the client side of
@@ -248,38 +260,50 @@ import java.util.concurrent.CompletableFuture;
  * </p>
  *
  * <a name="topology_filterring"></a>
- * <h3>Cluster topology filtering</h3>
+ * <h3>Cluster Topology Filtering</h3>
  * <p>
- * Routing of RPC operations among the cluster nodes is based on the RPC client's cluster topology view. By default, it includes all
- * of the cluster nodes that have an appropriate {@link RpcServerConfig RPC server}. It is possible to dynamically narrow down the list of
- * those nodes via the following methods:
+ * Routing of RPC operations among the cluster nodes is based on the RPC client's cluster view. By default, it includes all of the cluster
+ * nodes that have a compliant {@link RpcServerConfig RPC server}.
+ * </p>
+ *
+ * <p>
+ * It is possible to narrow down the list of client-visible nodes via the following methods of the {@link RpcClientBuilder} class:
  * </p>
  * <ul>
- * <li>{@link RpcClientBuilder#forRemotes()}</li>
- * <li>{@link RpcClientBuilder#forRole(String)}</li>
- * <li>{@link RpcClientBuilder#forProperty(String)}</li>
- * <li>{@link RpcClientBuilder#forNode(ClusterNode)}</li>
- * <li>{@link RpcClientBuilder#forOldest()}</li>
- * <li>{@link RpcClientBuilder#forYoungest()}</li>
- * <li>...{@link ClusterFilterSupport etc}</li>
+ * <li>{@link RpcClientBuilder#forRemotes() forRemotes()}</li>
+ * <li>{@link RpcClientBuilder#forRole(String) forRole(String)}</li>
+ * <li>{@link RpcClientBuilder#forProperty(String) forProperty(String)}</li>
+ * <li>{@link RpcClientBuilder#forNode(ClusterNode) forNode(ClusterNode)}</li>
+ * <li>{@link RpcClientBuilder#forOldest() forOldest()}</li>
+ * <li>{@link RpcClientBuilder#forYoungest() forYoungest()}</li>
+ * <li>...and other methods from the {@link ClusterFilterSupport} base interface</li>
  * </ul>
  *
  * <p>
- * If filtering rules are specified for an RPC client then all RPC operations of that client will be distributed among only those nodes
+ * If filtering rules are specified for an RPC client then all RPC operations of that client will be distributed only among those nodes
  * that do match the filtering criteria.
  * </p>
  *
- * <h2>RPC failover</h2>
+ * <a name="retrying_on_error"></a>
+ * <h2>Retrying on Error</h2>
  * <p>
- * Failover of RPC errors is controlled by the {@link FailoverPolicy} interface. Implementations of this interface can be
- * pre-configured for each RPC client individually via {@link RpcClientConfig#setFailover(FailoverPolicy)} method or
- * defined at runtime via {@link RpcClientBuilder#withFailover(FailoverPolicy)}. In case of an RPC error this interface will be called
- * in order to decided on whether another attempt should be performed or operation should fail.
+ * RPC service provides support for specifying a retry behavior in case of a remote invocation error.
  * </p>
  *
  * <p>
- * For more details and usage examples please see the documentation of {@link FailoverPolicy} interface.
+ * This can be done by marking a method of an RPC interface with the {@link RpcRetry} annotation. If such annotation is present on a method
+ * then all failed invocations of that method will be transparently retried based on the annotation attribute values.
  * </p>
+ *
+ * <p>
+ * {@link RpcRetry}'s attributes provide support for specifying different parameters of retry behavior (like maximum attempts, delay
+ * between retries, etc). It is also possible to configure default values of those attributes by registering an instance
+ * of {@link GenericRetryConfigurer} interface in the RPC client's configuration via the
+ * {@link RpcClientConfig#setRetryPolicy(GenericRetryConfigurer)} or at the RPC client construction time via the
+ * {@link RpcClientBuilder#withRetryPolicy(GenericRetryConfigurer)} method.
+ * </p>
+ *
+ * @see RpcServiceFactory
  */
 @DefaultServiceFactory(RpcServiceFactory.class)
 public interface RpcService extends Service {

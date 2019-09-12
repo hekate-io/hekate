@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -57,7 +57,7 @@ import org.springframework.stereotype.Component;
  * context.
  * </p>
  *
- * <h2>Channels injections</h2>
+ * <h2>Channels Injection</h2>
  * <p>
  * This auto-configuration provides support for injecting beans of {@link MessagingChannel} type into other beans with the help of {@link
  * InjectChannel} annotation. Please see its documentation for more details.

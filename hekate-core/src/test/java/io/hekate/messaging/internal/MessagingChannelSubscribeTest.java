@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -19,7 +19,7 @@ package io.hekate.messaging.internal;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingException;
-import io.hekate.messaging.unicast.SendCallback;
+import io.hekate.messaging.operation.SendCallback;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,9 +63,9 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
         awaitForChannelsTopology(sender, receiver);
 
         repeat(5, i -> {
-            List<String> results = sender.get().forNode(receiver.nodeId())
+            List<String> results = sender.channel().forNode(receiver.nodeId())
                 .newSubscribe("request")
-                .collectAll(3, TimeUnit.SECONDS);
+                .responses();
 
             assertEquals(Arrays.asList("response0", "response1", "response2", "final"), results);
 
@@ -98,17 +98,17 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
 
             List<String> senderMessages = Collections.synchronizedList(new ArrayList<>());
 
-            sender.get().forNode(receiver.nodeId()).subscribe("request", (err, reply) -> {
+            sender.channel().forNode(receiver.nodeId()).newSubscribe("request").submit((err, rsp) -> {
                 if (err == null) {
                     try {
-                        senderMessages.add(reply.get());
+                        senderMessages.add(rsp.payload());
 
-                        if (reply.get().equals("final")) {
-                            assertFalse(reply.isPartial());
+                        if (rsp.payload().equals("final")) {
+                            assertTrue(rsp.isLastPart());
 
                             errFuture.complete(null);
                         } else {
-                            assertTrue(reply.isPartial());
+                            assertFalse(rsp.isLastPart());
                         }
                     } catch (Throwable e) {
                         errFuture.complete(e);
@@ -169,17 +169,17 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
 
             List<String> senderMessages = Collections.synchronizedList(new ArrayList<>());
 
-            sender.get().forNode(receiver.nodeId()).subscribe("request", (err, reply) -> {
+            sender.channel().forNode(receiver.nodeId()).newSubscribe("request").submit((err, rsp) -> {
                 if (err == null) {
                     try {
-                        senderMessages.add(reply.get());
+                        senderMessages.add(rsp.payload());
 
-                        if (reply.get().equals("final")) {
-                            assertFalse(reply.isPartial());
+                        if (rsp.payload().equals("final")) {
+                            assertTrue(rsp.isLastPart());
 
                             sendErrFuture.complete(null);
                         } else {
-                            assertTrue(reply.isPartial());
+                            assertFalse(rsp.isLastPart());
                         }
                     } catch (AssertionError e) {
                         sendErrFuture.complete(e);
@@ -220,9 +220,9 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        sender.get().forNode(receiver.nodeId()).subscribe("test", (err, rsp) -> { /* Ignore. */ });
+        sender.channel().forNode(receiver.nodeId()).newSubscribe("test").submit((err, rsp) -> { /* Ignore. */ });
 
-        Message<String> msg = messageExchanger.exchange(null, 3, TimeUnit.SECONDS);
+        Message<String> msg = messageExchanger.exchange(null, AWAIT_TIMEOUT, TimeUnit.SECONDS);
 
         receiver.leave();
 
@@ -237,7 +237,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
                 }
             });
 
-            Throwable partialErr = errExchanger.exchange(null, 3, TimeUnit.SECONDS);
+            Throwable partialErr = errExchanger.exchange(null, AWAIT_TIMEOUT, TimeUnit.SECONDS);
 
             assertTrue(getStacktrace(partialErr), partialErr instanceof MessagingException);
             assertTrue(getStacktrace(partialErr), ErrorUtils.isCausedBy(ClosedChannelException.class, partialErr));
@@ -251,7 +251,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
             }
         });
 
-        Throwable err = errExchanger.exchange(null, 3, TimeUnit.SECONDS);
+        Throwable err = errExchanger.exchange(null, AWAIT_TIMEOUT, TimeUnit.SECONDS);
 
         assertTrue(getStacktrace(err), err instanceof MessagingException);
         assertTrue(getStacktrace(err), ErrorUtils.isCausedBy(ClosedChannelException.class, err));

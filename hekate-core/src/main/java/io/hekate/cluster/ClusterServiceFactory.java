@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -57,6 +57,8 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
     private SplitBrainAction splitBrainAction = SplitBrainAction.TERMINATE;
 
     private SplitBrainDetector splitBrainDetector;
+
+    private long splitBrainCheckInterval;
 
     private SeedNodeProvider seedNodeProvider;
 
@@ -246,6 +248,47 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
     }
 
     /**
+     * Returns the time interval in milliseconds for split-brain checking (see {@link #setSplitBrainCheckInterval(long)}).
+     *
+     * @return Time interval in milliseconds.
+     */
+    public long getSplitBrainCheckInterval() {
+        return splitBrainCheckInterval;
+    }
+
+    /**
+     * Sets the time interval in milliseconds for split-brain checking.
+     *
+     * <p>
+     * If the specified value is greater than zero then once per such interval the {@link #setSplitBrainDetector(SplitBrainDetector)
+     * SplitBrainDetector} component will be called to check the node's health. If check fails then the
+     * {@link #setSplitBrainAction(SplitBrainAction) SplitBrainAction} will be applied to the local node.
+     * </p>
+     *
+     * <p>
+     * Default value of this parameter is {@code 0} (i.e. periodic checks are disabled by default).
+     * </p>
+     *
+     * @param splitBrainCheckInterval Time interval in milliseconds.
+     */
+    public void setSplitBrainCheckInterval(long splitBrainCheckInterval) {
+        this.splitBrainCheckInterval = splitBrainCheckInterval;
+    }
+
+    /**
+     * Fluent-style version of {@link #setSplitBrainCheckInterval(long)}.
+     *
+     * @param splitBrainCheckInterval Time interval in milliseconds.
+     *
+     * @return This instance.
+     */
+    public ClusterServiceFactory withSplitBrainCheckInterval(long splitBrainCheckInterval) {
+        setSplitBrainCheckInterval(splitBrainCheckInterval);
+
+        return this;
+    }
+
+    /**
      * Returns a list of cluster event listeners (see {@link #setClusterListeners(List)}).
      *
      * @return List of cluster event listeners.
@@ -378,7 +421,7 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
     }
 
     /**
-     * Sets the maximum amount of nodes in the cluster for the gossip protocol to speeded up by sending messages at a higher rate so that
+     * Sets the maximum amount of nodes in the cluster for the gossip protocol to speed up by sending messages at a higher rate so that
      * the cluster could converge faster.
      *
      * <p>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,8 +16,9 @@
 
 package io.hekate.spring.bean.rpc;
 
+import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.spring.bean.HekateBaseBean;
-import org.springframework.beans.factory.annotation.Required;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.util.StringUtils;
 
 /**
@@ -25,7 +26,7 @@ import org.springframework.util.StringUtils;
  *
  * @param <T> RPC service interface.
  */
-public class RpcClientBean<T> extends HekateBaseBean<T> {
+public class RpcClientBean<T> extends HekateBaseBean<T> implements InitializingBean {
     private Class<T> rpcInterface;
 
     private String tag;
@@ -58,7 +59,6 @@ public class RpcClientBean<T> extends HekateBaseBean<T> {
      *
      * @param rpcInterface RPC service interface.
      */
-    @Required
     public void setRpcInterface(Class<T> rpcInterface) {
         this.rpcInterface = rpcInterface;
     }
@@ -79,5 +79,10 @@ public class RpcClientBean<T> extends HekateBaseBean<T> {
      */
     public void setTag(String tag) {
         this.tag = tag;
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        ConfigCheck.get(getClass()).notNull(rpcInterface, "rpcInterface");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -219,7 +219,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
         } finally {
             worker.shutdownNow();
 
-            assertTrue(worker.awaitTermination(3, TimeUnit.SECONDS));
+            assertTrue(worker.awaitTermination(AWAIT_TIMEOUT, TimeUnit.SECONDS));
         }
 
         if (errRef.get() != null) {
@@ -273,7 +273,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
         } finally {
             worker.shutdownNow();
 
-            assertTrue(worker.awaitTermination(3, TimeUnit.SECONDS));
+            assertTrue(worker.awaitTermination(AWAIT_TIMEOUT, TimeUnit.SECONDS));
         }
 
         if (errRef.get() != null) {
@@ -366,7 +366,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
             } finally {
                 worker.shutdownNow();
 
-                assertTrue(worker.awaitTermination(3, TimeUnit.SECONDS));
+                assertTrue(worker.awaitTermination(AWAIT_TIMEOUT, TimeUnit.SECONDS));
             }
 
             if (errRef.get() != null) {
@@ -467,7 +467,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
             workers.forEach(ExecutorService::shutdown);
 
             for (ExecutorService worker : workers) {
-                assertTrue(worker.awaitTermination(3, TimeUnit.SECONDS));
+                assertTrue(worker.awaitTermination(AWAIT_TIMEOUT, TimeUnit.SECONDS));
             }
         }
     }
@@ -529,7 +529,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
 
             worker.shutdown();
 
-            assertTrue(worker.awaitTermination(3, TimeUnit.SECONDS));
+            assertTrue(worker.awaitTermination(AWAIT_TIMEOUT, TimeUnit.SECONDS));
         }
     }
 }

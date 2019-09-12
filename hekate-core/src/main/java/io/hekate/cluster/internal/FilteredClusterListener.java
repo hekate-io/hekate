@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -75,9 +75,10 @@ class FilteredClusterListener implements ClusterEventListener {
 
                     List<ClusterNode> added = filterToImmutable(change.added());
                     List<ClusterNode> removed = filterToImmutable(change.removed());
+                    List<ClusterNode> failed = filterToImmutable(change.failed());
 
                     if (!added.isEmpty() || !removed.isEmpty()) {
-                        delegate.onEvent(new ClusterChangeEvent(topology, added, removed, event.hekate()));
+                        delegate.onEvent(new ClusterChangeEvent(topology, added, removed, failed, event.hekate()));
                     }
 
                     break;

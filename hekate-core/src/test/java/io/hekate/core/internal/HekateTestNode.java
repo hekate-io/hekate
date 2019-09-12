@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -143,9 +143,13 @@ public class HekateTestNode extends HekateNode {
         } catch (InterruptedException e) {
             throw new AssertionError("Thread was interrupted while awaiting for cluster topology:" + nodes, e);
         } catch (ExecutionException e) {
-            throw new AssertionError("Failed to await for cluster topology: " + nodes, e.getCause());
+            throw new AssertionError("Failed to await for cluster topology on node " + localNode() + ": " + nodes, e.getCause());
         } catch (TimeoutException e) {
-            throw new AssertionError("Failed to await for cluster topology: " + nodes, e);
+            String msg = "Topology awaiting timed out on node " + localNode() + ": " + nodes
+                + "\n\n"
+                + HekateTestBase.threadDump();
+
+            throw new AssertionError(msg, e);
         }
     }
 

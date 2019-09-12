@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -23,7 +23,7 @@ import io.hekate.rpc.RpcRequest;
 
 public class SomeRpcLoadBalancer implements RpcLoadBalancer {
     @Override
-    public ClusterNodeId route(RpcRequest message, LoadBalancerContext ctx) {
+    public ClusterNodeId route(RpcRequest msg, LoadBalancerContext ctx) {
         return ctx.topology().random().id();
     }
 }

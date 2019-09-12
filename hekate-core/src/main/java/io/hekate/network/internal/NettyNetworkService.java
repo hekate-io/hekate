@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -29,6 +29,8 @@ import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxSupport;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.core.resource.ResourceService;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
@@ -45,6 +47,8 @@ import io.hekate.network.NetworkConfigProvider;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkConnectorConfig;
 import io.hekate.network.NetworkMessage;
+import io.hekate.network.NetworkPingCallback;
+import io.hekate.network.NetworkPingResult;
 import io.hekate.network.NetworkServer;
 import io.hekate.network.NetworkServerCallback;
 import io.hekate.network.NetworkServerFailure;
@@ -54,12 +58,10 @@ import io.hekate.network.NetworkService;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.network.NetworkServiceJmx;
 import io.hekate.network.NetworkSslConfig;
+import io.hekate.network.NetworkTimeoutException;
 import io.hekate.network.NetworkTransportType;
-import io.hekate.network.PingCallback;
-import io.hekate.network.PingResult;
 import io.hekate.network.address.AddressSelector;
 import io.hekate.network.netty.NettyClientFactory;
-import io.hekate.network.netty.NettyServer;
 import io.hekate.network.netty.NettyServerFactory;
 import io.hekate.network.netty.NettyServerHandlerConfig;
 import io.hekate.network.netty.NettyUtils;
@@ -67,7 +69,6 @@ import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
-import io.netty.channel.ConnectTimeoutException;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
@@ -76,7 +77,6 @@ import io.netty.handler.ssl.SslContext;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -91,15 +91,19 @@ import org.slf4j.LoggerFactory;
 import static java.util.stream.Collectors.toList;
 
 public class NettyNetworkService implements NetworkService, NetworkServiceManager, DependentService, ConfigurableService,
-    InitializingService, TerminatingService, JmxSupport<NetworkServiceJmx> {
+    InitializingService, TerminatingService, JmxSupport<NetworkServiceJmx>, ConfigReportSupport {
     private static class ConnectorRegistration<T> {
         private final EventLoopGroup eventLoop;
 
-        private final NetworkConnector<T> connector;
+        private final DefaultNetworkConnector<T> connector;
 
         private final NettyServerHandlerConfig<T> serverHandler;
 
-        public ConnectorRegistration(EventLoopGroup eventLoop, NetworkConnector<T> connector, NettyServerHandlerConfig<T> serverHandler) {
+        public ConnectorRegistration(
+            EventLoopGroup eventLoop,
+            DefaultNetworkConnector<T> connector,
+            NettyServerHandlerConfig<T> serverHandler
+        ) {
             assert connector != null : "Connector is null.";
 
             this.eventLoop = eventLoop;
@@ -119,7 +123,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
             return serverHandler;
         }
 
-        public NetworkConnector<T> connector() {
+        public DefaultNetworkConnector<T> connector() {
             return connector;
         }
     }
@@ -140,7 +144,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
     private final int connectTimeout;
 
-    private final long acceptorFailoverInterval;
+    private final long acceptorRetryInterval;
 
     private final int heartbeatInterval;
 
@@ -187,13 +191,16 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     private JmxService jmx;
 
     @ToStringIgnore
+    private NettyMetricsBuilder metrics;
+
+    @ToStringIgnore
     private EventLoopGroup acceptorLoop;
 
     @ToStringIgnore
     private EventLoopGroup coreLoop;
 
     @ToStringIgnore
-    private NettyServer server;
+    private NetworkServer server;
 
     public NettyNetworkService(NetworkServiceFactory factory) {
         assert factory != null : "Factory is null.";
@@ -212,7 +219,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         portRange = factory.getPortRange();
         addressSelector = factory.getHostSelector();
         connectTimeout = factory.getConnectTimeout();
-        acceptorFailoverInterval = factory.getAcceptRetryInterval();
+        acceptorRetryInterval = factory.getAcceptRetryInterval();
         heartbeatInterval = factory.getHeartbeatInterval();
         heartbeatLossThreshold = factory.getHeartbeatLossThreshold();
         nioThreadPoolSize = factory.getNioThreads();
@@ -243,6 +250,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     public void resolve(DependencyContext ctx) {
         codec = ctx.require(CodecService.class);
         resources = ctx.require(ResourceService.class);
+        metrics = new NettyMetricsBuilder(ctx.metrics());
 
         jmx = ctx.optional(JmxService.class);
     }
@@ -276,7 +284,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         }
 
         if (log.isInfoEnabled()) {
-            log.info("Selected public address [address={}]", publicIp);
+            log.info("Selected public address [address={}, selector={}]", publicIp, addressSelector);
 
             log.info("Binding network acceptor [port={}]", initPort);
         }
@@ -304,6 +312,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
             factory.setAcceptorEventLoop(acceptorLoop);
             factory.setWorkerEventLoop(coreLoop);
             factory.setSsl(serverSsl);
+            factory.setMetrics(metrics.createServerFactory());
 
             server = factory.createServer();
 
@@ -349,14 +358,14 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
                                 // Retry with the next port.
                                 return err.retry().withRetryAddress(newAddress);
                             }
-                        } else if (server.state() == NetworkServer.State.STARTED && acceptorFailoverInterval > 0) {
+                        } else if (server.state() == NetworkServer.State.STARTED && acceptorRetryInterval > 0) {
                             if (log.isErrorEnabled()) {
                                 log.error("Network server encountered an error ...will try to restart after {} ms [attempt={}, address={}]",
-                                    acceptorFailoverInterval, err.attempt(), err.lastTriedAddress(), cause);
+                                    acceptorRetryInterval, err.attempt(), err.lastTriedAddress(), cause);
                             }
 
                             // Failed while server had already been running for a while -> Retry with the same port.
-                            return err.retry().withRetryDelay(acceptorFailoverInterval);
+                            return err.retry().withRetryDelay(acceptorRetryInterval);
                         }
                     }
 
@@ -380,19 +389,16 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
                 log.debug("Initializing...");
             }
 
-            // Enable server metrics gathering.
-            NettyMetricsBuilder metrics = new NettyMetricsBuilder(ctx.metrics());
-
-            server.setMetrics(metrics.createServerFactory());
-
             // Register connectors.
-            connectorConfigs.forEach(cfg -> {
-                ConnectorRegistration<?> reg = register(cfg, metrics);
+            if (!connectorConfigs.isEmpty()) {
+                connectorConfigs.forEach(cfg -> {
+                    ConnectorRegistration<?> reg = register(cfg);
 
-                if (reg.serverHandler() != null) {
-                    server.addHandler(reg.serverHandler());
-                }
-            });
+                    if (reg.serverHandler() != null) {
+                        server.addHandler(reg.serverHandler());
+                    }
+                });
+            }
 
             // Register JMX (optional).
             if (jmx != null) {
@@ -412,11 +418,6 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     }
 
     @Override
-    public void preInitialize(InitializationContext ctx) {
-        // No-op.
-    }
-
-    @Override
     public void postInitialize(InitializationContext ctx) {
         guard.lockRead();
 
@@ -431,6 +432,53 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         } finally {
             guard.unlockRead();
         }
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("network", net -> {
+            net.value("address-selector", addressSelector);
+            net.value("transport", transport);
+            net.value("init-port", initPort);
+            net.value("port-range", portRange);
+            net.value("acceptor-retry-interval", acceptorRetryInterval);
+            net.value("connect-timeout", connectTimeout);
+            net.value("heartbeat-interval", heartbeatInterval);
+            net.value("heartbeat-loss-threshold", heartbeatLossThreshold);
+            net.value("nio-thread-pool-size", nioThreadPoolSize);
+            net.value("tcp-no-delay", tcpNoDelay);
+            net.value("so-receive-buffer-size", soReceiveBufferSize);
+            net.value("so-send-buffer-size", soSendBufferSize);
+            net.value("so-reuse-address", soReuseAddress);
+            net.value("so-backlog", soBacklog);
+
+            if (sslConfig != null) {
+                net.section("ssl", ssl -> {
+                    ssl.value("provider", sslConfig.getProvider());
+                    ssl.value("key-store-path", sslConfig.getKeyStorePath());
+                    ssl.value("key-store-type", sslConfig.getKeyStoreType());
+                    ssl.value("key-store-type", sslConfig.getKeyStoreAlgorithm());
+                    ssl.value("trust-store-path", sslConfig.getTrustStorePath());
+                    ssl.value("trust-store-type", sslConfig.getTrustStoreType());
+                    ssl.value("trust-store-type", sslConfig.getTrustStoreAlgorithm());
+                    ssl.value("session-cache-size", sslConfig.getSslSessionCacheSize());
+                    ssl.value("session-cache-timeout", sslConfig.getSslSessionCacheTimeout());
+                });
+            }
+
+            if (!connectors.isEmpty()) {
+                net.section("connectors", css ->
+                    connectors.values().forEach(c ->
+                        css.section("connector", cs -> {
+                            cs.value("protocol", c.connector().protocol());
+                            cs.value("server", c.connector().isServer());
+                            cs.value("nio-threads", c.hasEventLoop() ? c.connector().nioThreads() : "shared");
+                            cs.value("idle-timeout", c.connector().idleSocketTimeout());
+                        })
+                    )
+                );
+            }
+        });
     }
 
     @Override
@@ -529,22 +577,22 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     }
 
     @Override
-    public void ping(InetSocketAddress address, PingCallback callback) {
+    public void ping(InetSocketAddress address, NetworkPingCallback callback) {
         connector(PING_PROTOCOL).newClient().connect(address, new NetworkClientCallback<Object>() {
             @Override
             public void onConnect(NetworkClient<Object> client) {
                 client.disconnect();
 
-                callback.onResult(address, PingResult.SUCCESS);
+                callback.onResult(address, NetworkPingResult.SUCCESS);
             }
 
             @Override
             public void onDisconnect(NetworkClient<Object> client, Optional<Throwable> cause) {
                 cause.ifPresent(err -> {
-                    if (err instanceof ConnectTimeoutException || err instanceof SocketTimeoutException) {
-                        callback.onResult(address, PingResult.TIMEOUT);
+                    if (err instanceof NetworkTimeoutException) {
+                        callback.onResult(address, NetworkPingResult.TIMEOUT);
                     } else {
-                        callback.onResult(address, PingResult.FAILURE);
+                        callback.onResult(address, NetworkPingResult.FAILURE);
                     }
                 });
             }
@@ -627,7 +675,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         }
     }
 
-    private <T> ConnectorRegistration<T> register(NetworkConnectorConfig<T> cfg, NettyMetricsBuilder metrics) {
+    private <T> ConnectorRegistration<T> register(NetworkConnectorConfig<T> cfg) {
         assert cfg != null : "Connector configuration is null.";
 
         // Sanity checks.
@@ -706,7 +754,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         }
 
         // Register connector.
-        NetworkConnector<T> conn = new DefaultNetworkConnector<>(
+        DefaultNetworkConnector<T> conn = new DefaultNetworkConnector<>(
             protocol,
             nioThreads,
             handlerCfg != null, // <-- Has server handler.
@@ -783,6 +831,6 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
     @Override
     public String toString() {
-        return ToString.format(NetworkService.class, this);
+        return ToString.format(this);
     }
 }

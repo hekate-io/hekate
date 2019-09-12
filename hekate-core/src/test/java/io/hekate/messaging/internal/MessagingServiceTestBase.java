@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -55,6 +55,8 @@ public abstract class MessagingServiceTestBase extends HekateNodeParamTestBase {
     public static final String TEST_CHANNEL_NAME = "test-channel";
 
     public static final String TEST_NODE_ROLE = "test_comm";
+
+    public static final int TEST_BACKOFF_DELAY = 10;
 
     protected final int workerThreads;
 
@@ -155,7 +157,12 @@ public abstract class MessagingServiceTestBase extends HekateNodeParamTestBase {
             .withName(TEST_CHANNEL_NAME)
             .withWorkerThreads(workerThreads)
             .withNioThreads(nioThreads)
-            .withClusterFilter(node -> node.hasRole(TEST_NODE_ROLE))
+            .withRetryPolicy(retry ->
+                retry.withFixedDelay(TEST_BACKOFF_DELAY)
+            )
+            .withClusterFilter(node ->
+                node.hasRole(TEST_NODE_ROLE)
+            )
             .withLogCategory(getClass().getName());
     }
 

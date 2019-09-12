@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Copyright 2018 The Hekate Project
+  Copyright 2019 The Hekate Project
 
   The Hekate Project licenses this file to you under the Apache License,
   version 2.0 (the "License"); you may not use this file except in compliance
@@ -22,7 +22,7 @@
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hekate.io/spring/hekate-core
         http://www.hekate.io/spring/hekate-core.xsd">
-    <node id="hekateBean" name="test-node" cluster="test-cluster">
+    <node id="hekateBean" name="test-node" cluster="test-cluster" config-report="true">
         <roles>
             <role>role 1</role>
             <role>role 2</role>
@@ -71,7 +71,7 @@
                 <heartbeat interval-ms="501" loss-threshold="5" quorum="3"/>
             </failure-detection>
 
-            <split-brain-detection action="TERMINATE">
+            <split-brain-detection action="TERMINATE" check-interval-ms="1000">
                 <group require="ANY_VALID">
                     <host-reachable host="127.0.0.1" timeout-ms="3000"/>
                     <group require="ALL_VALID">
@@ -151,9 +151,6 @@
                 <cluster-filter>
                     <s:bean class="foo.bar.SomeClusterNodeFilter"/>
                 </cluster-filter>
-                <failover-policy>
-                    <s:bean class="foo.bar.SomeFailoverPolicy"/>
-                </failover-policy>
             </channel>
 
             <channel name="another.channel"/>
@@ -170,18 +167,12 @@
                     <load-balancer>
                         <s:bean class="foo.bar.SomeRpcLoadBalancer"/>
                     </load-balancer>
-                    <failover-policy>
-                        <s:bean class="foo.bar.SomeFailoverPolicy"/>
-                    </failover-policy>
                 </client>
 
                 <client name="someRpcClient2" interface="foo.bar.SomeRpcService" tag="some-tag-2">
                     <load-balancer>
                         <s:bean class="foo.bar.SomeRpcLoadBalancer"/>
                     </load-balancer>
-                    <failover-policy>
-                        <s:bean class="foo.bar.SomeFailoverPolicy"/>
-                    </failover-policy>
                 </client>
             </clients>
             <servers>

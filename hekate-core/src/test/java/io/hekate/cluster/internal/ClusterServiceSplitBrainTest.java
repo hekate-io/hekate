@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -214,5 +214,26 @@ public class ClusterServiceSplitBrainTest extends HekateNodeParamTestBase {
         await(errorLatch);
 
         node.awaitForStatus(Hekate.State.DOWN);
+    }
+
+    @Test
+    public void testPeriodicChecks() throws Exception {
+        SplitBrainDetectorMock detector = new SplitBrainDetectorMock(true);
+
+        HekateTestNode node = createNode(c -> {
+            ClusterServiceFactory cluster = c.service(ClusterServiceFactory.class).get();
+
+            cluster.setSplitBrainAction(SplitBrainAction.TERMINATE);
+            cluster.setSplitBrainDetector(detector);
+            cluster.setSplitBrainCheckInterval(10);
+        });
+
+        node.join();
+
+        detector.setValid(false);
+
+        busyWait("node termination", () ->
+            node.state() == Hekate.State.DOWN
+        );
     }
 }

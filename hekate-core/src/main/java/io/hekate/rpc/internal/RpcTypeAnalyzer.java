@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,6 +16,7 @@
 
 package io.hekate.rpc.internal;
 
+import io.hekate.core.inject.PlaceholderResolver;
 import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
@@ -35,6 +36,14 @@ import static java.util.Arrays.asList;
 
 class RpcTypeAnalyzer {
     private final ConcurrentMap<Class<?>, List<RpcInterfaceInfo<?>>> cache = new ConcurrentHashMap<>();
+
+    private final PlaceholderResolver resolver;
+
+    public RpcTypeAnalyzer(PlaceholderResolver resolver) {
+        assert resolver != null : "String resolver is null.";
+
+        this.resolver = resolver;
+    }
 
     public <T> RpcInterfaceInfo<T> analyzeType(Class<T> type) {
         @SuppressWarnings("unchecked")
@@ -60,10 +69,10 @@ class RpcTypeAnalyzer {
     }
 
     private List<RpcInterfaceInfo<?>> cached(Class<?> type) {
-        return cache.computeIfAbsent(type, RpcTypeAnalyzer::doAnalyzeType);
+        return cache.computeIfAbsent(type, this::doAnalyzeType);
     }
 
-    private static List<RpcInterfaceInfo<?>> doAnalyzeType(Class<?> type) {
+    private List<RpcInterfaceInfo<?>> doAnalyzeType(Class<?> type) {
         List<Class<?>> allInterfaces = findAllInterfaces(type);
 
         List<RpcInterfaceInfo<?>> collected = new ArrayList<>();
@@ -73,7 +82,7 @@ class RpcTypeAnalyzer {
         return collected;
     }
 
-    private static void doAnalyzeType(List<Class<?>> types, List<RpcInterfaceInfo<?>> rpcInterfaces, Set<Class<?>> uniqueTypes) {
+    private void doAnalyzeType(List<Class<?>> types, List<RpcInterfaceInfo<?>> rpcInterfaces, Set<Class<?>> uniqueTypes) {
         for (Class<?> javaType : types) {
             if (javaType.isInterface() && isPublic(javaType.getModifiers())) {
                 if (uniqueTypes == null || !uniqueTypes.contains(javaType)) {
@@ -92,7 +101,7 @@ class RpcTypeAnalyzer {
 
                         for (Method meth : methods) {
                             if (isPublic(meth.getModifiers()) && !isStatic(meth.getModifiers())) {
-                                methodsInfo.add(new RpcMethodInfo(meth));
+                                methodsInfo.add(new RpcMethodInfo(meth, resolver));
                             }
                         }
 

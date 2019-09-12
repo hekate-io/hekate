@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -31,6 +31,7 @@ import io.hekate.core.ServiceProperty;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.service.internal.DefaultServiceInfo;
+import io.hekate.network.address.AddressPattern;
 import io.hekate.test.HekateTestError;
 import java.io.IOException;
 import java.lang.management.LockInfo;
@@ -43,7 +44,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
 import java.net.UnknownHostException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -51,11 +51,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -69,6 +69,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
@@ -76,7 +77,6 @@ import org.junit.rules.TestWatcher;
 import org.junit.rules.Timeout;
 import org.junit.runner.Description;
 import org.junit.runners.model.TestTimedOutException;
-import org.mockito.internal.util.collections.Iterables;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -131,6 +131,9 @@ public abstract class HekateTestBase {
     /** Interval between loops of {@link #busyWait(String, Callable)}. */
     public static final int BUSY_WAIT_INTERVAL = 25;
 
+    /** Timeout in {@link TimeUnit#SECONDS} to wait for asynchronous tasks (like {@link Future#get()} or {@link CountDownLatch#await()}). */
+    public static final int AWAIT_TIMEOUT = 5;
+
     /** Singleton for expected errors ...{@link HekateTestError#MESSAGE RELAX:)}. */
     public static final AssertionError TEST_ERROR = new HekateTestError(HekateTestError.MESSAGE);
 
@@ -179,11 +182,14 @@ public abstract class HekateTestBase {
         // Third party libraries that start threads but do not allow to stop them.
         KNOWN_THREAD_PREFIXES.add("Okio Watchdog".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("OkHttp ConnectionPool".toLowerCase());
+        KNOWN_THREAD_PREFIXES.add("OkHttp Http2Connection".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("com.google.inject.internal.util.$Finalizer".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("Keep-Alive-Timer".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("Keep-Alive-SocketCleaner".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("H2 Close".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("Abandoned connection cleanup thread".toLowerCase());
+        KNOWN_THREAD_PREFIXES.add("mysql-cj-abandoned-connection-cleanup".toLowerCase());
+        KNOWN_THREAD_PREFIXES.add("event-executor-".toLowerCase()); // Consul callback daemon.
     }
 
     /** Test timeout rule (see {@link #MAX_TEST_TIMEOUT}). */
@@ -281,7 +287,7 @@ public abstract class HekateTestBase {
     }
 
     public static CountDownLatch await(CountDownLatch latch) {
-        return await(latch, 3);
+        return await(latch, AWAIT_TIMEOUT);
     }
 
     public static CountDownLatch await(CountDownLatch latch, int seconds) {
@@ -302,12 +308,32 @@ public abstract class HekateTestBase {
 
     public static <T> T get(Future<T> future) throws ExecutionException, InterruptedException, TimeoutException {
         try {
-            return future.get(3, TimeUnit.SECONDS);
+            return future.get(AWAIT_TIMEOUT, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
             System.out.println(threadDump());
 
             throw e;
         }
+    }
+
+    public static String threadDump() {
+        ThreadInfo[] threads = ManagementFactory.getThreadMXBean().dumpAllThreads(true, true);
+
+        String nl = System.lineSeparator();
+
+        StringBuilder buf = new StringBuilder();
+
+        buf.append("----------------------- Thread dump start ")
+            .append(TIMESTAMP_FORMAT.format(LocalDateTime.now()))
+            .append("---------------------------").append(nl);
+
+        for (ThreadInfo thread : threads) {
+            buf.append(toString(thread)).append(nl);
+        }
+
+        buf.append("----------------------- Thread dump end -----------------------------").append(nl);
+
+        return buf.toString();
     }
 
     @After
@@ -377,26 +403,30 @@ public abstract class HekateTestBase {
         return ErrorUtils.stackTrace(error);
     }
 
-    protected static String threadDump() {
-        ThreadInfo[] threads = ManagementFactory.getThreadMXBean().dumpAllThreads(true, true);
-
-        String nl = System.lineSeparator();
-
-        StringBuilder buf = new StringBuilder();
-
-        buf.append("----------------------- Thread dump start ---------------------------").append(nl);
-
-        for (ThreadInfo thread : threads) {
-            buf.append(toString(thread)).append(nl);
-        }
-
-        buf.append("----------------------- Thread dump end -----------------------------").append(nl);
-
-        return buf.toString();
-    }
-
     protected void ignoreGhostThreads() {
         ignoreGhostThreads = true;
+    }
+
+    protected void awaitForNoSuchThread(String prefix) throws InterruptedException {
+        ThreadMXBean jmx = ManagementFactory.getThreadMXBean();
+
+        for (int i = 0; i < BUSY_WAIT_LOOPS; i++) {
+            ThreadInfo[] threads = jmx.getThreadInfo(jmx.getAllThreadIds());
+
+            boolean notExist = Stream.of(threads)
+                .filter(Objects::nonNull)
+                .map(ThreadInfo::getThreadName)
+                .map(String::toLowerCase)
+                .noneMatch(name -> name.startsWith(prefix));
+
+            if (notExist) {
+                return;
+            }
+
+            Thread.sleep(BUSY_WAIT_INTERVAL);
+        }
+
+        checkGhostThreads();
     }
 
     protected void checkGhostThreads() throws InterruptedException {
@@ -784,27 +814,7 @@ public abstract class HekateTestBase {
         InetAddress cached = LOCAL_ADDRESS_CACHE.get();
 
         if (cached == null) {
-            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-
-            for (NetworkInterface nif : Iterables.toIterable(interfaces)) {
-                if (nif.isUp() && !nif.isLoopback() && nif.supportsMulticast()) {
-                    for (InetAddress addr : Iterables.toIterable(nif.getInetAddresses())) {
-                        if (!addr.isLinkLocalAddress()) {
-                            cached = addr;
-
-                            break;
-                        }
-                    }
-
-                    if (cached != null) {
-                        break;
-                    }
-                }
-            }
-
-            if (cached == null) {
-                cached = InetAddress.getLocalHost();
-            }
+            cached = new AddressPattern("any-ip4").select();
 
             LOCAL_ADDRESS_CACHE.set(cached);
         }

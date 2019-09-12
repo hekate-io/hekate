@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -21,8 +21,8 @@ import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.intercept.ClientMessageInterceptor;
 import io.hekate.messaging.intercept.ClientSendContext;
-import io.hekate.messaging.unicast.RequestFuture;
-import io.hekate.messaging.unicast.SubscribeFuture;
+import io.hekate.messaging.operation.RequestFuture;
+import io.hekate.messaging.operation.SubscribeFuture;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Exchanger;
@@ -53,14 +53,15 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel(c -> c.withMessagingTimeout(1)).join();
 
-        assertEquals(1, sender.get().timeout());
-
         repeat(5, i -> {
             hangLatchRef.set(new CountDownLatch(1));
 
             try {
                 MessagingFutureException e = expect(MessagingFutureException.class, () ->
-                    get(sender.get().forRemotes().request("must-fail-" + i))
+                    get(sender.channel()
+                        .forRemotes()
+                        .newRequest("must-fail-" + i)
+                        .submit())
                 );
 
                 assertTrue(getStacktrace(e), e.isCausedBy(MessageTimeoutException.class));
@@ -105,7 +106,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
                 // Submit requests.
                 // Note we are using the same affinity key for all messages so that they would all go to the same thread.
                 List<RequestFuture<String>> futures = Stream.of(i, i + 1, i + 2)
-                    .map(req -> sender.get().forRemotes()
+                    .map(req -> sender.channel().forRemotes()
                         .newRequest("must-fail-" + req)
                         .withAffinity("1")
                         .submit()
@@ -151,10 +152,8 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel(c -> c.withMessagingTimeout(1000)).join();
 
-        assertEquals(1000, sender.get().timeout());
-
         repeat(5, i ->
-            get(sender.get().forRemotes().request("request-" + i))
+            get(sender.channel().forRemotes().newRequest("request-" + i).submit())
         );
     }
 
@@ -170,14 +169,12 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel(c -> c.withMessagingTimeout(1)).join();
 
-        assertEquals(1, sender.get().timeout());
-
         repeat(5, i -> {
             hangLatchRef.set(new CountDownLatch(1));
 
             try {
                 MessagingFutureException e = expect(MessagingFutureException.class, () ->
-                    get(sender.get().forRemotes().subscribe("must-fail-" + i, (err, rsp) -> { /* Ignore. */ }))
+                    get(sender.channel().forRemotes().newSubscribe("must-fail-" + i).submit((err, rsp) -> { /* Ignore. */ }))
                 );
 
                 assertTrue(getStacktrace(e), e.isCausedBy(MessageTimeoutException.class));
@@ -205,10 +202,11 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel(c -> c.withMessagingTimeout(150)).join();
 
-        assertEquals(150, sender.get().timeout());
-
         repeat(3, i -> {
-            SubscribeFuture<String> future = sender.get().forRemotes().subscribe("must-fail-" + i, (err, rsp) -> { /* Ignore. */ });
+            SubscribeFuture<String> future = sender.channel()
+                .forRemotes()
+                .newSubscribe("must-fail-" + i)
+                .submit((err, rsp) -> { /* Ignore. */ });
 
             Message<String> request = msgRef.exchange(null);
 
@@ -231,26 +229,24 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
         })).join();
 
         TestChannel sender = createChannel(c -> {
-                c.withMessagingTimeout(1);
+                c.withMessagingTimeout(10);
                 c.withInterceptor(new ClientMessageInterceptor<String>() {
                     @Override
                     public void interceptClientSend(ClientSendContext ctx) {
-                        sleep(30);
+                        sleep(50);
                     }
                 });
             }
         ).join();
 
-        assertEquals(1, sender.get().timeout());
-
         repeat(3, i -> {
             try {
-                get(sender.get().forRemotes().newSend("must-fail-" + i).submit());
+                get(sender.channel().forRemotes().newSend("must-fail-" + i).submit());
 
                 fail("Error was expected.");
             } catch (MessagingFutureException e) {
                 assertTrue(getStacktrace(e), e.isCausedBy(MessageTimeoutException.class));
-                assertEquals("Messaging operation timed out [timeout=1, message=must-fail-" + i + ']',
+                assertEquals("Messaging operation timed out [timeout=10, message=must-fail-" + i + ']',
                     e.findCause(MessageTimeoutException.class).getMessage());
             }
         });
@@ -273,10 +269,8 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
             }
         ).join();
 
-        assertEquals(1000, sender.get().timeout());
-
         repeat(3, i ->
-            get(sender.get().forRemotes().newSend("request-" + i).submit())
+            get(sender.channel().forRemotes().newSend("request-" + i).submit())
         );
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,9 +17,11 @@
 package io.hekate.cluster.split;
 
 import io.hekate.HekateTestBase;
+import io.hekate.core.report.DefaultConfigReporter;
 import java.net.InetAddress;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -33,8 +35,21 @@ public class HostReachabilityDetectorTest extends HekateTestBase {
 
     @Test
     public void testInvalid() throws Exception {
-        HostReachabilityDetector detector = new HostReachabilityDetector("some.invalid.localhost", 2000);
+        HostReachabilityDetector detector = new HostReachabilityDetector("some.invalid.host", 2000);
 
         assertFalse(detector.isValid(newNode()));
+    }
+
+    @Test
+    public void testConfigReport() throws Exception {
+        HostReachabilityDetector detector = new HostReachabilityDetector(InetAddress.getLocalHost().getHostAddress(), 2000);
+
+        assertEquals(
+            "\n"
+                + "  host-reachability\n"
+                + "    host: " + detector.host() + "\n"
+                + "    timeout: " + detector.timeout() + "\n",
+            DefaultConfigReporter.report(detector)
+        );
     }
 }

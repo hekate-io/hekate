@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -19,6 +19,8 @@ package io.hekate.cluster.split;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.core.internal.util.ConfigCheck;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.util.format.ToString;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -40,7 +42,7 @@ import org.slf4j.LoggerFactory;
  *
  * @see ClusterServiceFactory#setSplitBrainDetector(SplitBrainDetector)
  */
-public class HostReachabilityDetector implements SplitBrainDetector {
+public class HostReachabilityDetector implements SplitBrainDetector, ConfigReportSupport {
     /** Default value (={@value}) in milliseconds for the {@code timeout} parameter of {@link #HostReachabilityDetector(String, int)}. */
     public static final int DEFAULT_TIMEOUT = 3000;
 
@@ -75,6 +77,32 @@ public class HostReachabilityDetector implements SplitBrainDetector {
 
         this.host = host.trim();
         this.timeout = timeout;
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("host-reachability", r -> {
+            r.value("host", host);
+            r.value("timeout", timeout);
+        });
+    }
+
+    /**
+     * Host to check.
+     *
+     * @return Host to check.
+     */
+    public String host() {
+        return host;
+    }
+
+    /**
+     * Check timeout in milliseconds.
+     *
+     * @return Timeout in milliseconds.
+     */
+    public int timeout() {
+        return timeout;
     }
 
     @Override

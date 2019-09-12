@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -38,11 +38,11 @@ import org.springframework.context.annotation.Configuration;
  * The following properties can be used to customize the auto-configured {@link ZooKeeperSeedNodeProvider} instance:
  * </p>
  * <ul>
- * <li>{@link ZooKeeperSeedNodeProviderConfig#setConnectionString(String)} 'hekate.cluster.seed.zookeeper.connection-string'}</li>
- * <li>{@link ZooKeeperSeedNodeProviderConfig#setBasePath(String)} 'hekate.cluster.seed.zookeeper.base-path'}</li>
- * <li>{@link ZooKeeperSeedNodeProviderConfig#setConnectTimeout(int)} 'hekate.cluster.seed.zookeeper.connect-timeout'}</li>
- * <li>{@link ZooKeeperSeedNodeProviderConfig#setSessionTimeout(int)} 'hekate.cluster.seed.zookeeper.session-timeout'}</li>
- * <li>{@link ZooKeeperSeedNodeProviderConfig#setCleanupInterval(int)} 'hekate.cluster.seed.zookeeper.cleanup-interval'}</li>
+ * <li>{@link ZooKeeperSeedNodeProviderConfig#setConnectionString(String) 'hekate.cluster.seed.zookeeper.connection-string'}</li>
+ * <li>{@link ZooKeeperSeedNodeProviderConfig#setBasePath(String) 'hekate.cluster.seed.zookeeper.base-path'}</li>
+ * <li>{@link ZooKeeperSeedNodeProviderConfig#setConnectTimeout(int) 'hekate.cluster.seed.zookeeper.connect-timeout'}</li>
+ * <li>{@link ZooKeeperSeedNodeProviderConfig#setSessionTimeout(int) 'hekate.cluster.seed.zookeeper.session-timeout'}</li>
+ * <li>{@link ZooKeeperSeedNodeProviderConfig#setCleanupInterval(int) 'hekate.cluster.seed.zookeeper.cleanup-interval'}</li>
  * </ul>
  *
  * @see HekateClusterServiceConfigurer
@@ -73,7 +73,7 @@ public class HekateZooKeeperSeedNodeProviderConfigurer {
      * @return New provider.
      */
     @Bean
-    public ZooKeeperSeedNodeProvider fsSeedNodeProvider(ZooKeeperSeedNodeProviderConfig cfg) {
+    public ZooKeeperSeedNodeProvider zooKeeperSeedNodeProvider(ZooKeeperSeedNodeProviderConfig cfg) {
         return new ZooKeeperSeedNodeProvider(cfg);
     }
 }

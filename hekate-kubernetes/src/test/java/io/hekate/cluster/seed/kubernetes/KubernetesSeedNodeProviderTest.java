@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.client.server.mock.KubernetesServer;
 import io.hekate.HekateTestBase;
 import io.hekate.core.HekateException;
+import io.hekate.core.report.DefaultConfigReporter;
 import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -44,6 +45,21 @@ public class KubernetesSeedNodeProviderTest extends HekateTestBase {
     @After
     public void tearDown() {
         server.after();
+    }
+
+    @Test
+    public void testConfigReport() throws Exception {
+        KubernetesSeedNodeProvider provider = createProvider(KubernetesSeedNodeProviderConfig.DEFAULT_CONTAINER_PORT_NAME);
+
+        assertEquals(
+            "\n"
+                + "  kubernetes\n"
+                + "    container-port-name: " + provider.containerPortName() + "\n"
+                + "    master-url: " + provider.masterUrl() + "\n"
+                + "    namespace: " + provider.namespace() + "\n"
+                + "    trust-certificates: " + provider.trustCertificates() + "\n",
+            DefaultConfigReporter.report(provider)
+        );
     }
 
     @Test

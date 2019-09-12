@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,6 +18,7 @@ package io.hekate.cluster.seed;
 
 import io.hekate.HekateTestBase;
 import io.hekate.core.HekateConfigurationException;
+import io.hekate.core.report.DefaultConfigReporter;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.List;
@@ -31,6 +32,18 @@ public class StaticSeedNodeProviderTest extends HekateTestBase {
     public static final String ADDRESS_V6 = "fe80::f4d2:5b65:8569:2945%4";
 
     public static final String ADDRESS_V4 = "127.0.0.1";
+
+    @Test
+    public void testConfigReport() throws Exception {
+        StaticSeedNodeProvider provider = get(ADDRESS_V4 + ":10001");
+
+        assertEquals(
+            "\n"
+                + "  static\n"
+                + "    addresses: " + provider.getAddresses() + "\n",
+            DefaultConfigReporter.report(provider)
+        );
+    }
 
     @Test
     public void testValidIAddressV4() throws Exception {

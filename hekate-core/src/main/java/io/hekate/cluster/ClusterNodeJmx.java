@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,6 +18,7 @@ package io.hekate.cluster;
 
 import io.hekate.util.format.ToString;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -157,23 +158,23 @@ public class ClusterNodeJmx {
             return false;
         }
 
-        if (name != null ? !name.equals(that.name) : that.name != null) {
+        if (!Objects.equals(name, that.name)) {
             return false;
         }
 
-        if (host != null ? !host.equals(that.host) : that.host != null) {
+        if (!Objects.equals(host, that.host)) {
             return false;
         }
 
-        if (id != null ? !id.equals(that.id) : that.id != null) {
+        if (!Objects.equals(id, that.id)) {
             return false;
         }
 
-        if (roles != null ? !roles.equals(that.roles) : that.roles != null) {
+        if (!Objects.equals(roles, that.roles)) {
             return false;
         }
 
-        return properties != null ? properties.equals(that.properties) : that.properties == null;
+        return Objects.equals(properties, that.properties);
     }
 
     @Override

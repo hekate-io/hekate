@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -80,7 +80,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
         AffinityCollector collector = new AffinityCollector();
 
         TestChannel receiver = createChannel(c -> c.setReceiver(msg ->
-            collector.collect(msg.get())
+            collector.collect(msg.payload())
         )).join();
 
         TestChannel sender = createChannel().join();
@@ -91,7 +91,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
-                MessagingChannel<String> channel = sender.get().forNode(receiver.nodeId());
+                MessagingChannel<String> channel = sender.channel().forNode(receiver.nodeId());
 
                 channel.newSend(AffinityCollector.affinityMessage(j, i))
                     .withAffinity(j)
@@ -113,7 +113,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
         AffinityCollector collector = new AffinityCollector();
 
         TestChannel receiver = createChannel(c -> c.setReceiver(msg -> {
-            collector.collect(msg.get());
+            collector.collect(msg.payload());
 
             msg.reply("ok");
         })).join();
@@ -126,7 +126,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
-                MessagingChannel<String> channel = sender.get().forNode(receiver.nodeId());
+                MessagingChannel<String> channel = sender.channel().forNode(receiver.nodeId());
 
                 channel.newRequest(AffinityCollector.affinityMessage(j, i))
                     .withAffinity(j)
@@ -167,7 +167,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
         awaitForChannelsTopology(sender, receiver);
 
         repeat(5, i -> {
-            get(sender.get()
+            get(sender.channel()
                 .forNode(receiver.nodeId())
                 .newRequest("request")
                 .withAffinity(i)
@@ -193,7 +193,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
             receivers.add(createChannel(c -> {
                 c.setBackupNodes(testNodes - 1);
                 c.setReceiver(msg ->
-                    collector.collect(msg.get())
+                    collector.collect(msg.payload())
                 );
             }).join());
 
@@ -206,7 +206,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
-                MessagingChannel<String> channel = sender.get().forRemotes();
+                MessagingChannel<String> channel = sender.channel().forRemotes();
 
                 channel.newBroadcast(AffinityCollector.affinityMessage(j, i))
                     .withAffinity(j)
@@ -240,7 +240,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
             receivers.add(createChannel(c -> {
                 c.setBackupNodes(testNodes - 1);
                 c.setReceiver(msg -> {
-                        collector.collect(msg.get());
+                        collector.collect(msg.payload());
 
                         msg.reply("ok");
                     }
@@ -256,7 +256,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
         for (int i = 0; i < partitionSize; i++) {
             for (int j = 0; j < partitionSize; j++) {
-                MessagingChannel<String> channel = sender.get().forRemotes();
+                MessagingChannel<String> channel = sender.channel().forRemotes();
 
                 channel.newAggregate(AffinityCollector.affinityMessage(j, i))
                     .withAffinity(j)

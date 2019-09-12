@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -33,6 +33,8 @@ import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.jmx.JmxService;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.DependencyContext;
@@ -61,6 +63,8 @@ import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.ExtendedScheduledExecutor;
 import io.hekate.util.async.Waiting;
+import io.hekate.util.format.ToString;
+import io.hekate.util.format.ToStringIgnore;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -74,34 +78,42 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 public class DefaultMessagingService implements MessagingService, DependentService, ConfigurableService, InitializingService,
-    TerminatingService, NetworkConfigProvider, ClusterAcceptor {
+    TerminatingService, NetworkConfigProvider, ClusterAcceptor, ConfigReportSupport {
     private static final Logger log = LoggerFactory.getLogger(DefaultMessagingService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
     private static final String MESSAGING_THREAD_PREFIX = "Messaging";
 
+    @ToStringIgnore
     private final StateGuard guard = new StateGuard(MessagingService.class);
 
+    @ToStringIgnore
     private final MessagingServiceFactory factory;
 
+    @ToStringIgnore
     private final Map<String, MessagingGateway<?>> gateways = new HashMap<>();
 
+    @ToStringIgnore
     private ExtendedScheduledExecutor timer;
 
+    @ToStringIgnore
     private CodecService codec;
 
+    @ToStringIgnore
     private NetworkService net;
 
+    @ToStringIgnore
     private ClusterService cluster;
 
+    @ToStringIgnore
     private JmxService jmx;
 
     // Volatile since accessed out of the guarded context.
+    @ToStringIgnore
     private volatile ClusterNodeId nodeId;
 
     public DefaultMessagingService(MessagingServiceFactory factory) {
@@ -124,10 +136,14 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         List<MessageInterceptor> interceptors = StreamUtils.nullSafe(factory.getGlobalInterceptors()).collect(toList());
 
         // Collect channel configurations.
-        StreamUtils.nullSafe(factory.getChannels()).forEach(cfg -> registerProxy(cfg, interceptors));
+        StreamUtils.nullSafe(factory.getChannels()).forEach(cfg ->
+            register(cfg, interceptors)
+        );
 
         StreamUtils.nullSafe(factory.getConfigProviders()).forEach(provider ->
-            StreamUtils.nullSafe(provider.configureMessaging()).forEach(cfg -> registerProxy(cfg, interceptors))
+            StreamUtils.nullSafe(provider.configureMessaging()).forEach(cfg ->
+                register(cfg, interceptors)
+            )
         );
 
         Collection<MessagingConfigProvider> providers = ctx.findComponents(MessagingConfigProvider.class);
@@ -135,7 +151,9 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         StreamUtils.nullSafe(providers).forEach(provider -> {
             Collection<MessagingChannelConfig<?>> regions = provider.configureMessaging();
 
-            StreamUtils.nullSafe(regions).forEach(cfg -> registerProxy(cfg, interceptors));
+            StreamUtils.nullSafe(regions).forEach(cfg ->
+                register(cfg, interceptors)
+            );
         });
 
         // Register channel meta-data as a service property.
@@ -222,6 +240,32 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         } finally {
             guard.unlockWrite();
         }
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        guard.withReadLockIfInitialized(() -> {
+            if (!gateways.isEmpty()) {
+                report.section("messaging", messagingSec ->
+                    messagingSec.section("channels", channelsSec -> {
+                        gateways.values().forEach(channel ->
+                            channelsSec.section("channel", channelSec -> {
+                                channelSec.value("name", channel.name());
+                                channelSec.value("base-type", channel.baseType().getName());
+                                channelSec.value("server", channel.hasReceiver());
+                                channelSec.value("worker-threads", channel.workerThreads());
+                                channelSec.value("messaging-timeout", channel.messagingTimeout());
+                                channelSec.value("idle-socket-timeout", channel.idleSocketTimeout());
+                                channelSec.value("partitions", channel.partitions());
+                                channelSec.value("backup-nodes", channel.backupNodes());
+                                channelSec.value("send-pressure", channel.sendPressureGuard());
+                                channelSec.value("receive-pressure", channel.receivePressureGuard());
+                            })
+                        );
+                    })
+                );
+            }
+        });
     }
 
     @Override
@@ -324,7 +368,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         return gateways.containsKey(channelName);
     }
 
-    private <T> void registerProxy(MessagingChannelConfig<T> cfg, List<MessageInterceptor> interceptors) {
+    private <T> void register(MessagingChannelConfig<T> cfg, List<MessageInterceptor> interceptors) {
         ConfigCheck check = ConfigCheck.get(MessagingChannelConfig.class);
 
         // Validate configuration.
@@ -376,7 +420,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         assert guard.isWriteLocked() : "Thread must hold a write lock.";
 
         if (DEBUG) {
-            log.debug("Creating a new messaging gateway [context={}]", gateway);
+            log.debug("Initializing messaging gateway [gateway={}]", gateway);
         }
 
         // Prepare network connector.
@@ -412,6 +456,9 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             gateway.interceptors(),
             gateway.log(),
             gateway.idleSocketTimeout() > 0, /* <-- Check for idle connections.*/
+            gateway.messagingTimeout(),
+            gateway.warnOnRetry(),
+            gateway.baseRetryPolicy(),
             gateway.rootChannel()
         );
 
@@ -575,19 +622,6 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     @Override
     public String toString() {
-        String serverChannels = gateways.values().stream()
-            .filter(MessagingGateway::hasReceiver)
-            .map(MessagingGateway::name)
-            .collect(joining(", ", "{", "}"));
-
-        String clientChannels = gateways.values().stream()
-            .filter(proxy -> !proxy.hasReceiver())
-            .map(MessagingGateway::name)
-            .collect(joining(", ", "{", "}"));
-
-        return MessagingService.class.getSimpleName()
-            + "[client-channels=" + clientChannels
-            + ", server-channels=" + serverChannels
-            + ']';
+        return ToString.format(this);
     }
 }

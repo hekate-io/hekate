@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -32,7 +32,7 @@ public abstract class MessagingConfigBase<T extends MessagingConfigBase<T>> {
 
     /** See {@link #setIdleSocketTimeout(long)}. */
     private long idleSocketTimeout;
-    
+
     /** See {@link #setBackPressure(MessagingBackPressureConfig)}. */
     private MessagingBackPressureConfig backPressure = new MessagingBackPressureConfig();
 

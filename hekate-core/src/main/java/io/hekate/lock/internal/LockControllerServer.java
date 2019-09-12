@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -197,7 +197,7 @@ class LockControllerServer {
             log.debug("Got lock request [from={}, request={}]", msg.endpoint(), msg);
         }
 
-        LockRequest request = msg.get(LockRequest.class);
+        LockRequest request = msg.payload(LockRequest.class);
 
         sync.lock();
 
@@ -234,7 +234,7 @@ class LockControllerServer {
             log.debug("Got unlock request [from={}, request={}]", msg.endpoint(), msg);
         }
 
-        UnlockRequest request = msg.get(UnlockRequest.class);
+        UnlockRequest request = msg.payload(UnlockRequest.class);
 
         sync.lock();
 

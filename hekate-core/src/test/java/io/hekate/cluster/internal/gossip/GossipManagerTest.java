@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -479,9 +479,9 @@ public class GossipManagerTest extends HekateTestBase {
         assertSame(GossipNodeStatus.UP, g1.member(m1.id()).status());
         assertSame(GossipNodeStatus.UP, g1.member(m2.id()).status());
         assertSame(GossipNodeStatus.UP, g1.member(m3.id()).status());
-        assertEquals(0, g1.suspectedView().suspected().size());
-        assertSame(ComparisonResult.SAME, g1.compare(m2.localGossip()));
-        assertSame(ComparisonResult.SAME, g1.compare(m3.localGossip()));
+        assertEquals(0, g1.suspectView().suspected().size());
+        assertSame(GossipPrecedence.SAME, g1.compare(m2.localGossip()));
+        assertSame(GossipPrecedence.SAME, g1.compare(m3.localGossip()));
         assertEquals(3, g1.seen().size());
         assertTrue(g1.seen().contains(m1.id()));
         assertTrue(g1.seen().contains(m2.id()));
@@ -495,9 +495,9 @@ public class GossipManagerTest extends HekateTestBase {
         assertSame(GossipNodeStatus.UP, g2.member(m1.id()).status());
         assertSame(GossipNodeStatus.UP, g2.member(m2.id()).status());
         assertSame(GossipNodeStatus.UP, g2.member(m3.id()).status());
-        assertEquals(0, g2.suspectedView().suspected().size());
-        assertSame(ComparisonResult.SAME, g2.compare(m1.localGossip()));
-        assertSame(ComparisonResult.SAME, g2.compare(m3.localGossip()));
+        assertEquals(0, g2.suspectView().suspected().size());
+        assertSame(GossipPrecedence.SAME, g2.compare(m1.localGossip()));
+        assertSame(GossipPrecedence.SAME, g2.compare(m3.localGossip()));
         assertEquals(3, g2.seen().size());
         assertTrue(g2.seen().contains(m1.id()));
         assertTrue(g2.seen().contains(m2.id()));
@@ -511,9 +511,9 @@ public class GossipManagerTest extends HekateTestBase {
         assertSame(GossipNodeStatus.UP, g3.member(m1.id()).status());
         assertSame(GossipNodeStatus.UP, g3.member(m2.id()).status());
         assertSame(GossipNodeStatus.UP, g3.member(m3.id()).status());
-        assertEquals(0, g3.suspectedView().suspected().size());
-        assertSame(ComparisonResult.SAME, g3.compare(m1.localGossip()));
-        assertSame(ComparisonResult.SAME, g3.compare(m2.localGossip()));
+        assertEquals(0, g3.suspectView().suspected().size());
+        assertSame(GossipPrecedence.SAME, g3.compare(m1.localGossip()));
+        assertSame(GossipPrecedence.SAME, g3.compare(m2.localGossip()));
         assertEquals(3, g3.seen().size());
         assertTrue(g3.seen().contains(m1.id()));
         assertTrue(g3.seen().contains(m2.id()));
@@ -759,10 +759,10 @@ public class GossipManagerTest extends HekateTestBase {
 
         assertEquals(3, g1.members().size());
         assertSame(GossipNodeStatus.UP, g1.member(m1.id()).status());
-        assertSame(GossipNodeStatus.DOWN, g1.member(m2.id()).status());
+        assertSame(GossipNodeStatus.FAILED, g1.member(m2.id()).status());
         assertSame(GossipNodeStatus.UP, g1.member(m3.id()).status());
-        assertEquals(1, g1.suspectedView().suspected().size());
-        assertTrue(g1.suspectedView().suspecting(m2.id()).contains(m1.id()));
+        assertEquals(1, g1.suspectView().suspected().size());
+        assertTrue(g1.suspectView().suspecting(m2.id()).contains(m1.id()));
 
         Gossip g3 = m3.localGossip();
 
@@ -770,8 +770,8 @@ public class GossipManagerTest extends HekateTestBase {
         assertSame(GossipNodeStatus.UP, g3.member(m1.id()).status());
         assertSame(GossipNodeStatus.UP, g3.member(m2.id()).status());
         assertSame(GossipNodeStatus.UP, g3.member(m3.id()).status());
-        assertEquals(1, g3.suspectedView().suspected().size());
-        assertTrue(g3.suspectedView().suspecting(m2.id()).contains(m3.id()));
+        assertEquals(1, g3.suspectView().suspected().size());
+        assertTrue(g3.suspectView().suspecting(m2.id()).contains(m3.id()));
 
         say("OMG! He is dead! ...lets get rid of his body.");
 
@@ -782,18 +782,18 @@ public class GossipManagerTest extends HekateTestBase {
         assertEquals(2, g1.members().size());
         assertSame(GossipNodeStatus.UP, g1.member(m1.id()).status());
         assertSame(GossipNodeStatus.UP, g1.member(m3.id()).status());
-        assertEquals(1, g1.suspectedView().suspected().size());
-        assertFalse(g1.suspectedView().suspecting(m2.id()).contains(m1.id()));
-        assertTrue(g1.suspectedView().suspecting(m2.id()).contains(m3.id()));
+        assertEquals(1, g1.suspectView().suspected().size());
+        assertFalse(g1.suspectView().suspecting(m2.id()).contains(m1.id()));
+        assertTrue(g1.suspectView().suspecting(m2.id()).contains(m3.id()));
 
         g3 = m3.localGossip();
 
         assertEquals(2, g3.members().size());
         assertSame(GossipNodeStatus.UP, g3.member(m1.id()).status());
         assertSame(GossipNodeStatus.UP, g3.member(m3.id()).status());
-        assertEquals(1, g3.suspectedView().suspected().size());
-        assertFalse(g3.suspectedView().suspecting(m2.id()).contains(m1.id()));
-        assertTrue(g3.suspectedView().suspecting(m2.id()).contains(m3.id()));
+        assertEquals(1, g3.suspectView().suspected().size());
+        assertFalse(g3.suspectView().suspecting(m2.id()).contains(m1.id()));
+        assertTrue(g3.suspectView().suspecting(m2.id()).contains(m3.id()));
 
         say("Hm, one more thing. We need to remove evidences of his existence.");
 
@@ -811,14 +811,14 @@ public class GossipManagerTest extends HekateTestBase {
         assertEquals(2, g1.members().size());
         assertSame(GossipNodeStatus.UP, g1.member(m1.id()).status());
         assertSame(GossipNodeStatus.UP, g1.member(m3.id()).status());
-        assertEquals(0, g1.suspectedView().suspected().size());
+        assertEquals(0, g1.suspectView().suspected().size());
 
         g3 = m3.localGossip();
 
         assertEquals(2, g3.members().size());
         assertSame(GossipNodeStatus.UP, g3.member(m1.id()).status());
         assertSame(GossipNodeStatus.UP, g3.member(m3.id()).status());
-        assertEquals(0, g3.suspectedView().suspected().size());
+        assertEquals(0, g3.suspectView().suspected().size());
     }
 
     @Test
@@ -1031,7 +1031,7 @@ public class GossipManagerTest extends HekateTestBase {
         Gossip gossip = managers.get(0).localGossip();
 
         for (GossipManager mgr : managers) {
-            if (gossip.compare(mgr.localGossip()) != ComparisonResult.SAME) {
+            if (gossip.compare(mgr.localGossip()) != GossipPrecedence.SAME) {
                 return false;
             }
         }
@@ -1068,8 +1068,8 @@ public class GossipManagerTest extends HekateTestBase {
             }
 
             @Override
-            public void onTopologyChange(Set<ClusterNode> oldTopology, Set<ClusterNode> newTopology) {
-                say("Topology  change on " + node + " " + oldTopology + " -> " + newTopology);
+            public void onTopologyChange(Set<ClusterNode> oldTopology, Set<ClusterNode> newTopology, Set<ClusterNode> failed) {
+                say("Topology  change on " + node + " " + oldTopology + " -> " + newTopology + " (failed=" + failed + ')');
             }
 
             @Override

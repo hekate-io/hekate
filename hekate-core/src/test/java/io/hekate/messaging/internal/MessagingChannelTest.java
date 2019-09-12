@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -20,7 +20,6 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.UpdatableClusterView;
-import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelId;
 import io.hekate.messaging.MessagingEndpoint;
@@ -38,7 +37,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Exchanger;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
@@ -62,9 +60,9 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
     @Test
     public void testChannel() throws Exception {
-        TestChannel testChannel = createChannel(c -> c.withMessagingTimeout(100500)).join();
+        TestChannel testChannel = createChannel().join();
 
-        MessagingChannel<String> channel = testChannel.get();
+        MessagingChannel<String> channel = testChannel.channel();
 
         assertNotNull(channel.id());
         assertEquals(TEST_CHANNEL_NAME, channel.name());
@@ -73,7 +71,6 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         assertEquals(nioThreads, channel.nioThreads());
         assertEquals(workerThreads, channel.workerThreads());
         assertNotNull(channel.executor());
-        assertEquals(100500, channel.timeout());
     }
 
     @Test
@@ -135,7 +132,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
             }
 
             if (msg.mustReply()) {
-                String response = msg.get() + "-reply";
+                String response = msg.payload() + "-reply";
 
                 msg.reply(response);
             }
@@ -143,7 +140,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         awaitForChannelsTopology(sender, receiver);
 
-        sender.get().forNode(receiver.nodeId()).request("request").get();
+        sender.channel().forNode(receiver.nodeId()).newRequest("request").submit().get();
 
         if (errorRef.get() != null) {
             throw errorRef.get();
@@ -156,7 +153,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         createChannel(c -> c.setReceiver(msg -> {
             try {
-                switch (msg.get()) {
+                switch (msg.payload()) {
                     case "send":
                     case "broadcast": {
                         assertFalse(msg.mustReply());
@@ -223,54 +220,30 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel().join();
 
-        sender.get().forRemotes().send("send");
+        sender.channel().forRemotes().newSend("send").submit();
         Optional.ofNullable(errRef.exchange(null)).ifPresent(e -> {
             throw new AssertionError(e);
         });
 
-        sender.get().forRemotes().request("request");
+        sender.channel().forRemotes().newRequest("request").submit();
         Optional.ofNullable(errRef.exchange(null)).ifPresent(e -> {
             throw new AssertionError(e);
         });
 
-        sender.get().forRemotes().subscribe("stream-request", (err, rsp) -> { /* Ignore. */ });
+        sender.channel().forRemotes().newSubscribe("stream-request").submit((err, rsp) -> { /* Ignore. */ });
         Optional.ofNullable(errRef.exchange(null)).ifPresent(e -> {
             throw new AssertionError(e);
         });
 
-        sender.get().forRemotes().broadcast("broadcast");
+        sender.channel().forRemotes().newBroadcast("broadcast").submit();
         Optional.ofNullable(errRef.exchange(null)).ifPresent(e -> {
             throw new AssertionError(e);
         });
 
-        sender.get().forRemotes().aggregate("aggregate");
+        sender.channel().forRemotes().newAggregate("aggregate").submit();
         Optional.ofNullable(errRef.exchange(null)).ifPresent(e -> {
             throw new AssertionError(e);
         });
-    }
-
-    @Test
-    public void testFailover() throws Exception {
-        MessagingChannel<String> channel = createChannel().join().get();
-
-        assertNull(channel.failover());
-        assertNull(channel.forRemotes().failover());
-
-        FailoverPolicy p1 = context -> null;
-        FailoverPolicy p2 = context -> null;
-        FailoverPolicy p3 = context -> null;
-
-        assertSame(p1, channel.withFailover(p1).failover());
-        assertNull(channel.failover());
-        assertNull(channel.forRemotes().failover());
-
-        assertSame(p2, channel.forRemotes().withFailover(p2).failover());
-        assertNull(channel.failover());
-        assertNull(channel.forRemotes().failover());
-
-        assertSame(p3, channel.forRemotes().withFailover(p3).forRemotes().failover());
-        assertNull(channel.failover());
-        assertNull(channel.forRemotes().failover());
     }
 
     @Test
@@ -278,7 +251,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         MessagingChannel<String> channel1 = createChannel(cfg -> cfg
             .withPartitions(64)
             .withBackupNodes(12)
-        ).join().get();
+        ).join().channel();
 
         assertNotNull(channel1.partitions());
         assertEquals(64, channel1.partitions().partitions());
@@ -297,28 +270,12 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
     }
 
     @Test
-    public void testTimeout() throws Exception {
-        MessagingChannel<String> channel = createChannel().join().get();
-
-        assertEquals(0, channel.timeout());
-
-        assertEquals(1000, channel.withTimeout(1, TimeUnit.SECONDS).timeout());
-        assertEquals(0, channel.timeout());
-
-        assertEquals(2000, channel.forRemotes().withTimeout(2, TimeUnit.SECONDS).timeout());
-        assertEquals(0, channel.timeout());
-
-        assertEquals(3000, channel.forRemotes().withTimeout(3, TimeUnit.SECONDS).forRemotes().timeout());
-        assertEquals(0, channel.timeout());
-    }
-
-    @Test
     public void testCustomClusterView() throws Exception {
         List<TestChannel> channels = createAndJoinChannels(3, c ->
-            c.setReceiver(msg -> msg.reply(msg.get() + "-reply"))
+            c.setReceiver(msg -> msg.reply(msg.payload() + "-reply"))
         );
 
-        MessagingChannel<String> originalSender = channels.get(0).get();
+        MessagingChannel<String> originalSender = channels.get(0).channel();
 
         UpdatableClusterView manualCluster = UpdatableClusterView.empty();
 
@@ -333,7 +290,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         channels.forEach(c ->
             expectCause(EmptyTopologyException.class, () ->
-                get(sender.forNode(c.nodeId()).request("test"))
+                get(sender.forNode(c.nodeId()).newRequest("test").submit())
             )
         );
 
@@ -348,7 +305,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         channels.forEach(c ->
             expectCause(EmptyTopologyException.class, () ->
-                get(sender.forNode(c.nodeId()).request("test"))
+                get(sender.forNode(c.nodeId()).newRequest("test").submit())
             )
         );
 
@@ -363,7 +320,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         channels.forEach(c ->
             expectCause(EmptyTopologyException.class, () ->
-                get(sender.forNode(c.nodeId()).request("test"))
+                get(sender.forNode(c.nodeId()).newRequest("test").submit())
             )
         );
 
@@ -377,7 +334,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
             assertEquals(1, sender.partitions().topology().size());
             assertTrue(sender.partitions().topology().contains(c.nodeId()));
 
-            get(sender.forNode(c.nodeId()).request("test"));
+            get(sender.forNode(c.nodeId()).newRequest("test").submit());
         }
 
         // New node should not be visible.
@@ -390,19 +347,19 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         // Join new node.
         channels.add(createChannel(c ->
-            c.setReceiver(msg -> msg.reply(msg.get() + "-reply"))
+            c.setReceiver(msg -> msg.reply(msg.payload() + "-reply"))
         ).join());
 
         awaitForChannelsTopology(channels);
 
         // New node should not be visible.
         expectCause(EmptyTopologyException.class, () ->
-            get(sender2.forNode(channels.get(channels.size() - 1).nodeId()).request("test"))
+            get(sender2.forNode(channels.get(channels.size() - 1).nodeId()).newRequest("test").submit())
         );
 
         // Old nodes should be visible.
         for (int i = 0; i < channels.size() - 1 /* <- Exclude newly added node */; i++) {
-            get(sender2.forNode(channels.get(i).nodeId()).request("test"));
+            get(sender2.forNode(channels.get(i).nodeId()).newRequest("test").submit());
         }
 
         // Removed node should be still visible.
@@ -422,7 +379,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         assertEquals(4, sender3.cluster().topology().size());
 
         expectCause(UnknownRouteException.class, () ->
-            get(sender3.forNode(removed.nodeId()).request("test"))
+            get(sender3.forNode(removed.nodeId()).newRequest("test").submit())
         );
 
         // Non-channel node should be filtered out.

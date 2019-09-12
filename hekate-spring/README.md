@@ -4,10 +4,10 @@ This module provides XML schema and adaptors for integration of [Hekate.io](http
 with [Spring Framework](https://projects.spring.io/spring-framework/) 
 
  
- ```
+ ```xml
  <dependency>
      <groupId>io.hekate</groupId>
      <artifactId>hekate-spring</artifactId>
-     <version>3.0.0-SNAPSHOT</version>
+     <version>3.6.0-SNAPSHOT</version>
  </dependency>
  ```

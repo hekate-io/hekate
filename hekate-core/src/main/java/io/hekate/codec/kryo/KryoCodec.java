@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -128,7 +128,7 @@ class KryoCodec implements Codec<Object> {
 
         // Try to register extended serializers for the JDK classes that are not supported by Kryo out of the box.
         if (KRYO_SERIALIZERS_SUPPORTED) {
-            JavaKaffeeSerializersRegistrar.tryRegister(kryo);
+            JavaKaffeeSerializersRegistrar.register(kryo);
         }
 
         // Enforce JDK default serialization (required for writeReplace/readResolve/etc).

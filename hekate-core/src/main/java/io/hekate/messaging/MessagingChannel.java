@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,25 +18,26 @@ package io.hekate.messaging;
 
 import io.hekate.cluster.ClusterFilterSupport;
 import io.hekate.cluster.ClusterView;
-import io.hekate.failover.FailoverPolicy;
-import io.hekate.failover.FailoverPolicyBuilder;
-import io.hekate.messaging.broadcast.Aggregate;
-import io.hekate.messaging.broadcast.AggregateFuture;
-import io.hekate.messaging.broadcast.Broadcast;
-import io.hekate.messaging.broadcast.BroadcastFuture;
 import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancer;
-import io.hekate.messaging.unicast.Request;
-import io.hekate.messaging.unicast.RequestCallback;
-import io.hekate.messaging.unicast.RequestFuture;
-import io.hekate.messaging.unicast.Response;
-import io.hekate.messaging.unicast.Send;
-import io.hekate.messaging.unicast.SendFuture;
-import io.hekate.messaging.unicast.Subscribe;
-import io.hekate.messaging.unicast.SubscribeFuture;
+import io.hekate.messaging.operation.AckMode;
+import io.hekate.messaging.operation.Aggregate;
+import io.hekate.messaging.operation.AggregateFuture;
+import io.hekate.messaging.operation.AggregateResult;
+import io.hekate.messaging.operation.Broadcast;
+import io.hekate.messaging.operation.BroadcastFuture;
+import io.hekate.messaging.operation.BroadcastResult;
+import io.hekate.messaging.operation.Request;
+import io.hekate.messaging.operation.RequestFuture;
+import io.hekate.messaging.operation.ResponsePart;
+import io.hekate.messaging.operation.Send;
+import io.hekate.messaging.operation.SendFuture;
+import io.hekate.messaging.operation.Subscribe;
+import io.hekate.messaging.operation.SubscribeCallback;
+import io.hekate.messaging.operation.SubscribeFuture;
 import io.hekate.partition.PartitionMapper;
+import java.util.List;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Messaging channel.
@@ -68,7 +69,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * <p>
      * By default, this operation will not wait for the message to be processed on the receiver side. It is possible to change this behavior
-     * via {@link Send#withConfirmReceive(boolean)} method.
+     * via {@link Send#withAckMode(AckMode)} method.
      * </p>
      *
      * @param message Message to be sent.
@@ -97,7 +98,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return New operation.
      *
-     * @see Subscribe#submit(RequestCallback)
+     * @see Subscribe#submit(SubscribeCallback)
      */
     Subscribe<T> newSubscribe(T request);
 
@@ -106,7 +107,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * <p>
      * By default, this operation will not wait for the message to be processed on the receiver side. It is possible to change this behavior
-     * via {@link Send#withConfirmReceive(boolean)} method.
+     * via {@link Broadcast#withAckMode(AckMode)} method.
      * </p>
      *
      * @param request Message to broadcast.
@@ -192,65 +193,6 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     MessagingChannel<T> withPartitions(int partitions, int backupNodes);
 
     /**
-     * Returns a copy of this channel that will use the specified failover policy and will inherit all other options from this instance.
-     *
-     * @param policy Failover policy.
-     *
-     * @return Channel wrapper.
-     *
-     * @see MessagingChannelConfig#setFailoverPolicy(FailoverPolicy)
-     */
-    MessagingChannel<T> withFailover(FailoverPolicy policy);
-
-    /**
-     * Returns a copy of this channel that will use the specified failover policy and will inherit all other options from this instance.
-     *
-     * @param policy Failover policy.
-     *
-     * @return Channel wrapper.
-     *
-     * @see MessagingChannelConfig#setFailoverPolicy(FailoverPolicy)
-     */
-    MessagingChannel<T> withFailover(FailoverPolicyBuilder policy);
-
-    /**
-     * Returns the failover policy that was set via {@link #withFailover(FailoverPolicy)}.
-     *
-     * @return Failover policy or {@code null}, if no policy is specified.
-     */
-    FailoverPolicy failover();
-
-    /**
-     * Returns a copy of this channel that will use the specified timeout value and will inherit all other options from this instance.
-     *
-     * <p>
-     * If the message exchange operation can not be completed at the specified timeout then such operation will end up the error {@link
-     * MessageTimeoutException}.
-     * </p>
-     *
-     * <p>
-     * Specifying a negative or zero value disables the timeout check.
-     * </p>
-     *
-     * @param timeout Timeout.
-     * @param unit Unit.
-     *
-     * @return Channel wrapper.
-     *
-     * @see MessagingChannelConfig#setMessagingTimeout(long)
-     */
-    MessagingChannel<T> withTimeout(long timeout, TimeUnit unit);
-
-    /**
-     * Returns the timeout value in milliseconds.
-     *
-     * @return Timeout in milliseconds or 0, if timeout was not specified.
-     *
-     * @see #withTimeout(long, TimeUnit)
-     */
-    long timeout();
-
-    /**
      * Returns a copy of this channel that will use the specified load balancer and will inherit all other options from this instance.
      *
      * <p>
@@ -287,7 +229,7 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     MessagingChannel<T> withCluster(ClusterView cluster);
 
     /**
-     * Returns the asynchronous task executor of this channel.
+     * Returns the executor of this channel.
      *
      * @return Asynchronous task executor of this channel.
      *
@@ -296,70 +238,425 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     Executor executor();
 
     /**
-     * Asynchronously sends a one way message and returns a future object that can be used to inspect the operation result.
+     * Asynchronously sends the specified message with a mandatory acknowledgement.
+     *
+     * @param msg Message.
+     *
+     * @return Future object to be completed after receiving an acknowledgement.
+     */
+    default SendFuture sendAsync(T msg) {
+        return newSend(msg)
+            .withAckMode(AckMode.REQUIRED)
+            .submit();
+    }
+
+    /**
+     * Asynchronously sends the specified message with the specified acknowledgement mode.
+     *
+     * @param msg Message.
+     * @param ackMode Acknowledgement mode.
+     *
+     * @return Operation future.
+     */
+    default SendFuture sendAsync(T msg, AckMode ackMode) {
+        return newSend(msg)
+            .withAckMode(ackMode)
+            .submit();
+    }
+
+    /**
+     * Asynchronously sends the specified message with a mandatory acknowledgement.
+     *
+     * @param affinityKey Affinity key (see {@link Send#withAffinity(Object)}).
+     * @param msg Message.
+     *
+     * @return Future object to be completed after receiving an acknowledgement.
+     */
+    default SendFuture sendAsync(Object affinityKey, T msg) {
+        return newSend(msg)
+            .withAckMode(AckMode.REQUIRED)
+            .withAffinity(affinityKey)
+            .submit();
+    }
+
+    /**
+     * Asynchronously sends the specified message with the specified acknowledgement mode.
+     *
+     * @param affinityKey Affinity key (see {@link Send#withAffinity(Object)}).
+     * @param msg Message.
+     * @param ackMode Acknowledgement mode.
+     *
+     * @return Operation future.
+     */
+    default SendFuture sendAsync(Object affinityKey, T msg, AckMode ackMode) {
+        return newSend(msg)
+            .withAckMode(ackMode)
+            .withAffinity(affinityKey)
+            .submit();
+    }
+
+    /**
+     * Synchronously sends the specified message and awaits for an acknowledgement.
+     *
+     * @param msg Message.
+     *
+     * @throws MessagingFutureException If message operation failed.
+     * @throws InterruptedException If current thread got interrupted.
+     */
+    default void send(T msg) throws MessagingFutureException, InterruptedException {
+        newSend(msg)
+            .withAckMode(AckMode.REQUIRED)
+            .sync();
+    }
+
+    /**
+     * Synchronously sends the specified message with the specified acknowledgement mode.
+     *
+     * @param msg Message.
+     * @param ackMode Acknowledgement mode.
+     *
+     * @throws MessagingFutureException If message operation failed.
+     * @throws InterruptedException If current thread got interrupted.
+     */
+    default void send(T msg, AckMode ackMode) throws MessagingFutureException, InterruptedException {
+        newSend(msg)
+            .withAckMode(ackMode)
+            .sync();
+    }
+
+    /**
+     * Synchronously sends the specified message and awaits for an acknowledgement.
+     *
+     * @param affinityKey Affinity key (see {@link Send#withAffinity(Object)}).
+     * @param msg Message.
+     *
+     * @throws MessagingFutureException If message operation failed.
+     * @throws InterruptedException If current thread got interrupted.
+     */
+    default void send(Object affinityKey, T msg) throws MessagingFutureException, InterruptedException {
+        newSend(msg)
+            .withAckMode(AckMode.REQUIRED)
+            .withAffinity(affinityKey)
+            .sync();
+    }
+
+    /**
+     * Synchronously sends the specified message with the specified acknowledgement mode.
+     *
+     * @param affinityKey Affinity key (see {@link Send#withAffinity(Object)}).
+     * @param msg Message.
+     * @param ackMode Acknowledgement mode.
+     *
+     * @throws MessagingFutureException If message operation failed.
+     * @throws InterruptedException If current thread got interrupted.
+     */
+    default void send(Object affinityKey, T msg, AckMode ackMode) throws MessagingFutureException, InterruptedException {
+        newSend(msg)
+            .withAckMode(ackMode)
+            .withAffinity(affinityKey)
+            .sync();
+    }
+
+    /**
+     * Asynchronously sends the specified request.
+     *
+     * @param msg Request message.
+     *
+     * @return Future object to be completed after receiving a response.
+     */
+    default RequestFuture<T> requestAsync(T msg) {
+        return newRequest(msg).submit();
+    }
+
+    /**
+     * Asynchronously sends the specified request.
+     *
+     * @param affinityKey Affinity key (see {@link Request#withAffinity(Object)}).
+     * @param msg Request message.
+     *
+     * @return Future object to be completed after receiving a response.
+     */
+    default RequestFuture<T> requestAsync(Object affinityKey, T msg) {
+        return newRequest(msg)
+            .withAffinity(affinityKey)
+            .submit();
+    }
+
+    /**
+     * Synchronously sends the specified request and awaits for a response.
+     *
+     * @param msg Request message.
+     *
+     * @return Response.
+     *
+     * @throws MessagingFutureException If message operation failed.
+     * @throws InterruptedException If current thread got interrupted.
+     */
+    default T request(T msg) throws MessagingFutureException, InterruptedException {
+        return newRequest(msg).response();
+    }
+
+    /**
+     * Synchronously sends the specified request and awaits for a response.
+     *
+     * @param affinityKey Affinity key (see {@link Request#withAffinity(Object)}).
+     * @param msg Request message.
+     *
+     * @return Response.
+     *
+     * @throws MessagingFutureException If message operation failed.
+     * @throws InterruptedException If current thread got interrupted.
+     */
+    default T request(Object affinityKey, T msg) throws MessagingFutureException, InterruptedException {
+        return newRequest(msg)
+            .withAffinity(affinityKey)
+            .response();
+    }
+
+    /**
+     * Asynchronously sends the specified subscription request.
+     *
+     * @param msg Subscription request message.
+     * @param callback Subscription callback.
+     *
+     * @return Future object to be completed after receiving the final response (see {@link ResponsePart#isLastPart()}).
+     */
+    default SubscribeFuture<T> subscribeAsync(T msg, SubscribeCallback<T> callback) {
+        return newSubscribe(msg).submit(callback);
+    }
+
+    /**
+     * Asynchronously sends the specified subscription request.
+     *
+     * @param affinityKey Affinity key (see {@link Subscribe#withAffinity(Object)}).
+     * @param msg Subscription request message.
+     * @param callback Subscription callback.
+     *
+     * @return Future object to be completed after receiving the final response (see {@link ResponsePart#isLastPart()}).
+     */
+    default SubscribeFuture<T> subscribeAsync(Object affinityKey, T msg, SubscribeCallback<T> callback) {
+        return newSubscribe(msg)
+            .withAffinity(affinityKey)
+            .submit(callback);
+    }
+
+    /**
+     * Synchronously sends the specified subscription request and accumulates all responses.
      *
      * <p>
-     * This method doesn't assume any response to be received from the destination node. If request-response type of communication is
-     * required then consider using the {@link #request(Object)} method.
+     * <b>Notice:</b> This method blocks until the final response is received (see {@link ResponsePart#isLastPart()}) and accumulates all
+     * intermediate parts in memory.
      * </p>
      *
-     * @param message Message to be sent.
+     * @param msg Subscription request message.
      *
-     * @return Future object that can be used to inspect the operation result.
+     * @return All response parts that were received.
+     *
+     * @throws MessagingFutureException If message operation failed.
+     * @throws InterruptedException If current thread got interrupted.
      */
-    default SendFuture send(T message) {
-        return newSend(message).submit();
+    default List<T> subscribe(T msg) throws MessagingFutureException, InterruptedException {
+        return newSubscribe(msg).responses();
     }
 
     /**
-     * Asynchronously broadcasts the specified message and returns a future object that can be used to inspect the operation result.
-     *
-     * @param message Message to broadcast.
-     *
-     * @return Future object that can be used to inspect the broadcast operation result.
-     */
-    default BroadcastFuture<T> broadcast(T message) {
-        return newBroadcast(message).submit();
-    }
-
-    /**
-     * Asynchronously sends the query message and aggregates responses from all the nodes that received this message. This method returns a
-     * future object that can be used to inspect the aggregation results.
-     *
-     * @param message Query message that should be sent.
-     *
-     * @return Future object that can be used to inspect the aggregation results.
-     */
-    default AggregateFuture<T> aggregate(T message) {
-        return newAggregate(message).submit();
-    }
-
-    /**
-     * Asynchronously sends a request message and returns a future object that will be completed after receiving the response.
-     *
-     * @param request Request message.
-     *
-     * @return Future object that can be used to obtain the response.
-     */
-    default RequestFuture<T> request(T request) {
-        return newRequest(request).submit();
-    }
-
-    /**
-     * Opens a stream for receiving continuous responses.
+     * Synchronously sends the specified subscription request and accumulates all responses.
      *
      * <p>
-     * This method asynchronously sends a request message and opens a stream for receiving {@link Message#partialReply(Object) partial
-     * replies}. For each such reply the {@link RequestCallback#onComplete(Throwable, Response)} method will be called until the last
-     * (non-{@link Response#isPartial() partial}) response is received.
+     * <b>Notice:</b> This method blocks until the final response is received (see {@link ResponsePart#isLastPart()}) and accumulates all
+     * intermediate parts in memory.
      * </p>
      *
-     * @param request Request.
-     * @param callback Callback.
+     * @param affinityKey Affinity key (see {@link Subscribe#withAffinity(Object)}).
+     * @param msg Subscription request message.
      *
-     * @return Future object that gets completed when the final chunk of a response stream is received.
+     * @return All response parts that were received.
+     *
+     * @throws MessagingFutureException If message operation failed.
+     * @throws InterruptedException If current thread got interrupted.
      */
-    default SubscribeFuture<T> subscribe(T request, RequestCallback<T> callback) {
-        return newSubscribe(request).submit(callback);
+    default List<T> subscribe(Object affinityKey, T msg) throws MessagingFutureException, InterruptedException {
+        return newSubscribe(msg)
+            .withAffinity(affinityKey)
+            .responses();
+    }
+
+    /**
+     * Asynchronously broadcasts the specified message with a mandatory acknowledgement.
+     *
+     * @param msg Message.
+     *
+     * @return Future object to be completed after receiving acknowledgements from all nodes.
+     */
+    default BroadcastFuture<T> broadcastAsync(T msg) {
+        return newBroadcast(msg)
+            .withAckMode(AckMode.REQUIRED)
+            .submit();
+    }
+
+    /**
+     * Asynchronously broadcasts the specified message with the specified acknowledgement mode.
+     *
+     * @param msg Message.
+     * @param ackMode Acknowledgement mode.
+     *
+     * @return Operation future.
+     */
+    default BroadcastFuture<T> broadcastAsync(T msg, AckMode ackMode) {
+        return newBroadcast(msg)
+            .withAckMode(ackMode)
+            .submit();
+    }
+
+    /**
+     * Asynchronously broadcasts the specified message with a mandatory acknowledgement.
+     *
+     * @param affinityKey Affinity key (see {@link Broadcast#withAffinity(Object)}).
+     * @param msg Message.
+     *
+     * @return Future object to be completed after receiving acknowledgements from all nodes.
+     */
+    default BroadcastFuture<T> broadcastAsync(Object affinityKey, T msg) {
+        return newBroadcast(msg)
+            .withAckMode(AckMode.REQUIRED)
+            .withAffinity(affinityKey)
+            .submit();
+    }
+
+    /**
+     * Asynchronously broadcasts the specified message with the specified acknowledgement mode.
+     *
+     * @param affinityKey Affinity key (see {@link Broadcast#withAffinity(Object)}).
+     * @param msg Message.
+     * @param ackMode Acknowledgement mode.
+     *
+     * @return Operation future.
+     */
+    default BroadcastFuture<T> broadcastAsync(Object affinityKey, T msg, AckMode ackMode) {
+        return newBroadcast(msg)
+            .withAckMode(ackMode)
+            .withAffinity(affinityKey)
+            .submit();
+    }
+
+    /**
+     * Synchronously broadcasts the specified message with a mandatory acknowledgement.
+     *
+     * @param msg Message.
+     *
+     * @return Broadcast result.
+     *
+     * @throws MessagingFutureException If message operation failed.
+     * @throws InterruptedException If current thread got interrupted.
+     */
+    default BroadcastResult<T> broadcast(T msg) throws MessagingFutureException, InterruptedException {
+        return newBroadcast(msg)
+            .withAckMode(AckMode.REQUIRED)
+            .sync();
+    }
+
+    /**
+     * Synchronously broadcasts the specified message with the specified acknowledgement mode.
+     *
+     * @param msg Message.
+     * @param ackMode Acknowledgement mode.
+     *
+     * @return Broadcast result.
+     *
+     * @throws MessagingFutureException If message operation failed.
+     * @throws InterruptedException If current thread got interrupted.
+     */
+    default BroadcastResult<T> broadcast(T msg, AckMode ackMode) throws MessagingFutureException, InterruptedException {
+        return newBroadcast(msg)
+            .withAckMode(ackMode)
+            .sync();
+    }
+
+    /**
+     * Synchronously broadcasts the specified message with a mandatory acknowledgement.
+     *
+     * @param affinityKey Affinity key (see {@link Broadcast#withAffinity(Object)}).
+     * @param msg Message.
+     *
+     * @return Broadcast result.
+     *
+     * @throws MessagingFutureException If message operation failed.
+     * @throws InterruptedException If current thread got interrupted.
+     */
+    default BroadcastResult<T> broadcast(Object affinityKey, T msg) throws MessagingFutureException, InterruptedException {
+        return newBroadcast(msg)
+            .withAckMode(AckMode.REQUIRED)
+            .withAffinity(affinityKey).sync();
+    }
+
+    /**
+     * Synchronously broadcasts the specified message with the specified acknowledgement mode.
+     *
+     * @param affinityKey Affinity key (see {@link Broadcast#withAffinity(Object)}).
+     * @param msg Message.
+     * @param ackMode Acknowledgement mode.
+     *
+     * @return Broadcast result.
+     *
+     * @throws MessagingFutureException If message operation failed.
+     * @throws InterruptedException If current thread got interrupted.
+     */
+    default BroadcastResult<T> broadcast(Object affinityKey, T msg, AckMode ackMode) throws MessagingFutureException, InterruptedException {
+        return newBroadcast(msg)
+            .withAckMode(ackMode)
+            .withAffinity(affinityKey)
+            .sync();
+    }
+
+    /**
+     * Asynchronously submits the specified aggregation request.
+     *
+     * @param msg Aggregation request message.
+     *
+     * @return Future object to be completed after receiving responses from all nodes.
+     */
+    default AggregateFuture<T> aggregateAsync(T msg) {
+        return newAggregate(msg).submit();
+    }
+
+    /**
+     * Asynchronously submits the specified aggregation request.
+     *
+     * @param affinityKey Affinity key (see {@link Aggregate#withAffinity(Object)}).
+     * @param msg Aggregation request message.
+     *
+     * @return Future object to be completed after receiving responses from all nodes.
+     */
+    default AggregateFuture<T> aggregateAsync(Object affinityKey, T msg) {
+        return newAggregate(msg).withAffinity(affinityKey).submit();
+    }
+
+    /**
+     * Synchronously submits the specified aggregation request.
+     *
+     * @param msg Aggregation request message.
+     *
+     * @return Aggregation result.
+     *
+     * @throws MessagingFutureException If message operation failed.
+     * @throws InterruptedException If current thread got interrupted.
+     */
+    default AggregateResult<T> aggregate(T msg) throws MessagingFutureException, InterruptedException {
+        return newAggregate(msg).get();
+    }
+
+    /**
+     * Synchronously submits the specified aggregation request.
+     *
+     * @param affinityKey Affinity key (see {@link Aggregate#withAffinity(Object)}).
+     * @param msg Aggregation request message.
+     *
+     * @return Aggregation result.
+     *
+     * @throws MessagingFutureException If message operation failed.
+     * @throws InterruptedException If current thread got interrupted.
+     */
+    default AggregateResult<T> aggregate(Object affinityKey, T msg) throws MessagingFutureException, InterruptedException {
+        return newAggregate(msg).withAffinity(affinityKey).get();
     }
 }

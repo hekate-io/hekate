@@ -1,24 +1,55 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.intercept.OutboundType;
-import io.hekate.messaging.unicast.ReplyDecision;
-import io.hekate.messaging.unicast.Response;
-import io.hekate.messaging.unicast.SendFuture;
+import io.hekate.messaging.operation.AckMode;
+import io.hekate.messaging.operation.ResponsePart;
+import io.hekate.messaging.operation.SendFuture;
+import io.hekate.messaging.retry.RetryBackoffPolicy;
+import io.hekate.messaging.retry.RetryCallback;
+import io.hekate.messaging.retry.RetryCondition;
+import io.hekate.messaging.retry.RetryErrorPredicate;
+import io.hekate.messaging.retry.RetryRoutingPolicy;
 
 class SendOperation<T> extends UnicastOperation<T> {
     private final SendFuture future = new SendFuture();
 
-    private final boolean confirm;
+    private final AckMode ackMode;
 
-    public SendOperation(T message, Object affinityKey, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts, boolean confirm) {
-        super(message, affinityKey, gateway, opts, false);
+    public SendOperation(
+        T message,
+        Object affinityKey,
+        long timeout,
+        int maxAttempts,
+        RetryErrorPredicate retryErr,
+        RetryCondition retryCondition,
+        RetryBackoffPolicy retryBackoff,
+        RetryCallback retryCallback,
+        RetryRoutingPolicy retryRoute,
+        MessagingGatewayContext<T> gateway,
+        MessageOperationOpts<T> opts,
+        AckMode ackMode
+    ) {
+        super(
+            message,
+            affinityKey,
+            timeout,
+            maxAttempts,
+            retryErr,
+            retryCondition,
+            retryBackoff,
+            retryCallback,
+            retryRoute,
+            gateway,
+            opts,
+            false
+        );
 
-        this.confirm = confirm;
+        this.ackMode = ackMode;
     }
 
     @Override
     public OutboundType type() {
-        return confirm ? OutboundType.SEND_WITH_ACK : OutboundType.SEND_NO_ACK;
+        return ackMode == AckMode.REQUIRED ? OutboundType.SEND_WITH_ACK : OutboundType.SEND_NO_ACK;
     }
 
     @Override
@@ -27,12 +58,12 @@ class SendOperation<T> extends UnicastOperation<T> {
     }
 
     @Override
-    public ReplyDecision accept(Throwable error, Response<T> response) {
-        return ReplyDecision.DEFAULT;
+    public boolean shouldRetry(ResponsePart<T> response) {
+        return false;
     }
 
     @Override
-    protected void doReceiveFinal(Response<T> response) {
+    protected void doReceiveFinal(ResponsePart<T> response) {
         future.complete(null);
     }
 

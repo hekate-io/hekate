@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,8 +17,8 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.messaging.broadcast.BroadcastCallback;
-import io.hekate.messaging.broadcast.BroadcastResult;
+import io.hekate.messaging.operation.BroadcastCallback;
+import io.hekate.messaging.operation.BroadcastResult;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -60,7 +60,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
             awaitForChannelsTopology(channels);
 
-            BroadcastResult<String> result = get(channel.get().broadcast("test" + i));
+            BroadcastResult<String> result = channel.channel().newBroadcast("test" + i).sync();
 
             assertTrue(result.toString(), result.isSuccess());
             assertTrue(result.toString(), result.errors().isEmpty());
@@ -85,16 +85,15 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
             for (TestChannel channel : channels) {
                 repeat(100, j -> {
-                    BroadcastResult<String> result = get(channel.get()
+                    BroadcastResult<String> result = channel.channel()
                         .newBroadcast("test-" + j)
                         .withAffinity(j)
-                        .submit()
-                    );
+                        .sync();
 
                     assertTrue(result.isSuccess());
 
                     List<ClusterNode> sentTo = result.nodes();
-                    List<ClusterNode> mappedTo = channel.get().partitions().map(j).nodes();
+                    List<ClusterNode> mappedTo = channel.channel().partitions().map(j).nodes();
 
                     assertEquals(nodesPerPartition, sentTo.size());
                     assertEquals(mappedTo.stream().sorted().collect(toList()), sentTo.stream().sorted().collect(toList()));
@@ -118,8 +117,10 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
 
             awaitForChannelsTopology(channels);
 
-            // Empty targets.
-            BroadcastResult<String> result = get(channel.get().forRole("no-such-role").broadcast("test" + i));
+            BroadcastResult<String> result = channel.channel()
+                .forRole("no-such-role") // Empty targets.
+                .newBroadcast("test" + i)
+                .sync();
 
             assertTrue(result.toString(), result.isSuccess());
             assertTrue(result.toString(), result.errors().isEmpty());
@@ -138,7 +139,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
         TestChannel source = channels.get(channels.size() - 1);
 
         // Initialize connection to all nodes.
-        get(source.get().broadcast("test"));
+        source.channel().newBroadcast("test").sync();
 
         repeat(channels.size() - 1, i -> {
             TestChannel target = channels.get(i);
@@ -148,7 +149,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             // Induce failure by closing existing network connections.
             client.close();
 
-            BroadcastResult<String> result = get(source.get().broadcast("test" + i));
+            BroadcastResult<String> result = get(source.channel().newBroadcast("test" + i).submit());
 
             assertEquals("test" + i, result.message());
             assertFalse(result.errors().toString(), result.isSuccess());
@@ -179,7 +180,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             BroadcastTestCallback joinCallback = new BroadcastTestCallback();
 
             runAsync(() -> {
-                channel.get().filterAll(nodes -> {
+                channel.channel().filterAll(nodes -> {
                     joinFilterCallLatch.countDown();
 
                     await(joinLatch);
@@ -222,7 +223,7 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
             BroadcastTestCallback leaveCallback = new BroadcastTestCallback();
 
             runAsync(() -> {
-                channel.get().filterAll(nodes -> {
+                channel.channel().filterAll(nodes -> {
                     leaveFilterCallLatch.countDown();
 
                     await(leaveLatch);

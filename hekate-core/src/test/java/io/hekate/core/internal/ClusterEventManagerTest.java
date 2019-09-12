@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -436,7 +436,7 @@ public class ClusterEventManagerTest extends HekateTestBase {
     private ClusterChangeEvent newChangeEvent() throws Exception {
         ClusterTopology topology = newTopology();
 
-        return new ClusterChangeEvent(topology, topology.nodes(), emptyList(), mock(Hekate.class));
+        return new ClusterChangeEvent(topology, topology.nodes(), emptyList(), emptyList(), mock(Hekate.class));
     }
 
     private ClusterLeaveEvent newLeaveEvent() throws Exception {

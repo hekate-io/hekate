@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -47,8 +47,10 @@ import io.hekate.core.TerminateFuture;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
+import io.hekate.core.internal.util.Utils;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxSupport;
+import io.hekate.core.report.DefaultConfigReporter;
 import io.hekate.core.resource.ResourceService;
 import io.hekate.core.service.ClusterContext;
 import io.hekate.core.service.ClusterServiceManager;
@@ -114,6 +116,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     private final Set<String> nodeRoles;
 
     private final Map<String, String> nodeProps;
+
+    private final boolean configReport;
 
     private final NetworkServiceManager networkManager;
 
@@ -193,6 +197,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
         // Basic properties.
         this.nodeName = boot.getNodeName() != null ? boot.getNodeName().trim() : "";
         this.clusterName = boot.getClusterName().trim();
+        this.configReport = boot.isConfigReport();
 
         // Node roles.
         Set<String> roles;
@@ -422,41 +427,38 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                     log.debug("Skipped leave request since already in {} state.", state);
                 }
 
-                // Not joined. Return a future that is immediately completed.
-                LeaveFuture future = new LeaveFuture();
+                // Not joined.
+                return LeaveFuture.completed(this);
+            } else {
+                // Fork the leave future early in order to guard against internal state changes (f.e. by lifecycle listeners).
+                LeaveFuture leaveFutureFork = leaveFuture.fork();
 
-                future.complete(this);
+                if (state.get() == INITIALIZING || state.get() == INITIALIZED) {
+                    // Safe to run termination process (and bypass leave protocol) since we haven't started joining yet.
+                    doTerminateAsync(ClusterLeaveReason.LEAVE);
+                } else if (state.get() == JOINING || state.get() == SYNCHRONIZING || state.get() == UP) {
+                    state.set(LEAVING);
 
-                return future;
-            } else if (state.get() == INITIALIZING || state.get() == INITIALIZED) {
-                // Since we are still initializing it is safe to run termination process (and bypass leave protocol).
-                doTerminateAsync(ClusterLeaveReason.LEAVE);
+                    notifyOnLifecycleChange();
 
-                return leaveFuture.fork();
-            } else if (state.compareAndSet(JOINING, LEAVING)
-                || state.compareAndSet(SYNCHRONIZING, LEAVING)
-                || state.compareAndSet(UP, LEAVING)) {
-                notifyOnLifecycleChange();
+                    // Double check that state wasn't changed by listeners.
+                    if (state.get() == LEAVING) {
+                        if (DEBUG) {
+                            log.debug("Scheduling leave task for asynchronous processing.");
+                        }
 
-                // Double check that state wasn't changed by listeners.
-                if (state.get() == LEAVING) {
+                        runOnSysThread(this::doLeave);
+                    }
+                } else /* <-- LEAVING or TERMINATING */ {
                     if (DEBUG) {
-                        log.debug("Scheduling leave task for asynchronous processing.");
+                        log.debug("Skipped leave request since already in {} state.", state);
                     }
 
-                    runOnSysThread(this::doLeave);
+                    // Make sure that rejoining will not take place.
+                    rejoining.compareAndSet(true, false);
                 }
 
-                return leaveFuture.fork();
-            } else /* <-- LEAVING or TERMINATING */ {
-                if (DEBUG) {
-                    log.debug("Skipped leave request since already in {} state.", state);
-                }
-
-                // Make sure that rejoining will not take place.
-                rejoining.compareAndSet(true, false);
-
-                return leaveFuture.fork();
+                return leaveFutureFork;
             }
         });
     }
@@ -614,6 +616,10 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
             // Make sure that we are still initializing with the same node identifier.
             // Need to perform this check in order to stop early in case of concurrent leave/termination events.
             if (isInitializingFor(localNodeId)) {
+                if (DEBUG) {
+                    log.debug("Initializing node...");
+                }
+
                 // Initialize node info.
                 ClusterAddress address = new ClusterAddress(nodeAddress, localNodeId);
 
@@ -640,16 +646,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                     topology = oldTopology.update(emptySet());
                 }
 
-                if (log.isInfoEnabled()) {
-                    log.info("Initialized local node info [node={}]", localNode.toDetailedString());
-                }
-
                 // Initialize services.
                 InitializationContext ctx = createInitContext(localNode, joinFuture);
-
-                if (log.isInfoEnabled()) {
-                    log.info("Initializing services...");
-                }
 
                 services.preInitialize(ctx);
 
@@ -662,6 +660,35 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
                 if (jmx != null) {
                     jmx.register(this);
+                }
+
+                // Configuration report.
+                if (configReport) {
+                    DefaultConfigReporter report = new DefaultConfigReporter();
+
+                    // Node details report.
+                    report.section("node", r -> {
+                        r.value("id", localNode.id());
+                        r.value("address", localNode.address().socket());
+                        r.value("name", localNode.name());
+                        r.value("cluster", clusterName);
+                        r.value("roles", localNode.roles());
+                        r.value("properties", localNode.properties());
+                        r.value("pid", localNode.runtime().pid());
+                        r.value("cpu", localNode.runtime().cpus());
+                        r.value("ram", Utils.byteSizeFormat(localNode.runtime().maxMemory()));
+                        r.value("os", localNode.runtime().osName());
+                        r.value("jvm", localNode.runtime().jvmName()
+                            + " - " + localNode.runtime().jvmVersion()
+                            + " (" + localNode.runtime().jvmVendor() + ")"
+                        );
+                    });
+
+                    // Services report.
+                    services.configReport(report);
+
+                    // Log report.
+                    log.info("Initialized node: {}", report.report());
                 }
 
                 // Start plugins.
@@ -677,8 +704,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                     notifyOnLifecycleChange();
                 }
 
-                if (log.isInfoEnabled()) {
-                    log.info("Done initializing services.");
+                if (DEBUG) {
+                    log.debug("Done initializing node.");
                 }
             } else {
                 if (DEBUG) {
@@ -796,7 +823,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
             }
 
             @Override
-            public CompletableFuture<ClusterChangeEvent> onTopologyChange(Set<ClusterNode> nodes) {
+            public CompletableFuture<ClusterChangeEvent> onTopologyChange(Set<ClusterNode> liveSet, Set<ClusterNode> failedSet) {
                 CompletableFuture<ClusterChangeEvent> future = new CompletableFuture<>();
 
                 runOnSysThread(() ->
@@ -804,7 +831,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                         if (clusterEvents.isJoinEventFired()) {
                             DefaultClusterTopology lastTopology = topology;
 
-                            DefaultClusterTopology newTopology = lastTopology.updateIfModified(nodes);
+                            DefaultClusterTopology newTopology = lastTopology.updateIfModified(liveSet);
 
                             if (newTopology.version() == lastTopology.version()) {
                                 future.complete(null);
@@ -818,14 +845,16 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                                 Set<ClusterNode> oldNodes = lastTopology.nodeSet();
                                 Set<ClusterNode> newNodes = newTopology.nodeSet();
 
-                                List<ClusterNode> removed = getDiff(oldNodes, newNodes);
-                                List<ClusterNode> added = getDiff(newNodes, oldNodes);
+                                List<ClusterNode> removed = getImmutableDiff(oldNodes, newNodes);
+                                List<ClusterNode> added = getImmutableDiff(newNodes, oldNodes);
+                                List<ClusterNode> failed = unmodifiableList(new ArrayList<>(failedSet));
 
                                 if (log.isInfoEnabled()) {
-                                    log.info("Updated cluster topology [added={}, removed={}, topology={}]", added, removed, topology);
+                                    log.info("Updated cluster topology [added={}, removed={}, failed={}, topology={}]",
+                                        added, removed, failed, topology);
                                 }
 
-                                ClusterChangeEvent event = new ClusterChangeEvent(newTopology, added, removed, hekate());
+                                ClusterChangeEvent event = new ClusterChangeEvent(newTopology, added, removed, failed, hekate());
 
                                 clusterEvents.fireAsync(event);
 
@@ -890,7 +919,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
         assert localNode != null : "Local node is null.";
         assert guard.isWriteLocked() : "Thread must hold a write.";
 
-        ClusterContext clusterCtx = createClusterContext(localNode, joinFuture);
+        ClusterContext cluster = createClusterContext(localNode, joinFuture);
 
         return new InitializationContext() {
             @Override
@@ -905,7 +934,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
             @Override
             public ClusterContext cluster() {
-                return clusterCtx;
+                return cluster;
             }
 
             @Override
@@ -997,11 +1026,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                     log.debug("Skipped termination request processing since service is already in {} state.", DOWN);
                 }
 
-                TerminateFuture future = new TerminateFuture();
-
-                future.complete(this);
-
-                return future;
+                // Already terminated.
+                return TerminateFuture.completed(this);
             }
         });
     }
@@ -1208,13 +1234,14 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
             nodeName,
             clusterName,
             this,
+            metrics,
             builtInServices,
             coreServices,
             factories
         );
     }
 
-    private List<ClusterNode> getDiff(Set<ClusterNode> oldNodes, Set<ClusterNode> newNodes) {
+    private List<ClusterNode> getImmutableDiff(Set<ClusterNode> oldNodes, Set<ClusterNode> newNodes) {
         List<ClusterNode> removed = null;
 
         for (ClusterNode oldNode : oldNodes) {

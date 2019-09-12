@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -20,7 +20,7 @@ import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.MessageQueueOverflowException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFutureException;
-import io.hekate.messaging.unicast.SendFuture;
+import io.hekate.messaging.operation.SendFuture;
 import java.util.concurrent.CountDownLatch;
 import org.junit.Test;
 
@@ -41,7 +41,7 @@ public class BackPressureSendTest extends BackPressureParametrizedTestBase {
             await(resumeReceive, 10)
         )).join();
 
-        MessagingChannel<String> sender = createChannel(this::useBackPressure).join().get().forRemotes();
+        MessagingChannel<String> sender = createChannel(this::useBackPressure).join().channel().forRemotes();
 
         // Ensure that sender -> receiver connection is established.
         get(sender.newSend("init").submit());

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -41,6 +41,8 @@ class DefaultCoordinationProcess implements CoordinationProcess {
 
     private final String name;
 
+    private final boolean asyncInit;
+
     @ToStringIgnore
     private final CoordinationHandler handler;
 
@@ -49,9 +51,6 @@ class DefaultCoordinationProcess implements CoordinationProcess {
 
     @ToStringIgnore
     private final MessagingChannel<CoordinationProtocol> channel;
-
-    @ToStringIgnore
-    private final long failoverDelay;
 
     @ToStringIgnore
     private final StateGuard guard = new StateGuard(DefaultCoordinationProcess.class);
@@ -69,9 +68,9 @@ class DefaultCoordinationProcess implements CoordinationProcess {
         String name,
         HekateSupport hekate,
         CoordinationHandler handler,
+        boolean asyncInit,
         ExecutorService async,
-        MessagingChannel<CoordinationProtocol> channel,
-        long failoverDelay
+        MessagingChannel<CoordinationProtocol> channel
     ) {
         assert name != null : "Name is null.";
         assert hekate != null : "Hekate is null.";
@@ -83,8 +82,8 @@ class DefaultCoordinationProcess implements CoordinationProcess {
         this.hekate = hekate;
         this.handler = handler;
         this.async = async;
+        this.asyncInit = asyncInit;
         this.channel = channel;
-        this.failoverDelay = failoverDelay;
     }
 
     public CompletableFuture<?> initialize() {
@@ -155,7 +154,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
                 });
             } else {
                 if (DEBUG) {
-                    log.debug("Rejected coordination request since process is not initialized [message={}]", msg.get());
+                    log.debug("Rejected coordination request since process is not initialized [message={}]", msg.payload());
                 }
 
                 msg.reply(CoordinationProtocol.Reject.INSTANCE);
@@ -191,7 +190,6 @@ class DefaultCoordinationProcess implements CoordinationProcess {
                     channel,
                     async,
                     handler,
-                    failoverDelay,
                     () -> future.complete(this)
                 );
 
@@ -229,6 +227,10 @@ class DefaultCoordinationProcess implements CoordinationProcess {
     @Override
     public CoordinationHandler handler() {
         return handler;
+    }
+
+    public boolean isAsyncInit() {
+        return asyncInit;
     }
 
     private Waiting cancelCurrentContext() {

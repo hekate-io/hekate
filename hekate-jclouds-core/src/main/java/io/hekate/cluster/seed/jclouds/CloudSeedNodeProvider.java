@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -27,6 +27,8 @@ import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.core.internal.util.StreamUtils;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -92,7 +94,7 @@ import static java.util.stream.Collectors.toSet;
  * @see ClusterServiceFactory#setSeedNodeProvider(SeedNodeProvider)
  * @see SeedNodeProvider
  */
-public class CloudSeedNodeProvider implements SeedNodeProvider {
+public class CloudSeedNodeProvider implements SeedNodeProvider, ConfigReportSupport {
     private interface ComputeTask<T> {
         T execute(ComputeServiceContext ctx) throws HekateException;
     }
@@ -154,6 +156,54 @@ public class CloudSeedNodeProvider implements SeedNodeProvider {
         this.properties = properties;
 
         this.tags = cfg.getTags() != null ? new HashMap<>(cfg.getTags()) : Collections.emptyMap();
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("cloud", r -> {
+            r.value("provider", provider);
+            r.value("endpoint", endpoint);
+            r.value("properties", properties);
+        });
+    }
+
+    /**
+     * Cloud provider.
+     *
+     * @return Cloud provider.
+     *
+     * @see CloudSeedNodeProviderConfig#setProvider(String)
+     */
+    public String provider() {
+        return provider;
+    }
+
+    /**
+     * Cloud endpoint.
+     *
+     * @return Cloud endpoint.
+     *
+     * @see CloudSeedNodeProviderConfig#setEndpoint(String)
+     */
+    public String endpoint() {
+        return endpoint;
+    }
+
+    /**
+     * Cloud provider properties.
+     *
+     * @return Cloud properties.
+     *
+     * @see CloudSeedNodeProviderConfig#setProperties(Properties)
+     */
+    public Properties properties() {
+        Properties copy = new Properties();
+
+        for (String name : properties.stringPropertyNames()) {
+            copy.setProperty(name, properties.getProperty(name));
+        }
+
+        return copy;
     }
 
     @Override

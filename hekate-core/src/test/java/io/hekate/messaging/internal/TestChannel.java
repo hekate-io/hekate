@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -23,8 +23,7 @@ import io.hekate.core.HekateFutureException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.loadbalance.LoadBalancer;
-import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.operation.Response;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,7 +49,7 @@ public class TestChannel {
 
     public TestChannel(MessageReceiver<String> receiverDelegate) {
         receiver = msg -> {
-            received.add(msg.get());
+            received.add(msg.payload());
 
             if (receiverDelegate != null) {
                 try {
@@ -76,12 +75,8 @@ public class TestChannel {
         });
     }
 
-    public MessagingChannel<String> get() {
+    public MessagingChannel<String> channel() {
         return channel;
-    }
-
-    public MessagingChannel<String> withLoadBalancer(LoadBalancer<String> balancer) {
-        return channel.withLoadBalancer(balancer);
     }
 
     public ClusterNodeId nodeId() {

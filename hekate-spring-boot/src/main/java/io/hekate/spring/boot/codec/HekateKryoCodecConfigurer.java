@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -30,19 +30,14 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Auto-configuration for {@link KryoCodecFactory}.
  *
- * <h2>Module dependency</h2>
+ * <h2>Module Dependency</h2>
  * <p>
- * Kryo integration requires
- * <a href="https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.esotericsoftware%22%20a%3A%22kryo-shaded%22" target="_blank">
- * 'com.esotericsoftware:kryo-shaded'
- * </a>
- * to be on the project's classpath.
+ * Kryo integration requires {@code io.hekate:hekate-codec-kryo} to be placed on the project classpath.
  * </p>
  *
  * <h2>Configuration</h2>
  * <p>
- * This auto-configuration can be enabled by setting the {@code 'hekate.codec'} property to {@code 'kryo'} in the application's
- * configuration.
+ * This auto-configuration can be enabled by setting the {@code 'hekate.codec'} property to {@code 'kryo'} in the application configuration.
  * </p>
  *
  * <p>

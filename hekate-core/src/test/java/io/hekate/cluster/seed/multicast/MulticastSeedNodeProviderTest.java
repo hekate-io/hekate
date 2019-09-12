@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -19,6 +19,7 @@ package io.hekate.cluster.seed.multicast;
 import io.hekate.HekateTestProps;
 import io.hekate.cluster.seed.SeedNodeProviderTestBase;
 import io.hekate.core.HekateException;
+import io.hekate.core.report.DefaultConfigReporter;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -88,6 +89,22 @@ public class MulticastSeedNodeProviderTest extends SeedNodeProviderTestBase<Mult
     @AfterClass
     public static void clearCache() {
         INTERFACES_CACHE.clear();
+    }
+
+    @Test
+    public void testConfigReport() throws Exception {
+        MulticastSeedNodeProvider provider = createProvider();
+
+        assertEquals(
+            "\n"
+                + "  multicast\n"
+                + "    group: " + provider.group() + "\n"
+                + "    ttl: " + provider.ttl() + "\n"
+                + "    interval: " + provider.interval() + "\n"
+                + "    wait-time: " + provider.waitTime() + "\n"
+                + "    loopback-disabled: " + provider.isLoopBackDisabled() + "\n",
+            DefaultConfigReporter.report(provider)
+        );
     }
 
     @Test

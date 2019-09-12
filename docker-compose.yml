@@ -1,5 +1,5 @@
 #
-# Copyright 2018 The Hekate Project
+# Copyright 2019 The Hekate Project
 #
 # The Hekate Project licenses this file to you under the Apache License,
 # version 2.0 (the "License"); you may not use this file except in compliance
@@ -36,3 +36,14 @@ services:
       POSTGRES_DB: hekate-test
       POSTGRES_USER: hekate-test
       POSTGRES_PASSWORD: hekate-test
+  etcd:
+    container_name: hekate-test-etcd
+    image: quay.io/coreos/etcd:v3.3.9
+    ports:
+      - "2479:2379"
+    command: etcd -name=hekate-etcd -advertise-client-urls http://etcd:2379 -listen-client-urls http://0.0.0.0:2379
+  consul:
+    container_name: hekate-test-consul
+    image: consul:1.5.1
+    ports:
+      - "8501:8500"

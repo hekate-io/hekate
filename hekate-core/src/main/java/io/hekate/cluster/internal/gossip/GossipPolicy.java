@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -31,8 +31,12 @@ import static java.util.stream.Collectors.toList;
 public interface GossipPolicy {
     GossipPolicy RANDOM_PREFER_UNSEEN = new GossipPolicy() {
         @Override
-        public Collection<GossipNodeState> selectNodes(int size, GossipNodeState fromNode, List<GossipNodeState> nodes,
-            Set<ClusterNodeId> seen) {
+        public Collection<GossipNodeState> selectNodes(
+            int size,
+            GossipNodeState fromNode,
+            List<GossipNodeState> nodes,
+            Set<ClusterNodeId> seen
+        ) {
             assert size > 0 : "Size must be above zero [size=" + size + ']';
             assert fromNode != null : "From node is null.";
             assert seen != null : "Seen list is null.";
@@ -55,7 +59,7 @@ public interface GossipPolicy {
             }
 
             List<GossipNodeState> liveNodes = nodes.stream()
-                .filter(n -> n.status() != GossipNodeStatus.DOWN)
+                .filter(n -> !n.status().isTerminated())
                 .collect(toList());
 
             if (liveNodes.size() == size) {
@@ -85,14 +89,18 @@ public interface GossipPolicy {
 
     GossipPolicy RANDOM_UNSEEN_NON_DOWN = new GossipPolicy() {
         @Override
-        public Collection<GossipNodeState> selectNodes(int size, GossipNodeState fromNode, List<GossipNodeState> nodes,
-            Set<ClusterNodeId> seen) {
+        public Collection<GossipNodeState> selectNodes(
+            int size,
+            GossipNodeState fromNode,
+            List<GossipNodeState> nodes,
+            Set<ClusterNodeId> seen
+        ) {
             assert size > 0 : "Size must be above zero [size=" + size + ']';
             assert fromNode != null : "From node is null.";
             assert seen != null : "Seen list is null.";
 
             nodes = nodes.stream()
-                .filter(n -> !seen.contains(n.id()) && n.status() != GossipNodeStatus.DOWN)
+                .filter(n -> !seen.contains(n.id()) && !n.status().isTerminated())
                 .collect(toList());
 
             if (nodes.size() <= size) {
@@ -118,8 +126,12 @@ public interface GossipPolicy {
 
     GossipPolicy RANDOM_UNSEEN = new GossipPolicy() {
         @Override
-        public Collection<GossipNodeState> selectNodes(int size, GossipNodeState fromNode, List<GossipNodeState> nodes,
-            Set<ClusterNodeId> seen) {
+        public Collection<GossipNodeState> selectNodes(
+            int size,
+            GossipNodeState fromNode,
+            List<GossipNodeState> nodes,
+            Set<ClusterNodeId> seen
+        ) {
             assert size > 0 : "Size must be above zero [size=" + size + ']';
             assert fromNode != null : "From node is null.";
             assert seen != null : "Seen list is null.";
@@ -151,8 +163,12 @@ public interface GossipPolicy {
 
     GossipPolicy ON_DOWN = new GossipPolicy() {
         @Override
-        public Collection<GossipNodeState> selectNodes(int size, GossipNodeState fromNode, List<GossipNodeState> nodes,
-            Set<ClusterNodeId> seen) {
+        public Collection<GossipNodeState> selectNodes(
+            int size,
+            GossipNodeState fromNode,
+            List<GossipNodeState> nodes,
+            Set<ClusterNodeId> seen
+        ) {
             assert size > 0 : "Size must be above zero [size=" + size + ']';
             assert fromNode != null : "From node is null.";
             assert seen != null : "Seen list is null.";
@@ -172,8 +188,8 @@ public interface GossipPolicy {
                     .forEach(targets::add);
             }
 
-            // If all selected nodes are DOWN or LEAVING then try to add any other non LEAVING/DOWN node.
-            Predicate<GossipNodeState> isLiveNode = s -> s.status() != GossipNodeStatus.DOWN && s.status() != GossipNodeStatus.LEAVING;
+            // If all selected nodes are DOWN, FAILED or LEAVING then try to add any other alive node.
+            Predicate<GossipNodeState> isLiveNode = s -> !s.status().isTerminated() && s.status() != GossipNodeStatus.LEAVING;
 
             if (!targets.isEmpty() && targets.stream().noneMatch(isLiveNode)) {
                 List<GossipNodeState> nonDown = nodes.stream().filter(isLiveNode).collect(toList());

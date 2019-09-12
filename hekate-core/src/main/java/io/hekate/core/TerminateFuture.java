@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -27,6 +27,21 @@ import java.util.concurrent.TimeoutException;
  * @see Hekate#terminateAsync()
  */
 public class TerminateFuture extends HekateFuture<Hekate, TerminateFuture> {
+    /**
+     * Creates a future object that is already {@link #complete(Object) completed}.
+     *
+     * @param node Node to complete the future.
+     *
+     * @return Future.
+     */
+    public static TerminateFuture completed(Hekate node) {
+        TerminateFuture future = new TerminateFuture();
+
+        future.complete(node);
+
+        return future;
+    }
+
     @Override
     public Hekate get() throws InterruptedException, HekateFutureException {
         try {

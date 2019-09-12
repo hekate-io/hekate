@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -23,8 +23,6 @@ import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.event.ClusterChangeEvent;
 import io.hekate.cluster.event.ClusterJoinEvent;
 import io.hekate.cluster.event.ClusterLeaveEvent;
-import io.hekate.cluster.health.DefaultFailureDetector;
-import io.hekate.cluster.health.DefaultFailureDetectorConfig;
 import io.hekate.cluster.seed.multicast.MulticastSeedNodeProvider;
 import io.hekate.cluster.seed.multicast.MulticastSeedNodeProviderConfig;
 import io.hekate.core.Hekate;
@@ -46,12 +44,6 @@ public class ClusterServiceJavadocTest extends HekateNodeTestBase {
                     .withPort(45454)
                     .withInterval(200)
                     .withWaitTime(1000)
-            ))
-            .withFailureDetector(new DefaultFailureDetector(
-                new DefaultFailureDetectorConfig()
-                    .withHeartbeatInterval(500)
-                    .withHeartbeatLossThreshold(6)
-                    .withFailureDetectionQuorum(2)
             ));
 
         // ...other options...
@@ -60,15 +52,14 @@ public class ClusterServiceJavadocTest extends HekateNodeTestBase {
         Hekate hekate = new HekateBootstrap()
             .withService(factory)
             .join();
+
+        // Access the service.
+        ClusterService cluster = hekate.cluster();
         // End:configure
 
+        assertNotNull(cluster);
+
         try {
-            // Start:get_service
-            ClusterService cluster = hekate.cluster();
-            // End:get_service
-
-            assertNotNull(cluster);
-
             // Start:cluster_event_listener
             hekate.cluster().addListener(event -> {
                 switch (event.type()) {

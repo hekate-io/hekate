@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -36,7 +36,7 @@ import java.util.List;
  * existing services or provide some new functionality that is not covered by {@link Hekate} API.
  * </p>
  *
- * <h2>Service interface</h2>
+ * <h2>Service Interface</h2>
  * <p>
  * All services must implement {@link Service} marker interface in order to be accessible via {@link Hekate#get(Class)} method and can also
  * optionally implement a set of callback interfaces in order to participate in {@link Hekate} instance lifecycle.
@@ -55,7 +55,7 @@ import java.util.List;
  * Please see the documentation of those interfaces for more details.
  * </p>
  *
- * <h2>Service factory</h2>
+ * <h2>Service Factory</h2>
  * <p>
  * Each service must have a {@link ServiceFactory} that is responsible for configuring and creating new service instances. Service
  * factories can be registered via {@link HekateBootstrap#setServices(List)} method.

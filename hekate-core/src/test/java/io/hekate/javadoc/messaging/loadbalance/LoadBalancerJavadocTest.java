@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -31,9 +31,9 @@ public class LoadBalancerJavadocTest extends HekateTestBase {
     // Start:load_balancer
     public static class ExampleLoadBalancer implements LoadBalancer<Object> {
         @Override
-        public ClusterNodeId route(Object message, LoadBalancerContext ctx) {
+        public ClusterNodeId route(Object msg, LoadBalancerContext ctx) {
             // Calculate position of a destination node within the cluster topology.
-            int idx = Math.abs(message.hashCode() % ctx.size());
+            int idx = Math.abs(msg.hashCode() % ctx.size());
 
             // Select the destination node
             // Note that nodes are always sorted by their IDs within the topology.

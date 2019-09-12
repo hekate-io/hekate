@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -20,69 +20,31 @@ import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.cluster.seed.StaticSeedNodeProvider;
 import io.hekate.cluster.seed.StaticSeedNodeProviderConfig;
 import io.hekate.lock.DistributedLock;
-import io.hekate.lock.LockRegion;
-import io.hekate.lock.LockRegionConfig;
 import io.hekate.network.NetworkServiceFactory;
-import io.hekate.spring.boot.EnableHekate;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
 import io.hekate.spring.boot.lock.InjectLock;
-import io.hekate.spring.boot.lock.InjectLockRegion;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import org.junit.Test;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.stereotype.Component;
 
 import static org.junit.Assert.assertNotNull;
 
 public class LockInjectionJavadocTest extends HekateAutoConfigurerTestBase {
-    // Start:region_bean
+    // Start:bean
     @Component
     public static class MyBean {
-        @InjectLockRegion("my-region")
-        private LockRegion region;
-
-        // ... other fields and methods...
-    }
-    // End:region_bean
-
-    // Start:region_app
-    @EnableHekate
-    @SpringBootApplication
-    public static class MyApp {
-        @Bean
-        public LockRegionConfig lockRegionConfig() {
-            return new LockRegionConfig().withName("my-region");
-        }
-
-        // ... other beans and methods...
-    }
-    // End:region_app
-
-    // Start:lock_bean
-    @Component
-    public static class ExampleBean {
         @InjectLock(name = "my-lock", region = "my-region")
         private DistributedLock lock;
 
         // ... other fields and methods...
     }
-    // End:lock_bean
+    // End:bean
 
-    // Start:lock_app
-    @EnableHekate
-    @SpringBootApplication
-    public static class ExampleApp {
-        @Bean
-        public LockRegionConfig lockRegionConfig() {
-            return new LockRegionConfig().withName("my-region");
-        }
-
-        // ... other beans and methods...
-    }
-    // End:lock_app
-
+    @ComponentScan(excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = MyApp.class))
     public static class FasterMyApp extends MyApp {
         @Bean
         public SeedNodeProvider seedNodeProvider() throws UnknownHostException {
@@ -92,26 +54,10 @@ public class LockInjectionJavadocTest extends HekateAutoConfigurerTestBase {
         }
     }
 
-    public static class FasterExampleApp extends ExampleApp {
-        @Bean
-        public SeedNodeProvider seedNodeProvider() throws UnknownHostException {
-            return new StaticSeedNodeProvider(new StaticSeedNodeProviderConfig()
-                .withAddress(InetAddress.getLocalHost().getHostAddress() + ':' + NetworkServiceFactory.DEFAULT_PORT)
-            );
-        }
-    }
-
-    @Test
-    public void regionExample() {
-        registerAndRefresh(FasterMyApp.class);
-
-        assertNotNull(get(MyBean.class).region);
-    }
-
     @Test
     public void lockExample() {
-        registerAndRefresh(FasterExampleApp.class);
+        registerAndRefresh(FasterMyApp.class);
 
-        assertNotNull(get(ExampleBean.class).lock);
+        assertNotNull(get(MyBean.class).lock);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -32,7 +32,9 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.EmbeddedValueResolverAware;
 import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.util.StringValueResolver;
 
 /**
  * <span class="startHere">&laquo; start here</span>Main entry point to Spring Framework integration.
@@ -40,11 +42,11 @@ import org.springframework.context.event.ContextRefreshedEvent;
  * <h2>Overview</h2>
  * <p>
  * All configurable components and service factories of {@link Hekate} can be used as plain Spring &lt;bean&gt;s and can be configured via
- * &lt;property&gt; setters. This class provides an extension of {@link HekateBootstrap} class that makes it possible to easily
- * configure {@link Hekate} nodes and bound them to the lifecycle of Spring context.
+ * &lt;property&gt; setters. This class provides the extension of the {@link HekateBootstrap} class that makes it possible to easily
+ * configure a {@link Hekate} node and bound it to the lifecycle of the Spring application context.
  * </p>
  *
- * <h2>Module dependency</h2>
+ * <h2>Module Dependency</h2>
  * <p>
  * Spring Framework integration is provided by the 'hekate-spring' module and can be imported into the project dependency management system
  * as in the example below:
@@ -124,7 +126,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
  * </div>
  */
 public class HekateSpringBootstrap extends HekateBootstrap implements InitializingBean, DisposableBean, FactoryBean<Hekate>,
-    ApplicationContextAware, ApplicationListener<ContextRefreshedEvent> {
+    ApplicationContextAware, EmbeddedValueResolverAware, ApplicationListener<ContextRefreshedEvent> {
     private boolean deferredJoin;
 
     @ToStringIgnore
@@ -133,6 +135,7 @@ public class HekateSpringBootstrap extends HekateBootstrap implements Initializi
     @ToStringIgnore
     private volatile ApplicationContext ctx;
 
+    @ToStringIgnore
     private final ClusterEventListener ctxEventPublisher = new ClusterEventListener() {
         @Override
         public void onEvent(ClusterEvent event) throws HekateException {
@@ -143,6 +146,9 @@ public class HekateSpringBootstrap extends HekateBootstrap implements Initializi
     };
 
     @ToStringIgnore
+    private volatile StringValueResolver resolver;
+
+    @ToStringIgnore
     private ServiceFactory<InjectionService> injection;
 
     @ToStringIgnore
@@ -150,7 +156,7 @@ public class HekateSpringBootstrap extends HekateBootstrap implements Initializi
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        injection = SpringInjectionService.factory(ctx);
+        injection = SpringInjectionService.factory(ctx, resolver);
         resource = SpringResourceService.factory(ctx);
 
         withService(injection);
@@ -161,7 +167,9 @@ public class HekateSpringBootstrap extends HekateBootstrap implements Initializi
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        node.cluster().addListener(ctxEventPublisher);
+        if (node != null) {
+            node.cluster().addListener(ctxEventPublisher);
+        }
     }
 
     @Override
@@ -232,5 +240,10 @@ public class HekateSpringBootstrap extends HekateBootstrap implements Initializi
     @Override
     public void setApplicationContext(ApplicationContext ctx) throws BeansException {
         this.ctx = ctx;
+    }
+
+    @Override
+    public void setEmbeddedValueResolver(StringValueResolver resolver) {
+        this.resolver = resolver;
     }
 }

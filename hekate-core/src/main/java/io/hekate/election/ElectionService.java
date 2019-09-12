@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -40,7 +40,7 @@ import java.util.List;
  * leader.
  * </p>
  *
- * <h2>Service configuration</h2>
+ * <h2>Service Configuration</h2>
  * <p>
  * {@link ElectionService} can be registered and configured in {@link HekateBootstrap} with the help of {@link
  * ElectionServiceFactory} as shown in the example below:
@@ -67,13 +67,7 @@ import java.util.List;
  * </div>
  * </div>
  *
- * <h2>Accessing service</h2>
- * <p>
- * {@link ElectionService} can be accessed via {@link Hekate#election()} method as in the example below:
- * ${source: election/ElectionServiceJavadocTest.java#access}
- * </p>
- *
- * <h2>Leader election</h2>
+ * <h2>Leader Election</h2>
  * <p>
  * Leader election process starts right after the node joins the cluster. If leader has been already elected by that time then {@link
  * Candidate} switches to the {@link Candidate#becomeFollower(FollowerContext) folower} state. If this is the first node in the election
@@ -100,13 +94,15 @@ import java.util.List;
  * ${source: election/ElectionServiceJavadocTest.java#candidate}
  * </p>
  *
- * <h2>Leader election process details</h2>
+ * <h2>Leader Election Details</h2>
  * <p>
  * Leader elections are based on the {@link LockService} capabilities. During the startup {@link ElectionService} tries to asynchronously
  * acquire a distributed lock for each of its registered groups. If lock acquisition is successful then {@link Candidate} of such group
  * gets notified on becoming a leader. If lock is busy then {@link Candidate} get notified on becoming a follower and continues to await for
  * the lock to be acquired.
  * </p>
+ *
+ * @see ElectionServiceFactory
  */
 @DefaultServiceFactory(ElectionServiceFactory.class)
 public interface ElectionService extends Service {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -27,11 +27,11 @@ import java.io.IOException;
  * <h2>Overview</h2>
  * <p>
  * {@link CodecService} represents the {@link Service} interface adaptor for {@link CodecFactory} in order to make it easily
- * accessible via {@link Hekate#get(Class)} method. All data encoding/decoding operations are delegated to the {@link CodecFactory}
- * instance that is registered via {@link HekateBootstrap#setDefaultCodec(CodecFactory)} method.
+ * accessible via {@link Hekate#codec()} method. All data encoding/decoding operations are delegated to the {@link CodecFactory}
+ * instance that is registered via the {@link HekateBootstrap#setDefaultCodec(CodecFactory)} method.
  * </p>
  *
- * <h2>Accessing service</h2>
+ * <h2>Accessing the Service</h2>
  * <p>
  * Instances of this service can be obtained via {@link Hekate#codec()} method as shown in the example below:
  * ${source: codec/CodecServiceJavadocTest.java#access}

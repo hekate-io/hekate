@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -32,6 +32,9 @@ import io.hekate.messaging.MessagingOverflowPolicy;
 import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.retry.FixedBackoffPolicy;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
+import io.hekate.messaging.retry.RetryErrorPredicate;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.List;
@@ -51,7 +54,9 @@ class MessagingGateway<T> {
 
     private final int workerThreads;
 
-    private final long idleTimeout;
+    private final long messagingTimeout;
+
+    private final long idleSocketTimeout;
 
     private final int partitions;
 
@@ -62,6 +67,12 @@ class MessagingGateway<T> {
     private final ReceivePressureGuard receivePressure;
 
     private final CodecFactory<T> codecFactory;
+
+    @ToStringIgnore
+    private final int warnOnRetry;
+
+    @ToStringIgnore
+    private final GenericRetryConfigurer retryPolicy;
 
     @ToStringIgnore
     private final MessageReceiver<T> unguardedReceiver;
@@ -95,10 +106,41 @@ class MessagingGateway<T> {
         this.baseType = cfg.getBaseType();
         this.nioThreads = cfg.getNioThreads();
         this.workerThreads = cfg.getWorkerThreads();
-        this.idleTimeout = cfg.getIdleSocketTimeout();
+        this.messagingTimeout = cfg.getMessagingTimeout();
+        this.idleSocketTimeout = cfg.getIdleSocketTimeout();
         this.unguardedReceiver = cfg.getReceiver();
         this.partitions = cfg.getPartitions();
         this.backupNodes = cfg.getBackupNodes();
+        this.warnOnRetry = cfg.getWarnOnRetry();
+
+        // Retry policy.
+        GenericRetryConfigurer retryPolicy;
+
+        if (cfg.getRetryPolicy() == null) {
+            // Use an empty stub that doesn't support retries.
+            retryPolicy = GenericRetryConfigurer.noRetries();
+        } else {
+            // Use custom policy.
+            GenericRetryConfigurer customPolicy = cfg.getRetryPolicy();
+
+            retryPolicy = retry -> {
+                // Make sure that retries are enabled for all types of errors by default.
+                // Custom policy can override this setting.
+                retry.whileError(RetryErrorPredicate.acceptAll());
+
+                // Apply real policy
+                customPolicy.configure(retry);
+            };
+        }
+
+        this.retryPolicy = retry -> {
+            // Make sure that backoff delay is always set.
+            // Custom policy can override this setting.
+            retry.withBackoff(FixedBackoffPolicy.defaultPolicy());
+
+            // Apply real policy.
+            retryPolicy.configure(retry);
+        };
 
         // Interceptors.
         this.interceptors = new MessageInterceptors<>(
@@ -163,9 +205,7 @@ class MessagingGateway<T> {
             this,
             clusterView,
             mapper,
-            loadBalancer,
-            cfg.getFailoverPolicy(),
-            cfg.getMessagingTimeout()
+            loadBalancer
         );
     }
 
@@ -197,7 +237,11 @@ class MessagingGateway<T> {
     }
 
     public long idleSocketTimeout() {
-        return idleTimeout;
+        return idleSocketTimeout;
+    }
+
+    public long messagingTimeout() {
+        return messagingTimeout;
     }
 
     public int partitions() {
@@ -206,6 +250,14 @@ class MessagingGateway<T> {
 
     public int backupNodes() {
         return backupNodes;
+    }
+
+    public int warnOnRetry() {
+        return warnOnRetry;
+    }
+
+    public GenericRetryConfigurer baseRetryPolicy() {
+        return retryPolicy;
     }
 
     public MessageReceiver<T> unguardedReceiver() {

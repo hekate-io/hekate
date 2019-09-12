@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -78,7 +78,7 @@ public class RpcAsyncBroadcastTest extends RpcServiceTestBase {
         server2 = ctx.servers().get(1);
 
         client = ctx.client().rpc().clientFor(AggregateRpc.class)
-            .withTimeout(3, TimeUnit.SECONDS)
+            .withTimeout(AWAIT_TIMEOUT, TimeUnit.SECONDS)
             .build();
     }
 

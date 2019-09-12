@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -23,12 +23,12 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockOwnerInfo;
 import io.hekate.lock.LockRegion;
 import io.hekate.lock.internal.LockProtocol.LockOwnerRequest;
 import io.hekate.lock.internal.LockProtocol.LockOwnerResponse;
+import io.hekate.lock.internal.LockProtocol.LockRequest;
 import io.hekate.lock.internal.LockProtocol.LockResponse;
 import io.hekate.lock.internal.LockProtocol.MigrationApplyRequest;
 import io.hekate.lock.internal.LockProtocol.MigrationPrepareRequest;
@@ -62,8 +62,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.hekate.messaging.unicast.ReplyDecision.ACCEPT;
-import static io.hekate.messaging.unicast.ReplyDecision.REJECT;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toSet;
@@ -146,7 +144,6 @@ class DefaultLockRegion implements LockRegion {
         String regionName,
         ClusterNodeId localNode,
         ScheduledExecutorService scheduler,
-        long retryInterval,
         MeterRegistry metrics,
         MessagingChannel<LockProtocol> channel
     ) {
@@ -165,19 +162,10 @@ class DefaultLockRegion implements LockRegion {
         writeLock = lock.writeLock();
 
         // Configure messaging channel for locking operations.
-        lockChannel = channel.withFailover(new FailoverPolicyBuilder()
-            .withConstantRetryDelay(retryInterval)
-            .withAlwaysReRoute()
-            .withRetryUntil(failover -> !isTerminated())
-        );
+        lockChannel = channel;
 
         // Configure messaging channel for locks migration.
-        migrationRing = channel.filterAll(ClusterFilters.forNextInJoinOrder()) // <-- use ring-based communications.
-            .withFailover(new FailoverPolicyBuilder()
-                .withAlwaysReRoute()
-                .withConstantRetryDelay(retryInterval)
-                .withRetryUntil(failover -> !isTerminated())
-            );
+        migrationRing = channel.filterAll(ClusterFilters.forNextInJoinOrder()); // <-- Use ring-based communications.
 
         // Configure metrics.
         this.metrics = new LockRegionMetrics(regionName, metrics);
@@ -203,21 +191,24 @@ class DefaultLockRegion implements LockRegion {
             return Optional.empty();
         }
 
-        CompletableFuture<Optional<LockOwnerInfo>> resultFuture = new CompletableFuture<>();
+        CompletableFuture<Optional<LockOwnerInfo>> future = new CompletableFuture<>();
 
         LockOwnerRequest request = new LockOwnerRequest(regionName, lockName);
 
         lockChannel.newRequest(request)
             .withAffinity(new LockKey(regionName, lockName))
-            .until((err, rsp) -> {
-                if (err == null) {
-                    LockOwnerResponse lockReply = rsp.get(LockOwnerResponse.class);
+            .withRetry(retry -> retry
+                .unlimitedAttempts()
+                .alwaysReRoute()
+                .whileTrue(() -> !isTerminated() && !future.isDone())
+                .whileResponse(rsp -> {
+                    LockOwnerResponse lockReply = rsp.payload(LockOwnerResponse.class);
 
                     if (lockReply.status() == LockOwnerResponse.Status.OK) {
                         ClusterNodeId ownerId = lockReply.owner();
 
                         if (ownerId == null) {
-                            resultFuture.complete(Optional.empty());
+                            future.complete(Optional.empty());
                         } else {
                             ClusterTopology topology = lockChannel.cluster().topology();
 
@@ -228,25 +219,24 @@ class DefaultLockRegion implements LockRegion {
                             if (ownerNode != null) {
                                 DefaultLockOwnerInfo info = new DefaultLockOwnerInfo(lockReply.threadId(), ownerNode);
 
-                                resultFuture.complete(Optional.of(info));
+                                future.complete(Optional.of(info));
                             }
                         }
                     }
-                }
 
-                return resultFuture.isDone() ? ACCEPT : REJECT;
-            })
+                    return !future.isDone();
+                })
+            )
             .submit((err, rsp) -> {
-                // All attempts failed which means that manager is terminated.
                 if (err != null) {
-                    resultFuture.complete(Optional.empty());
+                    future.complete(Optional.empty());
                 }
             });
 
         try {
-            return resultFuture.get();
+            return future.get();
         } catch (InterruptedException e) {
-            resultFuture.cancel(false);
+            future.cancel(false);
 
             throw e;
         } catch (ExecutionException e) {
@@ -277,9 +267,10 @@ class DefaultLockRegion implements LockRegion {
             // Create lock client.
             LockControllerClient lockClient = new LockControllerClient(
                 lockId,
+                regionName,
+                lock.name(),
                 localNode,
                 threadId,
-                lock,
                 lockChannel,
                 timeout,
                 metrics,
@@ -329,7 +320,7 @@ class DefaultLockRegion implements LockRegion {
                     log.debug("Rejected unlocking since region is in {} state [region={}, lock-id={}]", regionName, status, lockId);
                 }
 
-                return LockFuture.completedFuture(true);
+                return LockFuture.completed(true);
             } else {
                 LockControllerClient client = lockClients.get(lockId);
 
@@ -352,7 +343,7 @@ class DefaultLockRegion implements LockRegion {
         readLock.lock();
 
         try {
-            LockProtocol.LockRequest request = msg.get(LockProtocol.LockRequest.class);
+            LockRequest request = msg.payload(LockRequest.class);
 
             if (status == Status.MIGRATING || status == Status.TERMINATED || !request.topology().equals(activeTopology())) {
                 reply(msg, new LockResponse(LockResponse.Status.RETRY, null, 0));
@@ -382,7 +373,7 @@ class DefaultLockRegion implements LockRegion {
         readLock.lock();
 
         try {
-            UnlockRequest request = msg.get(UnlockRequest.class);
+            UnlockRequest request = msg.payload(UnlockRequest.class);
 
             if (status == Status.MIGRATING || status == Status.TERMINATED || !request.topology().equals(activeTopology())) {
                 reply(msg, new UnlockResponse(UnlockResponse.Status.RETRY));
@@ -414,7 +405,7 @@ class DefaultLockRegion implements LockRegion {
         readLock.lock();
 
         try {
-            LockOwnerRequest request = msg.get(LockOwnerRequest.class);
+            LockOwnerRequest request = msg.payload(LockOwnerRequest.class);
 
             if (status == Status.MIGRATING || status == Status.TERMINATED || !request.topology().equals(activeTopology())) {
                 reply(msg, new LockOwnerResponse(0, null, LockOwnerResponse.Status.RETRY));
@@ -435,7 +426,7 @@ class DefaultLockRegion implements LockRegion {
     }
 
     public void processMigrationPrepare(Message<LockProtocol> msg) {
-        MigrationPrepareRequest request = msg.get(MigrationPrepareRequest.class);
+        MigrationPrepareRequest request = msg.payload(MigrationPrepareRequest.class);
 
         LockMigrationKey key = request.key();
 
@@ -569,7 +560,7 @@ class DefaultLockRegion implements LockRegion {
     }
 
     public void processMigrationApply(Message<LockProtocol> msg) {
-        MigrationApplyRequest request = msg.get(MigrationApplyRequest.class);
+        MigrationApplyRequest request = msg.payload(MigrationApplyRequest.class);
 
         LockMigrationKey key = request.key();
 
@@ -647,9 +638,6 @@ class DefaultLockRegion implements LockRegion {
 
             initMigration.countDown();
 
-            // Important to update status after lock controllers termination.
-            // Need to do it in order to prevent contention between the failover conditions of the messaging channel
-            // and retry logic within the lock client controller.
             status = Status.TERMINATED;
 
             latestMapping = null;
@@ -906,58 +894,55 @@ class DefaultLockRegion implements LockRegion {
     private void sendToNextNode(MigrationRequest request) {
         migrationRing.newRequest(request)
             .withAffinity(regionName)
-            .until((err, reply) -> {
-                if (err == null) {
-                    MigrationResponse response = reply.get(MigrationResponse.class);
+            .withRetry(retry -> retry
+                .unlimitedAttempts()
+                .alwaysTrySameNode()
+                .whileTrue(() -> isValid(request))
+                .whileResponse(rsp -> {
+                    MigrationResponse payload = rsp.payload(MigrationResponse.class);
 
-                    if (DEBUG) {
-                        log.debug("Got {} response [request={}]", response.status(), request);
-                    }
-
-                    switch (response.status()) {
+                    switch (payload.status()) {
                         case OK: {
-                            return ACCEPT;
+                            return false;
                         }
                         case RETRY: {
-                            return isValid(request) ? REJECT : ACCEPT;
+                            return isValid(request);
                         }
                         default: {
-                            throw new IllegalArgumentException("Unexpected status type: " + response.status());
+                            throw new IllegalArgumentException("Unexpected status type: " + payload.status());
                         }
                     }
-                } else {
-                    if (DEBUG) {
-                        log.debug("Got migration request failure [cause={}, request={}]", err.toString(), request);
-                    }
-
-                    return isValid(request) ? REJECT : ACCEPT;
-                }
-            })
+                })
+            )
             .submit((err, rsp) -> {
                 if (err != null && isValid(request)) {
-                    log.error("Failed to submit migration request [request={}]", request, err);
+                    if (DEBUG) {
+                        log.debug("Failed to submit migration request [request={}, cause={}]", request, err.toString());
+                    }
                 }
             });
     }
 
     private boolean isValid(MigrationRequest request) {
-        // No need to lock since field is volatile.
-        PartitionMapper mapping = this.latestMapping;
+        if (!isTerminated()) {
+            // Get latest topology from the messaging channel.
+            PartitionMapper mapping = this.latestMapping;
 
-        if (request.key().isSameTopology(mapping)) {
-            ClusterNodeId coordinator = request.key().coordinator();
+            if (request.key().isSameTopology(mapping)) {
+                ClusterNodeId coordinator = request.key().coordinator();
 
-            if (mapping.topology().contains(coordinator)) {
-                if (DEBUG) {
-                    log.debug("Request is valid [request={}]", request);
+                if (mapping.topology().contains(coordinator)) {
+                    if (DEBUG) {
+                        log.debug("Request is valid [request={}]", request);
+                    }
+
+                    return true;
                 }
-
-                return true;
             }
         }
 
         if (DEBUG) {
-            log.debug("Request is invalid [request={}]", request);
+            log.debug("Request is obsolete [request={}]", request);
         }
 
         return false;

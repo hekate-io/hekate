@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,6 +16,7 @@
 
 package io.hekate.rpc;
 
+import io.hekate.core.inject.PlaceholderResolver;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -49,6 +50,8 @@ public class RpcMethodInfo {
 
     private final OptionalInt affinityArg;
 
+    private final Optional<RpcRetryInfo> retry;
+
     @ToStringIgnore
     private final Class<?> realReturnType;
 
@@ -59,8 +62,9 @@ public class RpcMethodInfo {
      * Constructs a new instance.
      *
      * @param javaMethod Java method.
+     * @param resolver String value resolver.
      */
-    public RpcMethodInfo(Method javaMethod) {
+    public RpcMethodInfo(Method javaMethod, PlaceholderResolver resolver) {
         ArgAssert.notNull(javaMethod, "Java method");
 
         this.signature = shortSignature(javaMethod);
@@ -70,6 +74,7 @@ public class RpcMethodInfo {
         this.async = isAsyncReturnType(javaMethod);
         this.aggregate = findAggregate(javaMethod);
         this.broadcast = findBroadcast(javaMethod);
+        this.retry = findRetry(javaMethod, resolver);
 
         if (broadcast.isPresent()) {
             this.realReturnType = Void.class;
@@ -177,6 +182,17 @@ public class RpcMethodInfo {
     }
 
     /**
+     * Returns the error retry policy of this method based on the {@link RpcRetry} annotation attributes.
+     *
+     * @return Error retry policy.
+     *
+     * @see RpcRetry
+     */
+    public Optional<RpcRetryInfo> retry() {
+        return retry;
+    }
+
+    /**
      * Returns the zero-based index of an argument that is annotated with {@link RpcAffinityKey} (if presents).
      *
      * @return Zero-based index of an argument that is annotated with {@link RpcAffinityKey}.
@@ -234,6 +250,10 @@ public class RpcMethodInfo {
 
     private static Optional<RpcBroadcast> findBroadcast(Method meth) {
         return Optional.ofNullable(meth.getAnnotation(RpcBroadcast.class));
+    }
+
+    private static Optional<RpcRetryInfo> findRetry(Method meth, PlaceholderResolver resolver) {
+        return Optional.ofNullable(meth.getAnnotation(RpcRetry.class)).map((RpcRetry retry) -> RpcRetryInfo.parse(retry, resolver));
     }
 
     private static OptionalInt findSplitArg(Method meth) {

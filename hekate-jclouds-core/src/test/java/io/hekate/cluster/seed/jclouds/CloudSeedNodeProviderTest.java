@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -19,6 +19,7 @@ package io.hekate.cluster.seed.jclouds;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Module;
 import io.hekate.HekateTestBase;
+import io.hekate.core.report.DefaultConfigReporter;
 import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
 import java.util.Collection;
@@ -95,6 +96,19 @@ public class CloudSeedNodeProviderTest extends HekateTestBase {
                 }
             }
         }
+    }
+
+    @Test
+    public void testConfigReport() throws Exception {
+        CloudSeedNodeProvider provider = provider();
+
+        assertEquals(
+            "\n"
+                + "  cloud\n"
+                + "    provider: " + provider.provider() + "\n"
+                + "    properties: " + provider.properties() + "\n",
+            DefaultConfigReporter.report(provider)
+        );
     }
 
     @Test

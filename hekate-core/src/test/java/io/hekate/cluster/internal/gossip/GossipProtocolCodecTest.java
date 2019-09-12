@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -160,7 +160,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
             Gossip g2 = after.gossip();
 
-            assertSame(ComparisonResult.SAME, g1.compare(g2));
+            assertSame(GossipPrecedence.SAME, g1.compare(g2));
             assertEquals(g1.seen(), g2.seen());
             assertEquals(g1.allSuspected(), g2.allSuspected());
         });
@@ -184,7 +184,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
             Gossip g2 = after.gossip();
 
-            assertSame(ComparisonResult.SAME, g1.compare(g2));
+            assertSame(GossipPrecedence.SAME, g1.compare(g2));
             assertTrue(g2.seen().isEmpty());
             assertTrue(g2.members().isEmpty());
             assertTrue(g2.allSuspected().isEmpty());
@@ -211,7 +211,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
             Gossip g2 = after.gossip();
 
-            assertSame(ComparisonResult.SAME, g1.compare(g2));
+            assertSame(GossipPrecedence.SAME, g1.compare(g2));
             assertEquals(g1.seen(), g2.seen());
             assertEquals(g1.allSuspected(), g2.allSuspected());
 
@@ -252,7 +252,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
             Gossip g2 = after.gossip();
 
-            assertSame(ComparisonResult.SAME, g1.compare(g2));
+            assertSame(GossipPrecedence.SAME, g1.compare(g2));
             assertEquals(g1.seen(), g2.seen());
             assertEquals(g1.allSuspected(), g2.allSuspected());
 
@@ -345,7 +345,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
             Gossip g2 = after.gossip();
 
-            assertSame(ComparisonResult.SAME, g1.compare(g2));
+            assertSame(GossipPrecedence.SAME, g1.compare(g2));
             assertEquals(g1.seen(), g2.seen());
             assertEquals(g1.allSuspected(), g2.allSuspected());
 
@@ -390,7 +390,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
             Gossip g2 = after.gossip();
 
-            assertSame(ComparisonResult.SAME, g1.compare(g2));
+            assertSame(GossipPrecedence.SAME, g1.compare(g2));
             assertEquals(g1.seen(), g2.seen());
             assertEquals(g1.allSuspected(), g2.allSuspected());
 
@@ -426,7 +426,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
             GossipBase g2 = after.gossipBase();
 
-            assertSame(ComparisonResult.SAME, g1.compare(g2));
+            assertSame(GossipPrecedence.SAME, g1.compare(g2));
             assertTrue(g2.membersInfo().isEmpty());
         });
     }
@@ -449,7 +449,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
             GossipBase g2 = after.gossipBase();
 
-            assertSame(ComparisonResult.SAME, g1.compare(g2));
+            assertSame(GossipPrecedence.SAME, g1.compare(g2));
 
             g1.membersInfo().values().forEach(n1 -> {
                 GossipNodeInfoBase n2 = g2.membersInfo().get(n1.id());

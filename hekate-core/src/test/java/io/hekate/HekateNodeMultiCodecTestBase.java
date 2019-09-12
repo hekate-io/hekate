@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -48,7 +48,7 @@ public abstract class HekateNodeMultiCodecTestBase extends HekateNodeParamTestBa
     }
 
     @Parameters(name = "{index}: {0}")
-    public static Collection<MultiCodecTestContext> getLockAsyncTestContexts() {
+    public static Collection<MultiCodecTestContext> getCodecTestContexts() {
         return mapTestContext(p -> Stream.of(
             new MultiCodecTestContext(p, new KryoCodecFactory<>()),
             new MultiCodecTestContext(p, new FstCodecFactory<>()),

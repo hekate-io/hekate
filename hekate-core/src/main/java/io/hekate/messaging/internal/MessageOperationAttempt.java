@@ -3,7 +3,6 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.MessageMetaData;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.intercept.ClientSendContext;
@@ -18,6 +17,7 @@ import io.hekate.messaging.internal.MessagingProtocol.RequestBase;
 import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
 import io.hekate.messaging.internal.MessagingProtocol.SubscribeRequest;
 import io.hekate.messaging.internal.MessagingProtocol.VoidRequest;
+import io.hekate.messaging.retry.FailedAttempt;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -29,7 +29,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
 
     private final MessageOperation<T> operation;
 
-    private final Optional<FailureInfo> prevFailure;
+    private final Optional<FailedAttempt> prevFailure;
 
     private final MessageOperationCallback<T> callback;
 
@@ -39,13 +39,15 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
 
     private Map<String, Object> attributes;
 
-    private RequestHandle<T> reqHandle;
+    private RequestHandle<T> request;
+
+    private boolean completed;
 
     public MessageOperationAttempt(
         MessagingClient<T> client,
         ClusterTopology topology,
         MessageOperation<T> operation,
-        Optional<FailureInfo> prevFailure,
+        Optional<FailedAttempt> prevFailure,
         MessageOperationCallback<T> callback
     ) {
         this(client, topology, operation, prevFailure, callback, null, null);
@@ -55,7 +57,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
         MessagingClient<T> client,
         ClusterTopology topology,
         MessageOperation<T> operation,
-        Optional<FailureInfo> prevFailure,
+        Optional<FailedAttempt> prevFailure,
         MessageOperationCallback<T> callback,
         MessageMetaData metaData,
         Map<String, Object> attributes
@@ -71,7 +73,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
         this.payload = operation.message();
     }
 
-    public MessageOperationAttempt<T> nextAttempt(Optional<FailureInfo> failure) {
+    public MessageOperationAttempt<T> nextAttempt(Optional<FailedAttempt> failure) {
         return new MessageOperationAttempt<>(client, topology, operation, failure, callback, metaData, attributes);
     }
 
@@ -80,7 +82,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
         operation.gateway().interceptors().clientSend(this);
 
         // Build and submit the message.
-        long timeout = operation.opts().timeout();
+        long timeout = operation.timeout();
         boolean isRetransmit = prevFailure.isPresent();
         MessageMetaData metaData = hasMetaData() ? metaData() : null;
 
@@ -88,14 +90,14 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
 
         switch (type()) {
             case REQUEST: {
-                reqHandle = conn.registerRequest(this);
+                request = conn.registerRequest(this);
 
                 RequestBase<T> req;
 
                 if (operation.hasAffinity()) {
                     req = new AffinityRequest<>(
                         operation.affinity(),
-                        reqHandle.id(),
+                        request.id(),
                         isRetransmit,
                         timeout,
                         payload,
@@ -103,7 +105,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
                     );
                 } else {
                     req = new Request<>(
-                        reqHandle.id(),
+                        request.id(),
                         isRetransmit,
                         timeout,
                         payload,
@@ -116,14 +118,14 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
                 break;
             }
             case SUBSCRIBE: {
-                reqHandle = conn.registerRequest(this);
+                request = conn.registerRequest(this);
 
                 RequestBase<T> req;
 
                 if (operation.hasAffinity()) {
                     req = new AffinitySubscribeRequest<>(
                         operation.affinity(),
-                        reqHandle.id(),
+                        request.id(),
                         isRetransmit,
                         timeout,
                         payload,
@@ -131,7 +133,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
                     );
                 } else {
                     req = new SubscribeRequest<>(
-                        reqHandle.id(),
+                        request.id(),
                         isRetransmit,
                         timeout,
                         payload,
@@ -144,14 +146,14 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
                 break;
             }
             case SEND_WITH_ACK: {
-                reqHandle = conn.registerRequest(this);
+                request = conn.registerRequest(this);
 
                 RequestBase<T> req;
 
                 if (operation.hasAffinity()) {
                     req = new AffinityVoidRequest<>(
                         operation.affinity(),
-                        reqHandle.id(),
+                        request.id(),
                         isRetransmit,
                         timeout,
                         payload,
@@ -159,7 +161,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
                     );
                 } else {
                     req = new VoidRequest<>(
-                        reqHandle.id(),
+                        request.id(),
                         isRetransmit,
                         timeout,
                         payload,
@@ -202,30 +204,52 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
     }
 
     public void receive(ResponseChunk<T> rsp) {
-        // TODO: Catch all errors.
-        if (rsp == null) {
-            if (operation.type() == OutboundType.SEND_WITH_ACK) {
-                operation.gateway().interceptors().clientReceiveConfirmation(this);
-            }
-        } else {
-            operation.gateway().interceptors().clientReceive(rsp);
-        }
+        synchronized (this) {
+            if (!completed) {
+                // TODO: Catch all errors.
+                if (rsp == null) {
+                    if (operation.type() == OutboundType.SEND_WITH_ACK) {
+                        operation.gateway().interceptors().clientReceiveConfirmation(this);
+                    }
+                } else {
+                    operation.gateway().interceptors().clientReceive(rsp);
+                }
 
-        if (callback.completeAttempt(this, rsp, null)) {
-            if (reqHandle != null) {
-                reqHandle.unregister();
+                if (callback.completeAttempt(this, rsp, null)) {
+                    completed = true;
+
+                    if (request != null) {
+                        request.unregister();
+                    }
+                }
             }
         }
     }
 
     public void fail(Throwable err) {
-        // TODO: Catch all errors.
-        operation.gateway().interceptors().clientReceiveError(err, this);
+        synchronized (this) {
+            if (!completed) {
+                // TODO: Catch all errors.
+                operation.gateway().interceptors().clientReceiveError(err, this);
 
-        if (callback.completeAttempt(this, null, err)) {
-            if (reqHandle != null) {
-                reqHandle.unregister();
+                if (callback.completeAttempt(this, null, err)) {
+                    completed = true;
+
+                    if (request != null) {
+                        request.unregister();
+                    }
+                }
             }
+        }
+    }
+
+    public boolean hasMoreAttempts() {
+        if (operation.maxAttempts() < 0) {
+            return true;
+        } else if (operation.maxAttempts() == 0) {
+            return false;
+        } else {
+            return prevFailure.map(prev -> prev.attempt() + 1 < operation.maxAttempts()).orElse(true);
         }
     }
 
@@ -243,7 +267,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
     }
 
     @Override
-    public T get() {
+    public T payload() {
         return operation.message();
     }
 
@@ -313,7 +337,7 @@ class MessageOperationAttempt<T> implements ClientSendContext<T> {
     }
 
     @Override
-    public Optional<FailureInfo> prevFailure() {
+    public Optional<FailedAttempt> prevFailure() {
         return prevFailure;
     }
 

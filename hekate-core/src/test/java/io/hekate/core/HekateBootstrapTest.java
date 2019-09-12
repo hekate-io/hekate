@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -32,6 +32,7 @@ import org.junit.Test;
 
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -65,6 +66,17 @@ public class HekateBootstrapTest extends HekateTestBase {
         assertEquals("test", bootstrap.getClusterName());
 
         assertEquals("test2", bootstrap.withClusterName("test2").getClusterName());
+    }
+
+    @Test
+    public void testConfigReport() {
+        assertFalse(bootstrap.isConfigReport());
+
+        bootstrap.setConfigReport(true);
+
+        assertTrue(bootstrap.isConfigReport());
+
+        assertFalse(bootstrap.withConfigReport(false).isConfigReport());
     }
 
     @Test

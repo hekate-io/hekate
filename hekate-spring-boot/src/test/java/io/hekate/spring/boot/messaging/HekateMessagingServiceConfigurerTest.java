@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -22,12 +22,12 @@ import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingService;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
 import io.hekate.spring.boot.HekateTestConfigBase;
-import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
 import static org.junit.Assert.assertEquals;
@@ -45,6 +45,7 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
         private T t;
     }
 
+    @Configuration
     @EnableAutoConfiguration
     public static class MessagingTestConfig extends HekateTestConfigBase {
         @Component
@@ -119,6 +120,7 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
         }
     }
 
+    @Configuration
     @EnableAutoConfiguration
     public static class MessagingTypeSafetyTestConfig extends HekateTestConfigBase {
         @Component
@@ -155,13 +157,12 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
         }
     }
 
+    @Configuration
     @EnableAutoConfiguration
     public static class CustomizeChannelConfig extends HekateTestConfigBase {
         @Bean
         public MessagingChannel<String> testChannel(Hekate hekate) {
-            return hekate.messaging().channel("test", String.class)
-                .forRemotes()
-                .withTimeout(100500, TimeUnit.MILLISECONDS);
+            return hekate.messaging().channel("test", String.class).forRemotes();
         }
 
         @Bean
@@ -232,6 +233,5 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
         MessagingChannel<?> channel = get("testChannel", MessagingChannel.class);
 
         assertTrue(channel.cluster().topology().isEmpty());
-        assertEquals(100500, channel.timeout());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,15 +16,13 @@
 
 package io.hekate.messaging;
 
-import java.util.concurrent.TimeUnit;
-
 /**
  * Signals {@link MessagingChannel}'s send queue timeout.
  *
  * <p>
- * This error is thrown by a {@link MessagingChannel} when its send queue is full (above {@link
+ * This error is thrown by a {@link MessagingChannel} when its send queue is full (above the {@link
  * MessagingBackPressureConfig#setOutHighWatermark(int) high watermark}) and messaging operation
- * {@link MessagingChannel#withTimeout(long, TimeUnit) timed out}.
+ * {@link MessagingChannelConfig#withMessagingTimeout(long)} timed out}.
  * </p>
  *
  * @see MessagingBackPressureConfig

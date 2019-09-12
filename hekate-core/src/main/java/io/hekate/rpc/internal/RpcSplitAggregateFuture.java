@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,8 +17,8 @@
 package io.hekate.rpc.internal;
 
 import io.hekate.messaging.MessagingFuture;
-import io.hekate.messaging.unicast.RequestCallback;
-import io.hekate.messaging.unicast.Response;
+import io.hekate.messaging.operation.RequestCallback;
+import io.hekate.messaging.operation.Response;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -62,7 +62,7 @@ class RpcSplitAggregateFuture extends MessagingFuture<Object> implements Request
             synchronized (responses) {
                 if (mappedErr == null) {
                     if (rsp != null) { // <-- Can be null if there was a real error but it was ignored by the error policy.
-                        responses.add(rsp.get());
+                        responses.add(rsp.payload());
                     }
                 } else {
                     if (firstError == null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -178,15 +178,15 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
         }
     }
 
-    public void sendAndDisconnect(GossipProtocol msg, Runnable onComplete) {
+    public void sendAndDisconnect(GossipProtocol msg) {
         Optional<Throwable> callbackErr = listener.onBeforeSend(msg);
 
         if (callbackErr.isPresent()) {
             listener.onSendFailure(msg, callbackErr.get());
         } else {
-            NetworkClient<GossipProtocol> sendOnceClient = connector.newClient();
+            NetworkClient<GossipProtocol> oneTimeClient = connector.newClient();
 
-            sendOnceClient.connect(msg.toAddress(), msg, new NetworkClientCallback<GossipProtocol>() {
+            oneTimeClient.connect(msg.toAddress(), msg, new NetworkClientCallback<GossipProtocol>() {
                 @Override
                 public void onMessage(NetworkMessage<GossipProtocol> message, NetworkClient<GossipProtocol> from) {
                     // No-op.
@@ -197,21 +197,13 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
                     client.disconnect();
 
                     listener.onSendSuccess(msg);
-
-                    if (onComplete != null) {
-                        onComplete.run();
-                    }
                 }
 
                 @Override
                 public void onDisconnect(NetworkClient<GossipProtocol> client, Optional<Throwable> cause) {
-                    cause.ifPresent(err -> {
-                        listener.onSendFailure(msg, err);
-
-                        if (onComplete != null) {
-                            onComplete.run();
-                        }
-                    });
+                    cause.ifPresent(err ->
+                        listener.onSendFailure(msg, err)
+                    );
                 }
             });
         }
@@ -220,25 +212,25 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
     @Override
     public void onConnect(GossipProtocol msg, NetworkEndpoint<GossipProtocol> client) {
         if (msg instanceof GossipMessage) {
+            ClusterAddress from = msg.from();
+
+            client.setContext(from);
+
             if (DEBUG) {
-                log.debug("Got a new inbound connection [from={}]", msg.from());
+                log.debug("Got a new inbound connection [from={}]", from);
             }
 
-            ClusterNodeId fromId = msg.from().id();
-
-            client.setContext(msg.from());
-
             synchronized (mux) {
-                if (cache.containsKey(fromId)) {
+                if (cache.containsKey(from.id())) {
                     if (DEBUG) {
-                        log.debug("Will not register inbound connection since another connection exists [from={}]", msg.from());
+                        log.debug("Will not register inbound connection since another connection exists [from={}]", from);
                     }
                 } else {
                     if (DEBUG) {
-                        log.debug("Registering inbound connection [from={}]", msg.from());
+                        log.debug("Registering inbound connection [from={}]", from);
                     }
 
-                    cache.put(fromId, new EndpointHolder(client, false));
+                    cache.put(from.id(), new EndpointHolder(client, false));
                 }
             }
 

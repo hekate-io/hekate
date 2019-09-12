@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -20,9 +20,9 @@ import io.hekate.HekateTestBase;
 import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.cluster.seed.SeedNodeProviderAdaptor;
 import io.hekate.core.HekateException;
+import io.hekate.network.NetworkPingCallback;
+import io.hekate.network.NetworkPingResult;
 import io.hekate.network.NetworkService;
-import io.hekate.network.PingCallback;
-import io.hekate.network.PingResult;
 import io.hekate.test.HekateTestError;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -184,7 +184,7 @@ public class SeedNodeManagerTest extends HekateTestBase {
                 addresses.put(address, true);
 
                 try {
-                    latch.exchange("register-" + address, 3, TimeUnit.SECONDS);
+                    latch.exchange("register-" + address, AWAIT_TIMEOUT, TimeUnit.SECONDS);
                 } catch (InterruptedException | TimeoutException e) {
                     throw new HekateException("Unexpected timing error.", e);
                 }
@@ -195,7 +195,7 @@ public class SeedNodeManagerTest extends HekateTestBase {
                 addresses.remove(address);
 
                 try {
-                    latch.exchange("unregister-" + address, 3, TimeUnit.SECONDS);
+                    latch.exchange("unregister-" + address, AWAIT_TIMEOUT, TimeUnit.SECONDS);
                 } catch (InterruptedException | TimeoutException e) {
                     throw new HekateException("Unexpected timing error.", e);
                 }
@@ -206,16 +206,16 @@ public class SeedNodeManagerTest extends HekateTestBase {
 
         doAnswer(invocation -> {
             InetSocketAddress address = (InetSocketAddress)invocation.getArguments()[0];
-            PingCallback callback = (PingCallback)invocation.getArguments()[1];
+            NetworkPingCallback callback = (NetworkPingCallback)invocation.getArguments()[1];
 
             if (canPing.containsKey(address)) {
-                callback.onResult(address, PingResult.SUCCESS);
+                callback.onResult(address, NetworkPingResult.SUCCESS);
             } else {
-                callback.onResult(address, PingResult.FAILURE);
+                callback.onResult(address, NetworkPingResult.FAILURE);
             }
 
             return null;
-        }).when(netMock).ping(any(InetSocketAddress.class), any(PingCallback.class));
+        }).when(netMock).ping(any(InetSocketAddress.class), any(NetworkPingCallback.class));
 
         manager.startCleaning(netMock, alive::keySet);
 
@@ -229,7 +229,7 @@ public class SeedNodeManagerTest extends HekateTestBase {
             canPing.remove(address2);
             alive.remove(address2);
 
-            assertEquals("unregister-" + address2, latch.exchange(null, 3, TimeUnit.SECONDS));
+            assertEquals("unregister-" + address2, latch.exchange(null, AWAIT_TIMEOUT, TimeUnit.SECONDS));
 
             nodes = manager.getSeedNodes();
 
@@ -239,7 +239,7 @@ public class SeedNodeManagerTest extends HekateTestBase {
 
             alive.put(address2, true);
 
-            assertEquals("register-" + address2, latch.exchange(null, 3, TimeUnit.SECONDS));
+            assertEquals("register-" + address2, latch.exchange(null, AWAIT_TIMEOUT, TimeUnit.SECONDS));
 
             nodes = manager.getSeedNodes();
 

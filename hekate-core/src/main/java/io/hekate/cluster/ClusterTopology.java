@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -83,8 +83,8 @@ public interface ClusterTopology extends Iterable<ClusterNode>, ClusterTopologyS
     ClusterNode localNode();
 
     /**
-     * Returns an immutable list of all nodes with consistent ordering based on {@link ClusterNode#compareTo(Object)} method. Returns an
-     * empty list if there are no nodes within this topology.
+     * Returns an immutable list of all nodes with consistent ordering based on {@link ClusterNode#compareTo(ClusterNode)} method.
+     * Returns an empty list if there are no nodes within this topology.
      *
      * @return Immutable list of all nodes with consistent ordering or an empty list if there are no nodes within this topology.
      */

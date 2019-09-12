@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -20,11 +20,10 @@ import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.internal.DefaultClusterTopology;
-import io.hekate.failover.FailoverContext;
-import io.hekate.failover.FailoverRoutingPolicy;
-import io.hekate.failover.internal.DefaultFailoverContext;
 import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.retry.FailedAttempt;
+import io.hekate.messaging.retry.RetryRoutingPolicy;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.partition.RendezvousHashMapper;
 import java.util.HashSet;
@@ -81,7 +80,7 @@ public class DefaultLoadBalancerTest extends HekateTestBase {
 
     @Test
     public void testNonAffinityWithFailure() throws Exception {
-        FailoverContext failure = new DefaultFailoverContext(2, new Exception(), n1, toSet(n1, n2), FailoverRoutingPolicy.RE_ROUTE);
+        FailedAttempt failure = new MessageOperationFailure(2, new Exception(), n1, toSet(n1, n2), RetryRoutingPolicy.RE_ROUTE);
 
         for (int i = 0; i < 100; i++) {
 
@@ -115,7 +114,7 @@ public class DefaultLoadBalancerTest extends HekateTestBase {
     public void testAffinityWithFailure() throws Exception {
         PartitionMapper backupMapper = RendezvousHashMapper.of(topology).withBackupNodes(2).build();
 
-        FailoverContext failure = new DefaultFailoverContext(2, new Exception(), n1, toSet(n1, n2), FailoverRoutingPolicy.RE_ROUTE);
+        FailedAttempt failure = new MessageOperationFailure(2, new Exception(), n1, toSet(n1, n2), RetryRoutingPolicy.RE_ROUTE);
 
         for (int i = 0; i < 100; i++) {
             DefaultLoadBalancerContext ctx = new DefaultLoadBalancerContext(i, i, topology, backupMapper, Optional.of(failure));
@@ -131,7 +130,7 @@ public class DefaultLoadBalancerTest extends HekateTestBase {
     public void testAffinityWithFailureNoBackupNodes() throws Exception {
         Set<ClusterNodeId> allRoutes = new HashSet<>();
 
-        FailoverContext failure = new DefaultFailoverContext(2, new Exception(), n1, toSet(n1, n2), FailoverRoutingPolicy.RE_ROUTE);
+        FailedAttempt failure = new MessageOperationFailure(2, new Exception(), n1, toSet(n1, n2), RetryRoutingPolicy.RE_ROUTE);
 
         for (int i = 0; i < 100; i++) {
             DefaultLoadBalancerContext ctx = new DefaultLoadBalancerContext(i, i, topology, mapper, Optional.of(failure));

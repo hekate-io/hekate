@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,10 +16,11 @@
 
 package io.hekate.network.netty;
 
-import io.hekate.core.internal.util.ErrorUtils;
+import io.hekate.network.NetworkConnectTimeoutException;
+import io.hekate.network.NetworkTimeoutException;
+import io.netty.channel.ConnectTimeoutException;
 import io.netty.handler.codec.DecoderException;
-import java.io.IOException;
-import java.security.GeneralSecurityException;
+import java.net.SocketTimeoutException;
 import javax.net.ssl.SSLException;
 
 final class NettyErrorUtils {
@@ -28,15 +29,22 @@ final class NettyErrorUtils {
     }
 
     public static Throwable unwrap(Throwable err) {
-        if (err instanceof DecoderException && err.getCause() instanceof SSLException) {
-            return err.getCause();
+        if (err == null) {
+            return null;
+        } else if (err instanceof DecoderException && err.getCause() instanceof SSLException) {
+            return doUnwrap(err.getCause());
+        } else {
+            return doUnwrap(err);
+        }
+    }
+
+    private static Throwable doUnwrap(Throwable err) {
+        if (err instanceof ConnectTimeoutException) {
+            return new NetworkConnectTimeoutException(err.getMessage(), err);
+        } else if (err instanceof SocketTimeoutException) {
+            return new NetworkTimeoutException(err.getMessage(), err);
         }
 
         return err;
-    }
-
-    public static boolean isNonFatalIoError(Throwable err) {
-        return err instanceof IOException
-            && !ErrorUtils.isCausedBy(GeneralSecurityException.class, err);
     }
 }

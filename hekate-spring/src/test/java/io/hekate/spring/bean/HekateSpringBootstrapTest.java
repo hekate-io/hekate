@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -50,7 +50,7 @@ public class HekateSpringBootstrapTest extends HekateTestBase {
 
         Hekate node = null;
 
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 3; i++) {
             node = ctx.getBean("hekate", Hekate.class);
 
             assertSame(Hekate.State.UP, node.state());

@@ -23,7 +23,7 @@ public interface ClientReceiveContext<T> {
      *
      * @return Message.
      */
-    T get();
+    T payload();
 
     /**
      * Returns the outbound context.

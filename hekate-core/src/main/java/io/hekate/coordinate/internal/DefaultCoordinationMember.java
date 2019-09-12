@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -23,7 +23,6 @@ import io.hekate.cluster.ClusterTopology;
 import io.hekate.coordinate.CoordinationMember;
 import io.hekate.coordinate.CoordinationRequestCallback;
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.MessagingChannel;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,19 +32,21 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.hekate.messaging.unicast.ReplyDecision.ACCEPT;
-import static io.hekate.messaging.unicast.ReplyDecision.REJECT;
+import static java.util.Collections.newSetFromMap;
 
 class DefaultCoordinationMember implements CoordinationMember {
     private static final Logger log = LoggerFactory.getLogger(DefaultCoordinationMember.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private final String processName;
+    private final Set<Future<?>> requests = newSetFromMap(new IdentityHashMap<>());
+
+    private final Object mux = new Object();
+
+    private final String process;
 
     private final ClusterNode node;
 
@@ -57,43 +58,32 @@ class DefaultCoordinationMember implements CoordinationMember {
 
     private final ExecutorService async;
 
-    private final ReentrantLock lock = new ReentrantLock();
-
-    private final Set<Future<?>> requestFutures = Collections.newSetFromMap(new IdentityHashMap<>());
-
     private final ClusterNode localNode;
 
     private volatile boolean disposed;
 
     public DefaultCoordinationMember(
-        String processName,
+        String process,
         ClusterNode node,
         ClusterTopology topology,
         boolean coordinator,
         MessagingChannel<CoordinationProtocol> channel,
-        ExecutorService async,
-        long failoverDelay
+        ExecutorService async
     ) {
-        assert processName != null : "Coordination process name is null.";
+        assert process != null : "Coordination process name is null.";
         assert node != null : "Node is null.";
         assert topology != null : "Topology is null.";
         assert channel != null : "Channel is null.";
         assert async != null : "Executor service is null.";
 
-        this.processName = processName;
+        this.process = process;
         this.localNode = topology.localNode();
         this.node = node;
         this.topology = topology;
         this.coordinator = coordinator;
         this.async = async;
 
-        this.channel = channel.forNode(node)
-            .withFailover(new FailoverPolicyBuilder()
-                // Retry to death.
-                .withRetryUntil(ctx -> !disposed)
-                .withAlwaysRetrySameNode()
-                .withConstantRetryDelay(failoverDelay)
-            );
+        this.channel = channel.forNode(node);
     }
 
     @Override
@@ -114,42 +104,40 @@ class DefaultCoordinationMember implements CoordinationMember {
         ClusterNodeId from = localNode.id();
         ClusterHash clusterHash = topology.hash();
 
-        doRequest(new CoordinationProtocol.Request(processName, from, clusterHash, request), callback);
+        doRequest(new CoordinationProtocol.Request(process, from, clusterHash, request), callback);
     }
 
     public void sendPrepare(CoordinationRequestCallback callback) {
         ClusterNodeId from = localNode.id();
         ClusterHash clusterHash = topology.hash();
 
-        doRequest(new CoordinationProtocol.Prepare(processName, from, clusterHash), callback);
+        doRequest(new CoordinationProtocol.Prepare(process, from, clusterHash), callback);
     }
 
     public void sendComplete(CoordinationRequestCallback callback) {
         ClusterNodeId from = localNode.id();
         ClusterHash clusterHash = topology.hash();
 
-        doRequest(new CoordinationProtocol.Complete(processName, from, clusterHash), callback);
+        doRequest(new CoordinationProtocol.Complete(process, from, clusterHash), callback);
     }
 
     public void dispose() {
         List<Future<?>> toCancel;
 
-        lock.lock();
-
-        try {
+        synchronized (mux) {
             if (disposed) {
                 toCancel = Collections.emptyList();
             } else {
                 disposed = true;
 
-                toCancel = new ArrayList<>(requestFutures);
+                toCancel = new ArrayList<>(requests);
             }
-        } finally {
-            lock.unlock();
         }
 
         if (!toCancel.isEmpty()) {
-            toCancel.forEach(future -> future.cancel(false));
+            toCancel.forEach(future ->
+                future.cancel(false)
+            );
         }
     }
 
@@ -160,90 +148,65 @@ class DefaultCoordinationMember implements CoordinationMember {
 
         CompletableFuture<Object> future = newRequestFuture(request, callback);
 
-        boolean enqueued = false;
-
-        lock.lock();
-
-        try {
-            if (!disposed) {
-                enqueued = true;
-
-                requestFutures.add(future);
-            }
-        } finally {
-            lock.unlock();
-        }
-
-        if (enqueued) {
+        if (!future.isDone()) {
             channel.newRequest(request)
-                .withAffinity(processName)
-                .until((err, rsp) -> {
-                    if (future.isDone()) {
-                        if (DEBUG) {
-                            log.debug("Skipped response [from={}, response={}]", node, rsp);
-                        }
-
-                        return ACCEPT;
-                    } else if (err != null) {
-                        if (DEBUG) {
-                            log.debug("Got an error [from={}, error={}, request={}]", node, err.toString(), request);
-                        }
-
-                        return REJECT;
-                    } else if (rsp.is(CoordinationProtocol.Reject.class)) {
-                        if (DEBUG) {
-                            log.debug("Got a reject [from={}, request={}]", node, request);
-                        }
-
-                        return REJECT;
-                    } else {
-                        if (rsp.is(CoordinationProtocol.Confirm.class)) {
+                .withAffinity(process)
+                .withRetry(retry -> retry
+                    .unlimitedAttempts()
+                    .alwaysTrySameNode()
+                    .whileTrue(() -> !disposed && !future.isDone())
+                    .whileResponse(rsp -> {
+                        if (rsp.is(CoordinationProtocol.Reject.class)) {
                             if (DEBUG) {
-                                log.debug("Got a confirmation [from={}, request={}]", node, request);
+                                log.debug("Got a reject [from={}, request={}]", node, request);
                             }
 
-                            future.complete(null);
+                            return true;
                         } else {
-                            CoordinationProtocol.Response response = rsp.get(CoordinationProtocol.Response.class);
+                            if (rsp.is(CoordinationProtocol.Confirm.class)) {
+                                if (DEBUG) {
+                                    log.debug("Got a confirmation [from={}, request={}]", node, request);
+                                }
 
-                            if (DEBUG) {
-                                log.debug("Got a response [from={}, response={}]", node, response.response());
+                                future.complete(null);
+                            } else {
+                                CoordinationProtocol.Response response = rsp.payload(CoordinationProtocol.Response.class);
+
+                                if (DEBUG) {
+                                    log.debug("Got a response [from={}, response={}]", node, response.response());
+                                }
+
+                                future.complete(response.response());
                             }
 
-                            future.complete(response.response());
+                            return false;
                         }
-
-                        return ACCEPT;
-                    }
-                })
+                    })
+                )
                 .submit((err, rsp) -> {
                     unregister(future);
 
-                    if (DEBUG) {
-                        if (err != null && !disposed) {
-                            log.debug("Failed to submit coordination request [request={}]", request, err);
-                        }
+                    if (err != null) {
+                        future.completeExceptionally(err);
                     }
                 });
-        } else {
-            future.cancel(false);
         }
     }
 
-    private CompletableFuture<Object> newRequestFuture(CoordinationProtocol.RequestBase request, CoordinationRequestCallback callback) {
+    private CompletableFuture<Object> newRequestFuture(CoordinationProtocol.RequestBase req, CoordinationRequestCallback callback) {
         CompletableFuture<Object> future = new CompletableFuture<>();
 
-        future.whenCompleteAsync((response, error) -> {
+        future.whenCompleteAsync((rsp, err) -> {
             try {
-                if (error == null) {
+                if (err == null) {
                     if (DEBUG) {
-                        log.debug("Received coordination response [from={}, message={}]", node, response);
+                        log.debug("Received coordination response [from={}, message={}]", node, rsp);
                     }
 
-                    callback.onResponse(response, this);
+                    callback.onResponse(rsp, this);
                 } else {
                     if (DEBUG) {
-                        log.debug("Canceled coordination request sending [to={}, message={}]", node, request);
+                        log.debug("Canceled coordination request [to={}, message={}]", node, req);
                     }
 
                     callback.onCancel();
@@ -253,16 +216,32 @@ class DefaultCoordinationMember implements CoordinationMember {
             }
         }, async);
 
+        return tryRegisterOrCancel(future);
+    }
+
+    private CompletableFuture<Object> tryRegisterOrCancel(CompletableFuture<Object> future) {
+        if (!tryRegister(future)) {
+            future.cancel(false);
+        }
+
         return future;
     }
 
-    private void unregister(CompletableFuture<Object> future) {
-        lock.lock();
+    private boolean tryRegister(CompletableFuture<Object> future) {
+        synchronized (mux) {
+            if (disposed) {
+                return false;
+            } else {
+                requests.add(future);
 
-        try {
-            requestFutures.remove(future);
-        } finally {
-            lock.unlock();
+                return true;
+            }
+        }
+    }
+
+    private void unregister(CompletableFuture<Object> future) {
+        synchronized (mux) {
+            requests.remove(future);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -19,22 +19,19 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterFilter;
 import io.hekate.cluster.ClusterView;
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.failover.FailoverPolicy;
-import io.hekate.failover.FailoverPolicyBuilder;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelId;
-import io.hekate.messaging.broadcast.Aggregate;
-import io.hekate.messaging.broadcast.Broadcast;
 import io.hekate.messaging.loadbalance.LoadBalancer;
-import io.hekate.messaging.unicast.Request;
-import io.hekate.messaging.unicast.Send;
-import io.hekate.messaging.unicast.Subscribe;
+import io.hekate.messaging.operation.Aggregate;
+import io.hekate.messaging.operation.Broadcast;
+import io.hekate.messaging.operation.Request;
+import io.hekate.messaging.operation.Send;
+import io.hekate.messaging.operation.Subscribe;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 
 class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperationOpts<T> {
     private final MessagingGateway<T> gateway;
@@ -44,19 +41,13 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
 
     private final RendezvousHashMapper partitions;
 
-    private final FailoverPolicy failover;
-
     private final LoadBalancer<T> balancer;
-
-    private final long timeout;
 
     public DefaultMessagingChannel(
         MessagingGateway<T> gateway,
         ClusterView cluster,
         RendezvousHashMapper partitions,
-        LoadBalancer<T> balancer,
-        FailoverPolicy failover,
-        long timeout
+        LoadBalancer<T> balancer
     ) {
         assert gateway != null : "Gateway is null.";
         assert cluster != null : "Cluster view is null.";
@@ -66,33 +57,51 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
         this.cluster = cluster;
         this.partitions = partitions;
         this.balancer = balancer;
-        this.failover = failover;
-        this.timeout = timeout;
     }
 
     @Override
     public Send<T> newSend(T message) {
-        return new SendOperationBuilder<>(message, context(), this);
+        SendOperationBuilder<T> builder = new SendOperationBuilder<>(message, context(), this);
+
+        gateway.baseRetryPolicy().configure(builder);
+
+        return builder;
     }
 
     @Override
     public Request<T> newRequest(T request) {
-        return new RequestOperationBuilder<>(request, context(), this);
+        RequestOperationBuilder<T> builder = new RequestOperationBuilder<>(request, context(), this);
+
+        gateway.baseRetryPolicy().configure(builder);
+
+        return builder;
     }
 
     @Override
     public Subscribe<T> newSubscribe(T request) {
-        return new SubscribeOperationBuilder<>(request, context(), this);
+        SubscribeOperationBuilder<T> builder = new SubscribeOperationBuilder<>(request, context(), this);
+
+        gateway.baseRetryPolicy().configure(builder);
+
+        return builder;
     }
 
     @Override
     public Broadcast<T> newBroadcast(T request) {
-        return new BroadcastOperationBuilder<>(request, context(), this);
+        BroadcastOperationBuilder<T> builder = new BroadcastOperationBuilder<>(request, context(), this);
+
+        gateway.baseRetryPolicy().configure(builder);
+
+        return builder;
     }
 
     @Override
     public Aggregate<T> newAggregate(T request) {
-        return new AggregateOperationBuilder<>(request, context(), this);
+        AggregateOperationBuilder<T> builder = new AggregateOperationBuilder<>(request, context(), this);
+
+        gateway.baseRetryPolicy().configure(builder);
+
+        return builder;
     }
 
     @Override
@@ -127,9 +136,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             gateway,
             cluster,
             newPartitions,
-            balancer,
-            failover,
-            timeout
+            balancer
         );
     }
 
@@ -141,46 +148,13 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             gateway,
             cluster,
             partitions,
-            balancer,
-            failover,
-            timeout
+            balancer
         );
     }
 
     @Override
     public Executor executor() {
         return gateway.executor();
-    }
-
-    @Override
-    public DefaultMessagingChannel<T> withFailover(FailoverPolicy policy) {
-        return new DefaultMessagingChannel<>(
-            gateway,
-            cluster,
-            partitions,
-            balancer,
-            policy,
-            timeout
-        );
-    }
-
-    @Override
-    public DefaultMessagingChannel<T> withFailover(FailoverPolicyBuilder policy) {
-        return withFailover(policy.build());
-    }
-
-    @Override
-    public DefaultMessagingChannel<T> withTimeout(long timeout, TimeUnit unit) {
-        ArgAssert.notNull(unit, "Time unit");
-
-        return new DefaultMessagingChannel<>(
-            gateway,
-            cluster,
-            partitions,
-            balancer,
-            failover,
-            unit.toMillis(timeout)
-        );
     }
 
     @Override
@@ -194,9 +168,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             gateway,
             newCluster,
             newPartitions,
-            balancer,
-            failover,
-            timeout
+            balancer
         );
     }
 
@@ -216,9 +188,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             gateway,
             newCluster,
             newPartitions,
-            balancer,
-            failover,
-            timeout
+            balancer
         );
     }
 
@@ -235,16 +205,6 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
     @Override
     public LoadBalancer<T> balancer() {
         return balancer;
-    }
-
-    @Override
-    public FailoverPolicy failover() {
-        return failover;
-    }
-
-    @Override
-    public long timeout() {
-        return timeout;
     }
 
     // Package level for testing purposes.

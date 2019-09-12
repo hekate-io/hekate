@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,6 +18,7 @@ package io.hekate.rpc.internal;
 
 import io.hekate.core.internal.util.Utils;
 import io.hekate.util.format.ToString;
+import java.util.Objects;
 
 class RpcTypeKey {
     private final Class<?> type;
@@ -53,7 +54,7 @@ class RpcTypeKey {
             return false;
         }
 
-        return tag != null ? tag.equals(rpcTypeKey.tag) : rpcTypeKey.tag == null;
+        return Objects.equals(tag, rpcTypeKey.tag);
     }
 
     @Override

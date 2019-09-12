@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -131,11 +131,10 @@ public class CoordinationServiceJavadocTest extends HekateNodeTestBase {
         Hekate hekate = new HekateBootstrap()
             .withService(factory)
             .join();
-        // End:configure
 
-        // Start:access
+        // Access the service.
         CoordinationService coordination = hekate.coordination();
-        // End:access
+        // End:configure
 
         assertNotNull(coordination);
 
@@ -143,7 +142,7 @@ public class CoordinationServiceJavadocTest extends HekateNodeTestBase {
         // Get coordination process (or wait up to 3 seconds for initial coordination to be completed).
         CoordinationProcess process = hekate.coordination()
             .futureOf("example.process")
-            .get(3, TimeUnit.SECONDS);
+            .get(AWAIT_TIMEOUT, TimeUnit.SECONDS);
 
         System.out.println("Coordination completed for " + process.name());
         // End:future

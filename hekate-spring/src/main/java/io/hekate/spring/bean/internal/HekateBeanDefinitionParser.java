@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -23,6 +23,10 @@ import io.hekate.cluster.seed.SeedNodeProviderGroup;
 import io.hekate.cluster.seed.SeedNodeProviderGroupConfig;
 import io.hekate.cluster.seed.StaticSeedNodeProvider;
 import io.hekate.cluster.seed.StaticSeedNodeProviderConfig;
+import io.hekate.cluster.seed.consul.ConsulSeedNodeProvider;
+import io.hekate.cluster.seed.consul.ConsulSeedNodeProviderConfig;
+import io.hekate.cluster.seed.etcd.EtcdSeedNodeProvider;
+import io.hekate.cluster.seed.etcd.EtcdSeedNodeProviderConfig;
 import io.hekate.cluster.seed.fs.FsSeedNodeProvider;
 import io.hekate.cluster.seed.fs.FsSeedNodeProviderConfig;
 import io.hekate.cluster.seed.jclouds.BasicCredentialsSupplier;
@@ -69,7 +73,6 @@ import io.hekate.spring.bean.network.NetworkConnectorBean;
 import io.hekate.spring.bean.network.NetworkServiceBean;
 import io.hekate.spring.bean.rpc.RpcClientBean;
 import io.hekate.spring.bean.rpc.RpcServiceBean;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -136,6 +139,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
     protected void doParse(Element rootEl, ParserContext ctx, BeanDefinitionBuilder boot) {
         setProperty(boot, rootEl, "nodeName", "name");
         setProperty(boot, rootEl, "clusterName", "cluster");
+        setProperty(boot, rootEl, "configReport", "config-report");
 
         parseNodeRoles(boot, rootEl);
 
@@ -294,6 +298,12 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             case "zookeeper": {
                 return parseZooKeeperSeedNodeProvider(el, ctx);
             }
+            case "etcd": {
+                return parseEtcdSeedNodeProvider(el, ctx);
+            }
+            case "consul": {
+                return parseConsulSeedNodeProvider(el, ctx);
+            }
             case "custom-provider": {
                 return parseRefOrBean(el, ctx).orElseGet(() -> {
                     ctx.getReaderContext().error("Malformed seed node provider element <" + el.getLocalName() + '>', el);
@@ -319,6 +329,48 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         setProperty(cfg, el, "cleanupInterval", "cleanup-interval-ms");
 
         BeanDefinitionBuilder provider = newBean(ZooKeeperSeedNodeProvider.class, el);
+
+        provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
+
+        return registerInnerBean(provider, ctx);
+    }
+
+    private RuntimeBeanReference parseEtcdSeedNodeProvider(Element el, ParserContext ctx) {
+        BeanDefinitionBuilder cfg = newBean(EtcdSeedNodeProviderConfig.class, el);
+
+        List<String> endpoints = new ManagedList<>();
+
+        getChildElementsByTagName(el, "endpoint").forEach(addrEl ->
+            endpoints.add(getTextValue(addrEl))
+        );
+
+        if (!endpoints.isEmpty()) {
+            cfg.addPropertyValue("endpoints", endpoints);
+        }
+
+        setProperty(cfg, el, "username", "username");
+        setProperty(cfg, el, "password", "password");
+        setProperty(cfg, el, "basePath", "base-path");
+        setProperty(cfg, el, "cleanupInterval", "cleanup-interval-ms");
+
+        BeanDefinitionBuilder provider = newBean(EtcdSeedNodeProvider.class, el);
+
+        provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
+
+        return registerInnerBean(provider, ctx);
+    }
+
+    private RuntimeBeanReference parseConsulSeedNodeProvider(Element el, ParserContext ctx) {
+        BeanDefinitionBuilder cfg = newBean(ConsulSeedNodeProviderConfig.class, el);
+
+        setProperty(cfg, el, "url", "url");
+        setProperty(cfg, el, "basePath", "base-path");
+        setProperty(cfg, el, "cleanupInterval", "cleanup-interval-ms");
+        setProperty(cfg, el, "connectTimeout", "connect-timeout-ms");
+        setProperty(cfg, el, "readTimeout", "read-timeout-ms");
+        setProperty(cfg, el, "writeTimeout", "write-timeout-ms");
+
+        BeanDefinitionBuilder provider = newBean(ConsulSeedNodeProvider.class, el);
 
         provider.addConstructorArgValue(registerInnerBean(cfg, ctx));
 
@@ -445,7 +497,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
     private RuntimeBeanReference parseStaticSeedNodeProvider(Element el, ParserContext ctx) {
         BeanDefinitionBuilder cfg = newBean(StaticSeedNodeProviderConfig.class, el);
 
-        List<String> addresses = new ArrayList<>();
+        List<String> addresses = new ManagedList<>();
 
         getChildElementsByTagName(el, "address").forEach(addrEl ->
             addresses.add(getTextValue(addrEl))
@@ -563,6 +615,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
 
         if (splitBrainEl != null) {
             setProperty(cluster, splitBrainEl, "splitBrainAction", "action");
+            setProperty(cluster, splitBrainEl, "splitBrainCheckInterval", "check-interval-ms");
 
             Element groupEl = getChildElementByTagName(splitBrainEl, "group");
 
@@ -750,7 +803,6 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
                 setBeanOrRef(channel, channelEl, "loadBalancer", "load-balancer", ctx);
                 setBeanOrRef(channel, channelEl, "messageCodec", "message-codec", ctx);
                 setBeanOrRef(channel, channelEl, "clusterFilter", "cluster-filter", ctx);
-                setBeanOrRef(channel, channelEl, "failoverPolicy", "failover-policy", ctx);
 
                 parseCommonMessagingConfig(channelEl, channel, ctx);
 
@@ -843,7 +895,6 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
 
                 // Nested elements.
                 setBeanOrRef(client, clientEl, "loadBalancer", "load-balancer", ctx);
-                setBeanOrRef(client, clientEl, "failover", "failover-policy", ctx);
 
                 String name = clientEl.getAttribute("name");
 

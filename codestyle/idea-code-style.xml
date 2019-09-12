@@ -342,6 +342,16 @@
           <rule>
             <match>
               <AND>
+                <FIELD>true</FIELD>
+                <PUBLIC>true</PUBLIC>
+              </AND>
+            </match>
+          </rule>
+        </section>
+        <section>
+          <rule>
+            <match>
+              <AND>
                 <FIELD />
                 <FINAL />
                 <PROTECTED />
@@ -353,8 +363,28 @@
           <rule>
             <match>
               <AND>
+                <FIELD>true</FIELD>
+                <PROTECTED>true</PROTECTED>
+              </AND>
+            </match>
+          </rule>
+        </section>
+        <section>
+          <rule>
+            <match>
+              <AND>
                 <FIELD />
                 <FINAL />
+                <PACKAGE_PRIVATE />
+              </AND>
+            </match>
+          </rule>
+        </section>
+        <section>
+          <rule>
+            <match>
+              <AND>
+                <FIELD />
                 <PACKAGE_PRIVATE />
               </AND>
             </match>
@@ -367,36 +397,6 @@
                 <FIELD />
                 <FINAL />
                 <PRIVATE />
-              </AND>
-            </match>
-          </rule>
-        </section>
-        <section>
-          <rule>
-            <match>
-              <AND>
-                <FIELD />
-                <PUBLIC />
-              </AND>
-            </match>
-          </rule>
-        </section>
-        <section>
-          <rule>
-            <match>
-              <AND>
-                <FIELD />
-                <PROTECTED />
-              </AND>
-            </match>
-          </rule>
-        </section>
-        <section>
-          <rule>
-            <match>
-              <AND>
-                <FIELD />
-                <PACKAGE_PRIVATE />
               </AND>
             </match>
           </rule>
@@ -553,9 +553,6 @@
     <indentOptions>
       <option name="CONTINUATION_INDENT_SIZE" value="8" />
     </indentOptions>
-  </codeStyleSettings>
-  <codeStyleSettings language="SQL">
-    <option name="KEEP_BLANK_LINES_IN_CODE" value="1" />
   </codeStyleSettings>
   <codeStyleSettings language="TypeScript">
     <option name="KEEP_BLANK_LINES_IN_CODE" value="1" />

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,7 +17,6 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterView;
-import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.partition.PartitionMapper;
 
@@ -28,13 +27,5 @@ interface MessageOperationOpts<T> {
 
     ClusterView cluster();
 
-    FailoverPolicy failover();
-
     PartitionMapper partitions();
-
-    long timeout();
-
-    default boolean hasTimeout() {
-        return timeout() > 0;
-    }
 }

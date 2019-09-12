@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,15 +16,16 @@
 
 package io.hekate.spring.bean.lock;
 
+import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.lock.LockRegion;
 import io.hekate.lock.LockRegionConfig;
 import io.hekate.spring.bean.HekateBaseBean;
-import org.springframework.beans.factory.annotation.Required;
+import org.springframework.beans.factory.InitializingBean;
 
 /**
  * Imports {@link LockRegion} into a Spring context.
  */
-public class LockRegionBean extends HekateBaseBean<LockRegion> {
+public class LockRegionBean extends HekateBaseBean<LockRegion> implements InitializingBean {
     private String region;
 
     @Override
@@ -53,8 +54,12 @@ public class LockRegionBean extends HekateBaseBean<LockRegion> {
      *
      * @see LockRegionConfig#setName(String)
      */
-    @Required
     public void setRegion(String region) {
         this.region = region;
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        ConfigCheck.get(getClass()).notEmpty(region, "region");
     }
 }

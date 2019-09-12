@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -22,15 +22,22 @@ import io.hekate.codec.Codec;
 import io.hekate.codec.CodecFactory;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.failover.FailoverPolicy;
 import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.loadbalance.LoadBalancer;
+import io.hekate.messaging.operation.Aggregate;
+import io.hekate.messaging.operation.AggregateRetryConfigurer;
+import io.hekate.messaging.operation.Broadcast;
+import io.hekate.messaging.operation.BroadcastRetryConfigurer;
+import io.hekate.messaging.operation.Request;
+import io.hekate.messaging.operation.RequestRetryConfigurer;
+import io.hekate.messaging.operation.Send;
+import io.hekate.messaging.operation.SendRetryConfigurer;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.partition.Partition;
 import io.hekate.partition.RendezvousHashMapper;
 import io.hekate.util.format.ToString;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Configuration options for a {@link MessagingChannel}.
@@ -78,8 +85,8 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
     /** See {@link #setReceiver(MessageReceiver)}. */
     private MessageReceiver<T> receiver;
 
-    /** See {@link #setFailoverPolicy(FailoverPolicy)}. */
-    private FailoverPolicy failoverPolicy;
+    /** See {@link #setRetryPolicy(GenericRetryConfigurer)}. */
+    private GenericRetryConfigurer retryPolicy;
 
     /** See {@link #setLoadBalancer(LoadBalancer)}. */
     private LoadBalancer<T> loadBalancer;
@@ -92,6 +99,9 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
 
     /** See {@link #setLogCategory(String)}. */
     private String logCategory;
+
+    /** See {@link #setWarnOnRetry(int)}. */
+    private int warnOnRetry = -1;
 
     /**
      * Unsafe default constructor that should be used only for reflections-based instantiation by IoC frameworks. For programmatic
@@ -455,36 +465,42 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
     }
 
     /**
-     * Returns the default failover policy that should be used by the channel (see {@link #setFailoverPolicy(FailoverPolicy)}).
+     * Returns the generic retry policy to be applied to all messaging operations of this channel.
      *
-     * @return Default failover policy of this channel.
+     * @return Generic retry policy to be applied to all messaging operations of this channel.
      */
-    public FailoverPolicy getFailoverPolicy() {
-        return failoverPolicy;
+    public GenericRetryConfigurer getRetryPolicy() {
+        return retryPolicy;
     }
 
     /**
-     * Sets the default failover policy that should be used by the {@link MessagingChannel}.
+     * Sets the generic retry policy to be applied to all messaging operations of this channel.
      *
      * <p>
-     * Failover policy can be overridden dynamically via {@link MessagingChannel#withFailover(FailoverPolicy)} method.
+     * This policy can be overridden for each individual operation via the following methods:
      * </p>
+     * <ul>
+     * <li>{@link Request#withRetry(RequestRetryConfigurer)}</li>
+     * <li>{@link Send#withRetry(SendRetryConfigurer)}</li>
+     * <li>{@link Broadcast#withRetry(BroadcastRetryConfigurer)}</li>
+     * <li>{@link Aggregate#withRetry(AggregateRetryConfigurer)}</li>
+     * </ul>
      *
-     * @param failoverPolicy Default failover policy.
+     * @param retryPolicy Retry policy.
      */
-    public void setFailoverPolicy(FailoverPolicy failoverPolicy) {
-        this.failoverPolicy = failoverPolicy;
+    public void setRetryPolicy(GenericRetryConfigurer retryPolicy) {
+        this.retryPolicy = retryPolicy;
     }
 
     /**
-     * Fluent-style version of {@link #setFailoverPolicy(FailoverPolicy)}.
+     * Fluent-style version of {@link #setRetryPolicy(GenericRetryConfigurer)}.
      *
-     * @param failoverPolicy Default failover policy.
+     * @param retryPolicy Retry policy.
      *
      * @return This instance.
      */
-    public MessagingChannelConfig<T> withFailoverPolicy(FailoverPolicy failoverPolicy) {
-        setFailoverPolicy(failoverPolicy);
+    public MessagingChannelConfig<T> withRetryPolicy(GenericRetryConfigurer retryPolicy) {
+        setRetryPolicy(retryPolicy);
 
         return this;
     }
@@ -574,12 +590,11 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
     }
 
     /**
-     * Sets the timeout in milliseconds that should be applied to all messaging operations within this channel.
+     * Sets the timeout in milliseconds that should be applied to all messaging operations of this channel.
      *
      * <p>
-     * If particular messaging operation (f.e. {@link MessagingChannel#request(Object) request(...)}
-     * or {@link MessagingChannel#newSend(Object) send(...)}) can't be completed within the specified timeout then such operation will fail
-     * with {@link MessageTimeoutException}.
+     * If particular messaging operation can't be completed within the specified timeout then such operation will fail with
+     * {@link MessageTimeoutException}.
      * </p>
      *
      * <p>
@@ -587,13 +602,7 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
      * of this parameter is 0.
      * </p>
      *
-     * <p>
-     * <b>Note:</b> it is possible to dynamically specify timeout via {@link MessagingChannel#withTimeout(long, TimeUnit)}.
-     * </p>
-     *
      * @param messagingTimeout Timeout in milliseconds.
-     *
-     * @see MessagingChannel#withTimeout(long, TimeUnit)
      */
     public void setMessagingTimeout(long messagingTimeout) {
         this.messagingTimeout = messagingTimeout;
@@ -639,6 +648,47 @@ public class MessagingChannelConfig<T> extends MessagingConfigBase<MessagingChan
      */
     public MessagingChannelConfig<T> withLogCategory(String logCategory) {
         setLogCategory(logCategory);
+
+        return this;
+    }
+
+    /**
+     * Returns the amount of retry attempts to skip before logging a warn message (see {@link #setWarnOnRetry(int)}).
+     *
+     * @return Amount of retry attempts to skip before logging a warn message.
+     */
+    public int getWarnOnRetry() {
+        return warnOnRetry;
+    }
+
+    /**
+     * Sets the amount of retry attempts to skip before logging a warn message.
+     *
+     * <ul>
+     * <li>0 - log every attempt</li>
+     * <li>positive N - log every N'th attempt</li>
+     * <li>negative - do not log warning on retries</li>
+     * </ul>
+     *
+     * <p>
+     * By default this property is set to a negative value (i.e. retry warnings are disabled).
+     * </p>
+     *
+     * @param warnOnRetry How many attempts to skip before logging a warn message.
+     */
+    public void setWarnOnRetry(int warnOnRetry) {
+        this.warnOnRetry = warnOnRetry;
+    }
+
+    /**
+     * Fluent-style version of {@link #setWarnOnRetry(int)}.
+     *
+     * @param warnOnRetry How many attempts to skip before logging a warn message.
+     *
+     * @return This instance.
+     */
+    public MessagingChannelConfig<T> withWarnOnRetry(int warnOnRetry) {
+        setWarnOnRetry(warnOnRetry);
 
         return this;
     }

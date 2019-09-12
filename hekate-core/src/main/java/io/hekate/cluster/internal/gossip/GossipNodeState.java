@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -49,6 +49,24 @@ public class GossipNodeState extends GossipNodeInfoBase implements Comparable<Go
         this.status = status;
         this.version = version;
         this.suspected = suspected;
+    }
+
+    @Override
+    public ClusterNodeId id() {
+        return node.id();
+    }
+
+    @Override
+    public long version() {
+        return version;
+    }
+
+    public ClusterNode node() {
+        return node;
+    }
+
+    public ClusterAddress address() {
+        return node.address();
     }
 
     public GossipNodeState merge(GossipNodeState other) {
@@ -121,11 +139,11 @@ public class GossipNodeState extends GossipNodeInfoBase implements Comparable<Go
         return new GossipNodeState(node, status, version + 1, unmodifiableSet(suspected));
     }
 
-    public GossipNodeState unsuspected(ClusterNodeId removed) {
-        return unsuspected(Collections.singleton(removed));
+    public GossipNodeState unsuspect(ClusterNodeId removed) {
+        return unsuspect(Collections.singleton(removed));
     }
 
-    public GossipNodeState unsuspected(Set<ClusterNodeId> unsuspected) {
+    public GossipNodeState unsuspect(Set<ClusterNodeId> unsuspected) {
         Set<ClusterNodeId> newSuspected = null;
 
         for (ClusterNodeId removedId : unsuspected) {
@@ -149,24 +167,6 @@ public class GossipNodeState extends GossipNodeInfoBase implements Comparable<Go
 
     public boolean hasSuspected() {
         return !suspected.isEmpty();
-    }
-
-    @Override
-    public ClusterNodeId id() {
-        return node.id();
-    }
-
-    public ClusterNode node() {
-        return node;
-    }
-
-    public ClusterAddress address() {
-        return node.address();
-    }
-
-    @Override
-    public long version() {
-        return version;
     }
 
     @Override

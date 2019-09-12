@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,8 +18,7 @@ package io.hekate.rpc;
 
 import io.hekate.cluster.ClusterFilterSupport;
 import io.hekate.cluster.ClusterView;
-import io.hekate.failover.FailoverPolicy;
-import io.hekate.failover.FailoverPolicyBuilder;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.partition.PartitionMapper;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -70,40 +69,7 @@ public interface RpcClientBuilder<T> extends ClusterFilterSupport<RpcClientBuild
     String tag();
 
     /**
-     * Returns the failover policy (see {@link #withFailover(FailoverPolicy)}).
-     *
-     * @return Failover policy.
-     */
-    FailoverPolicy failover();
-
-    /**
-     * Returns a new builder that will apply the specifier failover policy to all of the clients that it will produce.
-     *
-     * <p>
-     * Alternatively, the failover policy can be pre-configured via {@link RpcClientConfig#setFailover(FailoverPolicy)} method.
-     * </p>
-     *
-     * @param policy Failover policy.
-     *
-     * @return New builder that will use the specified failover policy and will inherit all other options from this builder.
-     */
-    RpcClientBuilder<T> withFailover(FailoverPolicy policy);
-
-    /**
-     * Returns a new builder that will apply the specifier failover policy to all of the clients that it will produce.
-     *
-     * <p>
-     * Alternatively, the failover policy can be pre-configured via {@link RpcClientConfig#setFailover(FailoverPolicy)} method.
-     * </p>
-     *
-     * @param policy Failover policy builder.
-     *
-     * @return New builder that will use the specified failover policy and will inherit all other options from this builder.
-     */
-    RpcClientBuilder<T> withFailover(FailoverPolicyBuilder policy);
-
-    /**
-     * Returns a new builder that will apply the specifier load balancer to all of the clients that it will produce.
+     * Returns a new builder that will apply the specifier load balancer to all clients that it produces.
      *
      * <p>
      * Alternatively, the load balancer can be pre-configured via {@link RpcClientConfig#setLoadBalancer(RpcLoadBalancer)} method.
@@ -116,6 +82,21 @@ public interface RpcClientBuilder<T> extends ClusterFilterSupport<RpcClientBuild
     RpcClientBuilder<T> withLoadBalancer(RpcLoadBalancer balancer);
 
     /**
+     * Returns a new builder that will apply the specifier retry policy to all clients that it produces.
+     *
+     * <p>
+     * <b>Notice:</b>
+     * The specified retry policy will be applied only to those RPC methods that are explicitly marked with the {@link RpcRetry} annotation.
+     * Options that are defined in the annotation's attributes have higher priority over this policy.
+     * </p>
+     *
+     * @param retry Retry policy.
+     *
+     * @return New builder that will use the specified retry policy and will inherit all other options from this builder.
+     */
+    RpcClientBuilder<T> withRetryPolicy(GenericRetryConfigurer retry);
+
+    /**
      * Returns the timeout value in milliseconds (see {@link #withTimeout(long, TimeUnit)}).
      *
      * @return Timeout in milliseconds or 0, if timeout was not specified.
@@ -123,7 +104,7 @@ public interface RpcClientBuilder<T> extends ClusterFilterSupport<RpcClientBuild
     long timeout();
 
     /**
-     * Returns a new builder that will apply the specifier timeout to all of the clients that it will produce.
+     * Returns a new builder that will apply the specifier timeout to all clients that it produces.
      *
      * <p>
      * If the RPC operation can not be completed at the specified timeout then such operation will end up an error.
@@ -153,7 +134,7 @@ public interface RpcClientBuilder<T> extends ClusterFilterSupport<RpcClientBuild
     ClusterView cluster();
 
     /**
-     * Returns a new builder that will use the specified cluster view to all of the clients that it will produce.
+     * Returns a new builder that will use the specified cluster view with all clients that it produces.
      *
      * @param cluster Cluster view.
      *
@@ -173,7 +154,7 @@ public interface RpcClientBuilder<T> extends ClusterFilterSupport<RpcClientBuild
     PartitionMapper partitions();
 
     /**
-     * Returns a new builder that will apply the specified partitions mapping options to all of the clients that it will produce.
+     * Returns a new builder that will apply the specified partitions mapping options to all clients that it produces.
      *
      * @param partitions Total amount of partitions that should be managed by the RPC client's partition mapper.
      * @param backupNodes Amount of backup nodes that should be assigned to each partition by the the RPC client's partition mapper.

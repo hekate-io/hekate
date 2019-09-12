@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -22,7 +22,7 @@ import io.hekate.messaging.loadbalance.LoadBalancerContext;
 
 public class SomeLoadBalancer implements LoadBalancer<Object> {
     @Override
-    public ClusterNodeId route(Object message, LoadBalancerContext ctx) {
+    public ClusterNodeId route(Object msg, LoadBalancerContext ctx) {
         return ctx.topology().random().id();
     }
 }

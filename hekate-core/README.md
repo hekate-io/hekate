@@ -2,10 +2,10 @@
 
 This module represents the core functionality of [Hekate.io](https://github.com/hekate-io/hekate) library.
 
- ```
+ ```xml
  <dependency>
      <groupId>io.hekate</groupId>
      <artifactId>hekate-core</artifactId>
-     <version>3.0.0-SNAPSHOT</version>
+     <version>3.6.0-SNAPSHOT</version>
  </dependency>
  ```

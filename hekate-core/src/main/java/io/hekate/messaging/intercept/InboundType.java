@@ -1,7 +1,7 @@
 package io.hekate.messaging.intercept;
 
 import io.hekate.messaging.Message;
-import io.hekate.messaging.unicast.SendCallback;
+import io.hekate.messaging.operation.SendCallback;
 
 /**
  * Type of an inbound message.

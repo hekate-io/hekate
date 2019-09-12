@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -23,6 +23,8 @@ import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.jmx.JmxSupport;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.net.InetAddress;
@@ -51,7 +53,7 @@ import org.slf4j.LoggerFactory;
  * @see ClusterServiceFactory#setSeedNodeProvider(SeedNodeProvider)
  * @see SeedNodeProvider
  */
-public class JdbcSeedNodeProvider implements SeedNodeProvider, JmxSupport<JdbcSeedNodeProviderJmx> {
+public class JdbcSeedNodeProvider implements SeedNodeProvider, JmxSupport<JdbcSeedNodeProviderJmx>, ConfigReportSupport {
     private static final Logger log = LoggerFactory.getLogger(JdbcSeedNodeProvider.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -99,6 +101,16 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider, JmxSupport<JdbcSe
         selSql = "SELECT " + host + ", " + port + " FROM " + table + " WHERE " + cluster + " = ?";
         delSql = "DELETE FROM " + table + " WHERE " + host + " = ? AND " + port + " = ? AND " + cluster + " = ?";
         insSql = "INSERT INTO " + table + " (" + host + ", " + port + ", " + cluster + ") VALUES (?, ?, ?)";
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("jdbc", r -> {
+            r.value("datasource", ds);
+            r.value("insert-sql", insSql);
+            r.value("cleanup-interval", cleanupInterval);
+            r.value("query-timeout", queryTimeout);
+        });
     }
 
     @Override

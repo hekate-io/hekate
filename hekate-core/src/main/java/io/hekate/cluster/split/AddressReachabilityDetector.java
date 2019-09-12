@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -20,6 +20,8 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ConfigCheck;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.util.format.ToString;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -44,7 +46,7 @@ import org.slf4j.LoggerFactory;
  *
  * @see ClusterServiceFactory#setSplitBrainDetector(SplitBrainDetector)
  */
-public class AddressReachabilityDetector implements SplitBrainDetector {
+public class AddressReachabilityDetector implements SplitBrainDetector, ConfigReportSupport {
     /**
      * Default value (={@value}) in milliseconds for the {@code timeout} parameter of {@link #AddressReachabilityDetector(String, int)}.
      */
@@ -91,6 +93,32 @@ public class AddressReachabilityDetector implements SplitBrainDetector {
 
         this.address = address;
         this.timeout = timeout;
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("address-reachability", r -> {
+            r.value("address", address);
+            r.value("timeout", timeout);
+        });
+    }
+
+    /**
+     * Address to check.
+     *
+     * @return Address to check.
+     */
+    public InetSocketAddress address() {
+        return address;
+    }
+
+    /**
+     * Check timeout in milliseconds.
+     *
+     * @return Timeout in milliseconds.
+     */
+    public int timeout() {
+        return timeout;
     }
 
     @Override

@@ -78,7 +78,6 @@
     <option name="onlyWarnOnBaseMethods" value="true" />
     <option name="questionString" value="is,can,has,should,could,will,shall,check,contains,equals,add,put,remove,startsWith,endsWith,delete" />
   </inspection_tool>
-  <inspection_tool class="CStyleArrayDeclaration" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="CallToStringConcatCanBeReplacedByOperator" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="CastConflictsWithInstanceof" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="CatchMayIgnoreExceptionMerged" />
@@ -308,10 +307,11 @@
       </value>
     </option>
     <option name="IGNORE_DEPRECATED" value="false" />
-    <option name="IGNORE_JAVADOC_PERIOD" value="true" />
+    <option name="IGNORE_JAVADOC_PERIOD" value="false" />
     <option name="IGNORE_DUPLICATED_THROWS" value="false" />
     <option name="IGNORE_POINT_TO_ITSELF" value="false" />
     <option name="myAdditionalJavadocTags" value="gwt.typeArgs" />
+    <IGNORE_DUPLICATED_THROWS_TAGS value="false" />
   </inspection_tool>
   <inspection_tool class="JavaLangImport" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="JpaQlInspection" enabled="true" level="WARNING" enabled_by_default="true" />
@@ -458,7 +458,6 @@
     <option name="m_minLength" value="1" />
     <option name="m_maxLength" value="48" />
   </inspection_tool>
-  <inspection_tool class="PlaceholderCountMatchesArgumentCount" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="PointlessIndexOfComparison" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="ProblematicWhitespace" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="PropertyValueSetToItself" enabled="true" level="WARNING" enabled_by_default="true" />
@@ -479,7 +478,6 @@
     <option name="ignoreSerializable" value="false" />
     <option name="ignoreCloneable" value="false" />
   </inspection_tool>
-  <inspection_tool class="RedundantSuppression" enabled="true" level="WARNING" enabled_by_default="true" />
   <inspection_tool class="RedundantThrows" enabled="false" level="WARNING" enabled_by_default="false" />
   <inspection_tool class="ReplaceAssignmentWithOperatorAssignment" enabled="true" level="WARNING" enabled_by_default="true">
     <option name="ignoreLazyOperators" value="true" />

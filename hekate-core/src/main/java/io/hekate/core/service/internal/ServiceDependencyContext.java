@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -23,6 +23,7 @@ import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceDependencyException;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.HashSet;
 import java.util.Set;
 import org.slf4j.Logger;
@@ -78,6 +79,11 @@ class ServiceDependencyContext implements DependencyContext {
         }
 
         return null;
+    }
+
+    @Override
+    public MeterRegistry metrics() {
+        return manager.metrics();
     }
 
     @Override

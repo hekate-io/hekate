@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -22,6 +22,7 @@ import io.hekate.messaging.MessagingFuture;
 import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.loadbalance.LoadBalancers;
+import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.rpc.RpcAggregate;
 import io.hekate.rpc.RpcException;
 import io.hekate.rpc.RpcInterfaceInfo;
@@ -56,13 +57,26 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
     private final Function<List<RpcProtocol>, Object> aggregator;
 
-    public RpcSplitAggregateMethodClient(RpcInterfaceInfo<T> rpc, String tag, RpcMethodInfo method, MessagingChannel<RpcProtocol> channel) {
+    private final GenericRetryConfigurer retryPolicy;
+
+    private final long timeout;
+
+    public RpcSplitAggregateMethodClient(
+        RpcInterfaceInfo<T> rpc,
+        String tag,
+        RpcMethodInfo method,
+        MessagingChannel<RpcProtocol> channel,
+        GenericRetryConfigurer retryPolicy,
+        long timeout
+    ) {
         super(rpc, tag, method, channel);
 
         assert method.aggregate().isPresent() : "Not an aggregate method [rpc=" + rpc + ", method=" + method + ']';
         assert method.splitArg().isPresent() : "Split argument index is not defined.";
         assert method.splitArgType().isPresent() : "Split argument index is not defined.";
 
+        this.timeout = timeout;
+        this.retryPolicy = retryPolicy;
         this.splitArgIdx = method.splitArg().getAsInt();
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -191,13 +205,20 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
 
             // Process each part as a separate RPC request with a shared callback.
             for (Object part : parts) {
-                // Substitute original arguments with the part that should be submitted to the remote node.
+                // Replace the original argument with the part that should be sent to the remote node.
                 Object[] partArgs = substituteArgs(args, part);
 
                 // Submit RPC request.
                 RpcCall<T> call = new RpcCall<>(methodIdxKey(), rpc(), tag(), method(), partArgs, true /* <- Split. */);
 
-                roundRobin.newRequest(call).submit(aggrFuture /* <-- Future is a callback. */);
+                roundRobin.newRequest(call)
+                    .withTimeout(timeout, TimeUnit.MILLISECONDS)
+                    .withRetry(retry -> {
+                        if (retryPolicy != null) {
+                            retryPolicy.configure(retry);
+                        }
+                    })
+                    .submit(aggrFuture); // <- Future is a callback.
             }
 
             future = aggrFuture;
@@ -207,11 +228,7 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         if (method().isAsync()) {
             return future;
         } else {
-            if (channel().timeout() > 0) {
-                return future.get(channel().timeout(), TimeUnit.MILLISECONDS);
-            } else {
-                return future.get();
-            }
+            return future.get();
         }
     }
 

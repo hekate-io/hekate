@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -43,15 +43,13 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
 
     protected SeedNodeProviderMock seedNodes;
 
-    private List<HekateTestNode> allNodes;
+    private final List<HekateTestNode> allNodes = new CopyOnWriteArrayList<>();
 
     private boolean ignoreNodeFailures;
 
     @Before
     public void setUp() throws Exception {
         seedNodes = new SeedNodeProviderMock();
-
-        allNodes = new CopyOnWriteArrayList<>();
     }
 
     @After
@@ -62,13 +60,19 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
             }
         } finally {
             try {
+                boolean throttle = false;
+
                 for (HekateTestNode node : allNodes) {
                     try {
-                        node.leaveAsync().get(5, TimeUnit.SECONDS);
+                        node.leaveAsync().get(3, TimeUnit.SECONDS);
                     } catch (TimeoutException e) {
-                        say("Failed to await for node termination: " + e);
+                        say("Node termination timed out : " + node.localNode());
 
-                        System.out.println(threadDump());
+                        if (!throttle) {
+                            throttle = true;
+
+                            System.out.println(threadDump());
+                        }
                     }
                 }
             } finally {

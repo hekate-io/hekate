@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -24,9 +24,14 @@ import io.hekate.core.internal.util.Murmur3;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
@@ -194,23 +199,39 @@ public final class RendezvousHashMapper implements PartitionMapper {
 
                     ClusterNode primary = hashes[0].node();
 
+                    // Find backup nodes.
+                    int maxBackups = Math.min(backupSize, hashes.length - 1);
+
                     List<ClusterNode> backup;
 
-                    // Find backup nodes.
-                    if (backupSize > 0) {
-                        int maxNodes = Math.min(backupSize, hashes.length - 1);
+                    if (maxBackups > 0) {
+                        backup = new ArrayList<>(maxBackups);
 
-                        if (maxNodes > 0) {
-                            backup = new ArrayList<>(maxNodes);
+                        // Try to find nodes that are on different hosts.
+                        Map<InetAddress, ClusterNode> differentHosts = new HashMap<>(maxBackups, 1.0f);
 
-                            for (int j = 1; j < maxNodes + 1; j++) {
-                                backup.add(hashes[j].node());
+                        for (int i = 1; i < hashes.length && differentHosts.size() < maxBackups; i++) {
+                            ClusterNode node = hashes[i].node();
+
+                            if (!primary.socket().getAddress().equals(node.socket().getAddress())) {
+                                differentHosts.putIfAbsent(node.socket().getAddress(), node);
                             }
-
-                            backup = unmodifiableList(backup);
-                        } else {
-                            backup = emptyList();
                         }
+
+                        backup.addAll(differentHosts.values());
+
+                        // If couldn't gather enough backup nodes then add whatever other nodes are available.
+                        if (backup.size() < maxBackups) {
+                            Set<ClusterNode> usedNodes = new HashSet<>(backup);
+
+                            for (int i = 1; backup.size() < maxBackups && i < hashes.length; i++) {
+                                if (!usedNodes.contains(hashes[i].node())) {
+                                    backup.add(hashes[i].node());
+                                }
+                            }
+                        }
+
+                        backup = unmodifiableList(backup);
                     } else {
                         backup = emptyList();
                     }

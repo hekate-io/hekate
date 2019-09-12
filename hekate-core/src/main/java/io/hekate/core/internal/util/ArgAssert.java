@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -47,7 +47,7 @@ public final class ArgAssert {
         check(condition, msg);
     }
 
-    public static void positive(int val, String argName) {
+    public static void positive(long val, String argName) {
         doCheck(val > 0, argName, " must be > 0.");
     }
 

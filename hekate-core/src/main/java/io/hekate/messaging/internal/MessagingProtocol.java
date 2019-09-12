@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -31,8 +31,8 @@ import io.hekate.messaging.intercept.OutboundType;
 import io.hekate.messaging.intercept.ServerInboundContext;
 import io.hekate.messaging.intercept.ServerReceiveContext;
 import io.hekate.messaging.intercept.ServerSendContext;
-import io.hekate.messaging.unicast.Response;
-import io.hekate.messaging.unicast.SendCallback;
+import io.hekate.messaging.operation.ResponsePart;
+import io.hekate.messaging.operation.SendCallback;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.HashMap;
@@ -148,12 +148,12 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public T get() {
+        public T payload() {
             return payload;
         }
 
         @Override
-        public <P extends T> P get(Class<P> type) {
+        public <P extends T> P payload(Class<P> type) {
             return type.cast(payload);
         }
 
@@ -364,12 +364,12 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public T get() {
+        public T payload() {
             return payload;
         }
 
         @Override
-        public <P extends T> P get(Class<P> type) {
+        public <P extends T> P payload(Class<P> type) {
             return type.cast(payload);
         }
 
@@ -449,7 +449,7 @@ abstract class MessagingProtocol {
 
         private void responded() {
             if (!MUST_REPLY.compareAndSet(this, 0, 1)) {
-                throw new IllegalStateException("Message already responded [message=" + get() + ']');
+                throw new IllegalStateException("Message already responded [message=" + payload() + ']');
             }
         }
     }
@@ -654,7 +654,7 @@ abstract class MessagingProtocol {
         }
     }
 
-    static class ResponseChunk<T> extends MessagingProtocol implements Response<T>, ServerSendContext<T>, ClientReceiveContext<T> {
+    static class ResponseChunk<T> extends MessagingProtocol implements ResponsePart<T>, ServerSendContext<T>, ClientReceiveContext<T> {
         private final int requestId;
 
         private T payload;
@@ -701,12 +701,12 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public T get() {
+        public T payload() {
             return payload;
         }
 
         @Override
-        public <P extends T> P get(Class<P> type) {
+        public <P extends T> P payload(Class<P> type) {
             return type.cast(payload);
         }
 
@@ -728,8 +728,8 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public boolean isPartial() {
-            return true;
+        public boolean isLastPart() {
+            return false;
         }
 
         @Override
@@ -744,7 +744,7 @@ abstract class MessagingProtocol {
 
         @Override
         public T request() {
-            return clientCtx.get();
+            return clientCtx.payload();
         }
 
         @Override
@@ -792,8 +792,8 @@ abstract class MessagingProtocol {
         }
 
         @Override
-        public boolean isPartial() {
-            return false;
+        public boolean isLastPart() {
+            return true;
         }
 
         @Override

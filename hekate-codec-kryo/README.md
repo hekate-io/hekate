@@ -3,10 +3,10 @@
 This module provides integration with [Kryo](https://github.com/EsotericSoftware/kryo) for data serialization in 
 [Hekate.io](https://github.com/hekate-io/hekate) library. 
  
- ```
+ ```xml
  <dependency>
      <groupId>io.hekate</groupId>
      <artifactId>hekate-codec-kryo</artifactId>
-     <version>3.0.0-SNAPSHOT</version>
+     <version>3.6.0-SNAPSHOT</version>
  </dependency>
  ```

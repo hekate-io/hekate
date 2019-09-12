@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -29,7 +29,7 @@ import io.hekate.messaging.MessagingService;
  * <p>
  * Implementations of this interface are responsible for unicast message routing within a {@link MessagingChannel}. Channel calls the
  * {@link #route(Object, LoadBalancerContext)} method of this interface every time when it is going to perform a unicast operation
- * (f.e. {@link MessagingChannel#newSend(Object) send(...)} or {@link MessagingChannel#request(Object) request(...)}).
+ * (f.e. {@link MessagingChannel#newSend(Object) send(...)} or {@link MessagingChannel#newRequest(Object) request(...)}).
  * Implementations of this method must select one of the cluster nodes from the provided context. The selected cluster node will be used by
  * the channel as a messaging operation target.
  * </p>
@@ -61,12 +61,12 @@ public interface LoadBalancer<T> {
      * fail with {@link LoadBalancerException}.
      * </p>
      *
-     * @param message Message.
+     * @param msg Message.
      * @param ctx Load balancer context.
      *
      * @return Node that should be used for the messaging operation.
      *
      * @throws LoadBalancerException if failed to perform load balancing.
      */
-    ClusterNodeId route(T message, LoadBalancerContext ctx) throws LoadBalancerException;
+    ClusterNodeId route(T msg, LoadBalancerContext ctx) throws LoadBalancerException;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -338,7 +338,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                     Thread.currentThread().interrupt();
 
                     try {
-                        lock.tryLock(3, TimeUnit.SECONDS);
+                        lock.tryLock(AWAIT_TIMEOUT, TimeUnit.SECONDS);
 
                         // Make sure that lock is released even if test fails.
                         lock.unlock();
@@ -360,7 +360,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                     checkCanLockAsync(lock);
 
                     // Check that lock can be acquired if interrupted flag is reset.
-                    assertTrue(lock.tryLock(3, TimeUnit.SECONDS));
+                    assertTrue(lock.tryLock(AWAIT_TIMEOUT, TimeUnit.SECONDS));
 
                     lock.unlock();
                 } finally {
@@ -495,7 +495,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                 return null;
             });
 
-            assertTrue(lock.tryLock(3, TimeUnit.SECONDS));
+            assertTrue(lock.tryLock(AWAIT_TIMEOUT, TimeUnit.SECONDS));
 
             lock.unlock();
 
@@ -547,7 +547,11 @@ public class DistributedLockTest extends LockServiceTestBase {
                 Future<Object> async = runAsync(() -> {
                     awaitForQueuedLock(lockName);
 
+                    say("Terminating %s...", managerNode);
+
                     managerNode.terminate();
+
+                    say("Terminated manager.");
 
                     return null;
                 });
@@ -580,7 +584,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                     return null;
                 });
 
-                assertTrue(lock.tryLock(3, TimeUnit.SECONDS));
+                assertTrue(lock.tryLock(AWAIT_TIMEOUT, TimeUnit.SECONDS));
 
                 lock.unlock();
 
@@ -607,7 +611,7 @@ public class DistributedLockTest extends LockServiceTestBase {
                 Future<Object> async = runAsync(() -> {
                     awaitForQueuedLock(lockName);
 
-                    say("Terminating...");
+                    say("Terminating %s...", managerNode);
 
                     managerNode.terminate();
 
@@ -618,7 +622,7 @@ public class DistributedLockTest extends LockServiceTestBase {
 
                 say("Locking....");
 
-                assertTrue(lock.tryLock(3, TimeUnit.SECONDS));
+                assertTrue(lock.tryLock(AWAIT_TIMEOUT, TimeUnit.SECONDS));
 
                 say("Locked.");
 

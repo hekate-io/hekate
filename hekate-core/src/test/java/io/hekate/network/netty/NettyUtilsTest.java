@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -53,7 +53,7 @@ public class NettyUtilsTest extends HekateTestBase {
 
         NettyUtils.shutdown(mock);
 
-        verify(mock).shutdownGracefully(eq(NettyUtils.GRACEFUL_SHUTDOWN_PERIOD), eq(Long.MAX_VALUE), same(TimeUnit.MILLISECONDS));
+        verify(mock).shutdownGracefully(eq(0L), eq(Long.MAX_VALUE), same(TimeUnit.MILLISECONDS));
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,13 +16,11 @@
 
 package io.hekate.messaging;
 
-import java.util.concurrent.TimeUnit;
-
 /**
  * Signals that messaging operation timed out.
  *
  * @see MessagingChannelConfig#setMessagingTimeout(long)
- * @see MessagingChannel#withTimeout(long, TimeUnit)
+ * @see MessagingChannelConfig#withMessagingTimeout(long)
  */
 public class MessageTimeoutException extends MessagingException {
     private static final long serialVersionUID = 1;

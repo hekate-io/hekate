@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -22,8 +22,8 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.failover.FailureInfo;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
+import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.util.format.ToString;
 import java.util.Iterator;
@@ -42,14 +42,14 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
 
     private final ClusterTopology topology;
 
-    private final Optional<FailureInfo> failure;
+    private final Optional<FailedAttempt> failure;
 
     public DefaultLoadBalancerContext(
         int affinity,
         Object affinityKey,
         ClusterTopology topology,
         PartitionMapper partitions,
-        Optional<FailureInfo> failure
+        Optional<FailedAttempt> failure
     ) {
         this.affinity = affinity;
         this.affinityKey = affinityKey;
@@ -84,7 +84,7 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
     }
 
     @Override
-    public Optional<FailureInfo> failure() {
+    public Optional<FailedAttempt> failure() {
         return failure;
     }
 

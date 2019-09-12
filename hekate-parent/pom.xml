@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Copyright 2018 The Hekate Project
+  Copyright 2019 The Hekate Project
 
   The Hekate Project licenses this file to you under the Apache License,
   version 2.0 (the "License"); you may not use this file except in compliance
@@ -21,7 +21,7 @@
     <groupId>io.hekate</groupId>
     <artifactId>hekate-parent</artifactId>
     <packaging>pom</packaging>
-    <version>3.0.0-SNAPSHOT</version>
+    <version>3.6.0-SNAPSHOT</version>
 
     <name>Hekate.io</name>
     <description>Java library for cluster communications and computing.</description>
@@ -45,9 +45,9 @@
             <id>hekate.io</id>
             <name>The Hekate Project Contributors</name>
             <email>hekate.dev@gmail.com</email>
-            <url>http://hekate.io/</url>
+            <url>https://hekate.io/</url>
             <organization>The Hekate Project</organization>
-            <organizationUrl>http://hekate.io/</organizationUrl>
+            <organizationUrl>https://hekate.io/</organizationUrl>
         </developer>
     </developers>
 
@@ -61,15 +61,16 @@
         <java.target>1.8</java.target>
 
         <!-- Production dependencies.-->
-        <netty.tcnative.version>2.0.12.Final</netty.tcnative.version>
+        <spring.boot.version>2.1.7.RELEASE</spring.boot.version>
         <kryo.version>4.0.2</kryo.version>
-        <kryo.serializers.version>0.42</kryo.serializers.version>
+        <kryo.serializers.version>0.43</kryo.serializers.version>
         <fst.version>2.57</fst.version>
-        <spring.boot.version>2.0.5.RELEASE</spring.boot.version>
-        <zookeeper.curator.version>2.12.0</zookeeper.curator.version>
-        <kubernetes.client.version>4.0.3</kubernetes.client.version>
-        <jclouds.version>2.1.1</jclouds.version>
-        <aws.sdk.version>1.11.380</aws.sdk.version>
+        <zookeeper.curator.version>2.13.0</zookeeper.curator.version>
+        <jetcd.version>0.3.0</jetcd.version>
+        <consul.client.version>1.3.6</consul.client.version>
+        <kubernetes.client.version>4.3.0</kubernetes.client.version>
+        <jclouds.version>2.1.2</jclouds.version>
+        <aws.sdk.version>1.11.587</aws.sdk.version>
 
         <!-- Test dependencies.-->
         <junit.version>4.12</junit.version>
@@ -84,13 +85,13 @@
         <maven.git-commit-id.plugin.version>2.2.0</maven.git-commit-id.plugin.version>
         <maven.build.helper.plugin.version>3.0.0</maven.build.helper.plugin.version>
         <maven.surefire.plugin.version>2.22.0</maven.surefire.plugin.version>
-        <maven.jacoco.plugin.version>0.8.2</maven.jacoco.plugin.version>
+        <maven.jacoco.plugin.version>0.8.3</maven.jacoco.plugin.version>
         <maven.enforcer.plugin.version>1.4.1</maven.enforcer.plugin.version>
         <maven.source.plugin.version>3.0.1</maven.source.plugin.version>
         <maven.deploy.plugin.version>2.8.2</maven.deploy.plugin.version>
-        <maven.spotbugs.plugin.version>3.1.6</maven.spotbugs.plugin.version>
+        <maven.spotbugs.plugin.version>3.1.11</maven.spotbugs.plugin.version>
         <maven.checkstyle.plugin.version>3.0.0</maven.checkstyle.plugin.version>
-        <maven.checkstyle.plugin.lib.version>8.10.1</maven.checkstyle.plugin.lib.version>
+        <maven.checkstyle.plugin.lib.version>8.18</maven.checkstyle.plugin.lib.version>
         <maven.clean.plugin.version>3.0.0</maven.clean.plugin.version>
         <maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
         <maven.nexus.staging.plugin.version>1.6.8</maven.nexus.staging.plugin.version>
@@ -108,23 +109,10 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- Networking. -->
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-tcnative-boringssl-static</artifactId>
-                <version>${netty.tcnative.version}</version>
-            </dependency>
-
             <!-- Serialization. -->
             <dependency>
                 <groupId>com.esotericsoftware</groupId>
                 <artifactId>kryo-shaded</artifactId>
-                <version>${kryo.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.esotericsoftware</groupId>
-                <artifactId>kryo</artifactId>
                 <version>${kryo.version}</version>
             </dependency>
 
@@ -209,6 +197,20 @@
                 <version>${zookeeper.curator.version}</version>
             </dependency>
 
+            <!-- Etcd. -->
+            <dependency>
+                <groupId>io.etcd</groupId>
+                <artifactId>jetcd-core</artifactId>
+                <version>${jetcd.version}</version>
+            </dependency>
+
+            <!-- Consul. -->
+            <dependency>
+                <groupId>com.orbitz.consul</groupId>
+                <artifactId>consul-client</artifactId>
+                <version>${consul.client.version}</version>
+            </dependency>
+
             <!-- Kubernetes. -->
             <dependency>
                 <groupId>io.fabric8</groupId>
@@ -236,21 +238,10 @@
             </dependency>
 
             <!-- Enforce versions of conflicting dependencies. -->
-            <!--
-                TODO: JClouds related issues for GSON version:
-                      - https://issues.apache.org/jira/browse/JCLOUDS-1166
-                      - https://issues.apache.org/jira/browse/JCLOUDS-1160
-            -->
-            <dependency>
-                <groupId>com.google.code.gson</groupId>
-                <artifactId>gson</artifactId>
-                <version>2.6.2</version>
-            </dependency>
-
             <dependency>
                 <groupId>org.objenesis</groupId>
                 <artifactId>objenesis</artifactId>
-                <version>2.5.1</version>
+                <version>2.6</version>
             </dependency>
 
             <dependency>
@@ -262,25 +253,36 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>18.0</version>
+                <version>27.0.1-jre</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>2.1.2</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>3.0.2</version>
             </dependency>
 
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
-                <version>3.11.0</version>
+                <version>3.12.1</version>
             </dependency>
 
+            <!--
+                TODO: JClouds related issues for GSON version:
+                      - https://issues.apache.org/jira/browse/JCLOUDS-1166
+                      - https://issues.apache.org/jira/browse/JCLOUDS-1160
+            -->
             <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>logging-interceptor</artifactId>
-                <version>3.11.0</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.squareup.okio</groupId>
-                <artifactId>okio</artifactId>
-                <version>1.14.0</version>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>2.6.2</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -672,7 +674,7 @@
                         </group>
                         <group>
                             <title>Common Helpers and Utilities</title>
-                            <packages>io.hekate.failover*:io.hekate.partition*:io.hekate.util*</packages>
+                            <packages>io.hekate.partition*:io.hekate.util*</packages>
                         </group>
                         <group>
                             <title>Command line runner</title>

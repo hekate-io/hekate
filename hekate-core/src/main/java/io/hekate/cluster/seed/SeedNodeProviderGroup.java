@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -21,6 +21,8 @@ import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.jmx.JmxSupport;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -56,7 +58,7 @@ import static java.util.stream.Collectors.toList;
  * @see SeedNodeProviderGroupPolicy
  * @see SeedNodeProviderGroupConfig
  */
-public class SeedNodeProviderGroup implements SeedNodeProvider, JmxSupport<Collection<? extends SeedNodeProvider>> {
+public class SeedNodeProviderGroup implements SeedNodeProvider, JmxSupport<Collection<? extends SeedNodeProvider>>, ConfigReportSupport {
     /** See {@link #withPolicy(String, List, SeedNodeProviderTask)}. */
     private interface SeedNodeProviderTask {
         void execute(SeedNodeProvider provider) throws HekateException;
@@ -88,6 +90,19 @@ public class SeedNodeProviderGroup implements SeedNodeProvider, JmxSupport<Colle
 
         check.notNull(policy, "policy");
         check.isFalse(allProviders.isEmpty(), "providers can't be empty.");
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("group", r -> {
+            r.value("policy", policy);
+
+            r.section("providers", pr ->
+                allProviders.forEach(p ->
+                    pr.value("provider", p)
+                )
+            );
+        });
     }
 
     /**
@@ -238,7 +253,7 @@ public class SeedNodeProviderGroup implements SeedNodeProvider, JmxSupport<Colle
                     task.execute(provider);
 
                     success++;
-                } catch (HekateException e) {
+                } catch (HekateException | RuntimeException e) {
                     if (policy == SeedNodeProviderGroupPolicy.FAIL_ON_FIRST_ERROR) {
                         throw e;
                     } else {

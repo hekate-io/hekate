@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -24,6 +24,8 @@ import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxServiceException;
 import io.hekate.core.jmx.JmxServiceFactory;
 import io.hekate.core.jmx.JmxSupport;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.core.service.InitializationContext;
 import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.TerminatingService;
@@ -49,7 +51,7 @@ import org.slf4j.LoggerFactory;
 import static io.hekate.core.jmx.internal.JmxUtils.jmxName;
 import static java.util.stream.Collectors.toList;
 
-public class DefaultJmxService implements JmxService, InitializingService, TerminatingService {
+public class DefaultJmxService implements JmxService, InitializingService, TerminatingService, ConfigReportSupport {
     private static final Logger log = LoggerFactory.getLogger(DefaultJmxService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -79,24 +81,25 @@ public class DefaultJmxService implements JmxService, InitializingService, Termi
 
     @Override
     public void initialize(InitializationContext ctx) throws HekateException {
-        guard.lockWrite();
-
-        try {
+        guard.withWriteLock(() -> {
             guard.becomeInitialized();
 
             if (DEBUG) {
                 log.debug("Initialized.");
             }
-        } finally {
-            guard.unlockWrite();
-        }
+        });
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("jmx", jmx ->
+            jmx.value("domain", domain)
+        );
     }
 
     @Override
     public void preTerminate() throws HekateException {
-        guard.lockWrite();
-
-        try {
+        guard.withWriteLock(() -> {
             if (guard.becomeTerminated()) {
                 if (DEBUG) {
                     log.debug("Terminating...");
@@ -122,9 +125,7 @@ public class DefaultJmxService implements JmxService, InitializingService, Termi
                     log.debug("Terminated.");
                 }
             }
-        } finally {
-            guard.unlockWrite();
-        }
+        });
     }
 
     @Override
@@ -218,33 +219,41 @@ public class DefaultJmxService implements JmxService, InitializingService, Termi
                     Class<?> face = faces.get(0);
                     ObjectName name = nameFor(face, nameAttribute);
 
-                    if (DEBUG) {
-                        log.debug("Registering JMX bean [name={}]", name);
+                    if (server.isRegistered(name)) {
+                        if (DEBUG) {
+                            log.debug("Skipped registration of JMX bean (object name is already in use) [name={}]", name);
+                        }
+
+                        return Optional.empty();
+                    } else {
+                        if (DEBUG) {
+                            log.debug("Registering JMX bean [name={}]", name);
+                        }
+
+                        JmxBeanHandler jmxHandler;
+
+                        try {
+                            jmxHandler = new JmxBeanHandler(realMxBean, face, true);
+                        } catch (IllegalArgumentException err) {
+                            // MXBean introspection failure.
+                            String errMsg = String.format("Failed to register JMX bean [name=%s, type=%s]", name, face);
+
+                            throw new JmxServiceException(errMsg, err.getCause() != null ? err.getCause() : err);
+                        }
+
+                        try {
+                            server.registerMBean(jmxHandler, name);
+                        } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException err) {
+                            String errMsg = String.format("Failed to register JMX bean [name=%s, type=%s]", name, face);
+
+                            throw new JmxServiceException(errMsg, err);
+                        }
+
+                        // Remember the name so that we could unregister this bean during the termination of this service.
+                        names.add(name);
+
+                        return Optional.of(name);
                     }
-
-                    JmxBeanHandler jmxHandler;
-
-                    try {
-                        jmxHandler = new JmxBeanHandler(realMxBean, face, true);
-                    } catch (IllegalArgumentException err) {
-                        // MXBean introspection failure.
-                        String errMsg = String.format("Failed to register JMX bean [name=%s, type=%s]", name, face);
-
-                        throw new JmxServiceException(errMsg, err.getCause() != null ? err.getCause() : err);
-                    }
-
-                    try {
-                        server.registerMBean(jmxHandler, name);
-                    } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException err) {
-                        String errMsg = String.format("Failed to register JMX bean [name=%s, type=%s]", name, face);
-
-                        throw new JmxServiceException(errMsg, err);
-                    }
-
-                    // Remember the name so that we could unregister this bean during the termination of this service.
-                    names.add(name);
-
-                    return Optional.of(name);
                 }
             } finally {
                 guard.unlockWrite();

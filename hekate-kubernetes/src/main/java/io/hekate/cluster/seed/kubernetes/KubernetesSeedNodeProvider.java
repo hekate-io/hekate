@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -28,6 +28,8 @@ import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
+import io.hekate.core.report.ConfigReportSupport;
+import io.hekate.core.report.ConfigReporter;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.net.InetSocketAddress;
@@ -84,7 +86,7 @@ import static java.util.Collections.unmodifiableSet;
  * @see ClusterServiceFactory#setSeedNodeProvider(SeedNodeProvider)
  * @see SeedNodeProvider
  */
-public class KubernetesSeedNodeProvider implements SeedNodeProvider {
+public class KubernetesSeedNodeProvider implements SeedNodeProvider, ConfigReportSupport {
     /** Logger. */
     private static final Logger log = LoggerFactory.getLogger(KubernetesSeedNodeProvider.class);
 
@@ -95,8 +97,17 @@ public class KubernetesSeedNodeProvider implements SeedNodeProvider {
     @ToStringIgnore
     private final Config config;
 
-    /** Name of a container's port to search for. */
+    /** See {@link KubernetesSeedNodeProviderConfig#setContainerPortName(String)}. */
     private final String containerPortName;
+
+    /** See {@link KubernetesSeedNodeProviderConfig#setMasterUrl(String)}. */
+    private final String masterUrl;
+
+    /** See {@link KubernetesSeedNodeProviderConfig#setNamespace(String)}. */
+    private final String namespace;
+
+    /** See {@link KubernetesSeedNodeProviderConfig#setTrustCertificates(Boolean)}. */
+    private final Boolean trustCertificates;
 
     /**
      * Constructs new instance.
@@ -107,16 +118,75 @@ public class KubernetesSeedNodeProvider implements SeedNodeProvider {
         ArgAssert.notNull(cfg, "Configuration");
 
         this.containerPortName = nullOrTrim(cfg.getContainerPortName());
+        masterUrl = cfg.getMasterUrl();
+        namespace = cfg.getNamespace();
+        trustCertificates = cfg.getTrustCertificates();
 
-        ConfigCheck.get(KubernetesSeedNodeProviderConfig.class).notEmpty(containerPortName, "container port name");
+        ConfigCheck check = ConfigCheck.get(KubernetesSeedNodeProviderConfig.class);
+
+        check.notEmpty(containerPortName, "container port name");
 
         ConfigBuilder builder = new ConfigBuilder();
 
-        Optional.ofNullable(nullOrTrim(cfg.getMasterUrl())).ifPresent(builder::withMasterUrl);
-        Optional.ofNullable(nullOrTrim(cfg.getNamespace())).ifPresent(builder::withNamespace);
-        Optional.ofNullable(cfg.getTrustCertificates()).ifPresent(builder::withTrustCerts);
+        Optional.ofNullable(nullOrTrim(masterUrl)).ifPresent(builder::withMasterUrl);
+        Optional.ofNullable(nullOrTrim(namespace)).ifPresent(builder::withNamespace);
+        Optional.ofNullable(trustCertificates).ifPresent(builder::withTrustCerts);
 
         this.config = builder.build();
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        report.section("kubernetes", r -> {
+            r.value("container-port-name", containerPortName);
+            r.value("master-url", masterUrl);
+            r.value("namespace", namespace);
+            r.value("trust-certificates", trustCertificates);
+        });
+    }
+
+    /**
+     * Container port name.
+     *
+     * @return Container port name.
+     *
+     * @see KubernetesSeedNodeProviderConfig#setContainerPortName(String)
+     */
+    public String containerPortName() {
+        return containerPortName;
+    }
+
+    /**
+     * Kubernetes master URL.
+     *
+     * @return Master URL.
+     *
+     * @see KubernetesSeedNodeProviderConfig#setMasterUrl(String)
+     */
+    public String masterUrl() {
+        return masterUrl;
+    }
+
+    /**
+     * Kubernetes namespace.
+     *
+     * @return Kubernetes namespace.
+     *
+     * @see KubernetesSeedNodeProviderConfig#setNamespace(String)
+     */
+    public String namespace() {
+        return namespace;
+    }
+
+    /**
+     * {@code true} if  Kubernetes API must have a trusted certificate.
+     *
+     * @return {@code true} if  Kubernetes API must have a trusted certificate.
+     *
+     * @see KubernetesSeedNodeProviderConfig#setTrustCertificates(Boolean)
+     */
+    public Boolean trustCertificates() {
+        return trustCertificates;
     }
 
     @Override

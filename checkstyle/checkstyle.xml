@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  Copyright 2018 The Hekate Project
+  Copyright 2019 The Hekate Project
 
   The Hekate Project licenses this file to you under the Apache License,
   version 2.0 (the "License"); you may not use this file except in compliance
@@ -274,15 +274,15 @@
             <property name="allowSamelineMultipleAnnotations" value="false"/>
             <property name="allowSamelineSingleParameterlessAnnotation" value="false"/>
             <property name="allowSamelineParameterizedAnnotation" value="false"/>
-            <property name="tokens" value="CLASS_DEF, INTERFACE_DEF, ENUM_DEF, METHOD_DEF, CTOR_DEF, VARIABLE_DEF, ANNOTATION_DEF, TYPECAST,
-                                           LITERAL_NEW, DOT, ANNOTATION_FIELD_DEF"/>
+            <property name="tokens" value="CLASS_DEF, INTERFACE_DEF, ENUM_DEF, METHOD_DEF, CTOR_DEF, VARIABLE_DEF, ANNOTATION_DEF,
+                ANNOTATION_FIELD_DEF"/>
         </module>
 
         <module name="AnnotationLocation">
             <property name="allowSamelineMultipleAnnotations" value="true"/>
             <property name="allowSamelineSingleParameterlessAnnotation" value="false"/>
             <property name="allowSamelineParameterizedAnnotation" value="false"/>
-            <property name="tokens" value="PARAMETER_DEF, LITERAL_THROWS, IMPLEMENTS_CLAUSE, TYPE_ARGUMENT"/>
+            <property name="tokens" value="PARAMETER_DEF"/>
         </module>
 
         <!--
@@ -321,6 +321,10 @@
         <module name="LocalVariableName">
             <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
             <property name="allowOneCharVarInForLoop" value="true"/>
+        </module>
+
+        <module name="LambdaParameterName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
         </module>
 
         <module name="MemberName">

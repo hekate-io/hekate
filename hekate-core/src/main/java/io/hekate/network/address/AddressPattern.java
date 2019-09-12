@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -19,7 +19,6 @@ package io.hekate.network.address;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.network.NetworkServiceFactory;
-import io.hekate.util.format.ToString;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -46,7 +45,8 @@ import org.slf4j.LoggerFactory;
  *
  * <ul>
  * <li><b>any</b> - any non-loopback address</li>
- * <li><b>any-ip4</b> - any IPv6 non-loopback address</li>
+ * <li><b>any-ip4</b> - any IPv4 non-loopback address</li>
+ * <li><b>any-ip6</b> - any IPv6 non-loopback address</li>
  *
  * <li><b>ip~<i>regex</i></b> - any IP address that matches the specified regular expression</li>
  * <li><b>ip4~<i>regex</i></b> - any IPv4 address that matches the specified regular expression</li>
@@ -74,7 +74,8 @@ import org.slf4j.LoggerFactory;
  * </ul>
  *
  * <p>
- * If multiple addresses match the specified pattern then the first one will be selected (order is not guaranteed).
+ * If several addresses match the specified pattern, the first one will be selected (order is not guaranteed, but preference will be given
+ * to non-{@link NetworkInterface#isPointToPoint() P2P} addresses).
  * </p>
  *
  * @see AddressSelector
@@ -134,6 +135,9 @@ public class AddressPattern implements AddressSelector {
 
             List<NetworkInterface> nis = networkInterfaces();
 
+            InetAddress p2pAddr = null;
+            String p2pNiName = null;
+
             for (NetworkInterface ni : nis) {
                 if (!ni.isUp() || ni.isLoopback()) {
                     continue;
@@ -152,11 +156,20 @@ public class AddressPattern implements AddressSelector {
                         }
 
                         if (checkAddress(addrIncludes, addrExcludes, niName, address)) {
-                            if (DEBUG) {
-                                log.debug("Resolved address [interface={}, address={}]", niName, address);
-                            }
+                            if (ni.isPointToPoint()) {
+                                // If this is a P2P address then store it as a selected address in case if there are no other addresses.
+                                if (p2pAddr == null) {
+                                    p2pAddr = address;
+                                    p2pNiName = niName;
+                                }
+                            } else {
+                                if (DEBUG) {
+                                    log.debug("Resolved address [interface={}, address={}]", niName, address);
+                                }
 
-                            return address;
+                                // Returns the selected address.
+                                return address;
+                            }
                         }
                     }
                 } else {
@@ -165,11 +178,16 @@ public class AddressPattern implements AddressSelector {
                     }
                 }
             }
+
+            if (DEBUG) {
+                log.debug("Resolved Point-to-Point address [interface={}, address={}]", p2pNiName, p2pAddr);
+            }
+
+            // Returns the first selected P2P address if we couldn't find any alternatives.
+            return p2pAddr;
         } catch (IOException e) {
             throw new HekateException("Failed to resolve node address [" + opts + ']', e);
         }
-
-        return null;
     }
 
     // Package level for testing purposes.
@@ -242,6 +260,6 @@ public class AddressPattern implements AddressSelector {
 
     @Override
     public String toString() {
-        return ToString.format(this);
+        return opts.toString();
     }
 }

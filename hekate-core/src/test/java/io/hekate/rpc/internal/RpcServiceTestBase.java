@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2019 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -74,7 +74,17 @@ public abstract class RpcServiceTestBase extends HekateNodeMultiCodecTestBase {
     }
 
     protected ClientAndServer prepareClientAndServer(Object rpc, String tag) throws Exception {
-        HekateTestNode server = createNode(boot -> {
+        HekateTestNode server = prepareServer(rpc, tag);
+
+        HekateTestNode client = createNode(boot -> boot.withNodeName("rpc-client")).join();
+
+        awaitForTopology(client, server);
+
+        return new ClientAndServer(client, server);
+    }
+
+    protected HekateTestNode prepareServer(Object rpc, String tag) throws Exception {
+        return createNode(boot -> {
             boot.withNodeName("rpc-server");
             boot.withService(RpcServiceFactory.class, f ->
                 f.withServer(new RpcServerConfig()
@@ -83,12 +93,6 @@ public abstract class RpcServiceTestBase extends HekateNodeMultiCodecTestBase {
                 )
             );
         }).join();
-
-        HekateTestNode client = createNode(boot -> boot.withNodeName("rpc-client")).join();
-
-        awaitForTopology(client, server);
-
-        return new ClientAndServer(client, server);
     }
 
     protected ClientAndServers prepareClientAndServers(Object... rpcHandlers) throws Exception {
