@@ -219,33 +219,41 @@ public class DefaultJmxService implements JmxService, InitializingService, Termi
                     Class<?> face = faces.get(0);
                     ObjectName name = nameFor(face, nameAttribute);
 
-                    if (DEBUG) {
-                        log.debug("Registering JMX bean [name={}]", name);
+                    if (server.isRegistered(name)) {
+                        if (DEBUG) {
+                            log.debug("Skipped registration of JMX bean (object name is already in use) [name={}]", name);
+                        }
+
+                        return Optional.empty();
+                    } else {
+                        if (DEBUG) {
+                            log.debug("Registering JMX bean [name={}]", name);
+                        }
+
+                        JmxBeanHandler jmxHandler;
+
+                        try {
+                            jmxHandler = new JmxBeanHandler(realMxBean, face, true);
+                        } catch (IllegalArgumentException err) {
+                            // MXBean introspection failure.
+                            String errMsg = String.format("Failed to register JMX bean [name=%s, type=%s]", name, face);
+
+                            throw new JmxServiceException(errMsg, err.getCause() != null ? err.getCause() : err);
+                        }
+
+                        try {
+                            server.registerMBean(jmxHandler, name);
+                        } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException err) {
+                            String errMsg = String.format("Failed to register JMX bean [name=%s, type=%s]", name, face);
+
+                            throw new JmxServiceException(errMsg, err);
+                        }
+
+                        // Remember the name so that we could unregister this bean during the termination of this service.
+                        names.add(name);
+
+                        return Optional.of(name);
                     }
-
-                    JmxBeanHandler jmxHandler;
-
-                    try {
-                        jmxHandler = new JmxBeanHandler(realMxBean, face, true);
-                    } catch (IllegalArgumentException err) {
-                        // MXBean introspection failure.
-                        String errMsg = String.format("Failed to register JMX bean [name=%s, type=%s]", name, face);
-
-                        throw new JmxServiceException(errMsg, err.getCause() != null ? err.getCause() : err);
-                    }
-
-                    try {
-                        server.registerMBean(jmxHandler, name);
-                    } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException err) {
-                        String errMsg = String.format("Failed to register JMX bean [name=%s, type=%s]", name, face);
-
-                        throw new JmxServiceException(errMsg, err);
-                    }
-
-                    // Remember the name so that we could unregister this bean during the termination of this service.
-                    names.add(name);
-
-                    return Optional.of(name);
                 }
             } finally {
                 guard.unlockWrite();

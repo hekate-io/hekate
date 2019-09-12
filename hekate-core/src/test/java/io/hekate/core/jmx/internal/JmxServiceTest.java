@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Optional;
-import javax.management.InstanceAlreadyExistsException;
 import javax.management.MXBean;
 import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
@@ -118,19 +117,6 @@ public class JmxServiceTest extends HekateNodeTestBase {
         JmxServiceException err2 = expect(JmxServiceException.class, () -> jmx.register(mock(NonCompliantMxBean.class)));
 
         assertEquals(ErrorUtils.stackTrace(err2), NotCompliantMBeanException.class, err2.getCause().getClass());
-
-        // Duplicated object name.
-        ObjectName dupName = jmx.nameFor(TestMxBeanA.class);
-
-        try {
-            jmx.server().registerMBean(mock(TestMxBeanA.class), dupName);
-
-            JmxServiceException err3 = expect(JmxServiceException.class, () -> jmx.register(mock(TestMxBeanA.class)));
-
-            assertEquals(ErrorUtils.stackTrace(err3), InstanceAlreadyExistsException.class, err3.getCause().getClass());
-        } finally {
-            jmx.server().unregisterMBean(dupName);
-        }
     }
 
     @Test
@@ -173,6 +159,44 @@ public class JmxServiceTest extends HekateNodeTestBase {
             assertFalse(jmx.server().isRegistered(name1));
             assertFalse(jmx.server().isRegistered(name2));
             assertFalse(jmx.server().isRegistered(name3));
+
+            reset(bean1, bean2, bean3);
+        });
+    }
+
+    @Test
+    public void testRegisterDuplicate() throws Exception {
+        TestMxBeanA bean1 = mock(TestMxBeanA.class);
+        TestMxBeanA bean2 = mock(TestMxBeanA.class);
+        TestMxBeanA bean3 = mock(TestMxBeanA.class);
+
+        repeat(3, i -> {
+            when(bean1.getTestValue()).thenReturn("test-1");
+            when(bean2.getTestValue()).thenReturn("test-2");
+            when(bean3.getTestValue()).thenReturn("test-3");
+
+            if (node.state() == Hekate.State.DOWN) {
+                node.join();
+            }
+
+            JmxService jmx = node.get(JmxService.class);
+
+            ObjectName name = jmx.register(bean1, "test-name").get();
+
+            assertFalse(jmx.register(bean2, "test-name").isPresent());
+            assertFalse(jmx.register(bean3, "test-name").isPresent());
+
+            assertTrue(jmx.names().contains(name));
+
+            assertEquals("test-1", jmxAttribute(name, "TestValue", String.class, node));
+
+            verify(bean1).getTestValue();
+
+            verifyNoMoreInteractions(bean1, bean2, bean3);
+
+            node.leave();
+
+            assertFalse(jmx.server().isRegistered(name));
 
             reset(bean1, bean2, bean3);
         });
