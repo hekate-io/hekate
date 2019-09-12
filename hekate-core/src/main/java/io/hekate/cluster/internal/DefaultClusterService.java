@@ -419,9 +419,9 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         report.section("cluster", cs -> {
             cs.value("gossip-interval", gossipInterval);
             cs.value("speed-up-gossip-size", speedUpGossipSize);
-            cs.value("seed-node-provider", seedNodeProvider);
             cs.value("failure-detector", failureDetector);
             cs.value("split-brain", splitBrain);
+            cs.value("seed-node-provider", seedNodeProvider);
         });
     }
 

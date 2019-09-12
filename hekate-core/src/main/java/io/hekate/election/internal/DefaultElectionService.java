@@ -173,16 +173,20 @@ public class DefaultElectionService implements ElectionService, DependentService
 
     @Override
     public void report(ConfigReporter report) {
-        report.section("election", election ->
-            election.section("candidates", candidates ->
-                handlers.values().forEach(h ->
-                    candidates.section("candidate", candidate -> {
-                        candidate.value("group", h.group());
-                        candidate.value("candidate", h.candidate());
-                    })
-                )
-            )
-        );
+        guard.withReadLockIfInitialized(() -> {
+            if (!handlers.isEmpty()) {
+                report.section("election", election ->
+                    election.section("candidates", candidates ->
+                        handlers.values().forEach(h ->
+                            candidates.section("candidate", candidate -> {
+                                candidate.value("group", h.group());
+                                candidate.value("candidate", h.candidate());
+                            })
+                        )
+                    )
+                );
+            }
+        });
     }
 
     @Override

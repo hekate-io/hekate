@@ -472,8 +472,8 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
                         css.section("connector", cs -> {
                             cs.value("protocol", c.connector().protocol());
                             cs.value("server", c.connector().isServer());
-                            cs.value("idle-timeout", c.connector().idleSocketTimeout());
                             cs.value("nio-threads", c.hasEventLoop() ? c.connector().nioThreads() : "shared");
+                            cs.value("idle-timeout", c.connector().idleSocketTimeout());
                         })
                     )
                 );

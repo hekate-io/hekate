@@ -244,24 +244,28 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     @Override
     public void report(ConfigReporter report) {
-        report.section("messaging", ms ->
-            ms.section("channels", cs -> {
-                gateways.values().forEach(gateway ->
-                    cs.section("channel", c -> {
-                        c.value("name", gateway.name());
-                        c.value("base-type", gateway.baseType().getName());
-                        c.value("server", gateway.hasReceiver());
-                        c.value("worker-threads", gateway.workerThreads());
-                        c.value("messaging-timeout", gateway.messagingTimeout());
-                        c.value("idle-socket-timeout", gateway.idleSocketTimeout());
-                        c.value("partitions", gateway.partitions());
-                        c.value("backup-nodes", gateway.backupNodes());
-                        c.value("send-pressure", gateway.sendPressureGuard());
-                        c.value("receive-pressure", gateway.receivePressureGuard());
+        guard.withReadLockIfInitialized(() -> {
+            if (!gateways.isEmpty()) {
+                report.section("messaging", messagingSec ->
+                    messagingSec.section("channels", channelsSec -> {
+                        gateways.values().forEach(channel ->
+                            channelsSec.section("channel", channelSec -> {
+                                channelSec.value("name", channel.name());
+                                channelSec.value("base-type", channel.baseType().getName());
+                                channelSec.value("server", channel.hasReceiver());
+                                channelSec.value("worker-threads", channel.workerThreads());
+                                channelSec.value("messaging-timeout", channel.messagingTimeout());
+                                channelSec.value("idle-socket-timeout", channel.idleSocketTimeout());
+                                channelSec.value("partitions", channel.partitions());
+                                channelSec.value("backup-nodes", channel.backupNodes());
+                                channelSec.value("send-pressure", channel.sendPressureGuard());
+                                channelSec.value("receive-pressure", channel.receivePressureGuard());
+                            })
+                        );
                     })
                 );
-            })
-        );
+            }
+        });
     }
 
     @Override

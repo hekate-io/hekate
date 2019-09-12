@@ -257,16 +257,20 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
     @Override
     public void report(ConfigReporter report) {
-        report.section("locks", ls -> {
-            ls.value("retry-interval", retryInterval);
+        guard.withReadLockIfInitialized(() -> {
+            if (!regionsConfig.isEmpty()) {
+                report.section("locks", locksSec -> {
+                    locksSec.value("retry-interval", retryInterval);
 
-            ls.section("regions", rss ->
-                regionsConfig.forEach(cfg ->
-                    rss.section("region", rs ->
-                        rs.value("name", cfg.getName())
-                    )
-                )
-            );
+                    locksSec.section("regions", regionsSec ->
+                        regionsConfig.forEach(region ->
+                            regionsSec.section("region", regionSec ->
+                                regionSec.value("name", region.getName())
+                            )
+                        )
+                    );
+                });
+            }
         });
     }
 

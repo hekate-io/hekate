@@ -234,14 +234,18 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
     @Override
     public void report(ConfigReporter report) {
-        report.section("coordination", c -> {
-            c.value("retry-delay", retryDelay);
+        guard.withReadLockIfInitialized(() -> {
+            if (!processes.isEmpty()) {
+                report.section("coordination", coordinationSec -> {
+                    coordinationSec.value("retry-delay", retryDelay);
 
-            for (DefaultCoordinationProcess process : processes.values()) {
-                c.section("process", p -> {
-                    p.value("name", process.name());
-                    p.value("async-init", process.isAsyncInit());
-                    p.value("handler", process.handler());
+                    for (DefaultCoordinationProcess process : processes.values()) {
+                        coordinationSec.section("process", processSec -> {
+                            processSec.value("name", process.name());
+                            processSec.value("async-init", process.isAsyncInit());
+                            processSec.value("handler", process.handler());
+                        });
+                    }
                 });
             }
         });

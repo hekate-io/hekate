@@ -442,26 +442,30 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
     @Override
     public void report(ConfigReporter report) {
-        report.section("rpc", rs ->
-            rs.section("servers", ss ->
-                servers.forEach(server ->
-                    ss.section("server", s -> {
-                        s.value("tags", server.tags());
-                        s.value("implementation", server.rpc());
+        guard.withReadLockIfInitialized(() -> {
+            if (!servers.isEmpty()) {
+                report.section("rpc", rpcSec ->
+                    rpcSec.section("servers", serversSec ->
+                        servers.forEach(server ->
+                            serversSec.section("server", serverSec -> {
+                                serverSec.value("tags", server.tags());
+                                serverSec.value("implementation", server.rpc());
 
-                        s.section("interfaces", irs ->
-                            server.interfaces().forEach(i ->
-                                irs.section("interface", ir -> {
-                                    ir.value("type", i.javaType().getName());
-                                    ir.value("min-client-version", i.minClientVersion());
-                                    ir.value("version", i.version());
-                                })
-                            )
-                        );
-                    })
-                )
-            )
-        );
+                                serverSec.section("interfaces", facesSec ->
+                                    server.interfaces().forEach(face ->
+                                        facesSec.section("interface", faceSec -> {
+                                            faceSec.value("type", face.javaType().getName());
+                                            faceSec.value("min-client-version", face.minClientVersion());
+                                            faceSec.value("version", face.version());
+                                        })
+                                    )
+                                );
+                            })
+                        )
+                    )
+                );
+            }
+        });
     }
 
     private void handleMessage(Message<RpcProtocol> msg) {
