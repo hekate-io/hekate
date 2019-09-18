@@ -165,7 +165,7 @@ public class RendezvousHashMapperTest extends HekateNodeTestBase {
     }
 
     @Test
-    public void testBakupsResideOnDifferentHosts() throws Exception {
+    public void testBackupsResideOnDifferentHosts() throws Exception {
         Set<ClusterNode> nodes = new HashSet<>(Arrays.asList(
             newNode("127.0.0.1", 1, "22a0310ac3b04a4a8920175d1874fba5"),
             newNode("127.0.0.1", 2, "39f2a564bcc64a40ab977deaadf1dd50"),
