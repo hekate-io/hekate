@@ -361,6 +361,11 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                 }
             }
 
+            // Print version.
+            if (log.isInfoEnabled()) {
+                log.info("{}.", HekateVersion.info());
+            }
+
             // Generate new ID for this node.
             ClusterNodeId localNodeId = new ClusterNodeId();
 
@@ -559,10 +564,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
             // Make sure that we are still initializing with the same node identifier.
             // Need to perform this check in order to stop early in case of concurrent leave/termination events.
             if (isInitializingFor(localNodeId)) {
-                if (log.isInfoEnabled()) {
-                    log.info("Initializing {}.", HekateVersion.info());
-                }
-
                 // Bind network service.
                 networkManager.bind(new NetworkBindCallback() {
                     @Override

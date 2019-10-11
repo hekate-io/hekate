@@ -284,7 +284,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         }
 
         if (log.isInfoEnabled()) {
-            log.info("Selected public address [address={}, selector={}]", publicIp, addressSelector);
+            log.info("Network address selected [address={}, selector={}]", publicIp, addressSelector);
 
             log.info("Binding network acceptor [port={}]", initPort);
         }
@@ -346,13 +346,13 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
                             // Try to increment the port.
                             int prevPort = err.lastTriedAddress().getPort();
 
-                            int newPort = prevPort + 1;
+                            int nextPort = prevPort + 1;
 
-                            if (newPort < initPort + portRange) {
-                                InetSocketAddress newAddress = new InetSocketAddress(err.lastTriedAddress().getAddress(), newPort);
+                            if (nextPort < initPort + portRange) {
+                                InetSocketAddress newAddress = new InetSocketAddress(err.lastTriedAddress().getAddress(), nextPort);
 
                                 if (log.isInfoEnabled()) {
-                                    log.info("Couldn't bind on port {} ...will try next port [new-address={}]", prevPort, newAddress);
+                                    log.info("Couldn't bind on port {} ...will try next port [next-port={}]", prevPort, nextPort);
                                 }
 
                                 // Retry with the next port.
