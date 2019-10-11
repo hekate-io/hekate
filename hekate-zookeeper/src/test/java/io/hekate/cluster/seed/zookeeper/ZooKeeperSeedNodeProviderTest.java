@@ -61,7 +61,7 @@ public class ZooKeeperSeedNodeProviderTest extends PersistentSeedNodeProviderTes
 
         assertEquals(
             "\n"
-                + "  zookeeper\n"
+                + "  zookeeper:\n"
                 + "    connection-string: " + provider.connectionString() + "\n"
                 + "    base-path: " + provider.basePath() + "\n"
                 + "    connect-timeout: " + provider.connectTimeout() + "\n"

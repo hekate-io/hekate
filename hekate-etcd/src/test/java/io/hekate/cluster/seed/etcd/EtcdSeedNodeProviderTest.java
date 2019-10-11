@@ -78,7 +78,7 @@ public class EtcdSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase
 
         assertEquals(
             "\n"
-                + "  etcd\n"
+                + "  etcd:\n"
                 + "    endpoints: " + provider.endpoints() + "\n"
                 + "    base-path: " + provider.basePath() + "\n"
                 + "    cleanup-interval: " + provider.cleanupInterval() + "\n",

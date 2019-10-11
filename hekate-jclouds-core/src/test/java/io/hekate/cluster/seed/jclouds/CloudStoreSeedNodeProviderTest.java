@@ -53,7 +53,7 @@ public class CloudStoreSeedNodeProviderTest extends PersistentSeedNodeProviderTe
 
         assertEquals(
             "\n"
-                + "  cloud-store\n"
+                + "  cloud-store:\n"
                 + "    provider: " + provider.provider() + "\n"
                 + "    container: " + provider.container() + "\n"
                 + "    properties: " + provider.properties() + "\n"

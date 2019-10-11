@@ -42,7 +42,7 @@ public class ConsulSeedNodeProviderTest extends PersistentSeedNodeProviderTestBa
 
         assertEquals(
             "\n"
-                + "  consul\n"
+                + "  consul:\n"
                 + "    url: " + provider.url() + "\n"
                 + "    base-path: " + provider.basePath() + "\n"
                 + "    cleanup-interval: " + provider.cleanupInterval() + "\n"

@@ -104,7 +104,7 @@ public class CloudSeedNodeProviderTest extends HekateTestBase {
 
         assertEquals(
             "\n"
-                + "  cloud\n"
+                + "  cloud:\n"
                 + "    provider: " + provider.provider() + "\n"
                 + "    properties: " + provider.properties() + "\n",
             DefaultConfigReporter.report(provider)
