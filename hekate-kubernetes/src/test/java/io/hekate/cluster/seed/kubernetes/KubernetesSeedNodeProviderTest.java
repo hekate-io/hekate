@@ -53,7 +53,7 @@ public class KubernetesSeedNodeProviderTest extends HekateTestBase {
 
         assertEquals(
             "\n"
-                + "  kubernetes\n"
+                + "  kubernetes:\n"
                 + "    container-port-name: " + provider.containerPortName() + "\n"
                 + "    master-url: " + provider.masterUrl() + "\n"
                 + "    namespace: " + provider.namespace() + "\n"
