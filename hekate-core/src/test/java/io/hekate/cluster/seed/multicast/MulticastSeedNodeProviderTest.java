@@ -97,7 +97,7 @@ public class MulticastSeedNodeProviderTest extends SeedNodeProviderTestBase<Mult
 
         assertEquals(
             "\n"
-                + "  multicast\n"
+                + "  multicast:\n"
                 + "    group: " + provider.group() + "\n"
                 + "    ttl: " + provider.ttl() + "\n"
                 + "    interval: " + provider.interval() + "\n"

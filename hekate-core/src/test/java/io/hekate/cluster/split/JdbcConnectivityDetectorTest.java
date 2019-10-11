@@ -44,7 +44,7 @@ public class JdbcConnectivityDetectorTest extends HekateTestBase {
 
         assertEquals(
             "\n"
-                + "  jdbc-connectivity\n"
+                + "  jdbc-connectivity:\n"
                 + "    datasource: " + detector.datasource() + "\n"
                 + "    timeout: " + detector.timeout() + "\n",
             DefaultConfigReporter.report(detector)

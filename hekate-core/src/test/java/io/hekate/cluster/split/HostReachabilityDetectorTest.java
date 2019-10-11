@@ -46,7 +46,7 @@ public class HostReachabilityDetectorTest extends HekateTestBase {
 
         assertEquals(
             "\n"
-                + "  host-reachability\n"
+                + "  host-reachability:\n"
                 + "    host: " + detector.host() + "\n"
                 + "    timeout: " + detector.timeout() + "\n",
             DefaultConfigReporter.report(detector)

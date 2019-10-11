@@ -39,7 +39,7 @@ public class StaticSeedNodeProviderTest extends HekateTestBase {
 
         assertEquals(
             "\n"
-                + "  static\n"
+                + "  static:\n"
                 + "    addresses: " + provider.getAddresses() + "\n",
             DefaultConfigReporter.report(provider)
         );

@@ -55,7 +55,7 @@ public class AddressReachabilityDetectorTest extends HekateNodeTestBase {
 
         assertEquals(
             "\n"
-                + "  address-reachability\n"
+                + "  address-reachability:\n"
                 + "    address: " + detector.address() + "\n"
                 + "    timeout: " + detector.timeout() + "\n",
             DefaultConfigReporter.report(detector)

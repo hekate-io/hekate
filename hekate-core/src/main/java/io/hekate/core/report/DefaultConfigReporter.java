@@ -76,7 +76,7 @@ public class DefaultConfigReporter implements ConfigReporter {
 
     @Override
     public ConfigReporter section(String name) {
-        buf.append(indent).append(name).append(NL);
+        buf.append(indent).append(name).append(':').append(NL);
 
         return new DefaultConfigReporter(indent + INDENT_STEP, buf);
     }

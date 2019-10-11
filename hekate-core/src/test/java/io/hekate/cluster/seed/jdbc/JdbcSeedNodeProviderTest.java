@@ -97,7 +97,7 @@ public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase
 
         assertEquals(
             "\n"
-                + "  jdbc\n"
+                + "  jdbc:\n"
                 + "    datasource: " + provider.dataSource() + "\n"
                 + "    insert-sql: " + provider.insertSql() + "\n"
                 + "    cleanup-interval: " + provider.cleanupInterval() + "\n"

@@ -52,7 +52,7 @@ public class FsSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase<F
 
         assertEquals(
             "\n"
-                + "  shared-folder\n"
+                + "  shared-folder:\n"
                 + "    work-dir: " + provider.getWorkDir() + "\n"
                 + "    cleanup-interval: " + provider.cleanupInterval() + "\n",
             DefaultConfigReporter.report(provider)
