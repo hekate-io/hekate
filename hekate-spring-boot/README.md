@@ -7,6 +7,6 @@ for [Hekate.io](https://github.com/hekate-io/hekate) services and components.
  <dependency>
      <groupId>io.hekate</groupId>
      <artifactId>hekate-spring-boot</artifactId>
-     <version>3.6.0-SNAPSHOT</version>
+     <version>3.6.0</version>
  </dependency>
  ```

@@ -127,7 +127,7 @@ __More Examples__: Please see the **[hekate-io/hekate-examples](https://github.c
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring-boot</artifactId>
-    <version>3.6.0-SNAPSHOT</version>
+    <version>3.6.0</version>
 </dependency>
 ```
 
@@ -136,7 +136,7 @@ __More Examples__: Please see the **[hekate-io/hekate-examples](https://github.c
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring</artifactId>
-    <version>3.6.0-SNAPSHOT</version>
+    <version>3.6.0</version>
 </dependency>
 ```
 
@@ -145,7 +145,7 @@ __More Examples__: Please see the **[hekate-io/hekate-examples](https://github.c
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-core</artifactId>
-    <version>3.6.0-SNAPSHOT</version>
+    <version>3.6.0</version>
 </dependency>
 ```
 
